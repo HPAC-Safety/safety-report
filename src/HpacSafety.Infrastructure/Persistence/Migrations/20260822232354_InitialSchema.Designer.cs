@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HpacSafetyDbContext))]
-    [Migration("20260822230345_InitialSchema")]
+    [Migration("20260822232354_InitialSchema")]
     partial class InitialSchema
     {
         /// <inheritdoc />
@@ -456,6 +456,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasMaxLength(8)
                         .HasColumnType("character varying(8)")
                         .HasColumnName("language");
+
+                    b.Property<string>("OccurredAtLocal")
+                        .HasColumnType("text")
+                        .HasColumnName("occurred_at_local");
 
                     b.Property<DateOnly?>("OccurredOn")
                         .HasColumnType("date")

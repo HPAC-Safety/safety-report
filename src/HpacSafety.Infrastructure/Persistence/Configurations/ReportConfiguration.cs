@@ -8,7 +8,8 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace HpacSafety.Infrastructure.Persistence.Configurations;
 
 /// <summary>The <c>reports</c> table and everything hanging off it.</summary>
-public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
+/// <param name="cipher">The cipher its Restricted column is bound to.</param>
+public sealed class ReportConfiguration(IFieldCipher cipher) : IEntityTypeConfiguration<Report>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<Report> builder)
@@ -28,6 +29,13 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
         // Deliberately nullable, and deliberately not defaulted. An unanswered
         // consent is not a "no" — see ADR-0016.
         builder.Property(report => report.ConsentPublish);
+
+        // The day the reporter says it happened: a date, so no session timezone
+        // can shift it across midnight. The clock time at the site: Restricted,
+        // so encrypted, and never published — the coarse `time_of_day` bucket
+        // beside it is what anything downstream reads. See ADR-0019.
+        builder.Property(report => report.OccurredAtLocal)
+            .HasConversion(EncryptedTimeOnlyConverter.For(cipher));
 
         builder.Property(report => report.SummaryError).HasMaxLength(2000);
 

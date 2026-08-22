@@ -76,6 +76,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     submitted_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     consent_publish = table.Column<bool>(type: "boolean", nullable: true),
                     occurred_on = table.Column<DateOnly>(type: "date", nullable: true),
+                    occurred_at_local = table.Column<string>(type: "text", nullable: true),
                     province = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     time_of_day = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     pilot_injury = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),

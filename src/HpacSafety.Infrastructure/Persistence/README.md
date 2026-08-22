@@ -85,6 +85,8 @@ That maps straight onto the schema, and the split is not cosmetic:
 |---|---|---|
 | When the **system** did something — submitted, processed, approved, audited | `DateTimeOffset` | `timestamptz` |
 | The day the **reporter** says the occurrence happened | `DateOnly` | `date` |
+| The clock time at the site | `TimeOnly` | encrypted `text` |
+| The coarse bucket derived from that time | `TimeOfDay` | `time_of_day`, in the clear |
 
 `reports.occurred_on` is the one that would hurt. A published summary carries a
 month and a year (`docs/anonymization-policy.md`) because a province, an exact
@@ -95,9 +97,23 @@ accident happened on — and near the end of a month, which month gets published
 `OccurrenceDateTests` writes and reads it from sessions on both sides of the
 world and proves the day does not move.
 
-The reporter's *time of day* is not a clock time either: the form offers
-Morning, Mid-day, Afternoon, Evening, and "Do not know", so it is an ordinary
-coded answer, not a `TimeOnly`.
+The occurrence time is a **local wall clock** reading, not an instant. "Morning"
+means what the clock at the site said, and this system collects a province, not
+coordinates — provinces span time zones, so any offset stored here would be
+inferred and a wrong one moves the bucket. The cost is honest: this is not a
+globally-orderable instant, so two reports in different provinces cannot be
+strictly sequenced by when they happened. Nothing needs that; `submitted_at` is
+a real instant when ordering by arrival is what is wanted.
+
+The bucket is **derived**, never asked for, by
+`TimeOfDay.FromLocalTime(TimeOnly)` in `Core` — morning before 11:00, mid-day to
+14:00, afternoon to 17:00, evening after. That is the only place the boundaries
+exist; #18 calls it rather than re-deriving them. A reporter who gives no time
+(#68 makes it optional) is `TimeOfDay.Unknown`, which is a defined state and not
+a null anything reads as midnight.
+
+The precise time is Restricted and encrypted; the bucket is publishable and in
+the clear. See ADR-0019.
 
 ## Encryption
 

@@ -10,9 +10,9 @@ A field's tier is a property of the field, not of the screen it appears on.
 
 | Tier | Contents | Rules |
 |---|---|---|
-| **Restricted** | Reporter and pilot names, phone, email, member number, raw narrative, original media | Encrypted at rest. Admin-only. Never logged. Never sent to a translation service. |
+| **Restricted** | Reporter and pilot names, phone, email, member number, raw narrative, original media, the precise time of the occurrence | Encrypted at rest. Admin-only. Never logged. Never sent to a translation service. |
 | **Internal** | Manufacturer, model, precise site | Retained for HPAC trend analysis. Never published. |
-| **Publishable** | Approved summary, certification class, province, severity, month and year | Public once a safety officer approves and consent was given. |
+| **Publishable** | Approved summary, certification class, province, severity, month and year, time-of-day bucket | Public once a safety officer approves and consent was given. |
 
 If you are unsure which tier something belongs to, it is Restricted.
 
@@ -45,6 +45,14 @@ Three consequences, all deliberate:
 - Answer text cannot be searched, sorted, or indexed in SQL.
 - The wrong key fails loudly. It never returns plausible-looking rubbish.
 - Losing the key loses the data. Key custody is an operational responsibility.
+
+The **precise time** of an occurrence is Restricted for the same reason the
+exact date is never published: province, date, aircraft type, and injury
+severity already narrow to one person in a small flying community, and the
+minute makes it certain. It is encrypted; the coarse time-of-day bucket derived
+from it sits beside it in the clear, and that bucket is the only thing a summary
+carries. See [ADR-0019](decisions/ADR-0019-application-side-field-encryption.md)
+and #68.
 
 `admin_users.member_identifier` is deliberately **not** encrypted: it is the
 lookup key at sign-in, it is an administrator's own working identity, and it

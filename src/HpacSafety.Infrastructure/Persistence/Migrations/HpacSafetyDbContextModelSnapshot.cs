@@ -454,6 +454,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("language");
 
+                    b.Property<string>("OccurredAtLocal")
+                        .HasColumnType("text")
+                        .HasColumnName("occurred_at_local");
+
                     b.Property<DateOnly?>("OccurredOn")
                         .HasColumnType("date")
                         .HasColumnName("occurred_on");

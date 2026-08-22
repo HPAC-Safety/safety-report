@@ -95,6 +95,15 @@ Two rules this project enforces and nothing downstream may relax:
 - **A question cannot be activated with a missing translation.** A
   machine-translated counterpart is acceptable; an absent one is not.
 
+The reporter gives a real date and a real clock time, and the coarse
+`TimeOfDay` bucket is **derived** from the time by
+`TimeOfDay.FromLocalTime(TimeOnly)` — the one place the boundaries are written
+down, called by both the projection here and the scrub in #18. A time that was
+never given is `TimeOfDay.Unknown`, a defined state rather than a midnight
+nobody meant. See
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)
+and #68.
+
 ## Tests
 
 `tests/HpacSafety.Core.Tests` — pure unit tests.

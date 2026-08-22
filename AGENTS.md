@@ -247,6 +247,16 @@ shortcut. Five rules that are not negotiable at the schema level:
   introduce a second key type, and never authorise anything by possession of an
   identifier. See
   [ADR-0034](docs/decisions/ADR-0034-tiny-ids.md).
+- **The occurrence is a local date and a local time; the time-of-day bucket is
+  derived, never asked for.** `DateOnly` plus `TimeOnly`, both local wall clock,
+  because "morning" is what the clock at the site said and this system collects a
+  province rather than coordinates — any offset it stored would be inferred, and
+  a wrong one moves the bucket. The boundaries live in exactly one place,
+  `TimeOfDay.FromLocalTime(TimeOnly)` in `Core`; never re-derive them at a call
+  site. The precise time is Restricted and encrypted, the bucket is publishable
+  and in the clear, and a reporter who gives no time is `TimeOfDay.Unknown` —
+  a defined state, never a null that reads as midnight. See
+  [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md) and #68.
 - **Domain values are stored as invariant codes**, never as ordinal integers.
   `high_en_b`, not `3`. A stored code that no longer names a domain value throws
   rather than defaulting to zero.

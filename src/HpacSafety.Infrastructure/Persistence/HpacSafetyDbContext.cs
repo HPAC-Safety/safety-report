@@ -159,7 +159,7 @@ public class HpacSafetyDbContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
-        modelBuilder.ApplyConfiguration(new ReportConfiguration());
+        modelBuilder.ApplyConfiguration(new ReportConfiguration(_cipher));
         modelBuilder.ApplyConfiguration(new ReportAnswerConfiguration(_cipher));
         modelBuilder.ApplyConfiguration(new ReportAircraftConfiguration());
         modelBuilder.ApplyConfiguration(new ReportFileConfiguration());

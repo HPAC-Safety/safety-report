@@ -52,13 +52,13 @@
 			]
 		},
 		{
-			"description": "Approve non-major updates. Automerge stays off until CI exists (see the CI issue) - with no required checks, auto-merge has nothing to wait for and would merge instantly.",
+			"description": "Approve and automerge non-major updates. platformAutomerge holds the PR until the required status checks pass, which is why this could only be turned on once CI existed.",
 			"matchUpdateTypes": [
 				"minor",
 				"patch"
 			],
 			"autoApprove": true,
-			"automerge": false,
+			"automerge": true,
 			"prBodyNotes": [
 				"- [ ] This is a breaking change"
 			]

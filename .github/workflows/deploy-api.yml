@@ -1,0 +1,164 @@
+name: Deploy API
+
+# SCAFFOLD. The infrastructure this deploys to does not exist yet — it is built
+# by #32 (AWS bootstrap) and #30 (live deployment). Everything below is wired
+# except the AWS calls, which are commented out and marked TODO(#30).
+#
+# Runs only after CI has gone green on main. Never deploy a red build.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy. Defaults to the current commit SHA. Set this to roll back.'
+        required: false
+        type: string
+
+# id-token is what makes OIDC role assumption possible. There is no
+# AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY anywhere in this repository.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Required GitHub configuration
+  #
+  # Secrets (deploy-time only):
+  #   AWS_DEPLOY_ROLE_ARN         Role assumed via OIDC. The only credential
+  #                               GitHub holds, and useless without the trust
+  #                               policy, which must be scoped to this
+  #                               repository and to ref:refs/heads/main.
+  #
+  # Variables (ARNs and names are not credentials):
+  #   AWS_REGION                  ca-central-1
+  #   ECR_REPOSITORY_API          Image repository
+  #   ECS_CLUSTER                 Deploy target cluster
+  #   ECS_SERVICE_API             Deploy target service
+  #   ECS_TASK_DEFINITION_MIGRATE Task definition that runs EF Core migrations
+  #   ECS_SUBNETS                 Comma-separated subnet ids for the migrate task
+  #   ECS_SECURITY_GROUPS         Comma-separated security group ids
+  #
+  # Runtime secrets — ANTHROPIC_API_KEY, TURNSTILE_SECRET_KEY,
+  # ConnectionStrings__Default, Notifications__To — are NOT here. They live in
+  # AWS Secrets Manager and are injected into the task definition. Putting them
+  # in GitHub would spread them for no reason. See docs/deployment.md.
+  # ---------------------------------------------------------------------------
+  preflight:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Required configuration is present
+        env:
+          AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ECR_REPOSITORY_API: ${{ vars.ECR_REPOSITORY_API }}
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_SERVICE_API: ${{ vars.ECS_SERVICE_API }}
+        run: |
+          set -uo pipefail
+          missing=0
+          require() {
+            if [ -z "${2:-}" ]; then
+              echo "::error::Missing $3 '$1'. See docs/deployment.md."
+              missing=1
+            fi
+          }
+          require AWS_DEPLOY_ROLE_ARN "$AWS_DEPLOY_ROLE_ARN" secret
+          require AWS_REGION         "$AWS_REGION"           variable
+          require ECR_REPOSITORY_API "$ECR_REPOSITORY_API"   variable
+          require ECS_CLUSTER        "$ECS_CLUSTER"          variable
+          require ECS_SERVICE_API    "$ECS_SERVICE_API"      variable
+
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "The AWS environment has not been created yet. It is built by"
+            echo "#32 (bootstrap) and wired up by #30 (live deployment)."
+            exit 1
+          fi
+          echo "Deploying $IMAGE_TAG to $ECS_SERVICE_API on $ECS_CLUSTER."
+
+  image:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v3
+
+      # .NET 10 publishes an OCI image directly. No Dockerfile to keep in sync.
+      - name: Publish container
+        run: >
+          dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj
+          --configuration Release
+          /t:PublishContainer
+          -p:ContainerRegistry=${{ steps.ecr.outputs.registry }}
+          -p:ContainerRepository=${{ vars.ECR_REPOSITORY_API }}
+          -p:ContainerImageTag=${{ env.IMAGE_TAG }}
+
+  # Migrations are their own job with an explicit dependency edge, and they run
+  # BEFORE the new task set takes traffic. Never at application startup — that
+  # races the moment more than one task boots.
+  migrate:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run EF Core migrations
+        run: |
+          echo "::error::TODO(#30): run the migration task and wait for it to exit 0."
+          echo "Shape:"
+          echo "  aws ecs run-task --cluster \$ECS_CLUSTER \\"
+          echo "    --task-definition \$ECS_TASK_DEFINITION_MIGRATE \\"
+          echo "    --launch-type FARGATE --network-configuration ... \\"
+          echo "    --overrides '{\"containerOverrides\":[{\"name\":\"migrate\",\"command\":[\"--migrate\"]}]}'"
+          echo "  then poll describe-tasks until STOPPED and assert exit code 0."
+          exit 1
+
+  deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll the service
+        run: |
+          echo "::error::TODO(#30): update the service to the new image and wait for stability."
+          echo "Shape:"
+          echo "  aws ecs update-service --cluster \$ECS_CLUSTER --service \$ECS_SERVICE_API --force-new-deployment"
+          echo "  aws ecs wait services-stable --cluster \$ECS_CLUSTER --services \$ECS_SERVICE_API"
+          echo ""
+          echo "Rollback: re-run this workflow via workflow_dispatch with image_tag"
+          echo "set to the previous commit SHA. No commit required."
+          exit 1

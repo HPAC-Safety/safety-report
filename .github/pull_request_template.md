@@ -4,7 +4,12 @@
 
 ## Why
 
-<!-- Link the issue. If there isn't one, say what prompted this. -->
+<!--
+Required. The `linked-issue` check fails without a closing keyword, because the
+keyword in this body is the only thing that makes GitHub close the issue on
+merge — the body becomes the squash commit message. "See #123" does not count.
+If there is no issue behind this change, open one first.
+-->
 
 Closes #
 

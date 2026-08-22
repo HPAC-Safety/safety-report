@@ -1,0 +1,136 @@
+name: Deploy Web
+
+# SCAFFOLD. Infrastructure is #32 and #30. See docs/deployment.md.
+#
+# The public form and the admin queue deploy SEPARATELY, to separate buckets and
+# separate distributions. Different audiences, different risk: the admin surface
+# can then sit behind extra network controls without ever affecting a pilot's
+# ability to file a report.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      site:
+        description: 'Which site to deploy.'
+        required: true
+        default: both
+        type: choice
+        options: [both, public, admin]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-web
+  cancel-in-progress: false
+
+jobs:
+  # Secrets:   AWS_DEPLOY_ROLE_ARN
+  # Variables: AWS_REGION,
+  #            S3_BUCKET_PUBLIC, S3_BUCKET_ADMIN,
+  #            CLOUDFRONT_DISTRIBUTION_PUBLIC, CLOUDFRONT_DISTRIBUTION_ADMIN
+  #
+  # The Turnstile SITE key is public by design and may be a variable. The
+  # Turnstile SECRET key is server-side only, lives in AWS Secrets Manager, and
+  # must never reach a static bundle.
+  preflight:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Required configuration is present
+        env:
+          AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          S3_BUCKET_PUBLIC: ${{ vars.S3_BUCKET_PUBLIC }}
+          S3_BUCKET_ADMIN: ${{ vars.S3_BUCKET_ADMIN }}
+          CLOUDFRONT_DISTRIBUTION_PUBLIC: ${{ vars.CLOUDFRONT_DISTRIBUTION_PUBLIC }}
+          CLOUDFRONT_DISTRIBUTION_ADMIN: ${{ vars.CLOUDFRONT_DISTRIBUTION_ADMIN }}
+        run: |
+          set -uo pipefail
+          missing=0
+          require() {
+            if [ -z "${2:-}" ]; then
+              echo "::error::Missing $3 '$1'. See docs/deployment.md."
+              missing=1
+            fi
+          }
+          require AWS_DEPLOY_ROLE_ARN            "$AWS_DEPLOY_ROLE_ARN"            secret
+          require AWS_REGION                     "$AWS_REGION"                     variable
+          require S3_BUCKET_PUBLIC               "$S3_BUCKET_PUBLIC"               variable
+          require S3_BUCKET_ADMIN                "$S3_BUCKET_ADMIN"                variable
+          require CLOUDFRONT_DISTRIBUTION_PUBLIC "$CLOUDFRONT_DISTRIBUTION_PUBLIC" variable
+          require CLOUDFRONT_DISTRIBUTION_ADMIN  "$CLOUDFRONT_DISTRIBUTION_ADMIN"  variable
+
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "The AWS environment has not been created yet. It is built by"
+            echo "#32 (bootstrap) and wired up by #30 (live deployment)."
+            exit 1
+          fi
+
+  site:
+    needs: preflight
+    runs-on: ubuntu-latest
+    environment: production
+    strategy:
+      # One site failing must not abandon the other mid-flight.
+      fail-fast: false
+      matrix:
+        site: [public, admin]
+    steps:
+      - name: Skip sites not selected
+        id: gate
+        run: |
+          selected='${{ inputs.site || 'both' }}'
+          if [ "$selected" = both ] || [ "$selected" = '${{ matrix.site }}' ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::${{ matrix.site }} not selected."
+          fi
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Build stylesheet
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          if [ -x tools/build-css.sh ]; then
+            ./tools/build-css.sh
+          else
+            echo "::warning::tools/build-css.sh does not exist yet — added by #10."
+          fi
+
+      - if: steps.gate.outputs.run == 'true'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Sync and invalidate
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          echo "::error::TODO(#30): sync src/web/${{ matrix.site }} and invalidate."
+          echo "Shape:"
+          echo "  aws s3 sync src/web/${{ matrix.site }} s3://\$BUCKET --delete"
+          echo "  aws s3 sync src/web/shared s3://\$BUCKET/shared --delete"
+          echo "  aws s3 sync locales        s3://\$BUCKET/locales --delete"
+          echo "  aws cloudfront create-invalidation --distribution-id \$DIST --paths '/*'"
+          echo ""
+          echo "Clean URLs come from a CloudFront Function on the viewer-request"
+          echo "event, not from S3 website hosting. That rewrite is part of the"
+          echo "Terraform in #30 — this workflow only ships content."
+          echo ""
+          echo "Rollback: re-run this workflow from the previous commit."
+          exit 1

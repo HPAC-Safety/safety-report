@@ -1,0 +1,124 @@
+name: Deploy Worker
+
+# SCAFFOLD. See .github/workflows/deploy-api.yml for the full secret contract
+# and docs/deployment.md for the reasoning. Infrastructure is #32 and #30.
+#
+# The Worker deliberately has no migrate job. Migrations are owned by the API
+# deployment so that exactly one workflow can change the schema. If a release
+# needs both, deploy the API first.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy. Defaults to the current commit SHA. Set this to roll back.'
+        required: false
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-worker
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+
+jobs:
+  # Secrets:   AWS_DEPLOY_ROLE_ARN
+  # Variables: AWS_REGION, ECR_REPOSITORY_WORKER, ECS_CLUSTER, ECS_SERVICE_WORKER
+  #
+  # ANTHROPIC_API_KEY lives in AWS Secrets Manager and is injected into the task
+  # definition. The Worker is the only component that holds it. It is never a
+  # GitHub secret.
+  preflight:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Required configuration is present
+        env:
+          AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          AWS_REGION: ${{ vars.AWS_REGION }}
+          ECR_REPOSITORY_WORKER: ${{ vars.ECR_REPOSITORY_WORKER }}
+          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+          ECS_SERVICE_WORKER: ${{ vars.ECS_SERVICE_WORKER }}
+        run: |
+          set -uo pipefail
+          missing=0
+          require() {
+            if [ -z "${2:-}" ]; then
+              echo "::error::Missing $3 '$1'. See docs/deployment.md."
+              missing=1
+            fi
+          }
+          require AWS_DEPLOY_ROLE_ARN   "$AWS_DEPLOY_ROLE_ARN"   secret
+          require AWS_REGION            "$AWS_REGION"            variable
+          require ECR_REPOSITORY_WORKER "$ECR_REPOSITORY_WORKER" variable
+          require ECS_CLUSTER           "$ECS_CLUSTER"           variable
+          require ECS_SERVICE_WORKER    "$ECS_SERVICE_WORKER"    variable
+
+          if [ "$missing" -ne 0 ]; then
+            echo ""
+            echo "The AWS environment has not been created yet. It is built by"
+            echo "#32 (bootstrap) and wired up by #30 (live deployment)."
+            exit 1
+          fi
+          echo "Deploying $IMAGE_TAG to $ECS_SERVICE_WORKER on $ECS_CLUSTER."
+
+  image:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v3
+
+      - name: Publish container
+        run: >
+          dotnet publish src/HpacSafety.Worker/HpacSafety.Worker.csproj
+          --configuration Release
+          /t:PublishContainer
+          -p:ContainerRegistry=${{ steps.ecr.outputs.registry }}
+          -p:ContainerRepository=${{ vars.ECR_REPOSITORY_WORKER }}
+          -p:ContainerImageTag=${{ env.IMAGE_TAG }}
+
+  deploy:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll the service
+        run: |
+          echo "::error::TODO(#30): update the service to the new image and wait for stability."
+          echo "Shape:"
+          echo "  aws ecs update-service --cluster \$ECS_CLUSTER --service \$ECS_SERVICE_WORKER --force-new-deployment"
+          echo "  aws ecs wait services-stable --cluster \$ECS_CLUSTER --services \$ECS_SERVICE_WORKER"
+          echo ""
+          echo "The Worker drains in-flight outbox rows on SIGTERM; give the ECS"
+          echo "stop timeout enough room that a summarize call is not cut off."
+          echo ""
+          echo "Rollback: re-run via workflow_dispatch with image_tag set to the"
+          echo "previous commit SHA."
+          exit 1

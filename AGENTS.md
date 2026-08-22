@@ -94,11 +94,36 @@ place. See `prompts/README.md`.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
 
+### Design
+
+**Follow SOLID, always.** Not as ceremony — as the reason a redaction rule lives
+in one place rather than three. Single responsibility is measured by *who asks
+for a change*, `Core` depends on nothing, and a development stand-in must never
+weaken a guarantee the production implementation makes. See the
+[`solid-principles`](skills/solid-principles/SKILL.md) skill.
+
+**Reach for a Gang of Four pattern where one fits, and name it.** Adapter at
+every SDK boundary, decorator for retry and logging, strategy where the variation
+is real, chain of responsibility for the anonymization stages. A reviewer should
+learn the shape from the type name. See the
+[`gang-of-four-patterns`](skills/gang-of-four-patterns/SKILL.md) skill.
+
+The corollary matters as much: **a pattern that abstracts a variation which does
+not exist is a layer, not a pattern.** If you cannot say what varies, write the
+plain code. And the invariants above are deliberately *closed* — never add an
+extension point that lets a caller opt out of the PII audit or of human review.
+
 ## Working in this repo
 
 - **Every change goes through a pull request.** `main` is protected; direct
   pushes are rejected. One issue per PR where possible.
-- Squash merge only. Write the PR title as the commit message you want.
+- **Every pull request closes an issue.** Put `Closes #123` in the body, on its
+  own line. Nothing in GitHub's settings can force this — the closing keyword in
+  the body is the only mechanism, and the `linked-issue` CI check is what
+  enforces it. `See #123` and `Related to #123` do not close anything. If there
+  is no issue behind the change, open one first.
+- Squash merge only. Write the PR title as the commit message you want. The body
+  becomes the squash commit message, which is why the closing keyword works.
 - Do not create a `CODEOWNERS` file — see `CONTRIBUTING.md` for why.
 - Skills are managed by `skillfile`. Edit the source under `skills/`, then run
   `skillfile install`. Do not edit `.claude/skills/` — it is generated and
@@ -121,6 +146,7 @@ place. See `prompts/README.md`.
 | Colours, type, spacing | `docs/design-system.md` |
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
+| How does it get to AWS, and what does that need? | `docs/deployment.md` |
 | Why was X decided? | `docs/decisions/` |
 | How do I work here as an agent? | `docs/agent-workflow.md` |
 
@@ -129,6 +155,12 @@ place. See `prompts/README.md`.
 The repository is scaffolding and documentation. The solution builds and the
 test suite runs, but the projects are empty — there is deliberately no feature
 logic yet.
+
+CI runs on every pull request and on merge to `main`, and its checks are
+required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with
+a notice because the thing they would verify has not been written yet; each is
+filled in by its own issue. The deploy workflows are wired but fail at the AWS
+step, because the AWS environment does not exist yet.
 
 The work is filed as GitHub issues across the **Foundation**, **Phase 1**, and
 **Phase 2** milestones, with dependencies wired so nothing can be picked up out

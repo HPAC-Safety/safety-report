@@ -7,15 +7,17 @@ namespace HpacSafety.Core.Features.Anonymization;
 /// generalized to a province and the other is discarded outright.
 /// </summary>
 /// <remarks>
-/// The default is <see cref="Other"/> — kept, but passed through every
-/// identifier stage — so a field nobody has classified is still scrubbed. It is
-/// never dropped silently, because a field that disappears without anyone
-/// deciding it should is a lost safety lesson.
+/// <b>The zero value is the safe one.</b> A field whose handling nobody has
+/// decided is <see cref="Unclassified"/> and is dropped, exactly as a question
+/// nobody has classified is Restricted until someone decides otherwise — see
+/// docs/data-handling.md. Keeping a field has to be a decision somebody made;
+/// the cost of getting that wrong in the other direction is a name in a
+/// published summary.
 /// </remarks>
 public enum ScrubFieldKind
 {
-    /// <summary>Free text with no special handling. Kept and scrubbed.</summary>
-    Other = 0,
+    /// <summary>Nobody decided what this field is. Dropped.</summary>
+    Unclassified = 0,
 
     /// <summary>The reporter's name. Dropped, and its tokens become "the reporter" in free text.</summary>
     ReporterName = 1,
@@ -37,4 +39,7 @@ public enum ScrubFieldKind
 
     /// <summary>The reporter's own account. Kept and scrubbed — it is the safety lesson.</summary>
     Narrative = 7,
+
+    /// <summary>An ordinary answer with no special handling. Kept, and scrubbed anyway.</summary>
+    FreeText = 8,
 }

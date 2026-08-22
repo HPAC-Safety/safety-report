@@ -48,7 +48,12 @@ category:
 | HPAC member number | Structured answer dropped. In free text, matched on the word — `HPAC #48213`, `member number 48213` — because HPAC publishes no number format and stripping every run of digits would delete altitudes and airspeeds along with it. |
 | Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
 | Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
-| Everything else | Kept, and passed through every stripping rule anyway. |
+| Everything else | Kept, and passed through every stripping rule anyway — **unless nobody classified it**, in which case it is dropped. Keeping a field has to be a decision somebody made. |
+
+Every structured answer doubles as a token list for the free text. A launch name,
+an aircraft model, an `@handle`, or a member number that the reporter typed into
+a field **and** mentioned again in the narrative is removed from both, even where
+no pattern would have found the second one.
 
 Matching a name or a place is **case- and accent-insensitive**, and names split
 on hyphens and apostrophes: "Renée" in the name field is found as "Renee" in the

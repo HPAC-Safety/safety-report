@@ -34,18 +34,26 @@ internal static partial class ScrubPatterns
     /// </summary>
     [GeneratedRegex(
         @"(?:https?://|www\.)[^\s<>()\[\]]+|(?<![@\w.])(?:[A-Za-z0-9](?:[A-Za-z0-9\-]*[A-Za-z0-9])?\.)+[a-z]{2,24}(?![\w.])(?:/[^\s<>()\[\]]*)?",
-        RegexOptions.CultureInvariant,
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeoutMilliseconds)]
     internal static partial Regex Url { get; }
 
     /// <summary>
-    /// A North American phone number in the formats reporters actually write:
-    /// dashed, dotted, spaced, bracketed, bare, and with a country code. The
-    /// separator class includes the typographic dashes a word processor
-    /// substitutes for a hyphen on the way through a copy and paste.
+    /// A phone number in the formats reporters actually write: dashed, dotted,
+    /// spaced, slashed, bracketed, bare, seven-digit local, and with a country
+    /// code.
     /// </summary>
+    /// <remarks>
+    /// The separator class allows up to two characters and includes the
+    /// typographic dashes a word processor substitutes for a hyphen on the way
+    /// through a copy and paste — a number that survived because iOS turned the
+    /// hyphen into a non-breaking one has still been published. The second
+    /// alternative is the international form, anchored on a literal <c>+</c>:
+    /// loose enough for any country's grouping, and a leading <c>+</c> in an
+    /// accident narrative is a phone number essentially every time.
+    /// </remarks>
     [GeneratedRegex(
-        @"(?<!\d)(?:\+?1[\s.\-‐-―]?)?(?:\(\d{3}\)[\s.\-‐-―]?|\d{3}[\s.\-‐-―]?)\d{3}[\s.\-‐-―]?\d{4}(?!\d)",
+        @"(?<!\d)(?:\+?1[\s.\-/‐-―]{0,2})?(?:\(\d{3}\)[\s.\-/‐-―]{0,2}|\d{3}[\s.\-/‐-―]{0,2})?\d{3}[\s.\-/‐-―]{0,2}\d{4}(?!\d)|\+\d[\d\s.\-/()‐-―]{6,20}\d(?!\d)",
         RegexOptions.CultureInvariant,
         TimeoutMilliseconds)]
     internal static partial Regex Phone { get; }
@@ -57,8 +65,16 @@ internal static partial class ScrubPatterns
     /// more likely to be an altitude than an identifier. Stripping every number
     /// would take the safety lesson with it.
     /// </summary>
+    /// <remarks>
+    /// The filler list matters more than it looks. People write "my HPAC number
+    /// is 48213" and "HPAC ID 48213", not the tidy "HPAC #48213" a pattern gets
+    /// written against, and a keyword group that cannot step over "is" or "my"
+    /// misses the phrasing this rule exists for. The list is closed rather than
+    /// "any word", so "another club member landed at 1500 feet" keeps its
+    /// altitude.
+    /// </remarks>
     [GeneratedRegex(
-        @"\b(?:hpac|member(?:ship)?|membre|adh[ée]rent)\b(?:\s*(?:member(?:ship)?|membre|number|num[ée]ro|no\.?|n[o°]\.?|#|:))*\s*#?\s*\d{3,9}\b",
+        @"\b(?:hpac|member(?:ship)?|membre|adh[ée]rent)\b(?:\s*(?:member(?:ship)?|membre|number|num[ée]ro|no\.?|n[o°]\.?|id|is|was|are|my|the|de|du|est|#|:))*\s*#?\s*\d{3,9}\b",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeoutMilliseconds)]
     internal static partial Regex MemberNumber { get; }

@@ -26,6 +26,14 @@ rule, several of which interfere with each other if run in the wrong order.
 
 ## Decision
 
+**The zero value of `ScrubFieldKind` is the safe one.** A field whose handling
+nobody decided is `Unclassified` and is **dropped**, exactly as a question nobody
+has classified is Restricted until someone decides otherwise
+(`docs/data-handling.md`). An ordinary kept-and-scrubbed answer is `FreeText`,
+which somebody has to choose. The failure this prevents is concrete: an
+administrator adds a "next of kin" question, the role mapping misses it, and a
+fail-open default publishes the name in full.
+
 **The scrub takes labelled fields, not text.** A `ScrubRequest` is a list of
 `ScrubField(Kind, Label, Value)` plus the province. `ScrubFieldKind` says how a
 field must be *handled*; the label is carried through untouched and never matched
@@ -56,9 +64,19 @@ names, places and aircraft.
 **Membership identifiers are matched on the word, not on a digit shape.** HPAC
 publishes no member-number format, so there is nothing to match. A bare run of
 digits in a flying report is far more likely to be an altitude, and a rule that
-stripped every number would take the safety lesson with it. `HPAC #48213`,
-`member number 48213`, and `member no. 48213` are caught; a bare `48213` in prose
-is not, and the structured member-number field is dropped outright regardless.
+stripped every number would take the safety lesson with it. The keyword may be
+followed by a closed list of filler words — "my HPAC number **is** 48213", "HPAC
+**ID** 48213" — because that is how people actually write it; the list is closed
+rather than "any word", so "another club member landed at 1500 feet" keeps its
+altitude.
+
+**Every structured answer is also a token list for the free text, contact
+details included.** `Location` and `AircraftIdentity` contribute their words;
+`ContactDetail` and `MemberIdentifier` contribute their **whole value only**.
+That closes the two holes no pattern can: an `@handle` or a street address, and a
+member number written with no keyword near it — "I gave them my number, 48213".
+Whole value only, because splitting an address into words would harvest "West"
+and delete the wind direction from every sentence that mentions it.
 
 **Token matching is accent-insensitive, and names split on hyphens and
 apostrophes.** A reporter who types "Renée" into the name field and "Renee" three
@@ -105,6 +123,14 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
   publication. It must not be closed by shipping a list of Canadian site names.
 - Adding a category means adding one stage and one golden-file case. It does not
   mean touching the other seven.
+- **Known follow-up, outside this change:** `ISummarizer`, `IPiiAuditor`, and
+  `ITranslator` all take a `string`, so invariant 4 — raw text never reaches a
+  model — is a convention held up by an XML comment rather than by the type
+  system. `ScrubbedReport` has an `internal` constructor and is therefore an
+  unforgeable proof token; typing those ports to take it would make the invariant
+  a compile error. Those ports belong to `Reporting` and to the worker, so it is
+  filed as [#61](https://github.com/HPAC-Safety/safety-report/issues/61) rather
+  than done here.
 
 ## Alternatives rejected
 

@@ -68,7 +68,7 @@ no way to construct a scrub with a stage missing, no options object, and no
 callback. Anonymization is an invariant of this system, not a policy a caller
 configures — see AGENTS.md, "the invariants above are deliberately closed".
 
-## Three rules worth knowing before you change anything
+## Four rules worth knowing before you change anything
 
 **A name becomes a role word, not a placeholder.** "the pilot", "the reporter",
 chosen from the structured field the name was given in. The scrubbed text still
@@ -87,6 +87,11 @@ narrative and the other way round; "Sarah-Jane" is found as "Sarah". Sub-tokens
 below three characters (names) or four (places and aircraft) are not matched on
 their own, so a French narrative keeps its "de" and "la" and a flying report
 keeps the word "air".
+
+**A field nobody classified is dropped.** `ScrubFieldKind.Unclassified` is the
+zero value and it means "drop", the same way an unclassified question is
+Restricted. Keeping a field is a decision somebody has to make — `FreeText` for
+an ordinary answer, `Narrative` for the account itself.
 
 ## What it cannot do, on purpose
 

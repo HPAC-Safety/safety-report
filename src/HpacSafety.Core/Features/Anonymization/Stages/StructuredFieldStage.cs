@@ -61,7 +61,8 @@ internal sealed class StructuredFieldStage : ScrubStage
             or ScrubFieldKind.PilotName
             or ScrubFieldKind.ContactDetail
             or ScrubFieldKind.MemberIdentifier
-            or ScrubFieldKind.AircraftIdentity => null,
+            or ScrubFieldKind.AircraftIdentity
+            or ScrubFieldKind.Unclassified => null,
 
         // The region is the province and nothing finer. With no province
         // answered there is nothing to generalize to, and a location nobody can
@@ -109,9 +110,20 @@ internal sealed class StructuredFieldStage : ScrubStage
 
                     break;
 
-                case ScrubFieldKind.Other:
+                // Whole value only, and deliberately. A contact detail the
+                // reporter also typed into the narrative — "there's video on my
+                // page, @sarahflies", "I gave them my number, 48213" — is
+                // something no pattern catches, and we were handed the exact
+                // string. Splitting it into words would be a different matter:
+                // a street address would harvest "West" and delete the wind
+                // direction from every sentence that mentions it.
                 case ScrubFieldKind.ContactDetail:
                 case ScrubFieldKind.MemberIdentifier:
+                    terms.Add(field.Value.Trim());
+                    break;
+
+                case ScrubFieldKind.Unclassified:
+                case ScrubFieldKind.FreeText:
                 case ScrubFieldKind.Narrative:
                 default:
                     break;

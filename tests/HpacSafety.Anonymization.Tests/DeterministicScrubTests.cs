@@ -242,6 +242,11 @@ public class DeterministicScrubTests
     [InlineData("+1 (403) 555-0142")]
     [InlineData("403\u2013555\u20130142")]
     [InlineData("1 403 555 0142")]
+    [InlineData("555-0142")]
+    [InlineData("403/555/0142")]
+    [InlineData("(403)  555-0142")]
+    [InlineData("403\u2011555\u20110142")]
+    [InlineData("+44 7700 900142")]
     public void Given_a_phone_number_in_the_narrative_When_it_is_scrubbed_Then_the_number_is_absent(string phone)
     {
         // Given
@@ -269,9 +274,9 @@ public class DeterministicScrubTests
     }
 
     [Theory]
-    [InlineData("marc.delacroix@example.ca")]
+    [InlineData("marc.delacroix@example.com")]
     [InlineData("Marc.Delacroix+safety@mail.example.org")]
-    [InlineData("m_delacroix99@example.co.uk")]
+    [InlineData("m_delacroix99@lists.example.net")]
     public void Given_an_email_address_in_the_narrative_When_it_is_scrubbed_Then_the_address_is_absent(string email)
     {
         // Given
@@ -286,10 +291,11 @@ public class DeterministicScrubTests
     }
 
     [Theory]
-    [InlineData("https://www.ferndale-freeflight.example.ca/logbook/2026")]
-    [InlineData("http://example.ca/track?id=88214")]
-    [InlineData("www.ferndale-freeflight.example.ca")]
-    [InlineData("ferndale-freeflight.example.ca/tracks")]
+    [InlineData("https://www.ferndale-freeflight.example.org/logbook/2026")]
+    [InlineData("http://example.com/track?id=88214")]
+    [InlineData("www.ferndale-freeflight.example.org")]
+    [InlineData("ferndale-freeflight.example.org/tracks")]
+    [InlineData("Ferndale-Freeflight.example.ORG")]
     public void Given_a_url_in_the_narrative_When_it_is_scrubbed_Then_the_url_is_absent(string url)
     {
         // Given
@@ -313,6 +319,10 @@ public class DeterministicScrubTests
     [InlineData("HPAC: 48213")]
     [InlineData("membre 48213")]
     [InlineData("num\u00e9ro de membre 48213")]
+    [InlineData("my HPAC number is 48213")]
+    [InlineData("HPAC ID 48213")]
+    [InlineData("my membership is 48213")]
+    [InlineData("my HPAC no is 48213")]
     public void Given_an_hpac_member_number_in_the_narrative_When_it_is_scrubbed_Then_the_number_is_absent(string written)
     {
         // Given
@@ -459,6 +469,97 @@ public class DeterministicScrubTests
         scrubbed.Text.ShouldContain("EN B");
     }
 
+    // ---- what the reporter told us, found again in the narrative -----------
+
+    [Fact]
+    public void Given_a_social_handle_in_a_contact_field_When_it_recurs_in_the_narrative_Then_it_is_absent_there_too()
+    {
+        // Given — no pattern matches an @handle. The reporter handed us the
+        // exact string in a structured answer, so nothing has to.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.ContactDetail, "Social", "@sarahflies"),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    "There is video of the collapse on my page, @sarahflies, if that helps."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("sarahflies", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_a_member_number_in_a_structured_field_When_it_recurs_in_the_narrative_Then_it_is_absent_there_too()
+    {
+        // Given — written with no keyword near it, so only the structured
+        // answer can find it.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.MemberIdentifier, "HPAC member number", ScrubFixture.MemberNumber),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    $"I gave the paramedics my number, {ScrubFixture.MemberNumber}, at the landing field."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain(ScrubFixture.MemberNumber);
+    }
+
+    // ---- fields nobody classified ------------------------------------------
+
+    [Fact]
+    public void Given_a_field_whose_handling_was_never_classified_When_it_is_scrubbed_Then_it_is_dropped()
+    {
+        // Given — an administrator adds a "next of kin" question and the role
+        // mapping misses it. The safe answer is to drop it, not to publish it.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.Unclassified, "Next of kin", "Helene Marchetti"),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "A hard landing in the trees."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("Helene", Case.Insensitive);
+        scrubbed.Text.ShouldNotContain("Marchetti", Case.Insensitive);
+        scrubbed.Fields.Count.ShouldBe(1);
+    }
+
+    [Fact]
+    public void Given_the_default_field_kind_When_it_is_read_Then_it_is_the_one_that_drops()
+    {
+        // Given
+        var uninitialised = default(ScrubFieldKind);
+
+        // When
+        var kind = uninitialised;
+
+        // Then
+        kind.ShouldBe(ScrubFieldKind.Unclassified);
+    }
+
     // ---- everything at once ------------------------------------------------
 
     [Fact]
@@ -540,8 +641,8 @@ public class DeterministicScrubTests
             Province = Province.Ontario,
             Fields =
             [
-                new ScrubField(ScrubFieldKind.Other, "Damage", null),
-                new ScrubField(ScrubFieldKind.Other, "Injury description", "   "),
+                new ScrubField(ScrubFieldKind.FreeText, "Damage", null),
+                new ScrubField(ScrubFieldKind.FreeText, "Injury description", "   "),
                 new ScrubField(ScrubFieldKind.Narrative, "Description", "A broken riser on inflation."),
             ],
         };

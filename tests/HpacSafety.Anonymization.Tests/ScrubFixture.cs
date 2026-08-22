@@ -7,7 +7,8 @@ namespace HpacSafety.Anonymization.Tests;
 /// Fixture data for the golden-file suite. <b>Every value here is invented.</b>
 /// No real report content, no real pilot, no real launch site, no real HPAC
 /// member number, and no real aircraft brand appears in this repository — see
-/// tests/README.md.
+/// tests/README.md. Domains are RFC 2606 reserved (<c>example.com</c>,
+/// <c>example.org</c>) so no fixture can ever resolve to somebody's site.
 /// </summary>
 internal static class ScrubFixture
 {
@@ -19,10 +20,10 @@ internal static class ScrubFixture
     internal const string PilotLastName = "Whitlock";
     internal const string PilotFullName = $"{PilotFirstName} {PilotLastName}";
 
-    internal const string ReporterEmail = "marc.delacroix@example.ca";
+    internal const string ReporterEmail = "marc.delacroix@example.com";
     internal const string ReporterPhone = "403-555-0142";
     internal const string MemberNumber = "48213";
-    internal const string ClubUrl = "https://www.ferndale-freeflight.example.ca/logbook/2026";
+    internal const string ClubUrl = "https://www.ferndale-freeflight.example.org/logbook/2026";
     internal const string SiteName = "Mount Ferndale";
     internal const string LandingZoneName = "Kettle Flats";
     internal const string Manufacturer = "Vantara";
@@ -48,7 +49,7 @@ internal static class ScrubFixture
             new ScrubField(ScrubFieldKind.Location, "Where", SiteName),
             new ScrubField(ScrubFieldKind.AircraftIdentity, "Manufacturer", Manufacturer),
             new ScrubField(ScrubFieldKind.AircraftIdentity, "Model", Model),
-            new ScrubField(ScrubFieldKind.Other, "Certification", "EN B"),
+            new ScrubField(ScrubFieldKind.FreeText, "Certification", "EN B"),
             new ScrubField(ScrubFieldKind.Narrative, "Description", narrative),
         ],
     };

@@ -58,7 +58,7 @@ All of a report's media lives in a directory named with that report's id, so
 everything belonging to one report is a single literal prefix.
 
 ```
-quarantine/<report id>/<file>   unverified. Expires after 24 hours.
+quarantine/<report id>/<file>   unverified. Expired by lifecycle rule.
 <report id>/original/<file>     the Restricted record. Never shown to anyone.
 <report id>/stripped/<file>     the derivative a reviewer sees.
 ```
@@ -154,9 +154,10 @@ The rule the uploads bucket needs, owned by
 
 | | |
 |---|---|
-| **Bucket** | the private uploads bucket, `ca-central-1` |
+| **Bucket** | the private uploads bucket, `ca-central-1`. **Versioned** |
 | **Filter** | prefix `quarantine/` — literal, no wildcards |
 | **Expiration** | 1 day |
+| **Noncurrent version expiration** | 1 day |
 | **Also** | abort incomplete multipart uploads after 1 day |
 | **Status** | enabled |
 
@@ -171,18 +172,51 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     filter { prefix = "quarantine/" }
 
     expiration { days = 1 }
+
+    # The bucket is versioned, so the clause above only writes a delete marker.
+    # Without this one the noncurrent version falls to the bucket-wide 90-day
+    # policy, and an unverified crash photograph sits there for three months.
+    noncurrent_version_expiration { noncurrent_days = 1 }
+
     abort_incomplete_multipart_upload { days_after_initiation = 1 }
   }
 }
 ```
 
-**Be honest about what that guarantees.** S3 lifecycle expiration is day-granular
-and runs asynchronously: an object is expired *no sooner than* 24 hours after
-creation, and in practice up to roughly 48. "Expires after 24 hours" is a floor,
-not a deadline. That is acceptable here because quarantined bytes are never
-linked from a report, never served to a reviewer, and never published — but it is
-not a hard 24-hour destruction guarantee, and nothing should be written that
-claims otherwise.
+**The bucket is versioned, so expiry is a two-hop process.** This is the part
+that is easy to get wrong, and getting it wrong is not a small mistake:
+
+```mermaid
+flowchart LR
+    up["upload lands in<br/>quarantine/"] -->|"expiration<br/>days = 1"| dm["delete marker written.<br/>version becomes noncurrent.<br/>the key stops resolving"]
+    dm -->|"noncurrent_version_expiration<br/>noncurrent_days = 1"| gone["the bytes are<br/>permanently deleted"]
+```
+
+On a versioned bucket, `expiration` does **not** delete anything. It writes a
+delete marker and makes the current version noncurrent. Without
+`noncurrent_version_expiration` on the same rule, that noncurrent version then
+falls through to whatever bucket-wide noncurrent policy exists — **90 days** on
+this bucket. An unverified crash photograph would have sat there for three
+months, in a bucket whose lifecycle claimed to clear it in a day. Both clauses
+are load-bearing; neither is optional.
+
+**Be honest about what that guarantees.** Both hops are day-granular and run
+asynchronously, so there are two different moments worth separating:
+
+| | Floor | In practice |
+|---|---|---|
+| The key stops resolving — a GET returns the delete marker | 24 hours | up to ~48 |
+| The bytes are permanently gone | **48 hours** | up to ~96 |
+
+Between the two hops the noncurrent version is still fetchable **by version id**
+by anything holding `s3:GetObjectVersion` on the bucket. The application cannot
+do this — a pre-signed URL names a key and no version — so this is about direct
+bucket credentials, not about the report path.
+
+None of these is a deadline. That is acceptable because quarantined bytes are
+never linked from a report, never served to a reviewer, and never published —
+but nothing should be written that claims a hard 24-hour destruction guarantee,
+and after this change the honest floor for destruction is 48 hours, not 24.
 
 The same rule is what cleans up an upload for a report that was never submitted.
 

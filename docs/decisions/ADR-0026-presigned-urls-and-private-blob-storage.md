@@ -61,7 +61,7 @@ All of a report's media lives in a directory named with that report's id, so
 everything belonging to one report is a single literal prefix:
 
 ```
-quarantine/<report id>/<file>   unverified. Expires after 24 hours.
+quarantine/<report id>/<file>   unverified. Expired by lifecycle rule.
 <report id>/original/<file>     the Restricted record.
 <report id>/stripped/<file>     the derivative a reviewer sees.
 ```
@@ -98,6 +98,17 @@ where it landed, through a bucket lifecycle rule, so **no delete is needed and
 none exists**. That is the point — no code path exists that could later be
 pointed at a real report's media.
 
+Putting expiry in the bucket rather than in code has a cost worth naming: the
+guarantee now lives in Terraform, in another pull request, and this repository
+cannot test it. That is why the rule is specified precisely in
+`docs/data-handling.md` rather than described loosely — and it is exactly how the
+first version of it turned out to be wrong. The uploads bucket is **versioned**,
+where `expiration` writes a delete marker instead of deleting bytes; the
+noncurrent version it leaves behind would have fallen to the bucket-wide 90-day
+policy. `noncurrent_version_expiration { noncurrent_days = 1 }` on the same rule
+is what actually destroys the bytes, and both clauses are load-bearing. Caught by
+the agent implementing #32, against the spec written here.
+
 An S3 lifecycle filter matches a **literal** prefix. With the report id first,
 `*/quarantine/` is not expressible, so a per-report quarantine directory could
 not be expired by a prefix rule at all. Two ways out, and this is the one not
@@ -116,9 +127,11 @@ The cost is one departure from "report id first", for unverified files only. The
 report id is still the next segment, so per-report enumeration is one literal
 prefix either way (`quarantine/<id>/`), and nothing operational is lost.
 
-The exact rule #32 implements — bucket, prefix, expiry, and an honest note that
-S3 expiration is day-granular and therefore a floor rather than a deadline — is
-written out in `docs/data-handling.md`.
+The exact rule #32 implements — bucket, prefix, both expiry clauses, and an
+honest note that each hop is day-granular and therefore a floor rather than a
+deadline — is written out in `docs/data-handling.md`. On a versioned bucket the
+floor for *destruction* is two days, not one, because the two hops run in
+sequence.
 
 ### The report id exists before the upload does
 
@@ -264,7 +277,8 @@ that outlives the reason it was minted is a public object URL with extra steps.
 - An accepted upload is copied once, from quarantine to the Restricted record.
   That is the price of deciding what bytes are before they land anywhere
   permanent, and it is worth paying.
-- A submitted-late report loses its media: quarantine expires in about a day and
+- A submitted-late report loses its media: the quarantine key stops resolving
+  about a day after upload — the first lifecycle hop — and
   ingest reads from there. Upload slots live 15 minutes and a form is filled in
   one sitting, so this is acceptable — but it is a real coupling between the
   lifecycle rule and the submission flow, and #14 should not lengthen the gap

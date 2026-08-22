@@ -3,7 +3,7 @@ namespace HpacSafety.Core.SharedKernel;
 /// <summary>
 /// The name of one object in private storage, in one of exactly three shapes:
 /// <code>
-/// quarantine/&lt;report id&gt;/&lt;file&gt;   unverified, expires after 24 hours
+/// quarantine/&lt;report id&gt;/&lt;file&gt;   unverified, expired by lifecycle rule
 /// &lt;report id&gt;/original/&lt;file&gt;     the Restricted record
 /// &lt;report id&gt;/stripped/&lt;file&gt;     what a reviewer is shown
 /// </code>

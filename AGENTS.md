@@ -234,6 +234,14 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   camera roll name is Restricted data — it names sites and people — and a key
   reaches access logs and every pre-signed URL. The same goes for any other
   client string that would become part of a path.
+- **A guarantee delegated to infrastructure gets specified precisely, not
+  described.** When the thing that keeps a promise is a Terraform rule or a
+  bucket policy this repository cannot test, write the exact rule into `docs/`
+  — clauses and values, not prose — so the agent implementing it can check the
+  spec against reality. The quarantine expiry rule was wrong on its first
+  writing (a versioned bucket needs `noncurrent_version_expiration` as well as
+  `expiration`, or the bytes survive for the bucket-wide 90 days), and it was
+  caught precisely because it had been written out in full.
 - **A rule that has one enforcement point gets a test that says so.** Where a
   guarantee depends on everything going through a single type — `ReviewerMediaLink`
   for read URLs, `MediaUploadSlot` for uploads — an architecture test fails the

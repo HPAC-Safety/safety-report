@@ -11,7 +11,9 @@ public enum MediaCompartment
     /// <summary>
     /// Where every upload lands, before anything has looked at it:
     /// <c>quarantine/&lt;report id&gt;/&lt;file&gt;</c>. Unverified bytes, expired
-    /// automatically by a bucket lifecycle rule after 24 hours.
+    /// automatically by a bucket lifecycle rule — a delete marker after a day,
+    /// then the noncurrent version a day after that, because the bucket is
+    /// versioned. See docs/data-handling.md.
     /// </summary>
     Quarantine = 0,
 

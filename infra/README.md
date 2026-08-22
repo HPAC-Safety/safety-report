@@ -25,7 +25,7 @@ Terraform can authenticate at all.
 | Data | `database.tf` | RDS PostgreSQL, subnet group, parameter group, automated backups |
 | Compute | `ecs.tf`, `alb.tf`, `iam.tf` | ECS cluster, API and Worker Fargate services, a migrate task definition, an ALB, execution and task roles |
 | Registry | `ecr.tf` | Two repositories with lifecycle policies |
-| Storage | `storage.tf` | Private uploads bucket, one static site bucket |
+| Storage | `storage.tf` | Private uploads bucket with the `quarantine/` expiry rule, one static site bucket |
 | CDN | `cdn.tf`, `functions/clean-urls.js.tftpl` | One CloudFront distribution, an admin cache behavior and response headers policy, origin access control, one CloudFront Function |
 | Mail | `ses.tf` | Domain identity, Easy DKIM, custom MAIL FROM, configuration set |
 | Secrets | `secrets.tf` | Four Secrets Manager **entries**. No values. |
@@ -51,6 +51,13 @@ Terraform can authenticate at all.
   ADR-0031.
 - **Shipping content.** `deploy-api.yml`, `deploy-worker.yml`, and
   `deploy-web.yml` push artifacts into what this creates.
+- **Promoting an upload out of `quarantine/`.** This slice owns the bucket and
+  the lifecycle rule that expires anything left there; the ingest that sniffs the
+  content type, strips EXIF, and moves the object to `<report-id>/…` is
+  application code ([#16](https://github.com/HPAC-Safety/safety-report/issues/16)).
+  The rule is what catches the case where that ingest never ran — see
+  [`docs/deployment.md`](../docs/deployment.md#uploads-the-quarantine-prefix).
+  Its timing is a floor, not a deadline.
 - **Cloudflare Turnstile.** ADR-0010 anticipates managing the widget here too.
   It is not in this slice: it needs a long-lived Cloudflare API token that does
   not exist yet, and it is the one place a secret is knowingly allowed into

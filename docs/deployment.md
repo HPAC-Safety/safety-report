@@ -351,6 +351,49 @@ After every apply the job runs `terraform plan -detailed-exitcode` again and
 fails if it is not empty. ADR-0010 requires apply on an unchanged repository to
 be a no-op; that step is what makes it an assertion rather than an aspiration.
 
+## Uploads: the quarantine prefix
+
+The uploads bucket is private, versioned, encrypted, and holds one photo or video
+per report. Its key layout is report-id-first — `<report-id>/original/…`,
+`<report-id>/stripped/…` — with one deliberate departure:
+
+```mermaid
+flowchart LR
+    browser["browser<br/>pre-signed PUT"] --> q["quarantine/…<br/>unverified bytes"]
+    q --> ingest["ingest<br/>sniff content type<br/>strip EXIF"]
+    ingest -->|"promote"| keep["&lt;report-id&gt;/original/…<br/>&lt;report-id&gt;/stripped/…"]
+    ingest -->|"reject"| gone["lifecycle expiry"]
+    q -.->|"ingest never ran"| gone
+```
+
+**Every upload lands in `quarantine/` first and is promoted out only after
+validation.** The `expire-quarantine` lifecycle rule is therefore not an
+edge-case cleanup for rejected files — it is what removes **any upload whose
+ingest never completed**: a rejected file, a crashed ingest, or an upload slot
+issued for a report the pilot never went on to submit. Those are unverified bytes
+of a crash photograph, and nothing else in the system deletes them.
+
+It is a **prefix** filter, not a tag filter, and that is load-bearing. Both ways
+of applying a tag fail **open**: tagging at upload means signing `x-amz-tagging`
+into the pre-signed PUT and trusting the browser to send it, so a client that
+omits it produces an object that never expires; tagging after ingest means an
+object whose ingest never ran never gets tagged — precisely the case the rule
+exists for. The prefix fails **closed**, because `quarantine/` is the only place
+an upload URL can write. Per-report enumeration is still a single literal prefix
+either way. See [#16](https://github.com/HPAC-Safety/safety-report/issues/16).
+
+> **The timing is a floor, not a deadline.** S3 lifecycle expiration is
+> day-granular and asynchronous: expiry happens **no sooner than 24 hours** after
+> the object is written, and in practice up to roughly 48. Because this bucket is
+> versioned, expiry writes a delete marker rather than deleting bytes, and the
+> now-noncurrent version is removed on a later pass — the rule carries a matching
+> one-day noncurrent expiry so it falls in a day rather than to the bucket-wide
+> 90-day rule.
+>
+> Nothing here guarantees deletion within 24 hours, and no design decision
+> elsewhere should assume it does. If something needs a hard deletion deadline,
+> lifecycle is the wrong mechanism for it.
+
 ## Manual steps, and why each one has to be
 
 Everything below needs an account that does not exist yet, a human decision, or

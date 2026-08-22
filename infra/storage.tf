@@ -71,6 +71,61 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
 resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
   bucket = aws_s3_bucket.uploads.id
 
+  # EVERY upload lands under quarantine/ first and is PROMOTED out of it only
+  # after ingest validates it — content type sniffed rather than trusted, EXIF
+  # stripped. So this rule is not a cleanup for rejected files. It is what
+  # removes any upload whose ingest never completed: a rejected file, a crashed
+  # ingest, an upload slot issued for a report the pilot never submitted. Those
+  # are unverified bytes of a crash photograph sitting in a bucket, and nothing
+  # else deletes them.
+  #
+  # A PREFIX, not a tag filter, and that is the load-bearing part. Both ways of
+  # applying a tag fail OPEN:
+  #
+  #   tag at upload   means signing x-amz-tagging into the pre-signed PUT and
+  #                   trusting the browser to send it. A client that omits it
+  #                   produces an object that never expires.
+  #   tag after ingest  means an object whose ingest never ran never gets
+  #                   tagged — precisely the case this rule exists for.
+  #
+  # The prefix fails CLOSED: quarantine/ is the only place an upload URL can
+  # write, so an object that got there is covered whatever else went wrong.
+  #
+  # The rest of the bucket is report-id-first — <report-id>/original/…,
+  # <report-id>/stripped/… — and quarantine/ is the one deliberate departure,
+  # for unverified files only. Per-report enumeration is still a single literal
+  # prefix. See #16.
+  rule {
+    id     = "expire-quarantine"
+    status = "Enabled"
+
+    filter {
+      prefix = "quarantine/"
+    }
+
+    expiration {
+      days = 1
+    }
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 1
+    }
+
+    # NOT part of the rule as specified in #16, and needed for it to do what it
+    # says on THIS bucket, because versioning is enabled above.
+    #
+    # On a versioned bucket, `expiration` does not delete anything: it writes a
+    # delete marker and makes the object version noncurrent. Without this clause
+    # the bytes would then fall to the bucket-wide 90-day noncurrent rule below
+    # — so an unverified crash photograph would survive three months in a bucket
+    # whose lifecycle claims to clear it in a day.
+    #
+    # Overlapping rules: the shorter period governs this prefix.
+    noncurrent_version_expiration {
+      noncurrent_days = 1
+    }
+  }
+
   rule {
     id     = "abort-incomplete-multipart-uploads"
     status = "Enabled"

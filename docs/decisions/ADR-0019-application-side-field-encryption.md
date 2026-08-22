@@ -79,12 +79,18 @@ looked up. It is an administrator's own working identity rather than a
 reporter's, and it never reaches a published summary. Encrypting it would buy
 very little and would break the one query it exists for.
 
-### 4. Domain values are stored as invariant codes
+### 4. Domain values are stored as invariant codes, and a date is a date
 
 Every domain enum goes to the database as its `EnumCode` — `high_en_b`, not `3`
 — and `Locale` as `en-CA`. A row is then readable without the enum beside it,
 and reordering an enum cannot silently reinterpret history. A stored code that
 no longer names a domain value throws rather than defaulting to zero.
+
+The same reasoning covers dates. When the system did something is a moment and
+is a `DateTimeOffset` in `timestamptz`; the day the reporter says the occurrence
+happened is a `DateOnly` in `date`, so no session timezone can shift it across
+midnight and change which day — or, at the end of a month, which month — gets
+published. `DateTime` is not used anywhere. See ADR-0035.
 
 ### 5. `Core` grows a persistence constructor, and nothing else
 

@@ -72,6 +72,33 @@ Three shapes worth knowing before reading the configurations:
   the claim query reads the whole processed history for the rest of the system's
   life.
 
+## Dates and times
+
+`DateOnly` when the time does not matter, `DateTimeOffset` when it does,
+`TimeOnly` when the date does not. **`DateTime` is forbidden** — its `Kind` is
+ambient, so the same value means UTC, local, or unspecified depending on where it
+came from, and nothing in the type system tells them apart. See ADR-0035.
+
+That maps straight onto the schema, and the split is not cosmetic:
+
+| Kind of value | Type | Column |
+|---|---|---|
+| When the **system** did something — submitted, processed, approved, audited | `DateTimeOffset` | `timestamptz` |
+| The day the **reporter** says the occurrence happened | `DateOnly` | `date` |
+
+`reports.occurred_on` is the one that would hurt. A published summary carries a
+month and a year (`docs/anonymization-policy.md`) because a province, an exact
+date, an aircraft type, and an injury severity together identify one person in a
+small flying community. Storing that day as a moment invites a timezone
+conversion that shifts it across midnight and silently changes which day an
+accident happened on — and near the end of a month, which month gets published.
+`OccurrenceDateTests` writes and reads it from sessions on both sides of the
+world and proves the day does not move.
+
+The reporter's *time of day* is not a clock time either: the form offers
+Morning, Mid-day, Afternoon, Evening, and "Do not know", so it is an ordinary
+coded answer, not a `TimeOnly`.
+
 ## Encryption
 
 `report_answers.value` is encrypted with AES-256-GCM before PostgreSQL sees it,

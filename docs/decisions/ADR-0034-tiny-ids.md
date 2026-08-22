@@ -59,6 +59,9 @@ This is not a preference about how identifiers look.
   backwards into "this row was created at 14:32 on the fourteenth". This system
   spends real effort narrowing a published occurrence date to a month and a
   year; an identifier that carries a timestamp hands that back on the next line.
+  It is the same argument ADR-0035 makes about storing the occurrence date as a
+  `date` rather than a moment — the two decisions are protecting the same thing
+  from two directions, and neither is worth much without the other.
 - **It is not enumerable.** A report id in a URL or a blob key cannot be
   decremented to find the previous report. A sequential key can, and it also
   announces how many reports HPAC has ever received.
@@ -135,6 +138,7 @@ Eleven costs three characters and removes the question.
 
 ## Related
 
-- [ADR-0002](ADR-0002-transactional-outbox.md), [ADR-0019](ADR-0019-application-side-field-encryption.md), [ADR-0020](ADR-0020-seeding-by-migration.md)
+- [ADR-0002](ADR-0002-transactional-outbox.md), [ADR-0019](ADR-0019-application-side-field-encryption.md), [ADR-0020](ADR-0020-seeding-by-migration.md), ADR-0035 (dates and times, #66)
+- `docs/anonymization-policy.md`
 - `docs/data-handling.md`, `src/HpacSafety.Infrastructure/Persistence/README.md`
 - Issues #7, #16

@@ -70,16 +70,43 @@ public sealed class AesGcmFieldCipherTests
         Should.Throw<FieldDecryptionException>(() => otherKey.Decrypt(ciphertext));
     }
 
+    [Theory]
+    [InlineData(0)]    // the nonce
+    [InlineData(12)]   // the authentication tag
+    [InlineData(28)]   // the ciphertext itself
+    public void Given_a_ciphertext_altered_after_it_was_written_When_it_is_decrypted_Then_it_is_rejected(int offset)
+    {
+        // Given — flip one bit of the stored envelope. Editing the base64 text
+        // is not enough: its last character carries unused bits, so a changed
+        // character does not always change a decoded byte.
+        var cipher = CipherWith(0x11);
+        var envelope = Convert.FromBase64String(cipher.Encrypt(ContactDetail)["v1.".Length..]);
+        envelope[offset] ^= 0x01;
+
+        // When / Then
+        Should.Throw<FieldDecryptionException>(() => cipher.Decrypt("v1." + Convert.ToBase64String(envelope)));
+    }
+
     [Fact]
-    public void Given_a_ciphertext_altered_after_it_was_written_When_it_is_decrypted_Then_it_is_rejected()
+    public void Given_a_ciphertext_truncated_after_it_was_written_When_it_is_decrypted_Then_it_is_rejected()
+    {
+        // Given — shorter than a nonce and a tag together, so there is nothing
+        // left to authenticate.
+        var cipher = CipherWith(0x11);
+
+        // When / Then
+        Should.Throw<FieldDecryptionException>(
+            () => cipher.Decrypt("v1." + Convert.ToBase64String(new byte[8])));
+    }
+
+    [Fact]
+    public void Given_stored_text_that_is_not_base64_When_it_is_decrypted_Then_it_is_rejected()
     {
         // Given
         var cipher = CipherWith(0x11);
-        var ciphertext = cipher.Encrypt(ContactDetail);
-        var tampered = ciphertext[..^2] + (ciphertext[^2] == 'A' ? "B=" : "A=");
 
         // When / Then
-        Should.Throw<FieldDecryptionException>(() => cipher.Decrypt(tampered));
+        Should.Throw<FieldDecryptionException>(() => cipher.Decrypt("v1.not base64 at all!!"));
     }
 
     [Fact]

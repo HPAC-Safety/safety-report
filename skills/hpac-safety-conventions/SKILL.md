@@ -18,6 +18,11 @@ box-drawing characters in markdown.
 messages name the expression under test, which matters when the reader is an
 agent looking at a CI log rather than a person at a debugger.
 
+This is enforced, not requested: `Xunit.Assert` is in `tests/BannedSymbols.txt`
+and `RS0030` is an error, so it fails in the editor and in a local build. If a
+test genuinely needs it, `#pragma warning disable RS0030` with a comment — which
+is visible in review, and that is the point.
+
 **Given/When/Then**, in the name and marked in the body:
 
 ```csharp

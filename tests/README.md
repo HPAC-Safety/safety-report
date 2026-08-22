@@ -22,14 +22,22 @@ Add a fixture **before** changing a redaction rule.
 ## Running
 
 ```bash
-dotnet test                              # all .NET suites
+dotnet test                              # all .NET suites — needs Docker
+dotnet test --filter "Category!=Integration"   # no Docker daemon
 node --test tests/js                     # JavaScript units
 npx playwright test                      # E2E (needs the stack running)
 ```
 
+`HpacSafety.Api.Tests` starts a real `postgres:17-alpine` container through
+Testcontainers, so a Docker daemon has to be running. CI always runs the full
+set.
+
 ## Conventions
 
-- **Shouldly**, not `Assert.*` — CI fails on a bare `Assert.` here.
+- **Shouldly**, not `Assert.*` — `Xunit.Assert` is banned by an analyzer, so it
+  is a build error in the editor, not a CI surprise. See
+  [`BannedSymbols.txt`](BannedSymbols.txt) and
+  [ADR-0013](../docs/decisions/ADR-0013-ban-assert-rather-than-grep-for-it.md).
 - **`Given_..._When_..._Then_...`**, with the sections marked in the body.
 - **Never assert on exact model output.** Models drift, the test becomes noise,
   and noisy tests get muted. Assert absence of the identifier, and structural

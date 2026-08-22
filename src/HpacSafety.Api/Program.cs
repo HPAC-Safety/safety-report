@@ -16,3 +16,10 @@ app.UseHttpsRedirection();
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 await app.RunAsync().ConfigureAwait(false);
+
+/// <summary>
+/// Exposed so <c>WebApplicationFactory&lt;Program&gt;</c> can boot the API in
+/// process for integration tests. Top-level statements generate an internal
+/// <c>Program</c>, which the factory cannot reach.
+/// </summary>
+public partial class Program;

@@ -3,11 +3,31 @@
 ## Shouldly, always
 
 Not `Assert.*`, not FluentAssertions. Shouldly is pinned in
-`Directory.Packages.props` and CI fails on a bare `Assert.` in `tests/`.
+`Directory.Packages.props`, and **`Xunit.Assert` is banned outright** — using it
+is a build error, in the editor and in a local `dotnet build`, not just in CI:
+
+```
+error RS0030: The symbol 'Assert' is banned in this project: Use Shouldly.
+value.ShouldBe(expected), not Assert.Equal(expected, value).
+```
 
 The reason is legibility in a log. Shouldly names the expression under test in
 its failure message, which matters when the reader is an agent reading CI output
-rather than a person sitting at a debugger.
+rather than a person sitting at a debugger:
+
+| | on failure |
+|---|---|
+| `summary.Text.ShouldNotContain("Vince")` | prints the text that contained it |
+| `Assert.False(summary.Text.Contains("Vince"))` | `Expected: False, Actual: True` |
+
+The mechanism is `Microsoft.CodeAnalysis.BannedApiAnalyzers` reading
+[`tests/BannedSymbols.txt`](../tests/BannedSymbols.txt), wired up in
+`Directory.Build.props` for every `*.Tests` project. Add future bans to that
+file. Why an analyzer rather than a CI grep:
+[ADR-0013](decisions/ADR-0013-ban-assert-rather-than-grep-for-it.md).
+
+If a test ever legitimately needs it, `#pragma warning disable RS0030` with a
+comment saying why. That is visible in review, which is the point.
 
 ```csharp
 summary.Text.ShouldNotContain("403-555-0134");
@@ -56,6 +76,22 @@ describe('Given a browser advertising fr-CA', () => {
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
 | `tests/js` | `node --test` for i18n, api-client, form logic |
 | `tests/e2e` | Playwright, both locales |
+
+### Integration tests need Docker
+
+`HpacSafety.Api.Tests` starts a real PostgreSQL container through
+Testcontainers, pinned to `postgres:17-alpine` — a database version that moves
+underneath the suite is a failure nobody can reproduce.
+
+Those tests carry `[Trait("Category", "Integration")]`, so a machine without a
+running Docker daemon can skip them:
+
+```bash
+dotnet test --filter "Category!=Integration"
+```
+
+CI runs everything. Do not make the skip automatic: a test that silently skips
+itself is a test that stops running and nobody notices.
 
 ## Testing anything that calls a model
 

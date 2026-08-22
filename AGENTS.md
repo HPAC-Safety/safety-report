@@ -103,6 +103,8 @@ ASCII boxes do neither.
 ### Tests
 
 - **Shouldly for every assertion.** Not `Assert.*`, not FluentAssertions.
+  `Xunit.Assert` is banned by an analyzer — using it is a build error in the
+  editor, not a CI surprise. Add future bans to `tests/BannedSymbols.txt`.
 - **Given/When/Then naming**, in the test name and marked in the body:
   `Given_<scenario>_When_<action>_Then_<assertion>`.
 - JavaScript uses Node's built-in `node:test` with nested `describe` blocks

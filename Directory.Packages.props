@@ -10,16 +10,31 @@
 	<!-- Renovate groups its update PRs on these same boundaries, see renovate.json -->
 	<ItemGroup Label="Analyzers">
 		<PackageVersion Include="coverlet.collector" Version="10.0.1" />
+		<!-- Enforces tests/BannedSymbols.txt, which is how the Shouldly rule stops
+		     being documentation and starts being a build error. See ADR-0013. -->
+		<PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
 		<PackageVersion Include="Roslynator.Analyzers" Version="4.16.0" />
 	</ItemGroup>
 	<ItemGroup Label="Microsoft and System">
+		<PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.11" />
 		<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
 		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
 		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
 	</ItemGroup>
+	<ItemGroup Label="Npgsql">
+		<!-- The bare driver only, used by the Testcontainers harness to prove a
+		     container is reachable. Npgsql.EntityFrameworkCore.PostgreSQL arrives
+		     with the DbContext and belongs in an EntityFrameworkCore group, not
+		     here - the provider is pinned to EF Core's cadence, this is not.
+		     Renovate groups them the same way. -->
+		<PackageVersion Include="Npgsql" Version="10.0.3" />
+	</ItemGroup>
 	<ItemGroup Label="Shouldly">
 		<!-- The assertion library for this repository. Not Assert.*, not FluentAssertions. -->
 		<PackageVersion Include="Shouldly" Version="4.3.0" />
+	</ItemGroup>
+	<ItemGroup Label="Testcontainers">
+		<PackageVersion Include="Testcontainers.PostgreSql" Version="4.14.0" />
 	</ItemGroup>
 	<ItemGroup Label="xunit">
 		<PackageVersion Include="xunit" Version="2.9.3" />
@@ -30,10 +45,9 @@
 		right group rather than at the bottom of the file:
 
 			Anthropic                       the SDK used by the worker
-			AWSSDK                          S3, SimpleEmail - if AWS is confirmed
+			AWSSDK                          S3, SimpleEmail
 			FakeItEasy                      test doubles
-			Microsoft and System            EntityFrameworkCore, Mvc.Testing, Localization
+			Microsoft and System            EntityFrameworkCore, Localization
 			Npgsql                          Npgsql.EntityFrameworkCore.PostgreSQL
-			Testcontainers                  Testcontainers.PostgreSql
 	-->
 </Project>

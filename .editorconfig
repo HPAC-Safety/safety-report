@@ -28,3 +28,7 @@ indent_style = tab
 [tests/**/*.cs]
 dotnet_diagnostic.CA1707.severity = none
 dotnet_diagnostic.CA1861.severity = none
+
+# Banned symbols are an error, not a warning. TreatWarningsAsErrors would make
+# it one anyway, but stating it means the rule survives someone relaxing that.
+dotnet_diagnostic.RS0030.severity = error

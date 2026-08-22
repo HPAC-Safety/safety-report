@@ -119,11 +119,19 @@
 			]
 		},
 		{
-			"description": "EF Core and the Npgsql provider must move together or migrations break",
+			"description": "EF Core and the Npgsql PROVIDER must move together or migrations break. The bare Npgsql driver is a different vendor on its own cadence and is grouped separately.",
 			"groupName": "EntityFrameworkCore",
 			"matchPackageNames": [
 				"/^Microsoft\\.EntityFrameworkCore/",
-				"/^Npgsql/"
+				"/^Npgsql\\.EntityFrameworkCore/"
+			]
+		},
+		{
+			"description": "The bare Npgsql driver, matching its ItemGroup in Directory.Packages.props. Excludes the EF Core provider, which is pinned to EF Core's cadence above.",
+			"groupName": "Npgsql",
+			"matchPackageNames": [
+				"/^Npgsql/",
+				"!/^Npgsql\\.EntityFrameworkCore/"
 			]
 		},
 		{

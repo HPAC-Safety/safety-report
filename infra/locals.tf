@@ -14,14 +14,18 @@ locals {
   public_subnet_cidrs  = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 4, i)]
   private_subnet_cidrs = [for i in range(var.az_count) : cidrsubnet(var.vpc_cidr, 4, i + 8)]
 
-  # A domain is configured, or it is not. Every alias, certificate, and listener
-  # below keys off these rather than repeating the null check.
-  has_api_domain    = var.api_domain != null
-  has_public_domain = var.public_site_domain != null
-  has_admin_domain  = var.admin_site_domain != null
-  has_site_domain   = local.has_public_domain || local.has_admin_domain
-
-  site_domains = compact([var.public_site_domain, var.admin_site_domain])
+  # ONE website. The admin review queue is a route on it, not a second site —
+  # ADR-0031 supersedes ADR-0009 on this. These two are what everything else
+  # derives from, so the shape is stated once.
+  #
+  #   https://safety.hpac.ca/          the public report form
+  #   https://safety.hpac.ca/admin/    the review queue
+  #
+  # Origin-level isolation between the two is therefore gone. What protects the
+  # review queue is the API's authorization (#24), not the delivery path — the
+  # admin bundle is static HTML and JS and holds no report data. ADR-0031 has the
+  # full assessment and the edge rules that partly compensate.
+  admin_prefix = "/${var.admin_path_prefix}"
 
   # Log group names, in one place, because the task definitions, the log groups,
   # and the alarms all have to agree on them.

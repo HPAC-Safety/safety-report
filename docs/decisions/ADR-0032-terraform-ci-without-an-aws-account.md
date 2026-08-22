@@ -49,9 +49,11 @@ state bucket, plus **three explicit denials**:
 `ReadOnlyAccess` later. That last clause is the reason they are written out even
 where the managed policy does not currently grant the action.
 
-`terraform plan` on a pull request runs with `-lock=false`: the plan role cannot
-take the DynamoDB lock, and a plan writes no state. The lock exists to stop two
-*applies* overlapping.
+`terraform plan` on a pull request runs with `-lock=false`: the S3 backend takes
+its lock by writing a `.tflock` object into the state bucket
+([ADR-0031](ADR-0031-terraform-shape-and-topology.md)), the plan role can read
+that bucket but not write to it, and a plan writes no state anyway. The lock
+exists to stop two *applies* overlapping.
 
 **Rejected: widen the deploy role to `repo:HPAC-Safety/safety-report:*`.** One
 condition, no second role, and it is exactly what #32 forbids — it would let any
@@ -130,5 +132,5 @@ ADR-0011 exists to describe. The job runs in well under a minute.
 ## Related
 
 - [ADR-0010](ADR-0010-infrastructure-as-code.md), [ADR-0011](ADR-0011-ci-contexts-precede-their-checks.md)
-- [ADR-0031](ADR-0031-one-terraform-root-module.md)
+- [ADR-0031](ADR-0031-terraform-shape-and-topology.md)
 - `infra/README.md`, `docs/deployment.md`, `.github/workflows/README.md`

@@ -2,10 +2,17 @@ name: Deploy Web
 
 # SCAFFOLD. Infrastructure is #32 and #30. See docs/deployment.md.
 #
-# The public form and the admin queue deploy SEPARATELY, to separate buckets and
-# separate distributions. Different audiences, different risk: the admin surface
-# can then sit behind extra network controls without ever affecting a pilot's
-# ability to file a report.
+# ONE website: the public form at /, the admin review queue at /admin/. One
+# bucket, one distribution, one invalidation.
+#
+# This used to deploy two sites to two buckets behind two distributions. That is
+# superseded by ADR-0031 — the admin queue is a route on the website, not a site
+# of its own. The matrix below therefore selects which SUBTREE to sync, not which
+# site: both land in the same bucket, the admin one under the admin key prefix.
+#
+# Nothing here is a security boundary. The admin bundle is static assets holding
+# no report data; every byte a reviewer sees comes from the API, which authorizes
+# each request (#24).
 on:
   workflow_run:
     workflows: [CI]
@@ -30,9 +37,8 @@ concurrency:
 
 jobs:
   # Secrets:   AWS_DEPLOY_ROLE_ARN
-  # Variables: AWS_REGION,
-  #            S3_BUCKET_PUBLIC, S3_BUCKET_ADMIN,
-  #            CLOUDFRONT_DISTRIBUTION_PUBLIC, CLOUDFRONT_DISTRIBUTION_ADMIN
+  # Variables: AWS_REGION, S3_BUCKET_SITE, CLOUDFRONT_DISTRIBUTION_SITE,
+  #            SITE_ADMIN_PREFIX
   #
   # The Turnstile SITE key is public by design and may be a variable. The
   # Turnstile SECRET key is server-side only, lives in AWS Secrets Manager, and
@@ -62,10 +68,9 @@ jobs:
             AWS_DEPLOY_ROLE_ARN=${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           variables: |
             AWS_REGION=${{ vars.AWS_REGION }}
-            S3_BUCKET_PUBLIC=${{ vars.S3_BUCKET_PUBLIC }}
-            S3_BUCKET_ADMIN=${{ vars.S3_BUCKET_ADMIN }}
-            CLOUDFRONT_DISTRIBUTION_PUBLIC=${{ vars.CLOUDFRONT_DISTRIBUTION_PUBLIC }}
-            CLOUDFRONT_DISTRIBUTION_ADMIN=${{ vars.CLOUDFRONT_DISTRIBUTION_ADMIN }}
+            S3_BUCKET_SITE=${{ vars.S3_BUCKET_SITE }}
+            CLOUDFRONT_DISTRIBUTION_SITE=${{ vars.CLOUDFRONT_DISTRIBUTION_SITE }}
+            SITE_ADMIN_PREFIX=${{ vars.SITE_ADMIN_PREFIX }}
 
   site:
     needs: preflight
@@ -77,7 +82,7 @@ jobs:
       matrix:
         site: [public, admin]
     steps:
-      - name: Skip sites not selected
+      - name: Skip subtrees not selected
         id: gate
         run: |
           selected='${{ inputs.site || 'both' }}'
@@ -117,15 +122,19 @@ jobs:
         if: steps.gate.outputs.run == 'true'
         run: |
           echo "::error::TODO(#30): sync src/web/${{ matrix.site }} and invalidate."
-          echo "Shape:"
-          echo "  aws s3 sync src/web/${{ matrix.site }} s3://\$BUCKET --delete"
-          echo "  aws s3 sync src/web/shared s3://\$BUCKET/shared --delete"
-          echo "  aws s3 sync locales        s3://\$BUCKET/locales --delete"
-          echo "  aws cloudfront create-invalidation --distribution-id \$DIST --paths '/*'"
+          echo "Shape — ONE bucket, the admin subtree under its own key prefix:"
+          echo "  public: aws s3 sync src/web/public s3://\$S3_BUCKET_SITE --delete"
+          echo "  admin:  aws s3 sync src/web/admin  s3://\$S3_BUCKET_SITE/\$SITE_ADMIN_PREFIX --delete"
+          echo "          aws s3 sync src/web/shared s3://\$S3_BUCKET_SITE/shared --delete"
+          echo "          aws s3 sync locales        s3://\$S3_BUCKET_SITE/locales --delete"
+          echo "          aws cloudfront create-invalidation --distribution-id \$CLOUDFRONT_DISTRIBUTION_SITE --paths '/*'"
+          echo ""
+          echo "--delete on the public sync must NOT be allowed to reach the admin"
+          echo "prefix. Scope it, or sync the two subtrees under one prefix each."
           echo ""
           echo "Clean URLs come from a CloudFront Function on the viewer-request"
-          echo "event, not from S3 website hosting. That rewrite is part of the"
-          echo "Terraform in #30 — this workflow only ships content."
+          echo "event, not from S3 website hosting. That rewrite is Terraform, in"
+          echo "infra/functions/clean-urls.js.tftpl — this workflow ships content."
           echo ""
           echo "Rollback: re-run this workflow from the previous commit."
           exit 1

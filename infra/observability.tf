@@ -35,6 +35,18 @@ resource "aws_sns_topic" "alarms" {
   tags = { Name = "${local.name}-alarms" }
 }
 
+# PENDING CONFIRMATION until a human clicks the link AWS emails to the address.
+# Terraform creates the subscription and reports success either way; it cannot
+# complete the handshake, and there is no attribute to wait on. Until someone
+# clicks, every alarm below fires, is visible in CloudWatch, and emails nobody.
+#
+# The `alarm_subscriptions_pending_confirmation` output and the manual-steps
+# table in docs/deployment.md both exist so that gap is stated rather than
+# discovered.
+#
+# Alarm mail comes from Amazon SNS, not through the SES identity in ses.tf — so
+# it is not held up by the SES sandbox. It does still need safety@hpac.ca to be a
+# mailbox somebody reads.
 resource "aws_sns_topic_subscription" "alarms_email" {
   for_each = toset(var.alarm_email_addresses)
 

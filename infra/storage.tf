@@ -1,19 +1,21 @@
-# S3 buckets: one private uploads bucket, two static site buckets.
+# S3 buckets: one private uploads bucket, one static site bucket.
 #
-# All three are fully private. The site buckets are read by CloudFront through an
-# Origin Access Control, not by the public — S3 website hosting is not used at
+# ONE site bucket, not two. The admin review queue is a route on the website —
+# objects under the `admin/` key prefix — not a site of its own. ADR-0031
+# supersedes ADR-0009's two-bucket, two-distribution design and records what that
+# costs.
+#
+# Both buckets are fully private. The site bucket is read by CloudFront through
+# an Origin Access Control, not by the public — S3 website hosting is not used at
 # all, because clean URLs come from a CloudFront Function (ADR-0009) and website
 # hosting would require the bucket to be public to work.
 
 locals {
   # Account id in the name for the same reason as the state bucket: S3 names are
-  # globally unique, and "hpac-safety-public" is a name somebody else may hold.
+  # globally unique, and "hpac-safety-site" is a name somebody else may hold.
   bucket_suffix = data.aws_caller_identity.current.account_id
 
-  site_buckets = {
-    public = "${local.name}-public-${local.bucket_suffix}"
-    admin  = "${local.name}-admin-${local.bucket_suffix}"
-  }
+  site_bucket = "${local.name}-site-${local.bucket_suffix}"
 }
 
 # --------------------------------------------------------------------------
@@ -127,21 +129,26 @@ data "aws_iam_policy_document" "uploads" {
 }
 
 # --------------------------------------------------------------------------
-# Static sites
+# The website
 # --------------------------------------------------------------------------
+#
+# Layout inside the bucket:
+#
+#   /                    the public report form
+#   /admin/              the review queue, under the admin path prefix
+#
+# The admin objects are not secret: they are the same static HTML and JavaScript
+# for every visitor, and every byte of report data arrives from the API, which
+# authorizes each request. See ADR-0031.
 
 resource "aws_s3_bucket" "site" {
-  for_each = local.site_buckets
+  bucket = local.site_bucket
 
-  bucket = each.value
-
-  tags = { Name = "${local.name}-${each.key}-site" }
+  tags = { Name = "${local.name}-site" }
 }
 
 resource "aws_s3_bucket_public_access_block" "site" {
-  for_each = aws_s3_bucket.site
-
-  bucket                  = each.value.id
+  bucket                  = aws_s3_bucket.site.id
   block_public_acls       = true
   block_public_policy     = true
   ignore_public_acls      = true
@@ -149,9 +156,7 @@ resource "aws_s3_bucket_public_access_block" "site" {
 }
 
 resource "aws_s3_bucket_ownership_controls" "site" {
-  for_each = aws_s3_bucket.site
-
-  bucket = each.value.id
+  bucket = aws_s3_bucket.site.id
 
   rule {
     object_ownership = "BucketOwnerEnforced"
@@ -159,9 +164,7 @@ resource "aws_s3_bucket_ownership_controls" "site" {
 }
 
 resource "aws_s3_bucket_versioning" "site" {
-  for_each = aws_s3_bucket.site
-
-  bucket = each.value.id
+  bucket = aws_s3_bucket.site.id
 
   versioning_configuration {
     status = "Enabled"
@@ -169,9 +172,7 @@ resource "aws_s3_bucket_versioning" "site" {
 }
 
 resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
-  for_each = aws_s3_bucket.site
-
-  bucket = each.value.id
+  bucket = aws_s3_bucket.site.id
 
   rule {
     apply_server_side_encryption_by_default {
@@ -185,14 +186,12 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "site" {
 # CloudFront generally — that would let any distribution in any account read
 # these objects.
 data "aws_iam_policy_document" "site" {
-  for_each = local.site_buckets
-
   statement {
     sid     = "AllowCloudFrontOriginAccessControl"
     effect  = "Allow"
     actions = ["s3:GetObject"]
 
-    resources = ["${aws_s3_bucket.site[each.key].arn}/*"]
+    resources = ["${aws_s3_bucket.site.arn}/*"]
 
     principals {
       type        = "Service"
@@ -202,7 +201,7 @@ data "aws_iam_policy_document" "site" {
     condition {
       test     = "StringEquals"
       variable = "AWS:SourceArn"
-      values   = [aws_cloudfront_distribution.site[each.key].arn]
+      values   = [aws_cloudfront_distribution.site.arn]
     }
   }
 
@@ -212,8 +211,8 @@ data "aws_iam_policy_document" "site" {
     actions = ["s3:*"]
 
     resources = [
-      aws_s3_bucket.site[each.key].arn,
-      "${aws_s3_bucket.site[each.key].arn}/*",
+      aws_s3_bucket.site.arn,
+      "${aws_s3_bucket.site.arn}/*",
     ]
 
     principals {
@@ -230,10 +229,8 @@ data "aws_iam_policy_document" "site" {
 }
 
 resource "aws_s3_bucket_policy" "site" {
-  for_each = local.site_buckets
-
-  bucket = aws_s3_bucket.site[each.key].id
-  policy = data.aws_iam_policy_document.site[each.key].json
+  bucket = aws_s3_bucket.site.id
+  policy = data.aws_iam_policy_document.site.json
 
   depends_on = [aws_s3_bucket_public_access_block.site]
 }

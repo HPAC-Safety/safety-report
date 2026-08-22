@@ -390,11 +390,39 @@ preference:
   `aws_secretsmanager_secret_version` in `infra/`; adding one is the defect, not
   the fix.
 
+**One production email address: `safety@hpac.ca`.** Report notifications from the
+Worker and operational alarms both go there. Do not introduce a second address,
+and do not hardcode it — it is `alarm_email_addresses` in `infra/variables.tf`
+and the `hpac-safety/notifications-to` secret at runtime.
+
+**Two custom metrics, and their names are a contract.** The alarms in
+`infra/observability.tf` watch metrics the **Worker publishes**; nothing in AWS
+derives them. If the Worker does not emit these, the alarms watch nothing:
+
+| Namespace | Metric | Kind | Meaning |
+|---|---|---|---|
+| `HpacSafety` | `SummaryFailed` | count | A summarization attempt failed — a real report is unprocessed |
+| `HpacSafety` | `OutboxOldestAgeSeconds` | gauge, per poll | Age of the oldest unclaimed outbox row |
+
+The namespace arrives as `Metrics__Namespace`. Do not rename either metric on one
+side alone. Full detail, including thresholds, is in `docs/deployment.md` under
+"The metric contract".
+
+**One website, two hostnames.** `safety.hpac.ca` serves the public report form at
+`/` and the admin review queue at `/admin/`; `api.hpac.ca` serves the API, HTTPS
+only. There is **one** bucket and **one** CloudFront distribution — so there is
+no network control in front of the review queue that would not also apply to the
+public form. What protects it is the API's authorization, not the delivery path.
+The admin bundle must therefore stay static assets holding no report data; if
+that changes, revisit
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md) rather than
+working around it.
+
 `terraform apply` on an unchanged repository must be a no-op, and the workflow
 asserts it. Nothing is created or edited by hand after bootstrap — a console
 click Terraform does not know about is drift, and drift makes the plan
 untrustworthy. Depth: `infra/README.md`,
-[ADR-0031](docs/decisions/ADR-0031-one-terraform-root-module.md).
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md).
 
 ### Design
 

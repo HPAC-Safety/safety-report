@@ -22,7 +22,32 @@ the infrastructure itself is Terraform, per
 | `.github/workflows/terraform.yml` | `infra/` | The AWS environment itself |
 | `.github/workflows/deploy-api.yml` | `src/HpacSafety.Api` | ECS Fargate service |
 | `.github/workflows/deploy-worker.yml` | `src/HpacSafety.Worker` | ECS Fargate service |
-| `.github/workflows/deploy-web.yml` | `src/web/public`, `src/web/admin` | S3 + CloudFront, separately |
+| `.github/workflows/deploy-web.yml` | `src/web/public`, `src/web/admin` | One S3 bucket + one CloudFront distribution |
+
+### Where it all answers
+
+| URL | Serves |
+|---|---|
+| `https://safety.hpac.ca/` | The public report form |
+| `https://safety.hpac.ca/admin/` | The admin review queue |
+| `https://api.hpac.ca` | The API. **HTTPS only**; port 80 redirects. |
+
+**One website, not two.** The review queue is a route on `safety.hpac.ca`, served
+from the same bucket and the same CloudFront distribution as the public form.
+This supersedes ADR-0009's "one distribution each for public and admin", and it
+supersedes the `S3_BUCKET_PUBLIC` / `S3_BUCKET_ADMIN` and
+`CLOUDFRONT_DISTRIBUTION_PUBLIC` / `CLOUDFRONT_DISTRIBUTION_ADMIN` variables named
+in [#32](https://github.com/HPAC-Safety/safety-report/issues/32).
+
+The consequence to hold on to: **there is no network control in front of the
+review queue and there cannot be one that does not also apply to the public
+form.** WAF, geo restriction, and IP allowlisting are distribution-level in
+CloudFront. What protects the queue is the API's authorization
+([#24](https://github.com/HPAC-Safety/safety-report/issues/24)); the admin bundle
+is static assets holding no report data. `/admin/*` does get its own cache
+behavior, `X-Robots-Tag: noindex, nofollow`, and `Cache-Control: no-store`. The
+reasoning and what was rejected are in
+[ADR-0031](decisions/ADR-0031-terraform-shape-and-topology.md).
 
 Containers are produced by `dotnet publish -c Release /t:PublishContainer`.
 .NET 10 emits an OCI image directly, so there is no Dockerfile to drift from the
@@ -168,10 +193,9 @@ failed deploy log says which cluster it could not reach.
 | `ECS_TASK_DEFINITION_MIGRATE` | `hpac-safety-migrate` | api |
 | `ECS_SUBNETS` | `subnet-…,subnet-…` | api |
 | `ECS_SECURITY_GROUPS` | `sg-…` | api |
-| `S3_BUCKET_PUBLIC` | `hpac-safety-public` | web |
-| `S3_BUCKET_ADMIN` | `hpac-safety-admin` | web |
-| `CLOUDFRONT_DISTRIBUTION_PUBLIC` | `E…` | web |
-| `CLOUDFRONT_DISTRIBUTION_ADMIN` | `E…` | web |
+| `S3_BUCKET_SITE` | `hpac-safety-site-123456789012` | web |
+| `CLOUDFRONT_DISTRIBUTION_SITE` | `E…` | web |
+| `SITE_ADMIN_PREFIX` | `admin` | web |
 
 ```bash
 gh variable set AWS_REGION --body ca-central-1 --repo HPAC-Safety/safety-report
@@ -233,6 +257,75 @@ The RDS master password is a fifth secret that Terraform never sees at all:
 The Turnstile **site** key is public by design and may be a variable. The
 Turnstile **secret** key must never reach a static bundle.
 
+## One production email address
+
+**`safety@hpac.ca`.** Report notifications from the Worker and operational alarms
+from CloudWatch both go there. There is not a second address, and
+[#26](https://github.com/HPAC-Safety/safety-report/issues/26) must not invent
+one.
+
+It is both a **sender identity** and a **recipient**, and those are separate
+mechanisms that happen to share a domain. The DNS administrator will be reading
+the list below, so here is which record serves which purpose:
+
+| Record | On | Purpose |
+|---|---|---|
+| 3 × DKIM `CNAME` | `<token>._domainkey.hpac.ca` | Verifies the domain identity **and** publishes the public half of the key SES signs with. All three are required — two out of three is a domain that stays unverified. |
+| `MX` | `mail.hpac.ca` | Bounce handling for the custom MAIL FROM subdomain. **On the subdomain only** — it does not touch the MX for `hpac.ca`, so it cannot affect mail delivered *to* `safety@hpac.ca`. |
+| `TXT` (SPF) | `mail.hpac.ca` | Authenticates the envelope sender, so DMARC aligns with the visible `From` header. |
+| `TXT` (DMARC) | `_dmarc.hpac.ca` | Policy. `p=none` reports without rejecting — the correct starting point; tighten to quarantine then reject once reports show only SES sending. |
+| 2 × `CNAME` (ACM) | `_….hpac.ca` | Certificate validation for `safety.hpac.ca` and `api.hpac.ca`. |
+| 2 × `CNAME` (alias) | `safety.hpac.ca`, `api.hpac.ca` | Point the website at CloudFront and the API at the load balancer. |
+
+Every one of them, with its live value, comes out of
+`terraform output dns_records_to_publish`. Receiving mail at `safety@hpac.ca`
+depends on HPAC's existing MX and mailbox, which this account neither owns nor
+touches.
+
+> ### This address is inert until two things land
+>
+> **Nothing reaches `safety@hpac.ca` today, so alarms and report notifications
+> are both silent.** Two independent reasons, and neither is visible from
+> Terraform:
+>
+> - **Alarms** are an SNS email subscription, created *pending confirmation*. AWS
+>   emails a link and a human has to click it. Terraform cannot, and reports the
+>   subscription as created either way. Until someone clicks, the alarms fire,
+>   are visible in CloudWatch, and email nobody. Alarm mail comes from Amazon SNS
+>   rather than through the SES identity, so it is **not** held up by the SES
+>   sandbox — only by the click and by the mailbox existing.
+> - **Report notifications** go through SES as `hpac.ca`, so they need the DKIM
+>   and MAIL FROM records above published **and** SES production access granted.
+>   In sandbox, SES will not deliver to an address it has not individually
+>   verified.
+>
+> Do not read a green `terraform apply` as "alerting is live". It is not, until
+> the DNS records are published, production access clears, and someone confirms
+> the subscription.
+
+## The metric contract
+
+Two of the alarms watch metrics **the application publishes**. They are not
+derived from anything AWS knows on its own, so if the Worker does not emit them,
+the alarms watch nothing and report a permanent `INSUFFICIENT_DATA` or, worse,
+sit quietly at OK.
+
+| Namespace | Metric | Kind | Published by | Meaning |
+|---|---|---|---|---|
+| `HpacSafety` | `SummaryFailed` | count | Worker | A summarization attempt failed. A real occurrence report is sitting unprocessed. |
+| `HpacSafety` | `OutboxOldestAgeSeconds` | gauge, on each poll | Worker | Age of the oldest unclaimed outbox row. Rises when the Worker is wedged and stays flat when it is merely busy — which is why it is the age and not the depth. |
+
+The namespace is injected into the task as `Metrics__Namespace`. Both task roles
+may call `cloudwatch:PutMetricData`, and only within that namespace.
+
+`OutboxOldestAgeSeconds` alarms on **missing data**: a Worker that has stopped
+publishing entirely is the failure the alarm exists for.
+
+**These names are the contract.** The Worker issue implements against them; do
+not rename one on either side alone. Thresholds: `SummaryFailed >= 1` in five
+minutes, and `OutboxOldestAgeSeconds > 900` for two consecutive five-minute
+periods.
+
 ## The environment itself
 
 `infra/` is the whole AWS environment as Terraform, and
@@ -271,7 +364,8 @@ calendar time — start them before anything needs them.
 | Create an admin user or SSO permission set for whoever runs the bootstrap | The account existing |
 | Set a budget alert | A number somebody is willing to be woken up for |
 | Request SES production access | **A human review at AWS, a day or more.** Until it clears, mail only reaches individually verified addresses — `safety@hpac.ca` receives nothing. |
-| Publish DNS records on `hpac.ca` — SES verification, three DKIM CNAMEs, MAIL FROM MX and SPF, DMARC, ACM validation, CloudFront and ALB aliases | **HPAC's DNS administrator.** Another organisation's zone; days, not minutes. Every record is in the `dns_records_to_publish` Terraform output. |
+| Publish DNS records on `hpac.ca` — three DKIM CNAMEs, MAIL FROM MX and SPF, DMARC, two ACM validation CNAMEs, two alias CNAMEs | **HPAC's DNS administrator.** Another organisation's zone; days, not minutes. What each record is for is in "One production email address" above; the live values are in the `dns_records_to_publish` output. |
+| **Confirm the SNS alarm subscription** — click the link AWS emails to `safety@hpac.ca` | A human with access to that mailbox. Terraform creates the subscription *pending confirmation* and cannot complete it. Until it is confirmed, the alarms fire and email nobody. |
 | `aws secretsmanager put-secret-value` for each of the four entries | Values that must never enter Terraform state |
 
 ## First deploy on a fresh account
@@ -282,14 +376,17 @@ bootstrapping, not a defect. The order:
 
 ```mermaid
 flowchart TD
-    boot["./infra/bootstrap.sh<br/>OIDC · two roles · state bucket · lock table"]
+    boot["./infra/bootstrap.sh<br/>OIDC · two roles · state bucket"]
     boot --> gh["gh secret set AWS_DEPLOY_ROLE_ARN, AWS_PLAN_ROLE_ARN<br/>gh variable set TF_STATE_BUCKET"]
     gh --> apply1["terraform apply<br/>everything except a running task"]
     apply1 --> dns["publish the DNS records from<br/>the dns_records_to_publish output"]
     dns --> ses["request SES production access"]
+    dns --> confirm["confirm the SNS subscription<br/>in safety@hpac.ca"]
     apply1 --> secrets["put-secret-value ×4"]
     secrets --> deploy["deploy-api · deploy-worker · deploy-web"]
     deploy --> up["services stabilise"]
+    ses --> mail["alarms and report notifications<br/>actually arrive"]
+    confirm --> mail
 ```
 
 Two things look like failures on the way and are not:
@@ -299,7 +396,10 @@ Two things look like failures on the way and are not:
   no values. Both are fixed by the two steps after it.
 - **`aws_acm_certificate_validation` blocks**, for up to two hours, waiting for
   DNS records only HPAC's DNS administrator can publish. That is deliberate: the
-  alternative is a listener serving a certificate that was never validated.
+  alternative is a listener serving a certificate that was never validated. Both
+  hostnames are HTTPS-only, so this gate is on the critical path by design.
+- **Alerting is not live when apply goes green.** See "This address is inert
+  until two things land" above.
 
 ## Recovery
 
@@ -336,9 +436,11 @@ resource, not `terraform apply`.
 
 ### A lock is stuck
 
-An apply that was cancelled mid-run leaves the lock held.
-`terraform force-unlock <id>` releases it. Confirm no apply is actually running
-first; two concurrent applies is what the lock exists to prevent.
+An apply that was cancelled mid-run leaves the lock held. The lock is a
+`.tflock` object beside the state in the same bucket — `use_lockfile`, not a
+DynamoDB table (ADR-0031). `terraform force-unlock <id>` releases it. Confirm no
+apply is actually running first; two concurrent applies is what the lock exists
+to prevent.
 
 ### Rebuilding the environment from scratch
 

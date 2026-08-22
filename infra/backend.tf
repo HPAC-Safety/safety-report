@@ -14,15 +14,16 @@ terraform {
     key    = "hpac-safety/production.tfstate"
     region = "ca-central-1"
 
-    # State locking. The issue and ADR-0010 both specify a DynamoDB lock table,
-    # and infra/bootstrap.sh creates it, so that is what this uses.
+    # State locking is S3-NATIVE: Terraform writes a `.tflock` object with a
+    # conditional PutObject, so the bucket that already holds the state also
+    # holds the lock. No DynamoDB table, no second service, no second thing to
+    # bootstrap.
     #
-    # NOTE: Terraform 1.11 deprecated `dynamodb_table` in favour of `use_lockfile`
-    # (native S3 conditional-write locking, no second service), and 1.13+ emits a
-    # deprecation warning on every `init`. Migrating is a one-line change plus
-    # deleting the table, but it is a deliberate deviation from the accepted ADR
-    # rather than something to slip in here. Tracked in ADR-0031.
-    dynamodb_table = "hpac-safety-tfstate-lock"
-    encrypt        = true
+    # Issue #32 and ADR-0010 both specified a DynamoDB lock table. That clause is
+    # superseded — deliberately, before any live state existed to migrate — by
+    # ADR-0031. `dynamodb_table` was deprecated in Terraform 1.11 and warns on
+    # every `init` from 1.13 onward.
+    use_lockfile = true
+    encrypt      = true
   }
 }

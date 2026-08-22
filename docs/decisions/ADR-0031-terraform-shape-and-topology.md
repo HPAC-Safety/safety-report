@@ -1,6 +1,19 @@
-# ADR-0031 — One Terraform root module, and who owns which field
+# ADR-0031 — The shape of the Terraform, and the topology it builds
 
 **Status:** Accepted
+
+**Supersedes, in part:**
+
+- [ADR-0009](ADR-0009-hosting-on-aws.md) — "one distribution each for public and
+  admin". There is now **one** site bucket and **one** distribution, with the
+  admin review queue served as a route on the website.
+- [ADR-0010](ADR-0010-infrastructure-as-code.md) — "State in S3 with a DynamoDB
+  lock table". Locking is now **S3-native**; there is no DynamoDB table.
+
+Both reversals are recorded in full below rather than by editing the original
+ADRs, per the rule in `AGENTS.md`: a decision that was later reversed is
+superseded by a new ADR that says so, because the reasoning behind the reversal
+is the part worth keeping.
 
 ## Context
 
@@ -40,6 +53,78 @@ current, to solve a duplication problem that does not exist at one environment.
 
 If a second environment is ever wanted, the extraction is mechanical and this ADR
 is superseded rather than worked around.
+
+### One website, with the admin review queue as a route on it
+
+`https://safety.hpac.ca/` serves the public report form.
+`https://safety.hpac.ca/admin/` serves the review queue. One S3 bucket, one
+CloudFront distribution, one certificate, one hostname. The API is separate, at
+`https://api.hpac.ca`.
+
+```mermaid
+flowchart LR
+    viewer["viewer"] --> cf["CloudFront<br/>safety.hpac.ca"]
+    cf -->|"default behavior<br/>CachingOptimized"| s3["S3 site bucket"]
+    cf -->|"/admin/*<br/>CachingDisabled · noindex · no-store"| s3
+    cf -.->|"viewer-request<br/>clean-urls function"| cf
+    viewer --> alb["ALB<br/>api.hpac.ca<br/>HTTPS only"]
+    alb --> api["API<br/>authorizes every request"]
+    api --> db[("PostgreSQL")]
+```
+
+ADR-0009 specified two distributions, "so the admin surface can take network
+controls the public form must not have". That is reversed.
+
+**What is genuinely lost.** In CloudFront, WAF association, geo restriction, and
+IP allowlisting are **distribution-level**. With one distribution they can no
+longer be applied to the admin area alone — any of them would hit a pilot filing
+a report as well. Origin-level isolation between the two areas is gone.
+
+**Why that is acceptable here.** The admin bundle is static HTML and JavaScript,
+byte-identical for every visitor, and it contains **no report data**. Every piece
+of report data a reviewer sees arrives from the API, which authorizes each
+request against the `admin_users` allowlist (#24, [ADR-0005](ADR-0005-authentication.md)).
+The delivery path was never the security boundary; serving the admin *shell*
+publicly discloses the application's structure and its UI strings and nothing
+else. This does mean the mitigation is load-bearing: **if the admin bundle ever
+starts containing data, or the API's authorization is weakened, this decision
+must be revisited, not worked around.**
+
+**What still isolates the two, per path.** A cache behavior, a CloudFront
+Function, and a response headers policy are all per-path-pattern, and all three
+are used: `/admin/*` gets `CachingDisabled`, `X-Robots-Tag: noindex, nofollow` so
+the queue is never indexed, `Cache-Control: no-store`, and `frame-ancestors`-style
+headers via `X-Frame-Options: DENY`. Geo restriction is deliberately `none` — a
+Canadian pilot files from wherever they crashed.
+
+**Rejected: two distributions, as ADR-0009 had it.** It buys per-area WAF and IP
+allowlisting for an asset that holds nothing worth allowlisting, at the cost of a
+second bucket, a second certificate, a second hostname for HPAC's DNS
+administrator to publish, a second invalidation on every deploy, and a
+cross-origin boundary between two halves of one application.
+
+**Rejected: admin on its own hostname pointing at the same bucket.** A second
+name and a second certificate, with none of the isolation that was the point.
+
+### The state lock is S3-native, not DynamoDB
+
+`backend.tf` sets `use_lockfile = true`. Terraform takes the lock by writing a
+`.tflock` object into the state bucket with a conditional `PutObject`, so the
+bucket that holds the state also holds the lock. `bootstrap.sh` creates no
+DynamoDB table and the deploy role has no DynamoDB permissions.
+
+ADR-0010 and #32 both specified a DynamoDB lock table. `dynamodb_table` was
+deprecated in Terraform 1.11 and warns on every `init` from 1.13 onward, and it
+will be removed. **This is changed now, deliberately, because there is no live
+state to migrate** — doing it after the first apply would mean a lock migration
+on a state file that is the only record of what exists.
+
+**Rejected: ship the deprecated parameter and migrate later.** A deprecation
+warning on every run is a warning people stop reading, and the migration only
+gets more expensive once state is real.
+
+**Rejected: both mechanisms at once.** `dynamodb_table` alongside `use_lockfile`
+still emits the deprecation warning and leaves a table nothing needs.
 
 ### Terraform owns the shape of a task definition; the deploy workflow owns the revision
 
@@ -120,17 +205,6 @@ viewer → ALB → API → RDS) never traverses it. Losing that AZ delays
 summarization, which is already asynchronous behind the outbox, until the NAT is
 recreated.
 
-### The state lock is still DynamoDB, and that is now deprecated
-
-`bootstrap.sh` creates the DynamoDB lock table and `backend.tf` uses
-`dynamodb_table`, as ADR-0010 and #32 specify. Terraform 1.11 deprecated that
-parameter in favour of `use_lockfile` — S3-native conditional-write locking, no
-second service — and 1.13 onwards prints a deprecation warning on every `init`.
-
-Migrating is a one-line change plus deleting a table, but it is a change to an
-accepted decision, so it is recorded here rather than made in passing. It should
-be done before the parameter is removed.
-
 ## Consequences
 
 - Adding a second environment means extracting modules, and supersedes this ADR.
@@ -142,7 +216,23 @@ be done before the parameter is removed.
   the services do not stabilise until the first deploy and the first
   `put-secret-value`. The order is in `docs/deployment.md`; it is a property of
   bootstrapping, not a defect.
-- `terraform init` prints a deprecation warning until the lock mechanism moves.
+- **Admin protection is entirely the application's**, plus the per-path edge
+  rules above. There is no network control in front of the review queue, and the
+  next person to add one has to add it to the whole distribution or not at all.
+- HPAC's DNS administrator publishes two alias records rather than three, and one
+  certificate validation set rather than two.
+- `S3_BUCKET_PUBLIC`, `S3_BUCKET_ADMIN`, `CLOUDFRONT_DISTRIBUTION_PUBLIC`, and
+  `CLOUDFRONT_DISTRIBUTION_ADMIN` — named in #32 and in an earlier revision of
+  `docs/deployment.md` — do not exist. `S3_BUCKET_SITE`,
+  `CLOUDFRONT_DISTRIBUTION_SITE`, and `SITE_ADMIN_PREFIX` replace them.
+- One CloudFront invalidation per deploy covers both areas, so an admin-only
+  change invalidates the public form's cache too. At this deploy rate that costs
+  nothing.
+- **`aws s3 sync --delete` on the public subtree would delete the admin prefix**,
+  because they now share a bucket. The deploy workflow has to scope the delete,
+  and `deploy-web.yml` says so where the sync will be written (#30). This hazard
+  did not exist with two buckets and is the one real operational cost of the
+  change.
 
 ## Related
 

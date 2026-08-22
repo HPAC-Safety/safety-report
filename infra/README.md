@@ -5,7 +5,7 @@ The AWS environment for HPAC Safety, as Terraform, in `ca-central-1`.
 Hosting rationale is [ADR-0009](../docs/decisions/ADR-0009-hosting-on-aws.md);
 choosing Terraform and a scripted bootstrap is
 [ADR-0010](../docs/decisions/ADR-0010-infrastructure-as-code.md); the shape of
-this directory is [ADR-0031](../docs/decisions/ADR-0031-one-terraform-root-module.md);
+this directory is [ADR-0031](../docs/decisions/ADR-0031-terraform-shape-and-topology.md);
 the CI story is [ADR-0032](../docs/decisions/ADR-0032-terraform-ci-without-an-aws-account.md).
 
 > **Status: not yet applied.** The AWS account does not exist. Everything here is
@@ -25,18 +25,20 @@ Terraform can authenticate at all.
 | Data | `database.tf` | RDS PostgreSQL, subnet group, parameter group, automated backups |
 | Compute | `ecs.tf`, `alb.tf`, `iam.tf` | ECS cluster, API and Worker Fargate services, a migrate task definition, an ALB, execution and task roles |
 | Registry | `ecr.tf` | Two repositories with lifecycle policies |
-| Storage | `storage.tf` | Private uploads bucket, two static site buckets |
-| CDN | `cdn.tf`, `functions/clean-urls.js` | Two CloudFront distributions, origin access controls, one CloudFront Function |
+| Storage | `storage.tf` | Private uploads bucket, one static site bucket |
+| CDN | `cdn.tf`, `functions/clean-urls.js.tftpl` | One CloudFront distribution, an admin cache behavior and response headers policy, origin access control, one CloudFront Function |
 | Mail | `ses.tf` | Domain identity, Easy DKIM, custom MAIL FROM, configuration set |
 | Secrets | `secrets.tf` | Four Secrets Manager **entries**. No values. |
 | Observability | `observability.tf` | Three log groups, an SNS topic, four alarms |
-| Certificates | `acm.tf` | One ALB certificate, one CloudFront certificate in `us-east-1` |
+| Certificates | `acm.tf` | One ALB certificate, one CloudFront certificate in `us-east-1`. Both hostnames are HTTPS-only. |
 
 ## What it deliberately does not own
 
-- **The four bootstrap resources.** OIDC provider, deploy role, state bucket,
-  lock table. A workflow cannot create the thing that lets it authenticate, so
-  `bootstrap.sh` does — see below.
+- **The bootstrap resources.** OIDC provider, deploy role, read-only plan role,
+  state bucket. A workflow cannot create the thing that lets it authenticate, so
+  `bootstrap.sh` does — see below. There is no DynamoDB lock table: the S3
+  backend locks with an object in the state bucket (`use_lockfile`), which
+  supersedes ADR-0010's locking clause — see ADR-0031.
 - **Secret values.** Terraform creates the entry; a human sets the value with
   `aws secretsmanager put-secret-value`. A value in a `.tfvars` file is a value
   in state, and state is a file in S3 more people can read than should see an API
@@ -54,6 +56,41 @@ Terraform can authenticate at all.
   not exist yet, and it is the one place a secret is knowingly allowed into
   state. It comes with the Turnstile work.
 
+## The topology
+
+Two hostnames, and **one website**. The admin review queue is a route on it, not
+a site of its own — this supersedes ADR-0009's "one distribution each for public
+and admin". [ADR-0031](../docs/decisions/ADR-0031-terraform-shape-and-topology.md)
+records the decision, what it gives up, and why that is acceptable.
+
+| URL | Serves |
+|---|---|
+| `https://safety.hpac.ca/` | The public report form |
+| `https://safety.hpac.ca/admin/` | The admin review queue |
+| `https://api.hpac.ca` | The API. HTTPS only; port 80 redirects. |
+
+```mermaid
+flowchart LR
+    viewer["viewer"] --> cf["CloudFront<br/>safety.hpac.ca"]
+    cf -->|"default behavior"| s3["S3 site bucket"]
+    cf -->|"/admin/*<br/>no-store · noindex"| s3
+    viewer --> alb["ALB<br/>api.hpac.ca"]
+    alb --> api["API · authorizes<br/>every request"]
+    api --> db[("PostgreSQL")]
+```
+
+**Collapsing the two areas onto one distribution removes origin-level isolation
+between them.** WAF, geo restriction, and IP allowlisting are distribution-level
+in CloudFront, so none of them can be applied to the admin area alone any more.
+What protects the review queue is the API's authorization (#24) — the admin
+bundle is static HTML and JavaScript that holds no report data, and it never was
+the boundary. If that ever stops being true, revisit ADR-0031 rather than working
+around it.
+
+What still applies per path: a separate cache behavior (`CachingDisabled`), the
+URL-rewrite function, and a response headers policy adding
+`X-Robots-Tag: noindex, nofollow` and `Cache-Control: no-store`.
+
 ## The two phases
 
 ```mermaid
@@ -63,7 +100,7 @@ flowchart TD
         boot --> oidc["GitHub OIDC provider"]
         boot --> deploy["hpac-safety-deploy<br/>trusts main only"]
         boot --> plan["hpac-safety-plan<br/>trusts pull_request,<br/>read-only"]
-        boot --> state["S3 state bucket +<br/>DynamoDB lock table"]
+        boot --> state["S3 state bucket<br/>state + lock object"]
     end
 
     subgraph always["Phase 2 · every build, forever"]
@@ -121,26 +158,54 @@ terraform -chdir=infra init -backend=false -lockfile=readonly
 terraform -chdir=infra validate
 tflint --chdir=infra --init && tflint --chdir=infra
 shellcheck -s sh infra/bootstrap.sh
-node --check infra/functions/clean-urls.js
+
+# The CloudFront Function is a Terraform template. Substitute the prefix, then
+# parse it — this is what the `infra` CI job does.
+sed 's|\${admin_prefix}|/admin|' infra/functions/clean-urls.js.tftpl > /tmp/clean-urls.js
+node --check /tmp/clean-urls.js
 ```
 
 `terraform plan` needs the account and is not runnable yet.
 
-## Values a human still has to decide
+## Decided values
 
-These carry defaults so the configuration is complete and reviewable. Each one
-is marked `ASSUMPTION (unconfirmed)` in `variables.tf` and needs a real answer
-before the first apply.
+Every default in `variables.tf` was decided by the repository owner and is marked
+`DECIDED` there with the reasoning. None of them is a guess.
 
-| Variable | Default | Why it is a guess |
+| Variable | Value | Why |
 |---|---|---|
-| `public_site_domain`, `admin_site_domain`, `api_domain` | `null` | Nobody has said what they are. Null means no alias and no certificate; CloudFront serves on `*.cloudfront.net` and **the ALB listens on plain HTTP**, which is not a production configuration for a service receiving names and injury details. |
-| `db_instance_class` | `db.t4g.micro` | ADR-0009 says "the smallest viable instance sizes are correct here". |
-| `db_backup_retention_days` | `7` | The window in which an accidental deletion is recoverable. A safety officer may want much longer. |
-| `db_multi_az` | `false` | Roughly doubles the RDS bill to shorten an outage. |
-| `summary_failed_alarm_threshold` | `1` | One failure means a real report is unprocessed. |
-| `outbox_age_alarm_seconds` | `900` | A report waiting a quarter of an hour means the worker is wedged, not busy. |
-| `alarm_email_addresses` | `[]` | Nobody has said who is on call. The alarms still fire and are visible in CloudWatch; nothing is emailed. |
+| `site_domain` | `safety.hpac.ca` | One website; the review queue is a route on it |
+| `api_domain` | `api.hpac.ca` | HTTPS only; port 80 redirects |
+| `admin_path_prefix` | `admin` | Drives the cache behavior, the headers policy, and the rewrite function — defined once |
+| `db_instance_class` | `db.t4g.micro` | ADR-0009: the smallest viable sizes are correct here |
+| `db_backup_retention_days` | `7` | The window in which an accidental deletion is recoverable |
+| `db_multi_az` | `false` | Roughly doubles the RDS bill to shorten an outage |
+| `alarm_email_addresses` | `["safety@hpac.ca"]` | The single production address. A role address, so an alarm does not stop being read when someone leaves the committee. |
+| `summary_failed_alarm_threshold` | `1` in 5 min | One failure means a real report is unprocessed |
+| `outbox_age_alarm_seconds` | `900`, two periods | A report waiting a quarter of an hour means the worker is wedged, not busy |
+
+### One address, and it is inert until two other things land
+
+`safety@hpac.ca` is **the** production address for this system: report
+notifications from the Worker and operational alarms from CloudWatch both go
+there. There is not a second one, and #26 must not invent one.
+
+It is silent today, for two independent reasons, and neither is visible from
+Terraform:
+
+- **Alarms.** The SNS email subscription is created *pending confirmation*. AWS
+  emails a link and a human has to click it; Terraform cannot, and reports the
+  subscription as created either way. Until someone clicks, alarms fire, are
+  visible in CloudWatch, and email nobody. Alarm mail comes from Amazon SNS, so
+  it is *not* held up by the SES sandbox.
+- **Report notifications.** These go through SES as `hpac.ca`, so they need the
+  DKIM and MAIL FROM records published on `hpac.ca` **and** SES production access
+  granted. In sandbox, SES will not deliver to an address it has not individually
+  verified.
+
+Both paths end at the same inbox, and receiving mail there depends on HPAC's
+existing MX and mailbox, which this account neither owns nor touches. The custom
+MAIL FROM record is on the `mail.` subdomain precisely so it cannot disturb that.
 
 ## The metric contract
 

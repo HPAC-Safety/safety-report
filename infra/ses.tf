@@ -1,5 +1,21 @@
 # SES: domain identity, DKIM, and a configuration set.
 #
+# safety@hpac.ca is THE production address for this system — the recipient of
+# report notifications from the Worker and of operational alarms from CloudWatch
+# alike. There is one address, and #26 must not invent a second.
+#
+# It is both a SENDER identity and a RECIPIENT, and those are separate mechanisms
+# that happen to share a domain:
+#
+#   sending    SES authenticates as hpac.ca. That needs the DKIM CNAMEs, the
+#              MAIL FROM records, and DMARC — all published on hpac.ca by HPAC's
+#              DNS administrator — plus production access, because sandbox SES
+#              will not deliver to an address it has not individually verified.
+#   receiving  Nothing here. Mail reaching safety@hpac.ca depends on hpac.ca's
+#              existing MX and mailbox, which this account neither owns nor
+#              touches. Note that the MAIL FROM record below is on the `mail.`
+#              SUBDOMAIN precisely so it cannot disturb that.
+#
 # The Worker sends one kind of mail: a notification to the safety committee that
 # a report is waiting for review. Those mails carry a LINK, never the report —
 # an inbox is outside this system's access controls (docs/data-handling.md).

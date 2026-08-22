@@ -92,7 +92,14 @@ jobs:
       # 500 at the edge. Same reasoning as agent-config loading require-config:
       # see "The deploy blind spot" in .github/workflows/README.md.
       - name: CloudFront Function parses
-        run: node --check infra/functions/clean-urls.js
+        run: |
+          set -euo pipefail
+          # It is a Terraform template, so substitute the prefix before parsing.
+          # A literal placeholder in a string is still valid JavaScript, but
+          # substituting keeps this honest about what actually gets published.
+          # shellcheck disable=SC2016  # A Terraform placeholder, not a shell one.
+          sed 's|\${admin_prefix}|/admin|' infra/functions/clean-urls.js.tftpl > /tmp/clean-urls.js
+          node --check /tmp/clean-urls.js
 
       - name: terraform fmt
         run: terraform -chdir=infra fmt -check -recursive -diff
@@ -185,9 +192,10 @@ jobs:
           -lockfile=readonly
           -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
 
-      # -lock=false because the plan role is read-only and cannot take the
-      # DynamoDB lock. A plan does not write state, so there is nothing for the
-      # lock to protect; it only exists to stop two APPLIES overlapping.
+      # -lock=false because the plan role can read the state bucket but not write
+      # to it, and the S3 backend takes its lock by PUTTING a .tflock object into
+      # that same bucket. A plan writes no state, so there is nothing for the lock
+      # to protect; it exists to stop two APPLIES overlapping.
       - name: terraform plan
         id: plan
         if: steps.configured.outputs.ready == 'true'

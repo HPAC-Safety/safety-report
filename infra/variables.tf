@@ -1,8 +1,11 @@
-# Every variable that has no safe default is either null (the resource that would
-# need it is not created) or carries a marked ASSUMPTION comment naming what a
-# human still has to confirm. AGENTS.md forbids inventing a requirement quietly;
-# where a number had to exist for the code to be written at all, it is labelled
-# here and repeated in infra/README.md so nobody has to grep for it.
+# Every value here has been decided by the repository owner. Where a default was
+# originally a guess it is now marked DECIDED with what was chosen, because
+# AGENTS.md requires an answer to be written down in the pull request that
+# received it — an answer given twice is an answer that was not recorded the
+# first time.
+#
+# No default in this file is a guess any more. If you add a variable whose value
+# you had to invent, mark it plainly and say so in the pull request body.
 
 variable "project" {
   description = "Name prefix for every resource. Also the Project tag."
@@ -49,27 +52,32 @@ variable "az_count" {
 # --------------------------------------------------------------------------
 # Domains
 #
-# Null means "not known yet": no alias, no ACM certificate, and CloudFront serves
-# on its own *.cloudfront.net name. Setting one adds the certificate and the
-# alias, and produces the DNS records HPAC's DNS administrator has to publish.
+# DECIDED. Two hostnames, not three: the admin review queue is a ROUTE on the
+# website, not a site of its own. See ADR-0031, which supersedes ADR-0009's
+# "one distribution each for public and admin".
 # --------------------------------------------------------------------------
 
-variable "public_site_domain" {
-  description = "Hostname for the public report form, e.g. safety.hpac.ca. Null until decided."
+variable "site_domain" {
+  description = "The website. Serves the public report form at / and the admin review queue under the admin path prefix."
   type        = string
-  default     = null
-}
-
-variable "admin_site_domain" {
-  description = "Hostname for the admin review queue. Null until decided."
-  type        = string
-  default     = null
+  default     = "safety.hpac.ca"
 }
 
 variable "api_domain" {
-  description = "Hostname for the API in front of the ALB. Null until decided — the ALB then listens on HTTP only, which is not a production configuration."
+  description = "The API, in front of the ALB. HTTPS only; port 80 redirects."
   type        = string
-  default     = null
+  default     = "api.hpac.ca"
+}
+
+variable "admin_path_prefix" {
+  description = "Path prefix the admin review queue is served under, without slashes. Drives the CloudFront cache behavior, the response headers policy, and the URL-rewrite function, so it is defined once here rather than written into three places."
+  type        = string
+  default     = "admin"
+
+  validation {
+    condition     = can(regex("^[a-z0-9-]+$", var.admin_path_prefix))
+    error_message = "The admin path prefix is a single path segment: lowercase letters, digits, and hyphens, with no slashes."
+  }
 }
 
 # --------------------------------------------------------------------------
@@ -85,9 +93,9 @@ variable "db_engine_version" {
 variable "db_instance_class" {
   description = "RDS instance class."
   type        = string
-  # ASSUMPTION (unconfirmed): ADR-0009 says 'the smallest viable instance sizes
-  # are correct here' for an association receiving dozens of reports a year, and
-  # db.t4g.micro is the smallest Graviton class RDS PostgreSQL offers.
+  # DECIDED: db.t4g.micro. ADR-0009 says 'the smallest viable instance sizes are
+  # correct here' for an association receiving dozens of reports a year, and this
+  # is the smallest Graviton class RDS PostgreSQL offers.
   default = "db.t4g.micro"
 }
 
@@ -106,9 +114,9 @@ variable "db_max_allocated_storage" {
 variable "db_backup_retention_days" {
   description = "Automated backup retention, in days."
   type        = number
-  # ASSUMPTION (unconfirmed): 7 days. Raw reports are retained indefinitely and
-  # are the record of a real accident, so this is the window in which an
-  # accidental deletion is recoverable. A safety officer may want longer.
+  # DECIDED: 7 days. Raw reports are retained indefinitely and are the record of a
+  # real accident, so this is the window in which an accidental deletion is
+  # recoverable by rolling back rather than by restoring a snapshot.
   default = 7
 
   validation {
@@ -120,9 +128,9 @@ variable "db_backup_retention_days" {
 variable "db_multi_az" {
   description = "Run a standby in a second availability zone."
   type        = bool
-  # ASSUMPTION (unconfirmed): off. It roughly doubles the RDS bill to shorten an
-  # outage of a system that receives dozens of reports a year, and a failed
-  # submission is retried by a pilot rather than lost.
+  # DECIDED: off. It roughly doubles the RDS bill to shorten an outage of a system
+  # that receives dozens of reports a year, and a failed submission is retried by
+  # a pilot rather than lost.
   default = false
 }
 
@@ -199,15 +207,23 @@ variable "log_retention_days" {
 }
 
 variable "alarm_email_addresses" {
-  description = "Addresses subscribed to the alarm topic. Empty means the topic exists and nothing is subscribed; the alarms still fire and are visible in CloudWatch."
+  description = "Addresses subscribed to the alarm topic. A role address, never a personal one."
   type        = list(string)
-  default     = []
+  # DECIDED: safety@hpac.ca — the single production address for this system, for
+  # operational alarms and for report notifications alike. A role address, so an
+  # alarm does not stop being read when one person leaves the safety committee.
+  #
+  # An email subscription is created PENDING CONFIRMATION and Terraform cannot
+  # complete it: AWS sends a confirmation link to the address and a human has to
+  # click it. Until someone does, the alarms fire, are visible in CloudWatch, and
+  # email nobody. That step is in docs/deployment.md's manual-steps table.
+  default = ["safety@hpac.ca"]
 }
 
 variable "summary_failed_alarm_threshold" {
   description = "SummaryFailed count within one period that raises the alarm."
   type        = number
-  # ASSUMPTION (unconfirmed): 1. A summarization failure means a real report is
+  # DECIDED: 1 in five minutes. A summarization failure means a real report is
   # sitting unprocessed, which is not a thing to average out over an hour.
   default = 1
 }
@@ -221,7 +237,7 @@ variable "summary_failed_alarm_period_seconds" {
 variable "outbox_age_alarm_seconds" {
   description = "Age of the oldest unprocessed outbox row that raises the alarm."
   type        = number
-  # ASSUMPTION (unconfirmed): 900s. A report waiting a quarter of an hour means
-  # the worker is wedged, not that it is busy.
+  # DECIDED: 900s, over two consecutive periods. A report waiting a quarter of an
+  # hour means the worker is wedged, not that it is busy.
   default = 900
 }

@@ -12,7 +12,7 @@ on GitHub-hosted runners.
 | `terraform.yml` | pull request, push to `main`, dispatch | The AWS environment itself, from `infra/` |
 | `deploy-api.yml` | CI success on `main`, dispatch | The API container, **and the database schema** |
 | `deploy-worker.yml` | CI success on `main`, dispatch | The Worker container |
-| `deploy-web.yml` | CI success on `main`, dispatch | The public and admin static sites, separately |
+| `deploy-web.yml` | CI success on `main`, dispatch | The website — public form and admin route, one bucket, one distribution |
 
 ## What this slice does not own
 

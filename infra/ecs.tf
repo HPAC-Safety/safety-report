@@ -148,10 +148,7 @@ resource "aws_ecs_service" "api" {
     ignore_changes = [task_definition, desired_count]
   }
 
-  depends_on = [
-    aws_lb_listener.https,
-    aws_lb_listener.http_only,
-  ]
+  depends_on = [aws_lb_listener.https]
 }
 
 # --------------------------------------------------------------------------

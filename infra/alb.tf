@@ -44,23 +44,17 @@ resource "aws_lb_target_group" "api" {
 # Listeners
 # --------------------------------------------------------------------------
 #
-# With a domain: 443 terminates TLS and 80 redirects to it. Without one: 80
-# forwards directly, because there is no certificate to attach and no hostname
-# to redirect to.
-#
-# The second case is NOT a production configuration — this system receives
-# names, phone numbers, and injury details over that port. It exists so the
-# module is applyable before HPAC's DNS administrator has published anything,
-# and the `api_domain` variable is the thing that closes it.
+# HTTPS only. Port 80 exists to redirect, and does nothing else — this service
+# receives names, phone numbers, and injury details, and there is no
+# configuration of this module in which any of that crosses the internet in
+# plaintext.
 
 resource "aws_lb_listener" "https" {
-  count = local.has_api_domain ? 1 : 0
-
   load_balancer_arn = aws_lb.api.arn
   port              = 443
   protocol          = "HTTPS"
   ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-  certificate_arn   = aws_acm_certificate_validation.api[0].certificate_arn
+  certificate_arn   = aws_acm_certificate_validation.api.certificate_arn
 
   default_action {
     type             = "forward"
@@ -69,8 +63,6 @@ resource "aws_lb_listener" "https" {
 }
 
 resource "aws_lb_listener" "http_redirect" {
-  count = local.has_api_domain ? 1 : 0
-
   load_balancer_arn = aws_lb.api.arn
   port              = 80
   protocol          = "HTTP"
@@ -83,18 +75,5 @@ resource "aws_lb_listener" "http_redirect" {
       protocol    = "HTTPS"
       status_code = "HTTP_301"
     }
-  }
-}
-
-resource "aws_lb_listener" "http_only" {
-  count = local.has_api_domain ? 0 : 1
-
-  load_balancer_arn = aws_lb.api.arn
-  port              = 80
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.api.arn
   }
 }

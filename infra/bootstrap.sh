@@ -9,8 +9,10 @@
 #   2. the hpac-safety-deploy IAM role, and the policy it carries
 #   3. the hpac-safety-plan role, which is how `terraform plan` runs on a pull
 #      request without the deploy role ever trusting a branch other than main
-#   4. the versioned, encrypted, private S3 bucket holding Terraform state
-#   5. the DynamoDB table Terraform uses to lock that state
+#   4. the versioned, encrypted, private S3 bucket holding Terraform state,
+#      which also holds the state lock - Terraform's S3 backend locks with a
+#      conditional PutObject of a .tflock object, so there is no separate lock
+#      table to create. See ADR-0031, which supersedes ADR-0010 on this.
 #
 # It is idempotent. Running it on an already-bootstrapped account converges the
 # existing resources onto the definitions below and changes nothing else, which
@@ -59,7 +61,6 @@ ROLE_NAME='hpac-safety-deploy'
 POLICY_NAME='hpac-safety-deploy'
 PLAN_ROLE_NAME='hpac-safety-plan'
 PLAN_POLICY_NAME='hpac-safety-plan'
-LOCK_TABLE='hpac-safety-tfstate-lock'
 # The state bucket name gets the account id appended below: S3 bucket names are
 # globally unique, so a fixed name would collide with any other account that ran
 # this script.
@@ -112,7 +113,7 @@ say ''
 # pinned thumbprint is a copy of somebody else's rotation schedule sitting in
 # our repository. Older CLI versions require the argument, so fall back once.
 
-say '1/5  GitHub OIDC identity provider'
+say '1/4  GitHub OIDC identity provider'
 if aws iam get-open-id-connect-provider --open-id-connect-provider-arn "$OIDC_ARN" >/dev/null 2>&1; then
   say '     already exists'
 else
@@ -144,7 +145,7 @@ fi
 # 2. The deploy role
 # --------------------------------------------------------------------------
 
-say '2/5  hpac-safety-deploy IAM role'
+say '2/4  hpac-safety-deploy IAM role'
 
 TRUST_POLICY=$(cat <<JSON
 {
@@ -214,17 +215,6 @@ DEPLOY_POLICY=$(cat <<JSON
       ]
     },
     {
-      "Sid": "TerraformLock",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:DeleteItem",
-        "dynamodb:DescribeTable"
-      ],
-      "Resource": "arn:aws:dynamodb:${REGION}:${ACCOUNT_ID}:table/${LOCK_TABLE}"
-    },
-    {
       "Sid": "ManageTheEnvironment",
       "Effect": "Allow",
       "Action": [
@@ -232,7 +222,6 @@ DEPLOY_POLICY=$(cat <<JSON
         "application-autoscaling:*",
         "cloudfront:*",
         "cloudwatch:*",
-        "dynamodb:*",
         "ec2:*",
         "ecr:*",
         "ecs:*",
@@ -375,7 +364,7 @@ fi
 # Fork pull requests never reach it at all: GitHub withholds secrets and issues a
 # read-only token for them, so the workflow has no role ARN to pass and skips.
 
-say '3/5  hpac-safety-plan IAM role (read-only, pull requests)'
+say '3/4  hpac-safety-plan IAM role (read-only, pull requests)'
 
 PLAN_TRUST_POLICY=$(cat <<JSON
 {
@@ -502,7 +491,7 @@ say '     ReadOnlyAccess and the denial policy attached'
 # Turnstile widget secret), which makes this bucket's access controls something
 # to verify rather than assume.
 
-say "4/5  Terraform state bucket ${STATE_BUCKET}"
+say "4/4  Terraform state bucket ${STATE_BUCKET}"
 
 if aws s3api head-bucket --bucket "$STATE_BUCKET" >/dev/null 2>&1; then
   say '     already exists'
@@ -555,30 +544,6 @@ aws s3api put-bucket-tagging \
 say '     versioning, encryption, public-access block, TLS-only policy applied'
 
 # --------------------------------------------------------------------------
-# 4. The state lock table
-# --------------------------------------------------------------------------
-#
-# On-demand billing: this table is read a few times per deploy and costs
-# effectively nothing at that rate, and provisioned capacity would be a number
-# to tune for no reason.
-
-say "5/5  state lock table ${LOCK_TABLE}"
-
-if aws dynamodb describe-table --table-name "$LOCK_TABLE" --region "$REGION" >/dev/null 2>&1; then
-  say '     already exists'
-else
-  aws dynamodb create-table \
-    --table-name "$LOCK_TABLE" \
-    --region "$REGION" \
-    --attribute-definitions 'AttributeName=LockID,AttributeType=S' \
-    --key-schema 'AttributeName=LockID,KeyType=HASH' \
-    --billing-mode PAY_PER_REQUEST \
-    --tags "Key=${TAG_KEY},Value=${TAG_VALUE}" >/dev/null
-  aws dynamodb wait table-exists --table-name "$LOCK_TABLE" --region "$REGION"
-  say '     created'
-fi
-
-# --------------------------------------------------------------------------
 # Done
 # --------------------------------------------------------------------------
 
@@ -592,7 +557,8 @@ say "  gh variable set TF_STATE_BUCKET --repo ${GITHUB_ORG}/${GITHUB_REPO} --bod
 say ''
 say "infra/backend.tf is a partial configuration: the bucket name carries the account"
 say "id, so it is supplied at init time from TF_STATE_BUCKET rather than committed."
-say "The key, region, and lock table ${LOCK_TABLE} are fixed in that file."
+say 'The key and region are fixed in that file, and the state lock is an object in'
+say 'this same bucket rather than a table in another service.'
 say ''
 
 # The one thing on stdout: the deploy role ARN, so the script stays pipeable.

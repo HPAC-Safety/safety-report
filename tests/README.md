@@ -8,7 +8,7 @@
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
-| `js/` | `node --test` — i18n, api-client, form logic |
+| `js/` | `node --test` — the coverage gate, i18n, api-client, form logic |
 | `e2e/` | Playwright — submit → summarize → review → approve, both locales |
 
 ## The one that matters most
@@ -24,7 +24,7 @@ Add a fixture **before** changing a redaction rule.
 ```bash
 dotnet test                              # all .NET suites — needs Docker
 dotnet test --filter "Category!=Integration"   # no Docker daemon
-node --test tests/js                     # JavaScript units
+node --test $(find tests/js -name '*.test.mjs')   # JavaScript units
 npx playwright test                      # E2E (needs the stack running)
 ```
 

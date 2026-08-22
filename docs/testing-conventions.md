@@ -114,11 +114,36 @@ Two checks, both in the `coverage` CI job:
 | Check | Rule |
 |---|---|
 | Floor | 80% line, 70% branch |
-| Ratchet | Must not be below `main`'s, within 0.1pp |
+| Ratchet | Must not dilute coverage — see the two modes below |
 
 The floor stops the number sinking over years. The ratchet stops one pull
 request adding a large body of untested code while staying just above the floor.
 Neither works alone.
+
+### The ratchet has two modes
+
+Comparing whole-repository percentages only means something when both sides are
+roughly the same size. A branch that adds a subsystem to a small codebase moves
+the ratio on its own, and a scaffolding baseline sits at a perfect score it can
+only lose. So the gate picks its comparison:
+
+```mermaid
+flowchart TD
+    start["ratchet"] --> grew{"added lines ≥<br/>max(50, 25% of baseline)?"}
+    grew -->|no| ratio["ratio against main,<br/>within 0.1pp"]
+    grew -->|yes| new["coverage of the added lines<br/>and branches, against the floors"]
+```
+
+Every deletion and every ordinary change takes the ratio path, so dropping a test
+suite still fails. A branch that grows the codebase materially is judged on what
+it added — "the 450 lines this branch adds are 20.00% covered" — and the pull
+request comment says which mode ran. See
+[ADR-0017](decisions/ADR-0017-ratchet-judges-added-code.md).
+
+**Neither mode is a reason to delete a defensive guard.** An invariant check that
+no test can reach through the public API is doing its job; the floors have room
+for a few of them. If you find yourself removing a `throw` to move a percentage,
+stop — that is the failure this gate exists to prevent, not a way to satisfy it.
 
 ```bash
 dotnet test HpacSafety.slnx --collect:"XPlat Code Coverage" \

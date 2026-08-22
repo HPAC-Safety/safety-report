@@ -70,10 +70,15 @@ jobs:
       - name: dotnet test
         run: dotnet test HpacSafety.slnx --configuration Release
 
+      # The suite is passed as an explicit file list rather than as a
+      # directory: `node --test tests/js` resolves the path as a module and
+      # fails with MODULE_NOT_FOUND on the pinned Node.
       - name: node --test
         run: |
-          if [ -d tests/js ] && find tests/js -name '*.test.mjs' -o -name '*.test.js' | grep -q .; then
-            node --test tests/js
+          suite=$(find tests/js -name '*.test.mjs' -o -name '*.test.js' 2>/dev/null)
+          if [ -n "$suite" ]; then
+            # shellcheck disable=SC2086
+            node --test $suite
           else
             echo "::notice::No JavaScript test suite yet — added by #8. Skipping."
           fi
@@ -112,11 +117,13 @@ jobs:
 
       - name: Collect JavaScript coverage
         run: |
-          if [ -d tests/js ] && find tests/js -name '*.test.mjs' -o -name '*.test.js' | grep -q .; then
+          suite=$(find tests/js -name '*.test.mjs' -o -name '*.test.js' 2>/dev/null)
+          if [ -n "$suite" ]; then
             mkdir -p ./artifacts/coverage/js
+            # shellcheck disable=SC2086
             node --test --experimental-test-coverage \
               --test-reporter=lcov --test-reporter-destination=./artifacts/coverage/js/lcov.info \
-              tests/js
+              $suite
           else
             echo "::notice::No JavaScript test suite yet - added by #8. The merge below picks it up automatically once tests/js exists."
           fi

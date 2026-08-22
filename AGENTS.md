@@ -37,6 +37,10 @@ If an instruction appears to require it, stop and raise the conflict.
    there is no model-to-class lookup table. See `docs/aircraft-classification.md`.
 3. **Nothing is published without human approval.** There is no code path from
    report submission to publication that does not pass through a safety officer.
+   **Publication consent is answered explicitly or not at all** — the consent
+   question is required, has no pre-selected answer, and `Report.ConsentPublish`
+   is `bool?` so that unanswered is never mistaken for no. An unreadable consent
+   answer is an error, never a quiet no.
 4. **Raw reports are never translated and never leave the system.** Only the
    already-anonymized summary is sent to a translation service.
 5. **Member credentials are never persisted, logged, cached, or included in an
@@ -123,6 +127,10 @@ Full detail: `docs/testing-conventions.md`.
   `locales/en-CA.json` and reference it.
 - English is the source of truth; French is generated in CI and reviewed by a
   human. Never hand-edit `locales/fr-CA.json`.
+- That applies to **UI chrome**. Question wording is content, authored in the
+  admin UI, stored per locale in the database, and translated at authoring time
+  through `ITranslator` — in both directions, from whichever language the author
+  was working in. `docs/localization.md` has the split.
 - Terms in `locales/glossary.json` are pinned and must not be machine-translated.
 - Domain values are stored as invariant codes and localized only at the edge.
 
@@ -135,6 +143,48 @@ assets that ship with the worker and are sent to the model when a real report
 arrives. Redaction rules live in `prompts/`, versioned, because they are part of
 the request — not instructions for you. Bump the version rather than editing in
 place. See `prompts/README.md`.
+
+### Domain-driven design, and test-first
+
+Two preferences that shape almost every pull request here.
+
+**Model the domain, then wire it up.** `HpacSafety.Core` is the domain and it
+depends on nothing. Aggregates enforce their own invariants — `Report` decides
+whether it may be published, `Question` decides whether it may be deleted — so a
+caller cannot reach a forbidden state by forgetting a check. Primitives that
+carry rules become value objects (`Locale`, not `string`). Anything that reaches
+outside is a port declared here and implemented in `Infrastructure`. Depth:
+the [`ddd`](.claude/skills/ddd/SKILL.md) skill.
+
+**Write the test first.** Red, then green, then tidy. A test you never watched
+fail has not been shown to test anything. This matters more here than in most
+codebases: the assertions are what stop a real person being identified, and a
+test written after the fact tends to assert what the code does rather than what
+the rule says. Depth: the
+[`test-driven-development`](.claude/skills/test-driven-development/SKILL.md)
+skill.
+
+Neither is ceremony to perform on the way past. If a rule in this file conflicts
+with either skill, this file wins — see the note in `Skillfile`.
+
+### The question set is data
+
+The form is rows in `questions`, not properties on a class: an administrator
+adds, rewords, retypes, reorders, and removes questions without a deploy. When
+writing anything that touches the form, hold on to three things:
+
+- **An answer references a question *version*.** Rewording a question must never
+  change what an already-given answer appears to mean.
+- **`consent_publish` is the only system question.** Everything else — injury,
+  date, province, aircraft — is ordinary data that can be deleted. Logic finds
+  those answers through an optional `QuestionRole`, and a missing role is a
+  defined state (unknown severity, ordinary review path), never a zero.
+- **Question wording lives in the database, not in `locales/`**, and is
+  auto-translated at authoring time in both directions. `locales/` still owns
+  every piece of UI chrome, and the no-hardcoded-strings rule below is unchanged.
+
+See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
+[`incident-domain-model`](skills/incident-domain-model/SKILL.md) skill.
 
 ### Code
 
@@ -239,12 +289,54 @@ describes it is worse than no README, because it is believed.
   the body is the only mechanism, and the `linked-issue` CI check is what
   enforces it. `See #123` and `Related to #123` do not close anything. If there
   is no issue behind the change, open one first.
+- **A pull request is not finished when it is opened. It is finished when CI is
+  green.** Wait for every check to complete, read the result, and fix whatever
+  failed — in that pull request, before handing it over. A red check is the work,
+  not a notification about the work.
+
+  ```mermaid
+  flowchart LR
+      open["PR opened"] --> wait["wait for every check"]
+      wait --> q{"all green?"}
+      q -->|no| fix["read the log,<br/>fix the cause"]
+      fix --> push["push to the same branch"]
+      push --> wait
+      q -->|yes| done["hand it over"]
+  ```
+
+  Watch them with `gh pr checks <number> --watch`. Three rules about what to do
+  with a failure:
+
+  - **Fix the cause, never the check.** Lowering the coverage floor, deleting the
+    assertion, deleting a defensive guard to move a percentage, or marking a test
+    skipped is not a fix. If a gate is genuinely wrong — as the coverage ratchet
+    was in [ADR-0017](docs/decisions/ADR-0017-ratchet-judges-added-code.md) — say
+    so, open an issue for it, and change it deliberately with an ADR. Never
+    quietly.
+  - **A failure that looks unrelated is still yours.** Flaky, pre-existing, or
+    "someone else's" — investigate before assuming. Re-running a job to see if it
+    passes the second time is a diagnosis only if you then explain why it was
+    flaky.
+  - **Report the state honestly.** "Opened, checks running" and "opened, `web` is
+    failing and here is why" are both fine. "Done" while a check is red is not.
+
 - Squash merge only. Write the PR title as the commit message you want. The body
   becomes the squash commit message, which is why the closing keyword works.
 - Do not create a `CODEOWNERS` file — see `CONTRIBUTING.md` for why.
-- Skills are managed by `skillfile`. Edit the source under `skills/`, then run
-  `skillfile install`. Do not edit `.claude/skills/` — it is generated and
-  gitignored.
+- **Look for an existing skill before writing one.** Run
+  `skillfile search "<topic>"` and read the candidates. A maintained upstream
+  skill beats a local one: it is broader, someone else keeps it current, and it
+  does not become this repository's problem. Author a local skill only for
+  knowledge that is *specific to HPAC* — the anonymization rules, the aircraft
+  vocabulary, this domain — and say in the pull request what you searched for and
+  why nothing fitted. Where upstream guidance conflicts with this file, this file
+  wins.
+- Skills are managed by `skillfile`. Add upstream ones with
+  `skillfile add github skill owner/repo skills/<name>`; edit local sources under
+  `skills/` and run `skillfile install`. Commit `Skillfile` and `Skillfile.lock`.
+  Do not edit `.claude/skills/` — it is generated and gitignored. The
+  [`using-agent-skills`](.claude/skills/using-agent-skills/SKILL.md) skill covers
+  discovering and invoking what is installed.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
 - **A tool version is pinned in exactly one file, and `init-dev.sh` reads it
@@ -283,9 +375,9 @@ describes it is worse than no README, because it is believed.
 
 ## Current state
 
-The repository is scaffolding and documentation. The solution builds and the
-test suite runs, but the projects are empty — there is deliberately no feature
-logic yet.
+The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
+holds the entities, enums, interfaces, and the data-driven question bank, with
+unit tests; `Infrastructure`, `Api`, and `Worker` are still empty.
 
 CI runs on every pull request and on merge to `main`, and its checks are
 required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with

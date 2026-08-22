@@ -82,8 +82,16 @@
 		{
 			"groupName": "Analyzers",
 			"matchPackageNames": [
-				"coverlet.collector",
+				"Microsoft.CodeAnalysis.BannedApiAnalyzers",
 				"Roslynator.Analyzers"
+			]
+		},
+		{
+			"description": "The coverage toolchain, matching its ItemGroup in Directory.Packages.props. reportgenerator lives in .config/dotnet-tools.json but belongs with the collector it consumes.",
+			"groupName": "Coverage",
+			"matchPackageNames": [
+				"coverlet.collector",
+				"dotnet-reportgenerator-globaltool"
 			]
 		},
 		{
@@ -115,7 +123,8 @@
 			"matchPackageNames": [
 				"/^Microsoft\\./",
 				"/^System\\./",
-				"!/^Microsoft\\.EntityFrameworkCore/"
+				"!/^Microsoft\\.EntityFrameworkCore/",
+				"!/^Microsoft\\.CodeAnalysis/"
 			]
 		},
 		{

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	Coverage collection settings. Applied by passing the `settings` option to
+	`dotnet test`, alongside `collect:"XPlat Code Coverage"`.
+
+	The exclusions are not cosmetic. Without them the API measures 4.8% line
+	coverage while Program.cs is at 100%, because the OpenApi source generator
+	emits ~440 lines of XML-comment support into obj/ that no test will ever
+	execute. A gate reading that number would be measuring the SDK, not us.
+
+	See docs/testing-conventions.md and ADR-0014.
+-->
+<RunSettings>
+	<DataCollectionRunSettings>
+		<DataCollectors>
+			<DataCollector friendlyName="XPlat Code Coverage">
+				<Configuration>
+					<Format>cobertura</Format>
+					<!-- Generated code: source generators, designer files, and
+					     EF Core migrations. All are authored by a tool, and a
+					     test that exercised them would be testing the tool. -->
+					<ExcludeByFile>**/obj/**/*.cs,**/*.g.cs,**/*.designer.cs,**/Migrations/*.cs</ExcludeByFile>
+					<ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+					<!-- Test projects measure the code under test, not themselves. -->
+					<Exclude>[*.Tests]*</Exclude>
+					<SkipAutoProps>true</SkipAutoProps>
+					<DeterministicReport>false</DeterministicReport>
+				</Configuration>
+			</DataCollector>
+		</DataCollectors>
+	</DataCollectionRunSettings>
+</RunSettings>

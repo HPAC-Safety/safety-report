@@ -65,32 +65,142 @@ jobs:
 
   coverage:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Reading the baseline artifact from main's last green run.
+      actions: read
+      # Posting the summary comment. Fork pull requests get a read-only token,
+      # so the comment step is skipped for them - see the step's condition.
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
 
-      - name: Collect coverage
+      - name: Restore tools
+        run: dotnet tool restore
+
+      # coverlet.runsettings excludes generated code. Without it the API reports
+      # 4.8% while Program.cs is at 100%, because the OpenApi source generator
+      # emits ~440 lines into obj/ that no test will ever run.
+      - name: Collect .NET coverage
         run: >
           dotnet test HpacSafety.slnx
           --configuration Release
           --collect:"XPlat Code Coverage"
+          --settings coverlet.runsettings
           --results-directory ./artifacts/coverage
 
-      # The threshold gate and the ratchet against main are #5. This job
-      # collects and publishes today so that #5 is a matter of adding the
-      # comparison, not of building the plumbing.
-      - name: Report
+      - name: Collect JavaScript coverage
         run: |
-          echo "::notice::Coverage thresholds are not enforced yet — gate added by #5."
-          find ./artifacts/coverage -name 'coverage.cobertura.xml' -print
+          if [ -d tests/js ] && find tests/js -name '*.test.mjs' -o -name '*.test.js' | grep -q .; then
+            mkdir -p ./artifacts/coverage/js
+            node --test --experimental-test-coverage \
+              --test-reporter=lcov --test-reporter-destination=./artifacts/coverage/js/lcov.info \
+              tests/js
+          else
+            echo "::notice::No JavaScript test suite yet - added by #8. The merge below picks it up automatically once tests/js exists."
+          fi
+
+      # ReportGenerator merges every Cobertura and lcov file it finds into one
+      # report, so the JS half needs no wiring here beyond producing lcov.
+      - name: Merge into one report
+        run: >
+          dotnet tool run reportgenerator
+          "-reports:./artifacts/coverage/**/coverage.cobertura.xml;./artifacts/coverage/**/lcov.info"
+          "-targetdir:./artifacts/report"
+          "-reporttypes:Cobertura;MarkdownSummaryGithub;HtmlInline"
+
+      # The ratchet compares against main's last green run rather than
+      # recomputing it, which would double this job's time and re-run the
+      # Testcontainers suite for a number that is already known. See ADR-0014.
+      - name: Fetch the main baseline
+        id: baseline
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          run_id=$(gh run list --workflow CI --branch main --status success \
+            --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+
+          if [ -z "${run_id:-}" ]; then
+            echo "::notice::No successful CI run on main yet. The ratchet will not run; the floor still applies."
+            echo "path=none" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if gh run download "$run_id" --name coverage-report --dir ./artifacts/baseline 2>/dev/null \
+            && [ -f ./artifacts/baseline/Cobertura.xml ]; then
+            echo "Baseline from main run $run_id."
+            echo "path=./artifacts/baseline/Cobertura.xml" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::main run $run_id has no coverage-report artifact - it predates this job, or the artifact expired. Ratchet skipped; the floor still applies."
+            echo "path=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Gate
+        id: gate
+        run: >
+          node tools/coverage-gate.mjs
+          --report ./artifacts/report/Cobertura.xml
+          --baseline "${{ steps.baseline.outputs.path || 'none' }}"
+          --min-line 80
+          --min-branch 70
+
+      # The detailed per-file table, always, so a failure is diagnosable from
+      # the run page without downloading anything.
+      - name: Detail in the job summary
+        if: always()
+        run: |
+          if [ -f ./artifacts/report/SummaryGithub.md ]; then
+            {
+              echo ""
+              echo "<details><summary>Per-assembly detail</summary>"
+              echo ""
+              cat ./artifacts/report/SummaryGithub.md
+              echo ""
+              echo "</details>"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      # Skipped on fork pull requests, whose token cannot write. The job summary
+      # above carries the same information, so nothing is lost - a failing gate
+      # is still fully diagnosable from the run page.
+      - name: Comment on the pull request
+        if: >-
+          always() &&
+          github.event_name == 'pull_request' &&
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -uo pipefail
+          {
+            echo "<!-- coverage-gate -->"
+            node tools/coverage-gate.mjs \
+              --report ./artifacts/report/Cobertura.xml \
+              --baseline "${{ steps.baseline.outputs.path || 'none' }}" \
+              --min-line 80 --min-branch 70 2>&1 || true
+          } > comment.md
+
+          # --edit-last keeps one comment that updates, rather than a new one on
+          # every push. --create-if-none covers the first run on a pull request.
+          gh pr comment "${{ github.event.pull_request.number }}" \
+            --body-file comment.md --edit-last --create-if-none
 
       - uses: actions/upload-artifact@v5
         if: always()
         with:
-          name: coverage-cobertura
-          path: ./artifacts/coverage/**/coverage.cobertura.xml
+          name: coverage-report
+          path: |
+            ./artifacts/report/Cobertura.xml
+            ./artifacts/report/SummaryGithub.md
+            ./artifacts/report/*.html
           if-no-files-found: warn
 
   web:

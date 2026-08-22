@@ -74,18 +74,27 @@ it belongs in an operational process — with a record of who added whom — rat
 than in a migration in a public repository. No migration in this repository will
 ever contain a real name or a real address.
 
-### The French wording is seeded machine-translated and unreviewed
+### The French wording is seeded machine-translated, and says so
 
-`docs/form-spec.md` is English. A question cannot be activated with a missing
-counterpart (ADR-0016), so a clean database with English-only wording would
-render an empty form. Every seeded question therefore carries a French
-counterpart with `is_source = false` and `is_machine_translated = true` — the
-state ADR-0016 already defines as "acceptable to render, reviewed by nobody".
+`docs/form-spec.md` is English, because Typeform held one language. A clean
+database has to ask the form in **both**, so every seeded question carries a
+French counterpart with `is_source = false` and `is_machine_translated = true` —
+the state ADR-0016 already defines as "renders, reviewed by nobody".
 
-**This is flagged rather than assumed settled.** The French seed text has not
-been reviewed by a francophone, and the rows say so. Reviewing it is content
-work for HPAC, and the mechanism for doing it — editing a translation by hand
-clears `is_machine_translated` — already exists.
+`is_source` records which language the wording was authored in, not which one
+matters. The French rows are not a lesser copy of the English ones; they are the
+French half of a bilingual question set that happens to have been written down
+in English first.
+
+The flag is a mapped column, not a comment, so the admin UI in #49 can list
+every piece of unreviewed wording and a safety officer can work through it.
+`ReviseByHand` clears it, which is how reviewed French becomes reviewed French.
+`SeededQuestionBankTests` asserts both halves of that: the French rows are
+marked machine-translated, and they are findable by that mark alone.
+
+The risk this accepts is a **quality** one — wording that reads as translated
+until somebody improves it. It is not a privacy one: no reporter's data passes
+through it, and nothing here reaches a published summary.
 
 ## Consequences
 
@@ -125,14 +134,29 @@ over a guard that already fails closed.
 addresses do not go into a public repository, and an allowlist that changes
 needs a process rather than a migration.
 
-**Leaving the French wording out and seeding the questions inactive.** Honest
-about what has not been reviewed, and it produces a clean database whose form is
-empty. Rejected in favour of seeding the counterpart and marking it unreviewed,
-which is the state the domain already models.
+**Leaving the French wording out and seeding the questions inactive until a
+francophone has reviewed it.** The most honest-looking option: nothing claims to
+be French that nobody has read.
+
+Rejected, and worth saying why at length, because it is the option that sounds
+most careful:
+
+- A question cannot be activated with a missing counterpart (ADR-0016), so this
+  produces a clean database whose form asks **nothing at all** — in either
+  language. "Careful about French" would have cost the English form too.
+- It would block the end-to-end journey in #27, which runs submit → summarize →
+  review → approve in both locales. A suite that cannot run in French is a suite
+  that stops noticing French regressions.
+- It treats French as the optional half. This application has no optional half —
+  see `AGENTS.md`, "Both languages are first-class".
+- The domain already models exactly this situation. `is_machine_translated` says
+  "renders, reviewed by nobody", and hiding the wording instead of marking it
+  discards information a reviewer needs.
 
 ## Related
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md), [ADR-0019](ADR-0019-application-side-field-encryption.md)
 - `docs/form-spec.md`, `docs/localization.md`, `docs/data-handling.md`
+- `AGENTS.md`, "Both languages are first-class"
 - `src/HpacSafety.Infrastructure/Persistence/README.md`
-- Issue #7
+- Issues #7, #27, #49

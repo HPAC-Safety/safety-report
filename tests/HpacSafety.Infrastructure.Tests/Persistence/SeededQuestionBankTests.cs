@@ -73,6 +73,50 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Given_a_clean_database_When_a_reviewer_looks_for_wording_nobody_has_read_Then_every_unreviewed_row_is_findable()
+    {
+        // Given — the admin UI in #49 works through this list. A flag that
+        // cannot be queried is a comment, and a comment is not a work queue.
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        await using var context = PostgresFixture.ContextFor(connectionString);
+
+        // When
+        var unreviewed = await context.QuestionTranslations
+            .Where(t => t.IsMachineTranslated)
+            .Select(t => t.Locale)
+            .Distinct()
+            .ToListAsync();
+
+        var unreviewedOptions = await context.QuestionOptionTranslations
+            .CountAsync(t => t.IsMachineTranslated);
+
+        // Then — all of it is French, and all of the French is there.
+        unreviewed.ShouldBe([Locale.FrCa]);
+        unreviewedOptions.ShouldBe(QuestionBankSeed.Questions.Sum(q => q.Options.Count));
+    }
+
+    [Fact]
+    public async Task Given_seeded_wording_nobody_has_read_When_a_reviewer_rewrites_it_Then_it_stops_being_marked_unreviewed()
+    {
+        // Given
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        await using var context = PostgresFixture.ContextFor(connectionString);
+        var province = (await LoadedQuestionsAsync(context)).Single(q => q.Key == "province");
+        var french = province.CurrentVersion.Translation(Locale.FrCa)!;
+
+        // When
+        french.ReviseByHand("Province de l'événement :", french.HelpText, french.Placeholder, At);
+        await context.SaveChangesAsync();
+
+        // Then
+        await using var reader = PostgresFixture.ContextFor(connectionString);
+        var reread = await reader.QuestionTranslations.SingleAsync(t => t.Id == french.Id);
+        reread.IsMachineTranslated.ShouldBeFalse();
+        reread.Label.ShouldBe("Province de l'événement :");
+        reread.IsSource.ShouldBeFalse();
+    }
+
+    [Fact]
     public async Task Given_a_clean_database_When_a_question_with_choices_is_loaded_Then_its_options_carry_both_languages_in_order()
     {
         // Given

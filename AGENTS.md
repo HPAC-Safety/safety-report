@@ -120,6 +120,45 @@ ASCII boxes do neither.
 
 Full detail: `docs/testing-conventions.md`.
 
+### Both languages are first-class
+
+**English and French are two halves of this application, not a language and its
+translation.** HPAC is a national association; a francophone pilot reporting a
+crash is not using a localized version of an English system, they are using the
+system. Nothing here is allowed to treat one language as the real one and the
+other as a follow-up.
+
+That is a rule with consequences, not a sentiment. What it already means in this
+codebase:
+
+- **Question wording is stored per locale, and neither locale is primary.**
+  `is_source` records which language a human authored first — it does not mark
+  the canonical one, and no logic may read it as though it did. See
+  [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md).
+- **A question cannot be activated while its counterpart is missing**, so a
+  half-translated form never reaches a reporter. A machine-translated
+  counterpart is acceptable and is marked as such; an absent one is not.
+  ADR-0016 again.
+- **A summary is an EN/FR pair, and a safety officer approves the pair.**
+  `Report.IsPublishable` requires an approved summary in *every* locale.
+  Approving one does not implicitly approve the other, and there is no path that
+  publishes one language while the other waits. See
+  [ADR-0004](docs/decisions/ADR-0004-human-review-required.md).
+- **The deterministic scrub works in both languages**, with no language in which
+  stage one degrades. A redaction rule that fires only on English text is a
+  defect in the scrub, not a French limitation — that gap was real and was
+  closed in #58.
+- **The end-to-end journey runs in both locales** (#27). A suite that only
+  exercises English is a suite that stops noticing French regressions.
+- **Seeded and generated French is marked, never hidden.** Unreviewed wording
+  carries `is_machine_translated` so a reviewer can find it; the answer to "this
+  French has not been read by a person" is to flag it, never to withhold the
+  French and leave the form English-only. See
+  [ADR-0020](docs/decisions/ADR-0020-seeding-by-migration.md).
+
+When a change makes one language work and leaves the other for later, that is
+not a smaller version of the change. It is an incomplete one.
+
 ### Localization
 
 - **No hardcoded user-facing strings anywhere.** Not in the admin UI, not in an

@@ -66,6 +66,17 @@ as reproducible as the Terraform it enables.
 - Terraform creates Secrets Manager **entries**, never their **values**. A value
   in a `.tfvars` file ends up in state, and state is a file in S3 readable by
   more people than should see an API key.
+- **One deliberate exception:** `cloudflare_turnstile_widget` exposes the
+  widget's secret as an attribute, so managing the widget in Terraform puts that
+  secret in state. It is accepted because a leaked Turnstile secret is contained
+  — it verifies tokens for one widget, and grants no spend and no data access —
+  and because the alternative is creating the widget by hand and losing
+  idempotency. It is also the concrete reason the state bucket's encryption and
+  access restrictions must be verified rather than assumed.
+- Terraform also manages Cloudflare, sharing the same state and the same
+  plan-on-PR workflow. Cloudflare has no OIDC equivalent, so it needs a
+  long-lived API token — scoped to Turnstile Edit on one account, with no zone
+  permissions, so it cannot touch DNS if it leaks.
 - Some AWS-side steps stay manual because they need a human or another
   organisation: account creation, SES production access, and DNS records on
   `hpac.ca`. These are listed in the bootstrap issue and should be started early,

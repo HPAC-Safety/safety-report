@@ -46,7 +46,7 @@
 	</ItemGroup>
 	<ItemGroup Label="xunit">
 		<PackageVersion Include="xunit" Version="2.9.3" />
-		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="4.0.0" />
 	</ItemGroup>
 	<!--
 		Families expected as the system is built, listed here so they land in the

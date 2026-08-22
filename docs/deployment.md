@@ -152,6 +152,13 @@ The check is a composite action, [`.github/actions/require-config`](../.github/a
 shared by all three workflows. It began as three near-identical copies of a
 shell function, and they had already drifted.
 
+Its manifest contains **no `${{ … }}` expression of any kind**, including inside
+a description. GitHub template-evaluates an action manifest in full, the
+`secrets` context does not exist at that point, and a worked example in a
+description string was enough to make the whole action fail to load — see
+[#36](https://github.com/HPAC-Safety/safety-report/issues/36). CI exercises the
+action on every pull request so the manifest cannot break unnoticed again.
+
 ## Runtime secrets do not belong in GitHub
 
 This is the distinction most easily got wrong. The application needs these

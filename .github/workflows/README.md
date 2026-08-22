@@ -91,6 +91,22 @@ ordering rule, and the rollback path are in
 [`docs/deployment.md`](../../docs/deployment.md). Read that before changing any
 of these files.
 
+## The deploy blind spot
+
+The deploy workflows never run on a pull request. That is deliberate — they
+trigger on a push to `main` — but it means **nothing reachable only from a
+deploy workflow is exercised before it merges.** A local action, a script, a
+manifest: an error in any of them surfaces on `main` or not at all.
+
+That is how [#36](https://github.com/HPAC-Safety/safety-report/issues/36) got
+in. `actionlint` validates workflow files but not `action.yml` manifests, and no
+pull request ever loaded the one that was broken.
+
+CI's `agent-config` job therefore invokes `require-config` with dummy values, so
+its manifest is parsed on every pull request. **Anything new that only the deploy
+workflows use needs the same treatment** — a cheap exercise in CI, not a promise
+to be careful.
+
 ## Changing a workflow
 
 ```bash

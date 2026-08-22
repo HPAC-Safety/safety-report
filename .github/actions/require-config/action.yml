@@ -3,14 +3,17 @@ description: >
   Fail with a clear, named error when a deploy-time secret or variable is
   missing, instead of failing deep inside an AWS CLI call with an opaque one.
 
+# No expression syntax anywhere in this file, not even inside a description.
+# GitHub template-evaluates a manifest in full, and the `secrets` context does
+# not exist at that point - a worked example in a description string is enough
+# to make the whole action fail to load. See issue #36.
+
 inputs:
   secrets:
-    description: |
-      Newline-separated NAME=value pairs, e.g.
-
-        AWS_DEPLOY_ROLE_ARN=${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-
-      Only the NAME is ever printed. Values are masked by Actions in any case.
+    description: >
+      Newline-separated NAME=value pairs, one per line, where the caller
+      interpolates each value from the secrets context. Only the NAME is ever
+      printed; Actions masks the value in any case.
     required: false
     default: ''
   variables:

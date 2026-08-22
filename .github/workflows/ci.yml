@@ -173,6 +173,20 @@ jobs:
           skillfile install
           skillfile status
 
+      # The deploy workflows never run on a pull request - by design, they
+      # trigger on a push to main. So nothing exercises a local action they
+      # depend on until it is already merged, and a manifest error surfaces on
+      # main or not at all. That is how #36 got in. Loading the action here
+      # parses its manifest on every pull request.
+      - name: Local composite actions load
+        uses: ./.github/actions/require-config
+        with:
+          secrets: |
+            EXERCISE_SECRET=present
+          variables: |
+            EXERCISE_VARIABLE=present
+          context: 'This is a CI self-test of the action, not a real deploy.'
+
       # .claude/skills and .claude/agents are gitignored. If `skillfile install`
       # ever starts writing tracked files, that is drift worth failing on.
       - name: No drift from installing skills

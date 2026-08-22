@@ -268,6 +268,47 @@ public class AircraftClassifierTests
     }
 
     [Fact]
+    public void Given_a_speedwing_that_carries_an_EN_class_When_it_is_resolved_Then_the_class_is_kept_with_the_marker()
+    {
+        // Given
+        const string answer = "speed wing, EN A";
+
+        // When
+        var classification = _classifier.Classify(answer, Discipline.Speedflying);
+
+        // Then
+        classification.Class.ShouldBe(AircraftClass.EnA);
+        classification.Markers.ShouldBe(AircraftMarker.Speedwing);
+        classification.Codes.ShouldBe(["speedwing", "en_a"]);
+    }
+
+    [Theory]
+    [InlineData("ENB low", AircraftClass.LowEnB)]
+    [InlineData("enc", AircraftClass.EnC)]
+    public void Given_the_class_written_without_a_separator_When_it_is_resolved_Then_it_still_normalizes(
+        string answer, AircraftClass expected)
+    {
+        // Given / When
+        var classification = _classifier.Classify(answer, Discipline.Paragliding);
+
+        // Then
+        classification.Class.ShouldBe(expected);
+    }
+
+    [Fact]
+    public void Given_an_answer_naming_two_different_classes_When_it_is_resolved_Then_neither_is_chosen()
+    {
+        // Given
+        const string answer = "EN A or EN C, cant remember";
+
+        // When
+        var classification = _classifier.Classify(answer, Discipline.Paragliding);
+
+        // Then
+        classification.Class.ShouldBe(AircraftClass.NotDetermined);
+    }
+
+    [Fact]
     public void Given_an_undetermined_classification_When_its_codes_are_read_Then_it_says_so_rather_than_being_empty()
     {
         // Given / When

@@ -16,10 +16,6 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <param name="Markers">Qualifiers carried alongside the class.</param>
 public sealed record AircraftClassification(AircraftClass Class, AircraftMarker Markers = AircraftMarker.None)
 {
-    /// <summary>Nothing in the answer normalized to the vocabulary.</summary>
-    public static AircraftClassification Undetermined { get; } =
-        new(AircraftClass.NotDetermined, AircraftMarker.None);
-
     /// <summary>Whether a class was determined at all.</summary>
     public bool IsDetermined => Class != AircraftClass.NotDetermined;
 

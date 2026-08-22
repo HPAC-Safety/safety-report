@@ -1,0 +1,77 @@
+# ADR-0010 — Terraform, with a scripted one-time bootstrap
+
+**Status:** Accepted
+
+## Context
+
+Hosting is AWS (ADR-0009). The environment should be reproducible and set up by
+running a build rather than by following a click-path, so that a second
+environment — or a rebuild after a mistake — is not an archaeology exercise.
+
+There is one irreducible constraint: **a workflow cannot create the thing that
+lets it authenticate.** The GitHub OIDC provider, the deploy role, and the
+Terraform state backend must exist before any CI run can reach AWS at all.
+
+## Decision
+
+**Terraform**, in `infra/`, run from GitHub Actions.
+
+- `terraform plan` on pull requests, posted as a PR comment
+- `terraform apply` on merge to `main`, behind a `production` environment with a
+  required reviewer
+- State in S3 with a DynamoDB lock table
+
+**A committed, idempotent `infra/bootstrap.sh`** creates the OIDC provider, the
+deploy role, and the state backend. An administrator runs it once, against their
+own SSO session.
+
+## Why Terraform
+
+`terraform plan` posted on a pull request is a readable diff of exactly what will
+change in AWS, before it changes. On a system holding personal information about
+real accidents, that review artifact is worth more than any other property of
+the tooling.
+
+CDK in C# was the close alternative and would have kept one language across the
+repository, but `cdk diff` is noticeably noisier to review, and CDK's own
+bootstrap stack adds a second bootstrap concept on top of the one this design
+already requires.
+
+CloudFormation was rejected for verbosity and weak drift handling.
+Console-and-a-runbook was rejected because nothing is idempotent or reviewable,
+and the documentation starts drifting from reality on day one.
+
+## Why bootstrap locally rather than from a workflow
+
+The alternative was putting a temporary admin access key in GitHub secrets,
+running a bootstrap workflow, then revoking it. That would automate the last 10
+minutes of manual work at the cost of creating a long-lived admin credential and
+placing it in a secret store.
+
+Running a committed script against an administrator's existing session achieves
+the same result with **no long-lived AWS credential ever existing** — not
+during bootstrap, not after. The script is idempotent and re-runnable, so it is
+as reproducible as the Terraform it enables.
+
+## Consequences
+
+- One manual step, roughly ten minutes, once per environment. Everything after
+  it is a build.
+- `terraform apply` on an unchanged repository must be a no-op. If it is not,
+  something drifted.
+- **Nothing is created by hand after bootstrap.** A console click Terraform does
+  not know about becomes drift, and drift makes the plan untrustworthy — at
+  which point people stop reading it, and the review artifact this decision was
+  made for is lost.
+- Terraform creates Secrets Manager **entries**, never their **values**. A value
+  in a `.tfvars` file ends up in state, and state is a file in S3 readable by
+  more people than should see an API key.
+- Some AWS-side steps stay manual because they need a human or another
+  organisation: account creation, SES production access, and DNS records on
+  `hpac.ca`. These are listed in the bootstrap issue and should be started early,
+  since they take days rather than minutes.
+
+## Related
+
+- `docs/decisions/ADR-0009-hosting-on-aws.md`
+- `docs/data-handling.md`

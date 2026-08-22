@@ -96,6 +96,7 @@ Details in [`docs/localization.md`](docs/localization.md).
 | Local dev | Docker Compose |
 | Hosting | AWS `ca-central-1` — ECS Fargate, RDS, S3 + CloudFront, SES |
 | Deploys | GitHub Actions via OIDC role assumption; no stored AWS keys |
+| Infrastructure | Terraform in `infra/`, planned on PRs and applied on merge |
 
 Storage and email still sit behind `IBlobStore` and `IEmailSender`, so local
 development runs on the filesystem and a logging mailer without touching AWS.

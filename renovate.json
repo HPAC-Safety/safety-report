@@ -52,7 +52,7 @@
 			]
 		},
 		{
-			"description": "Approve non-major updates. Automerge stays off until CI exists (see the CI issue) - with no required checks, auto-merge has nothing to wait for and would merge instantly.",
+			"description": "Approve non-major updates but do not automerge yet. platformAutomerge holds a PR until the REQUIRED status checks pass, and the ruleset that makes them required is applied by hand after the CI pull request merges. Turning automerge on in the same commit as CI would leave a window in which a Renovate PR has nothing to wait for. Flipped to true in a follow-up, after the ruleset is applied - see ADR-0011.",
 			"matchUpdateTypes": [
 				"minor",
 				"patch"

@@ -97,6 +97,7 @@ Details in [`docs/localization.md`](docs/localization.md).
 | Hosting | AWS `ca-central-1` — ECS Fargate, RDS, S3 + CloudFront, SES |
 | Deploys | GitHub Actions via OIDC role assumption; no stored AWS keys |
 | Infrastructure | Terraform in `infra/`, planned on PRs and applied on merge |
+| CI | GitHub Actions — `build`, `test`, `coverage`, `web`, `e2e`, `agent-config`, `i18n`, `linked-issue`, all required |
 
 Storage and email still sit behind `IBlobStore` and `IEmailSender`, so local
 development runs on the filesystem and a logging mailer without touching AWS.
@@ -206,6 +207,8 @@ and every tool gets the same setup.
 | Colours and type | [`docs/design-system.md`](docs/design-system.md) |
 | Strings and translation | [`docs/localization.md`](docs/localization.md) |
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |
+| Deployment and secrets | [`docs/deployment.md`](docs/deployment.md) |
+| CI and deploy workflows | [`.github/workflows/README.md`](.github/workflows/README.md) |
 | Why things are the way they are | [`docs/decisions/`](docs/decisions/) |
 
 ## Roadmap

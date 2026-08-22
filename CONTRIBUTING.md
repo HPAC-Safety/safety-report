@@ -13,9 +13,14 @@ the invariants there are the reason this system exists.
 2. Branch: `area/short-description` (e.g. `worker/outbox-backoff`).
 3. Open a pull request. `main` is protected and every change needs one approving
    review from a repository administrator.
-4. **Squash merge only.** The PR title becomes the commit message, so write it
+4. **Put `Closes #123` in the pull request body.** The `linked-issue` check
+   fails without it. GitHub closes an issue on merge only when a closing keyword
+   appears in the body or the commit message — `See #123` does nothing. Because
+   the repository squashes with the body as the commit message, the body is the
+   one place that reliably works.
+5. **Squash merge only.** The PR title becomes the commit message, so write it
    as one.
-5. No `Co-Authored-By` trailers.
+6. No `Co-Authored-By` trailers.
 
 ## Approvals
 
@@ -43,6 +48,10 @@ These are enforced in CI, so knowing them saves a round trip:
   the body.
 - **No hardcoded user-facing strings.** Add a key to `locales/en-CA.json` —
   including in the admin UI, error messages, and `aria-label`s.
+- **SOLID, and a named Gang of Four pattern where one fits.** `Core` depends on
+  nothing; vendor SDKs cross the boundary through an adapter; retry and logging
+  are decorators. A pattern that abstracts a variation which does not exist is a
+  layer, not a pattern — if you cannot say what varies, write the plain code.
 - **Never hand-edit a generated file.** See the table in
   [`docs/agent-workflow.md`](docs/agent-workflow.md).
 

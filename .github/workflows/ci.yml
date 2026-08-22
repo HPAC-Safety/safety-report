@@ -1,0 +1,212 @@
+name: CI
+
+# Public repository. Fork pull requests run here, so this workflow uses
+# `pull_request` and NEVER `pull_request_target` — the latter would run
+# fork-authored code with a write token and repository secrets in scope.
+#
+# No job below reads a secret. Anything that needs one (the Anthropic client,
+# for instance) runs against recorded fixtures instead. Keep it that way.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  # Job ids are the status-check contexts named in docs/github-ruleset.json.
+  # Renaming a job renames the context and silently drops it from the required
+  # set — the ruleset keeps waiting on a name nothing reports.
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - run: dotnet restore HpacSafety.slnx
+      # Directory.Build.props sets TreatWarningsAsErrors, so a warning already
+      # fails. --warnaserror is belt and braces for anything outside that scope.
+      - run: dotnet build HpacSafety.slnx --configuration Release --no-restore --warnaserror
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: dotnet test
+        run: dotnet test HpacSafety.slnx --configuration Release
+
+      - name: node --test
+        run: |
+          if [ -d tests/js ] && find tests/js -name '*.test.mjs' -o -name '*.test.js' | grep -q .; then
+            node --test tests/js
+          else
+            echo "::notice::No JavaScript test suite yet — added by #8. Skipping."
+          fi
+
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - name: Collect coverage
+        run: >
+          dotnet test HpacSafety.slnx
+          --configuration Release
+          --collect:"XPlat Code Coverage"
+          --results-directory ./artifacts/coverage
+
+      # The threshold gate and the ratchet against main are #5. This job
+      # collects and publishes today so that #5 is a matter of adding the
+      # comparison, not of building the plumbing.
+      - name: Report
+        run: |
+          echo "::notice::Coverage thresholds are not enforced yet — gate added by #5."
+          find ./artifacts/coverage -name 'coverage.cobertura.xml' -print
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: coverage-cobertura
+          path: ./artifacts/coverage/**/coverage.cobertura.xml
+          if-no-files-found: warn
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Build stylesheet
+        run: |
+          if [ ! -x tools/build-css.sh ]; then
+            echo "::notice::tools/build-css.sh does not exist yet — added by #10. Skipping."
+            exit 0
+          fi
+          ./tools/build-css.sh
+          test -s src/web/styles/site.css
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Playwright
+        run: |
+          if [ ! -f tests/e2e/package.json ]; then
+            echo "::notice::No end-to-end suite yet — added by #26. Skipping."
+            exit 0
+          fi
+          npm --prefix tests/e2e ci
+          npx --prefix tests/e2e playwright install --with-deps chromium
+          npm --prefix tests/e2e test
+
+  agent-config:
+    runs-on: ubuntu-latest
+    steps:
+      # Symlinks only survive checkout when core.symlinks is on; it is by
+      # default on Linux runners. If that ever changes this job is what notices.
+      - uses: actions/checkout@v6
+
+      - name: Agent instruction symlinks resolve to AGENTS.md
+        run: |
+          set -euo pipefail
+          canonical=$(readlink -f AGENTS.md)
+          fail=0
+          for link in CLAUDE.md .github/copilot-instructions.md .cursor/rules/agents.mdc; do
+            if [ ! -L "$link" ]; then
+              echo "::error file=$link::Not a symlink. It must point at AGENTS.md."
+              fail=1
+              continue
+            fi
+            target=$(readlink -f "$link" || true)
+            if [ "$target" != "$canonical" ]; then
+              echo "::error file=$link::Resolves to '${target:-<broken>}', expected '$canonical'."
+              fail=1
+            fi
+          done
+          exit $fail
+
+      - name: Install skillfile
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release download v1.9.1 \
+            --repo eljulians/skillfile \
+            --pattern skillfile-x86_64-linux \
+            --output "$RUNNER_TEMP/skillfile"
+          chmod +x "$RUNNER_TEMP/skillfile"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+
+      - name: Skillfile validates and installs from the lock
+        run: |
+          set -euo pipefail
+          skillfile validate
+          skillfile install
+          skillfile status
+
+      # .claude/skills and .claude/agents are gitignored. If `skillfile install`
+      # ever starts writing tracked files, that is drift worth failing on.
+      - name: No drift from installing skills
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::skillfile install modified tracked files:"
+            git status --porcelain
+            exit 1
+          fi
+
+  i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+
+      - name: Locale key parity
+        run: |
+          if [ ! -f locales/en-CA.json ]; then
+            echo "::notice::No locale files yet — added by #7. Skipping."
+            exit 0
+          fi
+          if [ ! -f tools/check-locales.mjs ]; then
+            echo "::error::locales/en-CA.json exists but tools/check-locales.mjs does not. See #8."
+            exit 1
+          fi
+          node tools/check-locales.mjs
+
+      - name: No hardcoded user-facing strings
+        run: |
+          if [ ! -f tools/check-hardcoded-strings.mjs ]; then
+            echo "::notice::Hardcoded-string lint not written yet — added by #8. Skipping."
+            exit 0
+          fi
+          node tools/check-hardcoded-strings.mjs

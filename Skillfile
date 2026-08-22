@@ -18,6 +18,8 @@ install  claude-code  local
 local  skill  aircraft-classification      skills/aircraft-classification/SKILL.md
 local  skill  incident-domain-model        skills/incident-domain-model/SKILL.md
 local  skill  hpac-safety-conventions      skills/hpac-safety-conventions/SKILL.md
+local  skill  solid-principles             skills/solid-principles/SKILL.md
+local  skill  gang-of-four-patterns        skills/gang-of-four-patterns/SKILL.md
 local  agent  anonymization-auditor        agents/anonymization-auditor.md
 
 # --- upstream ---

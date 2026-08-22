@@ -1,0 +1,173 @@
+name: Deploy API
+
+# SCAFFOLD. The infrastructure this deploys to does not exist yet — it is built
+# by #32 (AWS bootstrap) and #30 (live deployment). Everything below is wired
+# except the AWS calls, which are commented out and marked TODO(#30).
+#
+# Runs only after CI has gone green on main. Never deploy a red build.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Image tag to deploy. Defaults to the current commit SHA. Set this to roll back.'
+        required: false
+        type: string
+
+# id-token is what makes OIDC role assumption possible. There is no
+# AWS_ACCESS_KEY_ID or AWS_SECRET_ACCESS_KEY anywhere in this repository.
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  # github.sha on a workflow_run trigger is the tip of the default branch at run
+  # time, NOT the commit CI tested. Using it would tag an image with a sha it was
+  # not built from the moment a second merge lands between CI finishing and this
+  # workflow starting — which breaks tag-based rollback silently. head_sha is the
+  # commit CI tested, and is what the checkout below uses.
+  IMAGE_TAG: ${{ inputs.image_tag || github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Required GitHub configuration
+  #
+  # Secrets (deploy-time only):
+  #   AWS_DEPLOY_ROLE_ARN         Role assumed via OIDC. The only credential
+  #                               GitHub holds, and useless without the trust
+  #                               policy, which must be scoped to this
+  #                               repository and to ref:refs/heads/main.
+  #
+  # Variables (ARNs and names are not credentials):
+  #   AWS_REGION                  ca-central-1
+  #   ECR_REPOSITORY_API          Image repository
+  #   ECS_CLUSTER                 Deploy target cluster
+  #   ECS_SERVICE_API             Deploy target service
+  #   ECS_TASK_DEFINITION_MIGRATE Task definition that runs EF Core migrations
+  #   ECS_SUBNETS                 Comma-separated subnet ids for the migrate task
+  #   ECS_SECURITY_GROUPS         Comma-separated security group ids
+  #
+  # Runtime secrets — ANTHROPIC_API_KEY, TURNSTILE_SECRET_KEY,
+  # ConnectionStrings__Default, Notifications__To — are NOT here. They live in
+  # AWS Secrets Manager and are injected into the task definition. Putting them
+  # in GitHub would spread them for no reason. See docs/deployment.md.
+  # ---------------------------------------------------------------------------
+  preflight:
+    # Three conditions, not one. `branches: [main]` above filters on the
+    # triggering run's head_branch, and a pull_request-triggered CI run reports
+    # its head_branch as the PR's source branch — so the filter alone is doing
+    # load-bearing work whose exact semantics are not worth betting an ECR push
+    # on. These are explicit and cheap:
+    #   event == push        only a merge to main, never a PR run or a dispatch
+    #   head_branch == main  belt and braces on the filter above
+    #   conclusion == success  never deploy a red build
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    steps:
+      # Needed because require-config is a local composite action.
+      - uses: actions/checkout@v6
+
+      # ECS_TASK_DEFINITION_MIGRATE, ECS_SUBNETS, and ECS_SECURITY_GROUPS belong
+      # here even though only `migrate` reads them. The whole point of preflight
+      # is that a missing value fails by name, before anything is built — not
+      # deep inside an `aws ecs run-task` call two jobs later.
+      - uses: ./.github/actions/require-config
+        with:
+          secrets: |
+            AWS_DEPLOY_ROLE_ARN=${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          variables: |
+            AWS_REGION=${{ vars.AWS_REGION }}
+            ECR_REPOSITORY_API=${{ vars.ECR_REPOSITORY_API }}
+            ECS_CLUSTER=${{ vars.ECS_CLUSTER }}
+            ECS_SERVICE_API=${{ vars.ECS_SERVICE_API }}
+            ECS_TASK_DEFINITION_MIGRATE=${{ vars.ECS_TASK_DEFINITION_MIGRATE }}
+            ECS_SUBNETS=${{ vars.ECS_SUBNETS }}
+            ECS_SECURITY_GROUPS=${{ vars.ECS_SECURITY_GROUPS }}
+
+      - run: echo "Deploying $IMAGE_TAG to ${{ vars.ECS_SERVICE_API }} on ${{ vars.ECS_CLUSTER }}."
+
+  image:
+    needs: preflight
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v3
+
+      # .NET 10 publishes an OCI image directly. No Dockerfile to keep in sync.
+      - name: Publish container
+        run: >
+          dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj
+          --configuration Release
+          /t:PublishContainer
+          -p:ContainerRegistry=${{ steps.ecr.outputs.registry }}
+          -p:ContainerRepository=${{ vars.ECR_REPOSITORY_API }}
+          -p:ContainerImageTag=${{ env.IMAGE_TAG }}
+
+  # Migrations are their own job with an explicit dependency edge, and they run
+  # BEFORE the new task set takes traffic. Never at application startup — that
+  # races the moment more than one task boots.
+  migrate:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Run EF Core migrations
+        run: |
+          echo "::error::TODO(#30): run the migration task and wait for it to exit 0."
+          echo "Shape:"
+          echo "  aws ecs run-task --cluster \$ECS_CLUSTER \\"
+          echo "    --task-definition \$ECS_TASK_DEFINITION_MIGRATE \\"
+          echo "    --launch-type FARGATE --network-configuration ... \\"
+          echo "    --overrides '{\"containerOverrides\":[{\"name\":\"migrate\",\"command\":[\"--migrate\"]}]}'"
+          echo "  then poll describe-tasks until STOPPED and assert exit code 0."
+          exit 1
+
+  deploy:
+    needs: migrate
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Roll the service
+        run: |
+          echo "::error::TODO(#30): update the service to the new image and wait for stability."
+          echo "Shape:"
+          echo "  aws ecs update-service --cluster \$ECS_CLUSTER --service \$ECS_SERVICE_API --force-new-deployment"
+          echo "  aws ecs wait services-stable --cluster \$ECS_CLUSTER --services \$ECS_SERVICE_API"
+          echo ""
+          echo "Rollback: re-run this workflow via workflow_dispatch with image_tag"
+          echo "set to the previous commit SHA. No commit required."
+          exit 1

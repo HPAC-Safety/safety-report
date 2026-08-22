@@ -1,0 +1,35 @@
+# Build output
+bin/
+obj/
+*.user
+*.suo
+artifacts/
+TestResults/
+coverage/
+*.coverage
+*.cobertura.xml
+
+# Node
+node_modules/
+.playwright/
+playwright-report/
+test-results/
+
+# Generated CSS + downloaded tooling
+src/web/styles/site.css
+tools/tailwindcss
+
+# Installed and cached by `skillfile install` — reproduced from Skillfile.lock,
+# never committed. See CONTRIBUTING.md.
+.claude/skills/
+.claude/agents/
+.skillfile/cache/
+
+# Secrets and local config
+.env
+.env.local
+appsettings.Development.local.json
+
+# OS
+.DS_Store
+Thumbs.db

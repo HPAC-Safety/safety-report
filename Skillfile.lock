@@ -1,0 +1,18 @@
+{
+  "github/skill/csharp-async": {
+    "sha": "83561bd7d8a46fcda0581aedabdf8eac7cb196b6",
+    "raw_url": "https://api.github.com/repos/github/awesome-copilot/contents/skills/csharp-async?ref=83561bd7d8a46fcda0581aedabdf8eac7cb196b6"
+  },
+  "github/skill/csharp-xunit": {
+    "sha": "83561bd7d8a46fcda0581aedabdf8eac7cb196b6",
+    "raw_url": "https://api.github.com/repos/github/awesome-copilot/contents/skills/csharp-xunit?ref=83561bd7d8a46fcda0581aedabdf8eac7cb196b6"
+  },
+  "github/skill/dotnet-best-practices": {
+    "sha": "83561bd7d8a46fcda0581aedabdf8eac7cb196b6",
+    "raw_url": "https://api.github.com/repos/github/awesome-copilot/contents/skills/dotnet-best-practices?ref=83561bd7d8a46fcda0581aedabdf8eac7cb196b6"
+  },
+  "github/skill/dotnet-design-pattern-review": {
+    "sha": "83561bd7d8a46fcda0581aedabdf8eac7cb196b6",
+    "raw_url": "https://api.github.com/repos/github/awesome-copilot/contents/skills/dotnet-design-pattern-review?ref=83561bd7d8a46fcda0581aedabdf8eac7cb196b6"
+  }
+}

@@ -1,0 +1,29 @@
+# HPAC safety-report — skills and agents.
+#
+# Skills are managed declaratively so every contributor and every agent tool
+# gets the same setup from `skillfile install`. The installed copies land in
+# .claude/ and are gitignored — Skillfile.lock reproduces them exactly.
+#
+# Docs: https://github.com/eljulians/skillfile
+
+install  claude-code  local
+
+# --- authored in this repo (source of truth lives under skills/ and agents/) ---
+# Note: the redaction rules are deliberately NOT a skill. They are runtime
+# assets under prompts/, shipped with the worker and sent to the model when a
+# report arrives — not instructions for the agent writing this codebase.
+# See prompts/README.md.
+# Names are explicit: every source file is called SKILL.md, so without a name
+# they would all infer the same one and overwrite each other on install.
+local  skill  aircraft-classification      skills/aircraft-classification/SKILL.md
+local  skill  incident-domain-model        skills/incident-domain-model/SKILL.md
+local  skill  hpac-safety-conventions      skills/hpac-safety-conventions/SKILL.md
+local  agent  anonymization-auditor        agents/anonymization-auditor.md
+
+# --- upstream ---
+# Where upstream guidance conflicts with AGENTS.md, AGENTS.md wins. In
+# particular csharp-xunit demonstrates Assert.*; this repository uses Shouldly.
+github  skill  github/awesome-copilot  skills/dotnet-best-practices
+github  skill  github/awesome-copilot  skills/dotnet-design-pattern-review
+github  skill  github/awesome-copilot  skills/csharp-async
+github  skill  github/awesome-copilot  skills/csharp-xunit

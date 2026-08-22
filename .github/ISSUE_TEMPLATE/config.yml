@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security or privacy disclosure
+    url: https://github.com/HPAC-Safety/safety-report/security/advisories/new
+    about: This system holds personal information about real accidents. Report privately, not in a public issue.
+  - name: HPAC safety committee
+    url: mailto:safety@hpac.ca
+    about: Questions about occurrence reporting itself, rather than this software.

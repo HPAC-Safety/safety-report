@@ -1,0 +1,42 @@
+name: Bug
+description: Something behaves incorrectly
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Do not paste the contents of a real occurrence report.** Those contain
+        personal information about a real accident. Reference the report ID.
+
+        For a security or privacy issue, follow `SECURITY.md` instead — please
+        do not open a public issue.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: [api, web, worker, infra, i18n, security, ci, unsure]
+    validations:
+      required: true
+  - type: dropdown
+    id: locale
+    attributes:
+      label: Locale
+      options: ["en-CA", "fr-CA", "both", "not applicable"]

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\HpacSafety.Core\HpacSafety.Core.csproj" />
+    <ProjectReference Include="..\HpacSafety.Infrastructure\HpacSafety.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

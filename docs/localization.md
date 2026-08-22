@@ -1,0 +1,135 @@
+# Localization
+
+HPAC is a national bilingual association. English (`en-CA`) and French (`fr-CA`)
+are both first-class here — the public form, the admin UI, API messages, emails,
+and published summaries.
+
+## Detection
+
+Client-side, in this order:
+
+1. `?lang=fr` / `?lang=en` — shareable links, and how the toggle works
+2. `localStorage` preference from a previous visit
+3. `navigator.languages` — any entry with primary subtag `fr` → `fr-CA`
+4. Otherwise `en-CA`
+
+English is the fallback for every unmatched locale. A visible EN / FR toggle sits
+in the header regardless: detection is a convenience, never a trap. `<html lang>`
+is set to the resolved locale.
+
+The API resolves culture from `Accept-Language` via
+`RequestLocalizationMiddleware` and returns already-localized messages, so the
+client never re-derives them.
+
+## No hardcoded user-facing strings
+
+Every string a person can read comes from the locale files. Public form, admin
+UI, validation errors, email subjects and bodies, `<title>`, meta descriptions,
+`aria-label`s, empty and loading and error states. No exceptions, and no "it's
+just the admin screen".
+
+```
+locales/
+  en-CA.json       # source of truth: form.*, admin.*, api.errors.*, email.*, common.*
+  fr-CA.json       # GENERATED — never hand-edit
+  glossary.json    # pinned terms, never machine-translated
+  fr-CA.meta.json  # per-key translation provenance
+```
+
+One shared set, consumed by **both** the web apps and the API. The .NET side
+loads them through a JSON `IStringLocalizer` — JSON rather than `.resx` so there
+is exactly one format and the tooling has one input.
+
+Domain values (injury severity, aircraft class, report status) are stored as
+stable invariant codes and localized only at the edge. The same row has to
+render in both languages; display text never goes in the database.
+
+A CI lint fails the build on user-facing literals outside the locale files.
+
+## Translation happens in CI
+
+```mermaid
+flowchart TD
+    A["push to main"] --> B["hash-diff en-CA.json<br/>against fr-CA.meta.json"]
+    B --> C{"new or changed keys?"}
+    C -->|no| D["exit 0"]
+    C -->|yes| E["drop keys pinned in glossary.json"]
+    E --> F["one batched GitHub Models call"]
+    F --> G["merge into fr-CA.json,<br/>stamp fr-CA.meta.json"]
+    G --> H["open PR"]
+    H --> I["human reviews the French"]
+```
+
+**Provider: GitHub Models**, free tier. The job declares
+`permissions: models: read` and the runner's built-in `GITHUB_TOKEN` already
+carries that scope — no API key, no vendor, no secret to rotate. Free limits are
+around 10 requests/minute; irrelevant when every new key is batched into one
+request per run.
+
+Runtime never calls a translation service: no per-visit latency, no per-view
+cost, no third-party request from a reporter's browser, and the French is
+reviewable in a diff like any other change.
+
+**Change detection is a content hash per key**, not a timestamp and not a
+whole-file diff. An English edit re-translates exactly that key; untouched keys
+are never re-sent, so the French does not churn and review stays small.
+
+**It opens a PR rather than pushing to `main`.** That is not a workaround for the
+ruleset — a human should read the French before it ships. On pull requests CI
+only *verifies* parity and fails on drift; it never generates, because fork PRs
+carry a read-only token and untrusted code must not trigger inference or write
+locale files.
+
+Alternatives, if the free tier ever proves too tight: `actions/ai-inference@v3`
+(Copilot CLI, needs a Copilot seat — not free), DeepL (best raw FR quality, adds
+a key), Amazon Translate (sensible if AWS is confirmed).
+
+## The glossary is not machine-translated
+
+Pinned in `locales/glossary.json` and never overwritten by the translator:
+
+- The injury severity scale — "Serious injury (secondary medical aid)" is close
+  to a defined term, not a phrase
+- Rating names: P1–P4, H1–H4, instructor and tandem ratings
+- Aircraft certification classes
+- The publication-consent question
+
+These need HPAC's own official French wording, ideally taken from the existing
+French Typeform. This is the one translation decision a machine must not make.
+
+## Reports and summaries
+
+**The raw report is never translated.** It stays as the reporter wrote it — it is
+evidence, and a translated account of a crash is a paraphrased account of a
+crash.
+
+`reports.language` records the locale it was written in. The summarizer
+summarizes **in that language**, then the summary is translated into the other,
+so both versions exist for every report:
+
+```mermaid
+flowchart LR
+    fr["submitted in French<br/>reports.language = fr-CA"] --> sfr["summary fr-CA<br/>is_source"]
+    sfr --> sen["summary en-CA<br/>translated_from"]
+    en["submitted in English<br/>reports.language = en-CA"] --> sen2["summary en-CA<br/>is_source"]
+    sen2 --> sfr2["summary fr-CA<br/>translated_from"]
+```
+
+The translation gets its own PII audit — a model producing fluent French can
+reintroduce a detail the scrub removed. A safety officer approves the pair, side
+by side; approving one does not approve the other.
+
+Note the split: the UI-string job runs inside GitHub Actions where `GITHUB_TOKEN`
+grants free Models access. The worker runs in production where no such token
+exists, so it translates through the Anthropic client it already holds. One
+`ITranslator` interface, two registrations.
+
+## Formatting
+
+Dates (`fr-CA` uses `AAAA-MM-JJ`), the province list, and a 24-hour clock all
+follow the resolved locale.
+
+## Related
+
+- `docs/decisions/ADR-0007-localization.md`
+- `docs/anonymization-policy.md`

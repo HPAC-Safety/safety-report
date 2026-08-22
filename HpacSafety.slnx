@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HpacSafety.Api/HpacSafety.Api.csproj" />
+    <Project Path="src/HpacSafety.Core/HpacSafety.Core.csproj" />
+    <Project Path="src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj" />
+    <Project Path="src/HpacSafety.Worker/HpacSafety.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/HpacSafety.Anonymization.Tests/HpacSafety.Anonymization.Tests.csproj" />
+    <Project Path="tests/HpacSafety.Api.Tests/HpacSafety.Api.Tests.csproj" />
+    <Project Path="tests/HpacSafety.Core.Tests/HpacSafety.Core.Tests.csproj" />
+    <Project Path="tests/HpacSafety.Worker.Tests/HpacSafety.Worker.Tests.csproj" />
+  </Folder>
+</Solution>

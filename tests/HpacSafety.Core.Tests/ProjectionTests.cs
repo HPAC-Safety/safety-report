@@ -149,7 +149,7 @@ public class ProjectionTests
         // When
         report.Answer(question, "A broken riser", Now);
         report.AddAircraft(Discipline.HangGliding, "Wills Wing", "T3", "topless");
-        report.AddFile("raw/one", "video/mp4", 4096, Now);
+        report.AddFile("kJQP7kiw5Fk/original/clip.mp4", "video/mp4", 4096, Now);
         report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "A hang glider landed short.", "model", "v1", Now));
 
         // Then

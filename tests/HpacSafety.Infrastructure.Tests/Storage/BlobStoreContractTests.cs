@@ -75,12 +75,13 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         var slot = new MediaUploadSlot(Store);
 
         // When
-        var upload = await slot.CreateAsync(ReportId, "photo.jpg", MediaType.Jpeg, TimeSpan.FromMinutes(5), CancellationToken.None);
+        var upload = await slot.CreateAsync(ReportId, MediaType.Jpeg, TimeSpan.FromMinutes(5), CancellationToken.None);
         var accepted = await TryUploadAsync(upload.Url, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg.ContentType);
 
         // Then
         accepted.ShouldBeTrue();
-        upload.Key.Value.ShouldBe("quarantine/dQw4w9WgXcQ/photo.jpg");
+        upload.Key.Compartment.ShouldBe(MediaCompartment.Quarantine);
+        upload.Key.Value.ShouldStartWith("quarantine/dQw4w9WgXcQ/");
     }
 
     [Fact]

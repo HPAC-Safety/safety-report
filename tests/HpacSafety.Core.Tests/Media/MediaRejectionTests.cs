@@ -40,7 +40,7 @@ public class MediaRejectionTests
     {
         // Given
         var locale = JsonSerializer.Deserialize<Dictionary<string, string>>(
-            File.ReadAllText(Path.Combine(RepositoryRoot(), "locales", "en-CA.json")));
+            File.ReadAllText(Path.Combine(ReviewerLinkIsTheOnlyChokepointTests.RepositoryRoot(), "locales", "en-CA.json")));
         locale.ShouldNotBeNull();
 
         // When
@@ -53,17 +53,5 @@ public class MediaRejectionTests
         // Then
         // A reason with no English wording reaches a reporter as a raw key name.
         missing.ShouldBeEmpty();
-    }
-
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
     }
 }

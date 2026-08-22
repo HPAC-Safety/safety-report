@@ -187,6 +187,32 @@ raw client header — neither belongs in a message something downstream will log
 `docs/data-handling.md` says log identifiers, not content; an exception message
 is a log line that has not happened yet.
 
+### The chokepoints are enforced, not documented
+
+`ReviewerMediaLink` and `MediaUploadSlot` are the only things that pre-sign
+anything. `IBlobStore` is a public port with no guard of its own — it will sign a
+GET for a report's unstripped original as readily as for its derivative — so
+"only these two call it" is a rule an architecture test enforces by walking
+`src/` and failing on any other call site. Convention is not enforcement, and the
+next contributor has not read this ADR.
+
+### File names are minted, never carried
+
+A camera roll name is Restricted data in its own right: `mt-7-tandem-dave.jpg`
+names a site and a person, which is exactly the small-community identifiability
+problem `docs/anonymization-policy.md` describes. A key reaches bucket access
+logs, CloudTrail, and every pre-signed URL. `MediaUploadSlot` mints a random
+name in the tiny-id alphabet and there is no parameter to pass one through, so
+this cannot be got wrong by forgetting.
+
+### The persisted row fails closed too
+
+`MediaIngestOutcome` is transient; `ReportFile` is what an admin UI projects
+from. So `ReportFile.ViewableKey` throws while `AwaitsStripping` rather than
+exposing the original, `AwaitsStripping` checks the key *and* the timestamp, and
+`RecordStripped` refuses a key outside the stripped compartment. A guarantee
+proven only on the transient type holds until the first page is written.
+
 ### The API is guarded against growing a blob route
 
 `NoBlobIsServedDirectlyTests` walks the live route table and fails if a route

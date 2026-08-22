@@ -230,6 +230,14 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   an explicit state, and a file with no derivative fails closed rather than
   falling through to the original.
   [ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
+- **Never carry a client-supplied file name into a stored key.** Mint it. A
+  camera roll name is Restricted data — it names sites and people — and a key
+  reaches access logs and every pre-signed URL. The same goes for any other
+  client string that would become part of a path.
+- **A rule that has one enforcement point gets a test that says so.** Where a
+  guarantee depends on everything going through a single type — `ReviewerMediaLink`
+  for read URLs, `MediaUploadSlot` for uploads — an architecture test fails the
+  build on any other call site. Documentation is not enforcement.
 - **A missing codec is a failure to start, never a silent refusal.** If a
   deployment accepts a format the runtime cannot decode, the process must not
   start. The alternative is every upload of that format being rejected as

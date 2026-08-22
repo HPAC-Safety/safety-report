@@ -64,7 +64,11 @@ quarantine/<report id>/<file>   unverified. Expires after 24 hours.
 ```
 
 Report ids are **tiny ids**: 11 characters of `A-Za-z0-9-_`, cryptographically
-random, encoding no timestamp.
+random, encoding no timestamp. **File names are minted the same way, never taken
+from the client.** A camera roll name is Restricted data in its own right —
+`mt-7-tandem-dave.jpg` names a site and a person — and a key ends up in bucket
+access logs, in CloudTrail, and in every pre-signed URL. The reporter's name for
+the file is of no use to this system, so it is not carried.
 
 Quarantine is the one deliberate departure from "report id first", and it is
 there because an S3 lifecycle filter matches a **literal** prefix — `*/quarantine/`
@@ -192,6 +196,9 @@ The same rule is what cleans up an upload for a report that was never submitted.
 | The declared content type is never believed | the sniffer chain, then `MediaPolicy` |
 | A refused upload is never promoted | `MediaIngestor`; `MediaIngestOutcome.OriginalKey` throws on a rejection |
 | A reviewer link can only ever name a derivative | `ReviewerMediaLink` refuses any compartment but `stripped` |
+| Only those two types pre-sign anything | an architecture test walks `src/` and fails on any other call site |
+| A persisted `ReportFile` fails closed too | `ReportFile.ViewableKey` throws while `AwaitsStripping`, which checks both the key and the timestamp |
+| No client-supplied file name reaches a key | `MediaUploadSlot` mints it; there is no parameter to pass one through |
 | A file with no derivative fails closed | `MediaIngestOutcome.DerivativeKey` throws rather than returning the original |
 | A missing image codec stops the process | `ImagingCapabilities.EnsureCanDecode`, at startup |
 | No client-supplied value reaches an exception message | `BlobKey`, `MediaType`, and `FileSystemBlobStore` all refuse without echoing the input |
@@ -207,6 +214,19 @@ mapped by `MediaRejection.LocalizationKeyFor` to a key under `upload.rejected.`
 in `locales/en-CA.json`. English and French are both first-class, so no rejection
 wording is written in `Core` or in `Infrastructure`. See
 [`localization.md`](localization.md).
+
+### What the API still has to enforce
+
+`MediaUploadSlot` takes a report id **on trust**. It is a capability check, not
+an identity check: it verifies the id's shape and that the URL can only write
+into that report's quarantine, and nothing more.
+
+**The route that calls it must establish that the caller owns that report
+first.** Nothing in the storage layer can do this, and the unguessable id is not
+a substitute — that is precisely the reliance this document disclaims above.
+This is a requirement on
+[#14](https://github.com/HPAC-Safety/safety-report/issues/14), written here so it
+is inherited rather than rediscovered.
 
 ### When the report id has to exist
 

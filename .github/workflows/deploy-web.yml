@@ -54,7 +54,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # Needed because require-config is a local composite action.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - uses: ./.github/actions/require-config
         with:
@@ -89,14 +89,14 @@ jobs:
           fi
 
       - if: steps.gate.outputs.run == 'true'
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - if: steps.gate.outputs.run == 'true'
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Build stylesheet
         if: steps.gate.outputs.run == 'true'
@@ -108,7 +108,7 @@ jobs:
           fi
 
       - if: steps.gate.outputs.run == 'true'
-        uses: aws-actions/configure-aws-credentials@v5
+        uses: aws-actions/configure-aws-credentials@v6
         with:
           role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}

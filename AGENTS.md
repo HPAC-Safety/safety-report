@@ -191,7 +191,8 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
 - .NET 10, file-scoped namespaces, nullable enabled, warnings as errors.
 - `HpacSafety.Core` depends on nothing. Infrastructure concerns — EF Core, HTTP
   clients, the Anthropic SDK — live in `HpacSafety.Infrastructure` behind
-  interfaces declared in `Core`.
+  interfaces declared in `Core`. That is a rule, not an example: see "Design"
+  below and [ADR-0033](docs/decisions/ADR-0033-third-party-libraries-behind-owned-abstractions.md).
 - Static HTML/JS for the UI. No SPA framework, no bundler.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
@@ -214,6 +215,33 @@ The corollary matters as much: **a pattern that abstracts a variation which does
 not exist is a layer, not a pattern.** If you cannot say what varies, write the
 plain code. And the invariants above are deliberately *closed* — never add an
 extension point that lets a caller opt out of the PII audit or of human review.
+
+**At a third-party boundary the variation is already named, and it is the
+vendor.** So the corollary does not apply there, and these two rules are read
+together, never one without the other:
+
+- **Inside the domain**, the corollary rules. One implementation, no named
+  variation, no interface. Write the plain code.
+- **At the edge of the process**, always a port. A third-party library is
+  reached through an interface declared in `HpacSafety.Core` and implemented by
+  an adapter in `HpacSafety.Infrastructure`, and **no call site outside that
+  adapter names the vendor type.** The purpose is swappability, and that purpose
+  is sufficient on its own — a second implementation need not exist or be
+  planned. The vendor's choices are not ours to keep.
+
+Scope: production dependencies that reach outside the process — SDK clients,
+HTTP clients, blob storage, image processing (Magick.NET included), translation
+providers, mail, authentication. **Not** test-only libraries — xunit, Shouldly,
+Testcontainers — and **not** the .NET BCL, which is the platform rather than a
+dependency. **Entity Framework Core is exempt**: `DbContext` and `DbSet` are
+already an abstraction over the data store, and a hand-rolled repository over
+them buys nothing while losing the `IQueryable` composition that is the reason
+to use EF at all. `Core` still references no EF packages.
+
+`IBlobStore`, `ITranslator`, `ISummarizer`, `IPiiAuditor`, `IAircraftClassifier`,
+`ITurnstileVerifier`, `IEmailSender`, and `IMemberAuthenticator` are the existing
+instances. See
+[ADR-0033](docs/decisions/ADR-0033-third-party-libraries-behind-owned-abstractions.md).
 
 ## Documentation is part of the work, not after it
 

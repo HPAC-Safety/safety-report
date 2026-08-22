@@ -39,7 +39,10 @@ public readonly record struct MediaType
     public static MediaType Parse(string? candidate) =>
         TryParse(candidate, out var type)
             ? type
-            : throw new DomainRuleViolationException($"'{candidate}' is not an accepted media type.");
+            // Not echoed: the declared content type is a raw client header, and
+            // a header is not something to interpolate into a message a log will
+            // later hold. The caller already knows what it passed.
+            : throw new DomainRuleViolationException("The declared content type is not one this system accepts.");
 
     /// <summary>
     /// Parses a content type without throwing. Parameters such as

@@ -22,7 +22,11 @@ public readonly record struct BlobKey
     public static BlobKey Parse(string? candidate) =>
         TryParse(candidate, out var key)
             ? key
-            : throw new DomainRuleViolationException($"'{candidate}' is not a valid blob key.");
+            // The candidate is deliberately not echoed. It is client-influenced,
+            // unbounded, may contain control characters, and encodes a report
+            // identifier - none of which belongs in an exception that something
+            // downstream will log.
+            : throw new DomainRuleViolationException("The value is not a valid blob key.");
 
     /// <summary>Parses a key without throwing.</summary>
     public static bool TryParse(string? candidate, out BlobKey key)
@@ -57,7 +61,7 @@ public readonly record struct BlobKey
 
         if (!IsValidSegment(prefix))
         {
-            throw new DomainRuleViolationException($"'{prefix}' is not a valid blob key prefix.");
+            throw new DomainRuleViolationException("The value is not a valid blob key prefix.");
         }
 
         return Parse($"{prefix}/{Value}");

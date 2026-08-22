@@ -21,9 +21,18 @@ public class NoBlobIsServedDirectlyTests : IClassFixture<WebApplicationFactory<P
 {
     // Substrings that name a route delivering bytes rather than JSON. A new route
     // that legitimately matches one of these is a conversation, not a rename.
+    //
+    // This is a tripwire, not a proof: a route could serve blob bytes under a
+    // name nobody listed. It is here because the cheapest moment to catch that
+    // is the pull request that adds it, and a reviewer who has to rename a route
+    // to get past this test has been asked the right question.
     private static readonly string[] BlobServingPatterns =
     [
         "blob",
+        "photo",
+        "image",
+        "thumbnail",
+        "preview",
         "media/content",
         "files/content",
         "download",

@@ -12,6 +12,9 @@ internal static class ExifFixtures
     /// <summary>The camera make written into the fixture, asserted absent from the derivative.</summary>
     public const string CameraMake = "HpacFixtureCamera";
 
+    /// <summary>The capture timestamp written into the fixture, asserted absent from the derivative.</summary>
+    public const string CapturedAt = "2026:08:22 12:34:56";
+
     /// <summary>A JPEG carrying GPS coordinates, a camera make, and a capture timestamp.</summary>
     public static byte[] JpegWithGpsExif()
     {
@@ -23,7 +26,7 @@ internal static class ExifFixtures
         exif.SetValue(ExifTag.GPSLongitudeRef, "W");
         exif.SetValue(ExifTag.GPSLongitude, [new Rational(150), new Rational(12), new Rational(9)]);
         exif.SetValue(ExifTag.Make, CameraMake);
-        exif.SetValue(ExifTag.DateTimeOriginal, "2026:08:22 12:34:56");
+        exif.SetValue(ExifTag.DateTimeOriginal, CapturedAt);
 
         image.SetProfile(exif);
         image.Format = MagickFormat.Jpeg;

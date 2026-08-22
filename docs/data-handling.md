@@ -78,6 +78,8 @@ the live route table.
 | Every URL expires within 15 minutes | `BlobUrlLifetime` in `Core`, called by both adapters |
 | The declared content type is never believed | `MagickNetMediaSniffer`, then `MediaPolicy` |
 | A refused upload produces no derivative | `MediaIngestor`; `MediaIngestOutcome.DerivativeKey` throws on a rejection |
+| A reviewer link can only ever name a derivative | `ReviewerMediaLink` refuses any key not under `stripped/`, including the original |
+| No client-supplied value reaches an exception message | `BlobKey`, `MediaType`, and `FileSystemBlobStore` all refuse without echoing the input |
 | Original bytes are retained untouched | asserted in the contract suite against MinIO and the filesystem |
 
 The development store signs its URLs exactly as S3 does, so the guarantee holds
@@ -99,6 +101,16 @@ decisions**:
   means adding a metadata-stripping step for it first.
 - **HEIC.** An iPhone's default camera format, and a common carrier of GPS.
   Browsers usually transcode on upload, but not always.
+
+### Refused uploads
+
+A file that fails validation is left where the browser put it. Nothing
+references it, no `report_files` row is written, and no derivative exists — but
+`IBlobStore` has no delete and this document's **Retention** section does not
+cover it. **What happens to a refused upload is an open question**: it is by
+definition the file this system decided it could not make safe, so a sweep for
+unreferenced originals is a reasonable tightening and, like the retention window
+above, a policy decision for HPAC rather than an engineering one.
 
 ### Size limit
 

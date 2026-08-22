@@ -29,6 +29,7 @@ Features/
                   PilotRating, TimeOfDay, Province,
                   MediaType, MediaPolicy, MediaValidation,
                   MediaRejectionReason, MediaIngestor, MediaIngestOutcome,
+                  ReviewerMediaLink,
                   ISummarizer, IPiiAuditor, IAircraftClassifier,
                   IPublicationChannel, IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
@@ -72,7 +73,10 @@ in — sniff, validate, strip, write — is what makes "a reviewer only ever see
 stripped bytes" true, and it is provable in a plain unit test with no bucket and
 no imaging library. `IMediaSniffer` and `IExifStripper` are ports;
 Magick.NET lives in `Infrastructure`. `BlobKey` is in the shared kernel because
-a key is attacker-influenced and must be parsed, never accepted as a string. See
+a key is attacker-influenced and must be parsed, never accepted as a string.
+`ReviewerMediaLink` is the only sanctioned way to mint a link to a photo: storage
+will sign a URL for any key, including the original, and this refuses everything
+that is not a stripped derivative. See
 [ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
 [ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 

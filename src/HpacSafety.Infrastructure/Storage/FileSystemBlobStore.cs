@@ -69,7 +69,10 @@ public sealed class FileSystemBlobStore : IBlobStore
 
         return File.Exists(path)
             ? Task.FromResult<Stream>(File.OpenRead(path))
-            : throw new FileNotFoundException("No blob is stored under that key.", key.Value);
+            // The key is not passed as FileNotFoundException.FileName: that
+            // property is appended to Message and ToString, which would put a
+            // report identifier into any log that catches this.
+            : throw new FileNotFoundException("No blob is stored under that key.");
     }
 
     /// <inheritdoc />

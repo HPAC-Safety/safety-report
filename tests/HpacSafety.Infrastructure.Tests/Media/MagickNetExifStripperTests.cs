@@ -1,3 +1,4 @@
+using System.Text;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Media;
 using ImageMagick;
@@ -44,6 +45,31 @@ public class MagickNetExifStripperTests
         stripped.Width.ShouldBe(64u);
         stripped.Height.ShouldBe(64u);
         stripped.Format.ShouldBe(MagickFormat.Jpeg);
+    }
+
+    [Fact]
+    public async Task Given_a_photo_with_GPS_EXIF_When_it_is_stripped_Then_the_APP1_segment_and_its_ascii_are_gone_from_the_bytes()
+    {
+        // Given
+        var original = ExifFixtures.JpegWithGpsExif();
+
+        // The same assertions run against the original first. A byte-level check
+        // that passes on both is a check that proves nothing, and that is exactly
+        // how a redaction test rots.
+        original.AsSpan().IndexOf("Exif\u0000\u0000"u8).ShouldBeGreaterThanOrEqualTo(0);
+        Encoding.ASCII.GetString(original).ShouldContain(ExifFixtures.CameraMake);
+        Encoding.ASCII.GetString(original).ShouldContain(ExifFixtures.CapturedAt);
+
+        // When
+        using var source = new MemoryStream(original);
+        using var destination = new MemoryStream();
+        await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+
+        // Then
+        var derivative = destination.ToArray();
+        derivative.AsSpan().IndexOf("Exif\u0000\u0000"u8).ShouldBe(-1);
+        Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
+        Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CapturedAt);
     }
 
     [Fact]

@@ -129,6 +129,15 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         using var source = new MemoryStream(original);
         await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
 
+        // The fixture really does carry a location. Without this the assertions
+        // below would pass just as happily on a photo that never had one, which
+        // is the failure mode that makes a redaction test worthless.
+        using (var beforeIngest = new MagickImage(original))
+        {
+            beforeIngest.GetExifProfile()!.GetValue(ExifTag.GPSLatitude).ShouldNotBeNull();
+            beforeIngest.GetExifProfile()!.GetValue(ExifTag.GPSLongitude).ShouldNotBeNull();
+        }
+
         // When
         var outcome = await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
 
@@ -137,9 +146,16 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 
         var derivative = await ReadAllAsync(outcome.DerivativeKey);
         using var stripped = new MagickImage(derivative);
+
+        // No profile at all, so no GPS IFD to read a coordinate out of.
         stripped.GetExifProfile().ShouldBeNull();
-        Encoding.ASCII.GetString(derivative).ShouldNotContain("GPS");
+
+        // And at the byte level: no APP1 EXIF segment, and none of the ASCII
+        // EXIF actually carried. Asserted on the bytes because a profile parser
+        // that silently stopped finding profiles would satisfy the check above.
+        derivative.AsSpan().IndexOf("Exif\u0000\u0000"u8).ShouldBe(-1);
         Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
+        Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CapturedAt);
     }
 
     [Fact]
@@ -189,6 +205,24 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 
         // Then
         outcome.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
+    }
+
+    [Fact]
+    public async Task Given_an_ingested_photo_When_a_reviewer_link_is_requested_for_the_original_Then_it_is_refused()
+    {
+        // Given
+        using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
+        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var outcome = await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var links = new ReviewerMediaLink(Store);
+
+        // When
+        var derivativeUrl = await links.CreateViewUrlAsync(outcome.DerivativeKey, TimeSpan.FromMinutes(5), CancellationToken.None);
+
+        // Then
+        derivativeUrl.ShouldNotBeNull();
+        await Should.ThrowAsync<DomainRuleViolationException>(
+            () => links.CreateViewUrlAsync(Photo, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     private MediaIngestor Ingestor() =>

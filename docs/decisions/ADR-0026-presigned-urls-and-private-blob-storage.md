@@ -84,6 +84,27 @@ throws rather than returning a key when the outcome is a rejection — a caller
 that asks for something to show a reviewer after a rejection has a bug worth
 failing loudly.
 
+### A reviewer link can only name a derivative
+
+`IBlobStore` will sign a URL for any key it is handed — it is generic storage and
+knows nothing about which bytes are safe to look at. `ReviewerMediaLink`, in
+`Core`, does: it refuses any key that is not under `stripped/`, so "show the
+reviewer the photo" cannot accidentally become "show the reviewer the original".
+The prefix is matched as a path segment, not as a string prefix, so
+`strippedish/...` does not read as a derivative.
+
+Enforcing it in one type rather than at each call site is deliberate. The admin
+route that will call this does not exist yet (#14); the rule should already be
+impossible to get wrong when it arrives.
+
+### Nothing client-supplied reaches an exception message
+
+`BlobKey`, `MediaType`, and `FileSystemBlobStore` all refuse bad input without
+echoing it. A key encodes a report identifier and a declared content type is a
+raw client header — neither belongs in a message something downstream will log.
+`docs/data-handling.md` says log identifiers, not content; an exception message
+is a log line that has not happened yet.
+
 ### The API is guarded against growing a blob route
 
 `NoBlobIsServedDirectlyTests` walks the live route table and fails if a route
@@ -127,6 +148,9 @@ that outlives the reason it was minted is a public object URL with extra steps.
   argument with no default — a size limit nobody chose is a size limit nobody
   owns. The maximum upload size HPAC wants is an open question in
   `docs/data-handling.md`.
+- A refused upload's original bytes stay in the bucket, unreferenced. There is
+  no delete on `IBlobStore` and no retention rule for them; that gap is recorded
+  in `docs/data-handling.md` as a question for HPAC rather than answered here.
 - Rejection reasons are an enum, never a sentence. The edge localizes them; no
   user-facing string is written in `Core` or `Infrastructure`.
 

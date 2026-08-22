@@ -28,6 +28,10 @@ another key and S3 answers `403`; `FileSystemBlobStore` throws
 `PresignedUrlRejectedException`. Every lifetime passes
 `BlobUrlLifetime.Validate`, capped at 15 minutes.
 
+Which bytes are *safe* to hand a reviewer is not this slice's question — storage
+signs whatever key it is given. `ReviewerMediaLink` in `Core` is what refuses a
+link to an original.
+
 The local store signs an HMAC over the operation, the key, the content type, and
 the expiry, and verifies it in fixed time. That is not ceremony — a development
 stand-in that skips the production adapter's guarantee is how the guarantee

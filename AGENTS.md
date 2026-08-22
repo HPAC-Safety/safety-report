@@ -266,6 +266,37 @@ describes it is worse than no README, because it is believed.
   the body is the only mechanism, and the `linked-issue` CI check is what
   enforces it. `See #123` and `Related to #123` do not close anything. If there
   is no issue behind the change, open one first.
+- **A pull request is not finished when it is opened. It is finished when CI is
+  green.** Wait for every check to complete, read the result, and fix whatever
+  failed — in that pull request, before handing it over. A red check is the work,
+  not a notification about the work.
+
+  ```mermaid
+  flowchart LR
+      open["PR opened"] --> wait["wait for every check"]
+      wait --> q{"all green?"}
+      q -->|no| fix["read the log,<br/>fix the cause"]
+      fix --> push["push to the same branch"]
+      push --> wait
+      q -->|yes| done["hand it over"]
+  ```
+
+  Watch them with `gh pr checks <number> --watch`. Three rules about what to do
+  with a failure:
+
+  - **Fix the cause, never the check.** Lowering the coverage floor, deleting the
+    assertion, deleting a defensive guard to move a percentage, or marking a test
+    skipped is not a fix. If a gate is genuinely wrong — as the coverage ratchet
+    was in [ADR-0017](docs/decisions/ADR-0017-ratchet-judges-added-code.md) — say
+    so, open an issue for it, and change it deliberately with an ADR. Never
+    quietly.
+  - **A failure that looks unrelated is still yours.** Flaky, pre-existing, or
+    "someone else's" — investigate before assuming. Re-running a job to see if it
+    passes the second time is a diagnosis only if you then explain why it was
+    flaky.
+  - **Report the state honestly.** "Opened, checks running" and "opened, `web` is
+    failing and here is why" are both fine. "Done" while a check is red is not.
+
 - Squash merge only. Write the PR title as the commit message you want. The body
   becomes the squash commit message, which is why the closing keyword works.
 - Do not create a `CODEOWNERS` file — see `CONTRIBUTING.md` for why.

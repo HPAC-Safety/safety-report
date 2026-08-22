@@ -10,7 +10,7 @@ public static class EnumCode
     /// <summary>The invariant code for an enum member.</summary>
     public static string Of<TEnum>(TEnum value) where TEnum : struct, Enum
     {
-        var name = value.ToString() ?? string.Empty;
+        var name = value.ToString();
         var code = new System.Text.StringBuilder(name.Length + 4);
 
         for (var i = 0; i < name.Length; i++)
@@ -44,7 +44,7 @@ public static class EnumCode
 
         foreach (var candidate in Enum.GetValues<TEnum>())
         {
-            if (string.Equals(Strip(candidate.ToString() ?? string.Empty), wanted, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(Strip(candidate.ToString()), wanted, StringComparison.OrdinalIgnoreCase))
             {
                 value = candidate;
                 return true;

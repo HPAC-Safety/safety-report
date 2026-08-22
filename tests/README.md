@@ -8,7 +8,7 @@
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
-| `js/` | `node --test` — i18n, api-client, form logic |
+| `js/` | `node --test` — the coverage gate, i18n, api-client, form logic |
 | `e2e/` | Playwright — submit → summarize → review → approve, both locales |
 
 ## The one that matters most

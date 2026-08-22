@@ -13,7 +13,7 @@ internal sealed class ScrubDocument
     {
         Province = request.Province;
         OccurredOn = request.OccurredOn;
-        OccurredAt = request.OccurredAt;
+        TimeOfDay = request.TimeOfDay;
         Vocabulary = vocabulary;
         Fields = [.. request.Fields.Where(field => field is not null)];
     }
@@ -24,8 +24,8 @@ internal sealed class ScrubDocument
     /// <summary>The occurrence date, narrowed on the way out.</summary>
     internal DateOnly? OccurredOn { get; }
 
-    /// <summary>The precise occurrence time, narrowed on the way out.</summary>
-    internal TimeOnly? OccurredAt { get; }
+    /// <summary>The coarse time-of-day bucket, the only form that travels onward.</summary>
+    internal TimeOfDay TimeOfDay { get; }
 
     /// <summary>The role words a name is replaced with.</summary>
     internal ScrubVocabulary Vocabulary { get; }

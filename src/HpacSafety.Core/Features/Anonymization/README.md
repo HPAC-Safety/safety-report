@@ -102,9 +102,16 @@ their own, so a French narrative keeps its "de" and "la" and a flying report
 keeps the word "air".
 
 **The precise date and time never survive.** The reporter submits an actual date
-and clock time; the scrub publishes month and year, and a `TimeOfDay` bucket. An
-absent time is `unknown` — never midnight, never "morning". A precise time plus a
-province plus an aircraft type is another aggregation that names one person.
+and clock time; the scrub publishes month and year, and a `TimeOfDay` bucket. A
+precise time plus a province plus an aircraft type is another aggregation that
+names one person.
+
+**The bucket boundaries are not here, on purpose.** Stage 1 is handed the bucket
+the way it is handed the province, and owns the invariant rather than the
+arithmetic — whatever the field said, only the bucket survives. `TimeOfDayBuckets`
+in the reporting feature is the single definition of "morning". Do not copy it
+here. `Unknown` (asked, unanswered) is published; `NotAnswered` (no such
+question) drops the field; midnight is neither and buckets as morning.
 
 **A field nobody classified is dropped**, and its value is removed from the
 narrative too. `ScrubFieldKind.Unclassified` is the

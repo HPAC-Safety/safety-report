@@ -88,14 +88,15 @@ internal sealed class StructuredFieldStage : ScrubStage
             ? null
             : field with { Value = EnumCode.Of(document.Province) },
 
-        // The clock never survives. An absent time is "unknown" rather than a
-        // dropped field, because "we do not know" is an answer and silence is
-        // not — and rather than midnight, which would publish "morning" about a
-        // crash nobody timed.
-        ScrubFieldKind.OccurrenceTime => field with
-        {
-            Value = EnumCode.Of(OccurrenceNarrowing.Bucket(document.OccurredAt)),
-        },
+        // The clock never survives: the field's own value is replaced outright,
+        // whatever it said. "Unknown" is kept because the form asked and the
+        // reporter did not answer, which is a fact worth publishing;
+        // "NotAnswered" means the form never asked, so there is nothing to say
+        // and the field goes. Neither is midnight — midnight is a real answer
+        // and buckets as morning, upstream of here.
+        ScrubFieldKind.OccurrenceTime => document.TimeOfDay is TimeOfDay.NotAnswered
+            ? null
+            : field with { Value = EnumCode.Of(document.TimeOfDay) },
 
         // Month and year, the same rule the policy has always stated for dates.
         ScrubFieldKind.OccurrenceDate => OccurrenceNarrowing.MonthAndYear(document.OccurredOn) is { } monthAndYear

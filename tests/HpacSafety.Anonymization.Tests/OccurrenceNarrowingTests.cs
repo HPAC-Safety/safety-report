@@ -6,61 +6,25 @@ using Shouldly;
 namespace HpacSafety.Anonymization.Tests;
 
 /// <summary>
-/// The reporter now submits an actual date and time; the anonymizer derives the
-/// coarse bucket. These pin the boundaries and, more importantly, pin that a
-/// precise time never reaches stage 2.
+/// The reporter submits an actual date and clock time; only the coarse forms
+/// travel onward. These pin the invariant stage 1 owns — a precise time never
+/// reaches stage 2 — rather than the bucket boundaries, which belong to the
+/// reporting feature and must have exactly one definition.
 /// </summary>
 public class OccurrenceNarrowingTests
 {
     [Theory]
-    [InlineData(0, 0, TimeOfDay.Morning)]
-    [InlineData(10, 59, TimeOfDay.Morning)]
-    [InlineData(11, 0, TimeOfDay.MidDay)]
-    [InlineData(13, 59, TimeOfDay.MidDay)]
-    [InlineData(14, 0, TimeOfDay.Afternoon)]
-    [InlineData(16, 59, TimeOfDay.Afternoon)]
-    [InlineData(17, 0, TimeOfDay.Evening)]
-    [InlineData(23, 59, TimeOfDay.Evening)]
-    public void Given_a_wall_clock_time_When_it_is_narrowed_Then_it_lands_in_the_expected_bucket(
-        int hour,
-        int minute,
-        TimeOfDay expected)
+    [InlineData(TimeOfDay.Morning)]
+    [InlineData(TimeOfDay.MidDay)]
+    [InlineData(TimeOfDay.Afternoon)]
+    [InlineData(TimeOfDay.Evening)]
+    public void Given_a_precise_time_in_the_field_When_it_is_scrubbed_Then_only_the_bucket_survives(TimeOfDay bucket)
     {
-        // Given
-        var occurredAt = new TimeOnly(hour, minute);
-
-        // When
-        var bucket = OccurrenceNarrowing.Bucket(occurredAt);
-
-        // Then
-        bucket.ShouldBe(expected);
-    }
-
-    [Fact]
-    public void Given_no_time_was_given_When_it_is_narrowed_Then_it_is_unknown_rather_than_midnight()
-    {
-        // Given — the time input is optional and a reporter who does not
-        // remember still files. Treating the default as midnight would publish
-        // "morning" about a crash nobody timed.
-        TimeOnly? absent = null;
-
-        // When
-        var bucket = OccurrenceNarrowing.Bucket(absent);
-
-        // Then
-        bucket.ShouldBe(TimeOfDay.Unknown);
-        bucket.ShouldNotBe(TimeOfDay.Morning);
-        bucket.ShouldNotBe(TimeOfDay.NotAnswered);
-    }
-
-    [Fact]
-    public void Given_a_precise_time_in_a_report_When_it_is_scrubbed_Then_only_the_bucket_survives()
-    {
-        // Given
+        // Given — the field still carries the clock time the reporter typed.
         var report = new ScrubRequest
         {
             Province = Province.BritishColumbia,
-            OccurredAt = new TimeOnly(15, 42),
+            TimeOfDay = bucket,
             Fields =
             [
                 new ScrubField(ScrubFieldKind.OccurrenceTime, "Time of day", "15:42"),
@@ -74,31 +38,55 @@ public class OccurrenceNarrowingTests
         // Then
         scrubbed.Text.ShouldNotContain("15:42");
         scrubbed.Text.ShouldNotContain("42");
-        scrubbed.Text.ShouldContain(EnumCode.Of(TimeOfDay.Afternoon));
+        scrubbed.Text.ShouldContain(EnumCode.Of(bucket));
     }
 
     [Fact]
-    public void Given_no_time_in_a_report_When_it_is_scrubbed_Then_the_field_says_unknown()
+    public void Given_the_reporter_did_not_answer_the_time_question_When_it_is_scrubbed_Then_it_says_unknown()
     {
-        // Given
-        var report = new ScrubRequest
-        {
-            Province = Province.BritishColumbia,
-            OccurredAt = null,
-            Fields =
-            [
-                new ScrubField(ScrubFieldKind.OccurrenceTime, "Time of day", "07:15"),
-                new ScrubField(ScrubFieldKind.Narrative, "Description", "A collapse on the ridge."),
-            ],
-        };
+        // Given — the form asked and the answer was "do not know". That is a
+        // defined answer and it is published as one.
+        var report = TimeReport(TimeOfDay.Unknown, "07:15");
 
         // When
         var scrubbed = ScrubFixture.Scrub().Scrub(report);
 
-        // Then — the stale field value must not win over the absent answer.
+        // Then
         scrubbed.Text.ShouldNotContain("07:15");
         scrubbed.Text.ShouldContain(EnumCode.Of(TimeOfDay.Unknown));
         scrubbed.Text.ShouldNotContain(EnumCode.Of(TimeOfDay.Morning));
+    }
+
+    [Fact]
+    public void Given_the_form_has_no_time_question_When_it_is_scrubbed_Then_the_field_is_dropped()
+    {
+        // Given — NotAnswered is not the same state as Unknown, and flattening
+        // the two would publish "do not know" about a question nobody asked.
+        var report = TimeReport(TimeOfDay.NotAnswered, "07:15");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("07:15");
+        scrubbed.Fields.ShouldNotContain(field => field.Kind == ScrubFieldKind.OccurrenceTime);
+        scrubbed.Text.ShouldNotContain(EnumCode.Of(TimeOfDay.Unknown));
+    }
+
+    [Fact]
+    public void Given_a_midnight_occurrence_bucketed_as_morning_When_it_is_scrubbed_Then_it_publishes_morning()
+    {
+        // Given — midnight is a real answer, not an absent one. The mapping
+        // lives in the reporting feature; what stage 1 owes is to carry the
+        // answer through rather than mistake it for a default.
+        var report = TimeReport(TimeOfDay.Morning, "00:00");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldContain(EnumCode.Of(TimeOfDay.Morning));
+        scrubbed.Text.ShouldNotContain("00:00");
     }
 
     [Fact]
@@ -146,4 +134,15 @@ public class OccurrenceNarrowingTests
         scrubbed.Text.ShouldNotContain("2026");
         scrubbed.Fields.ShouldNotContain(field => field.Kind == ScrubFieldKind.OccurrenceDate);
     }
+
+    private static ScrubRequest TimeReport(TimeOfDay bucket, string fieldValue) => new()
+    {
+        Province = Province.BritishColumbia,
+        TimeOfDay = bucket,
+        Fields =
+        [
+            new ScrubField(ScrubFieldKind.OccurrenceTime, "Time of day", fieldValue),
+            new ScrubField(ScrubFieldKind.Narrative, "Description", "A collapse on the ridge."),
+        ],
+    };
 }

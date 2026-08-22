@@ -49,7 +49,7 @@ category:
 | Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
 | Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
 | Precise date | Narrowed to **month and year** (`2026-03`). With no date given the field is dropped. |
-| Precise time | Narrowed to a **time-of-day bucket** — morning before 11:00, mid-day 11:00–14:00, afternoon 14:00–17:00, evening from 17:00. The reporter submits an actual clock time and the anonymizer derives the bucket; the clock time never reaches stage 2. **With no time given the answer is `unknown`** — not midnight, and not "morning". |
+| Precise time | Narrowed to a **time-of-day bucket**. The reporter submits an actual clock time, which is stored encrypted as Restricted data; **only the bucket ever reaches stage 2.** The boundaries — morning before 11:00, mid-day 11:00–14:00, afternoon 14:00–17:00, evening from 17:00 — are defined once, by `TimeOfDayBuckets` in the reporting feature, and stage 1 does not re-derive them. |
 | Everything else | Kept, and passed through every stripping rule anyway — **unless nobody classified it**, in which case it is dropped *and* its value is removed from the narrative. Keeping a field has to be a decision somebody made. |
 
 Every structured answer doubles as a token list for the free text. A launch name,
@@ -73,6 +73,18 @@ is the signal: "Marc de la Roche" keeps "de la", while a pilot surnamed "Le" or
 The cost is accepted in one direction on purpose: a name answer of exactly "Le"
 will also take the French article out of the narrative. Over-redaction is
 recoverable; a named pilot is not.
+
+Three states around the time are distinct and are never flattened together:
+
+| State | Meaning | Published as |
+|---|---|---|
+| a bucket | the reporter gave a time | that bucket |
+| `unknown` | the form asked; the reporter did not answer | `unknown` |
+| `not answered` | the form has no time question at all | the field is dropped |
+
+**Midnight is none of these.** It is a real answer and buckets as morning.
+Treating an absent time as `00:00` would publish "morning" about a crash nobody
+timed, which is a fabricated fact in a summary about a real person.
 
 Anything removed that has no natural replacement leaves a `[removed]` marker, so
 the sentence stays readable for stage 2 and a reviewer can tell "this was taken

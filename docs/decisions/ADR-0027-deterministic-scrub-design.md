@@ -163,12 +163,24 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
   that names no content, so a timeout fails the report loudly — still reaching a
   human through `FailSummarization` — without the narrative riding along into a
   log.
-- **The precise date and time never reach stage 2.** The reporter now submits an
-  actual date and clock time and the anonymizer derives the coarse forms: month
-  and year, and a `TimeOfDay` bucket. A precise time plus a province plus an
-  aircraft type is another aggregation that identifies one person. An absent
-  time is `unknown` and never midnight — publishing "morning" about a crash
-  nobody timed would be a fabricated fact.
+- **The precise date and time never reach stage 2.** The reporter submits an
+  actual date and clock time — the time stored encrypted as Restricted data —
+  and only the coarse forms travel onward: month and year, and a `TimeOfDay`
+  bucket. A precise time plus a province plus an aircraft type is another
+  aggregation that identifies one person.
+
+  **The bucket boundaries are deliberately not in this feature.** Stage 1 is
+  handed the bucket the same way it is handed the province, and owns the
+  invariant rather than the arithmetic: whatever the field said, only the bucket
+  survives. Copying "morning is before 11:00" here would create a second
+  definition, and a drifted boundary publishes the wrong time of day about a
+  real crash. `TimeOfDayBuckets` in the reporting feature is the one definition;
+  the caller calls it and passes the result in.
+
+  The three empty-ish states stay distinct: `Unknown` means the form asked and
+  the reporter did not answer, and is published; `NotAnswered` means the form has
+  no time question, and the field is dropped; midnight is neither — it is a real
+  answer that buckets as morning.
 - **A site that appears only in the narrative is not caught.** Stage 1 finds what
   matches a pattern or what the reporter also typed into a structured answer.
   That gap is why stages 3 and 5 exist and why a human approves every

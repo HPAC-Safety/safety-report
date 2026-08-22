@@ -192,6 +192,16 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
 - `HpacSafety.Core` depends on nothing. Infrastructure concerns — EF Core, HTTP
   clients, the Anthropic SDK — live in `HpacSafety.Infrastructure` behind
   interfaces declared in `Core`.
+- **Dates and times say what is actually known.** `DateOnly` when the time does
+  not matter, `DateTimeOffset` when it does, `TimeOnly` when the date does not.
+  **`DateTime` is forbidden** — its `Kind` is ambient and silently lost, so the
+  same value means UTC, local, or unspecified depending on where it came from.
+  It is banned in `tests/BannedSymbols.txt`, which makes it a build error rather
+  than a review comment. The occurrence date a reporter gives is a `DateOnly`;
+  audit timestamps, outbox `occurred_at`/`processed_at`, and `approved_at` are
+  `DateTimeOffset`. Where a third-party library hands back a `DateTime`, the
+  adapter converts at the boundary and no call site inherits it. See
+  [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md).
 - Static HTML/JS for the UI. No SPA framework, no bundler.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.

@@ -55,13 +55,13 @@
 			]
 		},
 		{
-			"description": "Automerge non-major updates",
+			"description": "Approve non-major updates. Automerge stays off until CI exists (see the CI issue) - with no required checks, auto-merge has nothing to wait for and would merge instantly.",
 			"matchUpdateTypes": [
 				"minor",
 				"patch"
 			],
 			"autoApprove": true,
-			"automerge": true,
+			"automerge": false,
 			"prBodyNotes": [
 				"- [ ] This is a breaking change"
 			]

@@ -31,9 +31,30 @@ role word appears is a readability question; the name being absent is the safety
 question, and it is absent either way.
 
 **Role words are supplied per language, by the caller.** `ScrubVocabulary` holds
-the two words and `ScrubVocabulary.EnglishCanada` is the only one this repository
-ships. There is no locale lookup inside the scrub and no default for a report
-filed in French.
+the two words; the repository ships `EnglishCanada` — "the reporter", "the pilot"
+— and `FrenchCanada` — **"le déclarant"**, **"le pilote"**. There is no locale
+lookup inside the scrub, so adding a language is supplying two words rather than
+editing the scrub.
+
+`déclarant` is the standard term for someone filing an official report and
+matches the institutional register of a safety authority. These are HPAC
+terminology decided by a person, not machine output, and they must never be
+re-translated.
+
+**The French role words are always masculine, whoever was flying.** Uniformly,
+without exception, and not varied to match the reporter or the pilot.
+
+This is the whole point of the decision rather than a detail of it. English lets
+you write "the pilot" and say nothing about the person; **French forces an
+article**, so the scrub has to make a choice that English never surfaces. Varying
+it would mean the output encodes the person's gender — and "la pilote" in a
+fifty-person flying community narrows the field considerably. Matching the
+article to the person would put back the exact fact the scrub had just removed,
+in the one language where the grammar makes it unavoidable and therefore easy to
+miss.
+
+Masculine is the grammatical generic in French, so uniformity costs nothing
+linguistically and buys the entire anonymising property.
 
 ## Consequences
 
@@ -44,10 +65,19 @@ filed in French.
   reserve" tells a reader which person in the account did it; "[name] deployed
   the reserve" tells them nothing and invites the model to speculate.
 - Adding a language is supplying two words, not editing the scrub.
-- **Open question, deliberately not answered here:** the fr-CA role words. A
-  French string is exactly the kind of value AGENTS.md forbids inventing, so
-  `ScrubVocabulary` has no French entry and a French report cannot be scrubbed
-  until HPAC supplies the wording. The seam is in place; the words are not.
+- A French report scrubs exactly as an English one does. There is no language in
+  which stage 1 degrades to "drop the narrative".
+- The uniform article is **asserted**, not just documented:
+  `FrenchNarrativeTests` scrubs a report in which a woman was flying and fails if
+  "la pilote" appears. A future contributor who "fixes" the agreement out of
+  linguistic instinct gets a red test explaining why it is not a bug.
+- The two French words are pinned by a test that asserts them literally. That is
+  the one place in this suite where asserting exact text is right: they are a
+  human decision, not generated output, so a change to either should be a
+  deliberate act that fails a test until somebody makes it.
+- **Follow-up:** these belong in `locales/glossary.json` as pinned terms, so the
+  translation job can never rewrite them. That file does not exist yet and its
+  format is owned by another issue, so it is not created here.
 
 ## Alternatives rejected
 
@@ -67,6 +97,17 @@ and "Pilot A, who was flying a tandem that day" identify exactly one person.
 
 **Leave the pronouns and delete the name.** "spiralled in from 200 feet" with no
 subject is not a sentence, and the model will supply a subject.
+
+**"l'auteur du rapport" for the reporter in French.** Accurate, and it reads
+heavily on repetition — a summary refers to the reporter several times, and a
+four-word noun phrase in each of them turns readable prose into administrative
+prose. `déclarant` is one word and is the term the register already uses.
+
+**Agreeing the French article with the person** — "la pilote" when a woman was
+flying. The instinct is correct grammar and wrong anonymisation: it re-introduces
+the person's gender into a text whose entire purpose is that the person cannot be
+picked out. Rejected explicitly rather than left to a future contributor's
+judgement, which is why there is a test asserting it.
 
 ## Related
 

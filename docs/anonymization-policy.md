@@ -77,9 +77,26 @@ reporter"** — and not by `[redacted]` or `[name]`.
 
 The scrubbed text still reads as prose, so the stage 2 summary is not degraded by
 a sentence with a hole in it. **When the reporter is the pilot, one role word
-covers both** and it is "the pilot". Role words are per language and are supplied
-to the scrub rather than built into it. See
-[ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
+covers both** and it is "the pilot".
+
+| Language | Reporter | Pilot |
+|---|---|---|
+| en-CA | the reporter | the pilot |
+| fr-CA | le déclarant | le pilote |
+
+These are **HPAC terminology decided by a person, not machine output**, and they
+are never re-translated.
+
+**The French role words are always masculine, whoever was flying.** Uniformly,
+without exception, never varied to match the reporter or the pilot. English lets
+you write "the pilot" and say nothing about the person; French forces an article,
+so the scrub has to make a choice that English never surfaces. "La pilote" in a
+fifty-person flying community narrows the field considerably — agreeing the
+article would put back the exact fact the scrub had just removed, in the one
+language where the grammar makes it unavoidable and therefore easy to miss.
+Masculine is the grammatical generic, so uniformity costs nothing linguistically.
+
+See [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
 
 ### The region is the province
 

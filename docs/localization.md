@@ -130,9 +130,19 @@ Pinned in `locales/glossary.json` and never overwritten by the translator:
 - Rating names: P1–P4, H1–H4, instructor and tandem ratings
 - Aircraft certification classes
 - The publication-consent question
+- **The anonymization role words** — "the reporter" / "le déclarant", "the pilot"
+  / "le pilote". These are what the deterministic scrub writes in place of a
+  person's name, they were chosen by HPAC rather than generated, and the French
+  pair is **always masculine whoever was flying** — a translator that agreed the
+  article would undo the anonymisation. See
+  [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
 
 These need HPAC's own official French wording, ideally taken from the existing
 French Typeform. This is the one translation decision a machine must not make.
+
+`locales/glossary.json` does not exist yet. Until it does, the role words are
+pinned by `ScrubVocabulary` in `HpacSafety.Core` and by a test that asserts them
+literally; they should be added to the glossary when the file is created.
 
 ## Reports and summaries
 

@@ -70,10 +70,17 @@ configures — see AGENTS.md, "the invariants above are deliberately closed".
 
 ## Four rules worth knowing before you change anything
 
-**A name becomes a role word, not a placeholder.** "the pilot", "the reporter",
-chosen from the structured field the name was given in. The scrubbed text still
-reads as prose, so stage 2 is summarizing a sentence rather than a fragment. If
-the reporter *is* the pilot, one role word covers both. See
+**A name becomes a role word, not a placeholder.** "the pilot" / "le pilote",
+"the reporter" / "le déclarant", chosen from the structured field the name was
+given in. The scrubbed text still reads as prose, so stage 2 is summarizing a
+sentence rather than a fragment. If the reporter *is* the pilot, one role word
+covers both.
+
+**The French role words are always masculine, whoever was flying.** Do not "fix"
+the agreement. French forces an article where English does not, and "la pilote"
+in a fifty-person flying community narrows the field considerably — agreeing it
+would put back the fact the scrub had just removed. `FrenchNarrativeTests` fails
+if you change it. See
 [ADR-0028](../../../../docs/decisions/ADR-0028-role-words-in-place-of-names.md).
 
 **The region a site is generalized to is the province, and nothing finer.** It

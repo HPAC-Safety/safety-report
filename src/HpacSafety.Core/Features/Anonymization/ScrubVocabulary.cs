@@ -13,10 +13,19 @@ namespace HpacSafety.Core.Features.Anonymization;
 /// ADR-0028.
 /// </para>
 /// <para>
-/// There is deliberately no locale lookup here and no default for a report filed
-/// in French: the caller supplies the vocabulary, so adding a language is
-/// supplying two words rather than editing the scrub. Inventing a French role
-/// word is not something this code may do.
+/// There is deliberately no locale lookup here: the caller supplies the
+/// vocabulary, so adding a language is supplying two words rather than editing
+/// the scrub. The words themselves are <b>HPAC terminology decided by a person,
+/// not machine output</b>, and they are not to be re-translated.
+/// </para>
+/// <para>
+/// <b>The French role words are always masculine, whoever was flying.</b> That
+/// is not an oversight and not a default — it is the anonymising property. French
+/// forces an article where English does not, and "la pilote" in a fifty-person
+/// flying community narrows the field considerably: matching the article to the
+/// person would put back the exact fact the scrub had just removed. Masculine is
+/// the grammatical generic, so uniformity costs nothing linguistically and buys
+/// the whole point. See ADR-0028.
 /// </para>
 /// </remarks>
 public sealed class ScrubVocabulary
@@ -34,9 +43,18 @@ public sealed class ScrubVocabulary
     /// <summary>The role words for a report filed in Canadian English.</summary>
     public static ScrubVocabulary EnglishCanada { get; } = new("the reporter", "the pilot");
 
-    /// <summary>Stands in for the reporter's name.</summary>
+    /// <summary>
+    /// The role words for a report filed in Canadian French. <b>Masculine
+    /// always</b>, regardless of who was flying — see the remarks on this type
+    /// and ADR-0028. <c>déclarant</c> is the standard term for someone filing an
+    /// official report and matches the institutional register of a safety
+    /// authority.
+    /// </summary>
+    public static ScrubVocabulary FrenchCanada { get; } = new("le déclarant", "le pilote");
+
+    /// <summary>Stands in for the reporter's name. Never varies with the person.</summary>
     public string Reporter { get; }
 
-    /// <summary>Stands in for the pilot in command's name.</summary>
+    /// <summary>Stands in for the pilot in command's name. Never varies with the person.</summary>
     public string Pilot { get; }
 }

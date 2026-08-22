@@ -37,3 +37,7 @@ If yes:
 - [ ] Assertions use Shouldly; tests are named `Given_..._When_..._Then_...`
 - [ ] Diagrams are Mermaid, not ASCII
 - [ ] Generated files were regenerated, not hand-edited
+- [ ] SOLID; any Gang of Four pattern used is named in the type name
+- [ ] ADR written for any decision; requirements captured; affected READMEs updated
+- [ ] **No assumptions.** Gaps in the requirements were asked about, not guessed.
+      Anything that had to be assumed is written down below, marked, and in the code.

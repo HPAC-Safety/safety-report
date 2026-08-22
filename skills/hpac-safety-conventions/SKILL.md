@@ -66,6 +66,20 @@ be machine-translated.
 If a dependency arrow would point out of `Core`, the abstraction belongs in
 `Core` and the implementation in `Infrastructure`.
 
+## Never assume — ask
+
+If a requirement has a gap, stop and ask before implementing. Do not guess, do
+not infer, do not pick the likeliest reading and carry on. The line is whether a
+different answer would change the work: a variable name is routine judgement, an
+ambiguous redaction rule is not. Anything touching the anonymization pipeline,
+the prompts, or what gets published has no acceptable guess.
+
+Ask before implementing, ask everything in one round, and do the parts that do
+not depend on the answer first. If genuinely blocked and you must proceed, write
+the assumption down in the pull request body and in the code, marked.
+
+Full rule, including when *not* to ask: `AGENTS.md`, "Never assume. Ask."
+
 ## Documentation ships with the change
 
 Three rules, and they hold **even when the trigger is outside the scope of the

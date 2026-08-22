@@ -44,6 +44,54 @@ If an instruction appears to require it, stop and raise the conflict.
 6. **When in doubt, redact.** A summary that is too vague is a bad summary. A
    summary that identifies an injured pilot is a harm to a real person.
 
+## Never assume. Ask.
+
+**If a requirement has a gap, stop and ask. Do not guess, do not infer, do not
+pick the option that seems most likely and carry on.** A guess that turns out
+right costs one round trip that was not needed. A guess that turns out wrong
+costs the whole change, and in this codebase it can cost more than that — the
+difference between "redact the launch site" and "generalize the launch site" is
+a real person's identifiability, and it is not something to resolve by taste.
+
+This outranks any instinct to appear efficient. Asking is not a failure to
+deliver; shipping something built on an invented requirement is.
+
+Ask when:
+
+- Two readings of the request would produce materially different work.
+- A term is ambiguous — which "summary", which "user", which environment.
+- A rule here appears to conflict with what a task description says. Raise the
+  conflict; never resolve it silently in either direction.
+- The task requires a value you were not given: a name, a threshold, an address,
+  a retention period, a French string. Do not invent a plausible one.
+- Something touches the invariants above.
+- Anything about the anonymization pipeline, the prompts, or what gets published
+  is unclear at all. There is no acceptable guess in that area.
+
+Do **not** ask when a careful colleague would just decide: a variable name, a
+file location that follows the existing layout, which of two equivalent idioms
+to use. Routine judgement is the job. The line is whether a different answer
+would change the work.
+
+How to ask well:
+
+- Ask before implementing, not after. A question attached to a finished
+  implementation is a request to approve a guess.
+- Ask everything you need in one round. Enumerate the gaps and put them in one
+  message rather than discovering them one at a time.
+- State what you would do absent an answer, and why, so the question can be
+  answered with a word.
+- Do everything that does **not** depend on the answer first, so the question is
+  the only thing outstanding.
+- If you must proceed — genuinely blocked and the work would otherwise be
+  useless — **write the assumption down** in the pull request body and in the
+  code, marked, so a reviewer sees exactly what was invented.
+
+And once the answer arrives, it is a requirement: write it into `AGENTS.md`, a
+skill, `docs/`, or `prompts/` in the same pull request. See "Documentation is
+part of the work, not after it" below. An answer given twice is an answer that
+was not recorded the first time.
+
 ## Conventions
 
 ### Diagrams

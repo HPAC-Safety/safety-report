@@ -65,9 +65,26 @@ All three deploy workflows share a shape: `preflight` → `image` → (`migrate`
 `deploy`, authenticating with OIDC role assumption and gated behind the
 `production` environment with a required reviewer.
 
-`preflight` checks that every secret and variable it needs is present and fails
-with a message naming the missing one. That is what runs today, because the AWS
-environment does not exist yet.
+`preflight` checks that every secret and variable it needs is present — including
+the ones only a later job reads — and fails with a message naming the missing
+one. That is what runs today, because the AWS environment does not exist yet.
+The check is a composite action, [`../actions/require-config`](../actions/require-config/action.yml),
+shared by all three workflows.
+
+Each `preflight` also carries an explicit trigger guard rather than relying on
+`workflow_run`'s `branches: [main]` filter alone:
+
+```yaml
+if: >-
+  github.event_name == 'workflow_dispatch' ||
+  (github.event.workflow_run.event == 'push' &&
+   github.event.workflow_run.head_branch == 'main' &&
+   github.event.workflow_run.conclusion == 'success')
+```
+
+`event == 'push'` admits only a merge to `main`. Without it a green CI run on an
+open pull request could reach `image`, which is not behind the `production`
+environment, and push a container built from unreviewed code.
 
 The full secret and variable contract, the trust-policy scoping, the migration
 ordering rule, and the rollback path are in

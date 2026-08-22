@@ -33,9 +33,46 @@ flowchart LR
     env --> aws["AWS ca-central-1"]
 ```
 
-Every deploy workflow triggers on `workflow_run` of **CI**, filtered to `main`
-and to `conclusion == success`. A red build cannot deploy. Each also has
-`workflow_dispatch`, so a rollback never requires a commit.
+Every deploy workflow triggers on `workflow_run` of **CI**. A red build cannot
+deploy, and neither can an unmerged one. Each also has `workflow_dispatch`, so a
+rollback never requires a commit.
+
+### The trigger guard
+
+`workflow_run`'s `branches: [main]` filter matches the *triggering run's*
+`head_branch`, and a `pull_request`-triggered CI run reports its `head_branch` as
+the pull request's **source** branch — a green CI run on a feature branch here
+reports `head_branch: ci/pipeline-and-deploy-scaffolding`, not `main`.
+
+That filter is therefore doing load-bearing work, and its exact semantics are not
+worth betting an ECR push on. Every `preflight` job carries an explicit guard as
+well:
+
+```yaml
+if: >-
+  github.event_name == 'workflow_dispatch' ||
+  (github.event.workflow_run.event == 'push' &&
+   github.event.workflow_run.head_branch == 'main' &&
+   github.event.workflow_run.conclusion == 'success')
+```
+
+`event == 'push'` is the important one. It admits only a merge to `main`, never a
+pull request run and never a dispatched CI run. Without it, a green CI run on an
+open pull request could reach `image`, which is **not** behind the `production`
+environment — the required reviewer guards `migrate` and `deploy` only — and push
+a container built from unreviewed, unmerged code.
+
+### Image tags
+
+`IMAGE_TAG` is `github.event.workflow_run.head_sha`, never `github.sha`.
+
+On a `workflow_run` trigger `github.sha` is the tip of the default branch **at
+run time**, not the commit CI tested. If a second pull request merges between CI
+finishing and the deploy workflow starting, `github.sha` moves and the image is
+tagged with a commit it was not built from. Rollback is by tag, so that failure
+stays silent until the day it matters.
+
+`head_sha` is the commit CI tested, and is what every checkout step uses.
 
 ## Authentication: OIDC, no stored AWS keys
 
@@ -105,6 +142,15 @@ failed deploy log says which cluster it could not reach.
 ```bash
 gh variable set AWS_REGION --body ca-central-1 --repo HPAC-Safety/safety-report
 ```
+
+`preflight` validates **every** variable the workflow's later jobs read,
+including the three only `migrate` uses. A variable missing from `preflight`
+does not go unnoticed — it fails two jobs later inside an `aws ecs run-task`
+call, with an AWS CLI error rather than the named one this contract promises.
+
+The check is a composite action, [`.github/actions/require-config`](../.github/actions/require-config/action.yml),
+shared by all three workflows. It began as three near-identical copies of a
+shell function, and they had already drifted.
 
 ## Runtime secrets do not belong in GitHub
 

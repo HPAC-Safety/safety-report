@@ -60,7 +60,13 @@ to merge past red.
   second job. Adding a job renames the context and silently drops it from the
   required set — the ruleset would go on waiting for a name nothing reports.
 - Job ids are the context names. Renaming a job is a ruleset change.
-- Renovate's `automerge` goes back on in the same pull request that lands CI.
+- **Renovate's `automerge` does not go back on in the same pull request that
+  lands CI.** It first looked like it should, but the ruleset is applied by hand
+  after that pull request merges — it cannot be applied before, or the pull
+  request blocks itself on contexts that have never reported. That leaves a
+  window with no required checks, and a Renovate pull request opening inside it
+  would have nothing to wait for and would merge on its own approval. The flag
+  is flipped separately, after the ruleset is confirmed live: #35.
 
 ## Superseded when
 

@@ -28,7 +28,10 @@ concurrency:
 
 env:
   DOTNET_NOLOGO: true
-  IMAGE_TAG: ${{ inputs.image_tag || github.sha }}
+  # head_sha, not github.sha — see the note in deploy-api.yml. github.sha on a
+  # workflow_run trigger is the tip of the default branch at run time, not the
+  # commit CI tested, which is what the checkout below uses.
+  IMAGE_TAG: ${{ inputs.image_tag || github.event.workflow_run.head_sha || github.sha }}
 
 jobs:
   # Secrets:   AWS_DEPLOY_ROLE_ARN
@@ -38,38 +41,34 @@ jobs:
   # definition. The Worker is the only component that holds it. It is never a
   # GitHub secret.
   preflight:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Three conditions, not one. `branches: [main]` above filters on the
+    # triggering run's head_branch, and a pull_request-triggered CI run reports
+    # its head_branch as the PR's source branch — so the filter alone is doing
+    # load-bearing work whose exact semantics are not worth betting an ECR push
+    # on. These are explicit and cheap:
+    #   event == push        only a merge to main, never a PR run or a dispatch
+    #   head_branch == main  belt and braces on the filter above
+    #   conclusion == success  never deploy a red build
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Required configuration is present
-        env:
-          AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          AWS_REGION: ${{ vars.AWS_REGION }}
-          ECR_REPOSITORY_WORKER: ${{ vars.ECR_REPOSITORY_WORKER }}
-          ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
-          ECS_SERVICE_WORKER: ${{ vars.ECS_SERVICE_WORKER }}
-        run: |
-          set -uo pipefail
-          missing=0
-          require() {
-            if [ -z "${2:-}" ]; then
-              echo "::error::Missing $3 '$1'. See docs/deployment.md."
-              missing=1
-            fi
-          }
-          require AWS_DEPLOY_ROLE_ARN   "$AWS_DEPLOY_ROLE_ARN"   secret
-          require AWS_REGION            "$AWS_REGION"            variable
-          require ECR_REPOSITORY_WORKER "$ECR_REPOSITORY_WORKER" variable
-          require ECS_CLUSTER           "$ECS_CLUSTER"           variable
-          require ECS_SERVICE_WORKER    "$ECS_SERVICE_WORKER"    variable
+      - uses: actions/checkout@v6
 
-          if [ "$missing" -ne 0 ]; then
-            echo ""
-            echo "The AWS environment has not been created yet. It is built by"
-            echo "#32 (bootstrap) and wired up by #30 (live deployment)."
-            exit 1
-          fi
-          echo "Deploying $IMAGE_TAG to $ECS_SERVICE_WORKER on $ECS_CLUSTER."
+      - uses: ./.github/actions/require-config
+        with:
+          secrets: |
+            AWS_DEPLOY_ROLE_ARN=${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          variables: |
+            AWS_REGION=${{ vars.AWS_REGION }}
+            ECR_REPOSITORY_WORKER=${{ vars.ECR_REPOSITORY_WORKER }}
+            ECS_CLUSTER=${{ vars.ECS_CLUSTER }}
+            ECS_SERVICE_WORKER=${{ vars.ECS_SERVICE_WORKER }}
+
+      - run: echo "Deploying $IMAGE_TAG to ${{ vars.ECS_SERVICE_WORKER }} on ${{ vars.ECS_CLUSTER }}."
 
   image:
     needs: preflight

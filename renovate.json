@@ -52,13 +52,13 @@
 			]
 		},
 		{
-			"description": "Approve and automerge non-major updates. platformAutomerge holds the PR until the required status checks pass, which is why this could only be turned on once CI existed.",
+			"description": "Approve non-major updates but do not automerge yet. platformAutomerge holds a PR until the REQUIRED status checks pass, and the ruleset that makes them required is applied by hand after the CI pull request merges. Turning automerge on in the same commit as CI would leave a window in which a Renovate PR has nothing to wait for. Flipped to true in a follow-up, after the ruleset is applied - see ADR-0011.",
 			"matchUpdateTypes": [
 				"minor",
 				"patch"
 			],
 			"autoApprove": true,
-			"automerge": true,
+			"automerge": false,
 			"prBodyNotes": [
 				"- [ ] This is a breaking change"
 			]

@@ -38,39 +38,34 @@ jobs:
   # Turnstile SECRET key is server-side only, lives in AWS Secrets Manager, and
   # must never reach a static bundle.
   preflight:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    # Three conditions, not one. `branches: [main]` above filters on the
+    # triggering run's head_branch, and a pull_request-triggered CI run reports
+    # its head_branch as the PR's source branch — so the filter alone is doing
+    # load-bearing work whose exact semantics are not worth betting an S3 sync
+    # on. These are explicit and cheap:
+    #   event == push        only a merge to main, never a PR run or a dispatch
+    #   head_branch == main  belt and braces on the filter above
+    #   conclusion == success  never deploy a red build
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Required configuration is present
-        env:
-          AWS_DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          AWS_REGION: ${{ vars.AWS_REGION }}
-          S3_BUCKET_PUBLIC: ${{ vars.S3_BUCKET_PUBLIC }}
-          S3_BUCKET_ADMIN: ${{ vars.S3_BUCKET_ADMIN }}
-          CLOUDFRONT_DISTRIBUTION_PUBLIC: ${{ vars.CLOUDFRONT_DISTRIBUTION_PUBLIC }}
-          CLOUDFRONT_DISTRIBUTION_ADMIN: ${{ vars.CLOUDFRONT_DISTRIBUTION_ADMIN }}
-        run: |
-          set -uo pipefail
-          missing=0
-          require() {
-            if [ -z "${2:-}" ]; then
-              echo "::error::Missing $3 '$1'. See docs/deployment.md."
-              missing=1
-            fi
-          }
-          require AWS_DEPLOY_ROLE_ARN            "$AWS_DEPLOY_ROLE_ARN"            secret
-          require AWS_REGION                     "$AWS_REGION"                     variable
-          require S3_BUCKET_PUBLIC               "$S3_BUCKET_PUBLIC"               variable
-          require S3_BUCKET_ADMIN                "$S3_BUCKET_ADMIN"                variable
-          require CLOUDFRONT_DISTRIBUTION_PUBLIC "$CLOUDFRONT_DISTRIBUTION_PUBLIC" variable
-          require CLOUDFRONT_DISTRIBUTION_ADMIN  "$CLOUDFRONT_DISTRIBUTION_ADMIN"  variable
+      # Needed because require-config is a local composite action.
+      - uses: actions/checkout@v6
 
-          if [ "$missing" -ne 0 ]; then
-            echo ""
-            echo "The AWS environment has not been created yet. It is built by"
-            echo "#32 (bootstrap) and wired up by #30 (live deployment)."
-            exit 1
-          fi
+      - uses: ./.github/actions/require-config
+        with:
+          secrets: |
+            AWS_DEPLOY_ROLE_ARN=${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          variables: |
+            AWS_REGION=${{ vars.AWS_REGION }}
+            S3_BUCKET_PUBLIC=${{ vars.S3_BUCKET_PUBLIC }}
+            S3_BUCKET_ADMIN=${{ vars.S3_BUCKET_ADMIN }}
+            CLOUDFRONT_DISTRIBUTION_PUBLIC=${{ vars.CLOUDFRONT_DISTRIBUTION_PUBLIC }}
+            CLOUDFRONT_DISTRIBUTION_ADMIN=${{ vars.CLOUDFRONT_DISTRIBUTION_ADMIN }}
 
   site:
     needs: preflight

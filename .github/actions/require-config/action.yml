@@ -1,0 +1,67 @@
+name: Require configuration
+description: >
+  Fail with a clear, named error when a deploy-time secret or variable is
+  missing, instead of failing deep inside an AWS CLI call with an opaque one.
+
+inputs:
+  secrets:
+    description: |
+      Newline-separated NAME=value pairs, e.g.
+
+        AWS_DEPLOY_ROLE_ARN=${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+
+      Only the NAME is ever printed. Values are masked by Actions in any case.
+    required: false
+    default: ''
+  variables:
+    description: 'Newline-separated NAME=value pairs, same form as `secrets`.'
+    required: false
+    default: ''
+  context:
+    description: 'Sentence appended to the failure output, naming what to do next.'
+    required: false
+    default: 'See docs/deployment.md.'
+
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        REQUIRED_SECRETS: ${{ inputs.secrets }}
+        REQUIRED_VARIABLES: ${{ inputs.variables }}
+        FAILURE_CONTEXT: ${{ inputs.context }}
+      run: |
+        set -uo pipefail
+        missing=0
+
+        check() {
+          kind=$1
+          # Fed by a here-string, never a pipe: a piped `while` runs in a
+          # subshell and `missing=1` would not survive it.
+          while IFS= read -r line; do
+            [ -z "${line//[[:space:]]/}" ] && continue
+            name=${line%%=*}
+            value=${line#*=}
+            # A line with no '=' is a malformed call, not a missing value.
+            if [ "$name" = "$line" ]; then
+              echo "::error::require-config: malformed $kind entry '$name' (expected NAME=value)."
+              missing=1
+              continue
+            fi
+            if [ -z "$value" ]; then
+              echo "::error::Missing $kind '$name'. $FAILURE_CONTEXT"
+              missing=1
+            fi
+          done
+        }
+
+        check secret   <<< "$REQUIRED_SECRETS"
+        check variable <<< "$REQUIRED_VARIABLES"
+
+        if [ "$missing" -ne 0 ]; then
+          echo ""
+          echo "The AWS environment has not been created yet. It is built by"
+          echo "#32 (bootstrap) and wired up by #30 (live deployment)."
+          exit 1
+        fi
+        echo "All required configuration is present."

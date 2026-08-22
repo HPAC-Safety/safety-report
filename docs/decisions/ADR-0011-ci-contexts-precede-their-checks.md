@@ -67,6 +67,12 @@ to merge past red.
   window with no required checks, and a Renovate pull request opening inside it
   would have nothing to wait for and would merge on its own approval. The flag
   is flipped separately, after the ruleset is confirmed live: #35.
+- **Update:** the window is closed. `gh api repos/HPAC-Safety/safety-report/rulesets/21206025`
+  confirmed all eight contexts (`build`, `test`, `coverage`, `web`, `e2e`,
+  `agent-config`, `i18n`, `linked-issue`) are required before `automerge` was
+  flipped to `true` for minor/patch updates in #35. That PR does not close #35
+  by itself — the issue also requires observing a real Renovate pull request
+  wait for checks and merge, which happens after this ADR change lands.
 
 ## Superseded when
 

@@ -44,4 +44,16 @@ set.
   properties.
 - **Never commit real report content** as a fixture. Invent plausible data.
 
+## Coverage
+
+`dotnet test --settings ../coverlet.runsettings --collect:"XPlat Code Coverage"`,
+merged with ReportGenerator, gated by `tools/coverage-gate.mjs`: an 80% line /
+70% branch floor, plus a ratchet that fails if coverage drops below `main`.
+
+Generated code and migrations are excluded — without that the API measures 4.8%
+while `Program.cs` is at 100%. See
+[ADR-0014](../docs/decisions/ADR-0014-coverage-gate.md).
+
+It is a floor, not a goal. The suite above it is what matters.
+
 Full detail: [`docs/testing-conventions.md`](../docs/testing-conventions.md).

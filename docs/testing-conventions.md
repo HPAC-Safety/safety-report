@@ -109,19 +109,53 @@ API key.
 
 ## Coverage
 
-`coverlet.collector` plus ReportGenerator on .NET,
-`node --test --experimental-test-coverage` on JS, merged into one Cobertura
-report.
+Two checks, both in the `coverage` CI job:
 
-- CI fails below **80% line / 70% branch**.
-- It **ratchets**: the threshold may rise, never fall, and CI compares against
-  the `main` baseline so a PR cannot quietly dilute it.
-- Bootstrap, migrations, and DTOs are excluded so the number reflects logic.
+| Check | Rule |
+|---|---|
+| Floor | 80% line, 70% branch |
+| Ratchet | Must not be below `main`'s, within 0.1pp |
+
+The floor stops the number sinking over years. The ratchet stops one pull
+request adding a large body of untested code while staying just above the floor.
+Neither works alone.
+
+```bash
+dotnet test HpacSafety.slnx --collect:"XPlat Code Coverage" \
+  --settings coverlet.runsettings --results-directory ./artifacts/coverage
+dotnet tool restore
+dotnet tool run reportgenerator \
+  "-reports:./artifacts/coverage/**/coverage.cobertura.xml" \
+  "-targetdir:./artifacts/report" -reporttypes:"Cobertura;HtmlInline"
+node tools/coverage-gate.mjs --report ./artifacts/report/Cobertura.xml
+```
+
+`./artifacts/report/index.html` is the per-line view.
+
+### What is excluded, and why it matters
+
+`coverlet.runsettings` drops generated code, migrations, `[ExcludeFromCodeCoverage]`,
+and the test assemblies. This is not tidying. Measured without it,
+`HpacSafety.Api` reports **4.8% while `Program.cs` is at 100%** — the gap is ~440
+lines the OpenApi source generator writes into `obj/`. A gate reading that number
+would be measuring the SDK.
+
+### The baseline
+
+The ratchet compares against the Cobertura artifact from `main`'s last green CI
+run — not a committed number, which the gated change could edit, and not a
+recomputation, which would double the job. If no baseline is available the
+ratchet skips with a notice and the floor still applies. See
+[ADR-0014](decisions/ADR-0014-coverage-gate.md).
+
+### Do not optimise for this
 
 Coverage is a floor, not a goal. This repository could sit at 95% and still
-publish someone's phone number — the anonymization suite is what actually
-protects a reporter. The PR template asks what behaviour a new test pins down,
-not whether the number went up.
+publish someone's phone number.
+
+`HpacSafety.Anonymization.Tests` is what protects a reporter. The pull request
+template asks what behaviour a new test pins down, not whether the number went
+up.
 
 ## Related
 

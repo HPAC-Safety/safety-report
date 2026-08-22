@@ -109,8 +109,10 @@ ASCII boxes do neither.
   `Given_<scenario>_When_<action>_Then_<assertion>`.
 - JavaScript uses Node's built-in `node:test` with nested `describe` blocks
   producing the same sentence. Playwright is for E2E only.
-- Coverage is gated in CI and ratchets upward. It is a floor, not a target —
-  the anonymization suite matters more than the percentage.
+- Coverage is gated in CI: an 80% line / 70% branch floor, plus a ratchet
+  against `main`. It is a floor, not a target — the anonymization suite matters
+  more than the percentage, and a change that raises the number without pinning
+  down behaviour is not an improvement.
 
 Full detail: `docs/testing-conventions.md`.
 

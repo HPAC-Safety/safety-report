@@ -52,8 +52,36 @@ build-time substitution.
 
 Two separate static sites. Both are pure static assets — upload and done.
 
-**Candidates:** S3 + CloudFront (if AWS is confirmed), Cloudflare Pages, Azure
-Static Web Apps, GitHub Pages.
+### The host must support URL rewrites
+
+This is a hard requirement, not a preference. We want clean URLs —
+`/report`, `/report/thanks`, `/admin/queue` — served from the underlying HTML
+without a `.html` suffix and without a hash router.
+
+That rules out **GitHub Pages**, which offers no rewrite mechanism. Its only
+approximation is the 404-page trick, which serves a real HTTP 404 before the
+page loads: bad for search indexing, worse for a form that should look reliable
+to someone filing after an accident.
+
+Viable hosts, with the mechanism each uses:
+
+| Host | Rewrites via |
+|---|---|
+| CloudFront + S3 | CloudFront Function on viewer-request, or S3 routing rules |
+| Cloudflare Pages | `_redirects` with `200` status rewrites |
+| Azure Static Web Apps | `staticwebapp.config.json` `navigationFallback` + `routes` |
+| Netlify | `_redirects` |
+
+Whichever is chosen, the rewrite config lives **in this repository** next to the
+files it serves, not in a console.
+
+Two rules for the rewrites themselves:
+
+- A rewrite serves content at the requested URL — status **200**, not a 301 to
+  a `.html` address. The clean URL is the canonical one.
+- **No blanket SPA fallback.** A genuinely unknown path must still return 404.
+  This is not a single-page app, and rewriting everything to `index.html` turns
+  a typo into a silently blank form.
 
 ```bash
 ./tools/build-css.sh

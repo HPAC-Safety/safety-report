@@ -150,7 +150,9 @@ flowchart TD
 
 Hosting is not finalised — AWS is the leading candidate, and a Canadian region
 is preferred because reports contain personal information about identifiable
-people. Nothing in the code depends on that choice: storage and email sit behind
+people. The static hosts must support **URL rewrites** so the pages have clean
+URLs, which rules GitHub Pages out; see
+[`src/web/README.md`](src/web/README.md). Nothing in the code depends on that choice: storage and email sit behind
 `IBlobStore` and `IEmailSender`.
 
 Two deployment rules worth stating up front:

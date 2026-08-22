@@ -5,15 +5,21 @@ one lives. Hosting rationale is [ADR-0009](decisions/ADR-0009-hosting-on-aws.md)
 the infrastructure itself is Terraform, per
 [ADR-0010](decisions/ADR-0010-infrastructure-as-code.md).
 
-> **Status: scaffold.** The workflows exist, are wired, and fail with a clear
-> message because the AWS environment has not been created yet. Creating it is
+> **Status: scaffold.** The workflows exist and are wired. The three `deploy-*`
+> workflows fail with a clear message because the AWS environment has not been
+> created yet; `terraform.yml` validates `infra/` on every pull request and skips
+> its AWS jobs with a notice for the same reason. The Terraform itself is written
+> and lives in [`infra/`](../infra/README.md) — it has never been applied.
+> Creating the account and running the bootstrap is
 > [#32](https://github.com/HPAC-Safety/safety-report/issues/32); filling in the
-> AWS calls is [#30](https://github.com/HPAC-Safety/safety-report/issues/30).
+> AWS calls in the deploy workflows is
+> [#30](https://github.com/HPAC-Safety/safety-report/issues/30).
 
 ## What deploys, and from where
 
 | Workflow | Deploys | Target |
 |---|---|---|
+| `.github/workflows/terraform.yml` | `infra/` | The AWS environment itself |
 | `.github/workflows/deploy-api.yml` | `src/HpacSafety.Api` | ECS Fargate service |
 | `.github/workflows/deploy-worker.yml` | `src/HpacSafety.Worker` | ECS Fargate service |
 | `.github/workflows/deploy-web.yml` | `src/web/public`, `src/web/admin` | S3 + CloudFront, separately |
@@ -104,18 +110,45 @@ to a fork — do the same.
 }
 ```
 
+### Two roles, because a pull request is not a branch
+
+`terraform plan` runs on pull requests, and a `pull_request`-triggered workflow
+presents the subject `repo:HPAC-Safety/safety-report:pull_request` — not a branch
+ref. It cannot assume the role above, and widening that role so it could is
+exactly what the scoping rule forbids.
+
+So `infra/bootstrap.sh` creates two:
+
+| Role | Trusts | May |
+|---|---|---|
+| `hpac-safety-deploy` | `…:ref:refs/heads/main` | Manage the environment, push images, update services |
+| `hpac-safety-plan` | `…:pull_request` | Read. Nothing else. |
+
+`hpac-safety-plan` is `ReadOnlyAccess` plus read on the state bucket, minus three
+explicit `Deny` statements: `s3:GetObject` on the uploads bucket (those objects
+are photographs of crash sites), `secretsmanager:GetSecretValue`, and the RDS
+log-download actions. `Deny` beats `Allow` unconditionally, so those hold
+whatever AWS adds to `ReadOnlyAccess` later.
+
+Neither role can mint a credential: both policies `Deny` `iam:CreateUser`,
+`iam:CreateAccessKey`, `iam:CreateLoginProfile`, `organizations:*`, and
+`account:*`. Reasoning: [ADR-0032](decisions/ADR-0032-terraform-ci-without-an-aws-account.md).
+
 ## Deploy-time configuration
 
 ### Secrets
 
-Exactly one, and it is not usable without the trust policy above.
+Two, and neither is usable without the trust policy above. They are role names,
+not credentials.
 
-| Name | Purpose |
-|---|---|
-| `AWS_DEPLOY_ROLE_ARN` | Role assumed via OIDC |
+| Name | Purpose | Printed by |
+|---|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | Role assumed via OIDC by the deploy workflows and by `terraform apply` | `bootstrap.sh`, on stdout |
+| `AWS_PLAN_ROLE_ARN` | Read-only role assumed by `terraform plan` on a pull request | `bootstrap.sh`, in its closing instructions |
 
 ```bash
-gh secret set AWS_DEPLOY_ROLE_ARN --repo HPAC-Safety/safety-report
+gh secret set AWS_DEPLOY_ROLE_ARN --repo HPAC-Safety/safety-report --body "$(./infra/bootstrap.sh)"
+gh secret set AWS_PLAN_ROLE_ARN   --repo HPAC-Safety/safety-report
 ```
 
 ### Variables
@@ -126,6 +159,7 @@ failed deploy log says which cluster it could not reach.
 | Name | Example | Used by |
 |---|---|---|
 | `AWS_REGION` | `ca-central-1` | all |
+| `TF_STATE_BUCKET` | `hpac-safety-tfstate-123456789012` | `terraform.yml` |
 | `ECR_REPOSITORY_API` | `hpac-safety/api` | api |
 | `ECR_REPOSITORY_WORKER` | `hpac-safety/worker` | worker |
 | `ECS_CLUSTER` | `hpac-safety` | api, worker |
@@ -142,6 +176,17 @@ failed deploy log says which cluster it could not reach.
 ```bash
 gh variable set AWS_REGION --body ca-central-1 --repo HPAC-Safety/safety-report
 ```
+
+`TF_STATE_BUCKET` is the one value that cannot be committed: `backend.tf` is a
+**partial** configuration because the bucket name carries the AWS account id, and
+`terraform init` is passed it as `-backend-config="bucket=$TF_STATE_BUCKET"`.
+
+Most of the rest are Terraform **outputs**. `terraform output -json
+deploy_variables` returns every one of them from state, which is where they
+should be read from — two sources of truth for a bucket name is one too many.
+The `apply` job writes them into its run summary, and wiring the deploy
+workflows to read them instead of `vars.*` is
+[#30](https://github.com/HPAC-Safety/safety-report/issues/30).
 
 `preflight` validates **every** variable the workflow's later jobs read,
 including the three only `migrate` uses. A variable missing from `preflight`
@@ -166,15 +211,145 @@ This is the distinction most easily got wrong. The application needs these
 and are injected into the ECS task definition. Putting them in GitHub would
 copy them into a second system that has no need to hold them.
 
-| Secret | Held by |
-|---|---|
-| `ANTHROPIC_API_KEY` | Worker — summarize, PII audit, translate |
-| `TURNSTILE_SECRET_KEY` | API — server-side `siteverify` |
-| `ConnectionStrings__Default` | API and Worker |
-| `Notifications__To` | Worker — `safety@hpac.ca` in production |
+| Secrets Manager entry | Injected as | Held by |
+|---|---|---|
+| `hpac-safety/anthropic-api-key` | `Anthropic__ApiKey` | Worker — summarize, PII audit, translate |
+| `hpac-safety/turnstile-secret-key` | `Turnstile__SecretKey` | API — server-side `siteverify` |
+| `hpac-safety/connection-string` | `ConnectionStrings__Default` | API and Worker |
+| `hpac-safety/notifications-to` | `Notifications__To` | Worker — `safety@hpac.ca` in production |
+
+Terraform creates those four **entries** and none of their **values**. There is
+no `aws_secretsmanager_secret_version` resource in `infra/`, and adding one is
+the defect rather than the fix — see
+[ADR-0010](decisions/ADR-0010-infrastructure-as-code.md). A task whose secret has
+no value fails to start, loudly, in the ECS event log; that is the intended
+behaviour, since an API booting without its Turnstile key would accept
+unverified submissions.
+
+The RDS master password is a fifth secret that Terraform never sees at all:
+`manage_master_user_password` has RDS generate and rotate it into its own entry.
+`terraform output database_master_password_secret_arn` says where.
 
 The Turnstile **site** key is public by design and may be a variable. The
 Turnstile **secret** key must never reach a static bundle.
+
+## The environment itself
+
+`infra/` is the whole AWS environment as Terraform, and
+`.github/workflows/terraform.yml` is how it runs. The three `deploy-*` workflows
+ship artifacts *into* it and never create anything.
+[`infra/README.md`](../infra/README.md) describes what it owns.
+
+| Job | Runs on | Needs AWS? | Does |
+|---|---|---|---|
+| `infra` | every pull request and push | no | `fmt -check`, `init -backend=false`, `validate`, `tflint`, `shellcheck bootstrap.sh`, `node --check` on the CloudFront Function |
+| `plan` | pull request, same-repo only | yes, read-only | `terraform plan`, posted as a pull request comment |
+| `apply` | merge to `main`, or dispatch | yes | `plan` then `apply`, behind `environment: production` |
+
+`infra` is a **required status check** and is the only one that can be, because
+it is the only one that works with no account behind it. `plan` and `apply`
+detect that the AWS configuration is missing, emit a `::notice::` naming #32, and
+exit 0 — the reasoning is
+[ADR-0032](decisions/ADR-0032-terraform-ci-without-an-aws-account.md), and it is
+[ADR-0011](decisions/ADR-0011-ci-contexts-precede-their-checks.md)'s applied to
+the same problem: a permanently-red check trains people to merge past red.
+
+After every apply the job runs `terraform plan -detailed-exitcode` again and
+fails if it is not empty. ADR-0010 requires apply on an unchanged repository to
+be a no-op; that step is what makes it an assertion rather than an aspiration.
+
+## Manual steps, and why each one has to be
+
+Everything below needs an account that does not exist yet, a human decision, or
+another organisation. None of it can be automated, and the first two take real
+calendar time — start them before anything needs them.
+
+| Step | Blocked on |
+|---|---|
+| Create the AWS account, or a dedicated account in an organisation | A person with a payment method. A separate account is worth it: this one holds personal information about real accidents. |
+| Enable MFA on the root user, then stop using it | Physical possession of the factor |
+| Create an admin user or SSO permission set for whoever runs the bootstrap | The account existing |
+| Set a budget alert | A number somebody is willing to be woken up for |
+| Request SES production access | **A human review at AWS, a day or more.** Until it clears, mail only reaches individually verified addresses — `safety@hpac.ca` receives nothing. |
+| Publish DNS records on `hpac.ca` — SES verification, three DKIM CNAMEs, MAIL FROM MX and SPF, DMARC, ACM validation, CloudFront and ALB aliases | **HPAC's DNS administrator.** Another organisation's zone; days, not minutes. Every record is in the `dns_records_to_publish` Terraform output. |
+| `aws secretsmanager put-secret-value` for each of the four entries | Values that must never enter Terraform state |
+
+## First deploy on a fresh account
+
+The first `terraform apply` does not produce a working system on its own —
+nothing has been pushed to ECR and no secret has a value. That is a property of
+bootstrapping, not a defect. The order:
+
+```mermaid
+flowchart TD
+    boot["./infra/bootstrap.sh<br/>OIDC · two roles · state bucket · lock table"]
+    boot --> gh["gh secret set AWS_DEPLOY_ROLE_ARN, AWS_PLAN_ROLE_ARN<br/>gh variable set TF_STATE_BUCKET"]
+    gh --> apply1["terraform apply<br/>everything except a running task"]
+    apply1 --> dns["publish the DNS records from<br/>the dns_records_to_publish output"]
+    dns --> ses["request SES production access"]
+    apply1 --> secrets["put-secret-value ×4"]
+    secrets --> deploy["deploy-api · deploy-worker · deploy-web"]
+    deploy --> up["services stabilise"]
+```
+
+Two things look like failures on the way and are not:
+
+- **The ECS services do not stabilise after the first apply.** The task
+  definitions point at an image tag nothing has pushed yet, and the secrets have
+  no values. Both are fixed by the two steps after it.
+- **`aws_acm_certificate_validation` blocks**, for up to two hours, waiting for
+  DNS records only HPAC's DNS administrator can publish. That is deliberate: the
+  alternative is a listener serving a certificate that was never validated.
+
+## Recovery
+
+### A workflow cannot assume its role
+
+The trust policy is the whole mechanism, and it is converged — not skipped — on
+every bootstrap run. Change the constant at the top of `infra/bootstrap.sh` and
+re-run it. Check the subject the run actually presented: `main` gives
+`repo:HPAC-Safety/safety-report:ref:refs/heads/main`, a pull request gives
+`…:pull_request`, and they need different roles.
+
+### The plan says something changed that nobody changed
+
+That is drift, and it means somebody clicked in the console. **Nothing is created
+or edited by hand after bootstrap.** Either import the change or revert it; do
+not add it to `infra/` retroactively as if Terraform had made it. A plan people
+have learned to skim is the review artifact ADR-0010 was chosen for, lost.
+
+### The state file is lost or corrupt
+
+The state bucket is versioned for exactly this. Restore the previous version:
+
+```bash
+aws s3api list-object-versions --bucket "$TF_STATE_BUCKET" \
+  --prefix hpac-safety/production.tfstate
+aws s3api copy-object --bucket "$TF_STATE_BUCKET" \
+  --key hpac-safety/production.tfstate \
+  --copy-source "$TF_STATE_BUCKET/hpac-safety/production.tfstate?versionId=<previous>"
+```
+
+Then `terraform plan` and read it before doing anything else. If state is gone
+entirely, the resources still exist — recovery is `terraform import`, resource by
+resource, not `terraform apply`.
+
+### A lock is stuck
+
+An apply that was cancelled mid-run leaves the lock held.
+`terraform force-unlock <id>` releases it. Confirm no apply is actually running
+first; two concurrent applies is what the lock exists to prevent.
+
+### Rebuilding the environment from scratch
+
+`terraform destroy` then `terraform apply`, with one deliberate obstacle: the RDS
+instance sets `deletion_protection = true` and `skip_final_snapshot = false`.
+Clearing that is a conscious act, which is the right amount of friction for the
+one resource holding data about real accidents. The uploads bucket is versioned
+and will not delete while it holds objects.
+
+Rebuilding does **not** restore the database. That is a snapshot restore, and it
+is a separate decision from rebuilding the infrastructure around it.
 
 ## Migrations
 

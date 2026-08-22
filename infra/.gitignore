@@ -1,0 +1,19 @@
+# Terraform working files. None of these belong in the repository: the state is
+# in S3 (backend.tf), the lock file for provider hashes is committed, and
+# everything else is per-machine.
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# tfvars can hold values, and a value in a file is a value one `git add -A` away
+# from being public. Terraform holds no secret values by design (ADR-0010) — this
+# is the belt to that braces.
+*.tfvars
+*.tfvars.json
+!example.tfvars
+
+# Plan files. A plan contains the full resource graph, including any attribute a
+# provider marked sensitive.
+*.tfplan

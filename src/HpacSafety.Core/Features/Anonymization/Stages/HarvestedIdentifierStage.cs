@@ -62,11 +62,63 @@ internal sealed class HarvestedIdentifierStage : ScrubStage
         var matcher = ScrubPatterns.Alternation(
             $@"(?<{LeadGroup}>\b[dlDL]['’])?(?<!\w)(?:{string.Join("|", branches)})s?(?!\w)");
 
-        document.RewriteValues(value => ScrubGuard.Replace(
-            matcher,
-            value,
-            match => Substitute(match, replacements)));
+        document.RewriteValues(value => CollapseDeterminers(
+            ScrubGuard.Replace(matcher, value, match => Substitute(match, replacements)),
+            document.Vocabulary));
     }
+
+    /// <summary>
+    /// Removes a determiner the reporter wrote immediately before one the scrub
+    /// wrote.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The single alternation cannot rescan its own output, but the reporter's
+    /// own prose can still supply the first half. A reporter surnamed "Pilot"
+    /// makes the ordinary word "pilot" a token, so "The pilot then threw the
+    /// reserve" became "The the reporter then threw" — ungrammatical, and
+    /// exactly what role words exist to avoid.
+    /// </para>
+    /// <para>
+    /// <b>The article the scrub wrote is the one that survives</b>, carrying the
+    /// reporter's capitalisation. Keeping the reporter's instead would put
+    /// "la pilote" back into a French summary, which is the whole point of the
+    /// uniform masculine article — see ADR-0028.
+    /// </para>
+    /// </remarks>
+    private static string CollapseDeterminers(string value, ScrubVocabulary vocabulary)
+    {
+        var written = new[] { Determiner(vocabulary.Reporter), Determiner(vocabulary.Pilot) }
+            .Where(word => word.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (written.Count == 0)
+        {
+            return value;
+        }
+
+        var pattern = ScrubPatterns.Alternation(
+            $@"(?<![\w'’])(?<source>the|a|an|le|la|les|un|une)\s+(?<written>{string.Join("|", written.Select(Regex.Escape))})(?=\s)");
+
+        return ScrubGuard.Replace(pattern, value, match =>
+        {
+            var word = match.Groups["written"].Value;
+
+            return char.IsUpper(match.Groups["source"].Value[0])
+                ? char.ToUpperInvariant(word[0]) + word[1..]
+                : word;
+        });
+    }
+
+    private static string Determiner(string roleWord)
+    {
+        var space = roleWord.IndexOf(' ', StringComparison.Ordinal);
+        return space > 0 ? roleWord[..space] : string.Empty;
+    }
+
+    private static bool StartsWithArticle(string replacement, string article) =>
+        replacement.StartsWith(article + " ", StringComparison.OrdinalIgnoreCase);
 
     private static string Substitute(Match match, List<string> replacements)
     {
@@ -88,16 +140,27 @@ internal sealed class HarvestedIdentifierStage : ScrubStage
             return replacement;
         }
 
-        // "de" + "le pilote" contracts to "du pilote". Only the article the
-        // vocabulary actually carries is contracted; anything else is left as
-        // the reporter wrote it, because guessing at French grammar is how a
-        // scrub starts inventing.
-        if (lead.Value[0] is 'd' or 'D' && replacement.StartsWith("le ", StringComparison.OrdinalIgnoreCase))
+        var elided = lead.Value[0];
+        var capitalised = char.IsUpper(elided);
+
+        // "de" + "le pilote" contracts to "du pilote".
+        if (elided is 'd' or 'D' && StartsWithArticle(replacement, "le"))
         {
-            var contracted = new StringBuilder(char.IsUpper(lead.Value[0]) ? "Du " : "du ");
+            var contracted = new StringBuilder(capitalised ? "Du " : "du ");
             return contracted.Append(replacement, 3, replacement.Length - 3).ToString();
         }
 
+        // "l'" + "le pilote" is the article twice over. The role word carries
+        // its own, so the elided one is absorbed rather than left as "l'le".
+        if (elided is 'l' or 'L' && (StartsWithArticle(replacement, "le") || StartsWithArticle(replacement, "la")))
+        {
+            return capitalised
+                ? char.ToUpperInvariant(replacement[0]) + replacement[1..]
+                : replacement;
+        }
+
+        // Anything else is left as the reporter wrote it. Guessing further at
+        // French grammar is how a deterministic pass starts inventing.
         return lead.Value + replacement;
     }
 }

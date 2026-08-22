@@ -74,11 +74,14 @@ public class OccurrenceNarrowingTests
     }
 
     [Fact]
-    public void Given_a_midnight_occurrence_bucketed_as_morning_When_it_is_scrubbed_Then_it_publishes_morning()
+    public void Given_a_morning_bucket_and_a_midnight_field_When_it_is_scrubbed_Then_the_bucket_is_carried_through()
     {
-        // Given — midnight is a real answer, not an absent one. The mapping
-        // lives in the reporting feature; what stage 1 owes is to carry the
-        // answer through rather than mistake it for a default.
+        // Given — this does NOT test that midnight buckets as morning. Nothing
+        // on this branch maps a clock time to a bucket, so that property is
+        // verified where the mapping lives, not here. What is tested is stage
+        // 1's own duty: a bucket it is handed is carried through unchanged and
+        // the clock value in the field is not, even when that value looks
+        // exactly like an unset default.
         var report = TimeReport(TimeOfDay.Morning, "00:00");
 
         // When

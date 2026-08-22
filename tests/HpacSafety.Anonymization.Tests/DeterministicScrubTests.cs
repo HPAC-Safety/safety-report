@@ -368,6 +368,82 @@ public class DeterministicScrubTests
         scrubbed.Text.ShouldContain("she broke her ankle");
     }
 
+    [Fact]
+    public void Given_the_reporter_wrote_the_word_that_is_a_name_When_it_is_scrubbed_Then_no_determiner_is_doubled()
+    {
+        // Given — the reporter's surname is "Pilot", so the ordinary word
+        // "pilot" in their own prose is matched too. Substituting it after an
+        // article produced "The the reporter", which is the ungrammatical text
+        // role words exist to prevent.
+        var report = new ScrubRequest
+        {
+            Province = Province.Ontario,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.ReporterName, "From", "Ann Pilot"),
+                new ScrubField(ScrubFieldKind.PilotName, "Pilot", "Sarah Whitlock"),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    "Whitlock flew the ridge. The pilot then threw the reserve."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("the the", Case.Insensitive);
+        scrubbed.Text.ShouldContain("The reporter then threw");
+    }
+
+    [Fact]
+    public void Given_a_two_character_aircraft_answer_When_the_narrative_uses_those_letters_Then_the_text_survives()
+    {
+        // Given — the letter/digit seam let the token "A1" match "a 1", which
+        // deletes a glide ratio out of the middle of a sentence.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.AircraftIdentity, "Model", "A1"),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "I was on a 1 to 1 glide the whole way."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldContain("a 1 to 1 glide");
+    }
+
+    [Fact]
+    public void Given_an_unclassified_yes_no_answer_When_it_is_scrubbed_Then_the_ordinary_word_survives()
+    {
+        // Given — harvesting every unclassified answer whole took "yes" out of
+        // the narrative along with it.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.Unclassified, "Reserve carried?", "Yes"),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    "Yes, I had a reserve, and yes I threw it."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldContain("Yes, I had a reserve, and yes I threw it.");
+    }
+
     // ---- gaps the anonymization auditor proved -----------------------------
 
     [Fact]

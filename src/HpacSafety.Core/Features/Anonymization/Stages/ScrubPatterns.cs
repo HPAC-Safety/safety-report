@@ -115,11 +115,6 @@ internal static partial class ScrubPatterns
     ///   </description></item>
     /// </list>
     /// </remarks>
-    internal static Regex Token(string token) => new(
-        $@"(?<!\w){Fold(token)}s?(?!\w)",
-        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
-        TimeSpan.FromMilliseconds(TimeoutMilliseconds));
-
     /// <summary>
     /// The body of a token matcher, without boundaries, for composing many
     /// tokens into one alternation. See <see cref="HarvestedIdentifierStage"/>
@@ -140,6 +135,7 @@ internal static partial class ScrubPatterns
         var index = 0;
 
         var separated = false;
+        var run = 0;
 
         while (index < normalized.Length)
         {
@@ -152,6 +148,7 @@ internal static partial class ScrubPatterns
 
                 pattern.Append(@"\s*");
                 separated = true;
+                run = 0;
                 continue;
             }
 
@@ -160,12 +157,14 @@ internal static partial class ScrubPatterns
             // spaces it out again. Allowing optional whitespace at the seams a
             // person would write means the answer finds the narrative whichever
             // side the space landed on.
-            if (index > 0 && !separated && IsSeam(normalized[index - 1], normalized[index]))
+            if (index > 0 && !separated && IsSeam(normalized[index - 1], normalized[index], run))
             {
                 pattern.Append(@"\s*");
             }
 
             separated = false;
+            // The run ending at this character, used by the next seam test.
+            run = index > 0 && SameKind(normalized[index - 1], normalized[index]) ? run + 1 : 1;
 
             var equivalents = Equivalents.GetValueOrDefault(BaseLetter(normalized[index]));
 
@@ -187,13 +186,25 @@ internal static partial class ScrubPatterns
     }
 
     /// <summary>
-    /// Whether a space could reasonably sit between two adjacent characters:
-    /// a letter/digit transition, or a lower-to-upper camel-case seam.
+    /// Whether a space could reasonably sit between two adjacent characters: a
+    /// letter/digit transition, or a lower-to-upper camel-case seam.
     /// </summary>
-    private static bool IsSeam(char previous, char current) =>
-        (char.IsLetter(previous) && char.IsDigit(current))
-        || (char.IsDigit(previous) && char.IsLetter(current))
-        || (char.IsLower(previous) && char.IsUpper(current));
+    /// <remarks>
+    /// <paramref name="run"/> is how many same-kind characters precede the seam,
+    /// and it is what stops the tolerance eating ordinary prose. A model answer
+    /// of "A1" would otherwise match "a 1" and delete a glide ratio out of the
+    /// middle of a sentence; a run that short is not a brand with a number after
+    /// it, it is a letter next to a digit.
+    /// </remarks>
+    private static bool IsSeam(char previous, char current, int run) =>
+        (char.IsLetter(previous) && char.IsDigit(current) && run >= 4)
+        || (char.IsDigit(previous) && char.IsLetter(current) && run >= 3)
+        || (char.IsLower(previous) && char.IsUpper(current) && run >= 3);
+
+    /// <summary>Whether two characters belong to the same run for seam purposes.</summary>
+    private static bool SameKind(char previous, char current) =>
+        (char.IsLetter(previous) && char.IsLetter(current))
+        || (char.IsDigit(previous) && char.IsDigit(current));
 
     /// <summary>The unaccented letter a character decomposes to, or the character itself.</summary>
     private static char BaseLetter(char character)

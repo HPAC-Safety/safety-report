@@ -32,20 +32,30 @@ internal sealed class StructuredFieldStage : ScrubStage
     // and matching it would turn every standalone "a" into "the pilot".
     private const int ShortestWholeAnswer = 2;
 
-    // Applied to PARTS only, and only when the answer wrote them in lower case.
-    // French name particles are conventionally lower case and surnames are
-    // capitalised, which is the signal that separates "Marc de la Roche" — where
-    // matching "de" would eat half of every French narrative — from "Thanh Le",
-    // where "Le" is the surname and must be matched. A whole answer of "Le" is
-    // a surname and is matched regardless.
-    private static readonly HashSet<string> NameParticles = new(StringComparer.Ordinal)
+    // Applied to interior PARTS only — see IsParticle. Membership on this list
+    // is necessary but never sufficient, because every entry is also somebody's
+    // surname: Le, La, Van, De, Di, Da, Du, El, Al, Bin, Der, Den, Ten, Ter,
+    // Ibn.
+    private static readonly HashSet<string> NameParticles = new(StringComparer.OrdinalIgnoreCase)
     {
         "de", "du", "des", "la", "le", "les", "van", "von", "der", "den", "di",
         "da", "dos", "das", "el", "al", "bin", "ibn", "ter", "ten", "of", "the",
     };
 
-    private static readonly char[] TokenSeparators =
-        [' ', '\t', '\n', '\r', '-', '\u2010', '\u2011', '\u2012', '\u2013', '\u2014', '\'', '\u2019'];
+    // Answers that say nothing about a person. Harvesting one of these whole
+    // would delete an ordinary word from every sentence that used it: an
+    // unclassified "Reserve carried? Yes" would take "yes" out of "yes, I threw
+    // it".
+    private static readonly HashSet<string> NotIdentifying = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "yes", "no", "oui", "non", "true", "false", "none", "n/a", "na",
+        "unknown", "inconnu", "aucun", "aucune",
+    };
+
+    private static readonly char[] WordSeparators = [' ', '\t', '\n', '\r'];
+
+    private static readonly char[] CompoundSeparators =
+        ['-', '\u2010', '\u2011', '\u2012', '\u2013', '\u2014', '\'', '\u2019'];
 
     protected override void Handle(ScrubDocument document)
     {
@@ -158,7 +168,7 @@ internal sealed class StructuredFieldStage : ScrubStage
                 case ScrubFieldKind.MemberIdentifier:
                     var contact = field.Value.Trim();
 
-                    if (contact.Length >= ShortestNamePart)
+                    if (contact.Length >= ShortestNamePart && !NotIdentifying.Contains(contact))
                     {
                         terms.Add(contact);
                     }
@@ -215,28 +225,63 @@ internal sealed class StructuredFieldStage : ScrubStage
             yield return whole;
         }
 
-        foreach (var part in whole.Split(TokenSeparators, StringSplitOptions.RemoveEmptyEntries))
+        var words = whole.Split(WordSeparators, StringSplitOptions.RemoveEmptyEntries);
+
+        for (var position = 0; position < words.Length; position++)
         {
-            var word = part.Trim(',', '.', ';', ':', '(', ')', '"');
+            var word = Clean(words[position]);
+            var compound = word.Split(CompoundSeparators, StringSplitOptions.RemoveEmptyEntries);
 
-            if (word.Length < shortest
-                || string.Equals(word, whole, StringComparison.OrdinalIgnoreCase)
-                || IsParticle(word, shortest))
+            foreach (var raw in compound)
             {
-                continue;
-            }
+                var part = Clean(raw);
 
-            yield return word;
+                if (part.Length < shortest
+                    || string.Equals(part, whole, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (shortest == ShortestNamePart
+                    && IsParticle(part, word, position, words.Length, compound.Length))
+                {
+                    continue;
+                }
+
+                yield return part;
+            }
         }
     }
 
     /// <summary>
-    /// A lower-case name particle inside a longer name. Skipped as a part and
-    /// matched as a whole answer, which is the difference between "Marc de la
-    /// Roche" and a pilot whose surname is "Le".
+    /// Whether a part of a name answer is a particle rather than a surname.
     /// </summary>
-    private static bool IsParticle(string word, int shortest) =>
-        shortest == ShortestNamePart
-        && char.IsLower(word[0])
-        && NameParticles.Contains(word.ToLowerInvariant());
+    /// <remarks>
+    /// <para>
+    /// Decided on <b>structure, never on capitalisation.</b> An earlier version
+    /// read <c>char.IsLower(part[0])</c>, which made redaction depend on the
+    /// reporter's shift key: "thanh le" leaked the surname because it was typed
+    /// on a phone, and "Marc DE LA ROCHE" — standard surname-in-capitals on an
+    /// official French-Canadian form — deleted "de la" from the narrative.
+    /// </para>
+    /// <para>
+    /// A particle is a word that sits <b>between</b> other parts of the name, so
+    /// it needs three or more words with at least one after it. That keeps "de"
+    /// and "la" in "Marc de la Roche" while matching "le" in "thanh le", where
+    /// it is the final word and therefore the surname.
+    /// </para>
+    /// <para>
+    /// It must also be a whole space-separated word. In "marie-le tremblay" the
+    /// hyphen makes "le" half of a compound given name, and a hyphen does not
+    /// depend on casing either.
+    /// </para>
+    /// </remarks>
+    private static bool IsParticle(string part, string word, int position, int wordCount, int compoundLength) =>
+        wordCount >= 3
+        && position < wordCount - 1
+        && compoundLength == 1
+        && string.Equals(part, word, StringComparison.OrdinalIgnoreCase)
+        && NameParticles.Contains(part);
+
+    private static string Clean(string text) => text.Trim(',', '.', ';', ':', '(', ')', '"');
 }

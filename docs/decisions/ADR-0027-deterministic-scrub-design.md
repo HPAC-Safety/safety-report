@@ -86,6 +86,11 @@ class of every letter sharing its unaccented base, built from Unicode rather tha
 from a hand-written table. Names also split on hyphens and apostrophes, or half
 of "Sarah-Jane" walks straight through.
 
+The whitespace tolerance is bounded by how much of the token precedes the seam:
+"Halcyon3" may find "Halcyon 3", but a model answer of "A1" may not find "a 1"
+and delete a glide ratio out of the middle of a sentence. A run that short is not
+a brand with a number after it.
+
 Matching also tolerates a **trailing "s"** ("the Whitlocks" names the same family
 as "Whitlock's", which an apostrophe already caught), **either Unicode
 normalization form** (a browser may send "é" as one code point or as "e" plus a
@@ -110,15 +115,28 @@ are overwhelmingly ordinary words and deleting "air" from a flying report delete
 the report.
 
 That leaves the French particle problem, which length cannot solve: "de" and
-"la" must survive in "Marc de la Roche" while "Le" must not in "Thanh Le". The
-discriminator is **capitalisation**, not length — French particles are
-conventionally lower case and surnames are capitalised — so a lower-case part on
-a closed particle list is skipped, and a capitalised one is matched.
+"la" must survive in "Marc de la Roche" while "Le" must not in "thanh le".
 
-The residual is accepted and stated: a name answer of exactly "Le" is treated as
-a surname and will take the French article out of the narrative with it. A
-reporter whose whole name answer is a particle is rare; a Vietnamese surname is
-not. Two would take the
+**The discriminator is structure, and it must never be capitalisation.** An
+earlier version of this decision used `char.IsLower` on the answer, reasoning
+that French particles are conventionally lower case and surnames capitalised.
+That made redaction depend on the reporter's shift key, and it failed in both
+directions: "thanh le" leaked the surname because it was typed on a phone, and
+"Marc DE LA ROCHE" — surname in capitals, standard on official French-Canadian
+forms — deleted "de la" from the narrative. Whether a real person is identifiable
+must not turn on how they typed their own name.
+
+A particle is instead a word that sits **between** other parts of the name: three
+or more space-separated words, with at least one after it. "de" and "la" in
+"Marc de la Roche" qualify; "le" in "thanh le" is the final word and therefore
+the surname. It must also be a whole space-separated word — in "marie-le
+tremblay" the hyphen makes "le" half of a compound given name, and a hyphen does
+not depend on casing either.
+
+The residual is accepted and stated: in a three-word name whose middle word is a
+genuine standalone surname — "Marie Le Blanc" — that surname is matched as part
+of the whole answer but not on its own. Narrower than the casing rule it
+replaced, and it fails the same way regardless of how the name was typed. Two would take the
 French name particles — "de", "la", "du", "le" — out of every French narrative
 the system ever scrubs; three-letter parts of a place or a brand are
 overwhelmingly ordinary words, and deleting "air" from a flying report deletes
@@ -154,9 +172,23 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
   a typo with no space after a full stop. A vague summary is recoverable.
 - **Every token is matched in one pass.** Names and places were two stages, each
   looping its tokens and rewriting the value every time, which let a later token
-  match inside text an earlier one had just written — a reporter surnamed
-  "Pilot" turned "the pilot" into "the the reporter". A single alternation,
+  match inside text an earlier one had just written. A single alternation,
   longest branch first, cannot rescan its own output.
+
+  **That fixes one of the two ways "the the reporter" arose, and it is worth
+  being exact about which.** The reporter's own prose supplies the other: when a
+  person's name is also an ordinary word — a reporter surnamed "Pilot" — the
+  word "pilot" in their narrative is a token too, so "The pilot then threw the
+  reserve" still puts an article in front of a role word that has one. A final
+  pass drops the duplicate, keeping **the article the scrub wrote** and the
+  reporter's capitalisation, because keeping the reporter's would put "la pilote"
+  back into a French summary.
+
+  What that pass cannot fix is the mislabelling underneath: the reporter meant
+  the generic word, and the scrub cannot tell that from the surname, so the
+  sentence now says "the reporter" where it meant the pilot. Redacting is still
+  the right call — it might genuinely have been the surname — and the human
+  reviewer is the backstop. Stated here rather than left for someone to discover.
 - **A regex timeout never carries the report with it.**
   `RegexMatchTimeoutException` exposes the subject text on `Input`, and that
   text is the raw narrative. It is caught and replaced with a domain exception
@@ -174,8 +206,15 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
   invariant rather than the arithmetic: whatever the field said, only the bucket
   survives. Copying "morning is before 11:00" here would create a second
   definition, and a drifted boundary publishes the wrong time of day about a
-  real crash. `TimeOfDayBuckets` in the reporting feature is the one definition;
-  the caller calls it and passes the result in.
+  real crash. The mapping from a clock time to a bucket arrives with the schema
+  work in [PR #62](https://github.com/HPAC-Safety/safety-report/pull/62) and is
+  not on this branch; until it lands the caller supplies the bucket, and nothing
+  in this feature changes when it does.
+
+  The narrowing covers the **structured** date and time answers. A date or time
+  written into the narrative passes through — free text is prose, and a rule
+  that stripped every number from it would take the altitudes and airspeeds too.
+  That residue is what stages 3 and 5 read for.
 
   The three empty-ish states stay distinct: `Unknown` means the form asked and
   the reporter did not answer, and is published; `NotAnswered` means the form has

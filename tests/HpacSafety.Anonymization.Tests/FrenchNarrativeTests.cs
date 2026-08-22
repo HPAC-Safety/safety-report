@@ -173,6 +173,23 @@ public class FrenchNarrativeTests
     }
 
     [Fact]
+    public void Given_a_capitalised_elided_article_before_a_name_When_it_is_scrubbed_Then_the_article_is_absorbed()
+    {
+        // Given — "L'Élise" is the other elision, and it produced "L'le pilote":
+        // one letter away from the breakage the contraction fix existed to
+        // remove. The role word carries its own article, so the elided one goes.
+        var report = Report($"L'{PilotFirstName} était en finale quand la voile a fermé.");
+
+        // When
+        var scrubbed = Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("L'le");
+        scrubbed.Text.ShouldNotContain("l'le");
+        scrubbed.Text.ShouldContain("Le pilote était en finale");
+    }
+
+    [Fact]
     public void Given_gendered_words_the_reporter_wrote_When_it_is_scrubbed_Then_they_survive_untouched()
     {
         // Given — the source text itself says "la pilote". Stage 1 replaces

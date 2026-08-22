@@ -49,7 +49,7 @@ category:
 | Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
 | Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
 | Precise date | Narrowed to **month and year** (`2026-03`). With no date given the field is dropped. |
-| Precise time | Narrowed to a **time-of-day bucket**. The reporter submits an actual clock time, which is stored encrypted as Restricted data; **only the bucket ever reaches stage 2.** The boundaries — morning before 11:00, mid-day 11:00–14:00, afternoon 14:00–17:00, evening from 17:00 — are defined once, by `TimeOfDayBuckets` in the reporting feature, and stage 1 does not re-derive them. |
+| Precise time | The **structured time answer** is narrowed to a time-of-day bucket. The reporter submits an actual clock time, stored encrypted as Restricted data; only the bucket leaves the structured field. The boundaries — morning before 11:00, mid-day 11:00–14:00, afternoon 14:00–17:00, evening from 17:00 — are owned by the reporting feature and stage 1 does not re-derive them. **A date or time written into the narrative is a different matter — see "What stage 1 cannot catch".** |
 | Everything else | Kept, and passed through every stripping rule anyway — **unless nobody classified it**, in which case it is dropped *and* its value is removed from the narrative. Keeping a field has to be a decision somebody made. |
 
 Every structured answer doubles as a token list for the free text. A launch name,
@@ -85,6 +85,12 @@ Three states around the time are distinct and are never flattened together:
 **Midnight is none of these.** It is a real answer and buckets as morning.
 Treating an absent time as `00:00` would publish "morning" about a crash nobody
 timed, which is a fabricated fact in a summary about a real person.
+
+The mapping from a clock time to a bucket is defined once, in the reporting
+feature, so that "morning" means the same thing everywhere. It arrives with the
+schema work in [PR #62](https://github.com/HPAC-Safety/safety-report/pull/62);
+until then the caller supplies the bucket and stage 1 enforces that only the
+bucket travels onward.
 
 Anything removed that has no natural replacement leaves a `[removed]` marker, so
 the sentence stays readable for stage 2 and a reviewer can tell "this was taken
@@ -146,6 +152,13 @@ typed it into a structured answer. Two things follow, and both are real:
 - **A social handle or a mailing address named only in the narrative is the same
   case.** `@sarahflies` matches no pattern. It is removed when the reporter also
   put it in a contact field, and not otherwise.
+- **A date or a time written into the narrative reaches stage 2 unchanged.**
+  "On 14 March 2026 at 14:37 I launched" passes through. The narrowing above
+  applies to the *structured* date and time answers, which is where they are
+  collected; free text is prose, and a rule that stripped every number from it
+  would take the altitudes and airspeeds with it. Stages 3 and 5 read the
+  generated summary for exactly this kind of residue, and the reviewer sees it
+  before anything is published.
 - **Stage 1 does not de-gender the reporter's own prose, and cannot.** It
   replaces the names it was given; it does not rewrite sentences. "She broke her
   ankle", "elle s'est posée", "elle était la pilote" survive stage 1 exactly as

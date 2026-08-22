@@ -108,9 +108,10 @@ names one person.
 
 **The bucket boundaries are not here, on purpose.** Stage 1 is handed the bucket
 the way it is handed the province, and owns the invariant rather than the
-arithmetic — whatever the field said, only the bucket survives. `TimeOfDayBuckets`
-in the reporting feature is the single definition of "morning". Do not copy it
-here. `Unknown` (asked, unanswered) is published; `NotAnswered` (no such
+arithmetic — whatever the field said, only the bucket survives. The single
+definition of "morning" arrives with the schema work in
+[PR #62](https://github.com/HPAC-Safety/safety-report/pull/62); it is not on this
+branch. Do not copy it here when it lands. `Unknown` (asked, unanswered) is published; `NotAnswered` (no such
 question) drops the field; midnight is neither and buckets as morning.
 
 **A field nobody classified is dropped**, and its value is removed from the
@@ -125,7 +126,10 @@ Stage 1 finds an identifier when it matches a pattern or when the reporter also
 typed it into a structured answer. A launch — or a social handle, or a mailing
 address — that appears **only** in the narrative and nowhere in the structured
 answers is not something a regular expression can recognise, and no amount of
-tuning changes that. Nothing pattern-matches `@sarahflies`.
+tuning changes that. Nothing pattern-matches `@sarahflies`. Nor does the
+narrowing reach a date or time the reporter typed into the narrative — that
+applies to the structured answers, and free text keeps its numbers so it keeps
+its altitudes.
 
 **Stage 1 does not de-gender the reporter's own prose, and must not try.** "She
 broke her ankle", "elle s'est posée" survive exactly as written. Rewriting

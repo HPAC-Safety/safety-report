@@ -1,0 +1,160 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"configMigration": true,
+	"extends": [
+		"config:recommended"
+	],
+	"ignorePresets": [
+		":disableRateLimiting"
+	],
+	"timezone": "America/Edmonton",
+	"schedule": [
+		"* 0-6 * * 1"
+	],
+	"lockFileMaintenance": {
+		"enabled": true,
+		"schedule": [
+			"* 0-6 * * 1"
+		]
+	},
+	"prConcurrentLimit": 0,
+	"prHourlyLimit": 0,
+	"labels": [
+		"dependencies",
+		"renovate"
+	],
+	"prBodyNotes": [
+		"## Checklist",
+		"",
+		"- [x] This PR resolves the linked issue",
+		"- [ ] Tests have been added or updated",
+		"- [x] Rebased on top of main"
+	],
+	"vulnerabilityAlerts": {
+		"addLabels": [
+			"area:security"
+		],
+		"schedule": [
+			"at any time"
+		],
+		"prPriority": 10
+	},
+	"packageRules": [
+		{
+			"description": "Label major updates as breaking changes",
+			"matchUpdateTypes": [
+				"major"
+			],
+			"addLabels": [
+				"breaking-change"
+			],
+			"prBodyNotes": [
+				"- [x] This is a breaking change"
+			]
+		},
+		{
+			"description": "Automerge non-major updates",
+			"matchUpdateTypes": [
+				"minor",
+				"patch"
+			],
+			"autoApprove": true,
+			"automerge": true,
+			"prBodyNotes": [
+				"- [ ] This is a breaking change"
+			]
+		},
+		{
+			"description": "Skip pinned versions",
+			"matchManagers": [
+				"nuget"
+			],
+			"matchCurrentValue": "/^\\[[^,]+\\]$/",
+			"enabled": false
+		},
+		{
+			"description": "The .NET SDK in global.json is pinned deliberately; never automerge it",
+			"matchManagers": [
+				"dotnet-sdk"
+			],
+			"groupName": ".NET SDK",
+			"automerge": false
+		},
+		{
+			"groupName": "Analyzers",
+			"matchPackageNames": [
+				"coverlet.collector",
+				"Roslynator.Analyzers"
+			]
+		},
+		{
+			"groupName": "Anthropic",
+			"matchPackageNames": [
+				"/^Anthropic/"
+			]
+		},
+		{
+			"groupName": "AWSSDK",
+			"matchPackageNames": [
+				"/^AWSSDK/"
+			]
+		},
+		{
+			"groupName": "FakeItEasy",
+			"matchPackageNames": [
+				"/^FakeItEasy/"
+			]
+		},
+		{
+			"groupName": "GitHub Actions",
+			"matchManagers": [
+				"github-actions"
+			]
+		},
+		{
+			"groupName": "Microsoft and System",
+			"matchPackageNames": [
+				"/^Microsoft\\./",
+				"/^System\\./",
+				"!/^Microsoft\\.EntityFrameworkCore/"
+			]
+		},
+		{
+			"description": "EF Core and the Npgsql provider must move together or migrations break",
+			"groupName": "EntityFrameworkCore",
+			"matchPackageNames": [
+				"/^Microsoft\\.EntityFrameworkCore/",
+				"/^Npgsql/"
+			]
+		},
+		{
+			"groupName": "Shouldly",
+			"matchPackageNames": [
+				"/^Shouldly/"
+			]
+		},
+		{
+			"groupName": "Testcontainers",
+			"matchPackageNames": [
+				"/^Testcontainers/"
+			]
+		},
+		{
+			"groupName": "xunit",
+			"matchPackageNames": [
+				"/^xunit/"
+			]
+		},
+		{
+			"description": "Keep Renovate up to date (self-managed)",
+			"groupName": "Renovate",
+			"matchManagers": [
+				"npm"
+			],
+			"matchPackageNames": [
+				"renovate"
+			],
+			"automerge": true
+		}
+	]
+}

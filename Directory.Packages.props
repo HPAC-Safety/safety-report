@@ -1,25 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
 <Project>
+	<PropertyGroup>
+		<!-- Enable central package management, https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management -->
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+	</PropertyGroup>
+	<!-- Each ItemGroup in this file should be sorted alphabetically based on their Label -->
+	<!-- Each PackageVersion within each ItemGroup should be sorted alphabetically based on their Include-->
+	<!-- Renovate groups its update PRs on these same boundaries, see renovate.json -->
+	<ItemGroup Label="Analyzers">
+		<PackageVersion Include="coverlet.collector" Version="10.0.1" />
+		<PackageVersion Include="Roslynator.Analyzers" Version="4.16.0" />
+	</ItemGroup>
+	<ItemGroup Label="Microsoft and System">
+		<PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
+		<PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+	</ItemGroup>
+	<ItemGroup Label="Shouldly">
+		<!-- The assertion library for this repository. Not Assert.*, not FluentAssertions. -->
+		<PackageVersion Include="Shouldly" Version="4.3.0" />
+	</ItemGroup>
+	<ItemGroup Label="xunit">
+		<PackageVersion Include="xunit" Version="2.9.3" />
+		<PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+	</ItemGroup>
+	<!--
+		Families expected as the system is built, listed here so they land in the
+		right group rather than at the bottom of the file:
 
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-  </PropertyGroup>
-
-  <!--
-    Test assertions are Shouldly, everywhere. Not Assert.*, not FluentAssertions.
-    CI fails on a bare `Assert.` under tests/. See docs/testing-conventions.md.
-  -->
-  <ItemGroup Label="Runtime">
-    <PackageVersion Include="Microsoft.AspNetCore.OpenApi" Version="10.0.11" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
-  </ItemGroup>
-
-  <ItemGroup Label="Testing">
-    <PackageVersion Include="Shouldly" Version="4.3.0" />
-    <PackageVersion Include="xunit" Version="2.9.2" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
-    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.2" />
-  </ItemGroup>
-
+			Anthropic                       the SDK used by the worker
+			AWSSDK                          S3, SimpleEmail - if AWS is confirmed
+			FakeItEasy                      test doubles
+			Microsoft and System            EntityFrameworkCore, Mvc.Testing, Localization
+			Npgsql                          Npgsql.EntityFrameworkCore.PostgreSQL
+			Testcontainers                  Testcontainers.PostgreSql
+	-->
 </Project>

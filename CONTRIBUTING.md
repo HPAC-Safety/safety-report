@@ -66,6 +66,25 @@ Run `skillfile install` after cloning. Windows contributors need
 `git config core.symlinks true` and Developer Mode, or the agent instruction
 files arrive as plain text containing a path.
 
+## Dependencies
+
+All NuGet versions live in `Directory.Packages.props` via Central Package
+Management. **A `PackageReference` in a `.csproj` never carries a `Version`
+attribute.**
+
+Packages are grouped into `ItemGroup`s labelled by family, sorted alphabetically
+by label, and alphabetically by `Include` within each group. `renovate.json`
+groups its update PRs on the same boundaries, so a family moves as a unit and
+the diff stays readable.
+
+Renovate runs **weekly, early Monday**. Patch and minor updates automerge once
+CI is green; major updates are labelled `breaking-change` and reviewed by hand.
+Security advisories bypass the schedule.
+
+Adding a package: add a `PackageVersion` to the right labelled group (create the
+group if the family is new, keeping the file sorted), then a bare
+`PackageReference` in the project that needs it.
+
 ## Security
 
 Do not report vulnerabilities in a public issue. See

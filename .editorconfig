@@ -22,3 +22,9 @@ trim_trailing_whitespace = false
 
 [Makefile]
 indent_style = tab
+
+# Test projects: Given_When_Then naming is the convention here, so the
+# underscore rule does not apply. See docs/testing-conventions.md.
+[tests/**/*.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = none

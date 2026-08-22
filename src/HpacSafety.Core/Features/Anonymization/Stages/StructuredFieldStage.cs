@@ -119,7 +119,13 @@ internal sealed class StructuredFieldStage : ScrubStage
                 // direction from every sentence that mentions it.
                 case ScrubFieldKind.ContactDetail:
                 case ScrubFieldKind.MemberIdentifier:
-                    terms.Add(field.Value.Trim());
+                    var contact = field.Value.Trim();
+
+                    if (contact.Length >= ShortestNameToken)
+                    {
+                        terms.Add(contact);
+                    }
+
                     break;
 
                 case ScrubFieldKind.Unclassified:
@@ -166,7 +172,12 @@ internal sealed class StructuredFieldStage : ScrubStage
     {
         var whole = value.Trim();
 
-        if (whole.Length > 0)
+        // The minimum applies to the whole answer too, not only to its parts.
+        // A reporter who types an initial into the name field would otherwise
+        // hand us the token "A", and every standalone "a" in the narrative
+        // would become "the pilot". The French case is worse: a name field
+        // reading "Le" would eat "Le vent a tourné".
+        if (whole.Length >= shortest)
         {
             yield return whole;
         }

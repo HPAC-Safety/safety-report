@@ -90,28 +90,69 @@ internal static partial class ScrubPatterns
     /// system that spelling drift is the norm rather than the exception. Every
     /// letter becomes the class of every letter sharing its unaccented base, so
     /// the field spelling and the narrative spelling match in both directions.
+    /// <para>
+    /// Three further forms of the same word, each of which was reaching the
+    /// summarizer intact:
+    /// </para>
+    /// <list type="bullet">
+    ///   <item><description>
+    ///     A <b>trailing "s"</b>. "Whitlock's" was caught because an apostrophe
+    ///     is not a word character; "the Whitlocks" was not, and it names the
+    ///     same family. A name is never a prefix of a longer word here — the
+    ///     lookahead still rejects "Marconi" for "Marc" — so the optional "s"
+    ///     costs nothing.
+    ///   </description></item>
+    ///   <item><description>
+    ///     <b>Either Unicode normalization form.</b> A browser may submit "é" as
+    ///     one code point or as "e" plus a combining acute, and the two are not
+    ///     equal byte for byte. The token is composed before it is folded and
+    ///     every letter may be followed by combining marks, so the two forms
+    ///     match each other in both directions.
+    ///   </description></item>
+    ///   <item><description>
+    ///     <b>Whitespace that moved.</b> A run of spaces in the answer becomes
+    ///     <c>\s*</c>, so a field reading "Halcyon 3" also finds "Halcyon3".
+    ///   </description></item>
+    /// </list>
     /// </remarks>
     internal static Regex Token(string token) => new(
-        $@"(?<!\w){Fold(token)}(?!\w)",
+        $@"(?<!\w){Fold(token)}s?(?!\w)",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeSpan.FromMilliseconds(TimeoutMilliseconds));
 
     private static string Fold(string token)
     {
-        var pattern = new StringBuilder(token.Length * 8);
+        var normalized = token.Normalize(NormalizationForm.FormC);
+        var pattern = new StringBuilder(normalized.Length * 12);
+        var index = 0;
 
-        foreach (var character in token)
+        while (index < normalized.Length)
         {
-            var equivalents = Equivalents.GetValueOrDefault(BaseLetter(character));
+            if (char.IsWhiteSpace(normalized[index]))
+            {
+                while (index < normalized.Length && char.IsWhiteSpace(normalized[index]))
+                {
+                    index++;
+                }
+
+                pattern.Append(@"\s*");
+                continue;
+            }
+
+            var equivalents = Equivalents.GetValueOrDefault(BaseLetter(normalized[index]));
 
             if (equivalents is null)
             {
-                pattern.Append(Regex.Escape(character.ToString()));
+                pattern.Append(Regex.Escape(normalized[index].ToString()));
             }
             else
             {
-                pattern.Append('[').Append(equivalents).Append(']');
+                // Trailing combining marks, so a decomposed narrative matches a
+                // composed answer and the other way round.
+                pattern.Append('[').Append(equivalents).Append(@"]\p{Mn}*");
             }
+
+            index++;
         }
 
         return pattern.ToString();

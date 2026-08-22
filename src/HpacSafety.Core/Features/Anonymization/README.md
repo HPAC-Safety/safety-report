@@ -88,8 +88,11 @@ comes from the reporter's own structured province answer. The scrub never derive
 a province from a site name — that would be inferring a location rather than
 reading one. With no province answered, the location field is dropped outright.
 
-**Matching is accent-insensitive as well as case-insensitive, and names split on
-hyphens and apostrophes.** "Renée" in the name field is found as "Renee" in the
+**Matching is forgiving about the form of the same word.** Accent- and
+case-insensitive; tolerant of a trailing "s", so "the Whitlocks" goes the way of
+"Whitlock's"; either Unicode normalization form, since a browser may send "é" as
+one code point or two; and whitespace may move, so "Halcyon 3" finds "Halcyon3".
+Names also split on hyphens and apostrophes. "Renée" in the name field is found as "Renee" in the
 narrative and the other way round; "Sarah-Jane" is found as "Sarah". Sub-tokens
 below three characters (names) or four (places and aircraft) are not matched on
 their own, so a French narrative keeps its "de" and "la" and a flying report
@@ -103,9 +106,10 @@ an ordinary answer, `Narrative` for the account itself.
 ## What it cannot do, on purpose
 
 Stage 1 finds an identifier when it matches a pattern or when the reporter also
-typed it into a structured answer. A launch that appears **only** in the
-narrative and nowhere in the structured answers is not something a regular
-expression can recognise, and no amount of tuning changes that. That gap is why
+typed it into a structured answer. A launch — or a social handle, or a mailing
+address — that appears **only** in the narrative and nowhere in the structured
+answers is not something a regular expression can recognise, and no amount of
+tuning changes that. Nothing pattern-matches `@sarahflies`. That gap is why
 stages 3 and 5 exist and why a human approves every publication. Do not close it
 by inventing a list of Canadian site names here.
 

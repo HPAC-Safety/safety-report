@@ -44,7 +44,7 @@ category:
 | Category | What stage 1 does |
 |---|---|
 | Reporter and pilot names | The structured answers are dropped. The same names found in free text become a **role word** — see below. |
-| Phone, email, address, social handle | Structured answers dropped. Emails, URLs, and phone numbers in the common written formats are stripped from free text. |
+| Phone, email, address, social handle | Structured answers dropped. Emails, URLs, and phone numbers in the common written formats are stripped from free text. **A social handle or a street address is only removed from the narrative when the reporter also gave it in a field** — no pattern recognises `@sarahflies`. See "What stage 1 cannot catch". |
 | HPAC member number | Structured answer dropped. In free text, matched on the word — `HPAC #48213`, `member number 48213` — because HPAC publishes no number format and stripping every run of digits would delete altitudes and airspeeds along with it. |
 | Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
 | Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
@@ -55,7 +55,10 @@ an aircraft model, an `@handle`, or a member number that the reporter typed into
 a field **and** mentioned again in the narrative is removed from both, even where
 no pattern would have found the second one.
 
-Matching a name or a place is **case- and accent-insensitive**, and names split
+Matching a name or a place is **case- and accent-insensitive**, tolerates a
+trailing "s" so "the Whitlocks" goes the way of "Whitlock's", accepts either
+Unicode normalization form, and allows whitespace to move so a field reading
+"Halcyon 3" also finds "Halcyon3". Names split
 on hyphens and apostrophes: "Renée" in the name field is found as "Renee" in the
 narrative and the other way round, and "Sarah-Jane" is found as "Sarah". Parts
 shorter than three characters (names) or four (places and aircraft) are not
@@ -112,8 +115,13 @@ location is dropped entirely** rather than guessed at.
 ### What stage 1 cannot catch
 
 Stage 1 finds an identifier when it matches a pattern, or when the reporter also
-typed it into a structured answer. A launch named **only** in the narrative is
-not something a regular expression can recognise, and no tuning changes that.
+typed it into a structured answer. Two things follow, and both are real:
+
+- A launch named **only** in the narrative is not something a regular expression
+  can recognise, and no tuning changes that.
+- **A social handle or a mailing address named only in the narrative is the same
+  case.** `@sarahflies` matches no pattern. It is removed when the reporter also
+  put it in a contact field, and not otherwise.
 That residual risk is the reason stages 3 and 5 exist and the reason a human
 approves every publication. It is not to be closed by shipping a list of Canadian
 site names — a lookup table of every site in the country is itself a map of where

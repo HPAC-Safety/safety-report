@@ -86,8 +86,19 @@ class of every letter sharing its unaccented base, built from Unicode rather tha
 from a hand-written table. Names also split on hyphens and apostrophes, or half
 of "Sarah-Jane" walks straight through.
 
+Matching also tolerates a **trailing "s"** ("the Whitlocks" names the same family
+as "Whitlock's", which an apostrophe already caught), **either Unicode
+normalization form** (a browser may send "é" as one code point or as "e" plus a
+combining acute, and the two are not equal byte for byte), and **whitespace that
+moved** (a field reading "Halcyon 3" finds "Halcyon3"). None of these is exotic;
+each was reaching the summarizer intact.
+
 The minimum sub-token lengths are a judgement and worth stating: **three
-characters for a name, four for a place or an aircraft.** Two would take the
+characters for a name, four for a place or an aircraft.** The minimum applies to
+the whole answer as well as to its parts, which is not a detail: a reporter who
+types an initial into the name field would otherwise hand the scrub the token
+"A", and every standalone "a" in the narrative would become "the pilot". In
+French it is worse — a name field reading "Le" would eat "Le vent a tourné". Two would take the
 French name particles — "de", "la", "du", "le" — out of every French narrative
 the system ever scrubs; three-letter parts of a place or a brand are
 overwhelmingly ordinary words, and deleting "air" from a flying report deletes
@@ -121,6 +132,11 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
   matches a pattern or what the reporter also typed into a structured answer.
   That gap is why stages 3 and 5 exist and why a human approves every
   publication. It must not be closed by shipping a list of Canadian site names.
+- **The same is true of a social handle or a mailing address.** Nothing
+  pattern-matches `@sarahflies`. It is removed when the reporter also gave it in
+  a contact field, and not otherwise. `docs/anonymization-policy.md` says so
+  where it lists what is always removed, because a policy that promises more
+  than the code delivers is worse than one that admits the gap.
 - Adding a category means adding one stage and one golden-file case. It does not
   mean touching the other seven.
 - **Known follow-up, outside this change:** `ISummarizer`, `IPiiAuditor`, and

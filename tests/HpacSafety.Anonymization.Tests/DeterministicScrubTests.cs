@@ -229,6 +229,119 @@ public class DeterministicScrubTests
         scrubbed.Text.ShouldContain("de la vallée");
     }
 
+    // ---- gaps the anonymization auditor proved -----------------------------
+
+    [Fact]
+    public void Given_a_pluralised_surname_in_the_narrative_When_it_is_scrubbed_Then_it_is_absent()
+    {
+        // Given — "Whitlock's" was caught because an apostrophe is not a word
+        // character. "Whitlocks" was not, and it names the same family.
+        var report = ScrubFixture.Report("The Whitlocks were both flying that afternoon.");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain(ScrubFixture.PilotLastName, Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_a_pluralised_site_name_in_the_narrative_When_it_is_scrubbed_Then_it_is_absent()
+    {
+        // Given
+        var report = ScrubFixture.Report("Both Ferndales are known for that rotor.");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("Ferndale", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_a_name_answer_in_decomposed_unicode_When_the_narrative_uses_the_composed_form_Then_it_is_absent()
+    {
+        // Given — the same name, two encodings. A browser can submit either,
+        // and they are not equal byte for byte.
+        const string decomposed = "Rene\u0301e Boucher";
+        const string composed = "Ren\u00e9e";
+
+        var report = new ScrubRequest
+        {
+            Province = Province.Quebec,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.PilotName, "Pilot", decomposed),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", $"{composed} sank out behind the ridge."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain(composed, Case.Insensitive);
+        scrubbed.Text.ShouldNotContain("Boucher", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_an_aircraft_model_written_without_its_space_When_it_is_scrubbed_Then_it_is_absent()
+    {
+        // Given — the field says "Halcyon 3"; the narrative says "Halcyon3".
+        var report = ScrubFixture.Report("I had been flying the Halcyon3 for two seasons.");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("Halcyon", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_a_single_letter_name_answer_When_the_narrative_is_scrubbed_Then_ordinary_words_survive()
+    {
+        // Given — a reporter who types an initial into the name field. Matching
+        // a one-character token would replace every standalone "a" in the
+        // narrative with "the pilot" and destroy the report.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.PilotName, "Pilot", "A"),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "I took a big collapse over a spine."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldContain("a big collapse");
+        scrubbed.Text.ShouldContain("a spine");
+    }
+
+    [Fact]
+    public void Given_a_two_letter_name_particle_answer_When_a_french_narrative_is_scrubbed_Then_it_survives()
+    {
+        // Given — the same bug in the language it hurts most.
+        var report = new ScrubRequest
+        {
+            Province = Province.Quebec,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.PilotName, "Pilote", "Le"),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "Le vent a tourné et la voile a fermé."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldContain("Le vent");
+    }
+
     // ---- contact details ---------------------------------------------------
 
     [Theory]

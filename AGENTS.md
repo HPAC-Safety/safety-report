@@ -195,6 +195,21 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
 - Static HTML/JS for the UI. No SPA framework, no bundler.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
+- **Dark mode is a token redefinition, never a `dark:` variant.** Write
+  `bg-surface text-ink border-rule` and dark mode is already handled, because
+  those utilities resolve to the custom properties the dark block redefines. A
+  `dark:` class in markup is a defect: it is a second place the theme is stated,
+  and the one that gets forgotten is a white card in a queue at midnight. A new
+  colour goes into `@theme` **and** both dark blocks. See
+  [ADR-0024](docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md).
+- **Nothing under `src/web` fetches from a third-party origin at page load** —
+  no CDN fonts, no CDN scripts, no remote images. A pilot filing an occurrence
+  report generates requests to this site and nowhere else. Assets are committed
+  under `src/web/assets` with their licences; the `web` job checks it.
+- `src/web/styles/theme-preview.html` is a developer artefact — not deployed,
+  not linked from either site, and the one file under `src/web` exempt from the
+  no-hardcoded-strings rule, because every string on it is a token or font name
+  rather than user-facing copy. Skip it in the hardcoded-string lint.
 
 ### Design
 
@@ -339,9 +354,12 @@ describes it is worse than no README, because it is believed.
   discovering and invoking what is installed.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
-- **A tool version is pinned in exactly one file, and `init-dev.sh` reads it
-  from there.** The .NET SDK lives in `global.json`, the Node major in
-  `.github/workflows/ci.yml`. Never write either number into `init-dev.sh` —
+- **A tool version is pinned in exactly one file, and the scripts read it from
+  there.** The .NET SDK lives in `global.json`, the Node major in
+  `.github/workflows/ci.yml`, the Tailwind standalone CLI in
+  `tools/tailwind.pin` — which also carries the SHA-256 of every release asset,
+  because `tools/build-css.sh` downloads an executable and running an unverified
+  one is not acceptable. Never write any of those numbers into a second file —
   a second copy is a copy that will drift, and the drift shows up as a
   contributor whose local build disagrees with CI for no visible reason. Adding
   a new prerequisite means adding a probe that reads its pin, not a constant.
@@ -366,6 +384,7 @@ describes it is worse than no README, because it is believed.
 | How does login work, and why is it like that? | `docs/authentication.md` |
 | Where does personal data live, and for how long? | `docs/data-handling.md` |
 | Colours, type, spacing | `docs/design-system.md` |
+| How is the stylesheet built? | `./tools/build-css.sh`, and `src/web/README.md` |
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
 | How does it get to AWS, and what does that need? | `docs/deployment.md` |
@@ -377,13 +396,16 @@ describes it is worse than no README, because it is believed.
 
 The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
 holds the entities, enums, interfaces, and the data-driven question bank, with
-unit tests; `Infrastructure`, `Api`, and `Worker` are still empty.
+unit tests; `Infrastructure`, `Api`, and `Worker` are still empty. `src/web` has
+its theme — tokens, self-hosted fonts, the build — but no pages yet: the report
+form is #12 and the review queue is #25.
 
 CI runs on every pull request and on merge to `main`, and its checks are
-required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with
-a notice because the thing they would verify has not been written yet; each is
-filled in by its own issue. The deploy workflows are wired but fail at the AWS
-step, because the AWS environment does not exist yet.
+required. Three of them — `coverage`, `e2e`, `i18n` — currently no-op with a
+notice because the thing they would verify has not been written yet; each is
+filled in by its own issue. `web` builds the stylesheet and enforces the theme
+rules above. The deploy workflows are wired but fail at the AWS step, because
+the AWS environment does not exist yet.
 
 The work is filed as GitHub issues across the **Foundation**, **Phase 1**, and
 **Phase 2** milestones, with dependencies wired so nothing can be picked up out

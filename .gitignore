@@ -18,6 +18,7 @@ test-results/
 # Generated CSS + downloaded tooling
 src/web/styles/site.css
 tools/tailwindcss
+tools/tailwindcss.download.*
 
 # Installed and cached by `skillfile install` — reproduced from Skillfile.lock,
 # never committed. See CONTRIBUTING.md.

@@ -42,11 +42,17 @@ and silently drops it from the required set — the ruleset goes on waiting for 
 name that nothing reports. If you rename one, update
 `docs/github-ruleset.json` and reapply it in the same pull request.
 
-Four jobs — `coverage`, `web`, `e2e`, `i18n` — currently detect that the thing
-they would check has not been written yet, emit a `::notice::` naming the issue
-that fills them in, and exit 0. The reasoning, and the obligation to *replace*
-the skip branch rather than add a second job, is in
+Three jobs — `coverage`, `e2e`, `i18n` — currently detect that the thing they
+would check has not been written yet, emit a `::notice::` naming the issue that
+fills them in, and exit 0. The reasoning, and the obligation to *replace* the
+skip branch rather than add a second job, is in
 [ADR-0011](../../docs/decisions/ADR-0011-ci-contexts-precede-their-checks.md).
+`web` was the fourth and now does its real work: it builds the stylesheet with
+the pinned, checksum-verified Tailwind binary, then checks the things the theme
+promises — no reference to a third-party font host anywhere under `src/web`, no
+raw hex in markup, and no tracked file changed by the build. It deliberately
+does **not** set up Node: the web layer has no `node_modules`, and a job that
+installs Node is a job that invites one.
 
 `init-dev.sh` is checked in two of those jobs rather than a job of its own,
 because a new job is a new status-check context and would have to be added to

@@ -14,8 +14,8 @@ produces one CSS file.
 | `public/` | The occurrence report form. Anonymous, bilingual, the highest-traffic surface. |
 | `admin/` | The review queue. Authenticated, used by a handful of safety officers. |
 | `shared/` | `api-client.js`, `i18n.js`, shared components |
-| `styles/` | `tailwind.css` (source, with `@theme` tokens) → `site.css` (generated) |
-| `assets/` | Logo, favicon, self-hosted Poppins and Aleo |
+| `styles/` | `tailwind.css` (source, with `@theme` tokens) → `site.css` (generated), and `theme-preview.html` |
+| `assets/` | Logo and self-hosted Poppins and Aleo. [`assets/README.md`](assets/README.md) |
 
 ## Why plain HTML
 
@@ -25,16 +25,65 @@ filing the report. There is no client state worth a framework — it is a form a
 a list.
 
 Fonts are self-hosted rather than loaded from Google, so filing a report makes
-no third-party request.
+no third-party request. That is checked in CI, not trusted:
+[`assets/fonts/README.md`](assets/fonts/README.md) has the provenance and the
+refresh procedure.
+
+## The theme
+
+Everything visual starts in `styles/tailwind.css`, and two rules come with it.
+
+**Raw hex values live in that file and nowhere else.** Markup writes
+`bg-surface`, `text-ink`, `border-rule` — never `#f22312`, never
+`bg-[#f22312]`. The `web` job in CI greps for it.
+
+**Dark mode is those same tokens, redefined — there is no `dark:` variant in
+any markup here, and none should be added.** `bg-surface` compiles to
+`var(--color-surface)`, so redefining the variable re-themes every existing use
+and every use added later. Write the light class; dark mode is already handled.
+Three states are supported: no `data-theme` attribute follows
+`prefers-color-scheme`, `data-theme="light"` stays light, `data-theme="dark"` is
+dark. See [ADR-0024](../../docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md).
+
+Token names are roles: `--color-ink` means "body text", `--color-surface-3`
+means "third step of the elevation ramp". Adding a colour means adding it to
+`@theme` **and** to both dark blocks, which sit adjacent for that reason.
+[`docs/design-system.md`](../../docs/design-system.md) lists them with their
+provenance.
+
+### theme-preview.html
+
+`styles/theme-preview.html` shows every token, both typefaces, the focus ring
+and the light/dark flip on one page. It is a **developer artefact**: not
+deployed, not linked from either site, and carrying no user-facing copy — every
+string on it is a token name or a font name. It is therefore the one file under
+`src/web` that the hardcoded-string lint (#8) must skip.
+
+```bash
+./tools/build-css.sh
+python3 -m http.server 8080 --directory src/web
+# http://localhost:8080/styles/theme-preview.html
+```
 
 ## Building
 
 ```bash
-./tools/build-css.sh          # downloads the Tailwind standalone binary, emits styles/site.css
+./tools/build-css.sh          # downloads the pinned Tailwind binary, emits styles/site.css
+./tools/build-css.sh --watch  # rebuild on change
+./tools/build-css.sh --check  # report the version, asset and paths; build nothing
 ```
 
-`styles/site.css` is generated and gitignored. There is nothing else to build —
-the HTML and JS ship as written.
+The Tailwind version is pinned in `tools/tailwind.pin` and **nowhere else**,
+along with the SHA-256 of every release asset. The script verifies the download
+against it before making it executable, and re-verifies an existing binary on
+every run — which is what makes a second run download nothing. `TAILWIND_BIN`
+points it at a binary you supply instead, for an air-gapped build; that one is
+used as given and is not verified, and the script says so.
+
+`styles/site.css` and the downloaded `tools/tailwindcss` are gitignored. There
+is nothing else to build — the HTML and JS ship as written, and no `node_modules`
+exists at any point. See
+[ADR-0023](../../docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md).
 
 ## Running locally
 
@@ -110,11 +159,17 @@ and trivially rollback-able — redeploy the previous commit.
 
 - **No hardcoded user-facing strings.** Every label, error, and `aria-label`
   comes from `locales/`. This includes the admin UI.
-- **No raw hex in markup.** Use the `@theme` tokens.
-- Real focus rings, 44px touch targets, WCAG AA contrast.
+- **No raw hex in markup.** Use the `@theme` tokens in `styles/tailwind.css`.
+- **No `dark:` variants.** Dark mode is a token redefinition; see above.
+- Real focus rings, 44px touch targets, WCAG AA contrast. `:focus-visible` and
+  `prefers-reduced-motion` are handled once in the base layer, so no component
+  has to remember them; the touch minimum is the `touch-target` utility.
 
 ## Related
 
 - [`docs/design-system.md`](../../docs/design-system.md)
 - [`docs/localization.md`](../../docs/localization.md)
 - [`docs/form-spec.md`](../../docs/form-spec.md)
+- [ADR-0006](../../docs/decisions/ADR-0006-theme-engine.md) — why Tailwind's standalone CLI
+- [ADR-0023](../../docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md) — why the binary, fonts and logo are pinned and committed
+- [ADR-0024](../../docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md) — why there is no `dark:` variant

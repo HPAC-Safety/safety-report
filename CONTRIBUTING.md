@@ -6,6 +6,25 @@ Paragliding Association of Canada. Contributions are welcome from anyone.
 Before writing code, read [`AGENTS.md`](AGENTS.md). It applies to humans too —
 the invariants there are the reason this system exists.
 
+## Setting up
+
+```bash
+git clone git@github.com:HPAC-Safety/safety-report.git
+cd safety-report
+./init-dev.sh
+```
+
+`init-dev.sh` installs the .NET SDK, Docker, and Node at the versions this
+repository pins, and finishes by telling you whether you are ready or what is
+left to do by hand. Windows contributors run it from **Git Bash**. It is
+idempotent, so re-run it whenever a build fails for a reason you cannot place —
+`./init-dev.sh --check` reports without installing anything.
+
+The full prerequisite table, the options, and the things the script deliberately
+leaves to you are in the [README](README.md#getting-started). Why it is one
+shell script and not PowerShell or a devcontainer:
+[ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
+
 ## Workflow
 
 1. Find or open an issue. Work is filed under the **Foundation**, **Phase 1**,
@@ -71,7 +90,7 @@ Never paste real report content into an issue, a PR, or a test fixture.
 This project is built primarily by AI agents and is configured to be
 tool-agnostic. See [`docs/agent-workflow.md`](docs/agent-workflow.md).
 
-Run `skillfile install` after cloning. Windows contributors need
+`./init-dev.sh` runs `skillfile install` for you. Windows contributors need
 `git config core.symlinks true` and Developer Mode, or the agent instruction
 files arrive as plain text containing a path.
 

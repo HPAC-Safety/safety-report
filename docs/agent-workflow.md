@@ -5,8 +5,11 @@ it shapes how the repository is laid out.
 
 ## Start here
 
-1. Read `AGENTS.md`. The invariants in it outrank any task description.
-2. `skillfile install` — pulls the skills into `.claude/`.
+1. `./init-dev.sh` — installs the .NET SDK, Docker, and Node at the pinned
+   versions, then pulls the skills into `.claude/`. Idempotent, so run it
+   whenever something looks wrong; `./init-dev.sh --check` reports without
+   installing. See [Getting started](../README.md#getting-started).
+2. Read `AGENTS.md`. The invariants in it outrank any task description.
 3. Pick an issue. Work is filed in the **Foundation**, **Phase 1**, and
    **Phase 2** milestones, sized to one PR each.
 4. Open a PR. `main` is protected; an administrator approves.

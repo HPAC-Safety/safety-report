@@ -33,6 +33,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      # Preinstalled on the runner. init-dev.sh is POSIX sh, not bash: Windows
+      # contributors run it under Git Bash, so a bashism would break the one
+      # platform nobody here tests on by hand. See ADR-0015.
+      - name: shellcheck init-dev.sh
+        run: shellcheck -s sh init-dev.sh
+
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
@@ -51,6 +58,14 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
+
+      # Exercises the version parsing on every pull request. setup-dotnet and
+      # setup-node above have already satisfied the versions init-dev.sh reads
+      # out of global.json and this file, so a failure here means the script
+      # stopped agreeing with the files that pin them - which is exactly the
+      # drift ADR-0015 exists to prevent. --check installs nothing.
+      - name: init-dev.sh --check
+        run: ./init-dev.sh --check
 
       - name: dotnet test
         run: dotnet test HpacSafety.slnx --configuration Release

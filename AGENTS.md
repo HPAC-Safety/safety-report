@@ -37,6 +37,10 @@ If an instruction appears to require it, stop and raise the conflict.
    there is no model-to-class lookup table. See `docs/aircraft-classification.md`.
 3. **Nothing is published without human approval.** There is no code path from
    report submission to publication that does not pass through a safety officer.
+   **Publication consent is answered explicitly or not at all** — the consent
+   question is required, has no pre-selected answer, and `Report.ConsentPublish`
+   is `bool?` so that unanswered is never mistaken for no. An unreadable consent
+   answer is an error, never a quiet no.
 4. **Raw reports are never translated and never leave the system.** Only the
    already-anonymized summary is sent to a translation service.
 5. **Member credentials are never persisted, logged, cached, or included in an
@@ -123,6 +127,10 @@ Full detail: `docs/testing-conventions.md`.
   `locales/en-CA.json` and reference it.
 - English is the source of truth; French is generated in CI and reviewed by a
   human. Never hand-edit `locales/fr-CA.json`.
+- That applies to **UI chrome**. Question wording is content, authored in the
+  admin UI, stored per locale in the database, and translated at authoring time
+  through `ITranslator` — in both directions, from whichever language the author
+  was working in. `docs/localization.md` has the split.
 - Terms in `locales/glossary.json` are pinned and must not be machine-translated.
 - Domain values are stored as invariant codes and localized only at the edge.
 
@@ -135,6 +143,25 @@ assets that ship with the worker and are sent to the model when a real report
 arrives. Redaction rules live in `prompts/`, versioned, because they are part of
 the request — not instructions for you. Bump the version rather than editing in
 place. See `prompts/README.md`.
+
+### The question set is data
+
+The form is rows in `questions`, not properties on a class: an administrator
+adds, rewords, retypes, reorders, and removes questions without a deploy. When
+writing anything that touches the form, hold on to three things:
+
+- **An answer references a question *version*.** Rewording a question must never
+  change what an already-given answer appears to mean.
+- **`consent_publish` is the only system question.** Everything else — injury,
+  date, province, aircraft — is ordinary data that can be deleted. Logic finds
+  those answers through an optional `QuestionRole`, and a missing role is a
+  defined state (unknown severity, ordinary review path), never a zero.
+- **Question wording lives in the database, not in `locales/`**, and is
+  auto-translated at authoring time in both directions. `locales/` still owns
+  every piece of UI chrome, and the no-hardcoded-strings rule below is unchanged.
+
+See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
+[`incident-domain-model`](skills/incident-domain-model/SKILL.md) skill.
 
 ### Code
 
@@ -283,9 +310,9 @@ describes it is worse than no README, because it is believed.
 
 ## Current state
 
-The repository is scaffolding and documentation. The solution builds and the
-test suite runs, but the projects are empty — there is deliberately no feature
-logic yet.
+The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
+holds the entities, enums, interfaces, and the data-driven question bank, with
+unit tests; `Infrastructure`, `Api`, and `Worker` are still empty.
 
 CI runs on every pull request and on merge to `main`, and its checks are
 required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with

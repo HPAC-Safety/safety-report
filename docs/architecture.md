@@ -76,7 +76,7 @@ restarting is a notification nobody hears.
 
 | Project | Responsibility | Depends on |
 |---|---|---|
-| `HpacSafety.Core` | Entities, enums, interfaces, the deterministic scrub | nothing |
+| `HpacSafety.Core` | Entities, enums, interfaces, the question bank, the deterministic scrub | nothing |
 | `HpacSafety.Infrastructure` | EF Core, Anthropic, blob storage, HPAC auth, email | Core |
 | `HpacSafety.Api` | HTTP surface, validation, sessions | Core, Infrastructure |
 | `HpacSafety.Worker` | Outbox consumer | Core, Infrastructure |
@@ -84,6 +84,19 @@ restarting is a notification nobody hears.
 `Core` depending on nothing is the rule that keeps the anonymization logic
 testable without a database, a network, or a model. The deterministic scrub in
 particular must be provable in a plain unit test.
+
+## Why the questions are in the database
+
+The form HPAC asks is a table, not a class. Questions carry a type, an order,
+their own options, and per-locale wording; answers reference the question
+*version* they were given under. A safety officer changes the form without a
+deploy, and a report from two seasons ago still renders the question it was
+actually answering.
+
+The answers that logic reads — consent above all — additionally project onto
+typed columns on `reports`, so the invariants stay enforceable in `Core` with no
+database. See
+[ADR-0016](decisions/ADR-0016-data-driven-question-bank.md).
 
 ## Deliberately deferred
 

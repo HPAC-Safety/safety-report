@@ -29,6 +29,12 @@ write the summary manually.
 
 | Table | Holds |
 |---|---|
+| `questions` | The question bank — key, order, active, role, sensitivity. Edited by an administrator, not by a deploy. |
+| `question_versions` | A question exactly as it was asked: type, required, option set, wording. Immutable. |
+| `question_options` | One row per choice, with an invariant `code`. Never display text. |
+| `question_translations` | Question wording per locale. `is_source` marks the language a human wrote; `is_machine_translated` marks text nobody has reviewed. |
+| `question_option_translations` | The same, for choices. |
+| `report_answers` | One answer to one **version** of a question. |
 | `reports` | The submission. Contact fields encrypted, admin-read only. `consent_publish` gates publication. **`language`** records the locale the reporter actually wrote in — see below. |
 | `report_aircraft` | One row per aircraft involved; make/model private, class/band published. |
 | `report_files` | Blob keys for uploads, plus `exif_stripped_at`. |
@@ -68,6 +74,42 @@ flowchart LR
     sen2 --> sfr2["summary fr-CA<br/>translated_from_summary_id"]
 ```
 
+## The question set is data
+
+The form is a table, not a class. An administrator adds, rewords, retypes,
+reorders, and removes questions without a deploy — see
+[ADR-0016](../../docs/decisions/ADR-0016-data-driven-question-bank.md).
+
+```mermaid
+flowchart LR
+    q["questions<br/>order, role, active"] --> v["question_versions<br/>type, options, wording"]
+    v --> a["report_answers<br/>answered under a version"]
+    a -->|"role-carrying answers<br/>project onto"| r["reports<br/>typed columns"]
+    r --> logic["consent gate<br/>injury escalation<br/>aircraft class"]
+```
+
+Three rules to keep straight when working here:
+
+1. **An answer references a version, never a question.** Rewording tomorrow must
+   not change what an answer given today appears to mean. Reordering and
+   activation are *not* versioned; neither changes meaning.
+2. **`consent_publish` is the only system question.** Undeletable, undeactivatable,
+   untypeable-away. `Report.ConsentPublish` is `bool?` — **null is unanswered,
+   which is not no.** The question is required with no default, and a report
+   cannot be submitted until a reporter picks yes or no. `YesNo` is a fixed
+   two-answer type; it cannot be given a third option.
+3. **Everything else finds its answer through an optional `QuestionRole`.**
+   Injury, date, province, aircraft. A role can be moved or cleared, and its
+   absence is a defined state: no injury question means severity is
+   `NotAnswered` and the report takes the ordinary review path rather than the
+   escalated one. Never treat a missing role as a zero.
+
+Question wording lives in `question_translations`, not in `locales/`, because it
+is authored at runtime. It is auto-translated into the other official language
+through `ITranslator` at authoring time, in both directions, and a question
+cannot be activated with a missing counterpart. UI chrome keeps its CI
+translation pipeline — see `docs/localization.md`.
+
 ## The outbox
 
 The API writes the report and its outbox row in **one** `SaveChangesAsync`.
@@ -87,6 +129,11 @@ notification emails. An email failure must never roll back a report submission.
 
 Three tiers, and the distinction drives access control, logging, and what may
 be sent to a model:
+
+A question carries its own tier, and a new question is **Restricted** until
+someone decides otherwise. An answer copies the tier it was given under, so
+reclassifying a question later cannot downgrade the handling of text a reporter
+already trusted us with.
 
 1. **Restricted** — reporter and pilot names, phone, email, member number, raw
    narrative, original uploaded media. Encrypted at rest, admin-only,

@@ -16,6 +16,17 @@ A field's tier is a property of the field, not of the screen it appears on.
 
 If you are unsure which tier something belongs to, it is Restricted.
 
+Because the question set is data rather than code (
+[ADR-0016](decisions/ADR-0016-data-driven-question-bank.md)), a **question
+carries its own tier**, and a question added through the admin UI is
+**Restricted** until someone decides otherwise. Nobody has to remember to
+classify a new question for it to be handled safely; they have to remember in
+order to *relax* it.
+
+An answer copies the tier it was given under. Reclassifying a question later
+therefore cannot retroactively downgrade the handling of text a reporter already
+trusted us with.
+
 ## Retention
 
 Raw reports are **retained**, with contact fields column-encrypted and readable

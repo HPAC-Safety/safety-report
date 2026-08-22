@@ -46,6 +46,43 @@ render in both languages; display text never goes in the database.
 
 A CI lint fails the build on user-facing literals outside the locale files.
 
+## Two translation paths, and which is which
+
+`locales/` is **UI chrome**: labels the code ships, translated in CI and reviewed
+by a human before it merges. Everything above describes that path.
+
+**Question wording is content**, authored in the admin UI by a safety officer at
+runtime. It cannot live in `locales/` — a question created on Tuesday would need
+a code change and a deploy before it rendered — so it lives in
+`question_translations`, one row per locale, and is translated at authoring time
+through `ITranslator`.
+
+| | UI chrome | Question content |
+|---|---|---|
+| Lives in | `locales/*.json`, git-tracked | `question_translations` rows |
+| Translated | In CI, via GitHub Models | At authoring time, via `ITranslator` |
+| Source language | Always English | Whichever the author was working in |
+| Reviewed by | A human, before merge | A human, in the builder, whenever they choose |
+| Covered by the #9 lint | Yes | No — it is data, not a literal |
+
+```mermaid
+flowchart LR
+    a["officer authors a question<br/>browser locale = fr-CA"] --> src["fr-CA row<br/>is_source = true"]
+    src -->|ITranslator| gen["en-CA row<br/>is_machine_translated = true"]
+    gen --> edit["officer edits it<br/>is_machine_translated = false"]
+```
+
+The authoring locale comes from the **browser**, using the detection above. An
+officer working in French types French and the English is generated; an officer
+working in English gets the reverse. A question cannot be activated for the
+public form with a missing counterpart — a machine-translated counterpart is
+acceptable, an absent one is not, because a reporter is never shown a
+half-translated form.
+
+This does not weaken the rule that raw reports are never translated. That rule is
+about reporter data; question wording contains none. See
+[ADR-0016](decisions/ADR-0016-data-driven-question-bank.md).
+
 ## Translation happens in CI
 
 ```mermaid

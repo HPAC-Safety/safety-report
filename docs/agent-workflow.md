@@ -38,13 +38,22 @@ nothing. CI asserts they resolve.
 
 ## Adding a skill
 
-Upstream:
+**Search before you author.** A maintained upstream skill is broader than
+anything written here in an afternoon, and it stays current without this
+repository doing the work.
 
 ```bash
 skillfile search "some topic"
 skillfile add github skill owner/repo skills/thing
 skillfile install
 ```
+
+Write a local skill only for knowledge specific to HPAC — the anonymization
+rules, the aircraft vocabulary, this domain model. Everything general — TDD, DDD,
+SOLID, C# idiom — comes from upstream. Say in the pull request what you searched
+for and why nothing fitted.
+
+Where upstream guidance conflicts with `AGENTS.md`, `AGENTS.md` wins.
 
 Authored here: add a directory under `skills/`, then a `local` line in
 `Skillfile` **with an explicit name** — every file is called `SKILL.md`, so

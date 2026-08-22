@@ -1,7 +1,8 @@
-using HpacSafety.Core;
-using HpacSafety.Core.Enums;
-using HpacSafety.Core.Questions;
-using HpacSafety.Core.Values;
+using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.Outbox;
+using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Core.SharedKernel;
 using Shouldly;
 
 namespace HpacSafety.Core.Tests;

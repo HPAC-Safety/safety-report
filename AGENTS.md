@@ -144,6 +144,29 @@ arrives. Redaction rules live in `prompts/`, versioned, because they are part of
 the request — not instructions for you. Bump the version rather than editing in
 place. See `prompts/README.md`.
 
+### Domain-driven design, and test-first
+
+Two preferences that shape almost every pull request here.
+
+**Model the domain, then wire it up.** `HpacSafety.Core` is the domain and it
+depends on nothing. Aggregates enforce their own invariants — `Report` decides
+whether it may be published, `Question` decides whether it may be deleted — so a
+caller cannot reach a forbidden state by forgetting a check. Primitives that
+carry rules become value objects (`Locale`, not `string`). Anything that reaches
+outside is a port declared here and implemented in `Infrastructure`. Depth:
+the [`ddd`](.claude/skills/ddd/SKILL.md) skill.
+
+**Write the test first.** Red, then green, then tidy. A test you never watched
+fail has not been shown to test anything. This matters more here than in most
+codebases: the assertions are what stop a real person being identified, and a
+test written after the fact tends to assert what the code does rather than what
+the rule says. Depth: the
+[`test-driven-development`](.claude/skills/test-driven-development/SKILL.md)
+skill.
+
+Neither is ceremony to perform on the way past. If a rule in this file conflicts
+with either skill, this file wins — see the note in `Skillfile`.
+
 ### The question set is data
 
 The form is rows in `questions`, not properties on a class: an administrator
@@ -300,9 +323,20 @@ describes it is worse than no README, because it is believed.
 - Squash merge only. Write the PR title as the commit message you want. The body
   becomes the squash commit message, which is why the closing keyword works.
 - Do not create a `CODEOWNERS` file — see `CONTRIBUTING.md` for why.
-- Skills are managed by `skillfile`. Edit the source under `skills/`, then run
-  `skillfile install`. Do not edit `.claude/skills/` — it is generated and
-  gitignored.
+- **Look for an existing skill before writing one.** Run
+  `skillfile search "<topic>"` and read the candidates. A maintained upstream
+  skill beats a local one: it is broader, someone else keeps it current, and it
+  does not become this repository's problem. Author a local skill only for
+  knowledge that is *specific to HPAC* — the anonymization rules, the aircraft
+  vocabulary, this domain — and say in the pull request what you searched for and
+  why nothing fitted. Where upstream guidance conflicts with this file, this file
+  wins.
+- Skills are managed by `skillfile`. Add upstream ones with
+  `skillfile add github skill owner/repo skills/<name>`; edit local sources under
+  `skills/` and run `skillfile install`. Commit `Skillfile` and `Skillfile.lock`.
+  Do not edit `.claude/skills/` — it is generated and gitignored. The
+  [`using-agent-skills`](.claude/skills/using-agent-skills/SKILL.md) skill covers
+  discovering and invoking what is installed.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
 - **A tool version is pinned in exactly one file, and `init-dev.sh` reads it

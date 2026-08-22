@@ -85,6 +85,12 @@ restarting is a notification nobody hears.
 testable without a database, a network, or a model. The deterministic scrub in
 particular must be provable in a plain unit test.
 
+Inside it, code is organised by **feature** — `Features/Reporting`,
+`Features/QuestionBank`, `Features/Moderation`, `Features/Outbox` — with the
+handful of genuinely cross-cutting types in `SharedKernel/`. Each feature owns
+its entities, its enums, and the ports it calls out through. See
+[ADR-0018](decisions/ADR-0018-feature-folders-in-core.md).
+
 ## Why the questions are in the database
 
 The form HPAC asks is a table, not a class. Questions carry a type, an order,

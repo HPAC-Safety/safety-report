@@ -16,18 +16,40 @@ here**, and it must be provable in a plain unit test with no database, no
 network, and no model. It is the first line of defence in the anonymization
 pipeline and the only stage that is fully deterministic.
 
-## Contents
+## Layout
 
-| | |
-|---|---|
-| `Reports/` | `Report`, `ReportAnswer`, `ReportAircraft`, `ReportFile`, `Summary` |
-| `Questions/` | `Question`, `QuestionVersion`, `QuestionOption`, `QuestionTranslation`, `QuestionOptionTranslation`, `QuestionRole`, `QuestionKey` |
-| `Outbox/` | `OutboxMessage` — backoff and the poison threshold |
-| `Administration/` | `AdminUser`, `AdminRole`, `AuditLogEntry`, `AuditAction` |
-| `Enums/` | `ReportStatus`, `InjurySeverity`, `AircraftClass`, `Discipline`, `PilotRating`, `TimeOfDay`, `Province`, `QuestionType`, `SensitivityTier` — stable invariant codes, never display text |
-| `Values/` | `Locale`, `EnumCode` |
-| `Abstractions/` | `ISummarizer`, `IPiiAuditor`, `ITranslator`, `IAircraftClassifier`, `IMemberAuthenticator`, `IBlobStore`, `IEmailSender`, `ITurnstileVerifier`, `IPublicationChannel` |
-| Logic | The deterministic scrub |
+Organised by **feature**, not by language construct. Each feature owns its
+entities, its enums, and the ports it calls out through — see
+[ADR-0018](../../docs/decisions/ADR-0018-feature-folders-in-core.md).
+
+```
+Features/
+  Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
+                  ReportStatus, InjurySeverity, AircraftClass, Discipline,
+                  PilotRating, TimeOfDay, Province,
+                  ISummarizer, IPiiAuditor, IAircraftClassifier,
+                  IPublicationChannel
+  QuestionBank/   Question, QuestionVersion, QuestionOption,
+                  QuestionTranslation, QuestionOptionTranslation,
+                  QuestionRole, QuestionKey, QuestionType
+  Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
+                  IMemberAuthenticator
+  Outbox/         OutboxMessage
+SharedKernel/     Locale, EnumCode, SensitivityTier,
+                  DomainRuleViolationException,
+                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
+```
+
+Namespaces match the folders exactly: `HpacSafety.Core.Features.Reporting`,
+`HpacSafety.Core.SharedKernel`.
+
+**Where does a new type go?** With the feature that owns it. A port called by one
+feature lives with that feature; `ISummarizer` is reporting's, not a folder of
+interfaces'. The shared kernel is for what more than one feature genuinely
+shares, and it is deliberately small — two callers is the bar for adding to it.
+
+`Reporting` depends on `QuestionBank`, because an answer is an answer *to a
+question*. That dependency is one way.
 
 ## The question set is data
 

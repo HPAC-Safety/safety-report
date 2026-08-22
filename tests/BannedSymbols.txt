@@ -1,8 +1,8 @@
 # Symbols banned, enforced as a build error by
 # Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030) plus TreatWarningsAsErrors.
-# Wired up in Directory.Build.props, which today applies it to every *.Tests
-# project. The dates-and-times ban below is a rule about production code too;
-# widening that condition to src/ is the open item noted in ADR-0035.
+# Wired up in Directory.Build.props, which applies it to every project in the
+# solution - src/ and tests/ alike. The file lives under tests/ for historical
+# reasons (ADR-0013 got here first); its reach is the whole repository.
 #
 # Format: one entry per line, `<documentation-comment-id>;<message>`.
 # T: type, M: method, P: property. See ADR-0013.

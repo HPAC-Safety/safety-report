@@ -196,7 +196,8 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   not matter, `DateTimeOffset` when it does, `TimeOnly` when the date does not.
   **`DateTime` is forbidden** — its `Kind` is ambient and silently lost, so the
   same value means UTC, local, or unspecified depending on where it came from.
-  It is banned in `tests/BannedSymbols.txt`, which makes it a build error rather
+  It is banned in `tests/BannedSymbols.txt` — which despite its path binds every
+  project, `src/` included — so using it is a build error in the editor rather
   than a review comment. The occurrence date a reporter gives is a `DateOnly`;
   audit timestamps, outbox `occurred_at`/`processed_at`, and `approved_at` are
   `DateTimeOffset`. Where a third-party library hands back a `DateTime`, the

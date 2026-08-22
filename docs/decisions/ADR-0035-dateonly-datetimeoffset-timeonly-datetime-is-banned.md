@@ -117,6 +117,17 @@ the editor and in a local `dotnet build`, carrying the reason and the
 replacement to the author at the exact character — not a review comment and not
 a CI surprise.
 
+The analyzer was previously wired under the
+`$(MSBuildProjectName.EndsWith('.Tests'))` condition, because the only ban was
+`Xunit.Assert` and ADR-0013 reasoned — correctly, for that symbol — that `src/`
+has no reason to reference xunit. **This ADR widens that wiring to every project
+in the solution**, and supersedes that one line of ADR-0013. This rule is about
+production code, so a ban that binds test projects only is documentation wearing
+a build error's clothes. Widening it costs nothing: `Xunit.Assert` does not
+resolve in `src/`, where xunit is not referenced, so the assertion ban is simply
+inert there, and `tests/BannedSymbols.txt` is now the one place a ban is
+declared for the whole repository regardless of which directory it lives in.
+
 `RS0030` fires on *operations*, and it is worth being precise about what that
 does and does not catch, because a rule whose reach is overstated is worse than
 one whose reach is known:
@@ -178,12 +189,13 @@ and find, not to infer.
   ban; `DateTimeOffset.Now`/`UtcNow` remain unbanned, and injecting
   `TimeProvider` is still the rule for anything whose clock a test needs to
   control.
-- The analyzer is currently wired in `Directory.Build.props` under the
-  `$(MSBuildProjectName.EndsWith('.Tests'))` condition, so today the ban binds
-  test projects only. The rule is about production code, so that condition has to
-  be widened for the enforcement to match the rule. **That change is not in this
-  ADR's pull request**, and until it lands the ban is enforced in `tests/` and
-  documented everywhere else. See the open question in the pull request body.
+- `Directory.Build.props` now applies `BannedApiAnalyzers` and
+  `tests/BannedSymbols.txt` to every project rather than to `*.Tests` only, so
+  the enforcement matches the rule's scope. Every project gains the analyzer
+  package; it is `PrivateAssets: all`, so nothing ships with it.
+- `tests/BannedSymbols.txt` now governs the whole repository despite its path.
+  Moving it would touch every project's wiring for no behavioural gain, so it
+  stays where ADR-0013 put it and the file's own header says what its reach is.
 - No existing code changes. At the time of writing, `src/` and `tests/` contain
   no `DateTime` at all — every field is already `DateTimeOffset` or `DateOnly`.
   This ADR records and enforces what the domain model already does rather than
@@ -244,7 +256,10 @@ not by quietly adding a package.
 ## Related
 
 - [ADR-0013](ADR-0013-ban-assert-rather-than-grep-for-it.md) — the enforcement
-  mechanism, and why an analyzer rather than a CI grep
+  mechanism, and why an analyzer rather than a CI grep. Its closing note that
+  "the ban applies to test projects only" is superseded here: the wiring now
+  covers every project, and the `Xunit.Assert` entry is inert in `src/` rather
+  than absent from it.
 - [ADR-0033](ADR-0033-third-party-libraries-behind-owned-abstractions.md) — why
   the vendor `DateTime` stops at the adapter
 - [ADR-0002](ADR-0002-transactional-outbox.md) — the outbox timestamps and the

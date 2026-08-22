@@ -18,4 +18,18 @@ public sealed record ScrubRequest
     /// be inferring a location rather than reading one.
     /// </summary>
     public Province Province { get; init; } = Province.NotAnswered;
+
+    /// <summary>
+    /// The date of the occurrence, if one was given. Narrowed to month and year
+    /// — never published precisely.
+    /// </summary>
+    public DateOnly? OccurredOn { get; init; }
+
+    /// <summary>
+    /// The wall-clock time of the occurrence, if one was given. Narrowed to a
+    /// <see cref="Reporting.TimeOfDay"/> bucket and never published precisely.
+    /// <b>Null means the reporter did not give one</b>, which is a defined
+    /// state — it becomes "unknown", never midnight and never "morning".
+    /// </summary>
+    public TimeOnly? OccurredAt { get; init; }
 }

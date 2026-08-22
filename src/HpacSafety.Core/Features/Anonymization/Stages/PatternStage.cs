@@ -18,5 +18,5 @@ internal sealed class PatternStage : ScrubStage
     internal PatternStage(Regex pattern) => _pattern = pattern;
 
     protected override void Handle(ScrubDocument document) =>
-        document.RewriteValues(value => _pattern.Replace(value, _ => ScrubMarker.Removed));
+        document.RewriteValues(value => ScrubGuard.Replace(_pattern, value, _ => ScrubMarker.Removed));
 }

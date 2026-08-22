@@ -74,7 +74,7 @@ internal static partial class ScrubPatterns
     /// altitude.
     /// </remarks>
     [GeneratedRegex(
-        @"\b(?:hpac|member(?:ship)?|membre|adh[ée]rent)\b(?:\s*(?:member(?:ship)?|membre|number|num[ée]ro|no\.?|n[o°]\.?|id|is|was|are|my|the|de|du|est|#|:))*\s*#?\s*\d{3,9}\b",
+        @"\b(?:hpac|member(?:ship)?|membre|adh[ée]rent)\b(?:\s*(?:member(?:ship)?|membre|number|num[ée]ro|no\.?|n[o°]\.?|id|is|was|are|my|the|de|du|est|#|:))*\s*#?\s*\d(?:[\s.  -]?\d){2,8}(?!\d)",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeoutMilliseconds)]
     internal static partial Regex MemberNumber { get; }
@@ -120,11 +120,26 @@ internal static partial class ScrubPatterns
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
         TimeSpan.FromMilliseconds(TimeoutMilliseconds));
 
+    /// <summary>
+    /// The body of a token matcher, without boundaries, for composing many
+    /// tokens into one alternation. See <see cref="HarvestedIdentifierStage"/>
+    /// for why they have to be matched in a single pass.
+    /// </summary>
+    internal static string TokenBody(string token) => Fold(token);
+
+    /// <summary>Builds a matcher over an alternation of token bodies.</summary>
+    internal static Regex Alternation(string body) => new(
+        body,
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+        TimeSpan.FromMilliseconds(TimeoutMilliseconds));
+
     private static string Fold(string token)
     {
         var normalized = token.Normalize(NormalizationForm.FormC);
         var pattern = new StringBuilder(normalized.Length * 12);
         var index = 0;
+
+        var separated = false;
 
         while (index < normalized.Length)
         {
@@ -136,8 +151,21 @@ internal static partial class ScrubPatterns
                 }
 
                 pattern.Append(@"\s*");
+                separated = true;
                 continue;
             }
+
+            // The tolerance has to run both ways. A short form field invites a
+            // compact spelling — "Halcyon3", "MountFerndale" — and the prose
+            // spaces it out again. Allowing optional whitespace at the seams a
+            // person would write means the answer finds the narrative whichever
+            // side the space landed on.
+            if (index > 0 && !separated && IsSeam(normalized[index - 1], normalized[index]))
+            {
+                pattern.Append(@"\s*");
+            }
+
+            separated = false;
 
             var equivalents = Equivalents.GetValueOrDefault(BaseLetter(normalized[index]));
 
@@ -157,6 +185,15 @@ internal static partial class ScrubPatterns
 
         return pattern.ToString();
     }
+
+    /// <summary>
+    /// Whether a space could reasonably sit between two adjacent characters:
+    /// a letter/digit transition, or a lower-to-upper camel-case seam.
+    /// </summary>
+    private static bool IsSeam(char previous, char current) =>
+        (char.IsLetter(previous) && char.IsDigit(current))
+        || (char.IsDigit(previous) && char.IsLetter(current))
+        || (char.IsLower(previous) && char.IsUpper(current));
 
     /// <summary>The unaccented letter a character decomposes to, or the character itself.</summary>
     private static char BaseLetter(char character)

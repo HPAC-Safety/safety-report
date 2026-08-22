@@ -42,4 +42,10 @@ public enum ScrubFieldKind
 
     /// <summary>An ordinary answer with no special handling. Kept, and scrubbed anyway.</summary>
     FreeText = 8,
+
+    /// <summary>The occurrence date. Narrowed to month and year.</summary>
+    OccurrenceDate = 9,
+
+    /// <summary>The precise occurrence time. Narrowed to a <c>TimeOfDay</c> bucket.</summary>
+    OccurrenceTime = 10,
 }

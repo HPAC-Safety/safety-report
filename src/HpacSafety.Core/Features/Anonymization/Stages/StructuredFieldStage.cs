@@ -15,17 +15,34 @@ namespace HpacSafety.Core.Features.Anonymization.Stages;
 /// </remarks>
 internal sealed class StructuredFieldStage : ScrubStage
 {
-    // Three, not two, for a name. A two-letter part would take the French name
-    // particles — "de", "la", "du", "le" — out of every French narrative the
-    // system ever scrubs, which costs far more than it buys: the full name and
-    // the surname still match, and those are what identify somebody.
-    private const int ShortestNameToken = 3;
+    // Two, not three. Ng, Wu, Li, Vo and Ha are common surnames, and gating
+    // the parts of an answer at three characters dropped them on the floor
+    // entirely — "Sarah Ng" built matchers for "Sarah Ng" and "Sarah" and left
+    // "Ng spiralled in" untouched.
+    private const int ShortestNamePart = 2;
 
-    // Four for a place or an aircraft, because three-letter parts of those are
-    // overwhelmingly ordinary words — "Air", "Sky", "Mont" — and deleting "air"
-    // from a flying report deletes the report. The whole multi-word term is
-    // always matched regardless of length.
-    private const int ShortestPlaceToken = 4;
+    // Four for a part of a place or an aircraft, because two- and
+    // three-letter parts of those are overwhelmingly ordinary words — "Air",
+    // "Sky" — and deleting "air" from a flying report deletes the report.
+    private const int ShortestPlacePart = 4;
+
+    // The whole answer is matched almost regardless of length, because a short
+    // whole answer is a short surname or a short brand: "Ng", "Cox", "UP". One
+    // character is the exception — that is an initial, it identifies nobody,
+    // and matching it would turn every standalone "a" into "the pilot".
+    private const int ShortestWholeAnswer = 2;
+
+    // Applied to PARTS only, and only when the answer wrote them in lower case.
+    // French name particles are conventionally lower case and surnames are
+    // capitalised, which is the signal that separates "Marc de la Roche" — where
+    // matching "de" would eat half of every French narrative — from "Thanh Le",
+    // where "Le" is the surname and must be matched. A whole answer of "Le" is
+    // a surname and is matched regardless.
+    private static readonly HashSet<string> NameParticles = new(StringComparer.Ordinal)
+    {
+        "de", "du", "des", "la", "le", "les", "van", "von", "der", "den", "di",
+        "da", "dos", "das", "el", "al", "bin", "ibn", "ter", "ten", "of", "the",
+    };
 
     private static readonly char[] TokenSeparators =
         [' ', '\t', '\n', '\r', '-', '\u2010', '\u2011', '\u2012', '\u2013', '\u2014', '\'', '\u2019'];
@@ -38,7 +55,7 @@ internal sealed class StructuredFieldStage : ScrubStage
 
         foreach (var field in document.Fields)
         {
-            var kept = Rewrite(field, document.Province);
+            var kept = Rewrite(field, document);
 
             if (kept is not null && !string.IsNullOrWhiteSpace(kept.Value))
             {
@@ -55,7 +72,7 @@ internal sealed class StructuredFieldStage : ScrubStage
     /// identifiers, and aircraft identity are dropped outright — there is no
     /// generalization of a phone number that is worth publishing.
     /// </summary>
-    private static ScrubField? Rewrite(ScrubField field, Province province) => field.Kind switch
+    private static ScrubField? Rewrite(ScrubField field, ScrubDocument document) => field.Kind switch
     {
         ScrubFieldKind.ReporterName
             or ScrubFieldKind.PilotName
@@ -67,9 +84,23 @@ internal sealed class StructuredFieldStage : ScrubStage
         // The region is the province and nothing finer. With no province
         // answered there is nothing to generalize to, and a location nobody can
         // place is dropped rather than guessed at.
-        ScrubFieldKind.Location => province is Province.NotAnswered
+        ScrubFieldKind.Location => document.Province is Province.NotAnswered
             ? null
-            : field with { Value = EnumCode.Of(province) },
+            : field with { Value = EnumCode.Of(document.Province) },
+
+        // The clock never survives. An absent time is "unknown" rather than a
+        // dropped field, because "we do not know" is an answer and silence is
+        // not — and rather than midnight, which would publish "morning" about a
+        // crash nobody timed.
+        ScrubFieldKind.OccurrenceTime => field with
+        {
+            Value = EnumCode.Of(OccurrenceNarrowing.Bucket(document.OccurredAt)),
+        },
+
+        // Month and year, the same rule the policy has always stated for dates.
+        ScrubFieldKind.OccurrenceDate => OccurrenceNarrowing.MonthAndYear(document.OccurredOn) is { } monthAndYear
+            ? field with { Value = monthAndYear }
+            : null,
 
         _ => field,
     };
@@ -91,19 +122,19 @@ internal sealed class StructuredFieldStage : ScrubStage
                 // The role word comes from the field the name was given in, so
                 // a reporter who is not the pilot reads as "the reporter".
                 case ScrubFieldKind.ReporterName:
-                    Collect(names, field.Value, document.Vocabulary.Reporter, ShortestNameToken, overwrite: false);
+                    Collect(names, field.Value, document.Vocabulary.Reporter, ShortestNamePart, overwrite: false);
                     break;
 
                 // The pilot wins a tie. When one name is in both answers the
                 // reporter is the pilot, and a report about a crash reads better
                 // — and no less safely — as "the pilot".
                 case ScrubFieldKind.PilotName:
-                    Collect(names, field.Value, document.Vocabulary.Pilot, ShortestNameToken, overwrite: true);
+                    Collect(names, field.Value, document.Vocabulary.Pilot, ShortestNamePart, overwrite: true);
                     break;
 
                 case ScrubFieldKind.Location:
                 case ScrubFieldKind.AircraftIdentity:
-                    foreach (var token in Tokens(field.Value, ShortestPlaceToken))
+                    foreach (var token in Tokens(field.Value, ShortestPlacePart))
                     {
                         terms.Add(token);
                     }
@@ -117,20 +148,26 @@ internal sealed class StructuredFieldStage : ScrubStage
                 // string. Splitting it into words would be a different matter:
                 // a street address would harvest "West" and delete the wind
                 // direction from every sentence that mentions it.
+                // Unclassified belongs here, not in the ignored group. Dropping
+                // the field is only half of fail-closed: ADR-0027 justifies the
+                // zero value with a "next of kin" question the role mapping
+                // missed, and that name turns up in the narrative too.
+                case ScrubFieldKind.Unclassified:
                 case ScrubFieldKind.ContactDetail:
                 case ScrubFieldKind.MemberIdentifier:
                     var contact = field.Value.Trim();
 
-                    if (contact.Length >= ShortestNameToken)
+                    if (contact.Length >= ShortestNamePart)
                     {
                         terms.Add(contact);
                     }
 
                     break;
 
-                case ScrubFieldKind.Unclassified:
                 case ScrubFieldKind.FreeText:
                 case ScrubFieldKind.Narrative:
+                case ScrubFieldKind.OccurrenceDate:
+                case ScrubFieldKind.OccurrenceTime:
                 default:
                     break;
             }
@@ -172,12 +209,7 @@ internal sealed class StructuredFieldStage : ScrubStage
     {
         var whole = value.Trim();
 
-        // The minimum applies to the whole answer too, not only to its parts.
-        // A reporter who types an initial into the name field would otherwise
-        // hand us the token "A", and every standalone "a" in the narrative
-        // would become "the pilot". The French case is worse: a name field
-        // reading "Le" would eat "Le vent a tourné".
-        if (whole.Length >= shortest)
+        if (whole.Length >= ShortestWholeAnswer)
         {
             yield return whole;
         }
@@ -186,10 +218,24 @@ internal sealed class StructuredFieldStage : ScrubStage
         {
             var word = part.Trim(',', '.', ';', ':', '(', ')', '"');
 
-            if (word.Length >= shortest && !string.Equals(word, whole, StringComparison.OrdinalIgnoreCase))
+            if (word.Length < shortest
+                || string.Equals(word, whole, StringComparison.OrdinalIgnoreCase)
+                || IsParticle(word, shortest))
             {
-                yield return word;
+                continue;
             }
+
+            yield return word;
         }
     }
+
+    /// <summary>
+    /// A lower-case name particle inside a longer name. Skipped as a part and
+    /// matched as a whole answer, which is the difference between "Marc de la
+    /// Roche" and a pilot whose surname is "Le".
+    /// </summary>
+    private static bool IsParticle(string word, int shortest) =>
+        shortest == ShortestNamePart
+        && char.IsLower(word[0])
+        && NameParticles.Contains(word.ToLowerInvariant());
 }

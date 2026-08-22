@@ -48,7 +48,9 @@ category:
 | HPAC member number | Structured answer dropped. In free text, matched on the word — `HPAC #48213`, `member number 48213` — because HPAC publishes no number format and stripping every run of digits would delete altitudes and airspeeds along with it. |
 | Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
 | Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
-| Everything else | Kept, and passed through every stripping rule anyway — **unless nobody classified it**, in which case it is dropped. Keeping a field has to be a decision somebody made. |
+| Precise date | Narrowed to **month and year** (`2026-03`). With no date given the field is dropped. |
+| Precise time | Narrowed to a **time-of-day bucket** — morning before 11:00, mid-day 11:00–14:00, afternoon 14:00–17:00, evening from 17:00. The reporter submits an actual clock time and the anonymizer derives the bucket; the clock time never reaches stage 2. **With no time given the answer is `unknown`** — not midnight, and not "morning". |
+| Everything else | Kept, and passed through every stripping rule anyway — **unless nobody classified it**, in which case it is dropped *and* its value is removed from the narrative. Keeping a field has to be a decision somebody made. |
 
 Every structured answer doubles as a token list for the free text. A launch name,
 an aircraft model, an `@handle`, or a member number that the reporter typed into
@@ -57,14 +59,20 @@ no pattern would have found the second one.
 
 Matching a name or a place is **case- and accent-insensitive**, tolerates a
 trailing "s" so "the Whitlocks" goes the way of "Whitlock's", accepts either
-Unicode normalization form, and allows whitespace to move so a field reading
-"Halcyon 3" also finds "Halcyon3". Names split
+Unicode normalization form, and allows whitespace to move **in both directions**
+— "Halcyon 3" finds "Halcyon3" and "Halcyon3" finds "Halcyon 3". Names split
 on hyphens and apostrophes: "Renée" in the name field is found as "Renee" in the
-narrative and the other way round, and "Sarah-Jane" is found as "Sarah". Parts
-shorter than three characters (names) or four (places and aircraft) are not
-matched on their own, so a French narrative keeps its "de" and "la" and a flying
-report keeps the word "air"; the full answer and the surname are matched
-regardless.
+narrative and the other way round, and "Sarah-Jane" is found as "Sarah". **The whole answer is always matched** unless it is a single character, so short
+surnames and short brands — Ng, Wu, Li, Vo, Ha, Cox, UP — are caught. Within a
+longer answer, a part is matched from two characters for a name and four for a
+place or an aircraft, except a **lower-case name particle** — "de", "la", "van",
+"von" — which is skipped so a French narrative keeps its articles. Capitalisation
+is the signal: "Marc de la Roche" keeps "de la", while a pilot surnamed "Le" or
+"Thanh Le" is matched.
+
+The cost is accepted in one direction on purpose: a name answer of exactly "Le"
+will also take the French article out of the narrative. Over-redaction is
+recoverable; a named pilot is not.
 
 Anything removed that has no natural replacement leaves a `[removed]` marker, so
 the sentence stays readable for stage 2 and a reviewer can tell "this was taken
@@ -99,6 +107,10 @@ article would put back the exact fact the scrub had just removed, in the one
 language where the grammar makes it unavoidable and therefore easy to miss.
 Masculine is the grammatical generic, so uniformity costs nothing linguistically.
 
+That guarantee covers **the words the scrub writes**, and only those. Where the
+reporter wrote "la pilote" or "elle" themselves, stage 1 leaves it — see "What
+stage 1 cannot catch" above.
+
 See [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
 
 ### The region is the province
@@ -122,6 +134,20 @@ typed it into a structured answer. Two things follow, and both are real:
 - **A social handle or a mailing address named only in the narrative is the same
   case.** `@sarahflies` matches no pattern. It is removed when the reporter also
   put it in a contact field, and not otherwise.
+- **Stage 1 does not de-gender the reporter's own prose, and cannot.** It
+  replaces the names it was given; it does not rewrite sentences. "She broke her
+  ankle", "elle s'est posée", "elle était la pilote" survive stage 1 exactly as
+  written, and in a fifty-person flying community a pronoun can narrow the field
+  as effectively as a name.
+
+  This is a boundary, not an oversight. Rewriting grammar requires understanding
+  the sentence, which is precisely what a deterministic pass must not attempt —
+  a regular expression that tried would mangle reports and still miss cases.
+  **Stage 2 is where it is handled**: the summarizer writes new prose and the
+  redaction rules tell it not to carry gender across. **Stage 3 is the check**,
+  reading the generated summary for anything that identifies. What stage 1
+  guarantees is narrower and worth stating plainly: the words *it* writes never
+  encode gender — see the uniform masculine article below.
 That residual risk is the reason stages 3 and 5 exist and the reason a human
 approves every publication. It is not to be closed by shipping a list of Canadian
 site names — a lookup table of every site in the country is itself a map of where

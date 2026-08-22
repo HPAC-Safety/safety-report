@@ -47,9 +47,8 @@ flowchart TD
     s2 --> s3["PatternStage · URL"]
     s3 --> s4["PatternStage · member number"]
     s4 --> s5["PatternStage · phone"]
-    s5 --> s6["NameStage<br/>name → role word"]
-    s6 --> s7["PlaceAndAircraftStage<br/>launch, LZ, make, model → marker"]
-    s7 --> out["ScrubbedReport"]
+    s5 --> s6["HarvestedIdentifierStage<br/>one pass: names → role word,<br/>launch, LZ, make, model,<br/>contact, unclassified → marker"]
+    s6 --> out["ScrubbedReport"]
 ```
 
 Why that order:
@@ -62,13 +61,17 @@ Why that order:
 - **Email and URL before names**, so `sarah.whitlock@example.ca` is removed as an
   address rather than rewritten into `the pilot.the pilot@example.ca`.
 - **Member number before phone**, so the phone rule cannot claim its digits.
+- **Everything harvested last, in a single pass.** One alternation, longest
+  branch first, because two stages each looping their tokens let a later token
+  match inside text an earlier one had just written — a reporter surnamed
+  "Pilot" turned "the pilot" into "the the reporter".
 
 The chain is **closed**. `ScrubStage` and every stage are `internal` and there is
 no way to construct a scrub with a stage missing, no options object, and no
 callback. Anonymization is an invariant of this system, not a policy a caller
 configures — see AGENTS.md, "the invariants above are deliberately closed".
 
-## Four rules worth knowing before you change anything
+## Five rules worth knowing before you change anything
 
 **A name becomes a role word, not a placeholder.** "the pilot" / "le pilote",
 "the reporter" / "le déclarant", chosen from the structured field the name was
@@ -98,7 +101,13 @@ below three characters (names) or four (places and aircraft) are not matched on
 their own, so a French narrative keeps its "de" and "la" and a flying report
 keeps the word "air".
 
-**A field nobody classified is dropped.** `ScrubFieldKind.Unclassified` is the
+**The precise date and time never survive.** The reporter submits an actual date
+and clock time; the scrub publishes month and year, and a `TimeOfDay` bucket. An
+absent time is `unknown` — never midnight, never "morning". A precise time plus a
+province plus an aircraft type is another aggregation that names one person.
+
+**A field nobody classified is dropped**, and its value is removed from the
+narrative too. `ScrubFieldKind.Unclassified` is the
 zero value and it means "drop", the same way an unclassified question is
 Restricted. Keeping a field is a decision somebody has to make — `FreeText` for
 an ordinary answer, `Narrative` for the account itself.
@@ -109,7 +118,13 @@ Stage 1 finds an identifier when it matches a pattern or when the reporter also
 typed it into a structured answer. A launch — or a social handle, or a mailing
 address — that appears **only** in the narrative and nowhere in the structured
 answers is not something a regular expression can recognise, and no amount of
-tuning changes that. Nothing pattern-matches `@sarahflies`. That gap is why
+tuning changes that. Nothing pattern-matches `@sarahflies`.
+
+**Stage 1 does not de-gender the reporter's own prose, and must not try.** "She
+broke her ankle", "elle s'est posée" survive exactly as written. Rewriting
+grammar means understanding the sentence, which is what a deterministic stage
+must not attempt; stage 2 rewrites and stage 3 flags. What stage 1 guarantees is
+that the words *it* writes never encode gender. See ADR-0028. That gap is why
 stages 3 and 5 exist and why a human approves every publication. Do not close it
 by inventing a list of Canadian site names here.
 

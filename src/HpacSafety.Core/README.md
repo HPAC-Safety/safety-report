@@ -18,7 +18,15 @@ pipeline and the only stage that is fully deterministic.
 
 It is not an aspiration:
 [`CoreDependencyTests`](../../tests/HpacSafety.Anonymization.Tests/CoreDependencyTests.cs)
-fails the day this project grows a `PackageReference` or a `ProjectReference`.
+fails the day this project grows a reference — it checks both the project file
+and the assembly Core actually compiled against.
+
+**"Zero package references" is shorthand, and it is not literally true.**
+`Directory.Build.props` injects `Roslynator.Analyzers` into every project here,
+so `dotnet list package` reports it for Core as well. It is analyzer-only with
+`PrivateAssets=all` and contributes nothing to the compiled output. The precise
+claim, and the one the test proves, is **zero runtime dependencies**: Core
+compiles against nothing but the framework.
 `Features/Anonymization/` has its own
 [README](Features/Anonymization/README.md) — read it before changing anything
 in there.

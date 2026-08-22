@@ -1,4 +1,4 @@
-<!-- Shared runtime rules, included by summarize.v1.md and pii-audit.v1.md. -->
+<!-- Shared runtime rules, included by summarize.v2.md and pii-audit.v2.md. -->
 <!-- Not developer documentation — this text is sent to the model. -->
 
 # Redaction rules

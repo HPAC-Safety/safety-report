@@ -204,21 +204,24 @@ public class DeterministicScrubTests
         scrubbed.Text.ShouldNotContain("Brien", Case.Insensitive);
     }
 
+
+    // ---- leaks the second independent audit proved --------------------------
+
     [Fact]
-    public void Given_a_french_name_particle_When_a_french_narrative_is_scrubbed_Then_ordinary_words_survive()
+    public void Given_a_two_letter_surname_in_a_longer_name_answer_When_it_is_scrubbed_Then_it_is_absent()
     {
-        // Given — "de" and "la" are half of French. A name rule that eats them
-        // has destroyed every French report the system will ever handle.
+        // Given — Ng, Wu, Li, Vo, Ha are common surnames, not exotic. Gating
+        // the parts at three characters dropped them on the floor.
         var report = new ScrubRequest
         {
-            Province = Province.Quebec,
+            Province = Province.BritishColumbia,
             Fields =
             [
-                new ScrubField(ScrubFieldKind.PilotName, "Pilot", "Marc de la Roche"),
+                new ScrubField(ScrubFieldKind.PilotName, "Pilot", "Sarah Ng"),
                 new ScrubField(
                     ScrubFieldKind.Narrative,
                     "Description",
-                    "Le vent de la vallée a tourné et la voile a fermé."),
+                    "Ng spiralled in from 200 feet. Ng's reserve failed to open."),
             ],
         };
 
@@ -226,7 +229,143 @@ public class DeterministicScrubTests
         var scrubbed = ScrubFixture.Scrub().Scrub(report);
 
         // Then
-        scrubbed.Text.ShouldContain("de la vallée");
+        scrubbed.Text.ShouldNotContain("Ng", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_a_short_site_answer_When_it_is_scrubbed_Then_it_is_absent_from_the_narrative()
+    {
+        // Given — a three-character launch name never became a matcher at all.
+        var report = new ScrubRequest
+        {
+            Province = Province.BritishColumbia,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.Location, "Where", "Cox"),
+                new ScrubField(ScrubFieldKind.AircraftIdentity, "Manufacturer", "UP"),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "Launched at Cox on a UP wing."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("Cox", Case.Insensitive);
+        scrubbed.Text.ShouldNotContain("UP", Case.Sensitive);
+    }
+
+    [Fact]
+    public void Given_a_compact_aircraft_answer_When_the_narrative_spaces_it_out_Then_it_is_absent()
+    {
+        // Given — the mirror of the "Halcyon 3" case. A short form field
+        // invites a compact spelling; prose spaces it out.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.AircraftIdentity, "Model", "Halcyon3"),
+                new ScrubField(ScrubFieldKind.Location, "Where", "MountFerndale"),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    "We flew Mount Ferndale on a Halcyon 3 that afternoon."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("Halcyon", Case.Insensitive);
+        scrubbed.Text.ShouldNotContain("Ferndale", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_an_unclassified_field_When_its_value_recurs_in_the_narrative_Then_it_is_absent_there_too()
+    {
+        // Given — dropping the field is not enough. ADR-0027 justifies the
+        // fail-closed zero value with exactly this scenario, so it has to hold
+        // for the narrative as well as for the field.
+        var report = new ScrubRequest
+        {
+            Province = Province.Alberta,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.Unclassified, "Next of kin", "Helene Marchetti"),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    "Helene Marchetti drove her to the hospital."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("Helene", Case.Insensitive);
+        scrubbed.Text.ShouldNotContain("Marchetti", Case.Insensitive);
+    }
+
+    [Theory]
+    [InlineData("48 213")]
+    [InlineData("48-213")]
+    [InlineData("48.213")]
+    public void Given_a_member_number_written_in_digit_groups_When_it_is_scrubbed_Then_it_is_absent(string written)
+    {
+        // Given — "48 213" is the standard fr-CA rendering of the same number.
+        var report = ScrubFixture.NarrativeOnly($"Mon numéro de membre est {written}.");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain(written);
+        scrubbed.Text.ShouldNotContain("213");
+    }
+
+    [Fact]
+    public void Given_a_role_word_written_by_an_earlier_matcher_When_a_later_token_matches_it_Then_it_is_left_alone()
+    {
+        // Given — "Pilot" is the reporter's surname here. Rewriting the value
+        // once per token let a later matcher fire inside "the pilot", which an
+        // earlier matcher had just written.
+        var report = new ScrubRequest
+        {
+            Province = Province.Ontario,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.ReporterName, "From", "Ann Pilot"),
+                new ScrubField(ScrubFieldKind.PilotName, "Pilot", "Sarah Whitlock"),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "Whitlock flew the ridge."),
+            ],
+        };
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain("the the");
+        scrubbed.Text.ShouldContain("the pilot flew the ridge.");
+    }
+
+    [Fact]
+    public void Given_gendered_words_the_reporter_wrote_When_it_is_scrubbed_Then_they_survive_untouched()
+    {
+        // Given — stage 1 does not rewrite the reporter's own prose, and this
+        // pins that honestly rather than leaving the docs claiming otherwise.
+        // Pronouns and agreement are stage 2's job and stage 3 flags what is
+        // left. See ADR-0028.
+        var report = ScrubFixture.Report($"{ScrubFixture.PilotFirstName} landed hard; she broke her ankle.");
+
+        // When
+        var scrubbed = ScrubFixture.Scrub().Scrub(report);
+
+        // Then — the name is gone; the gendered pronoun the reporter wrote is not.
+        scrubbed.Text.ShouldNotContain(ScrubFixture.PilotFirstName, Case.Insensitive);
+        scrubbed.Text.ShouldContain("she broke her ankle");
     }
 
     // ---- gaps the anonymization auditor proved -----------------------------
@@ -322,16 +461,20 @@ public class DeterministicScrubTests
     }
 
     [Fact]
-    public void Given_a_two_letter_name_particle_answer_When_a_french_narrative_is_scrubbed_Then_it_survives()
+    public void Given_a_two_letter_surname_as_the_whole_answer_When_it_is_scrubbed_Then_it_is_absent()
     {
-        // Given — the same bug in the language it hurts most.
+        // Given — "Le" is a common Vietnamese surname as well as a French
+        // article. When it is the entire name answer it is a surname, and the
+        // cost of matching it is that a French narrative loses some articles.
+        // That cost is accepted: over-redaction is recoverable, a named pilot
+        // is not. See ADR-0027.
         var report = new ScrubRequest
         {
             Province = Province.Quebec,
             Fields =
             [
                 new ScrubField(ScrubFieldKind.PilotName, "Pilote", "Le"),
-                new ScrubField(ScrubFieldKind.Narrative, "Description", "Le vent a tourné et la voile a fermé."),
+                new ScrubField(ScrubFieldKind.Narrative, "Description", "Le a subi une fermeture."),
             ],
         };
 
@@ -339,7 +482,7 @@ public class DeterministicScrubTests
         var scrubbed = ScrubFixture.Scrub().Scrub(report);
 
         // Then
-        scrubbed.Text.ShouldContain("Le vent");
+        scrubbed.Text.ShouldNotContain("Le ", Case.Sensitive);
     }
 
     // ---- contact details ---------------------------------------------------
@@ -368,9 +511,11 @@ public class DeterministicScrubTests
         // When
         var scrubbed = ScrubFixture.Scrub().Scrub(report);
 
-        // Then
+        // Then — the last four digits are the part that is common to every row,
+        // so asserting on them cannot be vacuous the way a literal "555" was
+        // for the international case.
         scrubbed.Text.ShouldNotContain(phone);
-        scrubbed.Text.ShouldNotContain("555");
+        scrubbed.Text.ShouldNotContain(phone[^4..]);
     }
 
     [Fact]

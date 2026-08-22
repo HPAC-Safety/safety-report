@@ -12,12 +12,20 @@ internal sealed class ScrubDocument
     internal ScrubDocument(ScrubRequest request, ScrubVocabulary vocabulary)
     {
         Province = request.Province;
+        OccurredOn = request.OccurredOn;
+        OccurredAt = request.OccurredAt;
         Vocabulary = vocabulary;
         Fields = [.. request.Fields.Where(field => field is not null)];
     }
 
     /// <summary>The region a location field is generalized to.</summary>
     internal Province Province { get; }
+
+    /// <summary>The occurrence date, narrowed on the way out.</summary>
+    internal DateOnly? OccurredOn { get; }
+
+    /// <summary>The precise occurrence time, narrowed on the way out.</summary>
+    internal TimeOnly? OccurredAt { get; }
 
     /// <summary>The role words a name is replaced with.</summary>
     internal ScrubVocabulary Vocabulary { get; }

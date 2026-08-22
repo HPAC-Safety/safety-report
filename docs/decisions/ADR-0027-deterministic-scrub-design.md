@@ -93,12 +93,32 @@ combining acute, and the two are not equal byte for byte), and **whitespace that
 moved** (a field reading "Halcyon 3" finds "Halcyon3"). None of these is exotic;
 each was reaching the summarizer intact.
 
-The minimum sub-token lengths are a judgement and worth stating: **three
-characters for a name, four for a place or an aircraft.** The minimum applies to
-the whole answer as well as to its parts, which is not a detail: a reporter who
-types an initial into the name field would otherwise hand the scrub the token
-"A", and every standalone "a" in the narrative would become "the pilot". In
-French it is worse — a name field reading "Le" would eat "Le vent a tourné". Two would take the
+**The whole answer and its parts are gated differently, and getting this wrong
+leaked twice in opposite directions.**
+
+The whole answer is matched unless it is a single character. Short whole answers
+are short surnames and short brands — Ng, Wu, Li, Vo, Ha, Cox, UP — and an
+earlier version gated the whole answer on the same minimum as its parts, so a
+three-letter launch name never became a matcher at all. One character is the
+exception: that is an initial, it identifies nobody, and matching it would turn
+every standalone "a" into "the pilot".
+
+Within a longer answer, a part is matched from **two** characters for a name and
+**four** for a place or an aircraft. Two, because "Sarah Ng" has to produce a
+matcher for "Ng"; four for places, because two- and three-letter parts of a brand
+are overwhelmingly ordinary words and deleting "air" from a flying report deletes
+the report.
+
+That leaves the French particle problem, which length cannot solve: "de" and
+"la" must survive in "Marc de la Roche" while "Le" must not in "Thanh Le". The
+discriminator is **capitalisation**, not length — French particles are
+conventionally lower case and surnames are capitalised — so a lower-case part on
+a closed particle list is skipped, and a capitalised one is matched.
+
+The residual is accepted and stated: a name answer of exactly "Le" is treated as
+a surname and will take the French article out of the narrative with it. A
+reporter whose whole name answer is a particle is rare; a Vietnamese surname is
+not. Two would take the
 French name particles — "de", "la", "du", "le" — out of every French narrative
 the system ever scrubs; three-letter parts of a place or a brand are
 overwhelmingly ordinary words, and deleting "air" from a flying report deletes
@@ -113,9 +133,13 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
 
 ## Consequences
 
-- `HpacSafety.Core` keeps zero package references. The patterns are
-  `[GeneratedRegex]`, which the SDK provides, so there is nothing to add. A test
-  fails the day that stops being true.
+- `HpacSafety.Core` keeps **zero runtime dependencies**. The patterns are
+  `[GeneratedRegex]`, which the SDK provides, so there is nothing to add. Note
+  the precise claim: "zero package references" is shorthand and is not literally
+  true, because `Directory.Build.props` injects `Roslynator.Analyzers` into every
+  project. It is analyzer-only with `PrivateAssets=all` and contributes nothing
+  to the compiled output; the test reads the assembly's actual references, which
+  is the claim worth making.
 - The whole stage is provable in a plain unit test: no database, no network, no
   model, no clock, no configuration.
 - Two golden-file cases assert what must **survive** — an altitude, a
@@ -128,6 +152,23 @@ exception and get a role word — [ADR-0028](ADR-0028-role-words-in-place-of-nam
 - **Over-redaction is the accepted failure mode.** The phone rule will sometimes
   take a ten-digit number that was not a phone; the URL rule will sometimes take
   a typo with no space after a full stop. A vague summary is recoverable.
+- **Every token is matched in one pass.** Names and places were two stages, each
+  looping its tokens and rewriting the value every time, which let a later token
+  match inside text an earlier one had just written — a reporter surnamed
+  "Pilot" turned "the pilot" into "the the reporter". A single alternation,
+  longest branch first, cannot rescan its own output.
+- **A regex timeout never carries the report with it.**
+  `RegexMatchTimeoutException` exposes the subject text on `Input`, and that
+  text is the raw narrative. It is caught and replaced with a domain exception
+  that names no content, so a timeout fails the report loudly — still reaching a
+  human through `FailSummarization` — without the narrative riding along into a
+  log.
+- **The precise date and time never reach stage 2.** The reporter now submits an
+  actual date and clock time and the anonymizer derives the coarse forms: month
+  and year, and a `TimeOfDay` bucket. A precise time plus a province plus an
+  aircraft type is another aggregation that identifies one person. An absent
+  time is `unknown` and never midnight — publishing "morning" about a crash
+  nobody timed would be a fabricated fact.
 - **A site that appears only in the narrative is not caught.** Stage 1 finds what
   matches a pattern or what the reporter also typed into a structured answer.
   That gap is why stages 3 and 5 exist and why a human approves every

@@ -5,10 +5,18 @@ namespace HpacSafety.Anonymization.Tests;
 
 /// <summary>
 /// The scrub is only provable in a plain unit test for as long as
-/// <c>HpacSafety.Core</c> depends on nothing. This pins that down so the day
-/// somebody adds a dependency to Core is the day a test goes red, rather than
-/// the day the golden-file suite quietly starts needing a database.
+/// <c>HpacSafety.Core</c> has <b>no runtime dependencies</b>. This pins that
+/// down so the day somebody adds one is the day a test goes red, rather than the
+/// day the golden-file suite quietly starts needing a database.
 /// </summary>
+/// <remarks>
+/// "Zero package references" is the shorthand and it is not literally true:
+/// <c>Directory.Build.props</c> injects <c>Roslynator.Analyzers</c> into every
+/// project in the repository, so <c>dotnet list package</c> reports it for Core
+/// too. It is analyzer-only with <c>PrivateAssets=all</c>, contributes nothing
+/// to the compiled output, and the second test below is the one that proves the
+/// claim that actually matters.
+/// </remarks>
 public class CoreDependencyTests
 {
     [Fact]

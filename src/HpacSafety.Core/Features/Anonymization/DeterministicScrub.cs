@@ -19,8 +19,12 @@ namespace HpacSafety.Core.Features.Anonymization;
 ///   <item><description>URLs</description></item>
 ///   <item><description>membership identifiers, before the phone rule can claim their digits</description></item>
 ///   <item><description>phone numbers</description></item>
-///   <item><description>names, replaced by the role word for the field they came from</description></item>
-///   <item><description>launch, landing zone, aircraft make and model</description></item>
+///   <item><description>
+///     everything harvested from the structured answers — names to their role
+///     word, launch, landing zone, make, model, contact details and
+///     unclassified answers to a marker — in <b>one pass</b>, so a replacement
+///     is never rescanned by a later token
+///   </description></item>
 /// </list>
 /// <para>
 /// The chain is assembled here and nowhere else. There is no way to construct a
@@ -46,8 +50,7 @@ public sealed class DeterministicScrub
             .Then(new PatternStage(ScrubPatterns.Url))
             .Then(new PatternStage(ScrubPatterns.MemberNumber))
             .Then(new PatternStage(ScrubPatterns.Phone))
-            .Then(new NameStage())
-            .Then(new PlaceAndAircraftStage());
+            .Then(new HarvestedIdentifierStage());
     }
 
     /// <summary>Runs the whole chain over a report.</summary>

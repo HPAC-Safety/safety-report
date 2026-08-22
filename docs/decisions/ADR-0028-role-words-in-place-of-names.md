@@ -56,6 +56,38 @@ miss.
 Masculine is the grammatical generic in French, so uniformity costs nothing
 linguistically and buys the entire anonymising property.
 
+**An elided article is contracted rather than left broken.** French writes
+"d'Élise", and substituting the name alone yields "d'le pilote", which is not
+French and hands stage 2 exactly the broken prose role words exist to avoid. The
+scrub contracts "de" + "le" to "du". Only the article the vocabulary actually
+carries is contracted; anything else is left as the reporter wrote it, because
+guessing further at French grammar is how a deterministic pass starts inventing.
+
+**What the uniform article does and does not cover.** It covers *the words the
+scrub writes*. It does not cover the reporter's own prose: "elle s'est posée",
+"sa voile", "elle était la pilote" pass through stage 1 untouched, and so does
+"she broke her ankle" in English.
+
+That is a boundary rather than a bug, and it is worth being exact about, because
+a document that claimed otherwise would be promising a property the code does not
+deliver. De-gendering free prose means rewriting sentences, which requires
+understanding them — precisely what a deterministic stage must not attempt. A
+regular expression that tried would mangle reports and still miss cases, and the
+failure would be silent.
+
+So the division is:
+
+- **Stage 1** guarantees that a name becomes a role word and that the role word
+  it writes never encodes gender. Tested, in both languages.
+- **Stage 2** writes new prose and is instructed not to carry gender across; it
+  is the only stage that can rephrase a sentence.
+- **Stage 3** reads the generated summary and flags what identifies, gendered
+  detail included, for the human who approves it.
+
+Stage 1 promising more than that would be a false promise, and a false promise
+about anonymisation is worse than a disclosed gap — someone downstream stops
+looking.
+
 ## Consequences
 
 - The scrubbed text stays grammatical prose, so stage 2 is summarizing a sentence
@@ -68,8 +100,11 @@ linguistically and buys the entire anonymising property.
 - A French report scrubs exactly as an English one does. There is no language in
   which stage 1 degrades to "drop the narrative".
 - The uniform article is **asserted**, not just documented:
-  `FrenchNarrativeTests` scrubs a report in which a woman was flying and fails if
-  "la pilote" appears. A future contributor who "fixes" the agreement out of
+  `FrenchNarrativeTests` scrubs a report in which a woman was flying and asserts
+  the substitution the scrub performed. An earlier version asserted the absence
+  of "la pilote" against a fixture that never contained it, which could not fail;
+  a separate test now feeds "elle était la pilote" through and pins that stage 1
+  leaves the reporter's own words alone. A future contributor who "fixes" the agreement out of
   linguistic instinct gets a red test explaining why it is not a bug.
 - The two French words are pinned by a test that asserts them literally. That is
   the one place in this suite where asserting exact text is right: they are a

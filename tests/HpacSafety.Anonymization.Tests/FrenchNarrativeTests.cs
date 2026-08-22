@@ -93,9 +93,10 @@ public class FrenchNarrativeTests
         // When
         var scrubbed = Scrub().Scrub(report);
 
-        // Then
-        scrubbed.Text.ShouldContain("le pilote");
-        scrubbed.Text.ShouldNotContain("la pilote");
+        // Then — the scrub wrote "le pilote" where the name was. The narrative
+        // never contained "la pilote", so asserting its absence would prove
+        // nothing; what is asserted is the substitution the scrub performed.
+        scrubbed.Text.ShouldContain("le pilote a jeté");
     }
 
     [Fact]
@@ -125,6 +126,69 @@ public class FrenchNarrativeTests
         scrubbed.Text.ShouldContain("le déclarant");
         scrubbed.Text.ShouldNotContain("la déclarante");
         scrubbed.Text.ShouldNotContain("la pilote");
+    }
+
+    [Fact]
+    public void Given_a_french_name_particle_When_a_french_narrative_is_scrubbed_Then_ordinary_words_survive()
+    {
+        // Given — "de" and "la" are half of French. A name rule that eats them
+        // has destroyed every French report the system will ever handle. Run
+        // through the French vocabulary, which is the only way this test means
+        // what its name says.
+        var report = new ScrubRequest
+        {
+            Province = Province.Quebec,
+            Fields =
+            [
+                new ScrubField(ScrubFieldKind.PilotName, "Pilote", "Marc de la Roche"),
+                new ScrubField(
+                    ScrubFieldKind.Narrative,
+                    "Description",
+                    "Le vent de la vallée a tourné et la voile a fermé."),
+            ],
+        };
+
+        // When
+        var scrubbed = Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldContain("de la vallée");
+        scrubbed.Text.ShouldNotContain("Roche", Case.Insensitive);
+    }
+
+    [Fact]
+    public void Given_an_elided_article_before_a_name_When_it_is_scrubbed_Then_the_result_is_not_d_apostrophe_le()
+    {
+        // Given — "d'Élise" is how French actually writes it, and a bare
+        // substitution produces "d'le pilote", which is not French.
+        var report = Report($"La voile d'{PilotFirstName} a fermé sur la crête.");
+
+        // When
+        var scrubbed = Scrub().Scrub(report);
+
+        // Then
+        scrubbed.Text.ShouldNotContain(PilotFirstName, Case.Insensitive);
+        scrubbed.Text.ShouldNotContain("d'le");
+        scrubbed.Text.ShouldContain("du pilote");
+    }
+
+    [Fact]
+    public void Given_gendered_words_the_reporter_wrote_When_it_is_scrubbed_Then_they_survive_untouched()
+    {
+        // Given — the source text itself says "la pilote". Stage 1 replaces
+        // names, not the reporter's grammar, and this pins that honestly
+        // instead of asserting against a fixture that never contained it.
+        var report = Report($"{PilotFirstName} était la pilote; elle s'est posée dans un champ.");
+
+        // When
+        var scrubbed = Scrub().Scrub(report);
+
+        // Then — the name is gone, the scrub's own article is masculine, and
+        // the reporter's own words are left alone. Stage 2 rewrites; stage 3
+        // flags what is left. See ADR-0028.
+        scrubbed.Text.ShouldNotContain(PilotFirstName, Case.Insensitive);
+        scrubbed.Text.ShouldContain("le pilote était la pilote");
+        scrubbed.Text.ShouldContain("elle s'est posée");
     }
 
     // ---- everything at once, and what must survive -------------------------

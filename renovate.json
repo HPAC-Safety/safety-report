@@ -19,6 +19,8 @@
 	},
 	"prConcurrentLimit": 0,
 	"prHourlyLimit": 0,
+	"automergeStrategy": "squash",
+	"platformAutomerge": true,
 	"labels": [
 		"dependencies",
 		"renovate"

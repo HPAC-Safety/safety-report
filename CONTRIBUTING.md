@@ -77,9 +77,15 @@ by label, and alphabetically by `Include` within each group. `renovate.json`
 groups its update PRs on the same boundaries, so a family moves as a unit and
 the diff stays readable.
 
-Renovate runs **weekly, early Monday**. Patch and minor updates automerge once
-CI is green; major updates are labelled `breaking-change` and reviewed by hand.
-Security advisories bypass the schedule.
+Renovate runs **weekly, early Monday**. Patch and minor updates are approved by
+Renovate itself and automerge once CI is green; major updates are labelled
+`breaking-change` and reviewed by hand. Security advisories bypass the schedule.
+
+The Renovate app holds write access, which is the **one deliberate exception** to
+the rule above that write access is approval power. It approves only its own
+dependency PRs, only patch and minor, and GitHub's auto-merge still holds them
+until required checks pass. See
+[ADR-0008](docs/decisions/ADR-0008-github-workflow.md).
 
 Adding a package: add a `PackageVersion` to the right labelled group (create the
 group if the family is new, keeping the file sorted), then a bare

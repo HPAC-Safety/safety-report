@@ -19,6 +19,13 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- The one committed binary fixture. HEIC cannot be generated at run time:
+       the imaging library decodes it but cannot encode it. See
+       Media/fixtures/README.md. -->
+  <ItemGroup>
+    <None Include="Media/fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\HpacSafety.Infrastructure\HpacSafety.Infrastructure.csproj" />
   </ItemGroup>

@@ -30,7 +30,14 @@ another key and S3 answers `403`; `FileSystemBlobStore` throws
 
 Which bytes are *safe* to hand a reviewer is not this slice's question — storage
 signs whatever key it is given. `ReviewerMediaLink` in `Core` is what refuses a
-link to an original.
+link to an original, and `MediaUploadSlot` is what keeps every upload in
+quarantine.
+
+Nothing here deletes. A refused upload expires through the bucket's lifecycle
+rule instead, so no code path exists that could later be pointed at a real
+report's media. The rule the bucket needs is written out in
+[`docs/data-handling.md`](../../../docs/data-handling.md); the Terraform belongs
+to issue #32.
 
 The local store signs an HMAC over the operation, the key, the content type, and
 the expiry, and verifies it in fixed time. That is not ceremony — a development

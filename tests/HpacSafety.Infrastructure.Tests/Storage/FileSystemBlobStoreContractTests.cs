@@ -53,6 +53,9 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
     protected override Uri RetargetToKey(Uri url, BlobKey key) =>
         new(new UriBuilder(url) { Path = "/" + key.Value }.Uri.ToString());
 
+    // The store reports a missing blob as FileNotFoundException, which is what
+    // the contract suite's existence check expects.
+
     public void Dispose()
     {
         if (Directory.Exists(_root))

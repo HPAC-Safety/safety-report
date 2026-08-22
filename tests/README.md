@@ -52,7 +52,11 @@ set.
   [ADR-0026](../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 - **Generate binary fixtures at run time** rather than committing them. The
   EXIF suite builds its own JPEG with GPS tags attached, which is both smaller
-  in the repository and impossible to mistake for a real photograph.
+  in the repository and impossible to mistake for a real photograph. The one
+  exception is a format the runtime cannot *encode* — see
+  `HpacSafety.Infrastructure.Tests/Media/fixtures/README.md`.
+- **A redaction assertion must be able to fail.** Assert against the un-redacted
+  input as well as the output; a check that passes on both proves nothing.
 
 ## Coverage
 

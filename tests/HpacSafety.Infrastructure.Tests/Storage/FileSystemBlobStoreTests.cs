@@ -13,7 +13,7 @@ namespace HpacSafety.Infrastructure.Tests.Storage;
 /// </summary>
 public sealed class FileSystemBlobStoreTests : IDisposable
 {
-    private static readonly BlobKey Photo = BlobKey.Parse("reports/9f1c8a/photo.jpg");
+    private static readonly BlobKey Photo = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Quarantine, "photo.jpg");
 
     private readonly string _root = Path.Combine(Path.GetTempPath(), "hpac-blob-tests", Guid.NewGuid().ToString("n"));
     private readonly MutableClock _clock = new(new DateTimeOffset(2026, 8, 22, 12, 0, 0, TimeSpan.Zero));

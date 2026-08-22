@@ -9,28 +9,40 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public sealed class MediaIngestOutcome
 {
+    private readonly BlobKey _originalKey;
     private readonly BlobKey _derivativeKey;
 
     private MediaIngestOutcome(
-        bool isAccepted,
+        MediaIngestStatus status,
         MediaRejectionReason rejectionReason,
         MediaType contentType,
         long byteSize,
         string sha256,
+        BlobKey originalKey,
         BlobKey derivativeKey,
         DateTimeOffset? strippedAt)
     {
-        IsAccepted = isAccepted;
+        Status = status;
         RejectionReason = rejectionReason;
         ContentType = contentType;
         ByteSize = byteSize;
         Sha256 = sha256;
+        _originalKey = originalKey;
         _derivativeKey = derivativeKey;
         StrippedAt = strippedAt;
     }
 
-    /// <summary>True when a stripped derivative exists and a reviewer may be shown it.</summary>
-    public bool IsAccepted { get; }
+    /// <summary>What ingest concluded.</summary>
+    public MediaIngestStatus Status { get; }
+
+    /// <summary>True when the bytes were retained as the Restricted record.</summary>
+    public bool IsAccepted => Status is not MediaIngestStatus.Rejected;
+
+    /// <summary>True when the file is accepted but has no derivative yet, so nothing is viewable.</summary>
+    public bool AwaitsStripping => Status is MediaIngestStatus.AwaitingStripping;
+
+    /// <summary>True when a reviewer may be shown this file.</summary>
+    public bool IsViewable => Status is MediaIngestStatus.Stripped;
 
     /// <summary>Why the upload was refused, or <see cref="MediaRejectionReason.None" />.</summary>
     public MediaRejectionReason RejectionReason { get; }
@@ -44,29 +56,47 @@ public sealed class MediaIngestOutcome
     /// <summary>Lowercase hex SHA-256 of the original bytes.</summary>
     public string Sha256 { get; }
 
-    /// <summary>When the derivative was written.</summary>
+    /// <summary>When the derivative was written, or <see langword="null" /> when there is none.</summary>
     public DateTimeOffset? StrippedAt { get; }
 
+    /// <summary>Where the Restricted original was promoted to. Throws on a rejection.</summary>
+    public BlobKey OriginalKey =>
+        IsAccepted
+            ? _originalKey
+            : throw new DomainRuleViolationException("A refused upload was never promoted out of quarantine.");
+
     /// <summary>
-    /// Where the stripped derivative lives. Reading this on a rejected outcome
-    /// throws rather than returning a key: there is no derivative to show, and a
-    /// caller that asks anyway has a bug worth failing loudly.
+    /// Where the stripped derivative lives. Reading this on anything but
+    /// <see cref="MediaIngestStatus.Stripped" /> throws rather than returning a
+    /// key — including for an accepted video, which has no derivative until #65.
+    /// A caller that asks for something to show a reviewer when there is nothing
+    /// safe to show has a bug worth failing loudly, and falling back to the
+    /// original would be the leak.
     /// </summary>
     public BlobKey DerivativeKey =>
-        IsAccepted
+        IsViewable
             ? _derivativeKey
-            : throw new DomainRuleViolationException("A rejected upload has no derivative for a reviewer to see.");
+            : throw new DomainRuleViolationException("There is no stripped derivative for a reviewer to see.");
 
-    /// <summary>The upload was refused.</summary>
+    /// <summary>The upload was refused. Its bytes stay in quarantine and expire.</summary>
     public static MediaIngestOutcome Rejected(MediaRejectionReason reason) =>
-        new(false, reason, default, 0, string.Empty, default, null);
+        new(MediaIngestStatus.Rejected, reason, default, 0, string.Empty, default, default, null);
 
-    /// <summary>The upload was accepted and a stripped derivative was written.</summary>
+    /// <summary>The upload was retained, but this system cannot strip the format yet.</summary>
+    public static MediaIngestOutcome Retained(
+        MediaType contentType,
+        long byteSize,
+        string sha256,
+        BlobKey originalKey) =>
+        new(MediaIngestStatus.AwaitingStripping, MediaRejectionReason.None, contentType, byteSize, sha256, originalKey, default, null);
+
+    /// <summary>The upload was retained and a stripped derivative was written.</summary>
     public static MediaIngestOutcome Ingested(
         MediaType contentType,
         long byteSize,
         string sha256,
+        BlobKey originalKey,
         BlobKey derivativeKey,
         DateTimeOffset strippedAt) =>
-        new(true, MediaRejectionReason.None, contentType, byteSize, sha256, derivativeKey, strippedAt);
+        new(MediaIngestStatus.Stripped, MediaRejectionReason.None, contentType, byteSize, sha256, originalKey, derivativeKey, strippedAt);
 }

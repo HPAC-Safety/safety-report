@@ -100,10 +100,15 @@ more — it means the API is not a second door onto Restricted media with its ow
 authorization story to get wrong. There is no route that serves blob bytes, and
 a test walks the live route table to keep it that way.
 
-Ingest then sniffs the content type, refuses anything it cannot strip, and
-writes an EXIF-stripped derivative under `stripped/<key>`. The original is
-retained untouched as the Restricted record; the derivative is the only thing a
-reviewer's browser fetches. See
+Every upload lands in `quarantine/` and nothing leaves it until this system has
+decided what the bytes are. Accepted media is promoted to
+`<report id>/original/<file>` — the Restricted record, retained untouched — and,
+where the format can be stripped, to `<report id>/stripped/<file>`, which is the
+only thing a reviewer's browser ever fetches. A refused upload is never
+promoted and expires in quarantine, which is why nothing here has a delete.
+
+Video is accepted and retained but has no derivative yet, so a reviewer sees
+nothing for it rather than something unsafe (#65). See
 [ADR-0025](decisions/ADR-0025-magick-net-for-exif-stripping.md),
 [ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md), and
 `docs/data-handling.md`.

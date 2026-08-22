@@ -1,0 +1,8 @@
+{
+  "upload.rejected.empty": "That file appears to be empty. Please choose the photo or video again.",
+  "upload.rejected.tooLarge": "That file is larger than 50 MB. Please upload a smaller photo or video.",
+  "upload.rejected.unrecognisedContent": "We could not read that file. Please upload a JPEG, PNG, WebP, or HEIC photo, or an MP4 or QuickTime video.",
+  "upload.rejected.unacceptedMediaType": "We cannot accept that kind of file. Please upload a JPEG, PNG, WebP, or HEIC photo, or an MP4 or QuickTime video.",
+  "upload.rejected.declaredTypeMismatch": "That file is not the type it says it is, so we did not keep it. Please upload the photo or video again.",
+  "upload.awaitingStripping": "Your video was received. It is held securely and is not yet available for review."
+}

@@ -20,8 +20,14 @@ namespace HpacSafety.Infrastructure.Tests.Storage;
 /// </summary>
 public abstract class BlobStoreContractTests : IAsyncLifetime
 {
-    private static readonly BlobKey Photo = BlobKey.Parse("reports/9f1c8a/photo.jpg");
-    private static readonly BlobKey OtherPhoto = BlobKey.Parse("reports/0000ff/other.jpg");
+    private const string ReportId = "dQw4w9WgXcQ";
+    private const string OtherReportId = "kJQP7kiw5Fk";
+
+    // "Exif" followed by two NULs - the APP1 marker introducing an EXIF block.
+    private static ReadOnlySpan<byte> ExifApp1Marker => [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+
+    private static readonly BlobKey Quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
+    private static readonly BlobKey AnotherReportsUpload = BlobKey.For(OtherReportId, MediaCompartment.Quarantine, "photo.jpg");
 
     /// <summary>The store under test.</summary>
     protected IBlobStore Store { get; private set; } = null!;
@@ -56,40 +62,41 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         using var source = new MemoryStream(content);
 
         // When
-        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+        await Store.WriteAsync(Quarantined, source, MediaType.Jpeg.ContentType, CancellationToken.None);
 
         // Then
-        await using var stored = await Store.OpenReadAsync(Photo, CancellationToken.None);
-        using var buffer = new MemoryStream();
-        await stored.CopyToAsync(buffer, CancellationToken.None);
-        buffer.ToArray().ShouldBe(content);
+        (await ReadAllAsync(Quarantined)).ShouldBe(content);
     }
 
     [Fact]
-    public async Task Given_a_presigned_upload_url_When_it_is_used_for_the_key_it_was_signed_for_Then_the_upload_succeeds()
+    public async Task Given_an_upload_slot_When_it_is_issued_Then_the_url_writes_only_into_quarantine()
     {
         // Given
-        var url = await Store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+        var slot = new MediaUploadSlot(Store);
 
         // When
-        var accepted = await TryUploadAsync(url, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg.ContentType);
+        var upload = await slot.CreateAsync(ReportId, "photo.jpg", MediaType.Jpeg, TimeSpan.FromMinutes(5), CancellationToken.None);
+        var accepted = await TryUploadAsync(upload.Url, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg.ContentType);
 
         // Then
         accepted.ShouldBeTrue();
+        upload.Key.Value.ShouldBe("quarantine/dQw4w9WgXcQ/photo.jpg");
     }
 
     [Fact]
     public async Task Given_a_presigned_upload_url_When_it_is_reused_for_a_different_key_Then_the_upload_is_refused()
     {
         // Given
-        var url = await Store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+        var url = await Store.CreateUploadUrlAsync(Quarantined, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
         // When
-        var retargeted = RetargetToKey(url, OtherPhoto);
+        var retargeted = RetargetToKey(url, AnotherReportsUpload);
         var accepted = await TryUploadAsync(retargeted, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg.ContentType);
 
         // Then
-        // A pre-signed URL is a capability for one object, not a key to the bucket.
+        // A pre-signed URL is a capability for one object, not a key to the
+        // bucket - and with the report id in the key, that also means one
+        // reporter's slot cannot write into another report's directory.
         accepted.ShouldBeFalse();
     }
 
@@ -98,11 +105,11 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     {
         // Given
         using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
-        await Store.WriteAsync(OtherPhoto, source, MediaType.Jpeg.ContentType, CancellationToken.None);
-        var url = await Store.CreateReadUrlAsync(Photo, TimeSpan.FromMinutes(5), CancellationToken.None);
+        await Store.WriteAsync(AnotherReportsUpload, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var url = await Store.CreateReadUrlAsync(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None);
 
         // When
-        var accepted = await TryReadAsync(RetargetToKey(url, OtherPhoto));
+        var accepted = await TryReadAsync(RetargetToKey(url, AnotherReportsUpload));
 
         // Then
         accepted.ShouldBeFalse();
@@ -116,9 +123,9 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 
         // When / Then
         await Should.ThrowAsync<DomainRuleViolationException>(
-            () => Store.CreateReadUrlAsync(Photo, lifetime, CancellationToken.None));
+            () => Store.CreateReadUrlAsync(Quarantined, lifetime, CancellationToken.None));
         await Should.ThrowAsync<DomainRuleViolationException>(
-            () => Store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, lifetime, CancellationToken.None));
+            () => Store.CreateUploadUrlAsync(Quarantined, MediaType.Jpeg.ContentType, lifetime, CancellationToken.None));
     }
 
     [Fact]
@@ -126,8 +133,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     {
         // Given
         var original = ExifFixtures.JpegWithGpsExif();
-        using var source = new MemoryStream(original);
-        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+        await SeedQuarantineAsync(Quarantined, original, MediaType.Jpeg);
 
         // The fixture really does carry a location. Without this the assertions
         // below would pass just as happily on a photo that never had one, which
@@ -139,10 +145,10 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         }
 
         // When
-        var outcome = await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
 
         // Then
-        outcome.IsAccepted.ShouldBeTrue();
+        outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
 
         var derivative = await ReadAllAsync(outcome.DerivativeKey);
         using var stripped = new MagickImage(derivative);
@@ -153,9 +159,28 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         // And at the byte level: no APP1 EXIF segment, and none of the ASCII
         // EXIF actually carried. Asserted on the bytes because a profile parser
         // that silently stopped finding profiles would satisfy the check above.
-        derivative.AsSpan().IndexOf("Exif\u0000\u0000"u8).ShouldBe(-1);
+        derivative.AsSpan().IndexOf(ExifApp1Marker).ShouldBe(-1);
         Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
         Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CapturedAt);
+    }
+
+    [Fact]
+    public async Task Given_a_heic_photo_with_GPS_EXIF_When_it_is_ingested_Then_the_derivative_is_a_stripped_jpeg()
+    {
+        // Given
+        var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.heic");
+        await SeedQuarantineAsync(key, ExifFixtures.HeicWithGpsExif(), MediaType.Heic);
+
+        // When
+        var outcome = await Ingestor().IngestAsync(key, MediaType.Heic.ContentType, CancellationToken.None);
+
+        // Then
+        outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
+        outcome.ContentType.ShouldBe(MediaType.Heic);
+
+        using var stripped = new MagickImage(await ReadAllAsync(outcome.DerivativeKey));
+        stripped.Format.ShouldBe(MagickFormat.Jpeg);
+        stripped.GetExifProfile().ShouldBeNull();
     }
 
     [Fact]
@@ -163,57 +188,48 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     {
         // Given
         var original = ExifFixtures.JpegWithGpsExif();
-        using var source = new MemoryStream(original);
-        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+        await SeedQuarantineAsync(Quarantined, original, MediaType.Jpeg);
 
         // When
-        await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
 
         // Then
         // The Restricted record keeps everything, GPS included; it is the
         // derivative that is safe to look at. See docs/data-handling.md.
-        var retained = await ReadAllAsync(Photo);
+        outcome.OriginalKey.Value.ShouldBe("dQw4w9WgXcQ/original/photo.jpg");
+        var retained = await ReadAllAsync(outcome.OriginalKey);
         retained.ShouldBe(original);
         using var retainedImage = new MagickImage(retained);
         retainedImage.GetExifProfile().ShouldNotBeNull();
     }
 
     [Fact]
-    public async Task Given_a_file_claiming_image_jpeg_but_containing_something_else_When_it_is_ingested_Then_it_is_rejected()
+    public async Task Given_a_video_When_it_is_ingested_Then_it_is_retained_and_no_reviewer_link_can_be_issued()
     {
         // Given
-        using var source = new MemoryStream(ExifFixtures.NotAnImage());
-        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
+        await SeedQuarantineAsync(key, ExifFixtures.Mp4(), MediaType.Mp4);
 
         // When
-        var outcome = await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
+        var outcome = await Ingestor().IngestAsync(key, MediaType.Mp4.ContentType, CancellationToken.None);
 
         // Then
-        outcome.IsAccepted.ShouldBeFalse();
-        outcome.RejectionReason.ShouldBe(MediaRejectionReason.UnrecognisedContent);
+        outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
+        (await ReadAllAsync(outcome.OriginalKey)).ShouldBe(ExifFixtures.Mp4());
+
+        // Fails closed: there is nothing to open, rather than a fall-through to
+        // the unstripped original. See #65.
+        Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
+        await Should.ThrowAsync<DomainRuleViolationException>(
+            () => new ReviewerMediaLink(Store).CreateViewUrlAsync(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     [Fact]
-    public async Task Given_a_png_uploaded_as_a_jpeg_When_it_is_ingested_Then_it_is_rejected()
+    public async Task Given_an_ingested_photo_When_a_reviewer_link_is_requested_Then_only_the_derivative_is_issued()
     {
         // Given
-        using var source = new MemoryStream(ExifFixtures.Png());
-        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
-
-        // When
-        var outcome = await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
-
-        // Then
-        outcome.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
-    }
-
-    [Fact]
-    public async Task Given_an_ingested_photo_When_a_reviewer_link_is_requested_for_the_original_Then_it_is_refused()
-    {
-        // Given
-        using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
-        await Store.WriteAsync(Photo, source, MediaType.Jpeg.ContentType, CancellationToken.None);
-        var outcome = await Ingestor().IngestAsync(Photo, MediaType.Jpeg.ContentType, CancellationToken.None);
+        await SeedQuarantineAsync(Quarantined, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg);
+        var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
         var links = new ReviewerMediaLink(Store);
 
         // When
@@ -222,15 +238,69 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         // Then
         derivativeUrl.ShouldNotBeNull();
         await Should.ThrowAsync<DomainRuleViolationException>(
-            () => links.CreateViewUrlAsync(Photo, TimeSpan.FromMinutes(5), CancellationToken.None));
+            () => links.CreateViewUrlAsync(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(
+            () => links.CreateViewUrlAsync(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Given_a_file_claiming_image_jpeg_but_containing_something_else_When_it_is_ingested_Then_it_is_rejected()
+    {
+        // Given
+        await SeedQuarantineAsync(Quarantined, ExifFixtures.NotMedia(), MediaType.Jpeg);
+
+        // When
+        var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
+
+        // Then
+        outcome.Status.ShouldBe(MediaIngestStatus.Rejected);
+        outcome.RejectionReason.ShouldBe(MediaRejectionReason.UnrecognisedContent);
+    }
+
+    [Fact]
+    public async Task Given_a_png_uploaded_as_a_jpeg_When_it_is_ingested_Then_it_is_rejected()
+    {
+        // Given
+        await SeedQuarantineAsync(Quarantined, ExifFixtures.Png(), MediaType.Jpeg);
+
+        // When
+        var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
+
+        // Then
+        outcome.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
+    }
+
+    [Fact]
+    public async Task Given_a_refused_upload_When_it_is_ingested_Then_nothing_is_promoted_out_of_quarantine()
+    {
+        // Given
+        await SeedQuarantineAsync(Quarantined, ExifFixtures.NotMedia(), MediaType.Jpeg);
+
+        // When
+        await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
+
+        // Then
+        // The bytes stay where the browser put them, and the bucket lifecycle
+        // rule expires them after 24 hours. There is no delete on IBlobStore, on
+        // purpose: no code path exists that could later be pointed at a real
+        // report's media. See ADR-0026.
+        (await ExistsAsync(Quarantined.In(MediaCompartment.Original))).ShouldBeFalse();
+        (await ExistsAsync(Quarantined.In(MediaCompartment.Stripped))).ShouldBeFalse();
+        (await ExistsAsync(Quarantined)).ShouldBeTrue();
     }
 
     private MediaIngestor Ingestor() =>
         new(Store,
-            new MagickNetMediaSniffer(),
-            new MagickNetExifStripper(),
-            new MediaPolicy(maxByteSize: 25 * 1024 * 1024, MediaType.All),
+            MediaSnifferChain.Default(),
+            new MagickNetExifStripper(MediaType.All),
+            new MediaPolicyOptions().ToPolicy(),
             TimeProvider.System);
+
+    private async Task SeedQuarantineAsync(BlobKey key, byte[] content, MediaType declaredType)
+    {
+        using var source = new MemoryStream(content);
+        await Store.WriteAsync(key, source, declaredType.ContentType, CancellationToken.None);
+    }
 
     private async Task<byte[]> ReadAllAsync(BlobKey key)
     {
@@ -238,5 +308,22 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         using var buffer = new MemoryStream();
         await stored.CopyToAsync(buffer, CancellationToken.None);
         return buffer.ToArray();
+    }
+
+    private async Task<bool> ExistsAsync(BlobKey key)
+    {
+        try
+        {
+            await using var stored = await Store.OpenReadAsync(key, CancellationToken.None);
+            return true;
+        }
+        catch (FileNotFoundException)
+        {
+            return false;
+        }
+        catch (Amazon.S3.AmazonS3Exception)
+        {
+            return false;
+        }
     }
 }

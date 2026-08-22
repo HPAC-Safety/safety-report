@@ -55,14 +55,83 @@ object, not a key to the bucket — is worth nothing if it is only true in the
 environment nobody develops against. `BlobStoreContractTests` is therefore one
 suite, run unchanged against MinIO in a container and against the filesystem.
 
-### A key is a value object
+### The layout is a rule, not a convention
 
-`BlobKey` parses or throws: no empty segments, no `.`, no `..`, no backslashes,
-no spaces or control characters, 512 characters at most. A key is
-attacker-influenced and ends up as a path on disk, so the string is validated
-once at the boundary and the store can never be handed a raw one.
-`FileSystemBlobStore` re-checks that the resolved path is inside its root
-anyway — two cheap checks beat one clever one.
+All of a report's media lives in a directory named with that report's id, so
+everything belonging to one report is a single literal prefix:
+
+```
+quarantine/<report id>/<file>   unverified. Expires after 24 hours.
+<report id>/original/<file>     the Restricted record.
+<report id>/stripped/<file>     the derivative a reviewer sees.
+```
+
+`BlobKey` parses or throws, and it parses **only those three shapes**. A key that
+is not namespaced by a well-formed report id is unrepresentable rather than
+merely discouraged — there is no constructor that produces one. It also refuses
+what it always refused: empty segments, `.`, `..`, backslashes, spaces, control
+characters, and leading dots in a file name. A key is attacker-influenced and
+ends up as a path on disk, so it is validated once at the boundary and the store
+can never be handed a raw one. `FileSystemBlobStore` re-checks that the resolved
+path is inside its root anyway — two cheap checks beat one clever one.
+
+Report ids are **tiny ids**: 11 characters of `A-Za-z0-9-_`, cryptographically
+random, encoding no timestamp. The shape is duplicated inside `BlobKey` today
+only because the shared `TinyId` value object is still in flight (#62); switch to
+it when that merges, because two implementations of one format is how they drift
+apart.
+
+An 11-character random id is not enumerable, so a report's media directory
+cannot be discovered by walking ids. **That is a reinforcement of the
+private-bucket rule and not a replacement for it.** Every object is still
+private, and still reached only through a short-lived pre-signed URL. The failure
+mode worth naming: someone later notices the key is unguessable and concludes
+that a public bucket would now be fine. It would not be. URLs end up in browser
+history, in referrer headers, and in screenshots pasted into chats, and an
+unguessable name that has been guessed once stays guessed forever.
+
+### Quarantine sits at the top level, and why not a tag
+
+Every upload lands in `quarantine/`, and nothing leaves it until this system has
+decided what the bytes are. A refused upload is simply never promoted: it expires
+where it landed, through a bucket lifecycle rule, so **no delete is needed and
+none exists**. That is the point — no code path exists that could later be
+pointed at a real report's media.
+
+An S3 lifecycle filter matches a **literal** prefix. With the report id first,
+`*/quarantine/` is not expressible, so a per-report quarantine directory could
+not be expired by a prefix rule at all. Two ways out, and this is the one not
+taken:
+
+**A tag filter**, keeping `<report id>/quarantine/`. Rejected because both ways
+of applying the tag fail *open*. Tagging at upload means signing an
+`x-amz-tagging` header into the pre-signed PUT and trusting the browser to send
+it — a client that omits it produces an object that never expires. Tagging after
+ingest means an object whose ingest never ran never gets tagged, which is exactly
+the case the rule exists for. The prefix fails *closed*: an object is in
+`quarantine/` because that is the only place an upload URL can write, and nothing
+has to remember anything for it to expire.
+
+The cost is one departure from "report id first", for unverified files only. The
+report id is still the next segment, so per-report enumeration is one literal
+prefix either way (`quarantine/<id>/`), and nothing operational is lost.
+
+The exact rule #32 implements — bucket, prefix, expiry, and an honest note that
+S3 expiration is day-granular and therefore a floor rather than a deadline — is
+written out in `docs/data-handling.md`.
+
+### The report id exists before the upload does
+
+A pre-signed PUT is scoped to a key and every key is namespaced by a report id,
+so **the id is minted when the upload slot is issued, not when the report is
+submitted.** The API mints it, issues the slot against it, and the submitted
+report carries the same id. #14 inherits that as a decided contract rather than
+discovering it.
+
+The consequence is deliberate and small: a slot can be issued for a report that
+is never submitted, leaving unverified bytes in quarantine that nothing
+references. The lifecycle rule above expires them without anything having to
+notice, which is the same mechanism that handles a refused upload.
 
 ### Fifteen minutes, enforced in `Core`
 
@@ -71,27 +140,40 @@ through `BlobUrlLifetime.Validate`. The cap lives in `Core` because a rule each
 implementation re-states is a rule one of them will eventually re-state
 differently.
 
-### The derivative lives under its own prefix
+### An upload can only ever land in quarantine
 
-`stripped/<original key>`. Two keyspaces that cannot collide, and "which one is
-safe to show a reviewer" is answerable from the key alone.
+`MediaUploadSlot` is the only thing that mints an upload URL, and it never names
+the compartment — it is always `Quarantine`. A caller cannot accidentally hand
+out a URL that writes straight into a report's Restricted record, because it has
+no way to ask for one.
 
-### Nothing is written for a file that was refused
+### Nothing is promoted for a file that was refused, and "accepted" is not "viewable"
 
-`MediaIngestor` sniffs, validates, strips, then writes, in that order. A refused
-upload never acquires a derivative, and `MediaIngestOutcome.DerivativeKey`
-throws rather than returning a key when the outcome is a rejection — a caller
-that asks for something to show a reviewer after a rejection has a bug worth
-failing loudly.
+`MediaIngestor` sniffs, validates, and only then promotes. `MediaIngestStatus`
+has three states rather than two, because accepted and safe-to-look-at are not
+the same thing:
+
+| Status | Original retained | Derivative | Reviewer sees |
+|---|---|---|---|
+| `Rejected` | no — expires in quarantine | no | nothing |
+| `AwaitingStripping` | yes | **no** — video, #65 | nothing |
+| `Stripped` | yes | yes | the derivative |
+
+`MediaIngestOutcome.DerivativeKey` throws on either of the first two. It does not
+fall back to the original, which would be the leak, and it does not return null
+for a caller to forget to check.
 
 ### A reviewer link can only name a derivative
 
 `IBlobStore` will sign a URL for any key it is handed — it is generic storage and
 knows nothing about which bytes are safe to look at. `ReviewerMediaLink`, in
-`Core`, does: it refuses any key that is not under `stripped/`, so "show the
-reviewer the photo" cannot accidentally become "show the reviewer the original".
-The prefix is matched as a path segment, not as a string prefix, so
-`strippedish/...` does not read as a derivative.
+`Core`, does: it issues a URL only for `MediaCompartment.Stripped`.
+
+The check is on the **parsed compartment**, not on a substring of the key. That
+survived the layout moving the report id to the front, which a prefix match would
+not have: a check that silently passes a differently-shaped key is worse than one
+that fails. It also means a video needs no special case — it has no stripped
+compartment at all, so it is refused by the same rule as any other original.
 
 Enforcing it in one type rather than at each call site is deliberate. The admin
 route that will call this does not exist yet (#14); the rule should already be
@@ -124,7 +206,12 @@ Pre-signed GETs put that logic in one place — whether to mint a URL at all.
 
 **A public bucket with unguessable keys.** Security by URL secrecy. URLs end up
 in browser history, in referrer headers, in a screenshot pasted into a chat.
-Rejected outright; `docs/data-handling.md` already forecloses it.
+Rejected outright; `docs/data-handling.md` already forecloses it. Tiny ids make
+the keys unguessable and change nothing about this.
+
+**Refusing video outright, because we cannot strip it.** It would have kept the
+invariant trivially, and it would have thrown away evidence a reporter chose to
+give us after a crash. Retaining it while refusing to show it keeps both.
 
 **No signature on the development store — return a `file://` path.** Shorter,
 and it would mean the "a pre-signed PUT cannot be reused for a different key"
@@ -144,13 +231,18 @@ that outlives the reason it was minted is a public object URL with extra steps.
   CI runs it. It is pinned to a release tag for the same reason the Postgres
   container is.
 - Ingest buffers the whole file in memory to hash, sniff, and strip it.
-  `MediaPolicy.MaxByteSize` is what bounds that cost, and it is a constructor
-  argument with no default — a size limit nobody chose is a size limit nobody
-  owns. The maximum upload size HPAC wants is an open question in
-  `docs/data-handling.md`.
-- A refused upload's original bytes stay in the bucket, unreferenced. There is
-  no delete on `IBlobStore` and no retention rule for them; that gap is recorded
-  in `docs/data-handling.md` as a question for HPAC rather than answered here.
+  `MediaPolicy.MaxByteSize` bounds that cost, and it stays a constructor argument
+  with no default — a size limit nobody chose is a size limit nobody owns. The
+  configured value is **50 MB** (`MediaPolicyOptions`), which is generous for a
+  photo and tight for video; see `docs/data-handling.md`.
+- An accepted upload is copied once, from quarantine to the Restricted record.
+  That is the price of deciding what bytes are before they land anywhere
+  permanent, and it is worth paying.
+- A submitted-late report loses its media: quarantine expires in about a day and
+  ingest reads from there. Upload slots live 15 minutes and a form is filled in
+  one sitting, so this is acceptable — but it is a real coupling between the
+  lifecycle rule and the submission flow, and #14 should not lengthen the gap
+  without revisiting it.
 - Rejection reasons are an enum, never a sentence. The edge localizes them; no
   user-facing string is written in `Core` or `Infrastructure`.
 

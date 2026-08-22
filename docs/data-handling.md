@@ -40,7 +40,7 @@ decision for HPAC rather than an engineering one.
 
 ## Uploads
 
-One photo per report, matching the existing form.
+One photo or video per report, matching the existing form.
 
 - Private bucket, no public object URLs, ever. Admin views use short-lived
   pre-signed GETs.
@@ -52,23 +52,135 @@ One photo per report, matching the existing form.
 - Media is **never** attached to a published summary. Publishing an image is a
   separate human decision, not in scope.
 
+### Where a report's media lives
+
+All of a report's media lives in a directory named with that report's id, so
+everything belonging to one report is a single literal prefix.
+
+```
+quarantine/<report id>/<file>   unverified. Expires after 24 hours.
+<report id>/original/<file>     the Restricted record. Never shown to anyone.
+<report id>/stripped/<file>     the derivative a reviewer sees.
+```
+
+Report ids are **tiny ids**: 11 characters of `A-Za-z0-9-_`, cryptographically
+random, encoding no timestamp.
+
+Quarantine is the one deliberate departure from "report id first", and it is
+there because an S3 lifecycle filter matches a **literal** prefix — `*/quarantine/`
+is not expressible. The report id is still the next segment, so per-report
+enumeration is one prefix either way. See
+[ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+
+An unguessable id is **not** a substitute for the private bucket. It means a
+report's directory cannot be found by walking ids, which is a useful
+reinforcement and nothing more: every object is still private and still reached
+only through a pre-signed URL. Treating the id as sufficient protection on its
+own is exactly the mistake this paragraph exists to prevent.
+
 ### How a photo travels
 
 ```mermaid
 flowchart LR
-    b["browser"] -->|"pre-signed PUT,<br/>one key, ≤15 min"| orig[("&lt;key&gt;<br/>original, Restricted")]
-    orig --> sniff["sniff the content type"]
+    b["browser"] -->|"pre-signed PUT,<br/>one key, ≤15 min"| q[("quarantine/&lt;id&gt;/&lt;file&gt;<br/>unverified")]
+    q --> sniff["sniff the content type"]
     sniff --> val{"accepted?"}
-    val -->|no| rej["rejected.<br/>no derivative exists"]
-    val -->|yes| strip["strip every<br/>metadata profile"]
-    strip --> der[("stripped/&lt;key&gt;<br/>derivative")]
+    val -->|no| rej["never promoted.<br/>expires in quarantine"]
+    val -->|yes| orig[("&lt;id&gt;/original/&lt;file&gt;<br/>Restricted")]
+    orig --> can{"can this system<br/>strip it?"}
+    can -->|"no — video, #65"| held["retained, not viewable"]
+    can -->|yes| der[("&lt;id&gt;/stripped/&lt;file&gt;")]
     der -->|"pre-signed GET,<br/>≤15 min"| rev["safety officer"]
 ```
 
-The original is never modified and never shown. The derivative is the only thing
-a reviewer's browser ever fetches, and it is fetched from storage directly —
-**no route in the API serves blob bytes**, which is asserted by a test that walks
-the live route table.
+Nothing leaves quarantine until this system has decided what it is. The original
+is never modified and never shown. The derivative is the only thing a reviewer's
+browser ever fetches, and it is fetched from storage directly — **no route in
+the API serves blob bytes**, which is asserted by a test that walks the live
+route table.
+
+### Accepted, but not yet viewable
+
+A **video is accepted and retained** — the original is the Restricted record like
+any other upload — but nothing in this system can strip a video's metadata yet,
+so **no derivative is produced and no reviewer link can be issued for it**. A
+reviewer sees nothing for that report's media rather than something unsafe.
+
+This is a distinct, explicit state in the domain (`MediaIngestStatus.AwaitingStripping`),
+not an absence. Asking for a derivative that does not exist throws; it never
+falls through to the original. Media is never published in any case, so nothing
+reaches the public path either way.
+
+**[Issue #65](https://github.com/HPAC-Safety/safety-report/issues/65)** adds the
+ffmpeg-based stripping step that turns this state into a viewable derivative.
+
+### Accepted formats
+
+| Format | Derivative |
+|---|---|
+| JPEG, PNG, WebP | the same format, stripped |
+| HEIC | a stripped **JPEG** — the imaging library decodes HEIC but cannot encode it, and a reviewer needs something every browser renders |
+| MP4, QuickTime | none yet. Retained, not viewable. See #65 |
+
+HEIC is accepted because it is an iPhone's default and one of the most common
+carriers of GPS this system will see. It needs libheif, and a runtime without it
+would refuse every iPhone upload as unrecognisable content with nothing in the
+logs to say why — so the codecs are **checked at startup and a missing one is a
+failure to start**, never a silent degradation.
+
+### Size limit
+
+**50 MB.** Generous headroom, so no realistic photo is refused for size. The
+number is configured (`MediaPolicyOptions`); `MediaPolicy` itself takes it as a
+constructor argument with no default, because a size limit nobody chose is a
+size limit nobody owns.
+
+**Video may force this number to be revisited.** 50 MB is ample for a photo and
+tight for anything but a short clip.
+
+### Refused uploads expire; nothing deletes them
+
+A refused upload is simply never promoted. It stays where the browser put it and
+is expired by a **bucket lifecycle rule**, not by application code — there is
+deliberately no delete on `IBlobStore`, so no code path exists that could later
+be pointed at a real report's media.
+
+The rule the uploads bucket needs, owned by
+[issue #32](https://github.com/HPAC-Safety/safety-report/issues/32):
+
+| | |
+|---|---|
+| **Bucket** | the private uploads bucket, `ca-central-1` |
+| **Filter** | prefix `quarantine/` — literal, no wildcards |
+| **Expiration** | 1 day |
+| **Also** | abort incomplete multipart uploads after 1 day |
+| **Status** | enabled |
+
+```hcl
+resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  rule {
+    id     = "expire-quarantine"
+    status = "Enabled"
+
+    filter { prefix = "quarantine/" }
+
+    expiration { days = 1 }
+    abort_incomplete_multipart_upload { days_after_initiation = 1 }
+  }
+}
+```
+
+**Be honest about what that guarantees.** S3 lifecycle expiration is day-granular
+and runs asynchronously: an object is expired *no sooner than* 24 hours after
+creation, and in practice up to roughly 48. "Expires after 24 hours" is a floor,
+not a deadline. That is acceptable here because quarantined bytes are never
+linked from a report, never served to a reviewer, and never published — but it is
+not a hard 24-hour destruction guarantee, and nothing should be written that
+claims otherwise.
+
+The same rule is what cleans up an upload for a report that was never submitted.
 
 ### Rules a reviewer can rely on
 
@@ -76,47 +188,36 @@ the live route table.
 |---|---|
 | A pre-signed URL works for exactly one key | `S3BlobStore` (SigV4) and `FileSystemBlobStore` (HMAC), one shared contract suite |
 | Every URL expires within 15 minutes | `BlobUrlLifetime` in `Core`, called by both adapters |
-| The declared content type is never believed | `MagickNetMediaSniffer`, then `MediaPolicy` |
-| A refused upload produces no derivative | `MediaIngestor`; `MediaIngestOutcome.DerivativeKey` throws on a rejection |
-| A reviewer link can only ever name a derivative | `ReviewerMediaLink` refuses any key not under `stripped/`, including the original |
+| An upload can only ever land in quarantine | `MediaUploadSlot`, which never names the compartment |
+| The declared content type is never believed | the sniffer chain, then `MediaPolicy` |
+| A refused upload is never promoted | `MediaIngestor`; `MediaIngestOutcome.OriginalKey` throws on a rejection |
+| A reviewer link can only ever name a derivative | `ReviewerMediaLink` refuses any compartment but `stripped` |
+| A file with no derivative fails closed | `MediaIngestOutcome.DerivativeKey` throws rather than returning the original |
+| A missing image codec stops the process | `ImagingCapabilities.EnsureCanDecode`, at startup |
 | No client-supplied value reaches an exception message | `BlobKey`, `MediaType`, and `FileSystemBlobStore` all refuse without echoing the input |
-| Original bytes are retained untouched | asserted in the contract suite against MinIO and the filesystem |
 
 The development store signs its URLs exactly as S3 does, so the guarantee holds
 in the environment contributors actually run. See
 [ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 
-### Formats deliberately not accepted yet
+### Telling a reporter why
 
-Accepted today: **JPEG, PNG, WebP**. A format is added only once this system can
-strip its metadata — a file whose EXIF cannot be removed has no derivative that
-is safe to show, and refusing the upload is the safe failure. See
-[ADR-0025](decisions/ADR-0025-magick-net-for-exif-stripping.md).
+Rejections are a **code**, never a sentence: `MediaRejectionReason` in the domain,
+mapped by `MediaRejection.LocalizationKeyFor` to a key under `upload.rejected.`
+in `locales/en-CA.json`. English and French are both first-class, so no rejection
+wording is written in `Core` or in `Infrastructure`. See
+[`localization.md`](localization.md).
 
-Two gaps are known and are **policy questions for HPAC, not engineering
-decisions**:
+### When the report id has to exist
 
-- **Video.** The form's wording allows a video. Nothing here can strip metadata
-  from one, so video is refused rather than stored un-stripped. Accepting video
-  means adding a metadata-stripping step for it first.
-- **HEIC.** An iPhone's default camera format, and a common carrier of GPS.
-  Browsers usually transcode on upload, but not always.
+A pre-signed PUT is scoped to a key, and every key is namespaced by a report id.
+So **the report id must be minted before the upload slot is issued**, not
+assigned when the report is submitted. The API mints the id, issues the slot
+against it, and the submitted report carries that same id.
 
-### Refused uploads
-
-A file that fails validation is left where the browser put it. Nothing
-references it, no `report_files` row is written, and no derivative exists — but
-`IBlobStore` has no delete and this document's **Retention** section does not
-cover it. **What happens to a refused upload is an open question**: it is by
-definition the file this system decided it could not make safe, so a sweep for
-unreferenced originals is a reasonable tightening and, like the retention window
-above, a policy decision for HPAC rather than an engineering one.
-
-### Size limit
-
-`MediaPolicy` takes its maximum as a constructor argument and has no default:
-a size limit nobody chose is a size limit nobody owns. **The number HPAC wants
-has not been decided**, and it belongs in this document once it is.
+The consequence is deliberate and small: a slot can be issued for a report that
+is never submitted, leaving unverified bytes in quarantine — which the lifecycle
+rule above expires without anything having to notice.
 
 ## What is sent to a third-party model
 

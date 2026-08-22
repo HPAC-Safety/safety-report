@@ -4,14 +4,21 @@ using HpacSafety.Core.SharedKernel;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// Turns a file that has just landed in the private bucket into something a
-/// reviewer may safely be shown.
+/// Turns bytes a browser dropped into quarantine into something this system is
+/// willing to keep — and, where it can, into something a reviewer may safely be
+/// shown.
 /// <para>
-/// The order is the point. Sniff, then validate, then strip, then write — and
-/// nothing is written when validation fails, so a file this system could not
-/// understand never acquires a derivative that looks reviewable. The original
-/// bytes are never modified: they are the Restricted record, kept because a
-/// summary can later be disputed. See docs/data-handling.md.
+/// The order is the point. Sniff, validate, then <i>promote</i>: nothing leaves
+/// quarantine until this system has decided what it is. A refused upload is
+/// simply never promoted, so it needs no delete — it expires where it landed,
+/// through a bucket lifecycle rule. That is deliberate: no code path exists
+/// which could later be pointed at a real report's media.
+/// </para>
+/// <para>
+/// A format this system cannot strip is still promoted, because the original is
+/// the Restricted record regardless, but it produces no derivative and the
+/// outcome says so. It fails closed: there is nothing for a reviewer to open,
+/// rather than a fall-through to the unstripped original.
 /// </para>
 /// <para>
 /// It lives in <c>Core</c> and depends only on ports, so the rule "a reviewer
@@ -21,16 +28,13 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public sealed class MediaIngestor
 {
-    /// <summary>The prefix the stripped derivative is stored under.</summary>
-    public const string DerivativePrefix = "stripped";
-
     private readonly IBlobStore _blobStore;
     private readonly IMediaSniffer _sniffer;
     private readonly IExifStripper _stripper;
     private readonly MediaPolicy _policy;
     private readonly TimeProvider _clock;
 
-    /// <summary>Creates an ingestor over the four ports it needs.</summary>
+    /// <summary>Creates an ingestor over the ports it needs.</summary>
     public MediaIngestor(
         IBlobStore blobStore,
         IMediaSniffer sniffer,
@@ -52,20 +56,26 @@ public sealed class MediaIngestor
     }
 
     /// <summary>
-    /// Reads the original at <paramref name="originalKey" />, judges it, and on
-    /// acceptance writes the stripped derivative alongside it.
+    /// Reads the quarantined upload, judges it, and on acceptance promotes it to
+    /// the Restricted record — writing a stripped derivative alongside when the
+    /// format allows one.
     /// </summary>
     public async Task<MediaIngestOutcome> IngestAsync(
-        BlobKey originalKey,
+        BlobKey quarantineKey,
         string? declaredContentType,
         CancellationToken cancellationToken)
     {
-        // Buffered rather than streamed: the bytes are read three times — for the
-        // digest, for the sniff and for the strip — and MediaPolicy.MaxByteSize
+        if (quarantineKey.Compartment is not MediaCompartment.Quarantine)
+        {
+            throw new DomainRuleViolationException("Ingest reads from quarantine and nowhere else.");
+        }
+
+        // Buffered rather than streamed: the bytes are read three times - for the
+        // digest, for the sniff and for the strip - and MediaPolicy.MaxByteSize
         // is what bounds how much that costs.
         using var original = new MemoryStream();
 
-        await using (var source = await _blobStore.OpenReadAsync(originalKey, cancellationToken).ConfigureAwait(false))
+        await using (var source = await _blobStore.OpenReadAsync(quarantineKey, cancellationToken).ConfigureAwait(false))
         {
             await source.CopyToAsync(original, cancellationToken).ConfigureAwait(false);
         }
@@ -88,19 +98,26 @@ public sealed class MediaIngestor
             return MediaIngestOutcome.Rejected(verdict.RejectionReason);
         }
 
+        var sha256 = Convert.ToHexStringLower(SHA256.HashData(original.GetBuffer().AsSpan(0, (int)byteSize)));
+
+        var originalKey = quarantineKey.In(MediaCompartment.Original);
+        original.Position = 0;
+        await _blobStore.WriteAsync(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
+
+        if (verdict.Type.StrippedForm is not { } derivativeType)
+        {
+            // Retained, and deliberately not viewable. See #65.
+            return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
+        }
+
         original.Position = 0;
         using var stripped = new MemoryStream();
         await _stripper.StripAsync(original, stripped, verdict.Type, cancellationToken).ConfigureAwait(false);
 
-        var derivativeKey = originalKey.WithPrefix(DerivativePrefix);
+        var derivativeKey = quarantineKey.In(MediaCompartment.Stripped);
         stripped.Position = 0;
-        await _blobStore.WriteAsync(derivativeKey, stripped, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
+        await _blobStore.WriteAsync(derivativeKey, stripped, derivativeType.ContentType, cancellationToken).ConfigureAwait(false);
 
-        return MediaIngestOutcome.Ingested(
-            verdict.Type,
-            byteSize,
-            Convert.ToHexStringLower(SHA256.HashData(original.GetBuffer().AsSpan(0, (int)byteSize))),
-            derivativeKey,
-            _clock.GetUtcNow());
+        return MediaIngestOutcome.Ingested(verdict.Type, byteSize, sha256, originalKey, derivativeKey, _clock.GetUtcNow());
     }
 }

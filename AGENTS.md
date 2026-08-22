@@ -120,7 +120,14 @@ ASCII boxes do neither.
   filesystem. See [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 - **Generate binary fixtures at run time.** Do not commit images or other
   binaries as test data; build them in the test. Nothing to mistake for a real
-  photograph, and nothing to review blind.
+  photograph, and nothing to review blind. The one allowed exception is a format
+  the runtime cannot *encode* — HEIC today. Commit the smallest synthetic file
+  that exercises the path, and write down beside it where it came from and how to
+  regenerate it.
+- **A redaction assertion must be able to fail.** Assert against the un-redacted
+  input as well as the output. `ShouldNotContain("GPS")` on a stripped photo
+  passes just as happily on one that never carried a location — and a test that
+  cannot fail is worse than no test, because it is believed.
 - Coverage is gated in CI: an 80% line / 70% branch floor, plus a ratchet
   against `main`. It is a floor, not a target — the anonymization suite matters
   more than the percentage, and a change that raises the number without pinning
@@ -132,7 +139,10 @@ Full detail: `docs/testing-conventions.md`.
 
 - **No hardcoded user-facing strings anywhere.** Not in the admin UI, not in an
   error message, not in an `aria-label`, not in an email subject. Add a key to
-  `locales/en-CA.json` and reference it.
+  `locales/en-CA.json` and reference it. This includes **validation and rejection
+  messages**: the domain returns a code, and the edge renders it from a key. An
+  exception message is developer-facing and stays in English — but it must never
+  carry user-supplied content, which is a different rule and equally firm.
 - English is the source of truth; French is generated in CI and reviewed by a
   human. Never hand-edit `locales/fr-CA.json`.
 - That applies to **UI chrome**. Question wording is content, authored in the
@@ -207,10 +217,23 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   URLs do not exist, and a URL that does not expire is a public object URL with
   extra steps. `docs/data-handling.md` and
   [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
-- **A file this system cannot strip is a file this system does not accept.**
-  Content types are sniffed, never taken from the client, and the accepted set is
-  closed. Refusing an upload is the safe failure; storing an un-stripped one is
-  not. [ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
+- **All of a report's media lives under that report's id**, and `BlobKey`
+  enforces it rather than trusting call sites: `<report id>/original/<file>`,
+  `<report id>/stripped/<file>`, and `quarantine/<report id>/<file>` for
+  unverified bytes. A key in any other shape cannot be constructed. Identifiers
+  are **tiny ids** — 11 characters of `A-Za-z0-9-_`, cryptographically random,
+  encoding no timestamp. An unguessable id is a *reinforcement* of the private
+  bucket, never a replacement for it.
+- **Content types are sniffed, never taken from the client**, and the accepted
+  set is closed. A format is added only once its metadata can be stripped **or**
+  the domain can say plainly that it cannot be — "accepted but not viewable" is
+  an explicit state, and a file with no derivative fails closed rather than
+  falling through to the original.
+  [ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
+- **A missing codec is a failure to start, never a silent refusal.** If a
+  deployment accepts a format the runtime cannot decode, the process must not
+  start. The alternative is every upload of that format being rejected as
+  unrecognisable content with nothing in the logs to explain it.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
 

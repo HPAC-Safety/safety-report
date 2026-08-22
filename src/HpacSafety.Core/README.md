@@ -28,8 +28,9 @@ Features/
                   ReportStatus, InjurySeverity, AircraftClass, Discipline,
                   PilotRating, TimeOfDay, Province,
                   MediaType, MediaPolicy, MediaValidation,
-                  MediaRejectionReason, MediaIngestor, MediaIngestOutcome,
-                  ReviewerMediaLink,
+                  MediaRejectionReason, MediaRejection, MediaKind,
+                  MediaIngestor, MediaIngestOutcome, MediaIngestStatus,
+                  MediaUploadSlot, ReviewerMediaLink,
                   ISummarizer, IPiiAuditor, IAircraftClassifier,
                   IPublicationChannel, IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
@@ -38,7 +39,8 @@ Features/
   Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                   IMemberAuthenticator
   Outbox/         OutboxMessage
-SharedKernel/     Locale, EnumCode, SensitivityTier, BlobKey, BlobUrlLifetime,
+SharedKernel/     Locale, EnumCode, SensitivityTier,
+                  BlobKey, MediaCompartment, BlobUrlLifetime,
                   DomainRuleViolationException,
                   ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
 ```
@@ -69,14 +71,27 @@ consent. See [ADR-0016](../../docs/decisions/ADR-0016-data-driven-question-bank.
 ## Uploaded media
 
 `MediaIngestor` is in `Core` for the same reason the scrub is: the order it runs
-in — sniff, validate, strip, write — is what makes "a reviewer only ever sees
-stripped bytes" true, and it is provable in a plain unit test with no bucket and
-no imaging library. `IMediaSniffer` and `IExifStripper` are ports;
-Magick.NET lives in `Infrastructure`. `BlobKey` is in the shared kernel because
-a key is attacker-influenced and must be parsed, never accepted as a string.
-`ReviewerMediaLink` is the only sanctioned way to mint a link to a photo: storage
-will sign a URL for any key, including the original, and this refuses everything
-that is not a stripped derivative. See
+in — sniff, validate, *then* promote out of quarantine — is what makes "a
+reviewer only ever sees stripped bytes" true, and it is provable in a plain unit
+test with no bucket and no imaging library. `IMediaSniffer` and `IExifStripper`
+are ports; Magick.NET lives in `Infrastructure`.
+
+Three types carry rules that would otherwise be call-site discipline:
+
+- **`BlobKey`** is in the shared kernel because a key is attacker-influenced and
+  must be parsed, never accepted as a string — and because the storage layout is
+  a rule. It parses exactly three shapes, all namespaced by a report id, so a key
+  outside the layout is unrepresentable.
+- **`MediaUploadSlot`** is the only thing that mints an upload URL, and it never
+  names the compartment: an upload can only ever land in quarantine.
+- **`ReviewerMediaLink`** is the only sanctioned way to mint a link to media.
+  Storage will sign a URL for any key, including the original; this issues one
+  only for `MediaCompartment.Stripped`.
+
+`MediaIngestStatus` has three states, not two. A video is *accepted* — the
+original is the Restricted record like any other upload — but nothing can strip
+it yet, so there is no derivative and nothing viewable. Asking for one throws
+rather than falling through to the unstripped original. See #65. See
 [ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
 [ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 

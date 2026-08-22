@@ -38,10 +38,39 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
+    public async Task Given_heic_bytes_When_they_are_sniffed_Then_they_are_reported_as_heic()
+    {
+        // Given
+        using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
+
+        // When
+        var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+
+        // Then
+        sniffed.ShouldBe(MediaType.Heic);
+    }
+
+    [Fact]
+    public async Task Given_an_mp4_When_it_is_sniffed_by_the_image_sniffer_Then_it_is_left_for_the_video_sniffer()
+    {
+        // Given
+        using var content = new MemoryStream(ExifFixtures.Mp4());
+
+        // When
+        var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+
+        // Then
+        // MP4 and HEIC share the ISO base media container and differ only by
+        // brand. This sniffer must not claim a video, or ImageMagick would end up
+        // decoding one.
+        sniffed.ShouldBeNull();
+    }
+
+    [Fact]
     public async Task Given_a_pdf_renamed_to_a_photo_When_it_is_sniffed_Then_it_is_unrecognised()
     {
         // Given
-        using var content = new MemoryStream(ExifFixtures.NotAnImage());
+        using var content = new MemoryStream(ExifFixtures.NotMedia());
 
         // When
         var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);

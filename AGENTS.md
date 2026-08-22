@@ -113,10 +113,75 @@ not exist is a layer, not a pattern.** If you cannot say what varies, write the
 plain code. And the invariants above are deliberately *closed* — never add an
 extension point that lets a caller opt out of the PII audit or of human review.
 
+## Documentation is part of the work, not after it
+
+A pull request that changes behaviour and not the documentation is incomplete.
+These three rules are not optional, and they apply **even when the trigger falls
+outside the scope of the task at hand** — that is precisely when knowledge gets
+lost.
+
+### Every decision gets an ADR
+
+If you chose between two viable options, write
+`docs/decisions/ADR-NNNN-<slug>.md` before the pull request. Number sequentially,
+never renumber, never delete — a decision that was later reversed is superseded
+by a new ADR that says so, because the reasoning behind the reversal is the part
+worth keeping.
+
+An ADR is warranted when someone could reasonably ask "why is it like that?" six
+months from now: a library choice, a schema shape, a boundary, a trade-off
+accepted, an option rejected. It is not warranted for a naming preference or a
+formatting change.
+
+Record what was rejected and why. An ADR listing only the winner is a press
+release.
+
+### Every requirement lands in `AGENTS.md` or a skill
+
+When a requirement, constraint, convention, or preference is stated — in an
+issue, in review, in conversation — write it down in the same pull request:
+
+- A rule about **how code in this repository is written** → `AGENTS.md`, or a
+  skill under `skills/` when it needs more than a few lines.
+- A rule about **what the running system does** → `docs/`, and an ADR if a
+  choice was made.
+- A rule about **what the model is sent at runtime** → `prompts/`, versioned.
+  Never a skill; see "Prompts are not skills" above.
+
+Do this even when the requirement arrives mid-task and is unrelated to the task.
+"I'll capture that next time" is how a convention becomes folklore and then
+becomes a defect.
+
+### Every vertical slice has a README
+
+Every project, every namespace with real behaviour, and every feature area
+carries a `README.md` at its root, and **you update it in the pull request that
+changes it.** A README describes the slice: what it is for, what it owns, what it
+deliberately does not own, how it is exercised, and how it is deployed if it is
+deployable.
+
+```mermaid
+flowchart TD
+    pr["a pull request"] --> q1{"chose between<br/>options?"}
+    q1 -->|yes| adr["docs/decisions/ADR-NNNN"]
+    pr --> q2{"a rule was<br/>stated?"}
+    q2 -->|yes| rule["AGENTS.md or skills/"]
+    pr --> q3{"behaviour of a<br/>slice changed?"}
+    q3 -->|yes| rm["that slice's README.md"]
+    adr --> done["ready for review"]
+    rule --> done
+    rm --> done
+```
+
+The existing READMEs under `src/` are the model. A slice whose README no longer
+describes it is worse than no README, because it is believed.
+
 ## Working in this repo
 
 - **Every change goes through a pull request.** `main` is protected; direct
   pushes are rejected. One issue per PR where possible.
+- **Every pull request updates its documentation.** ADR, `AGENTS.md` or skill,
+  and the affected README — see the section above. This is checked in review.
 - **Every pull request closes an issue.** Put `Closes #123` in the body, on its
   own line. Nothing in GitHub's settings can force this — the closing keyword in
   the body is the only mechanism, and the `linked-issue` CI check is what
@@ -147,6 +212,7 @@ extension point that lets a caller opt out of the PII audit or of human review.
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
 | How does it get to AWS, and what does that need? | `docs/deployment.md` |
+| What do the workflows do? | `.github/workflows/README.md` |
 | Why was X decided? | `docs/decisions/` |
 | How do I work here as an agent? | `docs/agent-workflow.md` |
 

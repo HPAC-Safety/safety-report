@@ -208,6 +208,7 @@ and every tool gets the same setup.
 | Strings and translation | [`docs/localization.md`](docs/localization.md) |
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |
 | Deployment and secrets | [`docs/deployment.md`](docs/deployment.md) |
+| CI and deploy workflows | [`.github/workflows/README.md`](.github/workflows/README.md) |
 | Why things are the way they are | [`docs/decisions/`](docs/decisions/) |
 
 ## Roadmap

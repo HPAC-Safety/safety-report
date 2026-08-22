@@ -15,7 +15,7 @@ the application-side encryption of Restricted columns.
 |---|---|
 | `Configurations/` | One `IEntityTypeConfiguration` per aggregate — tables, keys, indexes, relationships |
 | `Conventions/` | `SnakeCaseNames`, applied last so an explicit name always wins |
-| `Conversions/` | `LocaleConverter`, `EnumCodeConverter<T>` — domain values stored as invariant codes |
+| `Conversions/` | `TinyIdConverter`, `LocaleConverter`, `EnumCodeConverter<T>` — identifiers and domain values as text |
 | `Encryption/` | `AesGcmFieldCipher` and the value converter that binds it to a column |
 | `Migrations/` | Scaffolded by `dotnet ef`. Hand-edited only to call a seed writer |
 | `Seeding/` | The question bank as data, and the guarded local-administrator insert |
@@ -39,6 +39,24 @@ erDiagram
 
 `outbox_messages` stands alone, on purpose. It is written in the same
 transaction as a report and read by a different process.
+
+## Identifiers
+
+Every table's key is a `TinyId`: eleven characters over `A-Za-z0-9-_`, stored as
+`char(11)`, never `uuid`. One convention, no mixed-type joins.
+
+It carries **no timestamp and no sequence**, which is the point — an identifier
+here travels into admin URLs, blob keys (#16), notification links, and every log
+line, and this system narrows a published date to a month and a year precisely so
+a report cannot be pinned to a moment.
+
+Sixty-six bits makes a collision vanishingly unlikely; the primary key makes one
+a rejected write rather than an overwritten report, and `SaveChangesAsync` mints
+a fresh identifier and retries, rolling back to a savepoint if the caller had a
+transaction open. `outbox_messages.aggregate_id` and `audit_log.target_id` name
+a row by value with no foreign key, so the retry repoints those too.
+
+See [ADR-0034](../../../docs/decisions/ADR-0034-tiny-ids.md).
 
 Three shapes worth knowing before reading the configurations:
 
@@ -125,7 +143,8 @@ fresh database per test.
 
 - [`docs/data-handling.md`](../../../docs/data-handling.md)
 - [`docs/architecture.md`](../../../docs/architecture.md)
-- [ADR-0002](../../../docs/decisions/ADR-0002-transactional-outbox.md),
+- [ADR-0034](../../../docs/decisions/ADR-0034-tiny-ids.md),
+  [ADR-0002](../../../docs/decisions/ADR-0002-transactional-outbox.md),
   [ADR-0016](../../../docs/decisions/ADR-0016-data-driven-question-bank.md),
   [ADR-0019](../../../docs/decisions/ADR-0019-application-side-field-encryption.md),
   [ADR-0020](../../../docs/decisions/ADR-0020-seeding-by-migration.md)

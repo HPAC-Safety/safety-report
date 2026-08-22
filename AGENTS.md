@@ -238,6 +238,15 @@ shortcut. Five rules that are not negotiable at the schema level:
   tier that is stored in the clear, and never "temporarily" decrypt one into
   another column to make a query easier. See
   [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md).
+- **Every row is identified by a `TinyId`** — eleven characters over
+  `A-Za-z0-9-_`, one convention for every table, stored as `char(11)` and never
+  as `uuid`. It is chosen for what it does not say: no timestamp, nothing
+  enumerable. This system narrows a published date to a month and a year so a
+  report cannot be pinned to a moment, and a sequential or time-ordered key
+  would hand that back through every URL, blob key, and log line. Never
+  introduce a second key type, and never authorise anything by possession of an
+  identifier. See
+  [ADR-0034](docs/decisions/ADR-0034-tiny-ids.md).
 - **Domain values are stored as invariant codes**, never as ordinal integers.
   `high_en_b`, not `3`. A stored code that no longer names a domain value throws
   rather than defaulting to zero.

@@ -41,7 +41,7 @@ public static class DevelopmentAdminSeed
     public const string MemberIdentifier = "admin@localhost";
 
     /// <summary>The identifier of the seeded row.</summary>
-    public static Guid Id => SeedIds.For($"admin_user:{MemberIdentifier}");
+    public static TinyId Id => SeedIds.For($"admin_user:{MemberIdentifier}");
 
     /// <summary>
     /// The guarded insert. Safe to run against any database: it writes nothing
@@ -53,7 +53,7 @@ public static class DevelopmentAdminSeed
             CultureInfo.InvariantCulture,
             $"""
              INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
-             SELECT '{Id}'::uuid,
+             SELECT '{Id}',
                     '{MemberIdentifier}',
                     '{EnumCode.Of(AdminRole.Administrator)}',
                     TRUE,

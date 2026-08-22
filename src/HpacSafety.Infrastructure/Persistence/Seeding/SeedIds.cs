@@ -1,6 +1,8 @@
 using System.Security.Cryptography;
 using System.Text;
 
+using HpacSafety.Core.SharedKernel;
+
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 
 /// <summary>
@@ -11,9 +13,12 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// A migration must produce the same rows on every database it is applied to,
 /// and the same rows again when an idempotent SQL script is generated on one
 /// machine and applied on another. <see cref="Guid.NewGuid"/> cannot do that.
-/// This is RFC 4122 name-based generation with SHA-256 in place of SHA-1 — the
-/// value is a stable function of the name, so a seeded question keeps its
-/// identifier for the life of the system. See ADR-0020.
+/// The identifier is derived from a SHA-256 over a fixed namespace and the
+/// name, so it is a stable function of the name and a seeded question keeps its
+/// identifier for the life of the system. A hash is already unpredictable, so
+/// the leading bytes are encoded straight into the eleven-character alphabet —
+/// the result is an ordinary <see cref="TinyId"/>, indistinguishable from a
+/// minted one, and the seed stays idempotent. See ADR-0020 and ADR-0034.
 /// </remarks>
 public static class SeedIds
 {
@@ -29,7 +34,7 @@ public static class SeedIds
     /// A name unique within the seed — for example <c>question:province</c> or
     /// <c>option:province:alberta:fr-CA</c>.
     /// </param>
-    public static Guid For(string name)
+    public static TinyId For(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
@@ -38,12 +43,6 @@ public static class SeedIds
         Namespace.CopyTo(input, 0);
         bytes.CopyTo(input, Namespace.Length);
 
-        var digest = SHA256.HashData(input).AsSpan(0, 16).ToArray();
-
-        // Version 8, "custom", which is what a SHA-256 derivation honestly is.
-        digest[6] = (byte)((digest[6] & 0x0F) | 0x80);
-        digest[8] = (byte)((digest[8] & 0x3F) | 0x80);
-
-        return new Guid(digest, bigEndian: true);
+        return TinyId.FromEntropy(SHA256.HashData(input));
     }
 }

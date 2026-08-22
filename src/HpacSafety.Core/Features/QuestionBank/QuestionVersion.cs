@@ -27,9 +27,9 @@ public class QuestionVersion
     {
     }
 
-    private QuestionVersion(Guid questionId, int versionNumber, QuestionType type, bool isRequired, DateTimeOffset at)
+    private QuestionVersion(TinyId questionId, int versionNumber, QuestionType type, bool isRequired, DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         QuestionId = questionId;
         VersionNumber = versionNumber;
         Type = type;
@@ -38,10 +38,10 @@ public class QuestionVersion
     }
 
     /// <summary>Surrogate key. Answers reference this, never the question row.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The question this is a version of.</summary>
-    public Guid QuestionId { get; private init; }
+    public TinyId QuestionId { get; private init; }
 
     /// <summary>Increments by one per revision, starting at 1.</summary>
     public int VersionNumber { get; private init; }
@@ -93,7 +93,7 @@ public class QuestionVersion
         [.. Locale.All.Where(locale => Translation(locale) is null)];
 
     internal static QuestionVersion Create(
-        Guid questionId,
+        TinyId questionId,
         int versionNumber,
         QuestionType type,
         bool isRequired,

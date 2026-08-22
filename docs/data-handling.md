@@ -90,7 +90,10 @@ provable in a plain unit test.
 
 - Never log request bodies on the report endpoints.
 - Never log credentials, at any level.
-- Log report **identifiers**, not report content.
+- Log report **identifiers**, not report content. An identifier is a `TinyId`:
+  eleven characters carrying no timestamp and no sequence number, so logging one
+  does not quietly disclose when a report arrived or how many there are. See
+  [ADR-0034](decisions/ADR-0034-tiny-ids.md).
 - Notification emails carry a link, never the report — an inbox is outside this
   system's access controls.
 

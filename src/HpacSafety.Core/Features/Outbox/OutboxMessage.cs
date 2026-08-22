@@ -1,3 +1,5 @@
+using HpacSafety.Core.SharedKernel;
+
 namespace HpacSafety.Core.Features.Outbox;
 
 /// <summary>
@@ -23,9 +25,9 @@ public class OutboxMessage
     }
 #pragma warning restore CS8618
 
-    public OutboxMessage(Guid aggregateId, string type, string payload, DateTimeOffset occurredAt)
+    public OutboxMessage(TinyId aggregateId, string type, string payload, DateTimeOffset occurredAt)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         AggregateId = aggregateId;
         Type = type;
         Payload = payload;
@@ -34,10 +36,10 @@ public class OutboxMessage
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report, or other aggregate, this work is about.</summary>
-    public Guid AggregateId { get; private init; }
+    public TinyId AggregateId { get; private init; }
 
     /// <summary>What kind of work this is.</summary>
     public string Type { get; private init; }

@@ -23,19 +23,19 @@ public class QuestionOption
     }
 #pragma warning restore CS8618
 
-    private QuestionOption(Guid questionVersionId, string code, int displayOrder)
+    private QuestionOption(TinyId questionVersionId, string code, int displayOrder)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         QuestionVersionId = questionVersionId;
         Code = QuestionKey.Normalize(code);
         DisplayOrder = displayOrder;
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The version this option belongs to.</summary>
-    public Guid QuestionVersionId { get; private init; }
+    public TinyId QuestionVersionId { get; private init; }
 
     /// <summary>The invariant code stored against an answer. Never display text.</summary>
     public string Code { get; private init; }
@@ -47,7 +47,7 @@ public class QuestionOption
     public IReadOnlyCollection<QuestionOptionTranslation> Translations => _translations;
 
     internal static QuestionOption Create(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         string code,
         int displayOrder,
         Locale sourceLocale,

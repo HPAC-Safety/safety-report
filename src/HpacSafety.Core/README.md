@@ -35,7 +35,7 @@ Features/
   Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                   IMemberAuthenticator
   Outbox/         OutboxMessage
-SharedKernel/     Locale, EnumCode, SensitivityTier,
+SharedKernel/     TinyId, Locale, EnumCode, SensitivityTier,
                   DomainRuleViolationException, FieldDecryptionException,
                   ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier,
                   IFieldCipher
@@ -51,6 +51,12 @@ shares, and it is deliberately small — two callers is the bar for adding to it
 
 `Reporting` depends on `QuestionBank`, because an answer is an answer *to a
 question*. That dependency is one way.
+
+`TinyId` is the identifier every entity in every feature carries — eleven
+characters, unguessable, and carrying no timestamp, because this system
+deliberately does not let a report be pinned to a moment. It is in the shared
+kernel because every feature has rows, and because #16 builds a blob key out of
+one. See [ADR-0034](../../docs/decisions/ADR-0034-tiny-ids.md).
 
 `IFieldCipher` is in the shared kernel rather than with a feature because the
 rule it carries belongs to the whole system: Restricted data is encrypted at

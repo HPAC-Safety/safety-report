@@ -38,7 +38,7 @@ public class Question
 
     private Question(string key, bool isSystem, QuestionRole role, SensitivityTier sensitivity, int displayOrder, string? sectionKey, DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         Key = QuestionKey.Normalize(key);
         IsSystem = isSystem;
         Role = role;
@@ -49,7 +49,7 @@ public class Question
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>Stable invariant identity, used by exports and integrations.</summary>
     public string Key { get; private init; }

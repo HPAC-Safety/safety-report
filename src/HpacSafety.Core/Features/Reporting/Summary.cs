@@ -23,9 +23,9 @@ public class Summary
     }
 #pragma warning restore CS8618
 
-    private Summary(Guid reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
+    private Summary(TinyId reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         ReportId = reportId;
         Locale = locale;
         Text = text;
@@ -35,10 +35,10 @@ public class Summary
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report summarized.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>The language of this summary.</summary>
     public Locale Locale { get; private init; }
@@ -56,10 +56,10 @@ public class Summary
     public bool IsSource { get; private init; }
 
     /// <summary>Set on the translated summary, pointing at the one it came from.</summary>
-    public Guid? TranslatedFromSummaryId { get; private init; }
+    public TinyId? TranslatedFromSummaryId { get; private init; }
 
     /// <summary>The safety officer who approved this language.</summary>
-    public Guid? ApprovedBy { get; private set; }
+    public TinyId? ApprovedBy { get; private set; }
 
     /// <summary>When this language was approved.</summary>
     public DateTimeOffset? ApprovedAt { get; private set; }
@@ -72,7 +72,7 @@ public class Summary
 
     /// <summary>The summary generated from the report itself, in the language the reporter wrote in.</summary>
     public static Summary Generated(
-        Guid reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at) =>
+        TinyId reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at) =>
         new(reportId, locale, text, model, promptVersion, at) { IsSource = true };
 
     /// <summary>The other language, translated from an already-anonymized summary.</summary>
@@ -99,7 +99,7 @@ public class Summary
     }
 
     /// <summary>Records a safety officer's approval of this language.</summary>
-    public void Approve(Guid adminUserId, DateTimeOffset at)
+    public void Approve(TinyId adminUserId, DateTimeOffset at)
     {
         ApprovedBy = adminUserId;
         ApprovedAt = at;

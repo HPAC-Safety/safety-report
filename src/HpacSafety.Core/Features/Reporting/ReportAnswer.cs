@@ -26,9 +26,9 @@ public class ReportAnswer
     }
 #pragma warning restore CS8618
 
-    private ReportAnswer(Guid reportId, Question question, QuestionVersion version, DateTimeOffset at)
+    private ReportAnswer(TinyId reportId, Question question, QuestionVersion version, DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         ReportId = reportId;
         QuestionId = question.Id;
         QuestionVersionId = version.Id;
@@ -38,16 +38,16 @@ public class ReportAnswer
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report this answer belongs to.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>The question answered.</summary>
-    public Guid QuestionId { get; private init; }
+    public TinyId QuestionId { get; private init; }
 
     /// <summary>The exact version answered, which owns the wording and options.</summary>
-    public Guid QuestionVersionId { get; private init; }
+    public TinyId QuestionVersionId { get; private init; }
 
     /// <summary>The question's invariant key, carried for exports and reads.</summary>
     public string QuestionKey { get; private init; }
@@ -68,7 +68,7 @@ public class ReportAnswer
     /// <summary>When the answer was given.</summary>
     public DateTimeOffset AnsweredAt { get; private init; }
 
-    internal static ReportAnswer ForText(Guid reportId, Question question, string? value, DateTimeOffset at)
+    internal static ReportAnswer ForText(TinyId reportId, Question question, string? value, DateTimeOffset at)
     {
         var version = question.CurrentVersion;
 
@@ -91,7 +91,7 @@ public class ReportAnswer
     }
 
     internal static ReportAnswer ForOptions(
-        Guid reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
+        TinyId reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
     {
         var version = question.CurrentVersion;
 

@@ -55,12 +55,12 @@ public static class QuestionBankSeedWriter
             migrationBuilder.InsertData(
                 table: "questions",
                 columns: QuestionColumns,
-                values: [questionId, question.Key, question.IsSystem, EnumCode.Of(question.Role), EnumCode.Of(question.Sensitivity), order, question.SectionKey, true, at, null]);
+                values: [questionId.Value, question.Key, question.IsSystem, EnumCode.Of(question.Role), EnumCode.Of(question.Sensitivity), order, question.SectionKey, true, at, null]);
 
             migrationBuilder.InsertData(
                 table: "question_versions",
                 columns: VersionColumns,
-                values: [versionId, questionId, 1, EnumCode.Of(question.Type), question.IsRequired, at]);
+                values: [versionId.Value, questionId.Value, 1, EnumCode.Of(question.Type), question.IsRequired, at]);
 
             WriteQuestionTranslation(migrationBuilder, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, isSource: true);
             WriteQuestionTranslation(migrationBuilder, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, isSource: false);
@@ -73,7 +73,7 @@ public static class QuestionBankSeedWriter
                 migrationBuilder.InsertData(
                     table: "question_options",
                     columns: OptionColumns,
-                    values: [optionId, versionId, option.Code, optionOrder]);
+                    values: [optionId.Value, versionId.Value, option.Code, optionOrder]);
 
                 WriteOptionTranslation(migrationBuilder, question, option, optionId, Locale.EnCa, option.LabelEn, isSource: true);
                 WriteOptionTranslation(migrationBuilder, question, option, optionId, Locale.FrCa, option.LabelFr, isSource: false);
@@ -84,7 +84,7 @@ public static class QuestionBankSeedWriter
     private static void WriteQuestionTranslation(
         MigrationBuilder migrationBuilder,
         SeededQuestion question,
-        Guid versionId,
+        TinyId versionId,
         Locale locale,
         string label,
         string? helpText,
@@ -97,8 +97,8 @@ public static class QuestionBankSeedWriter
             columns: TranslationColumns,
             values:
             [
-                SeedIds.For($"question_translation:{question.Key}:1:{locale.Code}"),
-                versionId,
+                SeedIds.For($"question_translation:{question.Key}:1:{locale.Code}").Value,
+                versionId.Value,
                 locale.Code,
                 label,
                 helpText,
@@ -114,7 +114,7 @@ public static class QuestionBankSeedWriter
         MigrationBuilder migrationBuilder,
         SeededQuestion question,
         SeededOption option,
-        Guid optionId,
+        TinyId optionId,
         Locale locale,
         string label,
         bool isSource)
@@ -126,8 +126,8 @@ public static class QuestionBankSeedWriter
             columns: OptionTranslationColumns,
             values:
             [
-                SeedIds.For($"question_option_translation:{question.Key}:{option.Code}:{locale.Code}"),
-                optionId,
+                SeedIds.For($"question_option_translation:{question.Key}:{option.Code}:{locale.Code}").Value,
+                optionId.Value,
                 locale.Code,
                 label,
                 isSource,

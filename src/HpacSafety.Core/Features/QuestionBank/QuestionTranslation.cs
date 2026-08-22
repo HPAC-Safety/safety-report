@@ -27,7 +27,7 @@ public class QuestionTranslation
 #pragma warning restore CS8618
 
     private QuestionTranslation(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         Locale locale,
         string label,
         string? helpText,
@@ -36,7 +36,7 @@ public class QuestionTranslation
         bool isMachineTranslated,
         DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         QuestionVersionId = questionVersionId;
         Locale = locale;
         Label = NotBlank(label);
@@ -49,10 +49,10 @@ public class QuestionTranslation
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The version this wording belongs to.</summary>
-    public Guid QuestionVersionId { get; private init; }
+    public TinyId QuestionVersionId { get; private init; }
 
     /// <summary>The locale this wording is in.</summary>
     public Locale Locale { get; private init; }
@@ -82,7 +82,7 @@ public class QuestionTranslation
     public DateTimeOffset UpdatedAt { get; private set; }
 
     internal static QuestionTranslation Authored(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         Locale locale,
         string label,
         string? helpText,
@@ -92,7 +92,7 @@ public class QuestionTranslation
             isSource: true, isMachineTranslated: false, at);
 
     internal static QuestionTranslation Generated(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         Locale locale,
         string label,
         string? helpText,

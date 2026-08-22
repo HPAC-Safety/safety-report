@@ -22,9 +22,9 @@ public class ReportFile
     }
 #pragma warning restore CS8618
 
-    public ReportFile(Guid reportId, string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
+    public ReportFile(TinyId reportId, string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         ReportId = reportId;
         BlobKey = blobKey;
         ContentType = contentType;
@@ -33,10 +33,10 @@ public class ReportFile
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report this file belongs to.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>Key of the original bytes. Restricted.</summary>
     public string BlobKey { get; private init; }

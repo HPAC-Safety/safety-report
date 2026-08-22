@@ -115,7 +115,7 @@ public sealed class EncryptedColumnTests(PostgresFixture postgres)
         stored.ShouldBe([string.Empty]);
     }
 
-    private static async Task<Guid> StoreContactDetailsAsync(string connectionString)
+    private static async Task<TinyId> StoreContactDetailsAsync(string connectionString)
     {
         await using var context = PostgresFixture.ContextFor(connectionString);
         var report = new Report(Locale.EnCa, At);
@@ -132,7 +132,7 @@ public sealed class EncryptedColumnTests(PostgresFixture postgres)
         context.Questions.Include(q => q.Versions).SingleAsync(q => q.Key == key);
 
     private static async Task<string[]> RawAnswerValuesAsync(
-        string connectionString, Guid reportId, bool includeNulls = false)
+        string connectionString, TinyId reportId, bool includeNulls = false)
     {
         await using var connection = new NpgsqlConnection(connectionString);
         await connection.OpenAsync();
@@ -140,7 +140,7 @@ public sealed class EncryptedColumnTests(PostgresFixture postgres)
         await using var command = new NpgsqlCommand(
             "SELECT COALESCE(value, '') FROM report_answers WHERE report_id = @report ORDER BY question_key",
             connection);
-        command.Parameters.AddWithValue("report", reportId);
+        command.Parameters.AddWithValue("report", reportId.Value);
 
         await using var reader = await command.ExecuteReaderAsync();
 

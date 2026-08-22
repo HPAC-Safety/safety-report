@@ -8,6 +8,9 @@ using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+
+using Npgsql;
 
 namespace HpacSafety.Infrastructure.Persistence;
 
@@ -29,6 +32,22 @@ namespace HpacSafety.Infrastructure.Persistence;
 /// </remarks>
 public class HpacSafetyDbContext : DbContext
 {
+    /// <summary>
+    /// How many times a save will mint fresh identifiers and try again. Three
+    /// consecutive collisions at sixty-six bits is not a run of bad luck; it is
+    /// a broken random source, and failing is the right answer.
+    /// </summary>
+    private const int IdentifierAttempts = 3;
+
+    /// <summary>PostgreSQL's <c>unique_violation</c>.</summary>
+    private const string UniqueViolation = "23505";
+
+    /// <summary>
+    /// Columns that name a row without a foreign key to it, because they point
+    /// at more than one kind of thing. EF cannot fix these up, so a retry does.
+    /// </summary>
+    private static readonly string[] LooseReferences = ["AggregateId", "TargetId"];
+
     private readonly IFieldCipher _cipher;
 
     /// <summary>Creates the context.</summary>
@@ -85,6 +104,56 @@ public class HpacSafetyDbContext : DbContext
     /// </summary>
     internal string CipherKeyId => _cipher.KeyId;
 
+    /// <summary>
+    /// Saves, and mints a new identifier for anything that lost a collision.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Sixty-six bits of entropy makes a collision vanishingly unlikely. That is
+    /// not the same as handled: a unique constraint turns one into a rejected
+    /// write rather than a silently overwritten report, and this turns the
+    /// rejected write into a second attempt with a fresh identifier. See
+    /// ADR-0034.
+    /// </para>
+    /// <para>
+    /// PostgreSQL abandons the whole transaction on any error, so when a caller
+    /// has opened one — as the report endpoint does, writing the report and its
+    /// outbox row together — a savepoint is taken first and the retry rolls back
+    /// to it. The outer transaction, and ADR-0002's guarantee, survive.
+    /// </para>
+    /// </remarks>
+    /// <param name="cancellationToken">Cancels the save.</param>
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            var transaction = Database.CurrentTransaction;
+            var savepoint = transaction is not null && attempt < IdentifierAttempts
+                ? $"tiny_id_attempt_{attempt}"
+                : null;
+
+            if (savepoint is not null)
+            {
+                await transaction!.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+            }
+
+            try
+            {
+                return await base.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (DbUpdateException cause)
+                when (attempt < IdentifierAttempts && IsIdentifierCollision(cause))
+            {
+                if (savepoint is not null)
+                {
+                    await transaction!.RollbackToSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+                }
+
+                MintNewIdentifiers(cause);
+            }
+        }
+    }
+
     /// <inheritdoc />
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -115,6 +184,15 @@ public class HpacSafetyDbContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(configurationBuilder);
 
+        // Every identifier in every table is the same eleven-character shape.
+        // One convention, no mixed-type joins, and nothing in it that says when
+        // a row was created. See ADR-0034.
+        configurationBuilder.Properties<TinyId>()
+            .HaveConversion<TinyIdConverter>()
+            .HaveMaxLength(TinyId.Length)
+            .AreFixedLength()
+            .HaveColumnType($"char({TinyId.Length})");
+
         configurationBuilder.Properties<Locale>().HaveConversion<LocaleConverter>().HaveMaxLength(8);
 
         // Domain values are stored as invariant codes and localized only at the
@@ -131,5 +209,81 @@ public class HpacSafetyDbContext : DbContext
         configurationBuilder.Properties<QuestionRole>().HaveConversion<EnumCodeConverter<QuestionRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AdminRole>().HaveConversion<EnumCodeConverter<AdminRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AuditAction>().HaveConversion<EnumCodeConverter<AuditAction>>().HaveMaxLength(64);
+    }
+
+    /// <summary>
+    /// Whether a failed write was a primary key that already existed — as
+    /// opposed to a unique constraint the domain put there on purpose, such as
+    /// one summary per language, which is a real conflict and not luck.
+    /// </summary>
+    private static bool IsIdentifierCollision(DbUpdateException cause) =>
+        cause.InnerException is PostgresException postgres
+        && postgres.SqlState == UniqueViolation
+        && postgres.ConstraintName?.StartsWith("pk_", StringComparison.Ordinal) == true;
+
+    /// <summary>
+    /// Mints a fresh identifier for every row the failed write was inserting,
+    /// and repoints anything that referred to the old one by value.
+    /// </summary>
+    /// <remarks>
+    /// The identifier property is <c>private init</c>, so it is set through EF's
+    /// own accessor rather than by the domain — nothing outside persistence may
+    /// change an identifier once a row has one.
+    /// <para>
+    /// EF fixes up real relationships itself. What it cannot fix up is a
+    /// reference held as a bare value: <c>outbox_messages.aggregate_id</c> and
+    /// <c>audit_log.target_id</c> both name a row without a foreign key to it,
+    /// deliberately, because they point at more than one kind of thing. Those
+    /// are rewritten here, or a retried report would commit alongside an outbox
+    /// message pointing at an identifier that no longer exists.
+    /// </para>
+    /// </remarks>
+    private void MintNewIdentifiers(DbUpdateException cause)
+    {
+        var entries = cause.Entries.Count > 0
+            ? cause.Entries
+            : [.. ChangeTracker.Entries().Where(entry => entry.State == EntityState.Added)];
+
+        var replacements = new Dictionary<TinyId, TinyId>();
+
+        foreach (var entry in entries)
+        {
+            if (entry.State != EntityState.Added)
+            {
+                continue;
+            }
+
+            if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType } || clrType != typeof(TinyId))
+            {
+                continue;
+            }
+
+            var property = entry.Property("Id");
+            var replacement = TinyId.New();
+            replacements[(TinyId)property.CurrentValue!] = replacement;
+            property.CurrentValue = replacement;
+        }
+
+        if (replacements.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var entry in ChangeTracker.Entries().Where(entry => entry.State == EntityState.Added))
+        {
+            foreach (var name in LooseReferences)
+            {
+                if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType } || clrType != typeof(TinyId))
+                {
+                    continue;
+                }
+
+                var property = entry.Property(name);
+                if (property.CurrentValue is TinyId pointed && replacements.TryGetValue(pointed, out var replacement))
+                {
+                    property.CurrentValue = replacement;
+                }
+            }
+        }
     }
 }

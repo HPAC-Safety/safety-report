@@ -15,7 +15,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "admin_users",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     member_identifier = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
                     role = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false),
@@ -30,8 +30,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "outbox_messages",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    aggregate_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    aggregate_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     type = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     payload = table.Column<string>(type: "text", nullable: false),
                     occurred_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -50,7 +50,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "questions",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     is_system = table.Column<bool>(type: "boolean", nullable: false),
                     role = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
@@ -70,7 +70,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "reports",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     language = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     status = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     submitted_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -91,11 +91,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "audit_log",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    admin_user_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    admin_user_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     action = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     target_type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    target_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    target_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     occurred_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     detail = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: true)
                 },
@@ -114,8 +114,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "question_versions",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    question_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    question_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     version_number = table.Column<int>(type: "integer", nullable: false),
                     type = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     is_required = table.Column<bool>(type: "boolean", nullable: false),
@@ -136,8 +136,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "report_aircraft",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    report_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    report_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     discipline = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     manufacturer = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     model = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
@@ -159,8 +159,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "report_files",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    report_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    report_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     blob_key = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: false),
                     stripped_blob_key = table.Column<string>(type: "character varying(512)", maxLength: 512, nullable: true),
                     content_type = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
@@ -183,15 +183,15 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "summaries",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    report_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    report_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     language = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     text = table.Column<string>(type: "text", nullable: false),
                     model = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
                     prompt_version = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     is_source = table.Column<bool>(type: "boolean", nullable: false),
-                    translated_from_summary_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    approved_by = table.Column<Guid>(type: "uuid", nullable: true),
+                    translated_from_summary_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: true),
+                    approved_by = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: true),
                     approved_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
@@ -222,8 +222,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "question_options",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    question_version_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    question_version_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     code = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     display_order = table.Column<int>(type: "integer", nullable: false)
                 },
@@ -242,8 +242,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "question_translations",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    question_version_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    question_version_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     locale = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     label = table.Column<string>(type: "text", nullable: false),
                     help_text = table.Column<string>(type: "text", nullable: true),
@@ -268,10 +268,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "report_answers",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    report_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    question_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    question_version_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    report_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    question_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    question_version_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     question_key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     sensitivity = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     value = table.Column<string>(type: "text", nullable: true),
@@ -305,8 +305,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "question_option_translations",
                 columns: table => new
                 {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    question_option_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
+                    question_option_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     locale = table.Column<string>(type: "character varying(8)", maxLength: 8, nullable: false),
                     label = table.Column<string>(type: "text", nullable: false),
                     is_source = table.Column<bool>(type: "boolean", nullable: false),

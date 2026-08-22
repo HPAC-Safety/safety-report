@@ -20,9 +20,9 @@ public class AuditLogEntry
     }
 #pragma warning restore CS8618
 
-    public AuditLogEntry(Guid adminUserId, AuditAction action, string targetType, Guid targetId, DateTimeOffset at, string? detail = null)
+    public AuditLogEntry(TinyId adminUserId, AuditAction action, string targetType, TinyId targetId, DateTimeOffset at, string? detail = null)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         AdminUserId = adminUserId;
         Action = action;
         TargetType = targetType;
@@ -32,10 +32,10 @@ public class AuditLogEntry
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>Who acted.</summary>
-    public Guid AdminUserId { get; private init; }
+    public TinyId AdminUserId { get; private init; }
 
     /// <summary>What they did.</summary>
     public AuditAction Action { get; private init; }
@@ -44,7 +44,7 @@ public class AuditLogEntry
     public string TargetType { get; private init; }
 
     /// <summary>Which one.</summary>
-    public Guid TargetId { get; private init; }
+    public TinyId TargetId { get; private init; }
 
     /// <summary>When.</summary>
     public DateTimeOffset OccurredAt { get; private init; }

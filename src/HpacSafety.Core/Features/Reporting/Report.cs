@@ -36,14 +36,14 @@ public class Report
 
     public Report(Locale language, DateTimeOffset submittedAt)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         Language = language;
         SubmittedAt = submittedAt;
         Status = ReportStatus.Submitted;
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>
     /// The locale the report was written in. The summary is generated in this

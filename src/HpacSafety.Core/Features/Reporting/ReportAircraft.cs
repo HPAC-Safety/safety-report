@@ -22,9 +22,9 @@ public class ReportAircraft
     {
     }
 
-    public ReportAircraft(Guid reportId, Discipline discipline, string? manufacturer, string? model, string? certificationAnswer)
+    public ReportAircraft(TinyId reportId, Discipline discipline, string? manufacturer, string? model, string? certificationAnswer)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         ReportId = reportId;
         Discipline = discipline;
         Manufacturer = manufacturer;
@@ -33,10 +33,10 @@ public class ReportAircraft
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report this aircraft belongs to.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>What kind of aircraft it is.</summary>
     public Discipline Discipline { get; private set; }

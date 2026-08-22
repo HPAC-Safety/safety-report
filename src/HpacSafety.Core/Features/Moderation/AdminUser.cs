@@ -23,7 +23,7 @@ public class AdminUser
 
     public AdminUser(string memberIdentifier, AdminRole role, DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         MemberIdentifier = memberIdentifier;
         Role = role;
         CreatedAt = at;
@@ -31,7 +31,7 @@ public class AdminUser
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>Who they are upstream. Never a credential.</summary>
     public string MemberIdentifier { get; private init; }

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HpacSafetyDbContext))]
-    [Migration("20260822223531_InitialSchema")]
+    [Migration("20260822230345_InitialSchema")]
     partial class InitialSchema
     {
         /// <inheritdoc />
@@ -27,10 +27,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Moderation.AdminUser", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -64,10 +65,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Moderation.AuditLogEntry", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<string>("Action")
                         .IsRequired()
@@ -75,9 +77,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("action");
 
-                    b.Property<Guid>("AdminUserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("admin_user_id");
+                    b.Property<string>("AdminUserId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("admin_user_id")
+                        .IsFixedLength();
 
                     b.Property<string>("Detail")
                         .HasMaxLength(2000)
@@ -88,9 +93,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("occurred_at");
 
-                    b.Property<Guid>("TargetId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("target_id");
+                    b.Property<string>("TargetId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("target_id")
+                        .IsFixedLength();
 
                     b.Property<string>("TargetType")
                         .IsRequired()
@@ -115,14 +123,18 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Outbox.OutboxMessage", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
-                    b.Property<Guid>("AggregateId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("aggregate_id");
+                    b.Property<string>("AggregateId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("aggregate_id")
+                        .IsFixedLength();
 
                     b.Property<int>("Attempts")
                         .HasColumnType("integer")
@@ -175,10 +187,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -238,10 +251,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOption", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<string>("Code")
                         .IsRequired()
@@ -253,9 +267,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("display_order");
 
-                    b.Property<Guid>("QuestionVersionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_version_id");
+                    b.Property<string>("QuestionVersionId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("question_version_id")
+                        .IsFixedLength();
 
                     b.HasKey("Id")
                         .HasName("pk_question_options");
@@ -269,10 +286,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOptionTranslation", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<bool>("IsMachineTranslated")
                         .HasColumnType("boolean")
@@ -293,9 +311,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("locale");
 
-                    b.Property<Guid>("QuestionOptionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_option_id");
+                    b.Property<string>("QuestionOptionId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("question_option_id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset?>("TranslatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -317,10 +338,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionTranslation", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<string>("HelpText")
                         .HasColumnType("text")
@@ -349,9 +371,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("placeholder");
 
-                    b.Property<Guid>("QuestionVersionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_version_id");
+                    b.Property<string>("QuestionVersionId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("question_version_id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset?>("TranslatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -373,10 +398,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionVersion", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -386,9 +412,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_required");
 
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_id");
+                    b.Property<string>("QuestionId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("question_id")
+                        .IsFixedLength();
 
                     b.Property<string>("Type")
                         .IsRequired()
@@ -412,10 +441,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Report", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<bool?>("ConsentPublish")
                         .HasColumnType("boolean")
@@ -481,10 +511,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportAircraft", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<string>("CertificationAnswer")
                         .HasMaxLength(200)
@@ -513,9 +544,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("model");
 
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("report_id");
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
 
                     b.HasKey("Id")
                         .HasName("pk_report_aircraft");
@@ -528,18 +562,22 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportAnswer", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset>("AnsweredAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("answered_at");
 
-                    b.Property<Guid>("QuestionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_id");
+                    b.Property<string>("QuestionId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("question_id")
+                        .IsFixedLength();
 
                     b.Property<string>("QuestionKey")
                         .IsRequired()
@@ -547,13 +585,19 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("question_key");
 
-                    b.Property<Guid>("QuestionVersionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("question_version_id");
+                    b.Property<string>("QuestionVersionId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("question_version_id")
+                        .IsFixedLength();
 
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("report_id");
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
 
                     b.PrimitiveCollection<string[]>("SelectedOptionCodes")
                         .IsRequired()
@@ -587,10 +631,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportFile", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<string>("BlobKey")
                         .IsRequired()
@@ -612,9 +657,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("exif_stripped_at");
 
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("report_id");
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
 
                     b.Property<string>("StrippedBlobKey")
                         .HasMaxLength(512)
@@ -640,18 +688,21 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Summary", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset?>("ApprovedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("approved_at");
 
-                    b.Property<Guid?>("ApprovedBy")
-                        .HasColumnType("uuid")
-                        .HasColumnName("approved_by");
+                    b.Property<string>("ApprovedBy")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("approved_by")
+                        .IsFixedLength();
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -679,18 +730,23 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("prompt_version");
 
-                    b.Property<Guid>("ReportId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("report_id");
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
 
                     b.Property<string>("Text")
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("text");
 
-                    b.Property<Guid?>("TranslatedFromSummaryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("translated_from_summary_id");
+                    b.Property<string>("TranslatedFromSummaryId")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("translated_from_summary_id")
+                        .IsFixedLength();
 
                     b.HasKey("Id")
                         .HasName("pk_summaries");

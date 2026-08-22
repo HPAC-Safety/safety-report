@@ -22,14 +22,14 @@ public class QuestionOptionTranslation
 #pragma warning restore CS8618
 
     private QuestionOptionTranslation(
-        Guid questionOptionId,
+        TinyId questionOptionId,
         Locale locale,
         string label,
         bool isSource,
         bool isMachineTranslated,
         DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         QuestionOptionId = questionOptionId;
         Locale = locale;
         Label = string.IsNullOrWhiteSpace(label)
@@ -42,10 +42,10 @@ public class QuestionOptionTranslation
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The option this wording belongs to.</summary>
-    public Guid QuestionOptionId { get; private init; }
+    public TinyId QuestionOptionId { get; private init; }
 
     /// <summary>The locale this wording is in.</summary>
     public Locale Locale { get; private init; }
@@ -66,11 +66,11 @@ public class QuestionOptionTranslation
     public DateTimeOffset UpdatedAt { get; private set; }
 
     internal static QuestionOptionTranslation Authored(
-        Guid optionId, Locale locale, string label, DateTimeOffset at) =>
+        TinyId optionId, Locale locale, string label, DateTimeOffset at) =>
         new(optionId, locale, label, isSource: true, isMachineTranslated: false, at);
 
     internal static QuestionOptionTranslation Generated(
-        Guid optionId, Locale locale, string label, DateTimeOffset at) =>
+        TinyId optionId, Locale locale, string label, DateTimeOffset at) =>
         new(optionId, locale, label, isSource: false, isMachineTranslated: true, at);
 
     /// <summary>Corrects generated wording by hand.</summary>

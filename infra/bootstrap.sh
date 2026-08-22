@@ -194,6 +194,15 @@ fi
 # — the role cannot touch IAM users, access keys, Organizations, or the account
 # itself, which is the class of action that turns a leaked deploy path into a
 # lost account.
+#
+# It also cannot read an upload. `s3:*` would otherwise let it fetch a crash
+# photograph, and it has no reason to: it CONFIGURES that bucket — policy,
+# versioning, encryption, lifecycle — and never reads an object out of it. The
+# `NeverReadReportData` denial below covers the versioned actions too, because
+# `s3:GetObjectVersion` is a DISTINCT IAM action from `s3:GetObject` and denying
+# only the latter leaves every noncurrent version readable. That distinction
+# matters more since the quarantine lifecycle rule: between its two hops an
+# unverified upload exists precisely as a noncurrent version.
 
 DEPLOY_POLICY=$(cat <<JSON
 {
@@ -280,6 +289,21 @@ DEPLOY_POLICY=$(cat <<JSON
         "iam:GetOpenIDConnectProvider"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "NeverReadReportData",
+      "Effect": "Deny",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectAcl",
+        "s3:GetObjectAttributes",
+        "s3:GetObjectTorrent",
+        "s3:GetObjectVersion",
+        "s3:GetObjectVersionAcl",
+        "s3:GetObjectVersionAttributes",
+        "s3:GetObjectVersionTorrent"
+      ],
+      "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
     },
     {
       "Sid": "NeverMintACredential",
@@ -405,7 +429,12 @@ fi
 #
 # ReadOnlyAccess on its own would let a plan running on ANY pull request — from
 # any contributor with write access to a branch — read every object in the
-# uploads bucket. Those objects are photographs of crash sites. It would also
+# uploads bucket. Those objects are photographs of crash sites.
+#
+# The denial names the VERSIONED actions as well. `s3:GetObjectVersion` is a
+# distinct IAM action from `s3:GetObject`, so denying only the latter would leave
+# every noncurrent version readable by version id — including, between the two
+# hops of the quarantine lifecycle rule, an upload that failed validation. It would also
 # grant secretsmanager:GetSecretValue on nothing (that action is not in
 # ReadOnlyAccess), but the denial is written out anyway so the guarantee does not
 # depend on AWS never widening a managed policy.
@@ -432,7 +461,16 @@ PLAN_POLICY=$(cat <<JSON
     {
       "Sid": "NeverReadReportData",
       "Effect": "Deny",
-      "Action": "s3:GetObject",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectAcl",
+        "s3:GetObjectAttributes",
+        "s3:GetObjectTorrent",
+        "s3:GetObjectVersion",
+        "s3:GetObjectVersionAcl",
+        "s3:GetObjectVersionAttributes",
+        "s3:GetObjectVersionTorrent"
+      ],
       "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
     },
     {

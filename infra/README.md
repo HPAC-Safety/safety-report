@@ -57,7 +57,8 @@ Terraform can authenticate at all.
   application code ([#16](https://github.com/HPAC-Safety/safety-report/issues/16)).
   The rule is what catches the case where that ingest never ran — see
   [`docs/deployment.md`](../docs/deployment.md#uploads-the-quarantine-prefix).
-  Its timing is a floor, not a deadline.
+  Its timing is two floors, neither a deadline: the key stops resolving after
+  24 hours (in practice up to ~48), and the bytes are gone after 48 (up to ~96).
 - **Cloudflare Turnstile.** ADR-0010 anticipates managing the widget here too.
   It is not in this slice: it needs a long-lived Cloudflare API token that does
   not exist yet, and it is the one place a secret is knowingly allowed into

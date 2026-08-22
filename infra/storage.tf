@@ -121,8 +121,34 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     # whose lifecycle claims to clear it in a day.
     #
     # Overlapping rules: the shorter period governs this prefix.
+    #
+    # Two day-granular hops means two distinct moments, and they are NOT the
+    # same number. The key stops resolving after the first; the bytes are gone
+    # after the second. docs/deployment.md states both, and neither is a
+    # deadline.
     noncurrent_version_expiration {
       noncurrent_days = 1
+    }
+  }
+
+  # After both hops above, S3 leaves an EXPIRED OBJECT DELETE MARKER behind: a
+  # delete marker with no versions under it. Quarantine objects are created
+  # continuously, so those markers accumulate indefinitely. The cost is near
+  # zero; the clutter is not, because a listing of quarantine/ eventually says
+  # more about objects that are gone than about ones that are there.
+  #
+  # A SEPARATE rule, necessarily: S3 rejects `expired_object_delete_marker`
+  # and `days` in the same expiration block.
+  rule {
+    id     = "expire-quarantine-delete-markers"
+    status = "Enabled"
+
+    filter {
+      prefix = "quarantine/"
+    }
+
+    expiration {
+      expired_object_delete_marker = true
     }
   }
 

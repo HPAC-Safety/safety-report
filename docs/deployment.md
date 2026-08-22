@@ -382,17 +382,40 @@ exists for. The prefix fails **closed**, because `quarantine/` is the only place
 an upload URL can write. Per-report enumeration is still a single literal prefix
 either way. See [#16](https://github.com/HPAC-Safety/safety-report/issues/16).
 
-> **The timing is a floor, not a deadline.** S3 lifecycle expiration is
-> day-granular and asynchronous: expiry happens **no sooner than 24 hours** after
-> the object is written, and in practice up to roughly 48. Because this bucket is
-> versioned, expiry writes a delete marker rather than deleting bytes, and the
-> now-noncurrent version is removed on a later pass — the rule carries a matching
-> one-day noncurrent expiry so it falls in a day rather than to the bucket-wide
-> 90-day rule.
->
-> Nothing here guarantees deletion within 24 hours, and no design decision
-> elsewhere should assume it does. If something needs a hard deletion deadline,
-> lifecycle is the wrong mechanism for it.
+### Two hops, two different numbers
+
+The bucket is **versioned**, so expiry does not delete bytes — it writes a delete
+marker and makes the object version noncurrent. The rule carries a matching
+one-day noncurrent expiry, so the bytes fall a pass later rather than to the
+bucket-wide 90-day rule. That is two sequential day-granular hops, and they are
+**two distinct moments with two different floors**:
+
+| | Floor | In practice |
+|---|---|---|
+| The key stops resolving — a `GET` returns the delete marker | 24 hours | up to ~48 |
+| The bytes are permanently gone | **48 hours** | up to ~96 |
+
+> **Both numbers are floors, not deadlines.** S3 lifecycle is day-granular and
+> asynchronous. Nothing here guarantees deletion within any window, and no design
+> decision elsewhere should assume it does. If something needs a hard deletion
+> deadline, lifecycle is the wrong mechanism for it.
+
+**Between the two hops the object is still fetchable by version id**, by anything
+holding `s3:GetObjectVersion` on the bucket. That is not reachable through the
+application: a pre-signed URL names a key and no version, so the report path
+cannot see it. It is a question about **direct bucket credentials**, and it is why
+the uploads denial on both IAM roles names the versioned actions —
+`s3:GetObjectVersion` is a distinct action from `s3:GetObject`, and denying only
+the latter would leave every noncurrent version readable. Neither
+`hpac-safety-deploy` nor `hpac-safety-plan` can read an upload, current or
+noncurrent; see "Authentication" above.
+
+A second lifecycle rule, `expire-quarantine-delete-markers`, clears the expired
+object delete markers left behind after both hops. Quarantine objects are created
+continuously, so without it those markers accumulate indefinitely — near-zero
+cost, but a listing of `quarantine/` would eventually say more about objects that
+are gone than about ones that are there. It has to be a separate rule: S3 rejects
+`ExpiredObjectDeleteMarker` and `Days` in the same expiration block.
 
 ## Manual steps, and why each one has to be
 

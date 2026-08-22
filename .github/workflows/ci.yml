@@ -32,7 +32,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       # Preinstalled on the runner. init-dev.sh is POSIX sh, not bash: Windows
       # contributors run it under Git Bash, so a bashism would break the one
@@ -40,7 +40,7 @@ jobs:
       - name: shellcheck init-dev.sh
         run: shellcheck -s sh init-dev.sh
 
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - run: dotnet restore HpacSafety.slnx
@@ -51,13 +51,13 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       # Exercises the version parsing on every pull request. setup-dotnet and
       # setup-node above have already satisfied the versions init-dev.sh reads
@@ -88,13 +88,13 @@ jobs:
       # so the comment step is skipped for them - see the step's condition.
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Restore tools
         run: dotnet tool restore
@@ -207,7 +207,7 @@ jobs:
           gh pr comment "${{ github.event.pull_request.number }}" \
             --body-file comment.md --edit-last --create-if-none
 
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-report
@@ -220,10 +220,10 @@ jobs:
   web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Build stylesheet
         run: |
@@ -237,10 +237,10 @@ jobs:
   e2e:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Playwright
         run: |
@@ -257,7 +257,7 @@ jobs:
     steps:
       # Symlinks only survive checkout when core.symlinks is on; it is by
       # default on Linux runners. If that ever changes this job is what notices.
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Agent instruction symlinks resolve to AGENTS.md
         run: |
@@ -324,10 +324,10 @@ jobs:
   i18n:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-node@v6
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Locale key parity
         run: |

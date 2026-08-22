@@ -71,14 +71,19 @@ jobs:
         with:
           node-version: ${{ steps.node.outputs.major }}
 
-      # Provider configuration, not a vendor name in a script. GitHub Models —
-      # the provider ADR-0007 named — was retired on 30 July 2026, so there is
-      # no free built-in option and the replacement is configured here. If none
-      # is set the tool reports what it would have translated and changes
-      # nothing; see ADR-0022.
+      # DeepL, targeting FR-CA — the provider decided in ADR-0022, after GitHub
+      # Models (which ADR-0007 named) was retired on 30 July 2026. Only the key
+      # is required: the adapter picks the free or pro host from the key's ':fx'
+      # suffix, and defaults formality to prefer_more. Without DEEPL_API_KEY the
+      # tool reports which keys are waiting and changes nothing.
+      #
+      # The remaining variables exist so a second provider is a settings change
+      # rather than a code change. They are all unset by default.
       - name: Translate what changed
         id: translate
         env:
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          TRANSLATION_FORMALITY: ${{ vars.TRANSLATION_FORMALITY }}
           TRANSLATION_PROVIDER: ${{ vars.TRANSLATION_PROVIDER }}
           TRANSLATION_ENDPOINT: ${{ vars.TRANSLATION_ENDPOINT }}
           TRANSLATION_MODEL: ${{ vars.TRANSLATION_MODEL }}
@@ -87,13 +92,16 @@ jobs:
 
       # A pull request opened with the built-in GITHUB_TOKEN does not trigger
       # workflows — GitHub's loop protection — so CI would never report on it and
-      # the required checks would sit unfulfilled forever. TRANSLATION_PR_TOKEN,
-      # a fine-grained token with contents:write and pull-requests:write, is what
-      # makes CI run on the translation pull request. Without it the pull request
-      # is still opened and is still correct; it just has to be nudged by hand
-      # (close and reopen it, or push an empty commit) before it can merge. That
-      # trade-off is recorded in ADR-0021, and the warning below is what tells
-      # whoever reads the run which of the two happened.
+      # the required checks would sit unfulfilled forever. TRANSLATION_PR_TOKEN
+      # is what makes CI run on the translation pull request: a fine-grained PAT
+      # scoped to THIS repository, with Contents and Pull requests both set to
+      # "Read and write", and nothing else. Never a classic PAT — its `repo`
+      # scope reaches every repository the user can see.
+      #
+      # Without it the pull request is still opened and is still correct; it just
+      # has to be nudged by hand (close and reopen it, or push an empty commit)
+      # before it can merge. That trade-off is recorded in ADR-0021, and the
+      # warning below is what tells whoever reads the run which happened.
       - name: Open a pull request with the French
         if: steps.translate.outputs.changed == 'true'
         env:

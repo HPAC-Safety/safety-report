@@ -1,7 +1,6 @@
-# ADR-0022 — GitHub Models is retired; the translation provider is configuration behind a one-file adapter
+# ADR-0022 — DeepL, behind a one-file adapter, after GitHub Models was retired
 
-**Status:** Proposed — the adapter is decided and built; **which provider to
-configure is an open question for HPAC.** See "What is still open".
+**Status:** Accepted
 
 Supersedes the provider clause of [ADR-0007](ADR-0007-localization.md) — and
 only that clause. Everything else ADR-0007 decided still stands: English is the
@@ -23,18 +22,17 @@ rotate.
 
 — [GitHub Changelog, 30 July 2026](https://github.blog/changelog/2026-07-30-github-models-is-now-retired/)
 
-So the provider named in ADR-0007 does not exist, there is no free
-already-authenticated substitute inside GitHub Actions, and #10 could not be
-built as written. Retirement announcements are also not a one-off: whatever is
-chosen next can be retired too, and the cost of that should not be a rewrite of
-the translation job.
+So the provider named in ADR-0007 does not exist, and there is no free
+already-authenticated substitute inside GitHub Actions. Retirement is also not a
+one-off: whatever is chosen next can be retired too, and the cost of that should
+not be a rewrite of the translation job.
 
 ## Decision
 
-**The provider is configuration. The code names no vendor.**
+**DeepL**, targeting `FR-CA`, behind an adapter that is the one file to change
+to swap provider.
 
-`tools/translator.mjs` is the whole of it — the one file to change to swap
-provider — and it declares the same port as
+`tools/translator.mjs` declares the same port as
 `HpacSafety.Core.SharedKernel.ITranslator`:
 
 ```
@@ -48,98 +46,147 @@ The contract is deliberately identical.
 ```mermaid
 flowchart LR
     cli["translate-locale.mjs<br/>plan · merge · stamp"] --> port["ITranslator port<br/>tools/translator.mjs"]
-    port --> cc["chat-completions<br/>endpoint · model · key<br/>all from env"]
+    port --> dl["deepl · default<br/>FR-CA · prefer_more"]
+    port --> cc["chat-completions<br/>endpoint · model · key<br/>all from config"]
     port --> stub["stub<br/>tests only"]
-    cc -.-> deepl["DeepL"]
-    cc -.-> amz["Amazon Translate"]
 ```
-
-Two adapters ship:
 
 | Provider | What it is |
 |---|---|
-| `chat-completions` | Any OpenAI-shaped `/chat/completions` endpoint. `TRANSLATION_ENDPOINT`, `TRANSLATION_MODEL`, and `TRANSLATION_API_KEY` come from the workflow. This adapter names no vendor and hardcodes no model id. |
+| `deepl` | **The default.** Only `DEEPL_API_KEY` is required. |
+| `chat-completions` | Any OpenAI-shaped `/chat/completions` endpoint. Kept so that a future swap is a settings change, not a rewrite — and it is what proves the port abstracts a variation that actually exists. |
 | `stub` | Offline stand-in for the test suite. Stamps `provider: "stub"`, which `--check` rejects, so its output can never reach `main`. |
 
-**There is no default provider.** `createTranslator({})` throws
-`TranslatorNotConfiguredError`. A job that quietly picked one would put
-unattributed French in front of a reviewer with no way to know which machine
-wrote it — and `fr-CA.meta.json` records the provider per key precisely so that
-question always has an answer.
+Three details that are decisions, not plumbing:
 
-**Nothing configured is not a build failure.** With no provider set, the
-generate run prints a `::warning::`, lists the keys that are waiting, changes
-nothing, and exits 0. A red build on every push to `main` for a decision nobody
-has made yet is a red build that gets muted, and then the next real failure is
-invisible too.
+- **The endpoint is derived from the key.** DeepL identifies Free-tier keys by a
+  `:fx` suffix, and Free and Pro have different hosts. Choosing the host from
+  the key means the owner adds one secret rather than a secret and a matching
+  host, and gets a working job either way. Getting it wrong yields a 403 that
+  reads like a bad key.
+- **Formality defaults to `prefer_more`.** A national safety authority
+  addressing pilots uses *vous*. `more` would say that more firmly, but `more`
+  and `less` fail with **HTTP 400** on a target language that does not support
+  formality, whereas the `prefer_` variants degrade to default. `FR` documents
+  formality support; `FR-CA` does not. A whole run lost to a 400 over a nicety
+  is not a trade worth making. Override with `TRANSLATION_FORMALITY`.
+- **`preserve_formatting: true`.** These are interface labels. DeepL
+  "correcting" a label's capitalisation or trailing space is a change nobody
+  asked for.
 
-No model id is written down anywhere in this repository. That is deliberate —
-see below.
+### Provenance, when there is no model id
+
+DeepL has no model id, so `fr-CA.meta.json` records the two things that actually
+determine the output:
+
+```
+provider: "deepl:FR-CA:prefer_more"
+```
+
+Target variant and formality. Change either and every key's provenance says so,
+which is the question provenance exists to answer. The chat-completions adapter
+uses the same slot for `chat-completions:<model-id>`.
+
+## `FR-CA` is real, and it was worth checking
+
+The concern raised when DeepL was chosen was that DeepL offers only `FR`, which
+would mean `locales/fr-CA.json` quietly containing metropolitan French under a
+Canadian name.
+
+**It does not.** DeepL's supported-languages table lists, distinctly:
+
+| Code | Language | Translation |
+|---|---|---|
+| `FR` | French | source and target |
+| `FR-CA` | French (Canadian) | **Target Only** |
+| `FR-FR` | French (France) | Target Only |
+
+The adapter uses `FR-CA`. "Target Only" means it cannot be a *source* language,
+which never matters here — English is the source of truth for UI chrome, and the
+mapping refuses rather than guessing for any locale it has no code for.
+
+So there is no metropolitan-French gap to document. What remains true, and is
+the reason human review still matters, is narrower and worth stating plainly:
+`FR-CA` is DeepL's Canadian French, not HPAC's. It will not know that this
+association says *parapente* rather than *deltaplane* for a given wing, or which
+of two defensible renderings of a rating name the membership actually uses. That
+is what `glossary.json` and a human reviewer are for — see below.
+
+## DeepL's glossary feature, and why the pinned-glossary rule does not change
+
+DeepL has its own glossary feature: a stored resource of term pairs, referenced
+by `glossary_id`, applied *during* translation. It is available for `FR-CA`.
+
+It is **not** a substitute for the pinned-key rule, and the observable behaviour
+in [ADR-0021](ADR-0021-ci-translation-opens-a-pull-request.md) is unchanged: a
+glossary-pinned key is dropped before the call and never modified. The two
+mechanisms answer different questions:
+
+| | `locales/glossary.json` (this repo) | DeepL glossaries |
+|---|---|---|
+| Granularity | A whole key's French | A term inside a string |
+| Guarantee | The string is never sent and never altered | The term is *preferred*, and the rest is still machine output |
+| Where the French comes from | HPAC, by hand | HPAC's term, DeepL's sentence |
+
+"Serious injury (secondary medical aid)" is close to a defined term, and the
+requirement is that a machine does not decide it *at all* — not that a machine
+decides it with a hint. A DeepL glossary would still send the string and still
+return a machine-composed result, which is a weaker guarantee wearing the same
+name. Dropping the key before the call is the only version that cannot silently
+degrade.
+
+DeepL glossaries would be a genuine improvement for a different problem —
+**term consistency inside strings that are not pinned**, so that "glider"
+renders the same way across forty labels. That needs a glossary resource
+lifecycle (create, version, reference by id) that nothing here has, and it is
+deliberately not in this change. Worth its own issue.
 
 ## Alternatives
 
-- **GitHub Models.** The decision this supersedes. Retired; not available at any
+- **GitHub Models.** The decision this supersedes. Retired; unavailable at any
   price.
 - **`actions/ai-inference@v3`.** Already rejected in ADR-0007 for needing a
-  Copilot seat, and it was backed by the same retired service.
-- **Hardcode a specific vendor and model id in the tool.** The obvious thing,
-  and it is exactly what just broke. A vendor named in code is a vendor whose
-  retirement is a code change; a vendor named in a repository variable is a
-  vendor whose retirement is a settings change. It would also have meant
-  inventing a model id nobody chose — `AGENTS.md` is explicit that a value you
-  were not given is not a value to invent.
+  Copilot seat, and backed by the same retired service.
+- **Amazon Translate.** The cheapest answer on credentials: hosting is already
+  AWS, so it is reachable from Actions over the OIDC role that exists today and
+  needs **no new secret at all**. Rejected on output quality — it is the weakest
+  of the three for short interface labels, where there is no surrounding
+  sentence to disambiguate a word like "Submit" or "Clear", and it has no
+  equivalent of the formality control. Credential convenience is worth less than
+  the French a bilingual membership actually reads.
 - **Reuse the worker's Anthropic client, with `ANTHROPIC_API_KEY` in Actions.**
-  Genuinely attractive: the key already exists in AWS Secrets Manager for the
-  worker, so no new vendor relationship. But it puts a production runtime
-  credential into GitHub Actions, which today holds exactly one secret
+  Attractive because the key already exists in AWS Secrets Manager, so no new
+  vendor relationship. Rejected: it puts a **production runtime credential**
+  into GitHub Actions, which today holds exactly one secret
   (`AWS_DEPLOY_ROLE_ARN`, inert without its OIDC trust policy) and no runtime
-  secret at all. That is a security posture change, not a plumbing choice, and
-  it is not one to make unilaterally. It is question 1 below.
-- **DeepL.** Best raw French of the candidates and the reason `chat-completions`
-  is an adapter rather than the interface itself — DeepL's API is not
-  OpenAI-shaped, so it is a second adapter in the same file, not a config
-  change. Adds a vendor and a key.
-- **Amazon Translate.** In-region now that hosting is AWS, and reachable from
-  Actions with the OIDC role that already exists — arguably the cheapest answer
-  on credentials, since it needs no new secret at all. Weakest French of the
-  three for short interface labels.
-- **Drop machine translation; a human writes all the French.** Correct, and
-  blocking. Rejected in ADR-0007 for the same reason it is rejected here: the
-  machine draft plus human review reaches the same place without stalling
-  development.
-
-## What is still open
-
-The adapter is built, tested, and wired. Configuring it needs three answers that
-are HPAC's to give, not a maintainer's to guess:
-
-1. **Which provider**, and therefore whether GitHub Actions may hold an
-   inference credential at all. Reusing the worker's `ANTHROPIC_API_KEY`, adding
-   DeepL, and using Amazon Translate over the existing OIDC role have different
-   security postures, not just different French.
-2. **Which model id**, if the answer to 1 is a chat-completions provider. There
-   is no defensible default: model ids are vendor-specific and change, and this
-   one is stamped into `fr-CA.meta.json` as provenance for every key.
-3. **Whether to add `TRANSLATION_PR_TOKEN`**, the fine-grained token that lets
-   CI run on the translation pull request. See the consequences in
-   [ADR-0021](ADR-0021-ci-translation-opens-a-pull-request.md).
-
-Until then the job runs on every push to `main`, reports exactly which keys are
-waiting for a translator, and writes nothing.
+  secret at all. That is a security-posture change, and a translation job is not
+  a good reason to make it. A separate, narrowly scoped DeepL key can be revoked
+  without touching production.
+- **Human translation only.** Correct, and blocking. Rejected in ADR-0007 for
+  the same reason it is rejected here: the machine draft plus human review
+  reaches the same place without stalling development. It is also not the
+  either/or it looks like — every generated key lands as `reviewed: false`, so
+  the human step is preserved, just not on the critical path.
+- **Hardcode the vendor in the tool rather than behind an adapter.** The obvious
+  thing, and exactly what just broke. A vendor named in code is a vendor whose
+  retirement is a code change.
 
 ## Consequences
 
-- Swapping provider is one file and three repository settings. Retirement number
-  two costs an afternoon, not a rewrite.
-- `fr-CA.meta.json` records the provider per key, and the adapter puts the model
-  id in that name (`chat-completions:vendor/a-model`), so "which machine
-  wrote this French" is answerable after the fact, including after a swap.
-- The `chat-completions` adapter asks for `temperature: 0` where the provider
-  honours it. The same English twice should not produce two different French
-  strings and a spurious diff.
-- A provider reply that is not JSON fails the run rather than being written into
-  a locale file. A fenced reply is unwrapped first — models fence more often than
-  not, and burning a run over decoration helps nobody.
-- The error body from a failed provider call is **never logged**, only the status
+- **A new secret, `DEEPL_API_KEY`**, added by the repository owner. It is the
+  first inference credential in this repository's Actions. It is scoped to one
+  vendor and one purpose, and revoking it stops translation and nothing else.
+- Swapping provider again is one file and a repository variable.
+- **Placeholder preservation is checked after every translation**, for every
+  provider, in `translate-locale.mjs` rather than in an adapter — a French
+  string that lost `{count}` fails the run rather than shipping a label with a
+  hole in it. Order is not compared; French word order differs.
+- DeepL maps translations to inputs **by position**, with no keys in the
+  response. A length mismatch would shift every key by one and stamp each with a
+  hash asserting it is correct, so the adapter refuses on any mismatch rather
+  than mapping.
+- The error body of a failed provider call is **never logged**, only the status
   code. The request carries UI labels, not report data, but a reply can echo a
   header.
+- DeepL bills by character. Per-key hash detection means an edit to one label
+  re-sends one label, so the steady-state cost is close to zero.

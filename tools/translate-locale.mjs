@@ -180,6 +180,27 @@ export function planTranslation({ english, french = {}, meta = {}, glossary = {}
 }
 
 /**
+ * The `{named}` placeholders a string carries, in order of appearance.
+ *
+ * A translator that drops one turns "Showing {count} reports" into a label with
+ * a hole in it, and nothing downstream would notice — the key is present, the
+ * hash says it is current, and only a French-reading user sees the damage. This
+ * is checked for every provider, not inside one adapter, because it is a
+ * property of the output rather than of any vendor.
+ */
+export function placeholdersIn(text) {
+	return [...String(text).matchAll(/\{[^{}]*\}/g)].map((match) => match[0])
+}
+
+/** Compares placeholder multisets, ignoring order — French word order differs. */
+function placeholdersAgree(english, french) {
+	const sort = (list) => [...list].sort()
+	const a = sort(placeholdersIn(english))
+	const b = sort(placeholdersIn(french))
+	return a.length === b.length && a.every((token, index) => token === b[index])
+}
+
+/**
  * Merges a plan's results into the French file and its provenance.
  *
  * @throws when the provider returned nothing for a key that was queued. A
@@ -193,6 +214,12 @@ export function applyPlan({ french = {}, meta = {}, plan, translations = new Map
 		const translated = translations.get(key)
 		if (typeof translated !== 'string' || translated.length === 0) {
 			throw new Error(`The provider returned no translation for ${key}.`)
+		}
+		if (!placeholdersAgree(text, translated)) {
+			throw new Error(
+				`The translation of ${key} does not carry the same placeholders as the English. ` +
+					`Expected ${JSON.stringify(placeholdersIn(text))}, got ${JSON.stringify(placeholdersIn(translated))}.`,
+			)
 		}
 		byKey.set(key, translated)
 		nextMeta[key] = { source_hash: hashOf(text), provider, reviewed: false }
@@ -370,11 +397,12 @@ async function main() {
 			translator = createTranslator(configFromEnv())
 		} catch (error) {
 			if (!(error instanceof TranslatorNotConfiguredError)) throw error
-			// Deliberately not a failure. GitHub Models — the provider ADR-0007
-			// named — was retired on 30 July 2026 and its replacement is an open
-			// decision (ADR-0022). Until one is configured this job reports what
-			// it would have done and changes nothing; a red build on every push
-			// to main would just get muted.
+			// Deliberately not a failure. The provider is decided — DeepL, in
+			// ADR-0022 — but the credential is added by a human in repository
+			// settings, and until it exists this job reports what it would have
+			// done and changes nothing. A red build on every push to main while
+			// someone gets round to adding a secret would just get muted, and
+			// then the next real failure is invisible too.
 			console.log(`::warning::${error.message}`)
 			console.log(`${plan.translate.length} key(s) are waiting for a translation provider:`)
 			for (const { key } of plan.translate) console.log(`  ${key}`)

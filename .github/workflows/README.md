@@ -106,15 +106,18 @@ Three things about it that are easy to undo by accident:
 
 Configuration, all optional, all repository-level:
 
-| Setting | Kind | Without it |
+| Setting | Kind | Required? |
 |---|---|---|
-| `TRANSLATION_PROVIDER`, `TRANSLATION_ENDPOINT`, `TRANSLATION_MODEL` | variables | The job reports which keys are waiting and changes nothing |
-| `TRANSLATION_API_KEY` | secret | Same |
-| `TRANSLATION_PR_TOKEN` | secret | The pull request is opened with `GITHUB_TOKEN`, so **CI does not run on it** and it must be nudged by hand before it can merge |
+| `DEEPL_API_KEY` | secret | **Yes.** Without it the job reports which keys are waiting and changes nothing. The host is derived from the key's `:fx` suffix, so there is nothing else to set. |
+| `TRANSLATION_PR_TOKEN` | secret | **Yes, in practice.** Without it the pull request is opened with `GITHUB_TOKEN`, so **CI does not run on it** and it must be nudged by hand before it can merge. |
+| `TRANSLATION_FORMALITY` | variable | No. Defaults to `prefer_more`. |
+| `TRANSLATION_PROVIDER`, `TRANSLATION_ENDPOINT`, `TRANSLATION_MODEL`, `TRANSLATION_API_KEY` | variables + secret | No. These exist so a future provider swap is a settings change rather than a code change. |
 
-Which provider to configure is an open decision —
-[ADR-0022](../../docs/decisions/ADR-0022-translation-provider-is-configuration.md).
-GitHub Models, which ADR-0007 named, was retired on 30 July 2026.
+The provider is DeepL, targeting `FR-CA` —
+[ADR-0022](../../docs/decisions/ADR-0022-translation-provider-is-configuration.md),
+which records why Amazon Translate, the worker's Anthropic key, and human-only
+translation were rejected. GitHub Models, which ADR-0007 named, was retired on
+30 July 2026.
 
 ## Deployments
 

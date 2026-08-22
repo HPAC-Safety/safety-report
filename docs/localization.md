@@ -101,17 +101,40 @@ flowchart TD
 manual dispatch. `tools/translate-locale.mjs` is the tool; `tools/translator.mjs`
 is the provider adapter.
 
-**Provider: configuration, not a vendor in the code.** ADR-0007 chose GitHub
-Models on the free tier. **GitHub Models was fully retired on 30 July 2026** —
-playground, model catalogue, and inference API alike — so there is no free
-already-authenticated option inside GitHub Actions any more.
+**Provider: DeepL**, targeting `FR-CA`. ADR-0007 chose GitHub Models on the free
+tier; **GitHub Models was fully retired on 30 July 2026** — playground, model
+catalogue, and inference API alike — so there is no free already-authenticated
+option inside GitHub Actions any more.
 
-`tools/translator.mjs` therefore declares the `ITranslator` port and takes its
-endpoint, model, and key from the workflow. It is the one file to change to swap
-provider, and it names no vendor. **Which provider to configure is still an open
-question** — see [ADR-0022](decisions/ADR-0022-translation-provider-is-configuration.md),
-which lists the candidates and what each one costs in credentials. Until one is
-set the job reports which keys are waiting and changes nothing.
+`tools/translator.mjs` declares the `ITranslator` port and holds the adapter. It
+is the one file to change to swap provider. Amazon Translate, reusing the
+worker's Anthropic key, and human-only translation were all considered and
+rejected — the comparison is in
+[ADR-0022](decisions/ADR-0022-translation-provider-is-configuration.md).
+
+The job needs one secret, `DEEPL_API_KEY`. The adapter picks DeepL's Free or Pro
+host from the key's `:fx` suffix, so there is no matching host to configure.
+Without the secret the job reports which keys are waiting and changes nothing.
+
+**`FR-CA` is a real DeepL target language**, listed distinctly from `FR`
+(metropolitan) and `FR-FR`, so this file gets Canadian French rather than
+metropolitan French under a Canadian name. It is "Target Only" — it cannot be a
+*source* language, which never matters here.
+
+That is not the same as HPAC's French. DeepL will not know that this association
+says *parapente* rather than *deltaplane* for a given wing, or which rendering of
+a rating name the membership actually uses. **That is what `glossary.json` and
+the human review step are for**, and it is the reason neither is optional.
+
+**Formality defaults to `prefer_more`** — a safety authority addressing pilots
+uses *vous*. `prefer_more` rather than `more` because `more` fails with HTTP 400
+on a target language that does not document formality support, and `FR-CA` does
+not. Override with the `TRANSLATION_FORMALITY` repository variable.
+
+**Placeholders are checked after translation.** If the French of a key does not
+carry the same `{named}` placeholders as its English, the run fails rather than
+shipping a label with a hole in it. Order is not compared — French word order
+differs.
 
 Runtime never calls a translation service: no per-visit latency, no per-view
 cost, no third-party request from a reporter's browser, and the French is
@@ -191,6 +214,13 @@ request. Editing the *English* of a pinned key does not change its French — on
 HPAC may say when that wording changes. The `i18n` check fails if `fr-CA.json`
 ever stops matching a pin.
 
+DeepL has its own glossary feature — stored term pairs applied *during*
+translation — and it is **not** used for these keys, deliberately. It would still
+send the string and still return a machine-composed result: a weaker guarantee
+wearing the same name. Pinning here means the string is never sent at all. See
+ADR-0022, which also notes where DeepL glossaries *would* help — term
+consistency inside strings that are not pinned.
+
 ## Reports and summaries
 
 **The raw report is never translated.** It stays as the reporter wrote it — it is
@@ -213,16 +243,16 @@ The translation gets its own PII audit — a model producing fluent French can
 reintroduce a detail the scrub removed. A safety officer approves the pair, side
 by side; approving one does not approve the other.
 
-Note the split: the UI-string job runs inside GitHub Actions, against whichever
-provider is configured there. The worker runs in production and translates
+Note the split: the UI-string job runs inside GitHub Actions, against DeepL. The worker runs in production and translates
 through the Anthropic client it already holds. One `ITranslator` contract, two
 implementations in two runtimes — `tools/translator.mjs` and
 `HpacSafety.Core.SharedKernel.ITranslator` — because they cannot share a type.
 
 (ADR-0007 justified that split by GitHub Models being free inside Actions. That
 reason is gone with the service; the split survives it, because the worker still
-has no Actions token and Actions still should not hold a production runtime
-credential without a deliberate decision. See ADR-0022.)
+has no Actions token, and reusing the worker's `ANTHROPIC_API_KEY` in Actions was
+rejected precisely to keep a production runtime credential out of CI. See
+ADR-0022.)
 
 ## Formatting
 

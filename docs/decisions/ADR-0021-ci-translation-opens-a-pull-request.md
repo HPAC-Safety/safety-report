@@ -118,13 +118,24 @@ French; only HPAC may say when that wording changes.
   on the translation pull request, so its required checks sit unfulfilled and it
   cannot merge on its own.
 
-  The workflow therefore prefers an optional `TRANSLATION_PR_TOKEN` — a
-  fine-grained token with `contents: write` and `pull-requests: write` — and
+  The workflow therefore uses `TRANSLATION_PR_TOKEN` when it is present, and
   falls back to `GITHUB_TOKEN` with a `::warning::` naming the consequence.
   Without that secret the pull request is still opened and still correct; it has
   to be nudged by hand (close and reopen, or push an empty commit) before it can
-  merge. **Whether to add that token is an open question, recorded in
-  ADR-0022.**
+  merge.
+
+  **`TRANSLATION_PR_TOKEN` is a fine-grained personal access token scoped to
+  this repository alone**, with `Contents: Read and write` and
+  `Pull requests: Read and write` and nothing else. Not a classic PAT: a classic
+  token's `repo` scope covers every repository the user can reach, which is a
+  blast radius wildly out of proportion to opening one translation pull request.
+
+  A **GitHub App** installation token would be better still — it is not tied to
+  a person, so it survives someone leaving, and it does not expire on a calendar.
+  It is not required here because it means creating and installing an App for a
+  single workflow. If the fine-grained token's expiry becomes an annoyance, that
+  is the upgrade, and it needs no change to this workflow beyond the secret's
+  contents.
 - `locales/fr-CA.json` and `locales/fr-CA.meta.json` are generated files. Hand
   editing either is pointless — the next run overwrites it. A bad translation is
   fixed by changing the English or by pinning the term in `glossary.json`.

@@ -141,10 +141,17 @@ Full detail: `docs/testing-conventions.md`.
   constructs no translator; generation lives in `i18n-translate.yml`, behind a
   push to `main`. This repository runs fork-authored code, and untrusted code
   must never be able to trigger inference or write a generated locale file.
-- **The translation provider is configuration, never a vendor name in code.**
-  `tools/translator.mjs` is the one file to change to swap it. GitHub Models,
-  which ADR-0007 named, was retired on 30 July 2026; which provider replaces it
-  is an open decision. See ADR-0021 and ADR-0022.
+- **The translation provider is DeepL, behind a one-file adapter.**
+  `tools/translator.mjs` is the only file to change to swap it, and it names the
+  vendor in exactly one place. GitHub Models, which ADR-0007 named, was retired
+  on 30 July 2026. `FR-CA` is a real DeepL target language and is what the job
+  asks for — never `FR`, which is metropolitan French. See ADR-0021 and
+  ADR-0022.
+- **A pinned key is never sent to a translator at all** — not sent with a hint.
+  DeepL's own glossary feature is not a substitute: it still sends the string
+  and still returns machine-composed French. See ADR-0022.
+- **A translation must carry the same `{named}` placeholders as its English.**
+  Checked for every provider after every run; a mismatch fails the run.
 - **`reviewed` in `fr-CA.meta.json` is never set by a machine.** It is the record
   of what a human has actually read.
 

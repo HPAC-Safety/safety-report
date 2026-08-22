@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 
 import {
 	applyPlan,
+	placeholdersIn,
 	flatten,
 	glossaryFrench,
 	hashOf,
@@ -461,6 +462,59 @@ describe('verifying the locales without translating', () => {
 			// Then
 			assert.equal(result.ok, false)
 			assert.match(result.problems.join('\n'), /stub/)
+		})
+	})
+})
+
+describe('placeholders in a translated string', () => {
+	describe('given text carrying named placeholders', () => {
+		it('when they are read then each one is returned', () => {
+			// Given / When
+			const found = placeholdersIn('Showing {count} of {total} reports')
+
+			// Then
+			assert.deepEqual(found, ['{count}', '{total}'])
+		})
+	})
+
+	describe('given a translation that dropped a placeholder', () => {
+		it('when the plan is applied then it fails rather than shipping a broken label', () => {
+			// Given — a label whose French lost {count} renders as prose with a hole
+			const source = { admin: { queue: 'Showing {count} reports' } }
+			const plan = planTranslation({ english: source, french: {}, meta: {}, glossary: {} })
+
+			// When / Then
+			assert.throws(
+				() =>
+					applyPlan({
+						french: {},
+						meta: {},
+						plan,
+						translations: new Map([['admin.queue', 'Affichage des rapports']]),
+						provider: 'deepl:FR-CA:prefer_more',
+					}),
+				/\{count\}/,
+			)
+		})
+	})
+
+	describe('given a translation that kept every placeholder, reordered', () => {
+		it('when the plan is applied then it is accepted, because French word order differs', () => {
+			// Given
+			const source = { admin: { queue: '{count} of {total}' } }
+			const plan = planTranslation({ english: source, french: {}, meta: {}, glossary: {} })
+
+			// When
+			const result = applyPlan({
+				french: {},
+				meta: {},
+				plan,
+				translations: new Map([['admin.queue', 'sur {total}, {count}']]),
+				provider: 'deepl:FR-CA:prefer_more',
+			})
+
+			// Then
+			assert.equal(result.french.admin.queue, 'sur {total}, {count}')
 		})
 	})
 })

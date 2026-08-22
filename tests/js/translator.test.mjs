@@ -4,10 +4,12 @@ import assert from 'node:assert/strict'
 import { TranslatorNotConfiguredError, createTranslator } from '../../tools/translator.mjs'
 
 describe('the translator adapter', () => {
-	describe('given no provider configuration at all', () => {
-		it('when one is created then it says so rather than inventing a provider', () => {
-			// Given / When / Then
+	describe('given no configuration at all', () => {
+		it('when one is created then it defaults to DeepL and asks for the key it needs', () => {
+			// Given / When / Then — DeepL is the decided provider (ADR-0022), so the
+			// default is not a guess. The missing piece is the credential.
 			assert.throws(() => createTranslator({}), TranslatorNotConfiguredError)
+			assert.throws(() => createTranslator({}), /DEEPL_API_KEY/)
 		})
 	})
 
@@ -136,7 +138,124 @@ describe('the translator adapter', () => {
 	describe('given an unknown provider name', () => {
 		it('when one is created then it refuses rather than falling back', () => {
 			// Given / When / Then
-			assert.throws(() => createTranslator({ provider: 'deepl' }), /deepl/)
+			assert.throws(() => createTranslator({ provider: 'bing' }), /bing/)
+		})
+	})
+
+	describe('given a DeepL free-tier key', () => {
+		it('when one is created then it targets the free endpoint, by the :fx suffix', () => {
+			// Given — DeepL identifies Free keys by a ':fx' suffix
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'abc-123:fx' })
+
+			// Then
+			assert.equal(translator.endpoint, 'https://api-free.deepl.com/v2/translate')
+		})
+	})
+
+	describe('given a DeepL paid key', () => {
+		it('when one is created then it targets the pro endpoint', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'abc-123' })
+
+			// Then
+			assert.equal(translator.endpoint, 'https://api.deepl.com/v2/translate')
+		})
+	})
+
+	describe('given DeepL and the two official locales', () => {
+		it('when the request is built then it asks for Canadian French, not metropolitan', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+
+			// When
+			const body = translator.buildRequest(
+				[
+					{ key: 'form.submit', text: 'Submit' },
+					{ key: 'form.cancel', text: 'Cancel' },
+				],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then — FR-CA is a real DeepL target language, verified against their
+			// supported-languages table. FR would be metropolitan French.
+			assert.equal(body.target_lang, 'FR-CA')
+			assert.equal(body.source_lang, 'EN')
+			assert.deepEqual(body.text, ['Submit', 'Cancel'])
+			assert.equal(body.preserve_formatting, true)
+		})
+	})
+
+	describe('given DeepL and the default formality', () => {
+		it('when the request is built then it prefers formal and can never 400 for it', () => {
+			// Given / When
+			const body = createTranslator({ provider: 'deepl', apiKey: 'k' }).buildRequest(
+				[{ key: 'a', text: 'A' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then — 'more' would fail with HTTP 400 on a target that does not
+			// support formality. 'prefer_more' degrades to default instead.
+			assert.equal(body.formality, 'prefer_more')
+		})
+	})
+
+	describe('given a DeepL response', () => {
+		it('when it is parsed then translations map back to keys by position', () => {
+			// Given — DeepL returns translations in the order requested, with no keys
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+			const items = [
+				{ key: 'form.submit', text: 'Submit' },
+				{ key: 'form.cancel', text: 'Cancel' },
+			]
+
+			// When
+			const out = translator.parseResponse(
+				{ translations: [{ text: 'Envoyer' }, { text: 'Annuler' }] },
+				items,
+			)
+
+			// Then
+			assert.equal(out.get('form.submit'), 'Envoyer')
+			assert.equal(out.get('form.cancel'), 'Annuler')
+		})
+	})
+
+	describe('given a DeepL response with the wrong number of translations', () => {
+		it('when it is parsed then it refuses rather than mapping keys to the wrong French', () => {
+			// Given — position is the only thing tying a translation to its key, so a
+			// length mismatch silently shifts every key by one
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+			const items = [
+				{ key: 'form.submit', text: 'Submit' },
+				{ key: 'form.cancel', text: 'Cancel' },
+			]
+
+			// When / Then
+			assert.throws(() => translator.parseResponse({ translations: [{ text: 'Envoyer' }] }, items), /2.*1|1.*2/)
+		})
+	})
+
+	describe('given a DeepL translator', () => {
+		it('when it names itself then the provenance says variant and formality', () => {
+			// Given / When — DeepL has no model id, so the things that actually
+			// determine the output are what get recorded
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+
+			// Then
+			assert.equal(translator.name, 'deepl:FR-CA:prefer_more')
+		})
+	})
+
+	describe('given a locale DeepL has no code for', () => {
+		it('when the request is built then it refuses rather than guessing a code', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+
+			// When / Then
+			assert.throws(
+				() => translator.buildRequest([{ key: 'a', text: 'A' }], { source: 'en-CA', target: 'de-DE' }),
+				/de-DE/,
+			)
 		})
 	})
 })

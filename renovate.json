@@ -8,9 +8,6 @@
 		":disableRateLimiting"
 	],
 	"timezone": "America/Edmonton",
-	"schedule": [
-		"* 0-6 * * 1"
-	],
 	"lockFileMaintenance": {
 		"enabled": true,
 		"schedule": [

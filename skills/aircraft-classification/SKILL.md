@@ -88,6 +88,58 @@ The Typeform collects `Certification:` as free text, so today's answers vary:
 punctuation, and common spellings — and returns the class or the unknown state.
 It never returns a guess.
 
+`VocabularyAircraftClassifier` in `HpacSafety.Core.Features.Reporting` is the
+whole implementation. Three things about its shape are load-bearing:
+
+- **It is synchronous.** An implementation that had to await something would be
+  reaching for a model or a lookup service, and both are forbidden. The
+  signature is where that rule is enforced, not a comment. See ADR-0029.
+- **It reads two inputs only** — the reporter's verbatim answer and the aircraft
+  type they chose. Not the make, not the model, not the narrative, not the
+  pilot's rating.
+- **It is total.** Every input yields a class or `NotDetermined`. There is no
+  exception path and no default class.
+
+### What it recognises
+
+| The reporter wrote | It normalizes to |
+|---|---|
+| `EN A`, `en-a`, `EN 926 A` | `EN-A` |
+| `low B`, `EN B (low)`, `low EN-B` | `low EN-B` |
+| `B (high)`, `high EN B` | `high EN-B` |
+| `EN C`, `en-d`, `CCC` | `EN-C`, `EN-D`, `CCC` |
+| `uncertified`, `not certified`, `prototype` | `uncertified` |
+| `topless`, `rigid`, `single surface`, `kingpost` | the hang glider class |
+| `tandem, high EN-B` | `high EN-B` plus the tandem marker |
+| `mini wing, EN A` | `EN-A` plus the mini wing marker |
+| `EN B`, `LTF 1-2`, `n/a`, `Ozone Rush 6` | `class not determined` |
+
+### What it refuses, on purpose
+
+- **`EN B` with no band**, and an answer naming both bands. The band is the
+  signal; a contradiction is not resolved by picking a side.
+- **LTF and DHV answers.** A different scheme, and how its bands map onto EN
+  bands is HPAC's judgement, not the classifier's. Open question.
+- **An EN class on a hang glider.** The vocabularies are scoped by the aircraft
+  type, so the paraglider one cannot leak across.
+- **A make or model.** There is no table to look it up in.
+
+### Markers travel with the class
+
+A tandem is still a high EN-B. The result is an `AircraftClassification` — a
+class plus `AircraftMarker` flags — rendered as invariant codes such as
+`["tandem", "high_en_b"]`. The `tandem paraglider`, `tandem hang glider`,
+`mini wing` and `speedwing` members of `AircraftClass` stand in as the class
+only when no certification class was determined. See ADR-0030.
+
+### If you are adding to the vocabulary
+
+Add the answer shape and its expected class to
+`tests/HpacSafety.Core.Tests/AircraftClassifierTests.cs` first, watch it fail,
+then add the phrase. Anything that cannot be written as "this exact answer means
+this exact class" is not a normalization — it is an inference, and it does not
+belong here.
+
 **Preferred fix at the source:** the new form should ask for certification as a
 *selection* from the vocabulary above, scoped to the aircraft type the reporter
 already chose, with a free-text escape hatch. That turns normalization from a

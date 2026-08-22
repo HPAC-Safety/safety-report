@@ -16,6 +16,15 @@ here**, and it must be provable in a plain unit test with no database, no
 network, and no model. It is the first line of defence in the anonymization
 pipeline and the only stage that is fully deterministic.
 
+`VocabularyAircraftClassifier` is here for the same reason. It turns the
+reporter's own certification answer into the class a summary is published with,
+and it is deterministic, synchronous, and offline on purpose — an implementation
+that could await something could call a model, and inferring an aircraft class
+is exactly what invariant 2 forbids. Where an answer does not resolve, the
+result is `NotDetermined`, which a reviewer corrects by hand. See
+[ADR-0029](../../docs/decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md)
+and [ADR-0030](../../docs/decisions/ADR-0030-classification-carries-markers-with-the-class.md).
+
 ## Layout
 
 Organised by **feature**, not by language construct. Each feature owns its
@@ -25,10 +34,11 @@ entities, its enums, and the ports it calls out through — see
 ```
 Features/
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
-                  ReportStatus, InjurySeverity, AircraftClass, Discipline,
-                  PilotRating, TimeOfDay, Province,
+                  ReportStatus, InjurySeverity, AircraftClass, AircraftMarker,
+                  AircraftClassification, Discipline, PilotRating, TimeOfDay,
+                  Province,
                   ISummarizer, IPiiAuditor, IAircraftClassifier,
-                  IPublicationChannel
+                  VocabularyAircraftClassifier, IPublicationChannel
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
                   QuestionRole, QuestionKey, QuestionType

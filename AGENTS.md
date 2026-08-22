@@ -34,7 +34,16 @@ If an instruction appears to require it, stop and raise the conflict.
 2. **Aircraft are published as a certification class, never a brand.** "a high
    EN-B glider", not "an Ozone Rush 6". The class comes from the reporter's own
    answer on the form and nowhere else — an AI must never infer or guess it, and
-   there is no model-to-class lookup table. See `docs/aircraft-classification.md`.
+   there is no model-to-class lookup table. Not from the model name, not from
+   the narrative, not from the pilot's rating, and not from a table built by
+   reading a manufacturer's website. An answer that does not normalize is
+   **`class not determined`** — a valid outcome a reviewer may correct by hand,
+   never a guess and never a default. `IAircraftClassifier` is deterministic and
+   **synchronous**, so an implementation cannot quietly become a model call. See
+   `docs/aircraft-classification.md`,
+   [ADR-0029](docs/decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md),
+   and the [`aircraft-classification`](skills/aircraft-classification/SKILL.md)
+   skill.
 3. **Nothing is published without human approval.** There is no code path from
    report submission to publication that does not pass through a safety officer.
    **Publication consent is answered explicitly or not at all** — the consent

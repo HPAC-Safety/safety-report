@@ -48,6 +48,28 @@ public class ReportAircraft
     /// </summary>
     public AircraftClass Class { get; private set; } = AircraftClass.NotDetermined;
 
-    /// <summary>Records the normalized class.</summary>
+    /// <summary>
+    /// Qualifiers the reporter's answer carried alongside the class — tandem,
+    /// mini wing, speedwing. A tandem is still a high EN-B, so the marker
+    /// accompanies the class rather than replacing it. See ADR-0030.
+    /// </summary>
+    public AircraftMarker Markers { get; private set; } = AircraftMarker.None;
+
+    /// <summary>The class and its markers, as one value.</summary>
+    public AircraftClassification Classification => new(Class, Markers);
+
+    /// <summary>
+    /// Records what the reporter's answer normalized to. Also how a reviewer
+    /// corrects a class by hand — the one other thing allowed to set it.
+    /// </summary>
+    public void Classify(AircraftClassification classification)
+    {
+        ArgumentNullException.ThrowIfNull(classification);
+
+        Class = classification.Class;
+        Markers = classification.Markers;
+    }
+
+    /// <summary>Records the normalized class, leaving its markers unchanged.</summary>
     public void Classify(AircraftClass aircraftClass) => Class = aircraftClass;
 }

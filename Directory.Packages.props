@@ -12,7 +12,7 @@
 		<!-- Enforces tests/BannedSymbols.txt, which is how the Shouldly rule stops
 		     being documentation and starts being a build error. See ADR-0013. -->
 		<PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
-		<PackageVersion Include="Roslynator.Analyzers" Version="4.16.1" />
+		<PackageVersion Include="Roslynator.Analyzers" Version="5.0.0" />
 	</ItemGroup>
 	<ItemGroup Label="Coverage">
 		<!-- ReportGenerator is the other half of this and lives in

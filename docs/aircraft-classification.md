@@ -26,14 +26,20 @@ the result is `class not determined`, which a reviewer may correct by hand.
 
 ## Vocabulary
 
-**Paragliders:** `EN-A`, `low EN-B`, `high EN-B`, `EN-C`, `EN-D`, `CCC`,
-`uncertified`.
+**Paragliders:** `EN-A`, `low EN-B`, `high EN-B`, `EN-B`, `EN-C`, `EN-D`,
+`CCC`, `uncertified`.
 
 The low/high B split carries most of the safety signal. "EN-B" alone spans
-nearly the entire recreational market and says almost nothing.
+nearly the entire recreational market and says almost nothing — which is why the
+form should ask for the band, not why a reporter who gave a bare `EN-B` should
+have their answer thrown away. **Plain `EN-B` is a class of its own.** It is
+published as given and is never widened into `low EN-B` or `high EN-B`, and
+neither band is ever narrowed to it.
 
 **Hang gliders** are not EN-rated: `single-surface`,
-`double-surface kingposted`, `topless`, `rigid`.
+`double-surface kingposted`, `topless`, `rigid`, `uncertified`. Uncertified hang
+gliders exist; the term is shared with the paraglider vocabulary and is the only
+one that is.
 
 **Mini wings and speedwings:** `mini wing` / `speedwing`, plus the EN class if
 the wing carries one.
@@ -62,25 +68,30 @@ Case, punctuation, and spacing are irrelevant: `"EN-B (low)"`, `"en_b, low"` and
 | `EN C`, `en-d`, `CCC` | `EN-C`, `EN-D`, `CCC` |
 | `uncertified`, `not certified`, `prototype` | `uncertified` |
 | `topless`, `rigid`, `single surface`, `kingpost` | the hang glider class |
+| `EN B`, `en-b`, `B`, `low or high B, not sure` | `EN-B` |
+| `uncertified` (hang glider or paraglider) | `uncertified` |
 | `tandem, high EN-B` | `high EN-B` **and** the tandem marker |
 | `tandem` (aircraft type: paraglider) | `tandem paraglider` |
 | `mini wing, EN A` | `EN-A` **and** the mini wing marker |
-| `EN B`, `LTF 1-2`, `n/a`, `Ozone Rush 6` | `class not determined` |
+| `LTF 1-2`, `n/a`, `Ozone Rush 6` | `class not determined` |
 
 ### What it refuses, on purpose
 
-- **`EN B` with no band.** There is no plain EN-B in the vocabulary, and the
-  band is the part that carries the signal. An answer naming *both* bands is
-  refused the same way — a contradiction is not resolved by picking a side.
 - **LTF and DHV answers.** A different certification scheme. How its bands map
   onto EN bands is HPAC's judgement to make, not the classifier's, and
-  `"LTF 1-2"` sits inside the B band without saying where. **Open question with
-  HPAC**; if a mapping is agreed it lands here and in the vocabulary tests.
+  `"LTF 1-2"` sits inside the B band without saying where. Ruled on: it stays undetermined, and a
+  reviewer converts it by hand, on the record.
 - **An EN class on a hang glider.** Hang gliders are not EN-rated. The two
   vocabularies are scoped by the aircraft type the reporter chose, so the
   paraglider one cannot leak across.
 - **A make or model.** `"Ozone Rush 6"` in the certification field normalizes to
   nothing, because there is no table to look it up in.
+
+What it does **not** refuse is a bare `EN-B`. Refusing a true answer is its own
+kind of error: the reporter answered, and `EN-B` is in the vocabulary. It is
+kept as given and never widened into a band. See
+[ADR-0029](decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md),
+"Three rulings".
 
 ### Markers travel with the class
 

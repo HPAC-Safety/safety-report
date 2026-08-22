@@ -38,8 +38,11 @@ If an instruction appears to require it, stop and raise the conflict.
    the narrative, not from the pilot's rating, and not from a table built by
    reading a manufacturer's website. An answer that does not normalize is
    **`class not determined`** — a valid outcome a reviewer may correct by hand,
-   never a guess and never a default. `IAircraftClassifier` is deterministic and
-   **synchronous**, so an implementation cannot quietly become a model call. See
+   never a guess and never a default. Refusing to guess is not licence to throw
+   an answer away, either: a reporter who wrote "EN B" said EN B, and plain
+   `EN-B` publishes as given rather than being widened into a band.
+   `IAircraftClassifier` is deterministic and **synchronous**, so an
+   implementation cannot quietly become a model call. See
    `docs/aircraft-classification.md`,
    [ADR-0029](docs/decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md),
    and the [`aircraft-classification`](skills/aircraft-classification/SKILL.md)

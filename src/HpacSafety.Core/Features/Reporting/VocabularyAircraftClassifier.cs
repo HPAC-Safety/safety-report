@@ -17,17 +17,20 @@ namespace HpacSafety.Core.Features.Reporting;
 /// reviewer may correct by hand.
 /// </para>
 /// <para>
-/// Two shapes it refuses on purpose, because guessing them would publish a
+/// Some shapes it refuses on purpose, because guessing them would publish a
 /// confident wrong fact about a real accident:
 /// </para>
 /// <list type="bullet">
-///   <item><description><c>"EN B"</c> with no band. There is no plain EN-B in
-///   the vocabulary, and the low/high split is the part that carries the safety
-///   signal.</description></item>
 ///   <item><description>Answers in the LTF/DHV scheme. HPAC has not decided how
-///   those bands map onto EN bands, so nothing here decides it either. See
-///   ADR-0029.</description></item>
+///   those bands map onto EN bands, so nothing here decides it either.</description></item>
+///   <item><description>An EN class given for a hang glider. Hang gliders are
+///   not EN-rated, so the two vocabularies are scoped by aircraft type.</description></item>
 /// </list>
+/// <para>
+/// <c>"EN B"</c> with no band is <b>not</b> a refusal: it normalizes to plain
+/// <see cref="AircraftClass.EnB"/>, because the reporter did answer and the
+/// answer is true. It is simply never widened into a band. See ADR-0029.
+/// </para>
 /// </remarks>
 public sealed class VocabularyAircraftClassifier : IAircraftClassifier
 {
@@ -139,6 +142,14 @@ public sealed class VocabularyAircraftClassifier : IAircraftClassifier
             _ => false,
         };
 
+    /// <summary>
+    /// Uncertified is the one term both vocabularies share — uncertified hang
+    /// gliders exist, and refusing the answer would lose a true one.
+    /// </summary>
+    private static bool IsUncertified(string text) =>
+        Has(text, "uncertified", "un certified", "not certified", "no certification",
+            "no cert", "uncert", "prototype", "proto");
+
     private static AircraftClass ReadStructuralClass(string text)
     {
         if (Has(text, "rigid"))
@@ -156,9 +167,14 @@ public sealed class VocabularyAircraftClassifier : IAircraftClassifier
             return AircraftClass.DoubleSurfaceKingposted;
         }
 
-        return Has(text, "single surface", "single skin")
-            ? AircraftClass.SingleSurface
-            : AircraftClass.NotDetermined;
+        if (Has(text, "single surface", "single skin"))
+        {
+            return AircraftClass.SingleSurface;
+        }
+
+        // A structural class is the more useful answer where the reporter gave
+        // one, so this is the fallback rather than the first test.
+        return IsUncertified(text) ? AircraftClass.Uncertified : AircraftClass.NotDetermined;
     }
 
     private static AircraftClass ReadCertificationClass(string text)
@@ -169,8 +185,7 @@ public sealed class VocabularyAircraftClassifier : IAircraftClassifier
             return AircraftClass.NotDetermined;
         }
 
-        if (Has(text, "uncertified", "un certified", "not certified", "no certification",
-                "no cert", "uncert", "prototype", "proto"))
+        if (IsUncertified(text))
         {
             return AircraftClass.Uncertified;
         }
@@ -190,10 +205,13 @@ public sealed class VocabularyAircraftClassifier : IAircraftClassifier
             'c' => AircraftClass.EnC,
             'd' => AircraftClass.EnD,
 
-            // "EN-B" alone is not in the vocabulary, and an answer naming both
-            // bands has not chosen one. Neither is resolved by picking a side.
+            // A reporter who said "EN B" said EN B. The band is published when
+            // they gave one; when they gave none, or named both, the answer is
+            // still a true B and is kept as plain EN-B. It is never widened
+            // into a band by picking a side.
             'b' when low && !high => AircraftClass.LowEnB,
             'b' when high && !low => AircraftClass.HighEnB,
+            'b' => AircraftClass.EnB,
             _ => AircraftClass.NotDetermined,
         };
     }

@@ -21,6 +21,16 @@ public enum AircraftClass
     EnA = 1,
     LowEnB = 2,
     HighEnB = 3,
+
+    /// <summary>
+    /// EN-B with no band stated. A reporter who said "EN B" said EN B, so the
+    /// answer is kept and published as-is — but it spans nearly the whole
+    /// recreational market, so the low/high split stays the goal for new
+    /// reports. Never widened into <see cref="LowEnB"/> or
+    /// <see cref="HighEnB"/>, and never narrowed from them.
+    /// </summary>
+    EnB = 8,
+
     EnC = 4,
     EnD = 5,
     Ccc = 6,

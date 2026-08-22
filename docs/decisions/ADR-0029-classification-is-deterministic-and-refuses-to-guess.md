@@ -2,6 +2,8 @@
 
 **Status:** Accepted
 **Date:** 2026-08-22
+**Revised:** 2026-08-22 — three questions raised with HPAC were ruled on; see
+"Three rulings, and what they rejected".
 
 ## Context
 
@@ -50,37 +52,98 @@ reviewer may correct by hand. Three refusals are deliberate:
 ```mermaid
 flowchart TD
     a["reporter's answer + aircraft type"] --> b{"hang glider?"}
-    b -->|yes| c["structural vocabulary only<br/>single-surface · kingposted · topless · rigid"]
-    b -->|no| d["EN vocabulary<br/>A · low B · high B · C · D · CCC · uncertified"]
+    b -->|yes| c["structural vocabulary only<br/>single-surface · kingposted · topless · rigid · uncertified"]
+    b -->|no| d["EN vocabulary<br/>A · low B · high B · B · C · D · CCC · uncertified"]
     c --> e{"resolved?"}
     d --> e
     e -->|no| f["class not determined<br/>reviewer may correct"]
     e -->|yes| g["that class, plus any marker"]
 ```
 
-- **`"EN B"` with no band is `NotDetermined`.** There is no plain EN-B in the
-  vocabulary, and the low/high split is the part that carries the safety signal.
-  Picking a band would be inventing the only thing the field is for. An answer
-  naming *both* bands ("low or high B, not sure") is refused for the same
-  reason.
 - **LTF/DHV answers are `NotDetermined`.** LTF is a different certification
   scheme, and how its bands map onto EN bands is a judgement with a safety
   consequence that HPAC has not made. `"LTF 1-2"` in particular lands inside the
   B band without saying where, so even accepting the usual scheme equivalence
-  would leave it undetermined. **This is an open question raised with HPAC; if
-  the answer is that a mapping exists, it lands here, in the vocabulary tests,
-  and in `docs/aircraft-classification.md`.**
+  would leave it undetermined.
 - **A hang glider answer never resolves to an EN class.** Hang gliders are not
   EN-rated, so the two vocabularies are scoped by discipline and the paraglider
   one cannot leak across. `"EN B (low)"` on a hang glider is `NotDetermined`,
   not a translation attempt.
+- **A make or model in the certification field resolves to nothing**, because
+  there is no table to look it up in.
+
+Refusing is not the same as discarding an answer the reporter actually gave —
+see the three rulings below.
+
+## Three rulings, and what they rejected
+
+The first draft of this classifier refused three shapes that turned out to be
+answerable. The questions went to HPAC rather than being settled by taste, and
+the answers are requirements now.
+
+### 1. Plain `EN-B` is a class
+
+**Ruled:** add `EN-B` to the vocabulary. `"EN B"` with no band publishes as
+plain EN-B, and an answer naming *both* bands ("low or high B, not sure")
+resolves to plain EN-B too — the reporter has told us it is a B.
+
+**Never defaulted to low or high.** `AircraftClass.EnB` is a third value beside
+`LowEnB` and `HighEnB`, not a stand-in for either, and nothing widens one into
+the other in either direction.
+
+Plain EN-B carries less safety signal than a banded answer — it spans nearly the
+whole recreational market, which is why the low/high split exists — so the
+*goal* for new reports is unchanged: the selection-scoped certification question
+from #12, offering the band as a choice so it arrives banded. What changed is
+the treatment of the historical free-text answers, where refusing a true answer
+was the worse of the two errors.
+
+*Rejected:* refusing bare `EN-B` as `NotDetermined`, the original behaviour. It
+threw away an answer the reporter gave, and it made the review queue absorb
+reports where nothing was actually wrong. *Also rejected:* defaulting bare
+`EN-B` to `low` or to `high`, which is the guess this whole document exists to
+prevent.
+
+### 2. LTF and DHV stay undetermined
+
+**Ruled:** unchanged. Every LTF/DHV answer, `"LTF 1-2"` included, stays
+`NotDetermined`.
+
+The scheme mapping is not HPAC-settled, and applying one would be inference —
+precisely what invariant 2 forbids. Note the asymmetry with the ruling above and
+why it is not inconsistent: a reporter who writes `"EN B"` has stated a value in
+*this* vocabulary, while a reporter who writes `"LTF 1-2"` has stated a value in
+a different one, and crossing between them is a conversion nobody has ratified.
+A reviewer converts it by hand, on the record.
+
+*Rejected:* the conventional LTF-to-EN equivalence. It is widely quoted and it
+is still someone else's rule of thumb, and `"LTF 1-2"` would land inside the B
+band without saying where in any case.
+
+### 3. `uncertified` extends to hang gliders
+
+**Ruled:** `uncertified` is part of the hang glider vocabulary as well as the
+paraglider one. Uncertified hang gliders exist, and refusing the answer loses a
+true one.
+
+It stays the *fallback* within that vocabulary: `"topless, uncertified"` is
+`topless`, because the structural class is the more useful answer where the
+reporter gave one. And it is not an EN class, so the rule that a hang glider
+answer never resolves to an EN class is untouched.
+
+*Rejected:* keeping `uncertified` paraglider-only, on the grounds that
+`docs/aircraft-classification.md` listed it under paragliders. That was a gap in
+the document, not a decision — the document now lists it under both.
 
 ## Consequences
 
 - The classifier is provable in a plain unit test with no database, no network,
   and no model — the same reason the deterministic scrub lives in `Core`.
-- `NotDetermined` will be common on historical free-text answers. That is the
-  design working. The review queue absorbs it; a wrong published class does not.
+- `NotDetermined` will still appear on historical free-text answers, though less
+  often than the first draft produced it. That is the design working. The review
+  queue absorbs it; a wrong published class does not.
+- `AircraftClass` gains `EnB = 8`. Existing members keep their stored values —
+  appended, never renumbered.
 - Adding a recognised answer shape is a one-line vocabulary change with a test,
   not an integration.
 - A caller cannot opt into inference, because there is nothing to opt into.
@@ -113,9 +176,10 @@ never ask a model to do something deterministic code does reliably.
 guess as fact. `NotDetermined` is a valid, visible, correctable state; a default
 is invisible and wrong at unknown times.
 
-**Map LTF to EN in this pull request.** A defensible mapping exists in the wild,
-but it is HPAC's call to make, not an implementation detail to settle by taste.
-See "Never assume. Ask." in `AGENTS.md`.
+**Map LTF to EN.** A defensible mapping exists in the wild, but it is HPAC's
+call to make, not an implementation detail to settle by taste. Asked, and ruled
+on: it stays undetermined. See "Never assume. Ask." in `AGENTS.md`, and ruling 2
+above.
 
 ## Related
 

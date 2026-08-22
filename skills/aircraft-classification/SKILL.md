@@ -48,6 +48,7 @@ flowchart TD
 | `EN-A` | |
 | `low EN-B` | The B band carries most of the safety signal — do not collapse it |
 | `high EN-B` | |
+| `EN-B` | The reporter gave no band. Published as-is, never widened into one |
 | `EN-C` | |
 | `EN-D` | |
 | `CCC` | Competition class |
@@ -56,6 +57,11 @@ flowchart TD
 The low/high B distinction matters more than anything else in this table. "EN-B"
 alone spans nearly the whole recreational market and tells a reader almost
 nothing.
+
+That is an argument for **asking** for the band — the selection-scoped
+certification question — not for discarding a bare `EN-B` a reporter actually
+gave. Plain `EN-B` is its own class, and the three values never convert into one
+another in either direction.
 
 ### Hang gliders — structural class
 
@@ -68,6 +74,12 @@ HPAC covers both disciplines and a summary must be equally meaningful for each.
 | `double-surface kingposted` |
 | `topless` |
 | `rigid` |
+| `uncertified` |
+
+`uncertified` is the one term both vocabularies share — uncertified hang gliders
+exist. It is the fallback within the hang glider vocabulary, so
+`"topless, uncertified"` is `topless`: the structural class is the more useful
+answer where the reporter gave one.
 
 ### Mini wings and speedwings
 
@@ -110,19 +122,26 @@ whole implementation. Three things about its shape are load-bearing:
 | `EN C`, `en-d`, `CCC` | `EN-C`, `EN-D`, `CCC` |
 | `uncertified`, `not certified`, `prototype` | `uncertified` |
 | `topless`, `rigid`, `single surface`, `kingpost` | the hang glider class |
+| `EN B`, `en-b`, `B`, `low or high B, not sure` | `EN-B` |
+| `uncertified` (either discipline) | `uncertified` |
 | `tandem, high EN-B` | `high EN-B` plus the tandem marker |
 | `mini wing, EN A` | `EN-A` plus the mini wing marker |
-| `EN B`, `LTF 1-2`, `n/a`, `Ozone Rush 6` | `class not determined` |
+| `LTF 1-2`, `n/a`, `Ozone Rush 6` | `class not determined` |
 
 ### What it refuses, on purpose
 
-- **`EN B` with no band**, and an answer naming both bands. The band is the
-  signal; a contradiction is not resolved by picking a side.
 - **LTF and DHV answers.** A different scheme, and how its bands map onto EN
-  bands is HPAC's judgement, not the classifier's. Open question.
+  bands is HPAC's judgement, not the classifier's. Ruled on: undetermined, and a
+  reviewer converts it by hand. Note the contrast with a bare `EN B`, which *is*
+  a value in this vocabulary and is kept.
 - **An EN class on a hang glider.** The vocabularies are scoped by the aircraft
   type, so the paraglider one cannot leak across.
 - **A make or model.** There is no table to look it up in.
+
+Refusing and discarding are different things. An answer that names a value in
+this vocabulary is kept even when it is less precise than the form would like —
+that is the `EN-B` ruling in ADR-0029, and the reason `uncertified` reaches hang
+gliders too.
 
 ### Markers travel with the class
 

@@ -77,6 +77,8 @@ public class AircraftClassifierTests
     [InlineData("topless", AircraftClass.Topless)]
     [InlineData("Topless!", AircraftClass.Topless)]
     [InlineData("rigid", AircraftClass.Rigid)]
+    [InlineData("uncertified", AircraftClass.Uncertified)]
+    [InlineData("not certified", AircraftClass.Uncertified)]
     public void Given_a_hang_glider_certification_answer_When_the_class_is_resolved_Then_it_is_the_structural_class(
         string answer, AircraftClass expected)
     {
@@ -87,8 +89,39 @@ public class AircraftClassifierTests
         classification.Class.ShouldBe(expected);
     }
 
+    [Fact]
+    public void Given_a_hang_glider_answered_uncertified_When_the_class_is_resolved_Then_it_is_uncertified_and_never_an_EN_class()
+    {
+        // Given — uncertified hang gliders exist, and refusing the answer would lose a true one
+        AircraftClass[] enClasses =
+        [
+            AircraftClass.EnA, AircraftClass.LowEnB, AircraftClass.HighEnB,
+            AircraftClass.EnB, AircraftClass.EnC, AircraftClass.EnD, AircraftClass.Ccc,
+        ];
+
+        // When
+        var classification = _classifier.Classify("uncertified", Discipline.HangGliding);
+
+        // Then
+        classification.Class.ShouldBe(AircraftClass.Uncertified);
+        enClasses.ShouldNotContain(classification.Class);
+    }
+
+    [Fact]
+    public void Given_a_hang_glider_that_is_both_uncertified_and_topless_When_it_is_resolved_Then_the_structural_class_wins()
+    {
+        // Given — the structural class is the more useful of the two answers
+
+        // When
+        var classification = _classifier.Classify("topless, uncertified", Discipline.HangGliding);
+
+        // Then
+        classification.Class.ShouldBe(AircraftClass.Topless);
+    }
+
     [Theory]
     [InlineData("EN B (low)")]
+    [InlineData("EN B")]
     [InlineData("EN A")]
     [InlineData("high B")]
     [InlineData("EN D")]
@@ -111,6 +144,7 @@ public class AircraftClassifierTests
     [InlineData("single surface")]
     [InlineData("double surface kingposted")]
     [InlineData("tandem")]
+    [InlineData("uncertified")]
     [InlineData("n/a")]
     [InlineData("EN B")]
     [InlineData("Wills Wing T3")]
@@ -120,7 +154,7 @@ public class AircraftClassifierTests
         AircraftClass[] enClasses =
         [
             AircraftClass.EnA, AircraftClass.LowEnB, AircraftClass.HighEnB,
-            AircraftClass.EnC, AircraftClass.EnD, AircraftClass.Ccc,
+            AircraftClass.EnB, AircraftClass.EnC, AircraftClass.EnD, AircraftClass.Ccc,
         ];
 
         // When
@@ -152,16 +186,33 @@ public class AircraftClassifierTests
         classification.Markers.ShouldBe(AircraftMarker.None);
     }
 
-    [Fact]
-    public void Given_an_EN_B_answer_with_no_band_When_the_class_is_resolved_Then_the_band_is_not_guessed()
+    [Theory]
+    [InlineData("EN B")]
+    [InlineData("en-b")]
+    [InlineData("B")]
+    public void Given_an_EN_B_answer_with_no_band_When_the_class_is_resolved_Then_it_is_plain_EN_B(string answer)
     {
-        // Given — "EN-B" alone spans nearly the whole recreational market
+        // Given — the reporter did answer, and "EN B" is a true answer
 
         // When
-        var classification = _classifier.Classify("EN B", Discipline.Paragliding);
+        var classification = _classifier.Classify(answer, Discipline.Paragliding);
 
-        // Then — there is no plain EN-B in the vocabulary, and nothing invents a band
-        classification.Class.ShouldBe(AircraftClass.NotDetermined);
+        // Then — kept as given, and never widened into a band
+        classification.Class.ShouldBe(AircraftClass.EnB);
+    }
+
+    [Fact]
+    public void Given_a_plain_EN_B_answer_When_the_class_is_resolved_Then_neither_band_is_chosen()
+    {
+        // Given
+        const string answer = "EN B";
+
+        // When
+        var classification = _classifier.Classify(answer, Discipline.Paragliding);
+
+        // Then — the low/high split is the goal for new reports, not something to invent here
+        classification.Class.ShouldNotBe(AircraftClass.LowEnB);
+        classification.Class.ShouldNotBe(AircraftClass.HighEnB);
     }
 
     [Theory]
@@ -366,15 +417,15 @@ public class AircraftClassifierTests
     }
 
     [Fact]
-    public void Given_an_answer_naming_both_bands_When_it_is_resolved_Then_the_contradiction_is_not_resolved_by_picking_one()
+    public void Given_an_answer_naming_both_bands_When_it_is_resolved_Then_it_is_plain_EN_B()
     {
-        // Given
+        // Given — the reporter has not chosen a band, but they have told us it is a B
         const string answer = "low or high B, not sure";
 
         // When
         var classification = _classifier.Classify(answer, Discipline.Paragliding);
 
-        // Then
-        classification.Class.ShouldBe(AircraftClass.NotDetermined);
+        // Then — the B survives; the band is not picked for them
+        classification.Class.ShouldBe(AircraftClass.EnB);
     }
 }

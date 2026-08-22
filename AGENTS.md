@@ -126,6 +126,10 @@ place. See `prompts/README.md`.
 
 ## Current state
 
-The repository is scaffolding and documentation only — there is deliberately no
-application code yet. The work is filed as GitHub issues, grouped into the
-**Foundation**, **Phase 1**, and **Phase 2** milestones. Start there.
+The repository is scaffolding and documentation. The solution builds and the
+test suite runs, but the projects are empty — there is deliberately no feature
+logic yet.
+
+The work is filed as GitHub issues across the **Foundation**, **Phase 1**, and
+**Phase 2** milestones, with dependencies wired so nothing can be picked up out
+of order. Start with an issue that has no open blockers.

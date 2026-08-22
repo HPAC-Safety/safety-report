@@ -19,10 +19,11 @@ in `HpacSafety.Core`.
 
 ## Why the seams exist
 
-Hosting is not yet decided. `IBlobStore` and `IEmailSender` mean that decision
-stays a registration change rather than a rewrite — local development uses the
-filesystem and a logging mailer; production picks S3 and SES, or something else
-entirely.
+Hosting is AWS, so production registers `S3BlobStore` and an SES
+`IEmailSender`; local development uses the filesystem and a logging mailer. The
+seams still earn their keep — swapping a provider stays a registration change
+rather than a rewrite, and the test suite runs against MinIO and the filesystem
+without touching AWS.
 
 `IMemberAuthenticator` exists because `members.hpac.ca` has no OAuth today. When
 HPAC ships it, `OidcAuthenticator` replaces the proxy and nothing outside this

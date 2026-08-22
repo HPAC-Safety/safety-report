@@ -94,9 +94,11 @@ Details in [`docs/localization.md`](docs/localization.md).
 | AI | Anthropic API behind `ISummarizer` / `IPiiAuditor` |
 | Tests | xUnit + Shouldly + Testcontainers; `node:test`; Playwright |
 | Local dev | Docker Compose |
+| Hosting | AWS `ca-central-1` — ECS Fargate, RDS, S3 + CloudFront, SES |
+| Deploys | GitHub Actions via OIDC role assumption; no stored AWS keys |
 
-Hosting is not yet decided. Everything host-shaped sits behind `IBlobStore` and
-`IEmailSender`.
+Storage and email still sit behind `IBlobStore` and `IEmailSender`, so local
+development runs on the filesystem and a logging mailer without touching AWS.
 
 ## Layout
 
@@ -148,12 +150,15 @@ flowchart TD
     wsvc --> blob
 ```
 
-Hosting is not finalised — AWS is the leading candidate, and a Canadian region
-is preferred because reports contain personal information about identifiable
-people. The static hosts must support **URL rewrites** so the pages have clean
-URLs, which rules GitHub Pages out; see
-[`src/web/README.md`](src/web/README.md). Nothing in the code depends on that choice: storage and email sit behind
-`IBlobStore` and `IEmailSender`.
+Hosting is **AWS, `ca-central-1`** — ECS Fargate for the API and Worker, RDS
+PostgreSQL, S3 and CloudFront for the static sites, SES for mail. The Canadian
+region is deliberate: reports contain personal information about identifiable
+people. See [ADR-0009](docs/decisions/ADR-0009-hosting-on-aws.md).
+
+Deploys run from GitHub Actions using **OIDC role assumption — no AWS access
+keys are stored anywhere.** CloudFront Functions provide the URL rewrites the
+static sites need for clean URLs, which is why GitHub Pages was not an option;
+see [`src/web/README.md`](src/web/README.md).
 
 Two deployment rules worth stating up front:
 

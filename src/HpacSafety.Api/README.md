@@ -41,8 +41,8 @@ dotnet user-secrets set "Turnstile:SecretKey" "..."      --project src/HpacSafet
 
 ## Deployment
 
-Hosting is not finalised — AWS is the leading candidate. The mechanics are the
-same regardless.
+Hosting is **AWS `ca-central-1`**: an ECS Fargate service behind an ALB. See
+[ADR-0009](../../docs/decisions/ADR-0009-hosting-on-aws.md).
 
 **Build a container:**
 
@@ -50,8 +50,9 @@ same regardless.
 dotnet publish src/HpacSafety.Api -c Release /t:PublishContainer
 ```
 
-.NET 10 publishes an OCI image without a Dockerfile. Push it to the registry the
-chosen host uses (ECR, GHCR), then deploy as a long-running service.
+.NET 10 publishes an OCI image without a Dockerfile. Push to ECR, then deploy as
+a long-running ECS service. GitHub Actions authenticates by assuming an IAM role
+via OIDC — there are no stored AWS access keys.
 
 **Sizing:** one small instance is ample. HPAC receives on the order of dozens of
 reports a year; this API is sized for availability, not throughput. Run at least
@@ -75,8 +76,10 @@ not automatically at startup, which races when more than one instance boots:
 dotnet ef database update -p src/HpacSafety.Infrastructure -s src/HpacSafety.Api
 ```
 
-**Deploy trigger:** GitHub Actions on merge to `main`, once the hosting decision
-is made. Deployment is a Phase 2 issue.
+**Deploy trigger:** GitHub Actions on merge to `main`. Runtime secrets come from
+AWS Secrets Manager and are injected into the task definition — they are **not**
+GitHub secrets, because the application needs them at runtime rather than at
+deploy time.
 
 **TLS is mandatory.** This endpoint receives personal information and proxies
 member credentials. Terminate at the load balancer and enforce HSTS.

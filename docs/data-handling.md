@@ -67,9 +67,13 @@ part of keeping the promise.
 
 ## Residency
 
-Reports are filed by Canadians about incidents mostly in Canada. Hosting in a
-Canadian region keeps the PIPEDA position simple; if AWS is confirmed,
-`ca-central-1` for database, blobs, and mail.
+Reports are filed by Canadians about incidents mostly in Canada. Hosting is
+**AWS `ca-central-1`** — database, uploads bucket, and mail all in region. See
+[ADR-0009](decisions/ADR-0009-hosting-on-aws.md).
+
+**Do not relocate any of them to a US region** for cost or latency without
+revisiting this document. Region choice is a data-protection decision here, not
+an infrastructure preference.
 
 ## Related
 

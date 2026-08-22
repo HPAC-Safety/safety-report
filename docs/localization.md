@@ -82,7 +82,7 @@ locale files.
 
 Alternatives, if the free tier ever proves too tight: `actions/ai-inference@v3`
 (Copilot CLI, needs a Copilot seat — not free), DeepL (best raw FR quality, adds
-a key), Amazon Translate (sensible if AWS is confirmed).
+a key), Amazon Translate (available in-region now that hosting is AWS).
 
 ## The glossary is not machine-translated
 

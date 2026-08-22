@@ -40,7 +40,7 @@ decision for HPAC rather than an engineering one.
 
 ## Uploads
 
-One photo or video per report, matching the existing form.
+One photo per report, matching the existing form.
 
 - Private bucket, no public object URLs, ever. Admin views use short-lived
   pre-signed GETs.
@@ -51,6 +51,60 @@ One photo or video per report, matching the existing form.
 - Content type is sniffed, not trusted from the client.
 - Media is **never** attached to a published summary. Publishing an image is a
   separate human decision, not in scope.
+
+### How a photo travels
+
+```mermaid
+flowchart LR
+    b["browser"] -->|"pre-signed PUT,<br/>one key, ≤15 min"| orig[("&lt;key&gt;<br/>original, Restricted")]
+    orig --> sniff["sniff the content type"]
+    sniff --> val{"accepted?"}
+    val -->|no| rej["rejected.<br/>no derivative exists"]
+    val -->|yes| strip["strip every<br/>metadata profile"]
+    strip --> der[("stripped/&lt;key&gt;<br/>derivative")]
+    der -->|"pre-signed GET,<br/>≤15 min"| rev["safety officer"]
+```
+
+The original is never modified and never shown. The derivative is the only thing
+a reviewer's browser ever fetches, and it is fetched from storage directly —
+**no route in the API serves blob bytes**, which is asserted by a test that walks
+the live route table.
+
+### Rules a reviewer can rely on
+
+| Rule | Where it is enforced |
+|---|---|
+| A pre-signed URL works for exactly one key | `S3BlobStore` (SigV4) and `FileSystemBlobStore` (HMAC), one shared contract suite |
+| Every URL expires within 15 minutes | `BlobUrlLifetime` in `Core`, called by both adapters |
+| The declared content type is never believed | `MagickNetMediaSniffer`, then `MediaPolicy` |
+| A refused upload produces no derivative | `MediaIngestor`; `MediaIngestOutcome.DerivativeKey` throws on a rejection |
+| Original bytes are retained untouched | asserted in the contract suite against MinIO and the filesystem |
+
+The development store signs its URLs exactly as S3 does, so the guarantee holds
+in the environment contributors actually run. See
+[ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+
+### Formats deliberately not accepted yet
+
+Accepted today: **JPEG, PNG, WebP**. A format is added only once this system can
+strip its metadata — a file whose EXIF cannot be removed has no derivative that
+is safe to show, and refusing the upload is the safe failure. See
+[ADR-0025](decisions/ADR-0025-magick-net-for-exif-stripping.md).
+
+Two gaps are known and are **policy questions for HPAC, not engineering
+decisions**:
+
+- **Video.** The form's wording allows a video. Nothing here can strip metadata
+  from one, so video is refused rather than stored un-stripped. Accepting video
+  means adding a metadata-stripping step for it first.
+- **HEIC.** An iPhone's default camera format, and a common carrier of GPS.
+  Browsers usually transcode on upload, but not always.
+
+### Size limit
+
+`MediaPolicy` takes its maximum as a constructor argument and has no default:
+a size limit nobody chose is a size limit nobody owns. **The number HPAC wants
+has not been decided**, and it belongs in this document once it is.
 
 ## What is sent to a third-party model
 

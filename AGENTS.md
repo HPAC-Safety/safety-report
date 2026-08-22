@@ -113,6 +113,14 @@ ASCII boxes do neither.
   `Given_<scenario>_When_<action>_Then_<assertion>`.
 - JavaScript uses Node's built-in `node:test` with nested `describe` blocks
   producing the same sentence. Playwright is for E2E only.
+- **One contract suite per port, not one per adapter.** Where a port has a
+  production adapter and a development stand-in, the guarantees live in an
+  abstract suite both subclass, so the stand-in cannot quietly be the weaker
+  one. `BlobStoreContractTests` runs unchanged against MinIO and against the
+  filesystem. See [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **Generate binary fixtures at run time.** Do not commit images or other
+  binaries as test data; build them in the test. Nothing to mistake for a real
+  photograph, and nothing to review blind.
 - Coverage is gated in CI: an 80% line / 70% branch floor, plus a ratchet
   against `main`. It is a floor, not a target — the anonymization suite matters
   more than the percentage, and a change that raises the number without pinning
@@ -193,6 +201,16 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   clients, the Anthropic SDK — live in `HpacSafety.Infrastructure` behind
   interfaces declared in `Core`.
 - Static HTML/JS for the UI. No SPA framework, no bundler.
+- **Uploaded media never passes through the API, and no route ever serves blob
+  bytes.** A browser PUTs to a private bucket through a pre-signed URL scoped to
+  one key; a reviewer reads through a short-lived pre-signed GET. Public object
+  URLs do not exist, and a URL that does not expire is a public object URL with
+  extra steps. `docs/data-handling.md` and
+  [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **A file this system cannot strip is a file this system does not accept.**
+  Content types are sniffed, never taken from the client, and the accepted set is
+  closed. Refusing an upload is the safe failure; storing an un-stripped one is
+  not. [ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
 

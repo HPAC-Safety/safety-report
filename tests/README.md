@@ -6,6 +6,7 @@
 |---|---|
 | `HpacSafety.Core.Tests` | Pure unit. No database, no network. |
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
+| `HpacSafety.Infrastructure.Tests` | Adapters. Blob storage against MinIO and the filesystem; EXIF stripping and content sniffing |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
 | `js/` | `node --test` — the coverage gate, i18n, api-client, form logic |
@@ -28,7 +29,8 @@ node --test $(find tests/js -name '*.test.mjs')   # JavaScript units
 npx playwright test                      # E2E (needs the stack running)
 ```
 
-`HpacSafety.Api.Tests` starts a real `postgres:17-alpine` container through
+`HpacSafety.Api.Tests` starts a real `postgres:17-alpine` container and
+`HpacSafety.Infrastructure.Tests` starts a real MinIO one, both through
 Testcontainers, so a Docker daemon has to be running. CI always runs the full
 set.
 
@@ -43,6 +45,14 @@ set.
   and noisy tests get muted. Assert absence of the identifier, and structural
   properties.
 - **Never commit real report content** as a fixture. Invent plausible data.
+- **One contract suite per port, not one per adapter.** Where a port has a
+  production adapter and a development stand-in — `IBlobStore` today — the
+  guarantees live in an abstract suite that both subclass, so the stand-in
+  cannot quietly be the weaker one. See
+  [ADR-0026](../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **Generate binary fixtures at run time** rather than committing them. The
+  EXIF suite builds its own JPEG with GPS tags attached, which is both smaller
+  in the repository and impossible to mistake for a real photograph.
 
 ## Coverage
 

@@ -1,4 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="AWSSDK.S3" />
+    <PackageReference Include="Magick.NET-Q8-AnyCPU" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\HpacSafety.Core\HpacSafety.Core.csproj" />

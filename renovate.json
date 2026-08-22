@@ -119,6 +119,12 @@
 			]
 		},
 		{
+			"groupName": "Magick.NET",
+			"matchPackageNames": [
+				"/^Magick\\.NET/"
+			]
+		},
+		{
 			"groupName": "Microsoft and System",
 			"matchPackageNames": [
 				"/^Microsoft\\./",

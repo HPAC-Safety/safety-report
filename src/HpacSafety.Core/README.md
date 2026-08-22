@@ -27,15 +27,17 @@ Features/
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
                   ReportStatus, InjurySeverity, AircraftClass, Discipline,
                   PilotRating, TimeOfDay, Province,
+                  MediaType, MediaPolicy, MediaValidation,
+                  MediaRejectionReason, MediaIngestor, MediaIngestOutcome,
                   ISummarizer, IPiiAuditor, IAircraftClassifier,
-                  IPublicationChannel
+                  IPublicationChannel, IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
                   QuestionRole, QuestionKey, QuestionType
   Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                   IMemberAuthenticator
   Outbox/         OutboxMessage
-SharedKernel/     Locale, EnumCode, SensitivityTier,
+SharedKernel/     Locale, EnumCode, SensitivityTier, BlobKey, BlobUrlLifetime,
                   DomainRuleViolationException,
                   ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
 ```
@@ -62,6 +64,17 @@ A handful of answers additionally project onto typed properties on `Report`,
 because logic reads them rather than only displaying them. Which answer projects
 where comes from `QuestionRole`, and every role is optional except publication
 consent. See [ADR-0016](../../docs/decisions/ADR-0016-data-driven-question-bank.md).
+
+## Uploaded media
+
+`MediaIngestor` is in `Core` for the same reason the scrub is: the order it runs
+in — sniff, validate, strip, write — is what makes "a reviewer only ever sees
+stripped bytes" true, and it is provable in a plain unit test with no bucket and
+no imaging library. `IMediaSniffer` and `IExifStripper` are ports;
+Magick.NET lives in `Infrastructure`. `BlobKey` is in the shared kernel because
+a key is attacker-influenced and must be parsed, never accepted as a string. See
+[ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
+[ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 
 Two rules this project enforces and nothing downstream may relax:
 

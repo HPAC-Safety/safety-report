@@ -105,6 +105,7 @@ development runs on the filesystem and a logging mailer without touching AWS.
 ## Layout
 
 ```
+init-dev.sh        one-command development environment setup
 AGENTS.md          canonical agent instructions (CLAUDE.md et al. symlink to it)
 Skillfile          declarative skill management
 skills/ agents/    authored skills — sources for `skillfile install`
@@ -172,18 +173,103 @@ Two deployment rules worth stating up front:
 
 ## Getting started
 
+You need `git`. Everything else is installed for you.
+
 ```bash
 git clone git@github.com:HPAC-Safety/safety-report.git
 cd safety-report
-skillfile install     # installs skills into .claude/ (gitignored)
+./init-dev.sh
+```
+
+That is the whole setup. On Windows, run the same command from **Git Bash** —
+the shell that ships with Git for Windows — not from PowerShell or `cmd`.
+
+`init-dev.sh` reports what it found, installs what is missing, and finishes by
+telling you either that you are ready or exactly what is left for you to do:
+
+```
+safety-report — development environment
+  · platform: macos, package manager: brew
+  · required: .NET SDK 10.0.100 (global.json), Node 22 (.github/workflows/ci.yml)
+
+git
+  ✓ git 2.54.0
+
+.NET SDK
+  ✓ .NET SDK 10.0.302 satisfies global.json
+
+Docker
+  ✓ Docker 29.5.2 is running
+  ✓ docker compose plugin
+
+...
+
+summary
+  Ready. Build and test with:
+    dotnet build HpacSafety.slnx
+    dotnet test  HpacSafety.slnx
 ```
 
 Then read [`AGENTS.md`](AGENTS.md) and pick an issue from the Foundation
 milestone.
 
-Windows contributors need `git config core.symlinks true` and Developer Mode, or
-the agent instruction symlinks arrive as plain text files. See
-[`docs/agent-workflow.md`](docs/agent-workflow.md).
+### What it installs
+
+Every version below is read out of the file that already pins it, at the moment
+the script runs. There is no second copy of a version number inside the script,
+so bumping the pinning file is all it takes to change what a new contributor
+gets.
+
+| Tool | Version | Read from | Needed for |
+|---|---|---|---|
+| .NET SDK | `10.0.100` | `global.json` | building and testing everything |
+| Docker | current | — | Testcontainers integration tests, local `compose` |
+| Node.js | 22 or newer | `.github/workflows/ci.yml` | `node:test`, the coverage gate, Playwright |
+| .NET local tools | pinned | `.config/dotnet-tools.json` | the merged coverage report |
+| Python 3 | any | — | *optional* — `tools/extract-typeform.py`, serving `src/web` |
+| `skillfile` | latest | `Skillfile.lock` | *optional* — agent skills into `.claude/` |
+
+Packages come from your platform's own manager — `winget` or Chocolatey on
+Windows, Homebrew on macOS, `apt`, `dnf`, or `pacman` on Linux. The one
+exception is the .NET SDK, which uses Microsoft's official installer because no
+package manager can pin an exact SDK version, and pinning is the point.
+
+### Options
+
+| Command | What it does |
+|---|---|
+| `./init-dev.sh` | Install whatever is missing, then restore the repository |
+| `./init-dev.sh --check` | Report only. Installs nothing, touches nothing, exits non-zero if a required tool is missing |
+| `./init-dev.sh --help` | Usage |
+
+The script is **idempotent** — running it twice does the same thing as running
+it once, and the second run installs nothing. Run it again any time: after a
+`global.json` bump, after a machine rebuild, or when a build fails for a reason
+you cannot place.
+
+### Things the script cannot do for you
+
+These are reported as numbered steps at the end of a run rather than silently
+skipped. The script never claims to have done something it did not do.
+
+- **Start Docker.** Docker Desktop cannot be launched unattended on macOS or
+  Windows. Install completes; starting it once is yours.
+- **Change your `PATH`.** A script cannot alter the shell that invoked it. If
+  the .NET SDK lands in `~/.dotnet`, the script prints the exact `export` line
+  to add to `~/.zshrc` or `~/.bashrc`.
+- **Join you to the `docker` group.** On Linux this takes effect at your next
+  login.
+- **Enable symlinks on Windows.** Windows contributors need
+  `git config core.symlinks true` and Developer Mode, or the agent instruction
+  symlinks arrive as plain text files containing a path. See
+  [`docs/agent-workflow.md`](docs/agent-workflow.md).
+
+If your platform has no package manager the script can use, it says so up front
+and prints where to get one, rather than failing later with
+`command not found`.
+
+Why one shell script rather than PowerShell, a `.sh`/`.ps1` pair, or a
+devcontainer: [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
 
 ## Built by agents
 
@@ -197,6 +283,7 @@ and every tool gets the same setup.
 
 | Topic | Where |
 |---|---|
+| Setting up a machine to build this | [Getting started](#getting-started) |
 | System design | [`docs/architecture.md`](docs/architecture.md) |
 | What the form asks | [`docs/form-spec.md`](docs/form-spec.md) *(generated)* |
 | Redaction policy | [`docs/anonymization-policy.md`](docs/anonymization-policy.md) |

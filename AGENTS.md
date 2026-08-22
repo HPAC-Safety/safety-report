@@ -247,12 +247,25 @@ describes it is worse than no README, because it is believed.
   gitignored.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
+- **A tool version is pinned in exactly one file, and `init-dev.sh` reads it
+  from there.** The .NET SDK lives in `global.json`, the Node major in
+  `.github/workflows/ci.yml`. Never write either number into `init-dev.sh` —
+  a second copy is a copy that will drift, and the drift shows up as a
+  contributor whose local build disagrees with CI for no visible reason. Adding
+  a new prerequisite means adding a probe that reads its pin, not a constant.
+  See [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
+- **`init-dev.sh` never reports success for something it did not do.** Work it
+  cannot complete unattended — starting Docker, changing the caller's `PATH`,
+  a group membership that needs a re-login — is reported as a manual step. A
+  green tick that means "installed, but it will not work until you log out" is
+  worse than no tick, because the next failure looks like a different problem.
 - Do not add `Co-Authored-By` trailers to commits.
 
 ## Where to look
 
 | Question | File |
 |---|---|
+| How do I set up a machine to build this? | `./init-dev.sh`, and `README.md` |
 | What does the whole system do? | `README.md` |
 | What questions does the form ask? | `docs/form-spec.md` |
 | What gets stripped, and how? | `docs/anonymization-policy.md` |

@@ -48,6 +48,15 @@ that fills them in, and exit 0. The reasoning, and the obligation to *replace*
 the skip branch rather than add a second job, is in
 [ADR-0011](../../docs/decisions/ADR-0011-ci-contexts-precede-their-checks.md).
 
+`init-dev.sh` is checked in two of those jobs rather than a job of its own,
+because a new job is a new status-check context and would have to be added to
+`docs/github-ruleset.json` before it could be required. `build` runs
+`shellcheck -s sh` over it — it is POSIX `sh`, not bash, because Windows
+contributors run it under Git Bash. `test` runs `./init-dev.sh --check`, which
+installs nothing and fails if the script has stopped agreeing with the files
+that pin the .NET and Node versions. See
+[ADR-0015](../../docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
+
 ### Fork safety
 
 This repository is public and takes fork pull requests.

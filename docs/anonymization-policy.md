@@ -35,6 +35,71 @@ not silently rewrite.
 Stage 5 exists because translation is another generative step, and a model
 asked to produce fluent French can reintroduce a detail the scrub removed.
 
+## Stage 1 in detail
+
+The deterministic scrub lives in `HpacSafety.Core`, has no dependencies, and is
+the only stage whose behaviour is fully determined. What it does, category by
+category:
+
+| Category | What stage 1 does |
+|---|---|
+| Reporter and pilot names | The structured answers are dropped. The same names found in free text become a **role word** — see below. |
+| Phone, email, address, social handle | Structured answers dropped. Emails, URLs, and phone numbers in the common written formats are stripped from free text. |
+| HPAC member number | Structured answer dropped. In free text, matched on the word — `HPAC #48213`, `member number 48213` — because HPAC publishes no number format and stripping every run of digits would delete altitudes and airspeeds along with it. |
+| Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
+| Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
+| Everything else | Kept, and passed through every stripping rule anyway. |
+
+Matching a name or a place is **case- and accent-insensitive**, and names split
+on hyphens and apostrophes: "Renée" in the name field is found as "Renee" in the
+narrative and the other way round, and "Sarah-Jane" is found as "Sarah". Parts
+shorter than three characters (names) or four (places and aircraft) are not
+matched on their own, so a French narrative keeps its "de" and "la" and a flying
+report keeps the word "air"; the full answer and the surname are matched
+regardless.
+
+Anything removed that has no natural replacement leaves a `[removed]` marker, so
+the sentence stays readable for stage 2 and a reviewer can tell "this was taken
+out" from "the reporter never said".
+
+### A name becomes a role word
+
+A reporter or pilot name found in the narrative is replaced by the role the
+structured field it came from gives that person — **"the pilot"**, **"the
+reporter"** — and not by `[redacted]` or `[name]`.
+
+> Sarah spiralled in from 200 feet → the pilot spiralled in from 200 feet
+
+The scrubbed text still reads as prose, so the stage 2 summary is not degraded by
+a sentence with a hole in it. **When the reporter is the pilot, one role word
+covers both** and it is "the pilot". Role words are per language and are supplied
+to the scrub rather than built into it. See
+[ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
+
+### The region is the province
+
+`Where:` is generalized to the **province**, and nothing finer. There is no other
+region vocabulary in this system: the province comes from the reporter's own
+structured answer, next to the free-text site on the same form.
+
+The scrub never derives a province from a site name. That would be inferring a
+location rather than reading one — the same class of mistake as inferring a
+certification class from a model name. **If no province was answered, the
+location is dropped entirely** rather than guessed at.
+
+### What stage 1 cannot catch
+
+Stage 1 finds an identifier when it matches a pattern, or when the reporter also
+typed it into a structured answer. A launch named **only** in the narrative is
+not something a regular expression can recognise, and no tuning changes that.
+That residual risk is the reason stages 3 and 5 exist and the reason a human
+approves every publication. It is not to be closed by shipping a list of Canadian
+site names — a lookup table of every site in the country is itself a map of where
+every reporter flies.
+
+Over-redaction is the accepted failure mode in the other direction, and it is
+deliberate. See [ADR-0027](decisions/ADR-0027-deterministic-scrub-design.md).
+
 ## Always removed
 
 | Category | Examples |
@@ -94,5 +159,9 @@ Approving one does not implicitly approve the other.
 ## Related
 
 - `prompts/` — the runtime prompts that implement this policy
+- `src/HpacSafety.Core/Features/Anonymization/README.md` — stage 1, the code
+- `tests/HpacSafety.Anonymization.Tests` — the golden-file suite that proves it
+- [ADR-0027](decisions/ADR-0027-deterministic-scrub-design.md),
+  [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md)
 - `docs/aircraft-classification.md`
 - `docs/data-handling.md`

@@ -113,6 +113,14 @@ ASCII boxes do neither.
   `Given_<scenario>_When_<action>_Then_<assertion>`.
 - JavaScript uses Node's built-in `node:test` with nested `describe` blocks
   producing the same sentence. Playwright is for E2E only.
+- **Never commit real report content as a fixture.** Not a real name, a real
+  phone number, a real launch site, a real member number, or a real aircraft
+  brand — invent plausible data. A fixture is committed forever and is read by
+  everyone who clones the repository.
+- **Assert the absence of the identifier, never the exact output text.** A test
+  pinned to a generated sentence breaks on drift, gets muted, and stops
+  protecting anybody. `text.ShouldNotContain("Sarah")` is the assertion that
+  matters.
 - Coverage is gated in CI: an 80% line / 70% branch floor, plus a ratchet
   against `main`. It is a floor, not a target — the anonymization suite matters
   more than the percentage, and a change that raises the number without pinning
@@ -214,6 +222,15 @@ The corollary matters as much: **a pattern that abstracts a variation which does
 not exist is a layer, not a pattern.** If you cannot say what varies, write the
 plain code. And the invariants above are deliberately *closed* — never add an
 extension point that lets a caller opt out of the PII audit or of human review.
+
+**The anonymization chain is the clearest case of that.** Its stages are
+`internal`, the chain is assembled in `DeterministicScrub` and nowhere else, and
+there is no options object, no stage registry, and no callback. Making a stage
+individually configurable would be adding a way to run the pipeline with a stage
+missing, which is the only thing that extension point could ever be used for.
+Do not add one to make a stage easier to unit-test — test the assembled chain,
+because the assembled chain is what runs. See
+[ADR-0027](docs/decisions/ADR-0027-deterministic-scrub-design.md).
 
 ## Documentation is part of the work, not after it
 
@@ -361,6 +378,7 @@ describes it is worse than no README, because it is believed.
 | What does the whole system do? | `README.md` |
 | What questions does the form ask? | `docs/form-spec.md` |
 | What gets stripped, and how? | `docs/anonymization-policy.md` |
+| The code that strips it | `src/HpacSafety.Core/Features/Anonymization/README.md` |
 | The prompts sent to the model at runtime | `prompts/` |
 | How is an aircraft described? | `docs/aircraft-classification.md` |
 | How does login work, and why is it like that? | `docs/authentication.md` |
@@ -376,8 +394,10 @@ describes it is worse than no README, because it is believed.
 ## Current state
 
 The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
-holds the entities, enums, interfaces, and the data-driven question bank, with
-unit tests; `Infrastructure`, `Api`, and `Worker` are still empty.
+holds the entities, enums, interfaces, the data-driven question bank, and the
+deterministic PII scrub — stage 1 of the anonymization pipeline — with unit tests
+and the golden-file suite in `tests/HpacSafety.Anonymization.Tests`;
+`Infrastructure`, `Api`, and `Worker` are still empty.
 
 CI runs on every pull request and on merge to `main`, and its checks are
 required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with

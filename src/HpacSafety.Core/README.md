@@ -16,6 +16,13 @@ here**, and it must be provable in a plain unit test with no database, no
 network, and no model. It is the first line of defence in the anonymization
 pipeline and the only stage that is fully deterministic.
 
+It is not an aspiration:
+[`CoreDependencyTests`](../../tests/HpacSafety.Anonymization.Tests/CoreDependencyTests.cs)
+fails the day this project grows a `PackageReference` or a `ProjectReference`.
+`Features/Anonymization/` has its own
+[README](Features/Anonymization/README.md) — read it before changing anything
+in there.
+
 ## Layout
 
 Organised by **feature**, not by language construct. Each feature owns its
@@ -24,6 +31,9 @@ entities, its enums, and the ports it calls out through — see
 
 ```
 Features/
+  Anonymization/  DeterministicScrub, ScrubRequest, ScrubField, ScrubFieldKind,
+                  ScrubbedReport, ScrubVocabulary, ScrubMarker,
+                  Stages/ (internal — the chain of responsibility)
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
                   ReportStatus, InjurySeverity, AircraftClass, Discipline,
                   PilotRating, TimeOfDay, Province,

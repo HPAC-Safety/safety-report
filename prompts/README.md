@@ -11,7 +11,9 @@ category — they are part of the request, and they ship with the application.
 
 ## Versioning
 
-Filenames carry a version: `summarize.v1.md`, `pii-audit.v1.md`.
+Filenames carry a version: `summarize.v2.md`, `pii-audit.v2.md`. **v2 is
+current**; the v1 files stay because a summary generated under them has to remain
+explicable.
 
 `summaries.prompt_version` and `summaries.model` are stamped on every generated
 row, so any published summary can be traced back to exactly what produced it.
@@ -22,16 +24,28 @@ year must remain explicable.
 
 ## Composition
 
-`redaction-rules.v1.md` is shared text included by both prompts, so the rules
+`redaction-rules.v2.md` is shared text included by both prompts, so the rules
 cannot drift between the summarizer and the auditor. The loader composes:
 
 ```mermaid
 flowchart LR
-    rr["redaction-rules.v1.md"] --> s["summarize.v1.md"]
-    rr --> a["pii-audit.v1.md"]
+    rr["redaction-rules.v2.md"] --> s["summarize.v2.md"]
+    rr --> a["pii-audit.v2.md"]
     s --> call1["stage 2 · summarize"]
     a --> call2["stages 3 and 5 · audit"]
 ```
+
+Each version composes with its own: `summarize.v1.md` includes
+`redaction-rules.v1.md` and always will. A version is a frozen pair, not a file
+that picks up whatever the shared rules say today.
+
+### What changed in v2
+
+The redaction rules now describe **what the deterministic scrub already did** —
+the role words it writes in place of a name, and the `[removed]` marker it leaves
+behind — so the model neither strips "the pilot" as though it were a name nor
+reproduces a marker in a published summary. See
+[ADR-0028](../docs/decisions/ADR-0028-role-words-in-place-of-names.md).
 
 ## Changing these files
 

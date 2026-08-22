@@ -60,7 +60,7 @@ through `ITranslator`.
 | | UI chrome | Question content |
 |---|---|---|
 | Lives in | `locales/*.json`, git-tracked | `question_translations` rows |
-| Translated | In CI, via GitHub Models | At authoring time, via `ITranslator` |
+| Translated | In CI, via the configured provider | At authoring time, via `ITranslator` |
 | Source language | Always English | Whichever the author was working in |
 | Reviewed by | A human, before merge | A human, in the builder, whenever they choose |
 | Covered by the #9 lint | Yes | No — it is data, not a literal |
@@ -89,37 +89,72 @@ about reporter data; question wording contains none. See
 flowchart TD
     A["push to main"] --> B["hash-diff en-CA.json<br/>against fr-CA.meta.json"]
     B --> C{"new or changed keys?"}
-    C -->|no| D["exit 0"]
+    C -->|no| D["exit 0, open nothing"]
     C -->|yes| E["drop keys pinned in glossary.json"]
-    E --> F["one batched GitHub Models call"]
+    E --> F["one batched provider call"]
     F --> G["merge into fr-CA.json,<br/>stamp fr-CA.meta.json"]
-    G --> H["open PR"]
+    G --> H["open a PR"]
     H --> I["human reviews the French"]
 ```
 
-**Provider: GitHub Models**, free tier. The job declares
-`permissions: models: read` and the runner's built-in `GITHUB_TOKEN` already
-carries that scope — no API key, no vendor, no secret to rotate. Free limits are
-around 10 requests/minute; irrelevant when every new key is batched into one
-request per run.
+`.github/workflows/i18n-translate.yml` runs it, on a push to `main` and on
+manual dispatch. `tools/translate-locale.mjs` is the tool; `tools/translator.mjs`
+is the provider adapter.
+
+**Provider: configuration, not a vendor in the code.** ADR-0007 chose GitHub
+Models on the free tier. **GitHub Models was fully retired on 30 July 2026** —
+playground, model catalogue, and inference API alike — so there is no free
+already-authenticated option inside GitHub Actions any more.
+
+`tools/translator.mjs` therefore declares the `ITranslator` port and takes its
+endpoint, model, and key from the workflow. It is the one file to change to swap
+provider, and it names no vendor. **Which provider to configure is still an open
+question** — see [ADR-0022](decisions/ADR-0022-translation-provider-is-configuration.md),
+which lists the candidates and what each one costs in credentials. Until one is
+set the job reports which keys are waiting and changes nothing.
 
 Runtime never calls a translation service: no per-visit latency, no per-view
 cost, no third-party request from a reporter's browser, and the French is
 reviewable in a diff like any other change.
 
 **Change detection is a content hash per key**, not a timestamp and not a
-whole-file diff. An English edit re-translates exactly that key; untouched keys
-are never re-sent, so the French does not churn and review stays small.
+whole-file diff. `locales/fr-CA.meta.json` stores, per key, the SHA-256 of the
+English its French was made from:
+
+```json
+{
+  "form.submit": {
+    "source_hash": "9f86d081…",
+    "provider": "chat-completions:vendor/a-model",
+    "reviewed": false
+  }
+}
+```
+
+An English edit re-translates exactly that key; untouched keys are never re-sent,
+so the French does not churn and review stays small. `reviewed` is **never set by
+the job** — it is the record of what a human has actually read.
 
 **It opens a PR rather than pushing to `main`.** That is not a workaround for the
-ruleset — a human should read the French before it ships. On pull requests CI
-only *verifies* parity and fails on drift; it never generates, because fork PRs
-carry a read-only token and untrusted code must not trigger inference or write
-locale files.
+ruleset — a human should read the French before it ships. One branch,
+`chore/fr-CA-translations`, rebuilt every run, so there is one pull request that
+updates rather than a queue of them.
 
-Alternatives, if the free tier ever proves too tight: `actions/ai-inference@v3`
-(Copilot CLI, needs a Copilot seat — not free), DeepL (best raw FR quality, adds
-a key), Amazon Translate (available in-region now that hosting is AWS).
+**On pull requests CI only *verifies*.** The `i18n` job runs
+`translate-locale.mjs --check`, which reads the three files, constructs no
+translator, and fails on drift. It never generates, because fork PRs carry a
+read-only token and untrusted code must not trigger inference or write locale
+files. `--check` and `--generate` are separate modes and there is no default one.
+
+Two consequences worth knowing before you edit English:
+
+- **Editing `en-CA.json` without regenerating French fails the `i18n` check.**
+  That is intended. Merge it, and the translation workflow opens a pull request
+  with the French in it.
+- **Never hand-edit `fr-CA.json`.** The next run overwrites it. Fix the English,
+  or pin the term in `glossary.json`.
+
+Full detail: [ADR-0021](decisions/ADR-0021-ci-translation-opens-a-pull-request.md).
 
 ## The glossary is not machine-translated
 
@@ -133,6 +168,28 @@ Pinned in `locales/glossary.json` and never overwritten by the translator:
 
 These need HPAC's own official French wording, ideally taken from the existing
 French Typeform. This is the one translation decision a machine must not make.
+
+The file maps a dotted key from `en-CA.json` to its official French. An entry is
+either the French string itself, or an object carrying `fr-CA` plus a note
+saying where the wording came from. Keys beginning `_` are file-level commentary,
+not pins:
+
+```json
+{
+  "_note": "HPAC official French. Never machine-translated. See ADR-0007.",
+  "form.injury.severity.serious": "…",
+  "form.consent.publish": {
+    "fr-CA": "…",
+    "note": "Wording from the French Typeform, 2024."
+  }
+}
+```
+
+A pinned key takes its French from here verbatim, is stamped
+`provider: "glossary", reviewed: true`, and is never put in a translation
+request. Editing the *English* of a pinned key does not change its French — only
+HPAC may say when that wording changes. The `i18n` check fails if `fr-CA.json`
+ever stops matching a pin.
 
 ## Reports and summaries
 
@@ -156,10 +213,16 @@ The translation gets its own PII audit — a model producing fluent French can
 reintroduce a detail the scrub removed. A safety officer approves the pair, side
 by side; approving one does not approve the other.
 
-Note the split: the UI-string job runs inside GitHub Actions where `GITHUB_TOKEN`
-grants free Models access. The worker runs in production where no such token
-exists, so it translates through the Anthropic client it already holds. One
-`ITranslator` interface, two registrations.
+Note the split: the UI-string job runs inside GitHub Actions, against whichever
+provider is configured there. The worker runs in production and translates
+through the Anthropic client it already holds. One `ITranslator` contract, two
+implementations in two runtimes — `tools/translator.mjs` and
+`HpacSafety.Core.SharedKernel.ITranslator` — because they cannot share a type.
+
+(ADR-0007 justified that split by GitHub Models being free inside Actions. That
+reason is gone with the service; the split survives it, because the worker still
+has no Actions token and Actions still should not hold a production runtime
+credential without a deliberate decision. See ADR-0022.)
 
 ## Formatting
 
@@ -169,4 +232,6 @@ follow the resolved locale.
 ## Related
 
 - `docs/decisions/ADR-0007-localization.md`
+- `docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md`
+- `docs/decisions/ADR-0022-translation-provider-is-configuration.md`
 - `docs/anonymization-policy.md`

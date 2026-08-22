@@ -9,6 +9,7 @@ on GitHub-hosted runners.
 |---|---|---|
 | `ci.yml` | pull request, push to `main`, dispatch | Verifying the repository. Its job ids are the required status checks. |
 | `linked-issue.yml` | pull request, including `edited` | One rule: the pull request body closes an issue. |
+| `i18n-translate.yml` | push to `main`, dispatch | Generating `locales/fr-CA.json` and opening a pull request with it |
 | `deploy-api.yml` | CI success on `main`, dispatch | The API container, **and the database schema** |
 | `deploy-worker.yml` | CI success on `main`, dispatch | The Worker container |
 | `deploy-web.yml` | CI success on `main`, dispatch | The public and admin static sites, separately |
@@ -42,9 +43,11 @@ and silently drops it from the required set — the ruleset goes on waiting for 
 name that nothing reports. If you rename one, update
 `docs/github-ruleset.json` and reapply it in the same pull request.
 
-Four jobs — `coverage`, `web`, `e2e`, `i18n` — currently detect that the thing
-they would check has not been written yet, emit a `::notice::` naming the issue
-that fills them in, and exit 0. The reasoning, and the obligation to *replace*
+Three jobs — `coverage`, `web`, `e2e` — currently detect that the thing they
+would check has not been written yet, emit a `::notice::` naming the issue that
+fills them in, and exit 0. `i18n` was the fourth until #10; its translation-parity
+step is real now, and the two lint steps beside it still skip until #8 lands the
+locale files. The reasoning, and the obligation to *replace*
 the skip branch rather than add a second job, is in
 [ADR-0011](../../docs/decisions/ADR-0011-ci-contexts-precede-their-checks.md).
 
@@ -65,8 +68,53 @@ This repository is public and takes fork pull requests.
   code with a write token and repository secrets in scope.
 - No job in `ci.yml` or `linked-issue.yml` reads a secret. Keep it that way;
   anything needing one runs against recorded fixtures.
+- **`ci.yml` never runs inference.** The `i18n` job verifies the locales with
+  `translate-locale.mjs --check`, which constructs no translator. Generation is
+  a separate workflow that runs only on a push to `main`. A fork must not be
+  able to make this repository spend an inference call or write a generated
+  locale file. See [ADR-0021](../../docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md).
 - "Require approval for first-time contributors" stays enabled in Actions
   settings.
+
+## Translating the locales
+
+`i18n-translate.yml` regenerates `locales/fr-CA.json` from `locales/en-CA.json`
+and opens a pull request with the result. It is the counterpart of the `i18n`
+job in `ci.yml`, and the split between them is a security boundary:
+
+```mermaid
+flowchart TD
+    pr["pull_request<br/>(including forks)"] --> chk["ci.yml · i18n<br/>--check · reads files only"]
+    push["push to main"] --> gen["i18n-translate.yml<br/>--generate"]
+    gen --> q{"any key stale?"}
+    q -->|no| stop["exit 0, open nothing"]
+    q -->|yes| call["one batched provider call"]
+    call --> prq["pull request on<br/>chore/fr-CA-translations"]
+    prq --> human["a human reads the French"]
+```
+
+Three things about it that are easy to undo by accident:
+
+- **It never pushes to `main`.** A human reads the French first. The branch is
+  rebuilt and force-pushed every run, so there is one pull request that updates.
+- **It is the only workflow here that may hold an inference credential**, because
+  it is the only one that never runs fork-authored code.
+- **The Node major is read out of `ci.yml`, not written here.** A tool version is
+  pinned in exactly one file — see
+  [ADR-0015](../../docs/decisions/ADR-0015-one-shell-script-for-development-setup.md)
+  and the pinning rule in `AGENTS.md`.
+
+Configuration, all optional, all repository-level:
+
+| Setting | Kind | Without it |
+|---|---|---|
+| `TRANSLATION_PROVIDER`, `TRANSLATION_ENDPOINT`, `TRANSLATION_MODEL` | variables | The job reports which keys are waiting and changes nothing |
+| `TRANSLATION_API_KEY` | secret | Same |
+| `TRANSLATION_PR_TOKEN` | secret | The pull request is opened with `GITHUB_TOKEN`, so **CI does not run on it** and it must be nudged by hand before it can merge |
+
+Which provider to configure is an open decision —
+[ADR-0022](../../docs/decisions/ADR-0022-translation-provider-is-configuration.md).
+GitHub Models, which ADR-0007 named, was retired on 30 July 2026.
 
 ## Deployments
 

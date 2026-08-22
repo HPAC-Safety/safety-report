@@ -186,6 +186,45 @@ writing anything that touches the form, hold on to three things:
 See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
 [`incident-domain-model`](skills/incident-domain-model/SKILL.md) skill.
 
+### The database
+
+`HpacSafety.Infrastructure/Persistence` owns **every table and every migration**,
+including tables whose behaviour lives somewhere else. `Core` never references
+EF Core; a persistence concern reaching into the domain is a bug, not a
+shortcut. Five rules that are not negotiable at the schema level:
+
+- **Restricted text is encrypted by the application before PostgreSQL sees it**,
+  through `IFieldCipher` — declared in `Core`, implemented in `Infrastructure`,
+  bound to a column by a value converter. Never add a field in the Restricted
+  tier that is stored in the clear, and never "temporarily" decrypt one into
+  another column to make a query easier. See
+  [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md).
+- **Domain values are stored as invariant codes**, never as ordinal integers.
+  `high_en_b`, not `3`. A stored code that no longer names a domain value throws
+  rather than defaulting to zero.
+- **Seed data is written by the migration, never with `HasData`.** These rows
+  are edited by administrators after deployment, and `HasData` would turn every
+  one of those edits into a model difference the next migration tries to undo.
+  Seed identifiers are derived from a key, never random. See
+  [ADR-0020](docs/decisions/ADR-0020-seeding-by-migration.md).
+- **No migration ever contains a real name, a real address, or a real
+  allowlist.** The seeded local administrator is `admin@localhost`, it is one
+  row, and it is guarded inside the SQL by the PostgreSQL setting
+  `hpac.seed_development_admin` so that it cannot ride a generated script into
+  production. A guard evaluated in C# is evaluated on the machine that generated
+  the script, which is the wrong machine.
+- **The seeded question bank must reproduce `docs/form-spec.md` exactly**, and a
+  test reads the spec and proves it. Regenerate the spec with
+  `tools/extract-typeform.py`; never edit either side to make the other agree.
+
+Scaffolded migrations are exempt from `CA1062`, `CA1861`, and `IDE0161` in
+`.editorconfig`, because `dotnet ef` writes them and has no option to write them
+differently. That exemption is scoped to `**/Migrations/*.cs` and is not a
+licence to put logic there — the seed data those files call into is ordinary
+code under `Persistence/Seeding`, analysed and measured like everything else.
+
+Detail: [`src/HpacSafety.Infrastructure/Persistence/README.md`](src/HpacSafety.Infrastructure/Persistence/README.md).
+
 ### Code
 
 - .NET 10, file-scoped namespaces, nullable enabled, warnings as errors.
@@ -365,6 +404,7 @@ describes it is worse than no README, because it is believed.
 | How is an aircraft described? | `docs/aircraft-classification.md` |
 | How does login work, and why is it like that? | `docs/authentication.md` |
 | Where does personal data live, and for how long? | `docs/data-handling.md` |
+| What is in the database, and why is it shaped like that? | `src/HpacSafety.Infrastructure/Persistence/README.md` |
 | Colours, type, spacing | `docs/design-system.md` |
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
@@ -375,9 +415,11 @@ describes it is worse than no README, because it is believed.
 
 ## Current state
 
-The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
-holds the entities, enums, interfaces, and the data-driven question bank, with
-unit tests; `Infrastructure`, `Api`, and `Worker` are still empty.
+The repository is scaffolding, documentation, the domain, and the database.
+`HpacSafety.Core` holds the entities, enums, interfaces, and the data-driven
+question bank, with unit tests. `HpacSafety.Infrastructure` holds the EF Core
+model, the initial migration, the seeded question bank, and the field
+encryption. `Api` and `Worker` are still empty.
 
 CI runs on every pull request and on merge to `main`, and its checks are
 required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with

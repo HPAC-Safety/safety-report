@@ -13,6 +13,15 @@ namespace HpacSafety.Core.Features.Reporting;
 public class ReportAircraft
 {
     /// <summary>Creates an aircraft record from what the reporter answered.</summary>
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+    private ReportAircraft()
+    {
+    }
+
     public ReportAircraft(Guid reportId, Discipline discipline, string? manufacturer, string? model, string? certificationAnswer)
     {
         Id = Guid.NewGuid();

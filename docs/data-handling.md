@@ -27,6 +27,31 @@ An answer copies the tier it was given under. Reclassifying a question later
 therefore cannot retroactively downgrade the handling of text a reporter already
 trusted us with.
 
+## How "encrypted at rest" is done
+
+Restricted text is encrypted **by the application**, with AES-256-GCM, before
+PostgreSQL sees it. The key lives in configuration — a throwaway literal in
+`appsettings.Development.json`, a Secrets Manager reference in production — and
+never in the database that holds the ciphertext.
+
+Because the question set is data, contact details are answers rather than
+columns, so the whole of `report_answers.value` is encrypted rather than
+selected rows of it. A value converter runs per value and cannot ask which tier
+a row belongs to, and the tiering above already says the narrative is Restricted
+and a new question is Restricted until someone decides otherwise.
+
+Three consequences, all deliberate:
+
+- Answer text cannot be searched, sorted, or indexed in SQL.
+- The wrong key fails loudly. It never returns plausible-looking rubbish.
+- Losing the key loses the data. Key custody is an operational responsibility.
+
+`admin_users.member_identifier` is deliberately **not** encrypted: it is the
+lookup key at sign-in, it is an administrator's own working identity, and it
+never reaches a published summary.
+
+See [ADR-0019](decisions/ADR-0019-application-side-field-encryption.md).
+
 ## Retention
 
 Raw reports are **retained**, with contact fields column-encrypted and readable
@@ -71,7 +96,12 @@ provable in a plain unit test.
 
 ## Access and audit
 
-Admin access is an allowlist in `admin_users`. Every moderation action — view of
+Admin access is an allowlist in `admin_users`. The initial migration seeds
+**one obviously-fake local administrator**, `admin@localhost`, and only into a
+database that has opted in with the PostgreSQL setting
+`hpac.seed_development_admin`. Unset means no, which is what production is. The
+real safety-officer allowlist is a later issue and will never be a migration —
+see [ADR-0020](decisions/ADR-0020-seeding-by-migration.md). Every moderation action — view of
 a raw report, edit, approval, rejection — is written to `audit_log` with who and
 when. In a non-punitive reporting system, being able to show who saw what is
 part of keeping the promise.

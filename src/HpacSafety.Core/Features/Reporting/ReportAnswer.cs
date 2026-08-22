@@ -11,7 +11,20 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public class ReportAnswer
 {
-    private readonly List<string> _selectedOptionCodes = [];
+    // Not readonly: option codes are a primitive collection, which EF Core
+    // assigns to the backing field rather than adding into an existing list.
+    private List<string> _selectedOptionCodes = [];
+
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private ReportAnswer()
+    {
+    }
+#pragma warning restore CS8618
 
     private ReportAnswer(Guid reportId, Question question, QuestionVersion version, DateTimeOffset at)
     {

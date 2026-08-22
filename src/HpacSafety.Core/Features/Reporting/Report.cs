@@ -25,6 +25,15 @@ public class Report
     private readonly List<Summary> _summaries = [];
 
     /// <summary>Opens a report in the language the reporter is writing in.</summary>
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+    private Report()
+    {
+    }
+
     public Report(Locale language, DateTimeOffset submittedAt)
     {
         Id = Guid.NewGuid();

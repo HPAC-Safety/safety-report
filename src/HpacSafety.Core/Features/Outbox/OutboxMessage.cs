@@ -12,6 +12,17 @@ public class OutboxMessage
     public const int PoisonThreshold = 5;
 
     /// <summary>Queues work against an aggregate.</summary>
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private OutboxMessage()
+    {
+    }
+#pragma warning restore CS8618
+
     public OutboxMessage(Guid aggregateId, string type, string payload, DateTimeOffset occurredAt)
     {
         Id = Guid.NewGuid();

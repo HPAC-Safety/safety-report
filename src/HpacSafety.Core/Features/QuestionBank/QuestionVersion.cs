@@ -18,6 +18,15 @@ public class QuestionVersion
     private readonly List<QuestionOption> _options = [];
     private readonly List<QuestionTranslation> _translations = [];
 
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+    private QuestionVersion()
+    {
+    }
+
     private QuestionVersion(Guid questionId, int versionNumber, QuestionType type, bool isRequired, DateTimeOffset at)
     {
         Id = Guid.NewGuid();

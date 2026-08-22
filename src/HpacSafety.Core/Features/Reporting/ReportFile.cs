@@ -11,6 +11,17 @@ namespace HpacSafety.Core.Features.Reporting;
 public class ReportFile
 {
     /// <summary>Records an upload that has landed in the private bucket.</summary>
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private ReportFile()
+    {
+    }
+#pragma warning restore CS8618
+
     public ReportFile(Guid reportId, string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
     {
         Id = Guid.NewGuid();

@@ -15,6 +15,17 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public class QuestionTranslation
 {
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private QuestionTranslation()
+    {
+    }
+#pragma warning restore CS8618
+
     private QuestionTranslation(
         Guid questionVersionId,
         Locale locale,

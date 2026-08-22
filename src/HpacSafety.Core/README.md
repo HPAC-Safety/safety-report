@@ -36,8 +36,9 @@ Features/
                   IMemberAuthenticator
   Outbox/         OutboxMessage
 SharedKernel/     Locale, EnumCode, SensitivityTier,
-                  DomainRuleViolationException,
-                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
+                  DomainRuleViolationException, FieldDecryptionException,
+                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier,
+                  IFieldCipher
 ```
 
 Namespaces match the folders exactly: `HpacSafety.Core.Features.Reporting`,
@@ -50,6 +51,22 @@ shares, and it is deliberately small — two callers is the bar for adding to it
 
 `Reporting` depends on `QuestionBank`, because an answer is an answer *to a
 question*. That dependency is one way.
+
+`IFieldCipher` is in the shared kernel rather than with a feature because the
+rule it carries belongs to the whole system: Restricted data is encrypted at
+rest (`docs/data-handling.md`). The algorithm, the key, and the wiring into EF
+Core are infrastructure. See
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md).
+
+## One concession to persistence
+
+Every aggregate here carries a **private parameterless constructor**, marked as
+existing for EF Core. The ORM materializes an entity by calling a constructor and
+then setting the mapped properties, and these aggregates have none it can bind.
+
+It is the only concession. Domain code still has to go through the real
+constructor or factory, so no caller can reach a half-built aggregate, and this
+project still references nothing.
 
 ## The question set is data
 

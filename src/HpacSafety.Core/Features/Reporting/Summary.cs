@@ -12,6 +12,17 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public class Summary
 {
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private Summary()
+    {
+    }
+#pragma warning restore CS8618
+
     private Summary(Guid reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
     {
         Id = Guid.NewGuid();

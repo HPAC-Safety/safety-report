@@ -1,0 +1,18 @@
+# Symbols banned in test projects, enforced as a build error by
+# Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030). Wired up in
+# Directory.Build.props, which applies it to every *.Tests project.
+#
+# Format: one entry per line, `<documentation-comment-id>;<message>`.
+# T: type, M: method, P: property. See ADR-0013.
+
+# --- assertions -------------------------------------------------------------
+# Shouldly, always. Its failure messages name the expression under test, which
+# matters when the reader is an agent looking at a CI log rather than a person
+# at a debugger. See docs/testing-conventions.md.
+T:Xunit.Assert;Use Shouldly. value.ShouldBe(expected), not Assert.Equal(expected, value). Should.Throw<T>(...), not Assert.Throws<T>(...). See docs/testing-conventions.md.
+
+# Obvious future candidates, deliberately NOT banned yet because each is its own
+# judgement and none was asked for: System.DateTime.Now / UtcNow and their
+# DateTimeOffset equivalents (inject TimeProvider instead), and
+# System.Threading.Thread.Sleep (await the condition; a sleep is a race the test
+# author lost). Add them when the code that would misuse them exists.

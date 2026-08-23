@@ -17,7 +17,7 @@ public class OutboxMessageTests
     public void Given_a_failed_message_When_the_failure_is_recorded_Then_the_next_attempt_is_delayed()
     {
         // Given
-        var message = new OutboxMessage(Guid.NewGuid(), "summarize", "{}", Now);
+        var message = new OutboxMessage(TinyId.New(), "summarize", "{}", Now);
 
         // When
         message.RecordFailure("timeout", Now);
@@ -32,7 +32,7 @@ public class OutboxMessageTests
     public void Given_repeated_failures_When_the_threshold_is_crossed_Then_the_message_is_set_aside()
     {
         // Given
-        var message = new OutboxMessage(Guid.NewGuid(), "summarize", "{}", Now);
+        var message = new OutboxMessage(TinyId.New(), "summarize", "{}", Now);
 
         // When
         for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
@@ -49,7 +49,7 @@ public class OutboxMessageTests
     public void Given_a_message_When_it_is_processed_Then_the_last_error_is_cleared()
     {
         // Given
-        var message = new OutboxMessage(Guid.NewGuid(), "summarize", "{}", Now);
+        var message = new OutboxMessage(TinyId.New(), "summarize", "{}", Now);
         message.RecordFailure("timeout", Now);
 
         // When

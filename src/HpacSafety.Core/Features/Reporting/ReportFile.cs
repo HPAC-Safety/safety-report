@@ -11,9 +11,20 @@ namespace HpacSafety.Core.Features.Reporting;
 public class ReportFile
 {
     /// <summary>Records an upload that has landed in the private bucket.</summary>
-    public ReportFile(Guid reportId, string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private ReportFile()
     {
-        Id = Guid.NewGuid();
+    }
+#pragma warning restore CS8618
+
+    public ReportFile(TinyId reportId, string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
+    {
+        Id = TinyId.New();
         ReportId = reportId;
         BlobKey = blobKey;
         ContentType = contentType;
@@ -22,10 +33,10 @@ public class ReportFile
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report this file belongs to.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>Key of the original bytes. Restricted.</summary>
     public string BlobKey { get; private init; }

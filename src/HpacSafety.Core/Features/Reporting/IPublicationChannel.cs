@@ -8,7 +8,7 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <param name="ReportId">Which report it summarizes.</param>
 /// <param name="Locale">The language of this text.</param>
 /// <param name="Text">The approved, anonymized summary.</param>
-public sealed record PublishableSummary(Guid ReportId, Locale Locale, string Text);
+public sealed record PublishableSummary(TinyId ReportId, Locale Locale, string Text);
 
 /// <summary>
 /// Somewhere an approved summary goes: the website, and later WhatsApp or

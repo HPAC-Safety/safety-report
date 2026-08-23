@@ -72,6 +72,7 @@ describe('Given a browser advertising fr-CA', () => {
 |---|---|
 | `HpacSafety.Core.Tests` | Pure unit. No database, no network. The deterministic scrub lives here. |
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
+| `HpacSafety.Infrastructure.Tests` | Migrations, mapping, field encryption, and the seeded question bank. Testcontainers Postgres |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
 | `tests/js` | `node --test` for i18n, api-client, form logic |
@@ -79,8 +80,8 @@ describe('Given a browser advertising fr-CA', () => {
 
 ### Integration tests need Docker
 
-`HpacSafety.Api.Tests` starts a real PostgreSQL container through
-Testcontainers, pinned to `postgres:17-alpine` — a database version that moves
+`HpacSafety.Api.Tests` and `HpacSafety.Infrastructure.Tests` start a real
+PostgreSQL container through Testcontainers, pinned to `postgres:17-alpine` — a database version that moves
 underneath the suite is a failure nobody can reproduce.
 
 Those tests carry `[Trait("Category", "Integration")]`, so a machine without a

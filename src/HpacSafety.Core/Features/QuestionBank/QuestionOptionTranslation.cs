@@ -10,15 +10,26 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </summary>
 public class QuestionOptionTranslation
 {
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private QuestionOptionTranslation()
+    {
+    }
+#pragma warning restore CS8618
+
     private QuestionOptionTranslation(
-        Guid questionOptionId,
+        TinyId questionOptionId,
         Locale locale,
         string label,
         bool isSource,
         bool isMachineTranslated,
         DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         QuestionOptionId = questionOptionId;
         Locale = locale;
         Label = string.IsNullOrWhiteSpace(label)
@@ -31,10 +42,10 @@ public class QuestionOptionTranslation
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The option this wording belongs to.</summary>
-    public Guid QuestionOptionId { get; private init; }
+    public TinyId QuestionOptionId { get; private init; }
 
     /// <summary>The locale this wording is in.</summary>
     public Locale Locale { get; private init; }
@@ -55,11 +66,11 @@ public class QuestionOptionTranslation
     public DateTimeOffset UpdatedAt { get; private set; }
 
     internal static QuestionOptionTranslation Authored(
-        Guid optionId, Locale locale, string label, DateTimeOffset at) =>
+        TinyId optionId, Locale locale, string label, DateTimeOffset at) =>
         new(optionId, locale, label, isSource: true, isMachineTranslated: false, at);
 
     internal static QuestionOptionTranslation Generated(
-        Guid optionId, Locale locale, string label, DateTimeOffset at) =>
+        TinyId optionId, Locale locale, string label, DateTimeOffset at) =>
         new(optionId, locale, label, isSource: false, isMachineTranslated: true, at);
 
     /// <summary>Corrects generated wording by hand.</summary>

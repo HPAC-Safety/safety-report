@@ -6,6 +6,7 @@
 |---|---|
 | `HpacSafety.Core.Tests` | Pure unit. No database, no network. |
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
+| `HpacSafety.Infrastructure.Tests` | The database: migrations, mapping, encryption, seeding. Testcontainers Postgres |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
 | `js/` | `node --test` — the coverage gate, i18n, api-client, form logic |
@@ -28,9 +29,15 @@ node --test $(find tests/js -name '*.test.mjs')   # JavaScript units
 npx playwright test                      # E2E (needs the stack running)
 ```
 
-`HpacSafety.Api.Tests` starts a real `postgres:17-alpine` container through
-Testcontainers, so a Docker daemon has to be running. CI always runs the full
-set.
+`HpacSafety.Api.Tests` and `HpacSafety.Infrastructure.Tests` start a real
+`postgres:17-alpine` container through Testcontainers, so a Docker daemon has to
+be running. CI always runs the full set.
+
+`HpacSafety.Infrastructure.Tests` shares one container across the suite and
+creates a fresh database per test, so nothing one test writes is visible to
+another. Its non-integration half needs no Docker at all: it reads
+`docs/form-spec.md` and asserts the seeded question bank reproduces every field
+in it.
 
 ## Conventions
 

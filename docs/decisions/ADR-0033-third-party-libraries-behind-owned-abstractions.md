@@ -76,15 +76,22 @@ In scope: **production dependencies that reach outside the process.** SDK
 clients, HTTP clients, blob storage, image processing, translation providers,
 mail, authentication providers, bot verification.
 
+**`HttpClient` is a named example, not a special case.** It looks like the BCL
+— it ships in `System.Net.Http` — but a socket open to a specific host on the
+public internet is a third party's network stack wearing a BCL namespace, not
+something this repository owns. Production code does not construct or call
+`HttpClient` directly; it goes behind a port at the boundary being called, the
+same as any other SDK client.
+
 Not in scope:
 
 - **Test-only libraries** — xunit, Shouldly, Testcontainers, FakeItEasy. Tests
   are the call sites that get rewritten when the tool changes; a port would add
   indirection to the one place we want to read literally. Shouldly is pinned by
   an analyzer instead (ADR-0013), which is the honest form of that commitment.
-- **The .NET BCL.** `System.Text.Json`, `HttpClient`, `TimeProvider`, `ILogger`
-  and the rest are the platform. `.NET` is not a swappable dependency; wrapping
-  it is the generic wrapper layer rejected below.
+- **The .NET BCL.** `System.Text.Json`, `TimeProvider`, `ILogger` and the rest
+  are the platform. `.NET` is not a swappable dependency; wrapping it is the
+  generic wrapper layer rejected below.
 
 The line is not "is it a NuGet package". It is: does this dependency belong to
 a third party whose product decisions we do not control, and does production
@@ -106,16 +113,19 @@ abstraction is decorative) or being replaced by a growing set of
 `GetReportsByStatusAndProvincePaged` methods (in which case every new query is
 a new method on an interface in `Core`).
 
-So EF Core is named in `Core` entities and configuration and used directly in
-`Infrastructure`. This is a reasoned exemption, not a carve-out: it applies
-because the two conditions above hold — the library already *is* the
-abstraction, and interposing another one destroys its primary value. Any future
-library meeting both tests can argue for the same exemption in its own ADR. No
-other library is exempt today.
+So EF Core's SDK types — `DbContext`, `DbSet<T>`, its mapping attributes, its
+fluent configuration — live in `Infrastructure`'s configuration layer, the same
+place every other adapter lives. **`Core` takes no dependency on EF Core, the
+way it takes none on anything else** — the exemption is from writing a
+repository interface around it, not from the rule that `Core` depends on
+nothing. This is a reasoned exemption, not a carve-out: it applies because the
+two conditions above hold — the library already *is* the abstraction, and
+interposing another one destroys its primary value. Any future library meeting
+both tests can argue for the same exemption in its own ADR. No other library is
+exempt today.
 
-`Core` still does not reference EF Core packages, and the invariants stay in
-the aggregates rather than in query code. That is ADR-0018 and the `ddd` skill,
-unchanged by this decision.
+The invariants stay in the aggregates rather than in query code. That is
+ADR-0018 and the `ddd` skill, unchanged by this decision.
 
 ### Instances that already follow the rule
 
@@ -163,12 +173,16 @@ method per query. It also encourages loading aggregates to filter them in
 memory, which is a correctness and cost problem rather than a style one.
 
 **A generic wrapper layer over everything, including the BCL** — our own
-`IClock`, `IJsonSerializer`, `IHttpClient`, `IFileSystem`. Maximal purity and
-maximal cost. `TimeProvider` and `ILogger` are already abstractions, shipped and
-maintained by the platform, and re-declaring them in `Core` produces a second
-vocabulary a reader must learn with nothing behind it. It is the "layer, not a
-pattern" failure applied at scale, and it would make the real ports harder to
-find by burying them among ceremonial ones.
+`IClock`, `IJsonSerializer`, a pass-through `IHttpClient` that mirrors
+`HttpClient`'s own surface, `IFileSystem`. Maximal purity and maximal cost.
+`TimeProvider` and `ILogger` are already abstractions, shipped and maintained by
+the platform, and re-declaring them in `Core` produces a second vocabulary a
+reader must learn with nothing behind it. It is the "layer, not a pattern"
+failure applied at scale, and it would make the real ports harder to find by
+burying them among ceremonial ones. This is not in tension with `HttpClient`
+being in scope above: the port at an HTTP boundary is shaped by what the vendor
+does — `ITurnstileVerifier`, not a transport-shaped `IHttpClient` — and
+`HttpClient` itself stays an implementation detail inside that adapter.
 
 ## Consequences
 

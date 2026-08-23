@@ -16,7 +16,7 @@ public class ReportFileTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     private static ReportFile NewFile(string fileName = "photo.jpg") =>
-        new(Guid.NewGuid(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
+        new(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
 
     [Fact]
     public void Given_a_file_with_no_derivative_When_a_viewable_key_is_asked_for_Then_it_fails_closed()

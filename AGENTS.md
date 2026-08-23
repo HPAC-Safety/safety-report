@@ -32,19 +32,18 @@ If an instruction appears to require it, stop and raise the conflict.
    phone numbers, no email addresses, no HPAC member numbers, no URLs, no
    specific launch/landing site names, and no aircraft make or model.
 2. **Aircraft are published as a certification class, never a brand.** "a high
-   EN-B glider", not "an Ozone Rush 6". The class comes from the reporter's own
-   answer on the form and nowhere else — an AI must never infer or guess it, and
-   there is no model-to-class lookup table. Not from the model name, not from
-   the narrative, not from the pilot's rating, and not from a table built by
-   reading a manufacturer's website. An answer that does not normalize is
-   **`class not determined`** — a valid outcome a reviewer may correct by hand,
-   never a guess and never a default. Refusing to guess is not licence to throw
-   an answer away, either: a reporter who wrote "EN B" said EN B, and plain
-   `EN-B` publishes as given rather than being widened into a band.
-   `IAircraftClassifier` is deterministic and **synchronous**, so an
-   implementation cannot quietly become a model call. See
+   EN-B glider", not "an Ozone Rush 6". `HpacSafety.Core` never classifies,
+   normalizes, or otherwise mutates `ReportAircraft.CertificationAnswer` — it
+   stores exactly what the reporter typed. The summarizer determines the
+   published class from that verbatim answer at summarization time, and the
+   prompt it is sent (`prompts/summarize.v1.md`, composed with
+   `prompts/redaction-rules.v1.md`) is the only place the certification
+   vocabulary and the "never guess, say so if it does not resolve" rule are
+   enforced — not a deterministic classifier in `Core`. The same prompt tells
+   the model **never** to state a manufacturer or model, even though those
+   fields are collected and retained for HPAC's own trend analysis. See
    `docs/aircraft-classification.md`,
-   [ADR-0029](docs/decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md),
+   [ADR-0031](docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md),
    and the [`aircraft-classification`](skills/aircraft-classification/SKILL.md)
    skill.
 3. **Nothing is published without human approval.** There is no code path from

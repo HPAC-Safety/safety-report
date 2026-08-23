@@ -16,7 +16,7 @@ public class ReportRecordTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_an_aircraft_When_it_is_added_Then_its_class_is_not_determined_until_something_normalizes_it()
+    public void Given_an_aircraft_When_it_is_added_Then_the_reporters_answer_is_stored_verbatim()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -24,24 +24,11 @@ public class ReportRecordTests
         // When
         var aircraft = report.AddAircraft(Discipline.Paragliding, "Ozone", "Rush 6", "EN B (high)");
 
-        // Then — nothing infers a class from a model name
-        aircraft.Class.ShouldBe(AircraftClass.NotDetermined);
+        // Then — Core stores exactly what the reporter answered; nothing
+        // normalizes or classifies it here. See docs/aircraft-classification.md.
         aircraft.Manufacturer.ShouldBe("Ozone");
+        aircraft.Model.ShouldBe("Rush 6");
         aircraft.CertificationAnswer.ShouldBe("EN B (high)");
-    }
-
-    [Fact]
-    public void Given_a_reporters_certification_answer_When_it_is_normalized_Then_the_class_is_recorded()
-    {
-        // Given
-        var report = new Report(Locale.EnCa, Now);
-        var aircraft = report.AddAircraft(Discipline.Paragliding, "Ozone", "Rush 6", "high B");
-
-        // When
-        aircraft.Classify(AircraftClass.HighEnB);
-
-        // Then
-        aircraft.Class.ShouldBe(AircraftClass.HighEnB);
         report.Aircraft.Count.ShouldBe(1);
     }
 

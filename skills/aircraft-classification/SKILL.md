@@ -1,6 +1,6 @@
 ---
 name: aircraft-classification
-description: How HPAC occurrence reports describe an aircraft without naming it — paraglider EN classes and bands, hang glider structural classes, and normalizing the reporter's own certification answer. Use when working on IAircraftClassifier, summarization prompts, or the aircraft fields on the report form.
+description: How HPAC occurrence reports describe an aircraft without naming it — paraglider EN classes and bands, hang glider structural classes, and normalizing the reporter's own certification answer. Use when working on the summarization prompts, ReportAircraft, or the aircraft fields on the report form.
 ---
 
 # Describing an aircraft without identifying it
@@ -27,16 +27,25 @@ That is a deliberate simplification, and it is the safer design:
 - A stale or wrong table row publishes a confident, wrong, permanent fact about
   a real accident.
 
-**An AI never infers the class either.** Not from the model name, not from the
-narrative, not from the pilot's rating. If the reporter's answer cannot be
-normalized to the vocabulary below, the outcome is `class not determined` — a
-perfectly acceptable result that a reviewer can correct by hand.
+**Nothing infers the class from the model name, the narrative, or the pilot's
+rating either.** The only input is the reporter's own certification answer. If
+it cannot be normalized to the vocabulary below, the outcome is "an aircraft" —
+a perfectly acceptable result that a reviewer can name by hand before
+publication.
+
+`HpacSafety.Core` does not do this normalization. `ReportAircraft` stores the
+reporter's certification answer verbatim, the same as every other answer on
+the form — no code in `Core` reads it, interprets it, or writes a derived class
+anywhere. The summarizer determines the class from that raw text at
+summarization time, under the instructions in `prompts/summarize.v1.md`,
+composed with the aircraft-identity rule in `prompts/redaction-rules.v1.md`.
+See [ADR-0031](../../docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
 
 ```mermaid
 flowchart TD
-    A["reporter's 'Certification:' answer"] --> B{"normalizes to<br/>the vocabulary?"}
-    B -->|yes| C["publish that class"]
-    B -->|no, or blank| D["'class not determined'<br/>reviewer may correct"]
+    A["reporter's 'Certification:' answer<br/>stored verbatim in Core"] --> B{"summarizer:<br/>normalizes to<br/>the vocabulary?"}
+    B -->|yes| C["state that class<br/>in the summary"]
+    B -->|no, or blank| D["'an aircraft'<br/>reviewer may name it by hand"]
 ```
 
 ## Vocabulary
@@ -96,21 +105,20 @@ glider` — alongside the class where one exists.
 The Typeform collects `Certification:` as free text, so today's answers vary:
 `"EN B"`, `"low B"`, `"LTF 1-2"`, `"B (high)"`, `"topless"`, `"n/a"`.
 
-`IAircraftClassifier` normalizes that string against the vocabulary — case,
-punctuation, and common spellings — and returns the class or the unknown state.
-It never returns a guess.
+The summarizer normalizes that string against the vocabulary — case,
+punctuation, and common spellings — and states the class or says nothing about
+it. It never states a guess. Two things about this are load-bearing, and both
+are prompt instructions rather than code, per ADR-0031:
 
-`VocabularyAircraftClassifier` in `HpacSafety.Core.Features.Reporting` is the
-whole implementation. Three things about its shape are load-bearing:
-
-- **It is synchronous.** An implementation that had to await something would be
-  reaching for a model or a lookup service, and both are forbidden. The
-  signature is where that rule is enforced, not a comment. See ADR-0029.
-- **It reads two inputs only** — the reporter's verbatim answer and the aircraft
-  type they chose. Not the make, not the model, not the narrative, not the
-  pilot's rating.
-- **It is total.** Every input yields a class or `NotDetermined`. There is no
-  exception path and no default class.
+- **It reads two inputs only** — the reporter's verbatim certification answer
+  and the aircraft type they chose. Not the make, not the model, not the
+  narrative, not the pilot's rating. Manufacturer and model are told to the
+  model only so it can recognise and redact them if they leak into the
+  narrative — never as a source for the class.
+- **It is meant to be total.** Every certification answer should resolve to a
+  class or to "an aircraft" — never silence about the aircraft and never an
+  invented class. The redaction rules and the PII audit stage are the backstop
+  if a summary states one it should not have.
 
 ### What it recognises
 
@@ -128,56 +136,56 @@ whole implementation. Three things about its shape are load-bearing:
 | `mini wing, EN A` | `EN-A` plus the mini wing marker |
 | `LTF 1-2`, `n/a`, `Ozone Rush 6` | `class not determined` |
 
-### What it refuses, on purpose
+### What the prompt refuses to state a class for, on purpose
 
 - **LTF and DHV answers.** A different scheme, and how its bands map onto EN
-  bands is HPAC's judgement, not the classifier's. Ruled on: undetermined, and a
-  reviewer converts it by hand. Note the contrast with a bare `EN B`, which *is*
+  bands is HPAC's judgement, not the model's. Ruled on: unresolved, and a
+  reviewer names it by hand. Note the contrast with a bare `EN B`, which *is*
   a value in this vocabulary and is kept.
 - **An EN class on a hang glider.** The vocabularies are scoped by the aircraft
   type, so the paraglider one cannot leak across.
-- **A make or model.** There is no table to look it up in.
-- **A bare letter that never named a certification.** Normalizing an apostrophe
-  or a foreign word can produce a stray token that happens to be one character
-  long — `"I'd"` becomes the tokens `"i"` and `"d"`; ordinary prose is full of
-  the article `"a"`. `ReadEnLetter` only reads a bare `a`/`b`/`c`/`d` as the EN
-  letter when it is the whole answer, or when a certification word (`en`,
-  `high`, `low`) sits next to it — skipping a numeric token in between, so `"EN
-  926 A"` still resolves. Found by independent review; see ADR-0029, "4. A bare
-  letter only counts in a certification-shaped position", before touching this
-  method again.
+- **A make or model.** There is no table to look it up in, and stating one is
+  forbidden by the redaction rules regardless of where it came from.
+- **A stray letter that never named a certification.** Ordinary prose is full of
+  the article "a", a contraction can split into a bare letter ("I'd" → "i",
+  "d"), and a foreign sentence can contain one by accident ("c'est un bon
+  jour"). A bare `a`/`b`/`c`/`d` only names an EN letter when it is the whole
+  answer, or when a certification word (`en`, `high`, `low`) sits next to it —
+  the same rule `docs/aircraft-classification.md` and
+  `prompts/summarize.v1.md` describe.
 
 Refusing and discarding are different things. An answer that names a value in
 this vocabulary is kept even when it is less precise than the form would like —
-that is the `EN-B` ruling in ADR-0029, and the reason `uncertified` reaches hang
+that is why plain `EN-B` publishes as given, and why `uncertified` reaches hang
 gliders too. But a value has to actually be *named* — proximity to a
 certification word, not mere presence anywhere in the sentence.
 
 ### Markers travel with the class
 
-A tandem is still a high EN-B. The result is an `AircraftClassification` — a
-class plus `AircraftMarker` flags — rendered as invariant codes such as
-`["tandem", "high_en_b"]`. The `tandem paraglider`, `tandem hang glider`,
-`mini wing` and `speedwing` members of `AircraftClass` stand in as the class
-only when no certification class was determined. See ADR-0030.
+A tandem is still a high EN-B. The summary states both: "a tandem, high EN-B
+glider". `tandem paraglider`, `tandem hang glider`, `mini wing`, and
+`speedwing` are stated on their own only when no certification class resolves
+alongside them.
 
 ### If you are adding to the vocabulary
 
-Add the answer shape and its expected class to
-`tests/HpacSafety.Core.Tests/AircraftClassifierTests.cs` first, watch it fail,
-then add the phrase. Anything that cannot be written as "this exact answer means
-this exact class" is not a normalization — it is an inference, and it does not
-belong here.
+Update `prompts/summarize.v1.md` and `docs/aircraft-classification.md` together,
+and add the answer shape to whatever golden-file suite covers the summarizer
+(`tests/HpacSafety.Anonymization.Tests`, once #20 lands). Anything that cannot
+be written as "this exact answer means this exact class" is not a
+normalization — it is an inference, and the model must not attempt it either.
 
 **Preferred fix at the source:** the new form should ask for certification as a
 *selection* from the vocabulary above, scoped to the aircraft type the reporter
 already chose, with a free-text escape hatch. That turns normalization from a
 parsing problem into a validation problem, and every future report arrives clean.
-Free-text normalization still has to exist for the historical shape of the
-question.
+Free-text interpretation by the summarizer still has to exist for the historical
+shape of the question.
 
 ## Related
 
+- `prompts/summarize.v1.md` — where the class is actually determined
 - `prompts/redaction-rules.v1.md` — the runtime redaction rules
 - `docs/aircraft-classification.md` — the policy
+- [ADR-0031](../../docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md) — why this moved out of `Core`
 - `docs/form-spec.md` — the aircraft fields as the reporter sees them

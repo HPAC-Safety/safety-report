@@ -21,8 +21,14 @@ This is deliberate:
   table is a permanent maintenance burden that is always slightly out of date.
 - A stale row publishes a confident, wrong, permanent fact about a real accident.
 
-An AI never infers the class either. If the answer cannot be normalized,
-the result is `class not determined`, which a reviewer may correct by hand.
+**`HpacSafety.Core` stores the reporter's certification answer verbatim and
+does nothing else with it.** `ReportAircraft.CertificationAnswer` is exactly
+what the reporter typed — no normalization, no lookup, no classification —
+the same as every other answer on the form. Determining the published class is
+work the summarizer does at summarization time, from that raw text, under an
+explicit prompt instruction: state a class only when the answer names one in
+the vocabulary below, and write "an aircraft" rather than guess when it does
+not. See [ADR-0031](decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
 
 ## Vocabulary
 
@@ -51,14 +57,16 @@ the wing carries one.
 
 Today's Typeform collects certification as free text, so real answers vary:
 `"EN B"`, `"low B"`, `"LTF 1-2"`, `"B (high)"`, `"topless"`, `"n/a"`.
-`IAircraftClassifier` normalizes against the vocabulary and returns either a
-class or the unknown state — never a guess. `VocabularyAircraftClassifier` in
-`HpacSafety.Core` is the whole of it: deterministic, synchronous, offline, and
-reading exactly two inputs — the reporter's verbatim answer and the aircraft
-type they chose. See [ADR-0029](decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md).
+`ReportAircraft.CertificationAnswer` in `HpacSafety.Core` stores that text
+exactly as given — no normalization happens in `Core`. The summarizer reads
+the raw text at summarization time and states a class only when the answer
+names one in the vocabulary below — never a guess. See
+[ADR-0031](decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
 
-Case, punctuation, and spacing are irrelevant: `"EN-B (low)"`, `"en_b, low"` and
-`"  LOW   B "` are the same answer.
+The table below is what `prompts/summarize.v1.md` and
+`prompts/redaction-rules.v1.md` instruct the model to do with case, punctuation,
+and spacing variation: `"EN-B (low)"`, `"en_b, low"` and `"  LOW   B "` are the
+same answer.
 
 | The reporter wrote | It normalizes to |
 |---|---|
@@ -78,14 +86,17 @@ Case, punctuation, and spacing are irrelevant: `"EN-B (low)"`, `"en_b, low"` and
 ### What it refuses, on purpose
 
 - **LTF and DHV answers.** A different certification scheme. How its bands map
-  onto EN bands is HPAC's judgement to make, not the classifier's, and
-  `"LTF 1-2"` sits inside the B band without saying where. Ruled on: it stays undetermined, and a
-  reviewer converts it by hand, on the record.
+  onto EN bands is HPAC's judgement to make, not the model's, and
+  `"LTF 1-2"` sits inside the B band without saying where. Ruled on: it stays
+  undetermined ("an aircraft"), and a reviewer states the class by hand in the
+  summary, on the record.
 - **An EN class on a hang glider.** Hang gliders are not EN-rated. The two
   vocabularies are scoped by the aircraft type the reporter chose, so the
   paraglider one cannot leak across.
 - **A make or model.** `"Ozone Rush 6"` in the certification field normalizes to
-  nothing, because there is no table to look it up in.
+  nothing, because there is no table to look it up in — and the redaction rules
+  separately forbid the model from ever naming a manufacturer or model in
+  published output, whether or not it appears in the certification answer.
 - **A stray letter in prose that never named a certification.** `"it's a really
   nice wing"`, `"c'est un bon jour"` — a bare `a`/`b`/`c`/`d` only counts as an
   EN letter when it is the whole answer or sits next to a certification word
@@ -94,27 +105,26 @@ Case, punctuation, and spacing are irrelevant: `"EN-B (low)"`, `"en_b, low"` and
 
 What it does **not** refuse is a bare `EN-B`. Refusing a true answer is its own
 kind of error: the reporter answered, and `EN-B` is in the vocabulary. It is
-kept as given and never widened into a band. See
-[ADR-0029](decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md),
-"Four revisions".
+kept as given and never widened into a band.
 
 ### Markers travel with the class
 
-A tandem is still a high EN-B, and a mini wing may hold an EN class of its own,
-so the result is a class *plus* markers — `AircraftClassification`, rendered as
-invariant codes like `["tandem", "high_en_b"]`. The `tandem paraglider`,
-`tandem hang glider`, `mini wing` and `speedwing` members of `AircraftClass`
-stand in as the class only when no certification class was determined. See
-[ADR-0030](decisions/ADR-0030-classification-carries-markers-with-the-class.md).
+A tandem is still a high EN-B, and a mini wing may hold an EN class of its own.
+The summary states both — "a tandem, high EN-B glider" — rather than the marker
+standing in for the class or the class crowding the marker out. `tandem
+paraglider`, `tandem hang glider`, `mini wing`, and `speedwing` are stated on
+their own only when no certification class could be determined alongside them.
 
 **Fix it at the source:** the new form should ask for certification as a
 selection scoped to the aircraft type already chosen, with a free-text escape
 hatch. That turns parsing into validation and every future report arrives clean.
-Free-text normalization still has to exist for the historical shape of the
-question.
+Free-text interpretation by the summarizer still has to happen for the
+historical shape of the question.
 
 ## Related
 
+- `prompts/summarize.v1.md`, `prompts/redaction-rules.v1.md` — where this is enforced at runtime
+- [ADR-0031](decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md)
 - `skills/aircraft-classification/SKILL.md`
 - `docs/anonymization-policy.md`
 - `docs/form-spec.md`

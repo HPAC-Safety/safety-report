@@ -1,6 +1,6 @@
 # ADR-0029: Aircraft classification is deterministic, synchronous, and refuses to guess
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0031](ADR-0031-classification-moves-to-the-summarization-prompt.md)
 **Date:** 2026-08-22
 **Revised:** 2026-08-22 — three questions raised with HPAC were ruled on, and an
 independent review found a false-positive letter match; see "Four revisions, and

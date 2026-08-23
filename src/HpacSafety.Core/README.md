@@ -16,14 +16,14 @@ here**, and it must be provable in a plain unit test with no database, no
 network, and no model. It is the first line of defence in the anonymization
 pipeline and the only stage that is fully deterministic.
 
-`VocabularyAircraftClassifier` is here for the same reason. It turns the
-reporter's own certification answer into the class a summary is published with,
-and it is deterministic, synchronous, and offline on purpose — an implementation
-that could await something could call a model, and inferring an aircraft class
-is exactly what invariant 2 forbids. Where an answer does not resolve, the
-result is `NotDetermined`, which a reviewer corrects by hand. See
-[ADR-0029](../../docs/decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md)
-and [ADR-0030](../../docs/decisions/ADR-0030-classification-carries-markers-with-the-class.md).
+That same rule is why `ReportAircraft` does **not** classify the reporter's
+certification answer. Every answer on the form, aircraft certification
+included, is stored here exactly as submitted and nothing in `Core`
+normalizes, infers, or otherwise derives a second value from it. Turning a raw
+certification answer into a publishable class is the summarizer's job, done at
+summarization time under a versioned prompt in `prompts/`, not a `Core`
+concern. See
+[ADR-0031](../../docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
 
 ## Layout
 
@@ -34,11 +34,9 @@ entities, its enums, and the ports it calls out through — see
 ```
 Features/
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
-                  ReportStatus, InjurySeverity, AircraftClass, AircraftMarker,
-                  AircraftClassification, Discipline, PilotRating, TimeOfDay,
-                  Province,
-                  ISummarizer, IPiiAuditor, IAircraftClassifier,
-                  VocabularyAircraftClassifier, IPublicationChannel
+                  ReportStatus, InjurySeverity, Discipline, PilotRating,
+                  TimeOfDay, Province,
+                  ISummarizer, IPiiAuditor, IPublicationChannel
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
                   QuestionRole, QuestionKey, QuestionType

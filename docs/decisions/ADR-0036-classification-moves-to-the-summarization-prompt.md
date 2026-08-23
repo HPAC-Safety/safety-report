@@ -1,4 +1,4 @@
-# ADR-0031: Aircraft classification moves to the summarization prompt
+# ADR-0036: Aircraft classification moves to the summarization prompt
 
 **Status:** Accepted
 **Date:** 2026-08-22
@@ -84,7 +84,7 @@ flowchart LR
         r1["reporter answer"] -->|"stored verbatim"| ca1["CertificationAnswer"]
         r1 -->|"VocabularyAircraftClassifier<br/>(Core, deterministic)"| cl1["Class + Markers<br/>(second field)"]
     end
-    subgraph after["ADR-0031"]
+    subgraph after["ADR-0036"]
         r2["reporter answer"] -->|"stored verbatim, only field"| ca2["CertificationAnswer"]
         ca2 -->|"summarize.v1.md + redaction-rules.v1.md<br/>(Worker, at summarization time)"| pub["published class,<br/>in the summary text"]
     end
@@ -111,9 +111,10 @@ flowchart LR
   text directly, the same way they would correct any other sentence in it —
   there is no separate "reclassify" action to build.
 - `AircraftClass = 8` (`EnB`) and the rest of the enum's stored values are
-  gone; nothing in the schema referenced them (`Class`/`Markers` were never
-  persisted — `Infrastructure`/EF Core do not exist yet, see #7), so this is
-  not a migration.
+  gone. When `Infrastructure` landed on `main`, its undeployed initial migration
+  briefly included the `Class` column; this pull request removes that column
+  from the initial migration in place. `Markers` was never persisted, and no
+  follow-up migration is needed.
 
 ## Alternatives rejected
 

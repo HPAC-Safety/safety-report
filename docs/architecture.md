@@ -91,6 +91,28 @@ handful of genuinely cross-cutting types in `SharedKernel/`. Each feature owns
 its entities, its enums, and the ports it calls out through. See
 [ADR-0018](decisions/ADR-0018-feature-folders-in-core.md).
 
+## Why uploads bypass the API
+
+The browser PUTs a photo straight to a private bucket through a pre-signed URL
+the API mints, scoped to one key and valid for minutes. That keeps
+multi-megabyte bodies out of the request pipeline, and — the part that matters
+more — it means the API is not a second door onto Restricted media with its own
+authorization story to get wrong. There is no route that serves blob bytes, and
+a test walks the live route table to keep it that way.
+
+Every upload lands in `quarantine/` and nothing leaves it until this system has
+decided what the bytes are. Accepted media is promoted to
+`<report id>/original/<file>` — the Restricted record, retained untouched — and,
+where the format can be stripped, to `<report id>/stripped/<file>`, which is the
+only thing a reviewer's browser ever fetches. A refused upload is never
+promoted and expires in quarantine, which is why nothing here has a delete.
+
+Video is accepted and retained but has no derivative yet, so a reviewer sees
+nothing for it rather than something unsafe (#65). See
+[ADR-0025](decisions/ADR-0025-magick-net-for-exif-stripping.md),
+[ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md), and
+`docs/data-handling.md`.
+
 ## Why the questions are in the database
 
 The form HPAC asks is a table, not a class. Questions carry a type, an order,

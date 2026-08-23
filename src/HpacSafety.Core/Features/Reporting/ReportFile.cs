@@ -56,13 +56,46 @@ public class ReportFile
     /// <summary>When EXIF — GPS above all — was stripped.</summary>
     public DateTimeOffset? ExifStrippedAt { get; private set; }
 
-    /// <summary>True until the stripped derivative exists. A file is not viewable before then.</summary>
-    public bool AwaitsStripping => ExifStrippedAt is null;
+    /// <summary>
+    /// True until a stripped derivative exists. A file is not viewable before
+    /// then — and a video has no derivative at all yet, so it stays true. See
+    /// issue #65.
+    /// <para>
+    /// Both fields are checked, not just the timestamp: a row carrying a
+    /// stripped-at time with no key would otherwise read as viewable.
+    /// </para>
+    /// </summary>
+    public bool AwaitsStripping => ExifStrippedAt is null || StrippedBlobKey is null;
 
-    /// <summary>Records the stripped derivative.</summary>
+    /// <summary>
+    /// The key of the only bytes a reviewer may be shown.
+    /// <para>
+    /// Reading this while <see cref="AwaitsStripping" /> throws rather than
+    /// returning <see cref="BlobKey" />. Falling back to the original is the
+    /// leak this whole feature exists to prevent, and a caller that asks for
+    /// something to show when there is nothing safe to show has a bug worth
+    /// failing loudly. It is the persisted counterpart of
+    /// <see cref="MediaIngestOutcome.DerivativeKey" />.
+    /// </para>
+    /// </summary>
+    // Qualified, because this entity has a string property named BlobKey that
+    // shadows the type of the same name.
+    public SharedKernel.BlobKey ViewableKey =>
+        AwaitsStripping
+            ? throw new DomainRuleViolationException("There is no stripped derivative for a reviewer to see.")
+            : SharedKernel.BlobKey.Parse(StrippedBlobKey);
+
+    /// <summary>Records the stripped derivative. Both facts are recorded together or not at all.</summary>
     public void RecordStripped(string strippedBlobKey, DateTimeOffset at)
     {
-        StrippedBlobKey = strippedBlobKey;
+        var parsed = SharedKernel.BlobKey.Parse(strippedBlobKey);
+
+        if (parsed.Compartment is not MediaCompartment.Stripped)
+        {
+            throw new DomainRuleViolationException("A derivative must live in the stripped compartment.");
+        }
+
+        StrippedBlobKey = parsed.Value;
         ExifStrippedAt = at;
     }
 }

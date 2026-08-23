@@ -23,7 +23,7 @@ normalizes, infers, or otherwise derives a second value from it. Turning a raw
 certification answer into a publishable class is the summarizer's job, done at
 summarization time under a versioned prompt in `prompts/`, not a `Core`
 concern. See
-[ADR-0031](../../docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
+[ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
 
 ## Layout
 
@@ -36,7 +36,12 @@ Features/
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
                   ReportStatus, InjurySeverity, Discipline, PilotRating,
                   TimeOfDay, Province,
-                  ISummarizer, IPiiAuditor, IPublicationChannel
+                  MediaType, MediaPolicy, MediaValidation,
+                  MediaRejectionReason, MediaRejection, MediaKind,
+                  MediaIngestor, MediaIngestOutcome, MediaIngestStatus,
+                  MediaUploadSlot, ReviewerMediaLink,
+                  ISummarizer, IPiiAuditor, IPublicationChannel,
+                  IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
                   QuestionRole, QuestionKey, QuestionType
@@ -44,6 +49,7 @@ Features/
                   IMemberAuthenticator
   Outbox/         OutboxMessage
 SharedKernel/     TinyId, Locale, EnumCode, SensitivityTier,
+                  BlobKey, MediaCompartment, BlobUrlLifetime,
                   DomainRuleViolationException, FieldDecryptionException,
                   ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier,
                   IFieldCipher
@@ -93,6 +99,33 @@ A handful of answers additionally project onto typed properties on `Report`,
 because logic reads them rather than only displaying them. Which answer projects
 where comes from `QuestionRole`, and every role is optional except publication
 consent. See [ADR-0016](../../docs/decisions/ADR-0016-data-driven-question-bank.md).
+
+## Uploaded media
+
+`MediaIngestor` is in `Core` for the same reason the scrub is: the order it runs
+in — sniff, validate, *then* promote out of quarantine — is what makes "a
+reviewer only ever sees stripped bytes" true, and it is provable in a plain unit
+test with no bucket and no imaging library. `IMediaSniffer` and `IExifStripper`
+are ports; Magick.NET lives in `Infrastructure`.
+
+Three types carry rules that would otherwise be call-site discipline:
+
+- **`BlobKey`** is in the shared kernel because a key is attacker-influenced and
+  must be parsed, never accepted as a string — and because the storage layout is
+  a rule. It parses exactly three shapes, all namespaced by a report id, so a key
+  outside the layout is unrepresentable.
+- **`MediaUploadSlot`** is the only thing that mints an upload URL, and it never
+  names the compartment: an upload can only ever land in quarantine.
+- **`ReviewerMediaLink`** is the only sanctioned way to mint a link to media.
+  Storage will sign a URL for any key, including the original; this issues one
+  only for `MediaCompartment.Stripped`.
+
+`MediaIngestStatus` has three states, not two. A video is *accepted* — the
+original is the Restricted record like any other upload — but nothing can strip
+it yet, so there is no derivative and nothing viewable. Asking for one throws
+rather than falling through to the unstripped original. See #65. See
+[ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
+[ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 
 Two rules this project enforces and nothing downstream may relax:
 

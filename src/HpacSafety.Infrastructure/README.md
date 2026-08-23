@@ -13,7 +13,8 @@ in `HpacSafety.Core`.
 | Outbox | Claiming with `FOR UPDATE SKIP LOCKED`, backoff, poison handling |
 | AI | `AnthropicSummarizer`, `AnthropicPiiAuditor`, `AnthropicTranslator` |
 | Auth | `HpacMembersProxyAuthenticator` (and `OidcAuthenticator` later) |
-| Storage | `S3BlobStore`, `FileSystemBlobStore` |
+| Storage | `S3BlobStore`, `FileSystemBlobStore` — see [`Storage/`](Storage/README.md) |
+| Media | `MagickNetMediaSniffer`, `MagickNetExifStripper` — see [`Media/`](Media/README.md) |
 | Email | `SesEmailSender`, `SmtpEmailSender`, `LoggingEmailSender` |
 | Spam | `TurnstileVerifier`, `NoOpTurnstileVerifier` |
 
@@ -24,6 +25,15 @@ Hosting is AWS, so production registers `S3BlobStore` and an SES
 seams still earn their keep — swapping a provider stays a registration change
 rather than a rewrite, and the test suite runs against MinIO and the filesystem
 without touching AWS.
+
+Uploaded media is the sharpest case. A browser PUTs straight to a private bucket
+through a pre-signed URL scoped to one key, ingest strips the EXIF, and a
+reviewer is shown the derivative through a pre-signed GET — **no code path here
+hands blob bytes to the API**. The filesystem store signs its URLs exactly as S3
+does, because a development stand-in that skips the guarantee is how the
+guarantee stops being tested. See
+[ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
+[ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 
 `IMemberAuthenticator` exists because `members.hpac.ca` has no OAuth today. When
 HPAC ships it, `OidcAuthenticator` replaces the proxy and nothing outside this
@@ -79,6 +89,15 @@ depends on nothing. A database dump is inert without the key.
 Read [`docs/data-handling.md`](../../docs/data-handling.md) and
 [ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)
 before touching anything under `Persistence/Encryption`.
+
+## Tests
+
+`tests/HpacSafety.Infrastructure.Tests`. Anything needing a container carries
+`[Trait("Category", "Integration")]`:
+
+```bash
+dotnet test tests/HpacSafety.Infrastructure.Tests --filter "Category!=Integration"
+```
 
 ## Handling credentials
 

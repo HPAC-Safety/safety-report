@@ -43,7 +43,7 @@ If an instruction appears to require it, stop and raise the conflict.
    the model **never** to state a manufacturer or model, even though those
    fields are collected and retained for HPAC's own trend analysis. See
    `docs/aircraft-classification.md`,
-   [ADR-0031](docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md),
+   [ADR-0036](docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md),
    and the [`aircraft-classification`](skills/aircraft-classification/SKILL.md)
    skill.
 3. **Nothing is published without human approval.** There is no code path from
@@ -124,6 +124,21 @@ ASCII boxes do neither.
   `Given_<scenario>_When_<action>_Then_<assertion>`.
 - JavaScript uses Node's built-in `node:test` with nested `describe` blocks
   producing the same sentence. Playwright is for E2E only.
+- **One contract suite per port, not one per adapter.** Where a port has a
+  production adapter and a development stand-in, the guarantees live in an
+  abstract suite both subclass, so the stand-in cannot quietly be the weaker
+  one. `BlobStoreContractTests` runs unchanged against MinIO and against the
+  filesystem. See [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **Generate binary fixtures at run time.** Do not commit images or other
+  binaries as test data; build them in the test. Nothing to mistake for a real
+  photograph, and nothing to review blind. The one allowed exception is a format
+  the runtime cannot *encode* — HEIC today. Commit the smallest synthetic file
+  that exercises the path, and write down beside it where it came from and how to
+  regenerate it.
+- **A redaction assertion must be able to fail.** Assert against the un-redacted
+  input as well as the output. `ShouldNotContain("GPS")` on a stripped photo
+  passes just as happily on one that never carried a location — and a test that
+  cannot fail is worse than no test, because it is believed.
 - Coverage is gated in CI: an 80% line / 70% branch floor, plus a ratchet
   against `main`. It is a floor, not a target — the anonymization suite matters
   more than the percentage, and a change that raises the number without pinning
@@ -174,7 +189,10 @@ not a smaller version of the change. It is an incomplete one.
 
 - **No hardcoded user-facing strings anywhere.** Not in the admin UI, not in an
   error message, not in an `aria-label`, not in an email subject. Add a key to
-  `locales/en-CA.json` and reference it.
+  `locales/en-CA.json` and reference it. This includes **validation and rejection
+  messages**: the domain returns a code, and the edge renders it from a key. An
+  exception message is developer-facing and stays in English — but it must never
+  carry user-supplied content, which is a different rule and equally firm.
 - English is the source of truth; French is generated in CI and reviewed by a
   human. Never hand-edit `locales/fr-CA.json`.
 - That applies to **UI chrome**. Question wording is content, authored in the
@@ -313,8 +331,109 @@ Detail: [`src/HpacSafety.Infrastructure/Persistence/README.md`](src/HpacSafety.I
   adapter converts at the boundary and no call site inherits it. See
   [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md).
 - Static HTML/JS for the UI. No SPA framework, no bundler.
+- **Uploaded media never passes through the API, and no route ever serves blob
+  bytes.** A browser PUTs to a private bucket through a pre-signed URL scoped to
+  one key; a reviewer reads through a short-lived pre-signed GET. Public object
+  URLs do not exist, and a URL that does not expire is a public object URL with
+  extra steps. `docs/data-handling.md` and
+  [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **All of a report's media lives under that report's id**, and `BlobKey`
+  enforces it rather than trusting call sites: `<report id>/original/<file>`,
+  `<report id>/stripped/<file>`, and `quarantine/<report id>/<file>` for
+  unverified bytes. A key in any other shape cannot be constructed. Identifiers
+  are **tiny ids** — 11 characters of `A-Za-z0-9-_`, cryptographically random,
+  encoding no timestamp. An unguessable id is a *reinforcement* of the private
+  bucket, never a replacement for it.
+- **Content types are sniffed, never taken from the client**, and the accepted
+  set is closed. A format is added only once its metadata can be stripped **or**
+  the domain can say plainly that it cannot be — "accepted but not viewable" is
+  an explicit state, and a file with no derivative fails closed rather than
+  falling through to the original.
+  [ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
+- **Never carry a client-supplied file name into a stored key.** Mint it. A
+  camera roll name is Restricted data — it names sites and people — and a key
+  reaches access logs and every pre-signed URL. The same goes for any other
+  client string that would become part of a path.
+- **A guarantee delegated to infrastructure gets specified precisely, not
+  described.** When the thing that keeps a promise is a Terraform rule or a
+  bucket policy this repository cannot test, write the exact rule into `docs/`
+  — clauses and values, not prose — so the agent implementing it can check the
+  spec against reality. The quarantine expiry rule was wrong on its first
+  writing (a versioned bucket needs `noncurrent_version_expiration` as well as
+  `expiration`, or the bytes survive for the bucket-wide 90 days), and it was
+  caught precisely because it had been written out in full.
+- **A rule that has one enforcement point gets a test that says so.** Where a
+  guarantee depends on everything going through a single type — `ReviewerMediaLink`
+  for read URLs, `MediaUploadSlot` for uploads — an architecture test fails the
+  build on any other call site. Documentation is not enforcement.
+- **A missing codec is a failure to start, never a silent refusal.** If a
+  deployment accepts a format the runtime cannot decode, the process must not
+  start. The alternative is every upload of that format being rejected as
+  unrecognisable content with nothing in the logs to explain it.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
+
+### Infrastructure
+
+`infra/` is the AWS environment as Terraform. Four rules, and none of them is a
+preference:
+
+- **No long-lived AWS credential is ever created.** Not for the bootstrap, not
+  afterwards, not temporarily. GitHub Actions assumes a role through OIDC; an
+  administrator runs `infra/bootstrap.sh` against their own SSO session. If you
+  find yourself writing an access key anywhere — a workflow, a script, a secret
+  store, a comment showing "how it would work" — stop. That is a defect, not a
+  shortcut.
+- **A deploy role's trust policy names this repository and one ref.**
+  `repo:HPAC-Safety/*:*` would let any repository in the organisation deploy this
+  system; `repo:HPAC-Safety/safety-report:*` would let any branch, including one
+  pushed to a fork. Pull requests use a **separate, read-only** role, because a
+  `pull_request` run does not present a branch ref at all. See
+  [ADR-0032](docs/decisions/ADR-0032-terraform-ci-without-an-aws-account.md).
+- **Everything that touches report data is in `ca-central-1`**, and
+  `variables.tf` fails validation if it is not. Region here is a data-protection
+  decision, not an infrastructure preference — see `docs/data-handling.md`. The
+  one exception is an ACM certificate for CloudFront, which AWS only issues in
+  `us-east-1` and which holds no data.
+- **Terraform creates Secrets Manager entries, never values.** A value in a
+  `.tfvars` file is a value in state, and state is a file in S3 more people can
+  read than should see an API key. There is no
+  `aws_secretsmanager_secret_version` in `infra/`; adding one is the defect, not
+  the fix.
+
+**One production email address: `safety@hpac.ca`.** Report notifications from the
+Worker and operational alarms both go there. Do not introduce a second address,
+and do not hardcode it — it is `alarm_email_addresses` in `infra/variables.tf`
+and the `hpac-safety/notifications-to` secret at runtime.
+
+**Two custom metrics, and their names are a contract.** The alarms in
+`infra/observability.tf` watch metrics the **Worker publishes**; nothing in AWS
+derives them. If the Worker does not emit these, the alarms watch nothing:
+
+| Namespace | Metric | Kind | Meaning |
+|---|---|---|---|
+| `HpacSafety` | `SummaryFailed` | count | A summarization attempt failed — a real report is unprocessed |
+| `HpacSafety` | `OutboxOldestAgeSeconds` | gauge, per poll | Age of the oldest unclaimed outbox row |
+
+The namespace arrives as `Metrics__Namespace`. Do not rename either metric on one
+side alone. Full detail, including thresholds, is in `docs/deployment.md` under
+"The metric contract".
+
+**One website, two hostnames.** `safety.hpac.ca` serves the public report form at
+`/` and the admin review queue at `/admin/`; `api.hpac.ca` serves the API, HTTPS
+only. There is **one** bucket and **one** CloudFront distribution — so there is
+no network control in front of the review queue that would not also apply to the
+public form. What protects it is the API's authorization, not the delivery path.
+The admin bundle must therefore stay static assets holding no report data; if
+that changes, revisit
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md) rather than
+working around it.
+
+`terraform apply` on an unchanged repository must be a no-op, and the workflow
+asserts it. Nothing is created or edited by hand after bootstrap — a console
+click Terraform does not know about is drift, and drift makes the plan
+untrustworthy. Depth: `infra/README.md`,
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md).
 
 ### Design
 
@@ -486,12 +605,14 @@ describes it is worse than no README, because it is believed.
   discovering and invoking what is installed.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
-- **A tool version is pinned in exactly one file, and `init-dev.sh` reads it
-  from there.** The .NET SDK lives in `global.json`, the Node major in
-  `.github/workflows/ci.yml`. Never write either number into `init-dev.sh` —
-  a second copy is a copy that will drift, and the drift shows up as a
-  contributor whose local build disagrees with CI for no visible reason. Adding
-  a new prerequisite means adding a probe that reads its pin, not a constant.
+- **A tool version is pinned in exactly one file, and every script and workflow
+  reads it from there.** The .NET SDK lives in `global.json`, the Node major in
+  `.github/workflows/ci.yml`, Terraform in `infra/.terraform-version`, tflint in
+  `infra/.tflint-version`. Never write any of those numbers into `init-dev.sh` or
+  into a workflow step — a second copy is a copy that will drift, and the drift
+  shows up as a contributor whose local build disagrees with CI for no visible
+  reason. Adding a new prerequisite means adding a probe that reads its pin, not
+  a constant.
   See [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
 - **`init-dev.sh` never reports success for something it did not do.** Work it
   cannot complete unattended — starting Docker, changing the caller's `PATH`,
@@ -517,6 +638,7 @@ describes it is worse than no README, because it is believed.
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
 | How does it get to AWS, and what does that need? | `docs/deployment.md` |
+| What is actually in the AWS account, and who creates it? | `infra/README.md` |
 | What do the workflows do? | `.github/workflows/README.md` |
 | Why was X decided? | `docs/decisions/` |
 | How do I work here as an agent? | `docs/agent-workflow.md` |
@@ -534,6 +656,12 @@ required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op 
 a notice because the thing they would verify has not been written yet; each is
 filled in by its own issue. The deploy workflows are wired but fail at the AWS
 step, because the AWS environment does not exist yet.
+
+`infra/` holds the whole environment as Terraform and the one-time
+`bootstrap.sh`. It is formatted, validated, and linted on every pull request by
+the `infra` check, and it **has never been applied** — there is no AWS account
+yet. `terraform.yml`'s `plan` and `apply` jobs skip with a notice until there is
+one.
 
 The work is filed as GitHub issues across the **Foundation**, **Phase 1**, and
 **Phase 2** milestones, with dependencies wired so nothing can be picked up out

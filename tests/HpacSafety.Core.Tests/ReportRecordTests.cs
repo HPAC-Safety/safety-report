@@ -39,7 +39,7 @@ public class ReportRecordTests
         var report = new Report(Locale.EnCa, Now);
 
         // When
-        var file = report.AddFile("raw/abc", "image/jpeg", 2048, Now);
+        var file = report.AddFile("dQw4w9WgXcQ/original/photo.jpg", "image/jpeg", 2048, Now);
 
         // Then — GPS above all
         file.AwaitsStripping.ShouldBeTrue();
@@ -52,14 +52,14 @@ public class ReportRecordTests
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
-        var file = report.AddFile("raw/abc", "image/jpeg", 2048, Now);
+        var file = report.AddFile("dQw4w9WgXcQ/original/photo.jpg", "image/jpeg", 2048, Now);
 
         // When
-        file.RecordStripped("clean/abc", Now.AddSeconds(30));
+        file.RecordStripped("dQw4w9WgXcQ/stripped/photo.jpg", Now.AddSeconds(30));
 
         // Then
         file.AwaitsStripping.ShouldBeFalse();
-        file.StrippedBlobKey.ShouldBe("clean/abc");
+        file.StrippedBlobKey.ShouldBe("dQw4w9WgXcQ/stripped/photo.jpg");
         file.ExifStrippedAt.ShouldBe(Now.AddSeconds(30));
     }
 

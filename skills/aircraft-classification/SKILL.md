@@ -39,7 +39,7 @@ the form — no code in `Core` reads it, interprets it, or writes a derived clas
 anywhere. The summarizer determines the class from that raw text at
 summarization time, under the instructions in `prompts/summarize.v1.md`,
 composed with the aircraft-identity rule in `prompts/redaction-rules.v1.md`.
-See [ADR-0031](../../docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
+See [ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
 
 ```mermaid
 flowchart TD
@@ -108,7 +108,7 @@ The Typeform collects `Certification:` as free text, so today's answers vary:
 The summarizer normalizes that string against the vocabulary — case,
 punctuation, and common spellings — and states the class or says nothing about
 it. It never states a guess. Two things about this are load-bearing, and both
-are prompt instructions rather than code, per ADR-0031:
+are prompt instructions rather than code, per ADR-0036:
 
 - **It reads two inputs only** — the reporter's verbatim certification answer
   and the aircraft type they chose. Not the make, not the model, not the
@@ -187,5 +187,5 @@ shape of the question.
 - `prompts/summarize.v1.md` — where the class is actually determined
 - `prompts/redaction-rules.v1.md` — the runtime redaction rules
 - `docs/aircraft-classification.md` — the policy
-- [ADR-0031](../../docs/decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md) — why this moved out of `Core`
+- [ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md) — why this moved out of `Core`
 - `docs/form-spec.md` — the aircraft fields as the reporter sees them

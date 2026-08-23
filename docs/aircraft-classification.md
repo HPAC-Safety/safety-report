@@ -28,7 +28,7 @@ the same as every other answer on the form. Determining the published class is
 work the summarizer does at summarization time, from that raw text, under an
 explicit prompt instruction: state a class only when the answer names one in
 the vocabulary below, and write "an aircraft" rather than guess when it does
-not. See [ADR-0031](decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
+not. See [ADR-0036](decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
 
 ## Vocabulary
 
@@ -61,7 +61,7 @@ Today's Typeform collects certification as free text, so real answers vary:
 exactly as given — no normalization happens in `Core`. The summarizer reads
 the raw text at summarization time and states a class only when the answer
 names one in the vocabulary below — never a guess. See
-[ADR-0031](decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md).
+[ADR-0036](decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
 
 The table below is what `prompts/summarize.v1.md` and
 `prompts/redaction-rules.v1.md` instruct the model to do with case, punctuation,
@@ -124,7 +124,7 @@ historical shape of the question.
 ## Related
 
 - `prompts/summarize.v1.md`, `prompts/redaction-rules.v1.md` — where this is enforced at runtime
-- [ADR-0031](decisions/ADR-0031-classification-moves-to-the-summarization-prompt.md)
+- [ADR-0036](decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md)
 - `skills/aircraft-classification/SKILL.md`
 - `docs/anonymization-policy.md`
 - `docs/form-spec.md`

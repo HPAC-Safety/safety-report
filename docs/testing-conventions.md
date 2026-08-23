@@ -72,7 +72,7 @@ describe('Given a browser advertising fr-CA', () => {
 |---|---|
 | `HpacSafety.Core.Tests` | Pure unit. No database, no network. The deterministic scrub lives here. |
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
-| `HpacSafety.Infrastructure.Tests` | Migrations, mapping, field encryption, and the seeded question bank. Testcontainers Postgres |
+| `HpacSafety.Infrastructure.Tests` | Migrations, mapping, field encryption, the seeded question bank, and blob storage adapters (MinIO and the filesystem, EXIF stripping, content sniffing). Testcontainers Postgres |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
 | `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
 | `tests/js` | `node --test` for i18n, api-client, form logic |
@@ -83,6 +83,8 @@ describe('Given a browser advertising fr-CA', () => {
 `HpacSafety.Api.Tests` and `HpacSafety.Infrastructure.Tests` start a real
 PostgreSQL container through Testcontainers, pinned to `postgres:17-alpine` — a database version that moves
 underneath the suite is a failure nobody can reproduce.
+`HpacSafety.Infrastructure.Tests` starts a MinIO container, pinned to a release
+tag for the same reason.
 
 Those tests carry `[Trait("Category", "Integration")]`, so a machine without a
 running Docker daemon can skip them:
@@ -93,6 +95,20 @@ dotnet test --filter "Category!=Integration"
 
 CI runs everything. Do not make the skip automatic: a test that silently skips
 itself is a test that stops running and nobody notices.
+
+## One contract suite per port
+
+Where a port has a production adapter and a development stand-in, the
+guarantees belong in **one abstract suite that both subclass**, not in two suites
+that agree today. `BlobStoreContractTests` is the example: the same tests run
+against MinIO and against `FileSystemBlobStore`, so "a pre-signed URL works for
+exactly one key" cannot be true in production and merely assumed in the
+environment contributors actually run.
+
+The subclass supplies whatever the assertion needs in its own terms — S3 answers
+a retargeted URL with `403`, the filesystem store throws — and the test asks the
+same question of both. See
+[ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 
 ## Testing anything that calls a model
 

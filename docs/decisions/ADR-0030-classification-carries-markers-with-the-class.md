@@ -1,6 +1,6 @@
 # ADR-0030: A classification carries its markers alongside the class
 
-**Status:** Superseded by [ADR-0031](ADR-0031-classification-moves-to-the-summarization-prompt.md)
+**Status:** Superseded by [ADR-0036](ADR-0036-classification-moves-to-the-summarization-prompt.md)
 **Date:** 2026-08-22
 
 ## Context

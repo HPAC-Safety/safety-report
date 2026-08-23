@@ -526,12 +526,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("certification_answer");
 
-                    b.Property<string>("Class")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("class");
-
                     b.Property<string>("Discipline")
                         .IsRequired()
                         .HasMaxLength(64)

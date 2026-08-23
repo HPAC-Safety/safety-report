@@ -142,8 +142,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     discipline = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
                     manufacturer = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
                     model = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    certification_answer = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true),
-                    @class = table.Column<string>(name: "class", type: "character varying(64)", maxLength: 64, nullable: false)
+                    certification_answer = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {

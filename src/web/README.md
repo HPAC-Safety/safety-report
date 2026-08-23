@@ -20,9 +20,10 @@ explicit locale choice first, then browser preference, then English. Database
 questions already contain both languages.
 
 The public form renders current question revisions, requires only consent,
-keeps answers/revision IDs in the browser for 15 days, never restores files,
-and submits one multipart request. The admin site consumes only authorized DTOs;
-the API remains the security boundary.
+keeps answers/revision IDs only in the browser for 15 days, never restores files
+or writes unfinished report state to any server, and submits one final multipart
+request. The admin site consumes only authorized DTOs; the API remains the
+security boundary.
 
 Current main contains the design system and asset tooling but not the complete
 pages. Implement against

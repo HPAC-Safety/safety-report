@@ -8,6 +8,9 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
 
 ## Storage and retention
 
+- Before final submission, unfinished answers/revision IDs exist only in that
+  browser. No report, attachment, draft, reserved ID, or database row exists on
+  the server.
 - Use AWS-managed encryption at rest and TLS. Do not maintain application AES
   keys or ciphertext converters.
 - Keep raw reports private until an authorized officer soft-deletes them.

@@ -9,8 +9,10 @@ after a successful submission and ignores or removes expired state.
 
 Image, video, and document attachments are never placed in browser storage and
 are not restored after a reload. The UI explains this and places attachment
-selection last. There is no
-server draft, report ID reservation, upload token, or resumable upload protocol.
+selection last. There is no server draft, report ID reservation, upload token,
+or resumable upload protocol. Before the final multipart request, the browser
+makes no report-data write and the API, database, and object storage receive no
+unfinished report state.
 
 ## Endpoint
 

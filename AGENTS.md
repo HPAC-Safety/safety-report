@@ -21,10 +21,12 @@ privacy-sensitive.
 1. Questions come from the database as complete immutable bilingual revisions.
    Every edit creates a new revision. Only explicit publication consent is a
    required system question; every ordinary question may be skipped.
-2. A reporter submits one final multipart request containing the report DTO and
-   optional attachments. The API stores the report, exact question revisions,
-   answers, files, and outbox work atomically, then returns `202` without making
-   a model call.
+2. Until final submission, unfinished answers and shown revision IDs stay only
+   in that browser for 15 days; files are not persisted or restored. No report,
+   attachment, draft, reserved ID, or other respondent data is written to a
+   server or database. A reporter then submits one final multipart request. The
+   API stores the report, exact question revisions, answers, files, and outbox
+   work atomically, then returns `202` without making a model call.
 3. The Worker owns one versioned prompt and makes exactly one model call per
    summary attempt. `report_content` supplies eligible facts; labeled
    `private_context` may only help recognize identifying text. The response is

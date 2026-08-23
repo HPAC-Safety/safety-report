@@ -17,6 +17,9 @@ capability boundaries are normative.
 
 There are no draft, upload-slot, blob-proxy, public-answer, or publication-
 channel endpoints.
+Before `POST /api/v1/reports`, the reporter-facing API is read-only: unfinished
+answers remain browser-local and create no report, attachment, reserved ID, or
+database state.
 
 ### Admin API
 

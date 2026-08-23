@@ -22,6 +22,9 @@ synthetic people, locations, reports, and attachments.
 - current-form query examines the latest revision per key, does not resurrect an
   older active revision, and orders included active/live revisions deterministically;
 - locale toggle preserves answers and revision IDs;
+- unfinished answers/revision IDs remain browser-only for 15 days, no file is
+  restored, and no report/API/database/object-storage write occurs before final
+  submission;
 - only consent is required and it has no default;
 - skips are persisted for all shown answer-producing revisions, and multipart
   file indexes map exactly once to their file-upload answers;

@@ -43,8 +43,10 @@ flowchart LR
     api --> member[HPAC member authenticator]
 ```
 
-- The public static site renders the form, keeps unfinished answers locally,
-  submits a finalized report, and renders public summaries.
+- The public static site renders the form and keeps unfinished answers only in
+  that browser. No report data reaches the API, database, or object storage
+  until it submits one finalized multipart request. It also renders public
+  summaries.
 - The separate admin static site manages questions and authorized members,
   reviews reports and derivatives, edits summaries, and records approval.
 - The API owns validation, authorization, persistence orchestration, read DTOs,
@@ -71,6 +73,7 @@ sequenceDiagram
 
     B->>A: GET current question revisions
     A-->>B: Ordered bilingual form DTO
+    B->>B: Keep unfinished answers locally for up to 15 days
     B->>A: Multipart POST report DTO + optional attachments
     A->>S: Stream bounded files to quarantine
     A->>D: Report + answers + files + outbox (one transaction)

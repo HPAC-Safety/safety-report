@@ -13,6 +13,8 @@ Test observable contracts:
 
 - complete question revisions are immutable; latest-revision selection cannot
   resurrect an older active revision; only consent is required;
+- unfinished answers/revision IDs stay in browser storage for 15 days and no
+  report, file, reserved ID, or database state exists before final submission;
 - one multipart request maps answers and file indexes exactly, accepts known
   superseded revisions, rejects unknown/deleted ones, and commits report,
   answers, files, and outbox work atomically;

@@ -25,7 +25,8 @@ flowchart LR
   per-file attachment processing.
 - `src/web/public` and `src/web/admin` are separate static sites.
 
-Questions are complete immutable bilingual database revisions. Submission is
+Questions are complete immutable bilingual database revisions. Unfinished
+answers remain only in the browser; no report data is stored server-side until
 one final multipart request. The Worker produces one bilingual row, and human
 review plus positive consent gates a minimal public DTO.
 

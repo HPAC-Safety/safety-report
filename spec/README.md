@@ -62,7 +62,8 @@ with a human-approved pair can appear in the public feed.
 
 ## Simplicity guardrails
 
-The target deliberately has no server-side report drafts, pre-submit upload
+The target deliberately writes no respondent report data server-side before the
+one final submission. It has no server-side report drafts, pre-submit upload
 sessions, deterministic text scrubber, separate PII-audit call, translation
 call, specialized aircraft processing, outbound email, external publication
 channels, application-layer field encryption, restore workflow, or automated

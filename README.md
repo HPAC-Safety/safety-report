@@ -31,6 +31,9 @@ flowchart LR
 
 - Questions are complete immutable English/French database revisions. Every
   question is optional except explicit publication consent.
+- An unfinished report exists only in the respondent's browser for 15 days.
+  Nothing is written to the API, database, or attachment storage until the one
+  final multipart submission.
 - Private answers help the one model call recognize identifying text; they are
   never facts for publication. A repeated private name becomes a role such as
   “the pilot” / “le pilote,” with no name fragment left behind.

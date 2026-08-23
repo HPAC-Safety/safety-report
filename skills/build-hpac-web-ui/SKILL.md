@@ -15,13 +15,15 @@ assets.
   answers when switching language.
 - Render the ordered current bilingual question-revision DTO. Only consent is
   required and it has no selected default.
-- Persist answer values and revision IDs in the same browser for 15 days or
-  until successful submit. Never persist or restore file inputs.
+- Persist answer values and revision IDs only in the same browser for 15 days
+  or until successful submit. Never persist or restore file inputs, and make no
+  report-data write request before the final submission.
 - Submit one multipart request containing the JSON DTO and selected files.
 - Keep public and admin bundles as separately deployed static sites. Treat API
   authorization, not hidden markup, as the admin boundary.
 - Use design tokens rather than raw colors; dark mode redefines tokens rather
   than adding `dark:` variants.
 
-Do not introduce server drafts, upload sessions, third-party font/asset calls,
-or client-side access to private report data beyond authorized admin DTOs.
+Do not introduce server drafts, reserved report IDs, pre-submit API/database/
+object-storage writes, upload sessions, third-party font/asset calls, or
+client-side access to private report data beyond authorized admin DTOs.

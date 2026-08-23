@@ -203,6 +203,18 @@ fi
 # only the latter leaves every noncurrent version readable. That distinction
 # matters more since the quarantine lifecycle rule: between its two hops an
 # unverified upload exists precisely as a noncurrent version.
+#
+# SAME BUG CLASS, SECOND SERVICE: `rds:*` above lets this role manage the
+# database, and RDS mirrors its logs into CloudWatch Logs
+# (`enabled_cloudwatch_logs_exports` in database.tf) — the postgresql export can
+# carry report narrative text, because `log_min_duration_statement` logs the
+# statement TEXT for anything slower than a second. Denying `rds:*`'s own
+# download actions is not enough: reading those SAME log groups through
+# CloudWatch Logs' API (`logs:GetLogEvents`, `logs:FilterLogEvents`, and Logs
+# Insights) is a completely different action namespace that `rds:*` never
+# touched and `logs:*` above would otherwise grant. `NeverReadDatabaseLogs`
+# closes it the same way the S3 fix did: name the other surface, not just the
+# one this role happens to use on purpose.
 
 DEPLOY_POLICY=$(cat <<JSON
 {
@@ -304,6 +316,21 @@ DEPLOY_POLICY=$(cat <<JSON
         "s3:GetObjectVersionTorrent"
       ],
       "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
+    },
+    {
+      "Sid": "NeverReadDatabaseLogs",
+      "Effect": "Deny",
+      "Action": [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:GetLogRecord",
+        "logs:StartQuery",
+        "logs:GetQueryResults"
+      ],
+      "Resource": [
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety/postgresql:*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety/upgrade:*"
+      ]
     },
     {
       "Sid": "NeverMintACredential",
@@ -434,7 +461,19 @@ fi
 # The denial names the VERSIONED actions as well. `s3:GetObjectVersion` is a
 # distinct IAM action from `s3:GetObject`, so denying only the latter would leave
 # every noncurrent version readable by version id — including, between the two
-# hops of the quarantine lifecycle rule, an upload that failed validation. It would also
+# hops of the quarantine lifecycle rule, an upload that failed validation.
+#
+# SAME BUG CLASS, SECOND SERVICE: `ReadOnlyAccess` grants `logs:GetLogEvents` and
+# `logs:FilterLogEvents`, which is normally exactly what a read-only role should
+# have — except RDS mirrors its own logs into two of those log groups
+# (`enabled_cloudwatch_logs_exports` in database.tf), and the postgresql export
+# can carry report narrative text: `log_min_duration_statement` logs the
+# statement TEXT for anything slower than a second. `NeverReadASecretValue`
+# already denies RDS's *native* log-download API
+# (`rds:DownloadDBLogFilePortion`); it does not touch CloudWatch Logs' API,
+# which is a different action namespace reading the same data. Same shape as the
+# `s3:GetObjectVersion` gap above: a Deny naming one API surface does not cover a
+# different API surface that reaches the same underlying data. It would also
 # grant secretsmanager:GetSecretValue on nothing (that action is not in
 # ReadOnlyAccess), but the denial is written out anyway so the guarantee does not
 # depend on AWS never widening a managed policy.
@@ -472,6 +511,21 @@ PLAN_POLICY=$(cat <<JSON
         "s3:GetObjectVersionTorrent"
       ],
       "Resource": "arn:aws:s3:::hpac-safety-uploads-*/*"
+    },
+    {
+      "Sid": "NeverReadDatabaseLogs",
+      "Effect": "Deny",
+      "Action": [
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents",
+        "logs:GetLogRecord",
+        "logs:StartQuery",
+        "logs:GetQueryResults"
+      ],
+      "Resource": [
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety/postgresql:*",
+        "arn:aws:logs:${REGION}:${ACCOUNT_ID}:log-group:/aws/rds/instance/hpac-safety/upgrade:*"
+      ]
     },
     {
       "Sid": "NeverReadASecretValue",

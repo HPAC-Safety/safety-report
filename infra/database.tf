@@ -24,6 +24,13 @@ resource "aws_db_parameter_group" "main" {
   # TEXT, and a slow INSERT of a report would put narrative into the log — so
   # this is intentionally a duration threshold rather than log_statement = 'all'.
   # See docs/data-handling.md: log identifiers, never content.
+  #
+  # This is why the two log groups these logs export to
+  # (enabled_cloudwatch_logs_exports, below) are named explicitly in the
+  # NeverReadDatabaseLogs denial in infra/bootstrap.sh — reading them through
+  # CloudWatch Logs' API is a different action namespace from RDS's own
+  # log-download API, and denying only the latter would leave this text
+  # readable through the former.
   parameter {
     name  = "log_min_duration_statement"
     value = "1000"

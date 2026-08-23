@@ -149,11 +149,43 @@ So `infra/bootstrap.sh` creates two:
 | `hpac-safety-deploy` | `…:ref:refs/heads/main` | Manage the environment, push images, update services |
 | `hpac-safety-plan` | `…:pull_request` | Read. Nothing else. |
 
-`hpac-safety-plan` is `ReadOnlyAccess` plus read on the state bucket, minus three
-explicit `Deny` statements: `s3:GetObject` on the uploads bucket (those objects
-are photographs of crash sites), `secretsmanager:GetSecretValue`, and the RDS
-log-download actions. `Deny` beats `Allow` unconditionally, so those hold
+`hpac-safety-plan` is `ReadOnlyAccess` plus read on the state bucket, minus four
+explicit `Deny` statements: the full `s3:Get*Object*` set on the uploads bucket
+(those objects are photographs of crash sites), CloudWatch Logs read actions on
+the two log groups RDS exports to, `secretsmanager:GetSecretValue`, and RDS's
+own log-download API. `Deny` beats `Allow` unconditionally, so those hold
 whatever AWS adds to `ReadOnlyAccess` later.
+
+`hpac-safety-deploy` carries the mirror image of the first two: it configures
+the uploads bucket and the database, and has no reason to read either bucket's
+report data or that database's exported logs, so both denials apply to it too.
+
+### One bug class, found twice
+
+Both roles started with a real gap, and it was the **same shape both times**:
+denying one AWS API surface does not deny a different surface that reaches the
+same underlying data, because AWS treats them as unrelated IAM actions even when
+a human would call them "the same thing".
+
+- **`s3:GetObjectVersion` is a distinct action from `s3:GetObject`.** The
+  uploads bucket is versioned, and between the two hops of the quarantine
+  lifecycle rule (below), an unverified upload exists precisely as a noncurrent
+  version. A denial naming only `s3:GetObject` left every noncurrent version —
+  including that one — readable by version id.
+- **CloudWatch Logs' read API is a distinct surface from RDS's own log-download
+  API.** `database.tf` exports the `postgresql` and `upgrade` logs to
+  CloudWatch (`enabled_cloudwatch_logs_exports`), and the postgresql export can
+  carry report narrative text — `log_min_duration_statement` logs the statement
+  **text** for anything slower than a second. Denying `rds:DownloadDBLogFilePortion`
+  stops the RDS console's own download button; it does nothing about
+  `logs:GetLogEvents`, `logs:FilterLogEvents`, or CloudWatch Logs Insights
+  (`logs:StartQuery` / `GetQueryResults`) reading those same two log groups,
+  which `ReadOnlyAccess` and the deploy role's `logs:*` both grant by default.
+
+Both are closed the same way: name the *other* surface explicitly, in a `Deny`
+that outranks whatever the `Allow` above it grants. If a third such surface
+turns up — a new AWS API that reaches uploads or database logs by a route
+neither denial lists — close it the same way rather than special-casing it.
 
 Neither role can mint a credential: both policies `Deny` `iam:CreateUser`,
 `iam:CreateAccessKey`, `iam:CreateLoginProfile`, `organizations:*`, and

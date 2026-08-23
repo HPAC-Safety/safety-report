@@ -28,7 +28,7 @@ public sealed class DevelopmentAdminSeedSqlTests
         var sql = DevelopmentAdminSeed.InsertSql();
 
         // Then
-        DevelopmentAdminSeed.MemberIdentifier.ShouldBe("admin@localhost");
+        DevelopmentAdminSeed.Subject.ShouldBe("admin@localhost");
         sql.ShouldContain("'admin@localhost'");
         sql.ShouldContain("INSERT INTO admin_users");
     }

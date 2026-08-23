@@ -1,7 +1,7 @@
 # Occurrence report — form specification
 
 > **Generated file — do not edit by hand.**
-> Regenerate with `tools/extract-typeform.py`; CI diffs this against the live form.
+> Regenerate with `tools/extract-typeform.py`, then review the diff against the live form.
 
 Source: <https://pq3ivecn4rb.typeform.com/to/ZzIBaNLP>
 

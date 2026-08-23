@@ -23,7 +23,7 @@ locals {
   # here and are not in state — see secrets.tf.
   common_secrets = [
     {
-      name      = "ConnectionStrings__Default"
+      name      = "ConnectionStrings__HpacSafety"
       valueFrom = aws_secretsmanager_secret.this["connection_string"].arn
     },
   ]
@@ -31,7 +31,6 @@ locals {
   common_environment = [
     { name = "AWS_REGION", value = var.aws_region },
     { name = "ASPNETCORE_ENVIRONMENT", value = "Production" },
-    { name = "Storage__UploadsBucket", value = aws_s3_bucket.uploads.id },
   ]
 }
 
@@ -87,13 +86,10 @@ resource "aws_ecs_task_definition" "api" {
         }
       ]
 
-      environment = local.common_environment
-      secrets = concat(local.common_secrets, [
-        {
-          name      = "Turnstile__SecretKey"
-          valueFrom = aws_secretsmanager_secret.this["turnstile_secret_key"].arn
-        },
+      environment = concat(local.common_environment, [
+        { name = "Storage__UploadsBucket", value = aws_s3_bucket.uploads.id },
       ])
+      secrets = local.common_secrets
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -156,7 +152,7 @@ resource "aws_ecs_service" "api" {
 # --------------------------------------------------------------------------
 #
 # No load balancer, no ingress, no public IP. It claims outbox rows FOR UPDATE
-# SKIP LOCKED and calls out to Anthropic. See ADR-0002 and ADR-0003.
+# SKIP LOCKED and makes one model call. See ADR-0002 and ADR-0003.
 
 resource "aws_ecs_task_definition" "worker" {
   family                   = "${local.name}-worker"
@@ -178,19 +174,13 @@ resource "aws_ecs_task_definition" "worker" {
       image     = local.images.worker
       essential = true
       environment = concat(local.common_environment, [
-        { name = "Ses__ConfigurationSet", value = aws_sesv2_configuration_set.main.configuration_set_name },
-        { name = "Ses__FromDomain", value = var.ses_domain },
         { name = "Metrics__Namespace", value = local.metric_namespace },
       ])
 
       secrets = concat(local.common_secrets, [
         {
-          name      = "Anthropic__ApiKey"
-          valueFrom = aws_secretsmanager_secret.this["anthropic_api_key"].arn
-        },
-        {
-          name      = "Notifications__To"
-          valueFrom = aws_secretsmanager_secret.this["notifications_to"].arn
+          name      = "Model__ApiKey"
+          valueFrom = aws_secretsmanager_secret.this["model_api_key"].arn
         },
       ])
 

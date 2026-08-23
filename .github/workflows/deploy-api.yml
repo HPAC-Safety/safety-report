@@ -55,10 +55,9 @@ jobs:
   #   ECS_SUBNETS                 Comma-separated subnet ids for the migrate task
   #   ECS_SECURITY_GROUPS         Comma-separated security group ids
   #
-  # Runtime secrets — ANTHROPIC_API_KEY, TURNSTILE_SECRET_KEY,
-  # ConnectionStrings__Default, Notifications__To — are NOT here. They live in
-  # AWS Secrets Manager and are injected into the task definition. Putting them
-  # in GitHub would spread them for no reason. See docs/deployment.md.
+  # Runtime secrets — ConnectionStrings__HpacSafety and Model__ApiKey — are not
+  # here. They live in AWS Secrets Manager and are injected into task
+  # definitions. See docs/deployment.md.
   # ---------------------------------------------------------------------------
   preflight:
     # Three conditions, not one. `branches: [main]` above filters on the

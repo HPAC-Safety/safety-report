@@ -10,7 +10,7 @@ namespace HpacSafety.Infrastructure.Persistence.Configurations;
 /// The <c>admin_users</c> table — the allowlist that admin access is.
 /// </summary>
 /// <remarks>
-/// The member identifier is stored in plaintext, unlike a reporter's contact
+/// The identity-provider subject is stored in plaintext, unlike a reporter's contact
 /// details, because it is the lookup key at sign-in and a randomized-nonce
 /// ciphertext cannot be looked up. It is an administrator's own working
 /// identity, not a reporter's, and it is never part of a published summary.
@@ -26,10 +26,10 @@ public sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUser>
         builder.ToTable("admin_users");
         builder.HasKey(user => user.Id);
 
-        builder.Property(user => user.MemberIdentifier).HasMaxLength(256).IsRequired();
+        builder.Property(user => user.Subject).HasMaxLength(256).IsRequired();
         builder.Property(user => user.Role).IsRequired();
 
-        builder.HasIndex(user => user.MemberIdentifier).IsUnique();
+        builder.HasIndex(user => user.Subject).IsUnique();
     }
 }
 

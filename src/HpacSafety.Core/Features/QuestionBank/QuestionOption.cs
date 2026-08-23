@@ -1,81 +1,55 @@
-
 using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.QuestionBank;
 
-/// <summary>
-/// One choice on a select-style question. The <see cref="Code"/> is invariant
-/// and never changes — it is what every historical answer points at, so a
-/// rename is a translation change and nothing more.
-/// </summary>
-public class QuestionOption
+/// <summary>One immutable bilingual option on one question revision.</summary>
+public sealed class QuestionOption
 {
-    private readonly List<QuestionOptionTranslation> _translations = [];
-
-    // EF Core materializes an entity by calling this constructor and then
-    // setting every mapped property and backing field directly. It exists for
-    // the ORM and for nothing else — domain code still has to go through the
-    // constructor or factory that follows, so no caller can reach a half-built
-    // aggregate. See ADR-0019.
-#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+#pragma warning disable CS8618 // EF Core sets every mapped property.
     private QuestionOption()
     {
     }
 #pragma warning restore CS8618
 
-    private QuestionOption(TinyId questionVersionId, string code, int displayOrder)
+    private QuestionOption(TinyId questionId, QuestionOptionDefinition definition, int sortOrder)
     {
         Id = TinyId.New();
-        QuestionVersionId = questionVersionId;
-        Code = QuestionKey.Normalize(code);
-        DisplayOrder = displayOrder;
+        QuestionId = questionId;
+        Code = QuestionKey.Normalize(definition.Code);
+        LabelEn = NotBlank(definition.LabelEn, "English");
+        LabelFr = NotBlank(definition.LabelFr, "French");
+        SortOrder = sortOrder;
     }
 
-    /// <summary>Surrogate key.</summary>
+    /// <summary>Fixed yes/no option codes.</summary>
+    public static IReadOnlyList<string> YesNoCodes { get; } = ["yes", "no"];
+
+    /// <summary>Option id.</summary>
     public TinyId Id { get; private init; }
 
-    /// <summary>The version this option belongs to.</summary>
-    public TinyId QuestionVersionId { get; private init; }
+    /// <summary>Owning immutable question revision.</summary>
+    public TinyId QuestionId { get; private init; }
 
-    /// <summary>The invariant code stored against an answer. Never display text.</summary>
+    /// <summary>Invariant value stored in an answer.</summary>
     public string Code { get; private init; }
 
-    /// <summary>Where this option sits among its siblings.</summary>
-    public int DisplayOrder { get; private set; }
+    /// <summary>English display label.</summary>
+    public string LabelEn { get; private init; }
 
-    /// <summary>This option's wording, one row per locale.</summary>
-    public IReadOnlyCollection<QuestionOptionTranslation> Translations => _translations;
+    /// <summary>French display label.</summary>
+    public string LabelFr { get; private init; }
+
+    /// <summary>Order within the question revision.</summary>
+    public int SortOrder { get; private init; }
 
     internal static QuestionOption Create(
-        TinyId questionVersionId,
-        string code,
-        int displayOrder,
-        Locale sourceLocale,
-        string label,
-        DateTimeOffset at)
-    {
-        var option = new QuestionOption(questionVersionId, code, displayOrder);
-        option._translations.Add(QuestionOptionTranslation.Authored(option.Id, sourceLocale, label, at));
-        return option;
-    }
+        TinyId questionId,
+        QuestionOptionDefinition definition,
+        int sortOrder) =>
+        new(questionId, definition, sortOrder);
 
-    /// <summary>Attaches the generated counterpart in the other official locale.</summary>
-    public QuestionOptionTranslation AttachTranslation(Locale locale, string label, DateTimeOffset at)
-    {
-        if (Translation(locale) is not null)
-        {
-            throw new DomainRuleViolationException($"This option already has {locale} wording.");
-        }
-
-        var translation = QuestionOptionTranslation.Generated(Id, locale, label, at);
-        _translations.Add(translation);
-        return translation;
-    }
-
-    /// <summary>This option's wording in one locale, if it exists yet.</summary>
-    public QuestionOptionTranslation? Translation(Locale locale) =>
-        _translations.SingleOrDefault(t => t.Locale == locale);
-
-    /// <summary>Moves this option among its siblings. Not a versioned change.</summary>
-    public void Reorder(int displayOrder) => DisplayOrder = displayOrder;
+    private static string NotBlank(string value, string language) =>
+        string.IsNullOrWhiteSpace(value)
+            ? throw new DomainRuleViolationException($"A question option needs a {language} label.")
+            : value.Trim();
 }

@@ -32,7 +32,7 @@ body:
     id: area
     attributes:
       label: Area
-      options: [api, web, worker, infra, i18n, security, ci, unsure]
+      options: [api, web, worker, infra, security, ci, unsure]
     validations:
       required: true
   - type: dropdown

@@ -59,7 +59,7 @@ resource "aws_vpc_security_group_ingress_rule" "api_from_alb" {
 
 resource "aws_vpc_security_group_egress_rule" "api_all" {
   security_group_id = aws_security_group.api.id
-  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, SES."
+  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, and S3."
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
@@ -74,7 +74,7 @@ resource "aws_security_group" "worker" {
 
 resource "aws_vpc_security_group_egress_rule" "worker_all" {
   security_group_id = aws_security_group.worker.id
-  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, SES, and the Anthropic API."
+  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, and the model API."
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }

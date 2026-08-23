@@ -3,9 +3,8 @@ using HpacSafety.Core.SharedKernel;
 namespace HpacSafety.Core.Features.Moderation;
 
 /// <summary>
-/// A row on the authorization allowlist. Credentials are never stored here —
-/// authentication happens against members.hpac.ca and this table only answers
-/// "and may they".
+/// A row on the authorization allowlist. Credentials are never stored here;
+/// the configured identity provider authenticates the person.
 /// </summary>
 public class AdminUser
 {
@@ -21,10 +20,10 @@ public class AdminUser
     }
 #pragma warning restore CS8618
 
-    public AdminUser(string memberIdentifier, AdminRole role, DateTimeOffset at)
+    public AdminUser(string subject, AdminRole role, DateTimeOffset at)
     {
         Id = TinyId.New();
-        MemberIdentifier = memberIdentifier;
+        Subject = subject;
         Role = role;
         CreatedAt = at;
         IsActive = true;
@@ -33,8 +32,8 @@ public class AdminUser
     /// <summary>Surrogate key.</summary>
     public TinyId Id { get; private init; }
 
-    /// <summary>Who they are upstream. Never a credential.</summary>
-    public string MemberIdentifier { get; private init; }
+    /// <summary>Stable identity-provider subject. Never a credential.</summary>
+    public string Subject { get; private init; }
 
     /// <summary>What they may do.</summary>
     public AdminRole Role { get; private set; }

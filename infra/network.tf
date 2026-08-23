@@ -59,7 +59,7 @@ resource "aws_subnet" "private" {
 # outbound calls until the NAT is recreated, and inbound report submission (ALB
 # to API, API to RDS) keeps working because none of that path traverses it.
 #
-# Egress is needed at all because the Worker calls the Anthropic API. Interface
+# Egress is needed at all because the Worker calls a model API. Interface
 # endpoints cover ECR, Secrets Manager, and CloudWatch Logs, but there is no
 # endpoint for somebody else's public API.
 

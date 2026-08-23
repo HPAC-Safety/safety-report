@@ -1,107 +1,90 @@
-
-using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
-/// <summary>
-/// An anonymized summary of a report, in one language. Every report ends up with
-/// one row per official locale: the one generated from the report carries
-/// <see cref="IsSource"/>, the other carries
-/// <see cref="TranslatedFromSummaryId"/>.
-/// </summary>
-public class Summary
+/// <summary>One anonymized summary candidate in the report language.</summary>
+public sealed class Summary
 {
-    // EF Core materializes an entity by calling this constructor and then
-    // setting every mapped property and backing field directly. It exists for
-    // the ORM and for nothing else — domain code still has to go through the
-    // constructor or factory that follows, so no caller can reach a half-built
-    // aggregate. See ADR-0019.
-#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+#pragma warning disable CS8618 // EF Core sets every mapped property.
     private Summary()
     {
     }
 #pragma warning restore CS8618
 
-    private Summary(TinyId reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
+    private Summary(
+        TinyId reportId,
+        Locale locale,
+        string text,
+        string model,
+        string promptVersion,
+        DateTimeOffset at)
     {
         Id = TinyId.New();
         ReportId = reportId;
         Locale = locale;
-        Text = text;
+        Text = NotBlank(text);
         Model = model;
         PromptVersion = promptVersion;
         CreatedAt = at;
     }
 
-    /// <summary>Surrogate key.</summary>
+    /// <summary>Summary id.</summary>
     public TinyId Id { get; private init; }
 
-    /// <summary>The report summarized.</summary>
+    /// <summary>Owning report.</summary>
     public TinyId ReportId { get; private init; }
 
-    /// <summary>The language of this summary.</summary>
+    /// <summary>Summary language.</summary>
     public Locale Locale { get; private init; }
 
-    /// <summary>The summary text. Publishable only once approved.</summary>
+    /// <summary>Candidate text.</summary>
     public string Text { get; private set; }
 
-    /// <summary>The model that produced it, stamped so published text traces back.</summary>
+    /// <summary>Provider model identifier.</summary>
     public string Model { get; private init; }
 
-    /// <summary>The prompt version that produced it.</summary>
+    /// <summary>Runtime prompt version.</summary>
     public string PromptVersion { get; private init; }
 
-    /// <summary>True for the summary generated directly from the report.</summary>
-    public bool IsSource { get; private init; }
-
-    /// <summary>Set on the translated summary, pointing at the one it came from.</summary>
-    public TinyId? TranslatedFromSummaryId { get; private init; }
-
-    /// <summary>The safety officer who approved this language.</summary>
+    /// <summary>Approving safety officer.</summary>
     public TinyId? ApprovedBy { get; private set; }
 
-    /// <summary>When this language was approved.</summary>
+    /// <summary>Approval time.</summary>
     public DateTimeOffset? ApprovedAt { get; private set; }
 
-    /// <summary>When it was generated.</summary>
+    /// <summary>Creation time.</summary>
     public DateTimeOffset CreatedAt { get; private init; }
 
-    /// <summary>True once a human has approved this language specifically.</summary>
+    /// <summary>Whether a person approved the current text.</summary>
     public bool IsApproved => ApprovedAt is not null;
 
-    /// <summary>The summary generated from the report itself, in the language the reporter wrote in.</summary>
+    /// <summary>Creates a model-generated candidate.</summary>
     public static Summary Generated(
-        TinyId reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at) =>
-        new(reportId, locale, text, model, promptVersion, at) { IsSource = true };
+        TinyId reportId,
+        Locale locale,
+        string text,
+        string model,
+        string promptVersion,
+        DateTimeOffset at) =>
+        new(reportId, locale, text, model, promptVersion, at);
 
-    /// <summary>The other language, translated from an already-anonymized summary.</summary>
-    public static Summary TranslatedFrom(
-        Summary source, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
-    {
-        ArgumentNullException.ThrowIfNull(source);
-
-        return new Summary(source.ReportId, locale, text, model, promptVersion, at)
-        {
-            IsSource = false,
-            TranslatedFromSummaryId = source.Id,
-        };
-    }
-
-    /// <summary>Replaces the text by hand — the escape hatch when the model failed.</summary>
+    /// <summary>Edits the candidate and clears any earlier approval.</summary>
     public void Rewrite(string text)
     {
-        Text = string.IsNullOrWhiteSpace(text)
-            ? throw new DomainRuleViolationException("A summary cannot be blank.")
-            : text;
+        Text = NotBlank(text);
         ApprovedBy = null;
         ApprovedAt = null;
     }
 
-    /// <summary>Records a safety officer's approval of this language.</summary>
+    /// <summary>Approves the current candidate.</summary>
     public void Approve(TinyId adminUserId, DateTimeOffset at)
     {
         ApprovedBy = adminUserId;
         ApprovedAt = at;
     }
+
+    private static string NotBlank(string value) =>
+        string.IsNullOrWhiteSpace(value)
+            ? throw new DomainRuleViolationException("A summary cannot be blank.")
+            : value;
 }

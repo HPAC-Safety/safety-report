@@ -4,8 +4,7 @@ name: CI
 # `pull_request` and NEVER `pull_request_target` — the latter would run
 # fork-authored code with a write token and repository secrets in scope.
 #
-# No job below reads a secret. Anything that needs one (the Anthropic client,
-# for instance) runs against recorded fixtures instead. Keep it that way.
+# No job below reads a secret. Provider boundaries use controlled fixtures.
 on:
   push:
     branches: [main]
@@ -313,12 +312,27 @@ jobs:
       - name: Playwright
         run: |
           if [ ! -f tests/e2e/package.json ]; then
-            echo "::notice::No end-to-end suite yet — added by #26. Skipping."
+            echo "::notice::No end-to-end suite yet — added by #27. Skipping."
             exit 0
           fi
           npm --prefix tests/e2e ci
           npx --prefix tests/e2e playwright install --with-deps chromium
           npm --prefix tests/e2e test
+
+  # Keep the required status context while checking the invariant that matters:
+  # every database question and option is complete in English and French. This
+  # job never generates or translates text.
+  i18n:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - run: >
+          dotnet test tests/HpacSafety.Infrastructure.Tests/HpacSafety.Infrastructure.Tests.csproj
+          --configuration Release
+          --filter "FullyQualifiedName~Seeding.QuestionBankSeedTests"
 
   agent-config:
     runs-on: ubuntu-latest
@@ -388,43 +402,3 @@ jobs:
             git status --porcelain
             exit 1
           fi
-
-  i18n:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Locale key parity
-        run: |
-          if [ ! -f locales/en-CA.json ]; then
-            echo "::notice::No locale files yet — added by #7. Skipping."
-            exit 0
-          fi
-          if [ ! -f tools/check-locales.mjs ]; then
-            echo "::error::locales/en-CA.json exists but tools/check-locales.mjs does not. See #8."
-            exit 1
-          fi
-          node tools/check-locales.mjs
-
-      - name: No hardcoded user-facing strings
-        run: |
-          if [ ! -f tools/check-hardcoded-strings.mjs ]; then
-            echo "::notice::Hardcoded-string lint not written yet — added by #8. Skipping."
-            exit 0
-          fi
-          node tools/check-hardcoded-strings.mjs
-
-      # VERIFY ONLY. --check reads the three locale files and constructs no
-      # translator, so no inference happens here and no locale file is written.
-      # That is not a detail: this workflow runs fork-authored code on
-      # `pull_request` with a read-only token, and untrusted code must never be
-      # able to trigger a model call or edit generated French. Generation lives
-      # in i18n-translate.yml, which runs only on a push to main. See ADR-0021.
-      #
-      # No provider configuration is passed into this step, on purpose. There is
-      # nothing here for it to use.
-      - name: Locale translation is in step with English
-        run: node tools/translate-locale.mjs --check --locales locales

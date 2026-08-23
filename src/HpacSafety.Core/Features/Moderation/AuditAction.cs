@@ -16,8 +16,4 @@ public enum AuditAction
     PublishedReport = 5,
     CreatedQuestion = 10,
     RevisedQuestion = 11,
-    ReorderedQuestions = 12,
-    DeactivatedQuestion = 13,
-    DeletedQuestion = 14,
-    EditedQuestionTranslation = 15,
 }

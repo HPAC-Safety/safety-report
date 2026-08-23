@@ -44,9 +44,7 @@ resource "aws_sns_topic" "alarms" {
 # table in docs/deployment.md both exist so that gap is stated rather than
 # discovered.
 #
-# Alarm mail comes from Amazon SNS, not through the SES identity in ses.tf — so
-# it is not held up by the SES sandbox. It does still need safety@hpac.ca to be a
-# mailbox somebody reads.
+# Alert delivery is an SNS subscription to the configured role mailbox.
 resource "aws_sns_topic_subscription" "alarms_email" {
   for_each = toset(var.alarm_email_addresses)
 
@@ -99,54 +97,4 @@ resource "aws_cloudwatch_metric_alarm" "outbox_age" {
   ok_actions    = [aws_sns_topic.alarms.arn]
 
   tags = { Name = "${local.name}-outbox-age" }
-}
-
-# --------------------------------------------------------------------------
-# Alarms on things AWS already measures
-# --------------------------------------------------------------------------
-
-resource "aws_cloudwatch_metric_alarm" "alb_5xx" {
-  alarm_name        = "${local.name}-api-5xx"
-  alarm_description = "The API is returning server errors. Pilots filing reports are seeing failures."
-
-  namespace   = "AWS/ApplicationELB"
-  metric_name = "HTTPCode_Target_5XX_Count"
-  statistic   = "Sum"
-
-  dimensions = {
-    LoadBalancer = aws_lb.api.arn_suffix
-  }
-
-  comparison_operator = "GreaterThanThreshold"
-  threshold           = 5
-  period              = 300
-  evaluation_periods  = 1
-  treat_missing_data  = "notBreaching"
-
-  alarm_actions = [aws_sns_topic.alarms.arn]
-
-  tags = { Name = "${local.name}-api-5xx" }
-}
-
-resource "aws_cloudwatch_metric_alarm" "database_storage" {
-  alarm_name        = "${local.name}-database-storage"
-  alarm_description = "RDS free storage is low. Storage autoscaling has a ceiling and this is the warning before it."
-
-  namespace   = "AWS/RDS"
-  metric_name = "FreeStorageSpace"
-  statistic   = "Minimum"
-
-  dimensions = {
-    DBInstanceIdentifier = aws_db_instance.main.identifier
-  }
-
-  comparison_operator = "LessThanThreshold"
-  threshold           = 2 * 1024 * 1024 * 1024 # 2 GiB
-  period              = 300
-  evaluation_periods  = 2
-  treat_missing_data  = "missing"
-
-  alarm_actions = [aws_sns_topic.alarms.arn]
-
-  tags = { Name = "${local.name}-database-storage" }
 }

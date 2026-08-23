@@ -31,8 +31,8 @@ public static class SeedIds
 
     /// <summary>Derives the identifier for a seeded row from its name.</summary>
     /// <param name="name">
-    /// A name unique within the seed — for example <c>question:province</c> or
-    /// <c>option:province:alberta:fr-CA</c>.
+    /// A name unique within the seed — for example <c>question:province:1</c> or
+    /// <c>question_option:province:1:alberta</c>.
     /// </param>
     public static TinyId For(string name)
     {

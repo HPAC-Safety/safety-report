@@ -1,127 +1,105 @@
-
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
-/// <summary>
-/// One answer to one question, as it was asked. The reference is to a
-/// <see cref="QuestionVersion"/> rather than to the question, so rewording a
-/// question tomorrow cannot change what an answer given today appears to mean.
-/// </summary>
-public class ReportAnswer
+/// <summary>One nullable answer to the exact immutable question revision shown.</summary>
+public sealed class ReportAnswer
 {
-    // Not readonly: option codes are a primitive collection, which EF Core
-    // assigns to the backing field rather than adding into an existing list.
     private List<string> _selectedOptionCodes = [];
 
-    // EF Core materializes an entity by calling this constructor and then
-    // setting every mapped property and backing field directly. It exists for
-    // the ORM and for nothing else — domain code still has to go through the
-    // constructor or factory that follows, so no caller can reach a half-built
-    // aggregate. See ADR-0019.
-#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+#pragma warning disable CS8618 // EF Core sets every mapped property.
     private ReportAnswer()
     {
     }
 #pragma warning restore CS8618
 
-    private ReportAnswer(TinyId reportId, Question question, QuestionVersion version, DateTimeOffset at)
+    private ReportAnswer(TinyId reportId, Question question, DateTimeOffset at)
     {
         Id = TinyId.New();
         ReportId = reportId;
         QuestionId = question.Id;
-        QuestionVersionId = version.Id;
         QuestionKey = question.Key;
-        IsPrivate = question.IsPrivate;
         AnsweredAt = at;
     }
 
-    /// <summary>Surrogate key.</summary>
+    /// <summary>Answer id.</summary>
     public TinyId Id { get; private init; }
 
-    /// <summary>The report this answer belongs to.</summary>
+    /// <summary>Owning report.</summary>
     public TinyId ReportId { get; private init; }
 
-    /// <summary>The question answered.</summary>
+    /// <summary>The exact immutable question revision shown.</summary>
     public TinyId QuestionId { get; private init; }
 
-    /// <summary>The exact version answered, which owns the wording and options.</summary>
-    public TinyId QuestionVersionId { get; private init; }
-
-    /// <summary>The question's invariant key, carried for exports and reads.</summary>
+    /// <summary>Stable question key for exports.</summary>
     public string QuestionKey { get; private init; }
 
-    /// <summary>
-    /// Whether this answer is private redaction context, copied from the
-    /// immutable question contract when the answer is recorded.
-    /// </summary>
-    public bool IsPrivate { get; private init; }
+    /// <summary>Nullable text answer; null records an optional skip.</summary>
+    public string? Value { get; private init; }
 
-    /// <summary>Free-text value, for the text-shaped types. Null for select types.</summary>
-    public string? Value { get; private set; }
-
-    /// <summary>Invariant option codes, for select types. Never display text.</summary>
+    /// <summary>Selected invariant option codes; empty records an optional skip.</summary>
     public IReadOnlyList<string> SelectedOptionCodes => _selectedOptionCodes;
 
-    /// <summary>When the answer was given.</summary>
+    /// <summary>When the answer was recorded.</summary>
     public DateTimeOffset AnsweredAt { get; private init; }
 
-    internal static ReportAnswer ForText(TinyId reportId, Question question, string? value, DateTimeOffset at)
+    internal static ReportAnswer ForText(
+        TinyId reportId,
+        Question question,
+        string? value,
+        DateTimeOffset at)
     {
-        var version = question.CurrentVersion;
-
-        if (version.CollectsNoAnswer)
+        if (question.CollectsNoAnswer)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' is a {version.Type} and collects no answer.");
+            throw new DomainRuleViolationException($"'{question.Key}' collects no answer.");
         }
 
-        if (version.ExpectsOptions)
+        if (question.ExpectsOptions)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' expects option codes, not free text.");
+            throw new DomainRuleViolationException($"'{question.Key}' expects option codes.");
         }
 
-        if (version.IsRequired && string.IsNullOrWhiteSpace(value))
+        return new ReportAnswer(reportId, question, at)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' is required.");
-        }
-
-        return new ReportAnswer(reportId, question, version, at) { Value = value };
+            Value = string.IsNullOrWhiteSpace(value) ? null : value,
+        };
     }
 
     internal static ReportAnswer ForOptions(
-        TinyId reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
+        TinyId reportId,
+        Question question,
+        IReadOnlyList<string> codes,
+        DateTimeOffset at)
     {
-        var version = question.CurrentVersion;
-
-        if (!version.ExpectsOptions)
+        if (!question.ExpectsOptions)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' is a {version.Type} and takes a value, not option codes.");
+            throw new DomainRuleViolationException($"'{question.Key}' does not take option codes.");
         }
 
-        if (version.TakesOneAnswer && codes.Count > 1)
+        if (question.Type is QuestionType.SingleSelect or QuestionType.YesNo && codes.Count > 1)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' takes one answer, not {codes.Count}.");
+            throw new DomainRuleViolationException($"'{question.Key}' takes at most one answer.");
         }
 
-        if (version.IsRequired && codes.Count == 0)
+        if (question.IsRequired && codes.Count == 0)
         {
             throw new DomainRuleViolationException($"'{question.Key}' is required.");
         }
 
         foreach (var code in codes)
         {
-            if (!version.Accepts(code))
+            if (!question.Accepts(code))
             {
                 throw new DomainRuleViolationException($"'{code}' is not an option on '{question.Key}'.");
             }
         }
 
-        var answer = new ReportAnswer(reportId, question, version, at);
-        answer._selectedOptionCodes.AddRange(codes);
+        var answer = new ReportAnswer(reportId, question, at);
+        answer._selectedOptionCodes.AddRange(codes.Select(QuestionBank.QuestionKey.Normalize));
         return answer;
     }
 
-    /// <summary>The single selected code, for single-select questions.</summary>
+    /// <summary>The one selected code, or null.</summary>
     public string? SingleOptionCode => _selectedOptionCodes.Count == 1 ? _selectedOptionCodes[0] : null;
 }

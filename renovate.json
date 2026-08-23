@@ -52,7 +52,7 @@
 			]
 		},
 		{
-			"description": "Approve and automerge non-major updates. platformAutomerge holds a PR until the REQUIRED status checks pass; the ruleset that makes them required (build, test, coverage, web, e2e, agent-config, i18n, linked-issue) was confirmed live before this flag was flipped - see ADR-0011 and #35.",
+			"description": "Approve and automerge non-major updates only after required status checks pass.",
 			"matchUpdateTypes": [
 				"minor",
 				"patch"
@@ -92,24 +92,6 @@
 			"matchPackageNames": [
 				"coverlet.collector",
 				"dotnet-reportgenerator-globaltool"
-			]
-		},
-		{
-			"groupName": "Anthropic",
-			"matchPackageNames": [
-				"/^Anthropic/"
-			]
-		},
-		{
-			"groupName": "AWSSDK",
-			"matchPackageNames": [
-				"/^AWSSDK/"
-			]
-		},
-		{
-			"groupName": "FakeItEasy",
-			"matchPackageNames": [
-				"/^FakeItEasy/"
 			]
 		},
 		{

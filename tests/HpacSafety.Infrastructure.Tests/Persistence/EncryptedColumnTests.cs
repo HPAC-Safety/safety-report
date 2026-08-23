@@ -129,7 +129,7 @@ public sealed class EncryptedColumnTests(PostgresFixture postgres)
     }
 
     private static Task<Question> QuestionAsync(HpacSafetyDbContext context, string key) =>
-        context.Questions.Include(q => q.Versions).SingleAsync(q => q.Key == key);
+        context.Questions.SingleAsync(q => q.Key == key && q.IsActive);
 
     private static async Task<string[]> RawAnswerValuesAsync(
         string connectionString, TinyId reportId, bool includeNulls = false)

@@ -197,12 +197,10 @@ fi
 #
 # It also cannot read an upload. `s3:*` would otherwise let it fetch a crash
 # photograph, and it has no reason to: it CONFIGURES that bucket — policy,
-# versioning, encryption, lifecycle — and never reads an object out of it. The
+# versioning, and encryption — and never reads an object out of it. The
 # `NeverReadReportData` denial below covers the versioned actions too, because
 # `s3:GetObjectVersion` is a DISTINCT IAM action from `s3:GetObject` and denying
-# only the latter leaves every noncurrent version readable. That distinction
-# matters more since the quarantine lifecycle rule: between its two hops an
-# unverified upload exists precisely as a noncurrent version.
+# only the latter leaves every noncurrent version readable.
 #
 # SAME BUG CLASS, SECOND SERVICE: `rds:*` above lets this role manage the
 # database, and RDS mirrors its logs into CloudWatch Logs
@@ -253,7 +251,6 @@ DEPLOY_POLICY=$(cat <<JSON
         "rds:*",
         "s3:*",
         "secretsmanager:*",
-        "ses:*",
         "sns:*",
         "sqs:*",
         "tag:*"
@@ -460,8 +457,7 @@ fi
 #
 # The denial names the VERSIONED actions as well. `s3:GetObjectVersion` is a
 # distinct IAM action from `s3:GetObject`, so denying only the latter would leave
-# every noncurrent version readable by version id — including, between the two
-# hops of the quarantine lifecycle rule, an upload that failed validation.
+# every noncurrent version readable by version id.
 #
 # SAME BUG CLASS, SECOND SERVICE: `ReadOnlyAccess` grants `logs:GetLogEvents` and
 # `logs:FilterLogEvents`, which is normally exactly what a read-only role should
@@ -579,9 +575,8 @@ say '     ReadOnlyAccess and the denial policy attached'
 #
 # Versioned because state is the only record of what exists; a corrupt write
 # with no previous version is an environment you can no longer manage.
-# Encrypted and fully private because ADR-0010 accepts one secret in state (the
-# Turnstile widget secret), which makes this bucket's access controls something
-# to verify rather than assume.
+# Encrypted and fully private because state contains deployment topology and
+# access controls worth protecting.
 
 say "4/4  Terraform state bucket ${STATE_BUCKET}"
 

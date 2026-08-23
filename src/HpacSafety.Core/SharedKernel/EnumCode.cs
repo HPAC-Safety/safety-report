@@ -3,7 +3,7 @@ namespace HpacSafety.Core.SharedKernel;
 /// <summary>
 /// Converts between an enum member and the invariant code it is stored as.
 /// Domain values are stored as stable codes and localized only at the edge, so
-/// <c>InjurySeverity.Serious</c> is written and read as <c>serious</c>.
+/// <c>QuestionType.LongText</c> is written and read as <c>long_text</c>.
 /// </summary>
 public static class EnumCode
 {

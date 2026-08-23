@@ -68,7 +68,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     [Fact]
     public async Task Given_a_report_and_its_outbox_message_When_the_write_fails_part_way_Then_neither_row_is_present()
     {
-        // Given — an answer pointing at a question version that is not there.
+        // Given — an answer pointing at a question revision that is not there.
         // The database refuses it, and the report and the outbox row have to go
         // with it rather than being left behind without their trigger.
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -125,12 +125,12 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     }
 
     private static Task<Question> QuestionAsync(HpacSafetyDbContext context, string key) =>
-        context.Questions.Include(q => q.Versions).SingleAsync(q => q.Key == key);
+        context.Questions.SingleAsync(q => q.Key == key && q.IsActive);
 
     /// <summary>
     /// A question the database has never seen, so an answer to it cannot be
     /// stored. Built in memory only.
     /// </summary>
     private static Question OrphanedQuestion() =>
-        Question.Create("never_asked", QuestionType.LongText, Locale.EnCa, "Never asked", At);
+        Question.Create("never_asked", QuestionType.LongText, "Never asked", "Jamais demandée", At);
 }

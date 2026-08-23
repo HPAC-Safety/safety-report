@@ -2,11 +2,9 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 
 /// <summary>One choice on a seeded question, in both locales.</summary>
 /// <param name="Code">
-/// The invariant code stored against an answer. It never changes — a rename is
-/// a translation change, so historical answers keep pointing at the same thing.
-/// Where an answer projects onto a typed property, the code is the enum's own
-/// code so <c>EnumCode.TryParse</c> resolves it.
+/// The invariant code stored against an answer. Changing a code creates a new
+/// complete question revision, so historical answers retain the value shown.
 /// </param>
 /// <param name="LabelEn">The English label, the source wording.</param>
-/// <param name="LabelFr">The French label, machine-translated and unreviewed.</param>
+/// <param name="LabelFr">The reviewed French label.</param>
 public sealed record SeededOption(string Code, string LabelEn, string LabelFr);

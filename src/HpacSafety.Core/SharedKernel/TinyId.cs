@@ -12,16 +12,7 @@ namespace HpacSafety.Core.SharedKernel;
 /// One convention for every table, so there are no mixed-type joins and nothing
 /// for a reader to remember. Eleven symbols over sixty-four is sixty-six bits.
 /// </para>
-/// <para>
-/// It is chosen for what it does <b>not</b> say as much as for what it does.
-/// A sequential key leaks how many reports there are and what order they
-/// arrived in; a UUIDv7 leaks the moment a row was created. This system
-/// deliberately narrows a published occurrence date to a month and a year so
-/// that a report cannot be tied back to a moment — an identifier that carries a
-/// timestamp would hand that back. A tiny id encodes nothing, is not
-/// enumerable, and is short enough to sit inside a blob key or a URL without
-/// looking like a mistake. See ADR-0034.
-/// </para>
+/// <para>It is opaque, non-sequential, URL-safe, and carries no timestamp.</para>
 /// </remarks>
 public readonly record struct TinyId
 {

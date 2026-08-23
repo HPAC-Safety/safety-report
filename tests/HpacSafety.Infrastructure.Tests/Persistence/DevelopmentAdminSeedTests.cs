@@ -43,7 +43,7 @@ public sealed class DevelopmentAdminSeedTests(PostgresFixture postgres)
 
         // Then — exactly one, obviously local, and not a real person.
         administrators.Count.ShouldBe(1);
-        administrators[0].MemberIdentifier.ShouldBe("admin@localhost");
+        administrators[0].Subject.ShouldBe("admin@localhost");
         administrators[0].Role.ShouldBe(AdminRole.Administrator);
         administrators[0].IsActive.ShouldBeTrue();
         administrators[0].Id.ShouldBe(DevelopmentAdminSeed.Id);

@@ -40,9 +40,6 @@ jobs:
   # Variables: AWS_REGION, S3_BUCKET_SITE, CLOUDFRONT_DISTRIBUTION_SITE,
   #            SITE_ADMIN_PREFIX
   #
-  # The Turnstile SITE key is public by design and may be a variable. The
-  # Turnstile SECRET key is server-side only, lives in AWS Secrets Manager, and
-  # must never reach a static bundle.
   preflight:
     # Three conditions, not one. `branches: [main]` above filters on the
     # triggering run's head_branch, and a pull_request-triggered CI run reports
@@ -98,11 +95,6 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
-      - if: steps.gate.outputs.run == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
       - name: Build stylesheet
         if: steps.gate.outputs.run == 'true'
         run: |
@@ -126,7 +118,6 @@ jobs:
           echo "  public: aws s3 sync src/web/public s3://\$S3_BUCKET_SITE --delete"
           echo "  admin:  aws s3 sync src/web/admin  s3://\$S3_BUCKET_SITE/\$SITE_ADMIN_PREFIX --delete"
           echo "          aws s3 sync src/web/shared s3://\$S3_BUCKET_SITE/shared --delete"
-          echo "          aws s3 sync locales        s3://\$S3_BUCKET_SITE/locales --delete"
           echo "          aws cloudfront create-invalidation --distribution-id \$CLOUDFRONT_DISTRIBUTION_SITE --paths '/*'"
           echo ""
           echo "--delete on the public sync must NOT be allowed to reach the admin"

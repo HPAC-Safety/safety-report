@@ -2,8 +2,7 @@ namespace HpacSafety.Core.SharedKernel;
 
 /// <summary>
 /// Thrown when an operation would break a domain rule — publishing a report
-/// nobody consented to publish, deleting a question the system reads, or
-/// leaving a question version without a source language.
+/// nobody consented to publish or creating an incomplete question revision.
 /// </summary>
 public class DomainRuleViolationException : Exception
 {

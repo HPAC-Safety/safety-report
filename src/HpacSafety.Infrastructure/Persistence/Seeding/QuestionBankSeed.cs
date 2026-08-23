@@ -1,5 +1,4 @@
 using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 
@@ -16,14 +15,8 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// it by hand, and update this file to match when it changes.
 /// </para>
 /// <para>
-/// Every question here is ordinary data that an administrator may reword,
-/// reorder, retype, or delete — except <c>consent_publish</c>, which gates
-/// publication and cannot be removed. See ADR-0016.
-/// </para>
-/// <para>
-/// The French wording is machine-translated and carries
-/// <c>is_machine_translated = true</c>: it is good enough to render, and it has
-/// not been reviewed by a person. See ADR-0020.
+/// Every entry is one complete immutable revision. Any later change inserts a
+/// new row; historical answers keep this exact wording and privacy decision.
 /// </para>
 /// </remarks>
 public static class QuestionBankSeed
@@ -43,8 +36,8 @@ public static class QuestionBankSeed
             "intro",
             "Tell us as much as you can about the occurrence",
             "Dites-nous-en le plus possible sur l'événement",
-            "We will first ask you 15 short questions about the pilot, location, aircraft, injury, and damage.\nWe will then ask you to provide a detailed description of the occurrence, and the corrective actions that were taken after the occurrence (along with your recommendations).\nYou can type in your description or prepare it in advance and copy-paste it. You can leave the form and come back to it. Your answers are saved in your browser for 15 days or until you submit the form.",
-            "Nous vous poserons d'abord 15 courtes questions sur le pilote, le lieu, l'aéronef, les blessures et les dommages.\nNous vous demanderons ensuite une description détaillée de l'événement et des mesures correctives prises après celui-ci (ainsi que vos recommandations).\nVous pouvez saisir votre description ou la préparer à l'avance et la coller. Vous pouvez quitter le formulaire et y revenir. Vos réponses sont conservées dans votre navigateur pendant 15 jours ou jusqu'à l'envoi du formulaire."),
+            "Answer as much as you can. Only publication consent is required.",
+            "Répondez au mieux de vos connaissances. Seul le consentement à la publication est obligatoire."),
 
         Group(
             "from",
@@ -92,8 +85,7 @@ public static class QuestionBankSeed
             "occurrence_date", QuestionType.Date, isPrivate: true, null,
             "Date:", "Date :",
             "Tell us the date of the occurrence.",
-            "Dites-nous la date de l'événement.",
-            role: QuestionRole.OccurrenceDate),
+            "Dites-nous la date de l'événement."),
 
         Field(
             "time_of_day", QuestionType.SingleSelect, isPrivate: false, null,
@@ -126,7 +118,6 @@ public static class QuestionBankSeed
             "Province:", "Province :",
             "Tell us the province of the occurrence.",
             "Dites-nous la province de l'événement.",
-            role: QuestionRole.Province,
             options:
             [
                 new SeededOption("newfoundland_and_labrador", "Newfoundland and Labrador", "Terre-Neuve-et-Labrador"),
@@ -155,7 +146,6 @@ public static class QuestionBankSeed
             "Type of aircraft:", "Type d'aéronef :",
             "Tell us the type of aircraft(s) involved in the occurrence.",
             "Dites-nous le type d'aéronef(s) impliqué(s) dans l'événement.",
-            role: QuestionRole.AircraftType,
             options:
             [
                 new SeededOption("paraglider", "Paraglider", "Parapente"),
@@ -179,15 +169,13 @@ public static class QuestionBankSeed
             "aircraft_certification", QuestionType.ShortText, isPrivate: false, "aircraft",
             "Certification:", "Certification :",
             "Tell us about the certification of the pilot's aircraft.",
-            "Dites-nous la certification de l'aéronef du pilote.",
-            role: QuestionRole.AircraftCertification),
+            "Dites-nous la certification de l'aéronef du pilote."),
 
         Field(
             "pilot_injury", QuestionType.SingleSelect, isPrivate: false, null,
             "Pilot injury:", "Blessure du pilote :",
             "If any, tell us the type of injury to the pilot.",
             "S'il y a lieu, dites-nous le type de blessure du pilote.",
-            role: QuestionRole.PilotInjury,
             options: InjuryOptions()),
 
         Field(
@@ -195,7 +183,6 @@ public static class QuestionBankSeed
             "Passenger injury:", "Blessure du passager :",
             "If any, tell us the type of injury to the passenger.",
             "S'il y a lieu, dites-nous le type de blessure du passager.",
-            role: QuestionRole.PassengerInjury,
             options: InjuryOptions()),
 
         Field(
@@ -214,8 +201,7 @@ public static class QuestionBankSeed
             "description", QuestionType.LongText, isPrivate: false, null,
             "Description:", "Description :",
             "Give a precise description of the occurrence. What happened to the aircraft, what did you see, hear, or do? Include your *role* in the occurrence. Think *preflight*, *weather*, *distractions*, *emotions*. Include your thoughts about the *causes* for the incident or accident.",
-            "Donnez une description précise de l'événement. Qu'est-il arrivé à l'aéronef, qu'avez-vous vu, entendu ou fait ? Précisez votre *rôle* dans l'événement. Pensez à la *prévol*, à la *météo*, aux *distractions*, aux *émotions*. Ajoutez vos réflexions sur les *causes* de l'incident ou de l'accident.",
-            role: QuestionRole.Narrative),
+            "Donnez une description précise de l'événement. Qu'est-il arrivé à l'aéronef, qu'avez-vous vu, entendu ou fait ? Précisez votre *rôle* dans l'événement. Pensez à la *prévol*, à la *météo*, aux *distractions*, aux *émotions*. Ajoutez vos réflexions sur les *causes* de l'incident ou de l'accident."),
 
         Field(
             "action_and_prevention", QuestionType.LongText, isPrivate: false, null,
@@ -229,15 +215,13 @@ public static class QuestionBankSeed
             "Upload one photo or video of the occurrence. Please contact us directly for multiple files (safety@hpac.ca).",
             "Téléversez une photo ou une vidéo de l'événement. Veuillez nous contacter directement pour plusieurs fichiers (safety@hpac.ca)."),
 
-        // The one system question. It gates publication, so it cannot be
-        // deleted, deactivated, or retyped, and it has no default answer.
+        // The one required system question. Its invariants are derived from
+        // this stable key, not from mutable roles or projections.
         new SeededQuestion(
             QuestionKey.ConsentPublish,
             QuestionType.YesNo,
-            QuestionRole.ConsentPublish,
             IsPrivate: true,
-            IsRequired: true,
-            IsSystem: true,
+            IsActive: true,
             SectionKey: null,
             "Short form publication",
             "Publication du rapport abrégé",
@@ -266,12 +250,12 @@ public static class QuestionBankSeed
     ];
 
     private static SeededQuestion Statement(string key, string labelEn, string labelFr, string? helpEn, string? helpFr) =>
-        new(key, QuestionType.Statement, QuestionRole.None, IsPrivate: true,
-            IsRequired: false, IsSystem: false, SectionKey: null, labelEn, labelFr, helpEn, helpFr, []);
+        new(key, QuestionType.Statement, IsPrivate: true, IsActive: true,
+            SectionKey: null, labelEn, labelFr, helpEn, helpFr, []);
 
     private static SeededQuestion Group(string key, string labelEn, string labelFr, string helpEn, string helpFr) =>
-        new(key, QuestionType.Group, QuestionRole.None, IsPrivate: true,
-            IsRequired: false, IsSystem: false, SectionKey: null, labelEn, labelFr, helpEn, helpFr, []);
+        new(key, QuestionType.Group, IsPrivate: true, IsActive: true,
+            SectionKey: null, labelEn, labelFr, helpEn, helpFr, []);
 
     private static SeededQuestion Field(
         string key,
@@ -282,8 +266,7 @@ public static class QuestionBankSeed
         string labelFr,
         string? helpEn = null,
         string? helpFr = null,
-        QuestionRole role = QuestionRole.None,
         IReadOnlyList<SeededOption>? options = null) =>
-        new(key, type, role, isPrivate,
-            IsRequired: false, IsSystem: false, sectionKey, labelEn, labelFr, helpEn, helpFr, options ?? []);
+        new(key, type, isPrivate, IsActive: true,
+            sectionKey, labelEn, labelFr, helpEn, helpFr, options ?? []);
 }

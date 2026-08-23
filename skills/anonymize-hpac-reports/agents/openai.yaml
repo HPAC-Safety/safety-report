@@ -1,4 +1,4 @@
 interface:
   display_name: "Anonymize HPAC Reports"
-  short_description: "Safely evolve HPAC report anonymization"
-  default_prompt: "Use $anonymize-hpac-reports to change or audit immutable question privacy, partitioned model input, and published summaries without weakening privacy guarantees."
+  short_description: "Protect private report details in summaries"
+  default_prompt: "Use $anonymize-hpac-reports to audit the HPAC report-to-summary privacy boundary."

@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HpacSafetyDbContext))]
-    [Migration("20260823001528_InitialSchema")]
+    [Migration("20260823034048_InitialSchema")]
     partial class InitialSchema
     {
         /// <inheritdoc />
@@ -41,24 +41,24 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
-                    b.Property<string>("MemberIdentifier")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)")
-                        .HasColumnName("member_identifier");
-
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("role");
 
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("subject");
+
                     b.HasKey("Id")
                         .HasName("pk_admin_users");
 
-                    b.HasIndex("MemberIdentifier")
+                    b.HasIndex("Subject")
                         .IsUnique()
-                        .HasDatabaseName("ix_admin_users_member_identifier");
+                        .HasDatabaseName("ix_admin_users_subject");
 
                     b.ToTable("admin_users", (string)null);
                 });
@@ -197,17 +197,25 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTimeOffset?>("DeletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("deleted_at");
+                    b.Property<string>("HelpEn")
+                        .HasColumnType("text")
+                        .HasColumnName("help_en");
 
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("display_order");
+                    b.Property<string>("HelpFr")
+                        .HasColumnType("text")
+                        .HasColumnName("help_fr");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
+
+                    b.Property<bool>("IsPrivate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_private");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_required");
 
                     b.Property<bool>("IsSystem")
                         .HasColumnType("boolean")
@@ -219,32 +227,54 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("key");
 
-                    b.Property<string>("Role")
+                    b.Property<string>("LabelEn")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("role");
+                        .HasColumnType("text")
+                        .HasColumnName("label_en");
+
+                    b.Property<string>("LabelFr")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("label_fr");
+
+                    b.Property<int>("Revision")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision");
 
                     b.Property<string>("SectionKey")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")
                         .HasColumnName("section_key");
 
-                    b.Property<string>("Sensitivity")
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer")
+                        .HasColumnName("sort_order");
+
+                    b.Property<string>("SupersedesQuestionId")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("supersedes_question_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
-                        .HasColumnName("sensitivity");
+                        .HasColumnName("type");
 
                     b.HasKey("Id")
                         .HasName("pk_questions");
 
-                    b.HasIndex("Key")
+                    b.HasIndex("SupersedesQuestionId")
                         .IsUnique()
-                        .HasDatabaseName("ix_questions_key");
+                        .HasDatabaseName("ix_questions_supersedes_question_id");
 
-                    b.HasIndex("IsActive", "DisplayOrder")
-                        .HasDatabaseName("ix_questions_is_active_display_order");
+                    b.HasIndex("Key", "Revision")
+                        .IsUnique()
+                        .HasDatabaseName("ix_questions_key_revision");
+
+                    b.HasIndex("Key", "IsActive", "Revision")
+                        .HasDatabaseName("ix_questions_key_is_active_revision");
 
                     b.ToTable("questions", (string)null);
                 });
@@ -263,154 +293,15 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("code");
 
-                    b.Property<int>("DisplayOrder")
-                        .HasColumnType("integer")
-                        .HasColumnName("display_order");
-
-                    b.Property<string>("QuestionVersionId")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("question_version_id")
-                        .IsFixedLength();
-
-                    b.HasKey("Id")
-                        .HasName("pk_question_options");
-
-                    b.HasIndex("QuestionVersionId", "Code")
-                        .IsUnique()
-                        .HasDatabaseName("ix_question_options_question_version_id_code");
-
-                    b.ToTable("question_options", (string)null);
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOptionTranslation", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("id")
-                        .IsFixedLength();
-
-                    b.Property<bool>("IsMachineTranslated")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_machine_translated");
-
-                    b.Property<bool>("IsSource")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_source");
-
-                    b.Property<string>("Label")
+                    b.Property<string>("LabelEn")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("label");
+                        .HasColumnName("label_en");
 
-                    b.Property<string>("Locale")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("locale");
-
-                    b.Property<string>("QuestionOptionId")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("question_option_id")
-                        .IsFixedLength();
-
-                    b.Property<DateTimeOffset?>("TranslatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("translated_at");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_question_option_translations");
-
-                    b.HasIndex("QuestionOptionId", "Locale")
-                        .IsUnique()
-                        .HasDatabaseName("ix_question_option_translations_question_option_id_locale");
-
-                    b.ToTable("question_option_translations", (string)null);
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionTranslation", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("id")
-                        .IsFixedLength();
-
-                    b.Property<string>("HelpText")
-                        .HasColumnType("text")
-                        .HasColumnName("help_text");
-
-                    b.Property<bool>("IsMachineTranslated")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_machine_translated");
-
-                    b.Property<bool>("IsSource")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_source");
-
-                    b.Property<string>("Label")
+                    b.Property<string>("LabelFr")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("label");
-
-                    b.Property<string>("Locale")
-                        .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)")
-                        .HasColumnName("locale");
-
-                    b.Property<string>("Placeholder")
-                        .HasColumnType("text")
-                        .HasColumnName("placeholder");
-
-                    b.Property<string>("QuestionVersionId")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("question_version_id")
-                        .IsFixedLength();
-
-                    b.Property<DateTimeOffset?>("TranslatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("translated_at");
-
-                    b.Property<DateTimeOffset>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_question_translations");
-
-                    b.HasIndex("QuestionVersionId", "Locale")
-                        .IsUnique()
-                        .HasDatabaseName("ix_question_translations_question_version_id_locale");
-
-                    b.ToTable("question_translations", (string)null);
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionVersion", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("id")
-                        .IsFixedLength();
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_required");
+                        .HasColumnName("label_fr");
 
                     b.Property<string>("QuestionId")
                         .IsRequired()
@@ -419,24 +310,18 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnName("question_id")
                         .IsFixedLength();
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("type");
-
-                    b.Property<int>("VersionNumber")
+                    b.Property<int>("SortOrder")
                         .HasColumnType("integer")
-                        .HasColumnName("version_number");
+                        .HasColumnName("sort_order");
 
                     b.HasKey("Id")
-                        .HasName("pk_question_versions");
+                        .HasName("pk_question_options");
 
-                    b.HasIndex("QuestionId", "VersionNumber")
+                    b.HasIndex("QuestionId", "Code")
                         .IsUnique()
-                        .HasDatabaseName("ix_question_versions_question_id_version_number");
+                        .HasDatabaseName("ix_question_options_question_id_code");
 
-                    b.ToTable("question_versions", (string)null);
+                    b.ToTable("question_options", (string)null);
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Report", b =>
@@ -457,32 +342,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(8)")
                         .HasColumnName("language");
 
-                    b.Property<string>("OccurredAtLocal")
-                        .HasColumnType("text")
-                        .HasColumnName("occurred_at_local");
-
-                    b.Property<DateOnly?>("OccurredOn")
-                        .HasColumnType("date")
-                        .HasColumnName("occurred_on");
-
-                    b.Property<string>("PassengerInjury")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("passenger_injury");
-
-                    b.Property<string>("PilotInjury")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("pilot_injury");
-
-                    b.Property<string>("Province")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("province");
-
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -498,12 +357,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(2000)")
                         .HasColumnName("summary_error");
 
-                    b.Property<string>("TimeOfDay")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("time_of_day");
-
                     b.HasKey("Id")
                         .HasName("pk_reports");
 
@@ -511,51 +364,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasDatabaseName("ix_reports_status_submitted_at");
 
                     b.ToTable("reports", (string)null);
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportAircraft", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("id")
-                        .IsFixedLength();
-
-                    b.Property<string>("CertificationAnswer")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("certification_answer");
-
-                    b.Property<string>("Discipline")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("discipline");
-
-                    b.Property<string>("Manufacturer")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("manufacturer");
-
-                    b.Property<string>("Model")
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("model");
-
-                    b.Property<string>("ReportId")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("report_id")
-                        .IsFixedLength();
-
-                    b.HasKey("Id")
-                        .HasName("pk_report_aircraft");
-
-                    b.HasIndex("ReportId")
-                        .HasDatabaseName("ix_report_aircraft_report_id");
-
-                    b.ToTable("report_aircraft", (string)null);
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportAnswer", b =>
@@ -583,13 +391,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(128)")
                         .HasColumnName("question_key");
 
-                    b.Property<string>("QuestionVersionId")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("question_version_id")
-                        .IsFixedLength();
-
                     b.Property<string>("ReportId")
                         .IsRequired()
                         .HasMaxLength(11)
@@ -602,12 +403,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("selected_option_codes");
 
-                    b.Property<string>("Sensitivity")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("sensitivity");
-
                     b.Property<string>("Value")
                         .HasColumnType("text")
                         .HasColumnName("value");
@@ -618,70 +413,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.HasIndex("QuestionId")
                         .HasDatabaseName("ix_report_answers_question_id");
 
-                    b.HasIndex("QuestionVersionId")
-                        .HasDatabaseName("ix_report_answers_question_version_id");
-
                     b.HasIndex("ReportId")
                         .HasDatabaseName("ix_report_answers_report_id");
 
                     b.ToTable("report_answers", (string)null);
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportFile", b =>
-                {
-                    b.Property<string>("Id")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("id")
-                        .IsFixedLength();
-
-                    b.Property<string>("BlobKey")
-                        .IsRequired()
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("blob_key");
-
-                    b.Property<long>("ByteSize")
-                        .HasColumnType("bigint")
-                        .HasColumnName("byte_size");
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(128)
-                        .HasColumnType("character varying(128)")
-                        .HasColumnName("content_type");
-
-                    b.Property<DateTimeOffset?>("ExifStrippedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("exif_stripped_at");
-
-                    b.Property<string>("ReportId")
-                        .IsRequired()
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("report_id")
-                        .IsFixedLength();
-
-                    b.Property<string>("StrippedBlobKey")
-                        .HasMaxLength(512)
-                        .HasColumnType("character varying(512)")
-                        .HasColumnName("stripped_blob_key");
-
-                    b.Property<DateTimeOffset>("UploadedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("uploaded_at");
-
-                    b.HasKey("Id")
-                        .HasName("pk_report_files");
-
-                    b.HasIndex("ExifStrippedAt")
-                        .HasDatabaseName("ix_report_files_exif_stripped_at")
-                        .HasFilter("exif_stripped_at IS NULL");
-
-                    b.HasIndex("ReportId")
-                        .HasDatabaseName("ix_report_files_report_id");
-
-                    b.ToTable("report_files", (string)null);
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Summary", b =>
@@ -705,10 +440,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
-
-                    b.Property<bool>("IsSource")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_source");
 
                     b.Property<string>("Locale")
                         .IsRequired()
@@ -740,24 +471,15 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("text");
 
-                    b.Property<string>("TranslatedFromSummaryId")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("translated_from_summary_id")
-                        .IsFixedLength();
-
                     b.HasKey("Id")
                         .HasName("pk_summaries");
 
                     b.HasIndex("ApprovedBy")
                         .HasDatabaseName("ix_summaries_approved_by");
 
-                    b.HasIndex("TranslatedFromSummaryId")
-                        .HasDatabaseName("ix_summaries_translated_from_summary_id");
-
-                    b.HasIndex("ReportId", "Locale")
+                    b.HasIndex("ReportId")
                         .IsUnique()
-                        .HasDatabaseName("ix_summaries_report_id_language");
+                        .HasDatabaseName("ix_summaries_report_id");
 
                     b.ToTable("summaries", (string)null);
                 });
@@ -772,54 +494,23 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_audit_log_admin_users_admin_user_id");
                 });
 
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOption", b =>
-                {
-                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionVersion", null)
-                        .WithMany("Options")
-                        .HasForeignKey("QuestionVersionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_question_options_question_versions_question_version_id");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOptionTranslation", b =>
-                {
-                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionOption", null)
-                        .WithMany("Translations")
-                        .HasForeignKey("QuestionOptionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_question_option_translations_question_options_question_opti~");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionTranslation", b =>
-                {
-                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionVersion", null)
-                        .WithMany("Translations")
-                        .HasForeignKey("QuestionVersionId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_question_translations_question_versions_question_version_id");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionVersion", b =>
+            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
                 {
                     b.HasOne("HpacSafety.Core.Features.QuestionBank.Question", null)
-                        .WithMany("Versions")
+                        .WithOne()
+                        .HasForeignKey("HpacSafety.Core.Features.QuestionBank.Question", "SupersedesQuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_questions_questions_supersedes_question_id");
+                });
+
+            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOption", b =>
+                {
+                    b.HasOne("HpacSafety.Core.Features.QuestionBank.Question", null)
+                        .WithMany("Options")
                         .HasForeignKey("QuestionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_question_versions_questions_question_id");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportAircraft", b =>
-                {
-                    b.HasOne("HpacSafety.Core.Features.Reporting.Report", null)
-                        .WithMany("Aircraft")
-                        .HasForeignKey("ReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_report_aircraft_reports_report_id");
+                        .HasConstraintName("fk_question_options_questions_question_id");
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportAnswer", b =>
@@ -831,29 +522,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_report_answers_questions_question_id");
 
-                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionVersion", null)
-                        .WithMany()
-                        .HasForeignKey("QuestionVersionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_report_answers_question_versions_question_version_id");
-
                     b.HasOne("HpacSafety.Core.Features.Reporting.Report", null)
                         .WithMany("Answers")
                         .HasForeignKey("ReportId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_report_answers_reports_report_id");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportFile", b =>
-                {
-                    b.HasOne("HpacSafety.Core.Features.Reporting.Report", null)
-                        .WithMany("Files")
-                        .HasForeignKey("ReportId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_report_files_reports_report_id");
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Summary", b =>
@@ -870,38 +544,16 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_summaries_reports_report_id");
-
-                    b.HasOne("HpacSafety.Core.Features.Reporting.Summary", null)
-                        .WithMany()
-                        .HasForeignKey("TranslatedFromSummaryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_summaries_summaries_translated_from_summary_id");
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
                 {
-                    b.Navigation("Versions");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionOption", b =>
-                {
-                    b.Navigation("Translations");
-                });
-
-            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionVersion", b =>
-                {
                     b.Navigation("Options");
-
-                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Report", b =>
                 {
-                    b.Navigation("Aircraft");
-
                     b.Navigation("Answers");
-
-                    b.Navigation("Files");
 
                     b.Navigation("Summaries");
                 });

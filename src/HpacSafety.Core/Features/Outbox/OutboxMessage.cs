@@ -4,9 +4,8 @@ namespace HpacSafety.Core.Features.Outbox;
 
 /// <summary>
 /// Work to be done, written in the same transaction as the report that caused
-/// it. Summarization, translation, and notification all ride this — there is no
-/// "save, then notify", because that loses reports whenever the process dies
-/// between the two.
+/// it. The Worker summary request rides this same transaction, so there is no
+/// "save, then enqueue" gap that can lose work.
 /// </summary>
 public class OutboxMessage
 {

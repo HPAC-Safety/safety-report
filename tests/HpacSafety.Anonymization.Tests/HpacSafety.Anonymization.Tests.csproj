@@ -20,4 +20,8 @@
     <ProjectReference Include="..\..\src\HpacSafety.Core\HpacSafety.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="..\..\src\HpacSafety.Worker\Prompts\summarize.v4.md" Link="summarize.v4.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

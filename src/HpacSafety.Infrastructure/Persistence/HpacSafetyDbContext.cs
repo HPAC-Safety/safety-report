@@ -62,32 +62,17 @@ public class HpacSafetyDbContext : DbContext
     /// <summary>Occurrence reports.</summary>
     public DbSet<Report> Reports => Set<Report>();
 
-    /// <summary>Answers, each referencing the question version it was given under.</summary>
+    /// <summary>Answers, each referencing the exact question revision shown.</summary>
     public DbSet<ReportAnswer> ReportAnswers => Set<ReportAnswer>();
 
-    /// <summary>Aircraft involved in a report.</summary>
-    public DbSet<ReportAircraft> ReportAircraft => Set<ReportAircraft>();
-
-    /// <summary>Uploaded media. Blob storage itself is issue #16.</summary>
-    public DbSet<ReportFile> ReportFiles => Set<ReportFile>();
-
-    /// <summary>Summaries, one row per language.</summary>
+    /// <summary>One candidate summary per report.</summary>
     public DbSet<Summary> Summaries => Set<Summary>();
 
-    /// <summary>The question bank.</summary>
+    /// <summary>Complete immutable question revisions.</summary>
     public DbSet<Question> Questions => Set<Question>();
 
-    /// <summary>Immutable question versions.</summary>
-    public DbSet<QuestionVersion> QuestionVersions => Set<QuestionVersion>();
-
-    /// <summary>Options on a question version.</summary>
+    /// <summary>Options on immutable question revisions.</summary>
     public DbSet<QuestionOption> QuestionOptions => Set<QuestionOption>();
-
-    /// <summary>Per-locale question wording.</summary>
-    public DbSet<QuestionTranslation> QuestionTranslations => Set<QuestionTranslation>();
-
-    /// <summary>Per-locale option wording.</summary>
-    public DbSet<QuestionOptionTranslation> QuestionOptionTranslations => Set<QuestionOptionTranslation>();
 
     /// <summary>The admin allowlist.</summary>
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
@@ -159,17 +144,12 @@ public class HpacSafetyDbContext : DbContext
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
-        modelBuilder.ApplyConfiguration(new ReportConfiguration(_cipher));
+        modelBuilder.ApplyConfiguration(new ReportConfiguration());
         modelBuilder.ApplyConfiguration(new ReportAnswerConfiguration(_cipher));
-        modelBuilder.ApplyConfiguration(new ReportAircraftConfiguration());
-        modelBuilder.ApplyConfiguration(new ReportFileConfiguration());
         modelBuilder.ApplyConfiguration(new SummaryConfiguration());
 
         modelBuilder.ApplyConfiguration(new QuestionConfiguration());
-        modelBuilder.ApplyConfiguration(new QuestionVersionConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionOptionConfiguration());
-        modelBuilder.ApplyConfiguration(new QuestionTranslationConfiguration());
-        modelBuilder.ApplyConfiguration(new QuestionOptionTranslationConfiguration());
 
         modelBuilder.ApplyConfiguration(new AdminUserConfiguration());
         modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
@@ -199,12 +179,7 @@ public class HpacSafetyDbContext : DbContext
         // edge, so a row is readable on its own and a reordered enum cannot
         // silently reinterpret history.
         configurationBuilder.Properties<ReportStatus>().HaveConversion<EnumCodeConverter<ReportStatus>>().HaveMaxLength(64);
-        configurationBuilder.Properties<Province>().HaveConversion<EnumCodeConverter<Province>>().HaveMaxLength(64);
-        configurationBuilder.Properties<TimeOfDay>().HaveConversion<EnumCodeConverter<TimeOfDay>>().HaveMaxLength(64);
-        configurationBuilder.Properties<InjurySeverity>().HaveConversion<EnumCodeConverter<InjurySeverity>>().HaveMaxLength(64);
-        configurationBuilder.Properties<Discipline>().HaveConversion<EnumCodeConverter<Discipline>>().HaveMaxLength(64);
         configurationBuilder.Properties<QuestionType>().HaveConversion<EnumCodeConverter<QuestionType>>().HaveMaxLength(64);
-        configurationBuilder.Properties<QuestionRole>().HaveConversion<EnumCodeConverter<QuestionRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AdminRole>().HaveConversion<EnumCodeConverter<AdminRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AuditAction>().HaveConversion<EnumCodeConverter<AuditAction>>().HaveMaxLength(64);
     }
@@ -212,7 +187,7 @@ public class HpacSafetyDbContext : DbContext
     /// <summary>
     /// Whether a failed write was a primary key that already existed — as
     /// opposed to a unique constraint the domain put there on purpose, such as
-    /// one summary per language, which is a real conflict and not luck.
+    /// one summary per report, which is a real conflict and not luck.
     /// </summary>
     private static bool IsIdentifierCollision(DbUpdateException cause) =>
         cause.InnerException is PostgresException postgres

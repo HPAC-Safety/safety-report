@@ -38,10 +38,10 @@ public static class DevelopmentAdminSeed
     /// can be sent to it, nobody can receive at it, and it is recognisable as a
     /// development artefact at a glance.
     /// </summary>
-    public const string MemberIdentifier = "admin@localhost";
+    public const string Subject = "admin@localhost";
 
     /// <summary>The identifier of the seeded row.</summary>
-    public static TinyId Id => SeedIds.For($"admin_user:{MemberIdentifier}");
+    public static TinyId Id => SeedIds.For($"admin_user:{Subject}");
 
     /// <summary>
     /// The guarded insert. Safe to run against any database: it writes nothing
@@ -52,13 +52,13 @@ public static class DevelopmentAdminSeed
         string.Create(
             CultureInfo.InvariantCulture,
             $"""
-             INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
+             INSERT INTO admin_users (id, subject, role, is_active, created_at)
              SELECT '{Id}',
-                    '{MemberIdentifier}',
+                    '{Subject}',
                     '{EnumCode.Of(AdminRole.Administrator)}',
                     TRUE,
                     TIMESTAMPTZ '{QuestionBankSeed.SeededAt:yyyy-MM-dd HH:mm:sszzz}'
              WHERE current_setting('{SettingName}', true) = 'true'
-               AND NOT EXISTS (SELECT 1 FROM admin_users WHERE member_identifier = '{MemberIdentifier}');
+               AND NOT EXISTS (SELECT 1 FROM admin_users WHERE subject = '{Subject}');
              """);
 }

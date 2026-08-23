@@ -11,9 +11,8 @@ Usage:
 
     python3 tools/extract-typeform.py --json < page.html > form.json
 
-This file is the source of truth for the domain model (issue #5) and for the
-public report form (issue #11). Regenerate it rather than hand-editing
-docs/form-spec.md; CI diffs the two.
+This file is the source of truth for the initial question seed and public form.
+Regenerate it rather than hand-editing docs/form-spec.md, then review the diff.
 """
 from __future__ import annotations
 
@@ -105,7 +104,7 @@ def render_markdown(fields: list[dict]) -> str:
         "# Occurrence report — form specification",
         "",
         "> **Generated file — do not edit by hand.**",
-        "> Regenerate with `tools/extract-typeform.py`; CI diffs this against the live form.",
+        "> Regenerate with `tools/extract-typeform.py`, then review the diff against the live form.",
         "",
         f"Source: <{FORM_URL}>",
         "",

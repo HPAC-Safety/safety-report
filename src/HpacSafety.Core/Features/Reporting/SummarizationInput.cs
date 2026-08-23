@@ -1,50 +1,77 @@
+using HpacSafety.Core.SharedKernel;
+
 namespace HpacSafety.Core.Features.Reporting;
 
-/// <summary>A labeled answer prepared for the summarization model.</summary>
+/// <summary>One exact asked question and its nullable rendered answer.</summary>
+public sealed record ReportQuestionAnswerDto(
+    TinyId QuestionId,
+    string QuestionKey,
+    string Label,
+    bool IsPrivate,
+    string? Answer);
+
+/// <summary>The read DTO returned by the Worker database query.</summary>
+public sealed record ReportForSummaryDto(
+    TinyId ReportId,
+    Locale Language,
+    IReadOnlyList<ReportQuestionAnswerDto> Questions);
+
+/// <summary>One answered labeled field sent to the model.</summary>
 public sealed record SummarizationField(string QuestionKey, string Label, string Value);
 
-/// <summary>
-/// An answer paired with the immutable privacy classification copied from its
-/// question when the report was submitted.
-/// </summary>
-public sealed record ClassifiedReportField(SummarizationField Field, bool IsPrivate);
-
-/// <summary>
-/// The only input shape accepted by a summarizer. Report content supplies facts
-/// for the summary; private context supplies redaction hints and must not be
-/// restated as facts.
-/// </summary>
+/// <summary>The only request shape accepted by the summarizer.</summary>
 public sealed class SummarizationInput
 {
     private SummarizationInput(
+        TinyId reportId,
+        Locale language,
         IReadOnlyList<SummarizationField> reportContent,
         IReadOnlyList<SummarizationField> privateContext)
     {
+        ReportId = reportId;
+        Language = language;
         ReportContent = reportContent;
         PrivateContext = privateContext;
     }
 
-    /// <summary>Non-private fields eligible to contribute facts.</summary>
+    /// <summary>Report id for correlation only.</summary>
+    public TinyId ReportId { get; }
+
+    /// <summary>Requested output language.</summary>
+    public Locale Language { get; }
+
+    /// <summary>Non-private answered fields and the only eligible facts.</summary>
     public IReadOnlyList<SummarizationField> ReportContent { get; }
 
-    /// <summary>Private values the model may use only to recognize and remove identifiers.</summary>
+    /// <summary>Private answered fields used only as recognition hints.</summary>
     public IReadOnlyList<SummarizationField> PrivateContext { get; }
 
-    /// <summary>Partitions fields so callers cannot mix private values into report content.</summary>
-    public static SummarizationInput Partition(IEnumerable<ClassifiedReportField> fields)
+    /// <summary>Partitions one Worker query DTO and omits skipped answers.</summary>
+    public static SummarizationInput From(ReportForSummaryDto report)
     {
-        ArgumentNullException.ThrowIfNull(fields);
+        ArgumentNullException.ThrowIfNull(report);
+        ArgumentNullException.ThrowIfNull(report.Questions);
 
         var reportContent = new List<SummarizationField>();
         var privateContext = new List<SummarizationField>();
 
-        foreach (var classified in fields)
+        foreach (var question in report.Questions)
         {
-            ArgumentNullException.ThrowIfNull(classified);
-            ArgumentNullException.ThrowIfNull(classified.Field);
-            (classified.IsPrivate ? privateContext : reportContent).Add(classified.Field);
+            ArgumentNullException.ThrowIfNull(question);
+
+            if (string.IsNullOrWhiteSpace(question.Answer))
+            {
+                continue;
+            }
+
+            var field = new SummarizationField(question.QuestionKey, question.Label, question.Answer);
+            (question.IsPrivate ? privateContext : reportContent).Add(field);
         }
 
-        return new SummarizationInput(reportContent.AsReadOnly(), privateContext.AsReadOnly());
+        return new SummarizationInput(
+            report.ReportId,
+            report.Language,
+            reportContent.AsReadOnly(),
+            privateContext.AsReadOnly());
     }
 }

@@ -4,7 +4,7 @@ namespace HpacSafety.Core.Features.Moderation;
 
 /// <summary>
 /// What an administrator may do. Authentication is upstream at
-/// members.hpac.ca; roles are ours. See docs/authentication.md.
+/// Authentication belongs to the configured identity provider; roles are ours.
 /// </summary>
 public enum AdminRole
 {

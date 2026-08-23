@@ -1,11 +1,4 @@
-# Every value here has been decided by the repository owner. Where a default was
-# originally a guess it is now marked DECIDED with what was chosen, because
-# skills/clarify-hpac-requirements/SKILL.md requires an answer to be captured in
-# the pull request that received it — an answer given twice was not recorded the
-# first time.
-#
-# No default in this file is a guess any more. If you add a variable whose value
-# you had to invent, mark it plainly and say so in the pull request body.
+# Non-secret deployment choices. Add new variables only for required behavior.
 
 variable "project" {
   description = "Name prefix for every resource. Also the Project tag."
@@ -178,22 +171,6 @@ variable "container_port" {
   description = "Port the API container listens on."
   type        = number
   default     = 8080
-}
-
-# --------------------------------------------------------------------------
-# Mail
-# --------------------------------------------------------------------------
-
-variable "ses_domain" {
-  description = "Domain SES sends as. Verification, DKIM, SPF, and DMARC records for it are published by HPAC's DNS administrator."
-  type        = string
-  default     = "hpac.ca"
-}
-
-variable "ses_mail_from_subdomain" {
-  description = "Subdomain used as the MAIL FROM domain, so SPF aligns with the From header."
-  type        = string
-  default     = "mail"
 }
 
 # --------------------------------------------------------------------------

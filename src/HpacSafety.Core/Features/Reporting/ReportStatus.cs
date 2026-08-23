@@ -1,11 +1,7 @@
-using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Core.SharedKernel;
-
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// The lifecycle of an occurrence report. Stored as a stable invariant code and
-/// localized only at the edge. See skills/incident-domain-model/SKILL.md.
+/// The lifecycle of an occurrence report, stored as a stable invariant code.
 /// </summary>
 public enum ReportStatus
 {

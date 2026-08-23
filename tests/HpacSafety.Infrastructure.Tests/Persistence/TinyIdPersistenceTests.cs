@@ -48,7 +48,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
         }
 
         // Then — no mixed-type joins, and nothing left as uuid.
-        columns.Count.ShouldBeGreaterThan(15);
+        columns.Count.ShouldBeGreaterThan(10);
         columns.ShouldAllBe(column => column.EndsWith("character(11)", StringComparison.Ordinal));
     }
 
@@ -166,7 +166,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     [Fact]
     public async Task Given_a_unique_constraint_the_domain_put_there_When_it_is_violated_Then_it_is_reported_rather_than_retried_away()
     {
-        // Given — one summary per language per report is a rule, not luck. The
+        // Given — one summary per report is a rule, not luck. The
         // retry must not paper over it by minting a new identifier and trying
         // again forever.
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

@@ -1,4 +1,5 @@
 using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Core.SharedKernel;
 
 using Shouldly;
 
@@ -7,42 +8,39 @@ namespace HpacSafety.Anonymization.Tests;
 public sealed class SummarizationInputTests
 {
     [Fact]
-    public void Given_classified_answers_When_the_model_input_is_built_Then_private_fields_are_isolated_from_report_content()
+    public void Given_the_worker_query_dto_When_model_input_is_built_Then_answers_are_partitioned_by_question_privacy()
     {
         // Given
-        ClassifiedReportField[] fields =
-        [
-            new(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), IsPrivate: true),
-            new(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), IsPrivate: false),
-        ];
+        var reportId = TinyId.New();
+        var dto = new ReportForSummaryDto(
+            reportId,
+            Locale.EnCa,
+            [
+                new(TinyId.New(), "pilot_name", "Pilot name", IsPrivate: true, "Avery North"),
+                new(TinyId.New(), "description", "Description", IsPrivate: false, "Avery North landed hard."),
+            ]);
 
         // When
-        var input = SummarizationInput.Partition(fields);
+        var input = SummarizationInput.From(dto);
 
         // Then
-        input.ReportContent.Select(field => field.QuestionKey).ShouldBe(["description"]);
+        input.ReportId.ShouldBe(reportId);
+        input.Language.ShouldBe(Locale.EnCa);
         input.PrivateContext.Select(field => field.QuestionKey).ShouldBe(["pilot_name"]);
+        input.ReportContent.Select(field => field.QuestionKey).ShouldBe(["description"]);
     }
 
     [Fact]
-    public void Given_private_context_When_the_model_input_is_built_Then_it_is_available_only_as_a_separate_section()
+    public void Given_a_skipped_question_When_model_input_is_built_Then_it_is_not_sent_to_the_model()
     {
         // Given
-        var privateName = new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace");
+        var dto = new ReportForSummaryDto(
+            TinyId.New(),
+            Locale.FrCa,
+            [new(TinyId.New(), "damage", "Dommages", IsPrivate: false, Answer: null)]);
 
         // When
-        var input = SummarizationInput.Partition([new(privateName, IsPrivate: true)]);
-
-        // Then
-        input.ReportContent.ShouldBeEmpty();
-        input.PrivateContext.ShouldBe([privateName]);
-    }
-
-    [Fact]
-    public void Given_no_fields_When_the_model_input_is_built_Then_both_sections_are_empty()
-    {
-        // Given / When
-        var input = SummarizationInput.Partition([]);
+        var input = SummarizationInput.From(dto);
 
         // Then
         input.ReportContent.ShouldBeEmpty();
@@ -50,60 +48,36 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_a_null_field_collection_When_the_model_input_is_built_Then_it_is_rejected()
+    public void Given_the_model_boundary_When_ports_are_inspected_Then_only_one_summarizer_accepts_report_input()
     {
         // Given
-        IEnumerable<ClassifiedReportField> fields = null!;
+        var assembly = typeof(ISummarizer).Assembly;
 
         // When
-        var act = () => SummarizationInput.Partition(fields);
+        var parameters = typeof(ISummarizer)
+            .GetMethods()
+            .SelectMany(method => method.GetParameters())
+            .Select(parameter => parameter.ParameterType)
+            .ToArray();
 
         // Then
-        act.ShouldThrow<ArgumentNullException>();
+        parameters.ShouldContain(typeof(SummarizationInput));
+        assembly.GetType("HpacSafety.Core.Features.Reporting.IPiiAuditor").ShouldBeNull();
+        assembly.GetType("HpacSafety.Core.SharedKernel.ITranslator").ShouldBeNull();
+        assembly.GetType("HpacSafety.Core.Features.Reporting.IPublicationChannel").ShouldBeNull();
     }
 
     [Fact]
-    public void Given_a_null_classified_field_When_the_model_input_is_built_Then_it_is_rejected()
-    {
-        // Given
-        ClassifiedReportField[] fields = [null!];
-
-        // When
-        var act = () => SummarizationInput.Partition(fields);
-
-        // Then
-        act.ShouldThrow<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Given_a_classification_without_a_field_When_the_model_input_is_built_Then_it_is_rejected()
-    {
-        // Given
-        ClassifiedReportField[] fields = [new(null!, IsPrivate: true)];
-
-        // When
-        var act = () => SummarizationInput.Partition(fields);
-
-        // Then
-        act.ShouldThrow<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void Given_the_model_ports_When_their_parameters_are_inspected_Then_only_the_summarizer_accepts_report_input()
+    public void Given_the_current_runtime_prompt_When_it_is_loaded_Then_it_defines_role_replacement_in_the_single_call()
     {
         // Given / When
-        var summarizerParameters = ParametersOf(typeof(ISummarizer));
-        var auditorParameters = ParametersOf(typeof(IPiiAuditor));
-        var translatorParameters = ParametersOf(typeof(HpacSafety.Core.SharedKernel.ITranslator));
-        var publicationParameters = ParametersOf(typeof(IPublicationChannel));
+        var prompt = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "summarize.v4.md"));
 
         // Then
-        summarizerParameters.ShouldContain(typeof(SummarizationInput));
-        auditorParameters.ShouldNotContain(typeof(SummarizationInput));
-        translatorParameters.ShouldNotContain(typeof(SummarizationInput));
-        publicationParameters.ShouldNotContain(typeof(SummarizationInput));
+        prompt.ShouldContain("the pilot landed hard");
+        prompt.ShouldContain("Never keep any part of a matched name");
+        prompt.ShouldContain("one short, anonymized summary");
+        prompt.ShouldNotContain("{{include:");
+        prompt.ShouldNotContain("PII auditor", Case.Insensitive);
     }
-
-    private static Type[] ParametersOf(Type port) =>
-        port.GetMethods().SelectMany(method => method.GetParameters()).Select(parameter => parameter.ParameterType).ToArray();
 }

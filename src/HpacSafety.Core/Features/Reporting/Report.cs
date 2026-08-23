@@ -93,6 +93,11 @@ public sealed class Report
     {
         ArgumentNullException.ThrowIfNull(summary);
 
+        if (summary.ReportId != Id)
+        {
+            throw new DomainRuleViolationException("A summary must belong to this report.");
+        }
+
         if (_summaries.Count > 0)
         {
             throw new DomainRuleViolationException("This report already has a summary.");

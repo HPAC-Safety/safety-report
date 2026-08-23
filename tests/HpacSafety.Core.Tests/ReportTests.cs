@@ -91,6 +91,88 @@ public sealed class ReportTests
         answering.ShouldThrow<DomainRuleViolationException>();
     }
 
+    [Theory]
+    [InlineData(QuestionType.Statement)]
+    [InlineData(QuestionType.Group)]
+    public void Given_a_non_answering_question_When_text_is_recorded_Then_it_is_rejected(QuestionType type)
+    {
+        var report = new Report(Locale.EnCa, Now);
+        var question = Question.Create("context", type, "Context", "Contexte", Now);
+
+        var answering = () => report.Answer(question, "answer", Now);
+
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_an_option_question_When_text_is_recorded_Then_it_is_rejected()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        var question = SelectQuestion(QuestionType.SingleSelect);
+
+        var answering = () => report.Answer(question, "wind", Now);
+
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_a_text_question_When_option_codes_are_recorded_Then_it_is_rejected()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        var question = Question.Create("description", QuestionType.LongText, "Description", "Description", Now);
+
+        var answering = () => report.Answer(question, ["wind"], Now);
+
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Theory]
+    [InlineData(QuestionType.SingleSelect)]
+    [InlineData(QuestionType.YesNo)]
+    public void Given_a_single_value_question_When_multiple_codes_are_recorded_Then_it_is_rejected(QuestionType type)
+    {
+        var report = new Report(Locale.EnCa, Now);
+        var question = type == QuestionType.YesNo ? ConsentQuestion() : SelectQuestion(type);
+
+        var answering = () => report.Answer(question, ["yes", "no"], Now);
+
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_consent_When_no_code_is_recorded_Then_it_is_rejected()
+    {
+        var report = new Report(Locale.EnCa, Now);
+
+        var answering = () => report.Answer(ConsentQuestion(), [], Now);
+
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_a_multi_select_question_When_valid_codes_are_recorded_Then_the_codes_are_normalized()
+    {
+        var report = new Report(Locale.EnCa, Now);
+
+        var answer = report.Answer(SelectQuestion(QuestionType.MultiSelect), ["WIND", "rain"], Now);
+
+        answer.SelectedOptionCodes.ShouldBe(["wind", "rain"]);
+        answer.SingleOptionCode.ShouldBeNull();
+        report.ConsentPublish.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Given_the_same_question_revision_twice_When_both_answers_are_recorded_Then_the_second_is_rejected()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        var question = Question.Create("description", QuestionType.LongText, "Description", "Description", Now);
+        report.Answer(question, "First answer", Now);
+
+        var answeringAgain = () => report.Answer(question, "Second answer", Now);
+
+        answeringAgain.ShouldThrow<DomainRuleViolationException>();
+    }
+
     [Fact]
     public void Given_positive_consent_and_one_approved_summary_When_publication_is_attempted_Then_it_succeeds()
     {
@@ -107,6 +189,7 @@ public sealed class ReportTests
 
         // Then
         report.Status.ShouldBe(ReportStatus.Published);
+        report.IsPublishable.ShouldBeTrue();
     }
 
     [Fact]
@@ -141,6 +224,95 @@ public sealed class ReportTests
         report.SummaryError.ShouldBe("provider unavailable");
     }
 
+    [Fact]
+    public void Given_summarization_fails_without_a_safe_error_When_recorded_Then_a_content_free_error_is_used()
+    {
+        var report = new Report(Locale.EnCa, Now);
+
+        report.FailSummarization(" ");
+
+        report.Status.ShouldBe(ReportStatus.SummaryFailed);
+        report.SummaryError.ShouldBe("Summarization failed.");
+    }
+
+    [Fact]
+    public void Given_a_failed_summary_When_it_moves_to_review_Then_the_error_is_cleared()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        report.FailSummarization("provider unavailable");
+
+        report.AwaitReview();
+
+        report.Status.ShouldBe(ReportStatus.PendingReview);
+        report.SummaryError.ShouldBeNull();
+    }
+
+    [Fact]
+    public void Given_a_report_without_every_publication_gate_When_publication_is_attempted_Then_it_is_rejected()
+    {
+        var report = new Report(Locale.EnCa, Now);
+
+        var publishing = report.MarkPublished;
+
+        publishing.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_positive_consent_but_no_summary_When_the_report_is_approved_Then_it_is_not_publishable()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        report.Answer(ConsentQuestion(), ["yes"], Now);
+        report.Approve();
+
+        report.IsPublishable.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Given_positive_consent_and_an_unapproved_summary_When_the_report_is_approved_Then_it_is_not_publishable()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        report.Answer(ConsentQuestion(), ["yes"], Now);
+        report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "The pilot landed hard.", "model", "v4", Now));
+        report.Approve();
+
+        report.IsPublishable.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Given_positive_consent_and_an_approved_summary_without_report_approval_When_checked_Then_it_is_not_publishable()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        report.Answer(ConsentQuestion(), ["yes"], Now);
+        var summary = Summary.Generated(report.Id, Locale.EnCa, "The pilot landed hard.", "model", "v4", Now);
+        summary.Approve(TinyId.New(), Now);
+        report.AddSummary(summary);
+
+        report.IsPublishable.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void Given_a_report_is_rejected_When_the_decision_is_recorded_Then_its_status_changes()
+    {
+        var report = new Report(Locale.EnCa, Now);
+
+        report.Reject();
+
+        report.Status.ShouldBe(ReportStatus.Rejected);
+    }
+
     private static Question ConsentQuestion() =>
         Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier?", Now);
+
+    private static Question SelectQuestion(QuestionType type) =>
+        Question.Create(
+            "conditions",
+            type,
+            "Conditions",
+            "Conditions",
+            Now,
+            options:
+            [
+                new("wind", "Wind", "Vent"),
+                new("rain", "Rain", "Pluie"),
+            ]);
 }

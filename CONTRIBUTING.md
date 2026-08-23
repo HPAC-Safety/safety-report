@@ -76,9 +76,13 @@ These are enforced in CI, so knowing them saves a round trip:
 
 ## If your change touches personal data
 
-Redaction, prompts, summaries, uploads, logging, or authentication:
+Question privacy, model input, prompts, summaries, uploads, logging, or
+authentication:
 
-- Add a golden-file test asserting the specific identifier is absent.
+- Add a privacy-contract test for the boundary you changed. For model output,
+  use a controlled or recorded response, assert the synthetic identifier was
+  present in input and absent from output, and assert useful non-private facts
+  survived.
 - Bump the prompt version if you changed prompt text — do not edit in place.
 - Expect close review. The PR template asks about this explicitly; answer
   honestly, it routes reviewer attention rather than creating work.

@@ -26,7 +26,7 @@ Closes #
 
 If yes:
 
-- [ ] A golden-file test asserts the specific identifier is absent
+- [ ] A privacy/model-contract test proves the boundary or identifier claim
 - [ ] The prompt version was bumped if prompt text changed
 - [ ] `agents/anonymization-auditor.md` reviewed the diff
 - [ ] No credential, request body, or report content is written to a log

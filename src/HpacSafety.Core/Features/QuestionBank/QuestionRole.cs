@@ -49,7 +49,7 @@ public enum QuestionRole
     /// <summary>The aircraft's certification, from which the published class comes.</summary>
     AircraftCertification = 7,
 
-    /// <summary>The reporter's own account. Restricted, and never translated.</summary>
+    /// <summary>The reporter's own account. Non-private report content, but never translated.</summary>
     Narrative = 8,
 
     OccurrenceTime = 9,

@@ -201,8 +201,8 @@ between them) without opening the check to arbitrary nearby words.
 
 ## Consequences
 
-- The classifier is provable in a plain unit test with no database, no network,
-  and no model — the same reason the deterministic scrub lives in `Core`.
+- The classifier is provable in a plain unit test with no database, network, or
+  model. This historical classifier was later superseded by ADR-0036.
 - `NotDetermined` will still appear on historical free-text answers, though less
   often than the first draft produced it. That is the design working. The review
   queue absorbs it; a wrong published class does not.

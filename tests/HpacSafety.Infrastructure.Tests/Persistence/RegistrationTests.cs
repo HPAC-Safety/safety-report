@@ -61,7 +61,7 @@ public sealed class RegistrationTests
         // When
         using var provider = services.BuildServiceProvider();
 
-        // Then — never a silent fallback to storing Restricted text in the clear.
+        // Then — never a silent fallback to storing report text in the clear.
         Should.Throw<InvalidOperationException>(() => provider.GetRequiredService<IFieldCipher>());
     }
 }

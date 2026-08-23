@@ -9,7 +9,7 @@ namespace HpacSafety.Core.Tests.Media;
 /// <summary>
 /// Ingest is where a client-supplied file stops being trusted. Nothing leaves
 /// quarantine until this system has decided what it is; the original bytes are
-/// then retained exactly as uploaded — they are the Restricted record — and the
+/// then retained exactly as uploaded — they are the private source record — and the
 /// derivative a reviewer sees is the stripped one, when there can be one at all.
 /// See docs/data-handling.md.
 /// </summary>
@@ -206,7 +206,7 @@ public class MediaIngestorTests
 
         // When / Then
         // Ingest reads unverified bytes and nothing else. Pointing it at a
-        // report's Restricted record would re-run stripping over a file that has
+        // report's private source record would re-run stripping over a file that has
         // already been accepted, which is not what this is for.
         await Should.ThrowAsync<DomainRuleViolationException>(
             () => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).IngestAsync(original, "image/jpeg", CancellationToken.None));

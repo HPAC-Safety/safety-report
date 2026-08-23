@@ -4,7 +4,7 @@ using HpacSafety.Core.SharedKernel;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// An uploaded photo or video. The original bytes stay Restricted; the
+/// An uploaded photo or video. The original bytes stay private; the
 /// EXIF-stripped derivative is what a reviewer sees, and media is never attached
 /// to a published summary. See docs/data-handling.md.
 /// </summary>
@@ -38,7 +38,7 @@ public class ReportFile
     /// <summary>The report this file belongs to.</summary>
     public TinyId ReportId { get; private init; }
 
-    /// <summary>Key of the original bytes. Restricted.</summary>
+    /// <summary>Key of the private original bytes.</summary>
     public string BlobKey { get; private init; }
 
     /// <summary>Key of the EXIF-stripped derivative a reviewer is shown.</summary>

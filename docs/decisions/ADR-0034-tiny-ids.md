@@ -131,7 +131,7 @@ timestamp into every URL, blob key, and log line undoes that work. The property
 being paid for is one this domain specifically does not want.
 
 **A hash of the row's content.** Deterministic and deduplicating. Rejected:
-report content is Restricted, and an identifier derived from it is a fingerprint
+report content is sensitive, and an identifier derived from it is a fingerprint
 of it — two identical reports would announce that they are identical, and an
 identifier would change if a reviewer corrected a typo.
 

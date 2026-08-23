@@ -33,11 +33,14 @@ for question or summary data, [`incident-domain-model`](../incident-domain-model
   wording instead of hiding it.
 - Require and approve summaries as an EN/FR pair. Never publish one while the
   other waits.
-- Apply deterministic redaction in both languages.
+- Apply the same LLM anonymization policy in both languages. Private context is
+  available only to the source-language summarizer; it never reaches the
+  translation provider.
 - Exercise end-to-end flows in both locales.
 
-Raw reports remain in their submitted language and are never translated. Only
-an already-anonymized summary may cross the translation boundary.
+Report content and private context remain in the submitted language and are
+never translated. Only an LLM-anonymized source summary may cross the
+translation boundary, and the translated summary receives its own PII audit.
 
 ## Generate UI French safely
 

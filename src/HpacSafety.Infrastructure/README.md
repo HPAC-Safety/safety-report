@@ -68,10 +68,10 @@ Detail — the tables, the encryption, and the seeding — is in
 | Setting | What it is |
 |---|---|
 | `ConnectionStrings:HpacSafety` | The database. Empty in `appsettings.json` so nothing falls back to a database somebody did not mean to write to. |
-| `HpacSafety:FieldEncryption:Key` | Base64 256-bit key for Restricted columns. A throwaway literal in `appsettings.Development.json`, a Secrets Manager reference in production. |
+| `HpacSafety:FieldEncryption:Key` | Base64 256-bit key for encrypted report values. A throwaway literal in `appsettings.Development.json`, a Secrets Manager reference in production. |
 
 `AddHpacSafetyPersistence(configuration)` registers both, and refuses to start
-without either. A missing key is never a quiet fallback to storing Restricted
+without either. A missing key is never a quiet fallback to storing report
 text in the clear.
 
 The development connection string also carries
@@ -81,10 +81,11 @@ database in to the seeded `admin@localhost` administrator. See
 
 ## Handling personal data
 
-Reporter and pilot contact details, and the raw narrative, are **Restricted**.
-They are encrypted with AES-256-GCM by this project before PostgreSQL sees
-them, through `IFieldCipher` — a port declared in `Core` so that `Core` still
-depends on nothing. A database dump is inert without the key.
+Every report answer value is encrypted with AES-256-GCM by this project before
+PostgreSQL sees it, through `IFieldCipher` — a port declared in `Core` so that
+`Core` still depends on nothing. `IsPrivate` controls whether an answer becomes
+model-only redaction context, not encryption. A database dump is inert without
+the key.
 
 Read [`docs/data-handling.md`](../../docs/data-handling.md) and
 [ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)

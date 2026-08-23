@@ -19,7 +19,7 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.Property(question => question.Key).HasMaxLength(128).IsRequired();
         builder.Property(question => question.SectionKey).HasMaxLength(128);
         builder.Property(question => question.Role).IsRequired();
-        builder.Property(question => question.Sensitivity).IsRequired();
+        builder.Property(question => question.IsPrivate).IsRequired();
 
         builder.HasIndex(question => question.Key).IsUnique();
         builder.HasIndex(question => new { question.IsActive, question.DisplayOrder });

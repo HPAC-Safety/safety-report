@@ -39,7 +39,7 @@ github  skill  github/awesome-copilot  skills/dotnet-design-pattern-review
 github  skill  obra/superpowers  skills/test-driven-development
 
 # --- authored in this repo (source of truth lives under skills/ and agents/) ---
-# Note: the redaction rules are deliberately NOT a skill. They are runtime
+# Note: the anonymization rules are deliberately NOT a skill. They are runtime
 # assets under prompts/, shipped with the worker and sent to the model when a
 # report arrives — not instructions for the agent writing this codebase.
 # See prompts/README.md.

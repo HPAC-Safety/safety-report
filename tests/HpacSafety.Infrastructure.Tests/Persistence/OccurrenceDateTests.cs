@@ -112,7 +112,7 @@ public sealed class OccurrenceDateTests(PostgresFixture postgres)
     [Fact]
     public async Task Given_the_clock_time_a_reporter_gave_When_the_row_is_read_straight_out_of_postgres_Then_the_precise_time_is_not_there()
     {
-        // Given — the exact minute is Restricted. Province, day, aircraft type,
+        // Given — the exact minute is private. Province, day, aircraft type,
         // injury severity, and a time of day already narrow to one person in a
         // small flying community; the minute makes it certain.
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

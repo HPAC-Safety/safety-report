@@ -4,7 +4,7 @@ namespace HpacSafety.Core.SharedKernel;
 /// The name of one object in private storage, in one of exactly three shapes:
 /// <code>
 /// quarantine/&lt;report id&gt;/&lt;file&gt;   unverified, expired by lifecycle rule
-/// &lt;report id&gt;/original/&lt;file&gt;     the Restricted record
+/// &lt;report id&gt;/original/&lt;file&gt;     the private source record
 /// &lt;report id&gt;/stripped/&lt;file&gt;     what a reviewer is shown
 /// </code>
 /// <para>
@@ -29,7 +29,7 @@ public readonly record struct BlobKey
     /// <summary>The path segment quarantined uploads live under.</summary>
     public const string QuarantineSegment = "quarantine";
 
-    /// <summary>The path segment the Restricted original lives under.</summary>
+    /// <summary>The path segment the private original lives under.</summary>
     public const string OriginalSegment = "original";
 
     /// <summary>The path segment the stripped derivative lives under.</summary>

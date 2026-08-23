@@ -3,7 +3,7 @@ using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
-/// <summary>Canadian provinces and territories. Publishable — a province is not
+/// <summary>Canadian provinces and territories. Non-private report content — a province is not
 /// a site.</summary>
 public enum Province
 {

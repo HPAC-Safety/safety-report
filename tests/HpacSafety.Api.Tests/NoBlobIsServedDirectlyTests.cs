@@ -11,7 +11,7 @@ namespace HpacSafety.Api.Tests;
 /// <para>
 /// The rule is about what the API is *not*: there is no route that reads a blob
 /// and writes its bytes to the response, because such a route would be a second
-/// door onto Restricted media with its own access-control story to get wrong.
+/// door onto private media with its own access-control story to get wrong.
 /// This test walks the live route table and fails if one ever appears, which is
 /// the only moment the rule can be enforced cheaply — at review time, on the
 /// pull request that adds it.

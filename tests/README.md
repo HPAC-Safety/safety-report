@@ -1,94 +1,58 @@
 # tests
 
-**Not deployable.** Run in CI on every pull request and on merge to `main`.
+**Not deployable.** CI runs these on every pull request and merge to `main`.
 
 | Project | Scope |
 |---|---|
-| `HpacSafety.Core.Tests` | Pure unit. No database, no network. |
-| `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
-| `HpacSafety.Infrastructure.Tests` | The database (migrations, mapping, encryption, seeding) and adapters (blob storage against MinIO and the filesystem, EXIF stripping, content sniffing). Testcontainers Postgres |
-| `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
-| `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
-| `js/` | `node --test` — the coverage gate, i18n, api-client, form logic |
-| `e2e/` | Playwright — submit → summarize → review → approve, both locales |
+| `HpacSafety.Core.Tests` | Pure domain and port tests; no database or network |
+| `HpacSafety.Api.Tests` | `WebApplicationFactory` and Testcontainers PostgreSQL |
+| `HpacSafety.Infrastructure.Tests` | Migrations, mapping, encryption, seed data, storage, and media adapters |
+| `HpacSafety.Worker.Tests` | Outbox claim/retry/poison handling and recorded provider behaviour |
+| `HpacSafety.Anonymization.Tests` | Question-to-model privacy boundary and anonymization safety properties |
+| `js/` | Node built-in test runner |
+| `e2e/` | Playwright submission-to-approval journeys in both locales |
 
-## The one that matters most
+## Privacy tests
 
-`HpacSafety.Anonymization.Tests` is the suite that actually protects a reporter.
-Each case is a fixture report seeded with known personal information and an
-assertion that the specific token is absent from the output.
+The anonymization suite does not imitate the model with deterministic regexes.
+It protects the contract around the model:
 
-It covers stage 1, the deterministic scrub: names in the narrative, phone numbers
-in eight written formats, email addresses, URLs with and without a scheme, HPAC
-member numbers, launch and landing-zone names, aircraft make and model, and a
-case carrying all of them at once. `CoreDependencyTests` sits alongside them and
-fails the day `HpacSafety.Core` grows a package reference, because the suite is
-only provable while Core depends on nothing.
+- new questions default private and expose no reclassification path;
+- report answers snapshot question privacy;
+- `SummarizationInput.Partition` puts non-private fields in `report_content` and
+  private fields in `private_context`, never both;
+- only the summarizer can accept private context;
+- controlled or recorded model cases contain known synthetic identifiers in
+  input, omit each identifier from output, and preserve important non-private
+  safety details;
+- summary-only PII audit, translation, and human approval remain mandatory;
+- English and French exercise the same safety properties.
 
-`FrenchNarrativeTests` runs the same categories against a report filed in French,
-and additionally asserts that the role word's article **never** varies with who
-was flying — "la pilote" appearing is a failure, not a grammar improvement.
-
-Two tests in there assert what must **survive** — an altitude, a certification
-class, a word that merely contains a name. They are as load bearing as the rest:
-a scrub that deletes everything passes every absence assertion ever written.
-
-Add a fixture **before** changing a redaction rule.
+Never commit real report content. Use invented names, reserved-domain contact
+details, synthetic sites and brands, and runtime-generated binary fixtures.
 
 ## Running
 
 ```bash
-dotnet test                              # all .NET suites — needs Docker
-dotnet test --filter "Category!=Integration"   # no Docker daemon
-node --test $(find tests/js -name '*.test.mjs')   # JavaScript units
-npx playwright test                      # E2E (needs the stack running)
+dotnet test
+dotnet test --filter "Category!=Integration"
+node --test $(find tests/js -name '*.test.mjs')
+npx playwright test
 ```
 
-`HpacSafety.Api.Tests` starts a real `postgres:17-alpine` container, and
-`HpacSafety.Infrastructure.Tests` starts a real `postgres:17-alpine` container
-plus a real MinIO one, all through Testcontainers, so a Docker daemon has to be
-running. CI always runs the full set.
-
-`HpacSafety.Infrastructure.Tests` shares one Postgres container across the
-suite and creates a fresh database per test, so nothing one test writes is
-visible to another. Its non-integration half needs no Docker at all: it reads
-`docs/form-spec.md` and asserts the seeded question bank reproduces every field
-in it.
+The integration suites use Testcontainers and need Docker. Infrastructure tests
+share containers but create isolated databases. CI always runs the complete set.
 
 ## Conventions
 
-- **Shouldly**, not `Assert.*` — `Xunit.Assert` is banned by an analyzer, so it
-  is a build error in the editor, not a CI surprise. See
-  [`BannedSymbols.txt`](BannedSymbols.txt) and
-  [ADR-0013](../docs/decisions/ADR-0013-ban-assert-rather-than-grep-for-it.md).
-- **`Given_..._When_..._Then_...`**, with the sections marked in the body.
-- **Never assert on exact model output.** Models drift, the test becomes noise,
-  and noisy tests get muted. Assert absence of the identifier, and structural
-  properties.
-- **Never commit real report content** as a fixture. Invent plausible data.
-- **One contract suite per port, not one per adapter.** Where a port has a
-  production adapter and a development stand-in — `IBlobStore` today — the
-  guarantees live in an abstract suite that both subclass, so the stand-in
-  cannot quietly be the weaker one. See
-  [ADR-0026](../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
-- **Generate binary fixtures at run time** rather than committing them. The
-  EXIF suite builds its own JPEG with GPS tags attached, which is both smaller
-  in the repository and impossible to mistake for a real photograph. The one
-  exception is a format the runtime cannot *encode* — see
-  `HpacSafety.Infrastructure.Tests/Media/fixtures/README.md`.
-- **A redaction assertion must be able to fail.** Assert against the un-redacted
-  input as well as the output; a check that passes on both proves nothing.
+- Use Shouldly; `Xunit.Assert` is analyzer-banned.
+- Name tests `Given_..._When_..._Then_...` and mark those sections in the body.
+- Test ports with one abstract contract suite run against every adapter.
+- Assert generated-output safety properties, not exact prose.
+- Prove sensitive input was present before asserting it is absent; also prove
+  useful content survived so an empty output cannot pass.
+- Generate binary fixtures at runtime except for the smallest documented format
+  the runtime cannot encode.
 
-## Coverage
-
-`dotnet test --settings ../coverlet.runsettings --collect:"XPlat Code Coverage"`,
-merged with ReportGenerator, gated by `tools/coverage-gate.mjs`: an 80% line /
-70% branch floor, plus a ratchet that fails if coverage drops below `main`.
-
-Generated code and migrations are excluded — without that the API measures 4.8%
-while `Program.cs` is at 100%. See
-[ADR-0014](../docs/decisions/ADR-0014-coverage-gate.md).
-
-It is a floor, not a goal. The suite above it is what matters.
-
-Full detail: [`docs/testing-conventions.md`](../docs/testing-conventions.md).
+Coverage has an 80% line / 70% branch floor plus a ratchet against `main`. It is
+a floor, not a target. See `docs/testing-conventions.md`.

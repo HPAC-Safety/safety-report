@@ -1,6 +1,3 @@
-using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Core.SharedKernel;
-
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>Something the auditor believes identifies a person.</summary>
@@ -14,9 +11,9 @@ public sealed record PiiFinding(string Kind, string Excerpt);
 public sealed record PiiAuditResult(bool IsClean, IReadOnlyList<PiiFinding> Findings);
 
 /// <summary>
-/// The second-pass check over text the deterministic scrub has already been
-/// through. Deliberately a separate stage: the scrub catches what it knows the
-/// shape of, and this catches what it does not.
+/// A summary-only check for identifying text. It deliberately cannot accept
+/// report content or private context: it evaluates what a public reader could
+/// learn from the candidate summary itself.
 /// </summary>
 public interface IPiiAuditor
 {

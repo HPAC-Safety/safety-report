@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace HpacSafety.Infrastructure.Persistence.Configurations;
 
 /// <summary>The <c>reports</c> table and everything hanging off it.</summary>
-/// <param name="cipher">The cipher its Restricted column is bound to.</param>
+/// <param name="cipher">The cipher its private occurrence-time column is bound to.</param>
 public sealed class ReportConfiguration(IFieldCipher cipher) : IEntityTypeConfiguration<Report>
 {
     /// <inheritdoc />
@@ -31,7 +31,7 @@ public sealed class ReportConfiguration(IFieldCipher cipher) : IEntityTypeConfig
         builder.Property(report => report.ConsentPublish);
 
         // The day the reporter says it happened: a date, so no session timezone
-        // can shift it across midnight. The clock time at the site: Restricted,
+        // can shift it across midnight. The clock time at the site: private,
         // so encrypted, and never published — the coarse `time_of_day` bucket
         // beside it is what anything downstream reads. See ADR-0019.
         builder.Property(report => report.OccurredAtLocal)
@@ -85,10 +85,10 @@ public sealed class ReportAnswerConfiguration(IFieldCipher cipher) : IEntityType
         builder.HasKey(answer => answer.Id);
 
         builder.Property(answer => answer.QuestionKey).HasMaxLength(128).IsRequired();
-        builder.Property(answer => answer.Sensitivity).IsRequired();
+        builder.Property(answer => answer.IsPrivate).IsRequired();
 
-        // Restricted at rest. Encrypting the column rather than the row is what
-        // makes that true regardless of how a question is later reclassified.
+        // Every answer is encrypted at rest. IsPrivate controls the model input
+        // section, not whether storage receives protection.
         builder.Property(answer => answer.Value).HasConversion(EncryptedStringConverter.For(cipher));
 
         builder.PrimitiveCollection(answer => answer.SelectedOptionCodes)
@@ -124,7 +124,7 @@ public sealed class ReportAircraftConfiguration : IEntityTypeConfiguration<Repor
 
         builder.Property(aircraft => aircraft.Discipline).IsRequired();
 
-        // Internal tier: retained for trend analysis, never published.
+        // Private context: retained for trend analysis, never published.
         builder.Property(aircraft => aircraft.Manufacturer).HasMaxLength(200);
         builder.Property(aircraft => aircraft.Model).HasMaxLength(200);
         builder.Property(aircraft => aircraft.CertificationAnswer).HasMaxLength(200);

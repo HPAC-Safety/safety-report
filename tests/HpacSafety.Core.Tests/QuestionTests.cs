@@ -232,12 +232,26 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_new_question_When_no_tier_is_stated_Then_it_is_Restricted()
+    public void Given_a_new_question_When_privacy_is_not_stated_Then_it_is_private()
     {
         // Given / When
         var question = Question.Create("anything", QuestionType.ShortText, Locale.EnCa, "Anything", Now);
 
-        // Then — if you are unsure which tier something belongs to, it is Restricted
-        question.Sensitivity.ShouldBe(SensitivityTier.Restricted);
+        // Then — an administrator must deliberately opt a question into report content
+        question.IsPrivate.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Given_a_question_When_its_privacy_contract_is_inspected_Then_it_cannot_be_changed_after_creation()
+    {
+        // Given / When
+        var property = typeof(Question).GetProperty(nameof(Question.IsPrivate));
+        var publicMethods = typeof(Question).GetMethods().Select(method => method.Name);
+
+        // Then — changing classification requires retiring this question and creating another
+        property.ShouldNotBeNull();
+        property.SetMethod.ShouldNotBeNull();
+        property.SetMethod!.IsPrivate.ShouldBeTrue();
+        publicMethods.ShouldNotContain("Reclassify");
     }
 }

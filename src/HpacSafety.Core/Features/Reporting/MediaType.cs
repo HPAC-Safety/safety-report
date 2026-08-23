@@ -8,7 +8,7 @@ namespace HpacSafety.Core.Features.Reporting;
 /// derivative is, or that it does not have one yet.
 /// <para>
 /// A format without a stripped form is still accepted and still retained — the
-/// original is the Restricted record either way — but it produces no derivative,
+/// original is the private source record either way — but it produces no derivative,
 /// so <see cref="ReviewerMediaLink" /> has nothing to issue a URL for and a
 /// reviewer sees nothing rather than something unsafe. See
 /// docs/data-handling.md and ADR-0025.

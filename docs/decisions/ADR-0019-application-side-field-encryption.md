@@ -1,14 +1,14 @@
-# ADR-0019: Restricted fields are encrypted by the application, not by the database
+# ADR-0019: Report values are encrypted by the application, not by the database
 
 **Status:** Accepted
 **Date:** 2026-08-22
 
 ## Context
 
-`docs/data-handling.md` puts reporter and pilot names, phone numbers, email
-addresses, HPAC member numbers, and the raw narrative in the **Restricted**
-tier: encrypted at rest, admin-only, never logged, never sent to a translation
-service.
+Reports contain names, contact details, member identifiers, precise timing, and
+narrative accounts of real accidents. These values require application-side
+encryption at rest regardless of whether a question is private model context or
+non-private report content under the later ADR-0038.
 
 "Encrypted at rest" has several possible meanings, and they protect against
 different things:
@@ -48,12 +48,8 @@ Five decisions inside that one:
 ### 1. The whole `report_answers.value` column is encrypted
 
 A `ValueConverter` runs per value, not per row. A column is therefore encrypted
-for every row or for none, and "encrypt only the rows whose question is
-Restricted" is not a thing EF can express.
-
-Encrypting the whole column is also the answer `docs/data-handling.md` already
-gives: the narrative is Restricted too, a question added through the admin UI is
-Restricted until someone decides otherwise, and when in doubt it is Restricted.
+for every row or for none. Encrypting the whole column is deliberate: question
+privacy controls the summarization section, not storage protection.
 Option codes live in a separate `selected_option_codes` array and stay readable,
 because a code is a controlled vocabulary and not free text.
 
@@ -117,7 +113,7 @@ date and a clock reading at a site.
 The boundaries — morning before 11:00, mid-day 11:00 to 14:00, afternoon 14:00
 to 17:00, evening from 17:00 — live in exactly one place, `TimeOfDayBuckets`, as
 `TimeOfDay.FromLocalTime(TimeOnly)` in `Core`. The projection onto `Report` and
-the anonymization scrub in #18 both call it, so "when does the afternoon start"
+summarization input preparation both call it, so "when does the afternoon start"
 has one answer in this system rather than one per caller. The vocabulary is the
 existing `TimeOfDay`, unchanged, so answers carried over from Typeform — where
 the reporter picked the bucket directly — sit on the same scale as derived ones.
@@ -129,7 +125,7 @@ all) and is never a null that logic reads as midnight. Midnight is a real answer
 a reporter can give. This is the same shape as the `QuestionRole` rule in
 ADR-0016: a missing role is a defined state, never a zero.
 
-### 6. The precise time is Restricted, so it is encrypted
+### 6. The precise time is private, so it is encrypted
 
 `docs/anonymization-policy.md` narrows a published date to a month and a year
 because province, date, aircraft type, and injury severity together identify one
@@ -143,7 +139,7 @@ bucket is what a summary publishes and what analysis groups by; the precise time
 is for a reviewer looking at the raw report, and for nothing else.
 
 Storing it as encrypted text rather than as a `time` column costs the ability to
-range-query the precise time in SQL. Nothing does. The alternative — a Restricted
+range-query the precise time in SQL. Nothing does. The alternative — a private
 value sitting in the clear because the column type was prettier — is the thing
 `AGENTS.md` now forbids outright.
 
@@ -188,9 +184,9 @@ also removes most of the benefit.
 
 **A separate `report_contacts` table with typed encrypted columns.** Would let
 non-contact answers stay searchable. Rejected because it re-introduces the fixed
-schema ADR-0016 exists to avoid: the form is data, "which fields are contact
-fields" is an administrator's decision, and a typed table would have to be
-migrated every time they change their mind.
+schema ADR-0016 exists to avoid: the form is data, and a typed table would need
+a migration whenever a newly created question collected another kind of private
+value.
 
 **Deterministic encryption, so values stay comparable.** Rejected: equal
 ciphertexts would show, in a dump, which reports share a phone number — which is
@@ -207,8 +203,8 @@ accident into the wrong bucket, and near midnight into the wrong day and month.
 
 **Storing the occurrence time as a plain `time` column.** Readable in `psql`,
 range-queryable, and the obvious mapping for `TimeOnly`. Rejected because the
-precise time is Restricted and a Restricted value is not stored in the clear for
-convenience. Nothing range-queries it; the bucket beside it answers every
+precise time is private and is not stored in the clear for convenience. Nothing
+range-queries it; the bucket beside it answers every
 question anything actually asks.
 
 **Keeping "morning" as a question the reporter answers.** It is what Typeform

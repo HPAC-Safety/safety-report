@@ -13,8 +13,8 @@ public sealed record TranslationResult(string Text, string Model);
 /// <para>Two callers, both of them safe:</para>
 /// <list type="bullet">
 /// <item><description>The summary pipeline, which translates an
-/// <b>already-anonymized</b> summary. A raw report is never translated and never
-/// leaves the system.</description></item>
+/// <b>already-anonymized</b> summary. Report content and private context are
+/// never translated.</description></item>
 /// <item><description>The question builder, which translates question wording an
 /// administrator typed. Question text contains no reporter data.</description></item>
 /// </list>

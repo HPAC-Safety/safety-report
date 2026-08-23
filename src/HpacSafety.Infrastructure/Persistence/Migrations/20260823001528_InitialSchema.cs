@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
@@ -446,7 +446,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             // The question bank, so a clean database asks exactly the question
             // set in docs/form-spec.md. Guarded row-by-row, so re-applying this
             // is a safe no-op. See ADR-0020.
-            Seeding.QuestionBankSeedWriter.Write(migrationBuilder);
+            Seeding.QuestionBankSeedWriter.WriteLegacySensitivitySchema(migrationBuilder);
 
             // One obviously-fake local administrator, and only where the
             // database applying this says it wants one. Unset means no, which

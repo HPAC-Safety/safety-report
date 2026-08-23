@@ -33,7 +33,7 @@ Move detailed procedures behind focused, triggerable skills:
 | Requirement gaps and how to ask | `clarify-hpac-requirements` |
 | Test conventions and safety assertions | `test-hpac-safety` |
 | English/French parity and localization | `localize-hpac-app` |
-| Question bank, lifecycle, outbox, sensitivity | existing `incident-domain-model` |
+| Question bank, lifecycle, outbox, privacy | existing `incident-domain-model` |
 | Database and migration rules | `persist-hpac-data` |
 | Upload and media privacy | `handle-hpac-media` |
 | Static UI, theme, and browser assets | `build-hpac-web-ui` |

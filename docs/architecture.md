@@ -58,7 +58,7 @@ sequenceDiagram
     A->>D: COMMIT
     A-->>B: 202 Accepted
     W->>D: SELECT ... FOR UPDATE SKIP LOCKED
-    W->>W: scrub → summarize → audit → translate → audit
+    W->>W: partition answers → summarize/anonymize → audit summary → translate → audit
     W->>D: INSERT summaries (en-CA, fr-CA)
     W->>D: mark outbox row processed
 ```
@@ -76,14 +76,14 @@ restarting is a notification nobody hears.
 
 | Project | Responsibility | Depends on |
 |---|---|---|
-| `HpacSafety.Core` | Entities, enums, interfaces, the question bank, the deterministic scrub | nothing |
+| `HpacSafety.Core` | Entities, enums, interfaces, the question bank, and the owned summarization-input partition | nothing |
 | `HpacSafety.Infrastructure` | EF Core, Anthropic, blob storage, HPAC auth, email. **Owns every table and every migration** | Core |
 | `HpacSafety.Api` | HTTP surface, validation, sessions | Core, Infrastructure |
 | `HpacSafety.Worker` | Outbox consumer | Core, Infrastructure |
 
-`Core` depending on nothing is the rule that keeps the anonymization logic
-testable without a database, a network, or a model. The deterministic scrub in
-particular must be provable in a plain unit test.
+`Core` depending on nothing keeps immutable question privacy and model-input
+partitioning testable without a database, network, or model. Textual
+anonymization is performed by the configured LLM under versioned prompts.
 
 Inside it, code is organised by **feature** — `Features/Reporting`,
 `Features/QuestionBank`, `Features/Moderation`, `Features/Outbox` — with the
@@ -96,13 +96,13 @@ its entities, its enums, and the ports it calls out through. See
 The browser PUTs a photo straight to a private bucket through a pre-signed URL
 the API mints, scoped to one key and valid for minutes. That keeps
 multi-megabyte bodies out of the request pipeline, and — the part that matters
-more — it means the API is not a second door onto Restricted media with its own
+more — it means the API is not a second door onto private media with its own
 authorization story to get wrong. There is no route that serves blob bytes, and
 a test walks the live route table to keep it that way.
 
 Every upload lands in `quarantine/` and nothing leaves it until this system has
 decided what the bytes are. Accepted media is promoted to
-`<report id>/original/<file>` — the Restricted record, retained untouched — and,
+`<report id>/original/<file>` — the private source, retained untouched — and,
 where the format can be stripped, to `<report id>/stripped/<file>`, which is the
 only thing a reviewer's browser ever fetches. A refused upload is never
 promoted and expires in quarantine, which is why nothing here has a delete.
@@ -115,11 +115,11 @@ nothing for it rather than something unsafe (#65). See
 
 ## Why the questions are in the database
 
-The form HPAC asks is a table, not a class. Questions carry a type, an order,
-their own options, and per-locale wording; answers reference the question
-*version* they were given under. A safety officer changes the form without a
-deploy, and a report from two seasons ago still renders the question it was
-actually answering.
+The form HPAC asks is a table, not a class. Questions carry a type, order,
+options, per-locale wording, and an immutable `IsPrivate` decision; answers
+reference the version they were given under and snapshot privacy. A safety
+officer changes the form without a deploy, and historical answers keep the
+meaning and handling contract under which they were submitted.
 
 The answers that logic reads — consent above all — additionally project onto
 typed columns on `reports`, so the invariants stay enforceable in `Core` with no
@@ -130,9 +130,9 @@ database. See
 
 Every table, every index, and every migration is in
 `HpacSafety.Infrastructure/Persistence`, including tables whose behaviour lives
-elsewhere. Restricted columns are encrypted there too, by the application, behind
-a port declared in `Core` — PostgreSQL never sees the plaintext of a contact
-detail or a raw narrative. See
+elsewhere. Every report answer value is encrypted there by the application,
+behind a port declared in `Core` — PostgreSQL never sees plaintext report text.
+`IsPrivate` controls model input, not encryption. See
 [ADR-0019](decisions/ADR-0019-application-side-field-encryption.md) and
 [ADR-0020](decisions/ADR-0020-seeding-by-migration.md).
 

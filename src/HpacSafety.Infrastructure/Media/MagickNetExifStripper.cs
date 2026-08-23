@@ -50,7 +50,7 @@ public sealed class MagickNetExifStripper : IExifStripper
 
         // Carried across the re-encode so the derivative a reviewer sees is as
         // close to the original as stripping allows. The original bytes are kept
-        // untouched regardless; they are the Restricted record.
+        // untouched regardless; they are the private source record.
         var quality = image.Quality;
         image.Strip();
         image.Quality = quality;

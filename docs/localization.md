@@ -196,12 +196,11 @@ Pinned in `locales/glossary.json` and never overwritten by the translator:
 - Rating names: P1–P4, H1–H4, instructor and tandem ratings
 - Aircraft certification classes
 - The publication-consent question
-- **The anonymization role words** — "the reporter" / "le déclarant", "the pilot"
-  / "le pilote". These are what the deterministic scrub writes in place of a
-  person's name, they were chosen by HPAC rather than generated, and the French
-  pair is **always masculine whoever was flying** — a translator that agreed the
-  article would undo the anonymisation. See
-  [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
+- **The anonymization role words** — "the reporter" / "le déclarant", "the
+  pilot" / "le pilote". The summarization prompt uses these instead of a
+  person's name. They are HPAC terminology, and French must use stable generic
+  wording rather than agreement that restores an identifying trait. See
+  [ADR-0038](decisions/ADR-0038-question-privacy-and-llm-anonymization.md).
 
 These need HPAC's own official French wording, ideally taken from the existing
 French Typeform. This is the one translation decision a machine must not make.
@@ -235,15 +234,15 @@ wearing the same name. Pinning here means the string is never sent at all. See
 ADR-0022, which also notes where DeepL glossaries *would* help — term
 consistency inside strings that are not pinned.
 
-The role words are also owned by `ScrubVocabulary` because the deterministic
-scrub writes them into report text rather than UI chrome. Tests assert those
-human-decided terms literally; generated UI locale files remain CI-owned.
+Role wording is a versioned runtime-prompt decision, not UI chrome. Tests may
+assert those human-decided terms literally; generated UI locale files remain
+CI-owned.
 
 ## Reports and summaries
 
-**The raw report is never translated.** It stays as the reporter wrote it — it is
-evidence, and a translated account of a crash is a paraphrased account of a
-crash.
+**Report content and private context are never translated.** They stay as the
+reporter submitted them. Only the LLM-anonymized source summary crosses the
+translation boundary.
 
 `reports.language` records the locale it was written in. The summarizer
 summarizes **in that language**, then the summary is translated into the other,
@@ -258,7 +257,7 @@ flowchart LR
 ```
 
 The translation gets its own PII audit — a model producing fluent French can
-reintroduce a detail the scrub removed. A safety officer approves the pair, side
+introduce identifying specificity. A safety officer approves the pair, side
 by side; approving one does not approve the other.
 
 Note the split: the UI-string job runs inside GitHub Actions, against DeepL. The worker runs in production and translates

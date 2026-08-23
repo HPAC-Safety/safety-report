@@ -4,41 +4,34 @@ This system stores accounts of real accidents, including names, phone numbers,
 injuries, and occasionally fatalities. Canadian personal information law
 (PIPEDA) applies, and so does the promise the reporting form makes.
 
-## Three tiers
+## Question privacy and storage protection
 
-A field's tier is a property of the field, not of the screen it appears on.
+Question privacy is one immutable creation-time decision:
 
-| Tier | Contents | Rules |
-|---|---|---|
-| **Restricted** | Reporter and pilot names, phone, email, member number, raw narrative, original media, the precise time of the occurrence | Encrypted at rest. Admin-only. Never logged. Never sent to a translation service. |
-| **Internal** | Manufacturer, model, precise site | Retained for HPAC trend analysis. Never published. |
-| **Publishable** | Approved summary, certification class, province, severity, month and year, time-of-day bucket | Public once a safety officer approves and consent was given. |
+| Classification | Model handling |
+|---|---|
+| `IsPrivate = true` | The labeled answer goes only to the summarizer's `private_context`, where it may be used to recognize details that must not appear in output. |
+| `IsPrivate = false` | The labeled answer goes to `report_content` and may supply summary facts, still subject to LLM anonymization. |
 
-If you are unsure which tier something belongs to, it is Restricted.
+New questions default private. The administration UI does not permit later
+reclassification; changing privacy requires deactivating the old question and
+creating a new identity. Each submitted answer snapshots the value. See
+[ADR-0038](decisions/ADR-0038-question-privacy-and-llm-anonymization.md).
 
-Because the question set is data rather than code (
-[ADR-0016](decisions/ADR-0016-data-driven-question-bank.md)), a **question
-carries its own tier**, and a question added through the admin UI is
-**Restricted** until someone decides otherwise. Nobody has to remember to
-classify a new question for it to be handled safely; they have to remember in
-order to *relax* it.
-
-An answer copies the tier it was given under. Reclassifying a question later
-therefore cannot retroactively downgrade the handling of text a reporter already
-trusted us with.
+Privacy classification is not a storage tier. Every report answer is encrypted
+at rest, never logged, and admin-only in raw-report views. Only approved summary
+text becomes public after explicit consent and human review.
 
 ## How "encrypted at rest" is done
 
-Restricted text is encrypted **by the application**, with AES-256-GCM, before
+Report answer text is encrypted **by the application**, with AES-256-GCM, before
 PostgreSQL sees it. The key lives in configuration — a throwaway literal in
 `appsettings.Development.json`, a Secrets Manager reference in production — and
 never in the database that holds the ciphertext.
 
-Because the question set is data, contact details are answers rather than
-columns, so the whole of `report_answers.value` is encrypted rather than
-selected rows of it. A value converter runs per value and cannot ask which tier
-a row belongs to, and the tiering above already says the narrative is Restricted
-and a new question is Restricted until someone decides otherwise.
+Because the question set is data, contact details and narrative are answers
+rather than columns, so the whole of `report_answers.value` is encrypted. A
+value converter runs per value and protection does not depend on `IsPrivate`.
 
 Three consequences, all deliberate:
 
@@ -46,7 +39,7 @@ Three consequences, all deliberate:
 - The wrong key fails loudly. It never returns plausible-looking rubbish.
 - Losing the key loses the data. Key custody is an operational responsibility.
 
-The **precise time** of an occurrence is Restricted for the same reason the
+The **precise time** of an occurrence is private for the same reason the
 exact date is never published: province, date, aircraft type, and injury
 severity already narrow to one person in a small flying community, and the
 minute makes it certain. It is encrypted; the coarse time-of-day bucket derived
@@ -79,7 +72,7 @@ One photo or video per report, matching the existing form.
   pre-signed GETs.
 - **EXIF is stripped on ingest** — GPS above all. A crash photo identifies a
   person and a site regardless of how clean the text is.
-- Original bytes stay in the Restricted record; the stripped derivative is what
+- Original bytes stay in the private source record; the stripped derivative is what
   a reviewer sees.
 - Content type is sniffed, not trusted from the client.
 - Media is **never** attached to a published summary. Publishing an image is a
@@ -92,13 +85,13 @@ everything belonging to one report is a single literal prefix.
 
 ```
 quarantine/<report id>/<file>   unverified. Expired by lifecycle rule.
-<report id>/original/<file>     the Restricted record. Never shown to anyone.
+<report id>/original/<file>     the private source record. Never shown to anyone.
 <report id>/stripped/<file>     the derivative a reviewer sees.
 ```
 
 Report ids are **tiny ids**: 11 characters of `A-Za-z0-9-_`, cryptographically
 random, encoding no timestamp. **File names are minted the same way, never taken
-from the client.** A camera roll name is Restricted data in its own right —
+from the client.** A camera roll name is private data in its own right —
 `mt-7-tandem-dave.jpg` names a site and a person — and a key ends up in bucket
 access logs, in CloudTrail, and in every pre-signed URL. The reporter's name for
 the file is of no use to this system, so it is not carried.
@@ -123,7 +116,7 @@ flowchart LR
     q --> sniff["sniff the content type"]
     sniff --> val{"accepted?"}
     val -->|no| rej["never promoted.<br/>expires in quarantine"]
-    val -->|yes| orig[("&lt;id&gt;/original/&lt;file&gt;<br/>Restricted")]
+    val -->|yes| orig[("&lt;id&gt;/original/&lt;file&gt;<br/>private source")]
     orig --> can{"can this system<br/>strip it?"}
     can -->|"no — video, #65"| held["retained, not viewable"]
     can -->|yes| der[("&lt;id&gt;/stripped/&lt;file&gt;")]
@@ -138,7 +131,7 @@ route table.
 
 ### Accepted, but not yet viewable
 
-A **video is accepted and retained** — the original is the Restricted record like
+A **video is accepted and retained** — the original is the private source record like
 any other upload — but nothing in this system can strip a video's metadata yet,
 so **no derivative is produced and no reviewer link can be issued for it**. A
 reviewer sees nothing for that report's media rather than something unsafe.
@@ -315,12 +308,15 @@ rule above expires without anything having to notice.
 
 ## What is sent to a third-party model
 
-Only scrubbed text reaches Anthropic, and only the already-anonymized summary
-reaches a translation step. The raw report never leaves the system.
+The configured summarization model receives labeled `report_content` and
+`private_context` as distinct sections. Private context is used only to
+recognize identifiers that must be omitted or generalized; it is not a source
+of summary facts.
 
-The deterministic scrub running *before* the first model call is what makes that
-statement true, which is why it lives in `Core` with no dependencies and is
-provable in a plain unit test.
+No other third party receives private context. The PII auditor receives the
+candidate summary only, and the translation provider receives the anonymized
+source summary only. Prompt payloads and model responses are never logged. See
+ADR-0038 and `docs/anonymization-policy.md`.
 
 ## Logging
 

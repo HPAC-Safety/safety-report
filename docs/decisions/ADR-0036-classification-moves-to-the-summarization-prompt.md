@@ -104,7 +104,7 @@ flowchart LR
   from and kept in sync with; the prompt is the copy that ships.
 - A classification is no longer independently unit-testable against a plain
   `string?` input in `HpacSafety.Core.Tests`. It is exercised the way the rest
-  of the anonymization pipeline is: through the golden-file suite in
+  of the anonymization pipeline is: through controlled model-contract cases in
   `tests/HpacSafety.Anonymization.Tests` once the summarizer (#20) exists, and
   through human review before publication (invariant 3) regardless.
 - A reviewer who disagrees with the class a summary states corrects the summary

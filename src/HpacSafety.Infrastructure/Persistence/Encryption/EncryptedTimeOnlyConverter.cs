@@ -12,7 +12,7 @@ namespace HpacSafety.Infrastructure.Persistence.Encryption;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The exact time is Restricted, for the same reason the exact date is never
+/// The exact time is private, for the same reason the exact date is never
 /// published: a province, a day, an aircraft type, an injury severity, and a
 /// time of day together identify one person in a small flying community.
 /// Adding the minute to that makes it certain. The coarse
@@ -20,7 +20,7 @@ namespace HpacSafety.Infrastructure.Persistence.Encryption;
 /// only one anything downstream reads.
 /// </para>
 /// <para>
-/// Stored as encrypted text rather than as <c>time</c>, because a Restricted
+/// Stored as encrypted text rather than as <c>time</c>, because a private
 /// field is never stored in the clear. The cost is that the precise time cannot
 /// be range-queried in SQL — nothing does, because analysis reads the bucket.
 /// See ADR-0019.

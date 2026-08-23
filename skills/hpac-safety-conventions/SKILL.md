@@ -31,7 +31,9 @@ indirection.
 
 Treat `prompts/` as versioned product assets sent to the model processing real
 reports. Bump a prompt version instead of editing one in place. Keep agent
-instructions under `skills/`; never move redaction policy out of `prompts/`.
+instructions under `skills/`; runtime anonymization rules stay in `prompts/`.
+The summarizer receives partitioned `report_content` and `private_context`;
+other model or public boundaries must not accept private context.
 
 ## Regenerate owned artifacts
 

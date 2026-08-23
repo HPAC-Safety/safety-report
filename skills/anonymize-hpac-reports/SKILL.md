@@ -1,78 +1,80 @@
 ---
 name: anonymize-hpac-reports
-description: Safely evolve or audit HPAC safety-report anonymization, deterministic PII scrubbing, sensitive-data flow, summarization and PII-audit prompts, role-word replacement, and published-detail boundaries. Use when code, tests, fixtures, prompts, APIs, logs, exceptions, translations, or documentation could affect what report content reaches a model or published summary.
+description: Safely evolve or audit HPAC report anonymization, immutable question privacy, model-input partitioning, summarization and PII-audit prompts, private-data flow, translations, and published-detail boundaries. Use when code, tests, prompts, APIs, logs, exceptions, questions, or documentation could affect what report content reaches a model or public summary.
 ---
 
 # Protect the anonymization boundary
 
-Read `AGENTS.md`, `docs/anonymization-policy.md`,
-`src/HpacSafety.Core/Features/Anonymization/README.md`, and the applicable prompt
-versions before changing this pipeline. Load [`test-hpac-safety`](../test-hpac-safety/SKILL.md)
-for tests and [`localize-hpac-app`](../localize-hpac-app/SKILL.md) for either
-official language.
+Read `AGENTS.md`, `docs/anonymization-policy.md`, ADR-0038, and the active prompt
+versions. Load [`test-hpac-safety`](../test-hpac-safety/SKILL.md) for tests and
+[`localize-hpac-app`](../localize-hpac-app/SKILL.md) for either official
+language.
 
-## Preserve the closed deterministic pass
+## Classify at question creation
 
-- Keep `DeterministicScrub` in dependency-free `HpacSafety.Core`: no database,
-  network, model, configuration, or production runtime dependency.
-- Keep every scrub stage `internal` and assemble the complete chain only in
-  `DeterministicScrub`. Do not add an options object, registry, callback, or
-  public stage that lets a caller omit protection. Test the assembled chain.
-- Pass labelled fields in `ScrubRequest`; do not flatten structured answers
-  into one text blob. Treat an unclassified field as Restricted and fail closed.
-- Drop direct contact and member fields. Generalize structured locations to the
-  province, carry only the already-derived occurrence date/time buckets, and
-  never derive an aircraft class deterministically.
-- Harvest structured identifiers before scanning narrative patterns so names,
-  sites, handles, membership identifiers, manufacturers, and models repeated in
-  prose are removed or replaced.
-- Replace harvested names with the role vocabulary, not a generic marker. Keep
-  French role words uniform masculine so grammatical agreement does not restore
-  identifying information. Treat those words as human-decided pinned terms.
+- Every question has an immutable `IsPrivate` value. Default it to `true` so an
+  omitted checkbox cannot expose a new answer.
+- The administration form presents the privacy checkbox only while creating a
+  question. Do not offer it when revising wording, type, options, order, role,
+  or activation.
+- Never add a reclassification method or migration that silently changes an
+  existing question. To change privacy, deactivate the old question and create
+  a new identity. Historical answers keep their original classification.
+- Copy `Question.IsPrivate` to each `ReportAnswer` when it is recorded.
 
-ADR-0027 owns the scrub design and its disclosed limits. ADR-0028 owns the role
-vocabulary. Update the ADR and policy when accepting or closing a limitation;
-do not let documentation promise more than the code proves.
+## Partition the summarizer input
 
-## Keep sensitive text out of side channels
+Build the model request through `SummarizationInput.Partition`:
 
-- Never include a raw field, narrative, regex subject, member credential, or
-  other user input in logs, exception messages, telemetry, snapshots, or PR
-  fixtures. Translate low-level exceptions into content-free domain errors.
-- Keep `ScrubbedReport` unforgeable outside the deterministic feature. Model
-  ports still accept `string` until issue #61 retypes that boundary; do not add
-  another raw-string path, and use the proof value when completing that issue.
-- Never translate a raw report. Summarize in its submitted language, translate
-  only the already-anonymized summary, and approve both official-language
-  versions before publication.
-- Review combinations that identify someone in a small flying community even
-  when no single value looks like PII: exact dates, sites, unusual aircraft,
-  events, occupations, and unique roles.
+- `report_content` contains only non-private fields. These are the only facts
+  the summary may state.
+- `private_context` contains private labels and values. The summarizer may use
+  them only to recognize the same details inside report content and omit,
+  replace, or generalize them. It must not state a fact found only here.
+- Keep labels with values so the model knows that “Ada Lovelace” is a pilot
+  name, not an aircraft or site. Preserve question and answer boundaries; do
+  not flatten the report into an unlabeled blob.
+- Only the summarizer provider adapter receives private context. The PII
+  auditor receives the candidate summary only. Translation receives the
+  anonymized summary only. Public reads, notifications, logs, metrics, and
+  exceptions receive neither raw report section.
 
-## Version runtime prompts
+Do not add deterministic text scrubbers, regex redaction passes, replacement
+vocabularies, or staged cleansing classes. The LLM owns textual anonymization.
+Deterministic media type validation, malware handling, and metadata removal are
+separate controls and remain in the media pipeline.
 
-Keep runtime redaction and model instructions under `prompts/`, never in this
-skill. Add a new prompt version rather than editing an existing one. Compose
-each summarization and PII-audit version with the matching redaction-rules
-version, preserve absolute language such as “never,” and document the version
-relationship in `prompts/README.md`.
+## Direct the model and review its output
 
-## Prove the safety claim
+- In report content, replace a person's name with a role phrase such as “the
+  pilot” / “le pilote” when the role is known; otherwise omit it. Never emit
+  `[redacted]`, private-context values, or an explanation of what was removed.
+- Omit names, contact details, member identifiers, URLs, precise sites and
+  timing, aircraft make/model, and combinations that identify someone in a
+  small community. Generalize only from report content; never infer a new fact
+  from private context.
+- Generate the source summary in `Report.Language`. Translate only that
+  anonymized summary. PII-audit each language and require human approval of the
+  pair before publication.
+- Keep raw fields and model payloads out of logs, telemetry, exception messages,
+  snapshots, issue bodies, and committed fixtures.
 
-- Follow red-green-refactor for every change. Start with a synthetic fixture
-  that demonstrates the exact leak or over-redaction and watch it fail for that
-  reason.
-- Assert that each sensitive token exists in the input and is absent from the
-  result. Assert important non-sensitive details survive so deleting everything
-  cannot pass the suite.
-- Cover English and French, case and Unicode normalization, punctuation,
-  spacing, elision, compact spellings, and ordinary short names or sites.
-- Assert exact text only for human-decided vocabulary. Generated prose must be
-  tested by safety property rather than sentence shape.
-- Keep the Core dependency architecture test proving zero runtime dependencies;
-  analyzer-only packages with `PrivateAssets=all` do not weaken that claim.
+## Version and prove the contract
 
-Run the full anonymization suite and the repository test/coverage gates. Then
-run the configured `anonymization-auditor` against the committed diff for any
-redaction, prompt, PII, or publication change. Treat a substantiated leak as
-blocking; the auditor reports findings but never replaces human approval.
+Runtime instructions live under `prompts/`, never in this skill. Add a new
+version instead of editing an existing prompt. Record the prompt version with
+every generated summary.
+
+Test these boundaries:
+
+- new questions default private and expose no privacy mutation;
+- answers snapshot privacy, and partitioning never places a private field in
+  `report_content`;
+- translator, auditor, and public ports cannot accept `private_context`;
+- recorded model fixtures contain synthetic identifiers in the input, omit
+  them from output, and preserve important non-private facts;
+- English and French output obey the same policy.
+
+Run the full test and coverage gates, then use `agents/anonymization-auditor.md`
+against the committed diff. A substantiated privacy leak blocks publication;
+the auditor never replaces human approval.

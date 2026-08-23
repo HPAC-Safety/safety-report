@@ -62,7 +62,7 @@ ImageMagick guessing and stops it reaching for a delegate.
 ## Stripping re-encodes
 
 It does, and that is accepted: the **original bytes are retained untouched** in
-the Restricted record, and the derivative exists so a safety officer can look at
+the private source record, and the derivative exists so a safety officer can look at
 a photo without being handed a GPS fix. Source quality is carried across.
 See [ADR-0025](../../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
 

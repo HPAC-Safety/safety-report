@@ -36,13 +36,13 @@ public class Question
     }
 #pragma warning restore CS8618
 
-    private Question(string key, bool isSystem, QuestionRole role, SensitivityTier sensitivity, int displayOrder, string? sectionKey, DateTimeOffset at)
+    private Question(string key, bool isSystem, QuestionRole role, bool isPrivate, int displayOrder, string? sectionKey, DateTimeOffset at)
     {
         Id = TinyId.New();
         Key = QuestionKey.Normalize(key);
         IsSystem = isSystem;
         Role = role;
-        Sensitivity = sensitivity;
+        IsPrivate = isPrivate;
         DisplayOrder = displayOrder;
         SectionKey = sectionKey is null ? null : QuestionKey.Normalize(sectionKey);
         CreatedAt = at;
@@ -61,11 +61,12 @@ public class Question
     public QuestionRole Role { get; private set; }
 
     /// <summary>
-    /// The tier this question's answers live at. Restricted by default: a
-    /// question added tomorrow is treated as personal information until someone
-    /// decides otherwise. See docs/data-handling.md.
+    /// Whether answers are private redaction context rather than facts eligible
+    /// for the summary. Private by default, and immutable after creation: an
+    /// administrator must retire this question and create a new one to change
+    /// that contract. See ADR-0038.
     /// </summary>
-    public SensitivityTier Sensitivity { get; private set; }
+    public bool IsPrivate { get; private init; }
 
     /// <summary>Where this question sits on the form. Not versioned.</summary>
     public int DisplayOrder { get; private set; }
@@ -105,10 +106,10 @@ public class Question
         string? placeholder = null,
         bool isRequired = false,
         QuestionRole role = QuestionRole.None,
-        SensitivityTier sensitivity = SensitivityTier.Restricted,
+        bool isPrivate = true,
         int displayOrder = 0,
         string? sectionKey = null) =>
-        Create(key, type, sourceLocale, label, at, isSystem: false, helpText, placeholder, isRequired, role, sensitivity, displayOrder, sectionKey);
+        Create(key, type, sourceLocale, label, at, isSystem: false, helpText, placeholder, isRequired, role, isPrivate, displayOrder, sectionKey);
 
     /// <summary>
     /// Creates the publication-consent question. The only question the system
@@ -131,7 +132,7 @@ public class Question
             placeholder: null,
             isRequired: true,
             QuestionRole.ConsentPublish,
-            SensitivityTier.Internal,
+            isPrivate: true,
             displayOrder,
             sectionKey: null);
 
@@ -146,11 +147,11 @@ public class Question
         string? placeholder,
         bool isRequired,
         QuestionRole role,
-        SensitivityTier sensitivity,
+        bool isPrivate,
         int displayOrder,
         string? sectionKey)
     {
-        var question = new Question(key, isSystem, role, sensitivity, displayOrder, sectionKey, at);
+        var question = new Question(key, isSystem, role, isPrivate, displayOrder, sectionKey, at);
         question._versions.Add(
             QuestionVersion.Create(question.Id, 1, type, isRequired, sourceLocale, label, helpText, placeholder, at));
         return question;
@@ -212,13 +213,6 @@ public class Question
         }
 
         Role = role;
-    }
-
-    /// <summary>Changes the tier this question's answers are handled at.</summary>
-    public void Reclassify(SensitivityTier sensitivity)
-    {
-        EnsureNotDeleted();
-        Sensitivity = sensitivity;
     }
 
     /// <summary>

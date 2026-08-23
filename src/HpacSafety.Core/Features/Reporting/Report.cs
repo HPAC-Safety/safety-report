@@ -77,7 +77,7 @@ public class Report
     /// The clock time at the site, as the reporter gave it. Local wall clock,
     /// not an instant: "morning" means what the clock on the wall said, and this
     /// system collects a province rather than coordinates, so any offset it
-    /// stored would be inferred. Restricted, and encrypted at rest.
+    /// stored would be inferred. Private, and encrypted at rest.
     /// <para>
     /// Null when the reporter did not give one — #68 makes the time optional so
     /// that somebody who does not remember still files. That reads as

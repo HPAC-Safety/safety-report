@@ -1,26 +1,29 @@
 ---
 name: build-hpac-web-ui
-description: Build or review HPAC safety-report's static web UI using its localization, Tailwind theme, dark-mode, asset, and privacy rules. Use when changing files under src/web, HTML, browser JavaScript, CSS, Tailwind tokens, fonts, images, accessibility labels, or user-facing UI copy.
+description: Build HPAC Safety's accessible bilingual public and admin static sites with plain HTML, JavaScript, Tailwind tokens, and self-hosted assets. Use for web UI changes.
 ---
 
-# Build the static UI
+# Build the HPAC web UI
 
-Read `src/web/README.md`, `docs/design-system.md`, and
-[`localize-hpac-app`](../localize-hpac-app/SKILL.md) before editing the web
-surface.
+Use plain HTML and JavaScript with no SPA framework or bundler. Tailwind's
+standalone CLI is the only CSS build step. Use semantic HTML, visible focus,
+44px touch targets, reduced-motion support, WCAG AA contrast, and self-hosted
+assets.
 
-- Use static HTML and JavaScript. Do not add an SPA framework or bundler.
-- Put every user-facing string, including accessibility text, behind a locale
-  key. `src/web/styles/theme-preview.html` alone is exempt because its text is
-  developer-facing token and font names.
-- Build Tailwind v4 with the standalone CLI and the `@theme` tokens in
-  `src/web/styles/tailwind.css`. Never add raw hex colours to markup.
-- Implement dark mode by redefining tokens in both dark blocks. Use semantic
-  utilities such as `bg-surface`; never use a `dark:` variant in markup.
-- Add every new colour to `@theme` and both dark token blocks.
-- Make no third-party page-load requests from `src/web`: no CDN fonts, scripts,
-  or remote images. Commit assets and their licences under `src/web/assets`.
-- Regenerate `src/web/styles/site.css` with `tools/build-css.sh`; never edit the
-  generated stylesheet.
+- Put every user-facing string and accessible label in the locale catalogues.
+- Resolve locale explicitly, then from the browser, then English; preserve
+  answers when switching language.
+- Render the ordered current bilingual question-revision DTO. Only consent is
+  required and it has no selected default.
+- Persist answer values and revision IDs only in the same browser for 15 days
+  or until successful submit. Never persist or restore file inputs, and make no
+  report-data write request before the final submission.
+- Submit one multipart request containing the JSON DTO and selected files.
+- Keep public and admin bundles as separately deployed static sites. Treat API
+  authorization, not hidden markup, as the admin boundary.
+- Use design tokens rather than raw colors; dark mode redefines tokens rather
+  than adding `dark:` variants.
 
-Run the web checks and exercise the user journey in English and French.
+Do not introduce server drafts, reserved report IDs, pre-submit API/database/
+object-storage writes, upload sessions, third-party font/asset calls, or
+client-side access to private report data beyond authorized admin DTOs.

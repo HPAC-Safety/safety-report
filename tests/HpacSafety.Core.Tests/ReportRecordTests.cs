@@ -24,8 +24,8 @@ public class ReportRecordTests
         // When
         var aircraft = report.AddAircraft(Discipline.Paragliding, "Ozone", "Rush 6", "EN B (high)");
 
-        // Then — Core stores exactly what the reporter answered; nothing
-        // normalizes or classifies it here. See docs/aircraft-classification.md.
+        // Then — the legacy record stores exactly what the reporter answered.
+        // Issue #79 replaces it with ordinary revision-bound answers.
         aircraft.Manufacturer.ShouldBe("Ozone");
         aircraft.Model.ShouldBe("Rush 6");
         aircraft.CertificationAnswer.ShouldBe("EN B (high)");

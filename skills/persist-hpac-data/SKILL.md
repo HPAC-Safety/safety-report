@@ -1,46 +1,28 @@
 ---
 name: persist-hpac-data
-description: Apply HPAC persistence, EF Core, migration, encryption, immutable question-privacy, identifier, time, and seed-data rules. Use when changing entities, tables, mappings, migrations, value converters, TinyId keys, occurrence dates or times, encrypted fields, domain-code storage, or the seeded question bank.
+description: Implement HPAC Safety EF Core records, migrations, transactions, soft deletion, and purpose-built query DTOs. Use for persistence or database changes.
 ---
 
-# Preserve the database contract
+# Persist HPAC Safety data
 
-Read `src/HpacSafety.Infrastructure/Persistence/README.md` and the relevant ADRs
-before editing persistence. `HpacSafety.Infrastructure/Persistence` owns every
-table and migration; `HpacSafety.Core` never references EF Core.
+Follow [`spec/data-and-persistence.md`](../../spec/data-and-persistence.md).
 
-## Model storage explicitly
+- Use PostgreSQL `snake_case`; C# uses PascalCase. Use `DateOnly`, `TimeOnly`,
+  and `DateTimeOffset`, never `DateTime`.
+- Store complete immutable question revisions and revision-bound answers. Only
+  consent projects onto the report.
+- Store one summary row per report with English/French text, shared provenance,
+  and pair approval.
+- Save report, answers, file rows, and typed outbox messages in one transaction.
+- Query purpose-built DTOs containing exactly the fields a use case needs. The
+  summary DTO returns exact revision labels, answers, and privacy flags; the
+  public DTO cannot carry raw answers or attachments.
+- Add `deleted timestamptz` and default filters everywhere except append-only
+  `audit_log`. Cascade soft deletion explicitly with one timestamp. Reference
+  checks for question deletion include answers beneath deleted reports.
+- Use AWS-managed encryption at rest and TLS. Remove application AES keys,
+  ciphertext converters, and field-cipher ports.
 
-- Encrypt every report answer value in the application before PostgreSQL sees
-  it, through `IFieldCipher` and a value converter. `IsPrivate` controls model
-  input partitioning, not at-rest protection. Never create a clear-text helper
-  column.
-- Store `questions.is_private` as a required boolean that defaults to `true` in
-  creation paths and has no update path. Copy it to
-  `report_answers.is_private` when recording the answer. A privacy change is a
-  new question identity, never an update or bulk reclassification.
-- Identify every row with an 11-character `TinyId` over `A-Za-z0-9-_`, stored
-  as `char(11)`. Never introduce UUID, sequential, or time-bearing keys, and
-  never authorize access by possession of an identifier.
-- Store domain values as invariant string codes, never ordinals. Throw on an
-  unknown stored code instead of defaulting.
-- Represent the occurrence as local `DateOnly` plus local `TimeOnly`. Derive
-  `TimeOfDay` only through `TimeOfDay.FromLocalTime`; missing time becomes
-  `Unknown`, never midnight. Encrypt the precise time and keep only the bucket
-  publishable.
-
-## Seed safely
-
-- Write administrator-editable seed data in migrations, never `HasData`.
-- Derive seed identifiers deterministically from keys.
-- Never put a real name, address, or allowlist in a migration. Guard the single
-  `admin@localhost` development row inside PostgreSQL SQL with
-  `hpac.seed_development_admin`.
-- Reproduce generated `docs/form-spec.md` exactly in the seeded question bank,
-  assign an explicit privacy value to every seeded question, and keep the tests
-  that prove both. Regenerate the spec with
-  `tools/extract-typeform.py`; do not edit it by hand.
-
-Keep scaffolded-migration analyzer exemptions scoped to `**/Migrations/*.cs`.
-Put executable seed logic under `Persistence/Seeding`, where normal analysis and
-coverage still apply.
+Migrations must support both a fresh database and the current-main upgrade
+path. Do not physically delete records, add restore behavior, or hide a schema
+change in runtime startup.

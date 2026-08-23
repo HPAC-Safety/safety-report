@@ -29,8 +29,10 @@ know what was exposed, and you will not be penalised for reporting it.
   or lands in an exception message is a serious finding.
 - **Unauthorized access to raw reports**, which are admin-only and contain
   unredacted personal information.
-- **Uploaded media** reachable without a pre-signed URL, or an image served with
-  EXIF GPS intact.
+- **Attachment access or processing.** Unauthorized access to an original or
+  derivative; an image/video derivative retaining identifying metadata; a
+  document rendered inline, sent to AI, exposed publicly, or made available
+  before format and malware checks pass.
 - **Consent bypass** — any route by which a report marked "do not publish"
   becomes publishable.
 - Standard web issues: authentication bypass, injection, SSRF, XSS.

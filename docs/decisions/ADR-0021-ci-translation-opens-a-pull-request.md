@@ -1,6 +1,8 @@
 # ADR-0021 — The CI translation job opens a pull request, and never translates on one
 
-**Status:** Accepted
+**Status:** Accepted only for stable application UI catalogues. It does not
+translate database questions, raw reports, or summaries; see the
+[localization specification](../../spec/web-localization-and-design.md).
 
 Extends [ADR-0007](ADR-0007-localization.md), which decided that French is
 generated in CI. This one decides *how* — the change detection, the write path,

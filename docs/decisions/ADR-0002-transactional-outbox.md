@@ -17,8 +17,9 @@ The API writes the report and an `outbox_messages` row in **one** transaction. A
 separate worker process claims rows with `SELECT ... FOR UPDATE SKIP LOCKED`,
 applies exponential backoff, and sets aside poison messages after a threshold.
 
-Everything asynchronous rides the same mechanism: summarization, translation,
-and notification email.
+Target asynchronous work rides the same mechanism: one summary operation and
+one processing message per attachment. Retired translation/email stages are not
+additional message types to preserve.
 
 ## Alternatives
 

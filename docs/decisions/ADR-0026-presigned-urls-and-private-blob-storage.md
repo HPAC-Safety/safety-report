@@ -1,6 +1,8 @@
 # ADR-0026: Every blob is reached through a short-lived pre-signed URL
 
-**Status:** Accepted
+**Status:** Superseded for submission by the
+[final multipart design](../../spec/report-submission.md). Private storage and
+short-lived authorized reviewer reads remain; pre-submit upload slots do not.
 **Date:** 2026-08-22
 
 ## Context
@@ -254,9 +256,8 @@ give us after a crash. Retaining it while refusing to show it keeps both.
 
 **No signature on the development store — return a `file://` path.** Shorter,
 and it would mean the "a pre-signed PUT cannot be reused for a different key"
-test could only run where Docker runs. The stand-in would then be a weaker
-implementation of the same interface, which is the SOLID violation AGENTS.md
-names explicitly.
+test could only run where Docker runs. The stand-in would then weaken the
+production contract and stop the shared suite from proving it locally.
 
 **A longer expiry, an hour or a day.** A reviewer's session is minutes. A URL
 that outlives the reason it was minted is a public object URL with extra steps.

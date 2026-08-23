@@ -1,6 +1,8 @@
 # ADR-0022 — DeepL, behind a one-file adapter, after GitHub Models was retired
 
-**Status:** Accepted
+**Status:** Accepted only for application UI catalogue generation. Runtime
+question and summary translation clauses are superseded by the
+[localization specification](../../spec/web-localization-and-design.md).
 
 Supersedes the provider clause of [ADR-0007](ADR-0007-localization.md) — and
 only that clause. Everything else ADR-0007 decided still stands: English is the

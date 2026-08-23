@@ -1,6 +1,8 @@
 # ADR-0027 — The deterministic scrub is a closed chain over labelled fields
 
-**Status:** Superseded by [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
+**Status:** Superseded by the
+[one-call specification](../../spec/ai-anonymization.md). No deterministic text
+scrub stage remains.
 **Date:** 2026-08-22
 
 ## Context

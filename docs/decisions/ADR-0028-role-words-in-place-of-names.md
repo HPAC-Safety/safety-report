@@ -1,6 +1,8 @@
 # ADR-0028 — A name in a narrative becomes a role word, not a placeholder
 
-**Status:** Superseded by [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
+**Status:** Narrowed by the
+[one-call specification](../../spec/ai-anonymization.md). Whole-identity role
+replacement remains; the older multi-stage pipeline context is superseded.
 **Date:** 2026-08-22
 
 ## Context

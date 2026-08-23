@@ -1,127 +1,39 @@
-# Working here with an AI agent
+# Working with coding agents
 
-This project is built primarily by AI agents. That is a deliberate choice, and
-it shapes how the repository is laid out.
+[`AGENTS.md`](../AGENTS.md) is the only always-loaded repository instruction;
+the tool-specific instruction paths are symlinks to it. The product-design
+authority is [`spec/README.md`](../spec/README.md).
 
-## Start here
+## Start
 
-1. `./init-dev.sh` — installs the .NET SDK, Docker, and Node at the pinned
-   versions, then pulls the skills into `.claude/`. Idempotent, so run it
-   whenever something looks wrong; `./init-dev.sh --check` reports without
-   installing. See [Getting started](../README.md#getting-started).
-2. Read `AGENTS.md`. Its invariants outrank any task description, and its routing
-   table names the focused skills to load for the work.
-3. Pick an issue. Work is filed in the **Foundation**, **Phase 1**, and
-   **Phase 2** milestones, sized to one PR each.
-4. Open a PR. `main` is protected; an administrator approves.
+1. Run `./init-dev.sh` or `./init-dev.sh --check`.
+2. Read `AGENTS.md`, the affected `/spec` pages, and the focused issue.
+3. Load only the project skills relevant to the task.
+4. Work from current `main` on `issue-<number>/<short-description>`.
 
-## Agent-agnostic by design
+Project-owned skill sources live under `skills/`. `skillfile install` generates
+tool-specific copies under `.claude/`; never edit or commit those copies. Keep
+local skills concise and HPAC-specific. Search before adding generic guidance,
+and do not install a skill whose architecture conflicts with `/spec`.
 
-`AGENTS.md` is the only always-loaded instruction file. It carries the safety
-contract and routes task-specific detail into skills. Tool-specific instruction
-paths are symlinks:
-
-```mermaid
-flowchart LR
-    A["AGENTS.md<br/>canonical"]
-    B["CLAUDE.md"] --> A
-    C[".github/copilot-instructions.md"] --> A
-    D[".cursor/rules/agents.mdc"] --> A
-```
-
-Switching from Claude to Codex, Copilot, or Cursor requires no migration —
-whatever the tool reads, it resolves to the same file. Skills are managed by
-[`skillfile`](https://github.com/eljulians/skillfile), which installs the same
-set into whichever tools are configured.
-
-**Windows contributors:** git stores symlinks, but checkout needs
-`git config core.symlinks true` and Developer Mode enabled. Without it the
-symlinks arrive as text files containing a path, and your agent silently reads
-nothing. CI asserts they resolve.
-
-## Adding a skill
-
-**Search before you author.** A maintained upstream skill is broader than
-anything written here in an afternoon, and it stays current without this
-repository doing the work.
-
-```bash
-skillfile search "some topic"
-skillfile add github skill owner/repo skills/thing
-skillfile install
-```
-
-Write a local skill only for knowledge specific to HPAC — the anonymization
-rules, the aircraft vocabulary, this domain model. Everything general — TDD, DDD,
-SOLID, C# idiom — comes from upstream. Say in the pull request what you searched
-for and why nothing fitted.
-
-Where upstream guidance conflicts with `AGENTS.md`, `AGENTS.md` wins.
-
-## Progressive task guidance
-
-Do not turn `AGENTS.md` back into an encyclopedia. Keep safety invariants and
-routing always loaded, then put reusable task procedures in a narrowly triggered
-skill:
-
-| Concern | Skill |
-|---|---|
-| Requirement ambiguity | `clarify-hpac-requirements` |
-| Safety-focused testing | `test-hpac-safety` |
-| Report anonymization and prompt safety | `anonymize-hpac-reports` |
-| English/French parity | `localize-hpac-app` |
-| Persistence and migrations | `persist-hpac-data` |
-| Uploaded media | `handle-hpac-media` |
-| Static web UI | `build-hpac-web-ui` |
-| Terraform and AWS | `manage-hpac-infrastructure` |
-| Documentation and pull-request delivery | `deliver-hpac-change` plus upstream `documentation-and-adrs` |
-
-When adding a new cross-cutting rule, update the `AGENTS.md` routing table and
-the owning skill in the same pull request. Keep runtime instructions sent to the
-summarization model under versioned `prompts/`, never under `skills/`.
-
-Authored here: add a directory under `skills/`, then a `local` line in
-`Skillfile` **with an explicit name** — every file is called `SKILL.md`, so
-without a name they all infer the same one and overwrite each other on install.
-
-Commit `Skillfile` and `Skillfile.lock`. Do not commit `.claude/` — it is
-generated and gitignored.
+Runtime AI instructions are not coding-agent skills. The one current prompt
+lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
 
 ## Generated files
 
-Never hand-edit these:
-
-| File | Regenerate with |
+| Output | Owning command |
 |---|---|
+| `.claude/skills/` | `skillfile install` |
+| `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
-| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` (CI) |
-| `.claude/skills/`, `.claude/agents/` | `skillfile install` |
+| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` |
 | `src/web/styles/site.css` | `tools/build-css.sh` |
 
-## What agents get wrong here
+Question text is not generated from locale catalogues: every database question
+revision is manually authored in English and French.
 
-Observed and worth stating:
+## Finish
 
-- **Hardcoding a user-facing string.** Add a key to `locales/en-CA.json`.
-- **Reaching for `Assert.*` out of habit.** This repository uses Shouldly.
-- **Drawing an ASCII diagram.** Mermaid only.
-- **Softening a redaction rule** from "never" to "avoid" while rewording a
-  prompt. Bump the prompt version and expect the auditor to check it.
-- **Asserting on exact model output**, producing a test that breaks on drift and
-  then gets muted. Assert absence of the identifier instead.
-- **Inferring an aircraft class** from a model name. The reporter's answer is
-  the only source; `class not determined` is a valid outcome.
-
-## The auditor
-
-`agents/anonymization-auditor.md` is an adversarial reviewer for anything
-touching redaction, prompts, or PII. Run it on changes labelled `area:security`
-and before bumping a prompt version. It assumes the change leaks and tries to
-prove it.
-
-## Related
-
-- `AGENTS.md`
-- `CONTRIBUTING.md`
-- `Skillfile`
-- `skills/deliver-hpac-change/SKILL.md`
+Run relevant tests and validation, inspect the diff, push the branch, and open a
+PR containing `Closes #<number>`. Keep working until required checks are green.
+See [`deliver-hpac-change`](../skills/deliver-hpac-change/SKILL.md).

@@ -1,8 +1,8 @@
 # ADR-0010 — Terraform, with a scripted one-time bootstrap
 
-**Status:** Accepted. The state-locking clause is **superseded** by
-[ADR-0031](ADR-0031-terraform-shape-and-topology.md): locking is S3-native
-(`use_lockfile`), and there is no DynamoDB table.
+**Status:** Accepted for Terraform/bootstrap and S3-native locking; narrowed by
+the [minimal infrastructure specification](../../spec/infrastructure-and-operations.md).
+Resources for email or another retired feature are not part of the target.
 
 ## Context
 

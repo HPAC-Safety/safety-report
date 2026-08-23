@@ -5,7 +5,7 @@
 ## Context
 
 Development happens in public — anyone may fork and open a pull request — but
-only the two administrators (`ChaseFlorell`, `jopekar`) should be able to
+only the repository administrators should be able to
 approve. Managing who can approve should not itself require a pull request.
 
 ## Decision

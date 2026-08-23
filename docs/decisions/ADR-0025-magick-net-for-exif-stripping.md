@@ -1,6 +1,8 @@
 # ADR-0025: Magick.NET strips EXIF and sniffs content types
 
-**Status:** Accepted
+**Status:** Accepted for image detection/re-encoding and expanded by the
+[attachment specification](../../spec/media.md). The old video-without-
+derivative behavior and photo/video-only scope are superseded.
 **Date:** 2026-08-22
 
 ## Context

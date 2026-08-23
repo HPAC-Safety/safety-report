@@ -13,9 +13,8 @@ namespace HpacSafety.Infrastructure.Media;
 public sealed class MediaPolicyOptions
 {
     /// <summary>
-    /// 50 MB. Generous headroom, so no realistic photo is refused for size —
-    /// including a modern phone's HEIC burst. Video may force this number to be
-    /// revisited; see docs/data-handling.md.
+    /// The configurable 50 MB default applied independently to every accepted
+    /// attachment format.
     /// </summary>
     public const long DefaultMaxByteSize = 50L * 1024 * 1024;
 

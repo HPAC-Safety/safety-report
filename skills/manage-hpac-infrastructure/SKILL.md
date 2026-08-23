@@ -1,39 +1,26 @@
 ---
 name: manage-hpac-infrastructure
-description: Apply HPAC safety-report's Terraform, AWS identity, Canadian residency, secrets, observability, email, topology, and drift constraints. Use when changing infra/, deployment workflows, OIDC roles, S3, CloudFront, Secrets Manager, regions, alarms, custom metrics, hostnames, or bootstrap behaviour.
+description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment, secrets, backups, and focused Worker alerts. Use for infrastructure or operations changes.
 ---
 
-# Manage the declared AWS environment
+# Manage HPAC Safety infrastructure
 
-Read `infra/README.md`, `docs/deployment.md`, ADR-0031, and ADR-0032 before
-editing infrastructure.
+Target one small API service, one small Worker service, RDS PostgreSQL, private
+S3 attachment storage, and separate public/admin static S3+CloudFront sites in
+`ca-central-1`. Use Terraform and GitHub OIDC; never create long-lived AWS keys.
 
-## Preserve identity and residency
+- Use AWS-managed encryption at rest and TLS.
+- Keep runtime secret values in Secrets Manager and out of Terraform state and
+  GitHub where deployment does not need them.
+- Run database migrations explicitly before application rollout and retain
+  tested backups.
+- Quarantine unreferenced uploads with lifecycle expiry; keep report-linked
+  objects private.
+- Alert on terminal summary failures and stuck/aged outbox work. Keep logs
+  content-free.
+- Preserve least privilege and separate public/admin static origins.
 
-- Never create a long-lived AWS credential, even temporarily. GitHub Actions
-  assumes roles through OIDC; bootstrap uses an administrator's SSO session.
-- Scope the deploy-role trust policy to this repository and one ref. Use a
-  separate read-only pull-request role.
-- Keep all report data in `ca-central-1`. Only a CloudFront ACM certificate may
-  live in `us-east-1`, where it carries no report data.
-- Create Secrets Manager entries in Terraform, never secret values or
-  `aws_secretsmanager_secret_version` resources.
-
-## Preserve operational contracts
-
-- Send worker notifications and operational alarms to the one configured
-  production address, `safety@hpac.ca`. Do not hardcode it or add a second
-  address.
-- Keep the `HpacSafety/SummaryFailed` count and
-  `HpacSafety/OutboxOldestAgeSeconds` gauge synchronized between Worker and
-  Terraform. The namespace arrives as `Metrics__Namespace`.
-- Serve one website from one bucket and CloudFront distribution:
-  `safety.hpac.ca` hosts `/` and `/admin/`; `api.hpac.ca` hosts the HTTPS API.
-  Static admin assets contain no report data; API authorization protects the
-  review queue.
-- Require an unchanged `terraform apply` to be a no-op. Treat console changes
-  after bootstrap as drift, not setup.
-
-Pin Terraform in `infra/.terraform-version` and tflint in
-`infra/.tflint-version`; scripts and workflows must read those pins rather than
-copy their version numbers.
+Remove SES/email resources, combined-site assumptions, external publication
+integrations, speculative scaling, and secrets or alarms that exist only for
+retired features. Validate formatting, static security, and a credential-free
+plan path in CI where possible.

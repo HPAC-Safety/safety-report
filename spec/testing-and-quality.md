@@ -22,6 +22,9 @@ synthetic people, locations, reports, and attachments.
 - current-form query examines the latest revision per key, does not resurrect an
   older active revision, and orders included active/live revisions deterministically;
 - locale toggle preserves answers and revision IDs;
+- unfinished answers/revision IDs remain browser-only for 15 days, no file is
+  restored, and no report/API/database/object-storage write occurs before final
+  submission;
 - only consent is required and it has no default;
 - skips are persisted for all shown answer-producing revisions, and multipart
   file indexes map exactly once to their file-upload answers;
@@ -42,7 +45,6 @@ synthetic people, locations, reports, and attachments.
   as “the pilot” / “le pilote,” with no identity fragment;
 - make/model and precise identifying detail are absent while safety-relevant
   facts remain;
-- aircraft class normalization refuses to guess;
 - bounded failures reach `SummaryFailed` and manual authoring recovers; and
 - logs/exceptions never contain report content, private context, prompts,
   responses, or tokens.
@@ -107,6 +109,6 @@ banned through syntax-aware tests rather than fragile source grep.
 
 Documentation changes run a local-link check, verify every tracked `src` path
 is represented in [source inventory](source-inventory.md), and verify every
-GitHub issue through #76 is represented in
+GitHub issue through #82 is represented in
 [issue traceability](issue-traceability.md). No test fixture or specification
 may contain a real reporter's personal information.

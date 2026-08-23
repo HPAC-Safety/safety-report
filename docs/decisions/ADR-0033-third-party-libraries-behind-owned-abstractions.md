@@ -1,6 +1,9 @@
 # ADR-0033 — Third-party libraries are used behind an abstraction we own
 
-**Status:** Accepted
+**Status:** Narrowed by
+[`/spec/interfaces-and-data-flow`](../../spec/interfaces-and-data-flow.md).
+Keep ports at real external boundaries or for proven multiple implementations;
+do not wrap every library by default.
 **Date:** 2026-08-22
 
 ## Context
@@ -133,13 +136,10 @@ The rule is being written down, not invented. `Core` already declares:
 
 | Port | Boundary it owns |
 |---|---|
-| `IBlobStore` | Object storage — S3, R2, MinIO, local filesystem |
-| `ITranslator` | Translation provider |
-| `ISummarizer` | The model call that writes the summary |
-| `IPiiAuditor` | The model call that audits for identifying information |
-| `IAircraftClassifier` | Certification-class handling (invariant 2) |
+| Private blob store | Bounded private object storage and authorized short-lived reads |
+| Model summarizer | The one call that writes the bilingual summary pair |
+| Attachment processor | Format detection and controlled image/video/document handling |
 | `ITurnstileVerifier` | Cloudflare Turnstile |
-| `IEmailSender` | Outbound mail — SES |
 | `IMemberAuthenticator` | The HPAC membership system |
 
 **Image processing is explicitly included.** Magick.NET sits behind the blob
@@ -212,6 +212,5 @@ does — `ITurnstileVerifier`, not a transport-shaped `IHttpClient` — and
   becomes a rule when a build enforces it
 - [ADR-0018](ADR-0018-feature-folders-in-core.md) — where a port lives: with its
   feature, or in `SharedKernel`
-- `AGENTS.md` — "Design", and "Code"
-- The `solid-principles`, `gang-of-four-patterns`, and `ddd` skills
+- `AGENTS.md` and [`/spec/interfaces-and-data-flow`](../../spec/interfaces-and-data-flow.md)
 - Issue #16 — image processing behind the blob port

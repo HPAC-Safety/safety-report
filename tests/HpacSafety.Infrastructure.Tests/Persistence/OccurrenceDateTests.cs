@@ -15,12 +15,10 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 /// The date a reporter gives is the day an accident happened, not a moment.
 /// </summary>
 /// <remarks>
-/// This is not tidiness. `docs/anonymization-policy.md` narrows a published date
-/// to a month and a year because a province, an exact date, an aircraft type,
-/// and an injury severity together identify one person in a small flying
-/// community. Storing that date as a moment invites a timezone conversion that
+/// Storing the reported date as a moment invites a timezone conversion that
 /// shifts it across midnight and silently changes which day an accident
-/// happened on. See ADR-0035.
+/// happened on. Publication independently generalizes identifying detail. See
+/// ADR-0035 and <c>spec/ai-anonymization.md</c>.
 /// </remarks>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]

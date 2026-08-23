@@ -1,152 +1,39 @@
 # Architecture
 
-## The shape of it
+The complete target is specified in
+[`spec/system-overview.md`](../spec/system-overview.md) and
+[`spec/interfaces-and-data-flow.md`](../spec/interfaces-and-data-flow.md). This
+page is a short orientation only.
 
 ```mermaid
 flowchart LR
-    subgraph static["Static hosting"]
-        pub["web/public<br/>report form"]
-        adm["web/admin<br/>review queue"]
-    end
-
-    api["HpacSafety.Api<br/>ASP.NET Core 10"]
-    db[("PostgreSQL")]
-    worker["HpacSafety.Worker"]
-    hpac["members.hpac.ca"]
-    blob[("blob storage")]
-
-    pub -->|"POST /api/v1/reports"| api
-    adm -->|"/api/v1/admin/* (session)"| api
-    api -->|"report + outbox row,<br/>one transaction"| db
-    api -.->|"IMemberAuthenticator"| hpac
-    api -.->|"pre-signed PUT"| blob
-    db -->|"FOR UPDATE SKIP LOCKED"| worker
-    worker -->|"summaries EN + FR"| db
+    public["Public static site"] -->|"questions + final multipart report"| api["API"]
+    admin["Admin static site"] -->|"authenticated review"| api
+    api -->|"atomic report + outbox"| db[("PostgreSQL")]
+    api --> private[("Private attachments")]
+    db --> worker["Worker"]
+    worker -->|"one bilingual summary call"| db
+    worker --> private
 ```
 
-Four deployables: two static sites, one API, one worker. The web apps are plain
-HTML and JavaScript with no bundler, served independently of the API so either
-can move hosts without touching the other.
+- `HpacSafety.Core` owns small domain rules and ports for genuine external
+  boundaries.
+- `HpacSafety.Infrastructure` owns EF Core, private storage, authentication,
+  attachment processing, Turnstile, and the model adapter.
+- `HpacSafety.Api` exposes public and admin HTTP DTOs. It does no AI work.
+- `HpacSafety.Worker` consumes typed outbox work for the one-call summary and
+  per-file attachment processing.
+- `src/web/public` and `src/web/admin` are separate static sites.
 
-## Why a separate worker
+Questions are complete immutable bilingual database revisions. Unfinished
+answers remain only in the browser; no report data is stored server-side until
+one final multipart request. The Worker produces one bilingual row, and human
+review plus positive consent gates a minimal public DTO.
 
-Summarization takes seconds, calls a third-party model, and fails in ways an
-HTTP request should not have to care about. A pilot submitting a report after a
-crash gets an immediate acknowledgement; the AI work happens behind that.
+Keep only useful boundaries. The target has no server drafts, upload-slot API,
+application field cipher, runtime translator, PII auditor, email sender,
+external publication channel, or specialized aircraft service.
 
-Splitting the process also means summarization can be restarted, scaled, or
-switched off entirely without affecting the ability to *receive* reports — which
-is the part that must never be down.
-
-## Why an outbox
-
-The API writes the report and its outbox row in a single transaction. There is
-no "save, then notify" — that loses reports whenever the process dies between
-the two, and a lost safety report is not recoverable from anywhere.
-
-```mermaid
-sequenceDiagram
-    participant B as Browser
-    participant A as API
-    participant D as PostgreSQL
-    participant W as Worker
-
-    B->>A: POST /api/v1/reports
-    A->>D: BEGIN
-    A->>D: INSERT report
-    A->>D: INSERT outbox_message
-    A->>D: COMMIT
-    A-->>B: 202 Accepted
-    W->>D: SELECT ... FOR UPDATE SKIP LOCKED
-    W->>W: partition answers → summarize/anonymize → audit summary → translate → audit
-    W->>D: INSERT summaries (en-CA, fr-CA)
-    W->>D: mark outbox row processed
-```
-
-Everything asynchronous rides the same mechanism: summarization, translation,
-notification email. `SKIP LOCKED` lets more than one worker run without
-coordination. Failures back off exponentially and move aside after a poison
-threshold rather than retrying forever.
-
-Postgres `LISTEN/NOTIFY` may be added later purely to cut latency. Polling
-stays the source of truth — a notification delivered while the worker is
-restarting is a notification nobody hears.
-
-## Projects
-
-| Project | Responsibility | Depends on |
-|---|---|---|
-| `HpacSafety.Core` | Entities, enums, interfaces, the question bank, and the owned summarization-input partition | nothing |
-| `HpacSafety.Infrastructure` | EF Core, Anthropic, blob storage, HPAC auth, email. **Owns every table and every migration** | Core |
-| `HpacSafety.Api` | HTTP surface, validation, sessions | Core, Infrastructure |
-| `HpacSafety.Worker` | Outbox consumer | Core, Infrastructure |
-
-`Core` depending on nothing keeps immutable question privacy and model-input
-partitioning testable without a database, network, or model. Textual
-anonymization is performed by the configured LLM under versioned prompts.
-
-Inside it, code is organised by **feature** — `Features/Reporting`,
-`Features/QuestionBank`, `Features/Moderation`, `Features/Outbox` — with the
-handful of genuinely cross-cutting types in `SharedKernel/`. Each feature owns
-its entities, its enums, and the ports it calls out through. See
-[ADR-0018](decisions/ADR-0018-feature-folders-in-core.md).
-
-## Why uploads bypass the API
-
-The browser PUTs a photo straight to a private bucket through a pre-signed URL
-the API mints, scoped to one key and valid for minutes. That keeps
-multi-megabyte bodies out of the request pipeline, and — the part that matters
-more — it means the API is not a second door onto private media with its own
-authorization story to get wrong. There is no route that serves blob bytes, and
-a test walks the live route table to keep it that way.
-
-Every upload lands in `quarantine/` and nothing leaves it until this system has
-decided what the bytes are. Accepted media is promoted to
-`<report id>/original/<file>` — the private source, retained untouched — and,
-where the format can be stripped, to `<report id>/stripped/<file>`, which is the
-only thing a reviewer's browser ever fetches. A refused upload is never
-promoted and expires in quarantine, which is why nothing here has a delete.
-
-Video is accepted and retained but has no derivative yet, so a reviewer sees
-nothing for it rather than something unsafe (#65). See
-[ADR-0025](decisions/ADR-0025-magick-net-for-exif-stripping.md),
-[ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md), and
-`docs/data-handling.md`.
-
-## Why the questions are in the database
-
-The form HPAC asks is a table, not a class. Questions carry a type, order,
-options, per-locale wording, and an immutable `IsPrivate` decision; answers
-reference the version they were given under and snapshot privacy. A safety
-officer changes the form without a deploy, and historical answers keep the
-meaning and handling contract under which they were submitted.
-
-The answers that logic reads — consent above all — additionally project onto
-typed columns on `reports`, so the invariants stay enforceable in `Core` with no
-database. See
-[ADR-0016](decisions/ADR-0016-data-driven-question-bank.md).
-
-## Where the schema lives
-
-Every table, every index, and every migration is in
-`HpacSafety.Infrastructure/Persistence`, including tables whose behaviour lives
-elsewhere. Every report answer value is encrypted there by the application,
-behind a port declared in `Core` — PostgreSQL never sees plaintext report text.
-`IsPrivate` controls model input, not encryption. See
-[ADR-0019](decisions/ADR-0019-application-side-field-encryption.md) and
-[ADR-0020](decisions/ADR-0020-seeding-by-migration.md).
-
-## Deliberately deferred
-
-- Publication to the website, WhatsApp, or Telegram. `IPublicationChannel` is
-  declared and unimplemented.
-- Hosting choice. Everything host-shaped sits behind `IBlobStore` and
-  `IEmailSender`.
-- Postgres `LISTEN/NOTIFY`.
-
-## Related
-
-- `docs/anonymization-policy.md`
-- `docs/authentication.md`
-- `docs/data-handling.md`
-- `docs/decisions/`
+Current-main gaps are explicit in
+[`spec/implementation-status.md`](../spec/implementation-status.md); component
+READMEs must not describe a target feature as already implemented.

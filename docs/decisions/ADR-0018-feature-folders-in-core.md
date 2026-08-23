@@ -1,6 +1,8 @@
 # ADR-0018: `Core` is organised by feature, with a shared kernel
 
-**Status:** Accepted
+**Status:** Accepted for feature-based organization. The concrete type inventory
+below has been aligned to the target in `/spec`; the previous ports and typed
+ordinary-answer projections remain visible in Git history.
 **Date:** 2026-08-22
 
 ## Context
@@ -31,20 +33,13 @@ types live in `SharedKernel/`.
 ```
 src/HpacSafety.Core/
   Features/
-    Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
-                    ReportStatus, InjurySeverity, AircraftClass, Discipline,
-                    PilotRating, TimeOfDay, Province,
-                    ISummarizer, IPiiAuditor, IAircraftClassifier,
-                    IPublicationChannel
-    QuestionBank/   Question, QuestionVersion, QuestionOption,
-                    QuestionTranslation, QuestionOptionTranslation,
-                    QuestionRole, QuestionKey, QuestionType
+    Reporting/      Report, ReportAnswer, ReportFile, Summary,
+                    report lifecycle and real external-boundary ports
+    QuestionBank/   complete immutable bilingual question revisions
     Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                     IMemberAuthenticator
     Outbox/         OutboxMessage
-  SharedKernel/     Locale, EnumCode,
-                    DomainRuleViolationException,
-                    ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
+  SharedKernel/     identifiers, locale, time, and genuinely shared rules
 ```
 
 Folders and namespaces match exactly: `HpacSafety.Core.Features.Reporting`,
@@ -58,9 +53,9 @@ things qualify today —
 
 - `Locale`, because every feature is bilingual.
 - `DomainRuleViolationException`, because every aggregate throws it.
-- `ITranslator`, `IBlobStore`, `IEmailSender`, `ITurnstileVerifier` — ports with
-  no single owning feature. `ITranslator` in particular is called by both
-  summarization and the question builder.
+- A shared port belongs here only when more than one current feature genuinely
+  calls the same external boundary. Do not keep a shared kernel port for a
+  retired feature.
 
 A port used by exactly one feature lives *with* that feature. `ISummarizer`
 belongs to reporting, not to a folder of interfaces.
@@ -102,4 +97,4 @@ about growth that a folder called `Shared` never conveys.
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md)
 - `docs/architecture.md`, `src/HpacSafety.Core/README.md`
-- The `ddd` skill, and `AGENTS.md` — "Domain-driven design, and test-first"
+- `AGENTS.md` and [`/spec/interfaces-and-data-flow`](../../spec/interfaces-and-data-flow.md)

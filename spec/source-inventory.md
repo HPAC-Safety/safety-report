@@ -1,17 +1,18 @@
 # Source inventory
 
 This inventory accounts for every one of the 135 tracked paths under `src/` on
-the audited main commit. “Current” describes what the path does now; “target”
-identifies whether its idea is retained, revised, or removed. Generated and
-binary assets were inspected by metadata/content identity where source text
-does not exist.
+the audited main commit plus the Worker prompt added during guidance alignment.
+“Current” describes what a path did on the baseline unless an alignment note
+says otherwise; “target” identifies whether its idea is retained, revised, or
+removed. Generated and binary assets were inspected by metadata/content
+identity where source text does not exist.
 
 ## API — 6 paths
 
 - [src/HpacSafety.Api/HpacSafety.Api.csproj](../src/HpacSafety.Api/HpacSafety.Api.csproj) — ASP.NET Core project and references; retain and add only target endpoint dependencies.
 - [src/HpacSafety.Api/Program.cs](../src/HpacSafety.Api/Program.cs) — minimal host with `/health`; retain host and implement question, submission, admin, and public routes.
 - [src/HpacSafety.Api/Properties/launchSettings.json](../src/HpacSafety.Api/Properties/launchSettings.json) — local HTTP/HTTPS launch profiles; development-only configuration.
-- [src/HpacSafety.Api/README.md](../src/HpacSafety.Api/README.md) — current deployable boundary/readme; revise to point at the target interfaces and remove stale pipeline claims.
+- [src/HpacSafety.Api/README.md](../src/HpacSafety.Api/README.md) — aligned target-boundary orientation with an explicit current-scaffold warning.
 - [src/HpacSafety.Api/appsettings.Development.json](../src/HpacSafety.Api/appsettings.Development.json) — development logging; add safe local adapters without secrets.
 - [src/HpacSafety.Api/appsettings.json](../src/HpacSafety.Api/appsettings.json) — base logging/host settings; add validated target configuration references, never values of secrets.
 
@@ -71,7 +72,7 @@ does not exist.
 ### Core project and shared kernel
 
 - [src/HpacSafety.Core/HpacSafety.Core.csproj](../src/HpacSafety.Core/HpacSafety.Core.csproj) — dependency-free Core project; retain minimal dependency direction.
-- [src/HpacSafety.Core/README.md](../src/HpacSafety.Core/README.md) — current aggregate/port explanation; revise after target domain changes.
+- [src/HpacSafety.Core/README.md](../src/HpacSafety.Core/README.md) — aligned target-domain orientation that distinguishes useful current scaffolding from retired types.
 - [src/HpacSafety.Core/SharedKernel/BlobKey.cs](../src/HpacSafety.Core/SharedKernel/BlobKey.cs) — validated opaque report/compartment/server filename key; retain and extend attachment semantics without client names.
 - [src/HpacSafety.Core/SharedKernel/BlobUrlLifetime.cs](../src/HpacSafety.Core/SharedKernel/BlobUrlLifetime.cs) — enforces short signed-read maximum; retain for reviewer attachment reads, not pre-submit writes.
 - [src/HpacSafety.Core/SharedKernel/DomainRuleViolationException.cs](../src/HpacSafety.Core/SharedKernel/DomainRuleViolationException.cs) — domain invariant exception; retain without private data in messages.
@@ -98,7 +99,7 @@ does not exist.
 - [src/HpacSafety.Infrastructure/Media/MediaPolicyOptions.cs](../src/HpacSafety.Infrastructure/Media/MediaPolicyOptions.cs) — configured 50 MB policy; add combined attachment count/default five and document allowlist.
 - [src/HpacSafety.Infrastructure/Media/MediaSnifferChain.cs](../src/HpacSafety.Infrastructure/Media/MediaSnifferChain.cs) — composes image/video signature detectors; add document detector(s).
 - [src/HpacSafety.Infrastructure/Media/MissingImagingCodecException.cs](../src/HpacSafety.Infrastructure/Media/MissingImagingCodecException.cs) — fail-fast codec configuration error; retain.
-- [src/HpacSafety.Infrastructure/Media/README.md](../src/HpacSafety.Infrastructure/Media/README.md) — current image/video rules; revise for documents, safe video derivatives, and final multipart flow.
+- [src/HpacSafety.Infrastructure/Media/README.md](../src/HpacSafety.Infrastructure/Media/README.md) — aligned attachment matrix and current image/video/document gap note.
 - [src/HpacSafety.Infrastructure/Media/VideoContainerSniffer.cs](../src/HpacSafety.Infrastructure/Media/VideoContainerSniffer.cs) — bounded MP4/QuickTime `ftyp` detection; retain and pair with controlled derivative processing.
 
 ### Persistence
@@ -122,7 +123,7 @@ does not exist.
 - [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.Designer.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.Designer.cs) — generated metadata for privacy migration; historical.
 - [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.cs) — replaces sensitivity with current question privacy snapshot; migrate forward to revision-owned privacy.
 - [src/HpacSafety.Infrastructure/Persistence/Migrations/HpacSafetyDbContextModelSnapshot.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/HpacSafetyDbContextModelSnapshot.cs) — generated current model snapshot; regenerate from target model.
-- [src/HpacSafety.Infrastructure/Persistence/README.md](../src/HpacSafety.Infrastructure/Persistence/README.md) — detailed current schema/encryption/seed design; revise after migration and point canonical decisions here.
+- [src/HpacSafety.Infrastructure/Persistence/README.md](../src/HpacSafety.Infrastructure/Persistence/README.md) — aligned canonical-schema summary with explicit legacy migration gaps.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs) — environment-guarded synthetic local admin SQL; retain only for development.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeed.cs) — Typeform-derived bilingual seed definitions; convert to initial complete revisions.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeedWriter.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeedWriter.cs) — migration SQL writer for current normalized schema; rewrite for target complete revisions.
@@ -130,30 +131,31 @@ does not exist.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/SeededOption.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/SeededOption.cs) — current bilingual option seed record; adapt to complete revision child.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/SeededQuestion.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/SeededQuestion.cs) — current seed question shape; add every complete revision field and remove projection roles.
 - [src/HpacSafety.Infrastructure/PersistenceServiceCollectionExtensions.cs](../src/HpacSafety.Infrastructure/PersistenceServiceCollectionExtensions.cs) — Npgsql/DbContext registration and cipher options; retain registration but remove cipher/key plumbing.
-- [src/HpacSafety.Infrastructure/README.md](../src/HpacSafety.Infrastructure/README.md) — adapters/dependency overview; revise to target ports and removed features.
+- [src/HpacSafety.Infrastructure/README.md](../src/HpacSafety.Infrastructure/README.md) — aligned target-adapter overview and retired-feature warning.
 
 ### Private storage
 
 - [src/HpacSafety.Infrastructure/Storage/FileSystemBlobStore.cs](../src/HpacSafety.Infrastructure/Storage/FileSystemBlobStore.cs) — local private storage with signed URL simulation/read/write; retain streaming/read contract, remove upload-slot surface.
 - [src/HpacSafety.Infrastructure/Storage/FileSystemBlobStoreOptions.cs](../src/HpacSafety.Infrastructure/Storage/FileSystemBlobStoreOptions.cs) — local root/public-base configuration; revise so local URLs preserve target authorization behavior.
 - [src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs](../src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs) — safe signed-URL rejection type; retain only if still useful for authorized reads.
-- [src/HpacSafety.Infrastructure/Storage/README.md](../src/HpacSafety.Infrastructure/Storage/README.md) — current one-port/pre-signed contract explanation; revise for server-streamed writes and document downloads.
+- [src/HpacSafety.Infrastructure/Storage/README.md](../src/HpacSafety.Infrastructure/Storage/README.md) — aligned final-upload/private-review storage contract with legacy adapter note.
 - [src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs) — S3 private read/write and pre-signed operations; retain bounded streaming/short reads, remove public/pre-submit upload usage.
 - [src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs) — bucket configuration; retain for private attachment bucket.
 
-## Worker — 7 paths
+## Worker — 8 paths after alignment
 
 - [src/HpacSafety.Worker/HpacSafety.Worker.csproj](../src/HpacSafety.Worker/HpacSafety.Worker.csproj) — Worker project/reference scaffold; add persistence, model, and attachment handler composition.
+- [src/HpacSafety.Worker/Prompts/summarize-anonymize.v1.md](../src/HpacSafety.Worker/Prompts/summarize-anonymize.v1.md) — one concise versioned runtime prompt added after the baseline audit; load it from the Worker and version it with summary provenance.
 - [src/HpacSafety.Worker/Program.cs](../src/HpacSafety.Worker/Program.cs) — generic host registration; compose DB/outbox, one summarizer, and attachment processors.
 - [src/HpacSafety.Worker/Properties/launchSettings.json](../src/HpacSafety.Worker/Properties/launchSettings.json) — local Worker launch profile; retain.
-- [src/HpacSafety.Worker/README.md](../src/HpacSafety.Worker/README.md) — current long-running/outbox deployable intent; revise to one-call and attachment rules.
+- [src/HpacSafety.Worker/README.md](../src/HpacSafety.Worker/README.md) — aligned one-call/attachment target and current-host warning.
 - [src/HpacSafety.Worker/Worker.cs](../src/HpacSafety.Worker/Worker.cs) — startup log only; replace with an orchestrator that delegates typed outbox handlers without embedding domain policy.
 - [src/HpacSafety.Worker/appsettings.Development.json](../src/HpacSafety.Worker/appsettings.Development.json) — development logging; add safe fake/local adapter configuration without secrets.
 - [src/HpacSafety.Worker/appsettings.json](../src/HpacSafety.Worker/appsettings.json) — base Worker logging; add validated references for model/prompt/retries/tooling, not secret values.
 
 ## Web — 21 paths
 
-- [src/web/README.md](../src/web/README.md) — static/Tailwind build and separate deployable intent; revise any combined-hosting or absent-feature details.
+- [src/web/README.md](../src/web/README.md) — aligned static-site, form-continuity, accessibility, and current-page gap summary.
 - [src/web/admin/.gitkeep](../src/web/admin/.gitkeep) — empty admin-site placeholder; replace with sign-in/review/question/allowlist static pages and modules.
 - [src/web/assets/README.md](../src/web/assets/README.md) — asset provenance/pinning guidance; retain.
 - [src/web/assets/fonts/OFL-Aleo.txt](../src/web/assets/fonts/OFL-Aleo.txt) — Aleo SIL Open Font License; retain with font.

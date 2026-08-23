@@ -5,8 +5,8 @@
 The Worker owns one versioned runtime prompt and makes exactly one model call
 per summary attempt. That call both summarizes and anonymizes the report and
 returns both official-language texts. There is no deterministic text scrubber,
-separate redaction pass, PII-audit call, translation call, or standalone
-aircraft-classification call.
+separate redaction pass, PII-audit call, translation call, or specialized
+aircraft-processing call.
 
 The prompt is deployed with the Worker so prompt and code revisions move
 together. Its stable version identifier and the model identifier are stored on
@@ -79,14 +79,6 @@ injury severity, and other learning value when they do not identify someone.
 Documents are private review evidence only. Their text is not extracted,
 summarized, translated, or anonymized, and no document or document-derived text
 is sent to the model.
-
-## Aircraft certification
-
-The model may safely normalize a reporter-provided certification answer to an
-approved coarse class vocabulary as part of the same prompt. It must omit make
-and model and must refuse to guess when the reporter did not provide enough
-information. There is no classifier service, mapping pipeline, marker-carrying
-domain object, or second model request.
 
 ## Persistence and review
 

@@ -11,9 +11,9 @@ Usage:
 
     python3 tools/extract-typeform.py --json < page.html > form.json
 
-This file is the source of truth for the domain model (issue #5) and for the
-public report form (issue #11). Regenerate it rather than hand-editing
-docs/form-spec.md; CI diffs the two.
+The generated file is evidence of the current external question wording, not
+the target domain or submission contract. `/spec` is authoritative. Regenerate
+the snapshot rather than hand-editing docs/form-spec.md; CI diffs the two.
 """
 from __future__ import annotations
 
@@ -109,9 +109,10 @@ def render_markdown(fields: list[dict]) -> str:
         "",
         f"Source: <{FORM_URL}>",
         "",
-        "This is the question set HPAC has been collecting through Typeform. The new",
-        "form reproduces it so that historical and future reports stay comparable, and",
-        "so reporters see wording they already recognise.",
+        "This is source evidence for the questions HPAC has been collecting through",
+        "Typeform. The replacement preserves their intent and recognizable wording.",
+        "It is not the target system contract: `/spec` controls revision semantics,",
+        "optionality, attachments, submission, AI, review, and publication.",
         "",
         "See `docs/anonymization-policy.md` for which of these fields survive into a",
         "published summary — several of them never do.",

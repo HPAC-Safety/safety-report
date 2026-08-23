@@ -142,6 +142,13 @@ size limit nobody owns.
 **Video may force this number to be revisited.** 50 MB is ample for a photo and
 tight for anything but a short clip.
 
+The limit is enforced **as the object streams in**, not after it has been fully
+read: ingest reads a quarantined upload in chunks and stops as soon as it has
+seen more than the limit, so an oversized upload is never pulled fully into
+memory first. On a public endpoint that receives whatever a browser sends, that
+distinction is the difference between "refused" and a denial-of-service surface.
+See [ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+
 ### Refused uploads expire; nothing deletes them
 
 A refused upload is simply never promoted. It stays where the browser put it and

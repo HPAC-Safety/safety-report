@@ -269,11 +269,32 @@ that outlives the reason it was minted is a public object URL with extra steps.
   machine with no Docker daemon skips it with `--filter "Category!=Integration"`.
   CI runs it. It is pinned to a release tag for the same reason the Postgres
   container is.
-- Ingest buffers the whole file in memory to hash, sniff, and strip it.
+- Ingest buffers an accepted file in memory to hash, sniff, and strip it.
   `MediaPolicy.MaxByteSize` bounds that cost, and it stays a constructor argument
   with no default — a size limit nobody chose is a size limit nobody owns. The
   configured value is **50 MB** (`MediaPolicyOptions`), which is generous for a
   photo and tight for video; see `docs/data-handling.md`.
+- **The limit is enforced while the object streams in, not after it has been
+  fully downloaded.** An earlier version of `MediaIngestor` read the whole
+  quarantined object into memory with `CopyToAsync` and checked its length
+  afterward — on a public upload endpoint with no other size gate, that is a
+  denial-of-service surface: an attacker-supplied multi-gigabyte upload would be
+  pulled entirely into memory before ever being refused. `CopyBoundedAsync`
+  reads in `Stream.CopyToAsync`'s own chunk size and stops the moment more than
+  `MaxByteSize` bytes have arrived, so an oversized object is never read past a
+  few chunks beyond the configured limit. Caught in PR review; a test proves it
+  by tracking bytes actually pulled from a 500&nbsp;MB synthetic source against a
+  1&nbsp;KB policy limit, without allocating 500&nbsp;MB to make the point.
+- **Defense in depth, not yet done:** S3 pre-signed POST supports a
+  `content-length-range` policy condition, which would let S3 itself refuse an
+  oversized PUT before it reaches this system at all. `CreateUploadUrlAsync`
+  issues a pre-signed **PUT**, not a POST, and SigV4 PUT URLs have no equivalent
+  bound — only a POST policy document can carry one. Moving to POST (or adding a
+  POST-based upload path alongside PUT) to get that bound is a genuine
+  improvement and is not done here; it is not a substitute for the streaming
+  check above; even with a bucket-side bound, this application must not trust an
+  unbounded read on any source, including `FileSystemBlobStore` in development,
+  where no S3 policy applies at all.
 - An accepted upload is copied once, from quarantine to the Restricted record.
   That is the price of deciding what bytes are before they land anywhere
   permanent, and it is worth paying.

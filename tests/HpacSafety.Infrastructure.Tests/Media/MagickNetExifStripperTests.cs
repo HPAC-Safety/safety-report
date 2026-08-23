@@ -6,6 +6,29 @@ using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Media;
 
+/// <summary>
+/// A note on scope, from PR review (#60): the fixtures here carry GPS, a camera
+/// make, and a capture timestamp in the top-level IFD, but none embeds a
+/// thumbnail in EXIF's IFD1 — so thumbnail removal is demonstrated only by the
+/// mechanism (the whole APP1 EXIF segment is gone, IFD1 included) rather than by
+/// a fixture built specifically to carry one.
+/// <para>
+/// This is a documented gap, not an oversight. Magick.NET's <c>ExifProfile</c>
+/// exposes <c>ThumbnailOffset</c>/<c>ThumbnailLength</c> as read-only and a
+/// <c>RemoveThumbnail()</c>, but no supported way to <i>embed</i> one — doing so
+/// would mean hand-constructing the raw TIFF/IFD1 bytes ourselves rather than
+/// using the library under test to build the fixture, which is the "much extra
+/// machinery" the review comment anticipated might make this not worth forcing.
+/// </para>
+/// <para>
+/// The byte-level assertions below are why the mechanism argument holds: IFD0
+/// and IFD1 share one APP1 segment under a single TIFF header, so there is no
+/// code path in which <c>Strip()</c> removes the segment's top-level tags while
+/// leaving a thumbnail sub-IFD behind. Confirming the segment is absent
+/// confirms the thumbnail is too, by construction of the format rather than by
+/// observing a thumbnail directly.
+/// </para>
+/// </summary>
 public class MagickNetExifStripperTests
 {
     // "Exif" followed by two NULs - the APP1 marker that introduces an EXIF

@@ -28,6 +28,11 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public sealed class MediaIngestor
 {
+    // Stream.CopyToAsync's own default. Reading in chunks this size is what
+    // keeps the bound below tight rather than "the whole object, minus a
+    // rounding error".
+    private const int ReadBufferSize = 81920;
+
     private readonly IBlobStore _blobStore;
     private readonly IMediaSniffer _sniffer;
     private readonly IExifStripper _stripper;
@@ -70,23 +75,36 @@ public sealed class MediaIngestor
             throw new DomainRuleViolationException("Ingest reads from quarantine and nowhere else.");
         }
 
-        // Buffered rather than streamed: the bytes are read three times - for the
-        // digest, for the sniff and for the strip - and MediaPolicy.MaxByteSize
-        // is what bounds how much that costs.
+        // Buffered rather than streamed past this point: the bytes are read three
+        // more times - for the digest, for the sniff and for the strip - and
+        // MediaPolicy.MaxByteSize is what bounds how much that costs.
+        //
+        // Getting the bytes into that buffer is a different question, and it is
+        // the one a public upload endpoint cannot afford to get wrong: a
+        // "download everything, then check Length" copy pulls an arbitrarily
+        // large object fully into memory before an oversized upload is refused,
+        // which is itself a denial-of-service surface. CopyBoundedAsync checks
+        // the running total as bytes arrive and stops reading the source the
+        // moment the limit is exceeded - the rest of an oversized object is
+        // never requested at all.
         using var original = new MemoryStream();
+        bool exceedsLimit;
 
         await using (var source = await _blobStore.OpenReadAsync(quarantineKey, cancellationToken).ConfigureAwait(false))
         {
-            await source.CopyToAsync(original, cancellationToken).ConfigureAwait(false);
+            exceedsLimit = await CopyBoundedAsync(source, original, _policy.MaxByteSize, cancellationToken).ConfigureAwait(false);
+        }
+
+        if (exceedsLimit)
+        {
+            return MediaIngestOutcome.Rejected(MediaRejectionReason.TooLarge);
         }
 
         var byteSize = original.Length;
 
-        if (byteSize <= 0 || byteSize > _policy.MaxByteSize)
+        if (byteSize <= 0)
         {
-            // Refused before anything decodes it: an oversized file is not worth
-            // handing to an imaging library.
-            return MediaIngestOutcome.Rejected(_policy.Validate(declaredContentType, null, byteSize).RejectionReason);
+            return MediaIngestOutcome.Rejected(MediaRejectionReason.Empty);
         }
 
         original.Position = 0;
@@ -120,4 +138,44 @@ public sealed class MediaIngestor
 
         return MediaIngestOutcome.Ingested(verdict.Type, byteSize, sha256, originalKey, derivativeKey, _clock.GetUtcNow());
     }
+
+    /// <summary>
+    /// Copies <paramref name="source" /> into <paramref name="destination" />,
+    /// stopping as soon as more than <paramref name="maxByteSize" /> bytes have
+    /// been read rather than after the whole stream has been consumed.
+    /// </summary>
+    /// <returns><see langword="true" /> when the source exceeded the limit.</returns>
+    private static async Task<bool> CopyBoundedAsync(
+        Stream source,
+        MemoryStream destination,
+        long maxByteSize,
+        CancellationToken cancellationToken)
+    {
+        var buffer = new byte[ReadBufferSize];
+        long total = 0;
+
+        while (true)
+        {
+            // maxByteSize + 1: a file of exactly the limit must still succeed,
+            // and reading one byte past it is enough to know the limit was
+            // exceeded without reading a whole extra chunk to find out.
+            var toRead = (int)Math.Min(buffer.Length, maxByteSize + 1 - total);
+
+            if (toRead <= 0)
+            {
+                return true;
+            }
+
+            var read = await source.ReadAsync(buffer.AsMemory(0, toRead), cancellationToken).ConfigureAwait(false);
+
+            if (read == 0)
+            {
+                return false;
+            }
+
+            total += read;
+            await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+        }
+    }
+
 }

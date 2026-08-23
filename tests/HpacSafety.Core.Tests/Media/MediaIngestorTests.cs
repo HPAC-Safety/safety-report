@@ -148,6 +148,38 @@ public class MediaIngestorTests
     }
 
     [Fact]
+    public async Task Given_a_file_far_larger_than_the_limit_When_it_is_ingested_Then_the_source_is_never_pulled_fully_into_memory_before_rejection()
+    {
+        // Given
+        // 500 MB against a 1 KB limit - if the whole object were buffered before
+        // the size were checked, this test would allocate half a gigabyte to
+        // prove the bug exists. It never should, which is the point.
+        const long maxByteSize = 1_000;
+        var source = new SyntheticOversizedStream(500 * 1024 * 1024);
+        var store = new SingleStreamBlobStore(source);
+        var ingestor = new MediaIngestor(
+            store,
+            new StubMediaSniffer(MediaType.Jpeg),
+            new RecordingExifStripper(),
+            new MediaPolicy(maxByteSize, MediaType.All),
+            new FixedClock(Now));
+
+        // When
+        var outcome = await ingestor.IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+
+        // Then
+        outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
+
+        // The bound is generous on purpose - any reasonable streaming
+        // implementation reads in chunks no larger than a few hundred KB, so
+        // stopping within a few megabytes of the configured limit proves the
+        // rest of a 500 MB object was never requested. A naive
+        // "download everything, then check Length" implementation would have
+        // served the full 500 MB here.
+        source.TotalBytesServed.ShouldBeLessThan(maxByteSize + (4 * 1024 * 1024));
+    }
+
+    [Fact]
     public async Task Given_a_file_over_the_size_limit_When_it_is_ingested_Then_it_is_rejected_before_it_is_decoded()
     {
         // Given

@@ -120,6 +120,45 @@ ASCII boxes do neither.
 
 Full detail: `docs/testing-conventions.md`.
 
+### Both languages are first-class
+
+**English and French are two halves of this application, not a language and its
+translation.** HPAC is a national association; a francophone pilot reporting a
+crash is not using a localized version of an English system, they are using the
+system. Nothing here is allowed to treat one language as the real one and the
+other as a follow-up.
+
+That is a rule with consequences, not a sentiment. What it already means in this
+codebase:
+
+- **Question wording is stored per locale, and neither locale is primary.**
+  `is_source` records which language a human authored first — it does not mark
+  the canonical one, and no logic may read it as though it did. See
+  [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md).
+- **A question cannot be activated while its counterpart is missing**, so a
+  half-translated form never reaches a reporter. A machine-translated
+  counterpart is acceptable and is marked as such; an absent one is not.
+  ADR-0016 again.
+- **A summary is an EN/FR pair, and a safety officer approves the pair.**
+  `Report.IsPublishable` requires an approved summary in *every* locale.
+  Approving one does not implicitly approve the other, and there is no path that
+  publishes one language while the other waits. See
+  [ADR-0004](docs/decisions/ADR-0004-human-review-required.md).
+- **The deterministic scrub works in both languages**, with no language in which
+  stage one degrades. A redaction rule that fires only on English text is a
+  defect in the scrub, not a French limitation — that gap was real and was
+  closed in #58.
+- **The end-to-end journey runs in both locales** (#27). A suite that only
+  exercises English is a suite that stops noticing French regressions.
+- **Seeded and generated French is marked, never hidden.** Unreviewed wording
+  carries `is_machine_translated` so a reviewer can find it; the answer to "this
+  French has not been read by a person" is to flag it, never to withhold the
+  French and leave the form English-only. See
+  [ADR-0020](docs/decisions/ADR-0020-seeding-by-migration.md).
+
+When a change makes one language work and leaves the other for later, that is
+not a smaller version of the change. It is an incomplete one.
+
 ### Localization
 
 - **No hardcoded user-facing strings anywhere.** Not in the admin UI, not in an
@@ -186,6 +225,64 @@ writing anything that touches the form, hold on to three things:
 See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
 [`incident-domain-model`](skills/incident-domain-model/SKILL.md) skill.
 
+### The database
+
+`HpacSafety.Infrastructure/Persistence` owns **every table and every migration**,
+including tables whose behaviour lives somewhere else. `Core` never references
+EF Core; a persistence concern reaching into the domain is a bug, not a
+shortcut. Five rules that are not negotiable at the schema level:
+
+- **Restricted text is encrypted by the application before PostgreSQL sees it**,
+  through `IFieldCipher` — declared in `Core`, implemented in `Infrastructure`,
+  bound to a column by a value converter. Never add a field in the Restricted
+  tier that is stored in the clear, and never "temporarily" decrypt one into
+  another column to make a query easier. See
+  [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md).
+- **Every row is identified by a `TinyId`** — eleven characters over
+  `A-Za-z0-9-_`, one convention for every table, stored as `char(11)` and never
+  as `uuid`. It is chosen for what it does not say: no timestamp, nothing
+  enumerable. This system narrows a published date to a month and a year so a
+  report cannot be pinned to a moment, and a sequential or time-ordered key
+  would hand that back through every URL, blob key, and log line. Never
+  introduce a second key type, and never authorise anything by possession of an
+  identifier. See
+  [ADR-0034](docs/decisions/ADR-0034-tiny-ids.md).
+- **The occurrence is a local date and a local time; the time-of-day bucket is
+  derived, never asked for.** `DateOnly` plus `TimeOnly`, both local wall clock,
+  because "morning" is what the clock at the site said and this system collects a
+  province rather than coordinates — any offset it stored would be inferred, and
+  a wrong one moves the bucket. The boundaries live in exactly one place,
+  `TimeOfDay.FromLocalTime(TimeOnly)` in `Core`; never re-derive them at a call
+  site. The precise time is Restricted and encrypted, the bucket is publishable
+  and in the clear, and a reporter who gives no time is `TimeOfDay.Unknown` —
+  a defined state, never a null that reads as midnight. See
+  [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md) and #68.
+- **Domain values are stored as invariant codes**, never as ordinal integers.
+  `high_en_b`, not `3`. A stored code that no longer names a domain value throws
+  rather than defaulting to zero.
+- **Seed data is written by the migration, never with `HasData`.** These rows
+  are edited by administrators after deployment, and `HasData` would turn every
+  one of those edits into a model difference the next migration tries to undo.
+  Seed identifiers are derived from a key, never random. See
+  [ADR-0020](docs/decisions/ADR-0020-seeding-by-migration.md).
+- **No migration ever contains a real name, a real address, or a real
+  allowlist.** The seeded local administrator is `admin@localhost`, it is one
+  row, and it is guarded inside the SQL by the PostgreSQL setting
+  `hpac.seed_development_admin` so that it cannot ride a generated script into
+  production. A guard evaluated in C# is evaluated on the machine that generated
+  the script, which is the wrong machine.
+- **The seeded question bank must reproduce `docs/form-spec.md` exactly**, and a
+  test reads the spec and proves it. Regenerate the spec with
+  `tools/extract-typeform.py`; never edit either side to make the other agree.
+
+Scaffolded migrations are exempt from `CA1062`, `CA1861`, and `IDE0161` in
+`.editorconfig`, because `dotnet ef` writes them and has no option to write them
+differently. That exemption is scoped to `**/Migrations/*.cs` and is not a
+licence to put logic there — the seed data those files call into is ordinary
+code under `Persistence/Seeding`, analysed and measured like everything else.
+
+Detail: [`src/HpacSafety.Infrastructure/Persistence/README.md`](src/HpacSafety.Infrastructure/Persistence/README.md).
+
 ### Code
 
 - .NET 10, file-scoped namespaces, nullable enabled, warnings as errors.
@@ -193,6 +290,17 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   clients, the Anthropic SDK — live in `HpacSafety.Infrastructure` behind
   interfaces declared in `Core`. That is a rule, not an example: see "Design"
   below and [ADR-0033](docs/decisions/ADR-0033-third-party-libraries-behind-owned-abstractions.md).
+- **Dates and times say what is actually known.** `DateOnly` when the time does
+  not matter, `DateTimeOffset` when it does, `TimeOnly` when the date does not.
+  **`DateTime` is forbidden** — its `Kind` is ambient and silently lost, so the
+  same value means UTC, local, or unspecified depending on where it came from.
+  It is banned in `tests/BannedSymbols.txt` — which despite its path binds every
+  project, `src/` included — so using it is a build error in the editor rather
+  than a review comment. The occurrence date a reporter gives is a `DateOnly`;
+  audit timestamps, outbox `occurred_at`/`processed_at`, and `approved_at` are
+  `DateTimeOffset`. Where a third-party library hands back a `DateTime`, the
+  adapter converts at the boundary and no call site inherits it. See
+  [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md).
 - Static HTML/JS for the UI. No SPA framework, no bundler.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
@@ -393,6 +501,7 @@ describes it is worse than no README, because it is believed.
 | How is an aircraft described? | `docs/aircraft-classification.md` |
 | How does login work, and why is it like that? | `docs/authentication.md` |
 | Where does personal data live, and for how long? | `docs/data-handling.md` |
+| What is in the database, and why is it shaped like that? | `src/HpacSafety.Infrastructure/Persistence/README.md` |
 | Colours, type, spacing | `docs/design-system.md` |
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
@@ -403,9 +512,11 @@ describes it is worse than no README, because it is believed.
 
 ## Current state
 
-The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
-holds the entities, enums, interfaces, and the data-driven question bank, with
-unit tests; `Infrastructure`, `Api`, and `Worker` are still empty.
+The repository is scaffolding, documentation, the domain, and the database.
+`HpacSafety.Core` holds the entities, enums, interfaces, and the data-driven
+question bank, with unit tests. `HpacSafety.Infrastructure` holds the EF Core
+model, the initial migration, the seeded question bank, and the field
+encryption. `Api` and `Worker` are still empty.
 
 CI runs on every pull request and on merge to `main`, and its checks are
 required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op with

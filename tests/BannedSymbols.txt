@@ -1,6 +1,8 @@
-# Symbols banned in test projects, enforced as a build error by
-# Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030). Wired up in
-# Directory.Build.props, which applies it to every *.Tests project.
+# Symbols banned, enforced as a build error by
+# Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030) plus TreatWarningsAsErrors.
+# Wired up in Directory.Build.props, which applies it to every project in the
+# solution - src/ and tests/ alike. The file lives under tests/ for historical
+# reasons (ADR-0013 got here first); its reach is the whole repository.
 #
 # Format: one entry per line, `<documentation-comment-id>;<message>`.
 # T: type, M: method, P: property. See ADR-0013.
@@ -11,8 +13,18 @@
 # at a debugger. See docs/testing-conventions.md.
 T:Xunit.Assert;Use Shouldly. value.ShouldBe(expected), not Assert.Equal(expected, value). Should.Throw<T>(...), not Assert.Throws<T>(...). See docs/testing-conventions.md.
 
+# --- dates and times --------------------------------------------------------
+# DateTime.Kind is ambient: the same value means UTC, local, or unspecified
+# depending on where it came from, and nothing in the type system tells them
+# apart. Model the fact that is actually known instead. The occurrence date a
+# reporter gives is a date, and docs/anonymization-policy.md narrows it to month
+# and year before publication - a timezone conversion that shifts it across
+# midnight silently changes which day an accident happened on. See ADR-0035.
+T:System.DateTime;Use DateOnly for a date, DateTimeOffset for a moment, TimeOnly for a time of day. DateTime.Kind is ambient and silently lost. Where a third-party library hands one back, convert in the adapter and never past it. See docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md.
+
 # Obvious future candidates, deliberately NOT banned yet because each is its own
-# judgement and none was asked for: System.DateTime.Now / UtcNow and their
-# DateTimeOffset equivalents (inject TimeProvider instead), and
-# System.Threading.Thread.Sleep (await the condition; a sleep is a race the test
-# author lost). Add them when the code that would misuse them exists.
+# judgement and none was asked for: System.DateTimeOffset.Now / UtcNow (inject
+# TimeProvider instead - the DateTime equivalents are already covered by the
+# type-level ban above), and System.Threading.Thread.Sleep (await the condition;
+# a sleep is a race the test author lost). Add them when the code that would
+# misuse them exists.

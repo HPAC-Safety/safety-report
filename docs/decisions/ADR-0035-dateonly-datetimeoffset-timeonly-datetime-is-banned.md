@@ -151,9 +151,10 @@ this ban or no ban, and this ban is the one with teeth.
 ### The boundary exception
 
 A third-party library will hand back a `DateTime` — an AWS SDK response, a mail
-provider, a driver. Per
-[ADR-0033](ADR-0033-third-party-libraries-behind-owned-abstractions.md) that
-vendor type is named in exactly one place: the adapter in
+provider, a driver. This ADR applies the boundary-exception pattern established
+in ADR-0033, *third-party libraries behind owned abstractions* (companion
+PR #64, not yet merged) — see that ADR once merged for the full reconciliation.
+That pattern names the vendor type in exactly one place: the adapter in
 `HpacSafety.Infrastructure` that implements the port declared in
 `HpacSafety.Core`. **The adapter converts at the boundary and returns the owned
 type.** No call site outside the adapter ever sees a `DateTime`, and therefore no
@@ -242,7 +243,8 @@ against it here. First, the BCL caught up for *this* problem: `DateOnly` and
 `TimeOnly` arrived in .NET 6, and with `DateTimeOffset` for moments the three
 BCL types cover every temporal fact this system holds — nothing here needs
 future-dated recurrence in a named zone, which is where the BCL genuinely still
-falls short and where Noda would win outright. Second, ADR-0033: NodaTime is a
+falls short and where Noda would win outright. Second, the boundary rule
+established in ADR-0033 (companion PR #64, not yet merged): NodaTime is a
 third-party library, so it would be reached through a port in `Core` with an
 adapter in `Infrastructure`, and `Core` would end up with owned value objects
 that wrap Noda types that wrap the same concepts the BCL already offers. That is
@@ -260,8 +262,9 @@ not by quietly adding a package.
   "the ban applies to test projects only" is superseded here: the wiring now
   covers every project, and the `Xunit.Assert` entry is inert in `src/` rather
   than absent from it.
-- [ADR-0033](ADR-0033-third-party-libraries-behind-owned-abstractions.md) — why
-  the vendor `DateTime` stops at the adapter
+- ADR-0033, *third-party libraries behind owned abstractions* — why the vendor
+  `DateTime` stops at the adapter. Companion PR #64, not yet merged; once it
+  lands this becomes `[ADR-0033](ADR-0033-third-party-libraries-behind-owned-abstractions.md)`.
 - [ADR-0002](ADR-0002-transactional-outbox.md) — the outbox timestamps and the
   backoff arithmetic that depends on them
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — `QuestionRole` is how the

@@ -18,7 +18,7 @@ the application-side encryption of Restricted columns.
 | `Conversions/` | `TinyIdConverter`, `LocaleConverter`, `EnumCodeConverter<T>` — identifiers and domain values as text |
 | `Encryption/` | `AesGcmFieldCipher` and the value converter that binds it to a column |
 | `Migrations/` | Scaffolded by `dotnet ef`. Hand-edited only to call a seed writer |
-| `Seeding/` | The question bank as data, and the guarded local-administrator insert |
+| `Seeding/` | The question bank as data, both written as guarded, re-runnable inserts |
 
 ## The tables
 
@@ -151,6 +151,12 @@ The French wording is machine-translated and carries
 `is_machine_translated = true`: it renders, and nobody has reviewed it. That is a
 queryable column rather than a note, so the admin UI (#49) can list every piece
 of unreviewed wording as a work queue, and revising one by hand clears the flag.
+
+Every row is written with `INSERT ... SELECT ... WHERE NOT EXISTS`, guarded on
+its own identifier — the same shape `DevelopmentAdminSeed` uses for its one row.
+Re-executing the seed is therefore a safe no-op, which matters for a database
+that only lost its `__EFMigrationsHistory` row, or a later migration that
+re-seeds after someone empties the question bank by hand.
 
 The migration also seeds **one obviously-fake local administrator**,
 `admin@localhost`, and only where the database applying the migration has opted

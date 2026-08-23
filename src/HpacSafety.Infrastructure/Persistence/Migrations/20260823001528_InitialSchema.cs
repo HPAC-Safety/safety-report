@@ -445,7 +445,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 table: "summaries",
                 column: "translated_from_summary_id");
             // The question bank, so a clean database asks exactly the question
-            // set in docs/form-spec.md. See ADR-0020.
+            // set in docs/form-spec.md. Guarded row-by-row, so re-applying this
+            // is a safe no-op. See ADR-0020.
             Seeding.QuestionBankSeedWriter.Write(migrationBuilder);
 
             // One obviously-fake local administrator, and only where the

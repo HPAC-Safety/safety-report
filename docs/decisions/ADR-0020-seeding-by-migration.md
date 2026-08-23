@@ -24,8 +24,10 @@ not something to invent in source control.
 ### The question bank is seeded by the migration, written as SQL, not `HasData`
 
 `QuestionBankSeed` transcribes `docs/form-spec.md` into data;
-`QuestionBankSeedWriter` writes it through `MigrationBuilder.InsertData`;
-`InitialSchema` calls it after creating the tables.
+`QuestionBankSeedWriter` writes it as a guarded `INSERT ... SELECT ... WHERE
+NOT EXISTS` per row — the same shape `DevelopmentAdminSeed` uses for its one
+row — through `migrationBuilder.Sql(...)`; `InitialSchema` calls it after
+creating the tables.
 
 **Not `HasData`.** `HasData` makes seed rows part of the model snapshot, and the
 whole point of ADR-0016 is that an administrator rewords, reorders, retypes, and
@@ -35,7 +37,11 @@ that the application is expected to edit does not belong in the model.
 
 Identifiers are derived from the question key with SHA-256 (`SeedIds`) rather
 than drawn at random, so the migration produces identical rows on every database
-and in a generated SQL script.
+and in a generated SQL script — and because every insert is guarded on that same
+identifier, re-executing the seed is a safe no-op rather than a duplicate-key
+error. `SchemaTests` proves this by running the seed SQL a second time against
+an already-seeded database and asserting neither an error nor a changed row
+count.
 
 `QuestionBankSeedTests` reads `docs/form-spec.md` at test time and fails if the
 seed and the spec drift apart — label, section, type, choices, and help text.

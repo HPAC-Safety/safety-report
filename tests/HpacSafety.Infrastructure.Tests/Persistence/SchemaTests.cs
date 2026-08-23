@@ -1,3 +1,5 @@
+using HpacSafety.Infrastructure.Persistence.Seeding;
+
 using Microsoft.EntityFrameworkCore;
 
 using Npgsql;
@@ -47,9 +49,13 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_the_migrations_are_applied_a_second_time_Then_nothing_changes()
+    public async Task Given_a_migrated_database_When_pending_migrations_are_checked_Then_there_are_none()
     {
-        // Given
+        // Given — this proves EF's own bookkeeping, not that the migration's
+        // content is safe to re-run. `dotnet ef database update` reads
+        // __EFMigrationsHistory and never re-invokes a migration already
+        // recorded there, so this alone cannot catch a non-idempotent
+        // statement inside one. See the seed-reapplication tests below.
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
 
         // When
@@ -58,6 +64,45 @@ public sealed class SchemaTests(PostgresFixture postgres)
 
         // Then
         pending.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Given_a_seeded_database_When_the_question_bank_seed_is_executed_a_second_time_Then_it_does_not_error()
+    {
+        // Given — the scenario __EFMigrationsHistory cannot protect against:
+        // a future migration re-seeding after an administrator emptied the
+        // question bank by hand, or a deployment script re-run outside EF's
+        // own tracking. Every row is written with a WHERE NOT EXISTS guard on
+        // its own identifier, the same shape DevelopmentAdminSeed uses.
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        // When / Then — this line is what would have failed before the guard:
+        // EF's InsertData has no WHERE NOT EXISTS, so running the same insert
+        // twice violates the primary key on the second pass.
+        await using var command = new NpgsqlCommand(QuestionBankSeedWriter.Sql(), connection);
+        await Should.NotThrowAsync(() => command.ExecuteNonQueryAsync());
+    }
+
+    [Fact]
+    public async Task Given_a_seeded_database_When_the_question_bank_seed_is_executed_a_second_time_Then_it_writes_no_duplicate_rows()
+    {
+        // Given
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        var before = await RowCountsAsync(connectionString);
+
+        // When
+        await using (var connection = new NpgsqlConnection(connectionString))
+        {
+            await connection.OpenAsync();
+            await using var command = new NpgsqlCommand(QuestionBankSeedWriter.Sql(), connection);
+            await command.ExecuteNonQueryAsync();
+        }
+
+        // Then — a safe no-op, not merely a survivable one.
+        var after = await RowCountsAsync(connectionString);
+        after.ShouldBe(before);
     }
 
     [Fact]
@@ -108,6 +153,26 @@ public sealed class SchemaTests(PostgresFixture postgres)
 
         // Then
         types.ShouldBe(["ARRAY"]);
+    }
+
+    private static async Task<Dictionary<string, long>> RowCountsAsync(string connectionString)
+    {
+        string[] seededTables =
+        [
+            "questions", "question_versions", "question_translations", "question_options", "question_option_translations",
+        ];
+
+        var counts = new Dictionary<string, long>(StringComparer.Ordinal);
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync();
+
+        foreach (var table in seededTables)
+        {
+            await using var command = new NpgsqlCommand($"SELECT count(*) FROM {table}", connection);
+            counts[table] = (long)(await command.ExecuteScalarAsync())!;
+        }
+
+        return counts;
     }
 
     private static async Task<string[]> QueryStringsAsync(string connectionString, string sql)

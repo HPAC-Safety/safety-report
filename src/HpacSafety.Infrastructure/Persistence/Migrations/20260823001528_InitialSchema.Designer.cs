@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HpacSafetyDbContext))]
-    [Migration("20260822232354_InitialSchema")]
+    [Migration("20260823001528_InitialSchema")]
     partial class InitialSchema
     {
         /// <inheritdoc />

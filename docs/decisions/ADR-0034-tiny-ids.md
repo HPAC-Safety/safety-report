@@ -28,9 +28,12 @@ Case-sensitive. The alphabet is URL-safe base64's, which is the one YouTube uses
 for a video id.
 
 - `TinyId` is a readonly record struct in `HpacSafety.Core.SharedKernel`.
-  `RandomNumberGenerator` is in the BCL, so `Core` keeps its zero package
-  references. `#16` uses the same type for the report segment of a blob key
-  rather than re-deriving the rule.
+  `RandomNumberGenerator` is in the BCL, so `Core` keeps its zero *runtime*
+  package references — `Directory.Build.props` adds `Roslynator.Analyzers` to
+  every project, `Core` included, but that is a build-time analyzer with
+  `PrivateAssets="all"`, not something the running application depends on.
+  `#16` uses the same type for the report segment of a blob key rather than
+  re-deriving the rule.
 - **Malformed is unrepresentable.** The constructor is private; `Parse` and
   `TryParse` are the only ways in from text, and both reject anything that is
   not exactly eleven characters of the alphabet.

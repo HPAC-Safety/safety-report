@@ -1,4 +1,8 @@
+using System.Globalization;
+using System.Text;
+
 using HpacSafety.Core.SharedKernel;
+
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
@@ -20,30 +24,38 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// so the same migration produces the same rows on every database and in a
 /// generated SQL script. See <see cref="SeedIds"/>.
 /// </para>
+/// <para>
+/// Every row is written with an <c>INSERT ... SELECT ... WHERE NOT EXISTS</c>
+/// guard on its own identifier, the same shape <see cref="DevelopmentAdminSeed"/>
+/// uses for its one row — not EF's <c>InsertData</c>, which has no guard and
+/// errors on a second write. That makes re-applying this seed a safe no-op:
+/// against a database that only lost its <c>__EFMigrationsHistory</c> row, or
+/// against one a future migration deliberately re-seeds because an
+/// administrator emptied the question bank by hand. Deleting and re-inserting
+/// was considered and rejected — a seeded question a report has already
+/// answered is referenced by <c>report_answers</c> with
+/// <c>DeleteBehavior.Restrict</c>, so a delete would fail once real answers
+/// exist. See ADR-0020.
+/// </para>
 /// </remarks>
 public static class QuestionBankSeedWriter
 {
-    private static readonly string[] QuestionColumns =
-        ["id", "key", "is_system", "role", "sensitivity", "display_order", "section_key", "is_active", "created_at", "deleted_at"];
-
-    private static readonly string[] VersionColumns =
-        ["id", "question_id", "version_number", "type", "is_required", "created_at"];
-
-    private static readonly string[] TranslationColumns =
-        ["id", "question_version_id", "locale", "label", "help_text", "placeholder", "is_source", "is_machine_translated", "translated_at", "updated_at"];
-
-    private static readonly string[] OptionColumns =
-        ["id", "question_version_id", "code", "display_order"];
-
-    private static readonly string[] OptionTranslationColumns =
-        ["id", "question_option_id", "locale", "label", "is_source", "is_machine_translated", "translated_at", "updated_at"];
-
     /// <summary>Writes every seeded row through the migration.</summary>
     /// <param name="migrationBuilder">The migration being applied.</param>
     public static void Write(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
+        migrationBuilder.Sql(Sql());
+    }
 
+    /// <summary>
+    /// The guarded SQL every row is written with. Exposed so a test can execute
+    /// it a second time against an already-seeded database and prove that is a
+    /// no-op, independent of the schema-creation half of the migration.
+    /// </summary>
+    public static string Sql()
+    {
+        var sql = new StringBuilder();
         var at = QuestionBankSeed.SeededAt;
 
         for (var order = 0; order < QuestionBankSeed.Questions.Count; order++)
@@ -52,37 +64,48 @@ public static class QuestionBankSeedWriter
             var questionId = SeedIds.For($"question:{question.Key}");
             var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
-            migrationBuilder.InsertData(
-                table: "questions",
-                columns: QuestionColumns,
-                values: [questionId.Value, question.Key, question.IsSystem, EnumCode.Of(question.Role), EnumCode.Of(question.Sensitivity), order, question.SectionKey, true, at, null]);
+            AppendGuardedInsert(
+                sql,
+                "questions",
+                ["id", "key", "is_system", "role", "sensitivity", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
+                [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(EnumCode.Of(question.Sensitivity)), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                guardColumn: "id",
+                guardValue: Id(questionId));
 
-            migrationBuilder.InsertData(
-                table: "question_versions",
-                columns: VersionColumns,
-                values: [versionId.Value, questionId.Value, 1, EnumCode.Of(question.Type), question.IsRequired, at]);
+            AppendGuardedInsert(
+                sql,
+                "question_versions",
+                ["id", "question_id", "version_number", "type", "is_required", "created_at"],
+                [Id(versionId), Id(questionId), Int(1), Str(EnumCode.Of(question.Type)), Bool(question.IsRequired), Timestamp(at)],
+                guardColumn: "id",
+                guardValue: Id(versionId));
 
-            WriteQuestionTranslation(migrationBuilder, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, isSource: true);
-            WriteQuestionTranslation(migrationBuilder, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, isSource: false);
+            AppendQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, isSource: true);
+            AppendQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, isSource: false);
 
             for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
             {
                 var option = question.Options[optionOrder];
                 var optionId = SeedIds.For($"question_option:{question.Key}:{option.Code}");
 
-                migrationBuilder.InsertData(
-                    table: "question_options",
-                    columns: OptionColumns,
-                    values: [optionId.Value, versionId.Value, option.Code, optionOrder]);
+                AppendGuardedInsert(
+                    sql,
+                    "question_options",
+                    ["id", "question_version_id", "code", "display_order"],
+                    [Id(optionId), Id(versionId), Str(option.Code), Int(optionOrder)],
+                    guardColumn: "id",
+                    guardValue: Id(optionId));
 
-                WriteOptionTranslation(migrationBuilder, question, option, optionId, Locale.EnCa, option.LabelEn, isSource: true);
-                WriteOptionTranslation(migrationBuilder, question, option, optionId, Locale.FrCa, option.LabelFr, isSource: false);
+                AppendOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, isSource: true);
+                AppendOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, isSource: false);
             }
         }
+
+        return sql.ToString();
     }
 
-    private static void WriteQuestionTranslation(
-        MigrationBuilder migrationBuilder,
+    private static void AppendQuestionTranslation(
+        StringBuilder sql,
         SeededQuestion question,
         TinyId versionId,
         Locale locale,
@@ -91,27 +114,19 @@ public static class QuestionBankSeedWriter
         bool isSource)
     {
         var at = QuestionBankSeed.SeededAt;
+        var id = SeedIds.For($"question_translation:{question.Key}:1:{locale.Code}");
 
-        migrationBuilder.InsertData(
-            table: "question_translations",
-            columns: TranslationColumns,
-            values:
-            [
-                SeedIds.For($"question_translation:{question.Key}:1:{locale.Code}").Value,
-                versionId.Value,
-                locale.Code,
-                label,
-                helpText,
-                null,
-                isSource,
-                !isSource,
-                isSource ? null : at,
-                at,
-            ]);
+        AppendGuardedInsert(
+            sql,
+            "question_translations",
+            ["id", "question_version_id", "locale", "label", "help_text", "placeholder", "is_source", "is_machine_translated", "translated_at", "updated_at"],
+            [Id(id), Id(versionId), Str(locale.Code), Str(label), StrOrNull(helpText), "NULL", Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
+            guardColumn: "id",
+            guardValue: Id(id));
     }
 
-    private static void WriteOptionTranslation(
-        MigrationBuilder migrationBuilder,
+    private static void AppendOptionTranslation(
+        StringBuilder sql,
         SeededQuestion question,
         SeededOption option,
         TinyId optionId,
@@ -120,20 +135,43 @@ public static class QuestionBankSeedWriter
         bool isSource)
     {
         var at = QuestionBankSeed.SeededAt;
+        var id = SeedIds.For($"question_option_translation:{question.Key}:{option.Code}:{locale.Code}");
 
-        migrationBuilder.InsertData(
-            table: "question_option_translations",
-            columns: OptionTranslationColumns,
-            values:
-            [
-                SeedIds.For($"question_option_translation:{question.Key}:{option.Code}:{locale.Code}").Value,
-                optionId.Value,
-                locale.Code,
-                label,
-                isSource,
-                !isSource,
-                isSource ? null : at,
-                at,
-            ]);
+        AppendGuardedInsert(
+            sql,
+            "question_option_translations",
+            ["id", "question_option_id", "locale", "label", "is_source", "is_machine_translated", "translated_at", "updated_at"],
+            [Id(id), Id(optionId), Str(locale.Code), Str(label), Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
+            guardColumn: "id",
+            guardValue: Id(id));
     }
+
+    /// <summary>
+    /// <c>INSERT INTO table (columns) SELECT values WHERE NOT EXISTS (SELECT 1
+    /// FROM table WHERE guardColumn = guardValue);</c> — one row, written once,
+    /// however many times this statement runs.
+    /// </summary>
+    private static void AppendGuardedInsert(
+        StringBuilder sql, string table, string[] columns, string[] values, string guardColumn, string guardValue)
+    {
+        sql.Append("INSERT INTO ").Append(table)
+            .Append(" (").AppendJoin(", ", columns).Append(')')
+            .Append(" SELECT ").AppendJoin(", ", values)
+            .Append(" WHERE NOT EXISTS (SELECT 1 FROM ").Append(table)
+            .Append(" WHERE ").Append(guardColumn).Append(" = ").Append(guardValue).Append(");")
+            .Append('\n');
+    }
+
+    private static string Id(TinyId id) => Str(id.Value);
+
+    private static string Str(string value) => "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+
+    private static string StrOrNull(string? value) => value is null ? "NULL" : Str(value);
+
+    private static string Bool(bool value) => value ? "TRUE" : "FALSE";
+
+    private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
+
+    private static string Timestamp(DateTimeOffset value) =>
+        $"TIMESTAMPTZ '{value.ToString("yyyy-MM-dd HH:mm:sszzz", CultureInfo.InvariantCulture)}'";
 }

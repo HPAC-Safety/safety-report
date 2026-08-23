@@ -34,6 +34,7 @@ locales/
   fr-CA.json       # GENERATED — never hand-edit
   glossary.json    # pinned terms, never machine-translated
   fr-CA.meta.json  # per-key translation provenance
+  .fr-CA.pending   # one-time marker, removed by the initial generated-locale PR
 ```
 
 One shared set, consumed by **both** the web apps and the API. The .NET side
@@ -60,7 +61,7 @@ through `ITranslator`.
 | | UI chrome | Question content |
 |---|---|---|
 | Lives in | `locales/*.json`, git-tracked | `question_translations` rows |
-| Translated | In CI, via GitHub Models | At authoring time, via `ITranslator` |
+| Translated | In CI, via the configured provider | At authoring time, via `ITranslator` |
 | Source language | Always English | Whichever the author was working in |
 | Reviewed by | A human, before merge | A human, in the builder, whenever they choose |
 | Covered by the #9 lint | Yes | No — it is data, not a literal |
@@ -89,37 +90,102 @@ about reporter data; question wording contains none. See
 flowchart TD
     A["push to main"] --> B["hash-diff en-CA.json<br/>against fr-CA.meta.json"]
     B --> C{"new or changed keys?"}
-    C -->|no| D["exit 0"]
+    C -->|no| D["exit 0, open nothing"]
     C -->|yes| E["drop keys pinned in glossary.json"]
-    E --> F["one batched GitHub Models call"]
+    E --> F["one batched provider call"]
     F --> G["merge into fr-CA.json,<br/>stamp fr-CA.meta.json"]
-    G --> H["open PR"]
+    G --> H["open a PR"]
     H --> I["human reviews the French"]
 ```
 
-**Provider: GitHub Models**, free tier. The job declares
-`permissions: models: read` and the runner's built-in `GITHUB_TOKEN` already
-carries that scope — no API key, no vendor, no secret to rotate. Free limits are
-around 10 requests/minute; irrelevant when every new key is batched into one
-request per run.
+`.github/workflows/i18n-translate.yml` runs it, on a push to `main` and on
+manual dispatch. `tools/translate-locale.mjs` is the tool; `tools/translator.mjs`
+is the provider adapter.
+
+The first generation is an explicit bootstrap state. While
+`locales/.fr-CA.pending` exists and both generated files are absent, `--check`
+emits a notice so the workflow itself can merge. The first successful
+`--generate` removes the marker in the same pull request that adds
+`fr-CA.json` and `fr-CA.meta.json`. Never recreate it: after removal, a missing
+generated pair is a deletion and fails verification.
+
+**Provider: DeepL**, targeting `FR-CA`. ADR-0007 chose GitHub Models on the free
+tier; **GitHub Models was fully retired on 30 July 2026** — playground, model
+catalogue, and inference API alike — so there is no free already-authenticated
+option inside GitHub Actions any more.
+
+`tools/translator.mjs` declares the `ITranslator` port and holds the adapter. It
+is the one file to change to swap provider. Amazon Translate, reusing the
+worker's Anthropic key, and human-only translation were all considered and
+rejected — the comparison is in
+[ADR-0022](decisions/ADR-0022-translation-provider-is-configuration.md).
+
+The job needs one secret, `DEEPL_API_KEY`. The adapter picks DeepL's Free or Pro
+host from the key's `:fx` suffix, so there is no matching host to configure.
+Without the secret the job reports which keys are waiting and changes nothing.
+
+**`FR-CA` is a real DeepL target language**, listed distinctly from `FR`
+(metropolitan) and `FR-FR`, so this file gets Canadian French rather than
+metropolitan French under a Canadian name. It is "Target Only" — it cannot be a
+*source* language, which never matters here.
+
+That is not the same as HPAC's French. DeepL will not know that this association
+says *parapente* rather than *deltaplane* for a given wing, or which rendering of
+a rating name the membership actually uses. **That is what `glossary.json` and
+the human review step are for**, and it is the reason neither is optional.
+
+**Formality defaults to `prefer_more`** — a safety authority addressing pilots
+uses *vous*. `prefer_more` rather than `more` because `more` fails with HTTP 400
+on a target language that does not document formality support, and `FR-CA` does
+not. Override with the `TRANSLATION_FORMALITY` repository variable.
+
+**Placeholders are checked after translation.** If the French of a key does not
+carry the same `{named}` placeholders as its English, the run fails rather than
+shipping a label with a hole in it. Order is not compared — French word order
+differs.
 
 Runtime never calls a translation service: no per-visit latency, no per-view
 cost, no third-party request from a reporter's browser, and the French is
 reviewable in a diff like any other change.
 
 **Change detection is a content hash per key**, not a timestamp and not a
-whole-file diff. An English edit re-translates exactly that key; untouched keys
-are never re-sent, so the French does not churn and review stays small.
+whole-file diff. `locales/fr-CA.meta.json` stores, per key, the SHA-256 of the
+English its French was made from:
+
+```json
+{
+  "form.submit": {
+    "source_hash": "9f86d081…",
+    "provider": "chat-completions:vendor/a-model",
+    "reviewed": false
+  }
+}
+```
+
+An English edit re-translates exactly that key; untouched keys are never re-sent,
+so the French does not churn and review stays small. `reviewed` is **never set by
+the job** — it is the record of what a human has actually read.
 
 **It opens a PR rather than pushing to `main`.** That is not a workaround for the
-ruleset — a human should read the French before it ships. On pull requests CI
-only *verifies* parity and fails on drift; it never generates, because fork PRs
-carry a read-only token and untrusted code must not trigger inference or write
-locale files.
+ruleset — a human should read the French before it ships. One branch,
+`chore/fr-CA-translations`, rebuilt every run, so there is one pull request that
+updates rather than a queue of them.
 
-Alternatives, if the free tier ever proves too tight: `actions/ai-inference@v3`
-(Copilot CLI, needs a Copilot seat — not free), DeepL (best raw FR quality, adds
-a key), Amazon Translate (available in-region now that hosting is AWS).
+**On pull requests CI only *verifies*.** The `i18n` job runs
+`translate-locale.mjs --check`, which reads the three files, constructs no
+translator, and fails on drift. It never generates, because fork PRs carry a
+read-only token and untrusted code must not trigger inference or write locale
+files. `--check` and `--generate` are separate modes and there is no default one.
+
+Two consequences worth knowing before you edit English:
+
+- **Editing `en-CA.json` without regenerating French fails the `i18n` check.**
+  That is intended. Merge it, and the translation workflow opens a pull request
+  with the French in it.
+- **Never hand-edit `fr-CA.json`.** The next run overwrites it. Fix the English,
+  or pin the term in `glossary.json`.
+
+Full detail: [ADR-0021](decisions/ADR-0021-ci-translation-opens-a-pull-request.md).
 
 ## The glossary is not machine-translated
 
@@ -140,9 +206,38 @@ Pinned in `locales/glossary.json` and never overwritten by the translator:
 These need HPAC's own official French wording, ideally taken from the existing
 French Typeform. This is the one translation decision a machine must not make.
 
-`locales/glossary.json` does not exist yet. Until it does, the role words are
-pinned by `ScrubVocabulary` in `HpacSafety.Core` and by a test that asserts them
-literally; they should be added to the glossary when the file is created.
+The file maps a dotted key from `en-CA.json` to its official French. An entry is
+either the French string itself, or an object carrying `fr-CA` plus a note
+saying where the wording came from. Keys beginning `_` are file-level commentary,
+not pins:
+
+```json
+{
+  "_note": "HPAC official French. Never machine-translated. See ADR-0007.",
+  "form.injury.severity.serious": "…",
+  "form.consent.publish": {
+    "fr-CA": "…",
+    "note": "Wording from the French Typeform, 2024."
+  }
+}
+```
+
+A pinned key takes its French from here verbatim, is stamped
+`provider: "glossary", reviewed: true`, and is never put in a translation
+request. Editing the *English* of a pinned key does not change its French — only
+HPAC may say when that wording changes. The `i18n` check fails if `fr-CA.json`
+ever stops matching a pin.
+
+DeepL has its own glossary feature — stored term pairs applied *during*
+translation — and it is **not** used for these keys, deliberately. It would still
+send the string and still return a machine-composed result: a weaker guarantee
+wearing the same name. Pinning here means the string is never sent at all. See
+ADR-0022, which also notes where DeepL glossaries *would* help — term
+consistency inside strings that are not pinned.
+
+The role words are also owned by `ScrubVocabulary` because the deterministic
+scrub writes them into report text rather than UI chrome. Tests assert those
+human-decided terms literally; generated UI locale files remain CI-owned.
 
 ## Reports and summaries
 
@@ -166,17 +261,39 @@ The translation gets its own PII audit — a model producing fluent French can
 reintroduce a detail the scrub removed. A safety officer approves the pair, side
 by side; approving one does not approve the other.
 
-Note the split: the UI-string job runs inside GitHub Actions where `GITHUB_TOKEN`
-grants free Models access. The worker runs in production where no such token
-exists, so it translates through the Anthropic client it already holds. One
-`ITranslator` interface, two registrations.
+Note the split: the UI-string job runs inside GitHub Actions, against DeepL. The worker runs in production and translates
+through the Anthropic client it already holds. One `ITranslator` contract, two
+implementations in two runtimes — `tools/translator.mjs` and
+`HpacSafety.Core.SharedKernel.ITranslator` — because they cannot share a type.
+
+(ADR-0007 justified that split by GitHub Models being free inside Actions. That
+reason is gone with the service; the split survives it, because the worker still
+has no Actions token, and reusing the worker's `ANTHROPIC_API_KEY` in Actions was
+rejected precisely to keep a production runtime credential out of CI. See
+ADR-0022.)
 
 ## Formatting
 
 Dates (`fr-CA` uses `AAAA-MM-JJ`), the province list, and a 24-hour clock all
 follow the resolved locale.
 
+
+## Upload rejections
+
+A refused upload is reported as a **code**, not a sentence:
+`MediaRejectionReason` in the domain, mapped by
+`MediaRejection.LocalizationKeyFor` to a key under `upload.rejected.` in
+`locales/en-CA.json`. No rejection wording exists in `HpacSafety.Core` or
+`HpacSafety.Infrastructure`.
+
+A test asserts that **every reason has an English key**, so a new reason cannot
+reach a reporter as a raw key name. `tools/check-locales.mjs` then checks that
+every English key has a counterpart in each locale file that exists;
+`fr-CA.json` is generated in CI and never hand-edited.
+
 ## Related
 
 - `docs/decisions/ADR-0007-localization.md`
+- `docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md`
+- `docs/decisions/ADR-0022-translation-provider-is-configuration.md`
 - `docs/anonymization-policy.md`

@@ -17,8 +17,11 @@ Nothing you produce may allow a reader to work out who this happened to.
 - **Contact details.** Phone numbers, email addresses, mailing addresses, social
   media handles.
 - **Identifiers.** HPAC member numbers, licence numbers, insurance numbers.
-- **Aircraft identity.** Manufacturer, model, colour, serial number. Refer to
-  the aircraft only by the certification class you are given.
+- **Aircraft identity.** Manufacturer, model, colour, serial number — whether it
+  appears in a dedicated field or in the reporter's own narrative ("my Ozone
+  Rush 6", "the yellow wing"). Refer to the aircraft only by its certification
+  class. `summarize.v1.md` has the vocabulary and how to determine that class
+  from the reporter's own certification answer.
 - **Precise location.** Launch names, landing-zone names, club names, named
   landmarks. The province may be stated.
 - **Precise dates.** Month and year only.
@@ -33,7 +36,8 @@ Nothing you produce may allow a reader to work out who this happened to.
 The safety lesson is the entire point. Keep:
 
 - Phase of flight, conditions, and terrain in general terms
-- The certification class as supplied to you
+- The certification class, determined from the reporter's own certification
+  answer as described in `summarize.v1.md`
 - The sequence of events
 - Injuries at the severity-scale level used by the form
 - Reserve deployment and its outcome
@@ -49,5 +53,12 @@ someone who filed in good faith.
 ## Never invent
 
 If the report does not say why something happened, do not say why. Do not infer
-a cause, a certification class, a wind speed, or a pilot's intent. Omitting
-something is always acceptable; inventing something is not.
+a cause, a wind speed, or a pilot's intent. Omitting something is always
+acceptable; inventing something is not.
+
+This includes the certification class: state one only when the reporter's own
+certification answer names a value in the vocabulary in `summarize.v1.md`.
+Normalizing "EN B (high)" to "high EN-B" is reading what the reporter wrote;
+turning a bare "EN B" into "high EN-B", or "LTF 1-2" into an EN class, or a
+blank or unrecognizable answer into any class at all, is a guess and is exactly
+the kind of invention this rule forbids. Write "an aircraft" instead.

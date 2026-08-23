@@ -1,0 +1,294 @@
+/*
+ * tailwind.css — the source stylesheet. `./tools/build-css.sh` compiles this
+ * into site.css, which is generated and gitignored.
+ *
+ * Everything visual in this repository starts here. Two rules follow from that
+ * and are enforced in review:
+ *
+ *   1. Raw hex values appear in this file and nowhere else. Markup references
+ *      the semantic tokens below — `bg-surface`, `text-ink`, `border-rule` —
+ *      never `#f22312` and never `bg-[#f22312]`.
+ *   2. Dark mode is these same tokens, redefined. There is no parallel
+ *      stylesheet and no `dark:` utility anywhere in the markup; see the
+ *      "Dark mode" section and ADR-0024.
+ *
+ * See docs/design-system.md and ADR-0006.
+ */
+
+@import "tailwindcss" source(none);
+
+/*
+ * `source(none)` on the import above turns OFF Tailwind v4's automatic
+ * full-project content scan. Without it, the compiler walks every file under
+ * the repository root looking for anything that is class-name-shaped —
+ * including prose. A class name mentioned in a comment, an ADR, or a README as
+ * an example of what NOT to write (`bg-[#f22312]`, `dark:bg-neutral-900`) is
+ * indistinguishable to that scanner from the real thing, and it gets compiled
+ * into site.css. Confirmed by review on #55: both of those examples appeared
+ * in the built stylesheet with no such class anywhere in actual markup.
+ *
+ * The `@source` directives below are therefore the ONLY places this build
+ * looks for class names. src/web/public and src/web/admin do not have their
+ * pages yet (#12, #25); the directories exist, so the globs are already
+ * correct and no later change is needed here.
+ */
+@source "../public";
+@source "../admin";
+@source "../shared";
+@source "./theme-preview.html";
+
+/* --------------------------------------------------------------- typeface --
+ *
+ * Poppins and Aleo are served from src/web/assets/fonts, never from Google's
+ * CDN. Someone filing a report about a crash — sometimes their own, sometimes a
+ * fatal one — should not have that visit logged by a third party, and the form
+ * has to work on a bad connection at a landing zone. See
+ * src/web/assets/fonts/README.md for provenance and how to refresh them.
+ *
+ * `font-display: swap` is deliberate: the fallback stack renders immediately
+ * and the page is readable before the woff2 arrives.
+ *
+ * The unicode-range values are Google's own subset boundaries, kept as shipped
+ * so a browser fetches latin-ext only when a page actually needs it.
+ */
+
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-400-latin.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-400-latin-ext.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-500-latin.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-500-latin-ext.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-600-latin.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-600-latin-ext.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-700-latin.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Poppins";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("../assets/fonts/poppins-700-latin-ext.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/*
+ * Aleo is a variable font: one file covers 100–900, so the display face costs
+ * one request per subset rather than one per weight.
+ */
+@font-face {
+	font-family: "Aleo";
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url("../assets/fonts/aleo-latin.woff2") format("woff2");
+	unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+	font-family: "Aleo";
+	font-style: normal;
+	font-weight: 100 900;
+	font-display: swap;
+	src: url("../assets/fonts/aleo-latin-ext.woff2") format("woff2");
+	unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* ----------------------------------------------------------------- tokens --
+ *
+ * The light theme, and the only place the brand values are written down.
+ *
+ * Provenance is in docs/design-system.md: brand red, ink, rule, and the surface
+ * tints were extracted from hpac.ca's live markup. #2ea3f2 was deliberately NOT
+ * carried over — it is Divi's default blue, not an HPAC colour.
+ *
+ * Every name here is a ROLE, not a swatch. `--color-ink` means "body text", so
+ * redefining it below for dark mode is a re-statement of the same role rather
+ * than a lie about a colour.
+ */
+@theme {
+	/* Brand. Red is reserved for primary action and error state — never
+	 * decoration. That is what lets "Fatality" read as urgent instead of
+	 * competing with the page furniture. */
+	--color-brand-600: #f22312;
+	--color-brand-700: #e02b20;
+
+	/* Text. */
+	--color-ink: #474747;
+	--color-ink-muted: #6b6b6b;
+	--color-ink-inverse: #ffffff;
+
+	/* Lines. */
+	--color-rule: #d6d6d6;
+
+	/* Surfaces, lightest to heaviest. Sections and cards step down this ramp
+	 * instead of reaching for a drop shadow. */
+	--color-surface: #ffffff;
+	--color-surface-2: #f7f7f7;
+	--color-surface-3: #f3f3f3;
+	--color-surface-4: #e2e2e2;
+
+	/* Focus. brand-700 rather than brand-600: it clears 3:1 against both the
+	 * light and the dark surface ramp, which brand-600 does not. */
+	--color-focus: #e02b20;
+
+	--font-sans: "Poppins", Helvetica, Arial, sans-serif;
+	--font-display: "Aleo", Georgia, serif;
+
+	/* The single-column measure the whole form is built on. */
+	--container-measure: 65ch;
+}
+
+/* -------------------------------------------------------------- dark mode --
+ *
+ * Safety officers triage at 11pm and a fatality report is not something to read
+ * on a bright white screen.
+ *
+ * This block is the entire dark theme. No `dark:` utility exists in any markup
+ * in this repository and none should be added: a utility written as
+ * `bg-surface` resolves to `var(--color-surface)`, so redefining the variable
+ * re-themes every use of it at once. See ADR-0024.
+ *
+ * The brand values do NOT change. hpac.ca has one red and inventing a second
+ * one for dark mode would be inventing a brand colour. Red stays reserved for
+ * filled actions and error state, where white-on-brand-700 clears AA in both
+ * themes; it is never used as body text on either surface.
+ *
+ * Written unlayered so it outranks the `@layer theme` block Tailwind emits
+ * from `@theme` above, and written twice so that both the system preference
+ * and an explicit choice work:
+ *
+ *   no attribute            → follow prefers-color-scheme
+ *   data-theme="light"      → stay light even where the system says dark
+ *   data-theme="dark"       → dark regardless of the system
+ */
+
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--color-ink: #ededed;
+		--color-ink-muted: #a8a8a8;
+		--color-ink-inverse: #ffffff;
+		--color-rule: #3d3d3d;
+		--color-surface: #1a1a1a;
+		--color-surface-2: #212121;
+		--color-surface-3: #2a2a2a;
+		--color-surface-4: #363636;
+	}
+}
+
+:root[data-theme="dark"] {
+	--color-ink: #ededed;
+	--color-ink-muted: #a8a8a8;
+	--color-ink-inverse: #ffffff;
+	--color-rule: #3d3d3d;
+	--color-surface: #1a1a1a;
+	--color-surface-2: #212121;
+	--color-surface-3: #2a2a2a;
+	--color-surface-4: #363636;
+}
+
+/* ------------------------------------------------------------------- base --
+ *
+ * Deliberately thin. Components belong to the issues that build them (#12,
+ * #25); what is here is the part every page needs and nobody should have to
+ * remember to opt into.
+ */
+@layer base {
+	html {
+		color-scheme: light dark;
+		-webkit-text-size-adjust: 100%;
+	}
+
+	body {
+		background-color: var(--color-surface);
+		color: var(--color-ink);
+		font-family: var(--font-sans);
+		font-weight: 400;
+		line-height: 1.65;
+	}
+
+	h1, h2, h3 {
+		font-family: var(--font-display);
+		line-height: 1.25;
+	}
+
+	/*
+	 * Never `outline: none` without a replacement. `:focus-visible` rather than
+	 * `:focus` so a mouse click on a button does not leave a ring behind, while
+	 * keyboard and assistive-technology navigation always shows one.
+	 */
+	:focus-visible {
+		outline: 2px solid var(--color-focus);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+
+	/*
+	 * Respected repository-wide rather than per-component, because a component
+	 * that forgets is a component that spins a progress rail at somebody who
+	 * gets motion sick reading it.
+	 */
+	@media (prefers-reduced-motion: reduce) {
+		*, *::before, *::after {
+			animation-duration: 0.01ms !important;
+			animation-iteration-count: 1 !important;
+			transition-duration: 0.01ms !important;
+			scroll-behavior: auto !important;
+		}
+	}
+}
+
+/* --------------------------------------------------------------- utilities --
+ *
+ * One utility, because 44px touch targets are an accessibility requirement in
+ * docs/design-system.md and "remember to add min-h and min-w" is not a
+ * mechanism. Applied to every interactive control.
+ */
+@utility touch-target {
+	min-block-size: 44px;
+	min-inline-size: 44px;
+}

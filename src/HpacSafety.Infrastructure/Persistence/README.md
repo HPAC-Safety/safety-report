@@ -1,0 +1,199 @@
+# Persistence
+
+The database: the EF Core model, the migrations, the seeded question bank, and
+the application-side encryption of Restricted columns.
+
+**Owns** the schema. Every table in this system is defined here, including
+`report_files`, whose blob storage lives elsewhere.
+
+**Does not own** what any of it means. Invariants belong to the aggregates in
+`HpacSafety.Core`; this project maps them to columns and nothing more.
+
+## Layout
+
+| Folder | What is in it |
+|---|---|
+| `Configurations/` | One `IEntityTypeConfiguration` per aggregate — tables, keys, indexes, relationships |
+| `Conventions/` | `SnakeCaseNames`, applied last so an explicit name always wins |
+| `Conversions/` | `TinyIdConverter`, `LocaleConverter`, `EnumCodeConverter<T>` — identifiers and domain values as text |
+| `Encryption/` | `AesGcmFieldCipher` and the value converter that binds it to a column |
+| `Migrations/` | Scaffolded by `dotnet ef`. Hand-edited only to call a seed writer |
+| `Seeding/` | The question bank as data, both written as guarded, re-runnable inserts |
+
+## The tables
+
+```mermaid
+erDiagram
+    reports ||--o{ report_answers : "one per question answered"
+    reports ||--o{ report_aircraft : "involved"
+    reports ||--o{ report_files : "one photo or video"
+    reports ||--o{ summaries : "one per language"
+    questions ||--o{ question_versions : "immutable"
+    question_versions ||--o{ question_options : "choices"
+    question_versions ||--o{ question_translations : "one per locale"
+    question_options ||--o{ question_option_translations : "one per locale"
+    question_versions ||--o{ report_answers : "answered under"
+    admin_users ||--o{ audit_log : "who did what"
+    admin_users ||--o{ summaries : "approved by"
+```
+
+`outbox_messages` stands alone, on purpose. It is written in the same
+transaction as a report and read by a different process.
+
+## Identifiers
+
+Every table's key is a `TinyId`: eleven characters over `A-Za-z0-9-_`, stored as
+`char(11)`, never `uuid`. One convention, no mixed-type joins.
+
+It carries **no timestamp and no sequence**, which is the point — an identifier
+here travels into admin URLs, blob keys (#16), notification links, and every log
+line, and this system narrows a published date to a month and a year precisely so
+a report cannot be pinned to a moment.
+
+Sixty-six bits makes a collision vanishingly unlikely; the primary key makes one
+a rejected write rather than an overwritten report, and `SaveChangesAsync` mints
+a fresh identifier and retries, rolling back to a savepoint if the caller had a
+transaction open. `outbox_messages.aggregate_id` and `audit_log.target_id` name
+a row by value with no foreign key, so the retry repoints those too.
+
+See [ADR-0034](../../../docs/decisions/ADR-0034-tiny-ids.md).
+
+Three shapes worth knowing before reading the configurations:
+
+- **An answer references a question _version_**, never the mutable question row.
+  Rewording a question tomorrow cannot change what an answer given today appears
+  to mean. See [ADR-0016](../../../docs/decisions/ADR-0016-data-driven-question-bank.md).
+- **`summaries` holds one row per language**, with `is_source` on the one
+  generated from the report and `translated_from_summary_id` on the other. A
+  reviewer can always tell which is which, and `model` and `prompt_version` are
+  stamped on both so any published text traces back to what produced it.
+- **`ix_outbox_messages_claimable` is a partial index** over `next_attempt_at`,
+  filtered to rows that are neither processed nor poisoned. Without the filter,
+  the claim query reads the whole processed history for the rest of the system's
+  life.
+
+## Dates and times
+
+`DateOnly` when the time does not matter, `DateTimeOffset` when it does,
+`TimeOnly` when the date does not. **`DateTime` is forbidden** — its `Kind` is
+ambient, so the same value means UTC, local, or unspecified depending on where it
+came from, and nothing in the type system tells them apart. See ADR-0035.
+
+That maps straight onto the schema, and the split is not cosmetic:
+
+| Kind of value | Type | Column |
+|---|---|---|
+| When the **system** did something — submitted, processed, approved, audited | `DateTimeOffset` | `timestamptz` |
+| The day the **reporter** says the occurrence happened | `DateOnly` | `date` |
+| The clock time at the site | `TimeOnly` | encrypted `text` |
+| The coarse bucket derived from that time | `TimeOfDay` | `time_of_day`, in the clear |
+
+`reports.occurred_on` is the one that would hurt. A published summary carries a
+month and a year (`docs/anonymization-policy.md`) because a province, an exact
+date, an aircraft type, and an injury severity together identify one person in a
+small flying community. Storing that day as a moment invites a timezone
+conversion that shifts it across midnight and silently changes which day an
+accident happened on — and near the end of a month, which month gets published.
+`OccurrenceDateTests` writes and reads it from sessions on both sides of the
+world and proves the day does not move.
+
+The occurrence time is a **local wall clock** reading, not an instant. "Morning"
+means what the clock at the site said, and this system collects a province, not
+coordinates — provinces span time zones, so any offset stored here would be
+inferred and a wrong one moves the bucket. The cost is honest: this is not a
+globally-orderable instant, so two reports in different provinces cannot be
+strictly sequenced by when they happened. Nothing needs that; `submitted_at` is
+a real instant when ordering by arrival is what is wanted.
+
+The bucket is **derived**, never asked for, by
+`TimeOfDay.FromLocalTime(TimeOnly)` in `Core` — morning before 11:00, mid-day to
+14:00, afternoon to 17:00, evening after. That is the only place the boundaries
+exist; #18 calls it rather than re-deriving them. A reporter who gives no time
+(#68 makes it optional) is `TimeOfDay.Unknown`, which is a defined state and not
+a null anything reads as midnight.
+
+The precise time is Restricted and encrypted; the bucket is publishable and in
+the clear. See ADR-0019.
+
+## Encryption
+
+`report_answers.value` is encrypted with AES-256-GCM before PostgreSQL sees it,
+through `IFieldCipher` — a port declared in `Core`, implemented here, bound to
+the column by a value converter.
+
+```mermaid
+flowchart LR
+    app["ReportAnswer.Value"] -->|"Encrypt"| conv["EncryptedStringConverter"]
+    conv -->|"v1.base64(nonce ‖ tag ‖ ciphertext)"| db[("report_answers.value")]
+    db -->|"Decrypt"| conv2["EncryptedStringConverter"]
+    conv2 --> app2["ReportAnswer.Value"]
+    key["HpacSafety:FieldEncryption:Key"] -.-> conv
+    key -.-> conv2
+```
+
+Three things follow from that, and all three are deliberate:
+
+- The column cannot be searched, sorted, or indexed by value in the database.
+- The wrong key throws `FieldDecryptionException`. It never returns plausible
+  rubbish.
+- Losing the key loses the data. Key custody is an operational responsibility.
+
+`admin_users.member_identifier` is **not** encrypted: it is the lookup key at
+sign-in. See [ADR-0019](../../../docs/decisions/ADR-0019-application-side-field-encryption.md).
+
+## Seeding
+
+A clean database asks exactly the question set in `docs/form-spec.md`, **in both
+languages** — a form that only works in English is not a working form here, see
+`skills/localize-hpac-app/SKILL.md`.
+
+The French wording is machine-translated and carries
+`is_machine_translated = true`: it renders, and nobody has reviewed it. That is a
+queryable column rather than a note, so the admin UI (#49) can list every piece
+of unreviewed wording as a work queue, and revising one by hand clears the flag.
+
+Every row is written with `INSERT ... SELECT ... WHERE NOT EXISTS`, guarded on
+its own identifier — the same shape `DevelopmentAdminSeed` uses for its one row.
+Re-executing the seed is therefore a safe no-op, which matters for a database
+that only lost its `__EFMigrationsHistory` row, or a later migration that
+re-seeds after someone empties the question bank by hand.
+
+The migration also seeds **one obviously-fake local administrator**,
+`admin@localhost`, and only where the database applying the migration has opted
+in:
+
+```
+Options=-c hpac.seed_development_admin=true
+```
+
+Unset means no, which is what production is. The real safety-officer allowlist
+is a later issue and will never be a migration. See
+[ADR-0020](../../../docs/decisions/ADR-0020-seeding-by-migration.md).
+
+## Working on it
+
+```bash
+# Scaffold a migration. This project is both the migrations project and the
+# startup project — HpacSafetyDbContextFactory means no application has to boot.
+dotnet ef migrations add <Name> \
+  -p src/HpacSafety.Infrastructure -s src/HpacSafety.Infrastructure \
+  -o Persistence/Migrations
+
+# Apply it. HPAC_SAFETY_CONNECTION overrides the local default.
+dotnet ef database update \
+  -p src/HpacSafety.Infrastructure -s src/HpacSafety.Infrastructure
+```
+
+Exercised by `tests/HpacSafety.Infrastructure.Tests`, which starts a real
+`postgres:17-alpine` through Testcontainers and applies every migration to a
+fresh database per test.
+
+## Related
+
+- [`docs/data-handling.md`](../../../docs/data-handling.md)
+- [`docs/architecture.md`](../../../docs/architecture.md)
+- [ADR-0034](../../../docs/decisions/ADR-0034-tiny-ids.md),
+  [ADR-0002](../../../docs/decisions/ADR-0002-transactional-outbox.md),
+  [ADR-0016](../../../docs/decisions/ADR-0016-data-driven-question-bank.md),
+  [ADR-0019](../../../docs/decisions/ADR-0019-application-side-field-encryption.md),
+  [ADR-0020](../../../docs/decisions/ADR-0020-seeding-by-migration.md)

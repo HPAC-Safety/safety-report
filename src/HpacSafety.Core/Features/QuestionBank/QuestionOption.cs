@@ -12,19 +12,30 @@ public class QuestionOption
 {
     private readonly List<QuestionOptionTranslation> _translations = [];
 
-    private QuestionOption(Guid questionVersionId, string code, int displayOrder)
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private QuestionOption()
     {
-        Id = Guid.NewGuid();
+    }
+#pragma warning restore CS8618
+
+    private QuestionOption(TinyId questionVersionId, string code, int displayOrder)
+    {
+        Id = TinyId.New();
         QuestionVersionId = questionVersionId;
         Code = QuestionKey.Normalize(code);
         DisplayOrder = displayOrder;
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The version this option belongs to.</summary>
-    public Guid QuestionVersionId { get; private init; }
+    public TinyId QuestionVersionId { get; private init; }
 
     /// <summary>The invariant code stored against an answer. Never display text.</summary>
     public string Code { get; private init; }
@@ -36,7 +47,7 @@ public class QuestionOption
     public IReadOnlyCollection<QuestionOptionTranslation> Translations => _translations;
 
     internal static QuestionOption Create(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         string code,
         int displayOrder,
         Locale sourceLocale,

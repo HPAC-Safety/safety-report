@@ -212,6 +212,12 @@ injury severity can be unique even when each field alone is harmless. This is
 why the date is narrowed to month and year, and why reviewers are asked to read
 a summary as a local would.
 
+Narrowing only works if the value being narrowed is the day the reporter meant.
+The occurrence date is therefore a `DateOnly` and never a moment: a timezone
+conversion that shifts it across midnight moves an accident to a different day,
+and the published "July 2026" hides the fact that it did. See
+[ADR-0035](decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md).
+
 ## Consent
 
 The form asks whether the reporter agrees to publication of a de-identified
@@ -246,3 +252,5 @@ Approving one does not implicitly approve the other.
   [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md)
 - `docs/aircraft-classification.md`
 - `docs/data-handling.md`
+- `docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md`
+  — why the occurrence date is a `DateOnly`

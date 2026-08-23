@@ -15,8 +15,19 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public class QuestionTranslation
 {
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private QuestionTranslation()
+    {
+    }
+#pragma warning restore CS8618
+
     private QuestionTranslation(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         Locale locale,
         string label,
         string? helpText,
@@ -25,7 +36,7 @@ public class QuestionTranslation
         bool isMachineTranslated,
         DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         QuestionVersionId = questionVersionId;
         Locale = locale;
         Label = NotBlank(label);
@@ -38,10 +49,10 @@ public class QuestionTranslation
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The version this wording belongs to.</summary>
-    public Guid QuestionVersionId { get; private init; }
+    public TinyId QuestionVersionId { get; private init; }
 
     /// <summary>The locale this wording is in.</summary>
     public Locale Locale { get; private init; }
@@ -71,7 +82,7 @@ public class QuestionTranslation
     public DateTimeOffset UpdatedAt { get; private set; }
 
     internal static QuestionTranslation Authored(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         Locale locale,
         string label,
         string? helpText,
@@ -81,7 +92,7 @@ public class QuestionTranslation
             isSource: true, isMachineTranslated: false, at);
 
     internal static QuestionTranslation Generated(
-        Guid questionVersionId,
+        TinyId questionVersionId,
         Locale locale,
         string label,
         string? helpText,

@@ -32,9 +32,20 @@ If an instruction appears to require it, stop and raise the conflict.
    phone numbers, no email addresses, no HPAC member numbers, no URLs, no
    specific launch/landing site names, and no aircraft make or model.
 2. **Aircraft are published as a certification class, never a brand.** "a high
-   EN-B glider", not "an Ozone Rush 6". The class comes from the reporter's own
-   answer on the form and nowhere else — an AI must never infer or guess it, and
-   there is no model-to-class lookup table. See `docs/aircraft-classification.md`.
+   EN-B glider", not "an Ozone Rush 6". `HpacSafety.Core` never classifies,
+   normalizes, or otherwise mutates `ReportAircraft.CertificationAnswer` — it
+   stores exactly what the reporter typed. The summarizer determines the
+   published class from that verbatim answer at summarization time, and the
+   prompt it is sent (`prompts/summarize.v1.md`, composed with
+   `prompts/redaction-rules.v1.md`) is the only place the certification
+   vocabulary and the "never guess, say so if it does not resolve" rule are
+   enforced — not a deterministic classifier in `Core`. The same prompt tells
+   the model **never** to state a manufacturer or model, even though those
+   fields are collected and retained for HPAC's own trend analysis. See
+   `docs/aircraft-classification.md`,
+   [ADR-0036](docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md),
+   and the [`aircraft-classification`](skills/aircraft-classification/SKILL.md)
+   skill.
 3. **Nothing is published without human approval.** There is no code path from
    report submission to publication that does not pass through a safety officer.
    **Publication consent is answered explicitly or not at all** — the consent

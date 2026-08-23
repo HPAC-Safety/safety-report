@@ -123,7 +123,6 @@ public sealed class ReportAircraftConfiguration : IEntityTypeConfiguration<Repor
         builder.HasKey(aircraft => aircraft.Id);
 
         builder.Property(aircraft => aircraft.Discipline).IsRequired();
-        builder.Property(aircraft => aircraft.Class).IsRequired();
 
         // Internal tier: retained for trend analysis, never published.
         builder.Property(aircraft => aircraft.Manufacturer).HasMaxLength(200);

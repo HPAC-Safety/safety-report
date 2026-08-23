@@ -5,10 +5,13 @@ using HpacSafety.Core.SharedKernel;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// One aircraft involved in an occurrence. Make and model are Internal — kept
-/// for HPAC's own trend analysis and never published. Only
-/// <see cref="Class"/> is publishable, and it comes from the reporter's own
-/// answer: nothing in this system infers a class from a model name.
+/// One aircraft involved in an occurrence, recorded exactly as the reporter
+/// answered. Make and model are Internal — kept for HPAC's own trend analysis
+/// and never published. Nothing in <c>Core</c> classifies, normalizes, or
+/// otherwise mutates these values; the summarizer determines a publishable
+/// certification class from <see cref="CertificationAnswer"/> at
+/// summarization time, under the rules in <c>prompts/</c>. See
+/// docs/aircraft-classification.md.
 /// </summary>
 public class ReportAircraft
 {
@@ -47,16 +50,6 @@ public class ReportAircraft
     /// <summary>Internal tier. Never published.</summary>
     public string? Model { get; private set; }
 
-    /// <summary>The reporter's certification answer, verbatim, before normalization.</summary>
+    /// <summary>The reporter's certification answer, verbatim. Never mutated.</summary>
     public string? CertificationAnswer { get; private set; }
-
-    /// <summary>
-    /// The published class. <see cref="AircraftClass.NotDetermined"/> until an
-    /// <c>IAircraftClassifier</c> normalizes the reporter's answer, and a valid
-    /// end state — a reviewer may correct it by hand, but nothing guesses it.
-    /// </summary>
-    public AircraftClass Class { get; private set; } = AircraftClass.NotDetermined;
-
-    /// <summary>Records the normalized class.</summary>
-    public void Classify(AircraftClass aircraftClass) => Class = aircraftClass;
 }

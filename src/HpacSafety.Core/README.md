@@ -16,6 +16,15 @@ here**, and it must be provable in a plain unit test with no database, no
 network, and no model. It is the first line of defence in the anonymization
 pipeline and the only stage that is fully deterministic.
 
+That same rule is why `ReportAircraft` does **not** classify the reporter's
+certification answer. Every answer on the form, aircraft certification
+included, is stored here exactly as submitted and nothing in `Core`
+normalizes, infers, or otherwise derives a second value from it. Turning a raw
+certification answer into a publishable class is the summarizer's job, done at
+summarization time under a versioned prompt in `prompts/`, not a `Core`
+concern. See
+[ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
+
 ## Layout
 
 Organised by **feature**, not by language construct. Each feature owns its
@@ -25,14 +34,14 @@ entities, its enums, and the ports it calls out through — see
 ```
 Features/
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
-                  ReportStatus, InjurySeverity, AircraftClass, Discipline,
-                  PilotRating, TimeOfDay, Province,
+                  ReportStatus, InjurySeverity, Discipline, PilotRating,
+                  TimeOfDay, Province,
                   MediaType, MediaPolicy, MediaValidation,
                   MediaRejectionReason, MediaRejection, MediaKind,
                   MediaIngestor, MediaIngestOutcome, MediaIngestStatus,
                   MediaUploadSlot, ReviewerMediaLink,
-                  ISummarizer, IPiiAuditor, IAircraftClassifier,
-                  IPublicationChannel, IMediaSniffer, IExifStripper
+                  ISummarizer, IPiiAuditor, IPublicationChannel,
+                  IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
                   QuestionRole, QuestionKey, QuestionType

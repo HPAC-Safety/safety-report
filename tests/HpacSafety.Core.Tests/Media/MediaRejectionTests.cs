@@ -37,6 +37,13 @@ public class MediaRejectionTests
     }
 
     [Fact]
+    public void Given_a_reason_outside_the_defined_enum_When_a_rejection_key_is_requested_Then_it_throws()
+    {
+        // Given / When / Then
+        Should.Throw<ArgumentOutOfRangeException>(() => MediaRejection.LocalizationKeyFor((MediaRejectionReason)999));
+    }
+
+    [Fact]
     public void Given_every_rejection_reason_When_the_english_locale_is_read_Then_each_key_has_wording()
     {
         // Given

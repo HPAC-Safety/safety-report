@@ -51,6 +51,42 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task Given_a_url_with_the_wrong_scheme_When_it_is_used_Then_it_is_refused()
+    {
+        // Given
+        var wrongScheme = new Uri($"https://local/{Photo.Value}?op=put&ct=image%2Fjpeg&expires=1&sig=x");
+
+        // When / Then
+        using var content = new MemoryStream([1, 2, 3]);
+        await Should.ThrowAsync<PresignedUrlRejectedException>(
+            () => _store.ExecuteUploadAsync(wrongScheme, content, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Given_a_url_missing_a_required_query_parameter_When_it_is_used_Then_it_is_refused()
+    {
+        // Given
+        var missingSig = new Uri($"{FileSystemBlobStore.UrlScheme}://local/{Photo.Value}?op=put&expires=1");
+
+        // When / Then
+        using var content = new MemoryStream([1, 2, 3]);
+        await Should.ThrowAsync<PresignedUrlRejectedException>(
+            () => _store.ExecuteUploadAsync(missingSig, content, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Given_a_url_whose_path_is_not_a_valid_blob_key_When_it_is_used_Then_it_is_refused()
+    {
+        // Given
+        var badKey = new Uri($"{FileSystemBlobStore.UrlScheme}://local/not-a-key?op=put&ct=image%2Fjpeg&expires=1&sig=x");
+
+        // When / Then
+        using var content = new MemoryStream([1, 2, 3]);
+        await Should.ThrowAsync<PresignedUrlRejectedException>(
+            () => _store.ExecuteUploadAsync(badKey, content, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Given_an_upload_url_When_its_expiry_is_pushed_out_by_hand_Then_it_is_refused()
     {
         // Given
@@ -98,6 +134,26 @@ public sealed class FileSystemBlobStoreTests : IDisposable
         using var content = new MemoryStream([1, 2, 3]);
         await Should.ThrowAsync<PresignedUrlRejectedException>(
             () => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
+    }
+
+    [Fact]
+    public async Task Given_an_uploaded_blob_When_a_signed_read_url_is_used_Then_the_same_bytes_come_back()
+    {
+        // Given
+        var uploadUrl = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+        using (var content = new MemoryStream([1, 2, 3]))
+        {
+            await _store.ExecuteUploadAsync(uploadUrl, content, CancellationToken.None);
+        }
+
+        // When
+        var readUrl = await _store.CreateReadUrlAsync(Photo, TimeSpan.FromMinutes(5), CancellationToken.None);
+        await using var read = await _store.ExecuteReadAsync(readUrl, CancellationToken.None);
+        using var buffer = new MemoryStream();
+        await read.CopyToAsync(buffer, CancellationToken.None);
+
+        // Then
+        buffer.ToArray().ShouldBe([1, 2, 3]);
     }
 
     [Fact]

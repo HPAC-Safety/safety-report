@@ -193,6 +193,7 @@ public sealed class ReportTests
         // Then
         report.Status.ShouldBe(ReportStatus.Published);
         report.IsPublishable.ShouldBeTrue();
+        report.Summaries.ShouldBe([en, fr]);
     }
 
     [Fact]

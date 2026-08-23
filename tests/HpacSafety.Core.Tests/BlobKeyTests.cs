@@ -39,6 +39,16 @@ public class BlobKeyTests
         key.Value.ShouldStartWith("quarantine/");
     }
 
+    [Fact]
+    public void Given_a_key_When_it_is_converted_to_a_string_Then_it_is_the_same_as_its_value()
+    {
+        // Given
+        var key = BlobKey.For(ReportId, MediaCompartment.Original, "photo.jpg");
+
+        // When / Then
+        key.ToString().ShouldBe(key.Value);
+    }
+
     [Theory]
     [InlineData("dQw4w9WgXcQ/original/photo.jpg", MediaCompartment.Original)]
     [InlineData("dQw4w9WgXcQ/stripped/photo.jpg", MediaCompartment.Stripped)]

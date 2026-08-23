@@ -3,6 +3,9 @@ using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence.Seeding;
 
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Seeding;
@@ -292,6 +295,21 @@ public sealed class QuestionBankSeedTests
                 question.Options.ShouldNotBeEmpty($"'{question.Key}' is a {question.Type}.");
             }
         }
+    }
+
+    [Fact]
+    public void Given_the_current_question_schema_When_the_seed_is_written_Then_it_uses_immutable_privacy_flags()
+    {
+        // Given
+        var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");
+
+        // When
+        QuestionBankSeedWriter.Write(migration);
+
+        // Then
+        var operation = migration.Operations.ShouldHaveSingleItem().ShouldBeOfType<SqlOperation>();
+        operation.Sql.ShouldContain("is_private");
+        operation.Sql.ShouldNotContain("sensitivity");
     }
 
     private static string EnumCodeOf(Enum value) =>

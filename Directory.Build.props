@@ -24,11 +24,13 @@
 	<PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
 		<IsPackable>false</IsPackable>
 	</PropertyGroup>
-	<!-- Test projects only. The Shouldly rule is enforced by banning Xunit.Assert
-	     outright rather than by a CI grep, so it fails in the editor and in a
-	     local build, not only after a push. See tests/BannedSymbols.txt and
-	     ADR-0013. -->
-	<ItemGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+	<!-- Every project, src/ and tests/ alike. A ban enforced in test projects only
+	     is documentation wearing a build error's clothes, and the DateTime ban in
+	     particular is a rule about production code. Failing in the editor and in a
+	     local build, not only after a push, is the whole point. Xunit.Assert simply
+	     does not resolve in src/, where xunit is not referenced, so the assertion
+	     ban costs nothing there. See tests/BannedSymbols.txt, ADR-0013, ADR-0035. -->
+	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>

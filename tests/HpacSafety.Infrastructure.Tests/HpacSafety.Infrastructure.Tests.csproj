@@ -8,9 +8,15 @@
     <PackageReference Include="AWSSDK.S3" />
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Magick.NET-Q8-AnyCPU" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Npgsql" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Shouldly" />
     <PackageReference Include="Testcontainers.Minio" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -28,6 +34,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\HpacSafety.Infrastructure\HpacSafety.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- The seed test reads the generated form specification and asserts the
+       seeded question bank reproduces every field in it. See ADR-0020. -->
+  <ItemGroup>
+    <None Include="..\..\docs\form-spec.md" Link="form-spec.md" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -13,9 +13,18 @@ namespace HpacSafety.Core.Features.Reporting;
 public class ReportAircraft
 {
     /// <summary>Creates an aircraft record from what the reporter answered.</summary>
-    public ReportAircraft(Guid reportId, Discipline discipline, string? manufacturer, string? model, string? certificationAnswer)
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+    private ReportAircraft()
     {
-        Id = Guid.NewGuid();
+    }
+
+    public ReportAircraft(TinyId reportId, Discipline discipline, string? manufacturer, string? model, string? certificationAnswer)
+    {
+        Id = TinyId.New();
         ReportId = reportId;
         Discipline = discipline;
         Manufacturer = manufacturer;
@@ -24,10 +33,10 @@ public class ReportAircraft
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report this aircraft belongs to.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>What kind of aircraft it is.</summary>
     public Discipline Discipline { get; private set; }

@@ -9,7 +9,7 @@ in `HpacSafety.Core`.
 
 | Concern | Implements |
 |---|---|
-| Persistence | EF Core `DbContext`, entity configuration, migrations |
+| Persistence | EF Core `DbContext`, entity configuration, migrations, seeding, field encryption — [`Persistence/README.md`](Persistence/README.md) |
 | Outbox | Claiming with `FOR UPDATE SKIP LOCKED`, backoff, poison handling |
 | AI | `AnthropicSummarizer`, `AnthropicPiiAuditor`, `AnthropicTranslator` |
 | Auth | `HpacMembersProxyAuthenticator` (and `OidcAuthenticator` later) |
@@ -40,14 +40,55 @@ HPAC ships it, `OidcAuthenticator` replaces the proxy and nothing outside this
 project changes. If something outside *does* need to change, the abstraction
 leaked and that is a bug worth fixing before the migration.
 
-## Migrations
+## Persistence
+
+This project owns **every table in the system** and every migration, including
+tables whose behaviour lives elsewhere — `report_files` is defined here and
+filled by the blob storage in #16.
 
 ```bash
-dotnet ef migrations add <Name> -p src/HpacSafety.Infrastructure -s src/HpacSafety.Api
-dotnet ef database update      -p src/HpacSafety.Infrastructure -s src/HpacSafety.Api
+dotnet ef migrations add <Name> \
+  -p src/HpacSafety.Infrastructure -s src/HpacSafety.Infrastructure \
+  -o Persistence/Migrations
+
+dotnet ef database update \
+  -p src/HpacSafety.Infrastructure -s src/HpacSafety.Infrastructure
 ```
 
-The API is the startup project; this library holds the model and the migrations.
+This library is both the migrations project and the startup project:
+`HpacSafetyDbContextFactory` builds the context for design-time tooling, so
+scaffolding needs no running application and no deployment configuration.
+`HPAC_SAFETY_CONNECTION` overrides the local default.
+
+Detail — the tables, the encryption, and the seeding — is in
+[`Persistence/README.md`](Persistence/README.md).
+
+## Configuration
+
+| Setting | What it is |
+|---|---|
+| `ConnectionStrings:HpacSafety` | The database. Empty in `appsettings.json` so nothing falls back to a database somebody did not mean to write to. |
+| `HpacSafety:FieldEncryption:Key` | Base64 256-bit key for Restricted columns. A throwaway literal in `appsettings.Development.json`, a Secrets Manager reference in production. |
+
+`AddHpacSafetyPersistence(configuration)` registers both, and refuses to start
+without either. A missing key is never a quiet fallback to storing Restricted
+text in the clear.
+
+The development connection string also carries
+`Options=-c hpac.seed_development_admin=true`, which is what opts a local
+database in to the seeded `admin@localhost` administrator. See
+[ADR-0020](../../docs/decisions/ADR-0020-seeding-by-migration.md).
+
+## Handling personal data
+
+Reporter and pilot contact details, and the raw narrative, are **Restricted**.
+They are encrypted with AES-256-GCM by this project before PostgreSQL sees
+them, through `IFieldCipher` — a port declared in `Core` so that `Core` still
+depends on nothing. A database dump is inert without the key.
+
+Read [`docs/data-handling.md`](../../docs/data-handling.md) and
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)
+before touching anything under `Persistence/Encryption`.
 
 ## Tests
 

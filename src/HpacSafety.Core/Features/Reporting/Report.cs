@@ -25,16 +25,25 @@ public class Report
     private readonly List<Summary> _summaries = [];
 
     /// <summary>Opens a report in the language the reporter is writing in.</summary>
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+    private Report()
+    {
+    }
+
     public Report(Locale language, DateTimeOffset submittedAt)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         Language = language;
         SubmittedAt = submittedAt;
         Status = ReportStatus.Submitted;
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>
     /// The locale the report was written in. The summary is generated in this
@@ -63,6 +72,19 @@ public class Report
 
     /// <summary>The date of the occurrence, if the form asked for one.</summary>
     public DateOnly? OccurredOn { get; private set; }
+
+    /// <summary>
+    /// The clock time at the site, as the reporter gave it. Local wall clock,
+    /// not an instant: "morning" means what the clock on the wall said, and this
+    /// system collects a province rather than coordinates, so any offset it
+    /// stored would be inferred. Restricted, and encrypted at rest.
+    /// <para>
+    /// Null when the reporter did not give one — #68 makes the time optional so
+    /// that somebody who does not remember still files. That reads as
+    /// <see cref="TimeOfDay.Unknown"/>, never as midnight. See ADR-0019.
+    /// </para>
+    /// </summary>
+    public TimeOnly? OccurredAtLocal { get; private set; }
 
     /// <summary>The province, if the form asked for one.</summary>
     public Province Province { get; private set; } = Province.NotAnswered;
@@ -236,6 +258,17 @@ public class Report
                     OccurredOn = date;
                 }
 
+                break;
+
+            case QuestionRole.OccurrenceTime:
+                // The reporter gives a real time; the coarse bucket is derived
+                // from it. An unreadable or absent answer is "do not know" —
+                // a defined state, never a silent midnight.
+                OccurredAtLocal =
+                    TimeOnly.TryParse(answer.Value, System.Globalization.CultureInfo.InvariantCulture, out var time)
+                        ? time
+                        : null;
+                TimeOfDay = Reporting.TimeOfDay.FromLocalTime(OccurredAtLocal);
                 break;
 
             case QuestionRole.Province:

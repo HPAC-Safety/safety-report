@@ -10,9 +10,9 @@ A field's tier is a property of the field, not of the screen it appears on.
 
 | Tier | Contents | Rules |
 |---|---|---|
-| **Restricted** | Reporter and pilot names, phone, email, member number, raw narrative, original media | Encrypted at rest. Admin-only. Never logged. Never sent to a translation service. |
+| **Restricted** | Reporter and pilot names, phone, email, member number, raw narrative, original media, the precise time of the occurrence | Encrypted at rest. Admin-only. Never logged. Never sent to a translation service. |
 | **Internal** | Manufacturer, model, precise site | Retained for HPAC trend analysis. Never published. |
-| **Publishable** | Approved summary, certification class, province, severity, month and year | Public once a safety officer approves and consent was given. |
+| **Publishable** | Approved summary, certification class, province, severity, month and year, time-of-day bucket | Public once a safety officer approves and consent was given. |
 
 If you are unsure which tier something belongs to, it is Restricted.
 
@@ -26,6 +26,39 @@ order to *relax* it.
 An answer copies the tier it was given under. Reclassifying a question later
 therefore cannot retroactively downgrade the handling of text a reporter already
 trusted us with.
+
+## How "encrypted at rest" is done
+
+Restricted text is encrypted **by the application**, with AES-256-GCM, before
+PostgreSQL sees it. The key lives in configuration — a throwaway literal in
+`appsettings.Development.json`, a Secrets Manager reference in production — and
+never in the database that holds the ciphertext.
+
+Because the question set is data, contact details are answers rather than
+columns, so the whole of `report_answers.value` is encrypted rather than
+selected rows of it. A value converter runs per value and cannot ask which tier
+a row belongs to, and the tiering above already says the narrative is Restricted
+and a new question is Restricted until someone decides otherwise.
+
+Three consequences, all deliberate:
+
+- Answer text cannot be searched, sorted, or indexed in SQL.
+- The wrong key fails loudly. It never returns plausible-looking rubbish.
+- Losing the key loses the data. Key custody is an operational responsibility.
+
+The **precise time** of an occurrence is Restricted for the same reason the
+exact date is never published: province, date, aircraft type, and injury
+severity already narrow to one person in a small flying community, and the
+minute makes it certain. It is encrypted; the coarse time-of-day bucket derived
+from it sits beside it in the clear, and that bucket is the only thing a summary
+carries. See [ADR-0019](decisions/ADR-0019-application-side-field-encryption.md)
+and #68.
+
+`admin_users.member_identifier` is deliberately **not** encrypted: it is the
+lookup key at sign-in, it is an administrator's own working identity, and it
+never reaches a published summary.
+
+See [ADR-0019](decisions/ADR-0019-application-side-field-encryption.md).
 
 ## Retention
 
@@ -293,13 +326,21 @@ provable in a plain unit test.
 
 - Never log request bodies on the report endpoints.
 - Never log credentials, at any level.
-- Log report **identifiers**, not report content.
+- Log report **identifiers**, not report content. An identifier is a `TinyId`:
+  eleven characters carrying no timestamp and no sequence number, so logging one
+  does not quietly disclose when a report arrived or how many there are. See
+  [ADR-0034](decisions/ADR-0034-tiny-ids.md).
 - Notification emails carry a link, never the report — an inbox is outside this
   system's access controls.
 
 ## Access and audit
 
-Admin access is an allowlist in `admin_users`. Every moderation action — view of
+Admin access is an allowlist in `admin_users`. The initial migration seeds
+**one obviously-fake local administrator**, `admin@localhost`, and only into a
+database that has opted in with the PostgreSQL setting
+`hpac.seed_development_admin`. Unset means no, which is what production is. The
+real safety-officer allowlist is a later issue and will never be a migration —
+see [ADR-0020](decisions/ADR-0020-seeding-by-migration.md). Every moderation action — view of
 a raw report, edit, approval, rejection — is written to `audit_log` with who and
 when. In a non-punitive reporting system, being able to show who saw what is
 part of keeping the promise.

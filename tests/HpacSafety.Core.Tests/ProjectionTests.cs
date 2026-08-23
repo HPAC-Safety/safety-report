@@ -388,7 +388,7 @@ public class ProjectionTests
 
         var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        var officer = Guid.NewGuid();
+        var officer = TinyId.New();
         english.Approve(officer, Now);
         french.Approve(officer, Now);
         report.AddSummary(english);
@@ -412,7 +412,7 @@ public class ProjectionTests
 
         var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        var officer = Guid.NewGuid();
+        var officer = TinyId.New();
         english.Approve(officer, Now);
         french.Approve(officer, Now);
         report.AddSummary(english);

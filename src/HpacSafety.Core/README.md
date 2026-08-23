@@ -39,10 +39,11 @@ Features/
   Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                   IMemberAuthenticator
   Outbox/         OutboxMessage
-SharedKernel/     Locale, EnumCode, SensitivityTier,
+SharedKernel/     TinyId, Locale, EnumCode, SensitivityTier,
                   BlobKey, MediaCompartment, BlobUrlLifetime,
-                  DomainRuleViolationException,
-                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
+                  DomainRuleViolationException, FieldDecryptionException,
+                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier,
+                  IFieldCipher
 ```
 
 Namespaces match the folders exactly: `HpacSafety.Core.Features.Reporting`,
@@ -55,6 +56,28 @@ shares, and it is deliberately small — two callers is the bar for adding to it
 
 `Reporting` depends on `QuestionBank`, because an answer is an answer *to a
 question*. That dependency is one way.
+
+`TinyId` is the identifier every entity in every feature carries — eleven
+characters, unguessable, and carrying no timestamp, because this system
+deliberately does not let a report be pinned to a moment. It is in the shared
+kernel because every feature has rows, and because #16 builds a blob key out of
+one. See [ADR-0034](../../docs/decisions/ADR-0034-tiny-ids.md).
+
+`IFieldCipher` is in the shared kernel rather than with a feature because the
+rule it carries belongs to the whole system: Restricted data is encrypted at
+rest (`docs/data-handling.md`). The algorithm, the key, and the wiring into EF
+Core are infrastructure. See
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md).
+
+## One concession to persistence
+
+Every aggregate here carries a **private parameterless constructor**, marked as
+existing for EF Core. The ORM materializes an entity by calling a constructor and
+then setting the mapped properties, and these aggregates have none it can bind.
+
+It is the only concession. Domain code still has to go through the real
+constructor or factory, so no caller can reach a half-built aggregate, and this
+project still references nothing.
 
 ## The question set is data
 
@@ -103,6 +126,15 @@ Two rules this project enforces and nothing downstream may relax:
   that is not an explicit yes with both languages approved.
 - **A question cannot be activated with a missing translation.** A
   machine-translated counterpart is acceptable; an absent one is not.
+
+The reporter gives a real date and a real clock time, and the coarse
+`TimeOfDay` bucket is **derived** from the time by
+`TimeOfDay.FromLocalTime(TimeOnly)` — the one place the boundaries are written
+down, called by both the projection here and the scrub in #18. A time that was
+never given is `TimeOfDay.Unknown`, a defined state rather than a midnight
+nobody meant. See
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)
+and #68.
 
 ## Tests
 

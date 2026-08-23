@@ -32,3 +32,13 @@ dotnet_diagnostic.CA1861.severity = none
 # Banned symbols are an error, not a warning. TreatWarningsAsErrors would make
 # it one anyway, but stating it means the rule survives someone relaxing that.
 dotnet_diagnostic.RS0030.severity = error
+
+# Scaffolded EF Core migrations. `dotnet ef` writes these; hand-editing them to
+# satisfy an analyser would be undone by the next scaffold, and coverlet already
+# treats them as generated code. The seed data they call into is ordinary code
+# in Persistence/Seeding and is analysed and measured like everything else.
+[**/Migrations/*.cs]
+dotnet_diagnostic.CA1062.severity = none
+dotnet_diagnostic.CA1861.severity = none
+# `dotnet ef` emits a block-scoped namespace and has no option to do otherwise.
+dotnet_diagnostic.IDE0161.severity = none

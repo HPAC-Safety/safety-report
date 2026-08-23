@@ -63,8 +63,18 @@ public sealed class SummarizationInputTests
         // Then
         parameters.ShouldContain(typeof(SummarizationInput));
         assembly.GetType("HpacSafety.Core.Features.Reporting.IPiiAuditor").ShouldBeNull();
-        assembly.GetType("HpacSafety.Core.SharedKernel.ITranslator").ShouldBeNull();
         assembly.GetType("HpacSafety.Core.Features.Reporting.IPublicationChannel").ShouldBeNull();
+    }
+
+    [Fact]
+    public void Given_the_translation_boundary_When_the_port_is_inspected_Then_it_translates_text_only()
+    {
+        // Given
+        var translateMethod = typeof(ITranslator).GetMethod(nameof(ITranslator.TranslateAsync));
+
+        // Then
+        translateMethod.ShouldNotBeNull();
+        translateMethod.GetParameters().Select(p => p.ParameterType).ShouldNotContain(typeof(SummarizationInput));
     }
 
     [Fact]

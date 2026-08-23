@@ -21,6 +21,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
         "question_options",
         "questions",
         "report_answers",
+        "report_files",
         "reports",
         "summaries",
     ];
@@ -78,7 +79,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_summary_indexes_are_read_Then_there_can_be_only_one_per_report()
+    public async Task Given_a_migrated_database_When_summary_indexes_are_read_Then_there_can_be_only_one_per_report_per_locale()
     {
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
 
@@ -88,7 +89,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 
         definitions.ShouldContain(definition =>
             definition.Contains("report_id", StringComparison.Ordinal)
-            && !definition.Contains("language", StringComparison.Ordinal));
+            && definition.Contains("language", StringComparison.Ordinal));
     }
 
     [Fact]

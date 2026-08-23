@@ -51,6 +51,20 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task Given_no_configured_signing_key_When_the_store_signs_a_url_Then_it_still_verifies_its_own_signature()
+    {
+        // Given
+        var generatedKey = new FileSystemBlobStore(new FileSystemBlobStoreOptions { RootPath = _root }, _clock);
+
+        // When
+        var url = await generatedKey.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+
+        // Then
+        using var content = new MemoryStream([1, 2, 3]);
+        await Should.NotThrowAsync(() => generatedKey.ExecuteUploadAsync(url, content, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task Given_a_url_with_the_wrong_scheme_When_it_is_used_Then_it_is_refused()
     {
         // Given
@@ -169,6 +183,16 @@ public sealed class FileSystemBlobStoreTests : IDisposable
         // Then
         var recorded = await _store.ReadContentTypeAsync(Photo, CancellationToken.None);
         recorded.ShouldBe(MediaType.Jpeg.ContentType);
+    }
+
+    [Fact]
+    public async Task Given_a_key_nothing_was_ever_written_to_When_its_content_type_is_read_Then_it_is_null()
+    {
+        // Given / When
+        var recorded = await _store.ReadContentTypeAsync(Photo, CancellationToken.None);
+
+        // Then
+        recorded.ShouldBeNull();
     }
 
     public void Dispose()

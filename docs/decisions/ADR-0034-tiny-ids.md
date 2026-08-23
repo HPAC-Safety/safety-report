@@ -11,8 +11,8 @@ UUIDv4, a UUIDv7 — differ in what they say about the row they identify, and in
 this domain that matters more than it usually does.
 
 A report identifier is not an internal detail. It appears in the admin URL a
-safety officer opens, in the blob key a photo is stored under (#16 namespaces
-uploads by report id), in the notification email link, and in every log line —
+safety officer opens, in the blob key an attachment is stored under, and in
+every safe operational log line —
 because `docs/data-handling.md` says to log report **identifiers** and never
 report content. Whatever an identifier leaks, it leaks in all of those places.
 

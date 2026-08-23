@@ -1,6 +1,8 @@
 # ADR-0019: Report values are encrypted by the application, not by the database
 
-**Status:** Accepted
+**Status:** Superseded by
+[`/spec/data-and-persistence`](../../spec/data-and-persistence.md). The target
+uses managed encryption at rest and TLS, not application AES or field ciphers.
 **Date:** 2026-08-22
 
 ## Context

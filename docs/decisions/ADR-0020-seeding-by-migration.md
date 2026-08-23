@@ -1,6 +1,8 @@
 # ADR-0020: The migration seeds the question bank, and guards the one local administrator
 
-**Status:** Accepted
+**Status:** Superseded in question-schema and translation behavior by
+[`/spec/question-bank-and-form`](../../spec/question-bank-and-form.md). This
+record describes the current migration history, not the target model.
 **Date:** 2026-08-22
 
 ## Context

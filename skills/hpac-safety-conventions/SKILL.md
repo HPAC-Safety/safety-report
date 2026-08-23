@@ -1,50 +1,26 @@
 ---
 name: hpac-safety-conventions
-description: Cross-cutting repository conventions for HPAC safety-report, including Mermaid diagrams, .NET boundaries, date/time types, runtime prompts, generated artifacts, and focused-skill routing. Use before writing or reviewing any code, test, documentation, or diagram in this repository.
+description: Repository-wide HPAC Safety conventions. Use for any code, test, documentation, or diagram change in this repository.
 ---
 
-# Apply the repository baseline
+# HPAC Safety conventions
 
-Read `AGENTS.md` first. Its safety invariants outrank this skill and every task.
-Then load the more focused skill named in its routing table.
+1. Read [`spec/README.md`](../../spec/README.md) and the affected canonical
+   pages. Treat source/tests as current-state evidence and ADRs/issues as
+   history when they conflict.
+2. Keep the implementation direct. Add an interface only at a real external
+   boundary or when two implementations already need a shared contract.
+3. Protect privacy at DTO, storage, model, logging, review, and publication
+   boundaries. Use synthetic data only.
+4. Use .NET 10, nullable reference types, async APIs for I/O, and cancellation
+   tokens at public async boundaries. `Core` has no runtime package dependency.
+5. Use `DateOnly` for reported dates, `TimeOnly` for local wall time,
+   `DateTimeOffset` for instants, and never `DateTime`.
+6. Use Shouldly and Given/When/Then tests. Use Mermaid for diagrams.
+7. Put UI copy in locale catalogues. Database questions carry manually authored
+   English and French text in each immutable revision.
+8. Never log DTO bodies, answers, private context, prompts/responses,
+   credentials/tokens, client filenames, or attachment URLs.
 
-## Write diagrams and code
-
-- Use Mermaid for every diagram in Markdown. Never use ASCII or box-drawing art.
-- Target .NET 10 with file-scoped namespaces, nullable enabled, and warnings as
-  errors.
-- Keep `HpacSafety.Core` dependency-free. Declare ports there and implement
-  external integrations in `HpacSafety.Infrastructure`.
-- Put third-party production libraries behind owned ports and adapters. Do not
-  wrap the .NET BCL, test-only libraries, or EF Core's `DbContext`/`DbSet`.
-- Use `DateOnly` for dates, `TimeOnly` for local wall-clock times, and
-  `DateTimeOffset` for instants. Never use `DateTime`; it is banned by the
-  repository analyzer. Convert vendor `DateTime` values inside their adapter.
-- Store domain values as invariant codes and localize only at the edge.
-
-Load upstream `ddd`, `dotnet-best-practices`, and `csharp-async` as applicable.
-Load [`solid-principles`](../solid-principles/SKILL.md) for boundaries and
-[`gang-of-four-patterns`](../gang-of-four-patterns/SKILL.md) before adding
-indirection.
-
-## Keep runtime prompts separate
-
-Treat `prompts/` as versioned product assets sent to the model processing real
-reports. Bump a prompt version instead of editing one in place. Keep agent
-instructions under `skills/`; runtime anonymization rules stay in `prompts/`.
-The summarizer receives partitioned `report_content` and `private_context`;
-other model or public boundaries must not accept private context.
-
-## Regenerate owned artifacts
-
-Never hand-edit:
-
-| Artifact | Owner |
-|---|---|
-| `docs/form-spec.md` | `tools/extract-typeform.py` |
-| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` in CI |
-| `.claude/skills/`, `.claude/agents/` | `skillfile install` |
-| `src/web/styles/site.css` | `tools/build-css.sh` |
-
-Load [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md) before committing
-or opening a pull request.
+Before finishing, run the narrowest relevant checks, inspect the diff for
+unrelated changes, and update `/spec` whenever the target design changes.

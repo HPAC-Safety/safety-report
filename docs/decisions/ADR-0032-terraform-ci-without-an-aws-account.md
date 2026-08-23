@@ -1,6 +1,8 @@
 # ADR-0032 — Two roles, and a check that works without an AWS account
 
-**Status:** Accepted
+**Status:** Accepted for OIDC roles and credential-free validation. Any SES or
+combined-site examples below are superseded by the
+[infrastructure specification](../../spec/infrastructure-and-operations.md).
 
 ## Context
 

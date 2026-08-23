@@ -1,16 +1,14 @@
 namespace HpacSafety.Core.SharedKernel;
 
 /// <summary>
-/// Encrypts and decrypts one report value on its way to and from storage. The
-/// entire answer-value column is encrypted regardless of question privacy, so
-/// the database never holds plaintext narrative or contact details.
+/// Legacy application-encryption port retained only for the current-main
+/// migration path. Issue #79 removes it in favor of managed encryption at rest
+/// and TLS.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The port is declared here because <c>Core</c> owns the rule that report
-/// values are encrypted at rest (see <c>docs/data-handling.md</c>). The algorithm,
-/// the key, and the wiring into EF Core are infrastructure and live in
-/// <c>HpacSafety.Infrastructure</c>. See ADR-0019.
+/// This describes superseded current behavior, not a target domain rule. See
+/// the superseded status on ADR-0019 and <c>spec/data-and-persistence.md</c>.
 /// </para>
 /// <para>
 /// An implementation is authenticated: text that was tampered with, or that was

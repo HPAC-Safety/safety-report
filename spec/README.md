@@ -5,7 +5,7 @@ Occurrence Reporting system. It describes the deliberately small system the
 repository is intended to become. It was derived from a file-by-file audit of
 the 135 tracked paths under `src/`, all 69 tracked paths under `tests/`, the
 repository guidance and runtime prompts, and every open and closed GitHub issue
-through issue #76. The audited implementation baseline is main at
+through issue #82. The audited implementation baseline is main at
 `5f7340415e88706035a713bd8322e3dda466e821` on 2026-08-23.
 
 ## Authority and conflict rules
@@ -23,9 +23,9 @@ through issue #76. The audited implementation baseline is main at
    implementation-status matrix, issue traceability, and affected tests in the
    same pull request.
 
-The older `docs/`, deployable READMEs, skills, and prompts remain useful audit
-evidence. Where they conflict, the relevant page here names the conflict rather
-than combining incompatible designs.
+Source, tests, historical ADRs, and issue history remain useful audit evidence.
+Active READMEs, skills, and the Worker prompt are kept aligned with this
+specification rather than preserving competing designs.
 
 ## Specification index
 
@@ -64,7 +64,7 @@ with a human-approved pair can appear in the public feed.
 
 The target deliberately has no server-side report drafts, pre-submit upload
 sessions, deterministic text scrubber, separate PII-audit call, translation
-call, aircraft-classification subsystem, outbound email, external publication
+call, specialized aircraft processing, outbound email, external publication
 channels, application-layer field encryption, restore workflow, or automated
 raw-report purge. New abstractions are justified by a real boundary or a second
 implementation, not by a hypothetical future.

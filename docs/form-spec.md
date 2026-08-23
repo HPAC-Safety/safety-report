@@ -5,9 +5,10 @@
 
 Source: <https://pq3ivecn4rb.typeform.com/to/ZzIBaNLP>
 
-This is the question set HPAC has been collecting through Typeform. The new
-form reproduces it so that historical and future reports stay comparable, and
-so reporters see wording they already recognise.
+This is source evidence for the questions HPAC has been collecting through
+Typeform. The replacement preserves their intent and recognizable wording.
+It is not the target system contract: `/spec` controls revision semantics,
+optionality, attachments, submission, AI, review, and publication.
 
 See `docs/anonymization-policy.md` for which of these fields survive into a
 published summary — several of them never do.

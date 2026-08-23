@@ -1,38 +1,31 @@
 ---
 name: handle-hpac-media
-description: Protect uploaded HPAC occurrence-report media throughout upload, storage, metadata stripping, quarantine, and reviewer access. Use when changing blob storage, pre-signed URLs, BlobKey, upload slots, media derivatives, content sniffing, codecs, filenames, metadata, retention, or media tests.
+description: Handle HPAC Safety multipart attachments, private storage, safe image/video derivatives, and private documents. Use for upload, storage, validation, metadata, malware, or reviewer-access changes.
 ---
 
-# Keep report media private
+# Handle HPAC Safety attachments
 
-Read `docs/data-handling.md`, ADR-0025, ADR-0026, and the media sections of the
-relevant slice README before changing uploads.
+Attachments arrive only with the final multipart `POST /api/v1/reports`. Stream
+each part to private quarantine while enforcing a configurable total count
+(default 5) and 50 MB per-file limit. Map file parts to file-upload answers by
+validated index and mint every persisted name/key on the server.
 
-## Enforce the path
+Accepted formats:
 
-- Never proxy uploaded or downloaded blob bytes through the API. Browsers PUT
-  through a one-key pre-signed URL and reviewers read through a short-lived
-  pre-signed GET from a private bucket.
-- Keep every key under its report id:
-  `<report-id>/original/<minted-name>`,
-  `<report-id>/stripped/<minted-name>`, or
-  `quarantine/<report-id>/<minted-name>`. Enforce this in `BlobKey`.
-- Mint stored filenames. Never place a client-supplied filename or other client
-  string in a key, URL, or path.
-- Treat unguessable ids as reinforcement, never authorization.
+- images: JPEG, PNG, WebP, HEIC;
+- video: MP4, QuickTime;
+- documents: PDF, DOC, DOCX, RTF, MD, TXT, ODT.
 
-## Fail closed
+Sniff format and require declared/actual agreement. Run malware controls before
+review access. Decode/re-encode images and safely remux/transcode videos to
+remove metadata; reviewers may see only verified derivatives. Fail closed when
+a derivative cannot be produced.
 
-- Sniff content types from bytes; never trust the client declaration. Keep the
-  accepted format set closed.
-- Add a format only when metadata can be stripped or the domain explicitly
-  models that it cannot be viewed. Never fall back from a missing derivative to
-  the original.
-- Fail process startup when an accepted codec is unavailable.
-- Route all upload and reviewer-link creation through their single enforcement
-  types and protect that architecture with tests.
-- Specify infrastructure lifecycle guarantees exactly. In a versioned bucket,
-  quarantine deletion needs both current and noncurrent-version expiration.
+Documents are different: preserve the validated original, do not transform or
+anonymize its contents, and never parse/extract it for AI. Allow only an
+authorized, short-lived, forced download with active-content-safe headers.
+Documents are never inline-rendered or public.
 
-Use [`test-hpac-safety`](../test-hpac-safety/SKILL.md) to create synthetic
-fixtures that prove metadata existed before stripping and is absent afterward.
+Database failure leaves only unreferenced quarantine bytes for lifecycle expiry.
+Report-linked originals/derivatives remain private after soft deletion. Never
+log client filenames, storage keys/URLs, or file contents.

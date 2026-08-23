@@ -1,6 +1,7 @@
 # ADR-0037 — Progressive agent instructions
 
-**Status:** Accepted
+**Status:** Accepted and narrowed by issue #78. `/spec` is the product authority,
+and conflicting generic design/pattern skills were pruned.
 
 ## Context
 
@@ -20,8 +21,8 @@ maintained guidance that should not be re-authored locally when it fits.
 Keep `AGENTS.md` as the always-loaded safety contract. It owns:
 
 - the system identity and data sensitivity;
-- the six non-negotiable safety invariants;
-- instruction precedence and the safety-critical stop-and-ask rule;
+- the product/privacy invariants;
+- specification authority and the material-ambiguity rule;
 - the distinction between agent skills and runtime prompts;
 - a routing table to focused skills and canonical documentation;
 - the minimum issue/PR completion contract.
@@ -39,7 +40,7 @@ Move detailed procedures behind focused, triggerable skills:
 | Static UI, theme, and browser assets | `build-hpac-web-ui` |
 | Terraform, AWS, metrics, and topology | `manage-hpac-infrastructure` |
 | General code and prompt boundaries | narrowed `hpac-safety-conventions` |
-| SOLID, DDD, and patterns | existing local and upstream skills |
+| General design advice | Plain code by default; add boundaries only for a current need |
 | Documentation, issues, PRs, and CI | `deliver-hpac-change` |
 
 Use the maintained upstream `addyosmani/agent-skills` skill

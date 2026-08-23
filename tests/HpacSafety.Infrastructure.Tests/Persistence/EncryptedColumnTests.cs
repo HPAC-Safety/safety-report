@@ -12,8 +12,8 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Contact details are private: encrypted at rest, and unreadable without
-/// the key. See <c>docs/data-handling.md</c> and ADR-0019.
+/// Characterizes the legacy application-encrypted column so issue #79 can test
+/// its migration explicitly. This is not a target storage contract.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]

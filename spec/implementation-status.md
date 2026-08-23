@@ -17,8 +17,8 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Browser continuity | Not implemented. | Same-browser answer persistence for 15 days; never restore files. |
 | Abuse prevention | Turnstile port and Terraform resources exist; no endpoint enforcement/rate limit. | Verify Turnstile and trusted-IP rate limits on public submit; separate admin lockout. |
 | Summarization DTO | Partitioned `report_content`/`private_context` Core model and tests exist. | Keep concept; query exact revision labels/answers and exclude consent and all attachments. |
-| AI orchestration | Ports and prompts describe a one-language summarizer plus translator/PII auditor and, historically, deterministic scrub. No Worker execution. | One Worker prompt, one call, strict bilingual JSON, bounded retry, one pair row. Remove obsolete ports/pipeline. |
-| Aircraft handling | Typed aircraft aggregate/classification guidance exists; current decisions moved classification toward the prompt. | Remove subsystem/typed projection; allow safe non-guessing normalization in the one prompt. |
+| AI orchestration | No Worker execution exists. Issue #78 removed the legacy active prompt set and added one aligned Worker-owned prompt; retired ports/source types remain for implementation migration. | One Worker prompt, one call, strict bilingual JSON, bounded retry, one pair row. Remove obsolete ports/pipeline. |
+| Aircraft handling | Typed aircraft projections and retired specialized guidance exist in the audited source/history. | Treat aircraft responses like every other revision-bound answer; remove typed projections and all specialized processing. |
 | Summary persistence | One `Summary` row per locale with source/translation links and per-row approval. | Migrate to one row containing EN/FR texts, shared provenance, and one approval. |
 | Media images | Signature sniffing, 50 MB policy, private storage, and decode/re-encode metadata stripping are implemented and tested. | Reuse validated pieces behind final multipart ingest and configurable total attachment count. |
 | Media videos | MP4/QuickTime are detected and retained but deliberately have no reviewer derivative. | Add metadata-safe remux/transcode derivative; fail closed. |
@@ -58,27 +58,27 @@ history says a feature was completed.
 
 ## Guidance and skill audit
 
-The repository skill system is useful, but several skills encode superseded
-implementation detail. Alignment work should produce a small task-oriented set:
+Issue #78 reduced the repository skill system to a small task-oriented set and
+aligned the remaining guidance with this specification:
 
 | Skill/guidance | Disposition |
 |---|---|
-| HPAC conventions and delivery/testing workflow | Keep; update canonical spec links and target test commands. |
-| Incident domain model | Rewrite for complete question revisions, pair summaries, consent-only projection, and universal soft deletion. |
-| Anonymize HPAC reports | Collapse to one concise skill explaining purpose, content/private partition, role replacement, one bilingual response, and human approval. Remove scrub/auditor/translator mechanics. |
-| Localization | Keep UI-catalogue practices; remove one-language/translation-pipeline assumptions and clarify manually bilingual questions. |
-| Persistence | Rewrite to remove application AES and current normalized question/locale-summary schema. |
-| Media handling | Rewrite for final multipart streaming, video derivatives, and private non-anonymized documents. |
-| Web UI | Keep static/Tailwind/accessibility rules; point product behavior to this specification. |
-| Infrastructure | Rewrite for separate sites, no SES, managed encryption, and focused operations. |
-| Aircraft classification | Remove as a standalone skill; its small safe-normalization rule belongs in the anonymization prompt/skill. |
-| Generic Gang of Four / SOLID guidance | Remove from the project-specific installed set unless a concrete task needs it; it encourages abstractions the product does not require. |
-| Requirements clarification | Keep only if concise and repository-specific; this specification resolves the current product decisions. |
+| HPAC conventions and delivery/testing workflow | Retained with canonical spec links and target test commands. |
+| Incident domain model | Rewritten for complete question revisions, pair summaries, consent-only projection, and universal soft deletion. |
+| Anonymize HPAC reports | Collapsed to one concise skill covering the content/private partition, role replacement, one bilingual response, and human approval. Scrub/auditor/translator mechanics were removed. |
+| Localization | Retained for UI catalogues and manually bilingual questions; one-language/runtime-translation assumptions were removed. |
+| Persistence | Rewritten for the target schema and managed encryption; application AES guidance was removed. |
+| Media handling | Rewritten for final multipart streaming, video derivatives, and private non-anonymized documents. |
+| Web UI | Retained for static/Tailwind/accessibility rules, with product behavior delegated to this specification. |
+| Infrastructure | Rewritten for separate sites, no SES, managed encryption, and focused operations. |
+| Specialized aircraft guidance | Removed. Aircraft responses follow the ordinary question/answer and summary rules. |
+| Generic Gang of Four / SOLID guidance | Removed from the installed set because the product does not need pattern-driven abstractions. |
+| Requirements clarification | Retained as concise repository-specific guidance; this specification resolves the current product decisions. |
 
-Generated copies under agent-specific directories must be regenerated from the
-single authored skill source, never hand-edited independently. Skill pruning is
-an implementation change and should delete obsolete generated copies and
-references together.
+Generated copies under agent-specific directories are regenerated from the
+single authored skill source, never hand-edited independently. Issue #78 also
+removed the separate auditor agent and moved the one runtime prompt into the
+Worker.
 
 ## Recommended implementation order
 

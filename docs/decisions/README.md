@@ -1,16 +1,14 @@
 # Architecture decision records
 
-One file per decision that would otherwise be re-litigated. Each records what
-was chosen, what it was chosen over, and why — so a future contributor (human or
-agent) can tell the difference between a considered decision and an accident.
+ADRs preserve the reasoning and implementation context that existed when a
+decision was made. They are historical records, not the current product-design
+authority. [`/spec`](../../spec/README.md) wins whenever an ADR conflicts with
+the target.
 
-Format: context, decision, consequences. Status is `Accepted` unless superseded.
+Contradictory ADRs carry an explicit superseded or narrowed status. Dedicated
+records for the retired aircraft-processing concept were removed from the
+active tree; Git history preserves them if their history is ever needed.
 
-The current anonymization design is
-[ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md). ADR-0003,
-ADR-0027, and ADR-0028 remain as historical records of the retired
-deterministic scrub.
-
-Related process rules — when an ADR is warranted, what else has to be written
-alongside it, and how to deliver the change — are in
-`skills/deliver-hpac-change/SKILL.md`. `AGENTS.md` routes every ADR task there.
+Add an ADR only when a durable trade-off would otherwise be difficult to recover
+from the specification and code. A routine implementation choice or restatement
+of `/spec` does not need one.

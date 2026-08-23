@@ -5,13 +5,9 @@ using HpacSafety.Core.SharedKernel;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// One aircraft involved in an occurrence, recorded exactly as the reporter
-/// answered. Make and model are private context — kept for HPAC's trend analysis
-/// and never published. Nothing in <c>Core</c> classifies, normalizes, or
-/// otherwise mutates these values; the summarizer determines a publishable
-/// certification class from <see cref="CertificationAnswer"/> at
-/// summarization time, under the rules in <c>prompts/</c>. See
-/// docs/aircraft-classification.md.
+/// Legacy typed aircraft record from the audited schema. The target model stores
+/// these values as ordinary revision-bound answers with no specialized
+/// processing; issue #79 removes this projection.
 /// </summary>
 public class ReportAircraft
 {

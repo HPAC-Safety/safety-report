@@ -50,8 +50,8 @@ Keep ports only at real external boundaries:
 
 Do not keep ports whose only reason was a removed feature: field cipher,
 translator, PII auditor, publication channel, email sender, upload-URL slot, or
-aircraft classifier. A concrete implementation may be used directly when no
-domain boundary or second adapter exists.
+specialized aircraft processing. A concrete implementation may be used directly
+when no domain boundary or second adapter exists.
 
 ## Submission-to-review data flow
 

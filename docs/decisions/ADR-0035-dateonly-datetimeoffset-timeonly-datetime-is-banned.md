@@ -1,6 +1,8 @@
 # ADR-0035 — `DateOnly`, `DateTimeOffset`, `TimeOnly`; `DateTime` is banned
 
-**Status:** Accepted
+**Status:** Accepted for date/time types. Typed ordinary-answer projections
+described below are superseded by
+[`/spec/question-bank-and-form`](../../spec/question-bank-and-form.md).
 
 ## Context
 

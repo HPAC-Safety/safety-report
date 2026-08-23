@@ -1,8 +1,9 @@
 # ADR-0009 — Host on AWS, in ca-central-1
 
-**Status:** Accepted. The static-site topology is **superseded in part** by
-[ADR-0031](ADR-0031-terraform-shape-and-topology.md): there is one distribution,
-not two, and the admin review queue is a route on the website.
+**Status:** Superseded in part by the
+[infrastructure specification](../../spec/infrastructure-and-operations.md).
+AWS `ca-central-1` remains; the target has separate public/admin static sites
+and no SES/email resources.
 
 ## Context
 

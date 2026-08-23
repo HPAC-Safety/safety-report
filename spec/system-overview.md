@@ -104,7 +104,7 @@ deletion, and one Canadian AWS production environment.
 - Application-managed encryption keys or ciphertext fields
 - Physical record deletion or a restore UI
 - Automated translation of administrator-authored question text
-- A standalone PII service or aircraft classifier
+- A standalone PII service or specialized aircraft-processing subsystem
 
 ## Design ownership
 

@@ -1,6 +1,8 @@
 # ADR-0003 — Five-stage anonymization, deterministic first
 
-**Status:** Superseded by [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
+**Status:** Superseded by the
+[one-call specification](../../spec/ai-anonymization.md). There is no active
+scrub/audit/translation pipeline.
 
 ## Context
 

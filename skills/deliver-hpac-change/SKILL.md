@@ -1,59 +1,39 @@
 ---
 name: deliver-hpac-change
-description: Deliver an HPAC safety-report change from issue through a green pull request while capturing decisions, requirements, slice documentation, generated artifacts, skill sources, and tool pins. Use when planning a repository change, writing an ADR or README, managing Skillfile, committing, opening a PR, investigating CI, or reporting completion.
+description: Deliver HPAC Safety work through its issue, branch, documentation, pull-request, and CI workflow. Use when creating or editing issues, docs, branches, commits, PRs, or checks.
 ---
 
-# Deliver the whole change
+# Deliver an HPAC Safety change
 
-Use upstream `documentation-and-adrs` for general documentation quality and
-follow this repository-specific workflow where it is stricter.
+## Start
 
-## Start from durable work
+- Work from current `main` and a focused GitHub issue.
+- Name the branch `issue-<number>/<short-description>`.
+- Read the affected `/spec` pages before editing. Update them first if the
+  target behavior is changing.
+- Preserve unrelated work in a dirty tree.
 
-1. Work from one issue per pull request where practical; create the issue first
-   if none exists.
-2. Branch from current `main`. Never push directly to protected `main`.
-3. Search `skillfile search "<topic>"` and read candidates before writing a
-   general-purpose skill. Prefer maintained upstream guidance; keep local skills
-   HPAC- or repository-specific.
-4. Capture a clarified requirement in the same pull request so it is never
-   answered twice.
+## Document
 
-## Document while implementing
+- `/spec` describes the target.
+- Component READMEs describe their scope and current implementation status
+  without duplicating the specification.
+- ADRs are historical rationale. Add one only for a durable decision whose
+  trade-off will not be clear from `/spec` and code.
+- Update issue acceptance criteria when the design changes; do not leave a
+  conflicting backlog item open.
+- Never include real report content or personal information.
 
-- Write `docs/decisions/ADR-NNNN-<slug>.md` when choosing between viable options
-  someone could reasonably question in six months. Continue the sequence,
-  record rejected alternatives and consequences, never renumber or delete, and
-  supersede a reversed decision with a new ADR.
-- Put code-writing rules in `AGENTS.md` or a focused skill, running-system
-  behaviour in `docs/` plus an ADR when a choice was made, and runtime model
-  input in a new version under `prompts/`.
-- Update the README of every changed project, namespace with real behaviour, or
-  feature area. State what it owns, excludes, how it is exercised, and how it
-  deploys when applicable.
+## Verify and publish
 
-## Respect generated files and pins
+1. Run focused tests, then the repository checks proportional to risk.
+2. Inspect `git diff --check`, links, generated artifacts, and `git status`.
+3. Commit with a concise imperative message and no co-author trailer.
+4. Push and open a pull request with a squash-ready title.
+5. Put `Closes #<number>` on its own line in the PR body.
+6. Watch required checks, fix failures on the branch, and finish only when they
+   are green.
 
-- Regenerate `docs/form-spec.md`, `locales/fr-CA.json`, `locales/fr-CA.meta.json`,
-  `.claude/skills/`/`.claude/agents/`, and `src/web/styles/site.css` through
-  their documented owners; never hand-edit or commit generated `.claude/` files.
-- Commit `Skillfile` and `Skillfile.lock` after `skillfile install`.
-- Keep each tool version in one canonical pin: .NET in `global.json`, Node in
-  `.github/workflows/ci.yml`, Tailwind and hashes in `tools/tailwind.pin`,
-  Terraform in `infra/.terraform-version`, and tflint in
-  `infra/.tflint-version`. Make scripts and workflows read the pin.
-- Make `init-dev.sh` report manual steps honestly; never report success for work
-  it could not complete unattended.
-
-## Finish through CI
-
-1. Validate proportionally, including `skillfile validate`, install, and status
-   when agent configuration changes.
-2. Use a squash-ready PR title and put `Closes #<number>` on its own line in the
-   body. Answer the PII/anonymization checklist honestly.
-3. Do not create `CODEOWNERS` or add `Co-Authored-By` trailers.
-4. Watch every required check. Fix the cause, never lower or skip the gate.
-   Investigate apparently unrelated failures before calling them pre-existing
-   or flaky; a rerun is diagnosis only when the flake is explained.
-5. Report completion only when all checks are green. Otherwise report exactly
-   which checks are still running or failing and why.
+Never hand-edit generated `.claude/` content. When project-owned skills change,
+update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill
+validation.

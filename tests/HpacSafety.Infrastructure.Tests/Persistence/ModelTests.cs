@@ -36,6 +36,7 @@ public sealed class ModelTests
     [Theory]
     [InlineData(typeof(Report), "reports")]
     [InlineData(typeof(ReportAnswer), "report_answers")]
+    [InlineData(typeof(ReportFile), "report_files")]
     [InlineData(typeof(Summary), "summaries")]
     [InlineData(typeof(Question), "questions")]
     [InlineData(typeof(QuestionOption), "question_options")]
@@ -48,6 +49,22 @@ public sealed class ModelTests
 
         mapped.ShouldNotBeNull();
         mapped.GetTableName().ShouldBe(table);
+    }
+
+    [Fact]
+    public void Given_a_context_When_every_DbSet_is_touched_Then_none_of_them_throw()
+    {
+        using var context = Context();
+
+        context.Reports.ShouldNotBeNull();
+        context.ReportAnswers.ShouldNotBeNull();
+        context.ReportFiles.ShouldNotBeNull();
+        context.Summaries.ShouldNotBeNull();
+        context.Questions.ShouldNotBeNull();
+        context.QuestionOptions.ShouldNotBeNull();
+        context.AdminUsers.ShouldNotBeNull();
+        context.AuditLog.ShouldNotBeNull();
+        context.OutboxMessages.ShouldNotBeNull();
     }
 
     [Fact]

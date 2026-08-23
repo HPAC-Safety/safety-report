@@ -35,7 +35,7 @@ public sealed class MediaIngestOutcome
     /// <summary>What ingest concluded.</summary>
     public MediaIngestStatus Status { get; }
 
-    /// <summary>True when the bytes were retained as the Restricted record.</summary>
+    /// <summary>True when the bytes were retained as the private source record.</summary>
     public bool IsAccepted => Status is not MediaIngestStatus.Rejected;
 
     /// <summary>True when the file is accepted but has no derivative yet, so nothing is viewable.</summary>
@@ -59,7 +59,7 @@ public sealed class MediaIngestOutcome
     /// <summary>When the derivative was written, or <see langword="null" /> when there is none.</summary>
     public DateTimeOffset? StrippedAt { get; }
 
-    /// <summary>Where the Restricted original was promoted to. Throws on a rejection.</summary>
+    /// <summary>Where the private original was promoted to. Throws on a rejection.</summary>
     public BlobKey OriginalKey =>
         IsAccepted
             ? _originalKey

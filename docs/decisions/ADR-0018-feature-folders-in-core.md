@@ -42,7 +42,7 @@ src/HpacSafety.Core/
     Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                     IMemberAuthenticator
     Outbox/         OutboxMessage
-  SharedKernel/     Locale, EnumCode, SensitivityTier,
+  SharedKernel/     Locale, EnumCode,
                     DomainRuleViolationException,
                     ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
 ```
@@ -53,12 +53,10 @@ and vice versa, with no exceptions to remember.
 
 **`SharedKernel` is DDD's own term** for the small set of types more than one
 part of the domain agrees to share, and the name carries a warning with it: a
-shared kernel is expensive to change because everything depends on it. Four
+shared kernel is expensive to change because everything depends on it. These
 things qualify today —
 
 - `Locale`, because every feature is bilingual.
-- `SensitivityTier`, because the data-handling tiers are a property of the whole
-  system.
 - `DomainRuleViolationException`, because every aggregate throws it.
 - `ITranslator`, `IBlobStore`, `IEmailSender`, `ITurnstileVerifier` — ports with
   no single owning feature. `ITranslator` in particular is called by both

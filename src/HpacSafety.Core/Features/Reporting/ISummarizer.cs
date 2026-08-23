@@ -1,5 +1,4 @@
 
-using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
@@ -12,15 +11,15 @@ namespace HpacSafety.Core.Features.Reporting;
 public sealed record SummaryDraft(string Text, string Model, string PromptVersion);
 
 /// <summary>
-/// Produces an anonymized summary of a report, in the language the reporter
-/// wrote in.
+/// Produces an anonymized summary in the language the reporter wrote in.
 /// </summary>
 /// <remarks>
-/// Implementations receive text that has <b>already</b> been through the
-/// deterministic scrub. The raw report never reaches a model.
+/// The model receives non-private report content and private redaction context
+/// as distinct sections. Private context may identify information to omit or
+/// generalize, but it is never an eligible source of summary facts.
 /// </remarks>
 public interface ISummarizer
 {
-    /// <summary>Summarizes already-scrubbed narrative text.</summary>
-    Task<SummaryDraft> SummarizeAsync(string scrubbedNarrative, Locale locale, CancellationToken cancellationToken);
+    /// <summary>Summarizes partitioned report fields.</summary>
+    Task<SummaryDraft> SummarizeAsync(SummarizationInput input, Locale locale, CancellationToken cancellationToken);
 }

@@ -1,256 +1,128 @@
 # Anonymization policy
 
-HPAC runs a **non-punitive** reporting system. Pilots file reports about their
-own mistakes on the understanding that the result is used to teach, not to
-blame or identify. This document is that promise expressed as system behaviour.
+HPAC publishes safety lessons, not identities. Reports describe real accidents
+in a small community, so a summary must remove both direct identifiers and
+combinations of details that let local readers identify a person.
 
-The governing document is **SOP 405 — Accident / Incident Reporting**.
+When usefulness and anonymity conflict, anonymity wins. A human safety officer
+reviews both official-language summaries before anything is published.
 
-## The rule
+## One classification at question creation
 
-> A published summary must not allow a reader to identify the pilot, the
-> reporter, or the specific site.
+Every answer-producing question has an `IsPrivate` checkbox in question
+administration:
 
-When usefulness and anonymity conflict, anonymity wins.
+- Checked means the answer is private redaction context.
+- Unchecked means the answer is non-private report content eligible to inform a
+  summary.
+- New questions default checked.
 
-## Five stages
+Privacy is immutable after creation. Administrators may revise wording, type,
+options, order, role, and activation under the question-bank rules, but they
+cannot change `IsPrivate`. Reclassification requires deactivating the old
+question and creating a new question identity. Each `ReportAnswer` snapshots the
+question's value when submitted.
+
+This prevents an edit to today's form from silently changing the handling of
+historical reports.
+
+## The model boundary
+
+The Worker loads labeled answers and calls `SummarizationInput.Partition`:
 
 ```mermaid
 flowchart LR
-    raw["raw report"] --> s1["1 · deterministic scrub<br/>no AI"]
-    s1 --> s2["2 · summarize<br/>source language"]
-    s2 --> s3["3 · PII audit"]
-    s3 --> s4["4 · translate summary"]
-    s4 --> s5["5 · PII audit translation"]
-    s5 --> h["human review"]
-    s3 -. finding .-> h
-    s5 -. finding .-> h
+    answers["report answers<br/>privacy snapshot"] --> partition{"IsPrivate?"}
+    partition -->|false| content["report_content<br/>eligible facts"]
+    partition -->|true| context["private_context<br/>redaction hints only"]
+    content --> model["summarization LLM"]
+    context --> model
+    model --> source["anonymized source summary"]
+    source --> audit1["summary-only PII audit"]
+    source --> translate["translate summary only"]
+    translate --> audit2["summary-only PII audit"]
+    audit1 --> review["human review"]
+    audit2 --> review
 ```
 
-Stage 1 is deterministic and runs first on purpose: never ask a language model
-to remove something a regular expression removes reliably. Stages 3 and 5 read
-only the generated summary and return structured findings — they flag, they do
-not silently rewrite.
+`report_content` is the only source of publishable facts. It includes narrative,
+general damage and injury descriptions, prevention notes, aircraft type and
+certification answer, province, and other fields explicitly classified
+non-private.
 
-Stage 5 exists because translation is another generative step, and a model
-asked to produce fluent French can reintroduce a detail the scrub removed.
+`private_context` contains labeled values such as pilot/reporter names and
+contact details, precise location and date, pilot rating, aircraft make/model,
+media references, and publication consent. The summarizer may use it only to
+recognize those details inside report content. A private pilot name repeated in
+the narrative becomes “the pilot” / “le pilote”; it does not become a fact in
+the summary.
 
-## Stage 1 in detail
+Only the configured summarization provider receives private context. The PII
+auditor receives a candidate summary only. The translator receives the
+anonymized source summary only. Public endpoints, notifications, logs, metrics,
+traces, and exception messages receive neither model-input section.
 
-The deterministic scrub lives in `HpacSafety.Core`, has no dependencies, and is
-the only stage whose behaviour is fully determined. What it does, category by
-category:
+There is no deterministic text scrub, regex redaction pass, identifier harvester,
+or replacement-stage chain. The LLM performs textual anonymization. Media type
+validation, malware controls, and metadata stripping remain deterministic
+because they operate on files, not report prose.
 
-| Category | What stage 1 does |
-|---|---|
-| Reporter and pilot names | The structured answers are dropped. The same names found in free text become a **role word** — see below. |
-| Phone, email, address, social handle | Structured answers dropped. Emails, URLs, and phone numbers in the common written formats are stripped from free text. **A social handle or a street address is only removed from the narrative when the reporter also gave it in a field** — no pattern recognises `@sarahflies`. See "What stage 1 cannot catch". |
-| HPAC member number | Structured answer dropped. In free text, matched on the word — `HPAC #48213`, `member number 48213` — because HPAC publishes no number format and stripping every run of digits would delete altitudes and airspeeds along with it. |
-| Launch, landing zone, club | The site is replaced by the **province**. The same words are removed from free text. |
-| Aircraft manufacturer and model | Dropped, and removed from free text. The published class comes from the reporter's own certification answer and from nowhere else. |
-| Precise date | Narrowed to **month and year** (`2026-03`). With no date given the field is dropped. |
-| Precise time | The **structured time answer** is narrowed to a time-of-day bucket. The reporter submits an actual clock time, stored encrypted as Restricted data; only the bucket leaves the structured field. The boundaries — morning before 11:00, mid-day 11:00–14:00, afternoon 14:00–17:00, evening from 17:00 — are owned by the reporting feature and stage 1 does not re-derive them. **A date or time written into the narrative is a different matter — see "What stage 1 cannot catch".** |
-| Everything else | Kept, and passed through every stripping rule anyway — **unless nobody classified it**, in which case it is dropped *and* its value is removed from the narrative. Keeping a field has to be a decision somebody made. |
+## What never appears in a summary
 
-Every structured answer doubles as a token list for the free text. A launch name,
-an aircraft model, an `@handle`, or a member number that the reporter typed into
-a field **and** mentioned again in the narrative is removed from both, even where
-no pattern would have found the second one.
+- Names, initials, nicknames, contact details, social handles, or URLs.
+- Member, licence, insurance, registration, or serial identifiers.
+- Aircraft make, model, colour, or another distinctive aircraft identity.
+- Named launch/landing sites, clubs, addresses, landmarks, or coordinates.
+- Exact dates and times.
+- Unique occupations, club roles, named events, unusual equipment, or personal
+  circumstances that identify someone in combination.
+- Private-context facts, even when they seem harmless or could be generalized.
+- Redaction placeholders or commentary about omitted information.
 
-Matching a name or a place is **case- and accent-insensitive**, tolerates a
-trailing "s" so "the Whitlocks" goes the way of "Whitlock's", accepts either
-Unicode normalization form, and allows whitespace to move **in both directions**
-— "Halcyon 3" finds "Halcyon3" and "Halcyon3" finds "Halcyon 3". Names split
-on hyphens and apostrophes: "Renée" in the name field is found as "Renee" in the
-narrative and the other way round, and "Sarah-Jane" is found as "Sarah". **The whole answer is always matched** unless it is a single character, so short
-surnames and short brands — Ng, Wu, Li, Vo, Ha, Cox, UP — are caught. Within a
-longer answer, a part is matched from two characters for a name and four for a
-place or an aircraft, except a **lower-case name particle** — "de", "la", "van",
-"von" — which is skipped so a French narrative keeps its articles. Capitalisation
-is the signal: "Marc de la Roche" keeps "de la", while a pilot surnamed "Le" or
-"Thanh Le" is matched.
+People are described by role when useful and known from report content or a
+matching private label: “the pilot”, “the passenger”, “the reporter”, “a
+witness”. Otherwise the identity is omitted. French uses stable generic role
+wording and must not add gender or other identifying agreement.
 
-The cost is accepted in one direction on purpose: a name answer of exactly "Le"
-will also take the French article out of the narrative. Over-redaction is
-recoverable; a named pilot is not.
+## What should survive
 
-Three states around the time are distinct and are never flattened together:
+- Phase of flight, broadly stated conditions and terrain, and event sequence.
+- Reserve deployment and outcome.
+- Injury severity at the form's scale and damage in general terms.
+- Contributing factors and prevention lessons reported by the submitter.
+- Aircraft type and a certification class explicitly supported by non-private
+  report content, never inferred from private make/model.
 
-| State | Meaning | Published as |
-|---|---|---|
-| a bucket | the reporter gave a time | that bucket |
-| `unknown` | the form asked; the reporter did not answer | `unknown` |
-| `not answered` | the form has no time question at all | the field is dropped |
+The model never invents missing causes, conditions, intentions, or classes.
+Omission is safer than a confident guess.
 
-**Midnight is none of these.** It is a real answer and buckets as morning.
-Treating an absent time as `00:00` would publish "morning" about a crash nobody
-timed, which is a fabricated fact in a summary about a real person.
+## Language, audit, and approval
 
-The mapping from a clock time to a bucket is defined once, in the reporting
-feature, so that "morning" means the same thing everywhere. It arrives with the
-schema work in [PR #62](https://github.com/HPAC-Safety/safety-report/pull/62);
-until then the caller supplies the bucket and stage 1 enforces that only the
-bucket travels onward.
+The summarizer writes in the report's submitted language. Raw report sections
+are never translated. The anonymized source summary is translated into the
+other official language, and each candidate summary is independently PII
+audited. Findings route the report to a person; an audit does not approve or
+publish anything.
 
-Anything removed that has no natural replacement leaves a `[removed]` marker, so
-the sentence stays readable for stage 2 and a reviewer can tell "this was taken
-out" from "the reporter never said".
+Publication requires explicit reporter consent, both language summaries, and
+human safety-officer approval. Consent is itself private context, not summary
+content.
 
-### A name becomes a role word
+## Testing and prompt versions
 
-A reporter or pilot name found in the narrative is replaced by the role the
-structured field it came from gives that person — **"the pilot"**, **"the
-reporter"** — and not by `[redacted]` or `[name]`.
+Runtime policy lives in versioned files under `prompts/`. Versions 1 and 2 are
+historical; version 3 implements this design. Never edit an active historical
+version in place.
 
-> Sarah spiralled in from 200 feet → the pilot spiralled in from 200 feet
+Tests must prove:
 
-The scrubbed text still reads as prose, so the stage 2 summary is not degraded by
-a sentence with a hole in it. **When the reporter is the pilot, one role word
-covers both** and it is "the pilot".
+- privacy defaults to true and cannot be mutated;
+- answers snapshot classification;
+- partitioning places private and non-private fields in the correct sections;
+- non-summarizer ports cannot accept private context;
+- synthetic identifiers present in recorded model input are absent from output;
+- important non-private safety details survive;
+- English and French obey the same publication policy.
 
-| Language | Reporter | Pilot |
-|---|---|---|
-| en-CA | the reporter | the pilot |
-| fr-CA | le déclarant | le pilote |
-
-These are **HPAC terminology decided by a person, not machine output**, and they
-are never re-translated.
-
-**The French role words are always masculine, whoever was flying.** Uniformly,
-without exception, never varied to match the reporter or the pilot. English lets
-you write "the pilot" and say nothing about the person; French forces an article,
-so the scrub has to make a choice that English never surfaces. "La pilote" in a
-fifty-person flying community narrows the field considerably — agreeing the
-article would put back the exact fact the scrub had just removed, in the one
-language where the grammar makes it unavoidable and therefore easy to miss.
-Masculine is the grammatical generic, so uniformity costs nothing linguistically.
-
-That guarantee covers **the words the scrub writes**, and only those. Where the
-reporter wrote "la pilote" or "elle" themselves, stage 1 leaves it — see "What
-stage 1 cannot catch" above.
-
-See [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
-
-### The region is the province
-
-`Where:` is generalized to the **province**, and nothing finer. There is no other
-region vocabulary in this system: the province comes from the reporter's own
-structured answer, next to the free-text site on the same form.
-
-The scrub never derives a province from a site name. That would be inferring a
-location rather than reading one — the same class of mistake as inferring a
-certification class from a model name. **If no province was answered, the
-location is dropped entirely** rather than guessed at.
-
-### What stage 1 cannot catch
-
-Stage 1 finds an identifier when it matches a pattern, or when the reporter also
-typed it into a structured answer. Two things follow, and both are real:
-
-- A launch named **only** in the narrative is not something a regular expression
-  can recognise, and no tuning changes that.
-- **A social handle or a mailing address named only in the narrative is the same
-  case.** `@sarahflies` matches no pattern. It is removed when the reporter also
-  put it in a contact field, and not otherwise.
-- **A date or a time written into the narrative reaches stage 2 unchanged.**
-  "On 14 March 2026 at 14:37 I launched" passes through. The narrowing above
-  applies to the *structured* date and time answers, which is where they are
-  collected; free text is prose, and a rule that stripped every number from it
-  would take the altitudes and airspeeds with it. Stages 3 and 5 read the
-  generated summary for exactly this kind of residue, and the reviewer sees it
-  before anything is published.
-- **Stage 1 does not de-gender the reporter's own prose, and cannot.** It
-  replaces the names it was given; it does not rewrite sentences. "She broke her
-  ankle", "elle s'est posée", "elle était la pilote" survive stage 1 exactly as
-  written, and in a fifty-person flying community a pronoun can narrow the field
-  as effectively as a name.
-
-  This is a boundary, not an oversight. Rewriting grammar requires understanding
-  the sentence, which is precisely what a deterministic pass must not attempt —
-  a regular expression that tried would mangle reports and still miss cases.
-  **Stage 2 is where it is handled**: the summarizer writes new prose and the
-  redaction rules tell it not to carry gender across. **Stage 3 is the check**,
-  reading the generated summary for anything that identifies. What stage 1
-  guarantees is narrower and worth stating plainly: the words *it* writes never
-  encode gender — see the uniform masculine article below.
-That residual risk is the reason stages 3 and 5 exist and the reason a human
-approves every publication. It is not to be closed by shipping a list of Canadian
-site names — a lookup table of every site in the country is itself a map of where
-every reporter flies.
-
-Over-redaction is the accepted failure mode in the other direction, and it is
-deliberate. See [ADR-0027](decisions/ADR-0027-deterministic-scrub-design.md).
-
-## Always removed
-
-| Category | Examples |
-|---|---|
-| Names | reporter, pilot, passenger, instructor, witnesses, rescuers |
-| Contact details | phone, email, address, social handles |
-| Identifiers | HPAC member number, licence or insurance numbers |
-| Aircraft identity | manufacturer, model, colour, serial |
-| Precise location | launch name, LZ name, club, named landmark |
-| Precise timing | narrowed to month and year |
-| Media | never attached to a published summary |
-| Small-community tells | roles, named events, unusual equipment |
-
-## Always kept
-
-Phase of flight, conditions, certification class, sequence of events, injury at
-the severity-scale level, reserve deployment, contributing factors, and the
-reporter's own prevention notes. Province is kept; the site is not.
-
-## The identifiability problem nobody expects
-
-Canadian free-flight sites are small. A detail that is not personal information
-on its own — "the club's only tandem instructor", "during the annual fly-in",
-"flying a rigid" — can name one specific person to the fifty people who fly
-there.
-
-Aggregation is the same risk: province plus exact date plus aircraft type plus
-injury severity can be unique even when each field alone is harmless. This is
-why the date is narrowed to month and year, and why reviewers are asked to read
-a summary as a local would.
-
-Narrowing only works if the value being narrowed is the day the reporter meant.
-The occurrence date is therefore a `DateOnly` and never a moment: a timezone
-conversion that shifts it across midnight moves an accident to a different day,
-and the published "July 2026" hides the fact that it did. See
-[ADR-0035](decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md).
-
-## Consent
-
-The form asks whether the reporter agrees to publication of a de-identified
-version. **A report without consent is never published.** It is still stored,
-still summarized, and still counted in HPAC's internal analysis — the consent
-flag gates publication only.
-
-## Human review is not optional
-
-There is no code path from submission to publication that does not pass through
-a safety officer, and the officer approves the **English and French pair**.
-Approving one does not implicitly approve the other.
-
-## Failure modes we accept
-
-- A summary too vague to be useful. Recoverable — a reviewer can edit it.
-- `class not determined` on the aircraft. Recoverable.
-- A false positive from the PII audit. Costs a reviewer ten seconds.
-
-## Failure modes we do not accept
-
-- A name, number, or site in a published summary.
-- Publication without consent.
-- Publication without human approval.
-
-## Related
-
-- `prompts/` — the runtime prompts that implement this policy
-- `src/HpacSafety.Core/Features/Anonymization/README.md` — stage 1, the code
-- `tests/HpacSafety.Anonymization.Tests` — the golden-file suite that proves it
-- [ADR-0027](decisions/ADR-0027-deterministic-scrub-design.md),
-  [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md)
-- `docs/aircraft-classification.md`
-- `docs/data-handling.md`
-- `docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md`
-  — why the occurrence date is a `DateOnly`
+See ADR-0038, `prompts/README.md`, `agents/anonymization-auditor.md`, and
+`skills/anonymize-hpac-reports/SKILL.md`.

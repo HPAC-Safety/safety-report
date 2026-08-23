@@ -1,6 +1,6 @@
 # ADR-0003 — Five-stage anonymization, deterministic first
 
-**Status:** Accepted
+**Status:** Superseded by [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
 
 ## Context
 

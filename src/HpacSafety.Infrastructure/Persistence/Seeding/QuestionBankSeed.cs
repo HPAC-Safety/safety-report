@@ -52,10 +52,10 @@ public static class QuestionBankSeed
             "De :",
             "Tell us who is reporting the occurrence.",
             "Dites-nous qui déclare l'événement."),
-        Field("reporter_first_name", QuestionType.ShortText, SensitivityTier.Restricted, "from", "First name", "Prénom"),
-        Field("reporter_last_name", QuestionType.ShortText, SensitivityTier.Restricted, "from", "Last name", "Nom de famille"),
-        Field("reporter_phone", QuestionType.Phone, SensitivityTier.Restricted, "from", "Phone number", "Numéro de téléphone"),
-        Field("reporter_email", QuestionType.Email, SensitivityTier.Restricted, "from", "Email", "Courriel"),
+        Field("reporter_first_name", QuestionType.ShortText, isPrivate: true, "from", "First name", "Prénom"),
+        Field("reporter_last_name", QuestionType.ShortText, isPrivate: true, "from", "Last name", "Nom de famille"),
+        Field("reporter_phone", QuestionType.Phone, isPrivate: true, "from", "Phone number", "Numéro de téléphone"),
+        Field("reporter_email", QuestionType.Email, isPrivate: true, "from", "Email", "Courriel"),
 
         Group(
             "pilot",
@@ -63,11 +63,11 @@ public static class QuestionBankSeed
             "Pilote :",
             "Tell us who was the pilot in command.",
             "Dites-nous qui était le pilote commandant de bord."),
-        Field("pilot_first_name", QuestionType.ShortText, SensitivityTier.Restricted, "pilot", "First name", "Prénom"),
-        Field("pilot_last_name", QuestionType.ShortText, SensitivityTier.Restricted, "pilot", "Last name", "Nom de famille"),
+        Field("pilot_first_name", QuestionType.ShortText, isPrivate: true, "pilot", "First name", "Prénom"),
+        Field("pilot_last_name", QuestionType.ShortText, isPrivate: true, "pilot", "Last name", "Nom de famille"),
 
         Field(
-            "pilot_ratings", QuestionType.MultiSelect, SensitivityTier.Internal, null,
+            "pilot_ratings", QuestionType.MultiSelect, isPrivate: true, null,
             "Pilot's ratings:", "Qualifications du pilote :",
             "What are the pilot's most advanced HPAC ratings?",
             "Quelles sont les qualifications ACVL les plus avancées du pilote ?",
@@ -89,14 +89,14 @@ public static class QuestionBankSeed
             ]),
 
         Field(
-            "occurrence_date", QuestionType.Date, SensitivityTier.Internal, null,
+            "occurrence_date", QuestionType.Date, isPrivate: true, null,
             "Date:", "Date :",
             "Tell us the date of the occurrence.",
             "Dites-nous la date de l'événement.",
             role: QuestionRole.OccurrenceDate),
 
         Field(
-            "time_of_day", QuestionType.SingleSelect, SensitivityTier.Publishable, null,
+            "time_of_day", QuestionType.SingleSelect, isPrivate: false, null,
             "Time of day:", "Moment de la journée :",
             "Tell us the time of the occurrence.",
             "Dites-nous l'heure de l'événement.",
@@ -110,19 +110,19 @@ public static class QuestionBankSeed
             ]),
 
         Field(
-            "in_canada", QuestionType.YesNo, SensitivityTier.Publishable, null,
+            "in_canada", QuestionType.YesNo, isPrivate: false, null,
             "Country:", "Pays :",
             "Did the occurrence happen in Canada?",
             "L'événement s'est-il produit au Canada ?"),
 
         Field(
-            "location", QuestionType.ShortText, SensitivityTier.Internal, null,
+            "location", QuestionType.ShortText, isPrivate: true, null,
             "Where:", "Où :",
             "Tell us the location of the occurrence.",
             "Dites-nous le lieu de l'événement."),
 
         Field(
-            "province", QuestionType.SingleSelect, SensitivityTier.Publishable, null,
+            "province", QuestionType.SingleSelect, isPrivate: false, null,
             "Province:", "Province :",
             "Tell us the province of the occurrence.",
             "Dites-nous la province de l'événement.",
@@ -151,7 +151,7 @@ public static class QuestionBankSeed
             "Tell us more about the aircraft(s) involved in the occurrence.",
             "Dites-nous-en plus sur le ou les aéronefs impliqués dans l'événement."),
         Field(
-            "aircraft_type", QuestionType.MultiSelect, SensitivityTier.Publishable, "aircraft",
+            "aircraft_type", QuestionType.MultiSelect, isPrivate: false, "aircraft",
             "Type of aircraft:", "Type d'aéronef :",
             "Tell us the type of aircraft(s) involved in the occurrence.",
             "Dites-nous le type d'aéronef(s) impliqué(s) dans l'événement.",
@@ -166,24 +166,24 @@ public static class QuestionBankSeed
                 new SeededOption("hang_glider_tandem", "Hang Glider Tandem", "Deltaplane biplace"),
             ]),
         Field(
-            "aircraft_manufacturer", QuestionType.ShortText, SensitivityTier.Internal, "aircraft",
+            "aircraft_manufacturer", QuestionType.ShortText, isPrivate: true, "aircraft",
             "Manufacturer:", "Fabricant :",
             "Tell us the manufacturer of the pilot's aircraft.",
             "Dites-nous le fabricant de l'aéronef du pilote."),
         Field(
-            "aircraft_model", QuestionType.ShortText, SensitivityTier.Internal, "aircraft",
+            "aircraft_model", QuestionType.ShortText, isPrivate: true, "aircraft",
             "Model:", "Modèle :",
             "Tell us about the model of the pilot's aircraft.",
             "Dites-nous le modèle de l'aéronef du pilote."),
         Field(
-            "aircraft_certification", QuestionType.ShortText, SensitivityTier.Publishable, "aircraft",
+            "aircraft_certification", QuestionType.ShortText, isPrivate: false, "aircraft",
             "Certification:", "Certification :",
             "Tell us about the certification of the pilot's aircraft.",
             "Dites-nous la certification de l'aéronef du pilote.",
             role: QuestionRole.AircraftCertification),
 
         Field(
-            "pilot_injury", QuestionType.SingleSelect, SensitivityTier.Publishable, null,
+            "pilot_injury", QuestionType.SingleSelect, isPrivate: false, null,
             "Pilot injury:", "Blessure du pilote :",
             "If any, tell us the type of injury to the pilot.",
             "S'il y a lieu, dites-nous le type de blessure du pilote.",
@@ -191,7 +191,7 @@ public static class QuestionBankSeed
             options: InjuryOptions()),
 
         Field(
-            "passenger_injury", QuestionType.SingleSelect, SensitivityTier.Publishable, null,
+            "passenger_injury", QuestionType.SingleSelect, isPrivate: false, null,
             "Passenger injury:", "Blessure du passager :",
             "If any, tell us the type of injury to the passenger.",
             "S'il y a lieu, dites-nous le type de blessure du passager.",
@@ -199,32 +199,32 @@ public static class QuestionBankSeed
             options: InjuryOptions()),
 
         Field(
-            "injury_description", QuestionType.ShortText, SensitivityTier.Restricted, null,
+            "injury_description", QuestionType.ShortText, isPrivate: false, null,
             "Injury description:", "Description de la blessure :",
             "If any, describe the injury.",
             "S'il y a lieu, décrivez la blessure."),
 
         Field(
-            "damage", QuestionType.ShortText, SensitivityTier.Restricted, null,
+            "damage", QuestionType.ShortText, isPrivate: false, null,
             "Damage:", "Dommages :",
             "If any, describe the damage to the aircraft, environment, or property.",
             "S'il y a lieu, décrivez les dommages à l'aéronef, à l'environnement ou aux biens."),
 
         Field(
-            "description", QuestionType.LongText, SensitivityTier.Restricted, null,
+            "description", QuestionType.LongText, isPrivate: false, null,
             "Description:", "Description :",
             "Give a precise description of the occurrence. What happened to the aircraft, what did you see, hear, or do? Include your *role* in the occurrence. Think *preflight*, *weather*, *distractions*, *emotions*. Include your thoughts about the *causes* for the incident or accident.",
             "Donnez une description précise de l'événement. Qu'est-il arrivé à l'aéronef, qu'avez-vous vu, entendu ou fait ? Précisez votre *rôle* dans l'événement. Pensez à la *prévol*, à la *météo*, aux *distractions*, aux *émotions*. Ajoutez vos réflexions sur les *causes* de l'incident ou de l'accident.",
             role: QuestionRole.Narrative),
 
         Field(
-            "action_and_prevention", QuestionType.LongText, SensitivityTier.Restricted, null,
+            "action_and_prevention", QuestionType.LongText, isPrivate: false, null,
             "Action and prevention:", "Mesures et prévention :",
             "Tell us what actions were taken after the occurrence. Include your thoughts for prevention.",
             "Dites-nous quelles mesures ont été prises après l'événement. Ajoutez vos réflexions sur la prévention."),
 
         Field(
-            "photo_or_video", QuestionType.FileUpload, SensitivityTier.Restricted, null,
+            "photo_or_video", QuestionType.FileUpload, isPrivate: true, null,
             "Photo or video:", "Photo ou vidéo :",
             "Upload one photo or video of the occurrence. Please contact us directly for multiple files (safety@hpac.ca).",
             "Téléversez une photo ou une vidéo de l'événement. Veuillez nous contacter directement pour plusieurs fichiers (safety@hpac.ca)."),
@@ -235,7 +235,7 @@ public static class QuestionBankSeed
             QuestionKey.ConsentPublish,
             QuestionType.YesNo,
             QuestionRole.ConsentPublish,
-            SensitivityTier.Internal,
+            IsPrivate: true,
             IsRequired: true,
             IsSystem: true,
             SectionKey: null,
@@ -266,17 +266,17 @@ public static class QuestionBankSeed
     ];
 
     private static SeededQuestion Statement(string key, string labelEn, string labelFr, string? helpEn, string? helpFr) =>
-        new(key, QuestionType.Statement, QuestionRole.None, SensitivityTier.Internal,
+        new(key, QuestionType.Statement, QuestionRole.None, IsPrivate: true,
             IsRequired: false, IsSystem: false, SectionKey: null, labelEn, labelFr, helpEn, helpFr, []);
 
     private static SeededQuestion Group(string key, string labelEn, string labelFr, string helpEn, string helpFr) =>
-        new(key, QuestionType.Group, QuestionRole.None, SensitivityTier.Internal,
+        new(key, QuestionType.Group, QuestionRole.None, IsPrivate: true,
             IsRequired: false, IsSystem: false, SectionKey: null, labelEn, labelFr, helpEn, helpFr, []);
 
     private static SeededQuestion Field(
         string key,
         QuestionType type,
-        SensitivityTier sensitivity,
+        bool isPrivate,
         string? sectionKey,
         string labelEn,
         string labelFr,
@@ -284,6 +284,6 @@ public static class QuestionBankSeed
         string? helpFr = null,
         QuestionRole role = QuestionRole.None,
         IReadOnlyList<SeededOption>? options = null) =>
-        new(key, type, role, sensitivity,
+        new(key, type, role, isPrivate,
             IsRequired: false, IsSystem: false, sectionKey, labelEn, labelFr, helpEn, helpFr, options ?? []);
 }

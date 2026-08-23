@@ -1,6 +1,6 @@
 ---
 name: test-hpac-safety
-description: Apply HPAC safety-report test conventions and privacy-focused test design. Use when adding, changing, or reviewing .NET tests, JavaScript tests, Playwright journeys, fixtures, adapter contract tests, redaction assertions, or coverage-sensitive code.
+description: Apply HPAC test conventions and privacy-focused test design. Use when adding, changing, or reviewing .NET, JavaScript, Playwright, adapter-contract, question-privacy, model-input, anonymization, or coverage-sensitive tests.
 ---
 
 # Test safety behaviour first
@@ -27,12 +27,20 @@ before changing the suite.
 - Never commit real report content as a fixture. Invent every name, phone
   number, email, member number, site, and aircraft brand; use RFC-reserved
   domains. A fixture remains in repository history and every clone.
-- Assert that redaction and metadata-removal fixtures contained the sensitive
-  input before asserting it is absent afterward. A redaction assertion must be
-  able to fail.
+- Test that a new question defaults private, privacy has no public mutation,
+  and a recorded answer snapshots the flag. Test the owned partitioner rather
+  than reconstructing its behaviour in a Worker test.
+- Assert that every private field lands only in `private_context` and every
+  eligible fact lands only in `report_content`. Add architecture tests proving
+  translation, PII-audit, and public ports cannot receive private context.
+- Use recorded provider responses or a controlled model test double for textual
+  anonymization; do not recreate model behaviour with a regex scrubber in the
+  test suite. Assert each synthetic private token exists in the request and is
+  absent from the candidate summary.
 - Assert the absence of each identifier or identifying token, not an exact
-  generated sentence. Exact wording is appropriate only for a human-decided
-  invariant such as the pinned English/French role words.
+  generated sentence. Also assert important non-private details survive so an
+  empty summary cannot pass. Exact wording is appropriate only for a
+  human-decided invariant such as English/French role words.
 - Generate binary fixtures at runtime. Commit only the smallest synthetic file
   for a format the runtime cannot encode, document its provenance beside it,
   and document how to regenerate it.

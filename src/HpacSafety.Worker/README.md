@@ -25,10 +25,10 @@ Splitting it means:
 ```mermaid
 flowchart LR
     db[("outbox_messages")] -->|"FOR UPDATE SKIP LOCKED"| w["Worker"]
-    w --> s1["scrub · no AI"]
-    s1 --> s2["summarize"]
+    w --> split["partition answers<br/>by immutable privacy"]
+    split --> s2["LLM summarize + anonymize<br/>report content + private context"]
     s2 --> s3["PII audit"]
-    s3 --> s4["translate"]
+    s3 --> s4["translate summary only"]
     s4 --> s5["PII audit"]
     s5 --> rev["PendingReview"]
     w --> mail["notification email"]
@@ -38,6 +38,10 @@ Claims work with `SELECT ... FOR UPDATE SKIP LOCKED`, so more than one instance
 can run without coordination. Failures back off exponentially and move aside
 after a poison threshold rather than retrying forever — a report that cannot be
 summarized lands in `SummaryFailed` in front of a human, never nowhere.
+
+Only the summarizer receives private context. The PII auditor sees candidate
+summary text, and the translator sees the anonymized source summary. Model
+payloads are never logged.
 
 ## Running locally
 

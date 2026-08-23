@@ -5,14 +5,14 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HpacSafety.Infrastructure.Persistence.Encryption;
 
 /// <summary>
-/// Encrypts a Restricted text column on the way out and decrypts it on the way
+/// Encrypts a report text column on the way out and decrypts it on the way
 /// back, so PostgreSQL never holds its plaintext.
 /// </summary>
 /// <remarks>
 /// A converter runs per value, not per row, so a column is either encrypted for
 /// every row or for none. That is why the whole of <c>report_answers.value</c>
-/// is encrypted rather than only the rows whose question is Restricted — see
-/// ADR-0019, and <c>docs/data-handling.md</c>: when in doubt, it is Restricted.
+/// is encrypted rather than only rows whose question is private — see ADR-0019
+/// and <c>docs/data-handling.md</c>. Privacy controls model input, not storage.
 /// <para>
 /// The cost is real and deliberate: an encrypted column cannot be searched,
 /// sorted, or indexed by value in the database. A null stays null — EF Core does

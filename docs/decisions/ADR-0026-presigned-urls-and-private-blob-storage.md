@@ -5,7 +5,7 @@
 
 ## Context
 
-`docs/data-handling.md` is unambiguous: uploaded media is **Restricted**,
+`docs/data-handling.md` is unambiguous: uploaded media is **private**,
 the bucket is **private**, and there are **no public object URLs, ever**. A
 reporter uploads one photo; a safety officer later needs to look at it. Those
 are the only two moments a blob is touched from outside the system.
@@ -13,7 +13,7 @@ are the only two moments a blob is touched from outside the system.
 The obvious shape — the browser POSTs the file to the API, the API stores it,
 and an admin route streams it back — is the wrong one twice over. It puts
 multi-megabyte bodies through the API and its request-size limits, and it makes
-the API a second door onto Restricted media with its own access-control story to
+the API a second door onto private media with its own access-control story to
 get wrong.
 
 ## Decision
@@ -62,7 +62,7 @@ everything belonging to one report is a single literal prefix:
 
 ```
 quarantine/<report id>/<file>   unverified. Expired by lifecycle rule.
-<report id>/original/<file>     the Restricted record.
+<report id>/original/<file>     the private source record.
 <report id>/stripped/<file>     the derivative a reviewer sees.
 ```
 
@@ -157,7 +157,7 @@ differently.
 
 `MediaUploadSlot` is the only thing that mints an upload URL, and it never names
 the compartment — it is always `Quarantine`. A caller cannot accidentally hand
-out a URL that writes straight into a report's Restricted record, because it has
+out a URL that writes straight into a report's private source record, because it has
 no way to ask for one.
 
 ### Nothing is promoted for a file that was refused, and "accepted" is not "viewable"
@@ -211,7 +211,7 @@ next contributor has not read this ADR.
 
 ### File names are minted, never carried
 
-A camera roll name is Restricted data in its own right: `mt-7-tandem-dave.jpg`
+A camera roll name is private data in its own right: `mt-7-tandem-dave.jpg`
 names a site and a person, which is exactly the small-community identifiability
 problem `docs/anonymization-policy.md` describes. A key reaches bucket access
 logs, CloudTrail, and every pre-signed URL. `MediaUploadSlot` mints a random
@@ -236,11 +236,11 @@ is *not*, and that is only cheap to enforce at the moment someone adds one.
 
 **Upload through the API.** Simple, and it puts video-sized bodies through the
 request pipeline, needs the limits raised, and doubles the number of places
-Restricted bytes exist in memory. It also gives the API a reason to hold the
+Private bytes exist in memory. It also gives the API a reason to hold the
 whole file, which is exactly what pre-signing avoids.
 
 **An admin route that streams the blob.** Convenient, and it is a second access
-path to Restricted media, permanently. Every authorization bug in it is a leak.
+path to private media, permanently. Every authorization bug in it is a leak.
 Pre-signed GETs put that logic in one place — whether to mint a URL at all.
 
 **A public bucket with unguessable keys.** Security by URL secrecy. URLs end up
@@ -295,7 +295,7 @@ that outlives the reason it was minted is a public object URL with extra steps.
   check above; even with a bucket-side bound, this application must not trust an
   unbounded read on any source, including `FileSystemBlobStore` in development,
   where no S3 policy applies at all.
-- An accepted upload is copied once, from quarantine to the Restricted record.
+- An accepted upload is copied once, from quarantine to the private source record.
   That is the price of deciding what bytes are before they land anywhere
   permanent, and it is worth paying.
 - A submitted-late report loses its media: the quarantine key stops resolving

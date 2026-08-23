@@ -1,16 +1,14 @@
 namespace HpacSafety.Core.SharedKernel;
 
 /// <summary>
-/// Encrypts and decrypts a single Restricted field on its way to and from
-/// storage. Contact details — reporter and pilot name, phone, email, member
-/// number — and the raw narrative are encrypted by the application, so the
-/// database never holds their plaintext and a database backup is not a copy of
-/// everyone's contact list.
+/// Encrypts and decrypts one report value on its way to and from storage. The
+/// entire answer-value column is encrypted regardless of question privacy, so
+/// the database never holds plaintext narrative or contact details.
 /// </summary>
 /// <remarks>
 /// <para>
-/// The port is declared here because <c>Core</c> owns the rule that Restricted
-/// data is encrypted at rest (see <c>docs/data-handling.md</c>). The algorithm,
+/// The port is declared here because <c>Core</c> owns the rule that report
+/// values are encrypted at rest (see <c>docs/data-handling.md</c>). The algorithm,
 /// the key, and the wiring into EF Core are infrastructure and live in
 /// <c>HpacSafety.Infrastructure</c>. See ADR-0019.
 /// </para>

@@ -33,7 +33,7 @@ public class ReportAnswer
         QuestionId = question.Id;
         QuestionVersionId = version.Id;
         QuestionKey = question.Key;
-        Sensitivity = question.Sensitivity;
+        IsPrivate = question.IsPrivate;
         AnsweredAt = at;
     }
 
@@ -53,11 +53,10 @@ public class ReportAnswer
     public string QuestionKey { get; private init; }
 
     /// <summary>
-    /// The tier this answer is handled at, copied from the question at answer
-    /// time. Reclassifying a question later must not silently downgrade the
-    /// handling of text a reporter already trusted us with.
+    /// Whether this answer is private redaction context, copied from the
+    /// immutable question contract when the answer is recorded.
     /// </summary>
-    public SensitivityTier Sensitivity { get; private init; }
+    public bool IsPrivate { get; private init; }
 
     /// <summary>Free-text value, for the text-shaped types. Null for select types.</summary>
     public string? Value { get; private set; }

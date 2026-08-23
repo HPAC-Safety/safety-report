@@ -16,7 +16,7 @@ namespace HpacSafety.Infrastructure.Persistence;
 
 /// <summary>
 /// The one database context. Owns the schema, the migrations, and the
-/// application-side encryption of Restricted columns.
+/// application-side encryption of report values.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -203,7 +203,6 @@ public class HpacSafetyDbContext : DbContext
         configurationBuilder.Properties<TimeOfDay>().HaveConversion<EnumCodeConverter<TimeOfDay>>().HaveMaxLength(64);
         configurationBuilder.Properties<InjurySeverity>().HaveConversion<EnumCodeConverter<InjurySeverity>>().HaveMaxLength(64);
         configurationBuilder.Properties<Discipline>().HaveConversion<EnumCodeConverter<Discipline>>().HaveMaxLength(64);
-        configurationBuilder.Properties<SensitivityTier>().HaveConversion<EnumCodeConverter<SensitivityTier>>().HaveMaxLength(64);
         configurationBuilder.Properties<QuestionType>().HaveConversion<EnumCodeConverter<QuestionType>>().HaveMaxLength(64);
         configurationBuilder.Properties<QuestionRole>().HaveConversion<EnumCodeConverter<QuestionRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AdminRole>().HaveConversion<EnumCodeConverter<AdminRole>>().HaveMaxLength(64);

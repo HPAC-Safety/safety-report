@@ -6,7 +6,7 @@ namespace HpacSafety.Core.Features.Reporting;
 /// The only sanctioned way to hand a safety officer a link to uploaded media.
 /// <para>
 /// <see cref="IBlobStore.CreateReadUrlAsync" /> will mint a URL for any key it is
-/// given — the quarantined upload and the Restricted original included. It is
+/// given — the quarantined upload and the private original included. It is
 /// generic storage and knows nothing about which bytes are safe to look at. This
 /// does: only <see cref="MediaCompartment.Stripped" /> is ever issued.
 /// </para>

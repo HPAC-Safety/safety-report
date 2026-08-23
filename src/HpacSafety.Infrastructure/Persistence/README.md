@@ -1,7 +1,7 @@
 # Persistence
 
 The database: the EF Core model, the migrations, the seeded question bank, and
-the application-side encryption of Restricted columns.
+application-side encryption of report answers.
 
 **Owns** the schema. Every table in this system is defined here, including
 `report_files`, whose blob storage lives elsewhere.
@@ -71,6 +71,9 @@ Three shapes worth knowing before reading the configurations:
   filtered to rows that are neither processed nor poisoned. Without the filter,
   the claim query reads the whole processed history for the rest of the system's
   life.
+- **A question's `is_private` flag is immutable after creation**, and each
+  answer snapshots it. The flag partitions model input; it does not decide
+  whether an answer is encrypted.
 
 ## Dates and times
 
@@ -112,8 +115,9 @@ exist; #18 calls it rather than re-deriving them. A reporter who gives no time
 (#68 makes it optional) is `TimeOfDay.Unknown`, which is a defined state and not
 a null anything reads as midnight.
 
-The precise time is Restricted and encrypted; the bucket is publishable and in
-the clear. See ADR-0019.
+The precise time is private and encrypted; the coarse bucket is stored in the
+clear and may enter report content when the question is non-private. See
+ADR-0019 and ADR-0038.
 
 ## Encryption
 
@@ -146,6 +150,9 @@ sign-in. See [ADR-0019](../../../docs/decisions/ADR-0019-application-side-field-
 A clean database asks exactly the question set in `docs/form-spec.md`, **in both
 languages** — a form that only works in English is not a working form here, see
 `skills/localize-hpac-app/SKILL.md`.
+
+Every seeded question also states `IsPrivate` explicitly. New runtime-created
+questions default private, and the classification cannot be updated later.
 
 The French wording is machine-translated and carries
 `is_machine_translated = true`: it renders, and nobody has reviewed it. That is a

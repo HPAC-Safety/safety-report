@@ -204,18 +204,15 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_a_question_reclassified_later_When_an_earlier_answer_is_read_Then_it_keeps_the_tier_it_was_given_under()
+    public void Given_a_private_question_When_it_is_answered_Then_the_answer_snapshots_the_private_classification()
     {
         // Given
         var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where?", Now);
         var report = new Report(Locale.EnCa, Now);
         var answer = report.Answer(question, "A launch site", Now);
 
-        // When
-        question.Reclassify(SensitivityTier.Publishable);
-
-        // Then — reclassifying must not downgrade handling of text a reporter already trusted us with
-        answer.Sensitivity.ShouldBe(SensitivityTier.Restricted);
+        // When / Then — the answer remains self-describing even though question privacy is immutable
+        answer.IsPrivate.ShouldBeTrue();
     }
 
     [Fact]

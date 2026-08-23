@@ -18,7 +18,7 @@ public class MediaUploadSlotTests
         var upload = await slot.CreateAsync(ReportId, MediaType.Jpeg, TimeSpan.FromMinutes(5), CancellationToken.None);
 
         // Then
-        // A URL that wrote straight into a report's Restricted record would put
+        // A URL that wrote straight into a report's private source record would put
         // unverified bytes where verified ones live. It never names the
         // compartment, so it cannot.
         upload.Key.Compartment.ShouldBe(MediaCompartment.Quarantine);
@@ -38,7 +38,7 @@ public class MediaUploadSlotTests
         var second = await slot.CreateAsync(ReportId, MediaType.Jpeg, TimeSpan.FromMinutes(5), CancellationToken.None);
 
         // Then
-        // A camera roll name is Restricted data in its own right —
+        // A camera roll name is private data in its own right —
         // "mt-7-tandem-dave.jpg" names a site and a person — and a key reaches
         // bucket access logs and every pre-signed URL. There is no parameter to
         // pass one through.

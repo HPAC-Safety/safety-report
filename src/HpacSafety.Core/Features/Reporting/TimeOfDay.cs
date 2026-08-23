@@ -47,7 +47,7 @@ public enum TimeOfDay
 /// <para>
 /// The reporter submits an actual date and time; the coarse bucket is derived,
 /// never asked for. Both the projection onto <see cref="Report"/> and the
-/// anonymization scrub in #18 call this, so "when does the afternoon start"
+/// report projection and summarization input preparation call this, so "when does the afternoon start"
 /// has exactly one answer in this system rather than one per caller.
 /// </para>
 /// <para>

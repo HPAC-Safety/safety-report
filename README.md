@@ -38,22 +38,27 @@ A pilot submits a report. The API stores it and, in the same transaction, writes
 an outbox row. A separate worker picks that up and runs the anonymization
 pipeline. The result waits for a safety officer.
 
-## The anonymization pipeline
+## The anonymization flow
 
 ```mermaid
 flowchart LR
-    raw["raw report"] --> s1["1 · deterministic scrub<br/>no AI"]
-    s1 --> s2["2 · summarize<br/>in the source language"]
-    s2 --> s3["3 · PII audit"]
-    s3 --> s4["4 · translate the summary"]
-    s4 --> s5["5 · PII audit the translation"]
-    s5 --> h["human review"]
+    answers["labeled report answers"] --> split{"question IsPrivate?"}
+    split -->|no| content["report_content<br/>eligible facts"]
+    split -->|yes| context["private_context<br/>redaction hints only"]
+    content --> model["LLM summarize + anonymize<br/>source language"]
+    context --> model
+    model --> audit["PII audit summary only"]
+    model --> translate["translate summary only"]
+    translate --> audit2["PII audit translation"]
+    audit --> h["human review"]
+    audit2 --> h
 ```
 
-Deterministic redaction runs **first**, before any model sees the text — never
-ask a language model to remove something a regular expression removes reliably.
-The audit stages read only the generated summary and flag findings for a
-reviewer; they never silently rewrite.
+Question privacy is chosen once, when an administrator creates a question, and
+cannot be changed later. The summarization LLM is the only textual anonymizer:
+it receives private fields in a separate context so it can recognize the same
+details inside a non-private narrative without treating them as summary facts.
+There is no regex scrub layer. Audit and translation receive summary text only.
 
 ## What this system will never publish
 
@@ -111,7 +116,7 @@ Skillfile          declarative skill management
 skills/ agents/    authored skills — sources for `skillfile install`
 HpacSafety.slnx    solution (.NET 10)
 src/               Core · Infrastructure · Api · Worker · web  (README in each)
-tests/             unit · integration · anonymization golden files · js · e2e
+tests/             unit · integration · privacy/model contracts · js · e2e
 prompts/           versioned runtime prompts sent to the model
 locales/           en-CA.json (source), fr-CA.json (generated)
 docs/              design, policy, ADRs

@@ -8,12 +8,12 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <para>
 /// Every upload lands in <see cref="MediaCompartment.Quarantine" /> and nowhere
 /// else. Minting the URL in one place is what makes that true: a caller cannot
-/// accidentally hand out a URL that writes straight into a report's Restricted
+/// accidentally hand out a URL that writes straight into a report's private
 /// record, because it never names the compartment. See ADR-0026.
 /// </para>
 /// <para>
 /// <b>The file name is minted here, never taken from the client.</b> A camera
-/// roll name is Restricted data in its own right — <c>mt-7-tandem-dave.jpg</c>
+/// roll name is private data in its own right — <c>mt-7-tandem-dave.jpg</c>
 /// names a site and a person — and a key ends up in bucket access logs, in
 /// CloudTrail, and in every pre-signed URL. The reporter's name for the file is
 /// of no use to this system, so it is not carried. See

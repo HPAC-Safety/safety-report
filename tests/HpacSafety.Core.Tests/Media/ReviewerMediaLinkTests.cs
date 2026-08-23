@@ -5,7 +5,7 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// "Original bytes stay in the Restricted record; the stripped derivative is
+/// "Original bytes stay in the private source record; the stripped derivative is
 /// what a reviewer sees" — docs/data-handling.md. Storage will sign a URL for any
 /// key, so the rule is enforced here, once, rather than remembered at every call
 /// site.

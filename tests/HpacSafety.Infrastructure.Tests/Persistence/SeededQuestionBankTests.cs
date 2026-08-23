@@ -55,6 +55,25 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
+    public async Task Given_a_clean_database_When_question_privacy_is_loaded_Then_it_matches_the_seed_contract()
+    {
+        // Given
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        await using var context = PostgresFixture.ContextFor(connectionString);
+
+        // When
+        var stored = await context.Questions.ToDictionaryAsync(question => question.Key);
+
+        // Then
+        foreach (var expected in QuestionBankSeed.Questions)
+        {
+            stored[expected.Key].IsPrivate.ShouldBe(
+                expected.IsPrivate,
+                $"the privacy classification of '{expected.Key}' must survive the legacy-schema migration");
+        }
+    }
+
+    [Fact]
     public async Task Given_a_clean_database_When_the_French_wording_is_read_Then_it_is_marked_as_machine_translated_and_unreviewed()
     {
         // Given
@@ -198,6 +217,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         await using var reader = PostgresFixture.ContextFor(connectionString);
         var answer = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id);
         answer.SelectedOptionCodes.ShouldBe(["p3", "paragliding_instructor"]);
+        answer.IsPrivate.ShouldBeTrue();
     }
 
     private static async Task<List<Question>> LoadedQuestionsAsync(HpacSafetyDbContext context) =>

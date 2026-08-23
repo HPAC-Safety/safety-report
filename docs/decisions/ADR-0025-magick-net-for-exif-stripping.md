@@ -62,7 +62,7 @@ or that it does not have one.
 | MP4, QuickTime | **none** | nothing here can strip a video's metadata yet — see issue #65 |
 
 A format with no stripped form is still **accepted and retained**: the original
-is the Restricted record either way, and refusing a reporter's video after a
+is the private source record either way, and refusing a reporter's video after a
 crash to satisfy a limitation of ours is the wrong trade. What it does not get is
 a derivative, and therefore a reviewer link — `MediaIngestStatus.AwaitingStripping`
 is an explicit state, and asking it for a derivative throws rather than falling
@@ -109,7 +109,7 @@ link still sees the whole of it.
 `Strip()` followed by a write re-encodes a JPEG. The derivative is therefore not
 bit-identical to the original and loses the ICC profile along with everything
 else. That is acceptable here for one reason: **the original bytes are retained
-untouched in the Restricted record**. The derivative exists so a safety officer
+untouched in the private source record**. The derivative exists so a safety officer
 can look at a photo without being handed a GPS fix; it is not the evidentiary
 copy. The adapter carries the source image's quality setting across the
 re-encode so the derivative is as close as stripping allows.

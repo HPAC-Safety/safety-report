@@ -89,18 +89,18 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_question_When_it_is_reclassified_Then_the_new_tier_applies_to_later_answers()
+    public void Given_a_non_private_question_When_it_is_answered_Then_the_answer_carries_that_classification()
     {
         // Given
-        var question = Question.Create("province", QuestionType.ShortText, Locale.EnCa, "Province", Now);
-        question.Reclassify(SensitivityTier.Publishable);
+        var question = Question.Create(
+            "province", QuestionType.ShortText, Locale.EnCa, "Province", Now, isPrivate: false);
         var report = new Report(Locale.EnCa, Now);
 
         // When
         var answer = report.Answer(question, "Alberta", Now);
 
         // Then
-        answer.Sensitivity.ShouldBe(SensitivityTier.Publishable);
+        answer.IsPrivate.ShouldBeFalse();
     }
 
     [Fact]

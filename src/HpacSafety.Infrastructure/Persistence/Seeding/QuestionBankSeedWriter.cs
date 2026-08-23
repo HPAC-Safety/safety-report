@@ -49,11 +49,24 @@ public static class QuestionBankSeedWriter
     }
 
     /// <summary>
+    /// Writes the seed against the sensitivity columns used by the original
+    /// schema. Only the original migration calls this; the following migration
+    /// replaces those columns with immutable privacy flags.
+    /// </summary>
+    public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
+    {
+        ArgumentNullException.ThrowIfNull(migrationBuilder);
+        migrationBuilder.Sql(Sql(legacySensitivitySchema: true));
+    }
+
+    /// <summary>
     /// The guarded SQL every row is written with. Exposed so a test can execute
     /// it a second time against an already-seeded database and prove that is a
     /// no-op, independent of the schema-creation half of the migration.
     /// </summary>
-    public static string Sql()
+    public static string Sql() => Sql(legacySensitivitySchema: false);
+
+    private static string Sql(bool legacySensitivitySchema)
     {
         var sql = new StringBuilder();
         var at = QuestionBankSeed.SeededAt;
@@ -64,13 +77,26 @@ public static class QuestionBankSeedWriter
             var questionId = SeedIds.For($"question:{question.Key}");
             var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
-            AppendGuardedInsert(
-                sql,
-                "questions",
-                ["id", "key", "is_system", "role", "sensitivity", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
-                [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(EnumCode.Of(question.Sensitivity)), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
-                guardColumn: "id",
-                guardValue: Id(questionId));
+            if (legacySensitivitySchema)
+            {
+                AppendGuardedInsert(
+                    sql,
+                    "questions",
+                    ["id", "key", "is_system", "role", "sensitivity", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
+                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                    guardColumn: "id",
+                    guardValue: Id(questionId));
+            }
+            else
+            {
+                AppendGuardedInsert(
+                    sql,
+                    "questions",
+                    ["id", "key", "is_system", "role", "is_private", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
+                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                    guardColumn: "id",
+                    guardValue: Id(questionId));
+            }
 
             AppendGuardedInsert(
                 sql,

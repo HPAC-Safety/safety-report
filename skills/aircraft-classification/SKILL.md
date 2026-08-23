@@ -33,12 +33,11 @@ it cannot be normalized to the vocabulary below, the outcome is "an aircraft" �
 a perfectly acceptable result that a reviewer can name by hand before
 publication.
 
-`HpacSafety.Core` does not do this normalization. `ReportAircraft` stores the
-reporter's certification answer verbatim, the same as every other answer on
-the form — no code in `Core` reads it, interprets it, or writes a derived class
-anywhere. The summarizer determines the class from that raw text at
-summarization time, under the instructions in `prompts/summarize.v1.md`,
-composed with the aircraft-identity rule in `prompts/redaction-rules.v1.md`.
+`HpacSafety.Core` does not do this normalization. The reporter's certification
+answer is non-private `report_content`; aircraft make and model are separate
+`private_context` fields. The summarizer determines the class only from the
+certification answer and selected aircraft type under `prompts/summarize.v3.md`,
+composed with `prompts/redaction-rules.v3.md`.
 See [ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
 
 ```mermaid
@@ -113,8 +112,9 @@ are prompt instructions rather than code, per ADR-0036:
 - **It reads two inputs only** — the reporter's verbatim certification answer
   and the aircraft type they chose. Not the make, not the model, not the
   narrative, not the pilot's rating. Manufacturer and model are told to the
-  model only so it can recognise and redact them if they leak into the
-  narrative — never as a source for the class.
+  summarizer as labeled private context only so it can recognise and remove
+  them if they appear in the narrative — never as a source for the class or any
+  other summary fact.
 - **It is meant to be total.** Every certification answer should resolve to a
   class or to "an aircraft" — never silence about the aircraft and never an
   invented class. The redaction rules and the PII audit stage are the backstop
@@ -152,7 +152,7 @@ are prompt instructions rather than code, per ADR-0036:
   jour"). A bare `a`/`b`/`c`/`d` only names an EN letter when it is the whole
   answer, or when a certification word (`en`, `high`, `low`) sits next to it —
   the same rule `docs/aircraft-classification.md` and
-  `prompts/summarize.v1.md` describe.
+  `prompts/summarize.v3.md` describe.
 
 Refusing and discarding are different things. An answer that names a value in
 this vocabulary is kept even when it is less precise than the form would like —
@@ -169,8 +169,9 @@ alongside them.
 
 ### If you are adding to the vocabulary
 
-Update `prompts/summarize.v1.md` and `docs/aircraft-classification.md` together,
-and add the answer shape to whatever golden-file suite covers the summarizer
+Add a new summarization prompt version and update
+`docs/aircraft-classification.md` together,
+and add the answer shape to the controlled model-contract suite for the summarizer
 (`tests/HpacSafety.Anonymization.Tests`, once #20 lands). Anything that cannot
 be written as "this exact answer means this exact class" is not a
 normalization — it is an inference, and the model must not attempt it either.
@@ -184,8 +185,8 @@ shape of the question.
 
 ## Related
 
-- `prompts/summarize.v1.md` — where the class is actually determined
-- `prompts/redaction-rules.v1.md` — the runtime redaction rules
+- `prompts/summarize.v3.md` — where the class is actually determined
+- `prompts/redaction-rules.v3.md` — the runtime redaction rules
 - `docs/aircraft-classification.md` — the policy
 - [ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md) — why this moved out of `Core`
 - `docs/form-spec.md` — the aircraft fields as the reporter sees them

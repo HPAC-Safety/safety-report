@@ -18,7 +18,7 @@ public enum MediaCompartment
     Quarantine = 0,
 
     /// <summary>
-    /// The Restricted record: <c>&lt;report id&gt;/original/&lt;file&gt;</c>.
+    /// The private source record: <c>&lt;report id&gt;/original/&lt;file&gt;</c>.
     /// Retained exactly as uploaded, never shown to anyone.
     /// </summary>
     Original = 1,

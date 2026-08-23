@@ -3,6 +3,9 @@ using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence.Seeding;
 
+using Microsoft.EntityFrameworkCore.Migrations;
+using Microsoft.EntityFrameworkCore.Migrations.Operations;
+
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Seeding;
@@ -226,7 +229,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_the_contact_questions_are_read_Then_every_one_is_Restricted()
+    public void Given_the_seeded_question_bank_When_private_identity_fields_are_read_Then_every_one_is_private()
     {
         // Given
         string[] contact =
@@ -239,22 +242,40 @@ public sealed class QuestionBankSeedTests
         foreach (var key in contact)
         {
             QuestionBankSeed.Questions.Single(q => q.Key == key)
-                .Sensitivity.ShouldBe(SensitivityTier.Restricted, $"the tier of '{key}'.");
+                .IsPrivate.ShouldBeTrue($"the privacy classification of '{key}'.");
         }
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_the_narrative_questions_are_read_Then_every_one_is_Restricted()
+    public void Given_the_seeded_question_bank_When_summary_content_fields_are_read_Then_every_one_is_non_private()
     {
         // Given
-        string[] narrative = ["injury_description", "damage", "description", "action_and_prevention", "photo_or_video"];
+        string[] reportContent =
+        [
+            "time_of_day", "in_canada", "province", "aircraft_type", "aircraft_certification",
+            "pilot_injury", "passenger_injury", "injury_description", "damage", "description",
+            "action_and_prevention",
+        ];
 
         // When / Then
-        foreach (var key in narrative)
+        foreach (var key in reportContent)
         {
             QuestionBankSeed.Questions.Single(q => q.Key == key)
-                .Sensitivity.ShouldBe(SensitivityTier.Restricted, $"the tier of '{key}'.");
+                .IsPrivate.ShouldBeFalse($"the privacy classification of '{key}'.");
         }
+    }
+
+    [Theory]
+    [InlineData("occurrence_date")]
+    [InlineData("pilot_ratings")]
+    [InlineData("location")]
+    [InlineData("aircraft_manufacturer")]
+    [InlineData("aircraft_model")]
+    [InlineData("photo_or_video")]
+    [InlineData(QuestionKey.ConsentPublish)]
+    public void Given_the_seeded_question_bank_When_a_redaction_context_field_is_read_Then_it_is_private(string key)
+    {
+        QuestionBankSeed.Questions.Single(question => question.Key == key).IsPrivate.ShouldBeTrue();
     }
 
     [Fact]
@@ -274,6 +295,21 @@ public sealed class QuestionBankSeedTests
                 question.Options.ShouldNotBeEmpty($"'{question.Key}' is a {question.Type}.");
             }
         }
+    }
+
+    [Fact]
+    public void Given_the_current_question_schema_When_the_seed_is_written_Then_it_uses_immutable_privacy_flags()
+    {
+        // Given
+        var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");
+
+        // When
+        QuestionBankSeedWriter.Write(migration);
+
+        // Then
+        var operation = migration.Operations.ShouldHaveSingleItem().ShouldBeOfType<SqlOperation>();
+        operation.Sql.ShouldContain("is_private");
+        operation.Sql.ShouldNotContain("sensitivity");
     }
 
     private static string EnumCodeOf(Enum value) =>

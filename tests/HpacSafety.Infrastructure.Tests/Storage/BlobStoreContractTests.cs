@@ -195,7 +195,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);
 
         // Then
-        // The Restricted record keeps everything, GPS included; it is the
+        // The private source record keeps everything, GPS included; it is the
         // derivative that is safe to look at. See docs/data-handling.md.
         outcome.OriginalKey.Value.ShouldBe("dQw4w9WgXcQ/original/photo.jpg");
         var retained = await ReadAllAsync(outcome.OriginalKey);

@@ -6,7 +6,7 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 /// One aircraft involved in an occurrence, recorded exactly as the reporter
-/// answered. Make and model are Internal — kept for HPAC's own trend analysis
+/// answered. Make and model are private context — kept for HPAC's trend analysis
 /// and never published. Nothing in <c>Core</c> classifies, normalizes, or
 /// otherwise mutates these values; the summarizer determines a publishable
 /// certification class from <see cref="CertificationAnswer"/> at
@@ -44,10 +44,10 @@ public class ReportAircraft
     /// <summary>What kind of aircraft it is.</summary>
     public Discipline Discipline { get; private set; }
 
-    /// <summary>Internal tier. Never published.</summary>
+    /// <summary>Private context. Never published.</summary>
     public string? Manufacturer { get; private set; }
 
-    /// <summary>Internal tier. Never published.</summary>
+    /// <summary>Private context. Never published.</summary>
     public string? Model { get; private set; }
 
     /// <summary>The reporter's certification answer, verbatim. Never mutated.</summary>

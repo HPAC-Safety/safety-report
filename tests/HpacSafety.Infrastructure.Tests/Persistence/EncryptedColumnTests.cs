@@ -12,7 +12,7 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Contact details are Restricted: encrypted at rest, and unreadable without
+/// Contact details are private: encrypted at rest, and unreadable without
 /// the key. See <c>docs/data-handling.md</c> and ADR-0019.
 /// </summary>
 [Trait("Category", "Integration")]

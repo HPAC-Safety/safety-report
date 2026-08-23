@@ -25,11 +25,10 @@ flowchart TD
     subgraph structural["Structural"]
         a["Adapter<br/>Anthropic SDK → ISummarizer"]
         d["Decorator<br/>retry · logging · caching"]
-        fa["Facade<br/>AnonymizationPipeline"]
+        fa["Facade<br/>Worker summarization workflow"]
     end
     subgraph behavioural["Behavioural"]
         s["Strategy<br/>ITranslator: CI vs runtime"]
-        c["Chain of Responsibility<br/>the five scrub stages"]
         t["Template Method<br/>outbox consumer loop"]
         o["Observer<br/>outbox → handlers"]
         st["State<br/>report lifecycle"]
@@ -75,8 +74,10 @@ A logging decorator in this system has a hard constraint: **it logs that a call
 happened and how long it took. It never logs the payload.** Report text contains
 names and injuries, and a decorator is exactly where that leaks by accident.
 
-**Facade** — `AnonymizationPipeline` is one call to the Worker and five stages
-underneath. The facade is what lets the Worker stay a scheduling concern.
+**Facade** — a summarization workflow may present one operation to the Worker
+while coordinating input partitioning, the model call, summary-only PII audit,
+translation, and persistence. Keep the privacy boundary visible in its
+parameters: `SummarizationInput` is stronger than a raw string.
 
 **Proxy** — the `members.hpac.ca` credential proxy is literally this: a stand-in
 that speaks the same interface as the eventual OIDC implementation. See
@@ -89,13 +90,11 @@ run*: the CI job uses GitHub Models with the runner's token, the Worker uses the
 Anthropic client it already holds. One interface, two registrations, no shared
 code. This is the textbook case and it earns its keep.
 
-**Chain of Responsibility** — the five anonymization stages. Each stage takes
-the previous stage's output and either passes it on or records a finding.
-Composing them as a list means adding a stage is adding a registration, and the
-pipeline test can run any prefix.
-
-The important variant here: **a stage may flag but must not silently rewrite.**
-A chain whose links can quietly mutate is a chain nobody can audit.
+**Chain of Responsibility** — not the text-anonymization design. Do not build a
+chain of scrubbers, regex passes, or replacement stages around model input. The
+owned `SummarizationInput.Partition` operation performs one non-optional split;
+the LLM performs textual anonymization; the PII auditor evaluates the candidate
+summary without receiving the report or private context.
 
 **Template Method** — the outbox consumer: claim, dispatch, mark processed,
 back off, count attempts. That loop is identical for every message type; only
@@ -115,7 +114,9 @@ start owning real logic. What matters either way is that the transition function
 is in **one** place, because "which transitions are legal" is a safety question.
 
 **Specification** — publishability. `IsPublishable` is not one boolean; it is
-consent AND approval AND both PII audits clean AND both languages present.
+consent AND approval AND both language summaries present. PII-audit findings
+route work to human review; they never turn a report into automatically
+publishable text.
 Naming that composition as a specification keeps it out of the UI, out of the
 API, and out of the publication channel, where three copies would drift.
 
@@ -133,7 +134,7 @@ API, and out of the publication channel, where three copies would drift.
 
 Use the pattern's own noun as a suffix when the type *is* the pattern:
 `RetryingSummarizer` (decorator), `SummaryStrategy`, `ReportBuilder`,
-`AnonymizationPipeline` (facade). A reviewer should not have to read the body to
+`SummarizationWorkflow` (facade). A reviewer should not have to read the body to
 learn the shape.
 
 Do **not** suffix a type with a pattern it merely resembles. `ReportManager`,

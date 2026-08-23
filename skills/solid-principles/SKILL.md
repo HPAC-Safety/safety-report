@@ -6,9 +6,9 @@ description: SOLID design principles as applied in HPAC safety-report — how to
 # SOLID
 
 Every principle here is a lever for the same goal: **a change should touch one
-place.** In this codebase that goal has teeth, because the thing most likely to
-change under pressure is the anonymization pipeline, and a redaction rule that
-lives in three places is a redaction rule that will be fixed in two.
+place.** In this codebase that goal has teeth because question privacy,
+model-input partitioning, and runtime prompt policy must not acquire competing
+implementations.
 
 Apply these as reasoning, not as ceremony. An interface with one implementation
 that will never have a second is not Dependency Inversion; it is an extra file.
@@ -19,17 +19,17 @@ that will never have a second is not Dependency Inversion; it is an extra file.
 that is unfalsifiable — it is "who asks for a change to this file, and is it
 always the same person?"
 
-A safety officer changing the redaction vocabulary and an ops engineer changing
-the retry policy must not touch the same class.
+A safety officer changing model instructions and an ops engineer changing the
+retry policy must not touch the same class.
 
 ```mermaid
 flowchart TD
     subgraph bad["One class, three reasons to change"]
-        b["ReportProcessor<br/>scrub · summarize · retry · email"]
+        b["ReportProcessor<br/>partition · summarize · retry · email"]
     end
     subgraph good["Four, each with one owner"]
-        s["DeterministicScrubber<br/>safety policy"]
-        z["ClaudeSummarizer<br/>model + prompt"]
+        s["SummarizationInput<br/>privacy partition"]
+        z["ClaudeSummarizer<br/>model + versioned prompt"]
         r["OutboxClaimPolicy<br/>reliability"]
         e["ReportNotifier<br/>notification rules"]
     end
@@ -37,20 +37,21 @@ flowchart TD
 ```
 
 The observable symptom is a test file that needs a database, an HTTP stub, and
-a fixture prompt to assert one regex. When a unit test needs three collaborators
-to reach one behaviour, the class has three responsibilities.
+a fixture prompt to assert one partition. When a unit test needs three
+collaborators to reach one behaviour, the class has three responsibilities.
 
 ## Open/Closed
 
-**Extend by adding a type, not by adding a `case`.** The pipeline stages, the
-publication channels, and the blob stores are all places where a new variant
+**Extend by adding a type, not by adding a `case`.** The provider adapters,
+publication channels, and blob stores are all places where a new variant
 arrives later. Each of those is an interface plus a registration, so adding one
 is a new file and a line of DI wiring — never an edit to a `switch` that every
 existing variant also flows through.
 
 The counter-case matters as much: **the invariants in `AGENTS.md` are closed.**
-There must be no extension point that lets a caller opt out of the PII audit or
-out of human review. Open/Closed is about variation, not about escape hatches.
+There must be no extension point that lets a caller mix private fields into
+`report_content`, send private context to a translator/auditor, or opt out of
+human review. Open/Closed is about variation, not escape hatches.
 
 ## Liskov Substitution
 
@@ -95,8 +96,10 @@ audit consequences, and different rates of change.
 **`HpacSafety.Core` depends on nothing.** It declares the interfaces;
 `HpacSafety.Infrastructure` implements them against EF Core, HTTP, the Anthropic
 SDK, and AWS. This is the one structural rule in the solution and it is not
-negotiable, because it is what keeps the anonymization logic testable without a
-database and without a network.
+negotiable, because it keeps the privacy partition and domain contracts
+testable without a database or network. Textual anonymization belongs to the
+model adapter and versioned prompts, not to a duplicate deterministic Core
+implementation.
 
 ```mermaid
 flowchart RL

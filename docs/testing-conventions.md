@@ -70,11 +70,11 @@ describe('Given a browser advertising fr-CA', () => {
 
 | Project | Scope |
 |---|---|
-| `HpacSafety.Core.Tests` | Pure unit. No database, no network. The deterministic scrub lives here. |
+| `HpacSafety.Core.Tests` | Pure unit. No database or network. Question privacy and answer snapshots live here. |
 | `HpacSafety.Api.Tests` | `WebApplicationFactory` + Testcontainers Postgres |
 | `HpacSafety.Infrastructure.Tests` | Migrations, mapping, field encryption, the seeded question bank, and blob storage adapters (MinIO and the filesystem, EXIF stripping, content sniffing). Testcontainers Postgres |
 | `HpacSafety.Worker.Tests` | Outbox claiming, retry, poison handling; recorded model fixtures |
-| `HpacSafety.Anonymization.Tests` | Golden-file PII suite |
+| `HpacSafety.Anonymization.Tests` | Model-input partition and recorded anonymization safety properties |
 | `tests/js` | `node --test` for i18n, api-client, form logic |
 | `tests/e2e` | Playwright, both locales |
 
@@ -195,9 +195,11 @@ ratchet skips with a notice and the floor still applies. See
 Coverage is a floor, not a goal. This repository could sit at 95% and still
 publish someone's phone number.
 
-`HpacSafety.Anonymization.Tests` is what protects a reporter. The pull request
-template asks what behaviour a new test pins down, not whether the number went
-up.
+`HpacSafety.Anonymization.Tests` protects the model boundary: immutable privacy,
+correct partitioning, private-context isolation, and controlled output cases
+that remove synthetic identifiers without deleting the safety lesson. The pull
+request template asks what behaviour a new test pins down, not whether the
+number went up.
 
 ## Related
 

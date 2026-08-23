@@ -11,26 +11,17 @@ Worker.
 SDK, no configuration. If a dependency arrow would point out of `Core`, the
 abstraction belongs here and the implementation belongs in `Infrastructure`.
 
-That constraint exists for one reason: **the deterministic PII scrub lives
-here**, and it must be provable in a plain unit test with no database, no
-network, and no model. It is the first line of defence in the anonymization
-pipeline and the only stage that is fully deterministic.
-
-It is not an aspiration:
-[`CoreDependencyTests`](../../tests/HpacSafety.Anonymization.Tests/CoreDependencyTests.cs)
-fails the day this project grows a reference — it checks both the project file
-and the assembly Core actually compiled against.
+That constraint keeps domain invariants — including immutable question privacy
+and the owned `SummarizationInput` partition — provable in plain unit tests with
+no database, network, or model. Textual anonymization itself belongs to the
+configured model adapter and versioned runtime prompts.
 
 **"Zero package references" is shorthand, and it is not literally true.**
 `Directory.Build.props` injects `Roslynator.Analyzers` into every project here,
 so `dotnet list package` reports it for Core as well. It is analyzer-only with
 `PrivateAssets=all` and contributes nothing to the compiled output. The precise
-claim, and the one the test proves, is **zero runtime dependencies**: Core
+claim, and the one the build preserves, is **zero runtime dependencies**: Core
 compiles against nothing but the framework.
-`Features/Anonymization/` has its own
-[README](Features/Anonymization/README.md) — read it before changing anything
-in there.
-
 That same rule is why `ReportAircraft` does **not** classify the reporter's
 certification answer. Every answer on the form, aircraft certification
 included, is stored here exactly as submitted and nothing in `Core`
@@ -48,9 +39,6 @@ entities, its enums, and the ports it calls out through — see
 
 ```
 Features/
-  Anonymization/  DeterministicScrub, ScrubRequest, ScrubField, ScrubFieldKind,
-                  ScrubbedReport, ScrubVocabulary, ScrubMarker,
-                  Stages/ (internal — the chain of responsibility)
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
                   ReportStatus, InjurySeverity, Discipline, PilotRating,
                   TimeOfDay, Province,
@@ -58,7 +46,7 @@ Features/
                   MediaRejectionReason, MediaRejection, MediaKind,
                   MediaIngestor, MediaIngestOutcome, MediaIngestStatus,
                   MediaUploadSlot, ReviewerMediaLink,
-                  ISummarizer, IPiiAuditor, IPublicationChannel,
+                  SummarizationInput, ISummarizer, IPiiAuditor, IPublicationChannel,
                   IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
@@ -66,7 +54,7 @@ Features/
   Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                   IMemberAuthenticator
   Outbox/         OutboxMessage
-SharedKernel/     TinyId, Locale, EnumCode, SensitivityTier,
+SharedKernel/     TinyId, Locale, EnumCode,
                   BlobKey, MediaCompartment, BlobUrlLifetime,
                   DomainRuleViolationException, FieldDecryptionException,
                   ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier,
@@ -90,10 +78,9 @@ deliberately does not let a report be pinned to a moment. It is in the shared
 kernel because every feature has rows, and because #16 builds a blob key out of
 one. See [ADR-0034](../../docs/decisions/ADR-0034-tiny-ids.md).
 
-`IFieldCipher` is in the shared kernel rather than with a feature because the
-rule it carries belongs to the whole system: Restricted data is encrypted at
-rest (`docs/data-handling.md`). The algorithm, the key, and the wiring into EF
-Core are infrastructure. See
+`IFieldCipher` is in the shared kernel rather than with a feature because every
+report answer is encrypted at rest (`docs/data-handling.md`). The algorithm,
+key, and EF Core wiring are infrastructure. See
 [ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md).
 
 ## One concession to persistence
@@ -118,9 +105,15 @@ because logic reads them rather than only displaying them. Which answer projects
 where comes from `QuestionRole`, and every role is optional except publication
 consent. See [ADR-0016](../../docs/decisions/ADR-0016-data-driven-question-bank.md).
 
+Every question also has immutable `IsPrivate`, defaulting to true. An answer
+copies that value when it is recorded. `SummarizationInput.Partition` turns
+non-private answers into report content and private answers into model-only
+redaction context. Reclassification requires a new question identity. See
+[ADR-0038](../../docs/decisions/ADR-0038-question-privacy-and-llm-anonymization.md).
+
 ## Uploaded media
 
-`MediaIngestor` is in `Core` for the same reason the scrub is: the order it runs
+`MediaIngestor` is in `Core` because the order it runs
 in — sniff, validate, *then* promote out of quarantine — is what makes "a
 reviewer only ever sees stripped bytes" true, and it is provable in a plain unit
 test with no bucket and no imaging library. `IMediaSniffer` and `IExifStripper`
@@ -139,7 +132,7 @@ Three types carry rules that would otherwise be call-site discipline:
   only for `MediaCompartment.Stripped`.
 
 `MediaIngestStatus` has three states, not two. A video is *accepted* — the
-original is the Restricted record like any other upload — but nothing can strip
+original is the private source record like any other upload — but nothing can strip
 it yet, so there is no derivative and nothing viewable. Asking for one throws
 rather than falling through to the unstripped original. See #65. See
 [ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
@@ -157,7 +150,7 @@ Two rules this project enforces and nothing downstream may relax:
 The reporter gives a real date and a real clock time, and the coarse
 `TimeOfDay` bucket is **derived** from the time by
 `TimeOfDay.FromLocalTime(TimeOnly)` — the one place the boundaries are written
-down, called by both the projection here and the scrub in #18. A time that was
+down. A time that was
 never given is `TimeOfDay.Unknown`, a defined state rather than a midnight
 nobody meant. See
 [ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)
@@ -167,9 +160,8 @@ and #68.
 
 `tests/HpacSafety.Core.Tests` — pure unit tests.
 
-The golden-file redaction suite lives separately in
-`tests/HpacSafety.Anonymization.Tests`, because it is the suite people should
-look at first when reviewing anything privacy-related.
+Privacy partition and controlled model-contract tests live separately in
+`tests/HpacSafety.Anonymization.Tests`.
 
 ## Related
 

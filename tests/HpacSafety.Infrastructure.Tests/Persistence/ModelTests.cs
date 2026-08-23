@@ -73,6 +73,7 @@ public sealed class ModelTests
         columns.ShouldContain("question_version_id");
         columns.ShouldContain("selected_option_codes");
         columns.ShouldContain("answered_at");
+        columns.ShouldContain("is_private");
     }
 
     [Fact]

@@ -10,7 +10,7 @@ namespace HpacSafety.Infrastructure.Persistence.Encryption;
 
 /// <summary>
 /// AES-256-GCM applied in the application, so PostgreSQL only ever holds
-/// ciphertext for a Restricted field. See ADR-0019.
+/// ciphertext for a report value. See ADR-0019.
 /// </summary>
 /// <remarks>
 /// <para>

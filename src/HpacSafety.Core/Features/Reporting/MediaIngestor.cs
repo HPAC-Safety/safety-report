@@ -16,7 +16,7 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </para>
 /// <para>
 /// A format this system cannot strip is still promoted, because the original is
-/// the Restricted record regardless, but it produces no derivative and the
+/// the private source record regardless, but it produces no derivative and the
 /// outcome says so. It fails closed: there is nothing for a reviewer to open,
 /// rather than a fall-through to the unstripped original.
 /// </para>
@@ -62,7 +62,7 @@ public sealed class MediaIngestor
 
     /// <summary>
     /// Reads the quarantined upload, judges it, and on acceptance promotes it to
-    /// the Restricted record — writing a stripped derivative alongside when the
+    /// the private source record — writing a stripped derivative alongside when the
     /// format allows one.
     /// </summary>
     public async Task<MediaIngestOutcome> IngestAsync(

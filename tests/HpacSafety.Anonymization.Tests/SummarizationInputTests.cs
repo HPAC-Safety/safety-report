@@ -50,6 +50,45 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
+    public void Given_a_null_field_collection_When_the_model_input_is_built_Then_it_is_rejected()
+    {
+        // Given
+        IEnumerable<ClassifiedReportField> fields = null!;
+
+        // When
+        var act = () => SummarizationInput.Partition(fields);
+
+        // Then
+        act.ShouldThrow<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Given_a_null_classified_field_When_the_model_input_is_built_Then_it_is_rejected()
+    {
+        // Given
+        ClassifiedReportField[] fields = [null!];
+
+        // When
+        var act = () => SummarizationInput.Partition(fields);
+
+        // Then
+        act.ShouldThrow<ArgumentNullException>();
+    }
+
+    [Fact]
+    public void Given_a_classification_without_a_field_When_the_model_input_is_built_Then_it_is_rejected()
+    {
+        // Given
+        ClassifiedReportField[] fields = [new(null!, IsPrivate: true)];
+
+        // When
+        var act = () => SummarizationInput.Partition(fields);
+
+        // Then
+        act.ShouldThrow<ArgumentNullException>();
+    }
+
+    [Fact]
     public void Given_the_model_ports_When_their_parameters_are_inspected_Then_only_the_summarizer_accepts_report_input()
     {
         // Given / When

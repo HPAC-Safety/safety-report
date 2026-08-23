@@ -34,6 +34,7 @@ locales/
   fr-CA.json       # GENERATED — never hand-edit
   glossary.json    # pinned terms, never machine-translated
   fr-CA.meta.json  # per-key translation provenance
+  .fr-CA.pending   # one-time marker, removed by the initial generated-locale PR
 ```
 
 One shared set, consumed by **both** the web apps and the API. The .NET side
@@ -100,6 +101,13 @@ flowchart TD
 `.github/workflows/i18n-translate.yml` runs it, on a push to `main` and on
 manual dispatch. `tools/translate-locale.mjs` is the tool; `tools/translator.mjs`
 is the provider adapter.
+
+The first generation is an explicit bootstrap state. While
+`locales/.fr-CA.pending` exists and both generated files are absent, `--check`
+emits a notice so the workflow itself can merge. The first successful
+`--generate` removes the marker in the same pull request that adds
+`fr-CA.json` and `fr-CA.meta.json`. Never recreate it: after removal, a missing
+generated pair is a deletion and fails verification.
 
 **Provider: DeepL**, targeting `FR-CA`. ADR-0007 chose GitHub Models on the free
 tier; **GitHub Models was fully retired on 30 July 2026** — playground, model
@@ -258,6 +266,20 @@ ADR-0022.)
 
 Dates (`fr-CA` uses `AAAA-MM-JJ`), the province list, and a 24-hour clock all
 follow the resolved locale.
+
+
+## Upload rejections
+
+A refused upload is reported as a **code**, not a sentence:
+`MediaRejectionReason` in the domain, mapped by
+`MediaRejection.LocalizationKeyFor` to a key under `upload.rejected.` in
+`locales/en-CA.json`. No rejection wording exists in `HpacSafety.Core` or
+`HpacSafety.Infrastructure`.
+
+A test asserts that **every reason has an English key**, so a new reason cannot
+reach a reporter as a raw key name. `tools/check-locales.mjs` then checks that
+every English key has a counterpart in each locale file that exists;
+`fr-CA.json` is generated in CI and never hand-edited.
 
 ## Related
 

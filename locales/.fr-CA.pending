@@ -1,0 +1,6 @@
+The initial generated French locale has not landed yet.
+
+`i18n-translate.yml` removes this marker in the same pull request that adds
+`fr-CA.json` and `fr-CA.meta.json`. While it exists, pull-request verification
+may report the missing pair as pending. Once removed, a missing generated file
+is an error and this marker must never be recreated.

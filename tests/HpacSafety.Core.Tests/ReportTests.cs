@@ -82,7 +82,7 @@ public class ReportTests
         // Given
         var report = new Report(Locale.EnCa, Now);
         report.Answer(ConsentQuestion(), ["yes"], Now);
-        var officer = Guid.NewGuid();
+        var officer = TinyId.New();
 
         var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
@@ -108,7 +108,7 @@ public class ReportTests
 
         var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        english.Approve(Guid.NewGuid(), Now);
+        english.Approve(TinyId.New(), Now);
         report.AddSummary(english);
         report.AddSummary(french);
         report.Approve();

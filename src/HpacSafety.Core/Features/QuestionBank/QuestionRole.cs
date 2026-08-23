@@ -51,4 +51,6 @@ public enum QuestionRole
 
     /// <summary>The reporter's own account. Restricted, and never translated.</summary>
     Narrative = 8,
+
+    OccurrenceTime = 9,
 }

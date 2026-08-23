@@ -36,7 +36,7 @@ write the summary manually.
 | `question_option_translations` | The same, for choices. |
 | `report_answers` | One answer to one **version** of a question. |
 | `reports` | The submission. Contact fields encrypted, admin-read only. `consent_publish` gates publication. **`language`** records the locale the reporter actually wrote in — see below. |
-| `report_aircraft` | One row per aircraft involved; make/model private, class/band published. |
+| `report_aircraft` | One row per aircraft involved; make, model, and the certification answer remain private. The summarizer publishes a class from that verbatim answer. |
 | `report_files` | Blob keys for uploads, plus `exif_stripped_at`. |
 | `summaries` | One row **per language**. `is_source` marks the one generated from the report; the other carries `translated_from_summary_id`. |
 | `outbox_messages` | Work to be done, written in the same transaction as the report. |

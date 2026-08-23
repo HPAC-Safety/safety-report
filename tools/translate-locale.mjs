@@ -50,7 +50,7 @@
  */
 
 import { createHash } from 'node:crypto'
-import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 import { TranslatorNotConfiguredError, configFromEnv, createTranslator } from './translator.mjs'
@@ -341,6 +341,7 @@ async function main() {
 	const frenchPath = join(dir, `${TARGET_LOCALE}.json`)
 	const metaPath = join(dir, `${TARGET_LOCALE}.meta.json`)
 	const glossaryPath = join(dir, 'glossary.json')
+	const initialGenerationPath = join(dir, '.fr-CA.pending')
 
 	if (!existsSync(englishPath)) {
 		// #8 adds the locale files. Until it lands there is nothing to translate
@@ -352,6 +353,13 @@ async function main() {
 	}
 
 	const english = readJson(englishPath, {})
+
+	if (check && existsSync(initialGenerationPath) && !existsSync(frenchPath) && !existsSync(metaPath)) {
+		console.log('::notice::The initial French generation is pending. Merge the translation workflow and let it open the generated-locale pull request.')
+		setOutput({ changed: 'false', keys: '0' })
+		return
+	}
+
 	const french = readJson(frenchPath, {})
 	const meta = readJson(metaPath, {})
 	const glossary = readJson(glossaryPath, {})
@@ -424,6 +432,7 @@ async function main() {
 
 	writeJson(frenchPath, result.french)
 	writeJson(metaPath, result.meta)
+	if (existsSync(initialGenerationPath)) unlinkSync(initialGenerationPath)
 
 	const summary =
 		`${plan.translate.length} translated, ${plan.pin.length} pinned, ${plan.remove.length} removed`

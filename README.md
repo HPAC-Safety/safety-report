@@ -97,7 +97,7 @@ Details in [`docs/localization.md`](docs/localization.md).
 | Hosting | AWS `ca-central-1` — ECS Fargate, RDS, S3 + CloudFront, SES |
 | Deploys | GitHub Actions via OIDC role assumption; no stored AWS keys |
 | Infrastructure | Terraform in `infra/`, planned on PRs and applied on merge |
-| CI | GitHub Actions — `build`, `test`, `coverage`, `web`, `e2e`, `agent-config`, `i18n`, `linked-issue`, all required |
+| CI | GitHub Actions — `build`, `test`, `coverage`, `web`, `e2e`, `agent-config`, `i18n`, `infra`, `linked-issue`, all required |
 
 Storage and email still sit behind `IBlobStore` and `IEmailSender`, so local
 development runs on the filesystem and a logging mailer without touching AWS.
@@ -115,6 +115,7 @@ tests/             unit · integration · anonymization golden files · js · e2
 prompts/           versioned runtime prompts sent to the model
 locales/           en-CA.json (source), fr-CA.json (generated)
 docs/              design, policy, ADRs
+infra/             the AWS environment as Terraform, plus the one-time bootstrap
 tools/             generators and build scripts
 ```
 
@@ -274,10 +275,11 @@ devcontainer: [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-developmen
 ## Built by agents
 
 This project is built primarily by AI agents, and the configuration is
-deliberately tool-agnostic: `AGENTS.md` is the only real instruction file, and
-`CLAUDE.md`, `.github/copilot-instructions.md`, and `.cursor/rules/agents.mdc`
-are symlinks to it. Skills are pinned in `Skillfile.lock` so every contributor
-and every tool gets the same setup.
+deliberately tool-agnostic: `AGENTS.md` is the only always-loaded instruction
+file, and `CLAUDE.md`, `.github/copilot-instructions.md`, and
+`.cursor/rules/agents.mdc` are symlinks to it. It keeps the safety contract in
+view and routes task-specific detail to skills. Skills are pinned in
+`Skillfile.lock` so every contributor and every tool gets the same setup.
 
 ## Documentation
 
@@ -295,6 +297,7 @@ and every tool gets the same setup.
 | Strings and translation | [`docs/localization.md`](docs/localization.md) |
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |
 | Deployment and secrets | [`docs/deployment.md`](docs/deployment.md) |
+| What is in the AWS account | [`infra/README.md`](infra/README.md) |
 | CI and deploy workflows | [`.github/workflows/README.md`](.github/workflows/README.md) |
 | Why things are the way they are | [`docs/decisions/`](docs/decisions/) |
 

@@ -69,6 +69,18 @@ a fork cannot make this repository spend an inference call, and cannot write a
 generated locale file, because the code path that would do either is not in the
 mode that fork-authored pull requests run.
 
+### The initial generated pair has an explicit bootstrap marker
+
+Issue #8 landed `en-CA.json` before this workflow could generate its French
+counterpart. `locales/.fr-CA.pending` records that one-time state. While the
+marker exists and both generated files are absent, `--check` reports a notice;
+the first successful generation removes the marker in the same pull request
+that adds `fr-CA.json` and `fr-CA.meta.json`.
+
+After that pull request merges, the marker is gone permanently. A later pull
+request that deletes both generated files therefore fails rather than making
+their absence look like first-run setup.
+
 ### The offline stub cannot reach `main`
 
 The test suite needs a translator that makes no network call, so
@@ -148,3 +160,6 @@ French; only HPAC may say when that wording changes.
 - Until `locales/en-CA.json` exists (#8), both modes emit a `::notice::` and
   exit 0 rather than failing every pull request over a file this issue does not
   own.
+- While the tracked `.fr-CA.pending` marker exists, verification also permits
+  the one initial state where English exists but neither generated file does.
+  The generation pull request removes the marker; it must never be recreated.

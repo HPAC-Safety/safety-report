@@ -16,6 +16,15 @@ here**, and it must be provable in a plain unit test with no database, no
 network, and no model. It is the first line of defence in the anonymization
 pipeline and the only stage that is fully deterministic.
 
+That same rule is why `ReportAircraft` does **not** classify the reporter's
+certification answer. Every answer on the form, aircraft certification
+included, is stored here exactly as submitted and nothing in `Core`
+normalizes, infers, or otherwise derives a second value from it. Turning a raw
+certification answer into a publishable class is the summarizer's job, done at
+summarization time under a versioned prompt in `prompts/`, not a `Core`
+concern. See
+[ADR-0036](../../docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md).
+
 ## Layout
 
 Organised by **feature**, not by language construct. Each feature owns its
@@ -25,19 +34,25 @@ entities, its enums, and the ports it calls out through — see
 ```
 Features/
   Reporting/      Report, ReportAnswer, ReportAircraft, ReportFile, Summary,
-                  ReportStatus, InjurySeverity, AircraftClass, Discipline,
-                  PilotRating, TimeOfDay, Province,
-                  ISummarizer, IPiiAuditor, IAircraftClassifier,
-                  IPublicationChannel
+                  ReportStatus, InjurySeverity, Discipline, PilotRating,
+                  TimeOfDay, Province,
+                  MediaType, MediaPolicy, MediaValidation,
+                  MediaRejectionReason, MediaRejection, MediaKind,
+                  MediaIngestor, MediaIngestOutcome, MediaIngestStatus,
+                  MediaUploadSlot, ReviewerMediaLink,
+                  ISummarizer, IPiiAuditor, IPublicationChannel,
+                  IMediaSniffer, IExifStripper
   QuestionBank/   Question, QuestionVersion, QuestionOption,
                   QuestionTranslation, QuestionOptionTranslation,
                   QuestionRole, QuestionKey, QuestionType
   Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
                   IMemberAuthenticator
   Outbox/         OutboxMessage
-SharedKernel/     Locale, EnumCode, SensitivityTier,
-                  DomainRuleViolationException,
-                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier
+SharedKernel/     TinyId, Locale, EnumCode, SensitivityTier,
+                  BlobKey, MediaCompartment, BlobUrlLifetime,
+                  DomainRuleViolationException, FieldDecryptionException,
+                  ITranslator, IBlobStore, IEmailSender, ITurnstileVerifier,
+                  IFieldCipher
 ```
 
 Namespaces match the folders exactly: `HpacSafety.Core.Features.Reporting`,
@@ -51,6 +66,28 @@ shares, and it is deliberately small — two callers is the bar for adding to it
 `Reporting` depends on `QuestionBank`, because an answer is an answer *to a
 question*. That dependency is one way.
 
+`TinyId` is the identifier every entity in every feature carries — eleven
+characters, unguessable, and carrying no timestamp, because this system
+deliberately does not let a report be pinned to a moment. It is in the shared
+kernel because every feature has rows, and because #16 builds a blob key out of
+one. See [ADR-0034](../../docs/decisions/ADR-0034-tiny-ids.md).
+
+`IFieldCipher` is in the shared kernel rather than with a feature because the
+rule it carries belongs to the whole system: Restricted data is encrypted at
+rest (`docs/data-handling.md`). The algorithm, the key, and the wiring into EF
+Core are infrastructure. See
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md).
+
+## One concession to persistence
+
+Every aggregate here carries a **private parameterless constructor**, marked as
+existing for EF Core. The ORM materializes an entity by calling a constructor and
+then setting the mapped properties, and these aggregates have none it can bind.
+
+It is the only concession. Domain code still has to go through the real
+constructor or factory, so no caller can reach a half-built aggregate, and this
+project still references nothing.
+
 ## The question set is data
 
 The form is not a fixed set of properties. `Question` and its versions are the
@@ -63,6 +100,33 @@ because logic reads them rather than only displaying them. Which answer projects
 where comes from `QuestionRole`, and every role is optional except publication
 consent. See [ADR-0016](../../docs/decisions/ADR-0016-data-driven-question-bank.md).
 
+## Uploaded media
+
+`MediaIngestor` is in `Core` for the same reason the scrub is: the order it runs
+in — sniff, validate, *then* promote out of quarantine — is what makes "a
+reviewer only ever sees stripped bytes" true, and it is provable in a plain unit
+test with no bucket and no imaging library. `IMediaSniffer` and `IExifStripper`
+are ports; Magick.NET lives in `Infrastructure`.
+
+Three types carry rules that would otherwise be call-site discipline:
+
+- **`BlobKey`** is in the shared kernel because a key is attacker-influenced and
+  must be parsed, never accepted as a string — and because the storage layout is
+  a rule. It parses exactly three shapes, all namespaced by a report id, so a key
+  outside the layout is unrepresentable.
+- **`MediaUploadSlot`** is the only thing that mints an upload URL, and it never
+  names the compartment: an upload can only ever land in quarantine.
+- **`ReviewerMediaLink`** is the only sanctioned way to mint a link to media.
+  Storage will sign a URL for any key, including the original; this issues one
+  only for `MediaCompartment.Stripped`.
+
+`MediaIngestStatus` has three states, not two. A video is *accepted* — the
+original is the Restricted record like any other upload — but nothing can strip
+it yet, so there is no derivative and nothing viewable. Asking for one throws
+rather than falling through to the unstripped original. See #65. See
+[ADR-0025](../../docs/decisions/ADR-0025-magick-net-for-exif-stripping.md) and
+[ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+
 Two rules this project enforces and nothing downstream may relax:
 
 - **`consent_publish` cannot be deleted, deactivated, or retyped**, and
@@ -71,6 +135,15 @@ Two rules this project enforces and nothing downstream may relax:
   that is not an explicit yes with both languages approved.
 - **A question cannot be activated with a missing translation.** A
   machine-translated counterpart is acceptable; an absent one is not.
+
+The reporter gives a real date and a real clock time, and the coarse
+`TimeOfDay` bucket is **derived** from the time by
+`TimeOfDay.FromLocalTime(TimeOnly)` — the one place the boundaries are written
+down, called by both the projection here and the scrub in #18. A time that was
+never given is `TimeOfDay.Unknown`, a defined state rather than a midnight
+nobody meant. See
+[ADR-0019](../../docs/decisions/ADR-0019-application-side-field-encryption.md)
+and #68.
 
 ## Tests
 

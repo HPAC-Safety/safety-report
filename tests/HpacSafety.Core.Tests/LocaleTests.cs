@@ -30,8 +30,8 @@ public class LocaleTests
     }
 
     [Theory]
-    [InlineData(AircraftClass.HighEnB, "high_en_b")]
-    [InlineData(AircraftClass.NotDetermined, "not_determined")]
+    [InlineData(Discipline.HangGliding, "hang_gliding")]
+    [InlineData(Discipline.Unknown, "unknown")]
     [InlineData(InjurySeverity.Serious, "serious")]
     [InlineData(Province.BritishColumbia, "british_columbia")]
     public void Given_a_domain_value_When_it_is_written_as_a_code_Then_it_round_trips(Enum value, string expected)
@@ -39,7 +39,7 @@ public class LocaleTests
         // Given / When
         var code = value switch
         {
-            AircraftClass aircraftClass => EnumCode.Of(aircraftClass),
+            Discipline discipline => EnumCode.Of(discipline),
             InjurySeverity severity => EnumCode.Of(severity),
             Province province => EnumCode.Of(province),
             _ => throw new ArgumentOutOfRangeException(nameof(value)),
@@ -53,10 +53,10 @@ public class LocaleTests
     public void Given_an_unknown_code_When_it_is_parsed_Then_nothing_is_guessed()
     {
         // Given / When
-        var parsed = EnumCode.TryParse<AircraftClass>("en_b_ish", out var aircraftClass);
+        var parsed = EnumCode.TryParse<Discipline>("hang_gliding_ish", out var discipline);
 
-        // Then — an unrecognized certification answer is never guessed at
+        // Then — an unrecognized code is never guessed at
         parsed.ShouldBeFalse();
-        aircraftClass.ShouldBe(AircraftClass.NotDetermined);
+        discipline.ShouldBe(Discipline.Unknown);
     }
 }

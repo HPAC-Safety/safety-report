@@ -64,11 +64,41 @@ describe('the locale translation command', () => {
 		})
 	})
 
+	describe('given English exists while the initial French generation is pending', () => {
+		it('when it verifies then the tracked bootstrap marker defers parity without hiding a later deletion', () => {
+			// Given
+			const dir = locales({ 'en-CA.json': english, '.fr-CA.pending': 'initial generation pending' })
+
+			// When
+			const { code, output } = run(['--locales', dir, '--check'])
+
+			// Then
+			assert.equal(code, 0)
+			assert.match(output, /::notice::/)
+			assert.match(output, /initial French generation/i)
+		})
+	})
+
+	describe('given English exists and the generated French pair was removed after initialization', () => {
+		it('when it verifies then it fails instead of treating the deletion as bootstrap', () => {
+			// Given
+			const dir = locales({ 'en-CA.json': english })
+
+			// When
+			const { code, output } = run(['--locales', dir, '--check'])
+
+			// Then
+			assert.equal(code, 1)
+			assert.match(output, /form\.submit/)
+		})
+	})
+
 	describe('given a new English key and a configured provider', () => {
 		it('when it generates then only that key is translated and provenance is stamped', () => {
 			// Given — a settled set, then one key added
-			const dir = locales({ 'en-CA.json': english })
+			const dir = locales({ 'en-CA.json': english, '.fr-CA.pending': 'initial generation pending' })
 			assert.equal(run(['--locales', dir, '--generate'], stub).code, 0)
+			assert.equal(existsSync(join(dir, '.fr-CA.pending')), false)
 			const frenchBefore = read(dir, 'fr-CA.json')
 			writeFileSync(
 				join(dir, 'en-CA.json'),

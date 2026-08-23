@@ -1,3 +1,5 @@
+using HpacSafety.Core.SharedKernel;
+
 namespace HpacSafety.Core.Features.Outbox;
 
 /// <summary>
@@ -12,9 +14,20 @@ public class OutboxMessage
     public const int PoisonThreshold = 5;
 
     /// <summary>Queues work against an aggregate.</summary>
-    public OutboxMessage(Guid aggregateId, string type, string payload, DateTimeOffset occurredAt)
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private OutboxMessage()
     {
-        Id = Guid.NewGuid();
+    }
+#pragma warning restore CS8618
+
+    public OutboxMessage(TinyId aggregateId, string type, string payload, DateTimeOffset occurredAt)
+    {
+        Id = TinyId.New();
         AggregateId = aggregateId;
         Type = type;
         Payload = payload;
@@ -23,10 +36,10 @@ public class OutboxMessage
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report, or other aggregate, this work is about.</summary>
-    public Guid AggregateId { get; private init; }
+    public TinyId AggregateId { get; private init; }
 
     /// <summary>What kind of work this is.</summary>
     public string Type { get; private init; }

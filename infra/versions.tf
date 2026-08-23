@@ -2,8 +2,8 @@
 #
 # There is deliberately NO `required_version` here. The Terraform CLI version is
 # pinned in exactly one file — `.terraform-version`, which tfenv, asdf, mise, and
-# the `infra` CI job all read — and AGENTS.md is explicit that a tool version
-# pinned in two places is a version that will drift. A `required_version`
+# the `infra` CI job all read. skills/deliver-hpac-change/SKILL.md is explicit
+# that a tool version pinned in two places will drift. A `required_version`
 # constraint repeating that number would be the second copy.
 #
 # tflint's `terraform_required_version` rule is disabled in `.tflint.hcl` for the

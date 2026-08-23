@@ -275,10 +275,11 @@ devcontainer: [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-developmen
 ## Built by agents
 
 This project is built primarily by AI agents, and the configuration is
-deliberately tool-agnostic: `AGENTS.md` is the only real instruction file, and
-`CLAUDE.md`, `.github/copilot-instructions.md`, and `.cursor/rules/agents.mdc`
-are symlinks to it. Skills are pinned in `Skillfile.lock` so every contributor
-and every tool gets the same setup.
+deliberately tool-agnostic: `AGENTS.md` is the only always-loaded instruction
+file, and `CLAUDE.md`, `.github/copilot-instructions.md`, and
+`.cursor/rules/agents.mdc` are symlinks to it. It keeps the safety contract in
+view and routes task-specific detail to skills. Skills are pinned in
+`Skillfile.lock` so every contributor and every tool gets the same setup.
 
 ## Documentation
 

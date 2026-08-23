@@ -145,7 +145,7 @@ sign-in. See [ADR-0019](../../../docs/decisions/ADR-0019-application-side-field-
 
 A clean database asks exactly the question set in `docs/form-spec.md`, **in both
 languages** — a form that only works in English is not a working form here, see
-`AGENTS.md`, "Both languages are first-class".
+`skills/localize-hpac-app/SKILL.md`.
 
 The French wording is machine-translated and carries
 `is_machine_translated = true`: it renders, and nobody has reviewed it. That is a

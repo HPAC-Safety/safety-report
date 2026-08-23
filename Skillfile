@@ -1,20 +1,12 @@
 # HPAC safety-report — skills and agents.
 #
-# Skills are managed declaratively so every contributor and every agent tool
-# gets the same setup from `skillfile install`. The installed copies land in
-# .claude/ and are gitignored — Skillfile.lock reproduces them exactly.
+# Skills are managed declaratively so every contributor and agent gets the same
+# setup from `skillfile install`. Installed copies land in .claude/ and are
+# gitignored; Skillfile.lock reproduces upstream sources exactly.
 #
-# PREFER UPSTREAM. Search before authoring: `skillfile search "<topic>"`. A
-# maintained upstream skill is broader than anything written here in an
-# afternoon and stays current without this repository doing the work. Author a
-# local skill only for knowledge specific to HPAC — the anonymization rules,
-# the aircraft vocabulary, this domain model. See AGENTS.md, "Working in this
-# repo".
-#
-# Where upstream guidance conflicts with AGENTS.md, AGENTS.md wins. Two live
-# examples: csharp-xunit demonstrates Assert.*, and this repository uses
-# Shouldly; and the ddd skill's repository-per-aggregate advice is guidance,
-# not an instruction to add a repository layer this codebase has not needed.
+# Search before authoring: `skillfile search "<topic>"`. Prefer maintained
+# upstream guidance. Keep local skills for HPAC-specific knowledge and
+# repository-specific contracts. AGENTS.md always wins on conflict.
 #
 # Docs: https://github.com/eljulians/skillfile
 
@@ -29,19 +21,22 @@ local  agent  agents/anonymization-auditor.md
 # --- Skills ---
 # github  skill  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
 
+# General documentation and ADR practice; local delivery rules are stricter.
+github  skill  addyosmani/agent-skills  skills/documentation-and-adrs
+
 # How to find and invoke what is installed.
 github  skill  addyosmani/agent-skills  skills/using-agent-skills
 
 # Domain-driven design, .NET flavoured: aggregates, value objects, ports.
 github  skill  codewithmukesh/dotnet-claude-kit  skills/ddd
 
-# Red, green, tidy. Write the test before the code.
-github  skill  obra/superpowers  skills/test-driven-development
-
 github  skill  github/awesome-copilot  skills/csharp-async
 github  skill  github/awesome-copilot  skills/csharp-xunit
 github  skill  github/awesome-copilot  skills/dotnet-best-practices
 github  skill  github/awesome-copilot  skills/dotnet-design-pattern-review
+
+# Red, green, tidy. Write the test before the code.
+github  skill  obra/superpowers  skills/test-driven-development
 
 # --- authored in this repo (source of truth lives under skills/ and agents/) ---
 # Note: the redaction rules are deliberately NOT a skill. They are runtime
@@ -51,7 +46,15 @@ github  skill  github/awesome-copilot  skills/dotnet-design-pattern-review
 # Names are explicit: every source file is called SKILL.md, so without a name
 # they would all infer the same one and overwrite each other on install.
 local  skill  aircraft-classification  skills/aircraft-classification/SKILL.md
+local  skill  build-hpac-web-ui  skills/build-hpac-web-ui/SKILL.md
+local  skill  clarify-hpac-requirements  skills/clarify-hpac-requirements/SKILL.md
+local  skill  deliver-hpac-change  skills/deliver-hpac-change/SKILL.md
 local  skill  gang-of-four-patterns  skills/gang-of-four-patterns/SKILL.md
+local  skill  handle-hpac-media  skills/handle-hpac-media/SKILL.md
 local  skill  hpac-safety-conventions  skills/hpac-safety-conventions/SKILL.md
 local  skill  incident-domain-model  skills/incident-domain-model/SKILL.md
+local  skill  localize-hpac-app  skills/localize-hpac-app/SKILL.md
+local  skill  manage-hpac-infrastructure  skills/manage-hpac-infrastructure/SKILL.md
+local  skill  persist-hpac-data  skills/persist-hpac-data/SKILL.md
 local  skill  solid-principles  skills/solid-principles/SKILL.md
+local  skill  test-hpac-safety  skills/test-hpac-safety/SKILL.md

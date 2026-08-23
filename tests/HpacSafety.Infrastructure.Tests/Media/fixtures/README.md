@@ -2,9 +2,9 @@
 
 One committed binary, and a note on why it is the exception.
 
-`AGENTS.md` says to generate binary fixtures at run time rather than commit
-them: nothing to review blind, and nothing that could be mistaken for a real
-photograph. Every other fixture in this suite follows that rule — see
+The `test-hpac-safety` skill says to generate binary fixtures at run time rather
+than commit them: nothing to review blind, and nothing that could be mistaken
+for a real photograph. Every other fixture in this suite follows that rule — see
 [`ExifFixtures`](../ExifFixtures.cs), which builds JPEGs, PNGs, and video
 containers in memory.
 

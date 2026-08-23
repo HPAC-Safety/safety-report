@@ -1,8 +1,8 @@
 # The Tailwind CSS standalone CLI, pinned.
 #
-# This file is the ONLY place the Tailwind version is written down. AGENTS.md:
-# "A tool version is pinned in exactly one file." tools/build-css.sh reads the
-# version and the checksums from here; nothing else restates either.
+# This file is the ONLY place the Tailwind version is written down, per
+# skills/deliver-hpac-change/SKILL.md. tools/build-css.sh reads the version and
+# checksums from here; nothing else restates either.
 #
 # Bumping the version means replacing every line below in one edit — the
 # checksums belong to the release named by `version` and are worthless against

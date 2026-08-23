@@ -115,14 +115,32 @@ If you find yourself wanting `Core` to reference EF Core "just for the
 attributes", the answer is a configuration class in `Infrastructure`, not a
 reference in `Core`.
 
+### Third-party boundaries are already a variation
+
+Read the "plain code" rule and the adapter rule together:
+
+- Inside the domain, keep one implementation with no named variation concrete.
+- At the process edge, put every production dependency that reaches outside the
+  process behind a port declared in `Core` and one adapter in `Infrastructure`.
+  No other call site may name the vendor type. Swappability is sufficient; a
+  second implementation need not already exist.
+
+This boundary includes SDK and HTTP clients, blob storage, image processing,
+translation, mail, and authentication. It excludes test-only libraries, the
+.NET BCL, and EF Core: `DbContext` and `DbSet` already abstract persistence, and
+a repository wrapper would lose useful query composition. See ADR-0033.
+
 ## When not to
 
-- **Do not add an interface for a type that has exactly one implementation and
-  no test seam.** A value object, a domain enum, a record — leave them concrete.
+- **Do not add an interface for an in-process domain type that has exactly one
+  implementation and no test seam.** A value object, domain enum, or record
+  stays concrete. This does not waive the mandatory adapter at a third-party
+  process boundary.
 - **Do not split a class because it is long.** Split it because two people ask
   for different changes to it. Length is a hint, not a reason.
-- **Do not invert a dependency on the standard library.** Wrapping `DateTime` is
-  worth it (`TimeProvider`); wrapping `string` is not.
+- **Do not invert a dependency on the standard library.** Use the BCL's
+  `TimeProvider` when time needs a test seam; do not wrap `string` or other
+  platform primitives.
 
 ## Related
 

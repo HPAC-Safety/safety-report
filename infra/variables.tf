@@ -1,7 +1,7 @@
 # Every value here has been decided by the repository owner. Where a default was
 # originally a guess it is now marked DECIDED with what was chosen, because
-# AGENTS.md requires an answer to be written down in the pull request that
-# received it — an answer given twice is an answer that was not recorded the
+# skills/clarify-hpac-requirements/SKILL.md requires an answer to be captured in
+# the pull request that received it — an answer given twice was not recorded the
 # first time.
 #
 # No default in this file is a guess any more. If you add a variable whose value

@@ -9,14 +9,17 @@ it shapes how the repository is laid out.
    versions, then pulls the skills into `.claude/`. Idempotent, so run it
    whenever something looks wrong; `./init-dev.sh --check` reports without
    installing. See [Getting started](../README.md#getting-started).
-2. Read `AGENTS.md`. The invariants in it outrank any task description.
+2. Read `AGENTS.md`. Its invariants outrank any task description, and its routing
+   table names the focused skills to load for the work.
 3. Pick an issue. Work is filed in the **Foundation**, **Phase 1**, and
    **Phase 2** milestones, sized to one PR each.
 4. Open a PR. `main` is protected; an administrator approves.
 
 ## Agent-agnostic by design
 
-`AGENTS.md` is the only real instruction file. Everything else is a symlink:
+`AGENTS.md` is the only always-loaded instruction file. It carries the safety
+contract and routes task-specific detail into skills. Tool-specific instruction
+paths are symlinks:
 
 ```mermaid
 flowchart LR
@@ -54,6 +57,27 @@ SOLID, C# idiom — comes from upstream. Say in the pull request what you search
 for and why nothing fitted.
 
 Where upstream guidance conflicts with `AGENTS.md`, `AGENTS.md` wins.
+
+## Progressive task guidance
+
+Do not turn `AGENTS.md` back into an encyclopedia. Keep safety invariants and
+routing always loaded, then put reusable task procedures in a narrowly triggered
+skill:
+
+| Concern | Skill |
+|---|---|
+| Requirement ambiguity | `clarify-hpac-requirements` |
+| Safety-focused testing | `test-hpac-safety` |
+| English/French parity | `localize-hpac-app` |
+| Persistence and migrations | `persist-hpac-data` |
+| Uploaded media | `handle-hpac-media` |
+| Static web UI | `build-hpac-web-ui` |
+| Terraform and AWS | `manage-hpac-infrastructure` |
+| Documentation and pull-request delivery | `deliver-hpac-change` plus upstream `documentation-and-adrs` |
+
+When adding a new cross-cutting rule, update the `AGENTS.md` routing table and
+the owning skill in the same pull request. Keep runtime instructions sent to the
+summarization model under versioned `prompts/`, never under `skills/`.
 
 Authored here: add a directory under `skills/`, then a `local` line in
 `Skillfile` **with an explicit name** — every file is called `SKILL.md`, so
@@ -98,4 +122,5 @@ prove it.
 
 - `AGENTS.md`
 - `CONTRIBUTING.md`
-- `skills/hpac-safety-conventions/SKILL.md`
+- `Skillfile`
+- `skills/deliver-hpac-change/SKILL.md`

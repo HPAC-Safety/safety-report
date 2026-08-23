@@ -2,7 +2,8 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 /// Why an upload was refused. A code rather than a sentence: the edge localizes
-/// it, so no user-facing string is written here. See AGENTS.md.
+/// it, so no user-facing string is written here. See
+/// <c>skills/localize-hpac-app/SKILL.md</c>.
 /// </summary>
 public enum MediaRejectionReason
 {

@@ -18,6 +18,21 @@
 Each case is a fixture report seeded with known personal information and an
 assertion that the specific token is absent from the output.
 
+It covers stage 1, the deterministic scrub: names in the narrative, phone numbers
+in eight written formats, email addresses, URLs with and without a scheme, HPAC
+member numbers, launch and landing-zone names, aircraft make and model, and a
+case carrying all of them at once. `CoreDependencyTests` sits alongside them and
+fails the day `HpacSafety.Core` grows a package reference, because the suite is
+only provable while Core depends on nothing.
+
+`FrenchNarrativeTests` runs the same categories against a report filed in French,
+and additionally asserts that the role word's article **never** varies with who
+was flying — "la pilote" appearing is a failure, not a grammar improvement.
+
+Two tests in there assert what must **survive** — an altitude, a certification
+class, a word that merely contains a name. They are as load bearing as the rest:
+a scrub that deletes everything passes every absence assertion ever written.
+
 Add a fixture **before** changing a redaction rule.
 
 ## Running

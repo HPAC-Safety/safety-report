@@ -24,9 +24,15 @@ before changing the suite.
 - Define one abstract contract suite per port and run it unchanged against
   every production adapter and development stand-in. A stand-in may not weaken
   the production contract.
+- Never commit real report content as a fixture. Invent every name, phone
+  number, email, member number, site, and aircraft brand; use RFC-reserved
+  domains. A fixture remains in repository history and every clone.
 - Assert that redaction and metadata-removal fixtures contained the sensitive
   input before asserting it is absent afterward. A redaction assertion must be
   able to fail.
+- Assert the absence of each identifier or identifying token, not an exact
+  generated sentence. Exact wording is appropriate only for a human-decided
+  invariant such as the pinned English/French role words.
 - Generate binary fixtures at runtime. Commit only the smallest synthetic file
   for a format the runtime cannot encode, document its provenance beside it,
   and document how to regenerate it.

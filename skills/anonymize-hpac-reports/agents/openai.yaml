@@ -1,0 +1,4 @@
+interface:
+  display_name: "Anonymize HPAC Reports"
+  short_description: "Safely evolve HPAC report anonymization"
+  default_prompt: "Use $anonymize-hpac-reports to change or audit the HPAC anonymization pipeline without weakening privacy guarantees."

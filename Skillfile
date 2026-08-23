@@ -46,6 +46,7 @@ github  skill  obra/superpowers  skills/test-driven-development
 # Names are explicit: every source file is called SKILL.md, so without a name
 # they would all infer the same one and overwrite each other on install.
 local  skill  aircraft-classification  skills/aircraft-classification/SKILL.md
+local  skill  anonymize-hpac-reports  skills/anonymize-hpac-reports/SKILL.md
 local  skill  build-hpac-web-ui  skills/build-hpac-web-ui/SKILL.md
 local  skill  clarify-hpac-requirements  skills/clarify-hpac-requirements/SKILL.md
 local  skill  deliver-hpac-change  skills/deliver-hpac-change/SKILL.md

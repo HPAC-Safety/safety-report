@@ -68,6 +68,7 @@ skill:
 |---|---|
 | Requirement ambiguity | `clarify-hpac-requirements` |
 | Safety-focused testing | `test-hpac-safety` |
+| Report anonymization and prompt safety | `anonymize-hpac-reports` |
 | English/French parity | `localize-hpac-app` |
 | Persistence and migrations | `persist-hpac-data` |
 | Uploaded media | `handle-hpac-media` |

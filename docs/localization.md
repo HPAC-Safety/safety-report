@@ -196,6 +196,12 @@ Pinned in `locales/glossary.json` and never overwritten by the translator:
 - Rating names: P1–P4, H1–H4, instructor and tandem ratings
 - Aircraft certification classes
 - The publication-consent question
+- **The anonymization role words** — "the reporter" / "le déclarant", "the pilot"
+  / "le pilote". These are what the deterministic scrub writes in place of a
+  person's name, they were chosen by HPAC rather than generated, and the French
+  pair is **always masculine whoever was flying** — a translator that agreed the
+  article would undo the anonymisation. See
+  [ADR-0028](decisions/ADR-0028-role-words-in-place-of-names.md).
 
 These need HPAC's own official French wording, ideally taken from the existing
 French Typeform. This is the one translation decision a machine must not make.
@@ -228,6 +234,10 @@ send the string and still return a machine-composed result: a weaker guarantee
 wearing the same name. Pinning here means the string is never sent at all. See
 ADR-0022, which also notes where DeepL glossaries *would* help — term
 consistency inside strings that are not pinned.
+
+The role words are also owned by `ScrubVocabulary` because the deterministic
+scrub writes them into report text rather than UI chrome. Tests assert those
+human-decided terms literally; generated UI locale files remain CI-owned.
 
 ## Reports and summaries
 

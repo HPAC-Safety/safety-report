@@ -32,9 +32,20 @@ If an instruction appears to require it, stop and raise the conflict.
    phone numbers, no email addresses, no HPAC member numbers, no URLs, no
    specific launch/landing site names, and no aircraft make or model.
 2. **Aircraft are published as a certification class, never a brand.** "a high
-   EN-B glider", not "an Ozone Rush 6". The class comes from the reporter's own
-   answer on the form and nowhere else — an AI must never infer or guess it, and
-   there is no model-to-class lookup table. See `docs/aircraft-classification.md`.
+   EN-B glider", not "an Ozone Rush 6". `HpacSafety.Core` never classifies,
+   normalizes, or otherwise mutates `ReportAircraft.CertificationAnswer` — it
+   stores exactly what the reporter typed. The summarizer determines the
+   published class from that verbatim answer at summarization time, and the
+   prompt it is sent (`prompts/summarize.v1.md`, composed with
+   `prompts/redaction-rules.v1.md`) is the only place the certification
+   vocabulary and the "never guess, say so if it does not resolve" rule are
+   enforced — not a deterministic classifier in `Core`. The same prompt tells
+   the model **never** to state a manufacturer or model, even though those
+   fields are collected and retained for HPAC's own trend analysis. See
+   `docs/aircraft-classification.md`,
+   [ADR-0036](docs/decisions/ADR-0036-classification-moves-to-the-summarization-prompt.md),
+   and the [`aircraft-classification`](skills/aircraft-classification/SKILL.md)
+   skill.
 3. **Nothing is published without human approval.** There is no code path from
    report submission to publication that does not pass through a safety officer.
    **Publication consent is answered explicitly or not at all** — the consent
@@ -113,6 +124,21 @@ ASCII boxes do neither.
   `Given_<scenario>_When_<action>_Then_<assertion>`.
 - JavaScript uses Node's built-in `node:test` with nested `describe` blocks
   producing the same sentence. Playwright is for E2E only.
+- **One contract suite per port, not one per adapter.** Where a port has a
+  production adapter and a development stand-in, the guarantees live in an
+  abstract suite both subclass, so the stand-in cannot quietly be the weaker
+  one. `BlobStoreContractTests` runs unchanged against MinIO and against the
+  filesystem. See [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **Generate binary fixtures at run time.** Do not commit images or other
+  binaries as test data; build them in the test. Nothing to mistake for a real
+  photograph, and nothing to review blind. The one allowed exception is a format
+  the runtime cannot *encode* — HEIC today. Commit the smallest synthetic file
+  that exercises the path, and write down beside it where it came from and how to
+  regenerate it.
+- **A redaction assertion must be able to fail.** Assert against the un-redacted
+  input as well as the output. `ShouldNotContain("GPS")` on a stripped photo
+  passes just as happily on one that never carried a location — and a test that
+  cannot fail is worse than no test, because it is believed.
 - Coverage is gated in CI: an 80% line / 70% branch floor, plus a ratchet
   against `main`. It is a floor, not a target — the anonymization suite matters
   more than the percentage, and a change that raises the number without pinning
@@ -120,11 +146,53 @@ ASCII boxes do neither.
 
 Full detail: `docs/testing-conventions.md`.
 
+### Both languages are first-class
+
+**English and French are two halves of this application, not a language and its
+translation.** HPAC is a national association; a francophone pilot reporting a
+crash is not using a localized version of an English system, they are using the
+system. Nothing here is allowed to treat one language as the real one and the
+other as a follow-up.
+
+That is a rule with consequences, not a sentiment. What it already means in this
+codebase:
+
+- **Question wording is stored per locale, and neither locale is primary.**
+  `is_source` records which language a human authored first — it does not mark
+  the canonical one, and no logic may read it as though it did. See
+  [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md).
+- **A question cannot be activated while its counterpart is missing**, so a
+  half-translated form never reaches a reporter. A machine-translated
+  counterpart is acceptable and is marked as such; an absent one is not.
+  ADR-0016 again.
+- **A summary is an EN/FR pair, and a safety officer approves the pair.**
+  `Report.IsPublishable` requires an approved summary in *every* locale.
+  Approving one does not implicitly approve the other, and there is no path that
+  publishes one language while the other waits. See
+  [ADR-0004](docs/decisions/ADR-0004-human-review-required.md).
+- **The deterministic scrub works in both languages**, with no language in which
+  stage one degrades. A redaction rule that fires only on English text is a
+  defect in the scrub, not a French limitation — that gap was real and was
+  closed in #58.
+- **The end-to-end journey runs in both locales** (#27). A suite that only
+  exercises English is a suite that stops noticing French regressions.
+- **Seeded and generated French is marked, never hidden.** Unreviewed wording
+  carries `is_machine_translated` so a reviewer can find it; the answer to "this
+  French has not been read by a person" is to flag it, never to withhold the
+  French and leave the form English-only. See
+  [ADR-0020](docs/decisions/ADR-0020-seeding-by-migration.md).
+
+When a change makes one language work and leaves the other for later, that is
+not a smaller version of the change. It is an incomplete one.
+
 ### Localization
 
 - **No hardcoded user-facing strings anywhere.** Not in the admin UI, not in an
   error message, not in an `aria-label`, not in an email subject. Add a key to
-  `locales/en-CA.json` and reference it.
+  `locales/en-CA.json` and reference it. This includes **validation and rejection
+  messages**: the domain returns a code, and the edge renders it from a key. An
+  exception message is developer-facing and stays in English — but it must never
+  carry user-supplied content, which is a different rule and equally firm.
 - English is the source of truth; French is generated in CI and reviewed by a
   human. Never hand-edit `locales/fr-CA.json`.
 - That applies to **UI chrome**. Question wording is content, authored in the
@@ -186,13 +254,122 @@ writing anything that touches the form, hold on to three things:
 See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
 [`incident-domain-model`](skills/incident-domain-model/SKILL.md) skill.
 
+### The database
+
+`HpacSafety.Infrastructure/Persistence` owns **every table and every migration**,
+including tables whose behaviour lives somewhere else. `Core` never references
+EF Core; a persistence concern reaching into the domain is a bug, not a
+shortcut. Five rules that are not negotiable at the schema level:
+
+- **Restricted text is encrypted by the application before PostgreSQL sees it**,
+  through `IFieldCipher` — declared in `Core`, implemented in `Infrastructure`,
+  bound to a column by a value converter. Never add a field in the Restricted
+  tier that is stored in the clear, and never "temporarily" decrypt one into
+  another column to make a query easier. See
+  [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md).
+- **Every row is identified by a `TinyId`** — eleven characters over
+  `A-Za-z0-9-_`, one convention for every table, stored as `char(11)` and never
+  as `uuid`. It is chosen for what it does not say: no timestamp, nothing
+  enumerable. This system narrows a published date to a month and a year so a
+  report cannot be pinned to a moment, and a sequential or time-ordered key
+  would hand that back through every URL, blob key, and log line. Never
+  introduce a second key type, and never authorise anything by possession of an
+  identifier. See
+  [ADR-0034](docs/decisions/ADR-0034-tiny-ids.md).
+- **The occurrence is a local date and a local time; the time-of-day bucket is
+  derived, never asked for.** `DateOnly` plus `TimeOnly`, both local wall clock,
+  because "morning" is what the clock at the site said and this system collects a
+  province rather than coordinates — any offset it stored would be inferred, and
+  a wrong one moves the bucket. The boundaries live in exactly one place,
+  `TimeOfDay.FromLocalTime(TimeOnly)` in `Core`; never re-derive them at a call
+  site. The precise time is Restricted and encrypted, the bucket is publishable
+  and in the clear, and a reporter who gives no time is `TimeOfDay.Unknown` —
+  a defined state, never a null that reads as midnight. See
+  [ADR-0019](docs/decisions/ADR-0019-application-side-field-encryption.md) and #68.
+- **Domain values are stored as invariant codes**, never as ordinal integers.
+  `high_en_b`, not `3`. A stored code that no longer names a domain value throws
+  rather than defaulting to zero.
+- **Seed data is written by the migration, never with `HasData`.** These rows
+  are edited by administrators after deployment, and `HasData` would turn every
+  one of those edits into a model difference the next migration tries to undo.
+  Seed identifiers are derived from a key, never random. See
+  [ADR-0020](docs/decisions/ADR-0020-seeding-by-migration.md).
+- **No migration ever contains a real name, a real address, or a real
+  allowlist.** The seeded local administrator is `admin@localhost`, it is one
+  row, and it is guarded inside the SQL by the PostgreSQL setting
+  `hpac.seed_development_admin` so that it cannot ride a generated script into
+  production. A guard evaluated in C# is evaluated on the machine that generated
+  the script, which is the wrong machine.
+- **The seeded question bank must reproduce `docs/form-spec.md` exactly**, and a
+  test reads the spec and proves it. Regenerate the spec with
+  `tools/extract-typeform.py`; never edit either side to make the other agree.
+
+Scaffolded migrations are exempt from `CA1062`, `CA1861`, and `IDE0161` in
+`.editorconfig`, because `dotnet ef` writes them and has no option to write them
+differently. That exemption is scoped to `**/Migrations/*.cs` and is not a
+licence to put logic there — the seed data those files call into is ordinary
+code under `Persistence/Seeding`, analysed and measured like everything else.
+
+Detail: [`src/HpacSafety.Infrastructure/Persistence/README.md`](src/HpacSafety.Infrastructure/Persistence/README.md).
+
 ### Code
 
 - .NET 10, file-scoped namespaces, nullable enabled, warnings as errors.
 - `HpacSafety.Core` depends on nothing. Infrastructure concerns — EF Core, HTTP
   clients, the Anthropic SDK — live in `HpacSafety.Infrastructure` behind
-  interfaces declared in `Core`.
+  interfaces declared in `Core`. That is a rule, not an example: see "Design"
+  below and [ADR-0033](docs/decisions/ADR-0033-third-party-libraries-behind-owned-abstractions.md).
+- **Dates and times say what is actually known.** `DateOnly` when the time does
+  not matter, `DateTimeOffset` when it does, `TimeOnly` when the date does not.
+  **`DateTime` is forbidden** — its `Kind` is ambient and silently lost, so the
+  same value means UTC, local, or unspecified depending on where it came from.
+  It is banned in `tests/BannedSymbols.txt` — which despite its path binds every
+  project, `src/` included — so using it is a build error in the editor rather
+  than a review comment. The occurrence date a reporter gives is a `DateOnly`;
+  audit timestamps, outbox `occurred_at`/`processed_at`, and `approved_at` are
+  `DateTimeOffset`. Where a third-party library hands back a `DateTime`, the
+  adapter converts at the boundary and no call site inherits it. See
+  [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md).
 - Static HTML/JS for the UI. No SPA framework, no bundler.
+- **Uploaded media never passes through the API, and no route ever serves blob
+  bytes.** A browser PUTs to a private bucket through a pre-signed URL scoped to
+  one key; a reviewer reads through a short-lived pre-signed GET. Public object
+  URLs do not exist, and a URL that does not expire is a public object URL with
+  extra steps. `docs/data-handling.md` and
+  [ADR-0026](docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
+- **All of a report's media lives under that report's id**, and `BlobKey`
+  enforces it rather than trusting call sites: `<report id>/original/<file>`,
+  `<report id>/stripped/<file>`, and `quarantine/<report id>/<file>` for
+  unverified bytes. A key in any other shape cannot be constructed. Identifiers
+  are **tiny ids** — 11 characters of `A-Za-z0-9-_`, cryptographically random,
+  encoding no timestamp. An unguessable id is a *reinforcement* of the private
+  bucket, never a replacement for it.
+- **Content types are sniffed, never taken from the client**, and the accepted
+  set is closed. A format is added only once its metadata can be stripped **or**
+  the domain can say plainly that it cannot be — "accepted but not viewable" is
+  an explicit state, and a file with no derivative fails closed rather than
+  falling through to the original.
+  [ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md).
+- **Never carry a client-supplied file name into a stored key.** Mint it. A
+  camera roll name is Restricted data — it names sites and people — and a key
+  reaches access logs and every pre-signed URL. The same goes for any other
+  client string that would become part of a path.
+- **A guarantee delegated to infrastructure gets specified precisely, not
+  described.** When the thing that keeps a promise is a Terraform rule or a
+  bucket policy this repository cannot test, write the exact rule into `docs/`
+  — clauses and values, not prose — so the agent implementing it can check the
+  spec against reality. The quarantine expiry rule was wrong on its first
+  writing (a versioned bucket needs `noncurrent_version_expiration` as well as
+  `expiration`, or the bytes survive for the bucket-wide 90 days), and it was
+  caught precisely because it had been written out in full.
+- **A rule that has one enforcement point gets a test that says so.** Where a
+  guarantee depends on everything going through a single type — `ReviewerMediaLink`
+  for read URLs, `MediaUploadSlot` for uploads — an architecture test fails the
+  build on any other call site. Documentation is not enforcement.
+- **A missing codec is a failure to start, never a silent refusal.** If a
+  deployment accepts a format the runtime cannot decode, the process must not
+  start. The alternative is every upload of that format being rejected as
+  unrecognisable content with nothing in the logs to explain it.
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
 - **Dark mode is a token redefinition, never a `dark:` variant.** Write
@@ -210,6 +387,68 @@ See [ADR-0016](docs/decisions/ADR-0016-data-driven-question-bank.md) and the
   not linked from either site, and the one file under `src/web` exempt from the
   no-hardcoded-strings rule, because every string on it is a token or font name
   rather than user-facing copy. Skip it in the hardcoded-string lint.
+
+### Infrastructure
+
+`infra/` is the AWS environment as Terraform. Four rules, and none of them is a
+preference:
+
+- **No long-lived AWS credential is ever created.** Not for the bootstrap, not
+  afterwards, not temporarily. GitHub Actions assumes a role through OIDC; an
+  administrator runs `infra/bootstrap.sh` against their own SSO session. If you
+  find yourself writing an access key anywhere — a workflow, a script, a secret
+  store, a comment showing "how it would work" — stop. That is a defect, not a
+  shortcut.
+- **A deploy role's trust policy names this repository and one ref.**
+  `repo:HPAC-Safety/*:*` would let any repository in the organisation deploy this
+  system; `repo:HPAC-Safety/safety-report:*` would let any branch, including one
+  pushed to a fork. Pull requests use a **separate, read-only** role, because a
+  `pull_request` run does not present a branch ref at all. See
+  [ADR-0032](docs/decisions/ADR-0032-terraform-ci-without-an-aws-account.md).
+- **Everything that touches report data is in `ca-central-1`**, and
+  `variables.tf` fails validation if it is not. Region here is a data-protection
+  decision, not an infrastructure preference — see `docs/data-handling.md`. The
+  one exception is an ACM certificate for CloudFront, which AWS only issues in
+  `us-east-1` and which holds no data.
+- **Terraform creates Secrets Manager entries, never values.** A value in a
+  `.tfvars` file is a value in state, and state is a file in S3 more people can
+  read than should see an API key. There is no
+  `aws_secretsmanager_secret_version` in `infra/`; adding one is the defect, not
+  the fix.
+
+**One production email address: `safety@hpac.ca`.** Report notifications from the
+Worker and operational alarms both go there. Do not introduce a second address,
+and do not hardcode it — it is `alarm_email_addresses` in `infra/variables.tf`
+and the `hpac-safety/notifications-to` secret at runtime.
+
+**Two custom metrics, and their names are a contract.** The alarms in
+`infra/observability.tf` watch metrics the **Worker publishes**; nothing in AWS
+derives them. If the Worker does not emit these, the alarms watch nothing:
+
+| Namespace | Metric | Kind | Meaning |
+|---|---|---|---|
+| `HpacSafety` | `SummaryFailed` | count | A summarization attempt failed — a real report is unprocessed |
+| `HpacSafety` | `OutboxOldestAgeSeconds` | gauge, per poll | Age of the oldest unclaimed outbox row |
+
+The namespace arrives as `Metrics__Namespace`. Do not rename either metric on one
+side alone. Full detail, including thresholds, is in `docs/deployment.md` under
+"The metric contract".
+
+**One website, two hostnames.** `safety.hpac.ca` serves the public report form at
+`/` and the admin review queue at `/admin/`; `api.hpac.ca` serves the API, HTTPS
+only. There is **one** bucket and **one** CloudFront distribution — so there is
+no network control in front of the review queue that would not also apply to the
+public form. What protects it is the API's authorization, not the delivery path.
+The admin bundle must therefore stay static assets holding no report data; if
+that changes, revisit
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md) rather than
+working around it.
+
+`terraform apply` on an unchanged repository must be a no-op, and the workflow
+asserts it. Nothing is created or edited by hand after bootstrap — a console
+click Terraform does not know about is drift, and drift makes the plan
+untrustworthy. Depth: `infra/README.md`,
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md).
 
 ### Design
 
@@ -229,6 +468,33 @@ The corollary matters as much: **a pattern that abstracts a variation which does
 not exist is a layer, not a pattern.** If you cannot say what varies, write the
 plain code. And the invariants above are deliberately *closed* — never add an
 extension point that lets a caller opt out of the PII audit or of human review.
+
+**At a third-party boundary the variation is already named, and it is the
+vendor.** So the corollary does not apply there, and these two rules are read
+together, never one without the other:
+
+- **Inside the domain**, the corollary rules. One implementation, no named
+  variation, no interface. Write the plain code.
+- **At the edge of the process**, always a port. A third-party library is
+  reached through an interface declared in `HpacSafety.Core` and implemented by
+  an adapter in `HpacSafety.Infrastructure`, and **no call site outside that
+  adapter names the vendor type.** The purpose is swappability, and that purpose
+  is sufficient on its own — a second implementation need not exist or be
+  planned. The vendor's choices are not ours to keep.
+
+Scope: production dependencies that reach outside the process — SDK clients,
+HTTP clients, blob storage, image processing (Magick.NET included), translation
+providers, mail, authentication. **Not** test-only libraries — xunit, Shouldly,
+Testcontainers — and **not** the .NET BCL, which is the platform rather than a
+dependency. **Entity Framework Core is exempt**: `DbContext` and `DbSet` are
+already an abstraction over the data store, and a hand-rolled repository over
+them buys nothing while losing the `IQueryable` composition that is the reason
+to use EF at all. `Core` still references no EF packages.
+
+`IBlobStore`, `ITranslator`, `ISummarizer`, `IPiiAuditor`, `IAircraftClassifier`,
+`ITurnstileVerifier`, `IEmailSender`, and `IMemberAuthenticator` are the existing
+instances. See
+[ADR-0033](docs/decisions/ADR-0033-third-party-libraries-behind-owned-abstractions.md).
 
 ## Documentation is part of the work, not after it
 
@@ -354,15 +620,17 @@ describes it is worse than no README, because it is believed.
   discovering and invoking what is installed.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
-- **A tool version is pinned in exactly one file, and the scripts read it from
-  there.** The .NET SDK lives in `global.json`, the Node major in
+- **A tool version is pinned in exactly one file, and every script and workflow
+  reads it from there.** The .NET SDK lives in `global.json`, the Node major in
   `.github/workflows/ci.yml`, the Tailwind standalone CLI in
-  `tools/tailwind.pin` — which also carries the SHA-256 of every release asset,
-  because `tools/build-css.sh` downloads an executable and running an unverified
-  one is not acceptable. Never write any of those numbers into a second file —
-  a second copy is a copy that will drift, and the drift shows up as a
-  contributor whose local build disagrees with CI for no visible reason. Adding
-  a new prerequisite means adding a probe that reads its pin, not a constant.
+  `tools/tailwind.pin`, Terraform in `infra/.terraform-version`, and tflint in
+  `infra/.tflint-version`. `tools/tailwind.pin` also carries the SHA-256 of every
+  release asset, because `tools/build-css.sh` downloads an executable and
+  running an unverified one is not acceptable. Never write any of those numbers
+  into `init-dev.sh` or into a workflow step — a second copy is a copy that will
+  drift, and the drift shows up as a contributor whose local build disagrees
+  with CI for no visible reason. Adding a new prerequisite means adding a probe
+  that reads its pin, not a constant.
   See [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
 - **`init-dev.sh` never reports success for something it did not do.** Work it
   cannot complete unattended — starting Docker, changing the caller's `PATH`,
@@ -383,29 +651,40 @@ describes it is worse than no README, because it is believed.
 | How is an aircraft described? | `docs/aircraft-classification.md` |
 | How does login work, and why is it like that? | `docs/authentication.md` |
 | Where does personal data live, and for how long? | `docs/data-handling.md` |
+| What is in the database, and why is it shaped like that? | `src/HpacSafety.Infrastructure/Persistence/README.md` |
 | Colours, type, spacing | `docs/design-system.md` |
 | How is the stylesheet built? | `./tools/build-css.sh`, and `src/web/README.md` |
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
 | How does it get to AWS, and what does that need? | `docs/deployment.md` |
+| What is actually in the AWS account, and who creates it? | `infra/README.md` |
 | What do the workflows do? | `.github/workflows/README.md` |
 | Why was X decided? | `docs/decisions/` |
 | How do I work here as an agent? | `docs/agent-workflow.md` |
 
 ## Current state
 
-The repository is scaffolding, documentation, and the domain. `HpacSafety.Core`
-holds the entities, enums, interfaces, and the data-driven question bank, with
-unit tests; `Infrastructure`, `Api`, and `Worker` are still empty. `src/web` has
-its theme — tokens, self-hosted fonts, the build — but no pages yet: the report
-form is #12 and the review queue is #25.
+The repository is scaffolding, documentation, the domain, the database, and the
+web theme.
+`HpacSafety.Core` holds the entities, enums, interfaces, and the data-driven
+question bank, with unit tests. `HpacSafety.Infrastructure` holds the EF Core
+model, initial migration, seeded question bank, field encryption, media
+processing, and storage adapters. `Api` and `Worker` are still scaffolds.
+`src/web` has its tokens, self-hosted fonts, and stylesheet build, but no pages
+yet: the report form is #12 and the review queue is #25.
 
 CI runs on every pull request and on merge to `main`, and its checks are
-required. Three of them — `coverage`, `e2e`, `i18n` — currently no-op with a
-notice because the thing they would verify has not been written yet; each is
-filled in by its own issue. `web` builds the stylesheet and enforces the theme
-rules above. The deploy workflows are wired but fail at the AWS step, because
-the AWS environment does not exist yet.
+required. `build`, `test`, `coverage`, `web`, `agent-config`, and `i18n` enforce
+their respective contracts; `e2e` currently skips with a notice until #26 adds
+the browser suite. `web` builds the stylesheet and enforces the theme rules
+above. The deploy workflows are wired but cannot deploy until the AWS
+environment exists and its configuration is present.
+
+`infra/` holds the whole environment as Terraform and the one-time
+`bootstrap.sh`. It is formatted, validated, and linted on every pull request by
+the `infra` check, and it **has never been applied** — there is no AWS account
+yet. `terraform.yml`'s `plan` and `apply` jobs skip with a notice until there is
+one.
 
 The work is filed as GitHub issues across the **Foundation**, **Phase 1**, and
 **Phase 2** milestones, with dependencies wired so nothing can be picked up out

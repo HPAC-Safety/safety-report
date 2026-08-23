@@ -149,7 +149,7 @@ public class ProjectionTests
         // When
         report.Answer(question, "A broken riser", Now);
         report.AddAircraft(Discipline.HangGliding, "Wills Wing", "T3", "topless");
-        report.AddFile("raw/one", "video/mp4", 4096, Now);
+        report.AddFile("kJQP7kiw5Fk/original/clip.mp4", "video/mp4", 4096, Now);
         report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "A hang glider landed short.", "model", "v1", Now));
 
         // Then
@@ -388,7 +388,7 @@ public class ProjectionTests
 
         var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        var officer = Guid.NewGuid();
+        var officer = TinyId.New();
         english.Approve(officer, Now);
         french.Approve(officer, Now);
         report.AddSummary(english);
@@ -412,7 +412,7 @@ public class ProjectionTests
 
         var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        var officer = Guid.NewGuid();
+        var officer = TinyId.New();
         english.Approve(officer, Now);
         french.Approve(officer, Now);
         report.AddSummary(english);

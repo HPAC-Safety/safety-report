@@ -9,15 +9,17 @@ on GitHub-hosted runners.
 |---|---|---|
 | `ci.yml` | pull request, push to `main`, dispatch | Verifying the repository. Its job ids are the required status checks. |
 | `linked-issue.yml` | pull request, including `edited` | One rule: the pull request body closes an issue. |
+| `terraform.yml` | pull request, push to `main`, dispatch | The AWS environment itself, from `infra/` |
 | `deploy-api.yml` | CI success on `main`, dispatch | The API container, **and the database schema** |
 | `deploy-worker.yml` | CI success on `main`, dispatch | The Worker container |
-| `deploy-web.yml` | CI success on `main`, dispatch | The public and admin static sites, separately |
+| `deploy-web.yml` | CI success on `main`, dispatch | The website — public form and admin route, one bucket, one distribution |
 
 ## What this slice does not own
 
 - **The AWS resources themselves.** Those are Terraform, in `infra/`
-  ([ADR-0010](../../docs/decisions/ADR-0010-infrastructure-as-code.md)). These
-  workflows ship artifacts to an environment that already exists.
+  ([ADR-0010](../../docs/decisions/ADR-0010-infrastructure-as-code.md)), applied
+  by `terraform.yml`. The three `deploy-*` workflows ship artifacts to an
+  environment that already exists.
 - **Runtime secrets.** They live in AWS Secrets Manager and are injected into the
   ECS task definition. The only credential GitHub holds is
   `AWS_DEPLOY_ROLE_ARN`, and it is inert without its OIDC trust policy.
@@ -42,17 +44,17 @@ and silently drops it from the required set — the ruleset goes on waiting for 
 name that nothing reports. If you rename one, update
 `docs/github-ruleset.json` and reapply it in the same pull request.
 
-Three jobs — `coverage`, `e2e`, `i18n` — currently detect that the thing they
-would check has not been written yet, emit a `::notice::` naming the issue that
-fills them in, and exit 0. The reasoning, and the obligation to *replace* the
-skip branch rather than add a second job, is in
+Only `e2e` still detects that its suite has not been written, emits a
+`::notice::` naming the issue that fills it in, and exits 0. The reasoning, and
+the obligation to *replace* the skip branch rather than add a second job, is in
 [ADR-0011](../../docs/decisions/ADR-0011-ci-contexts-precede-their-checks.md).
-`web` was the fourth and now does its real work: it builds the stylesheet with
-the pinned, checksum-verified Tailwind binary, then checks the things the theme
-promises — no reference to a third-party font host anywhere under `src/web`, no
-raw hex in markup, and no tracked file changed by the build. It deliberately
-does **not** set up Node: the web layer has no `node_modules`, and a job that
-installs Node is a job that invites one.
+`coverage` and `i18n` already do their real work. This pull request fills in
+`web`: it builds the stylesheet with the pinned, checksum-verified Tailwind
+binary, then checks the things the theme promises — no reference to a
+third-party font host anywhere under `src/web`, no raw hex in markup, and no
+tracked file changed by the build. It deliberately does **not** set up Node: the
+web layer has no `node_modules`, and a job that installs Node is a job that
+invites one.
 
 `init-dev.sh` is checked in two of those jobs rather than a job of its own,
 because a new job is a new status-check context and would have to be added to
@@ -121,6 +123,43 @@ CI's `agent-config` job therefore invokes `require-config` with dummy values, so
 its manifest is parsed on every pull request. **Anything new that only the deploy
 workflows use needs the same treatment** — a cheap exercise in CI, not a promise
 to be careful.
+
+## Terraform
+
+`terraform.yml` is the environment, not an artifact. Three jobs:
+
+| Job | Runs on | Needs AWS? |
+|---|---|---|
+| `infra` | every pull request and push | **no** |
+| `plan` | pull request, same-repo only | yes, read-only |
+| `apply` | merge to `main`, or dispatch, behind `environment: production` | yes |
+
+`infra` is a required status check — `fmt -check`, `init -backend=false`,
+`validate`, `tflint`, `shellcheck` over `infra/bootstrap.sh`, and `node --check`
+over the CloudFront Function. All of it works on a fresh clone with no AWS
+account, which is the only reason it can be required.
+
+`plan` and `apply` skip with a `::notice::` when the AWS configuration is absent.
+The account does not exist yet; a permanently-red check trains people to merge
+past red, which is
+[ADR-0011](../../docs/decisions/ADR-0011-ci-contexts-precede-their-checks.md)'s
+reasoning and [ADR-0032](../../docs/decisions/ADR-0032-terraform-ci-without-an-aws-account.md)'s
+application of it.
+
+**`terraform.yml` has no `paths:` filter, deliberately.** `infra` is required, and
+a required context that never reports blocks a pull request permanently — a path
+filter would do exactly that to every pull request that does not touch `infra/`.
+
+`plan` assumes `hpac-safety-plan`, **not** `hpac-safety-deploy`. The deploy role
+trusts `ref:refs/heads/main` and nothing else, and a `pull_request`-triggered run
+presents `repo:HPAC-Safety/safety-report:pull_request`. Two roles, and the
+pull-request one is read-only with explicit denials on the uploads bucket and on
+secret values. `docs/deployment.md` has the contract.
+
+`terraform.yml` is also the answer to the deploy blind spot below for `infra/`:
+everything reachable from an apply that can be checked without an account —
+formatting, syntax, provider schema, the shell script, the edge function — is
+checked on every pull request.
 
 ## Changing a workflow
 

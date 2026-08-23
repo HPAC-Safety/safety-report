@@ -1,6 +1,8 @@
 # ADR-0009 — Host on AWS, in ca-central-1
 
-**Status:** Accepted
+**Status:** Accepted. The static-site topology is **superseded in part** by
+[ADR-0031](ADR-0031-terraform-shape-and-topology.md): there is one distribution,
+not two, and the admin review queue is a route on the website.
 
 ## Context
 
@@ -21,7 +23,7 @@ AWS, **`ca-central-1`** for every service that touches report data.
 | Database | RDS PostgreSQL |
 | Uploads | S3, private bucket |
 | Email | SES |
-| Static sites | S3 + CloudFront, one distribution each for public and admin |
+| Static sites | S3 + CloudFront — ~~one distribution each for public and admin~~, superseded: **one** site, admin as a route (ADR-0031) |
 | Images | ECR |
 | Runtime secrets | Secrets Manager |
 | Deploy identity | IAM role assumed by GitHub Actions via OIDC |
@@ -52,8 +54,12 @@ is the single most valuable security decision in the deployment story.
 - `ca-central-1` keeps the PIPEDA position simple. **Do not** move the database,
   bucket, or mail to a US region for cost or latency without revisiting
   `docs/data-handling.md`.
-- Two CloudFront distributions, so the admin surface can take network controls
-  the public form must not have.
+- ~~Two CloudFront distributions, so the admin surface can take network controls
+  the public form must not have.~~ **Superseded by
+  [ADR-0031](ADR-0031-terraform-shape-and-topology.md).** One distribution, with
+  the review queue at `/admin/`. Per-area WAF and IP allowlisting are given up —
+  they are distribution-level — because the admin bundle is static assets holding
+  no report data, and the boundary that matters is the API's authorization.
 - Cost is dominated by RDS and the two always-on Fargate tasks. For a national
   association receiving dozens of reports a year this is small but not zero;
   the smallest viable instance sizes are correct here.

@@ -1,6 +1,8 @@
 # ADR-0010 — Terraform, with a scripted one-time bootstrap
 
-**Status:** Accepted
+**Status:** Accepted. The state-locking clause is **superseded** by
+[ADR-0031](ADR-0031-terraform-shape-and-topology.md): locking is S3-native
+(`use_lockfile`), and there is no DynamoDB table.
 
 ## Context
 
@@ -19,10 +21,14 @@ Terraform state backend must exist before any CI run can reach AWS at all.
 - `terraform plan` on pull requests, posted as a PR comment
 - `terraform apply` on merge to `main`, behind a `production` environment with a
   required reviewer
-- State in S3 with a DynamoDB lock table
+- State in S3 with ~~a DynamoDB lock table~~ — superseded: an S3-native lock
+  object, `use_lockfile` (ADR-0031)
 
 **A committed, idempotent `infra/bootstrap.sh`** creates the OIDC provider, the
-deploy role, and the state backend. An administrator runs it once, against their
+deploy role, and the state backend. (It also creates a second, read-only role for
+`terraform plan` on pull requests — see
+[ADR-0032](ADR-0032-terraform-ci-without-an-aws-account.md) for why one role
+cannot serve both.) An administrator runs it once, against their
 own SSO session.
 
 ## Why Terraform

@@ -11,12 +11,25 @@ under `infra/`; GitHub Actions assumes AWS roles through OIDC.
 2. Run `terraform -chdir=infra init` and review `terraform plan`.
 3. Apply Terraform through the protected production workflow.
 4. Publish the ACM validation and application CNAME records shown by
-   `terraform output -json dns_records_to_publish`.
+   `terraform output -json dns_records_to_publish`, and the DKIM/MAIL
+   FROM/SPF/DMARC records SES needs for `safety@hpac.ca`.
 5. Set these Secrets Manager values out of band:
    - `hpac-safety/connection-string` → `ConnectionStrings__HpacSafety`
    - `hpac-safety/model-api-key` → `Model__ApiKey`
+   - `hpac-safety/turnstile-secret-key` → `Turnstile__SecretKey` (API —
+     server-side `siteverify`; a task without it fails to start rather than
+     accept unverified submissions)
+   - `hpac-safety/notifications-to` → `Notifications__To` (Worker —
+     `safety@hpac.ca` in production)
+
+   The Worker's `ITranslator` shares `Model__ApiKey` — the same Anthropic
+   client already used for summarization, not a separate credential. Only the
+   CI site-UI-chrome translation pipeline uses a different provider, and its
+   `DEEPL_API_KEY` is a GitHub Actions repository secret, not AWS Secrets
+   Manager — see ADR-0022.
 6. Confirm the SNS subscription for the role mailbox that receives only the
-   failed-summary and stuck-outbox alarms.
+   failed-summary and stuck-outbox alarms, and confirm SES production access —
+   nothing reaches `safety@hpac.ca` in SES sandbox mode.
 7. Deploy API, Worker, and web assets.
 
 Secret values never belong in Terraform variables, GitHub variables, committed
@@ -45,7 +58,7 @@ independently after CI succeeds on `main`.
 - a synthetic report can be submitted and reaches review.
 - model input/output content is absent from CloudWatch logs.
 - `SummaryFailed` and `OutboxOldestAgeSeconds` alarms have recent data.
+- a submission notification actually reaches `safety@hpac.ca`.
 
-The deployment intentionally has no SES application mail, CAPTCHA resource,
-media-processing pipeline, multiple publication channels, or speculative
-autoscaling.
+The deployment intentionally has no multiple publication channels or
+speculative autoscaling.

@@ -416,6 +416,63 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.ToTable("report_answers", (string)null);
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportFile", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<string>("BlobKey")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("blob_key");
+
+                    b.Property<long>("ByteSize")
+                        .HasColumnType("bigint")
+                        .HasColumnName("byte_size");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(128)
+                        .HasColumnType("character varying(128)")
+                        .HasColumnName("content_type");
+
+                    b.Property<DateTimeOffset?>("ExifStrippedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("exif_stripped_at");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("StrippedBlobKey")
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("stripped_blob_key");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("uploaded_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_files");
+
+                    b.HasIndex("ExifStrippedAt")
+                        .HasDatabaseName("ix_report_files_exif_stripped_at")
+                        .HasFilter("exif_stripped_at IS NULL");
+
+                    b.HasIndex("ReportId")
+                        .HasDatabaseName("ix_report_files_report_id");
+
+                    b.ToTable("report_files", (string)null);
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Summary", b =>
                 {
                     b.Property<string>("Id")
@@ -474,9 +531,9 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.HasIndex("ApprovedBy")
                         .HasDatabaseName("ix_summaries_approved_by");
 
-                    b.HasIndex("ReportId")
+                    b.HasIndex("ReportId", "Locale")
                         .IsUnique()
-                        .HasDatabaseName("ix_summaries_report_id");
+                        .HasDatabaseName("ix_summaries_report_id_language");
 
                     b.ToTable("summaries", (string)null);
                 });
@@ -527,6 +584,16 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_report_answers_reports_report_id");
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.Reporting.ReportFile", b =>
+                {
+                    b.HasOne("HpacSafety.Core.Features.Reporting.Report", null)
+                        .WithMany("Files")
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_files_reports_report_id");
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Summary", b =>
                 {
                     b.HasOne("HpacSafety.Core.Features.Moderation.AdminUser", null)
@@ -551,6 +618,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Report", b =>
                 {
                     b.Navigation("Answers");
+
+                    b.Navigation("Files");
 
                     b.Navigation("Summaries");
                 });

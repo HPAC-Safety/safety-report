@@ -10,7 +10,8 @@
 Anonymization tests use synthetic private values. They prove that private and
 non-private answers reach the correct arrays, skipped questions are absent, the
 runtime prompt requires a matching identity to become a role such as “the
-pilot,” and removed audit/translation ports do not return.
+pilot,” the translation provider only ever receives anonymized summary text,
+and a removed PII-audit/scrubber/classifier port does not return.
 
 Run:
 

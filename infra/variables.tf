@@ -174,6 +174,22 @@ variable "container_port" {
 }
 
 # --------------------------------------------------------------------------
+# Mail
+# --------------------------------------------------------------------------
+
+variable "ses_domain" {
+  description = "Domain SES sends as. Verification, DKIM, SPF, and DMARC records for it are published by HPAC's DNS administrator."
+  type        = string
+  default     = "hpac.ca"
+}
+
+variable "ses_mail_from_subdomain" {
+  description = "Subdomain used as the MAIL FROM domain, so SPF aligns with the From header."
+  type        = string
+  default     = "mail"
+}
+
+# --------------------------------------------------------------------------
 # Observability
 # --------------------------------------------------------------------------
 

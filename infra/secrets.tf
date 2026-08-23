@@ -5,11 +5,19 @@ locals {
   secret_entries = {
     model_api_key = {
       name        = "${local.name}/model-api-key"
-      description = "Model API key. Read by the Worker for its one anonymizing summary call."
+      description = "Model API key. Read by the Worker for summarize and translate."
+    }
+    turnstile_secret_key = {
+      name        = "${local.name}/turnstile-secret-key"
+      description = "Cloudflare Turnstile secret key. Read by the API for server-side siteverify. Never reaches a static bundle."
     }
     connection_string = {
       name        = "${local.name}/connection-string"
       description = "ConnectionStrings__HpacSafety for the API, Worker, and migration task."
+    }
+    notifications_to = {
+      name        = "${local.name}/notifications-to"
+      description = "Notifications__To. Where the Worker sends review alerts, safety@hpac.ca in production. A mailbox address, held here rather than in a variable so changing it is not a deploy."
     }
   }
 }

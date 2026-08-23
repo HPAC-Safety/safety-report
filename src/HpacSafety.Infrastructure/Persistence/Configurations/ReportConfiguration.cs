@@ -28,6 +28,11 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
             .HasForeignKey(answer => answer.ReportId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        builder.HasMany(report => report.Files)
+            .WithOne()
+            .HasForeignKey(file => file.ReportId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasMany(report => report.Summaries)
             .WithOne()
             .HasForeignKey(summary => summary.ReportId)
@@ -65,7 +70,32 @@ public sealed class ReportAnswerConfiguration(IFieldCipher cipher) : IEntityType
     }
 }
 
-/// <summary>Maps the one candidate summary per report.</summary>
+/// <summary>
+/// The <c>report_files</c> table. This project owns the table's shape; the blob
+/// storage that fills it is <see cref="HpacSafety.Core.SharedKernel.IBlobStore"/>.
+/// </summary>
+public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFile>
+{
+    /// <inheritdoc />
+    public void Configure(EntityTypeBuilder<ReportFile> builder)
+    {
+        ArgumentNullException.ThrowIfNull(builder);
+
+        builder.ToTable("report_files");
+        builder.HasKey(file => file.Id);
+
+        builder.Property(file => file.BlobKey).HasMaxLength(512).IsRequired();
+        builder.Property(file => file.StrippedBlobKey).HasMaxLength(512);
+        builder.Property(file => file.ContentType).HasMaxLength(128).IsRequired();
+
+        builder.HasIndex(file => file.ReportId);
+
+        // The EXIF stripper claims work by looking for what it has not done yet.
+        builder.HasIndex(file => file.ExifStrippedAt).HasFilter("exif_stripped_at IS NULL");
+    }
+}
+
+/// <summary>Maps the candidate summary, one row per official locale.</summary>
 public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 {
     /// <inheritdoc />
@@ -79,7 +109,10 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
         builder.Property(summary => summary.Text).IsRequired();
         builder.Property(summary => summary.Model).HasMaxLength(200).IsRequired();
         builder.Property(summary => summary.PromptVersion).HasMaxLength(50).IsRequired();
-        builder.HasIndex(summary => summary.ReportId).IsUnique();
+
+        // One summary per language per report, so a reviewer never has to pick
+        // between two English drafts.
+        builder.HasIndex(summary => new { summary.ReportId, summary.Locale }).IsUnique();
 
         builder.HasOne<Core.Features.Moderation.AdminUser>()
             .WithMany()

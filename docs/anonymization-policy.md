@@ -26,6 +26,9 @@ to infer causes, classifications, conditions, or outcomes.
 ## Controls
 
 - One prompt and one model call; no regex scrub or second AI audit.
+- The candidate is translated into the report's other official language after
+  anonymization, not before. The translation provider receives the anonymized
+  summary text only — never `report_content` or `private_context`.
 - Raw answers and model payloads never enter logs, telemetry, test fixtures,
   issues, or public DTOs.
 - The stored candidate records its model and prompt version.

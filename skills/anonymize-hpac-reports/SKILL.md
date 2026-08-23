@@ -25,8 +25,12 @@ changing the flow.
 - Require explicit publication consent and human approval.
 
 The Worker performs anonymization and summarization in one LLM call using one
-versioned prompt. Do not add deterministic text scrubbers, replacement chains,
-a second LLM audit, a translator, or a separate classification subsystem.
+versioned prompt, in the report's own language, then translates the resulting
+candidate to produce the second official language — translation receives the
+anonymized summary text only, never report content or private context. Do not
+add deterministic text scrubbers, replacement chains, a second LLM audit, or a
+separate classification subsystem; aircraft class is an ordinary public
+question, never inferred.
 
 Test with synthetic identifiers. Assert that every private token is present in
 the model request, absent from the summary, and that useful non-private incident

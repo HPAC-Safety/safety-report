@@ -89,7 +89,12 @@ resource "aws_ecs_task_definition" "api" {
       environment = concat(local.common_environment, [
         { name = "Storage__UploadsBucket", value = aws_s3_bucket.uploads.id },
       ])
-      secrets = local.common_secrets
+      secrets = concat(local.common_secrets, [
+        {
+          name      = "Turnstile__SecretKey"
+          valueFrom = aws_secretsmanager_secret.this["turnstile_secret_key"].arn
+        },
+      ])
 
       logConfiguration = {
         logDriver = "awslogs"
@@ -174,6 +179,8 @@ resource "aws_ecs_task_definition" "worker" {
       image     = local.images.worker
       essential = true
       environment = concat(local.common_environment, [
+        { name = "Ses__ConfigurationSet", value = aws_sesv2_configuration_set.main.configuration_set_name },
+        { name = "Ses__FromDomain", value = var.ses_domain },
         { name = "Metrics__Namespace", value = local.metric_namespace },
       ])
 
@@ -181,6 +188,10 @@ resource "aws_ecs_task_definition" "worker" {
         {
           name      = "Model__ApiKey"
           valueFrom = aws_secretsmanager_secret.this["model_api_key"].arn
+        },
+        {
+          name      = "Notifications__To"
+          valueFrom = aws_secretsmanager_secret.this["notifications_to"].arn
         },
       ])
 

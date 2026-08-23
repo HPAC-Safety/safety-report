@@ -174,14 +174,17 @@ public sealed class ReportTests
     }
 
     [Fact]
-    public void Given_positive_consent_and_one_approved_summary_When_publication_is_attempted_Then_it_succeeds()
+    public void Given_positive_consent_and_both_locale_summaries_approved_When_publication_is_attempted_Then_it_succeeds()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
         report.Answer(ConsentQuestion(), ["yes"], Now);
-        var summary = Summary.Generated(report.Id, Locale.EnCa, "The pilot landed hard.", "model", "v4", Now);
-        summary.Approve(TinyId.New(), Now);
-        report.AddSummary(summary);
+        var en = Summary.Generated(report.Id, Locale.EnCa, "The pilot landed hard.", "model", "v4", Now);
+        en.Approve(TinyId.New(), Now);
+        report.AddSummary(en);
+        var fr = Summary.Generated(report.Id, Locale.FrCa, "Le pilote a atterri durement.", "model", "v4", Now);
+        fr.Approve(TinyId.New(), Now);
+        report.AddSummary(fr);
         report.Approve();
 
         // When
@@ -190,6 +193,21 @@ public sealed class ReportTests
         // Then
         report.Status.ShouldBe(ReportStatus.Published);
         report.IsPublishable.ShouldBeTrue();
+    }
+
+    [Fact]
+    public void Given_a_report_When_a_file_is_added_Then_it_belongs_to_that_report_and_starts_unstripped()
+    {
+        // Given
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        var file = report.AddFile("blob-key", "image/jpeg", 1024, Now);
+
+        // Then
+        report.Files.ShouldContain(file);
+        file.ReportId.ShouldBe(report.Id);
+        file.ExifStrippedAt.ShouldBeNull();
     }
 
     [Fact]

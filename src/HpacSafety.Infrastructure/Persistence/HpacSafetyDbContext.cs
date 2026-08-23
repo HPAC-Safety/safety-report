@@ -65,6 +65,9 @@ public class HpacSafetyDbContext : DbContext
     /// <summary>Answers, each referencing the exact question revision shown.</summary>
     public DbSet<ReportAnswer> ReportAnswers => Set<ReportAnswer>();
 
+    /// <summary>Uploaded media, referenced through <see cref="ReviewerMediaLink"/> only.</summary>
+    public DbSet<ReportFile> ReportFiles => Set<ReportFile>();
+
     /// <summary>One candidate summary per report.</summary>
     public DbSet<Summary> Summaries => Set<Summary>();
 
@@ -146,6 +149,7 @@ public class HpacSafetyDbContext : DbContext
 
         modelBuilder.ApplyConfiguration(new ReportConfiguration());
         modelBuilder.ApplyConfiguration(new ReportAnswerConfiguration(_cipher));
+        modelBuilder.ApplyConfiguration(new ReportFileConfiguration());
         modelBuilder.ApplyConfiguration(new SummaryConfiguration());
 
         modelBuilder.ApplyConfiguration(new QuestionConfiguration());

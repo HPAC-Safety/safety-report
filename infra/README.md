@@ -7,11 +7,11 @@ Terraform for the minimal AWS deployment in `ca-central-1`:
 - one small API service and one small Worker service on ECS;
 - PostgreSQL on RDS;
 - ECR, networking, log groups, and Secrets Manager entries;
+- SES for the one production email address, `safety@hpac.ca`: the Worker's
+  submission-ready notification and, separately, SNS operational alerts;
 - two Worker alerts: summarization failure and stuck outbox.
 
-There is no SES application mail, CAPTCHA resource, media quarantine pipeline,
-or speculative scaling. Alert delivery through SNS is operational monitoring,
-not application email.
+There is no speculative scaling.
 
 ```bash
 ./infra/bootstrap.sh

@@ -8,8 +8,13 @@ Incident reports can identify people even when the public summary cannot.
   candidate summaries, review state, and audit/outbox rows.
 - Text answers are encrypted by the application before PostgreSQL stores them.
 - Selected option codes remain invariant and queryable.
-- Optional uploads live in one private Canadian S3 bucket. They are not public
-  summary input and have no public URL.
+- Optional uploads live in one private Canadian S3 bucket, under a key named
+  with the owning report's id. EXIF — GPS above all — is stripped on ingest,
+  the original and the stripped derivative are distinct storage compartments,
+  and only the stripped derivative is ever reachable, through a short-lived
+  presigned URL minted by `ReviewerMediaLink`. There is deliberately no delete
+  on `IBlobStore`. Media is never public summary input and is never attached
+  to a published summary. See [ADR-0026](decisions/ADR-0026-presigned-urls-and-private-blob-storage.md).
 - Question revisions are never edited or deleted; a new revision preserves what
   each reporter saw.
 
@@ -28,7 +33,9 @@ with values, upload contents, model payloads, or candidate text.
 The Worker decrypts answers only while building `ReportForSummaryDto`, then
 partitions them according to the exact immutable question privacy flags. See
 [anonymization-policy.md](anonymization-policy.md). The model provider receives
-the minimum one-call payload and no upload bytes.
+the minimum one-call payload and no upload bytes. The translation provider
+receives the anonymized candidate summary text only — never report content,
+private context, or upload bytes.
 
 ## Operations
 

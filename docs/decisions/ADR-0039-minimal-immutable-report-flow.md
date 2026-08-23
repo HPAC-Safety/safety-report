@@ -1,6 +1,13 @@
 # ADR-0039: One immutable report flow and one model call
 
-Status: Accepted — 2026-08-22
+Status: Accepted — 2026-08-22. Superseded in part by
+[ADR-0040](ADR-0040-restore-anti-spam-translation-and-notification.md): CAPTCHA
+(Turnstile), summary/question translation, application email, and the
+media-processing pipeline were dropped outside the scope of the issue that
+authorized this decision, and are reinstated. Everything else here — the
+immutable-revision schema, the removal of the deterministic scrubber, the
+second model audit, the classifier subsystem, the custom credential proxy, and
+the generic publication-channel framework — still stands.
 
 ## Context
 

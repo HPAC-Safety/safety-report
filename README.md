@@ -13,15 +13,22 @@ open work.
 3. Save the report DTO, exact question revision ids, answers (including skips),
    and Worker outbox message atomically.
 4. The Worker queries those questions, answers, and privacy flags into one DTO.
-5. One model call summarizes non-private answers and uses private answers only
+5. Cloudflare Turnstile verifies the submission server-side before it reaches
+   the database.
+6. One model call summarizes non-private answers and uses private answers only
    to recognize identifying details. A matching pilot name becomes “the pilot.”
-6. A safety officer reviews the candidate. Publication requires both positive
-   consent and human approval.
+7. The Worker translates that candidate into the report's other official
+   language and stores both. A safety officer reviews both candidates.
+   Publication requires positive consent and human approval of each.
+8. The Worker notifies `safety@hpac.ca` that a report is ready for review.
 
 Question revisions are complete immutable records: English, French, input type,
 options, order, privacy, active state, and display metadata. Any change creates
-a new row. The system has no separate PII-audit call, translation pipeline,
-deterministic scrubber, aircraft classifier, or publication-channel framework.
+a new row. Question wording is authored in one language and translated into the
+other before the row is saved. The system has no separate PII-audit call,
+deterministic scrubber, or publication-channel framework. Aircraft
+classification is not a subsystem — it is two ordinary questions, a public
+certification class and a private make/model.
 
 See [AGENTS.md](AGENTS.md) for invariants, [docs/form-spec.md](docs/form-spec.md)
 for the current Typeform questions, and

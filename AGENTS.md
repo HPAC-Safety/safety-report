@@ -17,17 +17,26 @@ flow:
    outbox row atomically.
 4. Query a worker DTO containing the exact questions asked, their privacy
    flags, and the submitted answers.
-5. Send answered non-private fields as `report_content` and answered private
+5. Reject a submission that fails Cloudflare Turnstile server-side `siteverify`
+   before it reaches the database.
+6. Send answered non-private fields as `report_content` and answered private
    fields as labeled `private_context` to one LLM call using the current Worker
    prompt. Private context is only a recognition aid. A private pilot name
    repeated in narrative becomes “the pilot”; no part of the name survives.
-6. Store one candidate summary for human review. Publish only after explicit
-   consent and approval.
+7. Generate one candidate summary in the report's own language, then translate
+   it through `ITranslator` to produce the second official language. Store both
+   for human review. Publish only after explicit consent and approval of both.
+8. Notify `safety@hpac.ca` that a report is ready for review, riding the same
+   outbox row so a failed send never rolls back the report.
 
-Do not add typed projections for ordinary answers, deterministic text
-scrubbers, a second AI audit, a translation pipeline, aircraft classification,
-external publication channels, or other processing stages without a new
-approved requirement.
+Question wording is authored in one language and translated into the other
+through `ITranslator` before the row is saved — an administrator never has to
+type both by hand. Aircraft classification is not a subsystem: it is two
+ordinary data-driven questions, a public certification class and a private
+make/model, handled by the same privacy partition as everything else. Do not
+add typed projections for ordinary answers, a deterministic text scrubber, a
+second AI audit, external publication channels, or other processing stages
+without a new approved requirement.
 
 ## Privacy invariants
 
@@ -41,6 +50,9 @@ approved requirement.
   only help remove or role-generalize matching details.
 - Raw answers and model payloads never enter logs, telemetry, email, issue
   bodies, or committed fixtures.
+- Uploaded media is EXIF-stripped before a reviewer can see it, is never
+  attached to a published summary, and is only ever reached through the
+  presigned-URL chokepoint — never a raw blob key.
 - Nothing is published without positive consent and human approval.
 
 When changing anonymization, prompts, question privacy, or public output, read

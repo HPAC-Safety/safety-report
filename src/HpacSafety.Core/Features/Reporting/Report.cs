@@ -7,6 +7,7 @@ namespace HpacSafety.Core.Features.Reporting;
 public sealed class Report
 {
     private readonly List<ReportAnswer> _answers = [];
+    private readonly List<ReportFile> _files = [];
     private readonly List<Summary> _summaries = [];
 
     private Report()
@@ -43,15 +44,21 @@ public sealed class Report
     /// <summary>One row per answer-producing question shown, including skips.</summary>
     public IReadOnlyList<ReportAnswer> Answers => _answers;
 
-    /// <summary>The single candidate summary.</summary>
+    /// <summary>Uploaded media.</summary>
+    public IReadOnlyList<ReportFile> Files => _files;
+
+    /// <summary>The candidate summary, one per official locale.</summary>
     public IReadOnlyList<Summary> Summaries => _summaries;
 
-    /// <summary>True only after positive consent and human approval.</summary>
+    /// <summary>
+    /// True only when a reporter consented, a safety officer approved the report,
+    /// and both languages of the summary were approved. Every clause is load
+    /// bearing: nothing reaches the public without all four.
+    /// </summary>
     public bool IsPublishable =>
         ConsentPublish is true
         && Status is ReportStatus.Approved or ReportStatus.Published
-        && _summaries.Count == 1
-        && _summaries[0].IsApproved;
+        && Locale.All.All(locale => _summaries.Exists(s => s.Locale == locale && s.IsApproved));
 
     /// <summary>Records a nullable text answer to the exact question revision.</summary>
     public ReportAnswer Answer(Question question, string? value, DateTimeOffset at)
@@ -88,7 +95,15 @@ public sealed class Report
         }
     }
 
-    /// <summary>Adds the one AI or manually authored summary.</summary>
+    /// <summary>Adds an uploaded file.</summary>
+    public ReportFile AddFile(string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
+    {
+        var file = new ReportFile(Id, blobKey, contentType, byteSize, uploadedAt);
+        _files.Add(file);
+        return file;
+    }
+
+    /// <summary>Adds an AI-generated or manually authored summary in one language.</summary>
     public void AddSummary(Summary summary)
     {
         ArgumentNullException.ThrowIfNull(summary);
@@ -98,9 +113,9 @@ public sealed class Report
             throw new DomainRuleViolationException("A summary must belong to this report.");
         }
 
-        if (_summaries.Count > 0)
+        if (_summaries.Exists(s => s.Locale == summary.Locale))
         {
-            throw new DomainRuleViolationException("This report already has a summary.");
+            throw new DomainRuleViolationException($"This report already has a {summary.Locale} summary.");
         }
 
         _summaries.Add(summary);

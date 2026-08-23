@@ -48,13 +48,18 @@ consent is the sole projection because it is a system invariant.
 
 `SummarizationInput` omits skips, puts non-private answers in `report_content`,
 and puts private answers in `private_context`. The Worker loads one versioned
-prompt and makes one LLM call. Private context may recognize details in report
-content but cannot supply summary facts. One candidate summary is stored for
-human editing and approval.
+prompt and makes one LLM call, in the report's own language. It then translates
+the candidate through `ITranslator` to produce the second official language.
+Private context may recognize details in report content but cannot supply
+summary facts. Both candidate summaries are stored for human editing and
+approval. Once stored, the Worker notifies `safety@hpac.ca` that the report is
+ready for review, riding the same outbox row.
 
-There is no deterministic scrubber, second model audit, translation call,
-aircraft classifier, notification pipeline, or generic publication-channel
-abstraction. Add one only for a newly approved requirement.
+There is no deterministic scrubber, second model audit, or generic
+publication-channel abstraction. Add one only for a newly approved requirement.
+Aircraft classification is not a subsystem: `aircraft_certification` is an
+ordinary public question and `aircraft_manufacturer`/`aircraft_model` are
+ordinary private ones, handled by the same partition as every other answer.
 
 ## Components
 

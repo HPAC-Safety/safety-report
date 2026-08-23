@@ -9,6 +9,7 @@ on GitHub-hosted runners.
 |---|---|---|
 | `ci.yml` | pull request, push to `main`, dispatch | Verifying the repository. Its job ids are the required status checks. |
 | `linked-issue.yml` | pull request, including `edited` | One rule: the pull request body closes an issue. |
+| `i18n-translate.yml` | push to `main`, dispatch | Generating `locales/fr-CA.json` and opening a pull request with it |
 | `terraform.yml` | pull request, push to `main`, dispatch | The AWS environment itself, from `infra/` |
 | `deploy-api.yml` | CI success on `main`, dispatch | The API container, **and the database schema** |
 | `deploy-worker.yml` | CI success on `main`, dispatch | The Worker container |
@@ -48,8 +49,8 @@ Only `e2e` still detects that its suite has not been written, emits a
 `::notice::` naming the issue that fills it in, and exits 0. The reasoning, and
 the obligation to *replace* the skip branch rather than add a second job, is in
 [ADR-0011](../../docs/decisions/ADR-0011-ci-contexts-precede-their-checks.md).
-`coverage` and `i18n` already do their real work. This pull request fills in
-`web`: it builds the stylesheet with the pinned, checksum-verified Tailwind
+`coverage` and `i18n` already do their real work. `web` builds the stylesheet
+with the pinned, checksum-verified Tailwind
 binary, then checks the things the theme promises — no reference to a
 third-party font host anywhere under `src/web`, no raw hex in markup, and no
 tracked file changed by the build. It deliberately does **not** set up Node: the
@@ -73,8 +74,59 @@ This repository is public and takes fork pull requests.
   code with a write token and repository secrets in scope.
 - No job in `ci.yml` or `linked-issue.yml` reads a secret. Keep it that way;
   anything needing one runs against recorded fixtures.
+- **`ci.yml` never runs inference.** The `i18n` job verifies the locales with
+  `translate-locale.mjs --check`, which constructs no translator. Generation is
+  a separate workflow that runs only on a push to `main`. A fork must not be
+  able to make this repository spend an inference call or write a generated
+  locale file. See [ADR-0021](../../docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md).
 - "Require approval for first-time contributors" stays enabled in Actions
   settings.
+
+## Translating the locales
+
+`i18n-translate.yml` regenerates `locales/fr-CA.json` from `locales/en-CA.json`
+and opens a pull request with the result. It is the counterpart of the `i18n`
+job in `ci.yml`, and the split between them is a security boundary:
+
+```mermaid
+flowchart TD
+    pr["pull_request<br/>(including forks)"] --> chk["ci.yml · i18n<br/>--check · reads files only"]
+    push["push to main"] --> gen["i18n-translate.yml<br/>--generate"]
+    gen --> q{"any key stale?"}
+    q -->|no| stop["exit 0, open nothing"]
+    q -->|yes| call["one batched provider call"]
+    call --> prq["pull request on<br/>chore/fr-CA-translations"]
+    prq --> human["a human reads the French"]
+```
+
+Three things about it that are easy to undo by accident:
+
+- **It never pushes to `main`.** A human reads the French first. The branch is
+  rebuilt and force-pushed every run, so there is one pull request that updates.
+- **Its first pull request removes `locales/.fr-CA.pending`.** That marker is the
+  only state in which verification permits both generated files to be absent;
+  after it is removed, deleting the generated pair fails closed.
+- **It is the only workflow here that may hold an inference credential**, because
+  it is the only one that never runs fork-authored code.
+- **The Node major is read out of `ci.yml`, not written here.** A tool version is
+  pinned in exactly one file — see
+  [ADR-0015](../../docs/decisions/ADR-0015-one-shell-script-for-development-setup.md)
+  and [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md).
+
+Configuration, all optional, all repository-level:
+
+| Setting | Kind | Required? |
+|---|---|---|
+| `DEEPL_API_KEY` | secret | **Yes.** Without it the job reports which keys are waiting and changes nothing. The host is derived from the key's `:fx` suffix, so there is nothing else to set. |
+| `TRANSLATION_PR_TOKEN` | secret | **Yes, in practice.** Without it the pull request is opened with `GITHUB_TOKEN`, so **CI does not run on it** and it must be nudged by hand before it can merge. |
+| `TRANSLATION_FORMALITY` | variable | No. Defaults to `prefer_more`. |
+| `TRANSLATION_PROVIDER`, `TRANSLATION_ENDPOINT`, `TRANSLATION_MODEL`, `TRANSLATION_API_KEY` | variables + secret | No. These exist so a future provider swap is a settings change rather than a code change. |
+
+The provider is DeepL, targeting `FR-CA` —
+[ADR-0022](../../docs/decisions/ADR-0022-translation-provider-is-configuration.md),
+which records why Amazon Translate, the worker's Anthropic key, and human-only
+translation were rejected. GitHub Models, which ADR-0007 named, was retired on
+30 July 2026.
 
 ## Deployments
 

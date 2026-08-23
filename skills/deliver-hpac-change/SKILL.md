@@ -34,7 +34,7 @@ follow this repository-specific workflow where it is stricter.
 
 ## Respect generated files and pins
 
-- Regenerate `docs/form-spec.md`, `locales/fr-CA.json`,
+- Regenerate `docs/form-spec.md`, `locales/fr-CA.json`, `locales/fr-CA.meta.json`,
   `.claude/skills/`/`.claude/agents/`, and `src/web/styles/site.css` through
   their documented owners; never hand-edit or commit generated `.claude/` files.
 - Commit `Skillfile` and `Skillfile.lock` after `skillfile install`.

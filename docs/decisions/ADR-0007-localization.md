@@ -1,6 +1,9 @@
 # ADR-0007 — Bilingual, with CI-time translation
 
-**Status:** Accepted
+**Status:** Accepted — **except the provider clause**, superseded by
+[ADR-0022](ADR-0022-translation-provider-is-configuration.md). GitHub Models was
+fully retired on 30 July 2026. How the CI job detects change, writes, and stays
+off `pull_request` is [ADR-0021](ADR-0021-ci-translation-opens-a-pull-request.md).
 
 ## Context
 
@@ -17,7 +20,8 @@ first-class.
 files consumed by both the web apps and the API, enforced by a CI lint.
 
 French is generated **in CI**, not at runtime, using **GitHub Models** on the
-free tier (`permissions: models: read`, no API key). Change detection is a
+free tier (`permissions: models: read`, no API key) — *retired since; see
+ADR-0022*. Change detection is a
 content hash per key; only new or changed keys are sent, batched into one
 request. The job **opens a PR** rather than pushing to `main`.
 

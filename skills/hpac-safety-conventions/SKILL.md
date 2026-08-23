@@ -40,7 +40,7 @@ Never hand-edit:
 | Artifact | Owner |
 |---|---|
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
-| `locales/fr-CA.json` | `tools/translate-locale.mjs` in CI |
+| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` in CI |
 | `.claude/skills/`, `.claude/agents/` | `skillfile install` |
 | `src/web/styles/site.css` | `tools/build-css.sh` |
 

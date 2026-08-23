@@ -93,7 +93,7 @@ Never hand-edit these:
 | File | Regenerate with |
 |---|---|
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
-| `locales/fr-CA.json` | `tools/translate-locale.mjs` (CI) |
+| `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` (CI) |
 | `.claude/skills/`, `.claude/agents/` | `skillfile install` |
 | `src/web/styles/site.css` | `tools/build-css.sh` |
 

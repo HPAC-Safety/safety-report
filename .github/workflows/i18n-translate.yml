@@ -1,0 +1,162 @@
+name: Translate locales
+
+# Generates locales/fr-CA.json from locales/en-CA.json and opens a pull request
+# with the result. It NEVER pushes to main: a human reads the French before it
+# ships. See ADR-0021.
+#
+# This is a separate workflow from ci.yml on purpose, and the separation is a
+# security boundary rather than tidiness:
+#
+#   * ci.yml runs on `pull_request`, which means it runs fork-authored code. It
+#     therefore only ever VERIFIES the locales — `translate-locale.mjs --check`
+#     reads files and constructs no translator, so a fork cannot make this
+#     repository spend an inference call, and cannot write a locale file.
+#   * This workflow runs only on a push to main — code that is already merged
+#     and reviewed — and on manual dispatch. It is the only place a provider
+#     credential is in scope.
+#
+# Nothing here ever sees report data. Its input is a JSON file of UI labels that
+# ships in the repository. Invariant 4 in AGENTS.md — raw reports are never
+# translated and never leave the system — is untouched by this job.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - locales/en-CA.json
+      - locales/glossary.json
+      - tools/translate-locale.mjs
+      - tools/translator.mjs
+      - .github/workflows/i18n-translate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One translation run at a time. Two overlapping runs would both branch from
+# main and the second would clobber the first's pull request.
+concurrency:
+  group: i18n-translate
+  cancel-in-progress: false
+
+env:
+  TRANSLATION_BRANCH: chore/fr-CA-translations
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    permissions:
+      # Pushing the translation branch, and opening the pull request that
+      # carries it. main itself is protected; this workflow never writes to it.
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # The Node major is pinned in ci.yml and nowhere else — see ADR-0015 and
+      # skills/deliver-hpac-change/SKILL.md. Reading it here rather than writing
+      # 24 again keeps this workflow from silently disagreeing with CI.
+      - name: Read the pinned Node major
+        id: node
+        run: |
+          set -euo pipefail
+          major=$(grep -m1 -oE 'node-version: [0-9]+' .github/workflows/ci.yml | grep -oE '[0-9]+$')
+          if [ -z "$major" ]; then
+            echo "::error::Could not read the pinned Node major out of .github/workflows/ci.yml."
+            exit 1
+          fi
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.node.outputs.major }}
+
+      # DeepL, targeting FR-CA — the provider decided in ADR-0022, after GitHub
+      # Models (which ADR-0007 named) was retired on 30 July 2026. Only the key
+      # is required: the adapter picks the free or pro host from the key's ':fx'
+      # suffix, and defaults formality to prefer_more. Without DEEPL_API_KEY the
+      # tool reports which keys are waiting and changes nothing.
+      #
+      # The remaining variables exist so a second provider is a settings change
+      # rather than a code change. They are all unset by default.
+      - name: Translate what changed
+        id: translate
+        env:
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+          TRANSLATION_FORMALITY: ${{ vars.TRANSLATION_FORMALITY }}
+          TRANSLATION_PROVIDER: ${{ vars.TRANSLATION_PROVIDER }}
+          TRANSLATION_ENDPOINT: ${{ vars.TRANSLATION_ENDPOINT }}
+          TRANSLATION_MODEL: ${{ vars.TRANSLATION_MODEL }}
+          TRANSLATION_API_KEY: ${{ secrets.TRANSLATION_API_KEY }}
+        run: node tools/translate-locale.mjs --generate --locales locales
+
+      # A pull request opened with the built-in GITHUB_TOKEN does not trigger
+      # workflows — GitHub's loop protection — so CI would never report on it and
+      # the required checks would sit unfulfilled forever. TRANSLATION_PR_TOKEN
+      # is what makes CI run on the translation pull request: a fine-grained PAT
+      # scoped to THIS repository, with Contents and Pull requests both set to
+      # "Read and write", and nothing else. Never a classic PAT — its `repo`
+      # scope reaches every repository the user can see.
+      #
+      # Without it the pull request is still opened and is still correct; it just
+      # has to be nudged by hand (close and reopen it, or push an empty commit)
+      # before it can merge. That trade-off is recorded in ADR-0021, and the
+      # warning below is what tells whoever reads the run which happened.
+      - name: Open a pull request with the French
+        if: steps.translate.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
+          USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
+          SUMMARY: ${{ steps.translate.outputs.summary }}
+        run: |
+          set -euo pipefail
+
+          if [ "$USING_DEFAULT_TOKEN" = 'true' ]; then
+            echo "::warning::No TRANSLATION_PR_TOKEN is set, so this pull request is opened with the built-in GITHUB_TOKEN and CI will not run on it. Close and reopen it, or push an empty commit, before merging. See ADR-0021."
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          git switch -C "$TRANSLATION_BRANCH"
+          git add locales/fr-CA.json locales/fr-CA.meta.json locales/.fr-CA.pending
+          git commit -m 'Regenerate the French UI strings' -m "$SUMMARY."
+
+          # Force, because the branch is rebuilt from main every run. It carries
+          # nothing a human wrote — every hand-written French string lives in
+          # locales/glossary.json, on main.
+          git push --force origin "$TRANSLATION_BRANCH"
+
+          {
+            printf '%s\n\n' "$SUMMARY."
+            cat <<'MD'
+          Generated by `.github/workflows/i18n-translate.yml` from `locales/en-CA.json`.
+
+          **Read the French before merging.** Everything here is machine output except
+          keys stamped `provider: "glossary"`, which are HPAC's own wording copied
+          verbatim from `locales/glossary.json`.
+
+          Every generated key carries `reviewed: false` in `locales/fr-CA.meta.json`.
+          Flip it to `true` as you check each one — that flag is the record of what a
+          human has actually read, and nothing in the job ever sets it.
+
+          Do not hand-edit `locales/fr-CA.json` to fix a translation; the next run
+          regenerates it. Fix the English, or pin the term in `locales/glossary.json`.
+
+          See `docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md`.
+          MD
+          } > "$RUNNER_TEMP/pr-body.md"
+
+          # One pull request that updates, rather than a new one every run.
+          if gh pr view "$TRANSLATION_BRANCH" --json number --jq .number >/dev/null 2>&1; then
+            gh pr edit "$TRANSLATION_BRANCH" --body-file "$RUNNER_TEMP/pr-body.md"
+            echo 'Updated the open translation pull request.'
+          else
+            gh pr create \
+              --base main \
+              --head "$TRANSLATION_BRANCH" \
+              --title 'Regenerate the French UI strings' \
+              --body-file "$RUNNER_TEMP/pr-body.md"
+          fi

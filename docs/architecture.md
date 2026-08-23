@@ -77,7 +77,7 @@ restarting is a notification nobody hears.
 | Project | Responsibility | Depends on |
 |---|---|---|
 | `HpacSafety.Core` | Entities, enums, interfaces, the question bank, the deterministic scrub | nothing |
-| `HpacSafety.Infrastructure` | EF Core, Anthropic, blob storage, HPAC auth, email | Core |
+| `HpacSafety.Infrastructure` | EF Core, Anthropic, blob storage, HPAC auth, email. **Owns every table and every migration** | Core |
 | `HpacSafety.Api` | HTTP surface, validation, sessions | Core, Infrastructure |
 | `HpacSafety.Worker` | Outbox consumer | Core, Infrastructure |
 
@@ -103,6 +103,16 @@ The answers that logic reads — consent above all — additionally project onto
 typed columns on `reports`, so the invariants stay enforceable in `Core` with no
 database. See
 [ADR-0016](decisions/ADR-0016-data-driven-question-bank.md).
+
+## Where the schema lives
+
+Every table, every index, and every migration is in
+`HpacSafety.Infrastructure/Persistence`, including tables whose behaviour lives
+elsewhere. Restricted columns are encrypted there too, by the application, behind
+a port declared in `Core` — PostgreSQL never sees the plaintext of a contact
+detail or a raw narrative. See
+[ADR-0019](decisions/ADR-0019-application-side-field-encryption.md) and
+[ADR-0020](decisions/ADR-0020-seeding-by-migration.md).
 
 ## Deliberately deferred
 

@@ -11,11 +11,24 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public class ReportAnswer
 {
-    private readonly List<string> _selectedOptionCodes = [];
+    // Not readonly: option codes are a primitive collection, which EF Core
+    // assigns to the backing field rather than adding into an existing list.
+    private List<string> _selectedOptionCodes = [];
 
-    private ReportAnswer(Guid reportId, Question question, QuestionVersion version, DateTimeOffset at)
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private ReportAnswer()
     {
-        Id = Guid.NewGuid();
+    }
+#pragma warning restore CS8618
+
+    private ReportAnswer(TinyId reportId, Question question, QuestionVersion version, DateTimeOffset at)
+    {
+        Id = TinyId.New();
         ReportId = reportId;
         QuestionId = question.Id;
         QuestionVersionId = version.Id;
@@ -25,16 +38,16 @@ public class ReportAnswer
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The report this answer belongs to.</summary>
-    public Guid ReportId { get; private init; }
+    public TinyId ReportId { get; private init; }
 
     /// <summary>The question answered.</summary>
-    public Guid QuestionId { get; private init; }
+    public TinyId QuestionId { get; private init; }
 
     /// <summary>The exact version answered, which owns the wording and options.</summary>
-    public Guid QuestionVersionId { get; private init; }
+    public TinyId QuestionVersionId { get; private init; }
 
     /// <summary>The question's invariant key, carried for exports and reads.</summary>
     public string QuestionKey { get; private init; }
@@ -55,7 +68,7 @@ public class ReportAnswer
     /// <summary>When the answer was given.</summary>
     public DateTimeOffset AnsweredAt { get; private init; }
 
-    internal static ReportAnswer ForText(Guid reportId, Question question, string? value, DateTimeOffset at)
+    internal static ReportAnswer ForText(TinyId reportId, Question question, string? value, DateTimeOffset at)
     {
         var version = question.CurrentVersion;
 
@@ -78,7 +91,7 @@ public class ReportAnswer
     }
 
     internal static ReportAnswer ForOptions(
-        Guid reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
+        TinyId reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
     {
         var version = question.CurrentVersion;
 

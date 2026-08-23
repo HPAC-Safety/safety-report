@@ -81,8 +81,8 @@ public class ReportRecordTests
     public void Given_an_approved_summary_When_it_is_rewritten_by_hand_Then_the_approval_is_withdrawn()
     {
         // Given
-        var summary = Summary.Generated(Guid.NewGuid(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
-        summary.Approve(Guid.NewGuid(), Now);
+        var summary = Summary.Generated(TinyId.New(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
+        summary.Approve(TinyId.New(), Now);
 
         // When
         summary.Rewrite("A pilot landed hard in gusty conditions.");
@@ -96,7 +96,7 @@ public class ReportRecordTests
     public void Given_a_summary_When_it_is_rewritten_blank_Then_it_is_refused()
     {
         // Given
-        var summary = Summary.Generated(Guid.NewGuid(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
+        var summary = Summary.Generated(TinyId.New(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
 
         // When
         var rewriting = () => summary.Rewrite("   ");
@@ -109,7 +109,7 @@ public class ReportRecordTests
     public void Given_a_translated_summary_When_it_is_created_Then_it_points_at_the_one_it_came_from()
     {
         // Given
-        var english = Summary.Generated(Guid.NewGuid(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
+        var english = Summary.Generated(TinyId.New(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
 
         // When
         var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
@@ -187,8 +187,8 @@ public class ReportRecordTests
     public void Given_a_moderation_action_When_it_is_audited_Then_it_records_who_and_when_and_not_the_content()
     {
         // Given
-        var adminId = Guid.NewGuid();
-        var reportId = Guid.NewGuid();
+        var adminId = TinyId.New();
+        var reportId = TinyId.New();
 
         // When
         var entry = new AuditLogEntry(adminId, AuditAction.ViewedRawReport, nameof(Report), reportId, Now);

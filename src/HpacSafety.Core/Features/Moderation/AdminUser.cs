@@ -10,9 +10,20 @@ namespace HpacSafety.Core.Features.Moderation;
 public class AdminUser
 {
     /// <summary>Adds someone to the allowlist.</summary>
+    // EF Core materializes an entity by calling this constructor and then
+    // setting every mapped property and backing field directly. It exists for
+    // the ORM and for nothing else — domain code still has to go through the
+    // constructor or factory that follows, so no caller can reach a half-built
+    // aggregate. See ADR-0019.
+#pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
+    private AdminUser()
+    {
+    }
+#pragma warning restore CS8618
+
     public AdminUser(string memberIdentifier, AdminRole role, DateTimeOffset at)
     {
-        Id = Guid.NewGuid();
+        Id = TinyId.New();
         MemberIdentifier = memberIdentifier;
         Role = role;
         CreatedAt = at;
@@ -20,7 +31,7 @@ public class AdminUser
     }
 
     /// <summary>Surrogate key.</summary>
-    public Guid Id { get; private init; }
+    public TinyId Id { get; private init; }
 
     /// <summary>Who they are upstream. Never a credential.</summary>
     public string MemberIdentifier { get; private init; }

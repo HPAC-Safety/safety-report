@@ -166,6 +166,20 @@ exists, so it translates through the Anthropic client it already holds. One
 Dates (`fr-CA` uses `AAAA-MM-JJ`), the province list, and a 24-hour clock all
 follow the resolved locale.
 
+
+## Upload rejections
+
+A refused upload is reported as a **code**, not a sentence:
+`MediaRejectionReason` in the domain, mapped by
+`MediaRejection.LocalizationKeyFor` to a key under `upload.rejected.` in
+`locales/en-CA.json`. No rejection wording exists in `HpacSafety.Core` or
+`HpacSafety.Infrastructure`.
+
+A test asserts that **every reason has an English key**, so a new reason cannot
+reach a reporter as a raw key name. `tools/check-locales.mjs` then checks that
+every English key has a counterpart in each locale file that exists;
+`fr-CA.json` is generated in CI and never hand-edited.
+
 ## Related
 
 - `docs/decisions/ADR-0007-localization.md`

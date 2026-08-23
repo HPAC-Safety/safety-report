@@ -230,6 +230,26 @@ describe('the translation plan', () => {
 		})
 	})
 
+	describe('given a glossary-pinned key already matches its source hash and official French', () => {
+		it('when the plan is built then it queues no work', () => {
+			// Given
+			const text = 'Serious injury (secondary medical aid)'
+			const pinned = 'Blessure grave (aide médicale secondaire)'
+			const source = { form: { severity: text } }
+			const glossary = { 'form.severity': pinned }
+			const french = { form: { severity: pinned } }
+			const meta = { 'form.severity': { source_hash: hashOf(text), provider: 'glossary', reviewed: true } }
+
+			// When
+			const plan = planTranslation({ english: source, french, meta, glossary })
+
+			// Then
+			assert.deepEqual(plan.unchanged, ['form.severity'])
+			assert.equal(plan.pin.length, 0)
+			assert.equal(plan.translate.length, 0)
+		})
+	})
+
 	describe('given an English key that was deleted', () => {
 		it('when the plan is built then the orphaned French key is removed', () => {
 			// Given

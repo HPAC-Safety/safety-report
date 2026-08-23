@@ -125,6 +125,20 @@ public class BlobKeyTests
         Should.Throw<DomainRuleViolationException>(() => BlobKey.For(ReportId, MediaCompartment.Original, fileName));
     }
 
+    [Theory]
+    [InlineData("UPPER.jpg")]
+    [InlineData("123.jpg")]
+    [InlineData("dash-name.jpg")]
+    [InlineData("under_score.jpg")]
+    public void Given_a_file_name_using_the_allowed_alphabet_When_a_key_is_built_Then_it_is_preserved(string fileName)
+    {
+        // Given / When
+        var key = BlobKey.For(ReportId, MediaCompartment.Original, fileName);
+
+        // Then
+        key.FileName.ShouldBe(fileName);
+    }
+
     [Fact]
     public void Given_a_quarantined_upload_When_it_moves_compartment_Then_the_report_and_file_are_carried_across()
     {

@@ -362,6 +362,68 @@ Detail: [`src/HpacSafety.Infrastructure/Persistence/README.md`](src/HpacSafety.I
 - Tailwind v4 via the standalone CLI, using the `@theme` tokens in
   `src/web/styles/tailwind.css`. Do not introduce raw hex values in markup.
 
+### Infrastructure
+
+`infra/` is the AWS environment as Terraform. Four rules, and none of them is a
+preference:
+
+- **No long-lived AWS credential is ever created.** Not for the bootstrap, not
+  afterwards, not temporarily. GitHub Actions assumes a role through OIDC; an
+  administrator runs `infra/bootstrap.sh` against their own SSO session. If you
+  find yourself writing an access key anywhere — a workflow, a script, a secret
+  store, a comment showing "how it would work" — stop. That is a defect, not a
+  shortcut.
+- **A deploy role's trust policy names this repository and one ref.**
+  `repo:HPAC-Safety/*:*` would let any repository in the organisation deploy this
+  system; `repo:HPAC-Safety/safety-report:*` would let any branch, including one
+  pushed to a fork. Pull requests use a **separate, read-only** role, because a
+  `pull_request` run does not present a branch ref at all. See
+  [ADR-0032](docs/decisions/ADR-0032-terraform-ci-without-an-aws-account.md).
+- **Everything that touches report data is in `ca-central-1`**, and
+  `variables.tf` fails validation if it is not. Region here is a data-protection
+  decision, not an infrastructure preference — see `docs/data-handling.md`. The
+  one exception is an ACM certificate for CloudFront, which AWS only issues in
+  `us-east-1` and which holds no data.
+- **Terraform creates Secrets Manager entries, never values.** A value in a
+  `.tfvars` file is a value in state, and state is a file in S3 more people can
+  read than should see an API key. There is no
+  `aws_secretsmanager_secret_version` in `infra/`; adding one is the defect, not
+  the fix.
+
+**One production email address: `safety@hpac.ca`.** Report notifications from the
+Worker and operational alarms both go there. Do not introduce a second address,
+and do not hardcode it — it is `alarm_email_addresses` in `infra/variables.tf`
+and the `hpac-safety/notifications-to` secret at runtime.
+
+**Two custom metrics, and their names are a contract.** The alarms in
+`infra/observability.tf` watch metrics the **Worker publishes**; nothing in AWS
+derives them. If the Worker does not emit these, the alarms watch nothing:
+
+| Namespace | Metric | Kind | Meaning |
+|---|---|---|---|
+| `HpacSafety` | `SummaryFailed` | count | A summarization attempt failed — a real report is unprocessed |
+| `HpacSafety` | `OutboxOldestAgeSeconds` | gauge, per poll | Age of the oldest unclaimed outbox row |
+
+The namespace arrives as `Metrics__Namespace`. Do not rename either metric on one
+side alone. Full detail, including thresholds, is in `docs/deployment.md` under
+"The metric contract".
+
+**One website, two hostnames.** `safety.hpac.ca` serves the public report form at
+`/` and the admin review queue at `/admin/`; `api.hpac.ca` serves the API, HTTPS
+only. There is **one** bucket and **one** CloudFront distribution — so there is
+no network control in front of the review queue that would not also apply to the
+public form. What protects it is the API's authorization, not the delivery path.
+The admin bundle must therefore stay static assets holding no report data; if
+that changes, revisit
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md) rather than
+working around it.
+
+`terraform apply` on an unchanged repository must be a no-op, and the workflow
+asserts it. Nothing is created or edited by hand after bootstrap — a console
+click Terraform does not know about is drift, and drift makes the plan
+untrustworthy. Depth: `infra/README.md`,
+[ADR-0031](docs/decisions/ADR-0031-terraform-shape-and-topology.md).
+
 ### Design
 
 **Follow SOLID, always.** Not as ceremony — as the reason a redaction rule lives
@@ -532,12 +594,14 @@ describes it is worse than no README, because it is believed.
   discovering and invoking what is installed.
 - Regenerate `docs/form-spec.md` with `tools/extract-typeform.py`; never edit it
   by hand.
-- **A tool version is pinned in exactly one file, and `init-dev.sh` reads it
-  from there.** The .NET SDK lives in `global.json`, the Node major in
-  `.github/workflows/ci.yml`. Never write either number into `init-dev.sh` —
-  a second copy is a copy that will drift, and the drift shows up as a
-  contributor whose local build disagrees with CI for no visible reason. Adding
-  a new prerequisite means adding a probe that reads its pin, not a constant.
+- **A tool version is pinned in exactly one file, and every script and workflow
+  reads it from there.** The .NET SDK lives in `global.json`, the Node major in
+  `.github/workflows/ci.yml`, Terraform in `infra/.terraform-version`, tflint in
+  `infra/.tflint-version`. Never write any of those numbers into `init-dev.sh` or
+  into a workflow step — a second copy is a copy that will drift, and the drift
+  shows up as a contributor whose local build disagrees with CI for no visible
+  reason. Adding a new prerequisite means adding a probe that reads its pin, not
+  a constant.
   See [ADR-0015](docs/decisions/ADR-0015-one-shell-script-for-development-setup.md).
 - **`init-dev.sh` never reports success for something it did not do.** Work it
   cannot complete unattended — starting Docker, changing the caller's `PATH`,
@@ -563,6 +627,7 @@ describes it is worse than no README, because it is believed.
 | Strings, locales, translation | `docs/localization.md` |
 | Test style and coverage rules | `docs/testing-conventions.md` |
 | How does it get to AWS, and what does that need? | `docs/deployment.md` |
+| What is actually in the AWS account, and who creates it? | `infra/README.md` |
 | What do the workflows do? | `.github/workflows/README.md` |
 | Why was X decided? | `docs/decisions/` |
 | How do I work here as an agent? | `docs/agent-workflow.md` |
@@ -580,6 +645,12 @@ required. Four of them — `coverage`, `web`, `e2e`, `i18n` — currently no-op 
 a notice because the thing they would verify has not been written yet; each is
 filled in by its own issue. The deploy workflows are wired but fail at the AWS
 step, because the AWS environment does not exist yet.
+
+`infra/` holds the whole environment as Terraform and the one-time
+`bootstrap.sh`. It is formatted, validated, and linted on every pull request by
+the `infra` check, and it **has never been applied** — there is no AWS account
+yet. `terraform.yml`'s `plan` and `apply` jobs skip with a notice until there is
+one.
 
 The work is filed as GitHub issues across the **Foundation**, **Phase 1**, and
 **Phase 2** milestones, with dependencies wired so nothing can be picked up out

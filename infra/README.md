@@ -154,8 +154,9 @@ variable.
 ## Working on the Terraform locally
 
 Terraform is pinned in `.terraform-version` and tflint in `.tflint-version` —
-each in exactly one file, read from there by CI, per `AGENTS.md`. `tfenv`,
-`asdf`, and `mise` all read `.terraform-version` on their own.
+each in exactly one file, read from there by CI, per
+`skills/deliver-hpac-change/SKILL.md`. `tfenv`, `asdf`, and `mise` all read
+`.terraform-version` on their own.
 
 Everything below runs with **no AWS account and no credentials**, and is exactly
 what the `infra` CI job runs:

@@ -6,6 +6,6 @@ agent) can tell the difference between a considered decision and an accident.
 
 Format: context, decision, consequences. Status is `Accepted` unless superseded.
 
-Related process rules — when an ADR is warranted, and what else has to be
-written alongside it — are in `AGENTS.md` under "Documentation is part of the
-work, not after it".
+Related process rules — when an ADR is warranted, what else has to be written
+alongside it, and how to deliver the change — are in
+`skills/deliver-hpac-change/SKILL.md`. `AGENTS.md` routes every ADR task there.

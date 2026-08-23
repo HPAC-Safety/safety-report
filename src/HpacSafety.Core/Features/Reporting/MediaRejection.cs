@@ -6,7 +6,8 @@ namespace HpacSafety.Core.Features.Reporting;
 /// This returns a <b>key</b>, never a sentence. English and French are both
 /// first-class here, so the wording lives in <c>locales/en-CA.json</c> and its
 /// generated French counterpart, and no user-facing string is written in
-/// <c>Core</c>. See AGENTS.md and docs/localization.md.
+/// <c>Core</c>. See <c>skills/localize-hpac-app/SKILL.md</c> and
+/// docs/localization.md.
 /// </para>
 /// </summary>
 public static class MediaRejection

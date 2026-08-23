@@ -15,8 +15,8 @@ namespace HpacSafety.Infrastructure.Storage;
 /// content type, and the expiry. Retarget a URL at another key and
 /// <see cref="ExecuteUploadAsync" /> refuses it, exactly as S3 answers
 /// <c>403</c>. The shared contract suite runs the same tests against both.
-/// See ADR-0026 and AGENTS.md — "a development stand-in must never weaken a
-/// guarantee the production implementation makes".
+/// See ADR-0026 and <c>skills/solid-principles/SKILL.md</c> — a development
+/// stand-in must never weaken a production guarantee.
 /// </para>
 /// </summary>
 public sealed class FileSystemBlobStore : IBlobStore

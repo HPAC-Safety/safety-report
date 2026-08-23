@@ -15,7 +15,7 @@ namespace HpacSafety.Infrastructure.Tests.Storage;
 /// One suite rather than two is the point: a development stand-in that is not
 /// held to the production adapter's guarantees is how a guarantee quietly stops
 /// being true in the environment people actually run. See ADR-0026 and
-/// AGENTS.md.
+/// <c>skills/test-hpac-safety/SKILL.md</c>.
 /// </para>
 /// </summary>
 public abstract class BlobStoreContractTests : IAsyncLifetime

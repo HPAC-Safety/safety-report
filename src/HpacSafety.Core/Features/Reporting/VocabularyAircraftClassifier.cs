@@ -217,19 +217,41 @@ public sealed class VocabularyAircraftClassifier : IAircraftClassifier
     }
 
     /// <summary>
+    /// Words either side of a bare letter that mark it as a certification
+    /// answer rather than an article, a pronoun, or a stray letter split out of
+    /// a contraction or a foreign word.
+    /// </summary>
+    private static readonly string[] CertificationContextWords = ["en", "high", "hi", "low", "lo"];
+
+    /// <summary>
     /// The single EN letter the answer names, or <c>'\0'</c> when it names none
     /// or more than one.
     /// </summary>
+    /// <remarks>
+    /// A token that spells the letter out with "en" attached — <c>"ena"</c>,
+    /// <c>"enb"</c> — is unambiguous on its own. A <b>bare</b> single-letter
+    /// token — <c>"a"</c>, <c>"b"</c>, <c>"c"</c>, <c>"d"</c> — is not: it is
+    /// also an article, a pronoun, or the second half of a contraction the
+    /// normalizer split apart ("I'd" becomes the tokens "i" and "d"), and
+    /// nothing distinguishes "the wing was a nice one" from a genuine "EN A"
+    /// unless the letter sits next to a certification word. A bare letter only
+    /// counts when <see cref="HasCertificationContext"/> confirms that; purely
+    /// numeric tokens such as a size code are skipped when looking, so
+    /// <c>"EN 926 A"</c> still reads as <c>A</c>.
+    /// </remarks>
     private static char ReadEnLetter(string text)
     {
+        var tokens = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         var found = '\0';
 
-        foreach (var token in text.Split(' ', StringSplitOptions.RemoveEmptyEntries))
+        for (var index = 0; index < tokens.Length; index++)
         {
+            var token = tokens[index];
+
             var letter = token switch
             {
-                ['a' or 'b' or 'c' or 'd'] => token[0],
                 ['e', 'n', 'a' or 'b' or 'c' or 'd'] => token[2],
+                ['a' or 'b' or 'c' or 'd'] when HasCertificationContext(tokens, index) => token[0],
                 _ => '\0',
             };
 
@@ -248,6 +270,41 @@ public sealed class VocabularyAircraftClassifier : IAircraftClassifier
 
         return found;
     }
+
+    /// <summary>
+    /// Whether a bare letter at <paramref name="index"/> is standing in a
+    /// certification-shaped position: the <b>whole</b> answer, so there is no
+    /// prose for it to be noise within — <c>"B"</c> on its own — or a
+    /// certification word next to it in either direction, skipping over any
+    /// purely numeric token in between so <c>"EN 926 A"</c> reaches past the
+    /// size code to find "EN". Anything else in between — another word,
+    /// punctuation already stripped to nothing — stops the search in that
+    /// direction: proximity has to be real, not "somewhere in the same
+    /// sentence".
+    /// </summary>
+    private static bool HasCertificationContext(string[] tokens, int index) =>
+        tokens.Length == 1 ||
+        HasContextInDirection(tokens, index, -1) ||
+        HasContextInDirection(tokens, index, 1);
+
+    private static bool HasContextInDirection(string[] tokens, int index, int step)
+    {
+        var i = index + step;
+
+        while (i >= 0 && i < tokens.Length && IsAllDigits(tokens[i]))
+        {
+            i += step;
+        }
+
+        return i >= 0 && i < tokens.Length && Array.IndexOf(CertificationContextWords, tokens[i]) >= 0;
+    }
+
+    /// <summary>
+    /// Every token here comes from <see cref="string.Split(char[], StringSplitOptions)"/>
+    /// with <see cref="StringSplitOptions.RemoveEmptyEntries"/>, so an empty
+    /// token never reaches this check.
+    /// </summary>
+    private static bool IsAllDigits(string token) => token.All(char.IsAsciiDigit);
 
     /// <summary>
     /// With no certification class in the answer, a marker the reporter did give

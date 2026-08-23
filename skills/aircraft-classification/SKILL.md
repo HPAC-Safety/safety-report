@@ -137,11 +137,21 @@ whole implementation. Three things about its shape are load-bearing:
 - **An EN class on a hang glider.** The vocabularies are scoped by the aircraft
   type, so the paraglider one cannot leak across.
 - **A make or model.** There is no table to look it up in.
+- **A bare letter that never named a certification.** Normalizing an apostrophe
+  or a foreign word can produce a stray token that happens to be one character
+  long — `"I'd"` becomes the tokens `"i"` and `"d"`; ordinary prose is full of
+  the article `"a"`. `ReadEnLetter` only reads a bare `a`/`b`/`c`/`d` as the EN
+  letter when it is the whole answer, or when a certification word (`en`,
+  `high`, `low`) sits next to it — skipping a numeric token in between, so `"EN
+  926 A"` still resolves. Found by independent review; see ADR-0029, "4. A bare
+  letter only counts in a certification-shaped position", before touching this
+  method again.
 
 Refusing and discarding are different things. An answer that names a value in
 this vocabulary is kept even when it is less precise than the form would like —
 that is the `EN-B` ruling in ADR-0029, and the reason `uncertified` reaches hang
-gliders too.
+gliders too. But a value has to actually be *named* — proximity to a
+certification word, not mere presence anywhere in the sentence.
 
 ### Markers travel with the class
 

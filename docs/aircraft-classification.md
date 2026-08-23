@@ -86,12 +86,17 @@ Case, punctuation, and spacing are irrelevant: `"EN-B (low)"`, `"en_b, low"` and
   paraglider one cannot leak across.
 - **A make or model.** `"Ozone Rush 6"` in the certification field normalizes to
   nothing, because there is no table to look it up in.
+- **A stray letter in prose that never named a certification.** `"it's a really
+  nice wing"`, `"c'est un bon jour"` — a bare `a`/`b`/`c`/`d` only counts as an
+  EN letter when it is the whole answer or sits next to a certification word
+  (`EN`, `high`, `low`); an article, a pronoun, or half of a contraction never
+  does.
 
 What it does **not** refuse is a bare `EN-B`. Refusing a true answer is its own
 kind of error: the reporter answered, and `EN-B` is in the vocabulary. It is
 kept as given and never widened into a band. See
 [ADR-0029](decisions/ADR-0029-classification-is-deterministic-and-refuses-to-guess.md),
-"Three rulings".
+"Four revisions".
 
 ### Markers travel with the class
 

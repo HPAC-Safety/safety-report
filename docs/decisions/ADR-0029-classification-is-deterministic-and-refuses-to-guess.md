@@ -2,8 +2,9 @@
 
 **Status:** Accepted
 **Date:** 2026-08-22
-**Revised:** 2026-08-22 — three questions raised with HPAC were ruled on; see
-"Three rulings, and what they rejected".
+**Revised:** 2026-08-22 — three questions raised with HPAC were ruled on, and an
+independent review found a false-positive letter match; see "Four revisions, and
+what they rejected".
 
 ## Context
 
@@ -75,11 +76,13 @@ flowchart TD
 Refusing is not the same as discarding an answer the reporter actually gave —
 see the three rulings below.
 
-## Three rulings, and what they rejected
+## Four revisions, and what they rejected
 
 The first draft of this classifier refused three shapes that turned out to be
 answerable. The questions went to HPAC rather than being settled by taste, and
-the answers are requirements now.
+the answers are requirements now. A fourth revision runs the other way: an
+independent review found a shape the classifier accepted that it should have
+refused, and closed it.
 
 ### 1. Plain `EN-B` is a class
 
@@ -134,6 +137,67 @@ answer never resolves to an EN class is untouched.
 *Rejected:* keeping `uncertified` paraglider-only, on the grounds that
 `docs/aircraft-classification.md` listed it under paragliders. That was a gap in
 the document, not a decision — the document now lists it under both.
+
+### 4. A bare letter only counts in a certification-shaped position
+
+**Found in independent review, fixed in the same pull request.** `ReadEnLetter`
+treated a single-character token — `"a"`, `"b"`, `"c"`, `"d"` — as a stated EN
+letter wherever it occurred, with no requirement that it relate to a
+certification word. The normalizer strips an apostrophe to a space, so `"I'd
+guess it was fine"` tokenizes to include a bare `"d"`; a French sentence with no
+certification content at all, `"c'est un bon jour"`, contains a bare `"c"`; the
+indefinite article in ordinary English prose is a bare `"a"` in nearly every
+paragraph. Each one resolved to a confident EN class from a sentence that never
+named one — the exact failure invariant 2 exists to prevent, arrived at through
+the mechanism meant to prevent it rather than around it.
+
+**Ruled — this one did not go to HPAC, because it is not a vocabulary
+judgement; it is a bug in reading the vocabulary.** The fix: a bare
+single-letter token counts as the EN letter only where it sits in a
+certification-shaped position:
+
+- **It is the whole answer.** A one-word answer that is only `"B"` has no prose
+  around it to be noise within, so it counts on its own.
+- **A certification word — `en`, `high`, `hi`, `low`, `lo` — sits next to it**,
+  in either direction, skipping over a purely numeric token in between so `"EN
+  926 A"` still reaches "EN" past the size code. Anything else in between —
+  another word, or nothing, once punctuation is already stripped — stops the
+  search in that direction. Proximity has to be real, not "the letter and the
+  word appear somewhere in the same sentence".
+
+A token that already spells the letter attached to "EN" — `"ena"`, `"enb"` — was
+never ambiguous and needed no context check; only the bare single-character
+token did.
+
+```mermaid
+flowchart TD
+    t["bare single-letter token<br/>a · b · c · d"] --> whole{"the whole<br/>answer?"}
+    whole -->|yes| en["counts as the EN letter"]
+    whole -->|no| near{"en / high / low<br/>adjacent, skipping<br/>digits?"}
+    near -->|yes| en
+    near -->|no| noise["noise — not counted<br/>('I'd', 'c'est', 'a nice wing')"]
+```
+
+Golden cases pin the fix down both ways: the three sentences above resolve to
+`NotDetermined`, and `"EN B"`, `"B (high)"`, `"low B"`, `"EN 926 A"` still
+resolve to their classes.
+
+*Rejected:* requiring the letter's own token to be exactly `"en"` + letter
+(banning the bare single-letter form entirely). That would refuse `"EN A"`
+itself, since normalizing splits it into two tokens, `"en"` and `"a"` — the most
+common real answer shape, not the noise case.
+
+*Rejected:* requiring a certification word to appear anywhere in the answer,
+rather than adjacent to the letter. It would still admit "the wing is high
+performance and I flew a bit erratically" as a hit on "high", proximity to the
+stray letter or not — closer to the original bug than to a fix.
+
+*Rejected:* a fixed word-distance window (for example, within two tokens either
+side) instead of skipping only numeric tokens. It would admit "the wing was a
+en route replacement" — an unrelated "en" two words from an unrelated "a" — on
+distance alone. Skipping only digits keeps the one legitimate reason a
+certification word and its letter are not literally adjacent (a size code
+between them) without opening the check to arbitrary nearby words.
 
 ## Consequences
 

@@ -359,6 +359,40 @@ public class AircraftClassifierTests
         classification.Class.ShouldBe(AircraftClass.NotDetermined);
     }
 
+    [Theory]
+    [InlineData("it's a really nice wing, not sure of class")]
+    [InlineData("I'd guess it was fine")]
+    [InlineData("c'est un bon jour")]
+    public void Given_prose_containing_a_stray_single_letter_When_it_is_resolved_Then_nothing_is_inferred_from_the_noise(string answer)
+    {
+        // Given — none of these sentences names a certification. A bare "a", "c",
+        // or "d" produced by tokenizing an apostrophe or a foreign article is
+        // noise, not an answer, and must never resolve to an EN class.
+
+        // When
+        var classification = _classifier.Classify(answer, Discipline.Paragliding);
+
+        // Then
+        classification.Class.ShouldBe(AircraftClass.NotDetermined);
+    }
+
+    [Theory]
+    [InlineData("EN B", AircraftClass.EnB)]
+    [InlineData("B (high)", AircraftClass.HighEnB)]
+    [InlineData("low B", AircraftClass.LowEnB)]
+    [InlineData("EN 926 A", AircraftClass.EnA)]
+    public void Given_a_short_legitimate_certification_answer_When_it_is_resolved_Then_the_fix_for_stray_letters_does_not_break_it(
+        string answer, AircraftClass expected)
+    {
+        // Given — the fix above must not cost a genuine short answer its class
+
+        // When
+        var classification = _classifier.Classify(answer, Discipline.Paragliding);
+
+        // Then
+        classification.Class.ShouldBe(expected);
+    }
+
     [Fact]
     public void Given_an_undetermined_classification_When_its_codes_are_read_Then_it_says_so_rather_than_being_empty()
     {

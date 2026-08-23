@@ -291,6 +291,7 @@ view and routes task-specific detail to skills. Skills are pinned in
 | Topic | Where |
 |---|---|
 | Setting up a machine to build this | [Getting started](#getting-started) |
+| Complete system specification | [`spec/README.md`](spec/README.md) |
 | System design | [`docs/architecture.md`](docs/architecture.md) |
 | What the form asks | [`docs/form-spec.md`](docs/form-spec.md) *(generated)* |
 | Redaction policy | [`docs/anonymization-policy.md`](docs/anonymization-policy.md) |

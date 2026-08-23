@@ -297,6 +297,35 @@ public sealed class ReportTests
     }
 
     [Fact]
+    public void Given_a_report_already_holding_an_English_summary_When_a_second_English_summary_is_added_Then_it_is_refused()
+    {
+        // Given
+        var report = new Report(Locale.EnCa, Now);
+        report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "The pilot landed hard.", "model", "v4", Now));
+
+        // When
+        Action addingASecond = () =>
+            report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "A second candidate.", "model", "v4", Now));
+
+        // Then
+        addingASecond.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_positive_consent_and_only_one_locale_approved_When_the_report_is_approved_Then_it_is_not_publishable()
+    {
+        var report = new Report(Locale.EnCa, Now);
+        report.Answer(ConsentQuestion(), ["yes"], Now);
+        var en = Summary.Generated(report.Id, Locale.EnCa, "The pilot landed hard.", "model", "v4", Now);
+        en.Approve(TinyId.New(), Now);
+        report.AddSummary(en);
+        report.AddSummary(Summary.Generated(report.Id, Locale.FrCa, "Le pilote a atterri durement.", "model", "v4", Now));
+        report.Approve();
+
+        report.IsPublishable.ShouldBeFalse();
+    }
+
+    [Fact]
     public void Given_positive_consent_and_an_approved_summary_without_report_approval_When_checked_Then_it_is_not_publishable()
     {
         var report = new Report(Locale.EnCa, Now);

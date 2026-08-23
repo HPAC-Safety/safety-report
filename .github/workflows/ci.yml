@@ -224,22 +224,83 @@ jobs:
             ./artifacts/report/*.html
           if-no-files-found: warn
 
+  # No setup-node here, and none is coming. The web layer builds with the
+  # Tailwind standalone binary and nothing else - if this job ever needs Node,
+  # something has grown a node_modules it should not have. See ADR-0006.
   web:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
 
+      # Preinstalled on the runner. build-css.sh is POSIX sh for the same
+      # reason init-dev.sh is: Windows contributors run it under Git Bash.
+      - name: shellcheck build-css.sh
+        run: shellcheck -s sh tools/build-css.sh
+
+      # Downloads the pinned binary named in tools/tailwind.pin and verifies it
+      # against the checksum recorded there before running it. A clean checkout
+      # with no node_modules is exactly the case this proves. See ADR-0023.
       - name: Build stylesheet
+        run: ./tools/build-css.sh
+
+      - name: The stylesheet was produced
+        run: test -s src/web/styles/site.css
+
+      # The acceptance criterion from #11, checked rather than trusted: nothing
+      # in the built stylesheet or in any page reaches Google for a font. The
+      # @font-face URLs are relative paths into src/web/assets/fonts.
+      - name: No third-party font requests
         run: |
-          if [ ! -x tools/build-css.sh ]; then
-            echo "::notice::tools/build-css.sh does not exist yet — added by #10. Skipping."
-            exit 0
+          set -eu
+          hits=$(grep -rIl -e fonts.googleapis.com -e fonts.gstatic.com \
+            src/web --include='*.css' --include='*.html' --include='*.js' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::Fonts must be self-hosted from src/web/assets/fonts. Found a Google Fonts reference in:"
+            echo "$hits"
+            exit 1
           fi
-          ./tools/build-css.sh
-          test -s src/web/styles/site.css
+
+      # Raw hex in markup defeats the token system: a literal colour cannot be
+      # re-themed, so it is the one thing that stays light when everything
+      # around it goes dark. Hex values belong in tailwind.css, which is why
+      # only markup is scanned here. See ADR-0024.
+      #
+      # CSS hex colours come in four valid lengths - #rgb, #rgba, #rrggbb,
+      # #rrggbbaa - and Tailwind arbitrary values (bg-[#f22312ff]) use the
+      # 4- and 8-digit alpha forms routinely. The alternation below is
+      # ordered longest-first so grep reports the whole literal rather than a
+      # 6-digit prefix of an 8-digit one; POSIX ERE alternation is
+      # leftmost-longest at each position regardless of order, but the order
+      # keeps the intent readable.
+      #
+      # Known false positive, left as-is rather than fixed: a hex-shaped
+      # anchor fragment - href="#bad", href="#dead" - matches the 3/4-digit
+      # branch. Distinguishing "#bad" the fragment from "#bad" the colour
+      # needs the surrounding attribute context (href=, id=, a CSS
+      # declaration, a Tailwind bracket), which turns a one-line content lint
+      # into a small parser for one rare collision - a fragment id that also
+      # happens to be a valid hex string. Cheaper to rename the anchor than to
+      # carry that complexity in a grep gate.
+      - name: No raw hex in markup
+        run: |
+          set -eu
+          hits=$(grep -rInE '#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{4}\b|#[0-9a-fA-F]{3}\b' \
+            src/web --include='*.html' --include='*.js' || true)
+          if [ -n "$hits" ]; then
+            echo "::error::Raw hex values belong in src/web/styles/tailwind.css. Use the @theme tokens in markup:"
+            echo "$hits"
+            exit 1
+          fi
+
+      # site.css is generated and gitignored. If a build produces a tracked
+      # change, something that should be generated has been committed.
+      - name: No drift from building
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "::error::Building the stylesheet modified tracked files:"
+            git status --porcelain
+            exit 1
+          fi
 
   e2e:
     runs-on: ubuntu-latest

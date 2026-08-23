@@ -1,0 +1,106 @@
+<!doctype html>
+<!--
+  theme-preview.html — a DEVELOPER artefact, not a user-facing surface.
+
+  It exists so the tokens in tailwind.css can be looked at, and so the
+  acceptance criteria for this theme can be demonstrated rather than asserted:
+  every swatch, both typefaces, the focus ring, and the light/dark flip on one
+  page. It is not deployed, is not linked from the form or the admin UI, and is
+  not part of either static site.
+
+  It is therefore the one page in src/web that is exempt from the
+  no-hardcoded-strings rule, because it contains no user-facing copy: every
+  string on it is a token name, a hex value, or a font name — the things it is
+  showing. The hardcoded-string lint (#8) must skip this file; that is recorded
+  in src/web/README.md and in AGENTS.md.
+
+  Open it after ./tools/build-css.sh:
+      python3 -m http.server 8080 --directory src/web
+      open http://localhost:8080/styles/theme-preview.html
+-->
+<html lang="en" data-theme="light">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="robots" content="noindex">
+	<title>HPAC theme tokens</title>
+	<link rel="icon" href="../assets/hpac-logo.png">
+	<link rel="preload" href="../assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="../assets/fonts/aleo-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="stylesheet" href="./site.css">
+</head>
+<body class="bg-surface text-ink">
+	<div class="mx-auto max-w-3xl px-6 py-10">
+
+		<header class="flex flex-wrap items-center justify-between gap-4 border-b border-rule pb-6">
+			<img src="../assets/hpac-logo.png" width="260" height="125" alt="HPAC" class="h-16 w-auto">
+			<button
+				id="theme-toggle"
+				type="button"
+				class="touch-target rounded border border-rule bg-surface-2 px-4 font-sans text-sm font-medium text-ink"
+				aria-live="polite"
+			>data-theme = <span id="theme-state">light</span></button>
+		</header>
+
+		<h1 class="mt-8 font-display text-4xl font-bold">Aleo &mdash; font-display</h1>
+		<p class="mt-2 font-sans text-lg text-ink-muted">Poppins &mdash; font-sans, 400</p>
+		<p class="mt-1 font-sans text-lg font-medium">Poppins 500 &middot;
+			<span class="font-semibold">600</span> &middot;
+			<span class="font-bold">700</span></p>
+		<p class="mt-1 font-sans text-lg">latin-ext &amp; fr-CA: &Agrave; &egrave; &ccedil; &ocirc; &oelig; &laquo;&nbsp;&raquo;</p>
+
+		<h2 class="mt-10 font-display text-2xl font-bold">--color-*</h2>
+		<dl class="mt-4 grid grid-cols-[8rem_1fr] gap-x-4 gap-y-2 font-sans text-sm">
+			<dt class="text-ink-muted">brand-600</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded bg-brand-600"></span></dd>
+			<dt class="text-ink-muted">brand-700</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded bg-brand-700"></span></dd>
+			<dt class="text-ink-muted">ink</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded bg-ink"></span></dd>
+			<dt class="text-ink-muted">ink-muted</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded bg-ink-muted"></span></dd>
+			<dt class="text-ink-muted">rule</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded bg-rule"></span></dd>
+			<dt class="text-ink-muted">surface</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded border border-rule bg-surface"></span></dd>
+			<dt class="text-ink-muted">surface-2</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded border border-rule bg-surface-2"></span></dd>
+			<dt class="text-ink-muted">surface-3</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded border border-rule bg-surface-3"></span></dd>
+			<dt class="text-ink-muted">surface-4</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded border border-rule bg-surface-4"></span></dd>
+			<dt class="text-ink-muted">focus</dt>
+			<dd><span class="inline-block h-6 w-24 align-middle rounded bg-focus"></span></dd>
+		</dl>
+
+		<h2 class="mt-10 font-display text-2xl font-bold">touch-target &amp; :focus-visible</h2>
+		<p class="mt-2 font-sans text-sm text-ink-muted">Tab to each. 44&times;44 minimum.</p>
+		<div class="mt-4 flex flex-wrap gap-3">
+			<button type="button" class="touch-target rounded bg-brand-700 px-5 font-sans font-semibold text-ink-inverse">brand-700 / ink-inverse</button>
+			<button type="button" class="touch-target rounded border border-rule bg-surface-2 px-5 font-sans font-medium text-ink">rule / surface-2</button>
+			<a href="#" class="touch-target inline-flex items-center rounded px-2 font-sans underline decoration-rule underline-offset-4">anchor</a>
+		</div>
+
+		<h2 class="mt-10 font-display text-2xl font-bold">--container-measure</h2>
+		<p class="mt-2 max-w-measure font-sans text-ink-muted">
+			65ch. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
+			eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad
+			minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
+			ex ea commodo consequat.
+		</p>
+	</div>
+
+	<script>
+		// The toggle is part of the preview, not of the theme: the theme itself
+		// needs no JavaScript at all. With no data-theme attribute the tokens
+		// follow prefers-color-scheme on their own.
+		const root = document.documentElement;
+		const state = document.getElementById('theme-state');
+		document.getElementById('theme-toggle').addEventListener('click', () => {
+			const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+			root.dataset.theme = next;
+			state.textContent = next;
+		});
+	</script>
+</body>
+</html>

@@ -15,12 +15,22 @@
  * See docs/design-system.md and ADR-0006.
  */
 
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 
 /*
- * The standalone CLI scans these directories for class names. src/web/public
- * and src/web/admin do not have their pages yet (#12, #25); the directories
- * exist, so the globs are already correct and no later change is needed here.
+ * `source(none)` on the import above turns OFF Tailwind v4's automatic
+ * full-project content scan. Without it, the compiler walks every file under
+ * the repository root looking for anything that is class-name-shaped —
+ * including prose. A class name mentioned in a comment, an ADR, or a README as
+ * an example of what NOT to write (`bg-[#f22312]`, `dark:bg-neutral-900`) is
+ * indistinguishable to that scanner from the real thing, and it gets compiled
+ * into site.css. Confirmed by review on #55: both of those examples appeared
+ * in the built stylesheet with no such class anywhere in actual markup.
+ *
+ * The `@source` directives below are therefore the ONLY places this build
+ * looks for class names. src/web/public and src/web/admin do not have their
+ * pages yet (#12, #25); the directories exist, so the globs are already
+ * correct and no later change is needed here.
  */
 @source "../public";
 @source "../admin";

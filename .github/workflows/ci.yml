@@ -264,10 +264,27 @@ jobs:
       # re-themed, so it is the one thing that stays light when everything
       # around it goes dark. Hex values belong in tailwind.css, which is why
       # only markup is scanned here. See ADR-0024.
+      #
+      # CSS hex colours come in four valid lengths - #rgb, #rgba, #rrggbb,
+      # #rrggbbaa - and Tailwind arbitrary values (bg-[#f22312ff]) use the
+      # 4- and 8-digit alpha forms routinely. The alternation below is
+      # ordered longest-first so grep reports the whole literal rather than a
+      # 6-digit prefix of an 8-digit one; POSIX ERE alternation is
+      # leftmost-longest at each position regardless of order, but the order
+      # keeps the intent readable.
+      #
+      # Known false positive, left as-is rather than fixed: a hex-shaped
+      # anchor fragment - href="#bad", href="#dead" - matches the 3/4-digit
+      # branch. Distinguishing "#bad" the fragment from "#bad" the colour
+      # needs the surrounding attribute context (href=, id=, a CSS
+      # declaration, a Tailwind bracket), which turns a one-line content lint
+      # into a small parser for one rare collision - a fragment id that also
+      # happens to be a valid hex string. Cheaper to rename the anchor than to
+      # carry that complexity in a grep gate.
       - name: No raw hex in markup
         run: |
           set -eu
-          hits=$(grep -rInE '#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?\b' \
+          hits=$(grep -rInE '#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{4}\b|#[0-9a-fA-F]{3}\b' \
             src/web --include='*.html' --include='*.js' || true)
           if [ -n "$hits" ]; then
             echo "::error::Raw hex values belong in src/web/styles/tailwind.css. Use the @theme tokens in markup:"

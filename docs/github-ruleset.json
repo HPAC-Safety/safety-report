@@ -72,6 +72,9 @@
           },
           {
             "context": "infra"
+          },
+          {
+            "context": "cucumber"
           }
         ]
       }

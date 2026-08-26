@@ -16,7 +16,7 @@ through issue #82. The audited implementation baseline is main at
 3. Issues and ADRs preserve history and rationale. A contradictory issue, ADR,
    README, prompt, skill, test, or implementation is superseded until it is
    aligned with this specification.
-4. [Implementation status](implementation-status.md) records gaps explicitly.
+4. [Implementation status](implementation-status/implementation-status.md) records gaps explicitly.
    A documented target feature must not be described as already working merely
    because its domain scaffold exists.
 5. A future decision that changes the design must update the canonical page,
@@ -31,22 +31,27 @@ specification rather than preserving competing designs.
 
 | Area | Canonical specification |
 |---|---|
-| Purpose, boundaries, and components | [System overview](system-overview.md) |
-| Immutable bilingual questions and form assembly | [Question bank and form](question-bank-and-form.md) |
-| Browser continuity, multipart API, DTOs, and validation | [Report submission](report-submission.md) |
-| Report states, invariants, deletion, and retention | [Domain and lifecycle](domain-and-lifecycle.md) |
-| One-call bilingual summarization and anonymization | [AI anonymization](ai-anonymization.md) |
-| Images, videos, documents, quarantine, and derivatives | [Attachments](media.md) |
-| Member authentication, authorization, review, and public feed | [Moderation, authentication, and publication](moderation-authentication-and-publication.md) |
-| Target records, naming, transactions, and query DTOs | [Data and persistence](data-and-persistence.md) |
-| HTTP surfaces, ports, and end-to-end data flow | [Interfaces and data flow](interfaces-and-data-flow.md) |
-| Static sites, bilingual behavior, design, and accessibility | [Web, localization, and design](web-localization-and-design.md) |
-| Minimal AWS topology, deployment, secrets, and operations | [Infrastructure and operations](infrastructure-and-operations.md) |
-| Required tests and quality gates | [Testing and quality](testing-and-quality.md) |
-| Target-to-main gap analysis | [Implementation status](implementation-status.md) |
-| Every audited path under `src/` | [Source inventory](source-inventory.md) |
-| Every GitHub issue and its relationship to this design | [Issue traceability](issue-traceability.md) |
-| Shared terms | [Glossary](glossary.md) |
+| Purpose, boundaries, and components | [System overview](system-overview/system-overview.md) |
+| Immutable bilingual questions and form assembly | [Question bank and form](question-bank-and-form/question-bank-and-form.feature) |
+| Browser continuity, multipart API, DTOs, and validation | [Report submission](report-submission/report-submission.feature) |
+| Report states, invariants, deletion, and retention | [Domain and lifecycle](domain-and-lifecycle/domain-and-lifecycle.feature) |
+| One-call bilingual summarization and anonymization | [AI anonymization](ai-anonymization/ai-anonymization.feature) |
+| Images, videos, documents, quarantine, and derivatives | [Attachments](media/media.feature) |
+| Member authentication, authorization, review, and public feed | [Moderation, authentication, and publication](moderation-authentication-and-publication/moderation-authentication-and-publication.feature) |
+| Target records, naming, transactions, and query DTOs | [Data and persistence](data-and-persistence/data-and-persistence.md) |
+| HTTP surfaces, ports, and end-to-end data flow | [Interfaces and data flow](interfaces-and-data-flow/interfaces-and-data-flow.md) |
+| Static sites, bilingual behavior, design, and accessibility | [Web, localization, and design](web-localization-and-design/web-localization-and-design.feature) |
+| Minimal AWS topology, deployment, secrets, and operations | [Infrastructure and operations](infrastructure-and-operations/infrastructure-and-operations.md) |
+| Required tests and quality gates | [Testing and quality](testing-and-quality/testing-and-quality.md) |
+| Target-to-main gap analysis | [Implementation status](implementation-status/implementation-status.md) |
+| Every audited path under `src/` | [Source inventory](source-inventory/source-inventory.md) |
+| Every GitHub issue and its relationship to this design | [Issue traceability](issue-traceability/issue-traceability.md) |
+| Shared terms | [Glossary](glossary/glossary.md) |
+
+Behavior-describing pages under `features/` are Cucumber-compliant
+`.feature` files (Given/When/Then); each has a `README.md` alongside it for
+supporting detail — tables, rationale, or current-implementation divergence
+notes — that doesn't fit Gherkin. Pure reference/audit pages stay `.md`.
 
 ## Product contract in one paragraph
 

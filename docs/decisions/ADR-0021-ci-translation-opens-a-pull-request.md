@@ -2,7 +2,7 @@
 
 **Status:** Accepted only for stable application UI catalogues. It does not
 translate database questions, raw reports, or summaries; see the
-[localization specification](../../spec/web-localization-and-design.md).
+[localization specification](../../features/web-localization-and-design/web-localization-and-design.feature).
 
 Extends [ADR-0007](ADR-0007-localization.md), which decided that French is
 generated in CI. This one decides *how* — the change detection, the write path,

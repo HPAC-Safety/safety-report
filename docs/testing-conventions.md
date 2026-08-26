@@ -11,7 +11,7 @@ assert schema, privacy properties, and preserved safety facts rather than exact
 prose.
 
 Prioritize boundaries described in
-[`spec/testing-and-quality.md`](../spec/testing-and-quality.md): immutable
+[`features/testing-and-quality/testing-and-quality.md`](../features/testing-and-quality/testing-and-quality.md): immutable
 question selection, multipart mapping/atomicity, Turnstile/rate limits, one-call
 bilingual output, role replacement with no identity fragments, attachment
 derivatives/private documents, authentication/audit, pair approval, soft

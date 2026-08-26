@@ -1,7 +1,7 @@
 # Contributing
 
 Read [`AGENTS.md`](AGENTS.md) and the canonical
-[`spec/README.md`](spec/README.md) before changing product behavior. The
+[`features/README.md`](features/README.md) before changing product behavior. The
 repository processes real accident reports, so privacy and publication rules
 are part of correctness.
 

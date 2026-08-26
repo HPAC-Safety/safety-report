@@ -97,4 +97,4 @@ about growth that a folder called `Shared` never conveys.
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md)
 - `docs/architecture.md`, `src/HpacSafety.Core/README.md`
-- `AGENTS.md` and [`/spec/interfaces-and-data-flow`](../../spec/interfaces-and-data-flow.md)
+- `AGENTS.md` and [`/features/interfaces-and-data-flow/interfaces-and-data-flow.md`](../../features/interfaces-and-data-flow/interfaces-and-data-flow.md)

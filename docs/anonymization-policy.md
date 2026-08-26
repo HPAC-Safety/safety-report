@@ -1,7 +1,7 @@
 # Anonymization policy
 
 The normative contract is
-[`spec/ai-anonymization.md`](../spec/ai-anonymization.md). HPAC publishes safety
+[`features/ai-anonymization/ai-anonymization.feature`](../features/ai-anonymization/ai-anonymization.feature). HPAC publishes safety
 lessons, not identities.
 
 The Worker makes one model call per attempt with one versioned prompt. Answered

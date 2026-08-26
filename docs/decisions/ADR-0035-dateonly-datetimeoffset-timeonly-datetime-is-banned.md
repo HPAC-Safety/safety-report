@@ -2,7 +2,7 @@
 
 **Status:** Accepted for date/time types. Typed ordinary-answer projections
 described below are superseded by
-[`/spec/question-bank-and-form`](../../spec/question-bank-and-form.md).
+[`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature).
 
 ## Context
 

@@ -2,7 +2,7 @@
 
 ADRs preserve the reasoning and implementation context that existed when a
 decision was made. They are historical records, not the current product-design
-authority. [`/spec`](../../spec/README.md) wins whenever an ADR conflicts with
+authority. [`/features`](../../features/README.md) wins whenever an ADR conflicts with
 the target.
 
 Contradictory ADRs carry an explicit superseded or narrowed status. Dedicated

@@ -1,7 +1,7 @@
 # ADR-0031 — The shape of the Terraform, and the topology it builds
 
 **Status:** Superseded by the
-[minimal infrastructure specification](../../spec/infrastructure-and-operations.md),
+[minimal infrastructure specification](../../features/infrastructure-and-operations/infrastructure-and-operations.md),
 which requires separate public/admin sites and removes SES/email resources.
 
 **Supersedes, in part:**

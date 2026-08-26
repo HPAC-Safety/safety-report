@@ -27,5 +27,5 @@ security boundary.
 
 Current main contains the design system and asset tooling but not the complete
 pages. Implement against
-[`spec/web-localization-and-design.md`](../../spec/web-localization-and-design.md),
+[`features/web-localization-and-design/web-localization-and-design.feature`](../../features/web-localization-and-design/web-localization-and-design.feature),
 not old issue closure state.

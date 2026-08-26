@@ -1,7 +1,7 @@
 # HpacSafety.Core
 
 Non-deployable domain library with no runtime package dependency. The target
-model is specified in [`spec/domain-and-lifecycle.md`](../../spec/domain-and-lifecycle.md).
+model is specified in [`features/domain-and-lifecycle/domain-and-lifecycle.feature`](../../features/domain-and-lifecycle/domain-and-lifecycle.feature).
 
 ## Target shape
 
@@ -23,7 +23,7 @@ publication-channel abstraction, or pre-submit upload-slot abstraction.
 Current main contains useful consent, IDs, outbox, privacy-partition, media, and
 question scaffolding, plus legacy typed projections and one-language summaries
 that must be migrated. Do not treat current types as target requirements; see
-[`spec/implementation-status.md`](../../spec/implementation-status.md).
+[`features/implementation-status/implementation-status.md`](../../features/implementation-status/implementation-status.md).
 
 Pure unit tests live in `tests/HpacSafety.Core.Tests`; privacy/model boundary
 tests use synthetic data in `tests/HpacSafety.Anonymization.Tests`.

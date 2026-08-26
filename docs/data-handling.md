@@ -2,9 +2,9 @@
 
 Occurrence reports can contain identities, contact details, injuries, and
 fatalities. The canonical storage, deletion, AI, and attachment rules are in
-[`spec/data-and-persistence.md`](../spec/data-and-persistence.md),
-[`spec/ai-anonymization.md`](../spec/ai-anonymization.md), and
-[`spec/media.md`](../spec/media.md).
+[`features/data-and-persistence/data-and-persistence.md`](../features/data-and-persistence/data-and-persistence.md),
+[`features/ai-anonymization/ai-anonymization.feature`](../features/ai-anonymization/ai-anonymization.feature), and
+[`features/media/media.feature`](../features/media/media.feature).
 
 ## Storage and retention
 

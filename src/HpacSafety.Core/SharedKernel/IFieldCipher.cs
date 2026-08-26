@@ -8,7 +8,7 @@ namespace HpacSafety.Core.SharedKernel;
 /// <remarks>
 /// <para>
 /// This describes superseded current behavior, not a target domain rule. See
-/// the superseded status on ADR-0019 and <c>spec/data-and-persistence.md</c>.
+/// the superseded status on ADR-0019 and <c>features/data-and-persistence/data-and-persistence.md</c>.
 /// </para>
 /// <para>
 /// An implementation is authenticated: text that was tampered with, or that was

@@ -30,4 +30,4 @@ officer reviews and approves the pair.
 Validation and problem details use stable machine codes plus localized safe
 copy. Never echo private input merely to localize an error.
 
-See [`spec/web-localization-and-design.md`](../spec/web-localization-and-design.md).
+See [`features/web-localization-and-design/web-localization-and-design.feature`](../features/web-localization-and-design/web-localization-and-design.feature).

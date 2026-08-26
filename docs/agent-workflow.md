@@ -2,7 +2,7 @@
 
 [`AGENTS.md`](../AGENTS.md) is the only always-loaded repository instruction;
 the tool-specific instruction paths are symlinks to it. The product-design
-authority is [`spec/README.md`](../spec/README.md).
+authority is [`features/README.md`](../features/README.md).
 
 ## Start
 

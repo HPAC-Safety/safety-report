@@ -1,8 +1,8 @@
 # ADR-0038 — Question privacy partitions an LLM-only anonymization request
 
 **Status:** Superseded in part by the
-[complete question-revision](../../spec/question-bank-and-form.md) and
-[one-call AI](../../spec/ai-anonymization.md) specifications. The two-section
+[complete question-revision](../../features/question-bank-and-form/question-bank-and-form.feature) and
+[one-call AI](../../features/ai-anonymization/ai-anonymization.feature) specifications. The two-section
 privacy partition remains; separate audit/translation and identity-level
 privacy rules do not.
 **Date:** 2026-08-22

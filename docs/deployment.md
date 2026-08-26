@@ -21,7 +21,7 @@ before cutover.
 The current Terraform and deploy workflows are scaffolding and still include
 superseded combined-site and email resources. Issue #30 owns pruning them and
 bringing the deployed topology to
-[`spec/infrastructure-and-operations.md`](../spec/infrastructure-and-operations.md).
+[`features/infrastructure-and-operations/infrastructure-and-operations.md`](../features/infrastructure-and-operations/infrastructure-and-operations.md).
 Do not interpret a successful Terraform validation as proof that the target
 environment exists or has been applied.
 

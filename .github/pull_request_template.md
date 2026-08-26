@@ -14,7 +14,7 @@ Closes #
 
 ## Privacy and specification
 
-- [ ] Product behavior matches `/spec`, or the affected specification pages are updated here
+- [ ] Product behavior matches `/features`, or the affected specification pages are updated here
 - [ ] Report/question/model/attachment/auth/publication changes have a focused boundary test
 - [ ] Runtime summarization still uses one prompt and one model call per attempt
 - [ ] Documents remain private and are not anonymized, parsed, sent to AI, inline-rendered, or published

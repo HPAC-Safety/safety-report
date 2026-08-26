@@ -11,4 +11,4 @@ active tree; Git history preserves them if their history is ever needed.
 
 Add an ADR only when a durable trade-off would otherwise be difficult to recover
 from the specification and code. A routine implementation choice or restatement
-of `/spec` does not need one.
+of `/features` does not need one.

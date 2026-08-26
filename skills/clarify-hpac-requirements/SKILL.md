@@ -5,7 +5,7 @@ description: Resolve genuinely material HPAC Safety requirement ambiguity. Use w
 
 # Clarify HPAC Safety requirements
 
-First read the relevant `/spec` pages, source, tests, and issue. Proceed with a
+First read the relevant `/features` pages, source, tests, and issue. Proceed with a
 documented local assumption when the choice is reversible and does not alter
 product behavior.
 

@@ -23,4 +23,4 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
    credentials/tokens, client filenames, or attachment URLs.
 
 Before finishing, run the narrowest relevant checks, inspect the diff for
-unrelated changes, and update `/spec` whenever the target design changes.
+unrelated changes, and update `/features` whenever the target design changes.

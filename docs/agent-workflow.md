@@ -7,14 +7,14 @@ authority is [`features/README.md`](../features/README.md).
 ## Start
 
 1. Run `./init-dev.sh` or `./init-dev.sh --check`.
-2. Read `AGENTS.md`, the affected `/spec` pages, and the focused issue.
+2. Read `AGENTS.md`, the affected `/features` pages, and the focused issue.
 3. Load only the project skills relevant to the task.
 4. Work from current `main` on `issue-<number>/<short-description>`.
 
 Project-owned skill sources live under `skills/`. `skillfile install` generates
 tool-specific copies under `.claude/`; never edit or commit those copies. Keep
 local skills concise and HPAC-specific. Search before adding generic guidance,
-and do not install a skill whose architecture conflicts with `/spec`.
+and do not install a skill whose architecture conflicts with `/features`.
 
 Runtime AI instructions are not coding-agent skills. The one current prompt
 lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.

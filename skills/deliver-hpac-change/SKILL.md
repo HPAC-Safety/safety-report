@@ -9,17 +9,17 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 
 - Work from current `main` and a focused GitHub issue.
 - Name the branch `issue-<number>/<short-description>`.
-- Read the affected `/spec` pages before editing. Update them first if the
+- Read the affected `/features` pages before editing. Update them first if the
   target behavior is changing.
 - Preserve unrelated work in a dirty tree.
 
 ## Document
 
-- `/spec` describes the target.
+- `/features` describes the target.
 - Component READMEs describe their scope and current implementation status
   without duplicating the specification.
 - ADRs are historical rationale. Add one only for a durable decision whose
-  trade-off will not be clear from `/spec` and code.
+  trade-off will not be clear from `/features` and code.
 - Update issue acceptance criteria when the design changes; do not leave a
   conflicting backlog item open.
 - Never include real report content or personal information.

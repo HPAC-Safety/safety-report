@@ -20,7 +20,7 @@ contributors run the script from Git Bash.
 
 1. Find or open a focused issue.
 2. Branch from current `main` using `issue-<number>/<short-description>`.
-3. Implement the smallest change that satisfies `/spec` and the issue.
+3. Implement the smallest change that satisfies `/features` and the issue.
 4. Run the checks relevant to the changed surface.
 5. Open a pull request with a squash-ready title and `Closes #<number>` on its
    own line in the body.

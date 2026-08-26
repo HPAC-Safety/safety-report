@@ -14,6 +14,17 @@ Feature: Question bank and form
     Then a new complete revision is created with the next revision number
     And the previous revision is left unchanged
 
+  Scenario: Only an active Administrator may create a revision
+    Given a member is not an active Administrator
+    When that member attempts to save a question revision
+    Then the API rejects the attempt
+
+  Scenario: The editor loads the latest revision and copies it into a new one
+    Given an active Administrator opens a question for editing
+    When the editor loads that question
+    Then it loads the latest revision and copies all fields into an edit DTO
+    And on save it validates both languages and all options, then saves a new complete row rather than patching the existing revision
+
   Scenario: Only the latest active, non-deleted revision is shown on the form
     Given a stable key has multiple revisions
     And only one of them is both active and not deleted
@@ -98,3 +109,4 @@ Feature: Question bank and form
     When an Administrator attempts to delete it
     Then the deletion is rejected
     And the revision remains available as history indefinitely
+    And deactivating it through a new revision is the normal way to remove it from future forms

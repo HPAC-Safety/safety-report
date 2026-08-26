@@ -6,6 +6,7 @@ Feature: Report submission
   Background:
     Given the only write endpoint for a reporter is POST /api/v1/reports
     And it accepts multipart/form-data with one report JSON part, zero or more files parts, and one Turnstile response token
+    And the Turnstile token is transport/security metadata, not persisted report content
 
   Scenario: The browser holds report state locally until submission
     Given a reporter is filling out the form
@@ -62,11 +63,16 @@ Feature: Report submission
     Then the API validates the answer against that revision's historical type, options, and privacy
     And does not require the submitted set to equal the latest form
 
+  Scenario: A revision that was never shown as answer-producing is rejectable
+    Given a submitted answer references a revision that the client was never shown as answer-producing, or the submitted revisions form an internally inconsistent combination for the same stable key
+    When the API validates the submission
+    Then the API may reject the submission
+
   Scenario: Reporter-visible errors never echo submitted content
     Given a submission fails validation
     When the API returns an error to the reporter
     Then the error is localized and safe
-    And it never echoes an answer, client filename, Turnstile token, or credential
+    And it never echoes an answer, client filename, Turnstile token, credential, or storage key
     And routine invalid requests are not logged with body content
 
   Scenario: Accepted attachments are streamed into quarantine under a bound
@@ -80,7 +86,7 @@ Feature: Report submission
   Scenario: A valid submission is persisted atomically
     Given a multipart submission passes every validation step
     When the API commits the submission
-    Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata for successfully quarantined blobs, one summarization outbox item, and one independent attachment-processing outbox item per file
+    Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, and one independent attachment-processing outbox item per file
 
   Scenario: A failed transaction leaves no visible report and no leaked blobs
     Given the persistence transaction for a submission fails

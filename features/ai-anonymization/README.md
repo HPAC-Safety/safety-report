@@ -12,6 +12,9 @@ version control; they do not need parallel active pipelines.
 
 ## Input DTO fields
 
+The Worker queries a purpose-built DTO containing the report ID, source
+locale, and the two labeled `report_content`/`private_context` arrays.
+
 Each field in `report_content` and `private_context` includes the stable
 question key, the label in the reporter's language, and its rendered answer.
 Question labels delimit fields; answer text is untrusted data and cannot issue

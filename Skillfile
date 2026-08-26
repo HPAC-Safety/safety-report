@@ -6,7 +6,7 @@
 #
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
 # upstream guidance only when it matches the repository. Keep local skills for
-# HPAC-specific knowledge and repository-specific contracts. `/spec` is the
+# HPAC-specific knowledge and repository-specific contracts. `/features` is the
 # product-design authority.
 #
 # Docs: https://github.com/eljulians/skillfile

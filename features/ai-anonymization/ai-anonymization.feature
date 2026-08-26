@@ -35,6 +35,12 @@ Feature: AI anonymization
     Then every occurrence of that identity becomes exactly "the pilot" in the English summary and "le pilote" in the French summary
     And no first name, surname, initials, fragment, hash, bracket, or generic numbered placeholder remains
 
+  Scenario: Both summaries preserve safety-relevant content while anonymizing
+    Given a report's eligible content includes the sequence, conditions, contributing factors, actions, outcome, and lessons of an occurrence
+    When the model produces the anonymized summary
+    Then both the English and French summary preserve that safety-relevant sequence, conditions, contributing factors, actions, outcome, and lessons
+    And material that could identify a person is removed or generalized instead of removing safety-relevant content
+
   Scenario Outline: An identifying category is never disclosed in a summary
     Given a report's eligible content contains <category>
     When the model produces the anonymized summary
@@ -45,7 +51,7 @@ Feature: AI anonymization
       | a name, initial, membership number, email, phone number, address, or account identifier |
       | an exact site, coordinates, or uniquely identifying location description |
       | an aircraft manufacturer or model                                |
-      | a filename, attachment/document content, or hidden metadata      |
+      | a filename, attachment/document content, metadata, or a hidden private answer |
 
   Scenario: A private-only fact is never added merely for completeness
     Given a private fact would make the narrative more complete
@@ -70,6 +76,12 @@ Feature: AI anonymization
     When a safety officer edits either the English or French text
     Then ApprovedBy and ApprovedAt are cleared
     And the officer reviews and approves the pair as a whole, never one language independently
+
+  Scenario: The reviewer may correct either text before approval
+    Given a safety officer is reviewing a summary pair before approval
+    When the officer edits either the English or French text
+    Then the correction is saved before approval
+    And the reviewer is responsible for the final privacy decision
 
   Scenario: Retries repeat the single-call operation without adding stages
     Given a summarization attempt fails with a transient provider error or invalid output

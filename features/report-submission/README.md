@@ -49,6 +49,12 @@ The API performs, in order:
 6. attachment mapping/count, per-file size, declared content type, and
    detected-type checks.
 
+## Failure handling
+
+If the persistence transaction fails, the API must not attempt a fragile
+distributed rollback across the database and object storage — the storage
+lifecycle rule expiring unreferenced quarantine blobs is what cleans those up.
+
 ## Document handoff
 
 Documents use the allowlist and handling rules in

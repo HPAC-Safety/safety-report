@@ -89,6 +89,12 @@ Feature: Domain and lifecycle
     Then the report is retained indefinitely
     And there is no scheduled report purge and no physical-delete path in the application
 
+  Scenario: Soft-deleted and private data remain under managed retention
+    Given a report has been soft-deleted, or a question revision has a private original or derivative
+    When that data is no longer reachable through normal application paths
+    Then it remains under managed storage/database retention rather than being purged
+    And backups of that data follow infrastructure policy
+
   Scenario: Unreferenced quarantine objects expire without affecting reports
     Given a multipart request fails or is abandoned before the transaction commits
     When the resulting quarantine objects are never referenced by a report

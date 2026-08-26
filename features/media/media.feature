@@ -24,6 +24,7 @@ Feature: Attachments
       | application/msword                                                       | document |
       | application/vnd.openxmlformats-officedocument.wordprocessingml.document  | document |
       | application/rtf                                                          | document |
+      | text/rtf                                                                 | document |
       | text/markdown                                                            | document |
       | text/plain                                                               | document |
       | application/vnd.oasis.opendocument.text                                  | document |
@@ -75,12 +76,12 @@ Feature: Attachments
     Then each file's processing is an independent outbox item
     And the slow or corrupt file neither rolls back the valid report nor forces an additional AI call
 
-  Scenario: A reviewer gets a short-lived URL only for successfully processed
-    media
+  Scenario: A reviewer gets a short-lived URL only for successfully processed media
     Given an image or video attachment has finished processing successfully
     When an authorized reviewer requests to view it
     Then the reviewer receives a short-lived read URL to the derivative
     And the response forces download with a server-minted display name and the header X-Content-Type-Options: nosniff
+    And there is no API blob proxy or public URL
 
   Scenario: A reviewer downloads a validated document as an unredacted original
     Given a document attachment has passed validation and malware scanning
@@ -88,6 +89,7 @@ Feature: Attachments
     Then the reviewer receives a short-lived URL to the private original
     And the admin site does not embed or inline-render the document content
     And the reviewer is warned that the document is unredacted before download
+    And there is no API blob proxy or public URL
 
   Scenario: A failed attachment is inaccessible to reviewers
     Given signature validation, malware scanning, decoding, metadata removal, re-encoding/remuxing, writing, or verification fails for an attachment

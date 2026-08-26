@@ -102,6 +102,11 @@ Feature: Web, localization, and design
     And motion respects reduced-motion and touch targets/contrast are sufficient
     And media previews are never required to complete a report
 
+  Scenario: Core content and navigation do not depend on JavaScript
+    Given a visitor loads the site
+    When JavaScript is unavailable
+    Then core content and navigation still render
+
   Scenario: A JavaScript failure never exposes or erases report data
     Given a script error occurs while a reporter is filling out the form
     When the failure happens

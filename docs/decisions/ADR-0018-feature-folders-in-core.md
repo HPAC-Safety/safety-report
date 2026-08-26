@@ -1,7 +1,7 @@
 # ADR-0018: `Core` is organised by feature, with a shared kernel
 
 **Status:** Accepted for feature-based organization. The concrete type inventory
-below has been aligned to the target in `/spec`; the previous ports and typed
+below has been aligned to the target in `/features`; the previous ports and typed
 ordinary-answer projections remain visible in Git history.
 **Date:** 2026-08-22
 

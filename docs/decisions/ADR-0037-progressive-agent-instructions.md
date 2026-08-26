@@ -1,6 +1,6 @@
 # ADR-0037 — Progressive agent instructions
 
-**Status:** Accepted and narrowed by issue #78. `/spec` is the product authority,
+**Status:** Accepted and narrowed by issue #78. `/features` is the product authority,
 and conflicting generic design/pattern skills were pruned.
 
 ## Context

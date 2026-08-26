@@ -65,12 +65,9 @@ Feature: Domain and lifecycle
   Scenario: Soft deletion removes a report from every normal path
     Given a report exists in any lifecycle state
     When a safety officer soft-deletes it
-    Then one application transaction stamps the same deleted timestamp on the
-      report and all owned/dependent rows: answers, summary, files, and
-      report outbox items
+    Then one application transaction stamps the same deleted timestamp on the report and all owned/dependent rows: answers, summary, files, and report outbox items
     And an immutable audit entry is recorded
-    And pending Worker work for the report stops, and the Worker rechecks
-      deletion before committing output
+    And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
     And public and normal admin queries hide the report immediately
     And there is no restore transition
 
@@ -81,35 +78,28 @@ Feature: Domain and lifecycle
     And historical audit rows remain and may still reference that admin's ID
 
   Scenario: A question revision can be deleted only when unreferenced
-    Given a question revision is referenced by no answer, including answers on
-      deleted reports
+    Given a question revision is referenced by no answer, including answers on deleted reports
     When an Administrator deletes it
-    Then the revision and its option children are stamped with one deleted
-      timestamp
-    And once any answer references a revision, that revision is never
-      deletable again
+    Then the revision and its option children are stamped with one deleted timestamp
+    And once any answer references a revision, that revision is never deletable again
 
   Scenario: Raw reports are retained until explicit deletion
     Given a report has been submitted
     When no safety officer has deleted it
     Then the report is retained indefinitely
-    And there is no scheduled report purge and no physical-delete path in the
-      application
+    And there is no scheduled report purge and no physical-delete path in the application
 
   Scenario: Unreferenced quarantine objects expire without affecting reports
-    Given a multipart request fails or is abandoned before the transaction
-      commits
+    Given a multipart request fails or is abandoned before the transaction commits
     When the resulting quarantine objects are never referenced by a report
-    Then those objects may expire automatically through storage lifecycle
-      rules
+    Then those objects may expire automatically through storage lifecycle rules
     And that operational cleanup does not change report retention
 
   Scenario Outline: An audited action is recorded in the immutable audit log
     Given <action> occurs
     When the action completes
     Then an audit log entry records identifiers and action metadata
-    And it never contains raw answers, names, credentials, tokens, or client
-      filenames
+    And it never contains raw answers, names, credentials, tokens, or client filenames
 
     Examples:
       | action                                                    |

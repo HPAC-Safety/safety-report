@@ -1,0 +1,10 @@
+{
+  "name": "hpac-safety-gherkin-check",
+  "private": true,
+  "type": "module",
+  "description": "Pinned official Cucumber Gherkin parser, used only to verify features/**/*.feature syntax in CI.",
+  "devDependencies": {
+    "@cucumber/gherkin": "42.0.1",
+    "@cucumber/messages": "34.2.1"
+  }
+}

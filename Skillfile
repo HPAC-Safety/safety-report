@@ -27,6 +27,11 @@ github  skill  github/awesome-copilot  skills/csharp-async
 # Red, green, tidy. Write the test before the code.
 github  skill  obra/superpowers  skills/test-driven-development
 
+# Declarative Gherkin scenario design and anti-patterns; framework-agnostic —
+# features/*.feature has no step definitions, so only the authoring guidance
+# applies, not the execution-framework parts of this skill.
+github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-best-practices
+
 # --- authored in this repo (source of truth lives under skills/) ---
 # The anonymization skill tells coding agents what contract to preserve. The
 # actual runtime prompt lives with the Worker and is sent to the model when a

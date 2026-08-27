@@ -16,9 +16,21 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// Its wording is still editable, and it reorders like any other.
 /// </para>
 /// <para>
-/// Everything else is ordinary data. Nothing but consent projects onto a typed
-/// property of <see cref="Reporting.Report"/> — the admin review DTO reads exact
-/// asked questions and answers directly. See <c>docs/data-and-persistence.md</c>.
+/// Nothing but consent projects onto a typed property of
+/// <see cref="Reporting.Report"/> — the admin review DTO reads exact asked
+/// questions and answers directly. See <c>docs/data-and-persistence.md</c>.
+/// </para>
+/// <para>
+/// Order, section, privacy, active state, system state, required state, and the
+/// complete ordered option set all live on <see cref="QuestionRevision"/>, not
+/// here — a referenced revision has to preserve the complete question exactly
+/// as it was shown, and none of those facts can be reconstructed from the
+/// current state of a mutable question row. Every read here that looks
+/// question-scoped (<see cref="IsPrivate"/>, <see cref="DisplayOrder"/>,
+/// <see cref="SectionKey"/>, <see cref="IsActive"/>) reads through to
+/// <see cref="CurrentRevision"/>, and every change to one of them is made by
+/// creating a new revision. See
+/// <c>features/question-bank-and-form/question-bank-and-form.feature</c>.
 /// </para>
 /// </remarks>
 public class Question
@@ -36,15 +48,12 @@ public class Question
     }
 #pragma warning restore CS8618
 
-    private Question(string key, bool isSystem, QuestionRole role, bool isPrivate, int displayOrder, string? sectionKey, DateTimeOffset at)
+    private Question(string key, bool isSystem, QuestionRole role, DateTimeOffset at)
     {
         Id = TinyId.New();
         Key = QuestionKey.Normalize(key);
         IsSystem = isSystem;
         Role = role;
-        IsPrivate = isPrivate;
-        DisplayOrder = displayOrder;
-        SectionKey = sectionKey is null ? null : QuestionKey.Normalize(sectionKey);
         CreatedAt = at;
     }
 
@@ -62,20 +71,22 @@ public class Question
 
     /// <summary>
     /// Whether answers are private redaction context rather than facts eligible
-    /// for the summary. Private by default, and immutable after creation: an
-    /// administrator must retire this question and create a new one to change
-    /// that contract. See ADR-0038.
+    /// for the summary, on the current revision. See ADR-0038 and the class
+    /// remarks: this is a revision field, changed by creating a new revision.
     /// </summary>
-    public bool IsPrivate { get; private init; }
+    public bool IsPrivate => CurrentRevision.IsPrivate;
 
-    /// <summary>Where this question sits on the form. Not versioned.</summary>
-    public int DisplayOrder { get; private set; }
+    /// <summary>Where this question sits on the form today. Not versioned
+    /// independently — see the class remarks.</summary>
+    public int DisplayOrder => CurrentRevision.DisplayOrder;
 
-    /// <summary>The section this question is grouped under, if any.</summary>
-    public string? SectionKey { get; private set; }
+    /// <summary>The section this question is grouped under today, if any.</summary>
+    public string? SectionKey => CurrentRevision.SectionKey;
 
-    /// <summary>Whether the public form asks this question today.</summary>
-    public bool IsActive { get; private set; }
+    /// <summary>Whether the public form asks this question today. Always false
+    /// once the question itself is deleted, regardless of what the current
+    /// revision says.</summary>
+    public bool IsActive => Deleted is null && CurrentRevision.IsActive;
 
     /// <summary>When this question was created.</summary>
     public DateTimeOffset CreatedAt { get; private init; }
@@ -86,10 +97,16 @@ public class Question
     /// <summary>Every revision, oldest first. Answers reference one of these.</summary>
     public IReadOnlyList<QuestionRevision> Revisions => _revisions;
 
-    /// <summary>The revision the form asks today.</summary>
+    /// <summary>
+    /// The revision the form asks today. Selected by the highest revision
+    /// number rather than list position: EF Core does not guarantee the order
+    /// of a loaded navigation collection, so the last element of
+    /// <see cref="_revisions"/> can be an arbitrary historical row after a
+    /// load.
+    /// </summary>
     public QuestionRevision CurrentRevision =>
         _revisions.Count > 0
-            ? _revisions[^1]
+            ? _revisions.MaxBy(revision => revision.RevisionNumber)!
             : throw new DomainRuleViolationException("A question always has at least one revision.");
 
     /// <summary>What this question currently asks for.</summary>
@@ -106,14 +123,15 @@ public class Question
         string? helpTextFr = null,
         string? placeholderEn = null,
         string? placeholderFr = null,
-        bool isRequired = false,
         QuestionRole role = QuestionRole.None,
         bool isPrivate = true,
+        bool isActive = false,
         int displayOrder = 0,
-        string? sectionKey = null) =>
+        string? sectionKey = null,
+        IReadOnlyList<QuestionOptionInput>? options = null) =>
         Create(
             key, type, labelEn, labelFr, at, isSystem: false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isRequired, role, isPrivate, displayOrder, sectionKey);
+            role, isPrivate, isActive, displayOrder, sectionKey, options);
 
     /// <summary>
     /// Creates the publication-consent question. The only question the system
@@ -137,11 +155,12 @@ public class Question
             helpTextFr,
             placeholderEn: null,
             placeholderFr: null,
-            isRequired: true,
             QuestionRole.ConsentPublish,
             isPrivate: true,
+            isActive: true,
             displayOrder,
-            sectionKey: null);
+            sectionKey: null,
+            options: null);
 
     private static Question Create(
         string key,
@@ -154,65 +173,70 @@ public class Question
         string? helpTextFr,
         string? placeholderEn,
         string? placeholderFr,
-        bool isRequired,
         QuestionRole role,
         bool isPrivate,
+        bool isActive,
         int displayOrder,
-        string? sectionKey)
+        string? sectionKey,
+        IReadOnlyList<QuestionOptionInput>? options)
     {
-        var question = new Question(key, isSystem, role, isPrivate, displayOrder, sectionKey, at);
+        var question = new Question(key, isSystem, role, at);
         question._revisions.Add(
             QuestionRevision.Create(
-                question.Id, 1, type, isRequired, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr, at));
+                question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
+                isSystem, isPrivate, isActive, displayOrder, sectionKey, options ?? [], at));
         return question;
     }
 
     /// <summary>
-    /// Rewords or retypes the question, producing a new complete bilingual
-    /// revision. Answers already given keep pointing at the revision they were
-    /// given under, so an old report still shows the wording it was actually
-    /// asked with.
+    /// Rewords, retypes, reorders, moves, reclassifies, activates, deactivates,
+    /// or changes the options of this question, producing one new complete
+    /// bilingual revision. Answers already given keep pointing at the revision
+    /// they were given under, so an old report still shows exactly what it was
+    /// actually asked, including the order, section, privacy, and active state
+    /// in force at the time.
     /// </summary>
     public QuestionRevision Revise(
         QuestionType type,
-        bool isRequired,
         string labelEn,
         string labelFr,
+        bool isPrivate,
+        bool isActive,
+        int displayOrder,
+        string? sectionKey,
         DateTimeOffset at,
         string? helpTextEn = null,
         string? helpTextFr = null,
         string? placeholderEn = null,
-        string? placeholderFr = null)
+        string? placeholderFr = null,
+        IReadOnlyList<QuestionOptionInput>? options = null)
     {
-        EnsureNotDeleted();
-
         if (IsSystem && type != Type)
         {
             throw new DomainRuleViolationException(
                 $"'{Key}' is a system question. Its wording can change; its type cannot.");
         }
 
-        var revision = QuestionRevision.Create(
-            Id, CurrentRevision.RevisionNumber + 1, type, isRequired, labelEn, labelFr,
-            helpTextEn, helpTextFr, placeholderEn, placeholderFr, at);
-        _revisions.Add(revision);
-        return revision;
+        return ReviseInternal(
+            type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
+            isPrivate, isActive, displayOrder, sectionKey, options ?? [], at);
     }
 
-    /// <summary>Moves the question on the form. Not a versioned change — moving a
-    /// question does not alter what any answer means.</summary>
-    public void Reorder(int displayOrder)
-    {
-        EnsureNotDeleted();
-        DisplayOrder = displayOrder;
-    }
+    /// <summary>Moves the question on the form, as a new revision. Every other
+    /// field is carried forward unchanged from <see cref="CurrentRevision"/>.</summary>
+    public QuestionRevision Reorder(int displayOrder, DateTimeOffset at) =>
+        ReviseInternal(
+            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
+            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, CurrentRevision.IsActive,
+            displayOrder, CurrentRevision.SectionKey, CurrentOptions(), at);
 
-    /// <summary>Moves the question into a section, or out of one.</summary>
-    public void MoveToSection(string? sectionKey)
-    {
-        EnsureNotDeleted();
-        SectionKey = sectionKey is null ? null : QuestionKey.Normalize(sectionKey);
-    }
+    /// <summary>Moves the question into a section, or out of one, as a new
+    /// revision. Every other field is carried forward unchanged.</summary>
+    public QuestionRevision MoveToSection(string? sectionKey, DateTimeOffset at) =>
+        ReviseInternal(
+            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
+            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, CurrentRevision.IsActive,
+            CurrentRevision.DisplayOrder, sectionKey, CurrentOptions(), at);
 
     /// <summary>Reassigns what logic reads this answer for. A role lives on at
     /// most one active question at a time; that is enforced by the question bank,
@@ -230,29 +254,30 @@ public class Question
     }
 
     /// <summary>
-    /// Starts asking this question. Every revision is born complete in both
-    /// official languages, so there is nothing left to check here beyond
-    /// whether the question itself is still live.
+    /// Starts asking this question, as a new revision. Every revision is born
+    /// complete in both official languages, so there is nothing left to check
+    /// here beyond whether the question itself is still live.
     /// </summary>
-    public void Activate()
-    {
-        EnsureNotDeleted();
-        IsActive = true;
-    }
+    public QuestionRevision Activate(DateTimeOffset at) =>
+        ReviseInternal(
+            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
+            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, isActive: true,
+            CurrentRevision.DisplayOrder, CurrentRevision.SectionKey, CurrentOptions(), at);
 
-    /// <summary>Stops asking this question. Every answer already given to it is
-    /// kept.</summary>
-    public void Deactivate()
+    /// <summary>Stops asking this question, as a new revision. Every answer
+    /// already given to it is kept.</summary>
+    public QuestionRevision Deactivate(DateTimeOffset at)
     {
-        EnsureNotDeleted();
-
         if (IsSystem)
         {
             throw new DomainRuleViolationException(
                 $"'{Key}' gates publication. A form that does not ask it cannot publish anything.");
         }
 
-        IsActive = false;
+        return ReviseInternal(
+            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
+            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, isActive: false,
+            CurrentRevision.DisplayOrder, CurrentRevision.SectionKey, CurrentOptions(), at);
     }
 
     /// <summary>
@@ -272,9 +297,36 @@ public class Question
             return;
         }
 
-        IsActive = false;
         Deleted = at;
     }
+
+    private QuestionRevision ReviseInternal(
+        QuestionType type,
+        string labelEn,
+        string labelFr,
+        string? helpTextEn,
+        string? helpTextFr,
+        string? placeholderEn,
+        string? placeholderFr,
+        bool isPrivate,
+        bool isActive,
+        int displayOrder,
+        string? sectionKey,
+        IReadOnlyList<QuestionOptionInput> options,
+        DateTimeOffset at)
+    {
+        EnsureNotDeleted();
+
+        var revision = QuestionRevision.Create(
+            Id, CurrentRevision.RevisionNumber + 1, type, labelEn, labelFr, helpTextEn, helpTextFr,
+            placeholderEn, placeholderFr, IsSystem, isPrivate, isActive, displayOrder, sectionKey, options, at);
+        _revisions.Add(revision);
+        return revision;
+    }
+
+    /// <summary>The current revision's option set, in order, as input for a new revision.</summary>
+    private List<QuestionOptionInput> CurrentOptions() =>
+        CurrentRevision.Options.Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr)).ToList();
 
     private void EnsureNotDeleted()
     {

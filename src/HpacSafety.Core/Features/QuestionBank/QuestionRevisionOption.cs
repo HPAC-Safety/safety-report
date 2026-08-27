@@ -41,8 +41,13 @@ public class QuestionRevisionOption
     /// <summary>The invariant code stored against an answer. Never display text.</summary>
     public string Code { get; private init; }
 
-    /// <summary>Where this option sits among its siblings.</summary>
-    public int DisplayOrder { get; private set; }
+    /// <summary>
+    /// Where this option sits among its siblings. Fixed at creation: the
+    /// complete ordered option set belongs to the revision it was born with,
+    /// and reordering options means creating a new revision with a new list,
+    /// not moving one in place.
+    /// </summary>
+    public int DisplayOrder { get; private init; }
 
     /// <summary>When this option was deleted along with its revision, if it was.</summary>
     public DateTimeOffset? Deleted { get; private set; }
@@ -59,9 +64,6 @@ public class QuestionRevisionOption
     internal static QuestionRevisionOption Create(
         TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr) =>
         new(questionRevisionId, code, displayOrder, labelEn, labelFr);
-
-    /// <summary>Moves this option among its siblings. Not a versioned change.</summary>
-    public void Reorder(int displayOrder) => DisplayOrder = displayOrder;
 
     private static string NotBlank(string label) =>
         string.IsNullOrWhiteSpace(label)

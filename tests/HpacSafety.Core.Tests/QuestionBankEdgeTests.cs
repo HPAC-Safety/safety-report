@@ -24,7 +24,7 @@ public class QuestionBankEdgeTests
         question.Delete(Now);
 
         // When
-        var reordering = () => question.Reorder(2);
+        var reordering = () => question.Reorder(2, Now);
 
         // Then
         reordering.ShouldThrow<DomainRuleViolationException>();
@@ -81,7 +81,7 @@ public class QuestionBankEdgeTests
         var question = Question.Create("manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now);
 
         // When
-        question.MoveToSection("Aircraft details");
+        question.MoveToSection("Aircraft details", Now);
 
         // Then
         question.SectionKey.ShouldBe("aircraft_details");
@@ -103,45 +103,49 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_duplicate_option_code_When_it_is_added_Then_it_is_refused()
+    public void Given_a_duplicate_option_code_When_the_revision_is_created_Then_it_is_refused()
     {
-        // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
-        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
-
-        // When
-        var adding = () => question.CurrentRevision.AddOption("Morning", "Morning again", "Encore le matin");
+        // Given / When — options are supplied once, complete, at creation
+        var creating = () => Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options:
+            [
+                new QuestionOptionInput("morning", "Morning", "Matin"),
+                new QuestionOptionInput("Morning", "Morning again", "Encore le matin"),
+            ]);
 
         // Then — the code is normalized before the duplicate check
-        adding.ShouldThrow<DomainRuleViolationException>();
+        creating.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
-    public void Given_an_option_missing_French_wording_When_it_is_added_Then_it_is_refused()
+    public void Given_an_option_missing_French_wording_When_the_revision_is_created_Then_it_is_refused()
     {
-        // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
-
-        // When
-        var adding = () => question.CurrentRevision.AddOption("morning", "Morning", "   ");
+        // Given / When
+        var creating = () => Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options: [new QuestionOptionInput("morning", "Morning", "   ")]);
 
         // Then
-        adding.ShouldThrow<DomainRuleViolationException>();
+        creating.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
-    public void Given_an_option_When_it_is_reordered_Then_it_moves_among_its_siblings()
+    public void Given_options_supplied_in_a_specific_order_When_the_revision_is_created_Then_their_display_order_matches()
     {
-        // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
-        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
-        var evening = question.CurrentRevision.AddOption("evening", "Evening", "Soirée");
-
-        // When
-        evening.Reorder(0);
+        // Given / When — the complete ordered option set is fixed at
+        // creation; there is no in-place reorder on an existing revision.
+        var question = Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options:
+            [
+                new QuestionOptionInput("evening", "Evening", "Soirée"),
+                new QuestionOptionInput("morning", "Morning", "Matin"),
+            ]);
 
         // Then
-        evening.DisplayOrder.ShouldBe(0);
+        question.CurrentRevision.Option("evening")!.DisplayOrder.ShouldBe(0);
+        question.CurrentRevision.Option("morning")!.DisplayOrder.ShouldBe(1);
         question.Revisions.Count.ShouldBe(1);
     }
 
@@ -149,8 +153,9 @@ public class QuestionBankEdgeTests
     public void Given_a_select_question_When_it_is_answered_with_free_text_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
-        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
+        var question = Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -176,31 +181,15 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_required_question_When_it_is_left_blank_Then_it_is_refused()
+    public void Given_the_consent_question_When_nothing_is_chosen_Then_it_is_refused()
     {
-        // Given
-        var question = Question.Create(
-            "description", QuestionType.LongText, "Describe the occurrence", "Décrivez l'événement", Now, isRequired: true);
+        // Given — consent_publish is the only question the system ever
+        // requires; IsRequired can no longer be set on an ordinary question.
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
         var report = new Report(Locale.EnCa, Now);
 
         // When
-        var answering = () => report.Answer(question, "  ", Now);
-
-        // Then
-        answering.ShouldThrow<DomainRuleViolationException>();
-    }
-
-    [Fact]
-    public void Given_a_required_select_question_When_nothing_is_chosen_Then_it_is_refused()
-    {
-        // Given
-        var question = Question.Create(
-            "province", QuestionType.SingleSelect, "Province", "Province", Now, isRequired: true);
-        question.CurrentRevision.AddOption("alberta", "Alberta", "Alberta");
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        var answering = () => report.Answer(question, [], Now);
+        var answering = () => report.Answer(consent, [], Now);
 
         // Then
         answering.ShouldThrow<DomainRuleViolationException>();
@@ -210,9 +199,9 @@ public class QuestionBankEdgeTests
     public void Given_a_single_select_question_When_two_answers_are_given_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("province", QuestionType.SingleSelect, "Province", "Province", Now);
-        question.CurrentRevision.AddOption("alberta", "Alberta", "Alberta");
-        question.CurrentRevision.AddOption("ontario", "Ontario", "Ontario");
+        var question = Question.Create(
+            "province", QuestionType.SingleSelect, "Province", "Province", Now,
+            options: [new QuestionOptionInput("alberta", "Alberta", "Alberta"), new QuestionOptionInput("ontario", "Ontario", "Ontario")]);
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -226,9 +215,9 @@ public class QuestionBankEdgeTests
     public void Given_a_multi_select_question_When_several_answers_are_given_Then_all_are_recorded()
     {
         // Given
-        var question = Question.Create("ratings", QuestionType.MultiSelect, "Pilot's ratings", "Qualifications du pilote", Now);
-        question.CurrentRevision.AddOption("p3", "P3", "P3");
-        question.CurrentRevision.AddOption("paragliding_instructor", "Paragliding Instructor", "Instructeur de parapente");
+        var question = Question.Create(
+            "ratings", QuestionType.MultiSelect, "Pilot's ratings", "Qualifications du pilote", Now,
+            options: [new QuestionOptionInput("p3", "P3", "P3"), new QuestionOptionInput("paragliding_instructor", "Paragliding Instructor", "Instructeur de parapente")]);
         var report = new Report(Locale.EnCa, Now);
 
         // When

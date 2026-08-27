@@ -86,10 +86,10 @@ public class ProjectionTests
     {
         // Given
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
-        question.Activate();
+        question.Activate(Now);
 
         // When
-        question.Deactivate();
+        question.Deactivate(Now.AddDays(1));
 
         // Then — every answer already given to it survives
         question.IsActive.ShouldBeFalse();
@@ -100,11 +100,13 @@ public class ProjectionTests
     public void Given_a_revision_When_its_contents_are_read_Then_options_are_exposed_in_both_languages()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
-        var option = question.CurrentRevision.AddOption("morning", "Morning", "Matin");
+        var question = Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
 
         // When
         var revision = question.CurrentRevision;
+        var option = revision.Option("morning")!;
 
         // Then
         revision.Options.Count.ShouldBe(1);
@@ -194,11 +196,14 @@ public class ProjectionTests
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
 
         // When
-        var revised = question.Revise(QuestionType.LongText, isRequired: true, "Describe the damage", "Décrivez les dommages", Now);
+        var revised = question.Revise(
+            QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
+            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now);
 
-        // Then
+        // Then — invariant #1: an ordinary question is never required, no
+        // matter what an earlier revision or caller asks for
         revised.Type.ShouldBe(QuestionType.LongText);
-        revised.IsRequired.ShouldBeTrue();
+        revised.IsRequired.ShouldBeFalse();
     }
 
     [Fact]
@@ -209,12 +214,14 @@ public class ProjectionTests
 
         // When
         var revised = consent.Revise(
-            QuestionType.YesNo, isRequired: true,
+            QuestionType.YesNo,
             "Do you agree to HPAC publishing a de-identified version?",
-            "Acceptez-vous que l'ACVL publie une version anonymisée ?", Now.AddDays(1));
+            "Acceptez-vous que l'ACVL publie une version anonymisée ?",
+            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, consent.SectionKey, Now.AddDays(1));
 
         // Then
         revised.RevisionNumber.ShouldBe(2);
+        revised.IsRequired.ShouldBeTrue();
         consent.Type.ShouldBe(QuestionType.YesNo);
     }
 
@@ -285,7 +292,7 @@ public class ProjectionTests
             "manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now, sectionKey: "aircraft");
 
         // When
-        question.MoveToSection(null);
+        question.MoveToSection(null, Now);
 
         // Then
         question.SectionKey.ShouldBeNull();

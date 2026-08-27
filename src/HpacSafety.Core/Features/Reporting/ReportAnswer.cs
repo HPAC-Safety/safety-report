@@ -33,7 +33,7 @@ public class ReportAnswer
         QuestionId = question.Id;
         QuestionRevisionId = revision.Id;
         QuestionKey = question.Key;
-        IsPrivate = question.IsPrivate;
+        IsPrivate = revision.IsPrivate;
         AnsweredAt = at;
     }
 
@@ -53,8 +53,8 @@ public class ReportAnswer
     public string QuestionKey { get; private init; }
 
     /// <summary>
-    /// Whether this answer is private redaction context, copied from the
-    /// immutable question contract when the answer is recorded.
+    /// Whether this answer is private redaction context, snapshotted from the
+    /// exact revision it was answered under when the answer is recorded.
     /// </summary>
     public bool IsPrivate { get; private init; }
 

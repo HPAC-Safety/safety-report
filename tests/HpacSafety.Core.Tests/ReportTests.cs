@@ -125,7 +125,9 @@ public class ReportTests
 
         // When
         var answer = report.Answer(question, "Broken riser", Now);
-        question.Revise(QuestionType.LongText, isRequired: false, "Describe the damage", "Décrivez les dommages", Now.AddDays(1));
+        question.Revise(
+            QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
+            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
 
         // Then — rewording tomorrow cannot change what an answer given today means
         answer.QuestionRevisionId.ShouldBe(askedUnder.Id);
@@ -148,8 +150,9 @@ public class ReportTests
     public void Given_an_unknown_option_code_When_it_is_answered_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
-        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
+        var question = Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
         var report = new Report(Locale.EnCa, Now);
 
         // When

@@ -6,11 +6,11 @@ this file; edit only this file.
 
 ## Design authority
 
-[`spec/README.md`](spec/README.md) is the canonical target design. Source and
-tests show the current implementation, while issues and ADRs preserve history.
-They do not override the specification. If a requested design change conflicts
-with `/spec`, call out the conflict and update the affected specification pages
-before implementing it.
+[`features/README.md`](features/README.md) is the canonical target design.
+Source and tests show the current implementation, while issues and ADRs
+preserve history. They do not override the specification. If a requested
+design change conflicts with `/features`, call out the conflict and update
+the affected specification pages before implementing it.
 
 The application receives real aviation occurrence reports containing personal
 and medical information. Keep the system small and treat every data boundary as
@@ -95,8 +95,8 @@ Never hand-edit generated files.
 
 | Need | Source |
 |---|---|
-| Target product and architecture | [`spec/README.md`](spec/README.md) |
-| Current implementation gaps | [`spec/implementation-status.md`](spec/implementation-status.md) |
+| Target product and architecture | [`features/README.md`](features/README.md) |
+| Current implementation gaps | [`features/implementation-status/implementation-status.md`](features/implementation-status/implementation-status.md) |
 | Current Typeform question evidence | [`docs/form-spec.md`](docs/form-spec.md) |
 | Setup | [`README.md`](README.md), `./init-dev.sh` |
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |

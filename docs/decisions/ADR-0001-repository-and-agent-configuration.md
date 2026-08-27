@@ -1,6 +1,6 @@
 # ADR-0001 — Agent-agnostic configuration via AGENTS.md and skillfile
 
-**Status:** Accepted for agent configuration. `/spec` is now the product-design
+**Status:** Accepted for agent configuration. `/features` is now the product-design
 authority; `AGENTS.md` routes contributors to it.
 
 ## Context

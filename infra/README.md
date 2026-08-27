@@ -8,7 +8,7 @@ required.
 
 The current Terraform has never been applied and still contains superseded
 combined-site, SES/email, and legacy upload assumptions. Issue #30 owns pruning
-it to [`spec/infrastructure-and-operations.md`](../spec/infrastructure-and-operations.md).
+it to [`features/infrastructure-and-operations/infrastructure-and-operations.md`](../features/infrastructure-and-operations/infrastructure-and-operations.md).
 
 The one-time bootstrap creates only the resources needed before Terraform can
 authenticate: GitHub OIDC roles and the remote state bucket. Secret values stay

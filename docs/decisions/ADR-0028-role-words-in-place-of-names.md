@@ -1,7 +1,7 @@
 # ADR-0028 — A name in a narrative becomes a role word, not a placeholder
 
 **Status:** Narrowed by the
-[one-call specification](../../spec/ai-anonymization.md). Whole-identity role
+[one-call specification](../../features/ai-anonymization/ai-anonymization.feature). Whole-identity role
 replacement remains; the older multi-stage pipeline context is superseded.
 **Date:** 2026-08-22
 

@@ -18,7 +18,7 @@ publication adapters, and pre-submit upload slots.
 
 Current-main mappings and adapters still include several of those superseded
 pieces. Their required disposition is listed path-by-path in
-[`spec/source-inventory.md`](../../spec/source-inventory.md).
+[`features/source-inventory/source-inventory.md`](../../features/source-inventory/source-inventory.md).
 
 ```bash
 dotnet ef migrations add <Name> \

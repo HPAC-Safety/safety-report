@@ -18,7 +18,7 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 /// Storing the reported date as a moment invites a timezone conversion that
 /// shifts it across midnight and silently changes which day an accident
 /// happened on. Publication independently generalizes identifying detail. See
-/// ADR-0035 and <c>spec/ai-anonymization.md</c>.
+/// ADR-0035 and <c>features/ai-anonymization/ai-anonymization.feature</c>.
 /// </remarks>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]

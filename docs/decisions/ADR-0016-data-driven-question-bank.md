@@ -1,7 +1,7 @@
 # ADR-0016: The question set is data, not code
 
 **Status:** Superseded in shape by the
-[complete-revision specification](../../spec/question-bank-and-form.md). The
+[complete-revision specification](../../features/question-bank-and-form/question-bank-and-form.feature). The
 core decision that questions are database data remains.
 
 **Date:** 2026-08-22
@@ -38,6 +38,6 @@ no special processing path for one category of ordinary question.
 
 ## Related
 
-- [`/spec/question-bank-and-form`](../../spec/question-bank-and-form.md)
-- [`/spec/report-submission`](../../spec/report-submission.md)
+- [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)
+- [`/features/report-submission/report-submission.feature`](../../features/report-submission/report-submission.feature)
 - [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)

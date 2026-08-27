@@ -10,7 +10,7 @@ replaced.
 
 | Issue | State at audit | Specification disposition |
 |---|---|---|
-| [#2 — CI pipeline and deployment scaffolding](https://github.com/HPAC-Safety/safety-report/issues/2) | Closed | Historical foundation; CI/deploy separation remains, while target gates are in [testing](testing-and-quality.md). |
+| [#2 — CI pipeline and deployment scaffolding](https://github.com/HPAC-Safety/safety-report/issues/2) | Closed | Historical foundation; CI/deploy separation remains, while target gates are in [testing](../testing-and-quality/testing-and-quality.md). |
 | [#3 — Solution scaffold and Testcontainers/Shouldly](https://github.com/HPAC-Safety/safety-report/issues/3) | Closed | Implemented foundation and retained convention. |
 | [#4 — Docker Compose development environment](https://github.com/HPAC-Safety/safety-report/issues/4) | Closed | Implemented local-development support; no target conflict. |
 | [#5 — Coverage gate and ratchet](https://github.com/HPAC-Safety/safety-report/issues/5) | Closed | Implemented quality gate; retained. |
@@ -46,7 +46,7 @@ replaced.
 | [#63 — Third-party libraries behind abstractions](https://github.com/HPAC-Safety/safety-report/issues/63) | Closed | Narrowed: keep owned ports at real external boundaries, not one abstraction per library or removed feature. |
 | [#66 — Date/time value types](https://github.com/HPAC-Safety/safety-report/issues/66) | Closed | Aligned and retained: DateOnly/TimeOnly/DateTimeOffset, never unspecified DateTime. |
 | [#69 — Retired: no aircraft-specific input or processing](https://github.com/HPAC-Safety/safety-report/issues/69) | Closed | Historical discussion is retired. Aircraft-related responses use the ordinary question/answer path with no specialized service, typed projection, or special UI. |
-| [#70 — Agent skill extraction](https://github.com/HPAC-Safety/safety-report/issues/70) | Closed | Initial skill work is present; the audited pruning/alignment in [implementation status](implementation-status.md) is still required. |
+| [#70 — Agent skill extraction](https://github.com/HPAC-Safety/safety-report/issues/70) | Closed | Initial skill work is present; the audited pruning/alignment in [implementation status](../implementation-status/implementation-status.md) is still required. |
 | [#72 — Private context and LLM anonymization](https://github.com/HPAC-Safety/safety-report/issues/72) | Closed | Core privacy partition and role-replacement intent align. Separate auditors/translators/legacy prompts remain superseded. |
 | [#74 — Simplify flow and prune guidance](https://github.com/HPAC-Safety/safety-report/issues/74) | Closed (declined) | The associated implementation was not based on current main. Its valid simplicity intent is incorporated here; its branch is preserved as history, not merged. |
 | [#76 — Complete system specification](https://github.com/HPAC-Safety/safety-report/issues/76) | Closed | Completed by merged specification pull request #77. |

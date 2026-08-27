@@ -5,7 +5,7 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
 
 # HPAC Safety conventions
 
-1. Read [`spec/README.md`](../../spec/README.md) and the affected canonical
+1. Read [`features/README.md`](../../features/README.md) and the affected canonical
    pages. Treat source/tests as current-state evidence and ADRs/issues as
    history when they conflict.
 2. Keep the implementation direct. Add an interface only at a real external
@@ -23,4 +23,4 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
    credentials/tokens, client filenames, or attachment URLs.
 
 Before finishing, run the narrowest relevant checks, inspect the diff for
-unrelated changes, and update `/spec` whenever the target design changes.
+unrelated changes, and update `/features` whenever the target design changes.

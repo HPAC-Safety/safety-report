@@ -1,7 +1,7 @@
 # ADR-0010 — Terraform, with a scripted one-time bootstrap
 
 **Status:** Accepted for Terraform/bootstrap and S3-native locking; narrowed by
-the [minimal infrastructure specification](../../spec/infrastructure-and-operations.md).
+the [minimal infrastructure specification](../../features/infrastructure-and-operations/infrastructure-and-operations.md).
 Resources for email or another retired feature are not part of the target.
 
 ## Context

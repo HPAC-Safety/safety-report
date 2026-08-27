@@ -1,7 +1,7 @@
 # ADR-0018: `Core` is organised by feature, with a shared kernel
 
 **Status:** Accepted for feature-based organization. The concrete type inventory
-below has been aligned to the target in `/spec`; the previous ports and typed
+below has been aligned to the target in `/features`; the previous ports and typed
 ordinary-answer projections remain visible in Git history.
 **Date:** 2026-08-22
 
@@ -97,4 +97,4 @@ about growth that a folder called `Shared` never conveys.
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md)
 - `docs/architecture.md`, `src/HpacSafety.Core/README.md`
-- `AGENTS.md` and [`/spec/interfaces-and-data-flow`](../../spec/interfaces-and-data-flow.md)
+- `AGENTS.md` and [`/features/interfaces-and-data-flow/interfaces-and-data-flow.md`](../../features/interfaces-and-data-flow/interfaces-and-data-flow.md)

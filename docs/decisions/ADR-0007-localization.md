@@ -1,7 +1,7 @@
 # ADR-0007 — Bilingual, with CI-time translation
 
 **Status:** Narrowed to application UI catalogues by the
-[localization specification](../../spec/web-localization-and-design.md).
+[localization specification](../../features/web-localization-and-design/web-localization-and-design.feature).
 Database questions are manually bilingual and one model call returns both
 summary texts; the question/runtime translation clauses below are superseded.
 

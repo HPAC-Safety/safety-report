@@ -1,7 +1,7 @@
 # ADR-0026: Every blob is reached through a short-lived pre-signed URL
 
 **Status:** Superseded for submission by the
-[final multipart design](../../spec/report-submission.md). Private storage and
+[final multipart design](../../features/report-submission/report-submission.feature). Private storage and
 short-lived authorized reviewer reads remain; pre-submit upload slots do not.
 **Date:** 2026-08-22
 

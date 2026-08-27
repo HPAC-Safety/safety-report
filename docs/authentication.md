@@ -22,5 +22,5 @@ publication, deletion, question changes, and allowlist changes are audited by
 actor and time without copying report content into the audit entry.
 
 See
-[`spec/moderation-authentication-and-publication.md`](../spec/moderation-authentication-and-publication.md)
+[`features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature`](../features/moderation-authentication-and-publication/moderation-authentication-and-publication.feature)
 for the normative role and endpoint rules.

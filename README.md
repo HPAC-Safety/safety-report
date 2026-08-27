@@ -8,14 +8,14 @@ requires human approval before publication.
 > **Implementation status:** the repository contains substantial domain,
 > persistence, media, web-asset, CI, and infrastructure scaffolding, but the
 > complete target flow is not implemented. The audited gaps are listed in
-> [`spec/implementation-status.md`](spec/implementation-status.md). Do not infer
+> [`features/implementation-status/implementation-status.md`](features/implementation-status/implementation-status.md). Do not infer
 > feature completion from an old closed issue or README.
 
 ## Canonical specification
 
-[`spec/README.md`](spec/README.md) is the design authority and index for every
+[`features/README.md`](features/README.md) is the design authority and index for every
 feature, boundary, DTO, lifecycle rule, and implementation gap. Older ADRs and
-GitHub issues are historical context when they disagree with `/spec`.
+GitHub issues are historical context when they disagree with `/features`.
 
 The target flow is deliberately small:
 
@@ -93,7 +93,7 @@ Integration tests require Docker. See [`tests/README.md`](tests/README.md) and
 
 | Path | Purpose |
 |---|---|
-| [`spec/`](spec/README.md) | Canonical product and system specification |
+| [`features/`](features/README.md) | Canonical product and system specification |
 | [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and static web code |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused project-specific coding-agent guidance |

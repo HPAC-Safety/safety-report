@@ -15,4 +15,4 @@ a fallback preview. Report-linked objects remain private after soft deletion.
 Current `S3BlobStore`/`FileSystemBlobStore` and their contract tests implement a
 legacy pre-signed capability design. Retain useful private streaming and
 short-lived read behavior while removing upload-slot assumptions as described
-in [`spec/media.md`](../../../spec/media.md).
+in [`features/media/media.feature`](../../../features/media/media.feature).

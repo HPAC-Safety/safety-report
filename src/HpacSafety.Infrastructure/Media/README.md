@@ -1,7 +1,7 @@
 # Attachment processing
 
 This slice detects and safely processes files streamed from the final multipart
-report submission. The normative matrix is in [`spec/media.md`](../../../spec/media.md).
+report submission. The normative matrix is in [`features/media/media.feature`](../../../features/media/media.feature).
 
 Accepted images are JPEG, PNG, WebP, and HEIC; videos are MP4 and QuickTime;
 documents are PDF, DOC, DOCX, RTF, MD, TXT, and ODT. Sniff actual format,

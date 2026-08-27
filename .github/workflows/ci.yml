@@ -83,6 +83,24 @@ jobs:
             echo "::notice::No JavaScript test suite yet — added by #8. Skipping."
           fi
 
+  # Parses every features/**/*.feature file with the official @cucumber/gherkin
+  # parser (the same parser cucumber-js uses), pinned in
+  # tools/gherkin/package.json. Syntax only — these are specification
+  # documents, not an executable suite, so there are no step definitions to run
+  # them against. See features/README.md.
+  cucumber:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Gherkin feature files parse
+        run: |
+          npm --prefix tools/gherkin ci
+          node tools/gherkin/verify.mjs
+
   coverage:
     runs-on: ubuntu-latest
     permissions:

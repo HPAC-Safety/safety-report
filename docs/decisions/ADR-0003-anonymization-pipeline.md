@@ -1,7 +1,7 @@
 # ADR-0003 — Five-stage anonymization, deterministic first
 
 **Status:** Superseded by the
-[one-call specification](../../spec/ai-anonymization.md). There is no active
+[one-call specification](../../features/ai-anonymization/ai-anonymization.feature). There is no active
 scrub/audit/translation pipeline.
 
 ## Context

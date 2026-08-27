@@ -44,10 +44,6 @@ erDiagram
         string key
         bool is_system
         int role
-        bool is_private
-        int display_order
-        string section_key
-        bool is_active
         timestamptz created_at
         timestamptz deleted
     }
@@ -57,7 +53,12 @@ erDiagram
         tinyid question_id FK
         int revision_number
         int type
+        bool is_system
         bool is_required
+        bool is_private
+        bool is_active
+        int display_order
+        string section_key
         string label_en
         string label_fr
         string help_text_en
@@ -171,6 +172,35 @@ operation as any other reword. This is accepted: a revision is immutable, and
 "the French said something slightly different" is exactly the kind of change
 the revision history exists to preserve.
 
+Order, section, privacy, active state, system state, required state, and the
+complete ordered option set are revision fields too, not `Question` fields —
+see
+[`question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)'s
+background scenario, which lists every one of them as something that produces
+a new revision when an administrator changes it. `Question` keeps only what
+never varies across a question's revision history: `Id`, `Key`, `IsSystem`,
+`Role`, `CreatedAt`, `Deleted`. `Question.IsPrivate`/`DisplayOrder`/
+`SectionKey`/`IsActive` are unmapped pass-throughs to `CurrentRevision` for
+convenience; `IsSystem` stays a real column on both tables (it never differs
+across a question's own revisions, so this is not the same redundancy decision
+4 rejects). `QuestionRevision.AddOption` and `QuestionRevisionOption.Reorder`
+are removed: a revision's option set is supplied complete, in order, to
+`QuestionRevision.Create`, and there is no public way to mutate it afterward —
+options on an already-returned revision are as immutable as its wording.
+`QuestionRevision.IsRequired` is derived from `IsSystem` inside
+`QuestionRevision.Create`/`Question.Revise`, never accepted as a caller
+parameter: only `consent_publish` may be required (product invariant #1), so
+there is no parameter through which a caller could ask for a contradictory
+combination.
+
+One further consequence: because `DisplayOrder`/`IsPrivate`/`IsActive`/
+`SectionKey` are computed from `CurrentRevision`, they cannot be translated
+into a SQL `ORDER BY`/`WHERE` against the `questions` table — a query needs
+`question_revisions` (or a loaded, `Include`d aggregate ordered client-side)
+to sort or filter by them. This matches `docs/data-and-persistence.md`'s
+"Current form DTO" query shape, which already reads the latest active
+revision directly rather than through a `Question` navigation.
+
 ### 2. `QuestionRole` keeps only `None` and `ConsentPublish`
 
 `OccurrenceDate`, `Province`, `PilotInjury`, `PassengerInjury`, `AircraftType`,
@@ -217,6 +247,18 @@ key custody problem, and no column that cannot be queried by value. The
 occurrence time and injury/province columns this encryption protected are
 themselves gone (see decision 4), so there is nothing left in `reports` that
 needs field-level protection beyond what the database already provides.
+
+Removing the converter is not enough by itself: current main already wrote
+every non-null `report_answers.value` as v1 AES-GCM ciphertext, and the new
+mapping reads that column directly. The migration therefore decrypts existing
+`report_answers.value` in place before anything else, using a pure-SQL
+reimplementation of the cipher's GCM counter mode (pgcrypto's raw AES-ECB
+primitive generates the keystream; the authentication tag is not re-verified,
+since this reads data the application already wrote and trusted). The key
+comes from the same configuration the outgoing cipher read
+(`HpacSafety__FieldEncryption__Key`), which must still be present in whatever
+environment applies this migration; a database with no encrypted answers
+needs no key. See `MigrationDataTransformTests` for the upgrade-path proof.
 
 ### 6. `ITranslator`, `IEmailSender`, `IPiiAuditor`, `IPublicationChannel`, and `MediaUploadSlot` are deleted
 
@@ -272,16 +314,62 @@ revision cannot exist half-translated, and the alternative, leaving a `NULL`
 in a `NOT NULL` column, is not an option). It merges each report's up-to-two
 `summaries` rows into one, taking English text from the `en-CA` row (or the
 only row, if just one language was ever generated), French text from the
-`fr-CA` row the same way, and approving the merged row only if every existing
-language row for that report was individually approved — a half-approved pair
-is not a state the target model can represent, so it is treated as
-unapproved rather than guessed at. `reports.province`/`pilot_injury`/
+`fr-CA` row the same way, and approving the merged row only if **both**
+language rows existed for that report **and** both were individually
+approved — a report that only ever had one language row never had a second
+language produced or reviewed by anyone, even though the text-merge step
+above duplicates that one row's text into the other column, so it must not
+inherit that row's approval any more than a genuinely half-approved pair
+would. Neither state is one the target model can represent, so the merged row
+starts unapproved rather than guessing. `reports.province`/`pilot_injury`/
 `passenger_injury`/`occurred_on`/`occurred_at_local` and the whole of
 `report_aircraft` are dropped with no target column to preserve them in —
 documented data loss, accepted because the same facts already exist,
 unchanged, in `report_answers`. `Down()` throws `NotSupportedException`: it
 would have to re-invent per-language rows the target schema has nowhere to
 put. Restoring a pre-migration backup is the supported rollback path.
+
+### 11. `report_files` enforces same-report linkage with a composite FK, not an independent one
+
+`ReportFile.ReportAnswerId` alone, with an independent FK to `report_answers.id`,
+cannot express "the answer belongs to *this* report" — Postgres would happily
+accept `ReportId = A` paired with an answer that belongs to report B, silently
+violating the exact invariant the FK's comment claimed to enforce. The fix is
+a compound alternate key on `report_answers(report_id, id)` and a composite FK
+from `report_files(report_id, report_answer_id)` against it. A null
+`ReportAnswerId` still satisfies the constraint under Postgres's default
+`MATCH SIMPLE` semantics, so the window before a file is linked to its answer
+during submission processing is unaffected; only a *set* `ReportAnswerId`
+pointing at the wrong report is now rejected by the database itself rather
+than left to application code to get right.
+
+### 12. Enumerated string columns and paired nullable fields get database check constraints
+
+`docs/data-and-persistence.md` requires "check constraints for valid
+status/role/type/work-code codes and coherent nullable approval and
+processing fields," and this migration is what introduces most of those
+columns. Every enum-backed string column this migration adds or reshapes —
+`questions.role`, `question_revisions.type`, `reports.language`,
+`reports.status`, `report_files.kind`, `outbox_messages.type`,
+`admin_users.role` — gets a `CHECK ... IN (...)` constraint naming exactly the
+codes `EnumCode.Of` can produce, so a bad value is rejected at the database
+boundary rather than surfacing later as an unparseable row. `summaries`
+(`approved_by`/`approved_at`) and `report_files`
+(`exif_stripped_at`/`stripped_blob_key`) each get a coherence check —
+`(a IS NULL) = (b IS NULL)` — matching the pairs `Summary.Approve`/
+`ClearApproval` and `ReportFile.RecordStripped`/`AwaitsStripping` already
+always set or clear together in code; the constraint is a second, independent
+enforcement of an invariant application code already holds.
+
+### 13. `admin_users.member_identifier` is unique among live rows only
+
+The original unique index covered every row regardless of `deleted`, so a
+soft-deleted administrator's upstream member identifier stayed permanently
+blocked — the query filter hides the deleted row from ordinary reads, but the
+database still checks new inserts against it. The index is now a partial
+unique index filtered on `deleted IS NULL`, matching
+`docs/data-and-persistence.md`'s "unique among live rows" wording for this
+column exactly; re-adding the same identifier after a soft delete succeeds.
 
 ## Consequences
 

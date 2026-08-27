@@ -17,12 +17,24 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.HasKey(question => question.Id);
 
         builder.Property(question => question.Key).HasMaxLength(128).IsRequired();
-        builder.Property(question => question.SectionKey).HasMaxLength(128);
         builder.Property(question => question.Role).IsRequired();
-        builder.Property(question => question.IsPrivate).IsRequired();
+        builder.Property(question => question.IsSystem).IsRequired();
+
+        // Order, section, privacy, and active state live on the revision, not
+        // here — a referenced revision must preserve the complete question
+        // exactly as it was shown. Question.IsPrivate/DisplayOrder/SectionKey/
+        // IsActive are computed pass-throughs to CurrentRevision and are
+        // therefore not mapped.
+        builder.Ignore(question => question.IsPrivate);
+        builder.Ignore(question => question.DisplayOrder);
+        builder.Ignore(question => question.SectionKey);
+        builder.Ignore(question => question.IsActive);
 
         builder.HasIndex(question => question.Key).IsUnique();
-        builder.HasIndex(question => new { question.IsActive, question.DisplayOrder });
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_questions_role",
+            "role IN ('none', 'consent_publish')"));
 
         builder.HasMany(question => question.Revisions)
             .WithOne()
@@ -51,9 +63,24 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
         builder.Property(revision => revision.Type).IsRequired();
         builder.Property(revision => revision.LabelEn).IsRequired();
         builder.Property(revision => revision.LabelFr).IsRequired();
+        builder.Property(revision => revision.IsSystem).IsRequired();
+        builder.Property(revision => revision.IsRequired).IsRequired();
+        builder.Property(revision => revision.IsPrivate).IsRequired();
+        builder.Property(revision => revision.IsActive).IsRequired();
+        builder.Property(revision => revision.DisplayOrder).IsRequired();
+        builder.Property(revision => revision.SectionKey).HasMaxLength(128);
 
         // Unique stable key + revision number.
         builder.HasIndex(revision => new { revision.QuestionId, revision.RevisionNumber }).IsUnique();
+
+        // Ties by stable key break ties in sort order — see
+        // features/question-bank-and-form/question-bank-and-form.feature.
+        builder.HasIndex(revision => new { revision.IsActive, revision.DisplayOrder });
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_question_revisions_type",
+            "type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', " +
+            "'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group')"));
 
         builder.HasMany(revision => revision.Options)
             .WithOne()

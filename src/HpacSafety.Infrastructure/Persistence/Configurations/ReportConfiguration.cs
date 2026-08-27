@@ -28,6 +28,14 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
         // The review queue reads by status, oldest first.
         builder.HasIndex(report => new { report.Status, report.SubmittedAt });
 
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_reports_language",
+            "language IN ('en-CA', 'fr-CA')"));
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_reports_status",
+            "status IN ('submitted', 'summarizing', 'pending_review', 'summary_failed', 'approved', 'rejected', 'published')"));
+
         builder.HasMany(report => report.Answers)
             .WithOne()
             .HasForeignKey(answer => answer.ReportId)
@@ -72,6 +80,11 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
         builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId }).IsUnique();
         builder.HasIndex(answer => answer.QuestionRevisionId);
 
+        // Lets a report_files row enforce, at the database level, that the
+        // answer it links to belongs to the same report — see
+        // ReportFileConfiguration below.
+        builder.HasAlternateKey(answer => new { answer.ReportId, answer.Id });
+
         // An answer references the revision it was answered under, and that
         // revision may never be deleted out from under it.
         builder.HasOne<Core.Features.QuestionBank.QuestionRevision>()
@@ -107,15 +120,35 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
         builder.Property(file => file.ProcessingErrorCode).HasMaxLength(128);
 
         builder.HasIndex(file => file.ReportId);
+        builder.HasIndex(file => new { file.ReportId, file.ReportAnswerId });
 
-        // A file belongs to exactly one file-upload answer on the same report.
+        // A file belongs to exactly one file-upload answer on the same
+        // report — never one on a different report. An independent FK on
+        // report_answer_id alone cannot express that: it would accept
+        // ReportId = A with an answer that belongs to report B. The composite
+        // FK below, against the compound alternate key on ReportAnswer, is
+        // what actually enforces it. A null ReportAnswerId still satisfies
+        // the constraint (Postgres MATCH SIMPLE), so the not-yet-linked
+        // window before AddFile's answer is known is unaffected.
         builder.HasOne<Core.Features.Reporting.ReportAnswer>()
             .WithMany()
-            .HasForeignKey(file => file.ReportAnswerId)
+            .HasForeignKey(file => new { file.ReportId, file.ReportAnswerId })
+            .HasPrincipalKey(answer => new { answer.ReportId, answer.Id })
             .OnDelete(DeleteBehavior.Restrict);
 
         // The EXIF stripper claims work by looking for what it has not done yet.
         builder.HasIndex(file => file.ExifStrippedAt).HasFilter("exif_stripped_at IS NULL");
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_report_files_kind",
+            "kind IN ('image', 'video', 'document')"));
+
+        // AwaitsStripping treats these two as one fact: a stripped-at time
+        // with no key, or a key with no stripped-at time, would read as a
+        // half-finished stripping nobody can act on.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_report_files_exif_stripped_coherence",
+            "(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)"));
     }
 }
 
@@ -142,6 +175,13 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 
         // Exactly one summary row per report.
         builder.HasIndex(summary => summary.ReportId).IsUnique();
+
+        // IsApproved reads ApprovedAt alone, but a row with one of the pair
+        // set and not the other is not a state the domain can represent —
+        // Approve()/ClearApproval() always set or clear both together.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_summaries_approval_coherence",
+            "(approved_by IS NULL) = (approved_at IS NULL)"));
 
         builder.HasOne<Core.Features.Moderation.AdminUser>()
             .WithMany()

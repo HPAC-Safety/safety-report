@@ -53,6 +53,105 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             // ----------------------------------------------------------------
+            // Report answers: current main stores every non-null
+            // report_answers.value as v1 AES-GCM ciphertext (see the
+            // now-deleted EncryptedStringConverter/AesGcmFieldCipher). The new
+            // mapping reads this column directly with no converter, so
+            // existing rows must be decrypted to plaintext here, before the
+            // application-side cipher is gone. The key comes from the same
+            // configuration the outgoing cipher used
+            // ("HpacSafety:FieldEncryption:Key", i.e. env var
+            // HpacSafety__FieldEncryption__Key) — it must still be present in
+            // the environment that runs this migration. A database with no
+            // encrypted answers (a fresh install, or a test database) does not
+            // require the key at all.
+            // ----------------------------------------------------------------
+            migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS pgcrypto;");
+
+            var fieldEncryptionKeyBase64 = Environment.GetEnvironmentVariable("HpacSafety__FieldEncryption__Key");
+            var keyExpression = string.IsNullOrWhiteSpace(fieldEncryptionKeyBase64)
+                ? "NULL"
+                : $"decode('{fieldEncryptionKeyBase64}', 'base64')";
+
+            migrationBuilder.Sql(
+                $"""
+                DO $guard$
+                BEGIN
+                    IF EXISTS (SELECT 1 FROM report_answers WHERE value IS NOT NULL)
+                       AND {keyExpression} IS NULL THEN
+                        RAISE EXCEPTION
+                            'HpacSafety__FieldEncryption__Key must be set to migrate existing encrypted report_answers.value rows to plaintext.';
+                    END IF;
+                END
+                $guard$;
+                """);
+
+            // Reimplements AES-256-GCM decryption (as AesGcmFieldCipher wrote
+            // it: "v1." + base64(nonce[12] || tag[16] || ciphertext)) in pure
+            // SQL via pgcrypto's raw AES-ECB primitive, used only to generate
+            // the GCM counter-mode keystream. The authentication tag is not
+            // re-verified: this reads data our own application already wrote
+            // and already trusted, one time, during an upgrade.
+            migrationBuilder.Sql(
+                """
+                CREATE OR REPLACE FUNCTION pg_temp.hpac_decrypt_v1_aesgcm(ciphertext text, key bytea)
+                RETURNS text
+                LANGUAGE plpgsql
+                AS $func$
+                DECLARE
+                    envelope bytea;
+                    nonce bytea;
+                    ct bytea;
+                    block_count integer;
+                    i integer;
+                    j integer;
+                    counter bytea;
+                    ks_block bytea;
+                    ct_block bytea;
+                    plain_block bytea;
+                    block_len integer;
+                    plain bytea := ''::bytea;
+                BEGIN
+                    IF ciphertext IS NULL THEN
+                        RETURN NULL;
+                    END IF;
+
+                    IF left(ciphertext, 3) <> 'v1.' THEN
+                        RAISE EXCEPTION 'report_answers.value is not in the expected v1 AES-GCM format.';
+                    END IF;
+
+                    envelope := decode(substring(ciphertext from 4), 'base64');
+                    nonce := substring(envelope from 1 for 12);
+                    ct := substring(envelope from 29);
+                    block_count := ceil(octet_length(ct)::numeric / 16);
+
+                    FOR i IN 0..block_count - 1 LOOP
+                        counter := nonce || int4send(i + 2);
+                        ks_block := encrypt(counter, key, 'aes-ecb/pad:none');
+                        ct_block := substring(ct from (i * 16) + 1 for 16);
+                        block_len := octet_length(ct_block);
+                        plain_block := ct_block;
+                        FOR j IN 0..block_len - 1 LOOP
+                            plain_block := set_byte(plain_block, j, get_byte(ct_block, j) # get_byte(ks_block, j));
+                        END LOOP;
+                        plain := plain || plain_block;
+                    END LOOP;
+
+                    RETURN convert_from(plain, 'UTF8');
+                END;
+                $func$;
+                """);
+
+            migrationBuilder.Sql(
+                $"""
+                UPDATE report_answers
+                SET value = pg_temp.hpac_decrypt_v1_aesgcm(value, {keyExpression})
+                WHERE value IS NOT NULL;
+                """);
+
+            migrationBuilder.Sql("DROP FUNCTION pg_temp.hpac_decrypt_v1_aesgcm(text, bytea);");
+
+            // ----------------------------------------------------------------
             // Question bank: create the new complete-revision tables first, so
             // the transform below can read the old ones before they are
             // dropped.
@@ -65,7 +164,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     question_id = table.Column<string>(type: "char(11)", fixedLength: true, maxLength: 11, nullable: false),
                     revision_number = table.Column<int>(type: "integer", nullable: false),
                     type = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    is_system = table.Column<bool>(type: "boolean", nullable: false),
                     is_required = table.Column<bool>(type: "boolean", nullable: false),
+                    is_private = table.Column<bool>(type: "boolean", nullable: false),
+                    is_active = table.Column<bool>(type: "boolean", nullable: false),
+                    display_order = table.Column<int>(type: "integer", nullable: false),
+                    section_key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
                     label_en = table.Column<string>(type: "text", nullable: false),
                     label_fr = table.Column<string>(type: "text", nullable: false),
                     help_text_en = table.Column<string>(type: "text", nullable: true),
@@ -78,6 +182,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_question_revisions", x => x.id);
+                    table.CheckConstraint(
+                        "ck_question_revisions_type",
+                        "type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', " +
+                        "'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group')");
                     table.ForeignKey(
                         name: "fk_question_revisions_questions_question_id",
                         column: x => x.question_id,
@@ -113,19 +221,33 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             // translation becomes one complete bilingual revision. A revision
             // missing its French counterpart inherits the English wording
             // rather than leaving a null in a column the target model requires
-            // to be complete — see MigrationDataTransformTests.
+            // to be complete — see MigrationDataTransformTests. Order,
+            // section, privacy, and active state were question-scoped, not
+            // versioned, in the old schema, so every historical revision of a
+            // question inherits that question's current values — there is no
+            // per-version history of them to preserve. is_required and
+            // is_system are NOT copied from the old per-version/per-question
+            // flags: is_required is derived from is_system here exactly as
+            // Question/QuestionRevision now derive it in code, so a legacy row
+            // that incorrectly marked an ordinary question required does not
+            // survive the upgrade — see product invariant #1.
             migrationBuilder.Sql(
                 """
                 INSERT INTO question_revisions
-                    (id, question_id, revision_number, type, is_required,
-                     label_en, label_fr, help_text_en, help_text_fr, placeholder_en, placeholder_fr,
+                    (id, question_id, revision_number, type, is_system, is_required, is_private, is_active,
+                     display_order, section_key, label_en, label_fr, help_text_en, help_text_fr, placeholder_en, placeholder_fr,
                      created_at, deleted)
                 SELECT
                     v.id,
                     v.question_id,
                     v.version_number,
                     v.type,
-                    v.is_required,
+                    q.is_system,
+                    q.is_system,
+                    q.is_private,
+                    q.is_active,
+                    q.display_order,
+                    q.section_key,
                     en.label,
                     COALESCE(fr.label, en.label),
                     en.help_text,
@@ -135,6 +257,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     v.created_at,
                     NULL
                 FROM question_versions v
+                JOIN questions q ON q.id = v.question_id
                 JOIN question_translations en ON en.question_version_id = v.id AND en.locale = 'en-CA'
                 LEFT JOIN question_translations fr ON fr.question_version_id = v.id AND fr.locale = 'fr-CA';
                 """);
@@ -181,22 +304,29 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     s.text)
                 """);
 
-            // The pair is approved only if every existing language row for the
-            // report was individually approved; otherwise the merged row
-            // starts unapproved rather than guessing which language's
-            // approval should stand for the whole pair.
+            // The pair is approved only if BOTH the en-CA and fr-CA legacy
+            // rows existed for the report and both were individually
+            // approved. A report that only ever had one language row never
+            // had its second language produced or reviewed by anyone, even
+            // though the earlier UPDATEs above duplicate that one text into
+            // the missing language column — so it must not inherit that one
+            // row's approval. Otherwise the merged row starts unapproved
+            // rather than guessing which language's approval should stand for
+            // the whole pair.
             migrationBuilder.Sql(
                 """
                 UPDATE summaries s
                 SET approved_by = CASE
-                        WHEN EXISTS (SELECT 1 FROM summaries x WHERE x.report_id = s.report_id AND x.approved_at IS NULL)
-                            THEN NULL
-                        ELSE (SELECT x.approved_by FROM summaries x WHERE x.report_id = s.report_id ORDER BY x.approved_at DESC LIMIT 1)
+                        WHEN (SELECT COUNT(*) FROM summaries x WHERE x.report_id = s.report_id) = 2
+                             AND NOT EXISTS (SELECT 1 FROM summaries x WHERE x.report_id = s.report_id AND x.approved_at IS NULL)
+                            THEN (SELECT x.approved_by FROM summaries x WHERE x.report_id = s.report_id ORDER BY x.approved_at DESC LIMIT 1)
+                        ELSE NULL
                     END,
                     approved_at = CASE
-                        WHEN EXISTS (SELECT 1 FROM summaries x WHERE x.report_id = s.report_id AND x.approved_at IS NULL)
-                            THEN NULL
-                        ELSE (SELECT MAX(x.approved_at) FROM summaries x WHERE x.report_id = s.report_id)
+                        WHEN (SELECT COUNT(*) FROM summaries x WHERE x.report_id = s.report_id) = 2
+                             AND NOT EXISTS (SELECT 1 FROM summaries x WHERE x.report_id = s.report_id AND x.approved_at IS NULL)
+                            THEN (SELECT MAX(x.approved_at) FROM summaries x WHERE x.report_id = s.report_id)
+                        ELSE NULL
                     END
                 """);
 
@@ -281,11 +411,25 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 column: "report_id",
                 unique: true);
 
+            // IsApproved reads ApprovedAt alone, but a row with one of the
+            // pair set and not the other is not a state the domain can
+            // represent — Approve()/ClearApproval() always set or clear both
+            // together.
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_summaries_approval_coherence",
+                table: "summaries",
+                sql: "(approved_by IS NULL) = (approved_at IS NULL)");
+
             // ----------------------------------------------------------------
             // Question bank: retire the superseded tables and reduce
             // questions.role to the values QuestionRole still defines.
             // ----------------------------------------------------------------
             migrationBuilder.Sql("UPDATE questions SET role = 'none' WHERE role <> 'consent_publish';");
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_questions_role",
+                table: "questions",
+                sql: "role IN ('none', 'consent_publish')");
 
             migrationBuilder.DropForeignKey(
                 name: "fk_report_answers_question_versions_question_version_id",
@@ -307,6 +451,34 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 name: "deleted_at",
                 table: "questions",
                 newName: "deleted");
+
+            // Order, section, privacy, and active state are now revision
+            // fields (copied onto every question_revisions row above) rather
+            // than question fields — a referenced revision has to preserve
+            // the complete question exactly as it was shown, which a mutable
+            // column on questions cannot do. Question.IsSystem stays: it
+            // never varies across a question's revisions, so keeping one copy
+            // here alongside the per-revision snapshot is not redundant data
+            // drift the way the others would be.
+            migrationBuilder.DropIndex(
+                name: "ix_questions_is_active_display_order",
+                table: "questions");
+
+            migrationBuilder.DropColumn(
+                name: "is_active",
+                table: "questions");
+
+            migrationBuilder.DropColumn(
+                name: "display_order",
+                table: "questions");
+
+            migrationBuilder.DropColumn(
+                name: "section_key",
+                table: "questions");
+
+            migrationBuilder.DropColumn(
+                name: "is_private",
+                table: "questions");
 
             migrationBuilder.RenameColumn(
                 name: "question_version_id",
@@ -337,6 +509,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 table: "question_revisions",
                 columns: new[] { "question_id", "revision_number" },
                 unique: true);
+
+            // Current-form lookup: latest active revision, ordered for display.
+            migrationBuilder.CreateIndex(
+                name: "ix_question_revisions_is_active_display_order",
+                table: "question_revisions",
+                columns: new[] { "is_active", "display_order" });
 
             // ----------------------------------------------------------------
             // Reports: only the consent projection remains typed. Every other
@@ -377,6 +555,16 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 table: "reports",
                 type: "timestamp with time zone",
                 nullable: true);
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_reports_language",
+                table: "reports",
+                sql: "language IN ('en-CA', 'fr-CA')");
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_reports_status",
+                table: "reports",
+                sql: "status IN ('submitted', 'summarizing', 'pending_review', 'summary_failed', 'approved', 'rejected', 'published')");
 
             // An aircraft answer is an ordinary revision-bound answer now, not
             // a specialized record. No target column exists to carry these
@@ -421,17 +609,48 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 type: "timestamp with time zone",
                 nullable: true);
 
+            // The composite FK below needs only this one index: a lookup by
+            // report_answer_id alone is never a real access pattern (files
+            // are always read by report first), and EF's own model does not
+            // ask for a second, single-column index here.
             migrationBuilder.CreateIndex(
-                name: "ix_report_files_report_answer_id",
+                name: "ix_report_files_report_id_report_answer_id",
                 table: "report_files",
-                column: "report_answer_id");
+                columns: new[] { "report_id", "report_answer_id" });
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_report_files_kind",
+                table: "report_files",
+                sql: "kind IN ('image', 'video', 'document')");
+
+            // AwaitsStripping treats these two as one fact: a stripped-at
+            // time with no key, or a key with no stripped-at time, would read
+            // as a half-finished stripping nobody can act on.
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_report_files_exif_stripped_coherence",
+                table: "report_files",
+                sql: "(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)");
+
+            // A file belongs to exactly one file-upload answer on the same
+            // report — never one on a different report. An independent FK on
+            // report_answer_id alone cannot express that: it happily accepts
+            // report_id = A with an answer that belongs to report B. The
+            // composite FK below, against the compound alternate key just
+            // added on report_answers, is what actually enforces it. A NULL
+            // report_answer_id still satisfies the constraint (Postgres
+            // MATCH SIMPLE), so the not-yet-linked window during submission
+            // processing is unaffected.
+            migrationBuilder.AddUniqueConstraint(
+                name: "ak_report_answers_report_id_id",
+                table: "report_answers",
+                columns: new[] { "report_id", "id" });
 
             migrationBuilder.AddForeignKey(
-                name: "fk_report_files_report_answers_report_answer_id",
+                name: "fk_report_files_report_answers_report_id_report_answer_id",
                 table: "report_files",
-                column: "report_answer_id",
+                columns: new[] { "report_id", "report_answer_id" },
                 principalTable: "report_answers",
-                principalColumn: "id",
+                principalColumns: new[] { "report_id", "id" },
                 onDelete: ReferentialAction.Restrict);
 
             // ----------------------------------------------------------------
@@ -471,14 +690,41 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 type: "timestamp with time zone",
                 nullable: true);
 
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_outbox_messages_type",
+                table: "outbox_messages",
+                sql: "type IN ('summarize_report')");
+
             // ----------------------------------------------------------------
-            // Admin users: universal soft deletion.
+            // Admin users: universal soft deletion, and a member identifier
+            // unique among live rows only — a deleted administrator must not
+            // permanently block re-adding the same upstream member
+            // identifier. The query filter already hides deleted rows from
+            // ordinary reads, but a plain unique index is still checked
+            // against them by the database, so the old index has to be
+            // replaced rather than left in place.
             // ----------------------------------------------------------------
             migrationBuilder.AddColumn<DateTimeOffset>(
                 name: "deleted",
                 table: "admin_users",
                 type: "timestamp with time zone",
                 nullable: true);
+
+            migrationBuilder.DropIndex(
+                name: "ix_admin_users_member_identifier",
+                table: "admin_users");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_admin_users_member_identifier",
+                table: "admin_users",
+                column: "member_identifier",
+                unique: true,
+                filter: "deleted IS NULL");
+
+            migrationBuilder.AddCheckConstraint(
+                name: "ck_admin_users_role",
+                table: "admin_users",
+                sql: "role IN ('safety_officer', 'administrator')");
         }
 
         /// <inheritdoc />

@@ -27,8 +27,9 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
         await using var context = PostgresFixture.ContextFor(connectionString);
 
-        // When
-        var keys = await context.Questions.OrderBy(q => q.DisplayOrder).Select(q => q.Key).ToListAsync();
+        // When — DisplayOrder now lives on the revision, so ordering by it
+        // happens after the aggregate is materialized, not in SQL.
+        var keys = (await LoadedQuestionsAsync(context)).Select(q => q.Key).ToList();
 
         // Then
         keys.ShouldBe(QuestionBankSeed.Questions.Select(q => q.Key).ToList());
@@ -61,8 +62,8 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
         await using var context = PostgresFixture.ContextFor(connectionString);
 
-        // When
-        var stored = await context.Questions.ToDictionaryAsync(question => question.Key);
+        // When — IsPrivate reads through to CurrentRevision, so Revisions must be loaded.
+        var stored = (await LoadedQuestionsAsync(context)).ToDictionary(question => question.Key, StringComparer.Ordinal);
 
         // Then
         foreach (var expected in QuestionBankSeed.Questions)
@@ -152,9 +153,14 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         answer.IsPrivate.ShouldBeTrue();
     }
 
-    private static async Task<List<Question>> LoadedQuestionsAsync(HpacSafetyDbContext context) =>
-        await context.Questions
+    // DisplayOrder now lives on QuestionRevision, so it cannot be translated
+    // into a SQL ORDER BY against the questions table — the aggregate is
+    // ordered after materialization instead.
+    private static async Task<List<Question>> LoadedQuestionsAsync(HpacSafetyDbContext context)
+    {
+        var questions = await context.Questions
             .Include(q => q.Revisions).ThenInclude(v => v.Options)
-            .OrderBy(q => q.DisplayOrder)
             .ToListAsync();
+        return questions.OrderBy(q => q.DisplayOrder).ToList();
+    }
 }

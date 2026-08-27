@@ -10,6 +10,12 @@ Feature: AI anonymization
     And that call produces both the English and French summary texts
     And no deterministic text scrubber, separate redaction pass, PII-audit call, or translation call runs
 
+  Scenario: Concurrent workers cannot claim the same summarization outbox item twice
+    Given a summarization outbox item is pending
+    When two Worker instances attempt to claim it concurrently
+    Then exactly one Worker claims the item
+    And the other Worker finds no work and makes no model call
+
   Scenario: Only eligible, labeled fields reach the model
     Given a report has non-private answered fields and private answered fields
     When the Worker builds the model input DTO

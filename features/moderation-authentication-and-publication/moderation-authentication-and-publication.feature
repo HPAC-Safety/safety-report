@@ -43,6 +43,17 @@ Feature: Moderation, authentication, and publication
     Then the member has every SafetyOfficer capability
     And can additionally create question revisions and manage the admin allowlist and roles
 
+  Scenario: Only an active Administrator manages the allowlist
+    Given a member is not an active Administrator
+    When that member attempts to list, add, change, revoke, or delete an allowlist entry
+    Then the API rejects the attempt
+
+  Scenario: A stale allowlist change fails instead of overwriting a newer decision
+    Given two Administrators load the same allowlist entry
+    When one saves a role or access change and the other then submits a stale concurrency token
+    Then the second, stale change is rejected
+    And the first change is not overwritten
+
   Scenario: Sensitive admin actions are audited without report content
     Given a sensitive read or material mutation occurs in the admin application
     When the action completes
@@ -87,6 +98,18 @@ Feature: Moderation, authentication, and publication
     When the public API returns it
     Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, and the publication timestamp
     And it never contains question keys, labels, answers, consent value, report language, private flags, raw reports, attachment metadata or URLs, admin identities, model provenance, or audit records
+
+  Scenario: The public feed lists only publishable reports
+    Given some reports are publishable and others are not
+    When the public feed is queried
+    Then the response is a deterministic paginated list containing only publishable reports
+    And no non-publishable report ever appears
+
+  Scenario: An unknown or non-public report id returns 404
+    Given a report id is unknown, deleted, unapproved, rejected, or not consented
+    When the public API is asked for that report
+    Then the API returns 404
+    And non-public ids are indistinguishable from unknown ids
 
   Scenario: There is no publication channel besides the HPAC public feed
     Given a report becomes publishable

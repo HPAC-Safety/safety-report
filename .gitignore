@@ -9,6 +9,9 @@ coverage/
 *.coverage
 *.cobertura.xml
 
+# Editor/IDE
+.idea/
+
 # Node
 node_modules/
 .playwright/

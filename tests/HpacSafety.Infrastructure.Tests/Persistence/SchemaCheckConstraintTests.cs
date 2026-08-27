@@ -131,6 +131,32 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
         exception.SqlState.ShouldBe("23514");
     }
 
+    [Fact]
+    public async Task Given_a_soft_deleted_admin_user_When_the_same_member_identifier_is_re_added_Then_it_succeeds()
+    {
+        // Given — the unique index on member_identifier must be partial
+        // (filtered on deleted IS NULL): a soft-deleted administrator's row
+        // is hidden by the query filter but must not permanently block
+        // re-adding the same upstream member identifier.
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        await ExecuteAsync(
+            connectionString,
+            "INSERT INTO admin_users (id, member_identifier, role, is_active, created_at) " +
+            "VALUES ('aaaaaaaaaa3', 'officer@example.test', 'safety_officer', TRUE, @at)");
+        await ExecuteAsync(
+            connectionString,
+            "UPDATE admin_users SET deleted = @at WHERE id = 'aaaaaaaaaa3'");
+
+        // When
+        var readding = () => ExecuteAsync(
+            connectionString,
+            "INSERT INTO admin_users (id, member_identifier, role, is_active, created_at) " +
+            "VALUES ('aaaaaaaaaa4', 'officer@example.test', 'safety_officer', TRUE, @at)");
+
+        // Then
+        await Should.NotThrowAsync(readding);
+    }
+
     private static async Task ExecuteAsync(string connectionString, string sql)
     {
         await using var connection = new NpgsqlConnection(connectionString);

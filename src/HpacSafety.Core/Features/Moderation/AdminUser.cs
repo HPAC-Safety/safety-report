@@ -45,6 +45,9 @@ public class AdminUser
     /// <summary>When they were added.</summary>
     public DateTimeOffset CreatedAt { get; private init; }
 
+    /// <summary>When they were removed from the allowlist entirely, if they were.</summary>
+    public DateTimeOffset? Deleted { get; private set; }
+
     /// <summary>True when they may edit the question bank.</summary>
     public bool MayEditQuestions => IsActive && Role == AdminRole.Administrator;
 

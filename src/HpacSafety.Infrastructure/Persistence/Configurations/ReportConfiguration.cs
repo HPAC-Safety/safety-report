@@ -1,6 +1,4 @@
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
-using HpacSafety.Infrastructure.Persistence.Encryption;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -8,8 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace HpacSafety.Infrastructure.Persistence.Configurations;
 
 /// <summary>The <c>reports</c> table and everything hanging off it.</summary>
-/// <param name="cipher">The cipher its private occurrence-time column is bound to.</param>
-public sealed class ReportConfiguration(IFieldCipher cipher) : IEntityTypeConfiguration<Report>
+public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<Report> builder)
@@ -21,35 +18,27 @@ public sealed class ReportConfiguration(IFieldCipher cipher) : IEntityTypeConfig
 
         builder.Property(report => report.Language).IsRequired();
         builder.Property(report => report.Status).IsRequired();
-        builder.Property(report => report.Province).IsRequired();
-        builder.Property(report => report.TimeOfDay).IsRequired();
-        builder.Property(report => report.PilotInjury).IsRequired();
-        builder.Property(report => report.PassengerInjury).IsRequired();
 
         // Deliberately nullable, and deliberately not defaulted. An unanswered
         // consent is not a "no" — see ADR-0016.
         builder.Property(report => report.ConsentPublish);
-
-        // The day the reporter says it happened: a date, so no session timezone
-        // can shift it across midnight. The clock time at the site: private,
-        // so encrypted, and never published — the coarse `time_of_day` bucket
-        // beside it is what anything downstream reads. See ADR-0019.
-        builder.Property(report => report.OccurredAtLocal)
-            .HasConversion(EncryptedTimeOnlyConverter.For(cipher));
 
         builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
         // The review queue reads by status, oldest first.
         builder.HasIndex(report => new { report.Status, report.SubmittedAt });
 
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_reports_language",
+            "language IN ('en-CA', 'fr-CA')"));
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_reports_status",
+            "status IN ('submitted', 'summarizing', 'pending_review', 'summary_failed', 'approved', 'rejected', 'published')"));
+
         builder.HasMany(report => report.Answers)
             .WithOne()
             .HasForeignKey(answer => answer.ReportId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(report => report.Aircraft)
-            .WithOne()
-            .HasForeignKey(aircraft => aircraft.ReportId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(report => report.Files)
@@ -57,24 +46,20 @@ public sealed class ReportConfiguration(IFieldCipher cipher) : IEntityTypeConfig
             .HasForeignKey(file => file.ReportId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(report => report.Summaries)
+        builder.HasOne(report => report.Summary)
             .WithOne()
-            .HasForeignKey(summary => summary.ReportId)
+            .HasForeignKey<Summary>(summary => summary.ReportId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        foreach (var navigation in builder.Metadata.GetNavigations())
-        {
-            navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
-        }
+        // The collections are backed by private fields; the Summary reference
+        // is an ordinary auto-property and needs no field access mode.
+        builder.Metadata.FindNavigation(nameof(Report.Answers))!.SetPropertyAccessMode(PropertyAccessMode.Field);
+        builder.Metadata.FindNavigation(nameof(Report.Files))!.SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 
-/// <summary>
-/// The <c>report_answers</c> table. Its <c>value</c> column is encrypted by the
-/// application — see <see cref="EncryptedStringConverter"/> and ADR-0019.
-/// </summary>
-/// <param name="cipher">The cipher the encrypted column is bound to.</param>
-public sealed class ReportAnswerConfiguration(IFieldCipher cipher) : IEntityTypeConfiguration<ReportAnswer>
+/// <summary>The <c>report_answers</c> table.</summary>
+public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportAnswer>
 {
     /// <inheritdoc />
     public void Configure(EntityTypeBuilder<ReportAnswer> builder)
@@ -87,49 +72,30 @@ public sealed class ReportAnswerConfiguration(IFieldCipher cipher) : IEntityType
         builder.Property(answer => answer.QuestionKey).HasMaxLength(128).IsRequired();
         builder.Property(answer => answer.IsPrivate).IsRequired();
 
-        // Every answer is encrypted at rest. IsPrivate controls the model input
-        // section, not whether storage receives protection.
-        builder.Property(answer => answer.Value).HasConversion(EncryptedStringConverter.For(cipher));
-
         builder.PrimitiveCollection(answer => answer.SelectedOptionCodes)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-        builder.HasIndex(answer => answer.ReportId);
-        builder.HasIndex(answer => answer.QuestionVersionId);
+        // At most one revision of the same stable key per report, and one
+        // answer per report + question revision.
+        builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId }).IsUnique();
+        builder.HasIndex(answer => answer.QuestionRevisionId);
 
-        // An answer references the version it was answered under, and that
-        // version may never be deleted out from under it.
-        builder.HasOne<Core.Features.QuestionBank.QuestionVersion>()
+        // Lets a report_files row enforce, at the database level, that the
+        // answer it links to belongs to the same report — see
+        // ReportFileConfiguration below.
+        builder.HasAlternateKey(answer => new { answer.ReportId, answer.Id });
+
+        // An answer references the revision it was answered under, and that
+        // revision may never be deleted out from under it.
+        builder.HasOne<Core.Features.QuestionBank.QuestionRevision>()
             .WithMany()
-            .HasForeignKey(answer => answer.QuestionVersionId)
+            .HasForeignKey(answer => answer.QuestionRevisionId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne<Core.Features.QuestionBank.Question>()
             .WithMany()
             .HasForeignKey(answer => answer.QuestionId)
             .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-/// <summary>The <c>report_aircraft</c> table.</summary>
-public sealed class ReportAircraftConfiguration : IEntityTypeConfiguration<ReportAircraft>
-{
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<ReportAircraft> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-
-        builder.ToTable("report_aircraft");
-        builder.HasKey(aircraft => aircraft.Id);
-
-        builder.Property(aircraft => aircraft.Discipline).IsRequired();
-
-        // Private context: retained for trend analysis, never published.
-        builder.Property(aircraft => aircraft.Manufacturer).HasMaxLength(200);
-        builder.Property(aircraft => aircraft.Model).HasMaxLength(200);
-        builder.Property(aircraft => aircraft.CertificationAnswer).HasMaxLength(200);
-
-        builder.HasIndex(aircraft => aircraft.ReportId);
     }
 }
 
@@ -147,18 +113,49 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
         builder.ToTable("report_files");
         builder.HasKey(file => file.Id);
 
+        builder.Property(file => file.Kind).IsRequired();
         builder.Property(file => file.BlobKey).HasMaxLength(512).IsRequired();
         builder.Property(file => file.StrippedBlobKey).HasMaxLength(512);
         builder.Property(file => file.ContentType).HasMaxLength(128).IsRequired();
+        builder.Property(file => file.ProcessingErrorCode).HasMaxLength(128);
 
         builder.HasIndex(file => file.ReportId);
+        builder.HasIndex(file => new { file.ReportId, file.ReportAnswerId });
+
+        // A file belongs to exactly one file-upload answer on the same
+        // report — never one on a different report. An independent FK on
+        // report_answer_id alone cannot express that: it would accept
+        // ReportId = A with an answer that belongs to report B. The composite
+        // FK below, against the compound alternate key on ReportAnswer, is
+        // what actually enforces it. A null ReportAnswerId still satisfies
+        // the constraint (Postgres MATCH SIMPLE), so the not-yet-linked
+        // window before AddFile's answer is known is unaffected.
+        builder.HasOne<Core.Features.Reporting.ReportAnswer>()
+            .WithMany()
+            .HasForeignKey(file => new { file.ReportId, file.ReportAnswerId })
+            .HasPrincipalKey(answer => new { answer.ReportId, answer.Id })
+            .OnDelete(DeleteBehavior.Restrict);
 
         // The EXIF stripper claims work by looking for what it has not done yet.
         builder.HasIndex(file => file.ExifStrippedAt).HasFilter("exif_stripped_at IS NULL");
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_report_files_kind",
+            "kind IN ('image', 'video', 'document')"));
+
+        // AwaitsStripping treats these two as one fact: a stripped-at time
+        // with no key, or a key with no stripped-at time, would read as a
+        // half-finished stripping nobody can act on.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_report_files_exif_stripped_coherence",
+            "(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)"));
     }
 }
 
-/// <summary>The <c>summaries</c> table, one row per language.</summary>
+/// <summary>
+/// The <c>summaries</c> table. Exactly one bilingual row per report, with shared
+/// provenance and one approval covering both languages.
+/// </summary>
 public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 {
     /// <inheritdoc />
@@ -169,26 +166,22 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
         builder.ToTable("summaries");
         builder.HasKey(summary => summary.Id);
 
-        // The column is named for what it holds rather than for the CLR type
-        // that carries it.
-        builder.Property(summary => summary.Locale).HasColumnName("language").IsRequired();
-
-        builder.Property(summary => summary.Text).IsRequired();
+        builder.Property(summary => summary.AiSummaryEn).IsRequired();
+        builder.Property(summary => summary.AiSummaryFr).IsRequired();
 
         // Every published sentence traces back to exactly what produced it.
         builder.Property(summary => summary.Model).HasMaxLength(200).IsRequired();
         builder.Property(summary => summary.PromptVersion).HasMaxLength(50).IsRequired();
 
-        // One summary per language per report, so a reviewer never has to pick
-        // between two French versions.
-        builder.HasIndex(summary => new { summary.ReportId, summary.Locale }).IsUnique();
+        // Exactly one summary row per report.
+        builder.HasIndex(summary => summary.ReportId).IsUnique();
 
-        // Which one was generated from the report, and which was translated
-        // from that one, has to be answerable from the row itself.
-        builder.HasOne<Summary>()
-            .WithMany()
-            .HasForeignKey(summary => summary.TranslatedFromSummaryId)
-            .OnDelete(DeleteBehavior.Restrict);
+        // IsApproved reads ApprovedAt alone, but a row with one of the pair
+        // set and not the other is not a state the domain can represent —
+        // Approve()/ClearApproval() always set or clear both together.
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_summaries_approval_coherence",
+            "(approved_by IS NULL) = (approved_at IS NULL)"));
 
         builder.HasOne<Core.Features.Moderation.AdminUser>()
             .WithMany()

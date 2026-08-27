@@ -1,5 +1,3 @@
-using HpacSafety.Infrastructure.Persistence.Seeding;
-
 using Microsoft.EntityFrameworkCore;
 
 using Npgsql;
@@ -21,12 +19,9 @@ public sealed class SchemaTests(PostgresFixture postgres)
         "admin_users",
         "audit_log",
         "outbox_messages",
-        "question_option_translations",
-        "question_options",
-        "question_translations",
-        "question_versions",
+        "question_revision_options",
+        "question_revisions",
         "questions",
-        "report_aircraft",
         "report_answers",
         "report_files",
         "reports",
@@ -67,45 +62,6 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_seeded_database_When_the_question_bank_seed_is_executed_a_second_time_Then_it_does_not_error()
-    {
-        // Given — the scenario __EFMigrationsHistory cannot protect against:
-        // a future migration re-seeding after an administrator emptied the
-        // question bank by hand, or a deployment script re-run outside EF's
-        // own tracking. Every row is written with a WHERE NOT EXISTS guard on
-        // its own identifier, the same shape DevelopmentAdminSeed uses.
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
-
-        // When / Then — this line is what would have failed before the guard:
-        // EF's InsertData has no WHERE NOT EXISTS, so running the same insert
-        // twice violates the primary key on the second pass.
-        await using var command = new NpgsqlCommand(QuestionBankSeedWriter.Sql(), connection);
-        await Should.NotThrowAsync(() => command.ExecuteNonQueryAsync());
-    }
-
-    [Fact]
-    public async Task Given_a_seeded_database_When_the_question_bank_seed_is_executed_a_second_time_Then_it_writes_no_duplicate_rows()
-    {
-        // Given
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        var before = await RowCountsAsync(connectionString);
-
-        // When
-        await using (var connection = new NpgsqlConnection(connectionString))
-        {
-            await connection.OpenAsync();
-            await using var command = new NpgsqlCommand(QuestionBankSeedWriter.Sql(), connection);
-            await command.ExecuteNonQueryAsync();
-        }
-
-        // Then — a safe no-op, not merely a survivable one.
-        var after = await RowCountsAsync(connectionString);
-        after.ShouldBe(before);
-    }
-
-    [Fact]
     public async Task Given_a_migrated_database_When_the_outbox_index_is_read_Then_it_covers_only_the_rows_a_worker_may_claim()
     {
         // Given
@@ -125,7 +81,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_the_summaries_table_is_read_Then_one_language_may_appear_once_per_report()
+    public async Task Given_a_migrated_database_When_the_summaries_table_is_read_Then_exactly_one_row_may_exist_per_report()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -135,9 +91,9 @@ public sealed class SchemaTests(PostgresFixture postgres)
             connectionString,
             "SELECT indexdef FROM pg_indexes WHERE tablename = 'summaries' AND indexdef LIKE '%UNIQUE%'");
 
-        // Then — a reviewer must never have to choose between two French
-        // summaries of the same report.
-        definitions.ShouldContain(d => d.Contains("report_id", StringComparison.Ordinal) && d.Contains("language", StringComparison.Ordinal));
+        // Then — a reviewer never has to choose between two summaries of the
+        // same report; the bilingual pair lives in one row.
+        definitions.ShouldContain(d => d.Contains("report_id", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -153,26 +109,6 @@ public sealed class SchemaTests(PostgresFixture postgres)
 
         // Then
         types.ShouldBe(["ARRAY"]);
-    }
-
-    private static async Task<Dictionary<string, long>> RowCountsAsync(string connectionString)
-    {
-        string[] seededTables =
-        [
-            "questions", "question_versions", "question_translations", "question_options", "question_option_translations",
-        ];
-
-        var counts = new Dictionary<string, long>(StringComparer.Ordinal);
-        await using var connection = new NpgsqlConnection(connectionString);
-        await connection.OpenAsync();
-
-        foreach (var table in seededTables)
-        {
-            await using var command = new NpgsqlCommand($"SELECT count(*) FROM {table}", connection);
-            counts[table] = (long)(await command.ExecuteScalarAsync())!;
-        }
-
-        return counts;
     }
 
     private static async Task<string[]> QueryStringsAsync(string connectionString, string sql)

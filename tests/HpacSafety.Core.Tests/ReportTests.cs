@@ -8,8 +8,7 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// Consent gates publication, and the answers that drive logic reach typed
-/// properties through a question's role rather than through a hardcoded key.
+/// Consent gates publication, and it is the only answer a report reads by name.
 /// </summary>
 public class ReportTests
 {
@@ -28,7 +27,7 @@ public class ReportTests
         // Then — stored, summarized, and counted internally; never published
         report.ConsentPublish.ShouldBe(false);
         report.IsPublishable.ShouldBeFalse();
-        Should.Throw<DomainRuleViolationException>(report.MarkPublished);
+        Should.Throw<DomainRuleViolationException>(() => report.MarkPublished(Now));
     }
 
     [Fact]
@@ -77,137 +76,69 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_consent_and_both_approved_summaries_When_publication_is_attempted_Then_it_succeeds()
+    public void Given_consent_and_an_approved_summary_When_publication_is_attempted_Then_it_succeeds()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
         report.Answer(ConsentQuestion(), ["yes"], Now);
         var officer = TinyId.New();
 
-        var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
-        var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        english.Approve(officer, Now);
-        french.Approve(officer, Now);
-        report.AddSummary(english);
-        report.AddSummary(french);
+        var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
+        summary.Approve(officer, Now);
+        report.AttachSummary(summary);
         report.Approve();
 
         // When
-        report.MarkPublished();
+        report.MarkPublished(Now);
 
         // Then
         report.Status.ShouldBe(ReportStatus.Published);
+        report.PublishedAt.ShouldBe(Now);
     }
 
     [Fact]
-    public void Given_only_the_English_summary_is_approved_When_publication_is_attempted_Then_it_is_blocked()
+    public void Given_the_summary_is_not_approved_When_publication_is_attempted_Then_it_is_blocked()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
         report.Answer(ConsentQuestion(), ["yes"], Now);
 
-        var english = Summary.Generated(report.Id, Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
-        var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-        english.Approve(TinyId.New(), Now);
-        report.AddSummary(english);
-        report.AddSummary(french);
+        var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
+        report.AttachSummary(summary);
         report.Approve();
 
         // When
-        var publishing = report.MarkPublished;
+        var publishing = () => report.MarkPublished(Now);
 
-        // Then — the human gate covers everything published, in both languages
+        // Then — the human gate covers everything published
         report.IsPublishable.ShouldBeFalse();
         publishing.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
-    public void Given_a_serious_injury_answer_When_it_is_recorded_Then_the_report_reports_a_serious_injury()
+    public void Given_an_answer_When_it_is_recorded_Then_it_references_the_revision_it_was_asked_under()
     {
         // Given
-        var injury = Question.Create(
-            "pilot_injury", QuestionType.SingleSelect, Locale.EnCa, "Pilot injury", Now,
-            role: QuestionRole.PilotInjury);
-        injury.CurrentVersion.AddOption("serious", "Serious injury (secondary medical aid)", Now);
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        report.Answer(injury, ["serious"], Now);
-
-        // Then
-        report.PilotInjury.ShouldBe(InjurySeverity.Serious);
-        report.InvolvesSeriousInjury.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void Given_no_injury_question_on_the_form_When_a_report_is_filed_Then_severity_is_unanswered_rather_than_assumed()
-    {
-        // Given — every role except consent is optional, and its absence is a defined state
-        var report = new Report(Locale.EnCa, Now);
-        report.Answer(ConsentQuestion(), ["yes"], Now);
-
-        // When
-        var severity = report.PilotInjury;
-
-        // Then
-        severity.ShouldBe(InjurySeverity.NotAnswered);
-        report.InvolvesSeriousInjury.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void Given_a_role_bearing_date_question_When_it_is_answered_Then_the_date_reaches_the_report()
-    {
-        // Given
-        var date = Question.Create(
-            "occurrence_date", QuestionType.Date, Locale.EnCa, "Date of the occurrence", Now,
-            role: QuestionRole.OccurrenceDate);
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        report.Answer(date, "2026-07-04", Now);
-
-        // Then
-        report.OccurredOn.ShouldBe(new DateOnly(2026, 7, 4));
-    }
-
-    [Fact]
-    public void Given_a_province_answer_When_it_is_recorded_Then_the_invariant_code_resolves_to_the_enum()
-    {
-        // Given
-        var province = Question.Create(
-            "province", QuestionType.SingleSelect, Locale.EnCa, "Province", Now, role: QuestionRole.Province);
-        province.CurrentVersion.AddOption("british_columbia", "British Columbia", Now);
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        report.Answer(province, ["british_columbia"], Now);
-
-        // Then — display text never reaches the database
-        report.Province.ShouldBe(Province.BritishColumbia);
-    }
-
-    [Fact]
-    public void Given_an_answer_When_it_is_recorded_Then_it_references_the_version_it_was_asked_under()
-    {
-        // Given
-        var question = Question.Create("damage", QuestionType.ShortText, Locale.EnCa, "Damage", Now);
-        var askedUnder = question.CurrentVersion;
+        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
+        var askedUnder = question.CurrentRevision;
         var report = new Report(Locale.EnCa, Now);
 
         // When
         var answer = report.Answer(question, "Broken riser", Now);
-        question.Revise(QuestionType.LongText, isRequired: false, Locale.EnCa, "Describe the damage", Now.AddDays(1));
+        question.Revise(
+            QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
+            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
 
         // Then — rewording tomorrow cannot change what an answer given today means
-        answer.QuestionVersionId.ShouldBe(askedUnder.Id);
-        answer.QuestionVersionId.ShouldNotBe(question.CurrentVersion.Id);
+        answer.QuestionRevisionId.ShouldBe(askedUnder.Id);
+        answer.QuestionRevisionId.ShouldNotBe(question.CurrentRevision.Id);
     }
 
     [Fact]
     public void Given_a_private_question_When_it_is_answered_Then_the_answer_snapshots_the_private_classification()
     {
         // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where?", Now);
+        var question = Question.Create("where", QuestionType.ShortText, "Where?", "Où ?", Now);
         var report = new Report(Locale.EnCa, Now);
         var answer = report.Answer(question, "A launch site", Now);
 
@@ -219,8 +150,9 @@ public class ReportTests
     public void Given_an_unknown_option_code_When_it_is_answered_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, Locale.EnCa, "Time of day", Now);
-        question.CurrentVersion.AddOption("morning", "Morning", Now);
+        var question = Question.Create(
+            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+            options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -246,5 +178,5 @@ public class ReportTests
     }
 
     private static Question ConsentQuestion() =>
-        Question.CreateConsentPublish(Locale.EnCa, "May we publish a de-identified version?", Now);
+        Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
 }

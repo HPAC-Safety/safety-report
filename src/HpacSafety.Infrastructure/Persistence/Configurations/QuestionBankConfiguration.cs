@@ -17,118 +17,102 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.HasKey(question => question.Id);
 
         builder.Property(question => question.Key).HasMaxLength(128).IsRequired();
-        builder.Property(question => question.SectionKey).HasMaxLength(128);
         builder.Property(question => question.Role).IsRequired();
-        builder.Property(question => question.IsPrivate).IsRequired();
+        builder.Property(question => question.IsSystem).IsRequired();
+
+        // Order, section, privacy, and active state live on the revision, not
+        // here — a referenced revision must preserve the complete question
+        // exactly as it was shown. Question.IsPrivate/DisplayOrder/SectionKey/
+        // IsActive are computed pass-throughs to CurrentRevision and are
+        // therefore not mapped.
+        builder.Ignore(question => question.IsPrivate);
+        builder.Ignore(question => question.DisplayOrder);
+        builder.Ignore(question => question.SectionKey);
+        builder.Ignore(question => question.IsActive);
 
         builder.HasIndex(question => question.Key).IsUnique();
-        builder.HasIndex(question => new { question.IsActive, question.DisplayOrder });
 
-        builder.HasMany(question => question.Versions)
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_questions_role",
+            "role IN ('none', 'consent_publish')"));
+
+        builder.HasMany(question => question.Revisions)
             .WithOne()
-            .HasForeignKey(version => version.QuestionId)
+            .HasForeignKey(revision => revision.QuestionId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.Metadata.FindNavigation(nameof(Question.Versions))!
-            .SetPropertyAccessMode(PropertyAccessMode.Field);
-    }
-}
-
-/// <summary>The <c>question_versions</c> table. A version is immutable once written.</summary>
-public sealed class QuestionVersionConfiguration : IEntityTypeConfiguration<QuestionVersion>
-{
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<QuestionVersion> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-
-        builder.ToTable("question_versions");
-        builder.HasKey(version => version.Id);
-
-        builder.Property(version => version.Type).IsRequired();
-
-        builder.HasIndex(version => new { version.QuestionId, version.VersionNumber }).IsUnique();
-
-        builder.HasMany(version => version.Options)
-            .WithOne()
-            .HasForeignKey(option => option.QuestionVersionId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.HasMany(version => version.Translations)
-            .WithOne()
-            .HasForeignKey(translation => translation.QuestionVersionId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        foreach (var navigation in builder.Metadata.GetNavigations())
-        {
-            navigation.SetPropertyAccessMode(PropertyAccessMode.Field);
-        }
-    }
-}
-
-/// <summary>The <c>question_options</c> table.</summary>
-public sealed class QuestionOptionConfiguration : IEntityTypeConfiguration<QuestionOption>
-{
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<QuestionOption> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-
-        builder.ToTable("question_options");
-        builder.HasKey(option => option.Id);
-
-        builder.Property(option => option.Code).HasMaxLength(128).IsRequired();
-
-        // A code never changes, and never repeats within a version — that is
-        // what lets a rename be a translation change rather than a data
-        // migration.
-        builder.HasIndex(option => new { option.QuestionVersionId, option.Code }).IsUnique();
-
-        builder.HasMany(option => option.Translations)
-            .WithOne()
-            .HasForeignKey(translation => translation.QuestionOptionId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        builder.Metadata.FindNavigation(nameof(QuestionOption.Translations))!
+        builder.Metadata.FindNavigation(nameof(Question.Revisions))!
             .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 
 /// <summary>
-/// The <c>question_translations</c> table — the same <c>is_source</c> and
-/// <c>is_machine_translated</c> shape <c>summaries</c> uses.
+/// The <c>question_revisions</c> table. A revision is complete and immutable
+/// once written: both official languages are present from the start.
 /// </summary>
-public sealed class QuestionTranslationConfiguration : IEntityTypeConfiguration<QuestionTranslation>
+public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<QuestionRevision>
 {
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<QuestionTranslation> builder)
+    public void Configure(EntityTypeBuilder<QuestionRevision> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("question_translations");
-        builder.HasKey(translation => translation.Id);
+        builder.ToTable("question_revisions");
+        builder.HasKey(revision => revision.Id);
 
-        builder.Property(translation => translation.Locale).IsRequired();
-        builder.Property(translation => translation.Label).IsRequired();
+        builder.Property(revision => revision.Type).IsRequired();
+        builder.Property(revision => revision.LabelEn).IsRequired();
+        builder.Property(revision => revision.LabelFr).IsRequired();
+        builder.Property(revision => revision.IsSystem).IsRequired();
+        builder.Property(revision => revision.IsRequired).IsRequired();
+        builder.Property(revision => revision.IsPrivate).IsRequired();
+        builder.Property(revision => revision.IsActive).IsRequired();
+        builder.Property(revision => revision.DisplayOrder).IsRequired();
+        builder.Property(revision => revision.SectionKey).HasMaxLength(128);
 
-        builder.HasIndex(translation => new { translation.QuestionVersionId, translation.Locale }).IsUnique();
+        // Unique stable key + revision number.
+        builder.HasIndex(revision => new { revision.QuestionId, revision.RevisionNumber }).IsUnique();
+
+        // Ties by stable key break ties in sort order — see
+        // features/question-bank-and-form/question-bank-and-form.feature.
+        builder.HasIndex(revision => new { revision.IsActive, revision.DisplayOrder });
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_question_revisions_type",
+            "type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', " +
+            "'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group')"));
+
+        builder.HasMany(revision => revision.Options)
+            .WithOne()
+            .HasForeignKey(option => option.QuestionRevisionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Metadata.FindNavigation(nameof(QuestionRevision.Options))!
+            .SetPropertyAccessMode(PropertyAccessMode.Field);
     }
 }
 
-/// <summary>The <c>question_option_translations</c> table.</summary>
-public sealed class QuestionOptionTranslationConfiguration : IEntityTypeConfiguration<QuestionOptionTranslation>
+/// <summary>
+/// The <c>question_revision_options</c> table, complete in both official
+/// languages.
+/// </summary>
+public sealed class QuestionRevisionOptionConfiguration : IEntityTypeConfiguration<QuestionRevisionOption>
 {
     /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<QuestionOptionTranslation> builder)
+    public void Configure(EntityTypeBuilder<QuestionRevisionOption> builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("question_option_translations");
-        builder.HasKey(translation => translation.Id);
+        builder.ToTable("question_revision_options");
+        builder.HasKey(option => option.Id);
 
-        builder.Property(translation => translation.Locale).IsRequired();
-        builder.Property(translation => translation.Label).IsRequired();
+        builder.Property(option => option.Code).HasMaxLength(128).IsRequired();
+        builder.Property(option => option.LabelEn).IsRequired();
+        builder.Property(option => option.LabelFr).IsRequired();
 
-        builder.HasIndex(translation => new { translation.QuestionOptionId, translation.Locale }).IsUnique();
+        // A code never changes, and never repeats within a revision — that is
+        // what lets a rename be a translation change rather than a data
+        // migration.
+        builder.HasIndex(option => new { option.QuestionRevisionId, option.Code }).IsUnique();
     }
 }

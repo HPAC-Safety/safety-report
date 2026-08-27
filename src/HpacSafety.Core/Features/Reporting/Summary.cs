@@ -1,14 +1,13 @@
 
-using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// An anonymized summary of a report, in one language. Every report ends up with
-/// one row per official locale: the one generated from the report carries
-/// <see cref="IsSource"/>, the other carries
-/// <see cref="TranslatedFromSummaryId"/>.
+/// The anonymized bilingual summary of a report. Exactly one row per report: the
+/// Worker's single model call produces both languages together, so there is
+/// nothing to keep in sync between them, and one shared approval covers the
+/// pair. See product invariant #6 and <c>docs/data-and-persistence.md</c>.
 /// </summary>
 public class Summary
 {
@@ -23,28 +22,29 @@ public class Summary
     }
 #pragma warning restore CS8618
 
-    private Summary(TinyId reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
+    private Summary(TinyId reportId, string aiSummaryEn, string aiSummaryFr, string model, string promptVersion, DateTimeOffset at)
     {
         Id = TinyId.New();
         ReportId = reportId;
-        Locale = locale;
-        Text = text;
+        AiSummaryEn = NotBlank(aiSummaryEn);
+        AiSummaryFr = NotBlank(aiSummaryFr);
         Model = model;
         PromptVersion = promptVersion;
-        CreatedAt = at;
+        GeneratedAt = at;
+        UpdatedAt = at;
     }
 
     /// <summary>Surrogate key.</summary>
     public TinyId Id { get; private init; }
 
-    /// <summary>The report summarized.</summary>
+    /// <summary>The report summarized. Unique: exactly one summary per report.</summary>
     public TinyId ReportId { get; private init; }
 
-    /// <summary>The language of this summary.</summary>
-    public Locale Locale { get; private init; }
+    /// <summary>The English text. Publishable only once the pair is approved.</summary>
+    public string AiSummaryEn { get; private set; }
 
-    /// <summary>The summary text. Publishable only once approved.</summary>
-    public string Text { get; private set; }
+    /// <summary>The French text. Publishable only once the pair is approved.</summary>
+    public string AiSummaryFr { get; private set; }
 
     /// <summary>The model that produced it, stamped so published text traces back.</summary>
     public string Model { get; private init; }
@@ -52,56 +52,66 @@ public class Summary
     /// <summary>The prompt version that produced it.</summary>
     public string PromptVersion { get; private init; }
 
-    /// <summary>True for the summary generated directly from the report.</summary>
-    public bool IsSource { get; private init; }
-
-    /// <summary>Set on the translated summary, pointing at the one it came from.</summary>
-    public TinyId? TranslatedFromSummaryId { get; private init; }
-
-    /// <summary>The safety officer who approved this language.</summary>
+    /// <summary>The safety officer who approved the pair.</summary>
     public TinyId? ApprovedBy { get; private set; }
 
-    /// <summary>When this language was approved.</summary>
+    /// <summary>When the pair was approved.</summary>
     public DateTimeOffset? ApprovedAt { get; private set; }
 
     /// <summary>When it was generated.</summary>
-    public DateTimeOffset CreatedAt { get; private init; }
+    public DateTimeOffset GeneratedAt { get; private init; }
 
-    /// <summary>True once a human has approved this language specifically.</summary>
+    /// <summary>When either language last changed.</summary>
+    public DateTimeOffset UpdatedAt { get; private set; }
+
+    /// <summary>When this summary was deleted along with its report, if it was.</summary>
+    public DateTimeOffset? Deleted { get; private set; }
+
+    /// <summary>True once a human has approved the pair.</summary>
     public bool IsApproved => ApprovedAt is not null;
 
-    /// <summary>The summary generated from the report itself, in the language the reporter wrote in.</summary>
-    public static Summary Generated(
-        TinyId reportId, Locale locale, string text, string model, string promptVersion, DateTimeOffset at) =>
-        new(reportId, locale, text, model, promptVersion, at) { IsSource = true };
+    /// <summary>Creates the summary generated from one Worker call.</summary>
+    public static Summary Generate(
+        TinyId reportId, string aiSummaryEn, string aiSummaryFr, string model, string promptVersion, DateTimeOffset at) =>
+        new(reportId, aiSummaryEn, aiSummaryFr, model, promptVersion, at);
 
-    /// <summary>The other language, translated from an already-anonymized summary.</summary>
-    public static Summary TranslatedFrom(
-        Summary source, Locale locale, string text, string model, string promptVersion, DateTimeOffset at)
+    /// <summary>
+    /// Replaces the English text by hand — the escape hatch when the model
+    /// failed. Editing either language clears the pair's approval.
+    /// </summary>
+    public void RewriteEn(string text, DateTimeOffset at)
     {
-        ArgumentNullException.ThrowIfNull(source);
-
-        return new Summary(source.ReportId, locale, text, model, promptVersion, at)
-        {
-            IsSource = false,
-            TranslatedFromSummaryId = source.Id,
-        };
+        AiSummaryEn = NotBlank(text);
+        UpdatedAt = at;
+        ClearApproval();
     }
 
-    /// <summary>Replaces the text by hand — the escape hatch when the model failed.</summary>
-    public void Rewrite(string text)
+    /// <summary>
+    /// Replaces the French text by hand. Editing either language clears the
+    /// pair's approval.
+    /// </summary>
+    public void RewriteFr(string text, DateTimeOffset at)
     {
-        Text = string.IsNullOrWhiteSpace(text)
-            ? throw new DomainRuleViolationException("A summary cannot be blank.")
-            : text;
-        ApprovedBy = null;
-        ApprovedAt = null;
+        AiSummaryFr = NotBlank(text);
+        UpdatedAt = at;
+        ClearApproval();
     }
 
-    /// <summary>Records a safety officer's approval of this language.</summary>
+    /// <summary>Records a safety officer's approval of the whole pair.</summary>
     public void Approve(TinyId adminUserId, DateTimeOffset at)
     {
         ApprovedBy = adminUserId;
         ApprovedAt = at;
     }
+
+    private void ClearApproval()
+    {
+        ApprovedBy = null;
+        ApprovedAt = null;
+    }
+
+    private static string NotBlank(string text) =>
+        string.IsNullOrWhiteSpace(text)
+            ? throw new DomainRuleViolationException("A summary cannot be blank.")
+            : text;
 }

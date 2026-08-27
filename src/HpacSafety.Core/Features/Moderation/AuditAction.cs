@@ -19,5 +19,4 @@ public enum AuditAction
     ReorderedQuestions = 12,
     DeactivatedQuestion = 13,
     DeletedQuestion = 14,
-    EditedQuestionTranslation = 15,
 }

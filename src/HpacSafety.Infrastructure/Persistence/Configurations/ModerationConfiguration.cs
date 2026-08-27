@@ -29,7 +29,19 @@ public sealed class AdminUserConfiguration : IEntityTypeConfiguration<AdminUser>
         builder.Property(user => user.MemberIdentifier).HasMaxLength(256).IsRequired();
         builder.Property(user => user.Role).IsRequired();
 
-        builder.HasIndex(user => user.MemberIdentifier).IsUnique();
+        // Unique among live rows only: a deleted administrator must not
+        // permanently block re-adding the same upstream member identifier.
+        // The query filter already hides deleted rows from ordinary reads,
+        // but a plain unique index is still checked against them by the
+        // database — this partial index is what actually frees the
+        // identifier back up once its row is soft-deleted.
+        builder.HasIndex(user => user.MemberIdentifier)
+            .IsUnique()
+            .HasFilter("deleted IS NULL");
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_admin_users_role",
+            "role IN ('safety_officer', 'administrator')"));
     }
 }
 
@@ -84,7 +96,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.ToTable("outbox_messages");
         builder.HasKey(message => message.Id);
 
-        builder.Property(message => message.Type).HasMaxLength(200).IsRequired();
+        builder.Property(message => message.Type).IsRequired();
         builder.Property(message => message.Payload).IsRequired();
         builder.Property(message => message.LastError).HasMaxLength(2000);
 
@@ -95,5 +107,9 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
             .HasFilter(ClaimableFilter);
 
         builder.HasIndex(message => message.AggregateId);
+
+        builder.ToTable(t => t.HasCheckConstraint(
+            "ck_outbox_messages_type",
+            "type IN ('summarize_report')"));
     }
 }

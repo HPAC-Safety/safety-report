@@ -1,12 +1,13 @@
-using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// An uploaded photo or video. The original bytes stay private; the
-/// EXIF-stripped derivative is what a reviewer sees, and media is never attached
-/// to a published summary. See docs/data-handling.md.
+/// An uploaded attachment. The original bytes stay private; for an image or
+/// video, the EXIF-stripped derivative is what a reviewer sees, and media is
+/// never attached to a published summary. A document has no derivative at all —
+/// it is validated, malware-checked, and kept private. See
+/// docs/data-handling.md.
 /// </summary>
 public class ReportFile
 {
@@ -28,6 +29,12 @@ public class ReportFile
         ReportId = reportId;
         BlobKey = blobKey;
         ContentType = contentType;
+        Kind = MediaType.TryParse(contentType, out var mediaType) ? mediaType.Kind switch
+        {
+            MediaKind.Video => AttachmentKind.Video,
+            _ => AttachmentKind.Image,
+        }
+        : AttachmentKind.Document;
         ByteSize = byteSize;
         UploadedAt = uploadedAt;
     }
@@ -38,10 +45,20 @@ public class ReportFile
     /// <summary>The report this file belongs to.</summary>
     public TinyId ReportId { get; private init; }
 
+    /// <summary>
+    /// The file-upload answer this attachment belongs to, once it is linked.
+    /// Every attachment belongs to exactly one file-upload answer on the same
+    /// report — the answer identifies the exact question revision asked.
+    /// </summary>
+    public TinyId? ReportAnswerId { get; private set; }
+
+    /// <summary>Whether this is an image, a video, or a private document.</summary>
+    public AttachmentKind Kind { get; private init; }
+
     /// <summary>Key of the private original bytes.</summary>
     public string BlobKey { get; private init; }
 
-    /// <summary>Key of the EXIF-stripped derivative a reviewer is shown.</summary>
+    /// <summary>Key of the EXIF-stripped derivative a reviewer is shown. Documents never have one.</summary>
     public string? StrippedBlobKey { get; private set; }
 
     /// <summary>Content type as sniffed on ingest, never as the client claimed.</summary>
@@ -55,6 +72,12 @@ public class ReportFile
 
     /// <summary>When EXIF — GPS above all — was stripped.</summary>
     public DateTimeOffset? ExifStrippedAt { get; private set; }
+
+    /// <summary>A safe, non-content error code recorded when processing this file failed.</summary>
+    public string? ProcessingErrorCode { get; private set; }
+
+    /// <summary>When this file was deleted along with its report, if it was.</summary>
+    public DateTimeOffset? Deleted { get; private set; }
 
     /// <summary>
     /// True until a stripped derivative exists. A file is not viewable before
@@ -98,4 +121,10 @@ public class ReportFile
         StrippedBlobKey = parsed.Value;
         ExifStrippedAt = at;
     }
+
+    /// <summary>Links this attachment to the file-upload answer it was submitted with.</summary>
+    public void LinkToAnswer(TinyId reportAnswerId) => ReportAnswerId = reportAnswerId;
+
+    /// <summary>Records that processing this file failed, with a safe non-content code.</summary>
+    public void RecordProcessingFailure(string errorCode) => ProcessingErrorCode = errorCode;
 }

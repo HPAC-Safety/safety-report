@@ -4,9 +4,8 @@ namespace HpacSafety.Core.Features.Outbox;
 
 /// <summary>
 /// Work to be done, written in the same transaction as the report that caused
-/// it. Summarization, translation, and notification all ride this — there is no
-/// "save, then notify", because that loses reports whenever the process dies
-/// between the two.
+/// it. Summarization rides this — there is no "save, then notify", because that
+/// loses reports whenever the process dies between the two.
 /// </summary>
 public class OutboxMessage
 {
@@ -25,7 +24,7 @@ public class OutboxMessage
     }
 #pragma warning restore CS8618
 
-    public OutboxMessage(TinyId aggregateId, string type, string payload, DateTimeOffset occurredAt)
+    public OutboxMessage(TinyId aggregateId, OutboxMessageType type, string payload, DateTimeOffset occurredAt)
     {
         Id = TinyId.New();
         AggregateId = aggregateId;
@@ -42,11 +41,11 @@ public class OutboxMessage
     public TinyId AggregateId { get; private init; }
 
     /// <summary>What kind of work this is.</summary>
-    public string Type { get; private init; }
+    public OutboxMessageType Type { get; private init; }
 
     /// <summary>
-    /// The message body. Identifiers, not report content — an outbox row is read
-    /// by logs and operators. See docs/data-handling.md.
+    /// The message body. Identifiers only, never report content — an outbox row
+    /// is read by logs and operators. See docs/data-handling.md.
     /// </summary>
     public string Payload { get; private init; }
 
@@ -67,6 +66,9 @@ public class OutboxMessage
 
     /// <summary>When it was set aside as poison.</summary>
     public DateTimeOffset? PoisonedAt { get; private set; }
+
+    /// <summary>When this message was deleted, if it was.</summary>
+    public DateTimeOffset? Deleted { get; private set; }
 
     /// <summary>True once it has completed.</summary>
     public bool IsProcessed => ProcessedAt is not null;

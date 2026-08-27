@@ -109,11 +109,11 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
         message.IsPoisoned.ShouldBeFalse();
         message.Attempts.ShouldBe(0);
         message.NextAttemptAt.ShouldBe(message.OccurredAt);
-        message.Type.ShouldBe("report.submitted");
+        message.Type.ShouldBe(OutboxMessageType.SummarizeReport);
     }
 
     private static OutboxMessage SummarizationRequestFor(Report report) =>
-        new(report.Id, "report.submitted", $$"""{"reportId":"{{report.Id}}"}""", At);
+        new(report.Id, OutboxMessageType.SummarizeReport, $$"""{"reportId":"{{report.Id}}"}""", At);
 
     private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
     {
@@ -125,12 +125,12 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     }
 
     private static Task<Question> QuestionAsync(HpacSafetyDbContext context, string key) =>
-        context.Questions.Include(q => q.Versions).SingleAsync(q => q.Key == key);
+        context.Questions.Include(q => q.Revisions).SingleAsync(q => q.Key == key);
 
     /// <summary>
     /// A question the database has never seen, so an answer to it cannot be
     /// stored. Built in memory only.
     /// </summary>
     private static Question OrphanedQuestion() =>
-        Question.Create("never_asked", QuestionType.LongText, Locale.EnCa, "Never asked", At);
+        Question.Create("never_asked", QuestionType.LongText, "Never asked", "Jamais demandé", At);
 }

@@ -20,7 +20,7 @@ public class QuestionBankEdgeTests
     public void Given_a_deleted_question_When_it_is_edited_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("damage", QuestionType.ShortText, Locale.EnCa, "Damage", Now);
+        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
         question.Delete(Now);
 
         // When
@@ -34,39 +34,38 @@ public class QuestionBankEdgeTests
     public void Given_a_question_deleted_twice_When_the_second_delete_runs_Then_the_first_time_stands()
     {
         // Given
-        var question = Question.Create("damage", QuestionType.ShortText, Locale.EnCa, "Damage", Now);
+        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
         question.Delete(Now);
 
         // When
         question.Delete(Now.AddDays(1));
 
         // Then
-        question.DeletedAt.ShouldBe(Now);
+        question.Deleted.ShouldBe(Now);
     }
 
     [Fact]
     public void Given_a_role_bearing_question_When_the_role_moves_to_another_question_Then_the_new_one_carries_it()
     {
-        // Given
-        var oldInjury = Question.Create(
-            "pilot_injury", QuestionType.SingleSelect, Locale.EnCa, "Pilot injury", Now, role: QuestionRole.PilotInjury);
-        var newInjury = Question.Create(
-            "injury_to_pilot", QuestionType.SingleSelect, Locale.EnCa, "Injury to the pilot", Now);
+        // Given — consent is the only role that must live somewhere, so moving
+        // it away has to land it on another question, not clear it to None.
+        var oldConsent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+        var newConsent = Question.Create(
+            "consent_v2", QuestionType.YesNo, "Do you agree?", "Êtes-vous d'accord ?", Now);
 
         // When
-        oldInjury.AssignRole(QuestionRole.None);
-        newInjury.AssignRole(QuestionRole.PilotInjury);
+        newConsent.AssignRole(QuestionRole.ConsentPublish);
 
         // Then
-        oldInjury.Role.ShouldBe(QuestionRole.None);
-        newInjury.Role.ShouldBe(QuestionRole.PilotInjury);
+        newConsent.Role.ShouldBe(QuestionRole.ConsentPublish);
+        oldConsent.Role.ShouldBe(QuestionRole.ConsentPublish);
     }
 
     [Fact]
     public void Given_the_consent_question_When_its_role_is_reassigned_Then_it_is_refused()
     {
         // Given
-        var consent = Question.CreateConsentPublish(Locale.EnCa, "May we publish?", Now);
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
         // When
         var reassigning = () => consent.AssignRole(QuestionRole.None);
@@ -79,7 +78,7 @@ public class QuestionBankEdgeTests
     public void Given_a_question_When_it_is_moved_into_a_section_Then_the_section_key_is_normalized()
     {
         // Given
-        var question = Question.Create("manufacturer", QuestionType.ShortText, Locale.EnCa, "Manufacturer", Now);
+        var question = Question.Create("manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now);
 
         // When
         question.MoveToSection("Aircraft details");
@@ -93,7 +92,7 @@ public class QuestionBankEdgeTests
     {
         // Given
         var question = Question.Create(
-            "province", QuestionType.ShortText, Locale.EnCa, "Province", Now, isPrivate: false);
+            "province", QuestionType.ShortText, "Province", "Province", Now, isPrivate: false);
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -107,67 +106,51 @@ public class QuestionBankEdgeTests
     public void Given_a_duplicate_option_code_When_it_is_added_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, Locale.EnCa, "Time of day", Now);
-        question.CurrentVersion.AddOption("morning", "Morning", Now);
+        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
+        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
 
         // When
-        var adding = () => question.CurrentVersion.AddOption("Morning", "Morning again", Now);
+        var adding = () => question.CurrentRevision.AddOption("Morning", "Morning again", "Encore le matin");
 
         // Then — the code is normalized before the duplicate check
         adding.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
-    public void Given_a_translation_that_already_exists_When_another_is_attached_Then_it_is_refused()
+    public void Given_an_option_missing_French_wording_When_it_is_added_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where?", Now);
-        question.CurrentVersion.AttachTranslation(Locale.FrCa, "Où?", null, null, Now);
+        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
 
         // When
-        var attaching = () => question.CurrentVersion.AttachTranslation(Locale.FrCa, "Où donc?", null, null, Now);
+        var adding = () => question.CurrentRevision.AddOption("morning", "Morning", "   ");
 
         // Then
-        attaching.ShouldThrow<DomainRuleViolationException>();
-    }
-
-    [Fact]
-    public void Given_an_option_translation_that_already_exists_When_another_is_attached_Then_it_is_refused()
-    {
-        // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, Locale.EnCa, "Time of day", Now);
-        var option = question.CurrentVersion.AddOption("morning", "Morning", Now);
-        option.AttachTranslation(Locale.FrCa, "Matin", Now);
-
-        // When
-        var attaching = () => option.AttachTranslation(Locale.FrCa, "Le matin", Now);
-
-        // Then
-        attaching.ShouldThrow<DomainRuleViolationException>();
+        adding.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
     public void Given_an_option_When_it_is_reordered_Then_it_moves_among_its_siblings()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, Locale.EnCa, "Time of day", Now);
-        question.CurrentVersion.AddOption("morning", "Morning", Now);
-        var evening = question.CurrentVersion.AddOption("evening", "Evening", Now);
+        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
+        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
+        var evening = question.CurrentRevision.AddOption("evening", "Evening", "Soirée");
 
         // When
         evening.Reorder(0);
 
         // Then
         evening.DisplayOrder.ShouldBe(0);
-        question.Versions.Count.ShouldBe(1);
+        question.Revisions.Count.ShouldBe(1);
     }
 
     [Fact]
     public void Given_a_select_question_When_it_is_answered_with_free_text_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, Locale.EnCa, "Time of day", Now);
-        question.CurrentVersion.AddOption("morning", "Morning", Now);
+        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
+        question.CurrentRevision.AddOption("morning", "Morning", "Matin");
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -182,7 +165,7 @@ public class QuestionBankEdgeTests
     {
         // Given
         var statement = Question.Create(
-            "intro", QuestionType.Statement, Locale.EnCa, "We will ask you 15 short questions.", Now);
+            "intro", QuestionType.Statement, "We will ask you 15 short questions.", "Nous vous poserons 15 courtes questions.", Now);
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -197,7 +180,7 @@ public class QuestionBankEdgeTests
     {
         // Given
         var question = Question.Create(
-            "description", QuestionType.LongText, Locale.EnCa, "Describe the occurrence", Now, isRequired: true);
+            "description", QuestionType.LongText, "Describe the occurrence", "Décrivez l'événement", Now, isRequired: true);
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -212,8 +195,8 @@ public class QuestionBankEdgeTests
     {
         // Given
         var question = Question.Create(
-            "province", QuestionType.SingleSelect, Locale.EnCa, "Province", Now, isRequired: true);
-        question.CurrentVersion.AddOption("alberta", "Alberta", Now);
+            "province", QuestionType.SingleSelect, "Province", "Province", Now, isRequired: true);
+        question.CurrentRevision.AddOption("alberta", "Alberta", "Alberta");
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -227,9 +210,9 @@ public class QuestionBankEdgeTests
     public void Given_a_single_select_question_When_two_answers_are_given_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("province", QuestionType.SingleSelect, Locale.EnCa, "Province", Now);
-        question.CurrentVersion.AddOption("alberta", "Alberta", Now);
-        question.CurrentVersion.AddOption("ontario", "Ontario", Now);
+        var question = Question.Create("province", QuestionType.SingleSelect, "Province", "Province", Now);
+        question.CurrentRevision.AddOption("alberta", "Alberta", "Alberta");
+        question.CurrentRevision.AddOption("ontario", "Ontario", "Ontario");
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -243,9 +226,9 @@ public class QuestionBankEdgeTests
     public void Given_a_multi_select_question_When_several_answers_are_given_Then_all_are_recorded()
     {
         // Given
-        var question = Question.Create("ratings", QuestionType.MultiSelect, Locale.EnCa, "Pilot's ratings", Now);
-        question.CurrentVersion.AddOption("p3", "P3", Now);
-        question.CurrentVersion.AddOption("paragliding_instructor", "Paragliding Instructor", Now);
+        var question = Question.Create("ratings", QuestionType.MultiSelect, "Pilot's ratings", "Qualifications du pilote", Now);
+        question.CurrentRevision.AddOption("p3", "P3", "P3");
+        question.CurrentRevision.AddOption("paragliding_instructor", "Paragliding Instructor", "Instructeur de parapente");
         var report = new Report(Locale.EnCa, Now);
 
         // When
@@ -270,7 +253,7 @@ public class QuestionBankEdgeTests
     public void Given_a_blank_label_When_a_question_is_created_Then_it_is_refused()
     {
         // Given / When
-        var creating = () => Question.Create("where", QuestionType.ShortText, Locale.EnCa, "   ", Now);
+        var creating = () => Question.Create("where", QuestionType.ShortText, "   ", "Où ?", Now);
 
         // Then
         creating.ShouldThrow<DomainRuleViolationException>();

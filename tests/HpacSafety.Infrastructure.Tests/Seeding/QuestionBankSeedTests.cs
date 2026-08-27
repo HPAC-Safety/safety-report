@@ -203,31 +203,6 @@ public sealed class QuestionBankSeedTests
         roles.Distinct().Count().ShouldBe(roles.Length);
     }
 
-    [Theory]
-    [InlineData("province", typeof(Province))]
-    [InlineData("pilot_injury", typeof(InjurySeverity))]
-    [InlineData("passenger_injury", typeof(InjurySeverity))]
-    [InlineData("time_of_day", typeof(TimeOfDay))]
-    public void Given_a_seeded_question_whose_answer_projects_onto_the_report_When_its_codes_are_read_Then_each_one_resolves_to_a_domain_value(
-        string key, Type domainEnum)
-    {
-        ArgumentNullException.ThrowIfNull(domainEnum);
-
-        // Given
-        var question = QuestionBankSeed.Questions.Single(q => q.Key == key);
-
-        // When / Then — a code that does not resolve means the projection in
-        // Report quietly leaves the property at NotAnswered.
-        foreach (var option in question.Options)
-        {
-            var resolved = Enum.GetValues(domainEnum)
-                .Cast<Enum>()
-                .Any(value => string.Equals(EnumCodeOf(value), option.Code, StringComparison.Ordinal));
-
-            resolved.ShouldBeTrue($"'{option.Code}' on '{key}' does not name a {domainEnum.Name}.");
-        }
-    }
-
     [Fact]
     public void Given_the_seeded_question_bank_When_private_identity_fields_are_read_Then_every_one_is_private()
     {
@@ -311,10 +286,4 @@ public sealed class QuestionBankSeedTests
         operation.Sql.ShouldContain("is_private");
         operation.Sql.ShouldNotContain("sensitivity");
     }
-
-    private static string EnumCodeOf(Enum value) =>
-        (string)typeof(EnumCode)
-            .GetMethod(nameof(EnumCode.Of))!
-            .MakeGenericMethod(value.GetType())
-            .Invoke(null, [value])!;
 }

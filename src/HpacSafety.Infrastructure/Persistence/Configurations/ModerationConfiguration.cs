@@ -84,7 +84,7 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
         builder.ToTable("outbox_messages");
         builder.HasKey(message => message.Id);
 
-        builder.Property(message => message.Type).HasMaxLength(200).IsRequired();
+        builder.Property(message => message.Type).IsRequired();
         builder.Property(message => message.Payload).IsRequired();
         builder.Property(message => message.LastError).HasMaxLength(2000);
 

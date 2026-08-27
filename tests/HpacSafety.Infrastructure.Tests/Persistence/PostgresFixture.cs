@@ -1,9 +1,6 @@
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence;
-using HpacSafety.Infrastructure.Persistence.Encryption;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 using Npgsql;
 
@@ -23,12 +20,6 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 public sealed class PostgresFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
-
-    /// <summary>A 256-bit key. Tests that need a second, different key use <see cref="OtherKey"/>.</summary>
-    public static string Key { get; } = Convert.ToBase64String(Enumerable.Repeat((byte)0x2f, 32).ToArray());
-
-    /// <summary>A different 256-bit key, for proving a column cannot be read without the right one.</summary>
-    public static string OtherKey { get; } = Convert.ToBase64String(Enumerable.Repeat((byte)0xd4, 32).ToArray());
 
     /// <summary>Starts the container.</summary>
     public Task InitializeAsync() => _postgres.StartAsync();
@@ -77,20 +68,14 @@ public sealed class PostgresFixture : IAsyncLifetime
 
     /// <summary>Opens a context against an existing database.</summary>
     /// <param name="connectionString">The database to open.</param>
-    /// <param name="key">The field-encryption key, base64. Defaults to <see cref="Key"/>.</param>
-    public static HpacSafetyDbContext ContextFor(string connectionString, string? key = null)
+    public static HpacSafetyDbContext ContextFor(string connectionString)
     {
         var options = new DbContextOptionsBuilder<HpacSafetyDbContext>()
             .UseNpgsql(connectionString)
-            .ReplaceService<IModelCacheKeyFactory, FieldCipherModelCacheKeyFactory>()
             .Options;
 
-        return new HpacSafetyDbContext(options, CipherFor(key ?? Key));
+        return new HpacSafetyDbContext(options);
     }
-
-    /// <summary>A cipher over the given base64 key.</summary>
-    /// <param name="key">The base64 key.</param>
-    public static IFieldCipher CipherFor(string key) => new AesGcmFieldCipher(new FieldEncryptionOptions { Key = key });
 }
 
 /// <summary>Shares one container across every integration test class.</summary>

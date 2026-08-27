@@ -9,7 +9,8 @@ namespace HpacSafety.Core.Tests;
 
 /// <summary>
 /// The question bank is data: an administrator adds, rewords, reorders, and
-/// removes questions without a deploy. Publication consent is the one exception.
+/// removes questions without a deploy. Publication consent is the one
+/// exception. Every revision is born complete in both official languages.
 /// </summary>
 public class QuestionTests
 {
@@ -19,7 +20,7 @@ public class QuestionTests
     public void Given_the_consent_question_When_deletion_is_attempted_Then_it_is_refused()
     {
         // Given
-        var consent = Question.CreateConsentPublish(Locale.EnCa, "May we publish a de-identified version?", Now);
+        var consent = Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
 
         // When
         var deleting = () => consent.Delete(Now);
@@ -33,7 +34,7 @@ public class QuestionTests
     public void Given_the_consent_question_When_deactivation_is_attempted_Then_it_is_refused()
     {
         // Given
-        var consent = Question.CreateConsentPublish(Locale.EnCa, "May we publish a de-identified version?", Now);
+        var consent = Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
 
         // When
         var deactivating = consent.Deactivate;
@@ -43,107 +44,56 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_an_injury_question_When_it_is_deleted_Then_it_is_retired_rather_than_refused()
+    public void Given_an_ordinary_question_When_it_is_deleted_Then_it_is_retired_rather_than_refused()
     {
-        // Given — everything except consent is ordinary data, including injury
-        var injury = Question.Create(
-            "pilot_injury", QuestionType.SingleSelect, Locale.EnCa, "Pilot injury", Now,
-            role: QuestionRole.PilotInjury);
+        // Given — everything except consent is ordinary data
+        var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
 
         // When
-        injury.Delete(Now);
+        question.Delete(Now);
 
         // Then
-        injury.DeletedAt.ShouldBe(Now);
-        injury.IsActive.ShouldBeFalse();
+        question.Deleted.ShouldBe(Now);
+        question.IsActive.ShouldBeFalse();
     }
 
     [Fact]
-    public void Given_a_question_with_only_English_wording_When_it_is_activated_Then_it_is_refused()
+    public void Given_a_question_missing_French_wording_When_it_is_created_Then_it_is_refused()
     {
-        // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where did it happen?", Now);
+        // Given / When — a revision is born complete in both official languages
+        var creating = () => Question.Create("where", QuestionType.ShortText, "Where did it happen?", "   ", Now);
 
-        // When
-        var activating = question.Activate;
-
-        // Then — a reporter is never shown a half-translated form
-        activating.ShouldThrow<DomainRuleViolationException>()
-            .Message.ShouldContain("fr-CA");
+        // Then
+        creating.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
-    public void Given_a_machine_translated_counterpart_When_the_question_is_activated_Then_it_is_allowed()
+    public void Given_a_complete_bilingual_question_When_it_is_activated_Then_it_is_allowed()
     {
         // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where did it happen?", Now);
-        question.CurrentVersion.AttachTranslation(Locale.FrCa, "Où cela s'est-il produit?", null, null, Now);
+        var question = Question.Create("where", QuestionType.ShortText, "Where did it happen?", "Où cela s'est-il produit?", Now);
 
         // When
         question.Activate();
 
-        // Then — generated is acceptable; absent is not
+        // Then
         question.IsActive.ShouldBeTrue();
-        question.CurrentVersion.Translation(Locale.FrCa)!.IsMachineTranslated.ShouldBeTrue();
     }
 
     [Fact]
-    public void Given_a_question_authored_in_French_When_its_counterpart_is_attached_Then_French_remains_the_source()
-    {
-        // Given — authoring locale comes from the browser, and French is as valid a source as English
-        var question = Question.Create("recit", QuestionType.LongText, Locale.FrCa, "Décrivez l'événement", Now);
-
-        // When
-        question.CurrentVersion.AttachTranslation(Locale.EnCa, "Describe the occurrence", null, null, Now);
-
-        // Then
-        question.CurrentVersion.SourceTranslation.Locale.ShouldBe(Locale.FrCa);
-        question.CurrentVersion.Translation(Locale.EnCa)!.IsSource.ShouldBeFalse();
-        question.CurrentVersion.Translations.Count(t => t.IsSource).ShouldBe(1);
-    }
-
-    [Fact]
-    public void Given_a_generated_translation_When_an_admin_edits_it_Then_it_is_no_longer_marked_machine_translated()
+    public void Given_a_question_is_reworded_When_a_new_revision_is_created_Then_the_previous_wording_survives()
     {
         // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where did it happen?", Now);
-        var generated = question.CurrentVersion.AttachTranslation(Locale.FrCa, "Ou?", null, null, Now);
+        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
+        var original = question.CurrentRevision;
 
         // When
-        generated.ReviseByHand("Où cela s'est-il produit?", null, null, Now.AddMinutes(5));
+        question.Revise(QuestionType.LongText, isRequired: false, "Describe the damage", "Décrivez les dommages", Now.AddDays(1));
 
         // Then
-        generated.IsMachineTranslated.ShouldBeFalse();
-        generated.Label.ShouldBe("Où cela s'est-il produit?");
-    }
-
-    [Fact]
-    public void Given_a_source_translation_When_rewording_it_directly_is_attempted_Then_it_is_refused()
-    {
-        // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where did it happen?", Now);
-
-        // When
-        var rewording = () => question.CurrentVersion.SourceTranslation.ReviseByHand("Where?", null, null, Now);
-
-        // Then — changing what a question asks is a revision, and revisions are versioned
-        rewording.ShouldThrow<DomainRuleViolationException>();
-    }
-
-    [Fact]
-    public void Given_a_question_is_reworded_When_a_new_version_is_created_Then_the_previous_wording_survives()
-    {
-        // Given
-        var question = Question.Create("damage", QuestionType.ShortText, Locale.EnCa, "Damage", Now);
-        var original = question.CurrentVersion;
-
-        // When
-        question.Revise(QuestionType.LongText, isRequired: false, Locale.EnCa, "Describe the damage", Now.AddDays(1));
-
-        // Then
-        question.Versions.Count.ShouldBe(2);
-        question.CurrentVersion.VersionNumber.ShouldBe(2);
-        original.SourceTranslation.Label.ShouldBe("Damage");
+        question.Revisions.Count.ShouldBe(2);
+        question.CurrentRevision.RevisionNumber.ShouldBe(2);
+        original.LabelEn.ShouldBe("Damage");
         original.Type.ShouldBe(QuestionType.ShortText);
     }
 
@@ -151,53 +101,52 @@ public class QuestionTests
     public void Given_the_consent_question_When_a_type_change_is_attempted_Then_it_is_refused()
     {
         // Given
-        var consent = Question.CreateConsentPublish(Locale.EnCa, "May we publish?", Now);
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
         // When
-        var retyping = () => consent.Revise(QuestionType.LongText, isRequired: true, Locale.EnCa, "May we publish?", Now);
+        var retyping = () => consent.Revise(QuestionType.LongText, isRequired: true, "May we publish?", "Pouvons-nous publier ?", Now);
 
         // Then — its wording can change; its type cannot
         retyping.ShouldThrow<DomainRuleViolationException>();
     }
 
     [Fact]
-    public void Given_a_question_is_reordered_When_the_move_is_saved_Then_no_new_version_is_created()
+    public void Given_a_question_is_reordered_When_the_move_is_saved_Then_no_new_revision_is_created()
     {
         // Given
-        var question = Question.Create("damage", QuestionType.ShortText, Locale.EnCa, "Damage", Now, displayOrder: 3);
+        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now, displayOrder: 3);
 
         // When
         question.Reorder(1);
 
         // Then — moving a question does not change what any answer means
         question.DisplayOrder.ShouldBe(1);
-        question.Versions.Count.ShouldBe(1);
+        question.Revisions.Count.ShouldBe(1);
     }
 
     [Fact]
-    public void Given_an_option_is_relabelled_When_the_label_changes_Then_its_code_is_unchanged()
+    public void Given_an_option_When_it_is_added_Then_its_code_is_invariant_and_its_wording_is_bilingual()
     {
         // Given
-        var question = Question.Create("time_of_day", QuestionType.SingleSelect, Locale.EnCa, "Time of day", Now);
-        var option = question.CurrentVersion.AddOption("mid_day", "Mid-day", Now);
-        var french = option.AttachTranslation(Locale.FrCa, "Milieu de journee", Now);
+        var question = Question.Create("time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now);
 
         // When
-        french.ReviseByHand("Milieu de journée", Now.AddMinutes(1));
+        var option = question.CurrentRevision.AddOption("mid_day", "Mid-day", "Milieu de journée");
 
         // Then — the code is what every historical answer points at
         option.Code.ShouldBe("mid_day");
-        option.Translation(Locale.FrCa)!.Label.ShouldBe("Milieu de journée");
+        option.LabelEn.ShouldBe("Mid-day");
+        option.LabelFr.ShouldBe("Milieu de journée");
     }
 
     [Fact]
     public void Given_a_free_text_question_When_an_option_is_added_Then_it_is_refused()
     {
         // Given
-        var question = Question.Create("where", QuestionType.ShortText, Locale.EnCa, "Where?", Now);
+        var question = Question.Create("where", QuestionType.ShortText, "Where?", "Où ?", Now);
 
         // When
-        var adding = () => question.CurrentVersion.AddOption("anything", "Anything", Now);
+        var adding = () => question.CurrentRevision.AddOption("anything", "Anything", "N'importe quoi");
 
         // Then
         adding.ShouldThrow<DomainRuleViolationException>();
@@ -207,26 +156,26 @@ public class QuestionTests
     public void Given_a_yes_no_question_When_a_third_option_is_added_Then_it_is_refused()
     {
         // Given
-        var consent = Question.CreateConsentPublish(Locale.EnCa, "May we publish?", Now);
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
         // When
-        var adding = () => consent.CurrentVersion.AddOption("maybe", "Maybe", Now);
+        var adding = () => consent.CurrentRevision.AddOption("maybe", "Maybe", "Peut-être");
 
         // Then — yes or no, no default and no third state
         adding.ShouldThrow<DomainRuleViolationException>();
-        consent.CurrentVersion.Accepts("yes").ShouldBeTrue();
-        consent.CurrentVersion.Accepts("no").ShouldBeTrue();
-        consent.CurrentVersion.Accepts("maybe").ShouldBeFalse();
+        consent.CurrentRevision.Accepts("yes").ShouldBeTrue();
+        consent.CurrentRevision.Accepts("no").ShouldBeTrue();
+        consent.CurrentRevision.Accepts("maybe").ShouldBeFalse();
     }
 
     [Fact]
     public void Given_the_consent_question_When_it_is_created_Then_it_is_required()
     {
         // Given / When
-        var consent = Question.CreateConsentPublish(Locale.EnCa, "May we publish?", Now);
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
         // Then — the reporter must choose before continuing
-        consent.CurrentVersion.IsRequired.ShouldBeTrue();
+        consent.CurrentRevision.IsRequired.ShouldBeTrue();
         consent.IsSystem.ShouldBeTrue();
         consent.Role.ShouldBe(QuestionRole.ConsentPublish);
     }
@@ -235,7 +184,7 @@ public class QuestionTests
     public void Given_a_new_question_When_privacy_is_not_stated_Then_it_is_private()
     {
         // Given / When
-        var question = Question.Create("anything", QuestionType.ShortText, Locale.EnCa, "Anything", Now);
+        var question = Question.Create("anything", QuestionType.ShortText, "Anything", "N'importe quoi", Now);
 
         // Then — an administrator must deliberately opt a question into report content
         question.IsPrivate.ShouldBeTrue();

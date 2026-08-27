@@ -92,8 +92,7 @@ public static class QuestionBankSeed
             "occurrence_date", QuestionType.Date, isPrivate: true, null,
             "Date:", "Date :",
             "Tell us the date of the occurrence.",
-            "Dites-nous la date de l'événement.",
-            role: QuestionRole.OccurrenceDate),
+            "Dites-nous la date de l'événement."),
 
         Field(
             "time_of_day", QuestionType.SingleSelect, isPrivate: false, null,
@@ -126,7 +125,6 @@ public static class QuestionBankSeed
             "Province:", "Province :",
             "Tell us the province of the occurrence.",
             "Dites-nous la province de l'événement.",
-            role: QuestionRole.Province,
             options:
             [
                 new SeededOption("newfoundland_and_labrador", "Newfoundland and Labrador", "Terre-Neuve-et-Labrador"),
@@ -155,7 +153,6 @@ public static class QuestionBankSeed
             "Type of aircraft:", "Type d'aéronef :",
             "Tell us the type of aircraft(s) involved in the occurrence.",
             "Dites-nous le type d'aéronef(s) impliqué(s) dans l'événement.",
-            role: QuestionRole.AircraftType,
             options:
             [
                 new SeededOption("paraglider", "Paraglider", "Parapente"),
@@ -179,15 +176,13 @@ public static class QuestionBankSeed
             "aircraft_certification", QuestionType.ShortText, isPrivate: false, "aircraft",
             "Certification:", "Certification :",
             "Tell us about the certification of the pilot's aircraft.",
-            "Dites-nous la certification de l'aéronef du pilote.",
-            role: QuestionRole.AircraftCertification),
+            "Dites-nous la certification de l'aéronef du pilote."),
 
         Field(
             "pilot_injury", QuestionType.SingleSelect, isPrivate: false, null,
             "Pilot injury:", "Blessure du pilote :",
             "If any, tell us the type of injury to the pilot.",
             "S'il y a lieu, dites-nous le type de blessure du pilote.",
-            role: QuestionRole.PilotInjury,
             options: InjuryOptions()),
 
         Field(
@@ -195,7 +190,6 @@ public static class QuestionBankSeed
             "Passenger injury:", "Blessure du passager :",
             "If any, tell us the type of injury to the passenger.",
             "S'il y a lieu, dites-nous le type de blessure du passager.",
-            role: QuestionRole.PassengerInjury,
             options: InjuryOptions()),
 
         Field(
@@ -214,8 +208,7 @@ public static class QuestionBankSeed
             "description", QuestionType.LongText, isPrivate: false, null,
             "Description:", "Description :",
             "Give a precise description of the occurrence. What happened to the aircraft, what did you see, hear, or do? Include your *role* in the occurrence. Think *preflight*, *weather*, *distractions*, *emotions*. Include your thoughts about the *causes* for the incident or accident.",
-            "Donnez une description précise de l'événement. Qu'est-il arrivé à l'aéronef, qu'avez-vous vu, entendu ou fait ? Précisez votre *rôle* dans l'événement. Pensez à la *prévol*, à la *météo*, aux *distractions*, aux *émotions*. Ajoutez vos réflexions sur les *causes* de l'incident ou de l'accident.",
-            role: QuestionRole.Narrative),
+            "Donnez une description précise de l'événement. Qu'est-il arrivé à l'aéronef, qu'avez-vous vu, entendu ou fait ? Précisez votre *rôle* dans l'événement. Pensez à la *prévol*, à la *météo*, aux *distractions*, aux *émotions*. Ajoutez vos réflexions sur les *causes* de l'incident ou de l'accident."),
 
         Field(
             "action_and_prevention", QuestionType.LongText, isPrivate: false, null,

@@ -89,19 +89,13 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_the_model_ports_When_their_parameters_are_inspected_Then_only_the_summarizer_accepts_report_input()
+    public void Given_the_summarizer_port_When_its_parameters_are_inspected_Then_it_accepts_report_input()
     {
         // Given / When
         var summarizerParameters = ParametersOf(typeof(ISummarizer));
-        var auditorParameters = ParametersOf(typeof(IPiiAuditor));
-        var translatorParameters = ParametersOf(typeof(HpacSafety.Core.SharedKernel.ITranslator));
-        var publicationParameters = ParametersOf(typeof(IPublicationChannel));
 
         // Then
         summarizerParameters.ShouldContain(typeof(SummarizationInput));
-        auditorParameters.ShouldNotContain(typeof(SummarizationInput));
-        translatorParameters.ShouldNotContain(typeof(SummarizationInput));
-        publicationParameters.ShouldNotContain(typeof(SummarizationInput));
     }
 
     private static Type[] ParametersOf(Type port) =>

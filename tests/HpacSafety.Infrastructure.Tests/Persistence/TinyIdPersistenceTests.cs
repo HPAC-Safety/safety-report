@@ -122,7 +122,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
         await using (var transaction = await colliding.Database.BeginTransactionAsync())
         {
             colliding.Reports.Add(second).Property("Id").CurrentValue = first.Id;
-            colliding.OutboxMessages.Add(new OutboxMessage(first.Id, "report.submitted", "{}", At));
+            colliding.OutboxMessages.Add(new OutboxMessage(first.Id, OutboxMessageType.SummarizeReport, "{}", At));
 
             await colliding.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -150,7 +150,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
         await using var colliding = PostgresFixture.ContextFor(connectionString);
         var second = new Report(Locale.FrCa, At);
         colliding.Reports.Add(second).Property("Id").CurrentValue = first.Id;
-        colliding.OutboxMessages.Add(new OutboxMessage(first.Id, "report.submitted", "{}", At));
+        colliding.OutboxMessages.Add(new OutboxMessage(first.Id, OutboxMessageType.SummarizeReport, "{}", At));
 
         // When
         await colliding.SaveChangesAsync();
@@ -166,19 +166,23 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     [Fact]
     public async Task Given_a_unique_constraint_the_domain_put_there_When_it_is_violated_Then_it_is_reported_rather_than_retried_away()
     {
-        // Given — one summary per language per report is a rule, not luck. The
-        // retry must not paper over it by minting a new identifier and trying
-        // again forever.
+        // Given — one summary per report is a rule, not luck. The retry must
+        // not paper over it by minting a new identifier and trying again
+        // forever. Two separate contexts, so EF's own one-to-one relationship
+        // fixup — which would otherwise treat two tracked Summary instances
+        // sharing one ReportId as replacing each other — cannot mask the real
+        // constraint the database enforces.
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
         await using var context = PostgresFixture.ContextFor(connectionString);
         var report = new Report(Locale.EnCa, At);
         context.Reports.Add(report);
+        context.Summaries.Add(Summary.Generate(report.Id, "One.", "Un.", "model", "v1", At));
         await context.SaveChangesAsync();
 
-        context.Summaries.Add(Summary.Generated(report.Id, Locale.EnCa, "One.", "model", "v1", At));
-        context.Summaries.Add(Summary.Generated(report.Id, Locale.EnCa, "Two.", "model", "v1", At));
+        await using var colliding = PostgresFixture.ContextFor(connectionString);
+        colliding.Summaries.Add(Summary.Generate(report.Id, "Two.", "Deux.", "model", "v1", At));
 
         // When / Then
-        await Should.ThrowAsync<DbUpdateException>(() => context.SaveChangesAsync());
+        await Should.ThrowAsync<DbUpdateException>(() => colliding.SaveChangesAsync());
     }
 }

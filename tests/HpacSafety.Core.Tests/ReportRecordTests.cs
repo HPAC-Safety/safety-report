@@ -8,29 +8,12 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// The rest of the record a report carries: aircraft, media, summaries, the
-/// allowlist, and the audit trail.
+/// The rest of the record a report carries: media, its summary, the allowlist,
+/// and the audit trail.
 /// </summary>
 public class ReportRecordTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
-
-    [Fact]
-    public void Given_an_aircraft_When_it_is_added_Then_the_reporters_answer_is_stored_verbatim()
-    {
-        // Given
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        var aircraft = report.AddAircraft(Discipline.Paragliding, "Ozone", "Rush 6", "EN B (high)");
-
-        // Then — the legacy record stores exactly what the reporter answered.
-        // Issue #79 replaces it with ordinary revision-bound answers.
-        aircraft.Manufacturer.ShouldBe("Ozone");
-        aircraft.Model.ShouldBe("Rush 6");
-        aircraft.CertificationAnswer.ShouldBe("EN B (high)");
-        report.Aircraft.Count.ShouldBe(1);
-    }
 
     [Fact]
     public void Given_an_upload_When_it_lands_Then_it_awaits_stripping_before_anyone_sees_it()
@@ -45,6 +28,33 @@ public class ReportRecordTests
         file.AwaitsStripping.ShouldBeTrue();
         file.StrippedBlobKey.ShouldBeNull();
         file.ByteSize.ShouldBe(2048);
+        file.Kind.ShouldBe(AttachmentKind.Image);
+    }
+
+    [Fact]
+    public void Given_a_video_upload_When_it_lands_Then_it_is_classified_as_video()
+    {
+        // Given
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        var file = report.AddFile("kJQP7kiw5Fk/original/clip.mp4", "video/mp4", 4096, Now);
+
+        // Then
+        file.Kind.ShouldBe(AttachmentKind.Video);
+    }
+
+    [Fact]
+    public void Given_a_document_upload_When_it_lands_Then_it_is_classified_as_a_document()
+    {
+        // Given
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        var file = report.AddFile("dQw4w9WgXcQ/original/report.pdf", "application/pdf", 1024, Now);
+
+        // Then — validated and kept private, never anonymized or published
+        file.Kind.ShouldBe(AttachmentKind.Document);
     }
 
     [Fact]
@@ -64,60 +74,88 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_two_summaries_in_one_language_When_the_second_is_added_Then_it_is_refused()
+    public void Given_an_uploaded_file_When_it_is_linked_to_its_answer_Then_the_link_is_recorded()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
-        report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "One", "model", "v1", Now));
+        var file = report.AddFile("dQw4w9WgXcQ/original/photo.jpg", "image/jpeg", 2048, Now);
+        var answerId = TinyId.New();
 
         // When
-        var adding = () => report.AddSummary(Summary.Generated(report.Id, Locale.EnCa, "Two", "model", "v1", Now));
+        file.LinkToAnswer(answerId);
 
         // Then
-        adding.ShouldThrow<DomainRuleViolationException>();
+        file.ReportAnswerId.ShouldBe(answerId);
     }
 
     [Fact]
-    public void Given_an_approved_summary_When_it_is_rewritten_by_hand_Then_the_approval_is_withdrawn()
+    public void Given_a_report_with_no_summary_When_one_is_attached_Then_it_is_recorded()
     {
         // Given
-        var summary = Summary.Generated(TinyId.New(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        report.AttachSummary(Summary.Generate(report.Id, "One.", "Un.", "model", "v1", Now));
+
+        // Then
+        report.Summary.ShouldNotBeNull();
+    }
+
+    [Fact]
+    public void Given_a_report_that_already_has_a_summary_When_a_second_is_attached_Then_it_is_refused()
+    {
+        // Given
+        var report = new Report(Locale.EnCa, Now);
+        report.AttachSummary(Summary.Generate(report.Id, "One.", "Un.", "model", "v1", Now));
+
+        // When
+        var attaching = () => report.AttachSummary(Summary.Generate(report.Id, "Two.", "Deux.", "model", "v1", Now));
+
+        // Then
+        attaching.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void Given_an_approved_summary_When_its_English_text_is_rewritten_by_hand_Then_the_approval_is_withdrawn()
+    {
+        // Given
+        var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
         summary.Approve(TinyId.New(), Now);
 
         // When
-        summary.Rewrite("A pilot landed hard in gusty conditions.");
+        summary.RewriteEn("A pilot landed hard in gusty conditions.", Now);
 
         // Then — editing after approval must not carry the approval forward
         summary.IsApproved.ShouldBeFalse();
-        summary.Text.ShouldBe("A pilot landed hard in gusty conditions.");
+        summary.AiSummaryEn.ShouldBe("A pilot landed hard in gusty conditions.");
     }
 
     [Fact]
-    public void Given_a_summary_When_it_is_rewritten_blank_Then_it_is_refused()
+    public void Given_an_approved_summary_When_its_French_text_is_rewritten_by_hand_Then_the_approval_is_withdrawn()
     {
         // Given
-        var summary = Summary.Generated(TinyId.New(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
+        var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
+        summary.Approve(TinyId.New(), Now);
 
         // When
-        var rewriting = () => summary.Rewrite("   ");
+        summary.RewriteFr("Un pilote a atterri durement, dans des conditions venteuses.", Now);
+
+        // Then
+        summary.IsApproved.ShouldBeFalse();
+        summary.AiSummaryFr.ShouldBe("Un pilote a atterri durement, dans des conditions venteuses.");
+    }
+
+    [Fact]
+    public void Given_a_summary_When_its_English_text_is_rewritten_blank_Then_it_is_refused()
+    {
+        // Given
+        var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
+
+        // When
+        var rewriting = () => summary.RewriteEn("   ", Now);
 
         // Then
         rewriting.ShouldThrow<DomainRuleViolationException>();
-    }
-
-    [Fact]
-    public void Given_a_translated_summary_When_it_is_created_Then_it_points_at_the_one_it_came_from()
-    {
-        // Given
-        var english = Summary.Generated(TinyId.New(), Locale.EnCa, "A pilot landed hard.", "model", "v1", Now);
-
-        // When
-        var french = Summary.TranslatedFrom(english, Locale.FrCa, "Un pilote a atterri durement.", "model", "v1", Now);
-
-        // Then — a reviewer must be able to tell an original from a translation
-        french.IsSource.ShouldBeFalse();
-        french.TranslatedFromSummaryId.ShouldBe(english.Id);
-        french.ReportId.ShouldBe(english.ReportId);
     }
 
     [Fact]
@@ -141,14 +179,14 @@ public class ReportRecordTests
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
-        report.Answer(Question.CreateConsentPublish(Locale.EnCa, "May we publish?", Now), ["yes"], Now);
+        report.Answer(Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now), ["yes"], Now);
 
         // When
         report.Reject();
 
         // Then
         report.Status.ShouldBe(ReportStatus.Rejected);
-        Should.Throw<DomainRuleViolationException>(report.MarkPublished);
+        Should.Throw<DomainRuleViolationException>(() => report.MarkPublished(Now));
     }
 
     [Fact]

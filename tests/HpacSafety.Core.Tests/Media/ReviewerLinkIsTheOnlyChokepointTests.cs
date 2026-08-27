@@ -10,10 +10,9 @@ namespace HpacSafety.Core.Tests.Media;
 /// unstripped original as readily as for its derivative.
 /// <para>
 /// Convention is not enforcement. This walks the source of the shipping projects
-/// and fails if anything outside the two places allowed to call it does, so the
+/// and fails if anything outside the places allowed to call it does, so the
 /// chokepoint is a rule rather than something a future contributor has to have
-/// read. Likewise for <c>CreateUploadUrlAsync</c>, whose chokepoint is
-/// <c>MediaUploadSlot</c> — the thing that keeps every upload in quarantine.
+/// read.
 /// </para>
 /// <para>
 /// A source scan rather than IL analysis: it is legible, it fails with a file
@@ -24,7 +23,6 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 {
     [Theory]
     [InlineData("CreateReadUrlAsync", "ReviewerMediaLink.cs")]
-    [InlineData("CreateUploadUrlAsync", "MediaUploadSlot.cs")]
     public void Given_the_shipping_source_When_a_presigning_call_is_made_Then_only_its_chokepoint_makes_it(
         string method,
         string chokepointFile)

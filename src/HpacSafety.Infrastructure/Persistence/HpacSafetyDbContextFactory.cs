@@ -1,10 +1,5 @@
-using System.Security.Cryptography;
-
-using HpacSafety.Infrastructure.Persistence.Encryption;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace HpacSafety.Infrastructure.Persistence;
 
@@ -12,16 +7,9 @@ namespace HpacSafety.Infrastructure.Persistence;
 /// Lets <c>dotnet ef</c> build the context without booting an application.
 /// </summary>
 /// <remarks>
-/// <para>
 /// This project is both the migrations project and the startup project for
 /// <c>dotnet ef</c>, so scaffolding a migration needs no running API and no
 /// deployment configuration. See <c>src/HpacSafety.Infrastructure/README.md</c>.
-/// </para>
-/// <para>
-/// The key below exists only so the model can be built. The shape of the model
-/// does not depend on the key's value, and nothing this factory produces is
-/// ever used to read or write a real row.
-/// </para>
 /// </remarks>
 public sealed class HpacSafetyDbContextFactory : IDesignTimeDbContextFactory<HpacSafetyDbContext>
 {
@@ -40,16 +28,8 @@ public sealed class HpacSafetyDbContextFactory : IDesignTimeDbContextFactory<Hpa
 
         var options = new DbContextOptionsBuilder<HpacSafetyDbContext>()
             .UseNpgsql(connection)
-            .ReplaceService<IModelCacheKeyFactory, FieldCipherModelCacheKeyFactory>()
             .Options;
 
-        return new HpacSafetyDbContext(options, DesignTimeCipher());
+        return new HpacSafetyDbContext(options);
     }
-
-    private static AesGcmFieldCipher DesignTimeCipher() =>
-        new(new FieldEncryptionOptions
-        {
-            // A throwaway. Design-time tooling reads the model, never a row.
-            Key = Convert.ToBase64String(SHA256.HashData("design-time, never used against data"u8.ToArray())),
-        });
 }

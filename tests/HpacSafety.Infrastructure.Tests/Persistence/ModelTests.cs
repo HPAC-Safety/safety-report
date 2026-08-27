@@ -6,10 +6,8 @@ using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
-using HpacSafety.Infrastructure.Persistence.Encryption;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
 
 using Shouldly;
@@ -18,7 +16,7 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
 /// The model, without a database. These assert the mapping decisions a
-/// migration then writes down. See ADR-0019.
+/// migration then writes down.
 /// </summary>
 public sealed class ModelTests
 {
@@ -28,25 +26,17 @@ public sealed class ModelTests
         return context.Model;
     }
 
-    private static HpacSafetyDbContext Context(string? key = null) =>
-        new(
-            new DbContextOptionsBuilder<HpacSafetyDbContext>()
-                .UseNpgsql("Host=nowhere;Database=unused")
-                .ReplaceService<IModelCacheKeyFactory, FieldCipherModelCacheKeyFactory>()
-                .Options,
-            PostgresFixture.CipherFor(key ?? PostgresFixture.Key));
+    private static HpacSafetyDbContext Context() =>
+        new(new DbContextOptionsBuilder<HpacSafetyDbContext>().UseNpgsql("Host=nowhere;Database=unused").Options);
 
     [Theory]
     [InlineData(typeof(Report), "reports")]
     [InlineData(typeof(ReportAnswer), "report_answers")]
-    [InlineData(typeof(ReportAircraft), "report_aircraft")]
     [InlineData(typeof(ReportFile), "report_files")]
     [InlineData(typeof(Summary), "summaries")]
     [InlineData(typeof(Question), "questions")]
-    [InlineData(typeof(QuestionVersion), "question_versions")]
-    [InlineData(typeof(QuestionOption), "question_options")]
-    [InlineData(typeof(QuestionTranslation), "question_translations")]
-    [InlineData(typeof(QuestionOptionTranslation), "question_option_translations")]
+    [InlineData(typeof(QuestionRevision), "question_revisions")]
+    [InlineData(typeof(QuestionRevisionOption), "question_revision_options")]
     [InlineData(typeof(AdminUser), "admin_users")]
     [InlineData(typeof(AuditLogEntry), "audit_log")]
     [InlineData(typeof(OutboxMessage), "outbox_messages")]
@@ -70,31 +60,10 @@ public sealed class ModelTests
         var columns = answer.GetProperties().Select(p => p.GetColumnName()).ToArray();
 
         // Then
-        columns.ShouldContain("question_version_id");
+        columns.ShouldContain("question_revision_id");
         columns.ShouldContain("selected_option_codes");
         columns.ShouldContain("answered_at");
         columns.ShouldContain("is_private");
-    }
-
-    [Fact]
-    public void Given_the_model_When_the_language_of_a_summary_is_mapped_Then_the_column_is_named_for_what_it_holds()
-    {
-        // Given / When
-        var column = Model().FindEntityType(typeof(Summary))!.GetProperty(nameof(Summary.Locale)).GetColumnName();
-
-        // Then — the issue names this column `language`.
-        column.ShouldBe("language");
-    }
-
-    [Fact]
-    public void Given_the_model_When_the_value_of_an_answer_is_mapped_Then_it_goes_through_the_cipher()
-    {
-        // Given / When
-        var converter = Model().FindEntityType(typeof(ReportAnswer))!
-            .GetProperty(nameof(ReportAnswer.Value)).GetValueConverter();
-
-        // Then
-        converter.ShouldBeOfType<EncryptedStringConverter>();
     }
 
     [Fact]
@@ -102,12 +71,12 @@ public sealed class ModelTests
     {
         // Given / When
         var converter = Model().FindEntityType(typeof(Report))!
-            .GetProperty(nameof(Report.PilotInjury)).GetValueConverter();
+            .GetProperty(nameof(Report.Status)).GetValueConverter();
 
         // Then
-        converter.ShouldBeOfType<EnumCodeConverter<InjurySeverity>>();
-        converter!.ConvertToProvider(InjurySeverity.Fatality).ShouldBe("fatality");
-        converter.ConvertFromProvider("serious").ShouldBe(InjurySeverity.Serious);
+        converter.ShouldBeOfType<EnumCodeConverter<ReportStatus>>();
+        converter!.ConvertToProvider(ReportStatus.Published).ShouldBe("published");
+        converter.ConvertFromProvider("approved").ShouldBe(ReportStatus.Approved);
     }
 
     [Fact]
@@ -127,35 +96,10 @@ public sealed class ModelTests
     public void Given_a_stored_code_that_no_longer_names_a_domain_value_When_it_is_read_Then_it_is_refused_rather_than_guessed()
     {
         // Given
-        var converter = new EnumCodeConverter<InjurySeverity>();
+        var converter = new EnumCodeConverter<ReportStatus>();
 
         // When / Then
         Should.Throw<DomainRuleViolationException>(() => converter.ConvertFromProvider("mildly_startled"));
-    }
-
-    [Fact]
-    public void Given_two_contexts_holding_different_keys_When_their_model_cache_keys_are_compared_Then_they_differ()
-    {
-        // Given
-        var factory = new FieldCipherModelCacheKeyFactory();
-        using var one = Context(PostgresFixture.Key);
-        using var other = Context(PostgresFixture.OtherKey);
-
-        // When / Then — sharing a cached model would mean the second context
-        // silently read through the first one's key.
-        factory.Create(one, designTime: false).ShouldNotBe(factory.Create(other, designTime: false));
-    }
-
-    [Fact]
-    public void Given_two_contexts_holding_the_same_key_When_their_model_cache_keys_are_compared_Then_they_match()
-    {
-        // Given
-        var factory = new FieldCipherModelCacheKeyFactory();
-        using var one = Context();
-        using var other = Context();
-
-        // When / Then
-        factory.Create(one, designTime: false).ShouldBe(factory.Create(other, designTime: false));
     }
 
     [Theory]
@@ -170,14 +114,35 @@ public sealed class ModelTests
         SnakeCaseNames.ToSnakeCase(name).ShouldBe(expected);
     }
 
-    [Fact]
-    public void Given_a_context_built_without_a_cipher_When_it_is_created_Then_it_refuses()
+    [Theory]
+    [InlineData(typeof(Report))]
+    [InlineData(typeof(ReportAnswer))]
+    [InlineData(typeof(ReportFile))]
+    [InlineData(typeof(Summary))]
+    [InlineData(typeof(Question))]
+    [InlineData(typeof(QuestionRevision))]
+    [InlineData(typeof(QuestionRevisionOption))]
+    [InlineData(typeof(AdminUser))]
+    [InlineData(typeof(OutboxMessage))]
+    public void Given_every_table_except_audit_log_When_its_model_is_read_Then_it_has_a_deleted_column_and_a_live_row_filter(Type entity)
     {
-        // Given
-        var options = new DbContextOptionsBuilder<HpacSafetyDbContext>().UseNpgsql("Host=nowhere").Options;
+        // Given / When
+        var mapped = Model().FindEntityType(entity!)!;
 
-        // When / Then
-        Should.Throw<ArgumentNullException>(() => new HpacSafetyDbContext(options, null!));
+        // Then
+        mapped.FindProperty("Deleted").ShouldNotBeNull();
+        mapped.GetDeclaredQueryFilters().ShouldNotBeEmpty();
+    }
+
+    [Fact]
+    public void Given_the_append_only_audit_log_When_its_model_is_read_Then_it_has_no_deleted_column()
+    {
+        // Given / When
+        var mapped = Model().FindEntityType(typeof(AuditLogEntry))!;
+
+        // Then
+        mapped.FindProperty("Deleted").ShouldBeNull();
+        mapped.GetDeclaredQueryFilters().ShouldBeEmpty();
     }
 
     [Fact]

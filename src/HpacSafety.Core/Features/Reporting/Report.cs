@@ -5,24 +5,15 @@ using HpacSafety.Core.SharedKernel;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// An occurrence report. The answers are data — one row per question asked — and
-/// a handful of them additionally project onto typed properties here, because
-/// consent, injury severity, the occurrence date, and the province are read by
-/// logic rather than only displayed.
+/// An occurrence report. Every ordinary answer is data — one row per question
+/// asked, in <see cref="Answers"/> — and publication consent is the only one
+/// that additionally projects onto a typed property here, because it is read by
+/// logic rather than only displayed. See <c>docs/data-and-persistence.md</c>.
 /// </summary>
-/// <remarks>
-/// Which answer projects where comes from <see cref="QuestionRole"/>, which an
-/// administrator can move between questions. Every projection except consent is
-/// optional: with no injury question on the form, <see cref="PilotInjury"/> is
-/// <see cref="InjurySeverity.NotAnswered"/> and the report takes the ordinary
-/// review path.
-/// </remarks>
 public class Report
 {
     private readonly List<ReportAnswer> _answers = [];
-    private readonly List<ReportAircraft> _aircraft = [];
     private readonly List<ReportFile> _files = [];
-    private readonly List<Summary> _summaries = [];
 
     /// <summary>Opens a report in the language the reporter is writing in.</summary>
     // EF Core materializes an entity by calling this constructor and then
@@ -46,9 +37,9 @@ public class Report
     public TinyId Id { get; private init; }
 
     /// <summary>
-    /// The locale the report was written in. The summary is generated in this
-    /// language and translated into the other; the raw narrative is never
-    /// translated.
+    /// The locale the report was written in. The Worker summarizes in this
+    /// language and produces the other in the same call; the raw narrative is
+    /// never translated.
     /// </summary>
     public Locale Language { get; private init; }
 
@@ -57,6 +48,9 @@ public class Report
 
     /// <summary>When it was received.</summary>
     public DateTimeOffset SubmittedAt { get; private init; }
+
+    /// <summary>When it was published, if it was.</summary>
+    public DateTimeOffset? PublishedAt { get; private set; }
 
     /// <summary>
     /// Whether the reporter agreed to publication of a de-identified version.
@@ -70,64 +64,31 @@ public class Report
     /// <summary>True once the reporter has actually chosen yes or no.</summary>
     public bool HasAnsweredConsent => ConsentPublish is not null;
 
-    /// <summary>The date of the occurrence, if the form asked for one.</summary>
-    public DateOnly? OccurredOn { get; private set; }
-
-    /// <summary>
-    /// The clock time at the site, as the reporter gave it. Local wall clock,
-    /// not an instant: "morning" means what the clock on the wall said, and this
-    /// system collects a province rather than coordinates, so any offset it
-    /// stored would be inferred. Private, and encrypted at rest.
-    /// <para>
-    /// Null when the reporter did not give one — #68 makes the time optional so
-    /// that somebody who does not remember still files. That reads as
-    /// <see cref="TimeOfDay.Unknown"/>, never as midnight. See ADR-0019.
-    /// </para>
-    /// </summary>
-    public TimeOnly? OccurredAtLocal { get; private set; }
-
-    /// <summary>The province, if the form asked for one.</summary>
-    public Province Province { get; private set; } = Province.NotAnswered;
-
-    /// <summary>Coarse time of day, if the form asked for one.</summary>
-    public TimeOfDay TimeOfDay { get; private set; } = TimeOfDay.NotAnswered;
-
-    /// <summary>Injury to the pilot, if the form asked.</summary>
-    public InjurySeverity PilotInjury { get; private set; } = InjurySeverity.NotAnswered;
-
-    /// <summary>Injury to the passenger, if the form asked.</summary>
-    public InjurySeverity PassengerInjury { get; private set; } = InjurySeverity.NotAnswered;
-
     /// <summary>Why summarization failed, when it did. Attached so the report
     /// still reaches a human rather than disappearing.</summary>
     public string? SummaryError { get; private set; }
 
-    /// <summary>Every answer given, against the question version it was given under.</summary>
+    /// <summary>When this report was soft-deleted, if it was.</summary>
+    public DateTimeOffset? Deleted { get; private set; }
+
+    /// <summary>Every answer given, against the question revision it was given under.</summary>
     public IReadOnlyList<ReportAnswer> Answers => _answers;
 
-    /// <summary>The aircraft involved.</summary>
-    public IReadOnlyList<ReportAircraft> Aircraft => _aircraft;
-
-    /// <summary>Uploaded media.</summary>
+    /// <summary>Uploaded attachments.</summary>
     public IReadOnlyList<ReportFile> Files => _files;
 
-    /// <summary>The summaries, one per official locale.</summary>
-    public IReadOnlyList<Summary> Summaries => _summaries;
+    /// <summary>The bilingual summary, once the Worker has produced one.</summary>
+    public Summary? Summary { get; private set; }
 
     /// <summary>
     /// True only when a reporter consented, a safety officer approved the report,
-    /// and both languages of the summary were approved. Every clause is load
-    /// bearing: nothing reaches the public without all four.
+    /// and the summary pair was approved. Every clause is load bearing: nothing
+    /// reaches the public without all three.
     /// </summary>
     public bool IsPublishable =>
         ConsentPublish is true
         && Status is ReportStatus.Approved or ReportStatus.Published
-        && Locale.All.All(locale => _summaries.Exists(s => s.Locale == locale && s.IsApproved));
-
-    /// <summary>True when a serious injury or fatality was reported for anyone aboard.</summary>
-    public bool InvolvesSeriousInjury =>
-        PilotInjury is InjurySeverity.Serious or InjurySeverity.Fatality
-        || PassengerInjury is InjurySeverity.Serious or InjurySeverity.Fatality;
+        && Summary is { IsApproved: true };
 
     /// <summary>Records a free-text answer, projecting it if the question carries a role.</summary>
     public ReportAnswer Answer(Question question, string? value, DateTimeOffset at)
@@ -152,14 +113,6 @@ public class Report
         return answer;
     }
 
-    /// <summary>Adds an aircraft.</summary>
-    public ReportAircraft AddAircraft(Discipline discipline, string? manufacturer, string? model, string? certificationAnswer)
-    {
-        var aircraft = new ReportAircraft(Id, discipline, manufacturer, model, certificationAnswer);
-        _aircraft.Add(aircraft);
-        return aircraft;
-    }
-
     /// <summary>Adds an uploaded file.</summary>
     public ReportFile AddFile(string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
     {
@@ -168,17 +121,17 @@ public class Report
         return file;
     }
 
-    /// <summary>Attaches a summary in one language.</summary>
-    public void AddSummary(Summary summary)
+    /// <summary>Attaches the report's bilingual summary, once the Worker has produced one.</summary>
+    public void AttachSummary(Summary summary)
     {
         ArgumentNullException.ThrowIfNull(summary);
 
-        if (_summaries.Exists(s => s.Locale == summary.Locale))
+        if (Summary is not null)
         {
-            throw new DomainRuleViolationException($"This report already has a {summary.Locale} summary.");
+            throw new DomainRuleViolationException("This report already has a summary.");
         }
 
-        _summaries.Add(summary);
+        Summary = summary;
     }
 
     /// <summary>
@@ -225,7 +178,7 @@ public class Report
     /// Marks the report published. Refused unless <see cref="IsPublishable"/> —
     /// the consent gate and the human gate are checked here, not by the caller.
     /// </summary>
-    public void MarkPublished()
+    public void MarkPublished(DateTimeOffset at)
     {
         if (ConsentPublish is not true)
         {
@@ -238,69 +191,18 @@ public class Report
         if (!IsPublishable)
         {
             throw new DomainRuleViolationException(
-                "A report is published only once a safety officer has approved it and both languages of its summary.");
+                "A report is published only once a safety officer has approved it and its summary pair.");
         }
 
         Status = ReportStatus.Published;
+        PublishedAt = at;
     }
 
     private void Project(Question question, ReportAnswer answer)
     {
-        switch (question.Role)
+        if (question.Role == QuestionRole.ConsentPublish)
         {
-            case QuestionRole.ConsentPublish:
-                ConsentPublish = ReadConsent(answer);
-                break;
-
-            case QuestionRole.OccurrenceDate:
-                if (DateOnly.TryParse(answer.Value, System.Globalization.CultureInfo.InvariantCulture, out var date))
-                {
-                    OccurredOn = date;
-                }
-
-                break;
-
-            case QuestionRole.OccurrenceTime:
-                // The reporter gives a real time; the coarse bucket is derived
-                // from it. An unreadable or absent answer is "do not know" —
-                // a defined state, never a silent midnight.
-                OccurredAtLocal =
-                    TimeOnly.TryParse(answer.Value, System.Globalization.CultureInfo.InvariantCulture, out var time)
-                        ? time
-                        : null;
-                TimeOfDay = Reporting.TimeOfDay.FromLocalTime(OccurredAtLocal);
-                break;
-
-            case QuestionRole.Province:
-                if (EnumCode.TryParse<Province>(answer.SingleOptionCode, out var province))
-                {
-                    Province = province;
-                }
-
-                break;
-
-            case QuestionRole.PilotInjury:
-                if (EnumCode.TryParse<InjurySeverity>(answer.SingleOptionCode, out var pilotInjury))
-                {
-                    PilotInjury = pilotInjury;
-                }
-
-                break;
-
-            case QuestionRole.PassengerInjury:
-                if (EnumCode.TryParse<InjurySeverity>(answer.SingleOptionCode, out var passengerInjury))
-                {
-                    PassengerInjury = passengerInjury;
-                }
-
-                break;
-
-            case QuestionRole.None:
-            case QuestionRole.AircraftType:
-            case QuestionRole.AircraftCertification:
-            case QuestionRole.Narrative:
-            default:
-                break;
+            ConsentPublish = ReadConsent(answer);
         }
     }
 

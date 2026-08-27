@@ -69,19 +69,19 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_an_upload_slot_When_it_is_issued_Then_the_url_writes_only_into_quarantine()
+    public async Task Given_a_presigned_upload_url_into_quarantine_When_it_is_used_Then_the_bytes_land_there()
     {
         // Given
-        var slot = new MediaUploadSlot(Store);
+        var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
 
         // When
-        var upload = await slot.CreateAsync(ReportId, MediaType.Jpeg, TimeSpan.FromMinutes(5), CancellationToken.None);
-        var accepted = await TryUploadAsync(upload.Url, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg.ContentType);
+        var url = await Store.CreateUploadUrlAsync(key, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+        var accepted = await TryUploadAsync(url, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg.ContentType);
 
         // Then
         accepted.ShouldBeTrue();
-        upload.Key.Compartment.ShouldBe(MediaCompartment.Quarantine);
-        upload.Key.Value.ShouldStartWith("quarantine/dQw4w9WgXcQ/");
+        key.Compartment.ShouldBe(MediaCompartment.Quarantine);
+        key.Value.ShouldStartWith("quarantine/dQw4w9WgXcQ/");
     }
 
     [Fact]

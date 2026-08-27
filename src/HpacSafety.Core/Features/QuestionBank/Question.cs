@@ -16,14 +16,14 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// Its wording is still editable, and it reorders like any other.
 /// </para>
 /// <para>
-/// Everything else is ordinary data, including the injury, date, province, and
-/// aircraft questions. Where logic needs to find one of them it reads
-/// <see cref="Role"/>, which an administrator may move or clear.
+/// Everything else is ordinary data. Nothing but consent projects onto a typed
+/// property of <see cref="Reporting.Report"/> — the admin review DTO reads exact
+/// asked questions and answers directly. See <c>docs/data-and-persistence.md</c>.
 /// </para>
 /// </remarks>
 public class Question
 {
-    private readonly List<QuestionVersion> _versions = [];
+    private readonly List<QuestionRevision> _revisions = [];
 
     // EF Core materializes an entity by calling this constructor and then
     // setting every mapped property and backing field directly. It exists for
@@ -81,55 +81,62 @@ public class Question
     public DateTimeOffset CreatedAt { get; private init; }
 
     /// <summary>When this question was retired, if it was.</summary>
-    public DateTimeOffset? DeletedAt { get; private set; }
+    public DateTimeOffset? Deleted { get; private set; }
 
-    /// <summary>Every version, oldest first. Answers reference one of these.</summary>
-    public IReadOnlyList<QuestionVersion> Versions => _versions;
+    /// <summary>Every revision, oldest first. Answers reference one of these.</summary>
+    public IReadOnlyList<QuestionRevision> Revisions => _revisions;
 
-    /// <summary>The version the form asks today.</summary>
-    public QuestionVersion CurrentVersion =>
-        _versions.Count > 0
-            ? _versions[^1]
-            : throw new DomainRuleViolationException("A question always has at least one version.");
+    /// <summary>The revision the form asks today.</summary>
+    public QuestionRevision CurrentRevision =>
+        _revisions.Count > 0
+            ? _revisions[^1]
+            : throw new DomainRuleViolationException("A question always has at least one revision.");
 
     /// <summary>What this question currently asks for.</summary>
-    public QuestionType Type => CurrentVersion.Type;
+    public QuestionType Type => CurrentRevision.Type;
 
-    /// <summary>Creates an ordinary question, authored in one locale.</summary>
+    /// <summary>Creates an ordinary question, complete in both official languages.</summary>
     public static Question Create(
         string key,
         QuestionType type,
-        Locale sourceLocale,
-        string label,
+        string labelEn,
+        string labelFr,
         DateTimeOffset at,
-        string? helpText = null,
-        string? placeholder = null,
+        string? helpTextEn = null,
+        string? helpTextFr = null,
+        string? placeholderEn = null,
+        string? placeholderFr = null,
         bool isRequired = false,
         QuestionRole role = QuestionRole.None,
         bool isPrivate = true,
         int displayOrder = 0,
         string? sectionKey = null) =>
-        Create(key, type, sourceLocale, label, at, isSystem: false, helpText, placeholder, isRequired, role, isPrivate, displayOrder, sectionKey);
+        Create(
+            key, type, labelEn, labelFr, at, isSystem: false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
+            isRequired, role, isPrivate, displayOrder, sectionKey);
 
     /// <summary>
     /// Creates the publication-consent question. The only question the system
     /// refuses to lose, and the only caller of this method.
     /// </summary>
     public static Question CreateConsentPublish(
-        Locale sourceLocale,
-        string label,
+        string labelEn,
+        string labelFr,
         DateTimeOffset at,
-        string? helpText = null,
+        string? helpTextEn = null,
+        string? helpTextFr = null,
         int displayOrder = 0) =>
         Create(
             QuestionKey.ConsentPublish,
             QuestionType.YesNo,
-            sourceLocale,
-            label,
+            labelEn,
+            labelFr,
             at,
             isSystem: true,
-            helpText,
-            placeholder: null,
+            helpTextEn,
+            helpTextFr,
+            placeholderEn: null,
+            placeholderFr: null,
             isRequired: true,
             QuestionRole.ConsentPublish,
             isPrivate: true,
@@ -139,12 +146,14 @@ public class Question
     private static Question Create(
         string key,
         QuestionType type,
-        Locale sourceLocale,
-        string label,
+        string labelEn,
+        string labelFr,
         DateTimeOffset at,
         bool isSystem,
-        string? helpText,
-        string? placeholder,
+        string? helpTextEn,
+        string? helpTextFr,
+        string? placeholderEn,
+        string? placeholderFr,
         bool isRequired,
         QuestionRole role,
         bool isPrivate,
@@ -152,24 +161,28 @@ public class Question
         string? sectionKey)
     {
         var question = new Question(key, isSystem, role, isPrivate, displayOrder, sectionKey, at);
-        question._versions.Add(
-            QuestionVersion.Create(question.Id, 1, type, isRequired, sourceLocale, label, helpText, placeholder, at));
+        question._revisions.Add(
+            QuestionRevision.Create(
+                question.Id, 1, type, isRequired, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr, at));
         return question;
     }
 
     /// <summary>
-    /// Rewords or retypes the question, producing a new version. Answers already
-    /// given keep pointing at the version they were given under, so an old report
-    /// still shows the wording it was actually asked with.
+    /// Rewords or retypes the question, producing a new complete bilingual
+    /// revision. Answers already given keep pointing at the revision they were
+    /// given under, so an old report still shows the wording it was actually
+    /// asked with.
     /// </summary>
-    public QuestionVersion Revise(
+    public QuestionRevision Revise(
         QuestionType type,
         bool isRequired,
-        Locale sourceLocale,
-        string label,
+        string labelEn,
+        string labelFr,
         DateTimeOffset at,
-        string? helpText = null,
-        string? placeholder = null)
+        string? helpTextEn = null,
+        string? helpTextFr = null,
+        string? placeholderEn = null,
+        string? placeholderFr = null)
     {
         EnsureNotDeleted();
 
@@ -179,10 +192,11 @@ public class Question
                 $"'{Key}' is a system question. Its wording can change; its type cannot.");
         }
 
-        var version = QuestionVersion.Create(
-            Id, CurrentVersion.VersionNumber + 1, type, isRequired, sourceLocale, label, helpText, placeholder, at);
-        _versions.Add(version);
-        return version;
+        var revision = QuestionRevision.Create(
+            Id, CurrentRevision.RevisionNumber + 1, type, isRequired, labelEn, labelFr,
+            helpTextEn, helpTextFr, placeholderEn, placeholderFr, at);
+        _revisions.Add(revision);
+        return revision;
     }
 
     /// <summary>Moves the question on the form. Not a versioned change — moving a
@@ -216,21 +230,13 @@ public class Question
     }
 
     /// <summary>
-    /// Starts asking this question. Refused while either official language is
-    /// missing: a reporter is never shown a form that is only half translated. A
-    /// machine-translated counterpart is acceptable; an absent one is not.
+    /// Starts asking this question. Every revision is born complete in both
+    /// official languages, so there is nothing left to check here beyond
+    /// whether the question itself is still live.
     /// </summary>
     public void Activate()
     {
         EnsureNotDeleted();
-
-        if (!CurrentVersion.IsFullyTranslated)
-        {
-            var missing = string.Join(", ", CurrentVersion.MissingLocales);
-            throw new DomainRuleViolationException(
-                $"'{Key}' has no wording in {(missing.Length > 0 ? missing : "every locale for its options")} and cannot be asked.");
-        }
-
         IsActive = true;
     }
 
@@ -261,18 +267,18 @@ public class Question
                 $"'{Key}' is publication consent and cannot be deleted. Nothing may be published without it.");
         }
 
-        if (DeletedAt is not null)
+        if (Deleted is not null)
         {
             return;
         }
 
         IsActive = false;
-        DeletedAt = at;
+        Deleted = at;
     }
 
     private void EnsureNotDeleted()
     {
-        if (DeletedAt is not null)
+        if (Deleted is not null)
         {
             throw new DomainRuleViolationException($"'{Key}' was deleted and cannot be changed.");
         }

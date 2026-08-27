@@ -6,7 +6,7 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 /// One answer to one question, as it was asked. The reference is to a
-/// <see cref="QuestionVersion"/> rather than to the question, so rewording a
+/// <see cref="QuestionRevision"/> rather than to the question, so rewording a
 /// question tomorrow cannot change what an answer given today appears to mean.
 /// </summary>
 public class ReportAnswer
@@ -26,12 +26,12 @@ public class ReportAnswer
     }
 #pragma warning restore CS8618
 
-    private ReportAnswer(TinyId reportId, Question question, QuestionVersion version, DateTimeOffset at)
+    private ReportAnswer(TinyId reportId, Question question, QuestionRevision revision, DateTimeOffset at)
     {
         Id = TinyId.New();
         ReportId = reportId;
         QuestionId = question.Id;
-        QuestionVersionId = version.Id;
+        QuestionRevisionId = revision.Id;
         QuestionKey = question.Key;
         IsPrivate = question.IsPrivate;
         AnsweredAt = at;
@@ -46,8 +46,8 @@ public class ReportAnswer
     /// <summary>The question answered.</summary>
     public TinyId QuestionId { get; private init; }
 
-    /// <summary>The exact version answered, which owns the wording and options.</summary>
-    public TinyId QuestionVersionId { get; private init; }
+    /// <summary>The exact revision answered, which owns the wording and options.</summary>
+    public TinyId QuestionRevisionId { get; private init; }
 
     /// <summary>The question's invariant key, carried for exports and reads.</summary>
     public string QuestionKey { get; private init; }
@@ -67,57 +67,60 @@ public class ReportAnswer
     /// <summary>When the answer was given.</summary>
     public DateTimeOffset AnsweredAt { get; private init; }
 
+    /// <summary>When this answer was deleted along with its report, if it was.</summary>
+    public DateTimeOffset? Deleted { get; private set; }
+
     internal static ReportAnswer ForText(TinyId reportId, Question question, string? value, DateTimeOffset at)
     {
-        var version = question.CurrentVersion;
+        var revision = question.CurrentRevision;
 
-        if (version.CollectsNoAnswer)
+        if (revision.CollectsNoAnswer)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' is a {version.Type} and collects no answer.");
+            throw new DomainRuleViolationException($"'{question.Key}' is a {revision.Type} and collects no answer.");
         }
 
-        if (version.ExpectsOptions)
+        if (revision.ExpectsOptions)
         {
             throw new DomainRuleViolationException($"'{question.Key}' expects option codes, not free text.");
         }
 
-        if (version.IsRequired && string.IsNullOrWhiteSpace(value))
+        if (revision.IsRequired && string.IsNullOrWhiteSpace(value))
         {
             throw new DomainRuleViolationException($"'{question.Key}' is required.");
         }
 
-        return new ReportAnswer(reportId, question, version, at) { Value = value };
+        return new ReportAnswer(reportId, question, revision, at) { Value = value };
     }
 
     internal static ReportAnswer ForOptions(
         TinyId reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
     {
-        var version = question.CurrentVersion;
+        var revision = question.CurrentRevision;
 
-        if (!version.ExpectsOptions)
+        if (!revision.ExpectsOptions)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' is a {version.Type} and takes a value, not option codes.");
+            throw new DomainRuleViolationException($"'{question.Key}' is a {revision.Type} and takes a value, not option codes.");
         }
 
-        if (version.TakesOneAnswer && codes.Count > 1)
+        if (revision.TakesOneAnswer && codes.Count > 1)
         {
             throw new DomainRuleViolationException($"'{question.Key}' takes one answer, not {codes.Count}.");
         }
 
-        if (version.IsRequired && codes.Count == 0)
+        if (revision.IsRequired && codes.Count == 0)
         {
             throw new DomainRuleViolationException($"'{question.Key}' is required.");
         }
 
         foreach (var code in codes)
         {
-            if (!version.Accepts(code))
+            if (!revision.Accepts(code))
             {
                 throw new DomainRuleViolationException($"'{code}' is not an option on '{question.Key}'.");
             }
         }
 
-        var answer = new ReportAnswer(reportId, question, version, at);
+        var answer = new ReportAnswer(reportId, question, revision, at);
         answer._selectedOptionCodes.AddRange(codes);
         return answer;
     }

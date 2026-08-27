@@ -29,7 +29,44 @@ jobs:
   # Renaming a job renames the context and silently drops it from the required
   # set — the ruleset keeps waiting on a name nothing reports.
 
+  # NOT a `paths:` filter on the trigger above — that is the trap ADR-0011 and
+  # terraform.yml document: a required context whose *workflow* never runs
+  # never reports, and blocks every pull request permanently. This job-level
+  # `if:` is different in kind, not just detail: the workflow above still
+  # triggers unconditionally, so `changes` always runs and every job below
+  # always gets scheduled; it just completes as "skipped" rather than running
+  # its real steps when the paths it cares about did not change. GitHub treats
+  # a skipped job as passing for required-status-check purposes. See ADR-0039.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      dotnet: ${{ steps.filter.outputs.dotnet }}
+      web: ${{ steps.filter.outputs.web }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            dotnet:
+              - 'src/**'
+              - 'tests/**'
+              - 'global.json'
+              - 'HpacSafety.slnx'
+              - 'Directory.Build.props'
+              - 'Directory.Packages.props'
+              - 'coverlet.runsettings'
+              - 'init-dev.sh'
+              - '.github/workflows/ci.yml'
+            web:
+              - 'src/web/**'
+              - 'tools/build-css.sh'
+              - 'tools/tailwind.pin'
+              - '.github/workflows/ci.yml'
+
   build:
+    needs: changes
+    if: needs.changes.outputs.dotnet == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -49,6 +86,8 @@ jobs:
       - run: dotnet build HpacSafety.slnx --configuration Release --no-restore --warnaserror
 
   test:
+    needs: changes
+    if: needs.changes.outputs.dotnet == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -102,6 +141,8 @@ jobs:
           node tools/gherkin/verify.mjs
 
   coverage:
+    needs: changes
+    if: needs.changes.outputs.dotnet == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -246,6 +287,8 @@ jobs:
   # Tailwind standalone binary and nothing else - if this job ever needs Node,
   # something has grown a node_modules it should not have. See ADR-0006.
   web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -321,6 +364,8 @@ jobs:
           fi
 
   e2e:
+    needs: changes
+    if: needs.changes.outputs.dotnet == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

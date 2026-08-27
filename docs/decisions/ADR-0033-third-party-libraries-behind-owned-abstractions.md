@@ -1,7 +1,7 @@
 # ADR-0033 — Third-party libraries are used behind an abstraction we own
 
 **Status:** Narrowed by
-[`/features/interfaces-and-data-flow/interfaces-and-data-flow.md`](../../features/interfaces-and-data-flow/interfaces-and-data-flow.md).
+[`/../interfaces-and-data-flow.md`](../interfaces-and-data-flow.md).
 Keep ports at real external boundaries or for proven multiple implementations;
 do not wrap every library by default.
 **Date:** 2026-08-22
@@ -212,5 +212,5 @@ does — `ITurnstileVerifier`, not a transport-shaped `IHttpClient` — and
   becomes a rule when a build enforces it
 - [ADR-0018](ADR-0018-feature-folders-in-core.md) — where a port lives: with its
   feature, or in `SharedKernel`
-- `AGENTS.md` and [`/features/interfaces-and-data-flow/interfaces-and-data-flow.md`](../../features/interfaces-and-data-flow/interfaces-and-data-flow.md)
+- `AGENTS.md` and [`/../interfaces-and-data-flow.md`](../interfaces-and-data-flow.md)
 - Issue #16 — image processing behind the blob port

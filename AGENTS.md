@@ -96,7 +96,7 @@ Never hand-edit generated files.
 | Need | Source |
 |---|---|
 | Target product and architecture | [`features/README.md`](features/README.md) |
-| Current implementation gaps | [`features/implementation-status/implementation-status.md`](features/implementation-status/implementation-status.md) |
+| Current implementation gaps | [`docs/implementation-status.md`](docs/implementation-status.md) |
 | Current Typeform question evidence | [`docs/form-spec.md`](docs/form-spec.md) |
 | Setup | [`README.md`](README.md), `./init-dev.sh` |
 | Test conventions | [`docs/testing-conventions.md`](docs/testing-conventions.md) |

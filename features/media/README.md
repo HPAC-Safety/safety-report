@@ -46,4 +46,4 @@ retains videos without a viewable derivative. The target replaces the
 upload-slot flow with API streaming and requires a safe derivative for videos
 as well as images. It does not yet accept or privately expose the document
 types specified above. See
-[implementation status](../implementation-status/implementation-status.md).
+[implementation status](../../docs/implementation-status.md).

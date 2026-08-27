@@ -23,7 +23,7 @@ publication-channel abstraction, or pre-submit upload-slot abstraction.
 Current main contains useful consent, IDs, outbox, privacy-partition, media, and
 question scaffolding, plus legacy typed projections and one-language summaries
 that must be migrated. Do not treat current types as target requirements; see
-[`features/implementation-status/implementation-status.md`](../../features/implementation-status/implementation-status.md).
+[`../../docs/implementation-status.md`](../../docs/implementation-status.md).
 
 Pure unit tests live in `tests/HpacSafety.Core.Tests`; privacy/model boundary
 tests use synthetic data in `tests/HpacSafety.Anonymization.Tests`.

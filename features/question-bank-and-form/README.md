@@ -45,4 +45,4 @@ Main currently has a stable `Question` whose order, active flag, privacy, and
 role can change, while wording/type/options live below `QuestionVersion`. It
 also projects several ordinary answers onto typed report properties. Both
 choices are superseded by the complete-revision model in the feature file. See
-[implementation status](../implementation-status/implementation-status.md).
+[implementation status](../../docs/implementation-status.md).

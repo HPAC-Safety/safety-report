@@ -1,8 +1,8 @@
 # Architecture
 
 The complete target is specified in
-[`features/system-overview/system-overview.md`](../features/system-overview/system-overview.md) and
-[`features/interfaces-and-data-flow/interfaces-and-data-flow.md`](../features/interfaces-and-data-flow/interfaces-and-data-flow.md). This
+[`system-overview.md`](system-overview.md) and
+[`interfaces-and-data-flow.md`](interfaces-and-data-flow.md). This
 page is a short orientation only.
 
 ```mermaid
@@ -35,5 +35,5 @@ application field cipher, runtime translator, PII auditor, email sender,
 external publication channel, or specialized aircraft service.
 
 Current-main gaps are explicit in
-[`features/implementation-status/implementation-status.md`](../features/implementation-status/implementation-status.md); component
+[`implementation-status.md`](implementation-status.md); component
 READMEs must not describe a target feature as already implemented.

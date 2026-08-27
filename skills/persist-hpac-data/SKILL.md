@@ -5,7 +5,7 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 
 # Persist HPAC Safety data
 
-Follow [`features/data-and-persistence/data-and-persistence.md`](../../features/data-and-persistence/data-and-persistence.md).
+Follow [`../../docs/data-and-persistence.md`](../../docs/data-and-persistence.md).
 
 - Use PostgreSQL `snake_case`; C# uses PascalCase. Use `DateOnly`, `TimeOnly`,
   and `DateTimeOffset`, never `DateTime`.

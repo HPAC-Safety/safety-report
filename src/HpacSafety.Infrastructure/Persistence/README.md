@@ -2,7 +2,7 @@
 
 This slice owns every PostgreSQL table, EF Core mapping, migration, transaction,
 and purpose-built query DTO. The normative target is
-[`features/data-and-persistence/data-and-persistence.md`](../../../features/data-and-persistence/data-and-persistence.md).
+[`../../../docs/data-and-persistence.md`](../../../docs/data-and-persistence.md).
 
 ## Target rules
 

@@ -115,4 +115,4 @@ Core owns domain rules and small ports. Infrastructure implements persistence,
 storage, authentication, attachment tooling, and the model client. API and Worker
 compose those pieces into use cases. The web sites consume HTTP DTOs and share
 only static assets and presentation utilities. See
-[interfaces and data flow](../interfaces-and-data-flow/interfaces-and-data-flow.md) for exact boundaries.
+[interfaces and data flow](interfaces-and-data-flow.md) for exact boundaries.

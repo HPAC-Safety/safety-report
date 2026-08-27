@@ -19,7 +19,7 @@ behavior, final multipart mapping and atomicity, Turnstile/rate limiting, one
 strict bilingual model call, whole-identity role replacement, image/video
 derivatives, private non-anonymized documents, authentication/audit, pair
 approval, universal soft deletion, and exact public DTO allowlists. See
-[`features/testing-and-quality/testing-and-quality.md`](../features/testing-and-quality/testing-and-quality.md).
+[`../docs/testing-and-quality.md`](../docs/testing-and-quality.md).
 
 Some current tests intentionally describe the legacy schema, field encryption,
 pre-submit storage, or multi-stage AI design. Update or remove those tests when

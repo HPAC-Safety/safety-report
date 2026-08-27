@@ -1,7 +1,7 @@
 # ADR-0009 — Host on AWS, in ca-central-1
 
 **Status:** Superseded in part by the
-[infrastructure specification](../../features/infrastructure-and-operations/infrastructure-and-operations.md).
+[infrastructure specification](../infrastructure-and-operations.md).
 AWS `ca-central-1` remains; the target has separate public/admin static sites
 and no SES/email resources.
 

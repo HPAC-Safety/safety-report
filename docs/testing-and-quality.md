@@ -108,7 +108,7 @@ issue enforcement. `DateTime` and assertion libraries other than Shouldly stay
 banned through syntax-aware tests rather than fragile source grep.
 
 Documentation changes run a local-link check, verify every tracked `src` path
-is represented in [source inventory](../source-inventory/source-inventory.md), and verify every
+is represented in [source inventory](source-inventory.md), and verify every
 GitHub issue through #82 is represented in
-[issue traceability](../issue-traceability/issue-traceability.md). No test fixture or specification
+[issue traceability](issue-traceability.md). No test fixture or specification
 may contain a real reporter's personal information.

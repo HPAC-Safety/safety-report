@@ -23,7 +23,7 @@ stage. Documents never enter model input.
 
 Current main is mostly a Worker host scaffold; the legacy ports/prompts do not
 describe the target pipeline. See
-[`features/implementation-status/implementation-status.md`](../../features/implementation-status/implementation-status.md).
+[`../../docs/implementation-status.md`](../../docs/implementation-status.md).
 
 ```bash
 docker compose up -d db

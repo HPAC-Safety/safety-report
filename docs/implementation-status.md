@@ -43,7 +43,7 @@ The baseline has 13 tables: `reports`, `report_answers`, `report_aircraft`,
 `admin_users`, `audit_log`, and `outbox_messages`. Two migrations create that
 shape and replace the earlier sensitivity scheme with question privacy. The
 target shape and required migration are specified in
-[data and persistence](../data-and-persistence/data-and-persistence.md).
+[data and persistence](data-and-persistence.md).
 
 ## Test evidence
 

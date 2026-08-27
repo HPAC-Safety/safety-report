@@ -21,7 +21,7 @@ production environment. A migration completes before new API traffic.
 
 The current deployment workflows still reflect legacy combined-site and email
 infrastructure. Align them with issue #30 and
-[`features/infrastructure-and-operations/infrastructure-and-operations.md`](../../features/infrastructure-and-operations/infrastructure-and-operations.md)
+[`../../docs/infrastructure-and-operations.md`](../../docs/infrastructure-and-operations.md)
 before production use.
 
 Run `actionlint` after workflow edits. If a required job ID changes, update the

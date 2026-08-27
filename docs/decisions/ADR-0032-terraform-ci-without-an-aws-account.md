@@ -2,7 +2,7 @@
 
 **Status:** Accepted for OIDC roles and credential-free validation. Any SES or
 combined-site examples below are superseded by the
-[infrastructure specification](../../features/infrastructure-and-operations/infrastructure-and-operations.md).
+[infrastructure specification](../infrastructure-and-operations.md).
 
 ## Context
 

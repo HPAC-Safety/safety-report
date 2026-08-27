@@ -1,7 +1,7 @@
 # HpacSafety.Api
 
 Deployable ASP.NET Core HTTP surface. The target contract is in
-[`features/interfaces-and-data-flow/interfaces-and-data-flow.md`](../../features/interfaces-and-data-flow/interfaces-and-data-flow.md).
+[`../../docs/interfaces-and-data-flow.md`](../../docs/interfaces-and-data-flow.md).
 
 ## Target responsibilities
 
@@ -22,7 +22,7 @@ per request.
 
 Current main is mostly a host scaffold; several legacy Core/Infrastructure
 types describe the superseded upload and persistence design. See
-[`features/implementation-status/implementation-status.md`](../../features/implementation-status/implementation-status.md) and the
+[`../../docs/implementation-status.md`](../../docs/implementation-status.md) and the
 linked implementation issues before extending them.
 
 ```bash

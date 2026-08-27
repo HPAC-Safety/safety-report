@@ -8,7 +8,7 @@ requires human approval before publication.
 > **Implementation status:** the repository contains substantial domain,
 > persistence, media, web-asset, CI, and infrastructure scaffolding, but the
 > complete target flow is not implemented. The audited gaps are listed in
-> [`features/implementation-status/implementation-status.md`](features/implementation-status/implementation-status.md). Do not infer
+> [`docs/implementation-status.md`](docs/implementation-status.md). Do not infer
 > feature completion from an old closed issue or README.
 
 ## Canonical specification

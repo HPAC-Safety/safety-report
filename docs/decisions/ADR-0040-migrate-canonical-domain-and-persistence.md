@@ -25,6 +25,127 @@ main, at the point this migration was written, had:
 ADR records the decisions made while writing the migration that gets current
 main there, and why the alternatives below were rejected.
 
+## Schema
+
+```mermaid
+erDiagram
+    questions ||--o{ question_revisions : "has"
+    question_revisions ||--o{ question_revision_options : "has"
+    questions ||--o{ report_answers : "answered_by"
+    question_revisions ||--o{ report_answers : "answered_by"
+    reports ||--o{ report_answers : "has"
+    reports ||--o{ report_files : "has"
+    reports ||--o| summaries : "has"
+    report_answers ||--o{ report_files : "attached_to"
+    admin_users ||--o{ summaries : "approves"
+
+    questions {
+        tinyid id PK
+        string key
+        bool is_system
+        int role
+        bool is_private
+        int display_order
+        string section_key
+        bool is_active
+        timestamptz created_at
+        timestamptz deleted
+    }
+
+    question_revisions {
+        tinyid id PK
+        tinyid question_id FK
+        int revision_number
+        int type
+        bool is_required
+        string label_en
+        string label_fr
+        string help_text_en
+        string help_text_fr
+        string placeholder_en
+        string placeholder_fr
+        timestamptz created_at
+        timestamptz deleted
+    }
+
+    question_revision_options {
+        tinyid id PK
+        tinyid question_revision_id FK
+        string code
+        int display_order
+        string label_en
+        string label_fr
+        timestamptz deleted
+    }
+
+    reports {
+        tinyid id PK
+        int language
+        int status
+        timestamptz submitted_at
+        timestamptz published_at
+        bool consent_publish
+        string summary_error
+        timestamptz deleted
+    }
+
+    report_answers {
+        tinyid id PK
+        tinyid report_id FK
+        tinyid question_id FK
+        tinyid question_revision_id FK
+        string question_key
+        bool is_private
+        string value
+        timestamptz answered_at
+        timestamptz deleted
+    }
+
+    report_files {
+        tinyid id PK
+        tinyid report_id FK
+        tinyid report_answer_id FK
+        int kind
+        string blob_key
+        string stripped_blob_key
+        string content_type
+        long byte_size
+        timestamptz uploaded_at
+        timestamptz exif_stripped_at
+        string processing_error_code
+        timestamptz deleted
+    }
+
+    summaries {
+        tinyid id PK
+        tinyid report_id FK
+        string ai_summary_en
+        string ai_summary_fr
+        string model
+        string prompt_version
+        tinyid approved_by FK
+        timestamptz approved_at
+        timestamptz generated_at
+        timestamptz updated_at
+        timestamptz deleted
+    }
+
+    admin_users {
+        tinyid id PK
+        timestamptz deleted
+    }
+```
+
+`question_versions`, `question_translations`, `question_options`,
+`question_option_translations`, and `report_aircraft` are dropped by this
+migration; their data is folded into the tables above (or, for
+`reports.province`/`pilot_injury`/`passenger_injury`/`occurred_on`/
+`occurred_at_local` and all of `report_aircraft`, discarded — the same facts
+already live unchanged in `report_answers`). Every table shown gains a
+nullable `deleted` timestamptz column and a live-row query filter
+(`WHERE deleted IS NULL`) via `SoftDeleteFilters`, except `audit_log`
+(unaffected, no `Deleted` property, not shown here).
+
 ## Decision
 
 ### 1. A question revision is born complete, not completed later

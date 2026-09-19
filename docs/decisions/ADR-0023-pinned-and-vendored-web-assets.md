@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell
 keywords: web assets, Tailwind, pinning, supply chain

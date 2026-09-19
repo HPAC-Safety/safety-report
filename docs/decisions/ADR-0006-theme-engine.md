@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell
 keywords: theming, design tokens, Tailwind, dark mode

@@ -433,14 +433,21 @@ fi
 #
 # Optional, agent tooling only. Check-only for the CLI itself, like skillfile
 # above: this script never auto-installs graphify. Once it is present, though:
-# `graphify update` builds the graph on a fresh clone and incrementally
+# `graphify extract` builds the graph on a fresh clone and incrementally
 # refreshes it on every later run (manifest-based, so a rerun with nothing
-# changed is cheap); `graphify <platform> install` registers it with the
-# contributor's agent; and `graphify hook install` keeps the graph current
-# between runs, on every commit/pull. All three are idempotent, so it is safe
-# to run every time. The chosen platform is cached in .graphify-agent (clone-
-# local, gitignored) so a second run re-registers silently instead of asking
-# again.
+# changed is cheap). Unlike `graphify update` (code only, no LLM), extract
+# also ingests docs — ADRs, features/*.feature, everything under docs/ — which
+# this repository relies on as its design authority, so it needs an LLM
+# backend API key (GEMINI_API_KEY, ANTHROPIC_API_KEY, ...; see
+# `graphify extract --help`) and fails fast with a clear message when none is
+# set — reported as a note, since graphify itself, let alone a configured
+# backend, is optional. `graphify <platform> install` registers it with the
+# contributor's agent, and `graphify hook install` keeps the graph current
+# between runs, on every commit/pull (code only — re-run `graphify extract`
+# by hand after doc/ADR changes, same as the hook's own log tells you to).
+# All three are idempotent, so it is safe to run every time. The chosen
+# platform is cached in .graphify-agent (clone-local, gitignored) so a second
+# run re-registers silently instead of asking again.
 
 heading "graphify (optional)"
 
@@ -454,15 +461,15 @@ if have graphify; then
 	else
 		GRAPHIFY_HAD_GRAPH=0
 		[ -d "$REPO_ROOT/graphify-out" ] && GRAPHIFY_HAD_GRAPH=1
-		say "  building/updating the graphify graph (this can take a while the first time)"
-		if graphify update "$REPO_ROOT"; then
+		say "  building/updating the graphify graph, including docs and ADRs (this can take a while the first time)"
+		if graphify extract "$REPO_ROOT"; then
 			if [ "$GRAPHIFY_HAD_GRAPH" -eq 1 ]; then
 				ok "graphify graph up to date"
 			else
 				added "graphify graph built"
 			fi
 		else
-			note "graphify update failed — run it directly to see why"
+			note "graphify extract failed — set an LLM backend API key (see: graphify extract --help), or run it directly to see why"
 		fi
 
 		GRAPHIFY_PLATFORM=''

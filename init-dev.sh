@@ -450,7 +450,10 @@ fi
 # by hand after doc/ADR changes, same as the hook's own log tells you to).
 # All three are idempotent, so it is safe to run every time. The chosen
 # platform is cached in .graphify-agent (clone-local, gitignored) so a second
-# run re-registers silently instead of asking again.
+# run re-registers silently instead of asking again. Extraction also needs
+# tree-sitter-hcl for this repository's Terraform files, an optional extra
+# graphify does not install by default — installed the same way as graphify
+# itself (uv tool, falling back to pip), into graphify's own environment.
 
 heading "graphify (optional)"
 
@@ -460,8 +463,33 @@ if have graphify; then
 	ok "graphify is installed"
 
 	if [ "$CHECK_ONLY" -eq 1 ]; then
-		note "skipped: --check does not build the graph, install a git hook, or register an agent"
+		note "skipped: --check does not build the graph, install a git hook, install extraction extras, or register an agent"
 	else
+		# This repository has Terraform (see manage-hpac-infrastructure), and
+		# extracting .tf/.hcl/.tfvars needs tree-sitter-hcl, an optional extra
+		# graphify does not pull in by default. Probed inside graphify's own
+		# uv-tool environment so this stays a no-op once installed, instead of
+		# an `--upgrade` network check on every run.
+		if have uv && uv tool run --from graphifyy python3 -c 'import tree_sitter_hcl' >/dev/null 2>&1; then
+			ok "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+		elif have uv; then
+			if uv tool install --upgrade "graphifyy[terraform]" -q; then
+				added "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+			else
+				note "could not install tree-sitter-hcl — .tf/.hcl/.tfvars files will not be indexed"
+			fi
+		elif python3 -c 'import tree_sitter_hcl' >/dev/null 2>&1; then
+			ok "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+		elif have python3; then
+			if python3 -m pip install --quiet "graphifyy[terraform]"; then
+				added "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+			else
+				note "could not install tree-sitter-hcl — .tf/.hcl/.tfvars files will not be indexed"
+			fi
+		else
+			note "graphify terraform/HCL extraction support needs uv or python3 — neither is installed"
+		fi
+
 		GRAPHIFY_HAD_GRAPH=0
 		[ -d "$REPO_ROOT/graphify-out" ] && GRAPHIFY_HAD_GRAPH=1
 		say "  building/updating the graphify graph, including docs and ADRs (this can take a while the first time)"

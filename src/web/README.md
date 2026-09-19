@@ -1,15 +1,19 @@
-# Static web sites
+# Web site
 
-`public/` is the anonymous report form and public feed; `admin/` is the
-authenticated review/administration UI. They are separate static deployments
-built with plain HTML and JavaScript. There is no SPA framework or bundler.
-
-Tailwind v4's standalone CLI builds the shared stylesheet:
+One React/TypeScript single-page application, built with Vite. The
+anonymous report form is the default route; the authenticated
+review/administration UI lives at `/admin` in the same app and build — see
+[ADR-0043](../../docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md)
+and
+[ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md).
 
 ```bash
-./tools/build-css.sh
-./tools/build-css.sh --watch
+npm install
+npm run dev
+npm run build
 ```
+
+Tailwind v4 runs via the `@tailwindcss/vite` plugin, not the standalone CLI.
 
 Use semantic HTML, visible focus, 44px touch targets, reduced-motion support,
 WCAG AA contrast, self-hosted assets, and design tokens. Dark mode redefines

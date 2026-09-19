@@ -17,6 +17,7 @@ node_modules/
 .playwright/
 playwright-report/
 test-results/
+src/web/dist/
 
 # Generated CSS + downloaded tooling
 src/web/styles/site.css

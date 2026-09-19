@@ -429,6 +429,20 @@ else
 	fi
 fi
 
+# ------------------------------------------------------------------ graphify --
+#
+# Optional, agent tooling only. Check-only, like skillfile above: this script
+# never auto-installs it. Ingestion (`/graphify <path>`) is a Claude Code skill
+# workflow driven by an agent, not a flat CLI command, so it cannot be invoked
+# from here — do not add an "invoke ingestion" step to this script.
+
+heading "graphify (optional)"
+if have graphify; then
+	ok "graphify is installed"
+else
+	note "graphify is not installed — install with: uv tool install --upgrade graphifyy -q (or: python3 -m pip install graphifyy -q)"
+fi
+
 # ------------------------------------------------------- repository restore ---
 #
 # Everything below is repository state rather than machine state, and every

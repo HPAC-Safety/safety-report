@@ -7,12 +7,15 @@ keywords: React, TypeScript, Vite, Tailwind, SPA, web front end
 
 # ADR-0043 — React, TypeScript, and Vite replace the no-framework web build
 
-**Status:** Accepted. Supersedes [ADR-0006](ADR-0006-theme-engine.md) (Tailwind
-v4 standalone CLI, "no SPA framework") and the "no npm, no node in the web
-build" stance of [ADR-0023](ADR-0023-pinned-and-vendored-web-assets.md).
-ADR-0023's vendoring rationale for fonts and the logo — self-hosted, never a
-third-party CDN — is unchanged; only the "no `node_modules`" mechanism it
-argued from is reversed.
+**Status:** Accepted, partially superseded by
+[ADR-0048](ADR-0048-one-website-admin-as-a-route.md). Supersedes
+[ADR-0006](ADR-0006-theme-engine.md) (Tailwind v4 standalone CLI, "no SPA
+framework") and the "no npm, no node in the web build" stance of
+[ADR-0023](ADR-0023-pinned-and-vendored-web-assets.md). ADR-0023's vendoring
+rationale for fonts and the logo — self-hosted, never a third-party CDN — is
+unchanged; only the "no `node_modules`" mechanism it argued from is reversed.
+This ADR's "two separately built and deployed applications" decision is
+reversed by ADR-0048: one Vite/React application, admin as a route within it.
 
 ## Context
 

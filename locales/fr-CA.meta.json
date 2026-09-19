@@ -1,0 +1,157 @@
+{
+  "admin.placeholderName": {
+    "source_hash": "c1c224b03cd9bc7b6a86d77f5dace40191766c485cd55dc48caf9ac873335d6f",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "footer.copyright": {
+    "source_hash": "13134728987d9a32ead5df5cd231bd2eea13714a02adce071cde8d19a0d18531",
+    "provider": "glossary",
+    "reviewed": true
+  },
+  "header.logoAlt": {
+    "source_hash": "526fac4ead6b1f032f6b3d8cfa0f6d0a26f89abda830f633b3f245a8ce44ff45",
+    "provider": "glossary",
+    "reviewed": true
+  },
+  "home.heroCta": {
+    "source_hash": "25a494c6807f1e401723519f97043c224b4be6c591700462a592db1d75b4d8ec",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "home.heroSubtitle": {
+    "source_hash": "761c12557a92b8cd15b881f39308013419077eee2b9f54eb698dce63a625a937",
+    "provider": "glossary",
+    "reviewed": true
+  },
+  "home.heroTitle": {
+    "source_hash": "533e282f49fcb146797b89fb6d50f9c037585c5c693b0723ca365c0de61dccd3",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "home.sectionAbout.body": {
+    "source_hash": "92365cd27443858d878e2c404cc056b551c9818b0638be75e45be9cb99d6a12e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "home.sectionAbout.title": {
+    "source_hash": "177b6d3e2853b9559497fd5d3841de11d4217791de2d65648aeaf1520d9b7483",
+    "provider": "glossary",
+    "reviewed": true
+  },
+  "home.sectionHow.body": {
+    "source_hash": "81bda566f826ce5f2682189ade4ab8f068985d98bd832e89e08ddd96f91a6ddd",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "home.sectionHow.title": {
+    "source_hash": "9c870aa6e5e93270170d5a81277ad3e623afe8d4efd186d3e28f3d2b646d52e6",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "home.sectionWhy.body": {
+    "source_hash": "55044aa8c108935d0eea6e06f8df62e0f7ddf004ca5f8a825a06372095886504",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "home.sectionWhy.title": {
+    "source_hash": "3e2af4b3deaf5c77a5886b8171ca55e4760b86a03b1c037e56857860f33b446e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "language.optionEnglish": {
+    "source_hash": "ba118bf7fc9c1aedc1edb28a0aa86e0b43b681f222af6616e13c43be87815b06",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "language.optionFrench": {
+    "source_hash": "e495d53b967a7b049c8a2c25baa519fe124b49c1d0cf9cd8bdffa00d2f9d8ed6",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "language.toggleLabel": {
+    "source_hash": "a4fe65264ef7dbb38d104b1e81eb3350f3142f3d16f32bdec39b1d9b42c1b8d1",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "nav.contact": {
+    "source_hash": "2b5c3d26721ae9c350cf3009318b626f0fc8a90b4a2ac0ca8099c05aa849282e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "nav.memberLogin": {
+    "source_hash": "fe7747440a0526f0ccdeb42924b76f94c011997233f4f0e23dd60e3b0da9ded4",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "nav.primaryLabel": {
+    "source_hash": "efe10c80ec8a9f38624cbb47103010a8cf32488a503e4b4bfe4f92307a9cefa7",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "nav.submitReport": {
+    "source_hash": "25a494c6807f1e401723519f97043c224b4be6c591700462a592db1d75b4d8ec",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "nav.viewReports": {
+    "source_hash": "14a060d6a897d1d2492491f64693cff98482382f660e0214a0d99e6246a76bd7",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "notFound.body": {
+    "source_hash": "2fffbc93267aa2bdbdd6eb406b8d43a421f04a8ce2f437a77bb20b3844ff846e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "notFound.title": {
+    "source_hash": "a469ab4ca4e55bf547566e9ebfa1b809c933207e9d558156bc0c4252b17533fe",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.placeholder.body": {
+    "source_hash": "8479f3e9140f9c3b2fb93b1318f8fa6ea5e7e7483595646b21bc1fb3f0d832bd",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.placeholder.title": {
+    "source_hash": "335afd3f30260697119d7e260594292c6222dbd3435d8ee7f85e3748cefe1536",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "theme.toggleLabel": {
+    "source_hash": "efb52e7172b77731d996ff4f51cd7b3dcfd55fc6f07392994619418d58d170dd",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "upload.awaitingStripping": {
+    "source_hash": "0373140dcd3cbb1ab85be21087161e15df2c34a3f49988296e6c541a11a47f68",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "upload.rejected.declaredTypeMismatch": {
+    "source_hash": "d2325b23735f895e1e7cccbceee68b6c8b75246cbc063ba89ae77cb0bca30eed",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "upload.rejected.empty": {
+    "source_hash": "3da9421c7ab6660b8e395418a564af8704a4f424b4418e6f935c5f49fd244293",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "upload.rejected.tooLarge": {
+    "source_hash": "7202b50ba7922c95cb43fcf8e03d5425e15893735c8e7510e785072fcc69800a",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "upload.rejected.unacceptedMediaType": {
+    "source_hash": "5e4ce2bd26a77ea5218a2346cfee4fd777df1317e4c6bb119c0eac709366c47b",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "upload.rejected.unrecognisedContent": {
+    "source_hash": "238fb77cc95a39d4cbb71b6fcbbd9c36b2eceb3c9a23b12d1264bc0f629e2dfe",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  }
+}

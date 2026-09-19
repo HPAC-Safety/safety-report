@@ -25,6 +25,10 @@ src/web/dist/
 .claude/agents/
 .skillfile/cache/
 
+# Written by `graphify claude install` — machine-local (hardcodes an absolute
+# path to the graphify binary), never committed.
+.claude/settings.json
+
 # Secrets and local config
 .env
 .env.local

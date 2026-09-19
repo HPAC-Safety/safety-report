@@ -432,10 +432,12 @@ fi
 # ------------------------------------------------------------------ graphify --
 #
 # Optional, agent tooling only. Check-only for the CLI itself, like skillfile
-# above: this script never auto-installs graphify. Once it is present, though,
-# `graphify <platform> install` both registers it with the contributor's agent
-# and performs the initial ingestion, and `graphify hook install` keeps the
-# graph current on every future commit/pull — both idempotent, so it is safe
+# above: this script never auto-installs graphify. Once it is present, though:
+# `graphify update` builds the graph on a fresh clone and incrementally
+# refreshes it on every later run (manifest-based, so a rerun with nothing
+# changed is cheap); `graphify <platform> install` registers it with the
+# contributor's agent; and `graphify hook install` keeps the graph current
+# between runs, on every commit/pull. All three are idempotent, so it is safe
 # to run every time. The chosen platform is cached in .graphify-agent (clone-
 # local, gitignored) so a second run re-registers silently instead of asking
 # again.
@@ -448,8 +450,21 @@ if have graphify; then
 	ok "graphify is installed"
 
 	if [ "$CHECK_ONLY" -eq 1 ]; then
-		note "skipped: --check does not install a git hook or register an agent"
+		note "skipped: --check does not build the graph, install a git hook, or register an agent"
 	else
+		GRAPHIFY_HAD_GRAPH=0
+		[ -d "$REPO_ROOT/graphify-out" ] && GRAPHIFY_HAD_GRAPH=1
+		say "  building/updating the graphify graph (this can take a while the first time)"
+		if graphify update "$REPO_ROOT"; then
+			if [ "$GRAPHIFY_HAD_GRAPH" -eq 1 ]; then
+				ok "graphify graph up to date"
+			else
+				added "graphify graph built"
+			fi
+		else
+			note "graphify update failed — run it directly to see why"
+		fi
+
 		GRAPHIFY_PLATFORM=''
 		if [ -s "$GRAPHIFY_AGENT_FILE" ]; then
 			GRAPHIFY_PLATFORM=$(cat "$GRAPHIFY_AGENT_FILE")

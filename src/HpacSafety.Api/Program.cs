@@ -1,6 +1,12 @@
+using HpacSafety.Infrastructure.Persistence;
+
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
 
 var app = builder.Build();
 
@@ -10,6 +16,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Whichever of the API or the Worker starts first after a deploy applies any
+// pending migration; the other is a no-op. See ADR-0055.
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+    await context.EnsureMigratedAsync(app.Logger).ConfigureAwait(false);
+}
 
 // Endpoints are added as features land. See the Foundation and Phase 1
 // milestones, and src/HpacSafety.Api/README.md.

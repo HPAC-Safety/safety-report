@@ -72,7 +72,7 @@ Read only the skills relevant to the task. Installed copies under
 | English/French behavior | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
 | Static HTML/JS and design system | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
 | AWS, Terraform, or deployment | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
-| Issues, docs, branches, PRs, or CI | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
+| Issues, docs, worktrees, PRs, or CI | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
 
 Use plain code until a real external boundary or a second implementation makes
 an abstraction useful. Do not introduce a pattern merely to name one.

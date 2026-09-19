@@ -29,6 +29,12 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   never justify a technology/pattern choice inside a `.feature` file or its
   README — keep decision rationale and behavior requirements in their own
   document.
+- An ADR that changes a technology choice or how the system is broken up
+  (a new or replaced framework/language/runtime, a hosting/topology change, a
+  service split or merge) updates the root [`README.md`](../../README.md) in
+  the same PR — the fact and a link to the ADR, not the rationale. Do not add
+  an entry for a routine or reversed-without-effect decision; keep the README
+  short and let the linked ADR carry the "why."
 - Update issue acceptance criteria when the design changes; do not leave a
   conflicting backlog item open.
 - Never include real report content or personal information.

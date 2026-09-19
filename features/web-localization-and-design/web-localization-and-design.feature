@@ -58,6 +58,12 @@ Feature: Web, localization, and design
     Then it comes from a committed locale catalogue with key parity between en-CA and fr-CA
     And no user-facing literal appears directly in code
 
+  Scenario: A translation missing locally is stubbed with a visible marker, and CI must replace it before merge
+    Given a key exists in en-CA.json but not in fr-CA.json
+    When the local build runs
+    Then fr-CA.json gains that key with its English text prefixed with a # marker
+    And a key still carrying that # marker fails locale verification, so it can never reach main untranslated
+
   @ignore
   Scenario: Question content comes from the bilingual database revision
     Given a question revision has English and French labels, help, and options authored by an Administrator

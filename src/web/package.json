@@ -3,7 +3,9 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
+		"predev": "node ../../tools/stub-missing-translations.mjs --locales ../../locales",
 		"dev": "vite",
+		"prebuild": "node ../../tools/stub-missing-translations.mjs --locales ../../locales",
 		"build": "vite build",
 		"preview": "vite preview"
 	},

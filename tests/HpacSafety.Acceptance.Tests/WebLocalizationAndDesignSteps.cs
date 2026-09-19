@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Reqnroll;
 using Shouldly;
 
@@ -40,28 +41,73 @@ public sealed class WebLocalizationAndDesignSteps
         RunNodeTool("tools/check-hardcoded-strings.mjs");
     }
 
+    private string _localesDir = string.Empty;
+
+    [Given(@"a key exists in en-CA\.json but not in fr-CA\.json")]
+    public void GivenAKeyExistsInEnglishButNotFrench()
+    {
+        _localesDir = Path.Combine(Path.GetTempPath(), $"locales-stub-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_localesDir);
+        File.WriteAllText(
+            Path.Combine(_localesDir, "en-CA.json"),
+            JsonSerializer.Serialize(new { nav = new { contact = "Contact" } }));
+    }
+
+    [When(@"the local build runs")]
+    public void WhenTheLocalBuildRuns()
+    {
+        RunNodeTool("tools/stub-missing-translations.mjs", expectSuccess: true, "--locales", _localesDir);
+    }
+
+    [Then(@"fr-CA\.json gains that key with its English text prefixed with a # marker")]
+    public void ThenFrenchGainsAStubbedKey()
+    {
+        var french = File.ReadAllText(Path.Combine(_localesDir, "fr-CA.json"));
+        using var document = JsonDocument.Parse(french);
+        document.RootElement.GetProperty("nav").GetProperty("contact").GetString().ShouldBe("#Contact");
+    }
+
+    [Then(@"a key still carrying that # marker fails locale verification, so it can never reach main untranslated")]
+    public void ThenAStubbedKeyFailsVerification()
+    {
+        var exitCode = RunNodeTool("tools/translate-locale.mjs", expectSuccess: false, "--check", "--locales", _localesDir);
+        exitCode.ShouldNotBe(0);
+    }
+
 #pragma warning restore CA1822
 
-    private static void RunNodeTool(string relativeScriptPath)
+    private static void RunNodeTool(string relativeScriptPath) => RunNodeTool(relativeScriptPath, expectSuccess: true);
+
+    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, params string[] args)
     {
         var repositoryRoot = RepositoryRoot();
 
         using var process = new Process
         {
-            StartInfo = new ProcessStartInfo("node", relativeScriptPath)
+            StartInfo = new ProcessStartInfo("node")
             {
                 WorkingDirectory = repositoryRoot,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
             },
         };
+        process.StartInfo.ArgumentList.Add(relativeScriptPath);
+        foreach (var arg in args)
+        {
+            process.StartInfo.ArgumentList.Add(arg);
+        }
 
         process.Start();
         var output = process.StandardOutput.ReadToEnd();
         var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
 
-        process.ExitCode.ShouldBe(0, $"{relativeScriptPath} failed:\n{output}\n{error}");
+        if (expectSuccess)
+        {
+            process.ExitCode.ShouldBe(0, $"{relativeScriptPath} failed:\n{output}\n{error}");
+        }
+
+        return process.ExitCode;
     }
 
     private static string RepositoryRoot()

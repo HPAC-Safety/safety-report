@@ -20,6 +20,13 @@ test-results/
 src/web/dist/
 tests/e2e/.features-gen/
 
+# Written locally by `tools/stub-missing-translations.mjs` (predev/prebuild,
+# ADR-0054) so untranslated keys are visible while developing. Real French is
+# generated in CI only (ADR-0021) and reaches these paths by a normal merge
+# from main, which this entry does not affect — see the ADR.
+locales/fr-CA.json
+locales/fr-CA.meta.json
+
 # Installed and cached by `skillfile install` — reproduced from Skillfile.lock,
 # never committed. See CONTRIBUTING.md.
 .claude/skills/

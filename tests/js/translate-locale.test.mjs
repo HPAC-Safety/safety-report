@@ -484,6 +484,39 @@ describe('verifying the locales without translating', () => {
 			assert.match(result.problems.join('\n'), /stub/)
 		})
 	})
+
+	describe('given a French value still carrying stub-missing-translations.mjs\'s # marker', () => {
+		it('when it is verified then it fails, so a local stub can never merge (ADR-0054)', () => {
+			// Given
+			const source = { nav: { contact: 'Contact' } }
+
+			// When
+			const result = verifyLocales({ english: source, french: { nav: { contact: '#Contact' } }, meta: {}, glossary: {} })
+
+			// Then
+			assert.equal(result.ok, false)
+			assert.match(result.problems.join('\n'), /nav\.contact.*# stub/)
+		})
+	})
+
+	describe('given an English value still carrying stub-missing-translations.mjs\'s # marker', () => {
+		it('when it is verified then it fails, so an untranslated French-only key can never merge (ADR-0054)', () => {
+			// Given
+			const source = { nav: { onlyFrench: '#Seulement en français' } }
+
+			// When
+			const result = verifyLocales({
+				english: source,
+				french: { nav: { onlyFrench: 'Seulement en français' } },
+				meta: {},
+				glossary: {},
+			})
+
+			// Then
+			assert.equal(result.ok, false)
+			assert.match(result.problems.join('\n'), /nav\.onlyFrench.*# stub/)
+		})
+	})
 })
 
 describe('placeholders in a translated string', () => {

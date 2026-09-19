@@ -261,10 +261,22 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 	const wanted = new Set(englishKeys.map(([key]) => key))
 
 	for (const [key, text] of englishKeys) {
+		// A local `stub-missing-translations.mjs` run (ADR-0054) marks a
+		// placeholder this way. It must never reach main as either language.
+		if (text.startsWith('#')) {
+			problems.push(`'${key}' in ${SOURCE_LOCALE}.json is still a local # stub. Write the real English text.`)
+			continue
+		}
+
 		const pinned = glossaryFrench(key, glossary)
 
 		if (!frenchByKey.has(key)) {
 			problems.push(`${TARGET_LOCALE} is missing '${key}'. Regenerate it — never hand-edit ${TARGET_LOCALE}.json.`)
+			continue
+		}
+
+		if (frenchByKey.get(key).startsWith('#')) {
+			problems.push(`'${key}' in ${TARGET_LOCALE}.json is still a local # stub (ADR-0054). Merge to main so CI can translate it.`)
 			continue
 		}
 

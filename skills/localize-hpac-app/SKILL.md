@@ -7,6 +7,16 @@ description: Keep HPAC Safety application chrome, database questions, validation
 
 - Application chrome lives in reviewed `en-CA` and `fr-CA` catalogues with
   matching keys. CI translation tooling applies only to those stable catalogues.
+- Every new chrome string is added to `locales/en-CA.json` and read through
+  `t(...)` — never a literal in markup (`tools/check-hardcoded-strings.mjs`
+  enforces this). Never hand-author `fr-CA.json`: only CI translates it
+  (`DEEPL_API_KEY` lives only in CI, ADR-0021). `npm run dev`/`npm run build`
+  in `src/web` run `tools/stub-missing-translations.mjs` first, which fills
+  any key missing from either locale file with the other's text prefixed
+  `#` — so a new key is visibly untranslated (`#Contact`) rather than
+  silently falling back to English, until CI replaces it for real after
+  merge (ADR-0054). A committed `#`-prefixed value fails
+  `translate-locale.mjs --check` and must never reach main.
 - Every immutable database question revision stores both English and French
   label/help/option text. Administrators author and review both; no runtime or
   authoring-time translation service fills question text.

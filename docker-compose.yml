@@ -3,7 +3,7 @@
 # builds the api image and brings these services up).
 services:
   postgres:
-    image: postgres:17
+    image: postgres:18
     environment:
       POSTGRES_DB: hpac_safety
       POSTGRES_USER: postgres

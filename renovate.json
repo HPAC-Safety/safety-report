@@ -80,6 +80,15 @@
 			"automerge": false
 		},
 		{
+			"description": "Renovate's terraform manager computes .terraform.lock.hcl checksums itself instead of running terraform, and has produced a checksum that did not match the registry's real package (issue #118). Disabled here; .github/workflows/terraform-relock.yml regenerates the lock file with the real terraform binary on a schedule instead, verified by the required infra CI check.",
+			"matchManagers": [
+				"terraform"
+			],
+			"lockFileMaintenance": {
+				"enabled": false
+			}
+		},
+		{
 			"groupName": "Analyzers",
 			"matchPackageNames": [
 				"Microsoft.CodeAnalysis.BannedApiAnalyzers",

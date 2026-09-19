@@ -21,7 +21,7 @@ That is not good enough for launch, for two reasons.
 It is soft at any size worth using on a retina display. And it is the
 **reversed** artwork: the "HPAC ACVL" wordmark is white, so on a light surface
 only the red maple leaf shows and the wordmark vanishes. Open
-`../styles/theme-preview.html` and toggle the theme to see it.
+`../theme-preview.html` and toggle the theme to see it.
 
 **A vector or high-resolution source, with a dark-ink variant, is an open
 item** — recorded in

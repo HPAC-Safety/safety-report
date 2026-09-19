@@ -174,8 +174,8 @@ identity where source text does not exist.
 - [src/web/assets/hpac-logo.png](../src/web/assets/hpac-logo.png) — 260×125 raster placeholder; do not present as approved branding, replace only with supplied official asset.
 - [src/web/public/.gitkeep](../src/web/public/.gitkeep) — empty public-site placeholder; replace with report form/feed/detail static pages and modules.
 - [src/web/shared/.gitkeep](../src/web/shared/.gitkeep) — empty shared-code placeholder; add only genuinely shared locale/API/presentation utilities.
-- [src/web/styles/tailwind.css](../src/web/styles/tailwind.css) — HPAC tokens, self-hosted font faces, components, and dark token overrides; retain as shared design source.
-- [src/web/styles/theme-preview.html](../src/web/styles/theme-preview.html) — static token/component preview in both themes; retain as visual regression/design reference, not a product page.
+- [src/web/src/index.css](../src/web/src/index.css) — HPAC tokens, self-hosted font faces, components, and dark token overrides, compiled by `@tailwindcss/vite`; retain as shared design source.
+- [src/web/theme-preview.html](../src/web/theme-preview.html) — static token/component preview in both themes, served by the Vite dev server; retain as visual regression/design reference, not a product page.
 
 ## Test-derived observations
 

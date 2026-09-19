@@ -27,7 +27,7 @@ lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
 | `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` |
-| `src/web/styles/site.css` | `tools/build-css.sh` |
+| `src/web/dist/` | `npm --prefix src/web run build` |
 
 Question text is not generated from locale catalogues: every database question
 revision is manually authored in English and French.

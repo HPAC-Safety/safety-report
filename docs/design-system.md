@@ -23,7 +23,7 @@ stylesheet:
 Divi's default blue, not an HPAC brand colour. Also dropped: heavy drop-shadowed
 cards, full-width hero imagery on a form page, and the `ETmodules` icon font.
 
-Declared once as Tailwind v4 `@theme` tokens in `src/web/styles/tailwind.css`:
+Declared once as Tailwind v4 `@theme` tokens in `src/web/src/index.css`:
 
 ```css
 @theme {
@@ -65,9 +65,10 @@ Sections and cards step down the surface ramp instead of reaching for a drop
 shadow. `--color-focus` is brand-**700** rather than brand-600 because it is the
 one that clears 3:1 against both ends of that ramp.
 
-`styles/theme-preview.html` renders all of it on one page, with both typefaces
-and a light/dark toggle. It is a developer artefact — not deployed, not linked,
-no user-facing copy.
+`src/web/theme-preview.html` renders all of it on one page, with both
+typefaces and a light/dark toggle. It is a developer artefact, served only by
+the Vite dev server — not built, not deployed, not linked, no user-facing
+copy.
 
 ## Restraint is the design
 

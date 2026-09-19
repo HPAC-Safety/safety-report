@@ -90,7 +90,7 @@ Common verification commands:
 dotnet build HpacSafety.slnx
 dotnet test HpacSafety.slnx
 node --test $(find tests/js -name '*.test.mjs')
-./tools/build-css.sh
+npm --prefix src/web ci && npm --prefix src/web run build
 ```
 
 Integration tests require Docker. See [`tests/README.md`](tests/README.md) and

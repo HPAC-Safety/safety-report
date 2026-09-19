@@ -42,6 +42,7 @@ jobs:
     outputs:
       dotnet: ${{ steps.filter.outputs.dotnet }}
       web: ${{ steps.filter.outputs.web }}
+      e2e: ${{ steps.filter.outputs.e2e }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
@@ -60,8 +61,10 @@ jobs:
               - '.github/workflows/ci.yml'
             web:
               - 'src/web/**'
-              - 'tools/build-css.sh'
-              - 'tools/tailwind.pin'
+              - '.github/workflows/ci.yml'
+            e2e:
+              - 'src/web/**'
+              - 'tests/e2e/**'
               - '.github/workflows/ci.yml'
 
   build:
@@ -283,38 +286,35 @@ jobs:
             ./artifacts/report/*.html
           if-no-files-found: warn
 
-  # No setup-node here, and none is coming. The web layer builds with the
-  # Tailwind standalone binary and nothing else - if this job ever needs Node,
-  # something has grown a node_modules it should not have. See ADR-0006.
+  # Vite + @tailwindcss/vite, one package.json, one committed lockfile. See
+  # ADR-0043 (supersedes ADR-0006's no-Node standalone-CLI build).
   web:
     needs: changes
     if: needs.changes.outputs.web == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
-      # Preinstalled on the runner. build-css.sh is POSIX sh for the same
-      # reason init-dev.sh is: Windows contributors run it under Git Bash.
-      - name: shellcheck build-css.sh
-        run: shellcheck -s sh tools/build-css.sh
+      - name: npm ci
+        run: npm --prefix src/web ci
 
-      # Downloads the pinned binary named in tools/tailwind.pin and verifies it
-      # against the checksum recorded there before running it. A clean checkout
-      # with no node_modules is exactly the case this proves. See ADR-0023.
-      - name: Build stylesheet
-        run: ./tools/build-css.sh
+      - name: Build
+        run: npm --prefix src/web run build
 
-      - name: The stylesheet was produced
-        run: test -s src/web/styles/site.css
+      - name: The bundle was produced
+        run: test -s src/web/dist/index.html
 
       # The acceptance criterion from #11, checked rather than trusted: nothing
-      # in the built stylesheet or in any page reaches Google for a font. The
-      # @font-face URLs are relative paths into src/web/assets/fonts.
+      # in the built bundle reaches Google for a font. The @font-face URLs in
+      # src/web/src/index.css are relative paths into src/web/assets/fonts.
       - name: No third-party font requests
         run: |
           set -eu
           hits=$(grep -rIl -e fonts.googleapis.com -e fonts.gstatic.com \
-            src/web --include='*.css' --include='*.html' --include='*.js' || true)
+            src/web/dist || true)
           if [ -n "$hits" ]; then
             echo "::error::Fonts must be self-hosted from src/web/assets/fonts. Found a Google Fonts reference in:"
             echo "$hits"
@@ -323,8 +323,9 @@ jobs:
 
       # Raw hex in markup defeats the token system: a literal colour cannot be
       # re-themed, so it is the one thing that stays light when everything
-      # around it goes dark. Hex values belong in tailwind.css, which is why
-      # only markup is scanned here. See ADR-0024.
+      # around it goes dark. Hex values belong in src/web/src/index.css, which
+      # is why only source markup/components are scanned here, not that file
+      # itself. See ADR-0024.
       #
       # CSS hex colours come in four valid lengths - #rgb, #rgba, #rrggbb,
       # #rrggbbaa - and Tailwind arbitrary values (bg-[#f22312ff]) use the
@@ -346,26 +347,27 @@ jobs:
         run: |
           set -eu
           hits=$(grep -rInE '#[0-9a-fA-F]{8}\b|#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{4}\b|#[0-9a-fA-F]{3}\b' \
-            src/web --include='*.html' --include='*.js' || true)
+            src/web/src src/web/index.html src/web/theme-preview.html \
+            --include='*.tsx' --include='*.ts' --include='*.html' || true)
           if [ -n "$hits" ]; then
-            echo "::error::Raw hex values belong in src/web/styles/tailwind.css. Use the @theme tokens in markup:"
+            echo "::error::Raw hex values belong in src/web/src/index.css. Use the @theme tokens in markup:"
             echo "$hits"
             exit 1
           fi
 
-      # site.css is generated and gitignored. If a build produces a tracked
+      # dist/ is generated and gitignored. If a build produces a tracked
       # change, something that should be generated has been committed.
       - name: No drift from building
         run: |
           if [ -n "$(git status --porcelain)" ]; then
-            echo "::error::Building the stylesheet modified tracked files:"
+            echo "::error::Building the app modified tracked files:"
             git status --porcelain
             exit 1
           fi
 
   e2e:
     needs: changes
-    if: needs.changes.outputs.dotnet == 'true'
+    if: needs.changes.outputs.e2e == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -373,15 +375,16 @@ jobs:
         with:
           node-version: 24
 
+      - name: npm ci
+        run: npm --prefix tests/e2e ci
+
+      # The webServer in playwright.config.ts installs and builds src/web
+      # itself before tests run.
+      - name: Install browsers
+        run: npx --prefix tests/e2e playwright install --with-deps chromium
+
       - name: Playwright
-        run: |
-          if [ ! -f tests/e2e/package.json ]; then
-            echo "::notice::No end-to-end suite yet — added by #26. Skipping."
-            exit 0
-          fi
-          npm --prefix tests/e2e ci
-          npx --prefix tests/e2e playwright install --with-deps chromium
-          npm --prefix tests/e2e test
+        run: npm --prefix tests/e2e test
 
   agent-config:
     runs-on: ubuntu-latest

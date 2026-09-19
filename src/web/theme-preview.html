@@ -2,11 +2,12 @@
 <!--
   theme-preview.html — a DEVELOPER artefact, not a user-facing surface.
 
-  It exists so the tokens in tailwind.css can be looked at, and so the
+  It exists so the tokens in src/index.css can be looked at, and so the
   acceptance criteria for this theme can be demonstrated rather than asserted:
   every swatch, both typefaces, the focus ring, and the light/dark flip on one
   page. It is not deployed, is not linked from the form or the admin UI, and is
-  not part of either static site.
+  not part of the built app: Vite only builds index.html by default (ADR-0043),
+  so this page exists for the dev server only.
 
   It is therefore the one page in src/web that is exempt from the
   no-hardcoded-strings rule, because it contains no user-facing copy: every
@@ -14,9 +15,9 @@
   showing. The hardcoded-string lint (#8) must skip this file; that is recorded
   in src/web/README.md and skills/build-hpac-web-ui/SKILL.md.
 
-  Open it after ./tools/build-css.sh:
-      python3 -m http.server 8080 --directory src/web
-      open http://localhost:8080/styles/theme-preview.html
+  Open it with the Vite dev server:
+      npm --prefix src/web run dev
+      open http://localhost:5173/theme-preview.html
 -->
 <html lang="en" data-theme="light">
 <head>
@@ -24,16 +25,16 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="robots" content="noindex">
 	<title>HPAC theme tokens</title>
-	<link rel="icon" href="../assets/hpac-logo.png">
-	<link rel="preload" href="../assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
-	<link rel="preload" href="../assets/fonts/aleo-latin.woff2" as="font" type="font/woff2" crossorigin>
-	<link rel="stylesheet" href="./site.css">
+	<link rel="icon" href="./assets/hpac-logo.png">
+	<link rel="preload" href="./assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="preload" href="./assets/fonts/aleo-latin.woff2" as="font" type="font/woff2" crossorigin>
+	<link rel="stylesheet" href="/src/index.css">
 </head>
 <body class="bg-surface text-ink">
 	<div class="mx-auto max-w-3xl px-6 py-10">
 
 		<header class="flex flex-wrap items-center justify-between gap-4 border-b border-rule pb-6">
-			<img src="../assets/hpac-logo.png" width="260" height="125" alt="HPAC" class="h-16 w-auto">
+			<img src="./assets/hpac-logo.png" width="260" height="125" alt="HPAC" class="h-16 w-auto">
 			<button
 				id="theme-toggle"
 				type="button"

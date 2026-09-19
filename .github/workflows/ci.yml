@@ -174,10 +174,13 @@ jobs:
       # coverlet.runsettings excludes generated code. Without it the API reports
       # 4.8% while Program.cs is at 100%, because the OpenApi source generator
       # emits ~440 lines into obj/ that no test will ever run.
+      # @ui-tagged scenarios execute via playwright-bdd, not Reqnroll — see
+      # ADR-0053 and the matching filter on the `test` job's `dotnet test` step.
       - name: Collect .NET coverage
         run: >
           dotnet test HpacSafety.slnx
           --configuration Release
+          --filter "Category!=ui"
           --collect:"XPlat Code Coverage"
           --settings coverlet.runsettings
           --results-directory ./artifacts/coverage

@@ -38,6 +38,7 @@ Thumbs.db
 /graphify-out/
 /.graphify-tool/
 /.graphify-version
+/.graphify-agent
 /.gitattributes
 
 # Agent-created git worktrees are clone-local, not repo content.

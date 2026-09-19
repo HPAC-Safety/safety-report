@@ -128,6 +128,14 @@
 			]
 		},
 		{
+			"description": "@vitejs/plugin-react's major version is peer-locked to vite's (6.x requires vite ^8.0.0) — a solo bump of either breaks npm's peer resolution (#119). Move them together, same reasoning as EntityFrameworkCore/Npgsql below.",
+			"groupName": "Vite",
+			"matchPackageNames": [
+				"vite",
+				"@vitejs/plugin-react"
+			]
+		},
+		{
 			"groupName": "Magick.NET",
 			"matchPackageNames": [
 				"/^Magick\\.NET/"

@@ -4,12 +4,14 @@ name: Deploy API
 # by #32 (AWS bootstrap) and #30 (live deployment). Everything below is wired
 # except the AWS calls, which are commented out and marked TODO(#30).
 #
-# Runs only after CI has gone green on main. Never deploy a red build.
+# Auto-trigger on CI success is disabled until #30 lands real deploy infra —
+# every run currently fails at migrate/deploy by design. Re-add the
+# workflow_run block below once that infra exists.
+#   workflow_run:
+#     workflows: [CI]
+#     types: [completed]
+#     branches: [main]
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:

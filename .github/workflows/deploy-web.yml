@@ -13,11 +13,15 @@ name: Deploy Web
 # Nothing here is a security boundary. The admin bundle is static assets holding
 # no report data; every byte a reviewer sees comes from the API, which authorizes
 # each request (#24).
+#
+# Auto-trigger on CI success is disabled until #30 lands real deploy infra —
+# every run currently fails by design. Re-add the workflow_run block below
+# once that infra exists.
+#   workflow_run:
+#     workflows: [CI]
+#     types: [completed]
+#     branches: [main]
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       site:

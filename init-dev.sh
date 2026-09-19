@@ -431,14 +431,129 @@ fi
 
 # ------------------------------------------------------------------ graphify --
 #
-# Optional, agent tooling only. Check-only, like skillfile above: this script
-# never auto-installs it. Ingestion (`/graphify <path>`) is a Claude Code skill
-# workflow driven by an agent, not a flat CLI command, so it cannot be invoked
-# from here — do not add an "invoke ingestion" step to this script.
+# Optional, agent tooling only. Check-only for the CLI itself, like skillfile
+# above: this script never auto-installs graphify. Once it is present, though:
+# `graphify extract` builds the graph on a fresh clone and incrementally
+# refreshes it on every later run (manifest-based, so a rerun with nothing
+# changed is cheap). Unlike `graphify update` (code only, no LLM), extract
+# also ingests docs — ADRs, features/*.feature, everything under docs/ — which
+# this repository relies on as its design authority, so it needs an LLM
+# backend. When the `claude` CLI is on PATH, `--backend claude-cli` drives it
+# headless through the contributor's own Claude Code login — no separate API
+# key. Without `claude`, extract needs one of its API-key backends
+# (GEMINI_API_KEY, ANTHROPIC_API_KEY, ...; see `graphify extract --help`) and
+# fails fast with a clear message when none is set — reported as a note,
+# since graphify itself, let alone a configured backend, is optional.
+# `graphify <platform> install` registers it with the
+# contributor's agent, and `graphify hook install` keeps the graph current
+# between runs, on every commit/pull (code only — re-run `graphify extract`
+# by hand after doc/ADR changes, same as the hook's own log tells you to).
+# All three are idempotent, so it is safe to run every time. The chosen
+# platform is cached in .graphify-agent (clone-local, gitignored) so a second
+# run re-registers silently instead of asking again. Extraction also needs
+# tree-sitter-hcl for this repository's Terraform files, an optional extra
+# graphify does not install by default — installed the same way as graphify
+# itself (uv tool, falling back to pip), into graphify's own environment.
 
 heading "graphify (optional)"
+
+GRAPHIFY_AGENT_FILE="$REPO_ROOT/.graphify-agent"
+
 if have graphify; then
 	ok "graphify is installed"
+
+	if [ "$CHECK_ONLY" -eq 1 ]; then
+		note "skipped: --check does not build the graph, install a git hook, install extraction extras, or register an agent"
+	else
+		# This repository has Terraform (see manage-hpac-infrastructure), and
+		# extracting .tf/.hcl/.tfvars needs tree-sitter-hcl, an optional extra
+		# graphify does not pull in by default. Probed inside graphify's own
+		# uv-tool environment so this stays a no-op once installed, instead of
+		# an `--upgrade` network check on every run.
+		if have uv && uv tool run --from graphifyy python3 -c 'import tree_sitter_hcl' >/dev/null 2>&1; then
+			ok "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+		elif have uv; then
+			if uv tool install --upgrade "graphifyy[terraform]" -q; then
+				added "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+			else
+				note "could not install tree-sitter-hcl — .tf/.hcl/.tfvars files will not be indexed"
+			fi
+		elif python3 -c 'import tree_sitter_hcl' >/dev/null 2>&1; then
+			ok "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+		elif have python3; then
+			if python3 -m pip install --quiet "graphifyy[terraform]"; then
+				added "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+			else
+				note "could not install tree-sitter-hcl — .tf/.hcl/.tfvars files will not be indexed"
+			fi
+		else
+			note "graphify terraform/HCL extraction support needs uv or python3 — neither is installed"
+		fi
+
+		GRAPHIFY_HAD_GRAPH=0
+		[ -d "$REPO_ROOT/graphify-out" ] && GRAPHIFY_HAD_GRAPH=1
+		say "  building/updating the graphify graph, including docs and ADRs (this can take a while the first time)"
+		if have claude; then
+			GRAPHIFY_EXTRACT_BACKEND='--backend claude-cli'
+		else
+			GRAPHIFY_EXTRACT_BACKEND=''
+		fi
+		# shellcheck disable=SC2086
+		if graphify extract "$REPO_ROOT" $GRAPHIFY_EXTRACT_BACKEND; then
+			if [ "$GRAPHIFY_HAD_GRAPH" -eq 1 ]; then
+				ok "graphify graph up to date"
+			else
+				added "graphify graph built"
+			fi
+		elif [ -n "$GRAPHIFY_EXTRACT_BACKEND" ]; then
+			note "graphify extract --backend claude-cli failed — run it directly to see why"
+		else
+			note "graphify extract failed — install the claude CLI, or set an LLM backend API key (see: graphify extract --help)"
+		fi
+
+		GRAPHIFY_PLATFORM=''
+		if [ -s "$GRAPHIFY_AGENT_FILE" ]; then
+			GRAPHIFY_PLATFORM=$(cat "$GRAPHIFY_AGENT_FILE")
+		elif [ -t 0 ]; then
+			say "  Which AI agent are you using?"
+			say "    1) Claude Code"
+			say "    2) Cursor"
+			say "    3) GitHub Copilot"
+			say "    4) Codex"
+			say "    5) Gemini CLI"
+			say "    6) other (see: graphify install --help)"
+			say "    0) skip"
+			printf '  > '
+			read -r GRAPHIFY_CHOICE < /dev/tty
+			case "$GRAPHIFY_CHOICE" in
+				1) GRAPHIFY_PLATFORM=claude ;;
+				2) GRAPHIFY_PLATFORM=cursor ;;
+				3) GRAPHIFY_PLATFORM=copilot ;;
+				4) GRAPHIFY_PLATFORM=codex ;;
+				5) GRAPHIFY_PLATFORM=gemini ;;
+				6) printf '  platform name: '
+				   read -r GRAPHIFY_PLATFORM < /dev/tty ;;
+				*) GRAPHIFY_PLATFORM='' ;;
+			esac
+		else
+			note "skipped: not running in a terminal — no agent to register"
+		fi
+
+		if [ -n "$GRAPHIFY_PLATFORM" ]; then
+			if graphify "$GRAPHIFY_PLATFORM" install >/dev/null 2>&1; then
+				printf '%s\n' "$GRAPHIFY_PLATFORM" > "$GRAPHIFY_AGENT_FILE"
+				added "graphify registered with $GRAPHIFY_PLATFORM"
+			else
+				note "graphify $GRAPHIFY_PLATFORM install failed — run it directly to see why"
+			fi
+		fi
+
+		if graphify hook install >/dev/null 2>&1; then
+			ok "graphify git hook installed"
+		else
+			note "graphify hook install failed — run it directly to see why"
+		fi
+	fi
 else
 	note "graphify is not installed — install with: uv tool install --upgrade graphifyy -q (or: python3 -m pip install graphifyy -q)"
 fi

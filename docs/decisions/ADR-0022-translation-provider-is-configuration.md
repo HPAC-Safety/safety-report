@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: translation provider, DeepL, configuration
+---
+
 # ADR-0022 — DeepL, behind a one-file adapter, after GitHub Models was retired
 
 **Status:** Accepted only for application UI catalogue generation. Runtime

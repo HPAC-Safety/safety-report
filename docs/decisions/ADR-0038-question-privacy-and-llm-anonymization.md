@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: privacy, LLM, anonymization, question bank
+---
+
 # ADR-0038 — Question privacy partitions an LLM-only anonymization request
 
 **Status:** Superseded in part by the

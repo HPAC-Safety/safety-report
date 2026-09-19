@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: authentication, IMemberAuthenticator, credential proxy, HPAC membership
+---
+
 # ADR-0005 — Credential proxy for admin authentication
 
 **Status:** Accepted, with a planned replacement

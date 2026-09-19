@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: code coverage, coverage gate, CI
+---
+
 # ADR-0014 — Coverage: an absolute floor plus a ratchet, from main's last artifact
 
 **Status:** Accepted

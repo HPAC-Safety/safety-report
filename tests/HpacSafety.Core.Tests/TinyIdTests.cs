@@ -1,4 +1,3 @@
-using HpacSafety.Core.SharedKernel;
 
 using Shouldly;
 

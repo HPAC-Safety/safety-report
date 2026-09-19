@@ -99,5 +99,5 @@ public sealed class SummarizationInputTests
     }
 
     private static Type[] ParametersOf(Type port) =>
-        port.GetMethods().SelectMany(method => method.GetParameters()).Select(parameter => parameter.ParameterType).ToArray();
+        [.. port.GetMethods().SelectMany(method => method.GetParameters()).Select(parameter => parameter.ParameterType)];
 }

@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: theming, design tokens, Tailwind, dark mode
+---
+
 # ADR-0006 — Tailwind v4 standalone CLI
 
 **Status:** Accepted

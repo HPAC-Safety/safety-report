@@ -1,6 +1,5 @@
 
 using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
@@ -13,7 +12,7 @@ public class ReportAnswer
 {
     // Not readonly: option codes are a primitive collection, which EF Core
     // assigns to the backing field rather than adding into an existing list.
-    private List<string> _selectedOptionCodes = [];
+    private readonly List<string> _selectedOptionCodes = [];
 
     // EF Core materializes an entity by calling this constructor and then
     // setting every mapped property and backing field directly. It exists for

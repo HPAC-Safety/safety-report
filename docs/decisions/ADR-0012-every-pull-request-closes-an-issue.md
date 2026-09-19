@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: pull requests, issues, delivery workflow
+---
+
 # ADR-0012 — Every pull request closes an issue, enforced in CI
 
 **Status:** Accepted

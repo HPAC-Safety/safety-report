@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using HpacSafety.Core;
 
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 

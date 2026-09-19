@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: translation, CI, localization, pull request
+---
+
 # ADR-0021 — The CI translation job opens a pull request, and never translates on one
 
 **Status:** Accepted only for stable application UI catalogues. It does not

@@ -1,5 +1,4 @@
 
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.QuestionBank;
 
@@ -326,7 +325,7 @@ public class Question
 
     /// <summary>The current revision's option set, in order, as input for a new revision.</summary>
     private List<QuestionOptionInput> CurrentOptions() =>
-        CurrentRevision.Options.Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr)).ToList();
+        [.. CurrentRevision.Options.Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr))];
 
     private void EnsureNotDeleted()
     {

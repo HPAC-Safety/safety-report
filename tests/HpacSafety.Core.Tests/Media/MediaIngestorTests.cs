@@ -1,7 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using Shouldly;
 
 namespace HpacSafety.Core.Tests.Media;

@@ -1,4 +1,4 @@
-namespace HpacSafety.Core.SharedKernel;
+namespace HpacSafety.Core;
 
 /// <summary>
 /// Thrown when an operation would break a domain rule — publishing a report

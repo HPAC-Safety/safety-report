@@ -1,4 +1,4 @@
-namespace HpacSafety.Core.SharedKernel;
+namespace HpacSafety.Core;
 
 /// <summary>
 /// One of the two official locales, <c>en-CA</c> and <c>fr-CA</c>. A value

@@ -15,11 +15,20 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 
 ## Document
 
-- `/features` describes the target.
+- `/features` describes the target. Every user-facing requirement is covered by
+  a scenario in a `.feature` file. This is mandatory, not discretionary — if a
+  change adds or changes behavior, add or update the scenario in the same PR.
 - Component READMEs describe their scope and current implementation status
   without duplicating the specification.
-- ADRs are historical rationale. Add one only for a durable decision whose
-  trade-off will not be clear from `/features` and code.
+- ADRs are historical rationale, one per durable architectural decision
+  (technology choice, rejected alternative, durable trade-off). This is
+  mandatory, not discretionary — if a change makes such a decision, add the ADR
+  in the same PR. A routine implementation detail with no rejected alternative
+  does not need one.
+- Never restate a `.feature` scenario's acceptance criteria inside an ADR, and
+  never justify a technology/pattern choice inside a `.feature` file or its
+  README — keep decision rationale and behavior requirements in their own
+  document.
 - Update issue acceptance criteria when the design changes; do not leave a
   conflicting backlog item open.
 - Never include real report content or personal information.

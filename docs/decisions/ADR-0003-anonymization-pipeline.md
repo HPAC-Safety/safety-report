@@ -1,3 +1,10 @@
+---
+status: superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: anonymization, PII, five-stage pipeline, superseded
+---
+
 # ADR-0003 — Five-stage anonymization, deterministic first
 
 **Status:** Superseded by the

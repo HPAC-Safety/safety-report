@@ -1,4 +1,4 @@
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 using HpacSafety.Infrastructure.Persistence.Seeding;
 
 using Shouldly;

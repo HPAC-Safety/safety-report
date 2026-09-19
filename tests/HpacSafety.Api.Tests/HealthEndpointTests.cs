@@ -11,11 +11,9 @@ namespace HpacSafety.Api.Tests;
 /// The endpoint under test is trivial; the harness is not, and this is what
 /// proves the harness works before any real endpoint depends on it.
 /// </summary>
-public class HealthEndpointTests : IClassFixture<WebApplicationFactory<Program>>
+public class HealthEndpointTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
 {
-    private readonly WebApplicationFactory<Program> _factory;
-
-    public HealthEndpointTests(WebApplicationFactory<Program> factory) => _factory = factory;
+    private readonly WebApplicationFactory<Program> _factory = factory;
 
     [Fact]
     public async Task Given_the_api_is_running_When_health_is_requested_Then_it_returns_ok()

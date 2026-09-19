@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: publication, human review, moderation, safety officer
+---
+
 # ADR-0004 — Mandatory human review before publication
 
 **Status:** Accepted

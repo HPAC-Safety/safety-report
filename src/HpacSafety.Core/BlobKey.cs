@@ -1,4 +1,4 @@
-namespace HpacSafety.Core.SharedKernel;
+namespace HpacSafety.Core;
 
 /// <summary>
 /// The name of one object in private storage, in one of exactly three shapes:

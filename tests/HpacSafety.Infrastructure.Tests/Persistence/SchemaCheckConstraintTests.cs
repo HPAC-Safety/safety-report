@@ -43,7 +43,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
 
         // When
-        var inserting = () => ExecuteAsync(connectionString, sql);
+        Task inserting() => ExecuteAsync(connectionString, sql);
 
         // Then
         var exception = await Should.ThrowAsync<PostgresException>(inserting);
@@ -60,7 +60,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
             "INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr3', 'en-CA', 'pending_review', @at)");
 
         // When
-        var inserting = () => ExecuteAsync(
+        Task inserting() => ExecuteAsync(
             connectionString,
             "INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by, approved_at, generated_at, updated_at) " +
             "VALUES ('ssssssssss1', 'rrrrrrrrrr3', 'en', 'fr', 'model', 'v1', 'aaaaaaaaaa2', NULL, @at, @at)");
@@ -80,7 +80,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
             "INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr4', 'en-CA', 'pending_review', @at)");
 
         // When
-        var inserting = () => ExecuteAsync(
+        Task inserting() => ExecuteAsync(
             connectionString,
             "INSERT INTO report_files (id, report_id, kind, blob_key, content_type, byte_size, uploaded_at, exif_stripped_at, stripped_blob_key) " +
             "VALUES ('ffffffffff1', 'rrrrrrrrrr4', 'image', 'original/x', 'image/jpeg', 1, @at, @at, NULL)");
@@ -100,7 +100,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
             "INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr5', 'en-CA', 'pending_review', @at)");
 
         // When
-        var inserting = () => ExecuteAsync(
+        Task inserting() => ExecuteAsync(
             connectionString,
             "INSERT INTO report_files (id, report_id, kind, blob_key, content_type, byte_size, uploaded_at) " +
             "VALUES ('ffffffffff2', 'rrrrrrrrrr5', 'audio', 'original/x', 'audio/mpeg', 1, @at)");
@@ -120,7 +120,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
             "INSERT INTO questions (id, key, is_system, role, created_at) VALUES ('qqqqqqqqqq2', 'some_key', FALSE, 'none', @at)");
 
         // When
-        var inserting = () => ExecuteAsync(
+        Task inserting() => ExecuteAsync(
             connectionString,
             "INSERT INTO question_revisions " +
             "(id, question_id, revision_number, type, is_system, is_required, is_private, is_active, display_order, label_en, label_fr, created_at) " +
@@ -148,7 +148,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
             "UPDATE admin_users SET deleted = @at WHERE id = 'aaaaaaaaaa3'");
 
         // When
-        var readding = () => ExecuteAsync(
+        Task readding() => ExecuteAsync(
             connectionString,
             "INSERT INTO admin_users (id, member_identifier, role, is_active, created_at) " +
             "VALUES ('aaaaaaaaaa4', 'officer@example.test', 'safety_officer', TRUE, @at)");

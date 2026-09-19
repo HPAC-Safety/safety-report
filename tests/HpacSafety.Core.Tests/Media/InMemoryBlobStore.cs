@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Tests.Media;
 

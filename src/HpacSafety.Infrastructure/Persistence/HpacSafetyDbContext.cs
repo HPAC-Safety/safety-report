@@ -1,8 +1,8 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence.Configurations;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
@@ -23,7 +23,9 @@ namespace HpacSafety.Infrastructure.Persistence;
 /// Storage and transport encryption are managed by PostgreSQL and TLS; this
 /// context holds no application-side cipher. See ADR-0019 (superseded).
 /// </remarks>
-public class HpacSafetyDbContext : DbContext
+/// <remarks>Creates the context.</remarks>
+/// <param name="options">Provider and connection options.</param>
+public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) : DbContext(options)
 {
     /// <summary>
     /// How many times a save will mint fresh identifiers and try again. Three
@@ -40,13 +42,6 @@ public class HpacSafetyDbContext : DbContext
     /// at more than one kind of thing. EF cannot fix these up, so a retry does.
     /// </summary>
     private static readonly string[] LooseReferences = ["AggregateId", "TargetId"];
-
-    /// <summary>Creates the context.</summary>
-    /// <param name="options">Provider and connection options.</param>
-    public HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options)
-        : base(options)
-    {
-    }
 
     /// <summary>Occurrence reports.</summary>
     public DbSet<Report> Reports => Set<Report>();

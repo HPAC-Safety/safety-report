@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: Terraform, infrastructure as code, state locking
+---
+
 # ADR-0010 — Terraform, with a scripted one-time bootstrap
 
 **Status:** Accepted for Terraform/bootstrap and S3-native locking; narrowed by

@@ -1,4 +1,4 @@
-namespace HpacSafety.Core.SharedKernel;
+namespace HpacSafety.Core;
 
 /// <summary>
 /// Which of a report's three media compartments a blob lives in. The

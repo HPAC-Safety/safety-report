@@ -28,6 +28,11 @@ through issue #82. The audited implementation baseline is main at
 5. A future decision that changes the design must update the canonical page,
    implementation-status matrix, issue traceability, and affected tests in the
    same pull request.
+6. Every user-facing requirement gets a `.feature` scenario; every durable
+   architectural decision gets an ADR under `docs/decisions/`. Neither is
+   optional, and neither substitutes for the other: a `.feature` file never
+   argues why a technology or pattern was chosen, and an ADR never restates
+   acceptance criteria.
 
 Source, tests, historical ADRs, and issue history remain useful audit evidence.
 Active READMEs, skills, and the Worker prompt are kept aligned with this

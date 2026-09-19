@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: outbox pattern, worker, async processing, transactional consistency
+---
+
 # ADR-0002 — Transactional outbox for AI processing
 
 **Status:** Accepted

@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: blob storage, presigned URLs, S3, privacy
+---
+
 # ADR-0026: Every blob is reached through a short-lived pre-signed URL
 
 **Status:** Superseded for submission by the

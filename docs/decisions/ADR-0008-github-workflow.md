@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: GitHub workflow, branch protection, rulesets, CI
+---
+
 # ADR-0008 — Rulesets, and no CODEOWNERS
 
 **Status:** Accepted

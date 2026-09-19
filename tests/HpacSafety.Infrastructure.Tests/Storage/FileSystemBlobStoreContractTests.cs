@@ -1,4 +1,4 @@
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 using HpacSafety.Infrastructure.Storage;
 
 namespace HpacSafety.Infrastructure.Tests.Storage;

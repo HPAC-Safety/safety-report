@@ -1,5 +1,5 @@
-using HpacSafety.Core.SharedKernel;
 
+using HpacSafety.Core;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace HpacSafety.Infrastructure.Persistence.Conversions;

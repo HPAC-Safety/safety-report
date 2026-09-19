@@ -1,6 +1,6 @@
 using System.Text;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Media;
 using HpacSafety.Infrastructure.Tests.Media;
 using ImageMagick;

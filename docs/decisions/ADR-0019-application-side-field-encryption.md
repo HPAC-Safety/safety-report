@@ -1,3 +1,10 @@
+---
+status: superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: encryption, field cipher, superseded
+---
+
 # ADR-0019: Report values are encrypted by the application, not by the database
 
 **Status:** Superseded by

@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: date/time types, banned API, DateOnly
+---
+
 # ADR-0035 — `DateOnly`, `DateTimeOffset`, `TimeOnly`; `DateTime` is banned
 
 **Status:** Accepted for date/time types. Typed ordinary-answer projections

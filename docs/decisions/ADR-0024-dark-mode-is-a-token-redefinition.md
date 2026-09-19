@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: dark mode, design tokens, CSS
+---
+
 # ADR-0024 — Dark mode is a token redefinition, not a variant
 
 **Status:** Accepted

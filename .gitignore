@@ -37,3 +37,12 @@ appsettings.Development.local.json
 # OS
 .DS_Store
 Thumbs.db
+
+# Graphify tooling and output are clone-local.
+/graphify-out/
+/.graphify-tool/
+/.graphify-version
+/.gitattributes
+
+# Agent-created git worktrees are clone-local, not repo content.
+/.claude/worktrees/

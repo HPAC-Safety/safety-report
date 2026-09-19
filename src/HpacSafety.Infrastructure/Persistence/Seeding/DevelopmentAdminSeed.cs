@@ -1,7 +1,6 @@
 using System.Globalization;
-
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 

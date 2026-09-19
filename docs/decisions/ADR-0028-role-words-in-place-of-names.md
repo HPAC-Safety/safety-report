@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: anonymization, role words, identity replacement
+---
+
 # ADR-0028 — A name in a narrative becomes a role word, not a placeholder
 
 **Status:** Narrowed by the

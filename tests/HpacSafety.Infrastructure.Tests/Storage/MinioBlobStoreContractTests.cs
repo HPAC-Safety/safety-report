@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using Amazon.S3;
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 using HpacSafety.Infrastructure.Storage;
 using Testcontainers.Minio;
 

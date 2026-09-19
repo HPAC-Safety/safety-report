@@ -1,6 +1,6 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence.Seeding;
 
 using Microsoft.EntityFrameworkCore.Migrations;
@@ -56,7 +56,7 @@ public sealed class QuestionBankSeedTests
         var labels = seeded.Select(q => q.LabelEn).ToArray();
 
         // Then
-        labels.ShouldBe(Spec.Select(f => f.Label).ToArray());
+        labels.ShouldBe([.. Spec.Select(f => f.Label)]);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public sealed class QuestionBankSeedTests
         foreach (var (field, question) in Spec.Zip(seeded))
         {
             question.Options.Select(o => o.LabelEn).ToArray()
-                .ShouldBe(field.Choices.ToArray(), $"the choices on '{field.Label}'.");
+                .ShouldBe([.. field.Choices], $"the choices on '{field.Label}'.");
         }
     }
 

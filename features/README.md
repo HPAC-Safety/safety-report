@@ -8,7 +8,13 @@ behavior-describing page as a Cucumber-compliant `.feature` file
 doesn't fit Gherkin. A `features/<name>/` subfolder always contains a
 `.feature` file; a page with no testable scenarios belongs in `docs/`
 instead. It describes the deliberately small system the repository is
-intended to become. It was derived from a file-by-file audit of the 135
+intended to become.
+
+Scenarios execute as xUnit tests via Reqnroll
+([`tests/HpacSafety.Acceptance.Tests`](../tests/HpacSafety.Acceptance.Tests),
+[ADR-0049](../docs/decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)).
+An unimplemented scenario carries an `@ignore` tag; implementing it means
+writing its step definitions and removing that tag in the same PR. It was derived from a file-by-file audit of the 135
 tracked paths under `src/`, all 69 tracked paths under `tests/`, the
 repository guidance and runtime prompts, and every open and closed GitHub issue
 through issue #82. The audited implementation baseline is main at

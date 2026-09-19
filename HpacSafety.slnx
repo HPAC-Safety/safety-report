@@ -6,6 +6,7 @@
     <Project Path="src/HpacSafety.Worker/HpacSafety.Worker.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/HpacSafety.Acceptance.Tests/HpacSafety.Acceptance.Tests.csproj" />
     <Project Path="tests/HpacSafety.Anonymization.Tests/HpacSafety.Anonymization.Tests.csproj" />
     <Project Path="tests/HpacSafety.Api.Tests/HpacSafety.Api.Tests.csproj" />
     <Project Path="tests/HpacSafety.Core.Tests/HpacSafety.Core.Tests.csproj" />

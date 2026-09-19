@@ -14,6 +14,12 @@ npx playwright test
 Integration tests require Docker. Use deterministic model fakes and synthetic
 identities, reports, locations, and attachments; never commit real report data.
 
+`HpacSafety.Acceptance.Tests` runs the `features/**/*.feature` scenarios
+directly via Reqnroll ([ADR-0049](../docs/decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)),
+as part of the same `dotnet test HpacSafety.slnx` run. A scenario carries
+`@ignore` until its behavior is implemented; implementing it means writing its
+step definitions and removing that tag in the same PR.
+
 Target tests protect complete immutable questions, consent-only required
 behavior, final multipart mapping and atomicity, Turnstile/rate limiting, one
 strict bilingual model call, whole-identity role replacement, image/video

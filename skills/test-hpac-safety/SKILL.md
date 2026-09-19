@@ -9,6 +9,12 @@ Use xUnit, Shouldly, and `Given_..._When_..._Then_...` names. JavaScript uses
 `node:test`; browser journeys use Playwright. Generate synthetic report and file
 fixtures and never use real personal data.
 
+Scenarios in `features/**/*.feature` execute directly as xUnit tests via
+Reqnroll (`tests/HpacSafety.Acceptance.Tests`, ADR-0049). An unimplemented
+scenario carries `@ignore`; implementing its behavior means writing its step
+definitions and removing that tag in the same PR — never leave a scenario
+both un-ignored and unimplemented.
+
 Test observable contracts:
 
 - complete question revisions are immutable; latest-revision selection cannot

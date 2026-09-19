@@ -3,6 +3,7 @@ Feature: Domain and lifecycle
   publication, and soft deletion can remove it from that lifecycle at any
   point.
 
+  @ignore
   Scenario Outline: A report follows the defined lifecycle transitions
     Given a report is in state <from>
     When <event> occurs
@@ -21,12 +22,14 @@ Feature: Domain and lifecycle
       | Approved      | consent is yes and the report is not deleted   | Published     |
       | Published     | either summary text is edited                  | PendingReview |
 
+  @ignore
   Scenario: SummaryFailed remains visible to safety officers
     Given a report's summarization retries are exhausted
     When the report becomes SummaryFailed
     Then it remains visible in the safety officer review queue
     And it does not disappear because AI processing failed
 
+  @ignore
   Scenario: A report is publishable only when every invariant holds
     Given a report and its summary row are not deleted
     And ConsentPublish is exactly true
@@ -36,6 +39,7 @@ Feature: Domain and lifecycle
     When the public query evaluates the report
     Then the report is publishable
 
+  @ignore
   Scenario Outline: A report is not publishable when one invariant fails
     Given a report otherwise satisfies every publication invariant
     But <violation>
@@ -50,18 +54,21 @@ Feature: Domain and lifecycle
       | the pair has no current human approval        |
       | the report has been rejected                  |
 
+  @ignore
   Scenario: Editing a summary text unpublishes the report
     Given a report is Published
     When either the English or French summary text is edited
     Then the pair's approver and approval timestamp are cleared
     And the report immediately stops satisfying the publication invariant
 
+  @ignore
   Scenario: Negative consent still allows internal review
     Given a reporter has not consented to publication
     When the report is summarized and reviewed
     Then internal summarization and safety review proceed normally
     And the report can never satisfy the public query
 
+  @ignore
   Scenario: Soft deletion removes a report from every normal path
     Given a report exists in any lifecycle state
     When a safety officer soft-deletes it
@@ -71,36 +78,42 @@ Feature: Domain and lifecycle
     And public and normal admin queries hide the report immediately
     And there is no restore transition
 
+  @ignore
   Scenario: Deleting an admin user revokes access but preserves history
     Given an admin user is soft-deleted
     When the deletion transaction commits
     Then that admin's authorization is revoked
     And historical audit rows remain and may still reference that admin's ID
 
+  @ignore
   Scenario: A question revision can be deleted only when unreferenced
     Given a question revision is referenced by no answer, including answers on deleted reports
     When an Administrator deletes it
     Then the revision and its option children are stamped with one deleted timestamp
     And once any answer references a revision, that revision is never deletable again
 
+  @ignore
   Scenario: Raw reports are retained until explicit deletion
     Given a report has been submitted
     When no safety officer has deleted it
     Then the report is retained indefinitely
     And there is no scheduled report purge and no physical-delete path in the application
 
+  @ignore
   Scenario: Soft-deleted and private data remain under managed retention
     Given a report has been soft-deleted, or a question revision has a private original or derivative
     When that data is no longer reachable through normal application paths
     Then it remains under managed storage/database retention rather than being purged
     And backups of that data follow infrastructure policy
 
+  @ignore
   Scenario: Unreferenced quarantine objects expire without affecting reports
     Given a multipart request fails or is abandoned before the transaction commits
     When the resulting quarantine objects are never referenced by a report
     Then those objects may expire automatically through storage lifecycle rules
     And that operational cleanup does not change report retention
 
+  @ignore
   Scenario Outline: An audited action is recorded in the immutable audit log
     Given <action> occurs
     When the action completes

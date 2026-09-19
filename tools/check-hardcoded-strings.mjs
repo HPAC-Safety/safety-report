@@ -20,7 +20,7 @@ const COPY_ATTRIBUTES = ['aria-label', 'alt', 'title', 'placeholder']
 // theme-preview.html is a dev-only token demo with no user-facing copy (see
 // its own header comment) and is a .html file, so it is naturally out of
 // scope for this .tsx/.ts scanner. No other files are excluded.
-function collectSourceFiles(dir) {
+export function collectSourceFiles(dir) {
   const files = []
   for (const entry of readdirSync(dir)) {
     const path = join(dir, entry)
@@ -70,21 +70,32 @@ export function findViolations(source, filePath) {
   return violations
 }
 
-function main() {
-  const files = collectSourceFiles(ROOT)
-  const allViolations = files.flatMap((file) => findViolations(readFileSync(file, 'utf8'), file))
+/** Scans every `.ts`/`.tsx` file under `root` and returns all violations found. */
+export function scanRepository(root) {
+  const files = collectSourceFiles(root)
+  return { files, violations: files.flatMap((file) => findViolations(readFileSync(file, 'utf8'), file)) }
+}
 
-  if (allViolations.length > 0) {
-    for (const violation of allViolations) {
+/**
+ * Scans `root` and reports the result the way the command line does, without
+ * exiting the process — so a test can call this directly, in-process, and
+ * exercise both outcomes. Returns the exit code the command should use.
+ */
+export function main(root = ROOT) {
+  const { files, violations } = scanRepository(root)
+
+  if (violations.length > 0) {
+    for (const violation of violations) {
       console.error(
         `::error file=${violation.file},line=${violation.line}::Hardcoded user-facing string (${violation.reason}): "${violation.text}". Add it to locales/en-CA.json and read it via t().`,
       )
     }
-    process.exit(1)
+    return 1
   }
 
-  console.log(`${files.length} file(s) scanned in ${ROOT}. No hardcoded user-facing strings found.`)
+  console.log(`${files.length} file(s) scanned in ${root}. No hardcoded user-facing strings found.`)
+  return 0
 }
 
-const runAsCommand = process.argv[1]?.endsWith('check-hardcoded-strings.mjs') ?? false
-if (runAsCommand) main()
+const runAsCommand = String(process.argv[1]).endsWith('check-hardcoded-strings.mjs')
+if (runAsCommand) process.exit(main())

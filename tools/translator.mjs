@@ -199,6 +199,30 @@ const DEEPL_CODES = {
 	'fr-CA': 'FR-CA',
 }
 
+/**
+ * Wraps each `{placeholder}` in a tag DeepL is told to leave untouched, so
+ * "Showing {count} reports" cannot come back as "Showing {compte} reports".
+ * `tag_handling: 'xml'` makes DeepL parse the string as XML, so any literal
+ * `&`, `<`, `>` outside a placeholder is escaped first — otherwise it would
+ * be read as markup rather than text.
+ */
+function protectPlaceholders(text) {
+	const escaped = String(text)
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+	return escaped.replace(/\{[^{}]*\}/g, (placeholder) => `<ph>${placeholder}</ph>`)
+}
+
+/** Reverses {@link protectPlaceholders} on a translated string. */
+function unprotectPlaceholders(text) {
+	return String(text)
+		.replace(/<ph>([^<]*)<\/ph>/g, '$1')
+		.replaceAll('&lt;', '<')
+		.replaceAll('&gt;', '>')
+		.replaceAll('&amp;', '&')
+}
+
 /** DeepL, the provider decided in ADR-0022. */
 function deeplTranslator({ apiKey, endpoint, formality }) {
 	if (!apiKey) {
@@ -232,13 +256,17 @@ function deeplTranslator({ apiKey, endpoint, formality }) {
 	}
 
 	const buildRequest = (items, { source, target }) => ({
-		text: items.map(({ text }) => text),
+		text: items.map(({ text }) => protectPlaceholders(text)),
 		source_lang: codeFor(source),
 		target_lang: codeFor(target),
 		formality: chosenFormality,
 		// These are interface labels. DeepL "correcting" the capitalisation or
 		// the trailing space of a label is a change nobody asked for.
 		preserve_formatting: true,
+		// Required for `ignore_tags` to take effect. The `<ph>` tags come from
+		// protectPlaceholders above, wrapping every `{placeholder}` token.
+		tag_handling: 'xml',
+		ignore_tags: ['ph'],
 	})
 
 	/**
@@ -258,7 +286,9 @@ function deeplTranslator({ apiKey, endpoint, formality }) {
 					'Position is what maps a translation to its key, so this is not recoverable.',
 			)
 		}
-		return new Map(items.map(({ key }, index) => [key, String(translations[index].text)]))
+		return new Map(
+			items.map(({ key }, index) => [key, unprotectPlaceholders(translations[index].text)]),
+		)
 	}
 
 	return {

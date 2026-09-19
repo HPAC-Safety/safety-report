@@ -1,0 +1,37 @@
+# Local dev only. Not used by CI or production — see docs/decisions/ADR-0015
+# (init-dev.sh, machine bootstrap) and dev-up.sh (this file's counterpart,
+# builds the api image and brings these services up).
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_DB: hpac_safety
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  api:
+    image: hpacsafety-api:dev
+    pull_policy: never
+    depends_on:
+      - postgres
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres;Options=-c hpac.seed_development_admin=true"
+    ports:
+      - "8080:8080"
+
+  web:
+    image: nginx:alpine
+    depends_on:
+      - api
+    volumes:
+      - ./src/web/dist:/usr/share/nginx/html:ro
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres-data:

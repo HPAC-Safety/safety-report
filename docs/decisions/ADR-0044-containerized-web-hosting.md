@@ -7,13 +7,13 @@ keywords: AWS, Docker, Nginx, ECS Fargate, ALB, CloudFront, hosting
 
 # ADR-0044 — The web front end is a Docker container, not S3 + CloudFront
 
-**Status:** Accepted. Supersedes the static-site hosting portion of
-[ADR-0009](ADR-0009-hosting-on-aws.md) (S3 + CloudFront). The current target's
-separate-public/admin-sites shape
-([`web-localization-and-design`](../../features/web-localization-and-design/web-localization-and-design.feature))
-is unchanged; only the origin behind each site moves from S3 to a container.
-ADR-0031's now-superseded one-site/admin-as-a-route consolidation is not
-reinstated by this ADR.
+**Status:** Accepted, partially superseded by
+[ADR-0048](ADR-0048-one-website-admin-as-a-route.md). Supersedes the
+static-site hosting portion of [ADR-0009](ADR-0009-hosting-on-aws.md) (S3 +
+CloudFront): a container origin, not a bucket, is still correct. The
+*two-sites-two-containers* topology decided below is reversed by ADR-0048
+back to one site, one container — see that ADR for the current shape; the
+Nginx/container reasoning here otherwise stands.
 
 ## Context
 

@@ -1,13 +1,13 @@
 Feature: Web, localization, and design
-  The public and admin sites are separately deployed React/TypeScript
-  single-page applications that render bilingual content, preserve local
-  report state, and meet WCAG 2.2 AA.
+  The public form and the admin review queue are routes within one
+  React/TypeScript single-page application that renders bilingual content,
+  preserves local report state, and meets WCAG 2.2 AA.
 
-  Scenario: The public and admin sites are independently deployed
-    Given the product ships the public site and the admin site
-    Then they have separate origins/distributions and deployment permissions
-    And each is a React/TypeScript application built with Vite and served from its own containerized deployment
-    And loading either site requires JavaScript
+  Scenario: The admin review queue is a route on the one deployed site
+    Given the product ships one website
+    Then the public form and the admin review queue are routes within the same React/TypeScript application, built with Vite and served from one containerized deployment
+    And the admin route is reachable only after HPAC authentication, enforced by the API on every data request
+    And loading the site requires JavaScript
 
   Scenario Outline: The initial locale is selected in priority order
     Given a visitor has <signal>

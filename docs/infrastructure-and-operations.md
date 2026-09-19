@@ -6,12 +6,10 @@ Production is one deliberately small AWS environment in `ca-central-1`:
 
 ```mermaid
 flowchart TD
-    internet[Internet] --> publiccdn[Public CDN]
-    officers[Safety officers] --> admincdn[Admin CDN]
-    publiccdn --> alb[HTTPS load balancer]
-    admincdn --> alb
-    alb --> pubweb[ECS/Fargate<br/>Public web container]
-    alb --> adminweb[ECS/Fargate<br/>Admin web container]
+    internet[Internet] --> cdn[CDN]
+    officers[Safety officers] --> cdn
+    cdn --> alb[HTTPS load balancer]
+    alb --> web[ECS/Fargate<br/>Web container]
     alb --> api[Lambda API]
     worker[ECS/Fargate Worker] --> llm[Configured LLM provider]
     api --> rds[(RDS PostgreSQL)]
@@ -20,16 +18,17 @@ flowchart TD
     worker --> media
 ```
 
-The public and admin sites have separate ECS Fargate containers (React/
-TypeScript/Vite builds served by Nginx;
-[ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
-[ADR-0044](decisions/ADR-0044-containerized-web-hosting.md)), separate
-CloudFront distributions, and separate deployment jobs. The API, Worker, and
-both web sites run from container images, on different primitives — the API
-is a Lambda function (container image, behind the ALB via a Lambda target
-group; see
+The public form and the admin review queue are routes within one
+React/TypeScript/Vite build, served by one Nginx ECS Fargate container behind
+one CloudFront distribution
+([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
+[ADR-0044](decisions/ADR-0044-containerized-web-hosting.md),
+[ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). The API,
+Worker, and the web site run from container images, on different primitives —
+the API is a Lambda function (container image, behind the ALB via a Lambda
+target group; see
 [ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)),
-the Worker and each web site a separate ECS Fargate service. RDS and
+the Worker and the web site each a separate ECS Fargate service. RDS and
 attachment storage are private. Secrets Manager supplies runtime secrets.
 Terraform owns the topology; explicit migrations own schema changes.
 
@@ -40,10 +39,10 @@ features should be pruned when implementation aligns.
 
 ## Network and data protection
 
-Only the CloudFront distributions and the HTTPS ALB are public. The API
-Lambda function, the public/admin web containers, and Worker tasks are
-attached to private subnets; security groups narrowly allow API/Worker to RDS
-and necessary egress. S3 public access is blocked. Managed encryption is
+Only the CloudFront distribution and the HTTPS ALB are public. The API
+Lambda function, the web container, and Worker tasks are attached to private
+subnets; security groups narrowly allow API/Worker to RDS and necessary
+egress. S3 public access is blocked. Managed encryption is
 enabled for RDS, snapshots/backups, logs, secrets, and every bucket. TLS is
 required for browsers, HPAC authentication, AWS service access, database
 connections, and the model provider.
@@ -57,7 +56,7 @@ application code.
 
 Configuration includes database/storage endpoints, attachment count and 50 MB size
 limit, accepted attachment types, document malware scanner, trusted proxy
-networks, public/admin origins,
+networks, the site origin,
 cookie settings, rate limits/lockout, Turnstile site/secret settings, HPAC auth
 kill switch and hardcoded endpoint, model/prompt version, retry bounds, and
 stuck-work thresholds.
@@ -76,12 +75,12 @@ production mutation.
 
 On an approved main deployment:
 
-1. immutable API, Worker, public web, and admin web images are built and
-   pushed with the commit SHA;
+1. immutable API, Worker, and web images are built and pushed with the
+   commit SHA;
 2. a one-off migration task runs the reviewed migration and must succeed;
-3. the API (Lambda function), Worker, public web, and admin web (ECS
-   services) deploy independently using that image version and invalidate
-   only their own CloudFront distribution; and
+3. the API (Lambda function), Worker, and web (ECS services) deploy
+   independently using that image version, and the web deploy invalidates
+   the CloudFront distribution; and
 4. health/readiness checks confirm the rollout.
 
 Services never run migrations on startup. Rollback deploys a known image/static

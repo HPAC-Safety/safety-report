@@ -97,6 +97,6 @@ Worker.
    safe video derivatives.
 4. Implement member authentication, review UI/API, pair approval, deletion, and
    the exact public DTO.
-5. Complete both static sites and end-to-end bilingual/privacy tests.
+5. Complete both React/TypeScript sites and end-to-end bilingual/privacy tests.
 6. Prune and split infrastructure, deploy through explicit migration, and
    verify focused operational alerts.

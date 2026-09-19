@@ -10,6 +10,12 @@ keywords: Terraform, topology, infrastructure
 **Status:** Superseded by the
 [minimal infrastructure specification](../infrastructure-and-operations.md),
 which requires separate public/admin sites and removes SES/email resources.
+The S3 + CloudFront origin described below is further superseded by
+[ADR-0044](ADR-0044-containerized-web-hosting.md): each site's origin is now
+an ECS Fargate container, not a site bucket — and the current target has
+already reverted this ADR's one-site/admin-as-a-route consolidation back to
+separate public/admin sites, so ADR-0044 builds on that separation, not on
+this ADR's shape.
 
 **Supersedes, in part:**
 

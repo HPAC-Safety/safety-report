@@ -21,7 +21,11 @@ through issue #82. The audited implementation baseline is main at
    override this target.
 3. Issues and ADRs preserve history and rationale. A contradictory issue, ADR,
    README, prompt, skill, test, or implementation is superseded until it is
-   aligned with this specification.
+   aligned with this specification. This resolves *inherited* drift; it is not
+   license to introduce new drift — a feature file must never contradict an
+   accepted ADR, and a change to one that affects the other updates both in
+   the same pull request
+   ([ADR-0047](../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
 4. [Implementation status](../docs/implementation-status.md) records gaps explicitly.
    A documented target feature must not be described as already working merely
    because its domain scaffold exists.
@@ -51,7 +55,7 @@ specification rather than preserving competing designs.
 | Member authentication, authorization, review, and public feed | [Moderation, authentication, and publication](moderation-authentication-and-publication/moderation-authentication-and-publication.feature) |
 | Target records, naming, transactions, and query DTOs | [Data and persistence](../docs/data-and-persistence.md) |
 | HTTP surfaces, ports, and end-to-end data flow | [Interfaces and data flow](../docs/interfaces-and-data-flow.md) |
-| Static sites, bilingual behavior, design, and accessibility | [Web, localization, and design](web-localization-and-design/web-localization-and-design.feature) |
+| React/TypeScript sites, bilingual behavior, design, and accessibility | [Web, localization, and design](web-localization-and-design/web-localization-and-design.feature) |
 | Minimal AWS topology, deployment, secrets, and operations | [Infrastructure and operations](../docs/infrastructure-and-operations.md) |
 | Required tests and quality gates | [Testing and quality](../docs/testing-and-quality.md) |
 | Target-to-main gap analysis | [Implementation status](../docs/implementation-status.md) |

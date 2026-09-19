@@ -6,11 +6,13 @@ Production is one deliberately small AWS environment in `ca-central-1`:
 
 ```mermaid
 flowchart TD
-    internet[Internet] --> publiccdn[Public CDN + static bucket]
-    officers[Safety officers] --> admincdn[Admin CDN + static bucket]
+    internet[Internet] --> publiccdn[Public CDN]
+    officers[Safety officers] --> admincdn[Admin CDN]
     publiccdn --> alb[HTTPS load balancer]
     admincdn --> alb
-    alb --> api[ECS/Fargate API]
+    alb --> pubweb[ECS/Fargate<br/>Public web container]
+    alb --> adminweb[ECS/Fargate<br/>Admin web container]
+    alb --> api[Lambda API]
     worker[ECS/Fargate Worker] --> llm[Configured LLM provider]
     api --> rds[(RDS PostgreSQL)]
     worker --> rds
@@ -18,10 +20,18 @@ flowchart TD
     worker --> media
 ```
 
-The public and admin sites have separate static buckets/distributions and
-deployment jobs. The API and long-running Worker are separate container
-services. RDS and attachment storage are private. Secrets Manager supplies runtime
-secrets. Terraform owns the topology; explicit migrations own schema changes.
+The public and admin sites have separate ECS Fargate containers (React/
+TypeScript/Vite builds served by Nginx;
+[ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
+[ADR-0044](decisions/ADR-0044-containerized-web-hosting.md)), separate
+CloudFront distributions, and separate deployment jobs. The API, Worker, and
+both web sites run from container images, on different primitives — the API
+is a Lambda function (container image, behind the ALB via a Lambda target
+group; see
+[ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)),
+the Worker and each web site a separate ECS Fargate service. RDS and
+attachment storage are private. Secrets Manager supplies runtime secrets.
+Terraform owns the topology; explicit migrations own schema changes.
 
 No SES/email resources, messaging integrations, public attachment distribution,
 application encryption key, speculative queueing platform, or autoscaling
@@ -30,9 +40,10 @@ features should be pruned when implementation aligns.
 
 ## Network and data protection
 
-Only CDN/static origins and the HTTPS API load balancer are public. API and
-Worker tasks run in private subnets; security groups narrowly allow API/Worker
-to RDS and necessary egress. S3 public access is blocked. Managed encryption is
+Only the CloudFront distributions and the HTTPS ALB are public. The API
+Lambda function, the public/admin web containers, and Worker tasks are
+attached to private subnets; security groups narrowly allow API/Worker to RDS
+and necessary egress. S3 public access is blocked. Managed encryption is
 enabled for RDS, snapshots/backups, logs, secrets, and every bucket. TLS is
 required for browsers, HPAC authentication, AWS service access, database
 connections, and the model provider.
@@ -65,12 +76,13 @@ production mutation.
 
 On an approved main deployment:
 
-1. immutable API and Worker images are built and pushed with the commit SHA;
+1. immutable API, Worker, public web, and admin web images are built and
+   pushed with the commit SHA;
 2. a one-off migration task runs the reviewed migration and must succeed;
-3. the API and Worker services deploy independently using that image version;
-4. public and admin static artifacts deploy independently to their own buckets
-   and invalidate only their own distributions; and
-5. health/readiness checks confirm the rollout.
+3. the API (Lambda function), Worker, public web, and admin web (ECS
+   services) deploy independently using that image version and invalidate
+   only their own CloudFront distribution; and
+4. health/readiness checks confirm the rollout.
 
 Services never run migrations on startup. Rollback deploys a known image/static
 artifact; database migrations follow expand/contract compatibility when a

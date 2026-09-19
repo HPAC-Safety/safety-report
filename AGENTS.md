@@ -10,7 +10,11 @@ this file; edit only this file.
 Source and tests show the current implementation, while issues and ADRs
 preserve history. They do not override the specification. If a requested
 design change conflicts with `/features`, call out the conflict and update
-the affected specification pages before implementing it.
+the affected specification pages before implementing it. A feature file must
+never contradict an accepted ADR, in either direction: a new or updated ADR
+that changes what a feature file asserts updates that feature file in the
+same pull request
+([ADR-0047](docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
 
 The application receives real aviation occurrence reports containing personal
 and medical information. Keep the system small and treat every data boundary as
@@ -88,8 +92,9 @@ do not add `Co-Authored-By` trailers, and keep working until required checks are
 green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
 
 Use Shouldly for .NET assertions, Given/When/Then test structure, Mermaid for
-diagrams, locale catalogues for UI copy, and synthetic data in tests and docs.
-Never hand-edit generated files.
+diagrams ([ADR-0046](docs/decisions/ADR-0046-mermaid-for-diagrams.md)), locale
+catalogues for UI copy, and synthetic data in tests and docs. Never hand-edit
+generated files.
 
 ## Where to look
 

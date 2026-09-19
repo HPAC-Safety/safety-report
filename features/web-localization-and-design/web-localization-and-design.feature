@@ -1,11 +1,13 @@
 Feature: Web, localization, and design
-  The public and admin sites are separately deployed static sites that render
-  bilingual content, preserve local report state, and meet WCAG 2.2 AA.
+  The public and admin sites are separately deployed React/TypeScript
+  single-page applications that render bilingual content, preserve local
+  report state, and meet WCAG 2.2 AA.
 
   Scenario: The public and admin sites are independently deployed
     Given the product ships the public site and the admin site
     Then they have separate origins/distributions and deployment permissions
-    And neither requires a SPA framework, client router, Node production server, or bundler
+    And each is a React/TypeScript application built with Vite and served from its own containerized deployment
+    And loading either site requires JavaScript
 
   Scenario Outline: The initial locale is selected in priority order
     Given a visitor has <signal>
@@ -83,7 +85,7 @@ Feature: Web, localization, and design
 
   Scenario: Assets are self-hosted, never loaded from third-party CDNs
     Given the site renders fonts, styles, or imagery
-    Then Aleo, Poppins, and other assets are served as self-hosted WOFF2/ committed files
+    Then Aleo, Poppins, and other assets are bundled and served from the site's own origin, WOFF2 vendored via a committed npm lockfile
     And no asset is loaded from a third-party CDN
     And the current logo is a placeholder that may only be replaced with an approved HPAC asset
 
@@ -101,11 +103,6 @@ Feature: Web, localization, and design
     And focus is visible and status updates use appropriate live regions
     And motion respects reduced-motion and touch targets/contrast are sufficient
     And media previews are never required to complete a report
-
-  Scenario: Core content and navigation do not depend on JavaScript
-    Given a visitor loads the site
-    When JavaScript is unavailable
-    Then core content and navigation still render
 
   Scenario: A JavaScript failure never exposes or erases report data
     Given a script error occurs while a reporter is filling out the form

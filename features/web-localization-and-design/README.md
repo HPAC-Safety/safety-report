@@ -10,9 +10,11 @@ that doesn't fit Gherkin.
 - the admin site contains sign-in, review, question editing, and allowlist
   management.
 
-They may share committed assets and small JavaScript modules but have
-separate origins/distributions and deployment permissions. Both use semantic
-HTML, progressive plain JavaScript, and compiled Tailwind CSS.
+They may share committed assets and components but have separate
+origins/distributions and deployment permissions. Both are React/TypeScript
+applications built with Vite
+([ADR-0043](../../docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md)),
+using semantic HTML and compiled Tailwind CSS.
 
 ## Localization scope
 
@@ -24,6 +26,7 @@ not be machine-translated.
 
 ## Visual system
 
-Use the existing restrained HPAC token system: Tailwind standalone CLI, CSS
-custom-property tokens, Aleo for display headings, Poppins for
-interface/body copy. Target WCAG 2.2 AA across both themes and languages.
+Use the existing restrained HPAC token system: Tailwind v4 via
+`@tailwindcss/vite`, CSS custom-property tokens, Aleo for display headings,
+Poppins for interface/body copy. Target WCAG 2.2 AA across both themes and
+languages.

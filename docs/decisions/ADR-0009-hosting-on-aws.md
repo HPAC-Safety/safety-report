@@ -10,7 +10,12 @@ keywords: AWS, hosting, infrastructure, ca-central-1
 **Status:** Superseded in part by the
 [infrastructure specification](../infrastructure-and-operations.md).
 AWS `ca-central-1` remains; the target has separate public/admin static sites
-and no SES/email resources.
+and no SES/email resources. The API row is further superseded by
+[ADR-0042](ADR-0042-lambda-hosted-api-with-fargate-migration-path.md): the API
+runs on Lambda, not ECS Fargate. The Static sites row is further superseded by
+[ADR-0044](ADR-0044-containerized-web-hosting.md): the web front end runs in a
+Docker container on ECS Fargate behind the ALB, not S3. The Worker row is
+unchanged.
 
 ## Context
 
@@ -26,12 +31,12 @@ AWS, **`ca-central-1`** for every service that touches report data.
 
 | Concern | Service |
 |---|---|
-| API | ECS Fargate service behind an ALB |
+| API | ~~ECS Fargate service behind an ALB~~, superseded: **Lambda** container image behind the ALB (ADR-0042) |
 | Worker | ECS Fargate service, no load balancer |
 | Database | RDS PostgreSQL |
 | Uploads | S3, private bucket |
 | Email | SES |
-| Static sites | S3 + CloudFront — ~~one distribution each for public and admin~~, superseded: **one** site, admin as a route (ADR-0031) |
+| Static sites | ~~S3 + CloudFront~~ — superseded: **ECS Fargate container (Nginx)** per site behind the ALB, CloudFront kept as edge cache, sites remain separate (ADR-0044) |
 | Images | ECR |
 | Runtime secrets | Secrets Manager |
 | Deploy identity | IAM role assumed by GitHub Actions via OIDC |

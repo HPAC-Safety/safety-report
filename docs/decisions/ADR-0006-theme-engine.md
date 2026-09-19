@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell
 keywords: theming, design tokens, Tailwind, dark mode
@@ -7,7 +7,10 @@ keywords: theming, design tokens, Tailwind, dark mode
 
 # ADR-0006 — Tailwind v4 standalone CLI
 
-**Status:** Accepted
+**Status:** Superseded by
+[ADR-0043](ADR-0043-react-typescript-vite-web-front-end.md). The web front end
+now builds with Vite and React/TypeScript; Tailwind v4 stays, via
+`@tailwindcss/vite` instead of the standalone CLI.
 
 ## Context
 

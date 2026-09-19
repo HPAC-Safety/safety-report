@@ -18,6 +18,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 - `/features` describes the target. Every user-facing requirement is covered by
   a scenario in a `.feature` file. This is mandatory, not discretionary — if a
   change adds or changes behavior, add or update the scenario in the same PR.
+- A scenario carries `@ignore` until its behavior is implemented (ADR-0049).
+  Implementing it means writing its Reqnroll step definitions in
+  `tests/HpacSafety.Acceptance.Tests` and removing the `@ignore` tag, in the
+  same PR that implements the behavior.
 - Component READMEs describe their scope and current implementation status
   without duplicating the specification.
 - ADRs are historical rationale, one per durable architectural decision

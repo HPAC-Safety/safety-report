@@ -65,6 +65,14 @@
 		     groups them the same way. -->
 		<PackageVersion Include="Npgsql" Version="10.0.3" />
 	</ItemGroup>
+	<ItemGroup Label="Reqnroll">
+		<!-- Executes the Gherkin scenarios under features/ as xUnit tests. See
+		     ADR-0049. Reqnroll.Tools.MsBuild.Generation is the actual
+		     feature-file-to-code-behind compiler; Reqnroll.xUnit only wires the
+		     generated tests into xUnit. -->
+		<PackageVersion Include="Reqnroll.Tools.MsBuild.Generation" Version="3.3.4" />
+		<PackageVersion Include="Reqnroll.xUnit" Version="3.3.4" />
+	</ItemGroup>
 	<ItemGroup Label="Shouldly">
 		<!-- The assertion library for this repository. Not Assert.*, not FluentAssertions. -->
 		<PackageVersion Include="Shouldly" Version="4.3.0" />

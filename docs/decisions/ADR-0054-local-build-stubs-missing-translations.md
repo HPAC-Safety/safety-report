@@ -7,7 +7,12 @@ keywords: i18n, DeepL, translation, dev experience, ADR-0021
 
 # ADR-0054 — The local build stubs missing translations; CI still does the actual translating
 
-**Status:** Accepted
+**Status:** Accepted; its `.gitignore` consequence is narrowed by
+[ADR-0056](ADR-0056-fr-ca-locale-files-are-tracked-not-gitignored.md).
+`locales/fr-CA.json` and `locales/fr-CA.meta.json` are tracked files, not
+gitignored — the premise below that they were already committed was never
+true. Everything else in this ADR (the `#`-stub mechanism, the
+`predev`/`prebuild` hooks, `verifyLocales`'s checks) is unaffected.
 
 ## Context
 
@@ -56,11 +61,13 @@ does. A `#`-prefixed placeholder must never merge to main — if `--check`
 ever sees one, either the CI generation step didn't run for that key or
 someone hand-committed a local stub.
 
-`locales/fr-CA.json` and `locales/fr-CA.meta.json` are added to
-`.gitignore`. `.gitignore` has no effect on a path once it is genuinely
-tracked (a merge from main still updates it normally), so this only stops a
-developer's local, stub-filled copy from being accidentally `git add -A`'d
-before CI's real generation exists or has caught up.
+`locales/fr-CA.json` and `locales/fr-CA.meta.json` were added to
+`.gitignore` here, on the premise that they were already committed and the
+entry would only stop a developer's local, stub-filled copy from being
+accidentally `git add -A`'d. That premise was false — neither file had ever
+been committed — and the entry instead blocked CI's own commit of the real
+files. See [ADR-0056](ADR-0056-fr-ca-locale-files-are-tracked-not-gitignored.md),
+which removes the entry; they are ordinary tracked files.
 
 ## Why this choice
 
@@ -97,7 +104,8 @@ so it needs no special-casing in `translate-locale.mjs` beyond the new
 - `src/web/package.json`: `predev`/`prebuild` scripts added.
 - `tools/translate-locale.mjs`: `verifyLocales` rejects a `#`-prefixed
   committed value.
-- `.gitignore`: `locales/fr-CA.json`, `locales/fr-CA.meta.json` added.
+- `.gitignore`: `locales/fr-CA.json`, `locales/fr-CA.meta.json` added, later
+  removed by [ADR-0056](ADR-0056-fr-ca-locale-files-are-tracked-not-gitignored.md).
 - `features/web-localization-and-design/web-localization-and-design.feature`
   gains a scenario for this behavior.
 

@@ -20,10 +20,13 @@ contrast, and self-hosted assets.
   or until successful submit. Never persist or restore file inputs, and make no
   report-data write request before the final submission.
 - Submit one multipart request containing the JSON DTO and selected files.
-- Keep public and admin apps as separately built and deployed applications,
-  each in its own container
-  ([ADR-0044](../../docs/decisions/ADR-0044-containerized-web-hosting.md)).
+- Public and admin are routes within the same application, build, and
+  container ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
   Treat API authorization, not hidden markup, as the admin boundary.
+- No `<script>` tag in any HTML file contains JavaScript. Every script is an
+  external, type-checked `.ts` module under `src/web/src/`, referenced with
+  `<script type="module" src="...">`
+  ([ADR-0052](../../docs/decisions/ADR-0052-no-inline-script-typescript-only.md)).
 - Use design tokens rather than raw colors; dark mode redefines tokens rather
   than adding `dark:` variants
   ([ADR-0024](../../docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md)) —

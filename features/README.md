@@ -10,15 +10,20 @@ doesn't fit Gherkin. A `features/<name>/` subfolder always contains a
 instead. It describes the deliberately small system the repository is
 intended to become.
 
-Scenarios execute as xUnit tests via Reqnroll
+Scenarios without `@ui` execute as xUnit tests via Reqnroll
 ([`tests/HpacSafety.Acceptance.Tests`](../tests/HpacSafety.Acceptance.Tests),
 [ADR-0049](../docs/decisions/ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)).
-An unimplemented scenario carries an `@ignore` tag; implementing it means
-writing its step definitions and removing that tag in the same PR. A
-scenario also carrying `@ui` asserts browser-observable behavior and needs
-a Playwright companion test in that same PR
+A scenario tagged `@ui` asserts browser-observable behavior and executes
+instead through `playwright-bdd`
+([`tests/e2e/steps`](../tests/e2e/steps)), which reads these same `.feature`
+files directly — Reqnroll has no browser to assert against, so it is never
+used for a `@ui` scenario
 ([ADR-0045](../docs/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md),
-[ADR-0050](../docs/decisions/ADR-0050-ui-tag-for-scenarios-needing-playwright.md)).
+[ADR-0050](../docs/decisions/ADR-0050-ui-tag-for-scenarios-needing-playwright.md),
+[ADR-0053](../docs/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
+An unimplemented scenario carries an `@ignore` tag; implementing it means
+writing its step definitions — Reqnroll or `playwright-bdd`, whichever this
+scenario's tag calls for — and removing that tag in the same PR.
 It was derived from a file-by-file audit of the 135
 tracked paths under `src/`, all 69 tracked paths under `tests/`, the
 repository guidance and runtime prompts, and every open and closed GitHub issue

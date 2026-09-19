@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" PrivateAssets="all" IncludeAssets="build" />
     <PackageReference Include="Reqnroll.xUnit" />
+    <PackageReference Include="Shouldly" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>

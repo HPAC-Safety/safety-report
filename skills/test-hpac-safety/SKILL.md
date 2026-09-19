@@ -9,16 +9,20 @@ Use xUnit, Shouldly, and `Given_..._When_..._Then_...` names. JavaScript uses
 `node:test`; browser journeys use Playwright. Generate synthetic report and file
 fixtures and never use real personal data.
 
-Scenarios in `features/**/*.feature` execute directly as xUnit tests via
-Reqnroll (`tests/HpacSafety.Acceptance.Tests`, ADR-0049). An unimplemented
-scenario carries `@ignore`; implementing its behavior means writing its step
-definitions and removing that tag in the same PR — never leave a scenario
-both un-ignored and unimplemented. A scenario also tagged `@ui` asserts
-browser-observable behavior and needs a Playwright companion test in that
-same PR (ADR-0045, ADR-0050); a scenario without `@ui` needs only its
-Reqnroll step definitions. A scenario blending a client-observable
-assertion with a server-authoritative one splits into an `@ui` scenario and
-an untagged one rather than carrying both concerns together.
+Scenarios in `features/**/*.feature` without `@ui` execute directly as
+xUnit tests via Reqnroll (`tests/HpacSafety.Acceptance.Tests`, ADR-0049). A
+scenario tagged `@ui` asserts browser-observable behavior and executes
+instead through `playwright-bdd` in `tests/e2e/steps` — Reqnroll has no
+browser to assert against, so it is never the right tool for a `@ui`
+scenario (ADR-0053); `.github/workflows/ci.yml`'s `dotnet test` step
+excludes `@ui` by category filter so one is never attempted there. An
+unimplemented scenario carries `@ignore`; implementing its behavior means
+writing its step definitions — Reqnroll for a plain scenario,
+`tests/e2e/steps` for an `@ui` one — and removing that tag in the same PR —
+never leave a scenario both un-ignored and unimplemented. A scenario
+blending a client-observable assertion with a server-authoritative one
+splits into an `@ui` scenario and an untagged one rather than carrying both
+concerns together.
 
 Test observable contracts:
 

@@ -109,8 +109,13 @@ jobs:
       - name: init-dev.sh --check
         run: ./init-dev.sh --check
 
+      # @ui-tagged scenarios execute via playwright-bdd (tests/e2e), not
+      # Reqnroll — see ADR-0053. The filter excludes them here so an
+      # un-ignored @ui scenario with no C# step definitions never fails this
+      # job for lack of one; Reqnroll's xUnit generator emits a
+      # `[Trait("Category", tag)]` per Gherkin tag, which is what this filters on.
       - name: dotnet test
-        run: dotnet test HpacSafety.slnx --configuration Release
+        run: dotnet test HpacSafety.slnx --configuration Release --filter "Category!=ui"
 
       # The suite is passed as an explicit file list rather than as a
       # directory: `node --test tests/js` resolves the path as a module and

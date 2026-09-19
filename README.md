@@ -51,15 +51,22 @@ publication channels.
 
 | Area | Choice |
 |---|---|
-| API and Worker | .NET 10 / ASP.NET Core background services |
+| API and Worker | .NET 10 / ASP.NET Core |
 | Database | PostgreSQL with EF Core |
-| Web | Static HTML and JavaScript; Tailwind v4 standalone CLI |
+| Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite` |
 | Tests | xUnit, Shouldly, Testcontainers, `node:test`, Playwright |
-| Hosting target | Minimal AWS in `ca-central-1`, deployed through GitHub OIDC |
+| Hosting target | AWS `ca-central-1`, deployed through GitHub OIDC |
 
-The public form and authenticated review UI are separate static sites. Runtime
-data stays in Canada, object storage remains private, and migrations run as an
-explicit deployment step.
+One Vite/React app serves the public form as its default route and the
+authenticated review queue at `/admin`; the API's `admin_users` allowlist is
+the security boundary, not the delivery path
+([ADR-0048](docs/decisions/ADR-0048-one-website-admin-as-a-route.md)). The API
+runs as a container image on Lambda behind the ALB, sized for sparse traffic
+with a Fargate migration path if that changes
+([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)).
+The Worker and the one web container run as ECS Fargate services; CloudFront
+sits in front of the ALB. Runtime data stays in Canada, object storage remains
+private, and migrations run as an explicit deployment step.
 
 ## Getting started
 
@@ -94,7 +101,7 @@ Integration tests require Docker. See [`tests/README.md`](tests/README.md) and
 | Path | Purpose |
 |---|---|
 | [`features/`](features/README.md) | Canonical product and system specification |
-| [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and static web code |
+| [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and the React/Vite web app |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused project-specific coding-agent guidance |
 | [`docs/`](docs/architecture.md) | Concise operational notes and historical ADRs |

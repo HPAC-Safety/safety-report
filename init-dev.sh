@@ -438,10 +438,13 @@ fi
 # changed is cheap). Unlike `graphify update` (code only, no LLM), extract
 # also ingests docs — ADRs, features/*.feature, everything under docs/ — which
 # this repository relies on as its design authority, so it needs an LLM
-# backend API key (GEMINI_API_KEY, ANTHROPIC_API_KEY, ...; see
-# `graphify extract --help`) and fails fast with a clear message when none is
-# set — reported as a note, since graphify itself, let alone a configured
-# backend, is optional. `graphify <platform> install` registers it with the
+# backend. When the `claude` CLI is on PATH, `--backend claude-cli` drives it
+# headless through the contributor's own Claude Code login — no separate API
+# key. Without `claude`, extract needs one of its API-key backends
+# (GEMINI_API_KEY, ANTHROPIC_API_KEY, ...; see `graphify extract --help`) and
+# fails fast with a clear message when none is set — reported as a note,
+# since graphify itself, let alone a configured backend, is optional.
+# `graphify <platform> install` registers it with the
 # contributor's agent, and `graphify hook install` keeps the graph current
 # between runs, on every commit/pull (code only — re-run `graphify extract`
 # by hand after doc/ADR changes, same as the hook's own log tells you to).
@@ -462,14 +465,22 @@ if have graphify; then
 		GRAPHIFY_HAD_GRAPH=0
 		[ -d "$REPO_ROOT/graphify-out" ] && GRAPHIFY_HAD_GRAPH=1
 		say "  building/updating the graphify graph, including docs and ADRs (this can take a while the first time)"
-		if graphify extract "$REPO_ROOT"; then
+		if have claude; then
+			GRAPHIFY_EXTRACT_BACKEND='--backend claude-cli'
+		else
+			GRAPHIFY_EXTRACT_BACKEND=''
+		fi
+		# shellcheck disable=SC2086
+		if graphify extract "$REPO_ROOT" $GRAPHIFY_EXTRACT_BACKEND; then
 			if [ "$GRAPHIFY_HAD_GRAPH" -eq 1 ]; then
 				ok "graphify graph up to date"
 			else
 				added "graphify graph built"
 			fi
+		elif [ -n "$GRAPHIFY_EXTRACT_BACKEND" ]; then
+			note "graphify extract --backend claude-cli failed — run it directly to see why"
 		else
-			note "graphify extract failed — set an LLM backend API key (see: graphify extract --help), or run it directly to see why"
+			note "graphify extract failed — install the claude CLI, or set an LLM backend API key (see: graphify extract --help)"
 		fi
 
 		GRAPHIFY_PLATFORM=''

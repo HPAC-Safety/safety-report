@@ -103,14 +103,16 @@ jobs:
         with:
           node-version: 24
 
-      - name: Build stylesheet
+      # ADR-0043: one npm project at src/web, built with Vite. This step
+      # predates that decision by building src/web/public and src/web/admin
+      # as separate static subtrees (S3/CloudFront topology, ADR-0031); #30
+      # still needs to reconcile the sync step below with the single Vite
+      # bundle and container hosting from ADR-0044/ADR-0048.
+      - name: Build
         if: steps.gate.outputs.run == 'true'
         run: |
-          if [ -x tools/build-css.sh ]; then
-            ./tools/build-css.sh
-          else
-            echo "::warning::tools/build-css.sh does not exist yet — added by #10."
-          fi
+          npm --prefix src/web ci
+          npm --prefix src/web run build
 
       - if: steps.gate.outputs.run == 'true'
         uses: aws-actions/configure-aws-credentials@v6

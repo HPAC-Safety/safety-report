@@ -1,0 +1,12 @@
+{
+	"name": "hpac-safety-e2e",
+	"private": true,
+	"type": "module",
+	"description": "Playwright browser suite for src/web, run by ci.yml's e2e job.",
+	"scripts": {
+		"test": "playwright test"
+	},
+	"devDependencies": {
+		"@playwright/test": "1.63.0"
+	}
+}

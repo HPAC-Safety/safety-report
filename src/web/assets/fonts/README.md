@@ -1,6 +1,6 @@
 # fonts
 
-Poppins (UI) and Aleo (display), self-hosted. `src/web/styles/tailwind.css`
+Poppins (UI) and Aleo (display), self-hosted. `src/web/src/index.css`
 declares the `@font-face` rules; nothing here is referenced from anywhere else.
 
 **Not from `fonts.googleapis.com`.** Someone filing a report about a crash —
@@ -64,7 +64,7 @@ curl -sS -A "$UA" 'https://fonts.googleapis.com/css2?family=Poppins:wght@400;500
 ```
 
 Without the user-agent it answers with TTF. Copy the `unicode-range` values into
-`tailwind.css` alongside the new files — they move when Google re-cuts a subset,
+`index.css` alongside the new files — they move when Google re-cuts a subset,
 and a stale range means a character silently falls back to Helvetica.
 
 Then rebuild and check the page again with the network panel open: the only

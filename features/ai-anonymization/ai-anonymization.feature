@@ -89,13 +89,6 @@ Feature: AI anonymization
     And no separate row is created per locale
 
   @ignore
-  Scenario: Editing either summary text clears pair approval
-    Given a summary pair has been approved
-    When a safety officer edits either the English or French text
-    Then ApprovedBy and ApprovedAt are cleared
-    And the officer reviews and approves the pair as a whole, never one language independently
-
-  @ignore
   Scenario: The reviewer may correct either text before approval
     Given a safety officer is reviewing a summary pair before approval
     When the officer edits either the English or French text

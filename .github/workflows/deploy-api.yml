@@ -53,9 +53,6 @@ jobs:
   #   ECR_REPOSITORY_API          Image repository
   #   ECS_CLUSTER                 Deploy target cluster
   #   ECS_SERVICE_API             Deploy target service
-  #   ECS_TASK_DEFINITION_MIGRATE Task definition that runs EF Core migrations
-  #   ECS_SUBNETS                 Comma-separated subnet ids for the migrate task
-  #   ECS_SECURITY_GROUPS         Comma-separated security group ids
   #
   # Runtime secrets — ANTHROPIC_API_KEY, TURNSTILE_SECRET_KEY,
   # ConnectionStrings__Default, Notifications__To — are NOT here. They live in
@@ -81,10 +78,6 @@ jobs:
       # Needed because require-config is a local composite action.
       - uses: actions/checkout@v7
 
-      # ECS_TASK_DEFINITION_MIGRATE, ECS_SUBNETS, and ECS_SECURITY_GROUPS belong
-      # here even though only `migrate` reads them. The whole point of preflight
-      # is that a missing value fails by name, before anything is built — not
-      # deep inside an `aws ecs run-task` call two jobs later.
       - uses: ./.github/actions/require-config
         with:
           secrets: |
@@ -94,9 +87,6 @@ jobs:
             ECR_REPOSITORY_API=${{ vars.ECR_REPOSITORY_API }}
             ECS_CLUSTER=${{ vars.ECS_CLUSTER }}
             ECS_SERVICE_API=${{ vars.ECS_SERVICE_API }}
-            ECS_TASK_DEFINITION_MIGRATE=${{ vars.ECS_TASK_DEFINITION_MIGRATE }}
-            ECS_SUBNETS=${{ vars.ECS_SUBNETS }}
-            ECS_SECURITY_GROUPS=${{ vars.ECS_SECURITY_GROUPS }}
 
       - run: echo "Deploying $IMAGE_TAG to ${{ vars.ECS_SERVICE_API }} on ${{ vars.ECS_CLUSTER }}."
 
@@ -129,32 +119,13 @@ jobs:
           -p:ContainerRepository=${{ vars.ECR_REPOSITORY_API }}
           -p:ContainerImageTag=${{ env.IMAGE_TAG }}
 
-  # Migrations are their own job with an explicit dependency edge, and they run
-  # BEFORE the new task set takes traffic. Never at application startup — that
-  # races the moment more than one task boots.
-  migrate:
-    needs: image
-    runs-on: ubuntu-latest
-    environment: production
-    steps:
-      - uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Run EF Core migrations
-        run: |
-          echo "::error::TODO(#30): run the migration task and wait for it to exit 0."
-          echo "Shape:"
-          echo "  aws ecs run-task --cluster \$ECS_CLUSTER \\"
-          echo "    --task-definition \$ECS_TASK_DEFINITION_MIGRATE \\"
-          echo "    --launch-type FARGATE --network-configuration ... \\"
-          echo "    --overrides '{\"containerOverrides\":[{\"name\":\"migrate\",\"command\":[\"--migrate\"]}]}'"
-          echo "  then poll describe-tasks until STOPPED and assert exit code 0."
-          exit 1
-
+  # No dedicated migrate job. Per ADR-0055, the API and Worker each apply
+  # pending migrations themselves at startup through
+  # HpacSafetyDbContext.EnsureMigratedAsync, guarded by a PostgreSQL advisory
+  # lock so whichever of the two starts first after this deploy is the one
+  # that applies them.
   deploy:
-    needs: migrate
+    needs: image
     runs-on: ubuntu-latest
     environment: production
     steps:

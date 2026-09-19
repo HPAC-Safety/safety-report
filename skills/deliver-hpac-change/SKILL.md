@@ -1,14 +1,23 @@
 ---
 name: deliver-hpac-change
-description: Deliver HPAC Safety work through its issue, branch, documentation, pull-request, and CI workflow. Use when creating or editing issues, docs, branches, commits, PRs, or checks.
+description: Deliver HPAC Safety work through its issue, branch, documentation, pull-request, and CI workflow. Use when creating or editing issues, docs, worktrees, PRs, or checks.
 ---
 
 # Deliver an HPAC Safety change
 
 ## Start
 
-- Work from current `main` and a focused GitHub issue.
-- Name the branch `issue-<number>/<short-description>`.
+- Work from a focused GitHub issue.
+- Never create work directly on a branch in the primary checkout. Fetch fresh
+  `origin/main`, then create a git worktree off it at
+  `.claude/worktrees/issue-<number>/<short-description>` (already gitignored),
+  with a branch named `issue-<number>/<short-description>` inside it:
+  `git fetch origin main && git worktree add -b issue-<number>/<short-description> .claude/worktrees/issue-<number>/<short-description> origin/main`.
+  Multiple agents may be working in this repository at once; a worktree per
+  issue means no agent ever switches a branch out from under another one's
+  in-progress checkout.
+- Do all work for the issue inside that worktree. Remove it
+  (`git worktree remove`) once its PR has merged.
 - Read the affected `/features` pages before editing. Update them first if the
   target behavior is changing.
 - Preserve unrelated work in a dirty tree.
@@ -55,8 +64,8 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    (Playwright, Claude in Chrome) capturing the real running app, not a
    mockup. A new page/component (a CREATE) needs an after screenshot; a
    change to an existing one (an UPDATE) needs both before and after.
-7. Watch required checks, fix failures on the branch, and finish only when they
-   are green.
+7. Watch required checks, fix failures in the worktree, and finish only when
+   they are green.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,
 update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill

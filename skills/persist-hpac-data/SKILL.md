@@ -24,8 +24,26 @@ Follow [`../../docs/data-and-persistence.md`](../../docs/data-and-persistence.md
   ciphertext converters, and field-cipher ports.
 
 Migrations must support both a fresh database and the current-main upgrade
-path. Do not physically delete records, add restore behavior, or hide a schema
-change in runtime startup.
+path. Do not physically delete records or add restore behavior.
+
+## Schema changes, raw SQL, and migration application (ADR-0055)
+
+- Every schema change is an EF Core migration reviewed under
+  `src/HpacSafety.Infrastructure/Persistence/Migrations/`. No hand-written
+  DDL, and no other means of changing the schema.
+- Plain LINQ is fine for simple queries. A query that is hard to express or
+  maintain as LINQ (multi-table aggregation, a cross-cutting report) becomes a
+  PostgreSQL view or stored procedure instead of a large LINQ expression.
+- Any raw SQL — a view, a stored procedure, or a migration data-transform —
+  lives in its own `.sql` file under
+  `src/HpacSafety.Infrastructure/Persistence/Sql/`, not as an inline C#
+  string. Existing inline SQL in past migrations is not rewritten
+  retroactively.
+- There is no dedicated deploy-time migrate job. Both `HpacSafety.Api` and
+  `HpacSafety.Worker` call `HpacSafetyDbContext.EnsureMigratedAsync` at
+  startup, which takes a PostgreSQL advisory lock, re-checks pending
+  migrations after acquiring it, and applies them if still pending. This is
+  what makes "the Worker started before the API" after a deploy safe.
 
 ## Document schema changes with a Mermaid diagram
 

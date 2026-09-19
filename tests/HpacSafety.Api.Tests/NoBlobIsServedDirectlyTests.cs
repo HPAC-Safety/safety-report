@@ -17,7 +17,9 @@ namespace HpacSafety.Api.Tests;
 /// pull request that adds it.
 /// </para>
 /// </summary>
-public class NoBlobIsServedDirectlyTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+[Trait("Category", "Integration")]
+[Collection(SharedApiPostgres.Name)]
+public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
 {
     // Substrings that name a route delivering bytes rather than JSON. A new route
     // that legitimately matches one of these is a conversation, not a rename.
@@ -40,7 +42,7 @@ public class NoBlobIsServedDirectlyTests(WebApplicationFactory<Program> factory)
         "attachment",
     ];
 
-    private readonly WebApplicationFactory<Program> _factory = factory;
+    private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
     [Fact]
     public void Given_the_api_route_table_When_it_is_read_Then_no_route_serves_a_blob_directly()

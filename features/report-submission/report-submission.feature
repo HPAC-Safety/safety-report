@@ -8,7 +8,7 @@ Feature: Report submission
     And it accepts multipart/form-data with one report JSON part, zero or more files parts, and one Turnstile response token
     And the Turnstile token is transport/security metadata, not persisted report content
 
-  @ignore
+  @ignore @ui
   Scenario: The browser holds report state locally until submission
     Given a reporter is filling out the form
     When the reporter has not yet submitted
@@ -16,13 +16,13 @@ Feature: Report submission
     And image, video, and document attachments are never placed in browser storage
     And no server draft, report ID reservation, upload token, or resumable upload protocol exists
 
-  @ignore
+  @ignore @ui
   Scenario: A successful submission clears local browser state
     Given a reporter has entered answers in local browser storage
     When the final multipart request succeeds
     Then the browser clears that local state
 
-  @ignore
+  @ignore @ui
   Scenario: Expired local state is not restored
     Given local browser state is older than 15 days
     When the reporter returns to the form
@@ -113,12 +113,13 @@ Feature: Report submission
     Then the response is 202 Accepted with an opaque report ID and the status "submitted"
     And the response contains no raw answers or attachment URLs
 
-  @ignore
+  @ignore @ui
   Scenario: The UI prevents duplicate submission while a request is in flight
     Given a reporter has just submitted the form
     When the request is still in flight
-    Then the UI disables repeat submission
+    Then the UI shows bounded progress and disables repeat submission
     And retains local state if the network result is uncertain
+    And clears saved local state only after a definite 202 response
 
   @ignore
   Scenario: Submission is rejected without valid abuse-control checks

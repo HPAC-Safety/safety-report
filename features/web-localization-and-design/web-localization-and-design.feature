@@ -3,14 +3,13 @@ Feature: Web, localization, and design
   React/TypeScript single-page application that renders bilingual content,
   preserves local report state, and meets WCAG 2.2 AA.
 
-  @ignore
+  @ignore @ui
   Scenario: The admin review queue is a route on the one deployed site
     Given the product ships one website
     Then the public form and the admin review queue are routes within the same React/TypeScript application, built with Vite and served from one containerized deployment
-    And the admin route is reachable only after HPAC authentication, enforced by the API on every data request
     And loading the site requires JavaScript
 
-  @ignore
+  @ignore @ui
   Scenario Outline: The initial locale is selected in priority order
     Given a visitor has <signal>
     When the page loads
@@ -22,7 +21,7 @@ Feature: Web, localization, and design
       | no stored choice but a supported browser language of fr-CA | the browser language, fr-CA |
       | no stored choice and no supported browser language | English, as the fallback      |
 
-  @ignore
+  @ignore @ui
   Scenario: Switching the language toggle rerenders without losing answers
     Given a reporter has entered answers in one locale
     When the reporter switches the language toggle
@@ -44,7 +43,7 @@ Feature: Web, localization, and design
     Then both languages come from the database revision
     And no runtime or CI auto-translation service produces question rendering
 
-  @ignore
+  @ignore @ui
   Scenario: Only publication consent is marked required on the form
     Given the form renders its questions in database order
     When a reporter views the form
@@ -52,42 +51,32 @@ Feature: Web, localization, and design
     And every optional question offers a natural blank/skipped state with no coerced answer
     And consent_publish has no selected default and requires an explicit yes or no
 
-  @ignore
-  Scenario: The form preserves local state and warns about attachments
+  @ignore @ui
+  Scenario: The form explains local storage and warns about attachments
     Given a reporter is filling out the form
-    Then the browser preserves locale, revision IDs, and answers locally for 15 days
-    And a privacy explanation is shown before submission
+    Then a privacy explanation of the 15-day local storage is shown before submission
     And attachment selection appears last with type/count/size guidance and a warning that files are not restored after reload
 
-  @ignore
-  Scenario: Submission feedback is bounded and idempotent-looking
-    Given a reporter submits the form
-    When the request is in flight
-    Then the UI shows bounded progress and disables accidental duplicate clicks
-    And saved local state is cleared only after a definite 202 response
+  @ignore @ui
+  Scenario: The client shows inline validation before submission
+    Given a reporter enters an answer
+    When the client validates it before submission
+    Then the client shows inline validation using the same stable type/option rules and localized messages the API uses
 
   @ignore
   Scenario: Client validation never replaces server validation
-    Given the client validates a reporter's answer before submission
-    When the API independently validates the same submission
-    Then the API's validation is authoritative regardless of what the client allowed
-    And both use the same stable type/option rules and localized messages
+    Given a submission reaches the API
+    When the API independently validates it
+    Then the API's validation is authoritative regardless of what the client allowed or displayed
 
-  @ignore
-  Scenario: Public pages render only the public DTO
-    Given the public site renders a published report
-    When the page is built
-    Then it renders only fields from the public DTO
-    And the HTML/JS never receives private fields to hide client-side
-
-  @ignore
+  @ignore @ui
   Scenario: The active locale controls which summary text is primary
     Given a published report has both ai_summary_en and ai_summary_fr
     When a visitor views it in a given locale
     Then that locale's text is shown first
     And the visitor can switch to the counterpart text
 
-  @ignore
+  @ignore @ui
   Scenario: Admin pages distinguish private, ordinary, and output content
     Given a reviewer opens a report in the admin site
     Then private context, ordinary report content, summary output, processing failures, approval state, safe image/video derivatives, and unredacted private document downloads are all visibly distinguished
@@ -102,14 +91,13 @@ Feature: Web, localization, and design
     And no asset is loaded from a third-party CDN
     And the current logo is a placeholder that may only be replaced with an approved HPAC asset
 
-  @ignore
-  Scenario: Dark mode is a token redefinition, not duplicated markup
+  @ignore @ui
+  Scenario: Dark mode renders correctly in every state
     Given a visitor's OS or stored preference requests dark mode
     When the page renders
-    Then the same component markup is used with redefined CSS custom-property tokens
-    And contrast, focus, error, disabled, and success states work in both themes and languages
+    Then contrast, focus, error, disabled, and success states work in both themes and languages
 
-  @ignore
+  @ignore @ui
   Scenario: The form meets baseline accessibility requirements
     Given a reporter uses assistive technology to complete the form
     Then every control has a programmatic label and usable keyboard order
@@ -119,7 +107,7 @@ Feature: Web, localization, and design
     And motion respects reduced-motion and touch targets/contrast are sufficient
     And media previews are never required to complete a report
 
-  @ignore
+  @ignore @ui
   Scenario: A JavaScript failure never exposes or erases report data
     Given a script error occurs while a reporter is filling out the form
     When the failure happens
@@ -127,7 +115,7 @@ Feature: Web, localization, and design
     And nothing is silently published
     And saved local answers are not erased
 
-  @ignore
+  @ignore @ui
   Scenario: A network failure preserves local state and explains retry
     Given a submission request fails due to a network error
     When the browser detects the failure

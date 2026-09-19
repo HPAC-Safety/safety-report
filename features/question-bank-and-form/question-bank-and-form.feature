@@ -22,11 +22,11 @@ Feature: Question bank and form
     Then the API rejects the attempt
 
   @ignore
-  Scenario: The editor loads the latest revision and copies it into a new one
-    Given an active Administrator opens a question for editing
-    When the editor loads that question
+  Scenario: Saving an edited question copies the latest revision into a new one
+    Given an active Administrator requests to save an edited question
+    When the API processes the request
     Then it loads the latest revision and copies all fields into an edit DTO
-    And on save it validates both languages and all options, then saves a new complete row rather than patching the existing revision
+    And it validates both languages and all options, then saves a new complete row rather than patching the existing revision
 
   @ignore
   Scenario: Only the latest active, non-deleted revision is shown on the form

@@ -98,9 +98,14 @@ Feature: Attachments
     Given a document attachment has passed validation and malware scanning
     When an authorized reviewer requests it
     Then the reviewer receives a short-lived URL to the private original
-    And the admin site does not embed or inline-render the document content
-    And the reviewer is warned that the document is unredacted before download
     And there is no API blob proxy or public URL
+
+  @ignore @ui
+  Scenario: The admin site never inline-renders a private document
+    Given an authorized reviewer opens a document attachment
+    When the admin site presents it
+    Then the admin site does not embed or inline-render the document content
+    And the reviewer is warned that the document is unredacted before download
 
   @ignore
   Scenario: A failed attachment is inaccessible to reviewers

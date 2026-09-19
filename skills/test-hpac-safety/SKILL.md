@@ -13,7 +13,12 @@ Scenarios in `features/**/*.feature` execute directly as xUnit tests via
 Reqnroll (`tests/HpacSafety.Acceptance.Tests`, ADR-0049). An unimplemented
 scenario carries `@ignore`; implementing its behavior means writing its step
 definitions and removing that tag in the same PR — never leave a scenario
-both un-ignored and unimplemented.
+both un-ignored and unimplemented. A scenario also tagged `@ui` asserts
+browser-observable behavior and needs a Playwright companion test in that
+same PR (ADR-0045, ADR-0050); a scenario without `@ui` needs only its
+Reqnroll step definitions. A scenario blending a client-observable
+assertion with a server-authoritative one splits into an `@ui` scenario and
+an untagged one rather than carrying both concerns together.
 
 Test observable contracts:
 

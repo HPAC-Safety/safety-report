@@ -1,7 +1,7 @@
 using Amazon;
 using Amazon.S3;
 using Amazon.S3.Model;
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 
 namespace HpacSafety.Infrastructure.Storage;
 

@@ -1,5 +1,4 @@
 
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.QuestionBank;
 

@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: identifiers, tiny id, primary keys
+---
+
 # ADR-0034: Every row is identified by an eleven-character tiny id
 
 **Status:** Accepted

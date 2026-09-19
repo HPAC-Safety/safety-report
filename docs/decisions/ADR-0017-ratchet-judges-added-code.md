@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: coverage ratchet, code review, quality gate
+---
+
 # ADR-0017: The coverage ratchet judges added code, not the whole-repository ratio
 
 **Status:** Accepted

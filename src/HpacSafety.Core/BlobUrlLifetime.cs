@@ -1,4 +1,4 @@
-namespace HpacSafety.Core.SharedKernel;
+namespace HpacSafety.Core;
 
 /// <summary>
 /// How long a pre-signed URL may live. There are no public object URLs, ever, so

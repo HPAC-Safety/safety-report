@@ -501,20 +501,20 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_question_revision_options_question_revision_id_code",
                 table: "question_revision_options",
-                columns: new[] { "question_revision_id", "code" },
+                columns: ["question_revision_id", "code"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_question_revisions_question_id_revision_number",
                 table: "question_revisions",
-                columns: new[] { "question_id", "revision_number" },
+                columns: ["question_id", "revision_number"],
                 unique: true);
 
             // Current-form lookup: latest active revision, ordered for display.
             migrationBuilder.CreateIndex(
                 name: "ix_question_revisions_is_active_display_order",
                 table: "question_revisions",
-                columns: new[] { "is_active", "display_order" });
+                columns: ["is_active", "display_order"]);
 
             // ----------------------------------------------------------------
             // Reports: only the consent projection remains typed. Every other
@@ -616,7 +616,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_report_files_report_id_report_answer_id",
                 table: "report_files",
-                columns: new[] { "report_id", "report_answer_id" });
+                columns: ["report_id", "report_answer_id"]);
 
             migrationBuilder.AddCheckConstraint(
                 name: "ck_report_files_kind",
@@ -643,14 +643,14 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.AddUniqueConstraint(
                 name: "ak_report_answers_report_id_id",
                 table: "report_answers",
-                columns: new[] { "report_id", "id" });
+                columns: ["report_id", "id"]);
 
             migrationBuilder.AddForeignKey(
                 name: "fk_report_files_report_answers_report_id_report_answer_id",
                 table: "report_files",
-                columns: new[] { "report_id", "report_answer_id" },
+                columns: ["report_id", "report_answer_id"],
                 principalTable: "report_answers",
-                principalColumns: new[] { "report_id", "id" },
+                principalColumns: ["report_id", "id"],
                 onDelete: ReferentialAction.Restrict);
 
             // ----------------------------------------------------------------
@@ -660,7 +660,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_report_answers_report_id_question_id",
                 table: "report_answers",
-                columns: new[] { "report_id", "question_id" },
+                columns: ["report_id", "question_id"],
                 unique: true);
 
             migrationBuilder.AddColumn<DateTimeOffset>(

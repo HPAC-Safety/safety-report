@@ -1,7 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 
 namespace HpacSafety.Infrastructure.Storage;
 

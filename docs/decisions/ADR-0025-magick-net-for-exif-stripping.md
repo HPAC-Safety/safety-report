@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: EXIF stripping, ImageMagick, media privacy
+---
+
 # ADR-0025: Magick.NET strips EXIF and sniffs content types
 
 **Status:** Accepted for image detection/re-encoding and expanded by the

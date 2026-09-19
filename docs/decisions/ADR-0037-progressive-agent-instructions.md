@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: agent instructions, skills, AGENTS.md
+---
+
 # ADR-0037 — Progressive agent instructions
 
 **Status:** Accepted and narrowed by issue #78. `/features` is the product authority,

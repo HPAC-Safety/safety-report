@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-26
+decision-makers: Chase Florell
+keywords: CI, required checks, path filters
+---
+
 # ADR-0039 — Path-gated required checks via job-level `if:`, never `paths:`
 
 **Status:** Accepted

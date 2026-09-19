@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: ports and adapters, third-party libraries, abstraction
+---
+
 # ADR-0033 — Third-party libraries are used behind an abstraction we own
 
 **Status:** Narrowed by

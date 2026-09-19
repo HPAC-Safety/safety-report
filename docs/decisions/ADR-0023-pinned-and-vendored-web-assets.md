@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: web assets, Tailwind, pinning, supply chain
+---
+
 # ADR-0023 — The web build's inputs are pinned, verified, and vendored
 
 **Status:** Accepted

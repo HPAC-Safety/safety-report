@@ -1,5 +1,4 @@
 using System.Security.Cryptography;
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 

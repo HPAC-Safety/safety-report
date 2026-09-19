@@ -1,6 +1,6 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Persistence.Seeding;
 
@@ -32,7 +32,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         var keys = (await LoadedQuestionsAsync(context)).Select(q => q.Key).ToList();
 
         // Then
-        keys.ShouldBe(QuestionBankSeed.Questions.Select(q => q.Key).ToList());
+        keys.ShouldBe([.. QuestionBankSeed.Questions.Select(q => q.Key)]);
     }
 
     [Fact]
@@ -161,6 +161,6 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         var questions = await context.Questions
             .Include(q => q.Revisions).ThenInclude(v => v.Options)
             .ToListAsync();
-        return questions.OrderBy(q => q.DisplayOrder).ToList();
+        return [.. questions.OrderBy(q => q.DisplayOrder)];
     }
 }

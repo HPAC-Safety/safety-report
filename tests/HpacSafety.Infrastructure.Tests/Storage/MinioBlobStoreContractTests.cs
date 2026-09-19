@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 using Amazon.S3;
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 using HpacSafety.Infrastructure.Storage;
 using Testcontainers.Minio;
 
@@ -23,8 +23,9 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 
     // Pinned rather than floating on `latest`, for the same reason the Postgres
     // container is: a server that moves underneath the suite is a failure nobody
-    // can reproduce.
-    private readonly MinioContainer _minio = new MinioBuilder("minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
+    // can reproduce. Pulled from quay.io: MinIO removed `minio/minio` from
+    // Docker Hub and now only publishes to quay.io/minio/minio.
+    private readonly MinioContainer _minio = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
 
     private readonly HttpClient _http = new();
     private AmazonS3Client _s3 = null!;

@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 
-namespace HpacSafety.Core.SharedKernel;
+namespace HpacSafety.Core;
 
 /// <summary>
 /// The identifier every row in this system carries: eleven characters over the

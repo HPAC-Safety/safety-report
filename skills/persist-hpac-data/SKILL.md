@@ -26,3 +26,13 @@ Follow [`../../docs/data-and-persistence.md`](../../docs/data-and-persistence.md
 Migrations must support both a fresh database and the current-main upgrade
 path. Do not physically delete records, add restore behavior, or hide a schema
 change in runtime startup.
+
+## Document schema changes with a Mermaid diagram
+
+Any PR that adds, removes, or restructures a table, column, relationship, or
+constraint must include a Mermaid `erDiagram` showing the resulting shape of
+the affected tables (not the whole database) in the PR description. Put the
+diagram in the ADR too when the change is significant enough to warrant one.
+Show table names in `snake_case`, primary/foreign keys, and relationship
+cardinality; omit unaffected tables and columns that don't help the reviewer
+see what changed.

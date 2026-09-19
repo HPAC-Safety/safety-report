@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: AWS, hosting, infrastructure, ca-central-1
+---
+
 # ADR-0009 — Host on AWS, in ca-central-1
 
 **Status:** Superseded in part by the

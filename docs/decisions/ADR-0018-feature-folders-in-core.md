@@ -1,8 +1,18 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: Core architecture, feature folders, shared kernel, namespaces
+---
+
 # ADR-0018: `Core` is organised by feature, with a shared kernel
 
 **Status:** Accepted for feature-based organization. The concrete type inventory
 below has been aligned to the target in `/features`; the previous ports and typed
-ordinary-answer projections remain visible in Git history.
+ordinary-answer projections remain visible in Git history. The `SharedKernel/`
+folder described below is superseded by [ADR-0041](ADR-0041-no-shared-kernel-folder.md):
+cross-cutting types now sit at the `HpacSafety.Core` namespace root, not in a
+named child folder.
 **Date:** 2026-08-22
 
 ## Context

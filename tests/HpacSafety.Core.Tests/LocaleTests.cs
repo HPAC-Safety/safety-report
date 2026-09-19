@@ -2,7 +2,6 @@ using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using Shouldly;
 
 namespace HpacSafety.Core.Tests;
@@ -23,7 +22,7 @@ public class LocaleTests
     public void Given_an_unsupported_code_When_it_is_parsed_Then_it_is_refused()
     {
         // Given / When
-        void Parsing() => Locale.Parse("es-MX");
+        static void Parsing() => Locale.Parse("es-MX");
 
         // Then
         Should.Throw<DomainRuleViolationException>(Parsing);

@@ -1,4 +1,3 @@
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Features.Reporting;
 
@@ -103,15 +102,15 @@ public class ReportFile
     /// </summary>
     // Qualified, because this entity has a string property named BlobKey that
     // shadows the type of the same name.
-    public SharedKernel.BlobKey ViewableKey =>
+    public global::HpacSafety.Core.BlobKey ViewableKey =>
         AwaitsStripping
             ? throw new DomainRuleViolationException("There is no stripped derivative for a reviewer to see.")
-            : SharedKernel.BlobKey.Parse(StrippedBlobKey);
+            : global::HpacSafety.Core.BlobKey.Parse(StrippedBlobKey);
 
     /// <summary>Records the stripped derivative. Both facts are recorded together or not at all.</summary>
     public void RecordStripped(string strippedBlobKey, DateTimeOffset at)
     {
-        var parsed = SharedKernel.BlobKey.Parse(strippedBlobKey);
+        var parsed = global::HpacSafety.Core.BlobKey.Parse(strippedBlobKey);
 
         if (parsed.Compartment is not MediaCompartment.Stripped)
         {

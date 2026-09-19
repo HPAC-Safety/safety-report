@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: Terraform, CI, OIDC, credential-free
+---
+
 # ADR-0032 — Two roles, and a check that works without an AWS account
 
 **Status:** Accepted for OIDC roles and credential-free validation. Any SES or

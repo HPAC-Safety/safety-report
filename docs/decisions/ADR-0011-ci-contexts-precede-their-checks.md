@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: CI, required status checks, GitHub
+---
+
 # ADR-0011 — CI contexts exist before the things they check
 
 **Status:** Accepted

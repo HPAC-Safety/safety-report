@@ -344,7 +344,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_audit_log_target_type_target_id",
                 table: "audit_log",
-                columns: new[] { "target_type", "target_id" });
+                columns: ["target_type", "target_id"]);
 
             migrationBuilder.CreateIndex(
                 name: "ix_outbox_messages_aggregate_id",
@@ -360,31 +360,31 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_question_option_translations_question_option_id_locale",
                 table: "question_option_translations",
-                columns: new[] { "question_option_id", "locale" },
+                columns: ["question_option_id", "locale"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_question_options_question_version_id_code",
                 table: "question_options",
-                columns: new[] { "question_version_id", "code" },
+                columns: ["question_version_id", "code"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_question_translations_question_version_id_locale",
                 table: "question_translations",
-                columns: new[] { "question_version_id", "locale" },
+                columns: ["question_version_id", "locale"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_question_versions_question_id_version_number",
                 table: "question_versions",
-                columns: new[] { "question_id", "version_number" },
+                columns: ["question_id", "version_number"],
                 unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_questions_is_active_display_order",
                 table: "questions",
-                columns: new[] { "is_active", "display_order" });
+                columns: ["is_active", "display_order"]);
 
             migrationBuilder.CreateIndex(
                 name: "ix_questions_key",
@@ -426,7 +426,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_reports_status_submitted_at",
                 table: "reports",
-                columns: new[] { "status", "submitted_at" });
+                columns: ["status", "submitted_at"]);
 
             migrationBuilder.CreateIndex(
                 name: "ix_summaries_approved_by",
@@ -436,7 +436,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_summaries_report_id_language",
                 table: "summaries",
-                columns: new[] { "report_id", "language" },
+                columns: ["report_id", "language"],
                 unique: true);
 
             migrationBuilder.CreateIndex(

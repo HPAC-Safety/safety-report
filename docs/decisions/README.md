@@ -9,6 +9,7 @@ Contradictory ADRs carry an explicit superseded or narrowed status. Dedicated
 records for the retired aircraft-processing concept were removed from the
 active tree; Git history preserves them if their history is ever needed.
 
-Add an ADR only when a durable trade-off would otherwise be difficult to recover
-from the specification and code. A routine implementation choice or restatement
-of `/features` does not need one.
+Every architectural decision — a technology choice, a rejected alternative, a
+durable trade-off between designs — gets an ADR. This is not discretionary. A
+routine implementation detail with no rejected alternative, or a restatement of
+`/features`, does not need one; if in doubt, write the ADR.

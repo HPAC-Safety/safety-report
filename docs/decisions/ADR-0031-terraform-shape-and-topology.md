@@ -1,3 +1,10 @@
+---
+status: superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: Terraform, topology, infrastructure
+---
+
 # ADR-0031 — The shape of the Terraform, and the topology it builds
 
 **Status:** Superseded by the

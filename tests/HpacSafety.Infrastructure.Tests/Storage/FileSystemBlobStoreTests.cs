@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Storage;
 using Shouldly;
 

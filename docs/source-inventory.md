@@ -69,23 +69,23 @@ identity where source text does not exist.
 - [src/HpacSafety.Core/Features/Reporting/Summary.cs](../src/HpacSafety.Core/Features/Reporting/Summary.cs) — current one-locale row/source-translation link; replace with one EN/FR row and one approval.
 - [src/HpacSafety.Core/Features/Reporting/TimeOfDay.cs](../src/HpacSafety.Core/Features/Reporting/TimeOfDay.cs) — current time projection/bucketing; no target report projection, though reusable display logic may remain at an edge if needed.
 
-### Core project and shared kernel
+### Core project and cross-cutting root types
 
 - [src/HpacSafety.Core/HpacSafety.Core.csproj](../src/HpacSafety.Core/HpacSafety.Core.csproj) — dependency-free Core project; retain minimal dependency direction.
 - [src/HpacSafety.Core/README.md](../src/HpacSafety.Core/README.md) — aligned target-domain orientation that distinguishes useful current scaffolding from retired types.
-- [src/HpacSafety.Core/SharedKernel/BlobKey.cs](../src/HpacSafety.Core/SharedKernel/BlobKey.cs) — validated opaque report/compartment/server filename key; retain and extend attachment semantics without client names.
-- [src/HpacSafety.Core/SharedKernel/BlobUrlLifetime.cs](../src/HpacSafety.Core/SharedKernel/BlobUrlLifetime.cs) — enforces short signed-read maximum; retain for reviewer attachment reads, not pre-submit writes.
-- [src/HpacSafety.Core/SharedKernel/DomainRuleViolationException.cs](../src/HpacSafety.Core/SharedKernel/DomainRuleViolationException.cs) — domain invariant exception; retain without private data in messages.
-- [src/HpacSafety.Core/SharedKernel/EnumCode.cs](../src/HpacSafety.Core/SharedKernel/EnumCode.cs) — invariant enum-code conversion; retain.
-- [src/HpacSafety.Core/SharedKernel/FieldDecryptionException.cs](../src/HpacSafety.Core/SharedKernel/FieldDecryptionException.cs) — application field-encryption error; remove with AES field encryption.
-- [src/HpacSafety.Core/SharedKernel/IBlobStore.cs](../src/HpacSafety.Core/SharedKernel/IBlobStore.cs) — current read/write plus signed-upload/read port; revise to streaming private writes/reads and signed authorized reads, no upload URL.
-- [src/HpacSafety.Core/SharedKernel/IEmailSender.cs](../src/HpacSafety.Core/SharedKernel/IEmailSender.cs) — unused outbound-email port; remove.
-- [src/HpacSafety.Core/SharedKernel/IFieldCipher.cs](../src/HpacSafety.Core/SharedKernel/IFieldCipher.cs) — application encryption port; remove.
-- [src/HpacSafety.Core/SharedKernel/ITranslator.cs](../src/HpacSafety.Core/SharedKernel/ITranslator.cs) — runtime summary translation port; remove.
-- [src/HpacSafety.Core/SharedKernel/ITurnstileVerifier.cs](../src/HpacSafety.Core/SharedKernel/ITurnstileVerifier.cs) — anti-bot boundary; retain and implement at final submission.
-- [src/HpacSafety.Core/SharedKernel/Locale.cs](../src/HpacSafety.Core/SharedKernel/Locale.cs) — exact `en-CA`/`fr-CA` value; retain.
-- [src/HpacSafety.Core/SharedKernel/MediaCompartment.cs](../src/HpacSafety.Core/SharedKernel/MediaCompartment.cs) — quarantine/original/derivative compartments; rename/generalize for attachments while preserving private boundaries.
-- [src/HpacSafety.Core/SharedKernel/TinyId.cs](../src/HpacSafety.Core/SharedKernel/TinyId.cs) — validated opaque compact identifier; retain.
+- [src/HpacSafety.Core/BlobKey.cs](../src/HpacSafety.Core/BlobKey.cs) — validated opaque report/compartment/server filename key; retain and extend attachment semantics without client names.
+- [src/HpacSafety.Core/BlobUrlLifetime.cs](../src/HpacSafety.Core/BlobUrlLifetime.cs) — enforces short signed-read maximum; retain for reviewer attachment reads, not pre-submit writes.
+- [src/HpacSafety.Core/DomainRuleViolationException.cs](../src/HpacSafety.Core/DomainRuleViolationException.cs) — domain invariant exception; retain without private data in messages.
+- [src/HpacSafety.Core/EnumCode.cs](../src/HpacSafety.Core/EnumCode.cs) — invariant enum-code conversion; retain.
+- [src/HpacSafety.Core/FieldDecryptionException.cs](../src/HpacSafety.Core/FieldDecryptionException.cs) — application field-encryption error; remove with AES field encryption.
+- [src/HpacSafety.Core/IBlobStore.cs](../src/HpacSafety.Core/IBlobStore.cs) — current read/write plus signed-upload/read port; revise to streaming private writes/reads and signed authorized reads, no upload URL.
+- [src/HpacSafety.Core/IEmailSender.cs](../src/HpacSafety.Core/IEmailSender.cs) — unused outbound-email port; remove.
+- [src/HpacSafety.Core/IFieldCipher.cs](../src/HpacSafety.Core/IFieldCipher.cs) — application encryption port; remove.
+- [src/HpacSafety.Core/ITranslator.cs](../src/HpacSafety.Core/ITranslator.cs) — runtime summary translation port; remove.
+- [src/HpacSafety.Core/ITurnstileVerifier.cs](../src/HpacSafety.Core/ITurnstileVerifier.cs) — anti-bot boundary; retain and implement at final submission.
+- [src/HpacSafety.Core/Locale.cs](../src/HpacSafety.Core/Locale.cs) — exact `en-CA`/`fr-CA` value; retain.
+- [src/HpacSafety.Core/MediaCompartment.cs](../src/HpacSafety.Core/MediaCompartment.cs) — quarantine/original/derivative compartments; rename/generalize for attachments while preserving private boundaries.
+- [src/HpacSafety.Core/TinyId.cs](../src/HpacSafety.Core/TinyId.cs) — validated opaque compact identifier; retain.
 
 ## Infrastructure — 44 paths
 

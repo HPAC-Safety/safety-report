@@ -1,16 +1,12 @@
 using System.Security.Cryptography;
 using System.Text;
-
-using HpacSafety.Core.SharedKernel;
+using HpacSafety.Core;
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
-
 using Npgsql;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;

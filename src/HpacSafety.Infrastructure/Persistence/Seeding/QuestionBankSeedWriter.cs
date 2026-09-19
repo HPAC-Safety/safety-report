@@ -1,8 +1,6 @@
 using System.Globalization;
 using System.Text;
-
-using HpacSafety.Core.SharedKernel;
-
+using HpacSafety.Core;
 using Microsoft.EntityFrameworkCore.Migrations;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;

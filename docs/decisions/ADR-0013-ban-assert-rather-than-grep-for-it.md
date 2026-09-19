@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: analyzers, banned APIs, static analysis, testing
+---
+
 # ADR-0013 — Ban `Xunit.Assert` with an analyzer, not a CI grep
 
 **Status:** Accepted

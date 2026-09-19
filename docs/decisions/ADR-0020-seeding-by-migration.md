@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: seeding, migrations, EF Core
+---
+
 # ADR-0020: The migration seeds the question bank, and guards the one local administrator
 
 **Status:** Superseded in question-schema and translation behavior by

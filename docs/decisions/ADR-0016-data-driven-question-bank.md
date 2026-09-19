@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: question bank, data-driven, form
+---
+
 # ADR-0016: The question set is data, not code
 
 **Status:** Superseded in shape by the

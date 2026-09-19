@@ -1,8 +1,8 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Core.SharedKernel;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;

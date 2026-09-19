@@ -1,5 +1,5 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 

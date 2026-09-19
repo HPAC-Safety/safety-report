@@ -1,3 +1,10 @@
+---
+status: partially-superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: localization, i18n, bilingual, translation
+---
+
 # ADR-0007 — Bilingual, with CI-time translation
 
 **Status:** Narrowed to application UI catalogues by the

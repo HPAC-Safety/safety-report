@@ -1,4 +1,3 @@
-using HpacSafety.Core.SharedKernel;
 
 namespace HpacSafety.Core.Tests.Media;
 

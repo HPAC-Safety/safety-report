@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: developer setup, bootstrap script, onboarding
+---
+
 # ADR-0015 — One POSIX `sh` script for development environment setup
 
 **Status:** Accepted

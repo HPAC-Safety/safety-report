@@ -1,3 +1,10 @@
+---
+status: superseded
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: PII scrub, anonymization, deterministic
+---
+
 # ADR-0027 — The deterministic scrub is a closed chain over labelled fields
 
 **Status:** Superseded by the

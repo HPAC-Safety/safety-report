@@ -1,3 +1,10 @@
+---
+status: accepted
+date: 2026-08-22
+decision-makers: Chase Florell
+keywords: agents, AGENTS.md, repository configuration, coding-agent instructions
+---
+
 # ADR-0001 — Agent-agnostic configuration via AGENTS.md and skillfile
 
 **Status:** Accepted for agent configuration. `/features` is now the product-design

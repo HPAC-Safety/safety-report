@@ -6,11 +6,15 @@ name: Deploy Worker
 # The Worker deliberately has no migrate job. Migrations are owned by the API
 # deployment so that exactly one workflow can change the schema. If a release
 # needs both, deploy the API first.
+#
+# Auto-trigger on CI success is disabled until #30 lands real deploy infra —
+# every run currently fails by design. Re-add the workflow_run block below
+# once that infra exists.
+#   workflow_run:
+#     workflows: [CI]
+#     types: [completed]
+#     branches: [main]
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       image_tag:

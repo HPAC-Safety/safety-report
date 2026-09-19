@@ -162,8 +162,11 @@ dimensions or its colours.
 
 ## Related
 
-- `docs/decisions/ADR-0006-theme-engine.md` — why Tailwind's standalone CLI
-- `docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md` — why the binary, fonts and logo are pinned and committed
+- `docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md` — why
+  React/TypeScript/Vite, and Tailwind via `@tailwindcss/vite`
+- `docs/decisions/ADR-0023-pinned-and-vendored-web-assets.md` — why the fonts
+  and logo are vendored and committed (partially superseded by ADR-0043 for
+  build tooling)
 - `docs/decisions/ADR-0024-dark-mode-is-a-token-redefinition.md` — why there is no `dark:` variant
 - `src/web/README.md`
 - `docs/localization.md`

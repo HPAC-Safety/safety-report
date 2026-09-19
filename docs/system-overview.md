@@ -30,8 +30,8 @@ forms platform, document-management suite, or publishing network.
 
 ```mermaid
 flowchart LR
-    reporter[Reporter browser] --> public[Public static site]
-    officer[Safety officer browser] --> admin[Admin static site]
+    reporter[Reporter browser] --> public[Public React/TS site]
+    officer[Safety officer browser] --> admin[Admin React/TS site]
     public --> api[ASP.NET Core API]
     admin --> api
     api --> db[(PostgreSQL)]
@@ -43,11 +43,11 @@ flowchart LR
     api --> member[HPAC member authenticator]
 ```
 
-- The public static site renders the form and keeps unfinished answers only in
-  that browser. No report data reaches the API, database, or object storage
+- The public React/TS site renders the form and keeps unfinished answers only
+  in that browser. No report data reaches the API, database, or object storage
   until it submits one finalized multipart request. It also renders public
   summaries.
-- The separate admin static site manages questions and authorized members,
+- The separate admin React/TS site manages questions and authorized members,
   reviews reports and derivatives, edits summaries, and records approval.
 - The API owns validation, authorization, persistence orchestration, read DTOs,
   and the public publication boundary. It never calls the model.

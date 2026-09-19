@@ -7,7 +7,13 @@ keywords: web assets, Tailwind, pinning, supply chain
 
 # ADR-0023 — The web build's inputs are pinned, verified, and vendored
 
-**Status:** Accepted
+**Status:** Partially superseded by
+[ADR-0043](ADR-0043-react-typescript-vite-web-front-end.md). The "no npm, no
+`node_modules`" premise this ADR argued from is reversed — the web build now
+has a `package.json` and a committed `package-lock.json`. The vendoring
+decision itself (fonts and the logo self-hosted, never a third-party CDN) is
+unchanged; only the Tailwind-binary pinning mechanism (`tools/tailwind.pin`,
+`tools/build-css.sh`) is removed.
 
 Supplements [ADR-0006](ADR-0006-theme-engine.md), which chose Tailwind v4's
 standalone CLI. This one is about everything that has to arrive from somewhere

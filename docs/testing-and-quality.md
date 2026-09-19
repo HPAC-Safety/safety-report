@@ -14,6 +14,10 @@ tests use the actual supported PostgreSQL major version through Testcontainers.
 JavaScript uses `node:test`; browser journeys use Playwright. Tests must use
 synthetic people, locations, reports, and attachments.
 
+A UI behavior change ships with a Playwright test and, when it touches or
+relies on API behavior, a server-side test covering that behavior
+([ADR-0045](decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
+
 ## Required contract coverage
 
 ### Questions and submission

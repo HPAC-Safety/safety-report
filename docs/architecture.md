@@ -7,8 +7,8 @@ page is a short orientation only.
 
 ```mermaid
 flowchart LR
-    public["Public static site"] -->|"questions + final multipart report"| api["API"]
-    admin["Admin static site"] -->|"authenticated review"| api
+    public["Public React/TS site"] -->|"questions + final multipart report"| api["API"]
+    admin["Admin React/TS site"] -->|"authenticated review"| api
     api -->|"atomic report + outbox"| db[("PostgreSQL")]
     api --> private[("Private attachments")]
     db --> worker["Worker"]
@@ -23,7 +23,10 @@ flowchart LR
 - `HpacSafety.Api` exposes public and admin HTTP DTOs. It does no AI work.
 - `HpacSafety.Worker` consumes typed outbox work for the one-call summary and
   per-file attachment processing.
-- `src/web/public` and `src/web/admin` are separate static sites.
+- `src/web/public` and `src/web/admin` are separate React/TypeScript
+  applications, each built with Vite and served from its own container
+  ([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
+  [ADR-0044](decisions/ADR-0044-containerized-web-hosting.md)).
 
 Questions are complete immutable bilingual database revisions. Unfinished
 answers remain only in the browser; no report data is stored server-side until

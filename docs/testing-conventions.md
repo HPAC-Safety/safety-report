@@ -29,3 +29,7 @@ npx playwright test
 Integration suites require Docker. Coverage retains the repository floor and
 added-code ratchet, but privacy and behavior assertions matter more than a high
 percentage.
+
+A UI behavior change ships with a Playwright test and, when it touches or
+relies on API behavior, a server-side test — see
+[ADR-0045](decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md).

@@ -160,6 +160,13 @@
 	 * light and the dark surface ramp, which brand-600 does not. */
 	--color-focus: #e02b20;
 
+	/* docs/design-system.md#logo: the current logo asset is hpac.ca's
+	 * *reversed* artwork — its wordmark is white, so it disappears on a light
+	 * surface. This plate is a constant (not redefined in either dark-mode
+	 * block below) so the header logo stays legible in both themes until a
+	 * proper light/dark logo variant replaces it. */
+	--color-logo-plate: #1a1a1a;
+
 	--font-sans: "Poppins", Helvetica, Arial, sans-serif;
 	--font-display: "Aleo", Georgia, serif;
 

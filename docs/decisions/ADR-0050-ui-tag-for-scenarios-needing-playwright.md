@@ -7,7 +7,11 @@ keywords: testing, Gherkin, feature files, Playwright, Reqnroll, tags
 
 # ADR-0050 — `@ui` tags the `.feature` scenarios that need a Playwright companion
 
-**Status:** Accepted
+**Status:** Accepted, partially superseded by
+[ADR-0053](ADR-0053-ui-scenarios-execute-via-playwright-bdd.md): `@ui`
+scenarios execute via `playwright-bdd`, not Reqnroll — the sentence below
+saying otherwise no longer holds. The tag itself, and everything else in
+this decision, is unchanged.
 
 ## Context
 

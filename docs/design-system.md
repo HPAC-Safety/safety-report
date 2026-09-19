@@ -82,6 +82,15 @@ sometimes about themselves. It is not a marketing page.
   competing with the brand.
 - No celebratory microcopy, no animation flourishes on submit.
 
+**The homepage is the deliberate exception**, not a contradiction of the
+above. It is the one brochure-style page in the app — a header, a hero, and
+a few wider sections modeled on hpac.ca's general layout (issue #140) — and
+it uses the surface ramp for wider sections rather than the 65ch measure.
+The report form and the admin review queue keep the restrained, single-
+column treatment this section describes; the homepage's job is different
+(orient and route a visitor, not collect an occurrence report), and its
+layout follows from that.
+
 ## Accessibility
 
 - Real focus rings. Never `outline: none` without a replacement.

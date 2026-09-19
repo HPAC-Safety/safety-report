@@ -9,7 +9,15 @@ Feature: Web, localization, and design
     Then the public form and the admin review queue are routes within the same React/TypeScript application, built with Vite and served from one containerized deployment
     And loading the site requires JavaScript
 
-  @ignore @ui
+  @ui
+  Scenario: The homepage header exposes navigation to reporting, submission, and contact, and a distinct member-login action
+    Given a visitor loads the homepage
+    Then the header shows links to view safety reports, submit a safety report, and contact
+    And the header shows a visually distinct member-login action
+    When a visitor activates any of those links or the member-login action
+    Then the browser navigates to that destination's page
+
+  @ui
   Scenario Outline: The initial locale is selected in priority order
     Given a visitor has <signal>
     When the page loads
@@ -21,6 +29,13 @@ Feature: Web, localization, and design
       | no stored choice but a supported browser language of fr-CA | the browser language, fr-CA |
       | no stored choice and no supported browser language | English, as the fallback      |
 
+  @ui
+  Scenario: Switching the language toggle updates the document language and persists the choice
+    Given a visitor is on any page
+    When the visitor switches the language toggle
+    Then the document lang attribute and page title update
+    And the language choice persists to local storage across a reload
+
   @ignore @ui
   Scenario: Switching the language toggle rerenders without losing answers
     Given a reporter has entered answers in one locale
@@ -29,12 +44,25 @@ Feature: Web, localization, and design
     And the document lang attribute and page title update
     And entered answers are neither cleared nor remapped
 
-  @ignore
+  @ui
+  Scenario: A visitor can toggle and persist a light/dark theme choice
+    Given a visitor has no stored theme preference
+    Then the page follows the operating system's light/dark preference
+    When the visitor toggles the theme control
+    Then the data-theme attribute updates immediately
+    And the theme choice persists to local storage across a reload
+
   Scenario: Application chrome strings come from committed locale catalogues
     Given the UI renders chrome or a stable validation/error message
     When the string is displayed
     Then it comes from a committed locale catalogue with key parity between en-CA and fr-CA
     And no user-facing literal appears directly in code
+
+  Scenario: A translation missing locally is stubbed with a visible marker, and CI must replace it before merge
+    Given a key exists in en-CA.json but not in fr-CA.json
+    When the local build runs
+    Then fr-CA.json gains that key with its English text prefixed with a # marker
+    And a key still carrying that # marker fails locale verification, so it can never reach main untranslated
 
   @ignore
   Scenario: Question content comes from the bilingual database revision

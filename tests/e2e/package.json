@@ -4,9 +4,10 @@
 	"type": "module",
 	"description": "Playwright browser suite for src/web, run by ci.yml's e2e job.",
 	"scripts": {
-		"test": "playwright test"
+		"test": "bddgen && playwright test"
 	},
 	"devDependencies": {
-		"@playwright/test": "1.63.0"
+		"@playwright/test": "1.63.0",
+		"playwright-bdd": "^9.2.1"
 	}
 }

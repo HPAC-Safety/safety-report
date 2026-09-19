@@ -50,7 +50,12 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 3. Commit with a concise imperative message and no co-author trailer.
 4. Push and open a pull request with a squash-ready title.
 5. Put `Closes #<number>` on its own line in the PR body.
-6. Watch required checks, fix failures on the branch, and finish only when they
+6. A PR that changes anything user-visible in `src/web` attaches screenshots
+   demonstrating it, in the PR body or a comment — a browser tool
+   (Playwright, Claude in Chrome) capturing the real running app, not a
+   mockup. A new page/component (a CREATE) needs an after screenshot; a
+   change to an existing one (an UPDATE) needs both before and after.
+7. Watch required checks, fix failures on the branch, and finish only when they
    are green.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,

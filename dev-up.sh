@@ -36,4 +36,12 @@ dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj \
 	-p:ContainerImageTag=dev
 
 echo "Starting containers"
-docker compose up --build
+# --force-recreate: `npm run build` above deletes and recreates src/web/dist
+# (Vite's emptyOutDir), and the web container bind-mounts that directory
+# read-only. Docker Desktop's bind mount can go stale across that
+# delete+recreate, and since docker-compose.yml itself never changes, a
+# plain `up` reuses the existing containers rather than remounting — the
+# result is nginx serving an empty directory listing, "403 Forbidden", even
+# though dist/index.html is right there on disk. postgres data survives
+# recreation (named volume); this just guarantees a fresh mount every run.
+docker compose up --build --force-recreate

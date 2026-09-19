@@ -6,8 +6,7 @@ Feature: Web, localization, and design
   Scenario: The public and admin sites are independently deployed
     Given the product ships the public site and the admin site
     Then they have separate origins/distributions and deployment permissions
-    And each is a React/TypeScript application built with Vite and served from
-      its own containerized deployment (ADR-0043, ADR-0044)
+    And each is a React/TypeScript application built with Vite and served from its own containerized deployment
     And loading either site requires JavaScript
 
   Scenario Outline: The initial locale is selected in priority order
@@ -86,8 +85,7 @@ Feature: Web, localization, and design
 
   Scenario: Assets are self-hosted, never loaded from third-party CDNs
     Given the site renders fonts, styles, or imagery
-    Then Aleo, Poppins, and other assets are bundled and served from the
-      site's own origin, WOFF2 vendored via a committed npm lockfile
+    Then Aleo, Poppins, and other assets are bundled and served from the site's own origin, WOFF2 vendored via a committed npm lockfile
     And no asset is loaded from a third-party CDN
     And the current logo is a placeholder that may only be replaced with an approved HPAC asset
 

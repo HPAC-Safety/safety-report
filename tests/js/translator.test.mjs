@@ -246,6 +246,58 @@ describe('the translator adapter', () => {
 		})
 	})
 
+	describe('given a string carrying a {placeholder}', () => {
+		it('when the request is built then the placeholder is wrapped in a tag DeepL is told to ignore', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+
+			// When
+			const body = translator.buildRequest(
+				[{ key: 'footer.copyright', text: '© {year} HPAC Safety' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then — DeepL translated the bare token to "{année}" once, in production
+			// against real DeepL. Wrapping it in an ignored tag is what stops that.
+			assert.deepEqual(body.text, ['© <ph>{year}</ph> HPAC Safety'])
+			assert.equal(body.tag_handling, 'xml')
+			assert.deepEqual(body.ignore_tags, ['ph'])
+		})
+	})
+
+	describe('given a string with characters that are meaningful in XML', () => {
+		it('when the request is built then they are escaped so tag_handling never misreads them as markup', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+
+			// When
+			const body = translator.buildRequest(
+				[{ key: 'a', text: 'A < B & C > D {count}' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then
+			assert.deepEqual(body.text, ['A &lt; B &amp; C &gt; D <ph>{count}</ph>'])
+		})
+	})
+
+	describe('given a DeepL response with a wrapped placeholder', () => {
+		it('when it is parsed then the tag is stripped and the placeholder comes back bare', () => {
+			// Given
+			const translator = createTranslator({ provider: 'deepl', apiKey: 'k' })
+			const items = [{ key: 'footer.copyright', text: '© {year} HPAC Safety' }]
+
+			// When
+			const out = translator.parseResponse(
+				{ translations: [{ text: '© <ph>{year}</ph> HPAC Safety' }] },
+				items,
+			)
+
+			// Then
+			assert.equal(out.get('footer.copyright'), '© {year} HPAC Safety')
+		})
+	})
+
 	describe('given a locale DeepL has no code for', () => {
 		it('when the request is built then it refuses rather than guessing a code', () => {
 			// Given

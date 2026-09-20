@@ -121,7 +121,13 @@ jobs:
             "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           git switch -C "$TRANSLATION_BRANCH"
-          git add locales/fr-CA.json locales/fr-CA.meta.json locales/.fr-CA.pending
+          # .fr-CA.pending is a one-time sentinel for the initial generation;
+          # translate-locale.mjs deletes it once fr-CA.json exists, so later
+          # runs have nothing to add for it.
+          git add locales/fr-CA.json locales/fr-CA.meta.json
+          if [ -f locales/.fr-CA.pending ]; then
+            git add locales/.fr-CA.pending
+          fi
           git commit -m 'Regenerate the French UI strings' -m "$SUMMARY."
 
           # Force, because the branch is rebuilt from main every run. It carries

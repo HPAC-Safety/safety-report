@@ -18,6 +18,15 @@ Feature: Web, localization, and design
     Then the browser navigates to that destination's page
 
   @ui
+  Scenario: On a mobile-width viewport, header navigation is reached through a hamburger toggle
+    Given a visitor loads the homepage on a mobile-width viewport
+    Then the header nav is hidden and a menu toggle is shown instead
+    When the visitor activates the menu toggle
+    Then a dialog containing the header's navigation links and member-login action opens
+    When the visitor activates the menu toggle again
+    Then the dialog closes
+
+  @ui
   Scenario Outline: The initial locale is selected in priority order
     Given a visitor has <signal>
     When the page loads

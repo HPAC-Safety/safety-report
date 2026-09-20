@@ -75,6 +75,9 @@
           },
           {
             "context": "cucumber"
+          },
+          {
+            "context": "feature-coverage"
           }
         ]
       }

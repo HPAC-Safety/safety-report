@@ -34,6 +34,18 @@ contrast, and self-hosted assets.
 - Every UI behavior change ships a Playwright test, plus a server-side test
   when it touches API behavior
   ([ADR-0045](../../docs/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
+- Every UI behavior change also gets a `.feature` scenario in the same PR —
+  this is the same mandatory-not-discretionary rule as everywhere else in the
+  repo (see AGENTS.md's Design authority section and
+  [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md)), not optional just
+  because this skill is about React/TypeScript rather than delivery process.
+  A Playwright test alone does not satisfy it: `@ui`-tagged scenarios execute
+  through `playwright-bdd` in `tests/e2e/steps/` per
+  [ADR-0053](../../docs/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md),
+  so the scenario and its step definitions are the test, not a separate
+  document alongside it. Plain `.spec.ts` files outside `tests/e2e/steps/`
+  are for broad smoke coverage only, never a substitute for scenario
+  coverage of specific behavior.
 
 Do not introduce server drafts, reserved report IDs, pre-submit API/database/
 object-storage writes, upload sessions, third-party font/asset calls, or

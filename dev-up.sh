@@ -25,9 +25,6 @@ if ! docker info >/dev/null 2>&1; then
 	exit 1
 fi
 
-echo "Building the web site (Vite)"
-( cd src/web && npm ci && npm run build )
-
 echo "Building the API container image"
 dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj \
 	--configuration Release \
@@ -36,12 +33,8 @@ dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj \
 	-p:ContainerImageTag=dev
 
 echo "Starting containers"
-# --force-recreate: `npm run build` above deletes and recreates src/web/dist
-# (Vite's emptyOutDir), and the web container bind-mounts that directory
-# read-only. Docker Desktop's bind mount can go stale across that
-# delete+recreate, and since docker-compose.yml itself never changes, a
-# plain `up` reuses the existing containers rather than remounting — the
-# result is nginx serving an empty directory listing, "403 Forbidden", even
-# though dist/index.html is right there on disk. postgres data survives
-# recreation (named volume); this just guarantees a fresh mount every run.
-docker compose up --build --force-recreate
+# The web container runs Vite's own dev server (npm ci && npm run dev)
+# against a bind-mounted repo, so edits on disk hot-reload in the browser
+# without a rebuild or restart. postgres data and web's node_modules both
+# survive restarts via named volumes.
+docker compose up --build

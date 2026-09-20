@@ -31,7 +31,7 @@ services:
       - "8080:8080"
 
   web:
-    image: node:22-alpine
+    image: node:24-alpine
     working_dir: /repo/src/web
     depends_on:
       - api

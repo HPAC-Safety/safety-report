@@ -45,6 +45,10 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
 		document.documentElement.lang = locale
 	}, [locale])
 
+	useEffect(() => {
+		if (catalogue["app.title"]) document.title = catalogue["app.title"]
+	}, [catalogue])
+
 	// Persisted only on an explicit user choice, not on automatic detection,
 	// so a visitor who never picks a language keeps following browser changes.
 	const setLocale = useCallback((next: Locale) => {

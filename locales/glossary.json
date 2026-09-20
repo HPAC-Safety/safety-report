@@ -1,6 +1,10 @@
 {
   "_comment": "HPAC's own French wording, pinned verbatim and never sent to a translation provider. See tools/translate-locale.mjs. 'HPAC' stays untranslated in French per the organization's bilingual 'HPAC ACVL' wordmark (docs/design-system.md) — a general-purpose translator otherwise reads it as the HVAC acronym. 'Safety' is an ordinary word and is translated as usual.",
+  "app.title": "HPAC Sécurité",
   "header.logoAlt": "HPAC Sécurité",
+  "nav.openMenuLabel": "Ouvrir le menu",
+  "nav.closeMenuLabel": "Fermer le menu",
+  "language.switchTo": "Passer à {language}",
   "footer.copyright": "© {year} HPAC Sécurité",
   "home.sectionAbout.title": "À propos de HPAC",
   "home.heroSubtitle": "HPAC Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol."

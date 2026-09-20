@@ -11,13 +11,19 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      - postgres-data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d hpac_safety"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
 
   api:
     image: hpacsafety-api:dev
     pull_policy: never
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres;Options=-c hpac.seed_development_admin=true"

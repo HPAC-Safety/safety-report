@@ -1,8 +1,10 @@
 name: Translate locales
 
-# Generates locales/fr-CA.json from locales/en-CA.json and opens a pull request
-# with the result. It NEVER pushes to main: a human reads the French before it
-# ships. See ADR-0021.
+# Generates locales/fr-CA.json from locales/en-CA.json. On a push to main it
+# opens a pull request with the result; on a same-repo pull request it commits
+# straight onto that PR's own branch (ADR-0057). It NEVER pushes to main
+# directly, and it never translates for a fork: a human reads the French
+# before it ships. See ADR-0021 and ADR-0057.
 #
 # This is a separate workflow from ci.yml on purpose, and the separation is a
 # security boundary rather than tidiness:
@@ -11,9 +13,15 @@ name: Translate locales
 #     therefore only ever VERIFIES the locales — `translate-locale.mjs --check`
 #     reads files and constructs no translator, so a fork cannot make this
 #     repository spend an inference call, and cannot write a locale file.
-#   * This workflow runs only on a push to main — code that is already merged
-#     and reviewed — and on manual dispatch. It is the only place a provider
-#     credential is in scope.
+#   * This workflow's `pull_request_target` trigger runs with this
+#     repository's secrets regardless of where the event came from, which is
+#     exactly why the translate/commit job below gates on
+#     `head.repo.full_name == github.repository` before doing anything. A fork
+#     PR fails that check and falls through to nothing, the same as before
+#     this trigger existed — French for its new keys still only arrives after
+#     merge, via the push-to-main path.
+#   * The push-to-main path is unchanged: it runs on code that is already
+#     merged and reviewed, or on manual dispatch.
 #
 # Nothing here ever sees report data. Its input is a JSON file of UI labels that
 # ships in the repository. Invariant 4 in AGENTS.md — raw reports are never
@@ -28,15 +36,24 @@ on:
       - tools/translate-locale.mjs
       - tools/translator.mjs
       - .github/workflows/i18n-translate.yml
+  pull_request_target:
+    paths:
+      - locales/en-CA.json
+      - locales/glossary.json
+      - tools/translate-locale.mjs
+      - tools/translator.mjs
+      - .github/workflows/i18n-translate.yml
   workflow_dispatch:
 
 permissions:
   contents: read
 
-# One translation run at a time. Two overlapping runs would both branch from
-# main and the second would clobber the first's pull request.
+# One translation run at a time per target: the push-to-main path still
+# shares one group (two overlapping runs would both branch from main and the
+# second would clobber the first's pull request), and each pull request gets
+# its own group so unrelated PRs never queue behind each other.
 concurrency:
-  group: i18n-translate
+  group: ${{ github.event_name == 'pull_request_target' && format('i18n-translate-pr-{0}', github.event.pull_request.number) || 'i18n-translate' }}
   cancel-in-progress: false
 
 env:
@@ -44,14 +61,21 @@ env:
 
 jobs:
   translate:
+    if: github.event_name != 'pull_request_target' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     permissions:
-      # Pushing the translation branch, and opening the pull request that
-      # carries it. main itself is protected; this workflow never writes to it.
+      # Pushing the translation branch (or a same-repo PR's own branch), and
+      # opening the pull request that carries the post-merge translation.
+      # main itself is protected; this workflow never writes to it.
       contents: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # For a same-repo PR, pin to the head SHA the event reported rather
+          # than the branch name, so a push landing between the event firing
+          # and this checkout can't change what gets translated.
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
 
       # The Node major is pinned in ci.yml and nowhere else — see ADR-0015 and
       # skills/deliver-hpac-change/SKILL.md. Reading it here rather than writing
@@ -90,6 +114,41 @@ jobs:
           TRANSLATION_API_KEY: ${{ secrets.TRANSLATION_API_KEY }}
         run: node tools/translate-locale.mjs --generate --locales locales
 
+      # Same-repo pull request (ADR-0057): commit the result straight onto the
+      # PR's own branch instead of opening a second one — the PR under review
+      # already carries the human-reads-the-French step ADR-0021 requires.
+      #
+      # A push authored by the built-in GITHUB_TOKEN does not trigger
+      # workflows — GitHub's loop protection — so ci.yml would never re-run on
+      # this commit. TRANSLATION_PR_TOKEN (see below) is what makes that
+      # happen; without it the commit still lands, it just needs a manual
+      # nudge (an empty commit, or closing/reopening the PR) before checks
+      # re-run.
+      - name: Commit the translation onto the pull request's own branch
+        if: github.event_name == 'pull_request_target' && steps.translate.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
+          USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
+          SUMMARY: ${{ steps.translate.outputs.summary }}
+        run: |
+          set -euo pipefail
+
+          if [ "$USING_DEFAULT_TOKEN" = 'true' ]; then
+            echo "::warning::No TRANSLATION_PR_TOKEN is set, so this commit is pushed with the built-in GITHUB_TOKEN and CI will not re-run on it. Push an empty commit, or close and reopen the PR, before merging. See ADR-0021/ADR-0057."
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          git add locales/fr-CA.json locales/fr-CA.meta.json
+          if [ -f locales/.fr-CA.pending ]; then
+            git add locales/.fr-CA.pending
+          fi
+          git commit -m 'Translate new/changed locale keys' -m "$SUMMARY."
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
       # A pull request opened with the built-in GITHUB_TOKEN does not trigger
       # workflows — GitHub's loop protection — so CI would never report on it and
       # the required checks would sit unfulfilled forever. TRANSLATION_PR_TOKEN
@@ -103,7 +162,7 @@ jobs:
       # before it can merge. That trade-off is recorded in ADR-0021, and the
       # warning below is what tells whoever reads the run which happened.
       - name: Open a pull request with the French
-        if: steps.translate.outputs.changed == 'true'
+        if: github.event_name != 'pull_request_target' && steps.translate.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
           USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}

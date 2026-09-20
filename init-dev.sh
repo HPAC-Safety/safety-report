@@ -233,12 +233,16 @@ fi
 # directory, and hooks live in the shared main-checkout gitdir instead.
 # Idempotent by content comparison, so a second run only touches the file when
 # .githooks/pre-commit itself changed.
+#
+# A dev-machine convenience, not a CI gate — CI enforces the same two checks
+# directly, in the "i18n" job — so a missing hook is reported with note(), not
+# missing(): it must never fail a fresh CI checkout's `--check` step.
 HOOKS_DIR=$(git rev-parse --git-path hooks)
 if [ "$CHECK_ONLY" -eq 1 ]; then
 	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then
 		ok "git pre-commit hook (locale parity)"
 	else
-		missing "git pre-commit hook not installed — run without --check"
+		note "git pre-commit hook not installed — run without --check"
 	fi
 else
 	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then

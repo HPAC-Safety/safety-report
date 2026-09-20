@@ -1,0 +1,63 @@
+{
+  "upload": {
+    "rejected": {
+      "empty": "Ce fichier semble être vide. Veuillez sélectionner à nouveau la photo ou la vidéo.",
+      "tooLarge": "Ce fichier est trop volumineux. Veuillez télécharger une photo ou une vidéo plus petite.",
+      "unrecognisedContent": "Nous n'avons pas pu lire ce fichier. Veuillez télécharger une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
+      "unacceptedMediaType": "Nous ne pouvons pas accepter ce type de fichier. Veuillez télécharger une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
+      "declaredTypeMismatch": "Ce fichier n'est pas du format indiqué; nous n'avons donc pas pu l'accepter. Veuillez télécharger à nouveau la photo ou la vidéo."
+    },
+    "awaitingStripping": "Nous avons bien reçu votre vidéo. Elle est conservée en toute sécurité et n’est pas encore disponible pour examen."
+  },
+  "nav": {
+    "primaryLabel": "Primaire",
+    "viewReports": "Consulter les rapports de sécurité",
+    "submitReport": "Soumettre un rapport de sécurité",
+    "contact": "Contact",
+    "memberLogin": "Connexion des membres"
+  },
+  "language": {
+    "toggleLabel": "Langue",
+    "optionEnglish": "Anglais",
+    "optionFrench": "Français"
+  },
+  "theme": {
+    "toggleLabel": "Thème"
+  },
+  "home": {
+    "heroTitle": "Ensemble, pour des vols plus sécuritaires",
+    "heroCta": "Soumettre un rapport de sécurité",
+    "sectionWhy": {
+      "title": "Pourquoi signaler?",
+      "body": "Chaque signalement, aussi minime soit-il, contribue à repérer des tendances avant qu’elles ne prennent une tournure grave. Les signalements peuvent être effectués de manière anonyme et sont examinés avant toute publication."
+    },
+    "sectionHow": {
+      "title": "Comment ça fonctionne",
+      "body": "Vous décrivez ce qui s’est passé avec vos propres mots. Un réviseur vérifie votre texte et, avec votre consentement, un résumé est publié afin d’aider l’ensemble de la communauté."
+    },
+    "sectionAbout": {
+      "body": "L’Association canadienne de vol libre et de parapente représente les pilotes de vol libre de tout le pays et fait la promotion d’une pratique sécuritaire à tous les niveaux de ce sport.",
+      "title": "À propos de HPAC"
+    },
+    "heroSubtitle": "HPAC Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol."
+  },
+  "admin": {
+    "placeholderName": "Admin"
+  },
+  "page": {
+    "placeholder": {
+      "title": "{pageName}",
+      "body": "Cette page est une page temporaire. Le contenu de {pageName} sera bientôt disponible."
+    }
+  },
+  "notFound": {
+    "title": "Page introuvable",
+    "body": "Il n'y a rien à cette adresse."
+  },
+  "header": {
+    "logoAlt": "HPAC Sécurité"
+  },
+  "footer": {
+    "copyright": "© {year} HPAC Sécurité"
+  }
+}

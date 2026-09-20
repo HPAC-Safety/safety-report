@@ -41,3 +41,34 @@ When("a visitor activates any of those links or the member-login action", async 
 Then("the browser navigates to that destination's page", async ({ page }) => {
 	await expect(page.locator("main h1")).toBeVisible()
 })
+
+Given("a visitor loads the homepage on a mobile-width viewport", async ({ page }) => {
+	await page.setViewportSize({ width: 375, height: 812 })
+	await page.goto("/")
+})
+
+Then("the header nav is hidden and a menu toggle is shown instead", async ({ page }) => {
+	await expect(page.getByRole("dialog", { name: "Primary" })).toBeHidden()
+	await expect(page.getByRole("button", { name: "Open menu" })).toBeVisible()
+})
+
+When("the visitor activates the menu toggle", async ({ page }) => {
+	await page.getByRole("button", { name: /^(Open|Close) menu$/ }).click()
+})
+
+Then("a dialog containing the header's navigation links and member-login action opens", async ({ page }) => {
+	const nav = page.getByRole("dialog", { name: "Primary" })
+	await expect(nav).toBeVisible()
+	for (const { name } of NAV_DESTINATIONS) {
+		await expect(nav.getByRole("link", { name })).toBeVisible()
+	}
+	await expect(nav.getByRole("link", { name: MEMBER_LOGIN.name })).toBeVisible()
+})
+
+When("the visitor activates the menu toggle again", async ({ page }) => {
+	await page.getByRole("button", { name: /^(Open|Close) menu$/ }).click()
+})
+
+Then("the dialog closes", async ({ page }) => {
+	await expect(page.getByRole("dialog", { name: "Primary" })).toBeHidden()
+})

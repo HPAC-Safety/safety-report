@@ -14,20 +14,3 @@ test("the homepage loads with a header, nav, and hero", async ({ page }) => {
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
 	await expect(page.locator("main h1")).toBeVisible()
 })
-
-test("on a mobile-width viewport, navigation is reached through a hamburger dropdown", async ({ page }) => {
-	await page.setViewportSize({ width: 375, height: 812 })
-	await page.goto("/")
-
-	const nav = page.getByRole("dialog", { name: "Primary" })
-	await expect(nav).toBeHidden()
-
-	const toggle = page.getByRole("button", { name: "Open menu" })
-	await toggle.click()
-	await expect(nav).toBeVisible()
-	await expect(nav.getByRole("link", { name: "View safety reports" })).toBeVisible()
-	await expect(nav.getByRole("link", { name: "Member login" })).toBeVisible()
-
-	await page.getByRole("button", { name: "Close menu" }).click()
-	await expect(nav).toBeHidden()
-})

@@ -11,19 +11,21 @@ import { NotFoundPage } from "./routes/NotFoundPage"
 
 function App() {
 	return (
-		<>
+		<div className="flex min-h-screen flex-col">
 			<Header />
-			<Routes>
-				<Route path="/" element={<HomePage />} />
-				<Route path="/reports" element={<ViewReportsPage />} />
-				<Route path="/report" element={<SubmitReportPage />} />
-				<Route path="/contact" element={<ContactPage />} />
-				<Route path="/login" element={<MemberLoginPage />} />
-				<Route path="/admin" element={<AdminPage />} />
-				<Route path="*" element={<NotFoundPage />} />
-			</Routes>
+			<div className="flex-1">
+				<Routes>
+					<Route path="/" element={<HomePage />} />
+					<Route path="/reports" element={<ViewReportsPage />} />
+					<Route path="/report" element={<SubmitReportPage />} />
+					<Route path="/contact" element={<ContactPage />} />
+					<Route path="/login" element={<MemberLoginPage />} />
+					<Route path="/admin" element={<AdminPage />} />
+					<Route path="*" element={<NotFoundPage />} />
+				</Routes>
+			</div>
 			<Footer />
-		</>
+		</div>
 	)
 }
 

@@ -61,6 +61,13 @@ Feature: Web, localization, and design
     Then the data-theme attribute updates immediately
     And the theme choice persists to local storage across a reload
 
+  @ui
+  Scenario: The footer sits at the bottom of the viewport on a short page but below the fold on a long one
+    Given a visitor loads a page whose content is shorter than the viewport
+    Then the footer sits flush with the bottom of the viewport
+    Given a visitor loads a page whose content is taller than the viewport
+    Then the footer sits below the content, not pinned to the viewport
+
   Scenario: Application chrome strings come from committed locale catalogues
     Given the UI renders chrome or a stable validation/error message
     When the string is displayed

@@ -25,13 +25,17 @@ services:
       - "8080:8080"
 
   web:
-    image: nginx:alpine
+    image: node:22-alpine
+    working_dir: /repo/src/web
     depends_on:
       - api
     volumes:
-      - ./src/web/dist:/usr/share/nginx/html:ro
+      - .:/repo
+      - web-node-modules:/repo/src/web/node_modules
+    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
     ports:
-      - "5173:80"
+      - "5173:5173"
 
 volumes:
   postgres-data:
+  web-node-modules:

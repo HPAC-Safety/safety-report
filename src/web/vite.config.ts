@@ -13,8 +13,12 @@ const repoRoot = fileURLToPath(new URL("../..", import.meta.url))
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	server: {
+		host: true,
 		fs: {
 			allow: [repoRoot],
+		},
+		hmr: {
+			clientPort: 5173,
 		},
 	},
 })

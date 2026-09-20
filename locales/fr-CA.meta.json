@@ -4,6 +4,11 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "app.title": {
+    "source_hash": "526fac4ead6b1f032f6b3d8cfa0f6d0a26f89abda830f633b3f245a8ce44ff45",
+    "provider": "glossary",
+    "reviewed": true
+  },
   "footer.copyright": {
     "source_hash": "13134728987d9a32ead5df5cd231bd2eea13714a02adce071cde8d19a0d18531",
     "provider": "glossary",
@@ -69,10 +74,15 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "language.toggleLabel": {
-    "source_hash": "a4fe65264ef7dbb38d104b1e81eb3350f3142f3d16f32bdec39b1d9b42c1b8d1",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+  "language.switchTo": {
+    "source_hash": "e74b4e0cb2ca0462eb247fb87cda16bcc26433ff0788de99ad35bd16aae781be",
+    "provider": "glossary",
+    "reviewed": true
+  },
+  "nav.closeMenuLabel": {
+    "source_hash": "6ccd5c7856042d36476ffd35a41b54518be95621cc741ac3ed55b8108ea41586",
+    "provider": "glossary",
+    "reviewed": true
   },
   "nav.contact": {
     "source_hash": "2b5c3d26721ae9c350cf3009318b626f0fc8a90b4a2ac0ca8099c05aa849282e",
@@ -83,6 +93,11 @@
     "source_hash": "fe7747440a0526f0ccdeb42924b76f94c011997233f4f0e23dd60e3b0da9ded4",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
+  },
+  "nav.openMenuLabel": {
+    "source_hash": "b40b3713b43dc702682dc967ea5c2dbe20ae414c30baf100d162a8250a928065",
+    "provider": "glossary",
+    "reviewed": true
   },
   "nav.primaryLabel": {
     "source_hash": "efe10c80ec8a9f38624cbb47103010a8cf32488a503e4b4bfe4f92307a9cefa7",

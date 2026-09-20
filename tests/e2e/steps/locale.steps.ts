@@ -49,11 +49,12 @@ Given("a visitor is on any page", async ({ page }) => {
 })
 
 When("the visitor switches the language toggle", async ({ page }) => {
-	await page.getByRole("button", { name: "Language" }).click()
+	await page.getByRole("button", { name: /^Switch to/ }).click()
 })
 
 Then("the document lang attribute and page title update", async ({ page }) => {
 	await expect(page.locator("html")).not.toHaveAttribute("lang", "en-CA")
+	await expect(page).not.toHaveTitle("HPAC Safety")
 })
 
 Then("the language choice persists to local storage across a reload", async ({ page }) => {

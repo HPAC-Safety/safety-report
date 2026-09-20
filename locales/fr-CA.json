@@ -14,12 +14,14 @@
     "viewReports": "Consulter les rapports de sécurité",
     "submitReport": "Soumettre un rapport de sécurité",
     "contact": "Contact",
-    "memberLogin": "Connexion des membres"
+    "memberLogin": "Connexion des membres",
+    "openMenuLabel": "Ouvrir le menu",
+    "closeMenuLabel": "Fermer le menu"
   },
   "language": {
-    "toggleLabel": "Langue",
     "optionEnglish": "Anglais",
-    "optionFrench": "Français"
+    "optionFrench": "Français",
+    "switchTo": "Passer à {language}"
   },
   "theme": {
     "toggleLabel": "Thème"
@@ -59,5 +61,8 @@
   },
   "footer": {
     "copyright": "© {year} HPAC Sécurité"
+  },
+  "app": {
+    "title": "HPAC Sécurité"
   }
 }

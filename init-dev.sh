@@ -214,6 +214,47 @@ else
 	missing "git is not installed, yet this script is running from a clone — install Git for your platform and start again"
 fi
 
+# ------------------------------------------------------------- git hooks ------
+#
+# .githooks/pre-commit (tracked, versioned like everything else in this repo)
+# blocks a commit that leaves locales/en-CA.json and fr-CA.json out of step (a
+# stray `#`-stub, a missing key, stale provenance) — the exact class of drift
+# that otherwise only surfaces after a push, in CI's "i18n" job.
+#
+# Installed by copying it into the real hooks directory rather than by
+# setting core.hooksPath: that directory is where graphify's own `graphify
+# hook install` (below) puts post-checkout/post-commit, and core.hooksPath
+# repoints git at a single directory for *every* hook, which would silently
+# stop those from running. Different hook name (pre-commit vs.
+# post-checkout/post-commit), so both coexist with no collision. Resolved with
+# `git rev-parse --git-path hooks` rather than a hardcoded `.git/hooks`
+# because this repository is worked in primarily through git worktrees (see
+# skills/deliver-hpac-change/SKILL.md), where `.git` is a file, not a
+# directory, and hooks live in the shared main-checkout gitdir instead.
+# Idempotent by content comparison, so a second run only touches the file when
+# .githooks/pre-commit itself changed.
+#
+# A dev-machine convenience, not a CI gate — CI enforces the same two checks
+# directly, in the "i18n" job — so a missing hook is reported with note(), not
+# missing(): it must never fail a fresh CI checkout's `--check` step.
+HOOKS_DIR=$(git rev-parse --git-path hooks)
+if [ "$CHECK_ONLY" -eq 1 ]; then
+	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then
+		ok "git pre-commit hook (locale parity)"
+	else
+		note "git pre-commit hook not installed — run without --check"
+	fi
+else
+	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then
+		ok "git pre-commit hook already installed"
+	else
+		mkdir -p "$HOOKS_DIR"
+		cp .githooks/pre-commit "$HOOKS_DIR/pre-commit"
+		chmod +x "$HOOKS_DIR/pre-commit"
+		added "git pre-commit hook (locale parity)"
+	fi
+fi
+
 # ----------------------------------------------------------------- .NET SDK ---
 #
 # `dotnet --version` run inside the repository is the authoritative check: it

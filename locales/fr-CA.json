@@ -165,9 +165,9 @@
     "delete": "Supprimer",
     "save": "Enregistrer",
     "cancel": "Annuler",
-    "itemCount": "{count} choix",
+    "itemCount": "Choix : {count}",
     "reporterAdded": "Ajouté par un journaliste",
-    "reporterAddedCount": "{count} Ces choix ont été ajoutés par les journalistes et n’ont pas été vérifiés. Vérifiez l’orthographe et le français, et supprimez tout ce qui ne devrait pas figurer dans la liste.",
+    "reporterAddedCount": "Ajouté par les journalistes et non encore vérifié : {count}. Vérifiez l’orthographe et le français, et supprimez tout ce qui ne devrait pas figurer dans l’offre.",
     "editorTitleNew": "Nouvelle liste de choix",
     "editorTitleEdit": "Modifier la liste de choix",
     "error": {

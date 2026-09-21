@@ -105,7 +105,7 @@
     "reviewed": false
   },
   "choiceLists.itemCount": {
-    "source_hash": "6306f458839935f0f5ab70b5fcd57403dfb3e81d8f7e2324241ca9ab26f790d2",
+    "source_hash": "0b692864c361f2b3c6e1f106bcaaaf572f4334ac4608e6472d8dbad2f3a5c7d6",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
@@ -120,7 +120,7 @@
     "reviewed": false
   },
   "choiceLists.reporterAddedCount": {
-    "source_hash": "ac79aed7f7aa05dbae9374fe17584719208cbd4968dd11dd19f37aa35994c8e9",
+    "source_hash": "5f49bfab030e7d9829437fc85a565167b45d855a88d0467f67ea2adf8fa4e157",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

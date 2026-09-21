@@ -21,6 +21,10 @@ used for a `@ui` scenario
 ([ADR-0045](../docs/decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md),
 [ADR-0050](../docs/decisions/ADR-0050-ui-tag-for-scenarios-needing-playwright.md),
 [ADR-0053](../docs/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
+The Reqnroll suite skips a `@ui` scenario itself, so it reports as skipped
+wherever that suite runs rather than failing for want of a C# step definition
+it is never meant to have
+([ADR-0073](../docs/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
 An unimplemented scenario carries an `@ignore` tag; implementing it means
 writing its step definitions — Reqnroll or `playwright-bdd`, whichever this
 scenario's tag calls for — and removing that tag in the same PR.

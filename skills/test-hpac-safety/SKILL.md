@@ -32,8 +32,10 @@ xUnit tests via Reqnroll (`tests/HpacSafety.Acceptance.Tests`, ADR-0049). A
 scenario tagged `@ui` asserts browser-observable behavior and executes
 instead through `playwright-bdd` in `tests/e2e/steps` — Reqnroll has no
 browser to assert against, so it is never the right tool for a `@ui`
-scenario (ADR-0053); `.github/workflows/ci.yml`'s `dotnet test` step
-excludes `@ui` by category filter so one is never attempted there. An
+scenario (ADR-0053). The acceptance suite skips a `@ui` scenario itself,
+through a `[BeforeScenario("ui")]` hook, so one is never attempted there
+wherever `dotnet test` runs; `.github/workflows/ci.yml`'s category filter
+is a second line of defence, not the mechanism (ADR-0073). An
 unimplemented scenario carries `@ignore`; implementing its behavior means
 writing its step definitions — Reqnroll for a plain scenario,
 `tests/e2e/steps` for an `@ui` one — and removing that tag in the same PR —

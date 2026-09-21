@@ -114,10 +114,12 @@ jobs:
         run: ./init-dev.sh --check
 
       # @ui-tagged scenarios execute via playwright-bdd (tests/e2e), not
-      # Reqnroll — see ADR-0053. The filter excludes them here so an
-      # un-ignored @ui scenario with no C# step definitions never fails this
-      # job for lack of one; Reqnroll's xUnit generator emits a
-      # `[Trait("Category", tag)]` per Gherkin tag, which is what this filters on.
+      # Reqnroll — see ADR-0053. The acceptance suite skips them itself, so a
+      # bare `dotnet test` is already correct (ADR-0073); this filter is a
+      # second line of defence, keeping the job green even if that hook
+      # regresses. Reqnroll's xUnit generator emits a `[Trait("Category", tag)]`
+      # per Gherkin tag, which is what this filters on. UiScenarioHooksTests is
+      # what actually catches a removed hook, since this filter would hide it.
       - name: dotnet test
         run: dotnet test HpacSafety.slnx --configuration Release --filter "Category!=ui"
 
@@ -237,7 +239,9 @@ jobs:
       # 4.8% while Program.cs is at 100%, because the OpenApi source generator
       # emits ~440 lines into obj/ that no test will ever run.
       # @ui-tagged scenarios execute via playwright-bdd, not Reqnroll — see
-      # ADR-0053 and the matching filter on the `test` job's `dotnet test` step.
+      # ADR-0053/ADR-0073 and the matching filter on the `test` job's
+      # `dotnet test` step. Skipped scenarios would not move coverage either
+      # way; the filter keeps the two runs collecting the same set.
       - name: Collect .NET coverage
         run: >
           dotnet test HpacSafety.slnx

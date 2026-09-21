@@ -20,6 +20,14 @@ as part of the same `dotnet test HpacSafety.slnx` run. A scenario carries
 `@ignore` until its behavior is implemented; implementing it means writing its
 step definitions and removing that tag in the same PR.
 
+A scenario tagged `@ui` is the exception: its step definitions are TypeScript
+in [`e2e/steps`](e2e/steps) and it executes under `npx playwright test`, never
+here ([ADR-0053](../docs/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
+The acceptance suite skips every `@ui` scenario itself, so the bare
+`dotnet test HpacSafety.slnx` above is the whole command — no category filter
+is needed to get a true result
+([ADR-0073](../docs/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
+
 Target tests protect complete immutable questions, consent-only required
 behavior, final multipart mapping and atomicity, Turnstile/rate limiting, one
 strict bilingual model call, whole-identity role replacement, image/video

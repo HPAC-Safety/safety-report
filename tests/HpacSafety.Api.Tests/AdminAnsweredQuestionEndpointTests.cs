@@ -183,6 +183,23 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    [Theory]
+    [InlineData("not-a-tiny-id")]
+    [InlineData("aaaaaaaaaaa")]
+    public async Task GivenUnknownAnswerId_WhenTranslationIsSupplied_ThenApiReturnsNotFound(string id)
+    {
+        // Given — a malformed id and a well-formed one that matches no answer
+        using var client = await SignedInAsync();
+
+        // When
+        using var response = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/answers/{id}/translation", UriKind.Relative),
+            new { value = "Colline Cooper" });
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
     /// <summary>
     /// Writes one report answer straight to the database, because there is no
     /// submission endpoint to post one through yet.

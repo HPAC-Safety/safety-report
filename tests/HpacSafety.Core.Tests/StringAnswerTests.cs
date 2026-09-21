@@ -80,6 +80,24 @@ public class StringAnswerTests
         answer.ValueIn(Locale.EnCa).ShouldBe("Alberta, as written in English");
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void GivenFlaggedAnswer_WhenBlankTranslationIsSupplied_ThenRefused(string blank)
+    {
+        // Given — clearing the flag with nothing in the box would leave the
+        // answer looking translated when half of it is missing
+        var report = new Report(Locale.FrCa, Now);
+        var answer = report.Answer(Province(), "Alberta", Now);
+
+        // When
+        var supplying = () => answer.SupplyTranslation(blank);
+
+        // Then
+        supplying.ShouldThrow<DomainRuleViolationException>();
+        answer.NeedsTranslation.ShouldBeTrue();
+    }
+
     [Fact]
     public void GivenAnswerNotAwaitingTranslation_WhenOneIsSupplied_ThenRefused()
     {
@@ -152,6 +170,69 @@ public class StringAnswerTests
         // Then — a skip is recorded, and nothing is synthesized in its place
         answer.Value.ShouldBeNull();
         answer.NeedsTranslation.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void GivenAnswerWithNoTranslationYet_WhenReadInEitherLanguage_ThenGivesWhatTheReporterWrote()
+    {
+        // Given — an administrator has not reached this one yet
+        var report = new Report(Locale.FrCa, Now);
+        var answer = report.Answer(Province(), "Alberta", Now);
+
+        // When / Then — a half-filled answer reads as the reporter's words
+        // rather than as a blank
+        answer.ValueIn(Locale.FrCa).ShouldBe("Alberta");
+        answer.ValueIn(Locale.EnCa).ShouldBe("Alberta");
+    }
+
+    [Theory]
+    [InlineData(QuestionType.Statement)]
+    [InlineData(QuestionType.Group)]
+    public void GivenQuestionThatCollectsNoAnswer_WhenAnswered_ThenRefused(QuestionType type)
+    {
+        // Given — copy on the form, and a heading over other questions
+        var question = Question.Create(
+            "preamble", type, "Read this first", "Lisez ceci d'abord", Now, isActive: true);
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        var answering = () => report.Answer(question, "anything at all", Now);
+
+        // Then
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void GivenRequiredQuestion_WhenLeftBlank_ThenRefused()
+    {
+        // Given
+        var question = Question.Create(
+            "narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", Now,
+            isRequired: true, isActive: true);
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        var answering = () => report.Answer(question, value: null, Now);
+
+        // Then
+        answering.ShouldThrow<DomainRuleViolationException>();
+    }
+
+    [Fact]
+    public void GivenMultiSelect_WhenNothingIsChosen_ThenOneSkippedAnswerIsRecorded()
+    {
+        // Given
+        var question = Question.Create(
+            "ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", Now, isActive: true,
+            options: [new QuestionOptionInput("p3", "P3", "P3")]);
+        var report = new Report(Locale.EnCa, Now);
+
+        // When
+        var answers = report.Answer(question, [], Now);
+
+        // Then — a skip is recorded, not omitted
+        answers.Count.ShouldBe(1);
+        answers[0].Value.ShouldBeNull();
     }
 
     [Theory]

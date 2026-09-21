@@ -83,6 +83,12 @@ arrives. Rejected as unearned now: nothing has asked for `AND`/`OR` or for
 comparison against an option code, and an empty generalization is a schema to
 migrate later either way.
 
+*Since [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) there are no
+option codes to compare against. The condition is a comparison of the parent's
+stored answer against the literal `"yes"`, which is invariant across both
+official languages precisely so this check does not depend on the reporter's
+locale. The argument against generalizing is unchanged.*
+
 **Enforce the parent's type with a trigger.** The only way to make the database
 authoritative. Rejected: it hides a domain rule in a place no test in this
 repository reads, and it has to duplicate the "current revision is the highest
@@ -95,4 +101,5 @@ the operators above — it is the rules-engine alternative in a smaller disguise
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — the other revision field added alongside this
+- [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — why `"yes"` is invariant
 - [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)

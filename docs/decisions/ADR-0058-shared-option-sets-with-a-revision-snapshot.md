@@ -74,6 +74,30 @@ Everything else here stands, including for autocompletes: the snapshot is still
 written, still immutable, and still the record of what a given reporter was
 offered. What changed is which of the two a form renders.
 
+### Amended by ADR-0072: the snapshot is a record, not a lookup
+
+[ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) made an answer store
+its own text instead of an option code. That removes the join this ADR was
+built to protect.
+
+Two of the arguments above were load-bearing and are now spent. "Removing one
+makes a stored answer point at nothing" cannot happen, because an answer points
+at nothing by design. "A revision would render choices it was never offered" is
+still true and still the reason the snapshot is written, but it is no longer
+also a data-integrity argument.
+
+What survives is the fact the snapshot records: **the complete set of choices
+this reporter was offered.** A reviewer reading a two-year-old report needs to
+know that "Springbank" was picked out of forty aerodromes rather than four, and
+nothing else in the schema says so. The copy-on-create behaviour, the two
+mutability rules, the provenance columns, and the `ON DELETE` rules are all
+unchanged.
+
+What is retired is using the snapshot to *resolve* an answer. Rendering a
+historical answer reads one column. Validating a submitted answer still consults
+the snapshot — the submitted text must be one of the labels the revision
+offered — but reading a stored one does not.
+
 ## Consequences
 
 - An administrator maintains the aerodrome list in one place, and every
@@ -112,6 +136,7 @@ this system's volume makes free.
 
 ## Related
 
+- [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — amends what the snapshot is for
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
 - [ADR-0034](ADR-0034-tiny-ids.md) — why the volume argument above holds
 - [ADR-0040](ADR-0040-migrate-canonical-domain-and-persistence.md) — the schema baseline

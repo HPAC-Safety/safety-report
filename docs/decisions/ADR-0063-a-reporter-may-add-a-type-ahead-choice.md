@@ -1,11 +1,16 @@
 ---
-status: accepted
+status: partially-superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: autocomplete, option sets, reporter-added, curation, snapshot, question bank
 ---
 
 # ADR-0063 — A reporter may add a missing type-ahead choice, and an autocomplete renders the live list
+
+**Status:** The curation half stands. Two parts are superseded by
+[ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): the submission path
+no longer translates anything, and a reporter's answer no longer refers to an
+option row. See "Superseded by ADR-0072" below.
 
 ## Context
 
@@ -83,20 +88,39 @@ reporter-added choices and marks each one, so a safety officer can fix a
 spelling, correct the French, merge a duplicate, or remove it. Removal is a
 soft delete, so revisions that already snapshotted it keep their copy.
 
-### The second language is machine-translated at submission
+### ~~The second language is machine-translated at submission~~
 
-A reporter types one language. Both are required, as everywhere else in the
-question bank. The submission path translates the typed value through
-`ITranslator` and supplies both labels; `AddFromReporter` does no translating
-itself, because which service drafted a label is the caller's business.
+**Superseded by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md).**
 
-**This widens ADR-0062's scope, and it should be read as a real change rather
-than a detail.** Reporter-entered text now reaches a translation provider. Two
-things bound it: the text is a place name typed into a type-ahead, not a
-narrative, and the result is visible to administrators as a reporter-added item
-rather than being filed silently. It is still reporter content leaving the
-system, and ADR-0062's scope statement is amended to say so plainly instead of
-contradicting the code.
+This section decided that the submission path translates a reporter's typed
+value through `ITranslator` and supplies both labels, and it widened ADR-0062's
+scope to admit that reporter-entered text now reaches a translation provider.
+
+Both are reversed. The submission path calls no translator. A reporter's typed
+value is recorded in the language they typed it in and flagged; an administrator
+supplies the second language by hand or with the Translate action, which
+requires the `Administrator` policy. ADR-0062's scope returns to
+administrator-initiated translation, and reporter content leaves the system only
+when an administrator asks for it.
+
+The argument below for *why* both languages are wanted at all still holds — half
+the membership reads French, and a choice with one language is a choice half of
+them cannot use. What changed is who triggers the translation and when.
+
+### Superseded by ADR-0072: an answer does not refer to an option row
+
+This ADR was written while `report_answers` stored option codes, so it says a
+reporter's answer "refers to" the item their typed value created or matched.
+[ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) removed that
+indirection: an answer stores the text itself and points at nothing.
+
+The curation mechanism is unaffected and is now the whole point of
+`AddFromReporter`. Adding "Mount 7" to the shared list no longer gives *this*
+reporter's answer something to reference — their answer already holds the
+words — it makes the site available to the *next* pilot, and puts it in front of
+an administrator to spell-check, merge, or remove. The three cases below, the
+`added_by_reporter` flag, and the refusal to revive a removed choice all stand
+unchanged.
 
 ## Consequences
 
@@ -143,9 +167,16 @@ is the requirement — in favour of requiring authentication on the form.
 publishes the credential (ADR-0062). Not at all leaves half the membership
 looking at a blank choice.
 
+*Superseded by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): "not
+at all, at submission" is now the decision. The blank-choice objection was
+answered by moving the translation rather than dropping it — an administrator
+fills the second language from a queue, so the choice is complete before the
+next reporter meets it.*
+
 ## Related
 
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — amended by the carve-out above
-- [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md) — scope widened by this ADR
+- [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — supersedes the translation and answer-reference parts of this ADR
+- [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md) — ~~scope widened by this ADR~~, narrowed back by ADR-0072
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
 - [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)

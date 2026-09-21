@@ -85,8 +85,9 @@ A reporter signs in as an HPAC member — which proves membership and is never
 recorded against the report — sees the latest active immutable revision of each
 bilingual database question in its configured order, may skip every ordinary
 question, must make an explicit publication-consent choice, and submits the
-answers and optional attachments once. The API saves the report, exact question
-revisions, files, and
+answers and optional attachments once. Every answer is stored as one string —
+the words the reporter saw, in the language they saw them. The API saves the
+report, exact question revisions, files, and
 outbox work atomically. The Worker makes exactly one model call using one
 versioned prompt to produce an anonymized English/French summary pair, using
 private answers only as recognition context. A safety officer reviews that pair

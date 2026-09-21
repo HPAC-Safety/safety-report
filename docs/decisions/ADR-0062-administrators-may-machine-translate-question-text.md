@@ -56,15 +56,19 @@ else changes about how a question is stored.**
   is a paraphrased account of a crash, and that remains forbidden: never a
   narrative, never an answer, never a summary.
 
-  **Scope widened by [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md).**
-  When a reporter types a missing choice into a type-ahead — a flying site the
-  list did not offer — that value is machine-translated at submission so the
-  new choice exists in both official languages. It is reporter-entered text
-  reaching a translation provider, which is exactly what the sentence above
-  forbids for a narrative, so it is written down rather than left implied. What
-  bounds it: the value is a short label typed into a type-ahead, not prose, and
-  the resulting choice is surfaced to administrators as reporter-added rather
-  than filed silently.
+  **~~Scope widened by [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md).~~
+  Narrowed back by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md).**
+  ADR-0063 had the submission path machine-translate a choice a reporter typed
+  into a type-ahead, which made reporter-entered text reach a provider without
+  anyone asking for it. That is reversed. Nothing on the submission path
+  translates anything.
+
+  One narrower addition replaces it: what an administrator may draft now
+  includes **the second language of a short select answer**, alongside question
+  wording. The same `/api/admin/translate` route, the same `Administrator`
+  policy, the same rule that the result is a draft in a form field. The
+  distinction this bullet draws is intact — an administrator asks, for a short
+  label, and nothing is translated because a reporter pressed Submit.
 
 ### What changes
 

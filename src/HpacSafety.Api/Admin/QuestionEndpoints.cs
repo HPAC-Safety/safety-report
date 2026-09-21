@@ -1,3 +1,4 @@
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
@@ -25,7 +26,7 @@ public static class QuestionEndpoints
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        var group = app.MapGroup("/api/admin/questions").RequireAdminSession();
+        var group = app.MapGroup("/api/admin/questions").RequireAuthorization(HpacPolicies.Administrator);
 
         group.MapGet("/", ListAsync);
         group.MapPost("/", CreateAsync);

@@ -81,39 +81,33 @@ Feature: Moderation, authentication, and publication
     Given a visitor loads the homepage
     Then the header shows no Admin menu
 
-  @ignore
   Scenario: A token signed by an unknown key is rejected
     Given a bearer token signed with a key the API does not trust
     When it is presented to any authenticated endpoint
     Then the API refuses the request
     And it does not disclose why the token was refused
 
-  @ignore
   Scenario: A token whose signature has been altered is rejected
     Given a validly issued bearer token whose signature segment has been changed
     When it is presented to any authenticated endpoint
     Then the API refuses the request
 
-  @ignore
   Scenario: An expired token is rejected
     Given a bearer token whose expiry has passed
     When it is presented to any authenticated endpoint
     Then the API refuses the request
 
-  @ignore
   Scenario: A token for the wrong audience is rejected
     Given a bearer token issued for a different audience
     When it is presented to any authenticated endpoint
     Then the API refuses the request
 
-  @ignore
   Scenario: A token with no recognized role claim authenticates as User
     Given a validly signed bearer token carrying no recognized role claim
     When it is presented to the API
     Then the request is authenticated
     And the identity has the User role and no administrative capability
 
-  @ignore
   Scenario: The API never reads a name, an email, or any other claim
     Given a validly signed bearer token carrying a name, an email, and a picture claim
     When the API establishes the caller's identity

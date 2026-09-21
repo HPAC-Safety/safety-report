@@ -1,4 +1,5 @@
 using HpacSafety.Api.Admin;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
 
@@ -21,6 +22,14 @@ builder.Services.AddHpacSafetyTranslation(
     builder.Configuration,
     useStandInWhenUnconfigured: builder.Environment.IsDevelopment());
 
+// Identity is a signed JWT this API validates; it never sees a password. In
+// Development the API also issues the tokens it validates, so the same
+// middleware and the same policies run either way and only the issuer and key
+// differ. See ADR-0064 and ADR-0066.
+builder.Services.AddHpacSafetyAuthentication(
+    builder.Configuration,
+    useDevelopmentIssuer: builder.Environment.IsDevelopment());
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -29,6 +38,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 
 // Whichever of the API or the Worker starts first after a deploy applies any
 // pending migration; the other is a no-op. See ADR-0055.
@@ -41,6 +52,10 @@ await using (var scope = app.Services.CreateAsyncScope())
 // Endpoints are added as features land. See the Foundation and Phase 1
 // milestones, and src/HpacSafety.Api/README.md.
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// Sign-in, and who the caller is. The development token endpoint inside is
+// mapped only in Development.
+app.MapAuth(app.Environment.IsDevelopment());
 
 // The question bank is data an administrator edits, not code that ships
 // (ADR-0016). These are the endpoints that edit it.

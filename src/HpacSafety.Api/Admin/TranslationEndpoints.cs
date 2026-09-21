@@ -1,3 +1,4 @@
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Translation;
 
@@ -29,7 +30,7 @@ public static class TranslationEndpoints
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        var group = app.MapGroup("/api/admin/translate").RequireAdminSession();
+        var group = app.MapGroup("/api/admin/translate").RequireAuthorization(HpacPolicies.Administrator);
 
         group.MapGet("/", Availability);
         group.MapPost("/", TranslateAsync);

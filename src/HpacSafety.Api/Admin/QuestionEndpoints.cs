@@ -44,12 +44,13 @@ public static class QuestionEndpoints
     private static async Task<IResult> ListAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
     {
         var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
+        var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
 
         return Results.Ok(
             questions
                 .OrderBy(question => question.DisplayOrder)
                 .ThenBy(question => question.Key, StringComparer.Ordinal)
-                .Select(QuestionView.Of)
+                .Select(question => QuestionView.Of(question, SetFor(question, sets)))
                 .ToList());
     }
 
@@ -109,7 +110,10 @@ public static class QuestionEndpoints
                 database.Questions.Add(question);
                 await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-                return Results.Created($"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question));
+                var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+
+                return Results.Created(
+                    $"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question, SetFor(question, sets)));
             }).ConfigureAwait(false);
     }
 
@@ -167,7 +171,9 @@ public static class QuestionEndpoints
 
                 await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-                return Results.Ok(QuestionView.Of(question));
+                var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+
+                return Results.Ok(QuestionView.Of(question, SetFor(question, sets)));
             }).ConfigureAwait(false);
     }
 
@@ -220,8 +226,10 @@ public static class QuestionEndpoints
 
         await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
+        var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+
         return Results.Ok(
-            ordered.Select(QuestionView.Of).ToList());
+            ordered.Select(question => QuestionView.Of(question, SetFor(question, sets))).ToList());
     }
 
     /// <summary>
@@ -257,6 +265,25 @@ public static class QuestionEndpoints
                 return Results.NoContent();
             }).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Every live shared choice list, by id. An autocomplete renders the live
+    /// list rather than its snapshot (ADR-0063), so the screen needs them.
+    /// </summary>
+    private static async Task<Dictionary<TinyId, OptionSet>> LiveSetsAsync(
+        HpacSafetyDbContext database, CancellationToken cancellationToken)
+    {
+        var sets = await database.OptionSets
+            .Include("_items")
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        return sets.ToDictionary(set => set.Id);
+    }
+
+    /// <summary>The shared list a question's current revision names, if it names a live one.</summary>
+    private static OptionSet? SetFor(Question question, Dictionary<TinyId, OptionSet> sets) =>
+        question.CurrentRevision.OptionSetId is { } id && sets.TryGetValue(id, out var set) ? set : null;
 
     private static IQueryable<Question> LiveQuestions(HpacSafetyDbContext database) =>
         database.Questions

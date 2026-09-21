@@ -165,5 +165,56 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
         parentExists.ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task Given_a_reporter_added_choice_When_the_list_is_read_back_Then_the_marker_survives()
+    {
+        // Given
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        var key = UniqueKey("sites");
+
+        await using (var context = PostgresFixture.ContextFor(connectionString))
+        {
+            var set = OptionSet.Create(key, "Flying sites", "Sites de vol", At);
+            set.Add("coopers", "Cooper's", "Cooper's");
+            set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
+
+            context.OptionSets.Add(set);
+            await context.SaveChangesAsync();
+        }
+
+        // When
+        await using var reading = PostgresFixture.ContextFor(connectionString);
+        var loaded = await reading.OptionSets.Include(Items).SingleAsync(set => set.Key == key);
+
+        // Then — the curation query is "what have reporters added to this list"
+        loaded.Items.Single(item => item.Code == "coopers").AddedByReporter.ShouldBeFalse();
+        loaded.Items.Single(item => item.Code == "mount_7").AddedByReporter.ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Given_an_existing_list_When_the_migration_is_applied_Then_its_choices_are_administrator_authored()
+    {
+        // Given — every row that existed before this column did was authored
+        // by an administrator, which is what the default records
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+        var key = UniqueKey("provinces");
+
+        await using (var context = PostgresFixture.ContextFor(connectionString))
+        {
+            var set = OptionSet.Create(key, "Provinces", "Provinces", At);
+            set.Add("alberta", "Alberta", "Alberta");
+
+            context.OptionSets.Add(set);
+            await context.SaveChangesAsync();
+        }
+
+        // When
+        await using var reading = PostgresFixture.ContextFor(connectionString);
+        var loaded = await reading.OptionSets.Include(Items).SingleAsync(set => set.Key == key);
+
+        // Then
+        loaded.Items.ShouldAllBe(item => !item.AddedByReporter);
+    }
+
     private static string UniqueKey(string prefix) => $"{prefix}_{Guid.NewGuid():N}"[..24];
 }

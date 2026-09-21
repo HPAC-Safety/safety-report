@@ -153,6 +153,47 @@ Feature: Question bank and form
     Then the option is retired from the list rather than erased
     And the revision's copy of it is unchanged
 
+  Scenario: A reporter adds a choice the type-ahead did not offer
+    Given a type-ahead question is backed by a shared choice list
+    When a reporter submits an answer naming a site the list does not offer
+    Then the site is added to the shared list as a reporter-added choice
+    And it carries both official languages
+    And the reporter's answer refers to it
+
+  Scenario: Two reporters naming the same new site produce one choice
+    Given a reporter has already added a site to a shared choice list
+    When another reporter submits the same site name
+    Then the existing choice is reused rather than duplicated
+    And an administrator's wording is never replaced by a reporter's
+
+  Scenario: A choice an administrator removed is not revived by a reporter
+    Given an Administrator removed a choice from a shared list
+    When a reporter submits that same value again
+    Then the choice stays removed from the list
+    And the reporter's answer still refers to the existing row
+
+  Scenario: A type-ahead offers the live list while its revision records what was shown
+    Given a type-ahead revision was saved when the shared list was shorter
+    When a choice is added to that list afterwards
+    Then the question now offers the longer list
+    And the revision still records the shorter one
+
+  Scenario Outline: Only a type-ahead reads the live list
+    Given a <type> revision is backed by a shared choice list
+    When a choice is added to that list afterwards
+    Then the question offers <offered>
+
+    Examples:
+      | type          | offered              |
+      | autocomplete  | the live list        |
+      | single_select | its own snapshot     |
+      | multi_select  | its own snapshot     |
+
+  Scenario: A retired shared list leaves a type-ahead showing what it recorded
+    Given a type-ahead revision was built from a shared choice list
+    When that shared list is retired entirely
+    Then the question still offers the choices its revision recorded
+
   Scenario: A question can be made conditional only on a yes/no question
     Given an active question asks for something other than yes or no
     When an Administrator tries to make another question conditional on it
@@ -270,6 +311,18 @@ Feature: Question bank and form
   Scenario: A development stand-in says what it is
     Given a signed-in Administrator is authoring a question on a development server
     Then the Translate action works and the screen says the text is copied unchanged
+
+  @ui
+  Scenario: An Administrator sees which choices reporters added
+    Given a signed-in Administrator opens the manage-choice-lists page
+    Then each reporter-added choice is marked as such
+    And the page says how many are waiting to be reviewed
+
+  @ui
+  Scenario: An Administrator corrects a reporter-added choice
+    Given a signed-in Administrator opens the manage-choice-lists page
+    When they correct the wording of a reporter-added choice and save
+    Then the corrected wording is shown in the list
 
   @ui
   Scenario: An Administrator authors a question from the dashboard

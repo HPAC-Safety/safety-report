@@ -58,6 +58,14 @@ public sealed class OptionSetItemConfiguration : IEntityTypeConfiguration<Option
         builder.Property(item => item.LabelFr).IsRequired();
         builder.Property(item => item.DisplayOrder).IsRequired();
 
+        // Not nullable: an item was either typed by a reporter or authored by
+        // an administrator, and every row that already exists was the latter.
+        builder.Property(item => item.AddedByReporter).IsRequired().HasDefaultValue(false);
+
+        // The curation query is "show me what reporters have added to this
+        // list", so it is worth an index on the pair.
+        builder.HasIndex(item => new { item.OptionSetId, item.AddedByReporter });
+
         // A code is unique in its set, including across a removed item —
         // re-adding a removed code revives that row rather than adding a
         // second one claiming the same code, so history keeps one target.

@@ -120,6 +120,7 @@ erDiagram
         int display_order
         text label_en
         text label_fr
+        boolean added_by_reporter "typed into a type-ahead, awaiting curation"
         timestamptz deleted
     }
 
@@ -200,6 +201,15 @@ updating the old. `report_answers` points at a revision, never at a question, so
 a report filed two years ago still renders exactly what it asked
 ([ADR-0016](../../../../docs/decisions/ADR-0016-data-driven-question-bank.md)).
 
+**A type-ahead reads the live list; everything else reads its snapshot.**
+`QuestionType.Autocomplete` backed by a live `option_set` renders that set's
+current items, because it is the one type a reporter can add to and a choice
+nobody can see until an administrator republishes the question is no use to the
+next reporter. Its snapshot is still written and still records what that
+reporter was offered. Every other option type renders the snapshot, and
+`QuestionChoices` is the one place the rule lives
+([ADR-0063](../../../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+
 **`option_sets` is mutable; `question_revision_options` is not.** The shared
 list is the working copy an administrator maintains. When a revision is built
 from one, the live items are *copied* into that revision's own rows, and it
@@ -255,6 +265,7 @@ this.
 | `20260823022839_ReplaceSensitivityWithQuestionPrivacy` | Replaced a three-tier sensitivity field with the private/eligible split the model actually needs (ADR-0038). |
 | `20260827013637_MigrateCanonicalDomainAndPersistence` | Moved to complete immutable revisions, removed the application-side field cipher, and reached the current baseline (ADR-0040). |
 | `20260921021720_AddQuestionAuthoring` | Added `option_sets`/`option_set_items`, the conditional-question and option-set provenance columns, and the `time` and `autocomplete` question types. |
+| `20260921034154_AddReporterAddedChoices` | Added `option_set_items.added_by_reporter` and an index on `(option_set_id, added_by_reporter)`, which is the curation query. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

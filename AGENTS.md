@@ -31,6 +31,11 @@ privacy-sensitive.
    a drafting aid while doing so; the database holds only what they saved, and
    a question cannot be saved in one language
    ([ADR-0062](docs/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
+   A reporter may add a missing choice to a type-ahead, recorded at submission,
+   translated into the other language, and marked for an administrator to
+   curate; a type-ahead therefore renders the live shared list while its
+   revision snapshot remains the record of what that reporter was offered
+   ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
    A question may be made conditional on a yes/no question, and its options may
    be copied from a shared choice list
    ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
@@ -64,8 +69,9 @@ privacy-sensitive.
 There is no deterministic scrubber, separate PII auditor, report translator,
 specialized aircraft processing, outbound email flow, pre-submit
 upload session, or speculative publication channel. Machine translation exists
-for one purpose only — drafting question wording while authoring — and never
-touches a report, an answer, or a summary.
+for two purposes only — drafting question wording while authoring, and filling
+the second language of a choice a reporter added to a type-ahead — and never
+touches a narrative, an answer, or a summary.
 
 ## Focused skills
 

@@ -244,6 +244,72 @@ public class Question
             at);
     }
 
+    /// <summary>
+    /// Applies an administrator's edit and returns the question that is live
+    /// afterwards — this one, revised, or a new one that replaces it.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is where ADR-0071 lives. While nothing has answered the question, an
+    /// edit is a revision and the question keeps its identity. Once an answer
+    /// exists, a reworded question is a different question: this one is retired
+    /// and a new one takes its place, carrying the same stable key, so every
+    /// answer already given keeps pointing at the wording it was given under.
+    /// </para>
+    /// <para>
+    /// Publication consent never forks. It cannot be deleted, so it revises in
+    /// place however many answers it has.
+    /// </para>
+    /// <para>
+    /// Whether the question has been answered is a fact about reports, which
+    /// this aggregate cannot see, so the caller reads it and passes it in. It
+    /// must count answers on deleted reports too — a deleted report is still a
+    /// record of what somebody was asked.
+    /// </para>
+    /// </remarks>
+    public Question ApplyEdit(
+        bool hasBeenAnswered,
+        QuestionType type,
+        string labelEn,
+        string labelFr,
+        bool isPrivate,
+        bool isActive,
+        int displayOrder,
+        string? sectionKey,
+        DateTimeOffset at,
+        string? helpTextEn = null,
+        string? helpTextFr = null,
+        string? placeholderEn = null,
+        string? placeholderFr = null,
+        bool isRequired = false,
+        TinyId? dependsOnQuestionId = null,
+        TinyId? optionSetId = null,
+        IReadOnlyList<QuestionOptionInput>? options = null)
+    {
+        var draft = new RevisionDraft(
+            type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
+            isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+            options ?? []);
+
+        if (!ForksWhenEdited(hasBeenAnswered))
+        {
+            Revise(
+                type, labelEn, labelFr, isPrivate, isActive, displayOrder, sectionKey, at,
+                helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
+                optionSetId, options);
+            return this;
+        }
+
+        return Fork(draft, at);
+    }
+
+    /// <summary>
+    /// Whether an edit would replace this question rather than revise it. False
+    /// for a question nobody has answered, and false for publication consent
+    /// however many answers it has.
+    /// </summary>
+    public bool ForksWhenEdited(bool hasBeenAnswered) => hasBeenAnswered && !IsSystem;
+
     /// <summary>Moves the question on the form, as a new revision. Every other
     /// field is carried forward unchanged from <see cref="CurrentRevision"/>.</summary>
     public QuestionRevision Reorder(int displayOrder, DateTimeOffset at) =>
@@ -302,6 +368,12 @@ public class Question
     /// Retires the question. A soft delete, always: answers to it are part of a
     /// real report and are never removed with it.
     /// </summary>
+    /// <remarks>
+    /// There is no undelete, deliberately. A retired question may already have
+    /// answers frozen against its retirement, and a row that can come back is
+    /// not frozen (ADR-0071). An administrator who wants it again authors it
+    /// again.
+    /// </remarks>
     public void Delete(DateTimeOffset at)
     {
         if (IsSystem)
@@ -316,6 +388,28 @@ public class Question
         }
 
         Deleted = at;
+    }
+
+    /// <summary>
+    /// Retires this question and returns its replacement, carrying the same
+    /// stable key and starting a fresh revision chain. The key is shared with
+    /// every retired question in the chain and is unique only among live ones,
+    /// which is what the partial unique index enforces (ADR-0071).
+    /// </summary>
+    private Question Fork(RevisionDraft draft, DateTimeOffset at)
+    {
+        EnsureNotDeleted();
+
+        var replacement = new Question(Key, isSystem: false, Role, at);
+        replacement._revisions.Add(
+            QuestionRevision.Create(
+                replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
+                draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
+                isSystem: false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
+                draft.SectionKey, draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at));
+
+        Delete(at);
+        return replacement;
     }
 
     private QuestionRevision ReviseInternal(RevisionDraft draft, DateTimeOffset at)

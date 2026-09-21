@@ -187,10 +187,21 @@ public class QuestionRevision
     /// <summary>The help text in one locale.</summary>
     public string? HelpText(Locale locale) => locale == Locale.FrCa ? HelpTextFr : HelpTextEn;
 
-    /// <summary>True when this type stores an option code rather than free text.</summary>
+    /// <summary>True when this type answers from a fixed set of choices rather
+    /// than free text.</summary>
     public bool ExpectsOptions =>
         Type is QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.YesNo
             or QuestionType.Autocomplete;
+
+    /// <summary>
+    /// True when an answer to this type is stored in the reporter's language and
+    /// so needs an administrator to supply the other one (ADR-0072). Yes/no is
+    /// excluded although it answers from a fixed set: its stored form is the
+    /// invariant <c>yes</c> or <c>no</c>, identical in both languages, which is
+    /// what lets a conditional question compare it without knowing the locale
+    /// (ADR-0060).
+    /// </summary>
+    public bool StoresLocalizedValue => ExpectsOptions && Type != QuestionType.YesNo;
 
     /// <summary>
     /// True when this type's options may come from a shared
@@ -250,6 +261,23 @@ public class QuestionRevision
         Type == QuestionType.YesNo
             ? YesNoCodes.Contains(code, StringComparer.OrdinalIgnoreCase)
             : Option(code) is not null;
+
+    /// <summary>
+    /// Whether this revision offered the given value, written as the reporter
+    /// saw it in their own language. This is the check an answer is validated
+    /// against now that answers store their words rather than a code
+    /// (ADR-0072), and it reads the same frozen snapshot <see cref="Accepts"/>
+    /// always did.
+    /// </summary>
+    /// <remarks>
+    /// Yes/no is invariant: its two stored forms are <c>yes</c> and <c>no</c> in
+    /// both languages, and the words a reporter actually saw are UI chrome from
+    /// <c>locales/</c> rather than option rows.
+    /// </remarks>
+    public bool Offers(string value, Locale locale) =>
+        Type == QuestionType.YesNo
+            ? YesNoCodes.Contains(value, StringComparer.Ordinal)
+            : _options.Exists(option => string.Equals(option.Label(locale), value, StringComparison.Ordinal));
 
     /// <summary>
     /// Builds the complete, ordered option set this revision is born with.

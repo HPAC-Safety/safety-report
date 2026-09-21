@@ -72,13 +72,18 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
         builder.Property(answer => answer.QuestionKey).HasMaxLength(128).IsRequired();
         builder.Property(answer => answer.IsPrivate).IsRequired();
 
-        builder.PrimitiveCollection(answer => answer.SelectedOptionCodes)
-            .UsePropertyAccessMode(PropertyAccessMode.Field);
+        builder.Property(answer => answer.Locale).IsRequired();
+        builder.Property(answer => answer.NeedsTranslation).IsRequired();
 
-        // At most one revision of the same stable key per report, and one
-        // answer per report + question revision.
-        builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId }).IsUnique();
+        // Not unique on (report, question): a multi-select records one row per
+        // chosen value, so a report legitimately holds several answers to one
+        // question (ADR-0072).
+        builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId });
         builder.HasIndex(answer => answer.QuestionRevisionId);
+
+        // The administrator's translation queue.
+        builder.HasIndex(answer => answer.NeedsTranslation)
+            .HasFilter("needs_translation");
 
         // Lets a report_files row enforce, at the database level, that the
         // answer it links to belongs to the same report — see

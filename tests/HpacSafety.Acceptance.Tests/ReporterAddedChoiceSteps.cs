@@ -57,7 +57,7 @@ public sealed class ReporterAddedChoiceSteps
     public void GivenAReporterAlreadyAddedASite()
     {
         GivenATypeAheadBackedByAList();
-        _added = _set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
+        _added = _set.AddFromReporter("Mount 7");
     }
 
     [Given(@"an Administrator removed a choice from a shared list")]
@@ -68,15 +68,15 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [When(@"a reporter submits an answer naming a site the list does not offer")]
-    public void WhenAReporterNamesANewSite() => _added = _set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
+    public void WhenAReporterNamesANewSite() => _added = _set.AddFromReporter("Mount 7");
 
     [When(@"another reporter submits the same site name")]
     public void WhenAnotherReporterNamesTheSameSite() =>
-        _added = _set.AddFromReporter("mount 7", "mount 7 (as typed)", "mont 7 (tel que saisi)");
+        _added = _set.AddFromReporter("mount 7");
 
     [When(@"a reporter submits that same value again")]
     public void WhenAReporterRetypesARemovedValue() =>
-        _added = _set.AddFromReporter("Woodside", "Woodside", "Woodside");
+        _added = _set.AddFromReporter("Woodside");
 
     [When(@"a choice is added to that list afterwards")]
     public void WhenAChoiceIsAddedAfterwards() => _set.Add("mount_7", "Mount 7", "Mont 7");

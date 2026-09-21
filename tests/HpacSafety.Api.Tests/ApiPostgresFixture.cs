@@ -1,3 +1,8 @@
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+
+using HpacSafety.Core.Features.Moderation;
+
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
 
@@ -16,6 +21,12 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
     // Pinned rather than floating on `latest` — see PostgresContainerTests.
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
+    /// <summary>
+    /// The signing key the booted API issues and validates development tokens
+    /// with. Long enough to satisfy the minimum the host enforces at startup.
+    /// </summary>
+    public const string SigningKey = "hpac-safety-api-test-signing-key-not-a-secret";
+
     /// <summary>The API, booted in process against the container above.</summary>
     public WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
@@ -25,7 +36,11 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
         await _postgres.StartAsync();
 
         Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            builder.UseSetting("ConnectionStrings:HpacSafety", _postgres.GetConnectionString()));
+        {
+            builder.UseEnvironment("Development");
+            builder.UseSetting("ConnectionStrings:HpacSafety", _postgres.GetConnectionString());
+            builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
+        });
     }
 
     /// <inheritdoc />
@@ -34,6 +49,69 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
         await Factory.DisposeAsync();
         await _postgres.DisposeAsync();
     }
+}
+
+/// <summary>
+/// Signs a test client in by asking the booted API for a real token.
+/// </summary>
+/// <remarks>
+/// Deliberately not a faked <c>ClaimsPrincipal</c> or a test authentication
+/// handler: the token is minted by the host and then validated by the same
+/// middleware production runs, so a test exercises signature verification,
+/// issuer and audience checks, expiry, claim extraction, and policy evaluation
+/// rather than trusting a stub. See ADR-0066.
+/// </remarks>
+public static class SignedInClient
+{
+    /// <summary>The development credential pair for each role.</summary>
+    public static (string Username, string Password) CredentialsFor(MemberRole role) => role switch
+    {
+        MemberRole.Administrator => ("admin", "admin"),
+        MemberRole.SafetyOfficer => ("officer", "officer"),
+        MemberRole.User => ("user", "user"),
+        _ => throw new ArgumentOutOfRangeException(nameof(role)),
+    };
+
+    /// <summary>Asks the booted API for a signed token in that role.</summary>
+    public static async Task<string> TokenForAsync(WebApplicationFactory<Program> factory, MemberRole role)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var (username, password) = CredentialsFor(role);
+
+        using var anonymous = factory.CreateClient();
+        using var response = await anonymous.PostAsJsonAsync("/api/auth/token", new { username, password });
+
+        response.EnsureSuccessStatusCode();
+
+        var token = await response.Content.ReadFromJsonAsync<TokenPayload>();
+        return token!.AccessToken;
+    }
+
+    /// <summary>A client carrying a real bearer token for that role.</summary>
+    public static async Task<HttpClient> AsAsync(WebApplicationFactory<Program> factory, MemberRole role)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var token = await TokenForAsync(factory, role);
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return client;
+    }
+
+    /// <summary>A client carrying an arbitrary bearer token.</summary>
+    public static HttpClient Bearing(WebApplicationFactory<Program> factory, string token)
+    {
+        ArgumentNullException.ThrowIfNull(factory);
+
+        var client = factory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return client;
+    }
+
+    private sealed record TokenPayload(string AccessToken, DateTimeOffset ExpiresAt, string Subject, string Role);
 }
 
 /// <summary>Shares one container and factory across every API test class.</summary>

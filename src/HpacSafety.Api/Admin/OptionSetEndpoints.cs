@@ -1,3 +1,4 @@
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
@@ -24,7 +25,7 @@ public static class OptionSetEndpoints
     {
         ArgumentNullException.ThrowIfNull(app);
 
-        var group = app.MapGroup("/api/admin/option-sets").RequireAdminSession();
+        var group = app.MapGroup("/api/admin/option-sets").RequireAuthorization(HpacPolicies.Administrator);
 
         group.MapGet("/", ListAsync);
         group.MapPost("/", CreateAsync);

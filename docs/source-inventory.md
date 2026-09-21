@@ -10,10 +10,11 @@ identity where source text does not exist.
 ## API — 6 paths
 
 - [src/HpacSafety.Api/HpacSafety.Api.csproj](../src/HpacSafety.Api/HpacSafety.Api.csproj) — ASP.NET Core project and references; retain and add only target endpoint dependencies.
-- [src/HpacSafety.Api/Program.cs](../src/HpacSafety.Api/Program.cs) — minimal host with `/health`; retain host and implement question, submission, admin, and public routes.
+- [src/HpacSafety.Api/Program.cs](../src/HpacSafety.Api/Program.cs) — host with `/health`, `/api/auth/*`, and the admin routes; implement submission and public routes.
+- [src/HpacSafety.Api/Authentication/](../src/HpacSafety.Api/Authentication/) — bearer-token options, role reading, the three policies, the Development-only token issuer, and the auth endpoints (ADR-0064, ADR-0066). Replaced the `AdminGate` session-header stub wholesale.
 - [src/HpacSafety.Api/Properties/launchSettings.json](../src/HpacSafety.Api/Properties/launchSettings.json) — local HTTP/HTTPS launch profiles; development-only configuration.
 - [src/HpacSafety.Api/README.md](../src/HpacSafety.Api/README.md) — aligned target-boundary orientation with an explicit current-scaffold warning.
-- [src/HpacSafety.Api/appsettings.Development.json](../src/HpacSafety.Api/appsettings.Development.json) — development logging; add safe local adapters without secrets.
+- [src/HpacSafety.Api/appsettings.Development.json](../src/HpacSafety.Api/appsettings.Development.json) — development logging and the throwaway JWT signing key; add safe local adapters without secrets.
 - [src/HpacSafety.Api/appsettings.json](../src/HpacSafety.Api/appsettings.json) — base logging/host settings; add validated target configuration references, never values of secrets.
 
 ## Core — 57 paths

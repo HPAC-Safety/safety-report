@@ -80,7 +80,7 @@ public class ReportTests
         // Given
         var report = new Report(Locale.EnCa, Now);
         report.Answer(ConsentQuestion(), ["yes"], Now);
-        var officer = TinyId.New();
+        var officer = "subject-officer";
 
         var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
         summary.Approve(officer, Now);

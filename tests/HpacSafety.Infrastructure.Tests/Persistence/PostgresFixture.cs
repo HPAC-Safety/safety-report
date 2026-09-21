@@ -31,9 +31,10 @@ public sealed class PostgresFixture : IAsyncLifetime
     /// Creates an empty database and returns a connection string for it.
     /// </summary>
     /// <param name="startupOptions">
-    /// PostgreSQL <c>options</c> for the session, if any — for example
-    /// <c>-c hpac.seed_development_admin=true</c>. This is how a development
-    /// machine opts into the seeded local administrator.
+    /// PostgreSQL <c>options</c> for the session, if any, passed through to
+    /// the connection string. No caller sets one today — the development
+    /// administrator this used to opt into was retired with the
+    /// <c>admin_users</c> table (ADR-0065).
     /// </param>
     public async Task<string> CreateDatabaseAsync(string? startupOptions = null)
     {

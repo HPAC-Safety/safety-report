@@ -28,6 +28,9 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   a scenario in a `.feature` file. This is mandatory, not discretionary — if a
   change adds or changes behavior, add or update the scenario in the same PR.
 - A scenario carries `@ignore` until its behavior is implemented (ADR-0049).
+  When a decision supersedes what a scenario asserts, **delete the scenario**
+  rather than parking it behind `@ignore` — `@ignore` means "not built yet,"
+  never "no longer true." Git history keeps the removed text.
   Implementing it means writing its Reqnroll step definitions in
   `tests/HpacSafety.Acceptance.Tests` and removing the `@ignore` tag, in the
   same PR that implements the behavior.

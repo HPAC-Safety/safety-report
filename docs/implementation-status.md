@@ -24,7 +24,7 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Media videos | MP4/QuickTime are detected and retained but deliberately have no reviewer derivative. | Add metadata-safe remux/transcode derivative; fail closed. |
 | Documents | No PDF, DOC, DOCX, RTF, Markdown, text, or ODT support. | Validate/scan and retain private originals; authorized forced download only; never extract, anonymize, send to LLM, or publish. |
 | Blob access | Filesystem/S3 stores implement pre-signed upload/read URLs; reviewer link is derivative-only. The pre-submit `MediaUploadSlot` entity was removed (#100), but `IBlobStore.CreateUploadUrlAsync` still exists on the port with no current caller. | Confirm the finalized multipart endpoint streams uploads server-side rather than reintroducing a pre-signed PUT flow; keep private streaming and short-lived reads for verified derivatives/private documents. |
-| Authentication | `IMemberAuthenticator`, two roles, the `admin_users` allowlist entity, and the audit entity exist; nothing reads any of them, and the web session is a `sessionStorage` marker. | Delete the port, the allowlist, and the roles enum; add three role claims, JWT bearer validation, role policies, and a development token issuer (ADR-0064, ADR-0065, ADR-0066). |
+| Authentication | Three `MemberRole` values and the audit entity exist, and identity is a token subject with no user table behind it (#190). Nothing validates a token yet, and the web session is still a `sessionStorage` marker. | Add JWT bearer validation, role policies, the three auth endpoints, and a development token issuer (ADR-0064, ADR-0066). |
 | Review/admin web | `/admin/questions` is a working authoring screen (#180) — create, edit, reorder by pointer or keyboard, options, shared lists, conditions, and Translate. `/admin/choice-lists` (#184) curates the shared lists and flags reporter-added choices. The review queue and the rest of `/admin` remain placeholders, and no screen is role-aware. | Implement queue/detail, pair editing/approval, safe attachment access, deletion, and role-aware chrome. There is no allowlist screen to build. |
 | Publication | Domain currently checks consent, report state, and separately approved locale rows; no public endpoints/UI. Publication-channel abstraction exists. | Implement minimal feed/detail allowlist over one approved pair; remove external-channel abstraction. |
 | Soft deletion | Implemented. Every entity except `AuditLogEntry` has a `Deleted` timestamp and an EF global query filter; `ModelTests` asserts both the universal filter and the audit-log exception. No restore or physical delete path exists. | Keep. |
@@ -37,12 +37,13 @@ substantially enforce the target behavior, not merely that an issue was closed.
 
 ## Current database shape
 
-The baseline has 12 tables: `reports`, `report_answers`, `report_files`,
+The baseline has 11 tables: `reports`, `report_answers`, `report_files`,
 `summaries`, `questions`, `question_revisions`, `question_revision_options`,
-`option_sets`, `option_set_items`, `admin_users`, `audit_log`, and
-`outbox_messages`. `admin_users` is on its way out — nothing reads it, and
-[ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)
-drops it, leaving 11. Five migrations create that shape:
+`option_sets`, `option_set_items`, `audit_log`, and `outbox_messages`. There is
+no user table: `admin_users` was dropped by
+[ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
+and `audit_log.actor_subject` and `summaries.approved_by_subject` hold opaque
+token subjects with no foreign key. Six migrations create that shape:
 the initial schema, replacing the earlier sensitivity scheme with question
 privacy, and `MigrateCanonicalDomainAndPersistence` (#100), which collapsed
 the old `question_versions`/`question_options`/`question_translations`/

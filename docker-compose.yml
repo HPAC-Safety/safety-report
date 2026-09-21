@@ -26,7 +26,7 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
-      ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres;Options=-c hpac.seed_development_admin=true"
+      ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres"
       # Optional. Export DEEPL_API_KEY before ./dev-up.sh to get a working
       # Translate button on /admin/questions; without it the API reports
       # translation unavailable and the control is disabled. See ADR-0062.

@@ -70,9 +70,6 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
     /// <summary>The choices in a reusable list.</summary>
     public DbSet<OptionSetItem> OptionSetItems => Set<OptionSetItem>();
 
-    /// <summary>The admin allowlist.</summary>
-    public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
-
     /// <summary>Who did what, and when.</summary>
     public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
@@ -145,7 +142,6 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
         modelBuilder.ApplyConfiguration(new OptionSetConfiguration());
         modelBuilder.ApplyConfiguration(new OptionSetItemConfiguration());
 
-        modelBuilder.ApplyConfiguration(new AdminUserConfiguration());
         modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
         modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
 
@@ -180,7 +176,6 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
         configurationBuilder.Properties<QuestionType>().HaveConversion<EnumCodeConverter<QuestionType>>().HaveMaxLength(64);
         configurationBuilder.Properties<QuestionRole>().HaveConversion<EnumCodeConverter<QuestionRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AttachmentKind>().HaveConversion<EnumCodeConverter<AttachmentKind>>().HaveMaxLength(64);
-        configurationBuilder.Properties<AdminRole>().HaveConversion<EnumCodeConverter<AdminRole>>().HaveMaxLength(64);
         configurationBuilder.Properties<AuditAction>().HaveConversion<EnumCodeConverter<AuditAction>>().HaveMaxLength(64);
         configurationBuilder.Properties<OutboxMessageType>().HaveConversion<EnumCodeConverter<OutboxMessageType>>().HaveMaxLength(64);
     }

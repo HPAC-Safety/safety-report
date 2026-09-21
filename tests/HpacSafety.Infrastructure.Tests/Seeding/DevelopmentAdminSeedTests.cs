@@ -5,8 +5,12 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Seeding;
 
 /// <summary>
-/// The seeded local administrator exists so a developer can open the admin UI.
-/// It must not be able to reach a real database. See ADR-0020.
+/// <b>History.</b> The seeded local administrator wrote to a table that no
+/// longer exists — ADR-0065 drops <c>admin_users</c>. These tests survive
+/// because <c>20260823001528_InitialSchema</c> still calls the seed and a
+/// committed migration is never edited: the SQL has to keep producing exactly
+/// the bytes it always did, including against a fresh database where a later
+/// migration then drops what it wrote.
 /// </summary>
 public sealed class DevelopmentAdminSeedSqlTests
 {
@@ -41,6 +45,17 @@ public sealed class DevelopmentAdminSeedSqlTests
 
         // Then
         sql.ShouldContain("NOT EXISTS");
+    }
+
+    [Fact]
+    public void Given_the_seed_statement_When_the_role_enum_no_longer_exists_Then_it_still_writes_the_literal_code()
+    {
+        // Given / When
+        var sql = DevelopmentAdminSeed.InsertSql();
+
+        // Then — AdminRole was deleted with the table, so the code is now a
+        // literal. A committed migration must not change the SQL it emits.
+        sql.ShouldContain("'administrator'");
     }
 
     [Fact]

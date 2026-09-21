@@ -251,7 +251,7 @@ public class ProjectionTests
         report.Answer(consent, ["yes"], Now);
 
         var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-        summary.Approve(TinyId.New(), Now);
+        summary.Approve("subject-officer", Now);
         report.AttachSummary(summary);
 
         // When
@@ -271,7 +271,7 @@ public class ProjectionTests
         report.Answer(consent, ["yes"], Now);
 
         var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-        summary.Approve(TinyId.New(), Now);
+        summary.Approve("subject-officer", Now);
         report.AttachSummary(summary);
         report.Approve();
         report.MarkPublished(Now);

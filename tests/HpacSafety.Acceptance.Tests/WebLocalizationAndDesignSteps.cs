@@ -102,11 +102,111 @@ public sealed class WebLocalizationAndDesignSteps
         exitCode.ShouldNotBe(0);
     }
 
+    // --- a hand-edited French value (ADR-0070) ---------------------------
+
+    private string _correctionDir = string.Empty;
+    private int _verifyExitCode;
+    private string _verifyOutput = string.Empty;
+
+    /// <summary>
+    /// A locale set as a real generate would leave it: both hashes stamped, so
+    /// a later edit to either side is visible.
+    /// </summary>
+    private void WriteCorrectionFixture(string english, string french, string stampedEnglish, string stampedFrench)
+    {
+        _correctionDir = Path.Combine(Path.GetTempPath(), $"locales-correction-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(_correctionDir);
+
+        File.WriteAllText(
+            Path.Combine(_correctionDir, "en-CA.json"),
+            JsonSerializer.Serialize(new { nav = new { contact = english } }));
+        File.WriteAllText(
+            Path.Combine(_correctionDir, "fr-CA.json"),
+            JsonSerializer.Serialize(new { nav = new { contact = french } }));
+        File.WriteAllText(
+            Path.Combine(_correctionDir, "fr-CA.meta.json"),
+            JsonSerializer.Serialize(new Dictionary<string, object>
+            {
+                ["nav.contact"] = new
+                {
+                    source_hash = Sha256(stampedEnglish),
+                    target_hash = Sha256(stampedFrench),
+                    provider = "deepl:FR-CA:prefer_more",
+                    reviewed = false,
+                },
+            }));
+    }
+
+    [Given(@"a French value is edited by hand and its English is unchanged")]
+    public void GivenAFrenchValueEditedByHand() =>
+        // Stamped against "Nous joindre"; the file now says something else.
+        WriteCorrectionFixture(
+            english: "Contact us", french: "Joignez-nous",
+            stampedEnglish: "Contact us", stampedFrench: "Nous joindre");
+
+    [Given(@"a key is edited in both en-CA\.json and fr-CA\.json")]
+    public void GivenBothLanguagesEdited() =>
+        WriteCorrectionFixture(
+            english: "Get in touch", french: "Joignez-nous",
+            stampedEnglish: "Contact us", stampedFrench: "Nous joindre");
+
+    [When(@"the locales are verified")]
+    public void WhenTheLocalesAreVerified() =>
+        _verifyExitCode = RunNodeTool(
+            "tools/translate-locale.mjs",
+            expectSuccess: false,
+            out _verifyOutput,
+            "--check",
+            "--locales",
+            _correctionDir,
+            "--allow-pending-translation");
+
+    [Then(@"the edit is accepted as a human correction")]
+    public void ThenAcceptedAsACorrection()
+    {
+        // Accepted on a branch, and named rather than absorbed in silence.
+        _verifyExitCode.ShouldBe(0);
+        _verifyOutput.ShouldContain("was edited by hand");
+    }
+
+    [Then(@"verification says it will be recorded and never machine-translated again")]
+    public void ThenVerificationSaysItWillBeRecorded()
+    {
+        // What the acceptance layer can honestly observe is what the check
+        // tells the author. That the plan then skips it, and that applyPlan
+        // re-stamps the provenance, are properties of those functions and are
+        // asserted directly in tests/js/translate-locale.test.mjs.
+        _verifyOutput.ShouldContain("never machine-translated again");
+    }
+
+    [Then(@"verification fails and names the key")]
+    public void ThenVerificationFailsAndNamesTheKey()
+    {
+        // Fails even with --allow-pending-translation: no workflow can choose
+        // between two deliberate human edits.
+        _verifyExitCode.ShouldNotBe(0);
+        _verifyOutput.ShouldContain("nav.contact");
+        _verifyOutput.ShouldContain("changed in both");
+    }
+
+    [Then(@"nothing is translated or overwritten while it is unresolved")]
+    public void ThenNothingIsWritten()
+    {
+        var french = File.ReadAllText(Path.Combine(_correctionDir, "fr-CA.json"));
+        french.ShouldContain("Joignez-nous");
+    }
+
+    private static string Sha256(string value) =>
+        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)));
+
 #pragma warning restore CA1822
 
     private static void RunNodeTool(string relativeScriptPath) => RunNodeTool(relativeScriptPath, expectSuccess: true);
 
-    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, params string[] args)
+    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, params string[] args) =>
+        RunNodeTool(relativeScriptPath, expectSuccess, out _, args);
+
+    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, out string combinedOutput, params string[] args)
     {
         var repositoryRoot = RepositoryRoot();
 
@@ -129,6 +229,8 @@ public sealed class WebLocalizationAndDesignSteps
         var output = process.StandardOutput.ReadToEnd();
         var error = process.StandardError.ReadToEnd();
         process.WaitForExit();
+
+        combinedOutput = $"{output}\n{error}";
 
         if (expectSuccess)
         {

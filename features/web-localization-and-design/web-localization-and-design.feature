@@ -80,6 +80,18 @@ Feature: Web, localization, and design
     Then the file missing that key gains it, with the other file's text prefixed with a # marker
     And a key still carrying that # marker fails locale verification, so it can never reach main untranslated
 
+  Scenario: A French value edited by hand is recorded rather than overwritten
+    Given a French value is edited by hand and its English is unchanged
+    When the locales are verified
+    Then the edit is accepted as a human correction
+    And verification says it will be recorded and never machine-translated again
+
+  Scenario: Changing both languages of one key stops and asks
+    Given a key is edited in both en-CA.json and fr-CA.json
+    When the locales are verified
+    Then verification fails and names the key
+    And nothing is translated or overwritten while it is unresolved
+
   @ignore
   Scenario: Question content comes from the bilingual database revision
     Given a question revision has English and French labels, help, and options authored by an Administrator

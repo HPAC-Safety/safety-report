@@ -9,6 +9,14 @@ Stable UI strings live in reviewed `locales/en-CA.json` and
 help prepare a catalogue PR, but runtime pages never call a translation service
 and generated French still receives human review.
 
+English is the source of truth and `fr-CA.json` is generated. Editing the
+French by hand is not the intended path, but it is possible, so it is
+recorded rather than absorbed: an edit whose English is unchanged becomes a
+**human correction**, stamped as human-authored and never machine-translated
+again. Changing both languages of one key at once fails and names it, because
+no machine should choose between two deliberate edits
+([ADR-0070](decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
+
 Resolve locale in this order: explicit user selection, browser preference,
 English fallback. Persist the explicit selection, set the HTML `lang`, and keep
 form answers/revision IDs when switching language.

@@ -11,6 +11,8 @@ import {
 	unflatten,
 	verifyLocales,
 	checkVerdict,
+	classifyKey,
+	HUMAN_PROVIDER,
 } from '../../tools/translate-locale.mjs'
 
 /** The smallest English set that still has a nested shape. */
@@ -300,6 +302,9 @@ describe('applying a translation plan', () => {
 			assert.equal(result.french.form.submit, 'FR:Submit')
 			assert.deepEqual(result.meta['form.reset'], {
 				source_hash: hashOf('Start over'),
+				// Hashing the French too is what makes a later hand edit
+				// visible rather than silent.
+				target_hash: hashOf('Recommencer'),
 				provider: 'test-provider',
 				reviewed: false,
 			})
@@ -689,5 +694,178 @@ describe('deciding what blocks a commit', () => {
 			assert.match(verdict.summary, /in step/)
 			assert.ok(!/pending/.test(verdict.summary))
 		})
+	})
+})
+
+describe('a French value edited by hand', () => {
+	const english = { nav: { contact: 'Contact us' } }
+	const french = { nav: { contact: 'Nous joindre' } }
+
+	/** A stamp as a real generate would leave it. */
+	const stampFor = (en, fr, provider = 'deepl:FR-CA:prefer_more') => ({
+		'nav.contact': { source_hash: hashOf(en), target_hash: hashOf(fr), provider, reviewed: false },
+	})
+
+	describe('given the English is unchanged', () => {
+		it('when the key is classified then it is a correction, not drift', () => {
+			// Given / When
+			const state = classifyKey({
+				stamp: stampFor('Contact us', 'Nous joindre')['nav.contact'],
+				english: 'Contact us',
+				french: 'Joignez-nous',
+			})
+
+			// Then
+			assert.equal(state, 'corrected')
+		})
+
+		it('when the plan is built then it is never sent to a provider again', () => {
+			// Given
+			const plan = planTranslation({
+				english,
+				french: { nav: { contact: 'Joignez-nous' } },
+				meta: stampFor('Contact us', 'Nous joindre'),
+				glossary: {},
+			})
+
+			// Then — a machine must not quietly replace wording a human chose
+			assert.deepEqual(plan.translate, [])
+			assert.deepEqual(plan.unchanged, ['nav.contact'])
+			assert.deepEqual(plan.conflicted, [])
+		})
+
+		it('when it is already recorded as human-authored then verification is silent', () => {
+			// Given
+			const result = verifyLocales({
+				english,
+				french: { nav: { contact: 'Joignez-nous' } },
+				meta: stampFor('Contact us', 'Joignez-nous', HUMAN_PROVIDER),
+				glossary: {},
+			})
+
+			// Then
+			assert.equal(result.ok, true)
+		})
+	})
+
+	describe('given the English changed too', () => {
+		it('when the key is classified then it is a conflict', () => {
+			// Given / When
+			const state = classifyKey({
+				stamp: stampFor('Contact us', 'Nous joindre')['nav.contact'],
+				english: 'Get in touch',
+				french: 'Joignez-nous',
+			})
+
+			// Then
+			assert.equal(state, 'conflicted')
+		})
+
+		it('when the plan is built then it is not translated, so the correction survives', () => {
+			// Given
+			const plan = planTranslation({
+				english: { nav: { contact: 'Get in touch' } },
+				french: { nav: { contact: 'Joignez-nous' } },
+				meta: stampFor('Contact us', 'Nous joindre'),
+				glossary: {},
+			})
+
+			// Then — overwriting here is exactly how a human edit disappears
+			assert.deepEqual(plan.translate, [])
+			assert.deepEqual(plan.conflicted, ['nav.contact'])
+		})
+
+		it('when it is verified then it fails loudly and is not pending', () => {
+			// Given
+			const result = verifyLocales({
+				english: { nav: { contact: 'Get in touch' } },
+				french: { nav: { contact: 'Joignez-nous' } },
+				meta: stampFor('Contact us', 'Nous joindre'),
+				glossary: {},
+			})
+
+			// Then — no workflow can decide which wording is right
+			assert.equal(result.ok, false)
+			assert.match(result.problems.join('\n'), /changed in both/)
+			assert.deepEqual(result.pending, [])
+		})
+	})
+
+	describe('given a stamp written before target_hash existed', () => {
+		it('when the key is classified then it is unknown, so nothing new is asserted about it', () => {
+			// Given — every key in the repository looked like this before #215
+			const state = classifyKey({
+				stamp: { source_hash: hashOf('Contact us'), provider: 'deepl:FR-CA:prefer_more' },
+				english: 'Contact us',
+				french: 'anything at all',
+			})
+
+			// Then
+			assert.equal(state, 'unknown')
+		})
+
+		it('when it is verified then it passes, so this change needs no flag day', () => {
+			// Given
+			const result = verifyLocales({
+				english,
+				french,
+				meta: { 'nav.contact': { source_hash: hashOf('Contact us'), provider: 'deepl:FR-CA:prefer_more' } },
+				glossary: {},
+			})
+
+			// Then
+			assert.equal(result.ok, true)
+		})
+	})
+})
+
+describe('recording a correction', () => {
+	it('given a hand-edited French when the plan is applied then only the provenance changes', () => {
+		// Given
+		const english = { nav: { contact: 'Contact us' } }
+		const french = { nav: { contact: 'Joignez-nous' } }
+		const meta = {
+			'nav.contact': {
+				source_hash: hashOf('Contact us'),
+				target_hash: hashOf('Nous joindre'),
+				provider: 'deepl:FR-CA:prefer_more',
+				reviewed: false,
+			},
+		}
+
+		const plan = planTranslation({ english, french, meta, glossary: {} })
+
+		// When
+		const result = applyPlan({ french, meta, plan, translations: new Map(), provider: 'unused' })
+
+		// Then — the wording a human chose is untouched
+		assert.equal(result.french.nav.contact, 'Joignez-nous')
+
+		// and the stamp no longer credits a provider for it
+		assert.equal(result.meta['nav.contact'].provider, HUMAN_PROVIDER)
+		assert.equal(result.meta['nav.contact'].reviewed, true)
+		assert.equal(result.meta['nav.contact'].target_hash, hashOf('Joignez-nous'))
+	})
+
+	it('given it is already recorded when the plan is built then there is nothing left to do', () => {
+		// Given
+		const english = { nav: { contact: 'Contact us' } }
+		const french = { nav: { contact: 'Joignez-nous' } }
+		const meta = {
+			'nav.contact': {
+				source_hash: hashOf('Contact us'),
+				target_hash: hashOf('Joignez-nous'),
+				provider: HUMAN_PROVIDER,
+				reviewed: true,
+			},
+		}
+
+		// When
+		const plan = planTranslation({ english, french, meta, glossary: {} })
+
+		// Then — recording is not repeated on every run
+		assert.deepEqual(plan.record, [])
+		assert.deepEqual(plan.translate, [])
+		assert.deepEqual(plan.unchanged, ['nav.contact'])
 	})
 })

@@ -43,7 +43,7 @@
     "heroCta": "Soumettre un rapport de sécurité",
     "sectionWhy": {
       "title": "Pourquoi signaler?",
-      "body": "Chaque signalement, aussi minime soit-il, contribue à repérer des tendances avant qu’elles ne prennent une tournure grave. Les signalements peuvent être effectués de manière anonyme et sont examinés avant toute publication."
+      "body": "Chaque signalement, aussi mineur soit-il, contribue à repérer des tendances avant qu’elles ne prennent une ampleur préoccupante. Les signalements peuvent être soumis de manière anonyme — le fait de vous connecter ne fait que confirmer que vous êtes membre de HPAC, et votre signalement n’est jamais associé à votre compte — et sont examinés avant toute publication."
     },
     "sectionHow": {
       "title": "Comment ça fonctionne",
@@ -64,6 +64,13 @@
     "placeholder": {
       "title": "{pageName}",
       "body": "Cette page est une page temporaire. Le contenu de {pageName} sera bientôt disponible."
+    },
+    "report": {
+      "signInRequiredTitle": "Connectez-vous pour faire un signalement",
+      "signInRequiredBody": "Pour remplir un rapport d'incident, vous devez vous connecter en tant que membre de l'HPAC. La connexion sert uniquement à confirmer que vous êtes membre; votre rapport n'est pas lié à votre compte.",
+      "signInAction": "Ouvrez une session",
+      "notTrackedTitle": "Votre rapport n'est pas associé à votre profil",
+      "notTrackedBody": "Le fait de vous connecter ne sert qu’à confirmer que vous êtes membre de la HPAC. Nous n’enregistrons ni votre nom, ni votre statut de membre, ni aucune information permettant d’identifier l’auteur de ce rapport."
     },
     "login": {
       "title": "Connexion des membres",

@@ -163,17 +163,21 @@ Feature: Report submission
     Then no audit entry attributes the submission to a subject
     And no log line records the submitting subject at any level
 
-  @ignore @ui
-  Scenario: A signed-out visitor is asked to sign in before the report form is offered
-    Given a signed-out visitor opens the report form
-    Then the form is not shown
+  @ui
+  Scenario: A signed-out visitor is asked to sign in before the report page is offered
+    Given a signed-out visitor opens the report page
+    Then the report page content is not shown
     And the page explains that filing a report requires an HPAC member sign-in
     And it offers a sign-in action
 
-  @ignore @ui
-  Scenario: The form tells the reporter that signing in does not attach them to the report
-    Given a signed-in member opens the report form
-    Then the form is shown
+  @ui
+  Scenario: The report page tells the reporter that signing in does not attach them to the report
+    Given a signed-in member opens the report page
+    Then the report page content is shown
     And a notice states that signing in only confirms HPAC membership
     And the notice states that the report is not linked to their account
-    And the notice appears in the reporter's chosen language
+
+  @ui
+  Scenario: The not-tracked notice is shown in the reporter's chosen language
+    Given a signed-in member opens the report page in French
+    Then the notice is shown in French

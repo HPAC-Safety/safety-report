@@ -1,5 +1,3 @@
-using HpacSafety.Infrastructure.Persistence;
-
 using Npgsql;
 
 using Shouldly;

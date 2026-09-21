@@ -1,5 +1,3 @@
-using HpacSafety.Core.Features.QuestionBank;
-
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>

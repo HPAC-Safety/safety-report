@@ -1,8 +1,6 @@
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.Reporting;
-using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 
 using Npgsql;

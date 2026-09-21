@@ -1,4 +1,3 @@
-using HpacSafety.Infrastructure;
 using HpacSafety.Infrastructure.Persistence;
 
 using Microsoft.Extensions.Configuration;

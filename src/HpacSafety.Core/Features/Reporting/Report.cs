@@ -89,27 +89,47 @@ public class Report
         && Status is ReportStatus.Approved or ReportStatus.Published
         && Summary is { IsApproved: true };
 
-    /// <summary>Records a free-text answer, projecting it if the question carries a role.</summary>
+    /// <summary>
+    /// Records one answer, in the report's own language, projecting it if the
+    /// question carries a role. Every type takes this path: the value is the
+    /// words the reporter saw, and a skip is a null value rather than an
+    /// omission.
+    /// </summary>
     public ReportAnswer Answer(Question question, string? value, DateTimeOffset at)
     {
         ArgumentNullException.ThrowIfNull(question);
 
-        var answer = ReportAnswer.ForText(Id, question, value, at);
+        var answer = ReportAnswer.For(Id, question, value, Language, at);
         _answers.Add(answer);
         Project(question, answer);
         return answer;
     }
 
-    /// <summary>Records a select answer, projecting it if the question carries a role.</summary>
-    public ReportAnswer Answer(Question question, IReadOnlyList<string> optionCodes, DateTimeOffset at)
+    /// <summary>
+    /// Records a multi-select answer as one row per chosen value, so each value
+    /// is a string in its own right and is translated on its own (ADR-0072). An
+    /// empty list records one skipped answer rather than nothing at all.
+    /// </summary>
+    public IReadOnlyList<ReportAnswer> Answer(
+        Question question, IReadOnlyList<string> values, DateTimeOffset at)
     {
         ArgumentNullException.ThrowIfNull(question);
-        ArgumentNullException.ThrowIfNull(optionCodes);
+        ArgumentNullException.ThrowIfNull(values);
 
-        var answer = ReportAnswer.ForOptions(Id, question, optionCodes, at);
-        _answers.Add(answer);
-        Project(question, answer);
-        return answer;
+        if (values.Count == 0)
+        {
+            return [Answer(question, value: null, at)];
+        }
+
+        // Multi-select is the only type that produces several rows. Everything
+        // else — a picker, a date, a line of prose — is one answer.
+        if (values.Count > 1 && question.CurrentRevision.Type != QuestionType.MultiSelect)
+        {
+            throw new DomainRuleViolationException(
+                $"'{question.Key}' takes one answer, not {values.Count}.");
+        }
+
+        return [.. values.Select(value => Answer(question, value, at))];
     }
 
     /// <summary>Adds an uploaded file.</summary>
@@ -212,16 +232,15 @@ public class Report
     /// </summary>
     private static bool ReadConsent(ReportAnswer answer)
     {
-        var given = answer.SingleOptionCode ?? answer.Value;
-
-        if (string.Equals(given, "yes", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(given, bool.TrueString, StringComparison.OrdinalIgnoreCase))
+        // "yes" and "no" are the invariant stored forms of every boolean answer
+        // (ADR-0072), so this reads the same two tokens whichever language the
+        // reporter used.
+        if (string.Equals(answer.Value, "yes", StringComparison.Ordinal))
         {
             return true;
         }
 
-        if (string.Equals(given, "no", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(given, bool.FalseString, StringComparison.OrdinalIgnoreCase))
+        if (string.Equals(answer.Value, "no", StringComparison.Ordinal))
         {
             return false;
         }

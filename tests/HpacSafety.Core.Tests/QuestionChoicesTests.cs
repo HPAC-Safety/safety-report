@@ -145,13 +145,17 @@ public class QuestionChoicesTests
         var set = Sites();
 
         // When
-        var added = set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
+        var added = set.AddFromReporter("Mount 7");
 
         // Then
         added.Code.ShouldBe("mount_7");
         added.AddedByReporter.ShouldBeTrue();
         added.LabelEn.ShouldBe("Mount 7");
-        added.Label(Locale.FrCa).ShouldBe("Mont 7");
+
+        // Nothing on the submission path translates, so the reporter's own
+        // words stand in for the other language and say so (ADR-0072).
+        added.Label(Locale.FrCa).ShouldBe("Mount 7");
+        added.NeedsTranslation.ShouldBeTrue();
         set.Items.Select(candidate => candidate.Code).ShouldBe(["coopers", "woodside", "mount_7"]);
     }
 
@@ -162,7 +166,7 @@ public class QuestionChoicesTests
         var set = Sites();
 
         // When
-        var added = set.AddFromReporter("coopers", "coopers launch", "décollage coopers");
+        var added = set.AddFromReporter("coopers");
 
         // Then
         added.LabelEn.ShouldBe("Cooper's");
@@ -177,8 +181,8 @@ public class QuestionChoicesTests
         var set = Sites();
 
         // When — the second types it differently; both normalize to one code
-        var first = set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
-        var second = set.AddFromReporter("mount  7", "mount 7", "mont 7");
+        var first = set.AddFromReporter("Mount 7");
+        var second = set.AddFromReporter("mount  7");
 
         // Then
         second.Id.ShouldBe(first.Id);
@@ -194,7 +198,7 @@ public class QuestionChoicesTests
         set.Remove("woodside", At.AddHours(1));
 
         // When
-        var added = set.AddFromReporter("Woodside", "Woodside", "Woodside");
+        var added = set.AddFromReporter("Woodside");
 
         // Then — the answer points at a real row, but the list still does not
         // offer it
@@ -211,18 +215,18 @@ public class QuestionChoicesTests
         set.Delete(At.AddHours(1));
 
         // When / Then
-        Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7", "Mount 7", "Mont 7"));
+        Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7"));
     }
 
     [Fact]
     public void GivenBlankLabel_WhenReporterAddsChoice_ThenRefused()
     {
-        // Given — both official languages are required here as everywhere else
+        // Given — a choice nobody can read is not a choice
         var set = Sites();
 
         // When / Then
-        Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7", " ", "Mont 7"));
-        Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7", "Mount 7", " "));
+        Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter(""));
+        Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("   "));
     }
 
     [Fact]
@@ -241,7 +245,7 @@ public class QuestionChoicesTests
         // Given — the flag records where a choice came from, not whether
         // anyone has touched it since
         var set = Sites();
-        set.AddFromReporter("Mount 7", "mount 7", "mont 7");
+        set.AddFromReporter("Mount 7");
 
         // When
         set.Relabel("mount_7", "Mount 7", "Mont 7");

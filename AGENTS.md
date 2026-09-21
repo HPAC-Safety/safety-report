@@ -23,19 +23,35 @@ privacy-sensitive.
 ## Product invariants
 
 1. Questions come from the database as complete immutable bilingual revisions.
-   Every edit creates a new revision. Publication consent is the only system
-   question and the only answer read by name; it can never be made optional.
+   An edit to a question nobody has answered creates a new revision; once any
+   answer references it, an edit soft-deletes the question and creates a new
+   one carrying the same stable key, so an old answer always correlates to the
+   question as it was actually worded. Soft deletion is irreversible, and at
+   most one question per key is live
+   ([ADR-0071](docs/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)).
+   Publication consent is the only system
+   question and the only answer read by name; it can never be made optional,
+   and it is the one question that revises in place even when answered, because
+   it can never be deleted.
    Every other question's required state is authored by an administrator
    ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
    An administrator authors both languages and may use machine translation as
    a drafting aid while doing so; the database holds only what they saved, and
    a question cannot be saved in one language
    ([ADR-0062](docs/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-   A reporter may add a missing choice to a type-ahead, recorded at submission,
-   translated into the other language, and marked for an administrator to
-   curate; a type-ahead therefore renders the live shared list while its
-   revision snapshot remains the record of what that reporter was offered
+   A reporter may add a missing choice to a type-ahead, recorded at submission
+   and marked for an administrator to curate; a type-ahead therefore renders the
+   live shared list while its revision snapshot remains the record of the
+   complete set of choices that reporter was offered
    ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+   Every answer is stored as one string. A select, picker, or type-ahead answer
+   holds the literal value as shown, in the reporter's language, with its locale
+   and a flag for an administrator to supply the second language. A boolean is
+   `yes` or `no`; a date, time, or date-and-time is ISO 8601 in the shape that
+   fits. ISO 8601 is the storage form only — the domain still uses `DateOnly`,
+   `TimeOnly`, and `DateTimeOffset`
+   ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
+   [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
    A question may be made conditional on a yes/no question, and its options may
    be copied from a shared choice list
    ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
@@ -81,10 +97,12 @@ privacy-sensitive.
 There is no deterministic scrubber, separate PII auditor, report translator,
 specialized aircraft processing, outbound email flow, pre-submit
 upload session, speculative publication channel, user table, allowlist,
-credential proxy, CSRF machinery, or Turnstile verification. Machine translation exists
-for two purposes only — drafting question wording while authoring, and filling
-the second language of a choice a reporter added to a type-ahead — and never
-touches a narrative, an answer, or a summary.
+credential proxy, CSRF machinery, or Turnstile verification. Machine translation
+is always administrator-initiated behind the `Administrator` policy, never runs
+on the submission path, and exists for two purposes only — drafting question
+wording while authoring, and filling the second language of a short select
+answer from the administrator's queue. It never touches a narrative, a free-text
+answer, or a summary.
 
 ## Focused skills
 

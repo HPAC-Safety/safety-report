@@ -91,6 +91,7 @@ export function QuestionEditor({
 	optionSets,
 	booleanQuestions,
 	isEditing,
+	hasBeenAnswered,
 	translationAvailable,
 	translationIsStandIn,
 	onChange,
@@ -101,6 +102,7 @@ export function QuestionEditor({
 	optionSets: OptionSetView[]
 	booleanQuestions: QuestionView[]
 	isEditing: boolean
+	hasBeenAnswered: boolean
 	translationAvailable: boolean
 	translationIsStandIn: boolean
 	onChange: (draft: QuestionDraft) => void
@@ -191,6 +193,12 @@ export function QuestionEditor({
 			<h2 className="font-display text-xl font-bold">
 				{isEditing ? t("questions.editorTitleEdit") : t("questions.editorTitleNew")}
 			</h2>
+
+			{isEditing && hasBeenAnswered && (
+				<p role="status" className="rounded border border-rule bg-surface-2 p-4 font-sans text-sm text-ink">
+					{t("questions.forkWarning")}
+				</p>
+			)}
 
 			<div className="grid gap-4 sm:grid-cols-2">
 				<div>

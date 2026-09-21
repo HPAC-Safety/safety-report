@@ -202,7 +202,7 @@ public class QuestionBankEdgeTests
         var report = new Report(Locale.EnCa, Now);
 
         // When
-        var answering = () => report.Answer(question, ["alberta", "ontario"], Now);
+        var answering = () => report.Answer(question, ["Alberta", "Ontario"], Now);
 
         // Then
         answering.ShouldThrow<DomainRuleViolationException>();
@@ -217,12 +217,13 @@ public class QuestionBankEdgeTests
             options: [new QuestionOptionInput("p3", "P3", "P3"), new QuestionOptionInput("paragliding_instructor", "Paragliding Instructor", "Instructeur de parapente")]);
         var report = new Report(Locale.EnCa, Now);
 
-        // When
-        var answer = report.Answer(question, ["p3", "paragliding_instructor"], Now);
+        // When — one row per chosen value, each a string in its own right
+        var answers = report.Answer(question, ["P3", "Paragliding Instructor"], Now);
 
         // Then
-        answer.SelectedOptionCodes.Count.ShouldBe(2);
-        answer.SingleOptionCode.ShouldBeNull();
+        answers.Count.ShouldBe(2);
+        answers.Select(answer => answer.Value).ShouldBe(["P3", "Paragliding Instructor"]);
+        answers.ShouldAllBe(answer => answer.NeedsTranslation);
     }
 
     [Fact]

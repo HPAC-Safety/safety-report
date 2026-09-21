@@ -34,16 +34,31 @@ Feature: Report submission
     Given the client says it showed the reporter a set of answer-producing revisions
     When the reporter submits the form
     Then the submission DTO contains exactly one answer entry for each of those revisions
-    And textual/scalar answers use "value", selection answers use "option_codes", and file-upload answers use zero-based indexes into the repeated files parts
+    And every answer of every type uses "value", a single string, alongside the locale it was given in
+    And file-upload answers additionally use zero-based indexes into the repeated files parts
     And fields for the other answer shapes are null
 
   @ignore
   Scenario: A skipped answer is represented by an empty value, not omission
     Given a reporter skips an answer-producing question
     When the submission DTO is built
-    Then a skipped scalar has a null value
-    And a skipped selection has an empty option_codes list
+    Then a skipped answer of any type has a null value
     And a skipped file upload has an empty attachment_part_indexes list
+
+  @ignore
+  Scenario: A submitted select value must be one the revision offered
+    Given a reporter submits a value for a picker or multi-select question
+    When the API validates the submission
+    Then the value is accepted only if the answered revision offered exactly that label
+    And a value the revision never offered is rejected
+    And a type-ahead backed by a live shared list also accepts a value the list does not yet offer
+
+  @ignore
+  Scenario: The submission path never calls a translation provider
+    Given a submission contains select answers and a value typed into a type-ahead
+    When the API commits the submission
+    Then no translation provider is called
+    And the answers are stored in the language the reporter gave them in, flagged for an Administrator
 
   @ignore
   Scenario Outline: The API rejects a malformed submission DTO

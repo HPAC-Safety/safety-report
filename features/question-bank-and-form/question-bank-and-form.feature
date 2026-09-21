@@ -1,19 +1,62 @@
 Feature: Question bank and form
-  Questions are stored as a sequence of complete, immutable bilingual
-  revisions. Every administrator edit creates a new revision instead of
-  patching an existing one, so a report always answers a specific, historical
-  revision.
+  Questions are stored as complete, immutable bilingual revisions. An edit to a
+  question nobody has answered creates a new revision instead of patching an
+  existing one. Once an answer exists, an edit retires the question and creates
+  a new one in its place, so an old answer always correlates to the question as
+  it was actually worded.
 
   Background:
     Given the question bank stores each question as a stable, non-localized key
     And each revision has a monotonically increasing revision number for its key
+    And at most one live question exists for a stable key
 
   @ignore
-  Scenario: Editing a question creates a new revision instead of mutating one
+  Scenario: Editing an unanswered question creates a new revision instead of mutating one
     Given an active question revision exists for a stable key
+    And no answer references that question
     When an Administrator changes its wording, help text, translations, options, type, order, section, privacy, active state, required state, or system state
     Then a new complete revision is created with the next revision number
     And the previous revision is left unchanged
+    And the question keeps its identifier
+
+  @ignore
+  Scenario: Editing an answered question retires it and creates a new one
+    Given a question has been answered on at least one report
+    When an Administrator changes its wording
+    Then the original question is stamped as deleted
+    And a new question is created with a new identifier
+    And the new question carries the same stable key
+    And the new question starts its own revision numbering
+    And the answers already given still refer to the retired question and its original wording
+
+  @ignore
+  Scenario: An answer on a deleted report still forces a fork
+    Given the only answer to a question is on a report that has been deleted
+    When an Administrator changes that question's wording
+    Then the original question is stamped as deleted
+    And a new question is created with a new identifier
+
+  @ignore
+  Scenario: A retired question can never be brought back
+    Given a question has been stamped as deleted
+    When anything attempts to restore, revive, or revise it
+    Then the attempt is rejected
+    And an Administrator who wants it back authors it again as a new question
+
+  @ignore
+  Scenario: Only one question per key is live at a time
+    Given a stable key has a retired question and a live one
+    When anything resolves that key
+    Then it resolves to the live question
+    And a second live question for the same key is rejected
+
+  @ignore
+  Scenario: Publication consent revises in place even when answered
+    Given the consent_publish question has been answered on at least one report
+    When an Administrator changes its wording
+    Then a new revision is created for it
+    And the question keeps its identifier
+    And it is never stamped as deleted
 
   @ignore
   Scenario: Only an Administrator may create a revision
@@ -67,8 +110,61 @@ Feature: Question bank and form
   Scenario: Skipping an ordinary question still records that it was shown
     Given a reporter is shown an optional answer-producing revision
     When the reporter leaves it blank
-    Then the submission DTO records an answer entry for that revision with a nullable value or empty option selection
+    Then the submission DTO records an answer entry for that revision with a null value
     And no value is synthesized
+
+  @ignore
+  Scenario: An answer to a picker stores the words the reporter saw
+    Given a reporter is shown a picker, type-ahead, or multi-select question
+    When the reporter chooses a value and submits
+    Then the stored answer holds that value's label exactly as it was shown
+    And it holds no option code and no reference to an option row
+    And relabelling or removing that option afterwards leaves the stored answer unchanged
+
+  @ignore
+  Scenario Outline: Every answer is stored in one invariant written form
+    Given a reporter answers a <type> question with <entered>
+    When the answer is persisted
+    Then the stored value is <stored>
+
+    Examples:
+      | type          | entered                        | stored                      |
+      | yes_no        | yes                            | yes                         |
+      | yes_no        | oui, in French                 | yes                         |
+      | yes_no        | no                             | no                          |
+      | date          | the 21st of September 2026     | 2026-09-21                  |
+      | time          | half past two in the afternoon | 14:30                       |
+      | short_text    | a line of prose                | that line, as typed         |
+
+  @ignore
+  Scenario: A select answer records the reporter's language and waits for the other
+    Given a reporter answering in French chooses a value from a curated list
+    When the answer is persisted
+    Then the stored value is the French label they saw
+    And the answer records that it was given in French
+    And the answer is flagged for an Administrator to supply English
+    And nothing on the submission path translates it
+
+  @ignore
+  Scenario: A curated list's other language is not copied onto the answer
+    Given a curated choice offers both official languages
+    When a reporter picks it in one language
+    Then the stored answer holds only the language they saw
+    And it is flagged for translation like any other select answer
+
+  @ignore
+  Scenario: An Administrator supplies the second language of an answer
+    Given a stored answer is flagged for translation
+    When an Administrator types the other language, or presses Translate and saves
+    Then the answer holds both languages
+    And it is no longer flagged
+    And the value the reporter gave is unchanged
+
+  @ignore
+  Scenario: Only an Administrator may translate
+    Given a member does not have the Administrator role
+    When that member requests a translation
+    Then the API rejects the request
 
   @ignore
   Scenario: Statements and groups never produce answer entries
@@ -87,7 +183,7 @@ Feature: Question bank and form
     Given a submitted report has answers to several ordinary questions
     When those answers are persisted
     Then only the consent_publish answer is projected onto the report aggregate as a publication invariant
-    And every other answer, including dates, times, provinces, injury severities, and aircraft details, remains a revision-bound answer interpreted through its question key and revision metadata
+    And every other answer, including dates, times, provinces, injury severities, and aircraft details, remains a stored string read through its question key
 
   @ignore
   Scenario: Privacy is a property of the revision, not the answer
@@ -157,8 +253,9 @@ Feature: Question bank and form
     Given a type-ahead question is backed by a shared choice list
     When a reporter submits an answer naming a site the list does not offer
     Then the site is added to the shared list as a reporter-added choice
-    And it carries both official languages
-    And the reporter's answer refers to it
+    And it carries the language the reporter typed it in
+    And it is marked for an Administrator to supply the other language
+    And the next reporter is offered it
 
   Scenario: Two reporters naming the same new site produce one choice
     Given a reporter has already added a site to a shared choice list
@@ -170,7 +267,7 @@ Feature: Question bank and form
     Given an Administrator removed a choice from a shared list
     When a reporter submits that same value again
     Then the choice stays removed from the list
-    And the reporter's answer still refers to the existing row
+    And the reporter's answer still records the value they typed
 
   Scenario: A type-ahead offers the live list while its revision records what was shown
     Given a type-ahead revision was saved when the shared list was shorter
@@ -261,12 +358,14 @@ Feature: Question bank and form
     Then the list takes that order
     And an arrangement that omits or repeats an option is rejected
 
-  Scenario: Translation is offered only for question wording
+  Scenario: Translation is offered for question wording and for a select answer's second language
     Given an Administrator is authoring a question in one official language
     When they ask for the other language to be translated
     Then the request goes to the application's own API rather than to a provider from the browser
     And the translated text is returned as a draft that is not saved anywhere
-    And no report, answer, or summary is ever translated this way
+    And the same action is available for the second language of a select answer awaiting translation
+    And no narrative, free-text answer, or summary is ever translated this way
+    And nothing is translated unless an Administrator asked for it
 
   Scenario: A server with no translation credential still authors questions
     Given no translation provider is configured outside development
@@ -350,10 +449,33 @@ Feature: Question bank and form
     Then the two questions have swapped places in the list
 
   @ui
-  Scenario: Editing a question from the dashboard shows its new version
+  Scenario: Editing an unanswered question from the dashboard shows its new version
     Given a signed-in Administrator opens the manage-questions page
-    When they edit the first question's English wording and save
+    And the first question has never been answered
+    When they edit its English wording and save
     Then the list shows the new wording and a higher version number
+
+  @ui
+  Scenario: Editing an answered question warns that it will be replaced
+    Given a signed-in Administrator opens the manage-questions page
+    And the first question has been answered
+    When they edit its English wording
+    Then the page says that saving retires this question and creates a new one
+    When they save
+    Then the list shows one question for that key, with the new wording
+
+  @ui
+  Scenario: An Administrator sees answers awaiting a second language
+    Given a signed-in Administrator opens the answers-awaiting-translation page
+    Then each answer is listed with its question, its value, and the language it was given in
+    And the page says how many are waiting
+
+  @ui
+  Scenario: An Administrator translates an answer from the queue
+    Given a signed-in Administrator opens the answers-awaiting-translation page
+    When they press Translate on the first answer and save
+    Then that answer leaves the queue
+    And the value the reporter gave is unchanged
 
   @ui
   Scenario: Deleting a question removes it from the list

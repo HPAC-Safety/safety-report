@@ -24,9 +24,18 @@ the reporter was asked.
 - Each question version is one complete immutable bilingual revision containing
   every value needed to render and validate it.
 - Every edit inserts a new revision. Historical rows are never updated.
+  **Narrowed by [ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md):**
+  this holds while a question has no answers, and for publication consent
+  always. Once any answer references a question, an edit soft-deletes it and
+  creates a new question carrying the same stable key.
 - The current form examines the latest live, non-deleted revision per stable key
-  and never falls back to an older revision.
+  and never falls back to an older revision. Since ADR-0071 there is at most one
+  live question per key, enforced by a partial unique index.
 - Report answers reference the exact revision shown, including a stored skip.
+  **Narrowed by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md):**
+  an answer still records the revision it was given under, but it no longer
+  resolves its own content through that revision — it stores its value as a
+  string, in the reporter's language.
 - Publication consent is the only system/required question and the only answer
   projected onto the report. Every ordinary answer remains generic data.
 - Administrators author both language versions. Since
@@ -52,3 +61,5 @@ no special processing path for one category of ordinary question.
 - [`/features/report-submission/report-submission.feature`](../../features/report-submission/report-submission.feature)
 - [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
 - [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md)
+- [ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md)
+- [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md)

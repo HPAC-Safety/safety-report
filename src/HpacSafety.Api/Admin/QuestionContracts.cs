@@ -33,7 +33,8 @@ public sealed record QuestionView(
     string? PlaceholderEn,
     string? PlaceholderFr,
     IReadOnlyList<OptionView> Options,
-    bool ChoicesComeFromLiveList)
+    bool ChoicesComeFromLiveList,
+    bool HasBeenAnswered)
 {
     /// <summary>Flattens a question and its current revision for the screen.</summary>
     /// <param name="question">The question to show.</param>
@@ -43,7 +44,13 @@ public sealed record QuestionView(
     /// authoring screen shows an administrator the same list a reporter would
     /// see — including anything reporters have added. See ADR-0063.
     /// </param>
-    public static QuestionView Of(Question question, OptionSet? optionSet = null)
+    /// <param name="hasBeenAnswered">
+    /// Whether any answer references this question. The screen warns before a
+    /// save, because an edit to an answered question retires it and creates a
+    /// new one in its place (ADR-0071).
+    /// </param>
+    public static QuestionView Of(
+        Question question, OptionSet? optionSet = null, bool hasBeenAnswered = false)
     {
         ArgumentNullException.ThrowIfNull(question);
 
@@ -72,7 +79,8 @@ public sealed record QuestionView(
             revision.PlaceholderFr,
             [.. choices.Select(option => new OptionView(
                 option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value, AddedByReporter: false))],
-            QuestionChoices.RendersLiveSet(revision, optionSet));
+            QuestionChoices.RendersLiveSet(revision, optionSet),
+            hasBeenAnswered);
     }
 }
 

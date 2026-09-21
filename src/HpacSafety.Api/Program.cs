@@ -62,6 +62,7 @@ app.MapAuth(app.Environment.IsDevelopment());
 app.MapAdminQuestions();
 app.MapAdminOptionSets();
 app.MapAdminTranslation();
+app.MapAdminAnswerTranslation();
 
 await app.RunAsync().ConfigureAwait(false);
 

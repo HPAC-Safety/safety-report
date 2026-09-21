@@ -4,16 +4,33 @@ using HpacSafety.Core.Features.QuestionBank;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// One answer to one question, as it was asked. The reference is to a
-/// <see cref="QuestionRevision"/> rather than to the question, so rewording a
-/// question tomorrow cannot change what an answer given today appears to mean.
+/// One answer to one question, as it was asked, stored as one string.
 /// </summary>
+/// <remarks>
+/// <para>
+/// The value is the words the reporter saw — the label they picked, the text
+/// they typed, <c>yes</c> or <c>no</c>, or an ISO 8601 date or time. It is not
+/// an option code and it resolves through nothing, so relabelling or removing a
+/// choice tomorrow cannot change what this answer says (ADR-0072).
+/// </para>
+/// <para>
+/// A select answer is recorded in the reporter's language only, and
+/// <see cref="NeedsTranslation"/> puts it in front of an administrator to supply
+/// the other one. Nothing on the submission path translates anything.
+/// </para>
+/// <para>
+/// A multi-select produces one of these per chosen value, so "an answer is one
+/// string" stays literally true and each value is translated on its own.
+/// </para>
+/// <para>
+/// The reference is to a <see cref="QuestionRevision"/> as well as to the
+/// question, because the revision is the record of the complete set of choices
+/// this reporter was offered (ADR-0058) even though the answer no longer reads
+/// its own content from it.
+/// </para>
+/// </remarks>
 public class ReportAnswer
 {
-    // Not readonly: option codes are a primitive collection, which EF Core
-    // assigns to the backing field rather than adding into an existing list.
-    private readonly List<string> _selectedOptionCodes = [];
-
     // EF Core materializes an entity by calling this constructor and then
     // setting every mapped property and backing field directly. It exists for
     // the ORM and for nothing else — domain code still has to go through the
@@ -25,7 +42,8 @@ public class ReportAnswer
     }
 #pragma warning restore CS8618
 
-    private ReportAnswer(TinyId reportId, Question question, QuestionRevision revision, DateTimeOffset at)
+    private ReportAnswer(
+        TinyId reportId, Question question, QuestionRevision revision, Locale locale, DateTimeOffset at)
     {
         Id = TinyId.New();
         ReportId = reportId;
@@ -33,6 +51,7 @@ public class ReportAnswer
         QuestionRevisionId = revision.Id;
         QuestionKey = question.Key;
         IsPrivate = revision.IsPrivate;
+        Locale = locale;
         AnsweredAt = at;
     }
 
@@ -45,7 +64,8 @@ public class ReportAnswer
     /// <summary>The question answered.</summary>
     public TinyId QuestionId { get; private init; }
 
-    /// <summary>The exact revision answered, which owns the wording and options.</summary>
+    /// <summary>The exact revision answered, which owns the wording and the
+    /// complete set of choices that were offered.</summary>
     public TinyId QuestionRevisionId { get; private init; }
 
     /// <summary>The question's invariant key, carried for exports and reads.</summary>
@@ -57,11 +77,27 @@ public class ReportAnswer
     /// </summary>
     public bool IsPrivate { get; private init; }
 
-    /// <summary>Free-text value, for the text-shaped types. Null for select types.</summary>
+    /// <summary>
+    /// The whole answer, as one string. Null for a question the reporter
+    /// skipped — nothing is ever synthesized in its place.
+    /// </summary>
     public string? Value { get; private set; }
 
-    /// <summary>Invariant option codes, for select types. Never display text.</summary>
-    public IReadOnlyList<string> SelectedOptionCodes => _selectedOptionCodes;
+    /// <summary>The official language <see cref="Value"/> is written in.</summary>
+    public Locale Locale { get; private init; }
+
+    /// <summary>
+    /// The other official language of <see cref="Value"/>, once an
+    /// administrator has supplied it. Null until then, and null forever for the
+    /// types whose stored form is the same in both languages.
+    /// </summary>
+    public string? TranslatedValue { get; private set; }
+
+    /// <summary>
+    /// Whether this answer is waiting for an administrator to supply its second
+    /// language. True only for a localized select value.
+    /// </summary>
+    public bool NeedsTranslation { get; private set; }
 
     /// <summary>When the answer was given.</summary>
     public DateTimeOffset AnsweredAt { get; private init; }
@@ -69,7 +105,18 @@ public class ReportAnswer
     /// <summary>When this answer was deleted along with its report, if it was.</summary>
     public DateTimeOffset? Deleted { get; private set; }
 
-    internal static ReportAnswer ForText(TinyId reportId, Question question, string? value, DateTimeOffset at)
+    /// <summary>This answer as written in the given language, falling back to
+    /// what the reporter gave when the other language is not supplied yet.</summary>
+    public string? ValueIn(Locale locale) =>
+        locale == Locale ? Value : TranslatedValue ?? Value;
+
+    /// <summary>
+    /// Records one answer, of any type. A select value is checked against the
+    /// choices the revision offered; everything else is taken as given, in the
+    /// invariant written form its type calls for.
+    /// </summary>
+    internal static ReportAnswer For(
+        TinyId reportId, Question question, string? value, Locale locale, DateTimeOffset at)
     {
         var revision = question.CurrentRevision;
 
@@ -78,52 +125,40 @@ public class ReportAnswer
             throw new DomainRuleViolationException($"'{question.Key}' is a {revision.Type} and collects no answer.");
         }
 
-        if (revision.ExpectsOptions)
-        {
-            throw new DomainRuleViolationException($"'{question.Key}' expects option codes, not free text.");
-        }
-
         if (revision.IsRequired && string.IsNullOrWhiteSpace(value))
         {
             throw new DomainRuleViolationException($"'{question.Key}' is required.");
         }
 
-        return new ReportAnswer(reportId, question, revision, at) { Value = value };
+        if (value is not null && revision.ExpectsOptions && !revision.Offers(value, locale))
+        {
+            throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
+        }
+
+        return new ReportAnswer(reportId, question, revision, locale, at)
+        {
+            Value = value,
+            NeedsTranslation = value is not null && revision.StoresLocalizedValue,
+        };
     }
 
-    internal static ReportAnswer ForOptions(
-        TinyId reportId, Question question, IReadOnlyList<string> codes, DateTimeOffset at)
+    /// <summary>
+    /// Supplies the second language of a select value. The reporter's own value
+    /// is never touched — this fills the language they did not answer in.
+    /// </summary>
+    public void SupplyTranslation(string translated)
     {
-        var revision = question.CurrentRevision;
-
-        if (!revision.ExpectsOptions)
+        if (!NeedsTranslation)
         {
-            throw new DomainRuleViolationException($"'{question.Key}' is a {revision.Type} and takes a value, not option codes.");
+            throw new DomainRuleViolationException("This answer is not waiting for a translation.");
         }
 
-        if (revision.TakesOneAnswer && codes.Count > 1)
+        if (string.IsNullOrWhiteSpace(translated))
         {
-            throw new DomainRuleViolationException($"'{question.Key}' takes one answer, not {codes.Count}.");
+            throw new DomainRuleViolationException("A supplied translation cannot be blank.");
         }
 
-        if (revision.IsRequired && codes.Count == 0)
-        {
-            throw new DomainRuleViolationException($"'{question.Key}' is required.");
-        }
-
-        foreach (var code in codes)
-        {
-            if (!revision.Accepts(code))
-            {
-                throw new DomainRuleViolationException($"'{code}' is not an option on '{question.Key}'.");
-            }
-        }
-
-        var answer = new ReportAnswer(reportId, question, revision, at);
-        answer._selectedOptionCodes.AddRange(codes);
-        return answer;
+        TranslatedValue = translated;
+        NeedsTranslation = false;
     }
-
-    /// <summary>The single selected code, for single-select questions.</summary>
-    public string? SingleOptionCode => _selectedOptionCodes.Count == 1 ? _selectedOptionCodes[0] : null;
 }

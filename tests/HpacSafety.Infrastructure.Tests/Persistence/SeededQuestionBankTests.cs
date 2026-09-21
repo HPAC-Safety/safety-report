@@ -117,9 +117,11 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         var questions = (await LoadedQuestionsAsync(context)).ToDictionary(q => q.Key, StringComparer.Ordinal);
         var report = new Report(Locale.EnCa, At);
 
+        var alberta = questions["province"].CurrentRevision.Option("alberta")!.LabelEn;
+
         // When
-        report.Answer(questions[QuestionKey.ConsentPublish], ["yes"], At);
-        report.Answer(questions["province"], ["alberta"], At);
+        report.Answer(questions[QuestionKey.ConsentPublish], "yes", At);
+        report.Answer(questions["province"], alberta, At);
         context.Reports.Add(report);
         await context.SaveChangesAsync();
 
@@ -129,28 +131,46 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
         stored.ConsentPublish.ShouldBe(true);
 
         var provinceAnswer = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id && a.QuestionKey == "province");
-        provinceAnswer.SelectedOptionCodes.ShouldBe(["alberta"]);
+        provinceAnswer.Value.ShouldBe(alberta);
+        provinceAnswer.Locale.ShouldBe(Locale.EnCa);
+        provinceAnswer.NeedsTranslation.ShouldBeTrue();
+
+        // Consent is a boolean: its stored form is invariant, so nothing waits
+        // on an administrator to translate it.
+        var consentAnswer = await reader.ReportAnswers.SingleAsync(
+            a => a.ReportId == report.Id && a.QuestionKey == QuestionKey.ConsentPublish);
+        consentAnswer.Value.ShouldBe("yes");
+        consentAnswer.NeedsTranslation.ShouldBeFalse();
     }
 
     [Fact]
-    public async Task GivenSeededForm_WhenMultiSelectAnswerIsSaved_ThenEveryChosenCodeSurvivesRoundTrip()
+    public async Task GivenSeededForm_WhenMultiSelectAnswerIsSaved_ThenEveryChosenValueSurvivesRoundTrip()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
         await using var context = PostgresFixture.ContextFor(connectionString);
         var ratings = (await LoadedQuestionsAsync(context)).Single(q => q.Key == "pilot_ratings");
         var report = new Report(Locale.EnCa, At);
+        var chosen = new[]
+        {
+            ratings.CurrentRevision.Option("p3")!.LabelEn,
+            ratings.CurrentRevision.Option("paragliding_instructor")!.LabelEn,
+        };
 
-        // When
-        report.Answer(ratings, ["p3", "paragliding_instructor"], At);
+        // When — a multi-select is one row per chosen value
+        report.Answer(ratings, chosen, At);
         context.Reports.Add(report);
         await context.SaveChangesAsync();
 
         // Then
         await using var reader = PostgresFixture.ContextFor(connectionString);
-        var answer = await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id);
-        answer.SelectedOptionCodes.ShouldBe(["p3", "paragliding_instructor"]);
-        answer.IsPrivate.ShouldBeTrue();
+        var answers = await reader.ReportAnswers
+            .Where(a => a.ReportId == report.Id)
+            .OrderBy(a => a.Value)
+            .ToListAsync();
+        answers.Select(a => a.Value).ShouldBe(chosen.OrderBy(value => value, StringComparer.Ordinal));
+        answers.ShouldAllBe(a => a.IsPrivate);
+        answers.ShouldAllBe(a => a.NeedsTranslation);
     }
 
     // DisplayOrder now lives on QuestionRevision, so it cannot be translated

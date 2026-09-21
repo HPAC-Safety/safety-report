@@ -32,7 +32,12 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.Ignore(question => question.SectionKey);
         builder.Ignore(question => question.IsActive);
 
-        builder.HasIndex(question => question.Key).IsUnique();
+        // Unique among live questions only. A fork chain shares one key — the
+        // retired questions and the one being asked today — and exactly one of
+        // them is live, which is the rule the form resolves by (ADR-0071).
+        builder.HasIndex(question => question.Key)
+            .IsUnique()
+            .HasFilter("deleted IS NULL");
 
         builder.ToTable(t => t.HasCheckConstraint(
             "ck_questions_role",

@@ -29,11 +29,13 @@ public class ProjectionTests
     }
 
     [Theory]
-    [InlineData("True", true)]
-    [InlineData("False", false)]
+    [InlineData("yes", true)]
+    [InlineData("no", false)]
     public void GivenConsentRoleOnTextQuestion_WhenAnswered_ThenBooleanWordIsRead(string given, bool expected)
     {
-        // Given — the role can be moved to a question that is not the YesNo one
+        // Given — "yes" and "no" are the invariant stored forms of every
+        // boolean answer (ADR-0072); the role can be moved to a question that
+        // is not the YesNo one
         var question = Question.Create(
             "consent", QuestionType.ShortText, "May we publish?", "Pouvons-nous publier ?", Now,
             role: QuestionRole.ConsentPublish);
@@ -47,14 +49,14 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void GivenFreeTextQuestion_WhenAnsweredWithOptionCodes_ThenRefused()
+    public void GivenFreeTextQuestion_WhenAnsweredWithSeveralValues_ThenRefused()
     {
-        // Given
+        // Given — multi-select is the only type that records more than one row
         var question = Question.Create("description", QuestionType.LongText, "Describe it", "Décrivez-le", Now);
         var report = new Report(Locale.EnCa, Now);
 
         // When
-        var answering = () => report.Answer(question, ["something"], Now);
+        var answering = () => report.Answer(question, ["something", "something else"], Now);
 
         // Then
         answering.ShouldThrow<DomainRuleViolationException>();

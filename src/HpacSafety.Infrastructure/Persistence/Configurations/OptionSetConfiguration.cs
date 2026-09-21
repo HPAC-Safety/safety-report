@@ -61,6 +61,7 @@ public sealed class OptionSetItemConfiguration : IEntityTypeConfiguration<Option
         // Not nullable: an item was either typed by a reporter or authored by
         // an administrator, and every row that already exists was the latter.
         builder.Property(item => item.AddedByReporter).IsRequired().HasDefaultValue(false);
+        builder.Property(item => item.NeedsTranslation).IsRequired().HasDefaultValue(false);
 
         // The curation query is "show me what reporters have added to this
         // list", so it is worth an index on the pair.

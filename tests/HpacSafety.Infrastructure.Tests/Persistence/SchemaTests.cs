@@ -98,18 +98,41 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task GivenMigratedDatabase_WhenAnswerColumnIsRead_ThenOptionCodesAreStoredAsArray()
+    public async Task GivenMigratedDatabase_WhenAnswerColumnsAreRead_ThenValueIsOneStringAndCodesAreGone()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
 
         // When
-        var types = await QueryStringsAsync(
+        var columns = await QueryStringsAsync(
             connectionString,
-            "SELECT data_type FROM information_schema.columns WHERE table_name = 'report_answers' AND column_name = 'selected_option_codes'");
+            "SELECT column_name FROM information_schema.columns WHERE table_name = 'report_answers'");
 
-        // Then
-        types.ShouldBe(["ARRAY"]);
+        // Then — every answer is one string, in the reporter's language, with
+        // a flag for an administrator to supply the other (ADR-0072)
+        columns.ShouldContain("value");
+        columns.ShouldContain("locale");
+        columns.ShouldContain("translated_value");
+        columns.ShouldContain("needs_translation");
+        columns.ShouldNotContain("selected_option_codes");
+    }
+
+    [Fact]
+    public async Task GivenMigratedDatabase_WhenQuestionKeyIndexIsRead_ThenUniqueAmongLiveRowsOnly()
+    {
+        // Given
+        var connectionString = await postgres.CreateMigratedDatabaseAsync();
+
+        // When
+        var definitions = await QueryStringsAsync(
+            connectionString,
+            "SELECT indexdef FROM pg_indexes WHERE tablename = 'questions' AND indexname = 'ix_questions_key'");
+
+        // Then — a fork chain shares one key, and exactly one of them is live
+        // (ADR-0071)
+        definitions.Length.ShouldBe(1);
+        definitions[0].ShouldContain("UNIQUE");
+        definitions[0].ShouldContain("deleted IS NULL");
     }
 
     private static async Task<string[]> QueryStringsAsync(string connectionString, string sql)

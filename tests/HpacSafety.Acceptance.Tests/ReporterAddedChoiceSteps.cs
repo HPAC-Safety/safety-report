@@ -1,5 +1,6 @@
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.Reporting;
 
 using Reqnroll;
 using Shouldly;
@@ -57,7 +58,7 @@ public sealed class ReporterAddedChoiceSteps
     public void GivenAReporterAlreadyAddedASite()
     {
         GivenATypeAheadBackedByAList();
-        _added = _set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
+        _added = _set.AddFromReporter("Mount 7");
     }
 
     [Given(@"an Administrator removed a choice from a shared list")]
@@ -68,15 +69,15 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [When(@"a reporter submits an answer naming a site the list does not offer")]
-    public void WhenAReporterNamesANewSite() => _added = _set.AddFromReporter("Mount 7", "Mount 7", "Mont 7");
+    public void WhenAReporterNamesANewSite() => _added = _set.AddFromReporter("Mount 7");
 
     [When(@"another reporter submits the same site name")]
     public void WhenAnotherReporterNamesTheSameSite() =>
-        _added = _set.AddFromReporter("mount 7", "mount 7 (as typed)", "mont 7 (tel que saisi)");
+        _added = _set.AddFromReporter("mount 7");
 
     [When(@"a reporter submits that same value again")]
     public void WhenAReporterRetypesARemovedValue() =>
-        _added = _set.AddFromReporter("Woodside", "Woodside", "Woodside");
+        _added = _set.AddFromReporter("Woodside");
 
     [When(@"a choice is added to that list afterwards")]
     public void WhenAChoiceIsAddedAfterwards() => _set.Add("mount_7", "Mount 7", "Mont 7");
@@ -91,15 +92,32 @@ public sealed class ReporterAddedChoiceSteps
         _set.Items.Select(item => item.Code).ShouldContain("mount_7");
     }
 
-    [Then(@"it carries both official languages")]
-    public void ThenItCarriesBothLanguages()
+    [Then(@"it carries the language the reporter typed it in")]
+    public void ThenItCarriesTheTypedLanguage() => _added!.LabelEn.ShouldBe("Mount 7");
+
+    [Then(@"it is marked for an Administrator to supply the other language")]
+    public void ThenItIsMarkedForTranslation()
     {
-        _added!.LabelEn.ShouldBe("Mount 7");
-        _added.Label(Locale.FrCa).ShouldBe("Mont 7");
+        // Nothing on the submission path translates, so the typed words stand
+        // in for both languages and the flag says so (ADR-0072).
+        _added!.NeedsTranslation.ShouldBeTrue();
+        _added.Label(Locale.FrCa).ShouldBe("Mount 7");
     }
 
-    [Then(@"the reporter's answer refers to it")]
-    public void ThenTheAnswerRefersToIt() => _added!.Id.Value.Length.ShouldBe(TinyId.Length);
+    [Then(@"the next reporter is offered it")]
+    public void ThenTheNextReporterIsOfferedIt() =>
+        _set.Items.Where(item => item.Deleted is null).Select(item => item.Code).ShouldContain("mount_7");
+
+    [Then(@"the reporter's answer still records the value they typed")]
+    public void ThenTheAnswerRecordsTheTypedValue()
+    {
+        // An answer holds its own words and points at no row at all (ADR-0072),
+        // so a removed choice cannot reach back and change what it says.
+        var report = new Report(Locale.EnCa, Noon);
+        var answer = report.Answer(_question, "Woodside", Noon);
+
+        answer.Value.ShouldBe("Woodside");
+    }
 
     [Then(@"the existing choice is reused rather than duplicated")]
     public void ThenTheExistingChoiceIsReused() =>

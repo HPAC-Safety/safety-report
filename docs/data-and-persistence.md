@@ -30,7 +30,8 @@ constraints permit, but it must preserve these logical records:
 | `option_sets` | ID, stable key (unique), EN/FR administrator-facing name, created timestamp, Deleted. Reusable choice lists shared by several questions. **Mutable**, unlike a revision — see ADR-0058. |
 | `option_set_items` | ID, option-set ID, stable option code, EN/FR label, sort order, reporter-added marker, Deleted. Unique set + code, including across a removed item, so re-adding a code revives that row rather than creating a rival — except from a reporter, which never revives a removed choice (ADR-0063). |
 | `reports` | ID, language, status, nullable ConsentPublish projection, submitted/published timestamps, safe summary failure state, Deleted. No ordinary typed projections. |
-| `report_answers` | ID, report ID, exact question revision ID, privacy snapshot, nullable scalar value or selected option-code representation, answered/recorded timestamp, Deleted. Includes skipped shown questions, including file-upload controls. |
+| `questions` | ID, stable key, system marker, role, created timestamp, Deleted. Unique key **among live rows only** — a retired question keeps its key so a fork chain shares one (ADR-0071). |
+| `report_answers` | ID, report ID, question ID, exact question revision ID, privacy snapshot, nullable string value, the locale it was given in, nullable second-language value, translation-pending marker, answered/recorded timestamp, Deleted. **Every answer of every type is one string** — a select answer holds the label as shown, a boolean holds `yes` or `no`, a date/time holds ISO 8601 (ADR-0072). Includes skipped shown questions, including file-upload controls. |
 | `report_files` | ID, report ID, file-upload report-answer ID, attachment kind, server-minted original and nullable derivative keys, detected/safe types and sizes, processing status/timestamps, safe error code, Deleted. The answer identifies the exact revision. Documents normally have no derivative. No client filename or extracted document text. |
 | `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, generated/updated timestamps, nullable ApprovedBySubject/ApprovedAt, Deleted. One row per report. |
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
@@ -64,12 +65,16 @@ Required database protection includes:
 
 - unique question stable key + revision number and at most one stable-key
   revision chain link;
+- unique question stable key among live questions only — `UNIQUE (key) WHERE
+  deleted IS NULL` — so a fork chain shares one key with one live member
+  (ADR-0071);
 - unique option code within a revision;
 - unique answer per report + question revision and, at the application layer,
   at most one revision of the same stable key per report;
 - each report file belongs to exactly one file-upload answer on the same report;
 - exactly one summary row per report;
-- indexes for latest-revision lookup and active/live filtering, the live review
+- indexes for latest-revision lookup and active/live filtering, the
+  translation-pending answer queue, the live review
   queue, live public reports,
   report dependencies, unprocessed outbox rows, and question-reference deletion
   checks;

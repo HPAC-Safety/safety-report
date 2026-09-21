@@ -40,6 +40,7 @@ interface StubQuestion {
 	placeholderEn: string | null
 	placeholderFr: string | null
 	options: { code: string; labelEn: string; labelFr: string; sourceItemId: string | null }[]
+	hasBeenAnswered: boolean
 }
 
 function question(id: string, key: string, labelEn: string, type: string, displayOrder: number): StubQuestion {
@@ -64,6 +65,7 @@ function question(id: string, key: string, labelEn: string, type: string, displa
 		placeholderEn: null,
 		placeholderFr: null,
 		options: [],
+		hasBeenAnswered: false,
 	}
 }
 
@@ -222,6 +224,8 @@ Given("the question bank stores each question as a stable, non-localized key", a
 
 Given("each revision has a monotonically increasing revision number for its key", async () => {})
 
+Given("at most one live question exists for a stable key", async () => {})
+
 Given("a signed-in Administrator opens the manage-questions page", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	await expect(page.getByRole("list", { name: "Questions on the form" })).toBeVisible()
@@ -288,6 +292,19 @@ Then("the two questions have swapped places in the list", async ({ page }) => {
 
 	await expect(rows.nth(0)).toContainText("What happened?")
 	await expect(rows.nth(1)).toContainText("Were you injured?")
+})
+
+Given("the first question has never been answered", async ({ page }) => {
+	// The default stub, stated so the scenario reads on its own.
+	await expect(page.getByRole("list", { name: "Questions on the form" })).toBeVisible()
+})
+
+When("they edit its English wording and save", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
+	await page.getByLabel("Question (English)").fill("Were you hurt?")
+	await page.getByRole("button", { name: "Save" }).click()
 })
 
 When("they edit the first question's English wording and save", async ({ page }) => {
@@ -432,4 +449,69 @@ Then("its key cannot be changed", async ({ page }) => {
 	// A key is what every stored answer refers to, so an edit may never change it.
 	await expect(page.getByLabel("Key")).toHaveAttribute("readonly", "")
 	await expect(page.getByLabel("Key")).toHaveValue("were_you_injured")
+})
+
+/*
+ * Editing an answered question retires it and creates a new one in its place
+ * (ADR-0071), so the editor says so before the administrator saves.
+ */
+
+Given("the first question has been answered", async ({ page }) => {
+	const listed = [
+		{ ...question("aaaaaaaaaaa", "injury", "Were you injured?", "yes_no", 1), hasBeenAnswered: true },
+		question("bbbbbbbbbbb", "narrative", "What happened?", "long_text", 2),
+	]
+
+	await page.route("**/api/admin/questions", async (route) => {
+		if (route.request().method() !== "GET") {
+			await route.fallback()
+			return
+		}
+
+		await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(listed) })
+	})
+
+	// Saving an answered question retires it and returns a new one carrying
+	// the same key, so the list shows one question for that key either way.
+	await page.route("**/api/admin/questions/*", async (route) => {
+		const saved = JSON.parse(route.request().postData() ?? "{}") as { labelEn: string }
+		const replacement = {
+			...question("ccccccccccc", "injury", saved.labelEn, "yes_no", 1),
+			revisionNumber: 1,
+		}
+
+		listed[0] = replacement
+		await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(replacement) })
+	})
+
+	await page.reload()
+	await expect(page.getByRole("list", { name: "Questions on the form" })).toBeVisible()
+})
+
+When("they edit its English wording", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
+	await page.getByLabel("Question (English)").fill("Did you need medical attention?")
+})
+
+Then("the page says that saving retires this question and creates a new one", async ({ page }) => {
+	// Scoped to the editor: dnd-kit keeps its own empty role="status" live
+	// region on this page.
+	await expect(
+		page.getByRole("status").filter({ hasText: "This question has been answered" }),
+	).toContainText("retires it and creates a new question")
+})
+
+When("they save", async ({ page }) => {
+	await page.getByRole("button", { name: "Save" }).click()
+})
+
+Then("the list shows one question for that key, with the new wording", async ({ page }) => {
+	const rows = page
+		.getByRole("list", { name: "Questions on the form" })
+		.getByRole("listitem")
+		.filter({ hasText: "Did you need medical attention?" })
+
+	await expect(rows).toHaveCount(1)
 })

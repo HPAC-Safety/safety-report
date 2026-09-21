@@ -11,6 +11,14 @@ keywords: date/time types, banned API, DateOnly
 described below are superseded by
 [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature).
 
+**Unaffected by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md),
+which is worth saying plainly.** A date, time, or date-and-time answer is now
+*stored* in `report_answers.value` as an ISO 8601 string. That is a statement
+about one column, not a licence to pass dates around as text: every rule below
+stands, the domain still uses `DateOnly`, `TimeOnly`, and `DateTimeOffset`,
+`DateTime` is still a build error, and parsing happens at the persistence
+boundary.
+
 ## Context
 
 `System.DateTime` is one type doing three different jobs. The same 64 bits mean

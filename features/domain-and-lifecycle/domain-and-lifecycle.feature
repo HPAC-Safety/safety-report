@@ -86,6 +86,14 @@ Feature: Domain and lifecycle
     And once any answer references a revision, that revision is never deletable again
 
   @ignore
+  Scenario: Retiring a question is a soft delete with no way back
+    Given a question is retired, either by an Administrator or by being replaced through an edit
+    When the deletion is committed
+    Then the question is stamped with a deleted timestamp rather than removed
+    And its revisions, options, and every answer given to it are untouched
+    And there is no restore transition
+
+  @ignore
   Scenario: Raw reports are retained until explicit deletion
     Given a report has been submitted
     When no safety officer has deleted it

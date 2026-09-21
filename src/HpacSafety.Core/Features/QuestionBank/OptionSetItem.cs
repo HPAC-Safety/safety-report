@@ -21,7 +21,8 @@ public class OptionSetItem
 #pragma warning restore CS8618
 
     private OptionSetItem(
-        TinyId optionSetId, string code, int displayOrder, string labelEn, string labelFr, bool addedByReporter)
+        TinyId optionSetId, string code, int displayOrder, string labelEn, string labelFr,
+        bool addedByReporter, bool needsTranslation)
     {
         Id = TinyId.New();
         OptionSetId = optionSetId;
@@ -30,6 +31,7 @@ public class OptionSetItem
         LabelEn = NotBlank(labelEn);
         LabelFr = NotBlank(labelFr);
         AddedByReporter = addedByReporter;
+        NeedsTranslation = needsTranslation;
     }
 
     /// <summary>Surrogate key. A revision's snapshot records this as its source.</summary>
@@ -61,10 +63,23 @@ public class OptionSetItem
     /// It is a curation flag, not a warning: an administrator uses it to find
     /// the entries nobody has reviewed yet, to rename "mount 7" to "Mount 7",
     /// to merge a duplicate, or to remove something that should not have been
-    /// added. The French on a reporter-added item was machine-drafted at
-    /// submission, so it is the wording most worth a second look. See ADR-0063.
+    /// added. See ADR-0063.
     /// </remarks>
     public bool AddedByReporter { get; private init; }
+
+    /// <summary>
+    /// True when one of the two labels is not a translation but a copy of the
+    /// other, waiting for an administrator to supply the real wording.
+    /// </summary>
+    /// <remarks>
+    /// A reporter types one language, and nothing on the submission path
+    /// translates it (ADR-0072). Rather than leave a choice half-blank — which
+    /// would show the other half of the membership an empty option — the typed
+    /// words stand in for both languages and this flag says so, exactly as the
+    /// development translator's copied output is labelled a stand-in rather
+    /// than passed off as a translation.
+    /// </remarks>
+    public bool NeedsTranslation { get; private set; }
 
     /// <summary>When this choice was removed from the set, if it was.</summary>
     public DateTimeOffset? Deleted { get; private set; }
@@ -74,13 +89,18 @@ public class OptionSetItem
 
     internal static OptionSetItem Create(
         TinyId optionSetId, string code, int displayOrder, string labelEn, string labelFr,
-        bool addedByReporter = false) =>
-        new(optionSetId, code, displayOrder, labelEn, labelFr, addedByReporter);
+        bool addedByReporter = false, bool needsTranslation = false) =>
+        new(optionSetId, code, displayOrder, labelEn, labelFr, addedByReporter, needsTranslation);
 
+    /// <summary>
+    /// Replaces both labels with an administrator's own wording, which settles
+    /// any stand-in language a reporter's entry was carrying.
+    /// </summary>
     internal void Relabel(string labelEn, string labelFr)
     {
         LabelEn = NotBlank(labelEn);
         LabelFr = NotBlank(labelFr);
+        NeedsTranslation = false;
     }
 
     internal void MoveTo(int displayOrder) => DisplayOrder = displayOrder;

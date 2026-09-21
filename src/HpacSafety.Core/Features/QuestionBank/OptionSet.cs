@@ -136,21 +136,21 @@ public class OptionSet
     /// </item>
     /// </list>
     /// <para>
-    /// Both languages are required here as everywhere else. A reporter types
-    /// one; the caller supplies the other, machine-translated at submission.
-    /// This method does no translating — it is a domain rule, and which
-    /// service drafted a label is the caller's business.
+    /// A reporter types one language and nothing here translates it — the
+    /// submission path calls no translator at all (ADR-0072). The typed words
+    /// stand in for both languages and the item is marked
+    /// <see cref="OptionSetItem.NeedsTranslation"/>, so the next reporter is
+    /// offered the choice immediately and an administrator supplies the real
+    /// second wording from the curation screen.
     /// </para>
     /// </remarks>
-    /// <param name="code">The value the reporter typed, normalized to a code.</param>
-    /// <param name="labelEn">The English wording.</param>
-    /// <param name="labelFr">The French wording.</param>
-    /// <returns>The item the reporter's answer should point at.</returns>
-    public OptionSetItem AddFromReporter(string code, string labelEn, string labelFr)
+    /// <param name="label">The wording the reporter typed.</param>
+    /// <returns>The item this choice is now recorded as.</returns>
+    public OptionSetItem AddFromReporter(string label)
     {
         EnsureNotDeleted();
 
-        var normalized = QuestionKey.Normalize(code);
+        var normalized = QuestionKey.Normalize(label);
 
         if (_items.Find(item => item.Code == normalized) is { } existing)
         {
@@ -158,7 +158,9 @@ public class OptionSet
         }
 
         var item = OptionSetItem.Create(
-            Id, normalized, NextDisplayOrder(), labelEn, labelFr, addedByReporter: true);
+            Id, normalized, NextDisplayOrder(),
+            labelEn: label, labelFr: label,
+            addedByReporter: true, needsTranslation: true);
 
         _items.Add(item);
         return item;

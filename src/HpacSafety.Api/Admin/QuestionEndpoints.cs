@@ -46,12 +46,14 @@ public static class QuestionEndpoints
     {
         var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
         var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+        var answered = await AnsweredQuestionIdsAsync(database, cancellationToken).ConfigureAwait(false);
 
         return Results.Ok(
             questions
                 .OrderBy(question => question.DisplayOrder)
                 .ThenBy(question => question.Key, StringComparer.Ordinal)
-                .Select(question => QuestionView.Of(question, SetFor(question, sets)))
+                .Select(question => QuestionView.Of(
+                    question, SetFor(question, sets), answered.Contains(question.Id)))
                 .ToList());
     }
 
@@ -151,8 +153,13 @@ public static class QuestionEndpoints
             {
                 var dependsOn = ResolvedDependency(request, questions, question.Id);
                 var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
+                var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
+                    .ConfigureAwait(false);
 
-                question.Revise(
+                // Revises while nothing has answered it, and otherwise retires
+                // this question and returns its replacement (ADR-0071).
+                var live = question.ApplyEdit(
+                    hasBeenAnswered,
                     type,
                     request.LabelEn,
                     request.LabelFr,
@@ -170,11 +177,19 @@ public static class QuestionEndpoints
                     ParsedOptionSet(request),
                     options);
 
+                var forked = !ReferenceEquals(live, question);
+
+                if (forked)
+                {
+                    database.Questions.Add(live);
+                }
+
                 await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
                 var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
 
-                return Results.Ok(QuestionView.Of(question, SetFor(question, sets)));
+                // The replacement is new, so nothing has answered it yet.
+                return Results.Ok(QuestionView.Of(live, SetFor(live, sets), hasBeenAnswered && !forked));
             }).ConfigureAwait(false);
     }
 
@@ -271,6 +286,34 @@ public static class QuestionEndpoints
     /// Every live shared choice list, by id. An autocomplete renders the live
     /// list rather than its snapshot (ADR-0063), so the screen needs them.
     /// </summary>
+    /// <summary>
+    /// Whether any answer anywhere references this question, which is what
+    /// decides between revising it and replacing it (ADR-0071).
+    /// </summary>
+    /// <remarks>
+    /// Query filters are ignored deliberately: an answer on a soft-deleted
+    /// report is still a record of what somebody was asked, so it forces the
+    /// fork exactly as a live one does.
+    /// </remarks>
+    /// <summary>
+    /// Every question that any answer references, so the list can mark which
+    /// ones an edit would replace rather than revise.
+    /// </summary>
+    private static async Task<HashSet<TinyId>> AnsweredQuestionIdsAsync(
+        HpacSafetyDbContext database, CancellationToken cancellationToken) =>
+        [.. await database.ReportAnswers
+            .IgnoreQueryFilters()
+            .Select(answer => answer.QuestionId)
+            .Distinct()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false)];
+
+    private static Task<bool> HasBeenAnsweredAsync(
+        HpacSafetyDbContext database, TinyId questionId, CancellationToken cancellationToken) =>
+        database.ReportAnswers
+            .IgnoreQueryFilters()
+            .AnyAsync(answer => answer.QuestionId == questionId, cancellationToken);
+
     private static async Task<Dictionary<TinyId, OptionSet>> LiveSetsAsync(
         HpacSafetyDbContext database, CancellationToken cancellationToken)
     {

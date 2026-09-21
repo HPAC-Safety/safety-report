@@ -10,6 +10,7 @@ import { AdminPage } from "./routes/AdminPage"
 import { ManageReportsPage } from "./routes/ManageReportsPage"
 import { ManageQuestionsPage } from "./routes/ManageQuestionsPage"
 import { ManageChoiceListsPage } from "./routes/ManageChoiceListsPage"
+import { ManageAnswerTranslationsPage } from "./routes/ManageAnswerTranslationsPage"
 import { NotFoundPage } from "./routes/NotFoundPage"
 
 function App() {
@@ -27,6 +28,7 @@ function App() {
 					<Route path="/admin/reports" element={<ManageReportsPage />} />
 					<Route path="/admin/questions" element={<ManageQuestionsPage />} />
 					<Route path="/admin/choice-lists" element={<ManageChoiceListsPage />} />
+					<Route path="/admin/answer-translations" element={<ManageAnswerTranslationsPage />} />
 					<Route path="*" element={<NotFoundPage />} />
 				</Routes>
 			</div>

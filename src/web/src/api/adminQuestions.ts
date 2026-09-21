@@ -69,6 +69,12 @@ export interface QuestionView {
 	 * reporter added shows up for the next one (ADR-0063).
 	 */
 	choicesComeFromLiveList: boolean
+	/**
+	 * Whether any answer references this question. An edit to an answered
+	 * question retires it and creates a new one in its place (ADR-0071), so the
+	 * editor says so before the administrator saves.
+	 */
+	hasBeenAnswered: boolean
 }
 
 export interface SaveQuestionRequest {
@@ -216,5 +222,41 @@ export function translate(texts: string[], from: string, to: string): Promise<{ 
 	return call<{ texts: string[] }>("/api/admin/translate", {
 		method: "POST",
 		body: JSON.stringify({ texts, from, to }),
+	})
+}
+
+/** One answer waiting for an administrator to supply its second language. */
+export interface AwaitingTranslationView {
+	id: string
+	questionKey: string
+	value: string
+	locale: string
+	into: string
+}
+
+/**
+ * The answers waiting for a second official language.
+ *
+ * A reporter answers a picker or a type-ahead in one language and nothing on
+ * the submission path translates it (ADR-0072). This is the queue where an
+ * administrator supplies the other one.
+ */
+export function listAnswersAwaitingTranslation(): Promise<{
+	answers: AwaitingTranslationView[]
+	waiting: number
+}> {
+	return call<{ answers: AwaitingTranslationView[]; waiting: number }>(
+		"/api/admin/answers/awaiting-translation",
+	)
+}
+
+/**
+ * Supplies an answer's second language. The reporter's own value is never
+ * changed — this fills the language they did not answer in.
+ */
+export function supplyAnswerTranslation(id: string, value: string): Promise<void> {
+	return call<void>(`/api/admin/answers/${id}/translation`, {
+		method: "PUT",
+		body: JSON.stringify({ value }),
 	})
 }

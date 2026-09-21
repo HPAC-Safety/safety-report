@@ -170,10 +170,37 @@ async function stubAdminApi(page: Page) {
 	})
 }
 
-async function signInAndOpenQuestions(page: Page) {
+/**
+ * Stubs the translation endpoint. The prefix makes a translation obviously
+ * machine-made, so a scenario asserts that the field was filled from the other
+ * language rather than asserting the quality of any French.
+ */
+async function stubTranslation(page: Page, { available = true }: { available?: boolean } = {}) {
+	await page.route("**/api/admin/translate", async (route) => {
+		if (route.request().method() === "GET") {
+			await route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ available }),
+			})
+			return
+		}
+
+		const { texts, to } = JSON.parse(route.request().postData() ?? "{}") as { texts: string[]; to: string }
+
+		await route.fulfill({
+			status: 200,
+			contentType: "application/json",
+			body: JSON.stringify({ texts: texts.map((text) => (text ? `[${to}] ${text}` : "")) }),
+		})
+	})
+}
+
+async function signInAndOpenQuestions(page: Page, { translation = true }: { translation?: boolean } = {}) {
 	await page.goto("/login")
 	await page.getByRole("button", { name: "Log in" }).click()
 	await stubAdminApi(page)
+	await stubTranslation(page, { available: translation })
 	await page.goto("/admin/questions")
 }
 
@@ -313,6 +340,64 @@ Then("the form is filled with its current wording, type, and behaviour", async (
 	await expect(page.getByLabel("Type")).toHaveValue("yes_no")
 	await expect(page.getByLabel("Private")).toBeChecked()
 	await expect(page.getByLabel("Reporters must answer")).not.toBeChecked()
+})
+
+Given(
+	"a signed-in Administrator is authoring a question on a server with no translation provider",
+	async ({ page }) => {
+		await signInAndOpenQuestions(page, { translation: false })
+		await page.getByRole("button", { name: "Add a question" }).click()
+	},
+)
+
+When("they write the English wording and ask for it to be translated", async ({ page }) => {
+	await page.getByLabel("Question (English)").fill("Were you injured?")
+	await page.getByRole("button", { name: "Translate into French" }).click()
+})
+
+When("they write the French wording and ask for it to be translated", async ({ page }) => {
+	await page.getByLabel("Question (French)").fill("Avez-vous été blessé ?")
+	await page.getByRole("button", { name: "Translate into English" }).click()
+})
+
+Then("the French field is filled with the translation", async ({ page }) => {
+	await expect(page.getByLabel("Question (French)")).toHaveValue("[fr-CA] Were you injured?")
+})
+
+Then("the English field is filled with the translation", async ({ page }) => {
+	await expect(page.getByLabel("Question (English)")).toHaveValue("[en-CA] Avez-vous été blessé ?")
+})
+
+Then("the French field remains editable", async ({ page }) => {
+	// A translation is a draft, not a locked value — the administrator corrects
+	// it and what they save is theirs.
+	const french = page.getByLabel("Question (French)")
+
+	await expect(french).not.toHaveAttribute("readonly", "")
+	await french.fill("Avez-vous été blessé ?")
+	await expect(french).toHaveValue("Avez-vous été blessé ?")
+})
+
+When("only one official language has been written", async ({ page }) => {
+	await page.getByLabel("Key").fill("were_you_hurt")
+	await page.getByLabel("Question (English)").fill("Were you injured?")
+})
+
+Then("saving is unavailable", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Save" })).toBeDisabled()
+})
+
+When("the other language is written as well", async ({ page }) => {
+	await page.getByLabel("Question (French)").fill("Avez-vous été blessé ?")
+})
+
+Then("saving becomes available", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Save" })).toBeEnabled()
+})
+
+Then("the translate action is unavailable and says so", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Translate into French" })).toBeDisabled()
+	await expect(page.getByText("Translation is not available on this server.")).toBeVisible()
 })
 
 Then("its key cannot be changed", async ({ page }) => {

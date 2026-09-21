@@ -58,6 +58,19 @@ jobs:
   # ConnectionStrings__Default, Notifications__To — are NOT here. They live in
   # AWS Secrets Manager and are injected into the task definition. Putting them
   # in GitHub would spread them for no reason. See docs/deployment.md.
+  #
+  # Translation__ApiKey is the exception, by an explicit decision (ADR-0062):
+  # the DeepL credential already exists as the DEEPL_API_KEY repository secret
+  # for the locale workflow, and the owner chose to reuse it rather than add a
+  # second copy in Secrets Manager. When the service roll below is implemented
+  # (#30), pass it into the task definition as:
+  #
+  #   Translation__ApiKey = ${{ secrets.DEEPL_API_KEY }}
+  #
+  # It is optional. With no key the API answers GET /api/admin/translate with
+  # available:false and the authoring screen disables its Translate control, so
+  # a deployment that omits it is degraded, never broken. Moving it into
+  # Secrets Manager alongside the others is a self-contained later change.
   # ---------------------------------------------------------------------------
   preflight:
     # Three conditions, not one. `branches: [main]` above filters on the

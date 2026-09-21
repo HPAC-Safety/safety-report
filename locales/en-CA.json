@@ -102,5 +102,12 @@
   "questions.type.checkbox": "Checkbox",
   "questions.type.file_upload": "File upload",
   "questions.type.statement": "Statement",
-  "questions.type.group": "Section heading"
+  "questions.type.group": "Section heading",
+  "questions.translate.toFrench": "Translate into French",
+  "questions.translate.toEnglish": "Translate into English",
+  "questions.translate.working": "Translating…",
+  "questions.translate.hint": "Write one language, then translate it into the other.",
+  "questions.translate.draftWarning": "A translation is a draft. Read it and correct it before saving.",
+  "questions.translate.unavailable": "Translation is not available on this server.",
+  "questions.translate.failed": "The translation could not be completed. Please try again or write the other language yourself."
 }

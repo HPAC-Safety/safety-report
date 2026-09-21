@@ -27,6 +27,10 @@ privacy-sensitive.
    question and the only answer read by name; it can never be made optional.
    Every other question's required state is authored by an administrator
    ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
+   An administrator authors both languages and may use machine translation as
+   a drafting aid while doing so; the database holds only what they saved, and
+   a question cannot be saved in one language
+   ([ADR-0062](docs/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
    A question may be made conditional on a yes/no question, and its options may
    be copied from a shared choice list
    ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
@@ -57,9 +61,11 @@ privacy-sensitive.
 8. Use managed encryption at rest and TLS. Do not add application-level field
    encryption, log report content, or physically delete application records.
 
-There is no deterministic scrubber, separate PII auditor, runtime translator,
+There is no deterministic scrubber, separate PII auditor, report translator,
 specialized aircraft processing, outbound email flow, pre-submit
-upload session, or speculative publication channel.
+upload session, or speculative publication channel. Machine translation exists
+for one purpose only — drafting question wording while authoring — and never
+touches a report, an answer, or a summary.
 
 ## Focused skills
 

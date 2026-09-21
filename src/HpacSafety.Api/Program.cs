@@ -1,5 +1,6 @@
 using HpacSafety.Api.Admin;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Infrastructure.Translation;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,11 @@ builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
+
+// Machine translation for the question-authoring screen. Registered whether or
+// not a credential is present; without one the endpoint says so and the
+// authoring screen disables the control. See ADR-0062.
+builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 
 var app = builder.Build();
 
@@ -36,6 +42,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 // (ADR-0016). These are the endpoints that edit it.
 app.MapAdminQuestions();
 app.MapAdminOptionSets();
+app.MapAdminTranslation();
 
 await app.RunAsync().ConfigureAwait(false);
 

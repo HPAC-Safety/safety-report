@@ -26,6 +26,9 @@
        they execute against it directly rather than through the API. -->
   <ItemGroup>
     <ProjectReference Include="../../src/HpacSafety.Core/HpacSafety.Core.csproj" />
+    <!-- The translation scenarios assert which types may depend on ITranslator,
+         which means loading the API assembly and reading its metadata. -->
+    <ProjectReference Include="../../src/HpacSafety.Api/HpacSafety.Api.csproj" />
   </ItemGroup>
 
   <!-- The canonical .feature files live under features/, outside this

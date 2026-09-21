@@ -191,6 +191,35 @@ Feature: Question bank and form
       | short_text   | is rejected              |
       | yes_no       | is rejected              |
 
+  Scenario: A question key is normalized and cannot be reused
+    Given an Administrator authors a question with a loosely typed key
+    Then the stored key is lowercase and underscore-separated
+    And a key that reduces to nothing at all is rejected
+
+  Scenario: Retiring a question keeps it and its history
+    Given an active question has been asked
+    When an Administrator deletes it
+    Then the question is stamped as deleted rather than removed
+    And it refuses any further revision
+
+  Scenario: Publication consent can never be deleted or deactivated
+    Given the consent_publish question exists
+    When an Administrator tries to delete it
+    Then the attempt is rejected
+    And trying to stop asking it is rejected the same way
+
+  Scenario: A retired choice list refuses further edits
+    Given a shared choice list offers several bilingual options
+    When an Administrator retires the whole list
+    Then its options are retired with it
+    And adding, renaming, or rearranging it is rejected
+
+  Scenario: A choice list is rearranged as a whole or not at all
+    Given a shared choice list offers several bilingual options
+    When an Administrator arranges every option into a new order
+    Then the list takes that order
+    And an arrangement that omits or repeats an option is rejected
+
   @ui
   Scenario: An Administrator authors a question from the dashboard
     Given a signed-in Administrator opens the manage-questions page
@@ -215,3 +244,29 @@ Feature: Question bank and form
     Given a signed-in Administrator opens the manage-questions page
     When they move the second question up using its move-up control
     Then the two questions have swapped places in the list
+
+  @ui
+  Scenario: Editing a question from the dashboard shows its new version
+    Given a signed-in Administrator opens the manage-questions page
+    When they edit the first question's English wording and save
+    Then the list shows the new wording and a higher version number
+
+  @ui
+  Scenario: Deleting a question removes it from the list
+    Given a signed-in Administrator opens the manage-questions page
+    When they delete the second question
+    Then it is gone from the list
+
+  @ui
+  Scenario: A rejected save tells the Administrator why
+    Given a signed-in Administrator is authoring a new question
+    When they save a question whose key is already in use
+    Then the page shows the reason the save was refused
+    And the question is not added to the list
+
+  @ui
+  Scenario: The editor carries an existing question's settings into the form
+    Given a signed-in Administrator opens the manage-questions page
+    When they open the first question for editing
+    Then the form is filled with its current wording, type, and behaviour
+    And its key cannot be changed

@@ -107,6 +107,19 @@ async function stubAdminApi(page: Page) {
 	await page.route("**/api/admin/questions", async (route) => {
 		if (route.request().method() === "POST") {
 			const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion>
+
+			if (questions.some((candidate) => candidate.key === saved.key)) {
+				await route.fulfill({
+					status: 400,
+					contentType: "application/problem+json",
+					body: JSON.stringify({
+						title: "That key is taken.",
+						detail: `Another question already uses the key '${saved.key}'.`,
+					}),
+				})
+				return
+			}
+
 			const created = {
 				...question(`q${questions.length}`.padEnd(11, "0"), saved.key ?? "new_question", saved.labelEn ?? "", saved.type ?? "short_text", questions.length),
 				labelFr: saved.labelFr ?? "",
@@ -118,6 +131,42 @@ async function stubAdminApi(page: Page) {
 		}
 
 		await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(questions) })
+	})
+
+	// Matches /api/admin/questions/<id> for PUT and DELETE. /order has its own
+	// route above; Playwright prefers the most recently registered match, so
+	// this one hands that path back rather than swallowing it.
+	await page.route("**/api/admin/questions/*", async (route) => {
+		if (route.request().url().endsWith("/order")) {
+			await route.fallback()
+			return
+		}
+
+		const id = route.request().url().split("/").pop()
+		const index = questions.findIndex((candidate) => candidate.id === id)
+
+		if (index < 0) {
+			await route.fulfill({ status: 404, contentType: "application/json", body: "{}" })
+			return
+		}
+
+		if (route.request().method() === "DELETE") {
+			questions.splice(index, 1)
+			await route.fulfill({ status: 204, body: "" })
+			return
+		}
+
+		// An edit is a new revision, never a patch — the version number moves.
+		const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion>
+		const revised = {
+			...questions[index],
+			...saved,
+			revisionNumber: questions[index].revisionNumber + 1,
+			revisionId: `rev${questions[index].revisionNumber + 1}${id}`,
+		}
+
+		questions[index] = revised
+		await route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(revised) })
 	})
 }
 
@@ -202,4 +251,72 @@ Then("the two questions have swapped places in the list", async ({ page }) => {
 
 	await expect(rows.nth(0)).toContainText("What happened?")
 	await expect(rows.nth(1)).toContainText("Were you injured?")
+})
+
+When("they edit the first question's English wording and save", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
+	await page.getByLabel("Question (English)").fill("Were you hurt?")
+	await page.getByRole("button", { name: "Save" }).click()
+})
+
+Then("the list shows the new wording and a higher version number", async ({ page }) => {
+	const row = page
+		.getByRole("list", { name: "Questions on the form" })
+		.getByRole("listitem")
+		.filter({ hasText: "Were you hurt?" })
+
+	await expect(row).toBeVisible()
+	await expect(row).toContainText("Version 2")
+})
+
+When("they delete the second question", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(1).getByRole("button", { name: "Delete" }).click()
+})
+
+Then("it is gone from the list", async ({ page }) => {
+	const list = page.getByRole("list", { name: "Questions on the form" })
+
+	await expect(list.getByRole("listitem")).toHaveCount(1)
+	await expect(list).not.toContainText("What happened?")
+})
+
+When("they save a question whose key is already in use", async ({ page }) => {
+	await page.getByLabel("Key").fill("were_you_injured")
+	await page.getByLabel("Question (English)").fill("A duplicate")
+	await page.getByLabel("Question (French)").fill("Un doublon")
+	await page.getByRole("button", { name: "Save" }).click()
+})
+
+Then("the page shows the reason the save was refused", async ({ page }) => {
+	await expect(page.getByRole("alert")).toContainText("were_you_injured")
+})
+
+Then("the question is not added to the list", async ({ page }) => {
+	const list = page.getByRole("list", { name: "Questions on the form" })
+
+	await expect(list).not.toContainText("A duplicate")
+})
+
+When("they open the first question for editing", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
+})
+
+Then("the form is filled with its current wording, type, and behaviour", async ({ page }) => {
+	await expect(page.getByLabel("Question (English)")).toHaveValue("Were you injured?")
+	await expect(page.getByLabel("Question (French)")).toHaveValue("Were you injured? (fr)")
+	await expect(page.getByLabel("Type")).toHaveValue("yes_no")
+	await expect(page.getByLabel("Private")).toBeChecked()
+	await expect(page.getByLabel("Reporters must answer")).not.toBeChecked()
+})
+
+Then("its key cannot be changed", async ({ page }) => {
+	// A key is what every stored answer refers to, so an edit may never change it.
+	await expect(page.getByLabel("Key")).toHaveAttribute("readonly", "")
+	await expect(page.getByLabel("Key")).toHaveValue("were_you_injured")
 })

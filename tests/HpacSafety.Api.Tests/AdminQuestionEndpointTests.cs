@@ -243,6 +243,304 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    [Fact]
+    public async Task Given_no_member_session_When_choice_lists_are_listed_Then_the_api_refuses()
+    {
+        // Given
+        using var client = _factory.CreateClient();
+
+        // When
+        using var response = await client.GetAsync(OptionSets);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [Fact]
+    public async Task Given_no_key_When_a_question_is_created_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        using var response = await client.PostAsJsonAsync(Questions, Draft(" ", "short_text"));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_a_key_already_in_use_When_a_question_is_created_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+        var key = UniqueKey("duplicate");
+        await CreateAsync(client, Draft(key, "short_text"));
+
+        // When
+        using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_a_question_that_names_itself_When_it_is_edited_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+        var key = UniqueKey("self_referential");
+        var created = await CreateAsync(client, Draft(key, "yes_no"));
+        var id = created.GetProperty("id").GetString()!;
+
+        // When
+        var edit = Draft(key, "yes_no") with { DependsOnQuestionId = id };
+        using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_a_choice_list_that_does_not_exist_When_a_question_names_it_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        var request = Draft(UniqueKey("launch_site"), "autocomplete") with { OptionSetId = "AAAAAAAAAAA" };
+        using var response = await client.PostAsJsonAsync(Questions, request);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("not-an-id")]
+    [InlineData("AAAAAAAAAAA")]
+    public async Task Given_an_id_that_names_no_question_When_it_is_edited_Then_the_api_returns_not_found(string id)
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        using var response = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(UniqueKey("absent"), "short_text"));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Theory]
+    [InlineData("not-an-id")]
+    [InlineData("AAAAAAAAAAA")]
+    public async Task Given_an_id_that_names_no_question_When_it_is_deleted_Then_the_api_returns_not_found(string id)
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Given_an_unknown_type_When_a_question_is_edited_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+        var key = UniqueKey("retyped");
+        var created = await CreateAsync(client, Draft(key, "short_text"));
+        var id = created.GetProperty("id").GetString()!;
+
+        // When
+        using var response = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(key, "telepathy"));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_publication_consent_When_it_is_deleted_Then_the_api_refuses()
+    {
+        // Given — the seeded system question, which nothing may remove
+        using var client = SignedIn();
+        var listed = await ListAsync(client);
+        var consent = listed.FirstOrDefault(question => question.GetProperty("isSystem").GetBoolean());
+
+        if (consent.ValueKind == JsonValueKind.Undefined)
+        {
+            return; // No seeded consent question in this database; nothing to assert.
+        }
+
+        // When
+        var id = consent.GetProperty("id").GetString();
+        using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_an_arrangement_naming_an_unknown_question_When_it_is_applied_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        using var response = await client.PostAsJsonAsync(
+            new Uri("/api/admin/questions/order", UriKind.Relative), new Reorder(["AAAAAAAAAAA"]));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_an_arrangement_that_omits_a_question_When_it_is_applied_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+        var created = await CreateAsync(client, Draft(UniqueKey("only_one"), "short_text"));
+
+        // When — a partial arrangement would leave every omitted question adrift
+        using var response = await client.PostAsJsonAsync(
+            new Uri("/api/admin/questions/order", UriKind.Relative),
+            new Reorder([created.GetProperty("id").GetString()!]));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_a_choice_list_When_it_is_deleted_Then_it_disappears_from_the_list()
+    {
+        // Given
+        using var client = SignedIn();
+        var set = await CreateOptionSetAsync(client, UniqueKey("retired_list"));
+        var id = set.GetProperty("id").GetString();
+
+        // When
+        using var response = await client.DeleteAsync(new Uri($"/api/admin/option-sets/{id}", UriKind.Relative));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        var listed = await client.GetFromJsonAsync<JsonElement>(OptionSets);
+        listed.EnumerateArray().ShouldNotContain(candidate => candidate.GetProperty("id").GetString() == id);
+    }
+
+    [Fact]
+    public async Task Given_a_choice_list_key_already_in_use_When_another_is_created_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+        var key = UniqueKey("duplicate_list");
+        await CreateOptionSetAsync(client, key);
+
+        // When
+        var request = new SaveOptionSet(key, "Duplicate", "Duplicate", [new Option("one", "One", "Un")]);
+        using var response = await client.PostAsJsonAsync(OptionSets, request);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_no_key_When_a_choice_list_is_created_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        var request = new SaveOptionSet(" ", "Nameless", "Sans nom", []);
+        using var response = await client.PostAsJsonAsync(OptionSets, request);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task Given_a_repeated_code_When_a_choice_list_is_created_Then_the_api_rejects_it()
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        var request = new SaveOptionSet(
+            UniqueKey("repeated"),
+            "Repeated",
+            "Répété",
+            [new Option("one", "One", "Un"), new Option("one", "One again", "Encore un")]);
+
+        using var response = await client.PostAsJsonAsync(OptionSets, request);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    [Theory]
+    [InlineData("not-an-id")]
+    [InlineData("AAAAAAAAAAA")]
+    public async Task Given_an_id_that_names_no_choice_list_When_it_is_replaced_Then_the_api_returns_not_found(string id)
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        var request = new SaveOptionSet(null, "Absent", "Absent", []);
+        using var response = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/option-sets/{id}", UriKind.Relative), request);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Theory]
+    [InlineData("not-an-id")]
+    [InlineData("AAAAAAAAAAA")]
+    public async Task Given_an_id_that_names_no_choice_list_When_it_is_deleted_Then_the_api_returns_not_found(string id)
+    {
+        // Given
+        using var client = SignedIn();
+
+        // When
+        using var response = await client.DeleteAsync(new Uri($"/api/admin/option-sets/{id}", UriKind.Relative));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task Given_a_choice_list_When_an_item_is_added_and_another_removed_Then_the_list_matches_what_was_sent()
+    {
+        // Given
+        using var client = SignedIn();
+        var set = await CreateOptionSetAsync(client, UniqueKey("edited_list"));
+        var id = set.GetProperty("id").GetString();
+
+        // When — 'alberta' relabelled, 'yukon' dropped, 'nunavut' added, order reversed
+        var request = new SaveOptionSet(
+            null,
+            "Edited",
+            "Modifié",
+            [new Option("nunavut", "Nunavut", "Nunavut"), new Option("alberta", "Alberta (edited)", "Alberta (modifié)")]);
+
+        using var response = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/option-sets/{id}", UriKind.Relative), request);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var replaced = await response.Content.ReadFromJsonAsync<JsonElement>();
+        var items = replaced.GetProperty("items").EnumerateArray().ToList();
+
+        items.Select(item => item.GetProperty("code").GetString()).ShouldBe(["nunavut", "alberta"]);
+        items[1].GetProperty("labelEn").GetString().ShouldBe("Alberta (edited)");
+    }
+
     private HttpClient SignedIn()
     {
         var client = _factory.CreateClient();

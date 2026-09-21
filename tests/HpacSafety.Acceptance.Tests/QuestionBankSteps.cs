@@ -337,6 +337,80 @@ public sealed class QuestionBankSteps
     [Then(@"the revision is rejected")]
     public void ThenTheRevisionIsRejected() => _rejection.ShouldBeOfType<DomainRuleViolationException>();
 
+    // -------------------------------------------------- keys and retirement --
+
+    [Given(@"an Administrator authors a question with a loosely typed key")]
+    public void GivenALooselyTypedKey() =>
+        _question = Question.Create(
+            "  Occurrence   Date! ", QuestionType.Date, "When?", "Quand ?", Noon, isActive: true);
+
+    [Then(@"the stored key is lowercase and underscore-separated")]
+    public void ThenTheKeyIsNormalized() => _question!.Key.ShouldBe("occurrence_date");
+
+    [Then(@"a key that reduces to nothing at all is rejected")]
+    public void ThenAnEmptyKeyIsRejected() =>
+        Should.Throw<DomainRuleViolationException>(() =>
+            Question.Create("!!!", QuestionType.Date, "When?", "Quand ?", Noon));
+
+    [Given(@"an active question has been asked")]
+    public void GivenAnActiveQuestion() => _question = Ordinary("occurrence_notes", QuestionType.LongText);
+
+    [When(@"an Administrator deletes it")]
+    public void WhenItIsDeleted() => _question!.Delete(Noon.AddHours(1));
+
+    [Then(@"the question is stamped as deleted rather than removed")]
+    public void ThenItIsStampedDeleted()
+    {
+        _question!.Deleted.ShouldBe(Noon.AddHours(1));
+        _question.IsActive.ShouldBeFalse();
+        _question.Revisions.ShouldNotBeEmpty();
+    }
+
+    [Then(@"it refuses any further revision")]
+    public void ThenItRefusesFurtherRevision() =>
+        Should.Throw<DomainRuleViolationException>(() => _question!.Reorder(5, Noon.AddHours(2)));
+
+    [When(@"an Administrator tries to delete it")]
+    public void WhenConsentIsDeleted() => _rejection = Record(() => _question!.Delete(Noon.AddHours(1)));
+
+    [Then(@"trying to stop asking it is rejected the same way")]
+    public void ThenDeactivatingConsentIsRejected() =>
+        Should.Throw<DomainRuleViolationException>(() => _question!.Deactivate(Noon.AddHours(1)));
+
+    // ------------------------------------------------- choice-list lifecycle --
+
+    [When(@"an Administrator retires the whole list")]
+    public void WhenTheListIsRetired() => _optionSet!.Delete(Noon.AddHours(1));
+
+    [Then(@"its options are retired with it")]
+    public void ThenItsOptionsAreRetired()
+    {
+        _optionSet!.Deleted.ShouldBe(Noon.AddHours(1));
+        _optionSet.Items.ShouldBeEmpty();
+    }
+
+    [Then(@"adding, renaming, or rearranging it is rejected")]
+    public void ThenARetiredListRefusesEdits()
+    {
+        Should.Throw<DomainRuleViolationException>(() => _optionSet!.Add("cochrane", "Cochrane", "Cochrane"));
+        Should.Throw<DomainRuleViolationException>(() => _optionSet!.Rename("Sites", "Sites"));
+        Should.Throw<DomainRuleViolationException>(() => _optionSet!.Arrange(["golden"]));
+    }
+
+    [When(@"an Administrator arranges every option into a new order")]
+    public void WhenTheListIsArranged() => _optionSet!.Arrange(["pemberton", "golden", "lumby"]);
+
+    [Then(@"the list takes that order")]
+    public void ThenTheListTakesThatOrder() =>
+        _optionSet!.Items.Select(item => item.Code).ShouldBe(["pemberton", "golden", "lumby"]);
+
+    [Then(@"an arrangement that omits or repeats an option is rejected")]
+    public void ThenAPartialArrangementIsRejected()
+    {
+        Should.Throw<DomainRuleViolationException>(() => _optionSet!.Arrange(["golden"]));
+        Should.Throw<DomainRuleViolationException>(() => _optionSet!.Arrange(["golden", "golden", "lumby"]));
+    }
+
     // ------------------------------------------------------------- helpers --
 
     private QuestionType _pendingType = QuestionType.ShortText;

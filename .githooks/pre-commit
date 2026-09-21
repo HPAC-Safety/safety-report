@@ -13,10 +13,11 @@
 #    tools/translate-locale.mjs --check) but locally, before the commit
 #    exists, instead of after a push.
 #
-# 2. C# formatting: dotnet format, auto-fixing and re-staging the staged
-#    files it changes, so formatting drift never reaches a commit. CI's
-#    "build" job re-verifies with --verify-no-changes as a server-side
-#    backstop for anyone who skipped this hook.
+# 2. C# formatting: dotnet format --include <staged files>, auto-fixing and
+#    re-staging just those files, so formatting drift never reaches a commit
+#    without touching files outside the diff. CI's "build" job re-verifies
+#    the whole solution with --verify-no-changes as a server-side backstop
+#    for anyone who skipped this hook.
 
 set -eu
 
@@ -41,7 +42,11 @@ if git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(cs|csproj)$';
 
 	STAGED_CS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(cs|csproj)$')
 
-	dotnet format HpacSafety.slnx
+	# --include scopes formatting to the staged files, not the whole solution,
+	# so a commit touching two files never rewrites (and re-stages) unrelated
+	# ones elsewhere in the tree that also happen to be out of format.
+	# shellcheck disable=SC2086 # word-split on purpose: one path per --include arg
+	dotnet format HpacSafety.slnx --include $STAGED_CS
 
 	echo "$STAGED_CS" | while IFS= read -r f; do
 		[ -f "$f" ] && git add -- "$f"

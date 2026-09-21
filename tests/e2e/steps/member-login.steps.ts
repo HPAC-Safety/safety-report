@@ -59,6 +59,30 @@ Then("it opens with manage-reports and manage-questions options", async ({ page 
 	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
 })
 
+Then("every option is on one line and none is truncated", async ({ page }) => {
+	const options = await page
+		.getByRole("menu", { name: "Admin" })
+		.getByRole("menuitem")
+		.evaluateAll((items) =>
+			items.map((item) => {
+				const range = document.createRange()
+				range.selectNodeContents(item)
+				return {
+					text: item.textContent ?? "",
+					lineBoxes: range.getClientRects().length,
+					clientWidth: item.clientWidth,
+					scrollWidth: item.scrollWidth,
+				}
+			}),
+		)
+
+	expect(options.length).toBeGreaterThan(0)
+	for (const option of options) {
+		expect(option.lineBoxes, `"${option.text}" wraps onto more than one line`).toBe(1)
+		expect(option.scrollWidth, `"${option.text}" is truncated`).toBeLessThanOrEqual(option.clientWidth)
+	}
+})
+
 const ADMIN_MENU_DESTINATIONS: Record<string, string> = {
 	"manage-reports": "/admin/reports",
 	"manage-questions": "/admin/questions",

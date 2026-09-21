@@ -324,6 +324,32 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 	return { ok: problems.length === 0, problems, pending }
 }
 
+/**
+ * Splits what `verifyLocales` found into what blocks a commit and what is
+ * merely pending.
+ *
+ * `allowPending` downgrades exactly one problem — a French value still
+ * carrying its local `#` stub — to a notice. The pre-commit hook passes it on
+ * a branch, where i18n-translate.yml is about to commit the French onto that
+ * same branch (ADR-0057). Nothing passes it on main or in CI, so a stub still
+ * cannot land there, and every other problem blocks either way.
+ */
+export function checkVerdict({ problems, pending }, { allowPending = false } = {}) {
+	const tolerated = allowPending ? pending : []
+	const toleratedSet = new Set(tolerated)
+	const blocking = problems.filter((problem) => !toleratedSet.has(problem))
+
+	return {
+		blocking,
+		tolerated,
+		ok: blocking.length === 0,
+		summary:
+			tolerated.length > 0
+				? `${SOURCE_LOCALE} and ${TARGET_LOCALE} are in step, with ${tolerated.length} translation(s) pending.`
+				: `${SOURCE_LOCALE}, ${TARGET_LOCALE}, and their provenance are in step.`,
+	}
+}
+
 // --- the command ------------------------------------------------------------
 
 /** True when this file was run as a command rather than imported by a test. */
@@ -397,22 +423,12 @@ async function main() {
 	const glossary = readJson(glossaryPath, {})
 
 	if (check) {
-		const { problems, pending } = verifyLocales({ english, french, meta, glossary })
+		const verdict = checkVerdict(verifyLocales({ english, french, meta, glossary }), { allowPending })
 
-		// --allow-pending-translation downgrades exactly one problem — a French
-		// value still carrying its `#` stub — to a notice. The pre-commit hook
-		// passes it on a branch, where i18n-translate.yml is about to supply
-		// the French (ADR-0057); nothing passes it on main or in CI, so a stub
-		// still cannot land there.
-		const tolerated = allowPending ? new Set(pending) : new Set()
-		const blocking = problems.filter((problem) => !tolerated.has(problem))
+		for (const problem of verdict.tolerated) console.log(`::notice::${problem}`)
 
-		for (const problem of problems) {
-			if (tolerated.has(problem)) console.log(`::notice::${problem}`)
-		}
-
-		if (blocking.length > 0) {
-			for (const problem of blocking) console.error(`::error::${problem}`)
+		if (verdict.blocking.length > 0) {
+			for (const problem of verdict.blocking) console.error(`::error::${problem}`)
 			console.error('')
 			console.error(`${SOURCE_LOCALE} is the source of truth and ${TARGET_LOCALE}.json is generated.`)
 			console.error('This job never translates on a pull request — merge to main and let the')
@@ -420,11 +436,7 @@ async function main() {
 			process.exit(1)
 		}
 
-		console.log(
-			tolerated.size > 0
-				? `${SOURCE_LOCALE} and ${TARGET_LOCALE} are in step, with ${tolerated.size} translation(s) pending.`
-				: `${SOURCE_LOCALE}, ${TARGET_LOCALE}, and their provenance are in step.`,
-		)
+		console.log(verdict.summary)
 		return
 	}
 

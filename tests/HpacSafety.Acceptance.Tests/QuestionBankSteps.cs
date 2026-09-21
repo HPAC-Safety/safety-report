@@ -183,7 +183,7 @@ public sealed class QuestionBankSteps
 
     // ------------------------------------------------- conditional questions --
 
-    [Given(@"an active question asks for something other than yes or no")]
+    [Given(@"an active question asks for something other than yes\/no or single-select")]
     public void GivenANonBooleanQuestion() => _questions.Add(Ordinary("wing_make", QuestionType.ShortText));
 
     [Given(@"a question is already conditional on a yes\/no question")]
@@ -227,7 +227,7 @@ public sealed class QuestionBankSteps
     {
         var other = _questions.Find(question => question.Key == "were_you_injured")!;
 
-        _rejection = Record(() => _question!.DependOn(other.Id, Noon.AddHours(1)));
+        _rejection = Record(() => _question!.DependOn(other.Id, null, Noon.AddHours(1)));
     }
 
     [Then(@"the attempt is rejected")]
@@ -246,6 +246,76 @@ public sealed class QuestionBankSteps
     public void ThenSelfDependencyIsRejected() =>
         Should.Throw<DomainRuleViolationException>(() =>
             QuestionDependencies.EnsureDependencyAllowed(_questions, _question!.Id, _question.Id));
+
+    [Then(@"a single-select question naming one of its live options is accepted as the condition instead")]
+    public void ThenASingleSelectQuestionIsAccepted()
+    {
+        var parent = PilotType();
+        _questions.Add(parent);
+
+        Should.NotThrow(() =>
+            QuestionDependencies.EnsureDependencyAllowed(_questions, childId: null, parent.Id, "hang_glider"));
+    }
+
+    [Given(@"a single-select question asking whether the pilot flies hang gliders or paragliders")]
+    public void GivenAPilotTypeQuestion() => _questions.Add(PilotType());
+
+    [Given(@"a single-select question offering hang glider and paraglider")]
+    public void GivenAPilotTypeQuestionForRejection() => GivenAPilotTypeQuestion();
+
+    [When(@"an Administrator makes a rating question depend on the ""(.*)"" option")]
+    [When(@"an Administrator makes a different rating question depend on the ""(.*)"" option")]
+    public void WhenARatingQuestionDependsOnTheOption(string optionLabel)
+    {
+        var parent = _questions.Single(question => question.Key == "pilot_type");
+        var code = optionLabel == "hang glider" ? "hang_glider" : "paraglider";
+
+        QuestionDependencies.EnsureDependencyAllowed(_questions, childId: null, parent.Id, code);
+
+        var child = Question.Create(
+            $"rating_{code}", QuestionType.SingleSelect, $"Rating ({optionLabel})", $"Qualification ({optionLabel})",
+            Noon, isActive: true, dependsOnQuestionId: parent.Id, dependsOnOptionCode: code,
+            options: [new QuestionOptionInput("h1", "H1", "H1")]);
+
+        _questions.Add(child);
+    }
+
+    [Then(@"each rating question's saved dependency names its own required option")]
+    public void ThenEachRatingQuestionNamesItsOwnOption()
+    {
+        _questions.Single(question => question.Key == "rating_hang_glider")
+            .DependsOnOptionCode.ShouldBe("hang_glider");
+        _questions.Single(question => question.Key == "rating_paraglider")
+            .DependsOnOptionCode.ShouldBe("paraglider");
+    }
+
+    [When(@"an Administrator tries to make another question depend on an option the parent does not offer")]
+    public void WhenDependingOnAnUnofferedOption()
+    {
+        var parent = _questions.Single(question => question.Key == "pilot_type");
+
+        _rejection = Record(() =>
+            QuestionDependencies.EnsureDependencyAllowed(_questions, childId: null, parent.Id, "trike"));
+    }
+
+    [Given(@"a yes\/no question")]
+    public void GivenAYesNoQuestion() => _questions.Add(Ordinary("were_you_injured", QuestionType.YesNo));
+
+    [When(@"an Administrator makes another question depend on it")]
+    public void WhenAnotherQuestionDependsOnTheYesNoQuestion()
+    {
+        var parent = _questions.Single(question => question.Type == QuestionType.YesNo);
+
+        QuestionDependencies.EnsureDependencyAllowed(_questions, childId: null, parent.Id);
+
+        _question = Question.Create(
+            "injury_detail", QuestionType.LongText, "What was the injury?", "Quelle était la blessure ?",
+            Noon, isActive: true, dependsOnQuestionId: parent.Id);
+        _questions.Add(_question);
+    }
+
+    [Then(@"the dependency needs no required option, because the condition is always ""answered yes""")]
+    public void ThenTheDependencyNeedsNoOption() => _question!.DependsOnOptionCode.ShouldBeNull();
 
     // ---------------------------------------------------------- reordering --
 
@@ -423,6 +493,16 @@ public sealed class QuestionBankSteps
 
     private static Question Ordinary(string key, QuestionType type, int displayOrder = 0) =>
         Question.Create(key, type, $"Question {key}", $"Question {key} (fr)", Noon, isActive: true, displayOrder: displayOrder);
+
+    private static Question PilotType() =>
+        Question.Create(
+            "pilot_type", QuestionType.SingleSelect, "Are you a hang gliding pilot or a paragliding pilot?",
+            "Êtes-vous un pilote de deltaplane ou de parapente ?", Noon, isActive: true,
+            options:
+            [
+                new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
+                new QuestionOptionInput("paraglider", "Paraglider", "Parapente"),
+            ]);
 
     private void Revise(bool isRequired)
     {

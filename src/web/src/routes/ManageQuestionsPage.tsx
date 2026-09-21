@@ -105,9 +105,12 @@ export function ManageQuestionsPage() {
 		}
 	}
 
-	// Only a yes/no question can enable another one, so those are the only
-	// candidates the picker offers (ADR-0060). A question never offers itself.
-	const booleanQuestions = questions.filter((question) => question.type === "yes_no" && question.id !== editing)
+	// Only a yes/no or single-select question can enable another one, so those
+	// are the only candidates the picker offers (ADR-0060, ADR-0074). A
+	// question never offers itself.
+	const conditionQuestions = questions.filter(
+		(question) => (question.type === "yes_no" || question.type === "single_select") && question.id !== editing,
+	)
 
 	return (
 		<main className="mx-auto max-w-4xl px-6 py-12">
@@ -137,7 +140,7 @@ export function ManageQuestionsPage() {
 				<QuestionEditor
 					draft={draft}
 					optionSets={optionSets}
-					booleanQuestions={booleanQuestions}
+					conditionQuestions={conditionQuestions}
 					isEditing={editing !== null}
 					hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 					translationAvailable={canTranslate}
@@ -213,7 +216,14 @@ function QuestionRow({
 				</p>
 				{parent && (
 					<p className="mt-1 font-sans text-xs text-ink-muted">
-						{t("questions.dependsOnSummary", { question: parent.labelEn })}
+						{question.dependsOnOptionCode
+							? t("questions.dependsOnOptionSummary", {
+									question: parent.labelEn,
+									option:
+										parent.options.find((option) => option.code === question.dependsOnOptionCode)?.labelEn ??
+										question.dependsOnOptionCode,
+								})
+							: t("questions.dependsOnSummary", { question: parent.labelEn })}
 					</p>
 				)}
 			</div>

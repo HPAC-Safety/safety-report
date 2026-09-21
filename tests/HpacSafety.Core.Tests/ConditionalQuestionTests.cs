@@ -36,7 +36,7 @@ public class ConditionalQuestionTests
         var question = Ordinary("were_you_injured", QuestionType.YesNo);
 
         // When / Then
-        Should.Throw<DomainRuleViolationException>(() => question.DependOn(question.Id, At.AddHours(1)));
+        Should.Throw<DomainRuleViolationException>(() => question.DependOn(question.Id, null, At.AddHours(1)));
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class ConditionalQuestionTests
         var other = Ordinary("were_you_injured", QuestionType.YesNo);
 
         // When / Then — a form that can skip asking consent cannot publish anything
-        Should.Throw<DomainRuleViolationException>(() => consent.DependOn(other.Id, At.AddHours(1)));
+        Should.Throw<DomainRuleViolationException>(() => consent.DependOn(other.Id, null, At.AddHours(1)));
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class ConditionalQuestionTests
         var child = Ordinary("injury_detail", QuestionType.LongText, parent.Id);
 
         // When
-        child.DependOn(null, At.AddHours(1));
+        child.DependOn(null, null, At.AddHours(1));
 
         // Then
         child.DependsOnQuestionId.ShouldBeNull();
@@ -149,7 +149,7 @@ public class ConditionalQuestionTests
         // wrongly report reaching "target".
         var first = Ordinary("first", QuestionType.YesNo);
         var second = Ordinary("second", QuestionType.YesNo, first.Id);
-        first.DependOn(second.Id, At.AddHours(1));
+        first.DependOn(second.Id, null, At.AddHours(1));
         var target = Ordinary("target", QuestionType.LongText);
 
         // When / Then
@@ -249,5 +249,182 @@ public class ConditionalQuestionTests
         Should.Throw<DomainRuleViolationException>(() => Question.Create(
             "occurrence_time", QuestionType.Time, "What time?", "À quelle heure ?", At, isActive: true,
             options: [new QuestionOptionInput("noon", "Noon", "Midi")]));
+    }
+
+    // ------------------------------------------ single-select parents (ADR-0074) --
+
+    private static Question PilotType() =>
+        Question.Create(
+            "pilot_type", QuestionType.SingleSelect, "Hang glider or paraglider?", "Deltaplane ou parapente ?", At,
+            isActive: true,
+            options:
+            [
+                new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
+                new QuestionOptionInput("paraglider", "Paraglider", "Parapente"),
+            ]);
+
+    [Fact]
+    public void GivenSingleSelectParentAndValidOption_WhenBankChecksDependency_ThenAllowed()
+    {
+        // Given
+        var parent = PilotType();
+
+        // When / Then
+        Should.NotThrow(() =>
+            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "hang_glider"));
+    }
+
+    [Fact]
+    public void GivenSingleSelectParentAndUnofferedOption_WhenBankChecksDependency_ThenRejected()
+    {
+        // Given
+        var parent = PilotType();
+
+        // When / Then
+        var cause = Should.Throw<DomainRuleViolationException>(() =>
+            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "trike"));
+
+        cause.Message.ShouldContain("trike");
+    }
+
+    [Fact]
+    public void GivenSingleSelectParentAndNoOption_WhenBankChecksDependency_ThenRejected()
+    {
+        // Given
+        var parent = PilotType();
+
+        // When / Then
+        Should.Throw<DomainRuleViolationException>(() =>
+            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id));
+    }
+
+    [Fact]
+    public void GivenYesNoParentAndAnOption_WhenBankChecksDependency_ThenRejected()
+    {
+        // Given — the yes/no condition is always "answered yes"; naming an
+        // option alongside it would be a second, contradictory condition.
+        var parent = Ordinary("were_you_injured", QuestionType.YesNo);
+
+        // When / Then
+        Should.Throw<DomainRuleViolationException>(() =>
+            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "yes"));
+    }
+
+    [Fact]
+    public void GivenMultiSelectParent_WhenBankChecksDependency_ThenRejected()
+    {
+        // Given — "contains" is a different condition than "equals", and out
+        // of scope for this decision.
+        var parent = Question.Create(
+            "aircraft_type", QuestionType.MultiSelect, "Aircraft type", "Type d'aéronef", At, isActive: true,
+            options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")]);
+
+        // When / Then
+        var cause = Should.Throw<DomainRuleViolationException>(() =>
+            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "hang_glider"));
+
+        cause.Message.ShouldContain("yes/no or single-select");
+    }
+
+    [Fact]
+    public void GivenRequiredOptionWithNoParent_WhenQuestionIsCreated_ThenRejected()
+    {
+        // Given / When / Then
+        Should.Throw<DomainRuleViolationException>(() => Question.Create(
+            "injury_detail", QuestionType.LongText, "What was the injury?", "Quelle était la blessure ?", At,
+            isActive: true, dependsOnOptionCode: "hang_glider"));
+    }
+
+    [Fact]
+    public void GivenSingleSelectDependency_WhenChildRecordsIt_ThenOptionCodeIsNormalized()
+    {
+        // Given
+        var parent = PilotType();
+
+        // When
+        var child = Question.Create(
+            "rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+            dependsOnQuestionId: parent.Id, dependsOnOptionCode: "Hang Glider");
+
+        // Then
+        child.DependsOnOptionCode.ShouldBe("hang_glider");
+    }
+
+    // -------------------------------------------------- IsEnabledGiven (ADR-0074) --
+
+    [Fact]
+    public void GivenUnconditionalQuestion_WhenEnabledIsChecked_ThenAlwaysTrue()
+    {
+        // Given
+        var question = Ordinary("occurrence_notes", QuestionType.LongText);
+
+        // When / Then
+        question.CurrentRevision.IsEnabledGiven(null, null, Locale.EnCa).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData("yes", true)]
+    [InlineData("no", false)]
+    [InlineData(null, false)]
+    public void GivenYesNoParent_WhenEnabledIsChecked_ThenMatchesTheAnswer(string? parentAnswer, bool expected)
+    {
+        // Given
+        var parent = Ordinary("were_you_injured", QuestionType.YesNo);
+        var child = Ordinary("injury_detail", QuestionType.LongText, parent.Id);
+
+        // When / Then
+        child.CurrentRevision.IsEnabledGiven(parent, parentAnswer, Locale.EnCa).ShouldBe(expected);
+    }
+
+    [Fact]
+    public void GivenSingleSelectParent_WhenEnabledIsCheckedWithMatchingAnswer_ThenTrue()
+    {
+        // Given
+        var parent = PilotType();
+        var child = Question.Create(
+            "rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+            dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+
+        // When / Then — the reporter's answer is the localized label they saw
+        child.CurrentRevision.IsEnabledGiven(parent, "Hang glider", Locale.EnCa).ShouldBeTrue();
+    }
+
+    [Fact]
+    public void GivenSingleSelectParent_WhenEnabledIsCheckedWithADifferentAnswer_ThenFalse()
+    {
+        // Given
+        var parent = PilotType();
+        var child = Question.Create(
+            "rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+            dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+
+        // When / Then
+        child.CurrentRevision.IsEnabledGiven(parent, "Paraglider", Locale.EnCa).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void GivenConditionalQuestion_WhenParentNotYetAnswered_ThenFalse()
+    {
+        // Given
+        var parent = PilotType();
+        var child = Question.Create(
+            "rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+            dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+
+        // When / Then
+        child.CurrentRevision.IsEnabledGiven(parent, null, Locale.EnCa).ShouldBeFalse();
+    }
+
+    [Fact]
+    public void GivenConditionalQuestion_WhenParentNotSupplied_ThenFalse()
+    {
+        // Given
+        var parent = PilotType();
+        var child = Question.Create(
+            "rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+            dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+
+        // When / Then — caller has not loaded the parent
+        child.CurrentRevision.IsEnabledGiven(null, "Hang glider", Locale.EnCa).ShouldBeFalse();
     }
 }

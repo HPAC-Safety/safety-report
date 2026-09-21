@@ -82,6 +82,10 @@ public class Question
     /// <summary>The question this one is conditional on today, if any.</summary>
     public TinyId? DependsOnQuestionId => CurrentRevision.DependsOnQuestionId;
 
+    /// <summary>The required option a single-select parent must be answered
+    /// with today, if any. See ADR-0074.</summary>
+    public string? DependsOnOptionCode => CurrentRevision.DependsOnOptionCode;
+
     /// <summary>Where this question sits on the form today. Not versioned
     /// independently — see the class remarks.</summary>
     public int DisplayOrder => CurrentRevision.DisplayOrder;
@@ -132,11 +136,13 @@ public class Question
         bool isActive = false,
         int displayOrder = 0,
         TinyId? dependsOnQuestionId = null,
+        string? dependsOnOptionCode = null,
         TinyId? optionSetId = null,
         IReadOnlyList<QuestionOptionInput>? options = null) =>
         Create(
             key, type, labelEn, labelFr, at, isSystem: false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId, options);
+            role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
+            options);
 
     /// <summary>
     /// Creates the publication-consent question. The only question the system
@@ -166,6 +172,7 @@ public class Question
             isActive: true,
             displayOrder,
             dependsOnQuestionId: null,
+            dependsOnOptionCode: null,
             optionSetId: null,
             options: null);
 
@@ -186,6 +193,7 @@ public class Question
         bool isActive,
         int displayOrder,
         TinyId? dependsOnQuestionId,
+        string? dependsOnOptionCode,
         TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput>? options)
     {
@@ -193,8 +201,8 @@ public class Question
         question._revisions.Add(
             QuestionRevision.Create(
                 question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-                isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
-                options ?? [], at));
+                isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+                optionSetId, options ?? [], at));
         return question;
     }
 
@@ -220,6 +228,7 @@ public class Question
         string? placeholderFr = null,
         bool isRequired = false,
         TinyId? dependsOnQuestionId = null,
+        string? dependsOnOptionCode = null,
         TinyId? optionSetId = null,
         IReadOnlyList<QuestionOptionInput>? options = null)
     {
@@ -232,7 +241,7 @@ public class Question
         return ReviseInternal(
             new RevisionDraft(
                 type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-                isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
+                isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
                 options ?? []),
             at);
     }
@@ -275,12 +284,13 @@ public class Question
         string? placeholderFr = null,
         bool isRequired = false,
         TinyId? dependsOnQuestionId = null,
+        string? dependsOnOptionCode = null,
         TinyId? optionSetId = null,
         IReadOnlyList<QuestionOptionInput>? options = null)
     {
         var draft = new RevisionDraft(
             type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
+            isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
             options ?? []);
 
         if (!ForksWhenEdited(hasBeenAnswered))
@@ -288,7 +298,7 @@ public class Question
             Revise(
                 type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
                 helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-                optionSetId, options);
+                dependsOnOptionCode, optionSetId, options);
             return this;
         }
 
@@ -309,11 +319,18 @@ public class Question
 
     /// <summary>
     /// Makes the question conditional on another question, or unconditional
-    /// again, as a new revision. Whether the named question is a yes/no
-    /// question is checked by <see cref="QuestionDependencies"/>, which can see it.
+    /// again, as a new revision. <paramref name="dependsOnOptionCode"/> names
+    /// the required option when the parent is single-select, and must be null
+    /// when it is yes/no or when there is no parent. Whether the named
+    /// question is a type that can be a parent at all — and, for
+    /// single-select, whether it currently offers the named option — is
+    /// checked by <see cref="QuestionDependencies"/>, which can see the rest
+    /// of the bank. See ADR-0060, ADR-0074.
     /// </summary>
-    public QuestionRevision DependOn(TinyId? dependsOnQuestionId, DateTimeOffset at) =>
-        ReviseInternal(CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId }, at);
+    public QuestionRevision DependOn(TinyId? dependsOnQuestionId, string? dependsOnOptionCode, DateTimeOffset at) =>
+        ReviseInternal(
+            CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId, DependsOnOptionCode = dependsOnOptionCode },
+            at);
 
     /// <summary>Reassigns what logic reads this answer for. A role lives on at
     /// most one active question at a time; that is enforced by the question bank,
@@ -393,7 +410,7 @@ public class Question
                 replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
                 draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
                 isSystem: false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-                draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at));
+                draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.Options, at));
 
         Delete(at);
         return replacement;
@@ -407,7 +424,7 @@ public class Question
             Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
             draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
             IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-            draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at);
+            draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.Options, at);
         _revisions.Add(revision);
         return revision;
     }
@@ -425,7 +442,7 @@ public class Question
         return new RevisionDraft(
             current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
             current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
-            current.DisplayOrder, current.DependsOnQuestionId, current.OptionSetId,
+            current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode, current.OptionSetId,
             CurrentOptions());
     }
 
@@ -461,6 +478,7 @@ public class Question
         bool IsActive,
         int DisplayOrder,
         TinyId? DependsOnQuestionId,
+        string? DependsOnOptionCode,
         TinyId? OptionSetId,
         IReadOnlyList<QuestionOptionInput> Options);
 }

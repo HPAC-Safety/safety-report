@@ -31,6 +31,7 @@ interface StubQuestion {
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
+	dependsOnOptionCode: string | null
 	optionSetId: string | null
 	labelEn: string
 	labelFr: string
@@ -42,7 +43,14 @@ interface StubQuestion {
 	hasBeenAnswered: boolean
 }
 
-function question(id: string, key: string, labelEn: string, type: string, displayOrder: number): StubQuestion {
+function question(
+	id: string,
+	key: string,
+	labelEn: string,
+	type: string,
+	displayOrder: number,
+	options: { code: string; labelEn: string; labelFr: string; sourceItemId: string | null }[] = [],
+): StubQuestion {
 	return {
 		id,
 		key,
@@ -55,6 +63,7 @@ function question(id: string, key: string, labelEn: string, type: string, displa
 		isActive: true,
 		displayOrder,
 		dependsOnQuestionId: null,
+		dependsOnOptionCode: null,
 		optionSetId: null,
 		labelEn,
 		labelFr: `${labelEn} (fr)`,
@@ -62,7 +71,7 @@ function question(id: string, key: string, labelEn: string, type: string, displa
 		helpTextFr: null,
 		placeholderEn: null,
 		placeholderFr: null,
-		options: [],
+		options,
 		hasBeenAnswered: false,
 	}
 }
@@ -76,6 +85,10 @@ async function stubAdminApi(page: Page) {
 	const questions: StubQuestion[] = [
 		question("aaaaaaaaaaa", "were_you_injured", "Were you injured?", "yes_no", 0),
 		question("bbbbbbbbbbb", "occurrence_notes", "What happened?", "long_text", 1),
+		question("ddddddddddd", "aircraft_type", "Hang glider or paraglider?", "single_select", 2, [
+			{ code: "hang_glider", labelEn: "Hang glider", labelFr: "Deltaplane", sourceItemId: null },
+			{ code: "paraglider", labelEn: "Paraglider", labelFr: "Parapente", sourceItemId: null },
+		]),
 	]
 
 	await page.route("**/api/admin/option-sets", async (route) => {
@@ -272,11 +285,33 @@ Then("the page offers neither", async ({ page }) => {
 
 // Cucumber expressions read `yes/no` as an alternation, so this one is a
 // regular expression rather than an expression string.
-Then(/^the condition picker offers only the yes\/no questions on the form$/, async ({ page }) => {
-	const picker = page.getByLabel("Only ask when another question is answered yes")
+Then(/^the condition picker offers only the yes\/no and single-select questions on the form$/, async ({ page }) => {
+	const picker = page.getByLabel("Only ask when another question is answered a certain way")
 	const offered = await picker.locator("option").allTextContents()
 
-	expect(offered).toEqual(["Always ask this question", "Were you injured?"])
+	expect(offered).toEqual(["Always ask this question", "Were you injured?", "Hang glider or paraglider?"])
+})
+
+// Cucumber expressions read `yes/no` as an alternation, so this one is a
+// regular expression rather than an expression string.
+When(/^they choose a yes\/no question as the condition$/, async ({ page }) => {
+	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("aaaaaaaaaaa")
+})
+
+Then("no required-option control is offered", async ({ page }) => {
+	await expect(page.getByLabel("Required answer")).toBeHidden()
+})
+
+When("they choose a single-select question as the condition instead", async ({ page }) => {
+	await page.getByLabel("Only ask when another question is answered a certain way").selectOption("ddddddddddd")
+})
+
+Then("a required-option control offers that question's live options", async ({ page }) => {
+	const picker = page.getByLabel("Required answer")
+	const offered = await picker.locator("option").allTextContents()
+
+	await expect(picker).toBeVisible()
+	expect(offered).toEqual(["Choose the required option", "Hang glider", "Paraglider"])
 })
 
 When("they move the second question up using its move-up control", async ({ page }) => {
@@ -323,16 +358,19 @@ Then("the list shows the new wording and a higher version number", async ({ page
 	await expect(row).toContainText("Version 2")
 })
 
+let countBeforeDelete = 0
+
 When("they delete the second question", async ({ page }) => {
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
 
+	countBeforeDelete = await rows.count()
 	await rows.nth(1).getByRole("button", { name: "Delete" }).click()
 })
 
 Then("it is gone from the list", async ({ page }) => {
 	const list = page.getByRole("list", { name: "Questions on the form" })
 
-	await expect(list.getByRole("listitem")).toHaveCount(1)
+	await expect(list.getByRole("listitem")).toHaveCount(countBeforeDelete - 1)
 	await expect(list).not.toContainText("What happened?")
 })
 

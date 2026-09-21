@@ -56,6 +56,7 @@ public class QuestionRevision
         bool isActive,
         int displayOrder,
         TinyId? dependsOnQuestionId,
+        string? dependsOnOptionCode,
         TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput> options,
         DateTimeOffset at)
@@ -74,6 +75,7 @@ public class QuestionRevision
         IsActive = isActive;
         DisplayOrder = displayOrder;
         DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, isSystem);
+        DependsOnOptionCode = ValidatedOptionCode(dependsOnOptionCode, DependsOnQuestionId);
         OptionSetId = optionSetId;
         LabelEn = NotBlank(labelEn);
         LabelFr = NotBlank(labelFr);
@@ -128,17 +130,29 @@ public class QuestionRevision
 
     /// <summary>
     /// The question this one is conditional on, if any. The form enables this
-    /// question only when that question is answered yes.
+    /// question only when that question's answer satisfies the condition:
+    /// "yes" for a yes/no parent, or the option named by
+    /// <see cref="DependsOnOptionCode"/> for a single-select parent.
     /// </summary>
     /// <remarks>
     /// This names the stable <see cref="Question"/>, not a revision of it, so
     /// rewording the parent does not break the child. Only a
-    /// <see cref="QuestionType.YesNo"/> question may be a parent; that is a
-    /// fact about the parent's current revision, which this row cannot see, so
-    /// it is checked by <see cref="QuestionDependencies"/> rather than here. See
-    /// ADR-0060.
+    /// <see cref="QuestionType.YesNo"/> or <see cref="QuestionType.SingleSelect"/>
+    /// question may be a parent; that is a fact about the parent's current
+    /// revision, which this row cannot see, so it is checked by
+    /// <see cref="QuestionDependencies"/> rather than here. See ADR-0060,
+    /// ADR-0074.
     /// </remarks>
     public TinyId? DependsOnQuestionId { get; private init; }
+
+    /// <summary>
+    /// The invariant option code a <see cref="QuestionType.SingleSelect"/>
+    /// parent must be answered with to enable this question. Always
+    /// <c>null</c> when <see cref="DependsOnQuestionId"/> is null or names a
+    /// <see cref="QuestionType.YesNo"/> parent, whose condition is the
+    /// invariant "yes" instead. See ADR-0074.
+    /// </summary>
+    public string? DependsOnOptionCode { get; private init; }
 
     /// <summary>
     /// The shared <see cref="OptionSet"/> this revision's options were copied
@@ -233,13 +247,14 @@ public class QuestionRevision
         bool isActive,
         int displayOrder,
         TinyId? dependsOnQuestionId,
+        string? dependsOnOptionCode,
         TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput> options,
         DateTimeOffset at) =>
         new(
             questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
-            options, at);
+            isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+            optionSetId, options, at);
 
     /// <summary>Finds a choice by its invariant code. Null for
     /// <see cref="QuestionType.YesNo"/>, whose two answers are not option rows —
@@ -335,6 +350,64 @@ public class QuestionRevision
         }
 
         return parent;
+    }
+
+    /// <summary>
+    /// Normalizes a required option code, and refuses one with no parent to
+    /// attach it to. Whether the parent's type actually takes an option code
+    /// (a <see cref="QuestionType.SingleSelect"/> parent does, a
+    /// <see cref="QuestionType.YesNo"/> one does not) is, like the parent's
+    /// type itself, a fact <see cref="QuestionDependencies"/> checks against
+    /// the live bank. See ADR-0074.
+    /// </summary>
+    private static string? ValidatedOptionCode(string? dependsOnOptionCode, TinyId? dependsOnQuestionId)
+    {
+        if (dependsOnOptionCode is null)
+        {
+            return null;
+        }
+
+        if (dependsOnQuestionId is null)
+        {
+            throw new DomainRuleViolationException("A required option needs a parent question to name it.");
+        }
+
+        return QuestionKey.Normalize(dependsOnOptionCode);
+    }
+
+    /// <summary>
+    /// Whether the reporter's answer to <paramref name="parent"/> satisfies
+    /// this revision's condition, so the question it belongs to should be
+    /// shown. Always true when this revision is unconditional. See ADR-0074.
+    /// </summary>
+    /// <param name="parent">
+    /// The question named by <see cref="DependsOnQuestionId"/>, or null when
+    /// this revision is unconditional or the caller has not loaded it.
+    /// </param>
+    /// <param name="parentAnswerValue">
+    /// The reporter's answer to <paramref name="parent"/> so far, in
+    /// <paramref name="locale"/>, or null when they have not answered it yet.
+    /// </param>
+    /// <param name="locale">The locale <paramref name="parentAnswerValue"/> was given in.</param>
+    public bool IsEnabledGiven(Question? parent, string? parentAnswerValue, Locale locale)
+    {
+        if (DependsOnQuestionId is null)
+        {
+            return true;
+        }
+
+        if (parent is null || parentAnswerValue is null)
+        {
+            return false;
+        }
+
+        var parentRevision = parent.CurrentRevision;
+
+        return parentRevision.Type == QuestionType.YesNo
+            ? string.Equals(parentAnswerValue, "yes", StringComparison.Ordinal)
+            : DependsOnOptionCode is { } requiredOptionCode
+                && string.Equals(
+                    parentRevision.Option(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);
     }
 
     private static string NotBlank(string label) =>

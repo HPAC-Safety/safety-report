@@ -105,7 +105,8 @@ public static class QuestionEndpoints
                     request.IsPrivate,
                     request.IsActive,
                     NextDisplayOrder(questions),
-                    dependsOn,
+                    dependsOn.ParentId,
+                    dependsOn.OptionCode,
                     ParsedOptionSet(request),
                     options);
 
@@ -171,7 +172,8 @@ public static class QuestionEndpoints
                     request.PlaceholderEn,
                     request.PlaceholderFr,
                     request.IsRequired,
-                    dependsOn,
+                    dependsOn.ParentId,
+                    dependsOn.OptionCode,
                     ParsedOptionSet(request),
                     options);
 
@@ -339,21 +341,25 @@ public static class QuestionEndpoints
         TinyId.TryParse(request.OptionSetId, out var optionSetId) ? optionSetId : null;
 
     /// <summary>
-    /// Resolves the parent question, checking the part of the rule that needs
-    /// to see the rest of the bank: the parent exists, is live, is a yes/no
-    /// question, and does not lead back here. See ADR-0060.
+    /// Resolves the parent question and required option, checking the part of
+    /// the rule that needs to see the rest of the bank: the parent exists, is
+    /// live, is a yes/no or single-select question, currently offers the
+    /// required option when it needs one, and does not lead back here. See
+    /// ADR-0060, ADR-0074.
     /// </summary>
-    private static TinyId? ResolvedDependency(
+    private static (TinyId? ParentId, string? OptionCode) ResolvedDependency(
         SaveQuestionRequest request, List<Question> questions, TinyId? childId)
     {
         if (!TinyId.TryParse(request.DependsOnQuestionId, out var parentId))
         {
-            return null;
+            return (null, null);
         }
 
-        QuestionDependencies.EnsureDependencyAllowed(questions, childId, parentId);
+        var optionCode = string.IsNullOrWhiteSpace(request.DependsOnOptionCode) ? null : request.DependsOnOptionCode;
 
-        return parentId;
+        QuestionDependencies.EnsureDependencyAllowed(questions, childId, parentId, optionCode);
+
+        return (parentId, optionCode);
     }
 
     /// <summary>

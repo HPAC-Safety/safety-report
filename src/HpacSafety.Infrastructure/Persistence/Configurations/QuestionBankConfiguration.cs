@@ -86,6 +86,11 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 
         builder.HasIndex(revision => revision.DependsOnQuestionId);
 
+        // The required option code on a single-select parent — never a
+        // localized label, matching every other invariant option code in
+        // this schema. See ADR-0074.
+        builder.Property(revision => revision.DependsOnOptionCode).HasMaxLength(128);
+
         // Provenance of the option snapshot, never consulted to render one.
         // SetNull so retiring a set leaves every revision built from it intact
         // and merely unattributed. See ADR-0058.

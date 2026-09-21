@@ -80,7 +80,8 @@ erDiagram
         boolean is_private "answers are recognition context only"
         boolean is_active
         int display_order
-        char(11) depends_on_question_id FK "nullable; a yes_no question"
+        char(11) depends_on_question_id FK "nullable; a yes_no or single_select question"
+        varchar(128) depends_on_option_code "nullable; required option on a single_select parent"
         char(11) option_set_id FK "nullable; provenance only"
         text label_en
         text label_fr
@@ -259,6 +260,7 @@ this.
 | `20260921152356_DropAdminUsersForJwtIdentity` | Dropped `admin_users` and renamed/widened its two referencing columns to opaque token subjects — `audit_log.actor_subject` and `summaries.approved_by_subject` (ADR-0065). |
 | `20260921192412_ForkAnsweredQuestionsAndStringAnswers` | Narrowed the unique index on `questions.key` to live rows so a fork chain can share one (ADR-0071). Replaced `report_answers.selected_option_codes` with `locale`, `translated_value`, and `needs_translation` alongside the existing `value`, dropped the uniqueness of `(report_id, question_id)` so a multi-select records one row per chosen value, indexed the translation queue, and added `option_set_items.needs_translation` (ADR-0072). |
 | `20260921205551_RemoveStatementGroupSectionKey` | Dropped `question_revisions.section_key` after removing the `statement` and `group` question types it existed to support — neither had a built renderer, and nothing distinguished them from each other in code. |
+| `20260921224859_AddDependsOnOptionCode` | Added `question_revisions.depends_on_option_code`, the required option a `single_select` parent must be answered with (ADR-0074). Null for a `yes_no` parent, whose condition stays the invariant "yes". |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

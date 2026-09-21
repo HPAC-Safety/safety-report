@@ -7,13 +7,14 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// <remarks>
 /// <para>
 /// <see cref="QuestionRevision"/> checks everything visible from inside one
-/// revision — that a dependency is not self-referential, that a statement is
-/// not made conditional. It cannot check that the <i>parent</i> is a yes/no
-/// question, because that fact lives on the parent's current revision, which is
-/// a different row. Nor can it see a cycle. Both are checked here, against the
-/// live bank, and the database is not asked to enforce them: doing so would
-/// take a trigger reading a second table, and a trigger is a rule hidden from
-/// everyone reading the C#. See ADR-0060.
+/// revision — that a dependency is not self-referential, that the system
+/// question is not made conditional. It cannot check the <i>parent's</i>
+/// current type, or, for a single-select parent, whether it currently offers
+/// the required option — those facts live on the parent's current revision,
+/// which is a different row. Nor can it see a cycle. All three are checked
+/// here, against the live bank, and the database is not asked to enforce
+/// them: doing so would take a trigger reading a second table, and a trigger
+/// is a rule hidden from everyone reading the C#. See ADR-0060, ADR-0074.
 /// </para>
 /// <para>
 /// This is a static rule-checker over a collection, not a repository. It does
@@ -24,15 +25,21 @@ public static class QuestionDependencies
 {
     /// <summary>
     /// Checks that a question may depend on the one it names: the parent
-    /// exists, is live, asks a yes/no question, and does not lead back to the
-    /// child.
+    /// exists, is live, is a type that can enable another question, currently
+    /// offers <paramref name="requiredOptionCode"/> when it needs one, and
+    /// does not lead back to the child.
     /// </summary>
     /// <param name="questions">Every live question, including the child if it already exists.</param>
     /// <param name="childId">The question being made conditional, or null when it is being created.</param>
     /// <param name="parentId">The question it is to depend on.</param>
+    /// <param name="requiredOptionCode">
+    /// The option code the parent must be answered with, when the parent is
+    /// single-select. Must be null for a yes/no parent, whose condition is
+    /// the invariant "yes". See ADR-0074.
+    /// </param>
     /// <exception cref="DomainRuleViolationException">When the dependency is not allowed.</exception>
     public static void EnsureDependencyAllowed(
-        IReadOnlyCollection<Question> questions, TinyId? childId, TinyId parentId)
+        IReadOnlyCollection<Question> questions, TinyId? childId, TinyId parentId, string? requiredOptionCode = null)
     {
         ArgumentNullException.ThrowIfNull(questions);
 
@@ -45,10 +52,30 @@ public static class QuestionDependencies
             ?? throw new DomainRuleViolationException(
                 "That question no longer exists, so nothing can be made conditional on it.");
 
-        if (parent.Type != QuestionType.YesNo)
+        switch (parent.Type)
         {
-            throw new DomainRuleViolationException(
-                $"'{parent.Key}' is a {EnumCode.Of(parent.Type)} question. Only a yes/no question can enable another one.");
+            case QuestionType.YesNo when requiredOptionCode is not null:
+                throw new DomainRuleViolationException(
+                    $"'{parent.Key}' is a yes/no question. Its condition is always 'answered yes' and cannot also name a required option.");
+
+            case QuestionType.YesNo:
+                break;
+
+            case QuestionType.SingleSelect when requiredOptionCode is null:
+                throw new DomainRuleViolationException(
+                    $"'{parent.Key}' is a single-select question and needs a required option to enable another one.");
+
+            case QuestionType.SingleSelect
+                when parent.CurrentRevision.Option(QuestionKey.Normalize(requiredOptionCode)) is null:
+                throw new DomainRuleViolationException(
+                    $"'{parent.Key}' does not currently offer the option '{requiredOptionCode}'.");
+
+            case QuestionType.SingleSelect:
+                break;
+
+            default:
+                throw new DomainRuleViolationException(
+                    $"'{parent.Key}' is a {EnumCode.Of(parent.Type)} question. Only a yes/no or single-select question can enable another one.");
         }
 
         if (childId is { } child && LeadsTo(questions, parentId, child))

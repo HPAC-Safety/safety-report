@@ -26,7 +26,9 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
    tokens at public async boundaries. `Core` has no runtime package dependency.
 6. Use `DateOnly` for reported dates, `TimeOnly` for local wall time,
    `DateTimeOffset` for instants, and never `DateTime`.
-7. Use Shouldly and Given/When/Then tests. Use Mermaid for diagrams.
+7. Use Shouldly, and name tests `GivenX_WhenY_ThenZ`
+   ([ADR-0069](../../docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)).
+   Use Mermaid for diagrams.
 8. Put UI copy in locale catalogues. Database questions carry manually authored
    English and French text in each immutable revision.
 9. Never log DTO bodies, answers, private context, prompts/responses,

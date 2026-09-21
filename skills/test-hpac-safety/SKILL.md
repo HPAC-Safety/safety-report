@@ -5,9 +5,27 @@ description: Test HPAC Safety privacy, immutable questions, multipart submission
 
 # Test HPAC Safety
 
-Use xUnit, Shouldly, and `Given_..._When_..._Then_...` names. JavaScript uses
-`node:test`; browser journeys use Playwright. Generate synthetic report and file
-fixtures and never use real personal data.
+Use xUnit and Shouldly. JavaScript uses `node:test`; browser journeys use
+Playwright. Generate synthetic report and file fixtures and never use real
+personal data.
+
+Name a C# test as three PascalCase segments joined by single underscores, each
+opening with `Given`, `When`, or `Then`
+([ADR-0069](../../docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)):
+
+```csharp
+// good
+GivenMigratedDatabase_WhenActorColumnIsRead_ThenWidenedStringWithLookupIndex
+
+// bad
+Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_string_with_a_lookup_index
+```
+
+Drop articles and empty predicates (`a`, `the`, `it is`); keep technical terms
+exact and keep an auxiliary that carries the voice. Mark the three sections in
+the body with `// Given`, `// When`, `// Then` comments. **C# identifiers
+only** — `node:test` and Playwright titles are display strings and stay
+prose.
 
 Scenarios in `features/**/*.feature` without `@ui` execute directly as
 xUnit tests via Reqnroll (`tests/HpacSafety.Acceptance.Tests`, ADR-0049). A

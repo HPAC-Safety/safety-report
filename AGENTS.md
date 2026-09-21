@@ -123,8 +123,10 @@ Put `Closes #<number>` on its own line in the PR body, use a squash-ready title,
 do not add `Co-Authored-By` trailers, and keep working until required checks are
 green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
 
-Use Shouldly for .NET assertions, Given/When/Then test structure, Mermaid for
-diagrams ([ADR-0046](docs/decisions/ADR-0046-mermaid-for-diagrams.md)), locale
+Use Shouldly for .NET assertions, `GivenX_WhenY_ThenZ` test names
+([ADR-0069](docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)),
+Mermaid for diagrams
+([ADR-0046](docs/decisions/ADR-0046-mermaid-for-diagrams.md)), locale
 catalogues for UI copy, and synthetic data in tests and docs. Never hand-edit
 generated files.
 

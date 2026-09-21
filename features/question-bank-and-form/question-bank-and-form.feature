@@ -228,10 +228,17 @@ Feature: Question bank and form
     And no report, answer, or summary is ever translated this way
 
   Scenario: A server with no translation credential still authors questions
-    Given no translation provider is configured
+    Given no translation provider is configured outside development
     When the authoring screen asks whether translation is available
     Then it is told that translation is unavailable
     And the answer carries no credential and no provider detail
+
+  Scenario: A development server translates through a stand-in rather than refusing
+    Given a development server has no translation provider configured
+    When an Administrator asks for the other language to be translated
+    Then the text comes back unchanged through the same interface
+    And the screen is told it is a stand-in so nobody mistakes it for a translation
+    And a server outside development never substitutes one
 
   @ui
   Scenario: An Administrator drafts the French from the English
@@ -258,6 +265,11 @@ Feature: Question bank and form
   Scenario: Translation is not offered when the server has no provider
     Given a signed-in Administrator is authoring a question on a server with no translation provider
     Then the Translate action is unavailable and says so
+
+  @ui
+  Scenario: A development stand-in says what it is
+    Given a signed-in Administrator is authoring a question on a development server
+    Then the Translate action works and the screen says the text is copied unchanged
 
   @ui
   Scenario: An Administrator authors a question from the dashboard

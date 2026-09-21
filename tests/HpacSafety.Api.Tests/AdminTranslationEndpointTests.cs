@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 
 using HpacSafety.Core;
+using HpacSafety.Infrastructure.Translation;
 
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -51,6 +52,41 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 
         // Then
         body.GetProperty("available").GetBoolean().ShouldBeTrue();
+        body.GetProperty("standIn").GetBoolean().ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task Given_the_development_stand_in_When_availability_is_asked_Then_it_says_it_is_a_stand_in()
+    {
+        // Given — a developer's server with no credential
+        await using var factory = WithTranslator(new EchoTranslator());
+        using var client = SignedIn(factory);
+
+        // When
+        var body = await client.GetFromJsonAsync<JsonElement>(Translate);
+
+        // Then — the screen says so, so copied English is never mistaken for
+        // a translation
+        body.GetProperty("available").GetBoolean().ShouldBeTrue();
+        body.GetProperty("standIn").GetBoolean().ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Given_the_development_stand_in_When_text_is_translated_Then_it_comes_back_unchanged()
+    {
+        // Given
+        await using var factory = WithTranslator(new EchoTranslator());
+        using var client = SignedIn(factory);
+
+        // When — the browser posts and the endpoint answers exactly as in
+        // production; only the adapter differs
+        using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]));
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        body.GetProperty("texts")[0].GetString().ShouldBe("Were you injured?");
     }
 
     [Fact]

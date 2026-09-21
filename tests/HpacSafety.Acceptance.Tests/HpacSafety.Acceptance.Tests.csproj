@@ -29,6 +29,7 @@
     <!-- The translation scenarios assert which types may depend on ITranslator,
          which means loading the API assembly and reading its metadata. -->
     <ProjectReference Include="../../src/HpacSafety.Api/HpacSafety.Api.csproj" />
+    <ProjectReference Include="../../src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj" />
   </ItemGroup>
 
   <!-- The canonical .feature files live under features/, outside this

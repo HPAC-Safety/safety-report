@@ -171,8 +171,8 @@ export function listOptionSets(): Promise<OptionSetView[]> {
  * Whether the server has a translation provider configured. Asked once, so the
  * Translate control can be disabled rather than offered and then failing.
  */
-export function translationAvailable(): Promise<{ available: boolean }> {
-	return call<{ available: boolean }>("/api/admin/translate")
+export function translationAvailable(): Promise<{ available: boolean; standIn: boolean }> {
+	return call<{ available: boolean; standIn: boolean }>("/api/admin/translate")
 }
 
 /**

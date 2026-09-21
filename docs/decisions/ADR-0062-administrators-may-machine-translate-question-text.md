@@ -95,10 +95,24 @@ adapter also accepts a bare `DEEPL_API_KEY` environment variable so a
 developer who already exports it for the CLI tooling gets a working button
 without learning a second name.
 
-**When no credential is configured, nothing fails.** `ITranslator.IsConfigured`
-is false, `GET /api/admin/translate` reports it, and the authoring screen
-disables the control with an explanation. A local checkout without the secret
-is the ordinary case and must keep working.
+**When no credential is configured, nothing fails** — but what happens next
+depends on the environment.
+
+*In Development*, the container resolves `EchoTranslator`, a stand-in that
+returns every string unchanged. The browser posts to the same endpoint, the
+endpoint calls the same `ITranslator`, and the same code fills the same field;
+only the adapter differs. Disabling the control locally instead would mean the
+one path most likely to break is the one nobody exercises until production.
+`GET /api/admin/translate` reports `standIn: true` and the screen says plainly
+that the text was copied across unchanged, so a developer seeing their English
+in the French box knows why.
+
+*Outside Development*, there is no stand-in. An unconfigured server reports
+`available: false` and the screen disables the control with an explanation.
+Copying English into the French column of a live question bank would put
+untranslated English in front of French-speaking pilots, which is worse than
+having no button. The opt-in parameter defaults to false for exactly this
+reason, and the only caller passes `builder.Environment.IsDevelopment()`.
 
 The key never reaches the browser, never enters a log, and never appears in a
 problem response. A provider error is reported as its status code only —
@@ -112,6 +126,8 @@ question wording being drafted.
 - The API gains an outbound network dependency on a third-party service, on an
   admin-only path. It is optional by construction: no key, no button.
 - `HpacSafety.Infrastructure` gains `Microsoft.Extensions.Http`.
+- A developer sees Translate work locally without a credential, and sees a note
+  saying what it really did.
 - Machine-translated text is **not marked** in the database. This was
   considered and rejected below.
 - The glossary in `locales/glossary.json` does **not** apply here. It is a map
@@ -138,6 +154,19 @@ pressed Save.
 
 **Translate in the browser.** Simpler, no endpoint. Rejected outright: it
 requires shipping the credential to a page, which publishes it.
+
+**Disable the control in development rather than standing in for it.** The
+first version of this change did exactly that. Rejected on the owner's ruling,
+and it is the better call: a control nobody can press locally is a control
+nobody tests, and the interesting failures — a field filled in the wrong place,
+an option label landing on a label — are in the code above the adapter, which
+the stand-in exercises fully.
+
+**Let the stand-in apply everywhere a credential is missing.** One rule, no
+environment check. Rejected: a production deployment that lost its key would
+silently start writing English into French, and an administrator pressing
+Translate would have no way to tell. Failing visibly is the right behaviour
+there.
 
 **Reuse `tools/translator.mjs` by shelling out to Node from the API.** No
 second implementation of the request shape. Rejected — it makes the API depend

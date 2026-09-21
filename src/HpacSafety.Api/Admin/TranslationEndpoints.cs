@@ -1,4 +1,5 @@
 using HpacSafety.Core;
+using HpacSafety.Infrastructure.Translation;
 
 namespace HpacSafety.Api.Admin;
 
@@ -45,7 +46,11 @@ public static class TranslationEndpoints
     {
         ArgumentNullException.ThrowIfNull(translator);
 
-        return Results.Ok(new TranslationAvailability(translator.IsConfigured));
+        // The screen says so plainly when it is the stand-in: a developer
+        // seeing their English copied into the French box should know why,
+        // rather than concluding the translator is broken.
+        return Results.Ok(
+            new TranslationAvailability(translator.IsConfigured, translator is EchoTranslator));
     }
 
     private static async Task<IResult> TranslateAsync(
@@ -122,7 +127,12 @@ public static class TranslationEndpoints
 
 /// <summary>Whether a translation provider is configured on this server.</summary>
 /// <param name="Available">True when the Translate control should be offered.</param>
-public sealed record TranslationAvailability(bool Available);
+/// <param name="StandIn">
+/// True when the provider is the development stand-in, which returns its input
+/// unchanged. The screen says so, so nobody mistakes copied English for a
+/// translation.
+/// </param>
+public sealed record TranslationAvailability(bool Available, bool StandIn);
 
 /// <summary>
 /// Text to translate between the two official languages.

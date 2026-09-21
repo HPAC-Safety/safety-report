@@ -34,6 +34,7 @@ export function ManageQuestionsPage() {
 	const [questions, setQuestions] = useState<QuestionView[]>([])
 	const [optionSets, setOptionSets] = useState<OptionSetView[]>([])
 	const [canTranslate, setCanTranslate] = useState(false)
+	const [translationIsStandIn, setTranslationIsStandIn] = useState(false)
 	const [draft, setDraft] = useState<QuestionDraft | null>(null)
 	const [editing, setEditing] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
@@ -52,11 +53,12 @@ export function ManageQuestionsPage() {
 				listOptionSets(),
 				// Asked once, so the Translate control is disabled rather than
 				// offered and then failing on a server with no credential.
-				translationAvailable().catch(() => ({ available: false })),
+				translationAvailable().catch(() => ({ available: false, standIn: false })),
 			])
 			setQuestions(loadedQuestions)
 			setOptionSets(loadedSets)
 			setCanTranslate(translation.available)
+			setTranslationIsStandIn(translation.standIn)
 			setError(null)
 		} catch (cause) {
 			report(cause)
@@ -138,6 +140,7 @@ export function ManageQuestionsPage() {
 					booleanQuestions={booleanQuestions}
 					isEditing={editing !== null}
 					translationAvailable={canTranslate}
+					translationIsStandIn={translationIsStandIn}
 					onChange={setDraft}
 					onCancel={() => {
 						setDraft(null)

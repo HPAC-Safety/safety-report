@@ -12,10 +12,14 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
 
-// Machine translation for the question-authoring screen. Registered whether or
-// not a credential is present; without one the endpoint says so and the
-// authoring screen disables the control. See ADR-0062.
-builder.Services.AddHpacSafetyTranslation(builder.Configuration);
+// Machine translation for the question-authoring screen. In Development with
+// no credential this resolves a stand-in that echoes its input, so the control
+// works locally and exercises the same endpoint and port as production. A
+// non-development deployment with no credential reports translation
+// unavailable instead. See ADR-0062.
+builder.Services.AddHpacSafetyTranslation(
+    builder.Configuration,
+    useStandInWhenUnconfigured: builder.Environment.IsDevelopment());
 
 var app = builder.Build();
 

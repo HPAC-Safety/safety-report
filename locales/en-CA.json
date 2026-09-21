@@ -108,5 +108,6 @@
   "questions.translate.hint": "Write one language, then translate it into the other.",
   "questions.translate.draftWarning": "A translation is a draft. Read it and correct it before saving.",
   "questions.translate.unavailable": "Translation is not available on this server.",
-  "questions.translate.failed": "The translation could not be completed. Please try again or write the other language yourself."
+  "questions.translate.failed": "The translation could not be completed. Please try again or write the other language yourself.",
+  "questions.translate.standIn": "This development server has no translation service, so Translate copies the text across unchanged. Production translates it for real."
 }

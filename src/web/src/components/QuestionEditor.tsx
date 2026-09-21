@@ -92,6 +92,7 @@ export function QuestionEditor({
 	booleanQuestions,
 	isEditing,
 	translationAvailable,
+	translationIsStandIn,
 	onChange,
 	onCancel,
 	onSave,
@@ -101,6 +102,7 @@ export function QuestionEditor({
 	booleanQuestions: QuestionView[]
 	isEditing: boolean
 	translationAvailable: boolean
+	translationIsStandIn: boolean
 	onChange: (draft: QuestionDraft) => void
 	onCancel: () => void
 	onSave: (draft: QuestionDraft) => void
@@ -298,9 +300,11 @@ export function QuestionEditor({
 				<p className="font-sans text-xs text-ink-muted">
 					{!translationAvailable
 						? t("questions.translate.unavailable")
-						: translationDirection === null
-							? t("questions.translate.hint")
-							: t("questions.translate.draftWarning")}
+						: translationIsStandIn
+							? t("questions.translate.standIn")
+							: translationDirection === null
+								? t("questions.translate.hint")
+								: t("questions.translate.draftWarning")}
 				</p>
 			</div>
 

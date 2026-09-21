@@ -9,30 +9,37 @@
     },
     "awaitingStripping": "Nous avons bien reçu votre vidéo. Elle est conservée en toute sécurité et n’est pas encore disponible pour examen."
   },
+  "app": {
+    "title": "ACVL Sécurité"
+  },
+  "header": {
+    "logoAlt": "ACVL Sécurité"
+  },
   "nav": {
     "primaryLabel": "Primaire",
     "viewReports": "Consulter les rapports de sécurité",
     "submitReport": "Soumettre un rapport de sécurité",
     "contact": "Contact",
     "memberLogin": "Connexion des membres",
+    "memberLogout": "Se déconnecter",
     "openMenuLabel": "Ouvrir le menu",
     "closeMenuLabel": "Fermer le menu",
-    "memberLogout": "Se déconnecter",
     "admin": "Admin",
     "manageReports": "Gérer les rapports",
     "manageQuestions": "Gérer les questions",
     "manageChoiceLists": "Gérer les listes de choix"
   },
   "language": {
+    "switchTo": "Passer à {language}",
     "optionEnglish": "Anglais",
-    "optionFrench": "Français",
-    "switchTo": "Passer à {language}"
+    "optionFrench": "Français"
   },
   "theme": {
     "toggleLabel": "Thème"
   },
   "home": {
     "heroTitle": "Ensemble, pour des vols plus sécuritaires",
+    "heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol.",
     "heroCta": "Soumettre un rapport de sécurité",
     "sectionWhy": {
       "title": "Pourquoi signaler?",
@@ -43,13 +50,15 @@
       "body": "Vous décrivez ce qui s’est passé avec vos propres mots. Un réviseur vérifie votre texte et, avec votre consentement, un résumé est publié afin d’aider l’ensemble de la communauté."
     },
     "sectionAbout": {
-      "body": "L’Association canadienne de vol libre et de parapente représente les pilotes de vol libre de tout le pays et fait la promotion d’une pratique sécuritaire à tous les niveaux de ce sport.",
-      "title": "À propos de ACVL"
-    },
-    "heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol."
+      "title": "À propos de ACVL",
+      "body": "L’Association canadienne de vol libre et de parapente représente les pilotes de vol libre de tout le pays et fait la promotion d’une pratique sécuritaire à tous les niveaux de ce sport."
+    }
   },
   "admin": {
     "placeholderName": "Admin"
+  },
+  "footer": {
+    "copyright": "© {year} l’Association canadienne de deltaplane et de parapente"
   },
   "page": {
     "placeholder": {
@@ -61,21 +70,14 @@
       "usernameLabel": "Nom d'utilisateur",
       "passwordLabel": "Mot de passe",
       "googleButton": "Continuer avec Google",
+      "errorGeneric": "#We could not sign you in. Check your username and password, then try again.",
+      "submitting": "#Signing in…",
       "submitButton": "Ouvrir une session"
     }
   },
   "notFound": {
     "title": "Page introuvable",
     "body": "Il n'y a rien à cette adresse."
-  },
-  "header": {
-    "logoAlt": "ACVL Sécurité"
-  },
-  "footer": {
-    "copyright": "© {year} l’Association canadienne de deltaplane et de parapente"
-  },
-  "app": {
-    "title": "ACVL Sécurité"
   },
   "questions": {
     "title": "Gérer les questions",
@@ -146,12 +148,12 @@
       "group": "Titre de la section"
     },
     "translate": {
+      "action": "Traduire",
       "working": "Traduction en cours…",
       "hint": "Écrivez dans une langue, puis traduisez-le dans l’autre.",
       "draftWarning": "Une traduction n’est qu’un premier jet. Lisez-la et corrigez-la avant de l’enregistrer.",
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
-      "action": "Traduire",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     }
   },

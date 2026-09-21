@@ -1,23 +1,73 @@
 import { createBdd } from "playwright-bdd"
 import { expect } from "@playwright/test"
 
+import { signInAs, stubAuth, type Role } from "./auth"
+
 const { Given, When, Then } = createBdd()
 
 Given("a visitor activates the member-login action", async ({ page }) => {
+	await stubAuth(page)
 	await page.goto("/")
 	await page.locator("header").getByRole("link", { name: "Member login" }).click()
 })
 
-Then("the login page shows a username field, a password field, a third-party sign-in option, and a login action", async ({ page }) => {
+Then("the login page shows a username field, a password field, and a login action", async ({ page }) => {
 	await expect(page.getByLabel("Username")).toBeVisible()
 	await expect(page.getByLabel("Password")).toBeVisible()
-	await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible()
 	await expect(page.getByRole("button", { name: "Log in" })).toBeVisible()
 })
 
+Then("the login page shows no third-party sign-in option", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Continue with Google" })).toBeHidden()
+})
+
+Given("the API reports that a third-party provider is configured", async ({ page }) => {
+	await stubAuth(page, { thirdPartySignIn: true })
+})
+
+Then("the login page also shows a third-party sign-in option", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Continue with Google" })).toBeVisible()
+})
+
 Given("a visitor signs in from the member login page", async ({ page }) => {
+	await signInAs(page, "administrator")
+})
+
+Given("a visitor signs in with valid member credentials", async ({ page }) => {
+	await signInAs(page, "administrator")
+})
+
+Given(/^a visitor signs in as an? (Administrator|SafetyOfficer|User)$/, async ({ page }, role: string) => {
+	const roles: Record<string, Role> = {
+		Administrator: "administrator",
+		SafetyOfficer: "safety_officer",
+		User: "user",
+	}
+	await signInAs(page, roles[role])
+})
+
+Given("a visitor submits credentials that are not valid", async ({ page }) => {
+	await stubAuth(page)
 	await page.goto("/login")
+	await page.getByLabel("Username").fill("nobody")
+	await page.getByLabel("Password").fill("wrong")
 	await page.getByRole("button", { name: "Log in" }).click()
+})
+
+Then("the login page shows one generic failure message", async ({ page }) => {
+	const alerts = page.getByRole("alert")
+	await expect(alerts).toHaveCount(1)
+	await expect(alerts).toBeVisible()
+})
+
+Then("the failure does not say whether the username or the password was wrong", async ({ page }) => {
+	// Whatever the message says, it must not name which half was at fault.
+	const message = (await page.getByRole("alert").textContent()) ?? ""
+	expect(message).not.toMatch(/unknown|no such|incorrect password|wrong password/i)
+})
+
+Then("the header still shows the member-login action", async ({ page }) => {
+	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
 })
 
 Then("the header shows a logout action instead of the member-login action", async ({ page }) => {
@@ -53,10 +103,25 @@ When("the visitor activates the Admin menu", async ({ page }) => {
 	await page.locator("header").getByRole("button", { name: "Admin" }).click()
 })
 
-Then("it opens with manage-reports and manage-questions options", async ({ page }) => {
+Then("it opens with manage-reports, manage-questions, and manage-choice-lists options", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
 	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
+	await expect(menu.getByRole("menuitem", { name: "Manage choice lists" })).toBeVisible()
+})
+
+Then("it opens with a manage-reports option", async ({ page }) => {
+	await expect(page.getByRole("menu", { name: "Admin" }).getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
+})
+
+Then("it offers no manage-questions or manage-choice-lists option", async ({ page }) => {
+	const menu = page.getByRole("menu", { name: "Admin" })
+	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeHidden()
+	await expect(menu.getByRole("menuitem", { name: "Manage choice lists" })).toBeHidden()
+})
+
+Then("the header shows a logout action", async ({ page }) => {
+	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
 })
 
 Then("every option is on one line and none is truncated", async ({ page }) => {

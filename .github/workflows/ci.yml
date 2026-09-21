@@ -84,6 +84,7 @@ jobs:
         with:
           global-json-file: global.json
       - run: dotnet restore HpacSafety.slnx
+      - run: dotnet format HpacSafety.slnx --verify-no-changes --no-restore
       # Directory.Build.props sets TreatWarningsAsErrors, so a warning already
       # fails. --warnaserror is belt and braces for anything outside that scope.
       - run: dotnet build HpacSafety.slnx --configuration Release --no-restore --warnaserror

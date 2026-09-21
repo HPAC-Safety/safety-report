@@ -1,32 +1,49 @@
 #!/usr/bin/env sh
 #
-# Blocks a commit that leaves locales/en-CA.json and locales/fr-CA.json out of
-# step: a missing/extra key, a local `#`-stub (tools/stub-missing-translations.mjs,
-# ADR-0054) that must never reach a PR, or stale fr-CA.meta.json provenance.
+# Two independent checks, each gated on the kind of file actually staged so
+# an unrelated commit pays nothing. This file is the tracked template;
+# ./init-dev.sh copies it into the real hooks directory (see that file for
+# why it's a copy rather than core.hooksPath) — edit this copy, not the
+# installed one, and re-run ./init-dev.sh to pick up the change.
 #
-# Runs the exact same checks as the "i18n" CI job
-# (tools/check-locales.mjs, tools/translate-locale.mjs --check) but locally,
-# before the commit exists, instead of after a push. This file is the tracked
-# template; ./init-dev.sh copies it into the real hooks directory (see that
-# file for why it's a copy rather than core.hooksPath) — edit this copy, not
-# the installed one, and re-run ./init-dev.sh to pick up the change.
+# 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, a
+#    local `#`-stub (tools/stub-missing-translations.mjs, ADR-0054) that must
+#    never reach a PR, or stale fr-CA.meta.json provenance. Runs the exact
+#    same checks as the "i18n" CI job (tools/check-locales.mjs,
+#    tools/translate-locale.mjs --check) but locally, before the commit
+#    exists, instead of after a push.
 #
-# Only runs when a locale file is actually staged, so every other commit pays
-# nothing.
+# 2. C# formatting: dotnet format, auto-fixing and re-staging the staged
+#    files it changes, so formatting drift never reaches a commit. CI's
+#    "build" job re-verifies with --verify-no-changes as a server-side
+#    backstop for anyone who skipped this hook.
 
 set -eu
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT"
 
-if ! git diff --cached --name-only --diff-filter=ACMR | grep -q '^locales/'; then
-	exit 0
+if git diff --cached --name-only --diff-filter=ACMR | grep -q '^locales/'; then
+	if ! command -v node >/dev/null 2>&1; then
+		echo "pre-commit: node is not on PATH, cannot verify locales/ — see README.md" >&2
+		exit 1
+	fi
+
+	node tools/check-locales.mjs
+	node tools/translate-locale.mjs --check --locales locales
 fi
 
-if ! command -v node >/dev/null 2>&1; then
-	echo "pre-commit: node is not on PATH, cannot verify locales/ — see README.md" >&2
-	exit 1
-fi
+if git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(cs|csproj)$'; then
+	if ! command -v dotnet >/dev/null 2>&1; then
+		echo "pre-commit: dotnet is not on PATH, cannot run dotnet format — see README.md" >&2
+		exit 1
+	fi
 
-node tools/check-locales.mjs
-node tools/translate-locale.mjs --check --locales locales
+	STAGED_CS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(cs|csproj)$')
+
+	dotnet format HpacSafety.slnx
+
+	echo "$STAGED_CS" | while IFS= read -r f; do
+		[ -f "$f" ] && git add -- "$f"
+	done
+fi

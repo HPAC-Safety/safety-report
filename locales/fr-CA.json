@@ -70,8 +70,8 @@
       "usernameLabel": "Nom d'utilisateur",
       "passwordLabel": "Mot de passe",
       "googleButton": "Continuer avec Google",
-      "errorGeneric": "#We could not sign you in. Check your username and password, then try again.",
-      "submitting": "#Signing in…",
+      "errorGeneric": "Nous n'avons pas pu vous connecter. Vérifiez votre nom d'utilisateur et votre mot de passe, puis réessayez.",
+      "submitting": "Connexion en cours…",
       "submitButton": "Ouvrir une session"
     }
   },

@@ -8,7 +8,6 @@ API, and Worker.
 - EF Core schema, migrations, transactions, outbox claims, and query DTOs;
 - one model adapter for strict bilingual summarization;
 - current hardcoded-TLS HPAC authentication adapter and future OIDC adapter;
-- Turnstile verification;
 - private bounded stream storage and attachment detection/processing;
 - image/video safe derivatives and validated private document originals.
 

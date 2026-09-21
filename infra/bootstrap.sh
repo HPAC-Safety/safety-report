@@ -579,9 +579,9 @@ say '     ReadOnlyAccess and the denial policy attached'
 #
 # Versioned because state is the only record of what exists; a corrupt write
 # with no previous version is an environment you can no longer manage.
-# Encrypted and fully private because ADR-0010 accepts one secret in state (the
-# Turnstile widget secret), which makes this bucket's access controls something
-# to verify rather than assume.
+# Encrypted and fully private because Terraform state can hold sensitive
+# values, which makes this bucket's access controls something to verify
+# rather than assume.
 
 say "4/4  Terraform state bucket ${STATE_BUCKET}"
 

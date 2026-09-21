@@ -43,10 +43,6 @@ jobs:
   # Secrets:   AWS_DEPLOY_ROLE_ARN
   # Variables: AWS_REGION, S3_BUCKET_SITE, CLOUDFRONT_DISTRIBUTION_SITE,
   #            SITE_ADMIN_PREFIX
-  #
-  # The Turnstile SITE key is public by design and may be a variable. The
-  # Turnstile SECRET key is server-side only, lives in AWS Secrets Manager, and
-  # must never reach a static bundle.
   preflight:
     # Three conditions, not one. `branches: [main]` above filters on the
     # triggering run's head_branch, and a pull_request-triggered CI run reports

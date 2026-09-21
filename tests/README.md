@@ -29,7 +29,7 @@ is needed to get a true result
 ([ADR-0073](../docs/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
 
 Target tests protect complete immutable questions, consent-only required
-behavior, final multipart mapping and atomicity, Turnstile/rate limiting, one
+behavior, final multipart mapping and atomicity, rate limiting, one
 strict bilingual model call, whole-identity role replacement, image/video
 derivatives, private non-anonymized documents, authentication/audit, pair
 approval, universal soft deletion, and exact public DTO allowlists. See

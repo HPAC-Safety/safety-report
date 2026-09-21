@@ -79,7 +79,7 @@ Then("each reporter-added choice is marked as such", async ({ page }) => {
 })
 
 Then("the page says how many are waiting to be reviewed", async ({ page }) => {
-	await expect(page.getByText("1 choices were added by reporters", { exact: false })).toBeVisible()
+	await expect(page.getByText("Added by reporters and not yet reviewed: 1", { exact: false })).toBeVisible()
 })
 
 When("they correct the wording of a reporter-added choice and save", async ({ page }) => {

@@ -1,11 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-
 using HpacSafety.Core.Features.Moderation;
-
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
-
+using Microsoft.AspNetCore.Mvc.Testing;
 using Testcontainers.PostgreSql;
 
 namespace HpacSafety.Api.Tests;

@@ -217,9 +217,11 @@ fi
 # ------------------------------------------------------------- git hooks ------
 #
 # .githooks/pre-commit (tracked, versioned like everything else in this repo)
-# blocks a commit that leaves locales/en-CA.json and fr-CA.json out of step (a
-# stray `#`-stub, a missing key, stale provenance) — the exact class of drift
-# that otherwise only surfaces after a push, in CI's "i18n" job.
+# runs two checks, each gated on what's actually staged: locale parity
+# between en-CA.json and fr-CA.json (a stray `#`-stub, a missing key, stale
+# provenance), and dotnet format on staged C# files — the exact classes of
+# drift that otherwise only surface after a push, in CI's "i18n" and "build"
+# jobs.
 #
 # Installed by copying it into the real hooks directory rather than by
 # setting core.hooksPath: that directory is where graphify's own `graphify
@@ -234,13 +236,14 @@ fi
 # Idempotent by content comparison, so a second run only touches the file when
 # .githooks/pre-commit itself changed.
 #
-# A dev-machine convenience, not a CI gate — CI enforces the same two checks
-# directly, in the "i18n" job — so a missing hook is reported with note(), not
-# missing(): it must never fail a fresh CI checkout's `--check` step.
+# A dev-machine convenience, not a CI gate — CI enforces the same checks
+# directly, in the "i18n" and "build" jobs — so a missing hook is reported
+# with note(), not missing(): it must never fail a fresh CI checkout's
+# `--check` step.
 HOOKS_DIR=$(git rev-parse --git-path hooks)
 if [ "$CHECK_ONLY" -eq 1 ]; then
 	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then
-		ok "git pre-commit hook (locale parity)"
+		ok "git pre-commit hook (locale parity + dotnet format)"
 	else
 		note "git pre-commit hook not installed — run without --check"
 	fi
@@ -251,7 +254,7 @@ else
 		mkdir -p "$HOOKS_DIR"
 		cp .githooks/pre-commit "$HOOKS_DIR/pre-commit"
 		chmod +x "$HOOKS_DIR/pre-commit"
-		added "git pre-commit hook (locale parity)"
+		added "git pre-commit hook (locale parity + dotnet format)"
 	fi
 fi
 

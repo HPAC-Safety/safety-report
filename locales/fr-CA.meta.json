@@ -424,16 +424,6 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "questions.translate.toEnglish": {
-    "source_hash": "6c1cff276e9f9770db9ff79df177de5675539623b00467a04e0d982bbb6f44f1",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
-  "questions.translate.toFrench": {
-    "source_hash": "80e4034f7ceddb16801dd64140a5a4a7325e71ef8731f75156124873d4e8f2cc",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
   "questions.translate.unavailable": {
     "source_hash": "82ed2298688c1840af6049800cf7ae109ab3b4d3d678d91512177c2807207e14",
     "provider": "deepl:FR-CA:prefer_more",

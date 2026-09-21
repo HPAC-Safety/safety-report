@@ -236,14 +236,14 @@ Feature: Question bank and form
   @ui
   Scenario: An Administrator drafts the French from the English
     Given a signed-in Administrator is authoring a new question
-    When they write the English wording and ask for it to be translated
+    When they write the English wording and press Translate
     Then the French field is filled with the translation
     And the French field remains editable
 
   @ui
   Scenario: An Administrator drafts the English from the French
     Given a signed-in Administrator is authoring a new question
-    When they write the French wording and ask for it to be translated
+    When they write the French wording and press Translate
     Then the English field is filled with the translation
 
   @ui
@@ -257,7 +257,7 @@ Feature: Question bank and form
   @ui
   Scenario: Translation is not offered when the server has no provider
     Given a signed-in Administrator is authoring a question on a server with no translation provider
-    Then the translate action is unavailable and says so
+    Then the Translate action is unavailable and says so
 
   @ui
   Scenario: An Administrator authors a question from the dashboard

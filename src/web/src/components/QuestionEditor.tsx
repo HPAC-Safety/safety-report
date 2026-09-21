@@ -292,11 +292,7 @@ export function QuestionEditor({
 					disabled={!translationAvailable || translationDirection === null || translating}
 					onClick={() => void translateMissingLanguage()}
 				>
-					{translating
-						? t("questions.translate.working")
-						: translationDirection === "toEnglish"
-							? t("questions.translate.toEnglish")
-							: t("questions.translate.toFrench")}
+					{translating ? t("questions.translate.working") : t("questions.translate.action")}
 				</button>
 
 				<p className="font-sans text-xs text-ink-muted">

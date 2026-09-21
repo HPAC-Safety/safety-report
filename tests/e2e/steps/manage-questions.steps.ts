@@ -350,14 +350,18 @@ Given(
 	},
 )
 
-When("they write the English wording and ask for it to be translated", async ({ page }) => {
+// One button, labelled "Translate", whichever way it is about to go: the
+// direction is decided by which language has been written, not by the caller.
+const translateButton = (page: Page) => page.getByRole("button", { name: "Translate", exact: true })
+
+When("they write the English wording and press Translate", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("Were you injured?")
-	await page.getByRole("button", { name: "Translate into French" }).click()
+	await translateButton(page).click()
 })
 
-When("they write the French wording and ask for it to be translated", async ({ page }) => {
+When("they write the French wording and press Translate", async ({ page }) => {
 	await page.getByLabel("Question (French)").fill("Avez-vous été blessé ?")
-	await page.getByRole("button", { name: "Translate into English" }).click()
+	await translateButton(page).click()
 })
 
 Then("the French field is filled with the translation", async ({ page }) => {
@@ -395,8 +399,8 @@ Then("saving becomes available", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Save" })).toBeEnabled()
 })
 
-Then("the translate action is unavailable and says so", async ({ page }) => {
-	await expect(page.getByRole("button", { name: "Translate into French" })).toBeDisabled()
+Then("the Translate action is unavailable and says so", async ({ page }) => {
+	await expect(translateButton(page)).toBeDisabled()
 	await expect(page.getByText("Translation is not available on this server.")).toBeVisible()
 })
 

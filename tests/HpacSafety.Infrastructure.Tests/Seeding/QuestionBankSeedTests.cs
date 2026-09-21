@@ -35,7 +35,7 @@ public sealed class QuestionBankSeedTests
     };
 
     [Fact]
-    public void Given_the_generated_form_specification_When_it_is_read_Then_it_describes_the_fields_the_seed_reproduces()
+    public void GivenGeneratedFormSpecification_WhenRead_ThenDescribesFieldsSeedReproduces()
     {
         // Given / When / Then — a parser that silently found nothing would make
         // every other assertion here vacuous.
@@ -45,7 +45,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_form_specification_When_the_seed_is_compared_to_it_Then_every_field_is_seeded_in_order()
+    public void GivenFormSpecification_WhenSeedIsComparedTo_ThenEveryFieldIsSeededInOrder()
     {
         // Given
         var seeded = QuestionBankSeed.Questions;
@@ -58,7 +58,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_form_specification_When_each_field_type_is_compared_Then_the_seed_asks_for_the_same_kind_of_answer()
+    public void GivenFormSpecification_WhenEachFieldTypeIsCompared_ThenSeedAsksForSameKindOfAnswer()
     {
         // Given
         var seeded = QuestionBankSeed.Questions;
@@ -71,7 +71,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_form_specification_When_a_field_sits_inside_a_group_Then_the_seeded_question_sits_in_the_same_section()
+    public void GivenFormSpecification_WhenFieldSitsInsideGroup_ThenSeededQuestionSitsInSameSection()
     {
         // Given
         var seeded = QuestionBankSeed.Questions;
@@ -88,7 +88,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_form_specification_When_a_field_offers_choices_Then_the_seeded_question_offers_the_same_choices_in_the_same_order()
+    public void GivenFormSpecification_WhenFieldOffersChoices_ThenSeededQuestionOffersSameChoicesInSameOrder()
     {
         // Given
         var seeded = QuestionBankSeed.Questions;
@@ -102,7 +102,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_form_specification_When_a_field_carries_help_text_Then_the_seeded_question_carries_it_word_for_word()
+    public void GivenFormSpecification_WhenFieldCarriesHelpText_ThenSeededQuestionCarriesWordForWord()
     {
         // Given — the recap screen's body is a list of Typeform field
         // references, which mean nothing outside Typeform and are deliberately
@@ -122,7 +122,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_the_French_wording_is_checked_Then_every_question_has_a_counterpart()
+    public void GivenSeededQuestionBank_WhenFrenchWordingIsChecked_ThenEveryQuestionHasCounterpart()
     {
         // Given / When / Then — a question cannot be activated with a missing
         // counterpart, so a clean database would render an empty form.
@@ -144,7 +144,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_the_keys_are_checked_Then_each_one_is_used_once_and_is_already_normalized()
+    public void GivenSeededQuestionBank_WhenKeysAreChecked_ThenEachOneIsUsedOnceAndIsAlreadyNormalized()
     {
         // Given
         var keys = QuestionBankSeed.Questions.Select(q => q.Key).ToArray();
@@ -158,7 +158,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_option_codes_are_checked_Then_they_are_unique_within_a_question_and_already_normalized()
+    public void GivenSeededQuestionBank_WhenOptionCodesAreChecked_ThenTheyAreUniqueWithinQuestionAndAlreadyNormalized()
     {
         // Given / When / Then
         foreach (var question in QuestionBankSeed.Questions)
@@ -174,7 +174,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_publication_consent_is_looked_up_Then_it_is_the_only_system_question_and_it_is_required()
+    public void GivenSeededQuestionBank_WhenPublicationConsentIsLookedUp_ThenOnlySystemQuestionAndRequired()
     {
         // Given
         var system = QuestionBankSeed.Questions.Where(q => q.IsSystem).ToArray();
@@ -189,7 +189,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_a_role_is_assigned_Then_no_two_questions_claim_the_same_one()
+    public void GivenSeededQuestionBank_WhenRoleIsAssigned_ThenNoTwoQuestionsClaimSameOne()
     {
         // Given
         var roles = QuestionBankSeed.Questions
@@ -202,7 +202,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_private_identity_fields_are_read_Then_every_one_is_private()
+    public void GivenSeededQuestionBank_WhenPrivateIdentityFieldsAreRead_ThenEveryOneIsPrivate()
     {
         // Given
         string[] contact =
@@ -220,7 +220,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_summary_content_fields_are_read_Then_every_one_is_non_private()
+    public void GivenSeededQuestionBank_WhenSummaryContentFieldsAreRead_ThenEveryOneIsNonPrivate()
     {
         // Given
         string[] reportContent =
@@ -246,13 +246,13 @@ public sealed class QuestionBankSeedTests
     [InlineData("aircraft_model")]
     [InlineData("photo_or_video")]
     [InlineData(QuestionKey.ConsentPublish)]
-    public void Given_the_seeded_question_bank_When_a_redaction_context_field_is_read_Then_it_is_private(string key)
+    public void GivenSeededQuestionBank_WhenRedactionContextFieldIsRead_ThenPrivate(string key)
     {
         QuestionBankSeed.Questions.Single(question => question.Key == key).IsPrivate.ShouldBeTrue();
     }
 
     [Fact]
-    public void Given_the_seeded_question_bank_When_a_question_takes_no_options_Then_none_are_seeded_for_it()
+    public void GivenSeededQuestionBank_WhenQuestionTakesNoOptions_ThenNoneAreSeededFor()
     {
         // Given / When / Then
         foreach (var question in QuestionBankSeed.Questions)
@@ -271,7 +271,7 @@ public sealed class QuestionBankSeedTests
     }
 
     [Fact]
-    public void Given_the_current_question_schema_When_the_seed_is_written_Then_it_uses_immutable_privacy_flags()
+    public void GivenCurrentQuestionSchema_WhenSeedIsWritten_ThenUsesImmutablePrivacyFlags()
     {
         // Given
         var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");

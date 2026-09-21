@@ -14,7 +14,7 @@ public class ReportRecordTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_an_upload_When_it_lands_Then_it_awaits_stripping_before_anyone_sees_it()
+    public void GivenUpload_WhenLands_ThenAwaitsStrippingBeforeAnyoneSees()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -30,7 +30,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_video_upload_When_it_lands_Then_it_is_classified_as_video()
+    public void GivenVideoUpload_WhenLands_ThenClassifiedAsVideo()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -43,7 +43,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_document_upload_When_it_lands_Then_it_is_classified_as_a_document()
+    public void GivenDocumentUpload_WhenLands_ThenClassifiedAsDocument()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -56,7 +56,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_an_upload_When_exif_is_stripped_Then_the_derivative_is_what_a_reviewer_sees()
+    public void GivenUpload_WhenExifIsStripped_ThenDerivativeIsWhatReviewerSees()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -72,7 +72,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_an_uploaded_file_When_it_is_linked_to_its_answer_Then_the_link_is_recorded()
+    public void GivenUploadedFile_WhenLinkedToAnswer_ThenLinkIsRecorded()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -87,7 +87,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_report_with_no_summary_When_one_is_attached_Then_it_is_recorded()
+    public void GivenReportWithNoSummary_WhenOneIsAttached_ThenRecorded()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -100,7 +100,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_report_that_already_has_a_summary_When_a_second_is_attached_Then_it_is_refused()
+    public void GivenReportAlreadyHasSummary_WhenSecondIsAttached_ThenRefused()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -114,7 +114,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_an_approved_summary_When_its_English_text_is_rewritten_by_hand_Then_the_approval_is_withdrawn()
+    public void GivenApprovedSummary_WhenEnglishTextIsRewrittenByHand_ThenApprovalIsWithdrawn()
     {
         // Given
         var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
@@ -129,7 +129,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_an_approved_summary_When_its_French_text_is_rewritten_by_hand_Then_the_approval_is_withdrawn()
+    public void GivenApprovedSummary_WhenFrenchTextIsRewrittenByHand_ThenApprovalIsWithdrawn()
     {
         // Given
         var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
@@ -144,7 +144,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_summary_When_its_English_text_is_rewritten_blank_Then_it_is_refused()
+    public void GivenSummary_WhenEnglishTextIsRewrittenBlank_ThenRefused()
     {
         // Given
         var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
@@ -157,7 +157,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_failed_summarization_When_it_later_succeeds_Then_the_error_is_cleared()
+    public void GivenFailedSummarization_WhenLaterSucceeds_ThenErrorIsCleared()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -173,7 +173,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_rejected_report_When_publication_is_attempted_Then_it_is_refused()
+    public void GivenRejectedReport_WhenPublicationIsAttempted_ThenRefused()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -190,7 +190,7 @@ public class ReportRecordTests
     [Theory]
     [InlineData(MemberRole.User, MemberRole.SafetyOfficer)]
     [InlineData(MemberRole.SafetyOfficer, MemberRole.Administrator)]
-    public void Given_two_member_roles_When_they_are_compared_Then_the_more_privileged_one_is_greater(
+    public void GivenTwoMemberRoles_WhenTheyAreCompared_ThenMorePrivilegedOneIsGreater(
         MemberRole lesser, MemberRole greater)
     {
         // Given / When
@@ -201,7 +201,7 @@ public class ReportRecordTests
     }
 
     [Fact]
-    public void Given_a_moderation_action_When_it_is_audited_Then_it_records_who_and_when_and_not_the_content()
+    public void GivenModerationAction_WhenAudited_ThenRecordsWhoAndWhenAndNotContent()
     {
         // Given
         const string actorSubject = "auth0|synthetic-officer";

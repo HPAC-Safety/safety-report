@@ -21,7 +21,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     private static readonly DateTimeOffset At = new(2026, 8, 22, 17, 30, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Given_a_clean_database_When_the_question_bank_is_read_Then_it_holds_every_seeded_question_in_order()
+    public async Task GivenCleanDatabase_WhenQuestionBankIsRead_ThenHoldsEverySeededQuestionInOrder()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -36,7 +36,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_clean_database_When_a_seeded_question_is_loaded_Then_it_is_active_and_worded_in_both_languages()
+    public async Task GivenCleanDatabase_WhenSeededQuestionIsLoaded_ThenActiveAndWordedInBothLanguages()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -56,7 +56,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_clean_database_When_question_privacy_is_loaded_Then_it_matches_the_seed_contract()
+    public async Task GivenCleanDatabase_WhenQuestionPrivacyIsLoaded_ThenMatchesSeedContract()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -75,7 +75,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_clean_database_When_a_question_with_choices_is_loaded_Then_its_options_carry_both_languages_in_order()
+    public async Task GivenCleanDatabase_WhenQuestionWithChoicesIsLoaded_ThenOptionsCarryBothLanguagesInOrder()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -92,7 +92,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_clean_database_When_publication_consent_is_looked_up_Then_it_is_the_system_question_and_cannot_be_deleted()
+    public async Task GivenCleanDatabase_WhenPublicationConsentIsLookedUp_ThenSystemQuestionAndCannotBeDeleted()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -109,7 +109,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_the_seeded_form_When_a_report_answers_publication_consent_Then_the_answer_projects_onto_the_report()
+    public async Task GivenSeededForm_WhenReportAnswersPublicationConsent_ThenAnswerProjectsOntoReport()
     {
         // Given — consent is the only answer a report reads by name.
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -133,7 +133,7 @@ public sealed class SeededQuestionBankTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_the_seeded_form_When_a_multi_select_answer_is_saved_Then_every_chosen_code_survives_the_round_trip()
+    public async Task GivenSeededForm_WhenMultiSelectAnswerIsSaved_ThenEveryChosenCodeSurvivesRoundTrip()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

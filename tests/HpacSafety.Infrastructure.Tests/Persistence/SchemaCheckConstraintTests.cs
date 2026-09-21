@@ -31,7 +31,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
         "outbox_messages",
         "INSERT INTO outbox_messages (id, aggregate_id, type, payload, occurred_at, next_attempt_at, attempts) " +
         "VALUES ('oooooooooo1', 'rrrrrrrrrr1', 'not_a_type', '{}', @at, @at, 0)")]
-    public async Task Given_a_bad_enum_code_When_it_is_inserted_Then_the_check_constraint_rejects_it(string table, string sql)
+    public async Task GivenBadEnumCode_WhenInserted_ThenCheckConstraintRejects(string table, string sql)
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -45,7 +45,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_summary_with_only_one_of_approved_by_subject_and_approved_at_set_When_it_is_inserted_Then_it_is_refused()
+    public async Task GivenSummaryWithOnlyOneOfApprovedBySubjectAndApprovedAtSet_WhenInserted_ThenRefused()
     {
         // Given — Summary.Approve/ClearApproval always set or clear both together
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -65,7 +65,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_report_file_with_a_stripped_time_but_no_key_When_it_is_inserted_Then_it_is_refused()
+    public async Task GivenReportFileWithStrippedTimeButNoKey_WhenInserted_ThenRefused()
     {
         // Given — AwaitsStripping treats exif_stripped_at and stripped_blob_key as one fact
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -85,7 +85,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_report_file_with_an_unknown_kind_When_it_is_inserted_Then_it_is_refused()
+    public async Task GivenReportFileWithUnknownKind_WhenInserted_ThenRefused()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -105,7 +105,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_question_revision_with_an_unknown_type_When_it_is_inserted_Then_it_is_refused()
+    public async Task GivenQuestionRevisionWithUnknownType_WhenInserted_ThenRefused()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

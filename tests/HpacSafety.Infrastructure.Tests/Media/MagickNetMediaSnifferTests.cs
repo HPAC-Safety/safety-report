@@ -12,7 +12,7 @@ public class MagickNetMediaSnifferTests
     private readonly MagickNetMediaSniffer _sniffer = new();
 
     [Fact]
-    public async Task Given_jpeg_bytes_When_they_are_sniffed_Then_they_are_reported_as_jpeg()
+    public async Task GivenJpegBytes_WhenTheyAreSniffed_ThenTheyAreReportedAsJpeg()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.JpegWithGpsExif());
@@ -25,7 +25,7 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
-    public async Task Given_png_bytes_When_they_are_sniffed_Then_they_are_reported_as_png()
+    public async Task GivenPngBytes_WhenTheyAreSniffed_ThenTheyAreReportedAsPng()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.Png());
@@ -38,7 +38,7 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
-    public async Task Given_heic_bytes_When_they_are_sniffed_Then_they_are_reported_as_heic()
+    public async Task GivenHeicBytes_WhenTheyAreSniffed_ThenTheyAreReportedAsHeic()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
@@ -51,7 +51,7 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
-    public async Task Given_an_mp4_When_it_is_sniffed_by_the_image_sniffer_Then_it_is_left_for_the_video_sniffer()
+    public async Task GivenMp4_WhenSniffedByImageSniffer_ThenLeftForVideoSniffer()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.Mp4());
@@ -67,7 +67,7 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
-    public async Task Given_a_pdf_renamed_to_a_photo_When_it_is_sniffed_Then_it_is_unrecognised()
+    public async Task GivenPdfRenamedToPhoto_WhenSniffed_ThenUnrecognised()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.NotMedia());
@@ -80,7 +80,7 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
-    public async Task Given_a_jpeg_magic_number_glued_onto_rubbish_When_it_is_sniffed_Then_it_is_unrecognised()
+    public async Task GivenJpegMagicNumberGluedOntoRubbish_WhenSniffed_ThenUnrecognised()
     {
         // Given
         // The leading bytes say JPEG; nothing after them does. Magic numbers alone
@@ -96,7 +96,7 @@ public class MagickNetMediaSnifferTests
     }
 
     [Fact]
-    public async Task Given_an_empty_stream_When_it_is_sniffed_Then_it_is_unrecognised()
+    public async Task GivenEmptyStream_WhenSniffed_ThenUnrecognised()
     {
         // Given
         using var content = new MemoryStream();

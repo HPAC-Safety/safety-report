@@ -31,7 +31,7 @@ public class MediaIngestorTests
             new FixedClock(Now));
 
     [Fact]
-    public async Task Given_a_quarantined_photo_When_it_is_ingested_Then_the_original_and_the_derivative_are_promoted()
+    public async Task GivenQuarantinedPhoto_WhenIngested_ThenOriginalAndDerivativeArePromoted()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -52,7 +52,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_quarantined_photo_When_it_is_ingested_Then_the_outcome_carries_the_sniffed_type_size_and_digest()
+    public async Task GivenQuarantinedPhoto_WhenIngested_ThenOutcomeCarriesSniffedTypeSizeAndDigest()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -71,7 +71,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_video_When_it_is_ingested_Then_it_is_retained_but_nothing_is_viewable()
+    public async Task GivenVideo_WhenIngested_ThenRetainedButNothingIsViewable()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -93,7 +93,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_video_When_a_derivative_is_asked_for_Then_it_fails_closed_rather_than_returning_the_original()
+    public async Task GivenVideo_WhenDerivativeIsAskedFor_ThenFailsClosedRatherThanReturningOriginal()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -111,7 +111,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_file_claiming_image_jpeg_but_containing_a_png_When_it_is_ingested_Then_it_is_rejected()
+    public async Task GivenFileClaimingImageJpegButContainingPng_WhenIngested_ThenRejected()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -128,7 +128,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_rejected_file_When_it_is_ingested_Then_nothing_is_promoted_out_of_quarantine()
+    public async Task GivenRejectedFile_WhenIngested_ThenNothingIsPromotedOutOfQuarantine()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -147,7 +147,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_file_far_larger_than_the_limit_When_it_is_ingested_Then_the_source_is_never_pulled_fully_into_memory_before_rejection()
+    public async Task GivenFileFarLargerThanLimit_WhenIngested_ThenSourceIsNeverPulledFullyIntoMemoryBeforeRejection()
     {
         // Given
         // 500 MB against a 1 KB limit - if the whole object were buffered before
@@ -179,7 +179,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_file_over_the_size_limit_When_it_is_ingested_Then_it_is_rejected_before_it_is_decoded()
+    public async Task GivenFileOverSizeLimit_WhenIngested_ThenRejectedBeforeDecoded()
     {
         // Given
         var store = new InMemoryBlobStore();
@@ -196,7 +196,7 @@ public class MediaIngestorTests
     }
 
     [Fact]
-    public async Task Given_a_key_outside_quarantine_When_ingest_is_asked_to_read_it_Then_it_refuses()
+    public async Task GivenKeyOutsideQuarantine_WhenIngestIsAskedToRead_ThenRefuses()
     {
         // Given
         var store = new InMemoryBlobStore();

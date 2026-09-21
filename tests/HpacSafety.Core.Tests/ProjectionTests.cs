@@ -14,7 +14,7 @@ public class ProjectionTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_an_ordinary_question_When_it_is_answered_Then_the_answer_is_simply_recorded()
+    public void GivenOrdinaryQuestion_WhenAnswered_ThenAnswerIsSimplyRecorded()
     {
         // Given
         var question = Question.Create("description", QuestionType.LongText, "Describe it", "Décrivez-le", Now);
@@ -31,7 +31,7 @@ public class ProjectionTests
     [Theory]
     [InlineData("True", true)]
     [InlineData("False", false)]
-    public void Given_a_consent_role_on_a_text_question_When_it_is_answered_Then_a_boolean_word_is_read(string given, bool expected)
+    public void GivenConsentRoleOnTextQuestion_WhenAnswered_ThenBooleanWordIsRead(string given, bool expected)
     {
         // Given — the role can be moved to a question that is not the YesNo one
         var question = Question.Create(
@@ -47,7 +47,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_free_text_question_When_it_is_answered_with_option_codes_Then_it_is_refused()
+    public void GivenFreeTextQuestion_WhenAnsweredWithOptionCodes_ThenRefused()
     {
         // Given
         var question = Question.Create("description", QuestionType.LongText, "Describe it", "Décrivez-le", Now);
@@ -61,7 +61,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_report_When_its_record_is_read_Then_answers_files_and_summary_are_all_there()
+    public void GivenReport_WhenRecordIsRead_ThenAnswersFilesAndSummaryAreAll()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -79,7 +79,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_an_ordinary_question_When_it_is_deactivated_Then_it_stops_being_asked()
+    public void GivenOrdinaryQuestion_WhenDeactivated_ThenStopsBeingAsked()
     {
         // Given
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
@@ -94,7 +94,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_revision_When_its_contents_are_read_Then_options_are_exposed_in_both_languages()
+    public void GivenRevision_WhenContentsAreRead_ThenOptionsAreExposedInBothLanguages()
     {
         // Given
         var question = Question.Create(
@@ -115,7 +115,7 @@ public class ProjectionTests
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void Given_no_code_at_all_When_it_is_parsed_Then_nothing_is_guessed(string? code)
+    public void GivenNoCodeAtAll_WhenParsed_ThenNothingIsGuessed(string? code)
     {
         // Given / When
         var parsed = EnumCode.TryParse<ReportStatus>(code, out var status);
@@ -126,7 +126,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_consent_was_never_answered_When_publication_is_attempted_Then_the_refusal_says_so()
+    public void GivenConsentWasNeverAnswered_WhenPublicationIsAttempted_ThenRefusalSaysSo()
     {
         // Given — the strongest form of the gate: nobody said no, and nobody said yes
         var report = new Report(Locale.EnCa, Now);
@@ -141,7 +141,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_consent_role_on_a_text_question_When_the_answer_is_no_Then_consent_is_refused()
+    public void GivenConsentRoleOnTextQuestion_WhenAnswerIsNo_ThenConsentIsRefused()
     {
         // Given
         var question = Question.Create(
@@ -158,7 +158,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_consent_and_approval_but_no_summary_When_publication_is_attempted_Then_it_is_blocked()
+    public void GivenConsentAndApprovalButNoSummary_WhenPublicationIsAttempted_ThenBlocked()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -175,7 +175,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_question_created_in_a_section_When_it_is_read_Then_the_section_key_is_normalized()
+    public void GivenQuestionCreatedInSection_WhenRead_ThenSectionKeyIsNormalized()
     {
         // Given / When
         var question = Question.Create(
@@ -187,7 +187,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_an_ordinary_question_When_its_type_changes_Then_it_is_allowed()
+    public void GivenOrdinaryQuestion_WhenTypeChanges_ThenAllowed()
     {
         // Given — only the consent question has a locked type
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
@@ -204,7 +204,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_the_consent_question_When_it_is_reworded_at_the_same_type_Then_it_is_allowed()
+    public void GivenConsentQuestion_WhenRewordedAtSameType_ThenAllowed()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -223,7 +223,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_consent_role_on_a_text_question_When_the_answer_is_neither_yes_nor_no_Then_it_is_refused()
+    public void GivenConsentRoleOnTextQuestion_WhenAnswerIsNeitherYesNorNo_ThenRefused()
     {
         // Given
         var question = Question.Create(
@@ -241,7 +241,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_consent_and_an_approved_summary_but_no_officer_approval_When_publishability_is_checked_Then_it_is_false()
+    public void GivenConsentAndApprovedSummaryButNoOfficerApproval_WhenPublishabilityIsChecked_ThenFalse()
     {
         // Given — the human gate is separate from the consent gate
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -261,7 +261,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_published_report_When_publishability_is_rechecked_Then_it_is_still_publishable()
+    public void GivenPublishedReport_WhenPublishabilityIsRechecked_ThenStillPublishable()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -282,7 +282,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_question_in_a_section_When_it_is_moved_out_of_it_Then_it_has_no_section()
+    public void GivenQuestionInSection_WhenMovedOutOf_ThenHasNoSection()
     {
         // Given
         var question = Question.Create(
@@ -296,7 +296,7 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void Given_a_domain_rule_violation_When_it_carries_a_cause_Then_the_cause_is_kept()
+    public void GivenDomainRuleViolation_WhenCarriesCause_ThenCauseIsKept()
     {
         // Given
         var cause = new InvalidOperationException("the underlying problem");

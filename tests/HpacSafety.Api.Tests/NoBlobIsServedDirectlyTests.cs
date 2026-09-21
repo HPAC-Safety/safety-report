@@ -45,7 +45,7 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
     private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
     [Fact]
-    public void Given_the_api_route_table_When_it_is_read_Then_no_route_serves_a_blob_directly()
+    public void GivenApiRouteTable_WhenRead_ThenNoRouteServesBlobDirectly()
     {
         // Given
         using var scope = _factory.Services.CreateScope();
@@ -64,7 +64,7 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public void Given_the_api_route_table_When_it_is_read_Then_it_is_not_empty()
+    public void GivenApiRouteTable_WhenRead_ThenNotEmpty()
     {
         // Given
         using var scope = _factory.Services.CreateScope();

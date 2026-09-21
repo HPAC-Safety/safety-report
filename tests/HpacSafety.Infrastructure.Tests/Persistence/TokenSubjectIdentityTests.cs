@@ -22,7 +22,7 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 {
     [Fact]
-    public async Task Given_a_migrated_database_When_the_tables_are_listed_Then_admin_users_is_absent()
+    public async Task GivenMigratedDatabase_WhenTablesAreListed_ThenAdminUsersIsAbsent()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -38,7 +38,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_the_identity_columns_are_read_Then_neither_carries_a_foreign_key()
+    public async Task GivenMigratedDatabase_WhenIdentityColumnsAreRead_ThenNeitherCarriesForeignKey()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -61,7 +61,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_string_with_a_lookup_index()
+    public async Task GivenMigratedDatabase_WhenActorColumnIsRead_ThenWidenedStringWithLookupIndex()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -81,7 +81,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_audit_row_written_with_a_token_subject_When_it_is_read_back_Then_the_subject_survives_the_round_trip()
+    public async Task GivenAuditRowWrittenWithTokenSubject_WhenReadBack_ThenSubjectSurvivesRoundTrip()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -105,7 +105,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_approved_summary_When_the_approver_is_read_back_Then_it_is_an_opaque_string()
+    public async Task GivenApprovedSummary_WhenApproverIsReadBack_ThenOpaqueString()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -135,7 +135,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_summary_approval_When_only_one_half_of_the_pair_is_set_Then_the_database_refuses_it()
+    public async Task GivenSummaryApproval_WhenOnlyOneHalfOfPairIsSet_ThenDatabaseRefuses()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

@@ -13,7 +13,7 @@ public class QuestionTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_the_consent_question_When_deletion_is_attempted_Then_it_is_refused()
+    public void GivenConsentQuestion_WhenDeletionIsAttempted_ThenRefused()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
@@ -27,7 +27,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_the_consent_question_When_deactivation_is_attempted_Then_it_is_refused()
+    public void GivenConsentQuestion_WhenDeactivationIsAttempted_ThenRefused()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
@@ -40,7 +40,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_an_ordinary_question_When_it_is_deleted_Then_it_is_retired_rather_than_refused()
+    public void GivenOrdinaryQuestion_WhenDeleted_ThenRetiredRatherThanRefused()
     {
         // Given — everything except consent is ordinary data
         var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
@@ -54,7 +54,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_question_missing_French_wording_When_it_is_created_Then_it_is_refused()
+    public void GivenQuestionMissingFrenchWording_WhenCreated_ThenRefused()
     {
         // Given / When — a revision is born complete in both official languages
         var creating = () => Question.Create("where", QuestionType.ShortText, "Where did it happen?", "   ", Now);
@@ -64,7 +64,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_complete_bilingual_question_When_it_is_activated_Then_it_is_allowed()
+    public void GivenCompleteBilingualQuestion_WhenActivated_ThenAllowed()
     {
         // Given
         var question = Question.Create("where", QuestionType.ShortText, "Where did it happen?", "Où cela s'est-il produit?", Now);
@@ -77,7 +77,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_question_is_reworded_When_a_new_revision_is_created_Then_the_previous_wording_survives()
+    public void GivenQuestionIsReworded_WhenNewRevisionIsCreated_ThenPreviousWordingSurvives()
     {
         // Given
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
@@ -96,7 +96,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_the_consent_question_When_a_type_change_is_attempted_Then_it_is_refused()
+    public void GivenConsentQuestion_WhenTypeChangeIsAttempted_ThenRefused()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -111,7 +111,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_question_is_reordered_When_the_move_is_saved_Then_a_new_revision_is_created()
+    public void GivenQuestionIsReordered_WhenMoveIsSaved_ThenNewRevisionIsCreated()
     {
         // Given — order is a revision field: moving a question is a new,
         // complete revision, not an in-place edit of the old one.
@@ -126,7 +126,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_an_option_When_it_is_added_Then_its_code_is_invariant_and_its_wording_is_bilingual()
+    public void GivenOption_WhenAdded_ThenCodeIsInvariantAndWordingIsBilingual()
     {
         // Given / When — a revision is born with its complete option set
         var question = Question.Create(
@@ -141,7 +141,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_free_text_question_When_an_option_is_supplied_Then_creation_is_refused()
+    public void GivenFreeTextQuestion_WhenOptionIsSupplied_ThenCreationIsRefused()
     {
         // Given / When
         var creating = () => Question.Create(
@@ -153,7 +153,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_yes_no_question_When_options_are_supplied_Then_creation_is_refused()
+    public void GivenYesNoQuestion_WhenOptionsAreSupplied_ThenCreationIsRefused()
     {
         // Given / When — yes or no, no default and no third state
         var creating = () => Question.Create(
@@ -165,7 +165,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_yes_no_question_When_answers_are_checked_Then_only_yes_and_no_are_accepted()
+    public void GivenYesNoQuestion_WhenAnswersAreChecked_ThenOnlyYesAndNoAreAccepted()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -177,7 +177,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_the_consent_question_When_it_is_created_Then_it_is_required()
+    public void GivenConsentQuestion_WhenCreated_ThenRequired()
     {
         // Given / When
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -189,7 +189,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_an_ordinary_question_When_created_Then_it_is_never_required()
+    public void GivenOrdinaryQuestion_WhenCreated_ThenNeverRequired()
     {
         // Given / When — invariant #1: only consent_publish may be required.
         // There is no isRequired parameter to pass at all, ordinary or
@@ -202,7 +202,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_new_question_When_privacy_is_not_stated_Then_it_is_private()
+    public void GivenNewQuestion_WhenPrivacyIsNotStated_ThenPrivate()
     {
         // Given / When
         var question = Question.Create("anything", QuestionType.ShortText, "Anything", "N'importe quoi", Now);
@@ -212,7 +212,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_question_When_its_privacy_contract_is_inspected_Then_it_has_no_public_setter()
+    public void GivenQuestion_WhenPrivacyContractIsInspected_ThenHasNoPublicSetter()
     {
         // Given / When — privacy lives on the revision and is set once, at
         // that revision's construction (an init-only accessor). Changing it,
@@ -230,7 +230,7 @@ public class QuestionTests
     }
 
     [Fact]
-    public void Given_a_question_When_its_privacy_is_changed_Then_a_new_revision_carries_the_change()
+    public void GivenQuestion_WhenPrivacyIsChanged_ThenNewRevisionCarriesChange()
     {
         // Given
         var question = Question.Create("where", QuestionType.ShortText, "Where?", "Où ?", Now, isPrivate: true);

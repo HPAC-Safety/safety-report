@@ -12,7 +12,7 @@ namespace HpacSafety.Infrastructure.Tests.Seeding;
 public sealed class SeedIdsTests
 {
     [Fact]
-    public void Given_the_same_name_When_an_identifier_is_derived_twice_Then_it_is_the_same_identifier()
+    public void GivenSameName_WhenIdentifierIsDerivedTwice_ThenSameIdentifier()
     {
         // Given / When
         var first = SeedIds.For("question:province");
@@ -23,7 +23,7 @@ public sealed class SeedIdsTests
     }
 
     [Fact]
-    public void Given_a_known_name_When_its_identifier_is_derived_Then_it_is_the_value_already_written_to_every_database()
+    public void GivenKnownName_WhenIdentifierIsDerived_ThenValueAlreadyWrittenToEveryDatabase()
     {
         // Given — pinned. Changing the derivation re-identifies every seeded
         // row, which is a data migration rather than an edit.
@@ -37,14 +37,14 @@ public sealed class SeedIdsTests
     }
 
     [Fact]
-    public void Given_two_different_names_When_identifiers_are_derived_Then_they_differ()
+    public void GivenTwoDifferentNames_WhenIdentifiersAreDerived_ThenTheyDiffer()
     {
         // Given / When / Then
         SeedIds.For("question:province").ShouldNotBe(SeedIds.For("question:pilot_injury"));
     }
 
     [Fact]
-    public void Given_a_derived_identifier_When_it_is_read_Then_it_is_an_ordinary_eleven_character_identifier()
+    public void GivenDerivedIdentifier_WhenRead_ThenOrdinaryElevenCharacterIdentifier()
     {
         // Given / When — a seeded row must be indistinguishable from a minted
         // one; deriving it changes where the entropy came from, nothing else.
@@ -56,7 +56,7 @@ public sealed class SeedIdsTests
     }
 
     [Fact]
-    public void Given_every_seeded_row_When_their_identifiers_are_collected_Then_none_of_them_collide()
+    public void GivenEverySeededRow_WhenTheirIdentifiersAreCollected_ThenNoneOfThemCollide()
     {
         // Given
         var ids = new List<TinyId>();
@@ -78,7 +78,7 @@ public sealed class SeedIdsTests
     }
 
     [Fact]
-    public void Given_no_name_When_an_identifier_is_asked_for_Then_it_refuses()
+    public void GivenNoName_WhenIdentifierIsAskedFor_ThenRefuses()
     {
         // Given / When / Then
         Should.Throw<ArgumentException>(() => SeedIds.For("  "));

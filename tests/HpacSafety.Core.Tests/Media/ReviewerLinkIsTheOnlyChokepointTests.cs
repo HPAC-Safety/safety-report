@@ -23,7 +23,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 {
     [Theory]
     [InlineData("CreateReadUrlAsync", "ReviewerMediaLink.cs")]
-    public void Given_the_shipping_source_When_a_presigning_call_is_made_Then_only_its_chokepoint_makes_it(
+    public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
         string method,
         string chokepointFile)
     {
@@ -51,7 +51,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
     }
 
     [Fact]
-    public void Given_the_chokepoint_itself_When_the_source_is_scanned_Then_the_scan_is_finding_real_call_sites()
+    public void GivenChokepointItself_WhenSourceIsScanned_ThenScanIsFindingRealCallSites()
     {
         // Given
         var reviewerLink = Path.Combine(RepositoryRoot(), "src", "HpacSafety.Core", "Features", "Reporting", "ReviewerMediaLink.cs");

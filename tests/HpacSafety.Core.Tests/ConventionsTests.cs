@@ -10,7 +10,7 @@ namespace HpacSafety.Core.Tests;
 public class ConventionsTests
 {
     [Fact]
-    public void Given_the_solution_scaffold_When_the_test_suite_runs_Then_it_executes()
+    public void GivenSolutionScaffold_WhenTestSuiteRuns_ThenExecutes()
     {
         // Given
         var scaffolded = true;

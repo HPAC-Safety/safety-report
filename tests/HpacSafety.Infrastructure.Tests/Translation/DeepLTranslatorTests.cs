@@ -20,7 +20,7 @@ public class DeepLTranslatorTests
     private const string Key = "test-key:fx";
 
     [Fact]
-    public async Task Given_no_credential_When_a_translation_is_requested_Then_it_reports_that_it_is_unconfigured()
+    public async Task GivenNoCredential_WhenTranslationIsRequested_ThenReportsUnconfigured()
     {
         // Given
         var (translator, _) = Translator(apiKey: null);
@@ -33,7 +33,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_one_language_When_it_is_translated_into_itself_Then_it_is_refused()
+    public async Task GivenOneLanguage_WhenTranslatedIntoItself_ThenRefused()
     {
         // Given
         var (translator, _) = Translator();
@@ -44,7 +44,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_nothing_to_translate_When_it_is_requested_Then_no_call_is_made()
+    public async Task GivenNothingToTranslate_WhenRequested_ThenNoCallIsMade()
     {
         // Given
         var (translator, transport) = Translator();
@@ -58,7 +58,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_english_When_it_is_translated_Then_the_request_asks_deepl_for_canadian_french()
+    public async Task GivenEnglish_WhenTranslated_ThenRequestAsksDeeplForCanadianFrench()
     {
         // Given
         var (translator, transport) = Translator(Responds("Avez-vous été blessé ?"));
@@ -78,7 +78,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_french_When_it_is_translated_back_Then_it_is_asked_for_as_plain_french()
+    public async Task GivenFrench_WhenTranslatedBack_ThenAskedForAsPlainFrench()
     {
         // Given — FR-CA is a target-only variant in DeepL and cannot be a source
         var (translator, transport) = Translator(Responds("Were you injured?"));
@@ -94,7 +94,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_text_with_a_placeholder_When_it_is_translated_Then_the_placeholder_is_protected_and_restored()
+    public async Task GivenTextWithPlaceholder_WhenTranslated_ThenPlaceholderIsProtectedAndRestored()
     {
         // Given — the response echoes back what a provider would return with
         // the ignored tag intact
@@ -114,7 +114,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_text_with_markup_characters_When_it_is_translated_Then_they_survive_the_round_trip()
+    public async Task GivenTextWithMarkupCharacters_WhenTranslated_ThenTheySurviveRoundTrip()
     {
         // Given — tag_handling: xml means a literal '<' would be read as markup
         var (translator, transport) = Translator(Responds("Altitude &lt; 500 pieds &amp; en descente"));
@@ -130,7 +130,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_several_strings_When_they_are_translated_Then_they_come_back_in_order()
+    public async Task GivenSeveralStrings_WhenTheyAreTranslated_ThenTheyComeBackInOrder()
     {
         // Given
         var (translator, _) = Translator(Responds("Un", "Deux", "Trois"));
@@ -144,7 +144,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_provider_that_returns_the_wrong_number_of_results_When_it_answers_Then_it_is_refused()
+    public async Task GivenProviderReturnsWrongNumberOfResults_WhenAnswers_ThenRefused()
     {
         // Given — position is the only thing mapping a translation to its field
         var (translator, _) = Translator(Responds("Un"));
@@ -155,7 +155,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_provider_that_refuses_When_it_answers_Then_the_failure_carries_no_provider_body()
+    public async Task GivenProviderRefuses_WhenAnswers_ThenFailureCarriesNoProviderBody()
     {
         // Given — a DeepL error body can echo the submitted text back
         var (translator, _) = Translator(new StubTransport(
@@ -175,7 +175,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_provider_that_cannot_be_reached_When_it_is_called_Then_the_failure_is_reported_safely()
+    public async Task GivenProviderCannotBeReached_WhenCalled_ThenFailureIsReportedSafely()
     {
         // Given
         var (translator, _) = Translator(new StubTransport(new HttpRequestException("no route to host")));
@@ -190,7 +190,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_provider_that_answers_with_no_translations_at_all_When_it_is_parsed_Then_it_is_refused()
+    public async Task GivenProviderAnswersWithNoTranslationsAtAll_WhenParsed_ThenRefused()
     {
         // Given — a 200 with a body that carries no translations array
         var (translator, _) = Translator(new StubTransport(
@@ -205,7 +205,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_provider_that_answers_with_nonsense_When_it_is_parsed_Then_it_is_refused()
+    public async Task GivenProviderAnswersWithNonsense_WhenParsed_ThenRefused()
     {
         // Given
         var (translator, _) = Translator(new StubTransport(
@@ -217,7 +217,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_free_tier_key_When_a_translation_is_requested_Then_the_free_host_is_used()
+    public async Task GivenFreeTierKey_WhenTranslationIsRequested_ThenFreeHostIsUsed()
     {
         // Given — DeepL marks free keys with ':fx' and serves the tiers from
         // different hosts; getting this wrong is a 403 that reads like a bad key
@@ -231,7 +231,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_paid_key_When_a_translation_is_requested_Then_the_paid_host_is_used()
+    public async Task GivenPaidKey_WhenTranslationIsRequested_ThenPaidHostIsUsed()
     {
         // Given
         var (translator, transport) = Translator(Responds("Un"), apiKey: "abc");
@@ -244,7 +244,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_configured_endpoint_When_a_translation_is_requested_Then_it_overrides_the_derived_host()
+    public async Task GivenConfiguredEndpoint_WhenTranslationIsRequested_ThenOverridesDerivedHost()
     {
         // Given
         var (translator, transport) = Translator(
@@ -258,7 +258,7 @@ public class DeepLTranslatorTests
     }
 
     [Fact]
-    public async Task Given_a_credential_When_a_translation_is_requested_Then_it_is_sent_as_a_deepl_auth_header()
+    public async Task GivenCredential_WhenTranslationIsRequested_ThenSentAsDeeplAuthHeader()
     {
         // Given
         var (translator, transport) = Translator(Responds("Un"));

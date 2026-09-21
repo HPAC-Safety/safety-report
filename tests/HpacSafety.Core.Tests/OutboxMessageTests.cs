@@ -10,7 +10,7 @@ public class OutboxMessageTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_a_failed_message_When_the_failure_is_recorded_Then_the_next_attempt_is_delayed()
+    public void GivenFailedMessage_WhenFailureIsRecorded_ThenNextAttemptIsDelayed()
     {
         // Given
         var message = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "{}", Now);
@@ -25,7 +25,7 @@ public class OutboxMessageTests
     }
 
     [Fact]
-    public void Given_repeated_failures_When_the_threshold_is_crossed_Then_the_message_is_set_aside()
+    public void GivenRepeatedFailures_WhenThresholdIsCrossed_ThenMessageIsSetAside()
     {
         // Given
         var message = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "{}", Now);
@@ -42,7 +42,7 @@ public class OutboxMessageTests
     }
 
     [Fact]
-    public void Given_a_message_When_it_is_processed_Then_the_last_error_is_cleared()
+    public void GivenMessage_WhenProcessed_ThenLastErrorIsCleared()
     {
         // Given
         var message = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "{}", Now);
@@ -57,7 +57,7 @@ public class OutboxMessageTests
     }
 
     [Fact]
-    public void Given_successive_attempts_When_the_backoff_is_calculated_Then_it_grows()
+    public void GivenSuccessiveAttempts_WhenBackoffIsCalculated_ThenGrows()
     {
         // Given / When
         var first = OutboxMessage.BackoffFor(1);

@@ -18,7 +18,7 @@ namespace HpacSafety.Infrastructure.Tests.Media;
 public class ImagingCapabilitiesTests
 {
     [Fact]
-    public void Given_this_runtime_When_heic_support_is_probed_Then_libheif_can_decode_it()
+    public void GivenThisRuntime_WhenHeicSupportIsProbed_ThenLibheifCanDecode()
     {
         // Given / When
         var canDecode = ImagingCapabilities.CanDecode(MediaType.Heic);
@@ -34,7 +34,7 @@ public class ImagingCapabilitiesTests
     [InlineData("image/jpeg")]
     [InlineData("image/png")]
     [InlineData("image/webp")]
-    public void Given_this_runtime_When_an_accepted_image_format_is_probed_Then_it_can_be_decoded(string contentType)
+    public void GivenThisRuntime_WhenAcceptedImageFormatIsProbed_ThenCanBeDecoded(string contentType)
     {
         // Given
         var type = MediaType.Parse(contentType);
@@ -47,14 +47,14 @@ public class ImagingCapabilitiesTests
     }
 
     [Fact]
-    public void Given_every_type_this_deployment_accepts_When_the_startup_check_runs_Then_it_passes()
+    public void GivenEveryTypeThisDeploymentAccepts_WhenStartupCheckRuns_ThenPasses()
     {
         // Given / When / Then
         Should.NotThrow(() => ImagingCapabilities.EnsureCanDecode(MediaType.All));
     }
 
     [Fact]
-    public void Given_a_video_When_it_is_probed_Then_no_imaging_codec_is_claimed_for_it()
+    public void GivenVideo_WhenProbed_ThenNoImagingCodecIsClaimedFor()
     {
         // Given / When
         var canDecode = ImagingCapabilities.CanDecode(MediaType.Mp4);
@@ -67,7 +67,7 @@ public class ImagingCapabilitiesTests
     }
 
     [Fact]
-    public void Given_the_stripper_When_it_is_constructed_Then_it_verifies_the_codecs_it_will_need()
+    public void GivenStripper_WhenConstructed_ThenVerifiesCodecsWillNeed()
     {
         // Given / When / Then
         // Construction is the startup check: a missing codec fails the process

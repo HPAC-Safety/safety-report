@@ -27,7 +27,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
     [Fact]
-    public async Task Given_no_member_session_When_translation_is_requested_Then_the_api_refuses()
+    public async Task GivenNoMemberSession_WhenTranslationIsRequested_ThenApiRefuses()
     {
         // Given
         await using var factory = WithTranslator(new FakeTranslator());
@@ -41,7 +41,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_configured_translator_When_availability_is_asked_Then_it_reports_available()
+    public async Task GivenConfiguredTranslator_WhenAvailabilityIsAsked_ThenReportsAvailable()
     {
         // Given
         await using var factory = WithTranslator(new FakeTranslator());
@@ -56,7 +56,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_the_development_stand_in_When_availability_is_asked_Then_it_says_it_is_a_stand_in()
+    public async Task GivenDevelopmentStandIn_WhenAvailabilityIsAsked_ThenSaysStandIn()
     {
         // Given — a developer's server with no credential
         await using var factory = WithTranslator(new EchoTranslator());
@@ -72,7 +72,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_the_development_stand_in_When_text_is_translated_Then_it_comes_back_unchanged()
+    public async Task GivenDevelopmentStandIn_WhenTextIsTranslated_ThenComesBackUnchanged()
     {
         // Given
         await using var factory = WithTranslator(new EchoTranslator());
@@ -90,7 +90,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_no_configured_translator_When_availability_is_asked_Then_it_reports_unavailable()
+    public async Task GivenNoConfiguredTranslator_WhenAvailabilityIsAsked_ThenReportsUnavailable()
     {
         // Given — the ordinary state of a checkout with no credential
         await using var factory = WithTranslator(new FakeTranslator { Configured = false });
@@ -104,7 +104,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_english_text_When_it_is_translated_Then_the_translations_come_back_in_order()
+    public async Task GivenEnglishText_WhenTranslated_ThenTranslationsComeBackInOrder()
     {
         // Given
         await using var factory = WithTranslator(new FakeTranslator());
@@ -123,7 +123,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_blank_fields_among_the_text_When_it_is_translated_Then_they_come_back_blank_in_place()
+    public async Task GivenBlankFieldsAmongText_WhenTranslated_ThenTheyComeBackBlankInPlace()
     {
         // Given — an administrator may leave the help text empty
         var translator = new FakeTranslator();
@@ -144,7 +144,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_nothing_but_blanks_When_translation_is_requested_Then_no_provider_call_is_made()
+    public async Task GivenNothingButBlanks_WhenTranslationIsRequested_ThenNoProviderCallIsMade()
     {
         // Given
         var translator = new FakeTranslator();
@@ -160,7 +160,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_french_text_When_it_is_translated_back_Then_the_direction_is_honoured()
+    public async Task GivenFrenchText_WhenTranslatedBack_ThenDirectionIsHonoured()
     {
         // Given
         var translator = new FakeTranslator();
@@ -181,7 +181,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     [InlineData("en-CA", "en-CA")]
     [InlineData("de-DE", "fr-CA")]
     [InlineData("en-CA", "")]
-    public async Task Given_an_unusable_language_pair_When_translation_is_requested_Then_the_api_rejects_it(
+    public async Task GivenUnusableLanguagePair_WhenTranslationIsRequested_ThenApiRejects(
         string from, string to)
     {
         // Given
@@ -197,7 +197,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_translator_that_is_unavailable_When_translation_is_requested_Then_the_api_says_so_safely()
+    public async Task GivenTranslatorIsUnavailable_WhenTranslationIsRequested_ThenApiSaysSoSafely()
     {
         // Given
         await using var factory = WithTranslator(new FakeTranslator
@@ -221,7 +221,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_request_with_no_texts_field_at_all_When_it_arrives_Then_it_is_answered_with_nothing()
+    public async Task GivenRequestWithNoTextsFieldAtAll_WhenArrives_ThenAnsweredWithNothing()
     {
         // Given
         var translator = new FakeTranslator();

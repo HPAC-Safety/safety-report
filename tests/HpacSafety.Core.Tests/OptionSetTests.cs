@@ -22,7 +22,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_new_set_When_it_is_created_Then_it_has_a_tiny_id_and_a_normalized_key()
+    public void GivenNewSet_WhenCreated_ThenHasTinyIdAndNormalizedKey()
     {
         // Given / When
         var set = OptionSet.Create("Aerodrome List", "Aerodromes", "Aérodromes", At);
@@ -34,7 +34,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_blank_name_When_a_set_is_created_Then_it_is_rejected()
+    public void GivenBlankName_WhenSetIsCreated_ThenRejected()
     {
         // Given / When / Then — a set is named in both official languages or not at all
         Should.Throw<DomainRuleViolationException>(() => OptionSet.Create("aerodromes", " ", "Aérodromes", At));
@@ -42,7 +42,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_set_When_items_are_added_Then_they_keep_the_order_they_were_added_in()
+    public void GivenSet_WhenItemsAreAdded_ThenTheyKeepOrderTheyWereAddedIn()
     {
         // Given / When
         var set = Aerodromes();
@@ -53,7 +53,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_code_already_in_the_set_When_it_is_added_again_Then_it_is_rejected()
+    public void GivenCodeAlreadyInSet_WhenAddedAgain_ThenRejected()
     {
         // Given
         var set = Aerodromes();
@@ -63,7 +63,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_removed_code_When_it_is_added_again_Then_the_original_item_is_revived()
+    public void GivenRemovedCode_WhenAddedAgain_ThenOriginalItemIsRevived()
     {
         // Given
         var set = Aerodromes();
@@ -80,7 +80,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_set_When_it_is_renamed_Then_both_languages_change_and_a_blank_is_refused()
+    public void GivenSet_WhenRenamed_ThenBothLanguagesChangeAndBlankIsRefused()
     {
         // Given
         var set = Aerodromes();
@@ -95,7 +95,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_live_item_When_it_is_relabelled_Then_its_code_is_unchanged()
+    public void GivenLiveItem_WhenRelabelled_ThenCodeIsUnchanged()
     {
         // Given
         var set = Aerodromes();
@@ -110,7 +110,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_code_that_is_not_live_When_it_is_relabelled_Then_it_is_rejected()
+    public void GivenCodeIsNotLive_WhenRelabelled_ThenRejected()
     {
         // Given
         var set = Aerodromes();
@@ -122,7 +122,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_set_When_it_is_arranged_Then_the_items_take_the_given_order()
+    public void GivenSet_WhenArranged_ThenItemsTakeGivenOrder()
     {
         // Given
         var set = Aerodromes();
@@ -136,7 +136,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_an_arrangement_that_is_not_the_whole_list_When_it_is_applied_Then_it_is_rejected()
+    public void GivenArrangementIsNotWholeList_WhenApplied_ThenRejected()
     {
         // Given
         var set = Aerodromes();
@@ -148,7 +148,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_set_When_an_item_is_removed_Then_it_leaves_the_live_list_without_being_erased()
+    public void GivenSet_WhenItemIsRemoved_ThenLeavesLiveListWithoutBeingErased()
     {
         // Given
         var set = Aerodromes();
@@ -162,7 +162,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_set_When_it_is_deleted_Then_it_and_its_items_are_retired_and_it_refuses_further_edits()
+    public void GivenSet_WhenDeleted_ThenAndItemsAreRetiredAndRefusesFurtherEdits()
     {
         // Given
         var set = Aerodromes();
@@ -180,7 +180,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_deleted_set_When_it_is_deleted_again_Then_the_first_timestamp_stands()
+    public void GivenDeletedSet_WhenDeletedAgain_ThenFirstTimestampStands()
     {
         // Given
         var set = Aerodromes();
@@ -194,7 +194,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_blank_item_label_When_it_is_added_Then_it_is_rejected()
+    public void GivenBlankItemLabel_WhenAdded_ThenRejected()
     {
         // Given
         var set = Aerodromes();
@@ -205,7 +205,7 @@ public class OptionSetTests
     }
 
     [Fact]
-    public void Given_a_set_When_it_is_read_as_revision_options_Then_each_carries_its_source_item()
+    public void GivenSet_WhenReadAsRevisionOptions_ThenEachCarriesSourceItem()
     {
         // Given
         var set = Aerodromes();

@@ -41,7 +41,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_member_session_When_a_question_is_created_Then_it_is_listed_with_its_first_revision()
+    public async Task GivenMemberSession_WhenQuestionIsCreated_ThenListedWithFirstRevision()
     {
         // Given
         using var client = await SignedInAsync();
@@ -60,7 +60,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_an_existing_question_When_it_is_edited_Then_a_new_revision_is_written_rather_than_a_patch()
+    public async Task GivenExistingQuestion_WhenEdited_ThenNewRevisionIsWrittenRatherThanPatch()
     {
         // Given
         using var client = await SignedInAsync();
@@ -83,7 +83,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_non_boolean_question_When_another_depends_on_it_Then_the_api_rejects_the_dependency()
+    public async Task GivenNonBooleanQuestion_WhenAnotherDependsOn_ThenApiRejectsDependency()
     {
         // Given
         using var client = await SignedInAsync();
@@ -105,7 +105,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_boolean_question_When_another_depends_on_it_Then_the_dependency_is_stored()
+    public async Task GivenBooleanQuestion_WhenAnotherDependsOn_ThenDependencyIsStored()
     {
         // Given
         using var client = await SignedInAsync();
@@ -121,7 +121,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_shared_choice_list_When_a_question_uses_it_Then_the_revision_snapshots_its_options()
+    public async Task GivenSharedChoiceList_WhenQuestionUses_ThenRevisionSnapshotsOptions()
     {
         // Given
         using var client = await SignedInAsync();
@@ -142,7 +142,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_question_built_from_a_choice_list_When_the_list_changes_Then_the_saved_revision_is_untouched()
+    public async Task GivenQuestionBuiltFromChoiceList_WhenListChanges_ThenSavedRevisionIsUntouched()
     {
         // Given
         using var client = await SignedInAsync();
@@ -175,7 +175,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_several_questions_When_they_are_rearranged_Then_each_moved_one_gains_a_revision()
+    public async Task GivenSeveralQuestions_WhenTheyAreRearranged_ThenEachMovedOneGainsRevision()
     {
         // Given
         using var client = await SignedInAsync();
@@ -214,7 +214,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_question_When_it_is_deleted_Then_it_disappears_from_the_list_without_being_erased()
+    public async Task GivenQuestion_WhenDeleted_ThenDisappearsFromListWithoutBeingErased()
     {
         // Given
         using var client = await SignedInAsync();
@@ -232,7 +232,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_an_unknown_type_When_a_question_is_created_Then_the_api_rejects_it()
+    public async Task GivenUnknownType_WhenQuestionIsCreated_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -245,7 +245,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_no_member_session_When_choice_lists_are_listed_Then_the_api_refuses()
+    public async Task GivenNoMemberSession_WhenChoiceListsAreListed_ThenApiRefuses()
     {
         // Given
         using var client = _factory.CreateClient();
@@ -258,7 +258,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_no_key_When_a_question_is_created_Then_the_api_rejects_it()
+    public async Task GivenNoKey_WhenQuestionIsCreated_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -271,7 +271,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_key_already_in_use_When_a_question_is_created_Then_the_api_rejects_it()
+    public async Task GivenKeyAlreadyInUse_WhenQuestionIsCreated_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -286,7 +286,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_question_that_names_itself_When_it_is_edited_Then_the_api_rejects_it()
+    public async Task GivenQuestionNamesItself_WhenEdited_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -303,7 +303,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_choice_list_that_does_not_exist_When_a_question_names_it_Then_the_api_rejects_it()
+    public async Task GivenChoiceListDoesNotExist_WhenQuestionNames_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -319,7 +319,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     [Theory]
     [InlineData("not-an-id")]
     [InlineData("AAAAAAAAAAA")]
-    public async Task Given_an_id_that_names_no_question_When_it_is_edited_Then_the_api_returns_not_found(string id)
+    public async Task GivenIdNamesNoQuestion_WhenEdited_ThenApiReturnsNotFound(string id)
     {
         // Given
         using var client = await SignedInAsync();
@@ -335,7 +335,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     [Theory]
     [InlineData("not-an-id")]
     [InlineData("AAAAAAAAAAA")]
-    public async Task Given_an_id_that_names_no_question_When_it_is_deleted_Then_the_api_returns_not_found(string id)
+    public async Task GivenIdNamesNoQuestion_WhenDeleted_ThenApiReturnsNotFound(string id)
     {
         // Given
         using var client = await SignedInAsync();
@@ -348,7 +348,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_an_unknown_type_When_a_question_is_edited_Then_the_api_rejects_it()
+    public async Task GivenUnknownType_WhenQuestionIsEdited_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -365,7 +365,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_publication_consent_When_it_is_deleted_Then_the_api_refuses()
+    public async Task GivenPublicationConsent_WhenDeleted_ThenApiRefuses()
     {
         // Given — the seeded system question, which nothing may remove
         using var client = await SignedInAsync();
@@ -386,7 +386,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_an_arrangement_naming_an_unknown_question_When_it_is_applied_Then_the_api_rejects_it()
+    public async Task GivenArrangementNamingUnknownQuestion_WhenApplied_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -400,7 +400,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_an_arrangement_that_omits_a_question_When_it_is_applied_Then_the_api_rejects_it()
+    public async Task GivenArrangementOmitsQuestion_WhenApplied_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -416,7 +416,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_choice_list_When_it_is_deleted_Then_it_disappears_from_the_list()
+    public async Task GivenChoiceList_WhenDeleted_ThenDisappearsFromList()
     {
         // Given
         using var client = await SignedInAsync();
@@ -434,7 +434,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_choice_list_key_already_in_use_When_another_is_created_Then_the_api_rejects_it()
+    public async Task GivenChoiceListKeyAlreadyInUse_WhenAnotherIsCreated_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -450,7 +450,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_no_key_When_a_choice_list_is_created_Then_the_api_rejects_it()
+    public async Task GivenNoKey_WhenChoiceListIsCreated_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -464,7 +464,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_repeated_code_When_a_choice_list_is_created_Then_the_api_rejects_it()
+    public async Task GivenRepeatedCode_WhenChoiceListIsCreated_ThenApiRejects()
     {
         // Given
         using var client = await SignedInAsync();
@@ -485,7 +485,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     [Theory]
     [InlineData("not-an-id")]
     [InlineData("AAAAAAAAAAA")]
-    public async Task Given_an_id_that_names_no_choice_list_When_it_is_replaced_Then_the_api_returns_not_found(string id)
+    public async Task GivenIdNamesNoChoiceList_WhenReplaced_ThenApiReturnsNotFound(string id)
     {
         // Given
         using var client = await SignedInAsync();
@@ -502,7 +502,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     [Theory]
     [InlineData("not-an-id")]
     [InlineData("AAAAAAAAAAA")]
-    public async Task Given_an_id_that_names_no_choice_list_When_it_is_deleted_Then_the_api_returns_not_found(string id)
+    public async Task GivenIdNamesNoChoiceList_WhenDeleted_ThenApiReturnsNotFound(string id)
     {
         // Given
         using var client = await SignedInAsync();
@@ -515,7 +515,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_choice_list_When_an_item_is_added_and_another_removed_Then_the_list_matches_what_was_sent()
+    public async Task GivenChoiceList_WhenItemIsAddedAndAnotherRemoved_ThenListMatchesWhatWasSent()
     {
         // Given
         using var client = await SignedInAsync();
@@ -543,7 +543,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_type_ahead_backed_by_a_list_When_the_list_grows_Then_the_question_offers_the_new_choice()
+    public async Task GivenTypeAheadBackedByList_WhenListGrows_ThenQuestionOffersNewChoice()
     {
         // Given — a type-ahead renders the live list, so a site a reporter
         // added shows up without anyone republishing the question (ADR-0063)
@@ -586,7 +586,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_pick_one_backed_by_a_list_When_the_list_grows_Then_the_question_keeps_its_snapshot()
+    public async Task GivenPickOneBackedByList_WhenListGrows_ThenQuestionKeepsSnapshot()
     {
         // Given — a closed, curated set still renders exactly what it recorded
         using var client = await SignedInAsync();
@@ -625,7 +625,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_a_choice_list_When_it_is_listed_Then_each_choice_says_whether_a_reporter_added_it()
+    public async Task GivenChoiceList_WhenListed_ThenEachChoiceSaysWhetherReporterAdded()
     {
         // Given
         using var client = await SignedInAsync();

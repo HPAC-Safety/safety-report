@@ -9,7 +9,7 @@ public class VideoContainerSnifferTests
     private readonly VideoContainerSniffer _sniffer = new();
 
     [Fact]
-    public async Task Given_an_mp4_When_it_is_sniffed_Then_it_is_reported_as_mp4()
+    public async Task GivenMp4_WhenSniffed_ThenReportedAsMp4()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.Mp4());
@@ -22,7 +22,7 @@ public class VideoContainerSnifferTests
     }
 
     [Fact]
-    public async Task Given_a_quicktime_file_When_it_is_sniffed_Then_it_is_reported_as_quicktime()
+    public async Task GivenQuicktimeFile_WhenSniffed_ThenReportedAsQuicktime()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.QuickTime());
@@ -35,7 +35,7 @@ public class VideoContainerSnifferTests
     }
 
     [Fact]
-    public async Task Given_a_heic_photo_When_it_is_sniffed_by_the_video_sniffer_Then_it_is_not_claimed_as_video()
+    public async Task GivenHeicPhoto_WhenSniffedByVideoSniffer_ThenNotClaimedAsVideo()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
@@ -52,7 +52,7 @@ public class VideoContainerSnifferTests
     [Theory]
     [InlineData("image/jpeg")]
     [InlineData("application/pdf")]
-    public async Task Given_something_that_is_not_a_container_When_it_is_sniffed_Then_it_is_unrecognised(string what)
+    public async Task GivenSomethingIsNotContainer_WhenSniffed_ThenUnrecognised(string what)
     {
         // Given
         var bytes = what == "image/jpeg" ? ExifFixtures.JpegWithGpsExif() : ExifFixtures.NotMedia();
@@ -66,7 +66,7 @@ public class VideoContainerSnifferTests
     }
 
     [Fact]
-    public async Task Given_a_truncated_header_When_it_is_sniffed_Then_it_is_unrecognised()
+    public async Task GivenTruncatedHeader_WhenSniffed_ThenUnrecognised()
     {
         // Given
         using var content = new MemoryStream([0, 0, 0, 0x18, (byte)'f', (byte)'t']);

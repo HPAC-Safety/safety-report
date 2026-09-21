@@ -14,7 +14,7 @@ public class ReviewerMediaLinkTests
     private const string ReportId = "dQw4w9WgXcQ";
 
     [Fact]
-    public async Task Given_a_stripped_derivative_When_a_view_url_is_requested_Then_one_is_issued()
+    public async Task GivenStrippedDerivative_WhenViewUrlIsRequested_ThenOneIsIssued()
     {
         // Given
         var derivative = BlobKey.For(ReportId, MediaCompartment.Stripped, "photo.jpg");
@@ -30,7 +30,7 @@ public class ReviewerMediaLinkTests
     [Theory]
     [InlineData(MediaCompartment.Original)]
     [InlineData(MediaCompartment.Quarantine)]
-    public async Task Given_a_key_outside_the_stripped_compartment_When_a_view_url_is_requested_Then_it_is_refused(MediaCompartment compartment)
+    public async Task GivenKeyOutsideStrippedCompartment_WhenViewUrlIsRequested_ThenRefused(MediaCompartment compartment)
     {
         // Given
         var key = BlobKey.For(ReportId, compartment, "photo.jpg");
@@ -41,7 +41,7 @@ public class ReviewerMediaLinkTests
     }
 
     [Fact]
-    public async Task Given_an_uploaded_video_When_a_view_url_is_requested_Then_it_is_refused()
+    public async Task GivenUploadedVideo_WhenViewUrlIsRequested_ThenRefused()
     {
         // Given
         // A video has no stripped compartment until #65, so its only key is the
@@ -56,7 +56,7 @@ public class ReviewerMediaLinkTests
     }
 
     [Fact]
-    public void Given_the_report_id_moved_to_the_front_of_the_key_When_viewability_is_checked_Then_it_still_reads_the_compartment()
+    public void GivenReportIdMovedToFrontOfKey_WhenViewabilityIsChecked_ThenStillReadsCompartment()
     {
         // Given
         // Re-verifying the check after the layout changed: the compartment is a

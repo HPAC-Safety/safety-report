@@ -20,7 +20,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     private static readonly DateTimeOffset At = new(2026, 8, 22, 17, 30, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Given_a_migrated_database_When_every_identifier_column_is_read_Then_all_of_them_are_the_same_eleven_character_type()
+    public async Task GivenMigratedDatabase_WhenEveryIdentifierColumnIsRead_ThenAllOfThemAreSameElevenCharacterType()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -51,7 +51,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_saved_report_When_its_identifier_is_read_out_of_postgres_Then_it_is_eleven_characters_of_the_alphabet()
+    public async Task GivenSavedReport_WhenIdentifierIsReadOutOfPostgres_ThenElevenCharactersOfAlphabet()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -74,7 +74,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_new_row_that_draws_an_identifier_already_in_use_When_it_is_saved_Then_it_is_given_a_fresh_one()
+    public async Task GivenNewRowDrawsIdentifierAlreadyInUse_WhenSaved_ThenGivenFreshOne()
     {
         // Given — a collision at sixty-six bits is vanishingly unlikely, which
         // is not the same as handled. Forced here, because waiting for one is
@@ -103,7 +103,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_collision_inside_a_transaction_When_it_is_retried_Then_the_rest_of_the_transaction_survives()
+    public async Task GivenCollisionInsideTransaction_WhenRetried_ThenRestOfTransactionSurvives()
     {
         // Given — the report endpoint writes a report and its outbox row in one
         // transaction. A retry must not cost ADR-0002's guarantee.
@@ -133,7 +133,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_outbox_message_naming_a_report_that_had_to_take_a_new_identifier_When_both_are_saved_Then_it_names_the_new_one()
+    public async Task GivenOutboxMessageNamingReportHadToTakeNewIdentifier_WhenBothAreSaved_ThenNamesNewOne()
     {
         // Given — the outbox names a report by value, with no foreign key, so
         // EF cannot fix it up. A retry that left it pointing at the identifier
@@ -162,7 +162,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_unique_constraint_the_domain_put_there_When_it_is_violated_Then_it_is_reported_rather_than_retried_away()
+    public async Task GivenUniqueConstraintDomainPut_WhenViolated_ThenReportedRatherThanRetriedAway()
     {
         // Given — one summary per report is a rule, not luck. The retry must
         // not paper over it by minting a new identifier and trying again

@@ -608,6 +608,36 @@ describe('placeholders in a translated string', () => {
 	})
 })
 
+describe('given an English value edited after it was translated', () => {
+	it('when the problems are classified then it is pending, because a workflow re-translates it (ADR-0057)', () => {
+		// Given — French is present and looks current, but the English moved
+		const source = { nav: { contact: 'Contact us' } }
+		const meta = { 'nav.contact': { source_hash: 'a-hash-of-the-old-english', provider: 'deepl:FR-CA:prefer_more' } }
+
+		// When
+		const result = verifyLocales({ english: source, french: { nav: { contact: 'Nous joindre' } }, meta, glossary: {} })
+
+		// Then — planTranslation queues exactly this, so it is not the author's to fix
+		assert.equal(result.ok, false)
+		assert.equal(result.pending.length, 1)
+		assert.match(result.pending[0], /nav\.contact.*changed in en-CA/)
+	})
+})
+
+describe('given an English value with no provenance at all', () => {
+	it('when the problems are classified then it is not pending, because no workflow invents a stamp', () => {
+		// Given
+		const source = { nav: { contact: 'Contact' } }
+
+		// When
+		const result = verifyLocales({ english: source, french: { nav: { contact: 'Nous joindre' } }, meta: {}, glossary: {} })
+
+		// Then
+		assert.equal(result.ok, false)
+		assert.deepEqual(result.pending, [])
+	})
+})
+
 describe('deciding what blocks a commit', () => {
 	const stub = "'nav.contact' in fr-CA.json is still a local # stub (ADR-0054). Merge to main so CI can translate it."
 	const missing = "fr-CA is missing 'nav.help'. Regenerate it — never hand-edit fr-CA.json."

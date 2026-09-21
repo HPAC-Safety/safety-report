@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using System.Text.Json;
 using Reqnroll;
 using Shouldly;
@@ -43,28 +44,55 @@ public sealed class WebLocalizationAndDesignSteps
 
     private string _localesDir = string.Empty;
 
-    [Given(@"a key exists in en-CA\.json but not in fr-CA\.json")]
-    public void GivenAKeyExistsInEnglishButNotFrench()
+    [Given(@"a key exists in en-CA\.json but not in fr-CA\.json, or in fr-CA\.json but not in en-CA\.json")]
+    public void GivenEachFileHasAKeyTheOtherLacks()
     {
         _localesDir = Path.Combine(Path.GetTempPath(), $"locales-stub-{Guid.NewGuid():N}");
         Directory.CreateDirectory(_localesDir);
+
+        // One gap in each direction, so the assertion below cannot pass by
+        // only ever filling French.
         File.WriteAllText(
             Path.Combine(_localesDir, "en-CA.json"),
             JsonSerializer.Serialize(new { nav = new { contact = "Contact" } }));
+        File.WriteAllText(
+            Path.Combine(_localesDir, "fr-CA.json"),
+            JsonSerializer.Serialize(new { nav = new { aide = "Aide" } }));
     }
 
-    [When(@"the local build runs")]
-    public void WhenTheLocalBuildRuns()
+    [When(@"the local build runs, or a commit is made that stages a locales\/ file")]
+    public void WhenTheStubberRuns()
     {
         RunNodeTool("tools/stub-missing-translations.mjs", expectSuccess: true, "--locales", _localesDir);
+
+        // The commit half of that sentence. Running git here would prove
+        // little that the hook's own three verified cases do not already
+        // cover; what matters to this scenario is that the hook reaches the
+        // same tool the local build does, before it checks parity.
+        //
+        // Comment lines are dropped first. Both tool names appear in the
+        // hook's header prose, so searching the whole file would find them
+        // there and pass whatever the code below it actually does.
+        var hookLines = File
+            .ReadAllLines(Path.Combine(RepositoryRoot(), ".githooks", "pre-commit"))
+            .Where(line => !line.TrimStart().StartsWith('#'))
+            .ToList();
+
+        var stubAt = hookLines.FindIndex(line => line.Contains("stub-missing-translations.mjs", StringComparison.Ordinal));
+        var checkAt = hookLines.FindIndex(line => line.Contains("check-locales.mjs", StringComparison.Ordinal));
+
+        stubAt.ShouldBeGreaterThan(-1, "the pre-commit hook no longer runs the stubber");
+        checkAt.ShouldBeGreaterThan(stubAt, "the hook checks parity before stubbing, so adding a key still blocks a commit");
     }
 
-    [Then(@"fr-CA\.json gains that key with its English text prefixed with a # marker")]
-    public void ThenFrenchGainsAStubbedKey()
+    [Then(@"the file missing that key gains it, with the other file's text prefixed with a # marker")]
+    public void ThenEachFileGainsTheOthersMissingKey()
     {
-        var french = File.ReadAllText(Path.Combine(_localesDir, "fr-CA.json"));
-        using var document = JsonDocument.Parse(french);
-        document.RootElement.GetProperty("nav").GetProperty("contact").GetString().ShouldBe("#Contact");
+        using var french = JsonDocument.Parse(File.ReadAllText(Path.Combine(_localesDir, "fr-CA.json")));
+        using var english = JsonDocument.Parse(File.ReadAllText(Path.Combine(_localesDir, "en-CA.json")));
+
+        french.RootElement.GetProperty("nav").GetProperty("contact").GetString().ShouldBe("#Contact");
+        english.RootElement.GetProperty("nav").GetProperty("aide").GetString().ShouldBe("#Aide");
     }
 
     [Then(@"a key still carrying that # marker fails locale verification, so it can never reach main untranslated")]

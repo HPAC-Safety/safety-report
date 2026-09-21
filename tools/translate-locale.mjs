@@ -263,11 +263,12 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 	const problems = []
 
 	// The subset of `problems` that a translation workflow will resolve on its
-	// own: a French value still carrying its local `#` stub. It is a real
-	// problem — it can never reach main — but it is the one the pre-commit
-	// hook tolerates on a branch, because ADR-0057 has i18n-translate.yml
-	// commit the French straight onto that branch. Everything else here means
-	// somebody has to do something.
+	// own: a French value still carrying its local `#` stub, and an English
+	// value edited after it was translated. Both are real problems — neither
+	// can reach main — but both are what the pre-commit hook tolerates on a
+	// branch, because ADR-0057 has i18n-translate.yml commit the French
+	// straight onto that branch. Everything else here means somebody has to do
+	// something a workflow cannot.
 	const pending = []
 	const englishKeys = flatten(english)
 	const frenchByKey = new Map(flatten(french))
@@ -309,7 +310,14 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 		if (!stamp) {
 			problems.push(`'${key}' has no provenance in ${TARGET_LOCALE}.meta.json.`)
 		} else if (stamp.source_hash !== hashOf(text)) {
-			problems.push(`'${key}' changed in ${SOURCE_LOCALE}.json after it was translated. Regenerate ${TARGET_LOCALE}.json.`)
+			// The English was edited after it was translated. `planTranslation`
+			// already queues exactly this for re-translation, and on a same-repo
+			// pull request i18n-translate.yml commits the new French onto the
+			// branch (ADR-0057) — so it is pending work a workflow resolves,
+			// like a `#` stub, rather than something the author can fix locally.
+			const problem = `'${key}' changed in ${SOURCE_LOCALE}.json after it was translated. Regenerate ${TARGET_LOCALE}.json.`
+			problems.push(problem)
+			pending.push(problem)
 		} else if (stamp.provider === 'stub') {
 			problems.push(`'${key}' was translated by the offline stub translator, which is a test stand-in and must never reach main.`)
 		}

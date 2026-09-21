@@ -22,8 +22,12 @@
 #    (tools/check-locales.mjs, tools/translate-locale.mjs --check) but
 #    locally, before the commit exists, instead of after a push.
 #
-#    One exception, on a branch only: a FRENCH value still carrying its local
-#    `#` stub is reported and allowed through. ADR-0057 has
+#    Two exceptions, on a branch only, both reported and allowed through: a
+#    FRENCH value still carrying its local `#` stub, and an ENGLISH value
+#    edited after it was translated (a stale fr-CA.meta.json source_hash).
+#    Both are pending work a workflow resolves rather than something the
+#    author can fix locally — translate-locale.mjs --generate queues a stale
+#    hash for re-translation exactly as it queues a missing key. ADR-0057 has
 #    i18n-translate.yml commit the French straight onto a same-repo pull
 #    request's branch, so the stub is a known, temporary state that a workflow
 #    resolves — and with no DeepL credential locally there is nothing a

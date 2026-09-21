@@ -50,7 +50,7 @@
   "notFound.title": "Page not found",
   "notFound.body": "There is nothing at this address.",
   "questions.title": "Manage questions",
-  "questions.intro": "The occurrence form is made of these questions. Editing one creates a new version, so a report already filed still shows exactly what it was asked.",
+  "questions.intro": "The occurrence form is made of these questions. Editing one creates a new version, and editing one that has already been answered replaces it with a new question, so a report already filed still shows exactly what it was asked.",
   "questions.listTitle": "Questions on the form",
   "questions.loading": "Loading questions…",
   "questions.empty": "No questions yet. Add the first one.",

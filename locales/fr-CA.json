@@ -28,7 +28,7 @@
     "manageReports": "Gérer les rapports",
     "manageQuestions": "Gérer les questions",
     "manageChoiceLists": "Gérer les listes de choix",
-    "manageAnswerTranslations": "#Answers awaiting translation"
+    "manageAnswerTranslations": "Réponses en attente de traduction"
   },
   "language": {
     "switchTo": "Passer à {language}",
@@ -89,7 +89,7 @@
   },
   "questions": {
     "title": "Gérer les questions",
-    "intro": "Le formulaire de déclaration se compose de ces questions. La modification d’une question entraîne la création d’une nouvelle version; ainsi, un rapport déjà soumis reflète toujours exactement les questions qui avaient été posées.",
+    "intro": "Le formulaire de déclaration se compose de ces questions. La modification d’une question crée une nouvelle version, tandis que la modification d’une question à laquelle une réponse a déjà été donnée la remplace par une nouvelle question; ainsi, une déclaration déjà déposée reflète toujours exactement ce qui a été demandé.",
     "listTitle": "Questions figurant sur le formulaire",
     "loading": "Chargement des questions…",
     "empty": "Il n'y a pas encore de questions. Ajoutez la première.",
@@ -164,7 +164,7 @@
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     },
-    "forkWarning": "#This question has been answered. Saving retires it and creates a new question in its place, so the answers already given keep the wording they were given under."
+    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données."
   },
   "choiceLists": {
     "title": "Gérer les listes de choix",
@@ -198,17 +198,17 @@
     }
   },
   "answerTranslations": {
-    "title": "#Answers awaiting translation",
-    "intro": "#A reporter answers a picker or a type-ahead in one official language, and nothing translates it on its way in. Supply the other language here; what the reporter wrote is never changed.",
-    "loading": "#Loading answers…",
-    "empty": "#No answers are waiting for a second language.",
-    "waitingCount": "#Waiting for a second language: {count}.",
-    "givenIn": "#Given in {locale}",
-    "supply": "#Supply {locale}",
-    "translate": "#Translate",
-    "save": "#Save",
+    "title": "Réponses en attente de traduction",
+    "intro": "Un journaliste répond à une suggestion de saisie ou à une suggestion automatique dans une langue officielle, et rien n’est traduit lors de la saisie. Indiquez ici l’autre langue; ce que le journaliste a écrit n’est jamais modifié.",
+    "loading": "Chargement des réponses…",
+    "empty": "Aucune réponse n’attend une deuxième langue.",
+    "waitingCount": "En attendant une deuxième langue : {count}.",
+    "givenIn": "Tiré de {locale}",
+    "supply": "{locale} de l'offre",
+    "translate": "Traduire",
+    "save": "Enregistrer",
     "error": {
-      "unexpected": "#Something went wrong. Please try again."
+      "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     }
   }
 }

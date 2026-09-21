@@ -75,9 +75,9 @@ Feature: Web, localization, and design
     And no user-facing literal appears directly in code
 
   Scenario: A translation missing locally is stubbed with a visible marker, and CI must replace it before merge
-    Given a key exists in en-CA.json but not in fr-CA.json
-    When the local build runs
-    Then fr-CA.json gains that key with its English text prefixed with a # marker
+    Given a key exists in en-CA.json but not in fr-CA.json, or in fr-CA.json but not in en-CA.json
+    When the local build runs, or a commit is made that stages a locales/ file
+    Then the file missing that key gains it, with the other file's text prefixed with a # marker
     And a key still carrying that # marker fails locale verification, so it can never reach main untranslated
 
   @ignore

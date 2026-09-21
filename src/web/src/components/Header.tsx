@@ -4,6 +4,7 @@ import logo from "../../assets/hpac-logo.png"
 import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
 import { Nav } from "./Nav"
+import { AdminMenu } from "./AdminMenu"
 import { LanguageToggle } from "./LanguageToggle"
 import { ThemeToggle } from "./ThemeToggle"
 
@@ -52,6 +53,7 @@ export function Header() {
 
 				<div className="hidden flex-wrap items-center justify-end gap-x-4 gap-y-2 lg:flex">
 					<Nav />
+					{isSignedIn && <AdminMenu />}
 					<div className="flex items-center gap-1">
 						<LanguageToggle />
 						<ThemeToggle />
@@ -104,6 +106,7 @@ export function Header() {
 
 						<div className="flex flex-col gap-1 px-6 py-4">
 							<Nav stacked onNavigate={() => setMenuOpen(false)} />
+							{isSignedIn && <AdminMenu stacked onNavigate={() => setMenuOpen(false)} />}
 						</div>
 
 						{isSignedIn ? (

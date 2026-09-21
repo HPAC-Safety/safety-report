@@ -17,6 +17,30 @@ Feature: Moderation, authentication, and publication
     When the visitor activates the logout action
     Then the header shows the member-login action again
 
+  @ui
+  Scenario: A signed-in member's header exposes an Admin menu with manage-reports and manage-questions options
+    Given a visitor signs in from the member login page
+    Then the header shows an Admin menu and no other header nav change
+    When the visitor activates the Admin menu
+    Then it opens with manage-reports and manage-questions options
+
+  @ui
+  Scenario Outline: Activating an Admin menu option navigates to its placeholder page
+    Given a visitor signs in from the member login page
+    When the visitor activates the Admin menu
+    And the visitor activates the <option> option
+    Then the browser navigates to the <destination> placeholder page
+
+    Examples:
+      | option           | destination       |
+      | Manage reports   | manage-reports     |
+      | Manage questions | manage-questions   |
+
+  @ui
+  Scenario: The Admin menu is absent for a signed-out visitor
+    Given a visitor loads the homepage
+    Then the header shows no Admin menu
+
   @ignore
   Scenario: Signing in through the third-party option completes the same authentication path
     Given a member selects the third-party sign-in option on the login page

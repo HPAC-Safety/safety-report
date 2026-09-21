@@ -17,7 +17,10 @@
     "memberLogin": "Connexion des membres",
     "openMenuLabel": "Ouvrir le menu",
     "closeMenuLabel": "Fermer le menu",
-    "memberLogout": "Se déconnecter"
+    "memberLogout": "Se déconnecter",
+    "admin": "Admin",
+    "manageReports": "Gérer les rapports",
+    "manageQuestions": "Gérer les questions"
   },
   "language": {
     "optionEnglish": "Anglais",
@@ -40,9 +43,9 @@
     },
     "sectionAbout": {
       "body": "L’Association canadienne de vol libre et de parapente représente les pilotes de vol libre de tout le pays et fait la promotion d’une pratique sécuritaire à tous les niveaux de ce sport.",
-      "title": "À propos de HPAC"
+      "title": "À propos de ACVL"
     },
-    "heroSubtitle": "HPAC Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol."
+    "heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol."
   },
   "admin": {
     "placeholderName": "Admin"
@@ -65,12 +68,12 @@
     "body": "Il n'y a rien à cette adresse."
   },
   "header": {
-    "logoAlt": "HPAC Sécurité"
+    "logoAlt": "ACVL Sécurité"
   },
   "footer": {
-    "copyright": "© {year} HPAC Sécurité"
+    "copyright": "© {year} l’Association canadienne de deltaplane et de parapente"
   },
   "app": {
-    "title": "HPAC Sécurité"
+    "title": "ACVL Sécurité"
   }
 }

@@ -16,8 +16,9 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   Multiple agents may be working in this repository at once; a worktree per
   issue means no agent ever switches a branch out from under another one's
   in-progress checkout.
-- Do all work for the issue inside that worktree. Remove it
-  (`git worktree remove`) once its PR has merged.
+- Do all work for the issue inside that worktree. Never leave it in place
+  after a push — see "Verify and publish" for exactly when it comes down and
+  how it comes back if a check fails.
 - Read the affected `/features` pages before editing. Update them first if the
   target behavior is changing.
 - Preserve unrelated work in a dirty tree.
@@ -67,14 +68,21 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    (Playwright, Claude in Chrome) capturing the real running app, not a
    mockup. A new page/component (a CREATE) needs an after screenshot; a
    change to an existing one (an UPDATE) needs both before and after.
-7. Watch required checks, fix failures in the worktree, and finish only when
-   they are green.
-8. After pushing, bring the local Docker environment up on the pushed code:
+7. After pushing, bring the local Docker environment up on the pushed code:
    `./dev-up.sh` from the worktree (`./dev-up.sh --down` first if containers
    from another branch are running). It starts the containers detached, waits
    until the API and the dev server actually answer, prints their URLs, and
    returns — it does not tail logs. The running environment should be the
    change under review, not whatever branch was built last.
+8. Remove the worktree (`git worktree remove`) immediately after — never leave
+   one sitting around, whether the PR is still open, still failing checks, or
+   already merged. Watching checks, reading logs, and commenting all work from
+   the primary checkout via `gh`; none of it needs the worktree present.
+9. Watch required checks from the primary checkout. If one fails, recreate the
+   worktree on the *same* branch (no `-b`, it already exists —
+   `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`),
+   fix, push, repeat step 7, then remove the worktree again. Finish only when
+   checks are green and no worktree remains.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,
 update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill

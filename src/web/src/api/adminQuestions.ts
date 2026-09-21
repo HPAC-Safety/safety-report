@@ -52,6 +52,7 @@ export interface QuestionView {
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
+	dependsOnOptionCode: string | null
 	optionSetId: string | null
 	labelEn: string
 	labelFr: string
@@ -87,6 +88,7 @@ export interface SaveQuestionRequest {
 	isPrivate: boolean
 	isActive: boolean
 	dependsOnQuestionId: string | null
+	dependsOnOptionCode: string | null
 	optionSetId: string | null
 	options: { code: string; labelEn: string; labelFr: string }[]
 }

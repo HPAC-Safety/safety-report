@@ -1,11 +1,19 @@
 ---
-status: accepted
+status: partially-superseded
 date: 2026-09-20
 decision-makers: Chase Florell
 keywords: conditional questions, dependency, question bank, yes/no, validation
 ---
 
 # ADR-0060 — A conditional question names a parent question, which must be a yes/no question
+
+**Status:** Partially superseded by
+[ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md):
+a `single_select` question may also be a parent, naming a required option.
+"Only a `yes_no` question may be a parent" below no longer holds; everything
+else — the dependency naming the parent question rather than a revision, the
+domain/API enforcement split, the cycle check, and the database enforcing
+only the foreign key — stands unchanged.
 
 ## Context
 
@@ -102,4 +110,5 @@ the operators above — it is the rules-engine alternative in a smaller disguise
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — the other revision field added alongside this
 - [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — why `"yes"` is invariant
+- [ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md) — partially supersedes this decision: a single-select question may also be a parent
 - [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)

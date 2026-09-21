@@ -107,6 +107,7 @@
     "inactive": "On ne vous l'a pas demandé",
     "revisionNumber": "Version{number}",
     "dependsOnSummary": "Cette question n’est posée que si la réponse à «{question} » est « oui »",
+    "dependsOnOptionSummary": "#Only asked when “{question}” is answered “{option}”",
     "editorTitleNew": "Nouvelle question",
     "editorTitleEdit": "Modifier la question",
     "error": {
@@ -128,6 +129,9 @@
       "dependsOn": "Ne posez la question que si la réponse à une autre question est « oui »",
       "dependsOnNone": "Posez toujours cette question",
       "dependsOnHelp": "Seule une question à réponse oui ou non peut en déclencher une autre.",
+      "dependsOnOption": "#Required answer",
+      "dependsOnOptionNone": "#Choose the required option",
+      "dependsOnOptionHelp": "#The reporter must choose this option for the question above before this one is asked.",
       "optionSet": "Liste de choix partagée",
       "optionSetNone": "Veuillez inscrire les choix ici à la place",
       "optionSetHelp": "Les choix sont copiés dans cette version lorsqu’elle est sauvegardée. Toute modification ultérieure de la liste partagée n’aura aucune incidence sur ce qui a déjà été affiché à un journaliste.",

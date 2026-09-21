@@ -24,6 +24,7 @@ public sealed record QuestionView(
     bool IsActive,
     int DisplayOrder,
     string? DependsOnQuestionId,
+    string? DependsOnOptionCode,
     string? OptionSetId,
     string LabelEn,
     string LabelFr,
@@ -68,6 +69,7 @@ public sealed record QuestionView(
             revision.IsActive,
             revision.DisplayOrder,
             revision.DependsOnQuestionId?.Value,
+            revision.DependsOnOptionCode,
             revision.OptionSetId?.Value,
             revision.LabelEn,
             revision.LabelFr,
@@ -112,6 +114,7 @@ public sealed record SaveQuestionRequest(
     bool IsPrivate,
     bool IsActive,
     string? DependsOnQuestionId,
+    string? DependsOnOptionCode,
     string? OptionSetId,
     IReadOnlyList<OptionInput>? Options);
 

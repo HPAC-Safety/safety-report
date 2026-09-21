@@ -52,9 +52,11 @@ privacy-sensitive.
    `TimeOnly`, and `DateTimeOffset`
    ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
    [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
-   A question may be made conditional on a yes/no question, and its options may
+   A question may be made conditional on a yes/no question, or on a
+   single-select question naming a required option, and its options may
    be copied from a shared choice list
    ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
+   [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
    [ADR-0058](docs/decisions/ADR-0058-shared-option-sets-with-a-revision-snapshot.md)).
 2. Until final submission, unfinished answers and shown revision IDs stay only
    in that browser for 15 days; files are not persisted or restored. No report,

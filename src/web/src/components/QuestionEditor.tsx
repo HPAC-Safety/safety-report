@@ -48,6 +48,7 @@ export function blankDraft(): QuestionDraft {
 			isPrivate: true,
 			isActive: true,
 			dependsOnQuestionId: null,
+			dependsOnOptionCode: null,
 			optionSetId: null,
 			options: [],
 		},
@@ -69,6 +70,7 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			isPrivate: question.isPrivate,
 			isActive: question.isActive,
 			dependsOnQuestionId: question.dependsOnQuestionId,
+			dependsOnOptionCode: question.dependsOnOptionCode,
 			optionSetId: question.optionSetId,
 			options: question.options.map((option) => ({
 				code: option.code,
@@ -87,7 +89,7 @@ const labelClassName = "block font-sans text-sm font-medium text-ink"
 export function QuestionEditor({
 	draft,
 	optionSets,
-	booleanQuestions,
+	conditionQuestions,
 	isEditing,
 	hasBeenAnswered,
 	translationAvailable,
@@ -98,7 +100,7 @@ export function QuestionEditor({
 }: {
 	draft: QuestionDraft
 	optionSets: OptionSetView[]
-	booleanQuestions: QuestionView[]
+	conditionQuestions: QuestionView[]
 	isEditing: boolean
 	hasBeenAnswered: boolean
 	translationAvailable: boolean
@@ -110,6 +112,7 @@ export function QuestionEditor({
 	const { t } = useLocale()
 	const request = draft.request
 	const takesOptions = OPTION_TYPES.includes(request.type)
+	const dependsOnParent = conditionQuestions.find((question) => question.id === request.dependsOnQuestionId)
 
 	const [translating, setTranslating] = useState(false)
 	const [translationError, setTranslationError] = useState<string | null>(null)
@@ -119,8 +122,11 @@ export function QuestionEditor({
 
 	// A question is stored as one complete bilingual revision, so a half-written
 	// one cannot be saved at all. Translate fills the empty side; the
-	// administrator still edits and saves it deliberately (ADR-0062).
-	const canSave = hasEnglish && hasFrench
+	// administrator still edits and saves it deliberately (ADR-0062). A
+	// single-select condition additionally needs its required option named,
+	// or the API rejects the save (ADR-0074).
+	const canSave =
+		hasEnglish && hasFrench && (dependsOnParent?.type !== "single_select" || request.dependsOnOptionCode !== null)
 	const translationDirection = hasEnglish && !hasFrench ? "toFrench" : !hasEnglish && hasFrench ? "toEnglish" : null
 
 	function update(changes: Partial<SaveQuestionRequest>) {
@@ -361,16 +367,41 @@ export function QuestionEditor({
 					id="question-depends-on"
 					className={fieldClassName}
 					value={request.dependsOnQuestionId ?? ""}
-					onChange={(event) => update({ dependsOnQuestionId: event.target.value || null })}
+					onChange={(event) =>
+						update({ dependsOnQuestionId: event.target.value || null, dependsOnOptionCode: null })
+					}
 				>
 					<option value="">{t("questions.field.dependsOnNone")}</option>
-					{booleanQuestions.map((question) => (
+					{conditionQuestions.map((question) => (
 						<option key={question.id} value={question.id}>
 							{question.labelEn}
 						</option>
 					))}
 				</select>
 				<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.dependsOnHelp")}</p>
+
+				{dependsOnParent?.type === "single_select" && (
+					<div className="mt-3">
+						<label className={labelClassName} htmlFor="question-depends-on-option">
+							{t("questions.field.dependsOnOption")}
+						</label>
+						<select
+							id="question-depends-on-option"
+							className={fieldClassName}
+							value={request.dependsOnOptionCode ?? ""}
+							required
+							onChange={(event) => update({ dependsOnOptionCode: event.target.value || null })}
+						>
+							<option value="">{t("questions.field.dependsOnOptionNone")}</option>
+							{dependsOnParent.options.map((option) => (
+								<option key={option.code} value={option.code}>
+									{option.labelEn}
+								</option>
+							))}
+						</select>
+						<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.dependsOnOptionHelp")}</p>
+					</div>
+				)}
 			</div>
 
 			{takesOptions && (

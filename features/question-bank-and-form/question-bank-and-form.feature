@@ -285,11 +285,28 @@ Feature: Question bank and form
     When that shared list is retired entirely
     Then the question still offers the choices its revision recorded
 
-  Scenario: A question can be made conditional only on a yes/no question
-    Given an active question asks for something other than yes or no
+  Scenario: A question can be made conditional only on a yes/no or single-select question
+    Given an active question asks for something other than yes/no or single-select
     When an Administrator tries to make another question conditional on it
     Then the attempt is rejected
     And a yes/no question is accepted as the condition instead
+    And a single-select question naming one of its live options is accepted as the condition instead
+
+  Scenario: A single-select parent's dependency records the required option
+    Given a single-select question asking whether the pilot flies hang gliders or paragliders
+    When an Administrator makes a rating question depend on the "hang glider" option
+    And an Administrator makes a different rating question depend on the "paraglider" option
+    Then each rating question's saved dependency names its own required option
+
+  Scenario: A single-select dependency must name one of the parent's current options
+    Given a single-select question offering hang glider and paraglider
+    When an Administrator tries to make another question depend on an option the parent does not offer
+    Then the attempt is rejected
+
+  Scenario: A yes/no dependency does not name an option
+    Given a yes/no question
+    When an Administrator makes another question depend on it
+    Then the dependency needs no required option, because the condition is always "answered yes"
 
   Scenario: A question cannot be conditional on itself or form a cycle
     Given a question is already conditional on a yes/no question
@@ -432,9 +449,17 @@ Feature: Question bank and form
     Then the page offers neither
 
   @ui
-  Scenario: Only yes/no questions are offered as a condition
+  Scenario: Only yes/no and single-select questions are offered as a condition
     Given a signed-in Administrator is authoring a new question
-    Then the condition picker offers only the yes/no questions on the form
+    Then the condition picker offers only the yes/no and single-select questions on the form
+
+  @ui
+  Scenario: Naming a required option appears only for a single-select condition
+    Given a signed-in Administrator is authoring a new question
+    When they choose a yes/no question as the condition
+    Then no required-option control is offered
+    When they choose a single-select question as the condition instead
+    Then a required-option control offers that question's live options
 
   @ui
   Scenario: Questions are reordered from the keyboard

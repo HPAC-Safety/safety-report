@@ -120,6 +120,79 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         created.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
     }
 
+    private static async Task<JsonElement> CreatePilotTypeAsync(HttpClient client) =>
+        await CreateAsync(
+            client,
+            Draft(UniqueKey("pilot_type"), "single_select") with
+            {
+                Options =
+                [
+                    new Option("hang_glider", "Hang glider", "Deltaplane"),
+                    new Option("paraglider", "Paraglider", "Parapente"),
+                ],
+            });
+
+    [Fact]
+    public async Task GivenSingleSelectQuestion_WhenAnotherDependsOnItsOption_ThenDependencyIsStored()
+    {
+        // Given
+        using var client = await SignedInAsync();
+        var parent = await CreatePilotTypeAsync(client);
+        var parentId = parent.GetProperty("id").GetString();
+
+        // When
+        var child = Draft(UniqueKey("rating"), "short_text") with
+        {
+            DependsOnQuestionId = parentId,
+            DependsOnOptionCode = "hang_glider",
+        };
+        var created = await CreateAsync(client, child);
+
+        // Then
+        created.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
+        created.GetProperty("dependsOnOptionCode").GetString().ShouldBe("hang_glider");
+    }
+
+    [Fact]
+    public async Task GivenSingleSelectQuestion_WhenAnotherDependsOnAnUnofferedOption_ThenApiRejectsDependency()
+    {
+        // Given
+        using var client = await SignedInAsync();
+        var parent = await CreatePilotTypeAsync(client);
+
+        // When
+        var child = Draft(UniqueKey("rating"), "short_text") with
+        {
+            DependsOnQuestionId = parent.GetProperty("id").GetString(),
+            DependsOnOptionCode = "trike",
+        };
+        using var response = await client.PostAsJsonAsync(Questions, child);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+        var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+        problem.GetProperty("detail").GetString()!.ShouldContain("trike");
+    }
+
+    [Fact]
+    public async Task GivenSingleSelectQuestion_WhenAnotherDependsWithNoOption_ThenApiRejectsDependency()
+    {
+        // Given
+        using var client = await SignedInAsync();
+        var parent = await CreatePilotTypeAsync(client);
+
+        // When
+        var child = Draft(UniqueKey("rating"), "short_text") with
+        {
+            DependsOnQuestionId = parent.GetProperty("id").GetString(),
+        };
+        using var response = await client.PostAsJsonAsync(Questions, child);
+
+        // Then
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
     [Fact]
     public async Task GivenSharedChoiceList_WhenQuestionUses_ThenRevisionSnapshotsOptions()
     {
@@ -651,7 +724,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
     private static SaveQuestion Draft(string key, string type) =>
         new(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
-            IsRequired: false, IsPrivate: true, IsActive: true, null, null, []);
+            IsRequired: false, IsPrivate: true, IsActive: true, null, null, null, []);
 
     private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
     {
@@ -694,6 +767,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         bool IsPrivate,
         bool IsActive,
         string? DependsOnQuestionId,
+        string? DependsOnOptionCode,
         string? OptionSetId,
         IReadOnlyList<Option> Options);
 

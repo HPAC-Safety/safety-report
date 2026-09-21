@@ -62,6 +62,18 @@ what makes an autocomplete worth having: it is domain-identical to
 `SingleSelect` — one stored option code — and differs only in how many choices
 are practical to show at once.
 
+### Amended by ADR-0063 for one type
+
+[ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md) narrows the
+"always render the snapshot" half of this decision for
+`QuestionType.Autocomplete` backed by a live set, which renders the **live**
+list instead. A reporter can add to a type-ahead, and a choice nobody can see
+until an administrator republishes the question is no use to the next reporter.
+
+Everything else here stands, including for autocompletes: the snapshot is still
+written, still immutable, and still the record of what a given reporter was
+offered. What changed is which of the two a form renders.
+
 ## Consequences
 
 - An administrator maintains the aerodrome list in one place, and every

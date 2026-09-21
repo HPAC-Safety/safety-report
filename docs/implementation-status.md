@@ -25,7 +25,7 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Documents | No PDF, DOC, DOCX, RTF, Markdown, text, or ODT support. | Validate/scan and retain private originals; authorized forced download only; never extract, anonymize, send to LLM, or publish. |
 | Blob access | Filesystem/S3 stores implement pre-signed upload/read URLs; reviewer link is derivative-only. The pre-submit `MediaUploadSlot` entity was removed (#100), but `IBlobStore.CreateUploadUrlAsync` still exists on the port with no current caller. | Confirm the finalized multipart endpoint streams uploads server-side rather than reintroducing a pre-signed PUT flow; keep private streaming and short-lived reads for verified derivatives/private documents. |
 | Authentication | `IMemberAuthenticator`, roles, admin allowlist entity, and audit entity exist; no API adapter/session flow. | Implement hardcoded-TLS HPAC adapter with kill switch, secure cookie/CSRF/lockout; preserve adapter seam. |
-| Review/admin web | `/admin/questions` is a working authoring screen (#180) — create, edit, reorder by pointer or keyboard, options, shared lists, conditions. The review queue and the rest of `/admin` remain placeholders. | Implement queue/detail, pair editing/approval, safe attachment access, allowlist, deletion. |
+| Review/admin web | `/admin/questions` is a working authoring screen (#180) — create, edit, reorder by pointer or keyboard, options, shared lists, conditions, and Translate. `/admin/choice-lists` (#184) curates the shared lists and flags reporter-added choices. The review queue and the rest of `/admin` remain placeholders. | Implement queue/detail, pair editing/approval, safe attachment access, allowlist, deletion. |
 | Publication | Domain currently checks consent, report state, and separately approved locale rows; no public endpoints/UI. Publication-channel abstraction exists. | Implement minimal feed/detail allowlist over one approved pair; remove external-channel abstraction. |
 | Soft deletion | Implemented. Every entity except `AuditLogEntry` has a `Deleted` timestamp and an EF global query filter; `ModelTests` asserts both the universal filter and the audit-log exception. No restore or physical delete path exists. | Keep. |
 | Retention | Storage lifecycle handles some quarantine states; no complete report-retention/deletion flow. | Retain until explicit soft deletion; expire only unreferenced quarantine; keep report-linked bytes private. |
@@ -40,7 +40,7 @@ substantially enforce the target behavior, not merely that an issue was closed.
 The baseline has 12 tables: `reports`, `report_answers`, `report_files`,
 `summaries`, `questions`, `question_revisions`, `question_revision_options`,
 `option_sets`, `option_set_items`, `admin_users`, `audit_log`, and
-`outbox_messages`. Four migrations create that shape:
+`outbox_messages`. Five migrations create that shape:
 the initial schema, replacing the earlier sensitivity scheme with question
 privacy, and `MigrateCanonicalDomainAndPersistence` (#100), which collapsed
 the old `question_versions`/`question_options`/`question_translations`/
@@ -49,7 +49,8 @@ the old `question_versions`/`question_options`/`question_translations`/
 application-side field-encryption columns/converters; and
 `AddQuestionAuthoring` (#180), which added `option_sets`/`option_set_items`,
 the conditional-question and option-set provenance columns, and the `time` and
-`autocomplete` question types. Every table except
+`autocomplete` question types; and `AddReporterAddedChoices` (#184), which
+added the reporter-added marker to `option_set_items`. Every table except
 `audit_log` carries a `Deleted` timestamp and an EF global query filter. The
 target shape and required migration are specified in
 [data and persistence](data-and-persistence.md).

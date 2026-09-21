@@ -32,14 +32,23 @@ public sealed record QuestionView(
     string? HelpTextFr,
     string? PlaceholderEn,
     string? PlaceholderFr,
-    IReadOnlyList<OptionView> Options)
+    IReadOnlyList<OptionView> Options,
+    bool ChoicesComeFromLiveList)
 {
     /// <summary>Flattens a question and its current revision for the screen.</summary>
-    public static QuestionView Of(Question question)
+    /// <param name="question">The question to show.</param>
+    /// <param name="optionSet">
+    /// The shared set the current revision names, when it names one. An
+    /// autocomplete renders the live set rather than its snapshot, so the
+    /// authoring screen shows an administrator the same list a reporter would
+    /// see — including anything reporters have added. See ADR-0063.
+    /// </param>
+    public static QuestionView Of(Question question, OptionSet? optionSet = null)
     {
         ArgumentNullException.ThrowIfNull(question);
 
         var revision = question.CurrentRevision;
+        var choices = QuestionChoices.For(revision, optionSet);
 
         return new QuestionView(
             question.Id.Value,
@@ -61,14 +70,24 @@ public sealed record QuestionView(
             revision.HelpTextFr,
             revision.PlaceholderEn,
             revision.PlaceholderFr,
-            [.. revision.Options
-                .OrderBy(option => option.DisplayOrder)
-                .Select(option => new OptionView(option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value))]);
+            [.. choices.Select(option => new OptionView(
+                option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value, AddedByReporter: false))],
+            QuestionChoices.RendersLiveSet(revision, optionSet));
     }
 }
 
 /// <summary>One choice on a question revision, in both official languages.</summary>
-public sealed record OptionView(string Code, string LabelEn, string LabelFr, string? SourceItemId);
+/// <summary>One choice, in both official languages.</summary>
+/// <param name="Code">The invariant code stored against an answer.</param>
+/// <param name="LabelEn">The English wording.</param>
+/// <param name="LabelFr">The French wording.</param>
+/// <param name="SourceItemId">The shared item this came from, if any.</param>
+/// <param name="AddedByReporter">
+/// True when a reporter typed this into a type-ahead rather than an
+/// administrator authoring it — the entries most worth curating. See ADR-0063.
+/// </param>
+public sealed record OptionView(
+    string Code, string LabelEn, string LabelFr, string? SourceItemId, bool AddedByReporter);
 
 /// <summary>
 /// What an administrator submits to create a question or to save an edit. An
@@ -115,7 +134,8 @@ public sealed record OptionSetView(
             set.Key,
             set.NameEn,
             set.NameFr,
-            [.. set.Items.Select(item => new OptionView(item.Code, item.LabelEn, item.LabelFr, item.Id.Value))]);
+            [.. set.Items.Select(item => new OptionView(
+                item.Code, item.LabelEn, item.LabelFr, item.Id.Value, item.AddedByReporter))]);
     }
 }
 

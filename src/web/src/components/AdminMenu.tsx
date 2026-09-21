@@ -72,6 +72,9 @@ export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; 
 					<Link role="menuitem" to="/admin/questions" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
 						{t("nav.manageQuestions")}
 					</Link>
+					<Link role="menuitem" to="/admin/choice-lists" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
+						{t("nav.manageChoiceLists")}
+					</Link>
 				</div>
 			)}
 		</div>

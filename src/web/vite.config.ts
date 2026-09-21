@@ -14,6 +14,10 @@ export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	server: {
 		host: true,
+		// Named hosts the dev server will answer to, beyond localhost. Vite
+		// refuses an unknown Host header, so reaching the dev server by machine
+		// name on a LAN needs it listed here.
+		allowedHosts: ["strider.local"],
 		// The admin screens call the API on the same origin, so there is no CORS
 		// configuration to get wrong in production and none to weaken in
 		// development. HPAC_API_ORIGIN covers running the API outside the

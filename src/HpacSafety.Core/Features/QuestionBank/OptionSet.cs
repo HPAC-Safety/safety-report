@@ -107,6 +107,63 @@ public class OptionSet
         return item;
     }
 
+    /// <summary>
+    /// Records a choice a reporter typed into a type-ahead that the list did
+    /// not already offer — the pilot who flew at a site nobody had written
+    /// down. See ADR-0063.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Three cases, and the difference between them is the whole method:
+    /// </para>
+    /// <list type="bullet">
+    /// <item>
+    /// The code is already offered — the reporter typed a site that exists, or
+    /// a second pilot typed the same new one. That item is returned unchanged.
+    /// Adding is idempotent, so a busy weekend at a new site produces one row,
+    /// not five, and it never relabels an administrator's wording with a
+    /// reporter's spelling.
+    /// </item>
+    /// <item>
+    /// The code exists but was removed. It is returned <b>without being
+    /// revived</b>. An administrator removed it on purpose — it was junk, or a
+    /// duplicate — and a reporter typing it again must not undo that. The
+    /// answer still points at a real row; the list simply does not offer it.
+    /// </item>
+    /// <item>
+    /// The code is new. A new item is created, flagged
+    /// <see cref="OptionSetItem.AddedByReporter"/>, and offered from now on.
+    /// </item>
+    /// </list>
+    /// <para>
+    /// Both languages are required here as everywhere else. A reporter types
+    /// one; the caller supplies the other, machine-translated at submission.
+    /// This method does no translating — it is a domain rule, and which
+    /// service drafted a label is the caller's business.
+    /// </para>
+    /// </remarks>
+    /// <param name="code">The value the reporter typed, normalized to a code.</param>
+    /// <param name="labelEn">The English wording.</param>
+    /// <param name="labelFr">The French wording.</param>
+    /// <returns>The item the reporter's answer should point at.</returns>
+    public OptionSetItem AddFromReporter(string code, string labelEn, string labelFr)
+    {
+        EnsureNotDeleted();
+
+        var normalized = QuestionKey.Normalize(code);
+
+        if (_items.Find(item => item.Code == normalized) is { } existing)
+        {
+            return existing;
+        }
+
+        var item = OptionSetItem.Create(
+            Id, normalized, NextDisplayOrder(), labelEn, labelFr, addedByReporter: true);
+
+        _items.Add(item);
+        return item;
+    }
+
     /// <summary>Relabels one choice in both official languages. Its code never changes.</summary>
     public void Relabel(string code, string labelEn, string labelFr) =>
         Live(code).Relabel(labelEn, labelFr);

@@ -40,6 +40,8 @@ export interface OptionView {
 	labelEn: string
 	labelFr: string
 	sourceItemId: string | null
+	/** A reporter typed this into a type-ahead; an administrator has not reviewed it. */
+	addedByReporter: boolean
 }
 
 export interface QuestionView {
@@ -63,6 +65,12 @@ export interface QuestionView {
 	placeholderEn: string | null
 	placeholderFr: string | null
 	options: OptionView[]
+	/**
+	 * True when this question's choices are read from the live shared list
+	 * rather than from the revision's own snapshot — which is how a site a
+	 * reporter added shows up for the next one (ADR-0063).
+	 */
+	choicesComeFromLiveList: boolean
 }
 
 export interface SaveQuestionRequest {
@@ -163,8 +171,27 @@ export function deleteQuestion(id: string): Promise<void> {
 	return call<void>(`/api/admin/questions/${id}`, { method: "DELETE" })
 }
 
+export interface SaveOptionSetRequest {
+	key?: string
+	nameEn: string
+	nameFr: string
+	items: { code: string; labelEn: string; labelFr: string }[]
+}
+
 export function listOptionSets(): Promise<OptionSetView[]> {
 	return call<OptionSetView[]>("/api/admin/option-sets")
+}
+
+export function createOptionSet(request: SaveOptionSetRequest): Promise<OptionSetView> {
+	return call<OptionSetView>("/api/admin/option-sets", { method: "POST", body: JSON.stringify(request) })
+}
+
+export function replaceOptionSet(id: string, request: SaveOptionSetRequest): Promise<OptionSetView> {
+	return call<OptionSetView>(`/api/admin/option-sets/${id}`, { method: "PUT", body: JSON.stringify(request) })
+}
+
+export function deleteOptionSet(id: string): Promise<void> {
+	return call<void>(`/api/admin/option-sets/${id}`, { method: "DELETE" })
 }
 
 /**

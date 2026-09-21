@@ -541,6 +541,104 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         items[1].GetProperty("labelEn").GetString().ShouldBe("Alberta (edited)");
     }
 
+    [Fact]
+    public async Task Given_a_type_ahead_backed_by_a_list_When_the_list_grows_Then_the_question_offers_the_new_choice()
+    {
+        // Given — a type-ahead renders the live list, so a site a reporter
+        // added shows up without anyone republishing the question (ADR-0063)
+        using var client = SignedIn();
+        var set = await CreateOptionSetAsync(client, UniqueKey("sites"));
+        var setId = set.GetProperty("id").GetString();
+
+        var created = await CreateAsync(
+            client, Draft(UniqueKey("where_did_this_happen"), "autocomplete") with { OptionSetId = setId });
+
+        created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeTrue();
+
+        // When a choice is added to the shared list afterwards
+        var grown = new SaveOptionSet(
+            null,
+            "Sites",
+            "Sites",
+            [
+                new Option("alberta", "Alberta", "Alberta"),
+                new Option("yukon", "Yukon", "Yukon"),
+                new Option("mount_7", "Mount 7", "Mont 7"),
+            ]);
+
+        using var replaced = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/option-sets/{setId}", UriKind.Relative), grown);
+
+        replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        // Then the question offers it, while its revision still records what
+        // it was saved with
+        var listed = await ListAsync(client);
+        var question = listed.Single(
+            candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
+
+        question.GetProperty("options").EnumerateArray()
+            .Select(option => option.GetProperty("code").GetString())
+            .ShouldContain("mount_7");
+
+        question.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
+    }
+
+    [Fact]
+    public async Task Given_a_pick_one_backed_by_a_list_When_the_list_grows_Then_the_question_keeps_its_snapshot()
+    {
+        // Given — a closed, curated set still renders exactly what it recorded
+        using var client = SignedIn();
+        var set = await CreateOptionSetAsync(client, UniqueKey("provinces"));
+        var setId = set.GetProperty("id").GetString();
+
+        var created = await CreateAsync(
+            client, Draft(UniqueKey("occurrence_province"), "single_select") with { OptionSetId = setId });
+
+        created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeFalse();
+
+        // When
+        var grown = new SaveOptionSet(
+            null,
+            "Provinces",
+            "Provinces",
+            [
+                new Option("alberta", "Alberta", "Alberta"),
+                new Option("yukon", "Yukon", "Yukon"),
+                new Option("nunavut", "Nunavut", "Nunavut"),
+            ]);
+
+        using var replaced = await client.PutAsJsonAsync(
+            new Uri($"/api/admin/option-sets/{setId}", UriKind.Relative), grown);
+
+        replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        // Then
+        var listed = await ListAsync(client);
+        var question = listed.Single(
+            candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
+
+        question.GetProperty("options").EnumerateArray()
+            .Select(option => option.GetProperty("code").GetString())
+            .ShouldNotContain("nunavut");
+    }
+
+    [Fact]
+    public async Task Given_a_choice_list_When_it_is_listed_Then_each_choice_says_whether_a_reporter_added_it()
+    {
+        // Given
+        using var client = SignedIn();
+        await CreateOptionSetAsync(client, UniqueKey("authored"));
+
+        // When
+        var listed = await client.GetFromJsonAsync<JsonElement>(OptionSets);
+
+        // Then — nothing an administrator authored is marked
+        listed.EnumerateArray()
+            .SelectMany(set => set.GetProperty("items").EnumerateArray())
+            .ShouldAllBe(item => !item.GetProperty("addedByReporter").GetBoolean());
+    }
+
     private HttpClient SignedIn()
     {
         var client = _factory.CreateClient();

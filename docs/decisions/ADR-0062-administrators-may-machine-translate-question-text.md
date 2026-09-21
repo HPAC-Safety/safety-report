@@ -52,10 +52,19 @@ else changes about how a question is stored.**
 - **Save is disabled until both languages are present.** The control cannot be
   used to store a half-written question, and a machine translation that nobody
   looked at is still a save somebody performed.
-- **No reporter content is ever translated.** This is for question wording
-  only — never a narrative, never an answer, never a summary. A translated
-  account of a crash is a paraphrased account of a crash, and that remains
-  forbidden.
+- **No reporter narrative is ever translated.** A translated account of a crash
+  is a paraphrased account of a crash, and that remains forbidden: never a
+  narrative, never an answer, never a summary.
+
+  **Scope widened by [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md).**
+  When a reporter types a missing choice into a type-ahead — a flying site the
+  list did not offer — that value is machine-translated at submission so the
+  new choice exists in both official languages. It is reporter-entered text
+  reaching a translation provider, which is exactly what the sentence above
+  forbids for a narrative, so it is written down rather than left implied. What
+  bounds it: the value is a short label typed into a type-ahead, not prose, and
+  the resulting choice is surfaced to administrators as reporter-added rather
+  than filed silently.
 
 ### What changes
 

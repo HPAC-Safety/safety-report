@@ -8,7 +8,9 @@ keywords: Reqnroll, Playwright, playwright-bdd, Gherkin, feature files, tags
 # ADR-0053 — `@ui` scenarios execute via Playwright, not Reqnroll
 
 **Status:** Accepted, partially supersedes
-[ADR-0050](ADR-0050-ui-tag-for-scenarios-needing-playwright.md)
+[ADR-0050](ADR-0050-ui-tag-for-scenarios-needing-playwright.md); its mechanism
+for keeping `@ui` out of Reqnroll is amended by
+[ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)
 
 ## Context
 
@@ -36,11 +38,17 @@ to `@ui and not @ignore`, and matches each Given/When/Then to a step
 definition in `tests/e2e/steps/*.ts` — real browser automation, in the same
 language and tool as the rest of the Playwright suite.
 
-`.github/workflows/ci.yml`'s `dotnet test` step excludes `@ui`-tagged
-scenarios by category filter (Reqnroll's xUnit generator emits `[Trait("Category",
-tag)]` per Gherkin tag), so an `@ui` scenario is never attempted through
-Reqnroll — whether or not it carries `@ignore` — and never fails there for
-lack of a C# step definition.
+An `@ui` scenario is never attempted through Reqnroll — whether or not it
+carries `@ignore` — and never fails there for lack of a C# step definition.
+
+> **Amended by
+> [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md).** This
+> ADR originally achieved that with a category filter on
+> `.github/workflows/ci.yml`'s `dotnet test` step, which only held where the
+> filter was typed: a bare `dotnet test` or an IDE run still attempted every
+> `@ui` scenario and failed. The suite now skips them itself, through a
+> `[BeforeScenario("ui")]` hook. The category filter remains in CI as a second
+> line of defence.
 
 Implementing an `@ui` scenario's behavior means writing its step
 definitions in `tests/e2e/steps/` and removing its `@ignore` tag, in the
@@ -93,7 +101,9 @@ without inventing a new tag or a new file layout.
 - `tests/e2e/package.json`'s `test` script runs `bddgen` before
   `playwright test`.
 - `.github/workflows/ci.yml`'s `dotnet test` step gains a category filter
-  excluding `@ui`.
+  excluding `@ui`. (Since
+  [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md) that
+  filter is a second line of defence rather than the mechanism.)
 - `features/README.md` and `skills/test-hpac-safety/SKILL.md` are updated
   in this PR to describe the split mechanism.
 
@@ -102,3 +112,4 @@ without inventing a new tag or a new file layout.
 - [ADR-0045](ADR-0045-ui-changes-require-playwright-and-server-tests.md)
 - [ADR-0049](ADR-0049-reqnroll-for-executable-gherkin-scenarios.md)
 - [ADR-0050](ADR-0050-ui-tag-for-scenarios-needing-playwright.md)
+- [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)

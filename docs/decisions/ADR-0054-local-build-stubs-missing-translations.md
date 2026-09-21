@@ -67,9 +67,12 @@ is unchanged and CI still enforces it. But once ADR-0057 had
 `i18n-translate.yml` commit the French straight onto a same-repo pull
 request's branch, a `#` stub stopped being evidence of a mistake on a branch
 and became a known, temporary state that a workflow resolves within seconds
-of the push. The hook therefore reports a stub in `fr-CA.json` as a notice
-on a branch and still refuses it on `main`, through
-`--allow-pending-translation`, which nothing in CI passes. A stub in
+of the push. **A stale `source_hash` is the same state by the same argument**
+(#213): editing an existing English string is precisely what
+`planTranslation` queues for re-translation, and with no DeepL credential
+locally there is nothing the author can do about it either. The hook therefore reports both as a notice on a branch and still refuses
+them on `main`, through `--allow-pending-translation`, which nothing in CI
+passes. A stub in
 `en-CA.json` stays fatal everywhere: no workflow writes English, so that one
 is always the author's to fix.
 

@@ -108,8 +108,6 @@
   "questions.type.phone": "Phone number",
   "questions.type.checkbox": "Checkbox",
   "questions.type.file_upload": "File upload",
-  "questions.type.statement": "Statement",
-  "questions.type.group": "Section heading",
   "questions.translate.action": "Translate",
   "questions.translate.working": "Translating…",
   "questions.translate.hint": "Write one language, then translate it into the other.",

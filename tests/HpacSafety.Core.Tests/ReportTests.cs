@@ -124,7 +124,7 @@ public class ReportTests
         var answer = report.Answer(question, "Broken riser", Now);
         question.Revise(
             QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
-            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
+            question.IsPrivate, question.IsActive, question.DisplayOrder, Now.AddDays(1));
 
         // Then — rewording tomorrow cannot change what an answer given today means
         answer.QuestionRevisionId.ShouldBe(askedUnder.Id);

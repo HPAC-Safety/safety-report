@@ -4,9 +4,9 @@ namespace HpacSafety.Core.Features.QuestionBank;
 
 /// <summary>
 /// A question exactly as it was asked at a point in time: its type, its complete
-/// bilingual wording, its order, section, privacy, active state, required
+/// bilingual wording, its order, privacy, active state, required
 /// state, system state, and option set. Immutable once created — rewording,
-/// retyping, reordering, moving into a section, changing privacy, activating,
+/// retyping, reordering, changing privacy, activating,
 /// deactivating, or changing the options produces a new revision, so a report
 /// filed last year still renders the revision it was actually answering.
 /// </summary>
@@ -18,7 +18,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// <c>docs/data-and-persistence.md</c>.
 /// </para>
 /// <para>
-/// Order, section, privacy, active state, system state, required state, and the
+/// Order, privacy, active state, system state, required state, and the
 /// complete ordered option set are all revision fields — see
 /// <c>features/question-bank-and-form/question-bank-and-form.feature</c>. None
 /// of them can be mutated on an existing revision; every change, including
@@ -55,7 +55,6 @@ public class QuestionRevision
         bool isPrivate,
         bool isActive,
         int displayOrder,
-        string? sectionKey,
         TinyId? dependsOnQuestionId,
         TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput> options,
@@ -74,8 +73,7 @@ public class QuestionRevision
         IsPrivate = isPrivate;
         IsActive = isActive;
         DisplayOrder = displayOrder;
-        SectionKey = sectionKey is null ? null : QuestionKey.Normalize(sectionKey);
-        DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
+        DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, isSystem);
         OptionSetId = optionSetId;
         LabelEn = NotBlank(labelEn);
         LabelFr = NotBlank(labelFr);
@@ -127,9 +125,6 @@ public class QuestionRevision
 
     /// <summary>Where this revision sits on the form.</summary>
     public int DisplayOrder { get; private init; }
-
-    /// <summary>The section this revision is grouped under, if any.</summary>
-    public string? SectionKey { get; private init; }
 
     /// <summary>
     /// The question this one is conditional on, if any. The form enables this
@@ -222,9 +217,6 @@ public class QuestionRevision
     /// </summary>
     public static IReadOnlyList<string> YesNoCodes { get; } = ["yes", "no"];
 
-    /// <summary>True when this type collects no answer at all.</summary>
-    public bool CollectsNoAnswer => Type is QuestionType.Statement or QuestionType.Group;
-
     internal static QuestionRevision Create(
         TinyId questionId,
         int revisionNumber,
@@ -240,14 +232,13 @@ public class QuestionRevision
         bool isPrivate,
         bool isActive,
         int displayOrder,
-        string? sectionKey,
         TinyId? dependsOnQuestionId,
         TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput> options,
         DateTimeOffset at) =>
         new(
             questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isSystem, isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+            isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
             options, at);
 
     /// <summary>Finds a choice by its invariant code. Null for
@@ -320,13 +311,12 @@ public class QuestionRevision
 
     /// <summary>
     /// Checks the part of a dependency this row can see on its own: that it
-    /// does not point at itself, and that the question is one a reporter can
-    /// answer conditionally at all. Whether the <i>parent</i> is a yes/no
-    /// question is a fact about a different row, so <see cref="QuestionDependencies"/>
-    /// checks that. See ADR-0060.
+    /// does not point at itself, and that the question is not the
+    /// publication-consent system question. Whether the <i>parent</i> is a
+    /// question type that can enable another one is a fact about a different
+    /// row, so <see cref="QuestionDependencies"/> checks that. See ADR-0060.
     /// </summary>
-    private static TinyId? ValidatedDependency(
-        TinyId? dependsOnQuestionId, TinyId questionId, QuestionType type, bool isSystem)
+    private static TinyId? ValidatedDependency(TinyId? dependsOnQuestionId, TinyId questionId, bool isSystem)
     {
         if (dependsOnQuestionId is not { } parent)
         {
@@ -344,9 +334,7 @@ public class QuestionRevision
                 "Publication consent is always asked. Making it conditional would let a report reach the form with no consent question at all.");
         }
 
-        return type is QuestionType.Statement or QuestionType.Group
-            ? throw new DomainRuleViolationException($"A {type} question collects no answer and cannot be made conditional.")
-            : parent;
+        return parent;
     }
 
     private static string NotBlank(string label) =>

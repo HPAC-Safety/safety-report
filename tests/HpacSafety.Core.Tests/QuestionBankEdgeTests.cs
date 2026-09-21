@@ -72,19 +72,6 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void GivenQuestion_WhenMovedIntoSection_ThenSectionKeyIsNormalized()
-    {
-        // Given
-        var question = Question.Create("manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now);
-
-        // When
-        question.MoveToSection("Aircraft details", Now);
-
-        // Then
-        question.SectionKey.ShouldBe("aircraft_details");
-    }
-
-    [Fact]
     public void GivenNonPrivateQuestion_WhenAnswered_ThenAnswerCarriesClassification()
     {
         // Given
@@ -157,21 +144,6 @@ public class QuestionBankEdgeTests
 
         // When
         var answering = () => report.Answer(question, "in the morning", Now);
-
-        // Then
-        answering.ShouldThrow<DomainRuleViolationException>();
-    }
-
-    [Fact]
-    public void GivenStatement_WhenAnswered_ThenRefused()
-    {
-        // Given
-        var statement = Question.Create(
-            "intro", QuestionType.Statement, "We will ask you 15 short questions.", "Nous vous poserons 15 courtes questions.", Now);
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        var answering = () => report.Answer(statement, "ok", Now);
 
         // Then
         answering.ShouldThrow<DomainRuleViolationException>();

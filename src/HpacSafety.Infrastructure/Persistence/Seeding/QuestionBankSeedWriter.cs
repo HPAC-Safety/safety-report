@@ -40,10 +40,18 @@ public static class QuestionBankSeedWriter
 {
     /// <summary>Writes every seeded row through the migration.</summary>
     /// <param name="migrationBuilder">The migration being applied.</param>
-    public static void Write(MigrationBuilder migrationBuilder)
+    public static void Write(MigrationBuilder migrationBuilder) => Write(migrationBuilder, QuestionBankSeed.Questions);
+
+    /// <summary>
+    /// Writes an arbitrary question list through the migration. Exposed so a
+    /// test can exercise the guarded-insert SQL actually being scheduled,
+    /// without depending on what <see cref="QuestionBankSeed"/> currently
+    /// seeds.
+    /// </summary>
+    public static void Write(MigrationBuilder migrationBuilder, IReadOnlyList<SeededQuestion> questions)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.Sql(Sql());
+        AppendIfAny(migrationBuilder, Sql(questions));
     }
 
     /// <summary>
@@ -54,24 +62,39 @@ public static class QuestionBankSeedWriter
     public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.Sql(Sql(legacySensitivitySchema: true));
+        AppendIfAny(migrationBuilder, Sql(legacySensitivitySchema: true));
     }
 
     /// <summary>
-    /// The guarded SQL every row is written with. Exposed so a test can execute
-    /// it a second time against an already-seeded database and prove that is a
-    /// no-op, independent of the schema-creation half of the migration.
+    /// <see cref="MigrationBuilder.Sql(string, bool)"/> refuses an empty
+    /// string, which an empty <see cref="QuestionBankSeed"/> produces.
     /// </summary>
-    public static string Sql() => Sql(legacySensitivitySchema: false);
-
-    private static string Sql(bool legacySensitivitySchema)
+    private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
     {
+        if (sql.Length > 0)
+        {
+            migrationBuilder.Sql(sql);
+        }
+    }
+
+    private static string Sql(bool legacySensitivitySchema) => Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
+
+    /// <summary>
+    /// The guarded SQL for an arbitrary question list. Exposed so a test can
+    /// exercise every row this writer produces — the question, its version,
+    /// both languages, and any options, in either schema shape — without
+    /// depending on what <see cref="QuestionBankSeed"/> currently seeds.
+    /// </summary>
+    public static string Sql(IReadOnlyList<SeededQuestion> questions, bool legacySensitivitySchema = false)
+    {
+        ArgumentNullException.ThrowIfNull(questions);
+
         var sql = new StringBuilder();
         var at = QuestionBankSeed.SeededAt;
 
-        for (var order = 0; order < QuestionBankSeed.Questions.Count; order++)
+        for (var order = 0; order < questions.Count; order++)
         {
-            var question = QuestionBankSeed.Questions[order];
+            var question = questions[order];
             var questionId = SeedIds.For($"question:{question.Key}");
             var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
@@ -80,8 +103,8 @@ public static class QuestionBankSeedWriter
                 AppendGuardedInsert(
                     sql,
                     "questions",
-                    ["id", "key", "is_system", "role", "sensitivity", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
-                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                    ["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
+                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
                     guardColumn: "id",
                     guardValue: Id(questionId));
             }
@@ -90,8 +113,8 @@ public static class QuestionBankSeedWriter
                 AppendGuardedInsert(
                     sql,
                     "questions",
-                    ["id", "key", "is_system", "role", "is_private", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
-                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                    ["id", "key", "is_system", "role", "is_private", "display_order", "is_active", "created_at", "deleted_at"],
+                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
                     guardColumn: "id",
                     guardValue: Id(questionId));
             }

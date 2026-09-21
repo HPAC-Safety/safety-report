@@ -105,7 +105,6 @@ public static class QuestionEndpoints
                     request.IsPrivate,
                     request.IsActive,
                     NextDisplayOrder(questions),
-                    request.SectionKey,
                     dependsOn,
                     ParsedOptionSet(request),
                     options);
@@ -166,7 +165,6 @@ public static class QuestionEndpoints
                     request.IsPrivate,
                     request.IsActive,
                     question.DisplayOrder,
-                    request.SectionKey,
                     clock.GetUtcNow(),
                     request.HelpTextEn,
                     request.HelpTextFr,

@@ -651,7 +651,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
     private static SaveQuestion Draft(string key, string type) =>
         new(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
-            IsRequired: false, IsPrivate: true, IsActive: true, null, null, null, []);
+            IsRequired: false, IsPrivate: true, IsActive: true, null, null, []);
 
     private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
     {
@@ -693,7 +693,6 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         bool IsRequired,
         bool IsPrivate,
         bool IsActive,
-        string? SectionKey,
         string? DependsOnQuestionId,
         string? OptionSetId,
         IReadOnlyList<Option> Options);

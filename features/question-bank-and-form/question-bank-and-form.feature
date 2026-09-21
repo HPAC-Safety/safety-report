@@ -14,7 +14,7 @@ Feature: Question bank and form
   Scenario: Editing an unanswered question creates a new revision instead of mutating one
     Given an active question revision exists for a stable key
     And no answer references that question
-    When an Administrator changes its wording, help text, translations, options, type, order, section, privacy, active state, required state, or system state
+    When an Administrator changes its wording, help text, translations, options, type, order, privacy, active state, required state, or system state
     Then a new complete revision is created with the next revision number
     And the previous revision is left unchanged
     And the question keeps its identifier
@@ -165,12 +165,6 @@ Feature: Question bank and form
     Given a member does not have the Administrator role
     When that member requests a translation
     Then the API rejects the request
-
-  @ignore
-  Scenario: Statements and groups never produce answer entries
-    Given a statement or group/section revision is shown on the form
-    When the reporter submits the form
-    Then no answer entry exists for that revision
 
   @ignore
   Scenario: A skipped file-upload question produces an answer with no attachment

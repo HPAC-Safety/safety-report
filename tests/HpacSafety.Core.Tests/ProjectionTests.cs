@@ -177,18 +177,6 @@ public class ProjectionTests
     }
 
     [Fact]
-    public void GivenQuestionCreatedInSection_WhenRead_ThenSectionKeyIsNormalized()
-    {
-        // Given / When
-        var question = Question.Create(
-            "manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now,
-            sectionKey: "Aircraft Details");
-
-        // Then
-        question.SectionKey.ShouldBe("aircraft_details");
-    }
-
-    [Fact]
     public void GivenOrdinaryQuestion_WhenTypeChanges_ThenAllowed()
     {
         // Given — only the consent question has a locked type
@@ -197,7 +185,7 @@ public class ProjectionTests
         // When
         var revised = question.Revise(
             QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
-            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now);
+            question.IsPrivate, question.IsActive, question.DisplayOrder, Now);
 
         // Then — invariant #1: an ordinary question is never required, no
         // matter what an earlier revision or caller asks for
@@ -216,7 +204,7 @@ public class ProjectionTests
             QuestionType.YesNo,
             "Do you agree to HPAC publishing a de-identified version?",
             "Acceptez-vous que l'ACVL publie une version anonymisée ?",
-            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, consent.SectionKey, Now.AddDays(1));
+            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, Now.AddDays(1));
 
         // Then
         revised.RevisionNumber.ShouldBe(2);
@@ -281,20 +269,6 @@ public class ProjectionTests
 
         // Then — publishing does not invalidate the state that allowed it
         publishable.ShouldBeTrue();
-    }
-
-    [Fact]
-    public void GivenQuestionInSection_WhenMovedOutOf_ThenHasNoSection()
-    {
-        // Given
-        var question = Question.Create(
-            "manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now, sectionKey: "aircraft");
-
-        // When
-        question.MoveToSection(null, Now);
-
-        // Then
-        question.SectionKey.ShouldBeNull();
     }
 
     [Fact]

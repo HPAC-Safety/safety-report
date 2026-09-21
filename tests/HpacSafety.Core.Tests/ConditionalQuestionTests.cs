@@ -50,19 +50,6 @@ public class ConditionalQuestionTests
         Should.Throw<DomainRuleViolationException>(() => consent.DependOn(other.Id, At.AddHours(1)));
     }
 
-    [Theory]
-    [InlineData(QuestionType.Statement)]
-    [InlineData(QuestionType.Group)]
-    public void GivenQuestionCollectsNoAnswer_WhenMadeConditional_ThenRejected(QuestionType type)
-    {
-        // Given
-        var parent = Ordinary("were_you_injured", QuestionType.YesNo);
-        var question = Ordinary("section", type);
-
-        // When / Then
-        Should.Throw<DomainRuleViolationException>(() => question.DependOn(parent.Id, At.AddHours(1)));
-    }
-
     [Fact]
     public void GivenConditionalQuestion_WhenDependencyIsCleared_ThenNewRevisionRecords()
     {
@@ -153,6 +140,24 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
+    public void GivenExistingCycleAmongOtherQuestions_WhenCheckedAgainstUnrelatedTarget_ThenAllowed()
+    {
+        // Given — "first" and "second" already depend on each other, a shape
+        // only this direct construction can produce (the higher-level API
+        // never lets one form). Walking from "first" must notice it has
+        // already visited "first" and stop, rather than loop forever or
+        // wrongly report reaching "target".
+        var first = Ordinary("first", QuestionType.YesNo);
+        var second = Ordinary("second", QuestionType.YesNo, first.Id);
+        first.DependOn(second.Id, At.AddHours(1));
+        var target = Ordinary("target", QuestionType.LongText);
+
+        // When / Then
+        Should.NotThrow(() =>
+            QuestionDependencies.EnsureDependencyAllowed([first, second, target], target.Id, first.Id));
+    }
+
+    [Fact]
     public void GivenQuestionIsOwnParent_WhenBankChecks_ThenRejected()
     {
         // Given
@@ -183,7 +188,7 @@ public class ConditionalQuestionTests
         // When
         var revision = consent.Revise(
             QuestionType.YesNo, "May we publish a summary?", "Pouvons-nous publier un résumé ?",
-            isPrivate: true, isActive: true, displayOrder: 0, sectionKey: null, At.AddHours(1), isRequired: false);
+            isPrivate: true, isActive: true, displayOrder: 0, At.AddHours(1), isRequired: false);
 
         // Then — consent cannot be made skippable, whatever the caller asks for
         revision.IsRequired.ShouldBeTrue();

@@ -37,7 +37,8 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 
         // Then
         await using var reader = PostgresFixture.ContextFor(connectionString);
-        (await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(1);
+        (await reader.Reports.SingleAsync(r => r.Id == report.Id)).Id.ShouldBe(report.Id);
+        (await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id)).Value.ShouldBe("yes");
         (await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(1);
     }
 
@@ -118,14 +119,14 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
     {
         var report = new Report(Locale.EnCa, At);
-        var consent = await QuestionAsync(context, QuestionKey.ConsentPublish);
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+        context.Questions.Add(consent);
+        await context.SaveChangesAsync();
+
         report.Answer(consent, ["yes"], At);
         report.EnsureReadyForSubmission();
         return report;
     }
-
-    private static Task<Question> QuestionAsync(HpacSafetyDbContext context, string key) =>
-        context.Questions.Include(q => q.Revisions).SingleAsync(q => q.Key == key);
 
     /// <summary>
     /// A question the database has never seen, so an answer to it cannot be

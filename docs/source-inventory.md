@@ -35,7 +35,7 @@ identity where source text does not exist.
 - [src/HpacSafety.Core/Features/QuestionBank/QuestionOptionTranslation.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionOptionTranslation.cs) — current normalized option locale row; fold into the complete revision aggregate/DTO unless physical normalization remains demonstrably simpler.
 - [src/HpacSafety.Core/Features/QuestionBank/QuestionRole.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionRole.cs) — drives current ordinary typed projections; remove except the fixed consent invariant represented by key/system metadata.
 - [src/HpacSafety.Core/Features/QuestionBank/QuestionTranslation.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionTranslation.cs) — current normalized label/help locale row; fold into complete bilingual revision semantics.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionType.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionType.cs) — answer-shape enum including statement/group; retain stable types and localize only at edges.
+- [src/HpacSafety.Core/Features/QuestionBank/QuestionType.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionType.cs) — answer-shape enum; retain stable types and localize only at edges.
 - [src/HpacSafety.Core/Features/QuestionBank/QuestionVersion.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionVersion.cs) — current immutable wording/type container; expand/replace with the complete revision defined by this specification.
 
 ### Reporting and attachments

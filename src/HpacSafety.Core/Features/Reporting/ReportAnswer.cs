@@ -120,11 +120,6 @@ public class ReportAnswer
     {
         var revision = question.CurrentRevision;
 
-        if (revision.CollectsNoAnswer)
-        {
-            throw new DomainRuleViolationException($"'{question.Key}' is a {revision.Type} and collects no answer.");
-        }
-
         if (revision.IsRequired && string.IsNullOrWhiteSpace(value))
         {
             throw new DomainRuleViolationException($"'{question.Key}' is required.");

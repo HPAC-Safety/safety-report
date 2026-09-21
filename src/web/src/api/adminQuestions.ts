@@ -24,8 +24,6 @@ export const QUESTION_TYPES = [
 	"phone",
 	"checkbox",
 	"file_upload",
-	"statement",
-	"group",
 ] as const
 
 export type QuestionType = (typeof QUESTION_TYPES)[number]
@@ -53,7 +51,6 @@ export interface QuestionView {
 	isPrivate: boolean
 	isActive: boolean
 	displayOrder: number
-	sectionKey: string | null
 	dependsOnQuestionId: string | null
 	optionSetId: string | null
 	labelEn: string
@@ -89,7 +86,6 @@ export interface SaveQuestionRequest {
 	isRequired: boolean
 	isPrivate: boolean
 	isActive: boolean
-	sectionKey: string | null
 	dependsOnQuestionId: string | null
 	optionSetId: string | null
 	options: { code: string; labelEn: string; labelFr: string }[]

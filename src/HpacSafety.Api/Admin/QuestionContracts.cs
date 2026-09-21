@@ -23,7 +23,6 @@ public sealed record QuestionView(
     bool IsPrivate,
     bool IsActive,
     int DisplayOrder,
-    string? SectionKey,
     string? DependsOnQuestionId,
     string? OptionSetId,
     string LabelEn,
@@ -68,7 +67,6 @@ public sealed record QuestionView(
             revision.IsPrivate,
             revision.IsActive,
             revision.DisplayOrder,
-            revision.SectionKey,
             revision.DependsOnQuestionId?.Value,
             revision.OptionSetId?.Value,
             revision.LabelEn,
@@ -113,7 +111,6 @@ public sealed record SaveQuestionRequest(
     bool IsRequired,
     bool IsPrivate,
     bool IsActive,
-    string? SectionKey,
     string? DependsOnQuestionId,
     string? OptionSetId,
     IReadOnlyList<OptionInput>? Options);

@@ -80,7 +80,6 @@ erDiagram
         boolean is_private "answers are recognition context only"
         boolean is_active
         int display_order
-        varchar(128) section_key
         char(11) depends_on_question_id FK "nullable; a yes_no question"
         char(11) option_set_id FK "nullable; provenance only"
         text label_en
@@ -259,6 +258,7 @@ this.
 | `20260921034154_AddReporterAddedChoices` | Added `option_set_items.added_by_reporter` and an index on `(option_set_id, added_by_reporter)`, which is the curation query. |
 | `20260921152356_DropAdminUsersForJwtIdentity` | Dropped `admin_users` and renamed/widened its two referencing columns to opaque token subjects — `audit_log.actor_subject` and `summaries.approved_by_subject` (ADR-0065). |
 | `20260921192412_ForkAnsweredQuestionsAndStringAnswers` | Narrowed the unique index on `questions.key` to live rows so a fork chain can share one (ADR-0071). Replaced `report_answers.selected_option_codes` with `locale`, `translated_value`, and `needs_translation` alongside the existing `value`, dropped the uniqueness of `(report_id, question_id)` so a multi-select records one row per chosen value, indexed the translation queue, and added `option_set_items.needs_translation` (ADR-0072). |
+| `20260921205551_RemoveStatementGroupSectionKey` | Dropped `question_revisions.section_key` after removing the `statement` and `group` question types it existed to support — neither had a built renderer, and nothing distinguished them from each other in code. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

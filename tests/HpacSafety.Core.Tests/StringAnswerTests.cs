@@ -39,7 +39,7 @@ public class StringAnswerTests
         // When — a later revision renames the choice entirely
         question.Revise(
             QuestionType.SingleSelect, "Province", "Province", isPrivate: true, isActive: true,
-            displayOrder: 1, sectionKey: null, Now,
+            displayOrder: 1, Now,
             options: [new QuestionOptionInput("alberta", "Province of Alberta", "Province de l'Alberta")]);
 
         // Then — the answer carries its own words and resolves through nothing
@@ -185,22 +185,6 @@ public class StringAnswerTests
         answer.ValueIn(Locale.EnCa).ShouldBe("Alberta");
     }
 
-    [Theory]
-    [InlineData(QuestionType.Statement)]
-    [InlineData(QuestionType.Group)]
-    public void GivenQuestionThatCollectsNoAnswer_WhenAnswered_ThenRefused(QuestionType type)
-    {
-        // Given — copy on the form, and a heading over other questions
-        var question = Question.Create(
-            "preamble", type, "Read this first", "Lisez ceci d'abord", Now, isActive: true);
-        var report = new Report(Locale.EnCa, Now);
-
-        // When
-        var answering = () => report.Answer(question, "anything at all", Now);
-
-        // Then
-        answering.ShouldThrow<DomainRuleViolationException>();
-    }
 
     [Fact]
     public void GivenRequiredQuestion_WhenLeftBlank_ThenRefused()

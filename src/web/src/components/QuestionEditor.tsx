@@ -47,7 +47,6 @@ export function blankDraft(): QuestionDraft {
 			// deliberately. See ADR-0038.
 			isPrivate: true,
 			isActive: true,
-			sectionKey: null,
 			dependsOnQuestionId: null,
 			optionSetId: null,
 			options: [],
@@ -69,7 +68,6 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			isRequired: question.isRequired,
 			isPrivate: question.isPrivate,
 			isActive: question.isActive,
-			sectionKey: question.sectionKey,
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			optionSetId: question.optionSetId,
 			options: question.options.map((option) => ({

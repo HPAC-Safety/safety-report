@@ -86,7 +86,7 @@ public class QuestionTests
         // When
         question.Revise(
             QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
-            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
+            question.IsPrivate, question.IsActive, question.DisplayOrder, Now.AddDays(1));
 
         // Then
         question.Revisions.Count.ShouldBe(2);
@@ -104,7 +104,7 @@ public class QuestionTests
         // When
         var retyping = () => consent.Revise(
             QuestionType.LongText, "May we publish?", "Pouvons-nous publier ?",
-            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, consent.SectionKey, Now);
+            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, Now);
 
         // Then — its wording can change; its type cannot
         retyping.ShouldThrow<DomainRuleViolationException>();
@@ -238,11 +238,27 @@ public class QuestionTests
 
         // When
         var revised = question.Revise(
-            question.Type, "Where?", "Où ?", isPrivate: false, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
+            question.Type, "Where?", "Où ?", isPrivate: false, question.IsActive, question.DisplayOrder, Now.AddDays(1));
 
         // Then — the old revision, already possibly referenced by an answer, is unchanged
         original.IsPrivate.ShouldBeTrue();
         revised.IsPrivate.ShouldBeFalse();
         question.IsPrivate.ShouldBeFalse();
+    }
+
+    [Fact]
+    public void GivenRevision_WhenLabelAndHelpTextAreReadByLocale_ThenEachLanguagePicksItsOwnWording()
+    {
+        // Given
+        var question = Question.Create(
+            "where", QuestionType.ShortText, "Where?", "Où ?", Now,
+            helpTextEn: "Tell us where.", helpTextFr: "Dites-nous où.");
+        var revision = question.CurrentRevision;
+
+        // Then
+        revision.Label(Locale.EnCa).ShouldBe("Where?");
+        revision.Label(Locale.FrCa).ShouldBe("Où ?");
+        revision.HelpText(Locale.EnCa).ShouldBe("Tell us where.");
+        revision.HelpText(Locale.FrCa).ShouldBe("Dites-nous où.");
     }
 }

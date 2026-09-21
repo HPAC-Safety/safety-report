@@ -61,6 +61,18 @@ does. A `#`-prefixed placeholder must never merge to main — if `--check`
 ever sees one, either the CI generation step didn't run for that key or
 someone hand-committed a local stub.
 
+**Narrowed by [ADR-0057](ADR-0057-same-repo-pull-requests-translate-in-pr.md)
+and issue #207, for the pre-commit hook only.** "Must never merge to main"
+is unchanged and CI still enforces it. But once ADR-0057 had
+`i18n-translate.yml` commit the French straight onto a same-repo pull
+request's branch, a `#` stub stopped being evidence of a mistake on a branch
+and became a known, temporary state that a workflow resolves within seconds
+of the push. The hook therefore reports a stub in `fr-CA.json` as a notice
+on a branch and still refuses it on `main`, through
+`--allow-pending-translation`, which nothing in CI passes. A stub in
+`en-CA.json` stays fatal everywhere: no workflow writes English, so that one
+is always the author's to fix.
+
 `locales/fr-CA.json` and `locales/fr-CA.meta.json` were added to
 `.gitignore` here, on the premise that they were already committed and the
 entry would only stop a developer's local, stub-filled copy from being

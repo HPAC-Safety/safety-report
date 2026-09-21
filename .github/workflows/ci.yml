@@ -77,8 +77,11 @@ jobs:
       # Preinstalled on the runner. init-dev.sh is POSIX sh, not bash: Windows
       # contributors run it under Git Bash, so a bashism would break the one
       # platform nobody here tests on by hand. See ADR-0015.
-      - name: shellcheck init-dev.sh
-        run: shellcheck -s sh init-dev.sh
+      # The hook is POSIX sh for the same reason, and it grew real branching
+      # when its two checks were made independent (#207) — a bashism or an
+      # unguarded cd there breaks committing, not CI, so it is worth linting.
+      - name: shellcheck init-dev.sh and the pre-commit hook
+        run: shellcheck -s sh init-dev.sh .githooks/pre-commit
 
       - uses: actions/setup-dotnet@v6
         with:

@@ -499,6 +499,38 @@ describe('verifying the locales without translating', () => {
 		})
 	})
 
+	describe('given a French value still carrying its # marker', () => {
+		it('when the problems are classified then only that one is pending, so the hook can tolerate it on a branch (ADR-0057)', () => {
+			// Given
+			const source = { nav: { contact: 'Contact' } }
+
+			// When
+			const result = verifyLocales({ english: source, french: { nav: { contact: '#Contact' } }, meta: {}, glossary: {} })
+
+			// Then — a workflow resolves this one on its own; nothing else here does
+			assert.equal(result.pending.length, 1)
+			assert.match(result.pending[0], /nav\.contact.*# stub/)
+			assert.deepEqual(result.problems, result.pending)
+		})
+	})
+
+	describe('given a missing French key alongside a pending stub', () => {
+		it('when the problems are classified then the missing key is not pending, so it still blocks a commit', () => {
+			// Given
+			const source = { nav: { contact: 'Contact', help: 'Help' } }
+
+			// When
+			const result = verifyLocales({ english: source, french: { nav: { contact: '#Contact' } }, meta: {}, glossary: {} })
+
+			// Then — a workflow fills a stub; nothing fills a key somebody forgot
+			assert.equal(result.ok, false)
+			assert.equal(result.pending.length, 1)
+			assert.equal(result.problems.length, 2)
+			assert.ok(result.problems.some((problem) => /missing 'nav\.help'/.test(problem)))
+			assert.ok(!result.pending.some((problem) => /nav\.help/.test(problem)))
+		})
+	})
+
 	describe('given an English value still carrying stub-missing-translations.mjs\'s # marker', () => {
 		it('when it is verified then it fails, so an untranslated French-only key can never merge (ADR-0054)', () => {
 			// Given
@@ -515,6 +547,9 @@ describe('verifying the locales without translating', () => {
 			// Then
 			assert.equal(result.ok, false)
 			assert.match(result.problems.join('\n'), /nav\.onlyFrench.*# stub/)
+
+			// No workflow writes English. This one is always the author's to fix.
+			assert.deepEqual(result.pending, [])
 		})
 	})
 })

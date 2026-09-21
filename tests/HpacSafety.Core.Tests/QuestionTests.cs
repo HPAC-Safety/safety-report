@@ -245,4 +245,20 @@ public class QuestionTests
         revised.IsPrivate.ShouldBeFalse();
         question.IsPrivate.ShouldBeFalse();
     }
+
+    [Fact]
+    public void GivenRevision_WhenLabelAndHelpTextAreReadByLocale_ThenEachLanguagePicksItsOwnWording()
+    {
+        // Given
+        var question = Question.Create(
+            "where", QuestionType.ShortText, "Where?", "Où ?", Now,
+            helpTextEn: "Tell us where.", helpTextFr: "Dites-nous où.");
+        var revision = question.CurrentRevision;
+
+        // Then
+        revision.Label(Locale.EnCa).ShouldBe("Where?");
+        revision.Label(Locale.FrCa).ShouldBe("Où ?");
+        revision.HelpText(Locale.EnCa).ShouldBe("Tell us where.");
+        revision.HelpText(Locale.FrCa).ShouldBe("Dites-nous où.");
+    }
 }

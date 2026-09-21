@@ -28,6 +28,21 @@ public sealed class QuestionBankSeedWriterTests
         "Une certaine aide",
         [new SeededOption("a", "Option A", "Option A (fr)")]);
 
+    /// <summary>Not private, and with no help text — the other side of both
+    /// ternaries <see cref="Question"/> alone leaves untouched.</summary>
+    private static readonly SeededQuestion NonPrivateQuestionWithNoHelp = new(
+        "another_question",
+        QuestionType.ShortText,
+        QuestionRole.None,
+        IsPrivate: false,
+        IsRequired: false,
+        IsSystem: false,
+        "Another question",
+        "Une autre question",
+        null,
+        null,
+        []);
+
     [Fact]
     public void GivenSeededQuestionWithAnOption_WhenSqlIsBuilt_ThenEveryRowGetsAGuardedInsert()
     {
@@ -46,6 +61,17 @@ public sealed class QuestionBankSeedWriterTests
     public void GivenNoQuestions_WhenSqlIsBuilt_ThenEmpty()
     {
         QuestionBankSeedWriter.Sql([]).ShouldBeEmpty();
+    }
+
+    [Fact]
+    public void GivenNonEmptyQuestions_WhenWritten_ThenOneSqlOperationIsScheduled()
+    {
+        var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");
+
+        QuestionBankSeedWriter.Write(migration, [Question]);
+
+        var operation = migration.Operations.ShouldHaveSingleItem().ShouldBeOfType<SqlOperation>();
+        operation.Sql.ShouldContain("INSERT INTO questions");
     }
 
     [Fact]
@@ -72,12 +98,20 @@ public sealed class QuestionBankSeedWriterTests
     }
 
     [Fact]
-    public void GivenSeededQuestion_WhenWrittenAgainstLegacySensitivitySchema_ThenUsesSensitivityNotPrivacyFlag()
+    public void GivenSeededQuestions_WhenWrittenAgainstLegacySensitivitySchema_ThenUsesSensitivityNotPrivacyFlag()
     {
-        var sql = QuestionBankSeedWriter.Sql([Question], legacySensitivitySchema: true);
+        var sql = QuestionBankSeedWriter.Sql([Question, NonPrivateQuestionWithNoHelp], legacySensitivitySchema: true);
 
-
-        sql.ShouldContain("sensitivity");
+        sql.ShouldContain("'restricted'");
+        sql.ShouldContain("'publishable'");
         sql.ShouldNotContain("is_private");
+    }
+
+    [Fact]
+    public void GivenQuestionWithNoHelpText_WhenSqlIsBuilt_ThenHelpColumnIsNull()
+    {
+        var sql = QuestionBankSeedWriter.Sql([NonPrivateQuestionWithNoHelp]);
+
+        sql.ShouldContain("NULL");
     }
 }

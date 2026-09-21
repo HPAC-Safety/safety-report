@@ -40,10 +40,18 @@ public static class QuestionBankSeedWriter
 {
     /// <summary>Writes every seeded row through the migration.</summary>
     /// <param name="migrationBuilder">The migration being applied.</param>
-    public static void Write(MigrationBuilder migrationBuilder)
+    public static void Write(MigrationBuilder migrationBuilder) => Write(migrationBuilder, QuestionBankSeed.Questions);
+
+    /// <summary>
+    /// Writes an arbitrary question list through the migration. Exposed so a
+    /// test can exercise the guarded-insert SQL actually being scheduled,
+    /// without depending on what <see cref="QuestionBankSeed"/> currently
+    /// seeds.
+    /// </summary>
+    public static void Write(MigrationBuilder migrationBuilder, IReadOnlyList<SeededQuestion> questions)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        AppendIfAny(migrationBuilder, Sql());
+        AppendIfAny(migrationBuilder, Sql(questions));
     }
 
     /// <summary>
@@ -68,13 +76,6 @@ public static class QuestionBankSeedWriter
             migrationBuilder.Sql(sql);
         }
     }
-
-    /// <summary>
-    /// The guarded SQL every row is written with. Exposed so a test can execute
-    /// it a second time against an already-seeded database and prove that is a
-    /// no-op, independent of the schema-creation half of the migration.
-    /// </summary>
-    public static string Sql() => Sql(legacySensitivitySchema: false);
 
     private static string Sql(bool legacySensitivitySchema) => Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
 

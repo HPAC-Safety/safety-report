@@ -23,8 +23,14 @@ privacy-sensitive.
 ## Product invariants
 
 1. Questions come from the database as complete immutable bilingual revisions.
-   Every edit creates a new revision. Only explicit publication consent is a
-   required system question; every ordinary question may be skipped.
+   Every edit creates a new revision. Publication consent is the only system
+   question and the only answer read by name; it can never be made optional.
+   Every other question's required state is authored by an administrator
+   ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
+   A question may be made conditional on a yes/no question, and its options may
+   be copied from a shared choice list
+   ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
+   [ADR-0058](docs/decisions/ADR-0058-shared-option-sets-with-a-revision-snapshot.md)).
 2. Until final submission, unfinished answers and shown revision IDs stay only
    in that browser for 15 days; files are not persisted or restored. No report,
    attachment, draft, reserved ID, or other respondent data is written to a
@@ -67,7 +73,8 @@ Read only the skills relevant to the task. Installed copies under
 | Tests and fixtures | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
 | Summary privacy or runtime prompt | [`anonymize-hpac-reports`](skills/anonymize-hpac-reports/SKILL.md) |
 | Questions, reports, lifecycle, review, publication | [`incident-domain-model`](skills/incident-domain-model/SKILL.md) |
-| EF Core, migrations, or query DTOs | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
+| EF Core or query DTOs | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
+| Writing or applying a migration | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | Attachments or private object storage | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
 | English/French behavior | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
 | Static HTML/JS and design system | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |

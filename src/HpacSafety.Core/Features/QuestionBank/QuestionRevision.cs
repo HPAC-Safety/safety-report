@@ -51,10 +51,13 @@ public class QuestionRevision
         string? placeholderEn,
         string? placeholderFr,
         bool isSystem,
+        bool isRequired,
         bool isPrivate,
         bool isActive,
         int displayOrder,
         string? sectionKey,
+        TinyId? dependsOnQuestionId,
+        TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput> options,
         DateTimeOffset at)
     {
@@ -62,17 +65,18 @@ public class QuestionRevision
         QuestionId = questionId;
         RevisionNumber = revisionNumber;
         Type = type;
-        // Only the publication-consent question may be system or required —
-        // see product invariant #1. Both are derived from what kind of
-        // question this is, never accepted from a caller, so contradictory
-        // input (an ordinary question asking to be required, or consent
-        // asking not to be) cannot exist.
+        // Only the publication-consent question is a system question, and it is
+        // always required — a form that lets a reporter skip consent cannot
+        // publish anything. Every other question's required state is authored
+        // by an administrator. See ADR-0061.
         IsSystem = isSystem;
-        IsRequired = isSystem;
+        IsRequired = isSystem || isRequired;
         IsPrivate = isPrivate;
         IsActive = isActive;
         DisplayOrder = displayOrder;
         SectionKey = sectionKey is null ? null : QuestionKey.Normalize(sectionKey);
+        DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
+        OptionSetId = optionSetId;
         LabelEn = NotBlank(labelEn);
         LabelFr = NotBlank(labelFr);
         HelpTextEn = helpTextEn;
@@ -105,9 +109,10 @@ public class QuestionRevision
     public bool IsSystem { get; private init; }
 
     /// <summary>
-    /// Whether a reporter must answer before submitting. Derived: true only
-    /// when <see cref="IsSystem"/> is true. Never caller-controlled — see
-    /// product invariant #1.
+    /// Whether a reporter must answer before submitting. Authored by an
+    /// administrator on every ordinary question, and forced true on the
+    /// publication-consent question, which cannot be made optional. See
+    /// ADR-0061.
     /// </summary>
     public bool IsRequired { get; private init; }
 
@@ -125,6 +130,28 @@ public class QuestionRevision
 
     /// <summary>The section this revision is grouped under, if any.</summary>
     public string? SectionKey { get; private init; }
+
+    /// <summary>
+    /// The question this one is conditional on, if any. The form enables this
+    /// question only when that question is answered yes.
+    /// </summary>
+    /// <remarks>
+    /// This names the stable <see cref="Question"/>, not a revision of it, so
+    /// rewording the parent does not break the child. Only a
+    /// <see cref="QuestionType.YesNo"/> question may be a parent; that is a
+    /// fact about the parent's current revision, which this row cannot see, so
+    /// it is checked by <see cref="QuestionDependencies"/> rather than here. See
+    /// ADR-0060.
+    /// </remarks>
+    public TinyId? DependsOnQuestionId { get; private init; }
+
+    /// <summary>
+    /// The shared <see cref="OptionSet"/> this revision's options were copied
+    /// from, if any. Provenance only — the copy in <see cref="Options"/> is
+    /// what this revision offers, whatever later happens to the set. See
+    /// ADR-0058.
+    /// </summary>
+    public TinyId? OptionSetId { get; private init; }
 
     /// <summary>The English wording.</summary>
     public string LabelEn { get; private init; }
@@ -162,10 +189,20 @@ public class QuestionRevision
 
     /// <summary>True when this type stores an option code rather than free text.</summary>
     public bool ExpectsOptions =>
-        Type is QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.YesNo;
+        Type is QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.YesNo
+            or QuestionType.Autocomplete;
+
+    /// <summary>
+    /// True when this type's options may come from a shared
+    /// <see cref="OptionSet"/>. Yes/no is excluded: its two answers are not
+    /// option rows at all.
+    /// </summary>
+    public bool AcceptsOptionSet =>
+        Type is QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete;
 
     /// <summary>True when this type takes at most one answer.</summary>
-    public bool TakesOneAnswer => Type is QuestionType.SingleSelect or QuestionType.YesNo;
+    public bool TakesOneAnswer =>
+        Type is QuestionType.SingleSelect or QuestionType.YesNo or QuestionType.Autocomplete;
 
     /// <summary>
     /// The two codes a <see cref="QuestionType.YesNo"/> question accepts. Fixed,
@@ -188,15 +225,19 @@ public class QuestionRevision
         string? placeholderEn,
         string? placeholderFr,
         bool isSystem,
+        bool isRequired,
         bool isPrivate,
         bool isActive,
         int displayOrder,
         string? sectionKey,
+        TinyId? dependsOnQuestionId,
+        TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput> options,
         DateTimeOffset at) =>
         new(
             questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isSystem, isPrivate, isActive, displayOrder, sectionKey, options, at);
+            isSystem, isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+            options, at);
 
     /// <summary>Finds a choice by its invariant code. Null for
     /// <see cref="QuestionType.YesNo"/>, whose two answers are not option rows —
@@ -245,8 +286,39 @@ public class QuestionRevision
                 throw new DomainRuleViolationException($"This question already has an option coded '{normalized}'.");
             }
 
-            _options.Add(QuestionRevisionOption.Create(Id, normalized, i, input.LabelEn, input.LabelFr));
+            _options.Add(QuestionRevisionOption.Create(Id, normalized, i, input.LabelEn, input.LabelFr, input.SourceItemId));
         }
+    }
+
+    /// <summary>
+    /// Checks the part of a dependency this row can see on its own: that it
+    /// does not point at itself, and that the question is one a reporter can
+    /// answer conditionally at all. Whether the <i>parent</i> is a yes/no
+    /// question is a fact about a different row, so <see cref="QuestionDependencies"/>
+    /// checks that. See ADR-0060.
+    /// </summary>
+    private static TinyId? ValidatedDependency(
+        TinyId? dependsOnQuestionId, TinyId questionId, QuestionType type, bool isSystem)
+    {
+        if (dependsOnQuestionId is not { } parent)
+        {
+            return null;
+        }
+
+        if (parent == questionId)
+        {
+            throw new DomainRuleViolationException("A question cannot be conditional on itself.");
+        }
+
+        if (isSystem)
+        {
+            throw new DomainRuleViolationException(
+                "Publication consent is always asked. Making it conditional would let a report reach the form with no consent question at all.");
+        }
+
+        return type is QuestionType.Statement or QuestionType.Group
+            ? throw new DomainRuleViolationException($"A {type} question collects no answer and cannot be made conditional.")
+            : parent;
     }
 
     private static string NotBlank(string label) =>

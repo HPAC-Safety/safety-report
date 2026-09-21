@@ -24,4 +24,15 @@ public enum QuestionType
 
     /// <summary>A heading that owns nested questions and collects no answer itself.</summary>
     Group = 12,
+
+    /// <summary>A local wall-clock time, with no date. Stored as <c>TimeOnly</c> — ADR-0035.</summary>
+    Time = 13,
+
+    /// <summary>
+    /// A type-ahead over a known list. Domain-identical to
+    /// <see cref="SingleSelect"/> — it stores one option code, and the
+    /// difference is only how many choices are practical to show at once. A
+    /// province list is a picker; an aerodrome list is an autocomplete.
+    /// </summary>
+    Autocomplete = 14,
 }

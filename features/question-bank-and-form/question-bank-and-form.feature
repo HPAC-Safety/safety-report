@@ -45,11 +45,17 @@ Feature: Question bank and form
     And ties are broken by stable key
 
   @ignore
-  Scenario: consent_publish is the only required question
+  Scenario: consent_publish is the only question that can never be optional
     Given the form is assembled for a reporter
     When the reporter submits without an answer to consent_publish
     Then the API rejects the submission
-    And every other answer-producing question may be skipped without blocking submission
+    And an Administrator cannot save a consent_publish revision that is optional
+
+  Scenario: An Administrator chooses whether an ordinary question must be answered
+    Given an Administrator authors an ordinary question
+    When they mark it as one reporters must answer
+    Then the new revision records that it is required
+    And marking it optional again records that on a further new revision
 
   @ignore
   Scenario: consent_publish must resolve to an explicit yes or no
@@ -98,7 +104,7 @@ Feature: Question bank and form
     And both English and French labels are present for an answer-producing question
     And an option-requiring type has at least one valid bilingual option and every other type has none
     And option codes are unique within the revision
-    And only consent_publish may be marked system or required
+    And only consent_publish may be marked system
     And the consent_publish revision is active, yes/no, private, and excluded from summary input despite being stored as an answer
 
   @ignore
@@ -128,3 +134,139 @@ Feature: Question bank and form
     Then the deletion is rejected
     And the revision remains available as history indefinitely
     And deactivating it through a new revision is the normal way to remove it from future forms
+
+  Scenario: A shared choice list is copied into the revision that uses it
+    Given a shared choice list offers several bilingual options
+    When an Administrator saves a question revision that uses that list
+    Then the revision holds its own complete copy of those options
+    And each copy records the shared item it came from
+
+  Scenario: Editing a shared choice list never changes a revision already built from it
+    Given a question revision was built from a shared choice list
+    When an Administrator relabels an option, adds one, and removes another from that list
+    Then the existing revision still offers exactly the options it was saved with
+    And a revision saved afterwards offers the edited list instead
+
+  Scenario: Removing an option from a shared list keeps every snapshot of it
+    Given a question revision copied an option from a shared choice list
+    When an Administrator removes that option from the list
+    Then the option is retired from the list rather than erased
+    And the revision's copy of it is unchanged
+
+  Scenario: A question can be made conditional only on a yes/no question
+    Given an active question asks for something other than yes or no
+    When an Administrator tries to make another question conditional on it
+    Then the attempt is rejected
+    And a yes/no question is accepted as the condition instead
+
+  Scenario: A question cannot be conditional on itself or form a cycle
+    Given a question is already conditional on a yes/no question
+    When an Administrator tries to make that yes/no question conditional on it
+    Then the attempt is rejected
+    And a question offered as its own condition is rejected the same way
+
+  Scenario: Publication consent can never be made conditional
+    Given the consent_publish question exists
+    When an Administrator tries to make it conditional on another question
+    Then the attempt is rejected
+
+  Scenario: Rearranging the form writes a new revision for every question that moved
+    Given several active questions sit in a known order
+    When an Administrator rearranges them
+    Then each question that moved has a new revision recording its new position
+    And a question that did not move keeps its current revision
+    And no two questions are left claiming the same position
+
+  Scenario Outline: A question type either takes options or does not
+    Given an Administrator authors a <type> question
+    When they supply bilingual options with it
+    Then the revision <outcome>
+
+    Examples:
+      | type         | outcome                  |
+      | autocomplete | stores those options     |
+      | single_select| stores those options     |
+      | multi_select | stores those options     |
+      | time         | is rejected              |
+      | short_text   | is rejected              |
+      | yes_no       | is rejected              |
+
+  Scenario: A question key is normalized and cannot be reused
+    Given an Administrator authors a question with a loosely typed key
+    Then the stored key is lowercase and underscore-separated
+    And a key that reduces to nothing at all is rejected
+
+  Scenario: Retiring a question keeps it and its history
+    Given an active question has been asked
+    When an Administrator deletes it
+    Then the question is stamped as deleted rather than removed
+    And it refuses any further revision
+
+  Scenario: Publication consent can never be deleted or deactivated
+    Given the consent_publish question exists
+    When an Administrator tries to delete it
+    Then the attempt is rejected
+    And trying to stop asking it is rejected the same way
+
+  Scenario: A retired choice list refuses further edits
+    Given a shared choice list offers several bilingual options
+    When an Administrator retires the whole list
+    Then its options are retired with it
+    And adding, renaming, or rearranging it is rejected
+
+  Scenario: A choice list is rearranged as a whole or not at all
+    Given a shared choice list offers several bilingual options
+    When an Administrator arranges every option into a new order
+    Then the list takes that order
+    And an arrangement that omits or repeats an option is rejected
+
+  @ui
+  Scenario: An Administrator authors a question from the dashboard
+    Given a signed-in Administrator opens the manage-questions page
+    When they add a paragraph-text question in both official languages
+    Then the new question appears in the list with its type and version
+
+  @ui
+  Scenario: The options editor appears only for a type that takes options
+    Given a signed-in Administrator is authoring a new question
+    When they choose the type-ahead list type
+    Then the page offers a shared choice list and an option editor
+    When they choose the single-line text type instead
+    Then the page offers neither
+
+  @ui
+  Scenario: Only yes/no questions are offered as a condition
+    Given a signed-in Administrator is authoring a new question
+    Then the condition picker offers only the yes/no questions on the form
+
+  @ui
+  Scenario: Questions are reordered from the keyboard
+    Given a signed-in Administrator opens the manage-questions page
+    When they move the second question up using its move-up control
+    Then the two questions have swapped places in the list
+
+  @ui
+  Scenario: Editing a question from the dashboard shows its new version
+    Given a signed-in Administrator opens the manage-questions page
+    When they edit the first question's English wording and save
+    Then the list shows the new wording and a higher version number
+
+  @ui
+  Scenario: Deleting a question removes it from the list
+    Given a signed-in Administrator opens the manage-questions page
+    When they delete the second question
+    Then it is gone from the list
+
+  @ui
+  Scenario: A rejected save tells the Administrator why
+    Given a signed-in Administrator is authoring a new question
+    When they save a question whose key is already in use
+    Then the page shows the reason the save was refused
+    And the question is not added to the list
+
+  @ui
+  Scenario: The editor carries an existing question's settings into the form
+    Given a signed-in Administrator opens the manage-questions page
+    When they open the first question for editing
+    Then the form is filled with its current wording, type, and behaviour
+    And its key cannot be changed

@@ -53,7 +53,7 @@ publication channels.
 |---|---|
 | API and Worker | .NET 10 / ASP.NET Core |
 | Database | PostgreSQL with EF Core |
-| Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite` |
+| Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite`; `@dnd-kit` for reordering, behind one owned component ([ADR-0059](docs/decisions/ADR-0059-dnd-kit-for-reordering.md)) |
 | Tests | xUnit, Shouldly, Testcontainers, `node:test`, Playwright |
 | Hosting target | AWS `ca-central-1`, deployed through GitHub OIDC |
 

@@ -22,6 +22,12 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- The question-bank scenarios describe rules that live in the domain, so
+       they execute against it directly rather than through the API. -->
+  <ItemGroup>
+    <ProjectReference Include="../../src/HpacSafety.Core/HpacSafety.Core.csproj" />
+  </ItemGroup>
+
   <!-- The canonical .feature files live under features/, outside this
        project's folder, and stay there - see ADR-0049. -->
   <ItemGroup>

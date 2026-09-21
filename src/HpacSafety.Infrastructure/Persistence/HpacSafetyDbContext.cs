@@ -64,6 +64,12 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
     /// <summary>Options on a question revision.</summary>
     public DbSet<QuestionRevisionOption> QuestionRevisionOptions => Set<QuestionRevisionOption>();
 
+    /// <summary>Reusable choice lists shared by more than one question.</summary>
+    public DbSet<OptionSet> OptionSets => Set<OptionSet>();
+
+    /// <summary>The choices in a reusable list.</summary>
+    public DbSet<OptionSetItem> OptionSetItems => Set<OptionSetItem>();
+
     /// <summary>The admin allowlist.</summary>
     public DbSet<AdminUser> AdminUsers => Set<AdminUser>();
 
@@ -136,6 +142,8 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
         modelBuilder.ApplyConfiguration(new QuestionConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionRevisionConfiguration());
         modelBuilder.ApplyConfiguration(new QuestionRevisionOptionConfiguration());
+        modelBuilder.ApplyConfiguration(new OptionSetConfiguration());
+        modelBuilder.ApplyConfiguration(new OptionSetItemConfiguration());
 
         modelBuilder.ApplyConfiguration(new AdminUserConfiguration());
         modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());

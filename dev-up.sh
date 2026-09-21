@@ -37,4 +37,33 @@ echo "Starting containers"
 # against a bind-mounted repo, so edits on disk hot-reload in the browser
 # without a rebuild or restart. postgres data and web's node_modules both
 # survive restarts via named volumes.
-docker compose up --build
+#
+# Detached on purpose: this script brings the environment up, waits until it
+# is actually serving, and returns. Logs are `docker compose logs -f`.
+docker compose up --build --detach
+
+echo "Waiting for the API and the web dev server"
+
+# The web container runs `npm ci` on a cold node_modules volume, which is the
+# slow part of a first start.
+WAITED=0
+LIMIT=300
+
+while [ "$WAITED" -lt "$LIMIT" ]; do
+	API_UP=$(curl --silent --fail --max-time 2 http://localhost:8080/health >/dev/null 2>&1 && echo yes || echo no)
+	WEB_UP=$(curl --silent --fail --max-time 2 http://localhost:5173/ >/dev/null 2>&1 && echo yes || echo no)
+
+	if [ "$API_UP" = yes ] && [ "$WEB_UP" = yes ]; then
+		echo
+		echo "Web  http://localhost:5173"
+		echo "API  http://localhost:8080"
+		echo "Logs docker compose logs -f     Stop ./dev-up.sh --down"
+		exit 0
+	fi
+
+	sleep 2
+	WAITED=$((WAITED + 2))
+done
+
+echo "error: the containers did not come up within ${LIMIT}s. Check: docker compose logs" >&2
+exit 1

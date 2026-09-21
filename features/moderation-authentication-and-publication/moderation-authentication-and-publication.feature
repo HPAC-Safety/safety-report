@@ -3,6 +3,27 @@ Feature: Moderation, authentication, and publication
   reports, and only a fully approved, consented, non-deleted report ever
   reaches the public feed.
 
+  @ui
+  Scenario: The member login page presents credential fields and a third-party sign-in option
+    Given a visitor activates the member-login action
+    Then the login page shows a username field, a password field, a third-party sign-in option, and a login action
+
+  @ui
+  Scenario: A member's signed-in session persists across a reload and clears on logout
+    Given a visitor signs in from the member login page
+    Then the header shows a logout action instead of the member-login action
+    When the page reloads
+    Then the header still shows the logout action
+    When the visitor activates the logout action
+    Then the header shows the member-login action again
+
+  @ignore
+  Scenario: Signing in through the third-party option completes the same authentication path
+    Given a member selects the third-party sign-in option on the login page
+    When that identity flow completes successfully
+    Then the result is authenticated the same way as the credential form, through IMemberAuthenticator
+    And the local allowlist still governs whether that identity receives a role
+
   @ignore
   Scenario: Successful authentication issues a short-lived secure cookie
     Given a member authenticates through IMemberAuthenticator

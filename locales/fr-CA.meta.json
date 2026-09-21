@@ -10,7 +10,7 @@
     "reviewed": true
   },
   "footer.copyright": {
-    "source_hash": "13134728987d9a32ead5df5cd231bd2eea13714a02adce071cde8d19a0d18531",
+    "source_hash": "8615fda338344cec2d1769d84fa9526873123c0a92f8368e0f74fc3261a76460",
     "provider": "glossary",
     "reviewed": true
   },
@@ -94,6 +94,11 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "nav.memberLogout": {
+    "source_hash": "49616145514e9abf1fc47d631fccccff2ed974cc260d38848181a07e0fa9972f",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "nav.openMenuLabel": {
     "source_hash": "b40b3713b43dc702682dc967ea5c2dbe20ae414c30baf100d162a8250a928065",
     "provider": "glossary",
@@ -121,6 +126,31 @@
   },
   "notFound.title": {
     "source_hash": "a469ab4ca4e55bf547566e9ebfa1b809c933207e9d558156bc0c4252b17533fe",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.login.googleButton": {
+    "source_hash": "cce937e891444a7417c696cdd80c0eed11deb383f3c42bdb8b591d5dfcaa398e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.login.passwordLabel": {
+    "source_hash": "e7cf3ef4f17c3999a94f2c6f612e8a888e5b1026878e4e19398b23bd38ec221a",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.login.submitButton": {
+    "source_hash": "c189840cf7e2d6f6fdeefde1ac59dfdf50bb75642eb569b4e38a5614d6f12ac2",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.login.title": {
+    "source_hash": "fe7747440a0526f0ccdeb42924b76f94c011997233f4f0e23dd60e3b0da9ded4",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.login.usernameLabel": {
+    "source_hash": "e3b89e9d33f88e523083d8b4436adcc3726c89e97fd3179a2e102d765d1b16ed",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

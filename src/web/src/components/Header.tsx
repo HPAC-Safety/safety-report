@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import logo from "../../assets/hpac-logo.png"
 import { useLocale } from "../i18n/useLocale"
+import { useAuth } from "../auth/useAuth"
 import { Nav } from "./Nav"
 import { LanguageToggle } from "./LanguageToggle"
 import { ThemeToggle } from "./ThemeToggle"
@@ -24,6 +25,7 @@ function CloseIcon() {
 
 export function Header() {
 	const { t } = useLocale()
+	const { isSignedIn, signOut } = useAuth()
 	const [menuOpen, setMenuOpen] = useState(false)
 	const toggleButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -54,12 +56,22 @@ export function Header() {
 						<LanguageToggle />
 						<ThemeToggle />
 					</div>
-					<Link
-						to="/login"
-						className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-semibold text-ink-inverse"
-					>
-						{t("nav.memberLogin")}
-					</Link>
+					{isSignedIn ? (
+						<button
+							type="button"
+							onClick={signOut}
+							className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-semibold text-ink-inverse"
+						>
+							{t("nav.memberLogout")}
+						</button>
+					) : (
+						<Link
+							to="/login"
+							className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-semibold text-ink-inverse"
+						>
+							{t("nav.memberLogin")}
+						</Link>
+					)}
 				</div>
 
 				<button
@@ -94,13 +106,26 @@ export function Header() {
 							<Nav stacked onNavigate={() => setMenuOpen(false)} />
 						</div>
 
-						<Link
-							to="/login"
-							onClick={() => setMenuOpen(false)}
-							className="touch-target flex items-center justify-center bg-brand-700 py-4 font-sans text-sm font-semibold text-ink-inverse"
-						>
-							{t("nav.memberLogin")}
-						</Link>
+						{isSignedIn ? (
+							<button
+								type="button"
+								onClick={() => {
+									signOut()
+									setMenuOpen(false)
+								}}
+								className="touch-target flex items-center justify-center bg-brand-700 py-4 font-sans text-sm font-semibold text-ink-inverse"
+							>
+								{t("nav.memberLogout")}
+							</button>
+						) : (
+							<Link
+								to="/login"
+								onClick={() => setMenuOpen(false)}
+								className="touch-target flex items-center justify-center bg-brand-700 py-4 font-sans text-sm font-semibold text-ink-inverse"
+							>
+								{t("nav.memberLogin")}
+							</Link>
+						)}
 					</div>
 				</>
 			)}

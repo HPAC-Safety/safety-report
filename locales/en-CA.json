@@ -12,6 +12,7 @@
   "nav.submitReport": "Submit a safety report",
   "nav.contact": "Contact",
   "nav.memberLogin": "Member login",
+  "nav.memberLogout": "Log out",
   "nav.openMenuLabel": "Open menu",
   "nav.closeMenuLabel": "Close menu",
   "language.switchTo": "Switch to {language}",
@@ -31,6 +32,11 @@
   "footer.copyright": "© {year} Hang Gliding and Paragliding Association of Canada",
   "page.placeholder.title": "{pageName}",
   "page.placeholder.body": "This page is a placeholder. Content for {pageName} is coming soon.",
+  "page.login.title": "Member login",
+  "page.login.usernameLabel": "Username",
+  "page.login.passwordLabel": "Password",
+  "page.login.googleButton": "Continue with Google",
+  "page.login.submitButton": "Log in",
   "notFound.title": "Page not found",
   "notFound.body": "There is nothing at this address."
 }

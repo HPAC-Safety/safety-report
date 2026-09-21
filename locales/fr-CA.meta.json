@@ -497,6 +497,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.dependsOnOptionSummary": {
+    "source_hash": "6061adfeaa4bae8a29ea672d90c0c7f810ee730d305ea2eb7eebc8284375f65d",
+    "target_hash": "0d131dfc59f430848f101e27abeffb702a17dc6342b2f8309d50addccec923d4",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "questions.dependsOnSummary": {
     "source_hash": "43206b471e3aae0e2587124cfe2ff49ead5e94a006c8dfc44182c5e06343b00f",
     "target_hash": "ff1ecd6c84df910d63aa8780c336d5cf256543110f9ebffd46e374590b1e156f",
@@ -558,20 +564,38 @@
     "reviewed": false
   },
   "questions.field.dependsOn": {
-    "source_hash": "8100f8638b5cef572460143728e3b76ae1f5f9d10689558a9698d3ac3bfabd57",
-    "target_hash": "99667b7b81ccc9cdb041d29ba03f9e09f60e009f08546488ae4ba0adfd8ef185",
+    "source_hash": "60643c429d398f2122fb54313b4cbc9d2f37a4765fa156d18233b2a8bcff2b84",
+    "target_hash": "6319a70674a6034600218ba6bd5f809d90303a968d5f3de9a912dbd8aeadb4b4",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
   "questions.field.dependsOnHelp": {
-    "source_hash": "d0a8232b1229b10c869d36fe2b14ecbb872bc0e3d309ff34713767ba0005526d",
-    "target_hash": "fd7743c6d1a4be2529660f32f85cd54e99e6904ce3279eceff59de84a042da9f",
+    "source_hash": "ada80bed4839fd1959f47a47e7be0df327166db82d7e62e9579837fde31f46ef",
+    "target_hash": "8b2c33232de8b50f34ec41c2603cdc4b2b95ced43ec04fe891c4f017a83cebd3",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
   "questions.field.dependsOnNone": {
     "source_hash": "b44247fc07aeca197f6580ca39bbcfc684452457ab44892c715b1aef6bbcc68a",
     "target_hash": "8bef5cb659a86a0f43462228dbfd52cb40c28e4d82b43db06fe0c01f01e09fc7",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.field.dependsOnOption": {
+    "source_hash": "1fa3a0ae039508f491d8e6c4f1dd62866de49a09ca05f14069afdb784de0e946",
+    "target_hash": "4498fd34a828cf5c95c034e147e3409d91f158b67271a02f7a3112f77b7ecdf1",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.field.dependsOnOptionHelp": {
+    "source_hash": "de7f4ae5fdbde9998f6220945aaf99cfa1122a17811cb90efb98de5884602b52",
+    "target_hash": "f8bc9048e627e3bb30a1d0b1e583715fb212fa0518f57a1a4261a812b7718576",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.field.dependsOnOptionNone": {
+    "source_hash": "3c79a899ad0d507d779e53caf64a8825a4cb201d7bb41ef62944e4ce16b3c1ee",
+    "target_hash": "e086bf1bc58cd460b7fc19c495593b7bd376b331614b9d759aec4e024c9be59a",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

@@ -10,6 +10,12 @@ keywords: translation, CI, localization, pull request
 **Status:** Accepted only for stable application UI catalogues. It does not
 translate database questions, raw reports, or summaries; see the
 [localization specification](../../features/web-localization-and-design/web-localization-and-design.feature).
+Extended by [ADR-0057](ADR-0057-same-repo-pull-requests-translate-in-pr.md):
+a pull request from a branch of this repository (never a fork) now gets its
+French committed onto its own branch before merge, instead of only after.
+The security boundary this ADR describes — a `pull_request` run must never
+translate, because it may be running fork-authored code — is unchanged;
+ADR-0057 only adds a same-repo-checked path that never applies to a fork.
 
 Extends [ADR-0007](ADR-0007-localization.md), which decided that French is
 generated in CI. This one decides *how* — the change detection, the write path,

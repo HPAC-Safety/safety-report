@@ -13,7 +13,12 @@
 #
 # 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, an
 #    English `#`-stub, stale fr-CA.meta.json provenance, or a glossary
-#    mismatch. Runs the exact same checks as the "i18n" CI job
+#    mismatch. Before checking, tools/stub-missing-translations.mjs (ADR-0054)
+#    runs first and re-stages the result: a key added to one language and not
+#    the other is filled into the missing side with a `#`-prefixed copy of the
+#    text it has, both directions, so a bare "add a key" commit never blocks
+#    on parity by itself — it only blocks on a stub CI still has to resolve.
+#    Then this runs the exact same checks as the "i18n" CI job
 #    (tools/check-locales.mjs, tools/translate-locale.mjs --check) but
 #    locally, before the commit exists, instead of after a push.
 #
@@ -25,7 +30,9 @@
 #    developer could do to satisfy the old rule except `--no-verify`, which
 #    also skipped the formatting check for a reason that had nothing to do
 #    with formatting. On main the stub is still fatal, and CI never passes
-#    --allow-pending-translation, so one still cannot reach main.
+#    --allow-pending-translation, so one still cannot reach main. An ENGLISH
+#    stub is fatal everywhere — no workflow ever writes English — so adding a
+#    key in French only still requires you to write the real English by hand.
 #
 # 2. C# formatting: dotnet format --include <staged files>, auto-fixing and
 #    re-staging just those files, so formatting drift never reaches a commit
@@ -62,6 +69,31 @@ if staged | grep -q '^locales/'; then
 		echo "pre-commit: node is not on PATH, cannot verify locales/ — see README.md" >&2
 		status=1
 	else
+		# Which locale files the developer actually put in this commit,
+		# captured before the stubber rewrites anything.
+		STAGED_LOCALES=$(staged | grep '^locales/' || true)
+
+		node tools/stub-missing-translations.mjs --locales locales
+
+		# fr-CA.json is generated and never hand-authored (ADR-0021,
+		# ADR-0056), so staging it is safe — and it is what makes the commit
+		# self-consistent: a new English key and its French placeholder land
+		# together rather than one without the other.
+		[ -f locales/fr-CA.json ] && git add -- locales/fr-CA.json
+
+		# en-CA.json is hand-authored, so it is re-staged only if it was
+		# already staged. The stubber rewrites a whole file from the working
+		# tree, so adding it unconditionally would sweep in unstaged edits the
+		# developer deliberately left out of this commit — the same trap the
+		# formatting block below avoids by re-adding only what it formatted.
+		#
+		# The stubber touches en-CA.json only for a key that exists in French
+		# and not English, and the `#` stub that produces is fatal everywhere:
+		# no workflow writes English, so that one is always fixed by hand.
+		if echo "$STAGED_LOCALES" | grep -q '^locales/en-CA\.json$'; then
+			git add -- locales/en-CA.json
+		fi
+
 		node tools/check-locales.mjs || status=1
 
 		# shellcheck disable=SC2086 # empty on main, one flag elsewhere

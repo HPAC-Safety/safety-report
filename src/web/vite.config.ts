@@ -20,5 +20,13 @@ export default defineConfig({
 		hmr: {
 			clientPort: 5173,
 		},
+		// locales/ sits outside src/web, reached only through fs.allow above.
+		// On a Docker bind mount (docker-compose.yml's `.:/repo`), native fs
+		// events for paths outside the project root aren't reliable, so the
+		// dev server can keep serving a stale catalogue after a locale file
+		// changes until restarted. Polling avoids depending on those events.
+		watch: {
+			usePolling: true,
+		},
 	},
 })

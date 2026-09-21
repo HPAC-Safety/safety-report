@@ -179,20 +179,13 @@ public sealed class WebLocalizationAndDesignSteps
         _verifyOutput.ShouldContain("never machine-translated again");
     }
 
-    [Then(@"verification fails and names the key")]
-    public void ThenVerificationFailsAndNamesTheKey()
+    [Then(@"neither language is overwritten")]
+    public void ThenNeitherLanguageIsOverwritten()
     {
-        // Fails even with --allow-pending-translation: no workflow can choose
-        // between two deliberate human edits.
-        _verifyExitCode.ShouldNotBe(0);
-        _verifyOutput.ShouldContain("nav.contact");
-        _verifyOutput.ShouldContain("changed in both");
-    }
-
-    [Then(@"nothing is translated or overwritten while it is unresolved")]
-    public void ThenNothingIsWritten()
-    {
+        var english = File.ReadAllText(Path.Combine(_correctionDir, "en-CA.json"));
         var french = File.ReadAllText(Path.Combine(_correctionDir, "fr-CA.json"));
+
+        english.ShouldContain("Get in touch");
         french.ShouldContain("Joignez-nous");
     }
 

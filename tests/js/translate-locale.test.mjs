@@ -731,7 +731,6 @@ describe('a French value edited by hand', () => {
 			// Then — a machine must not quietly replace wording a human chose
 			assert.deepEqual(plan.translate, [])
 			assert.deepEqual(plan.unchanged, ['nav.contact'])
-			assert.deepEqual(plan.conflicted, [])
 		})
 
 		it('when it is already recorded as human-authored then verification is silent', () => {
@@ -748,8 +747,8 @@ describe('a French value edited by hand', () => {
 		})
 	})
 
-	describe('given the English changed too', () => {
-		it('when the key is classified then it is a conflict', () => {
+	describe('given the English changed in the same edit', () => {
+		it('when the key is classified then it is still a correction, because editing both was deliberate', () => {
 			// Given / When
 			const state = classifyKey({
 				stamp: stampFor('Contact us', 'Nous joindre')['nav.contact'],
@@ -758,10 +757,10 @@ describe('a French value edited by hand', () => {
 			})
 
 			// Then
-			assert.equal(state, 'conflicted')
+			assert.equal(state, 'corrected')
 		})
 
-		it('when the plan is built then it is not translated, so the correction survives', () => {
+		it('when the plan is built then it is recorded rather than translated', () => {
 			// Given
 			const plan = planTranslation({
 				english: { nav: { contact: 'Get in touch' } },
@@ -770,24 +769,35 @@ describe('a French value edited by hand', () => {
 				glossary: {},
 			})
 
-			// Then — overwriting here is exactly how a human edit disappears
+			// Then — the author wrote both sides; neither is second-guessed
 			assert.deepEqual(plan.translate, [])
-			assert.deepEqual(plan.conflicted, ['nav.contact'])
+			assert.deepEqual(plan.record.map((entry) => entry.key), ['nav.contact'])
 		})
+	})
 
-		it('when it is verified then it fails loudly and is not pending', () => {
-			// Given
-			const result = verifyLocales({
+	describe('given only the English changes afterwards', () => {
+		it('when the plan is built then the French is regenerated, which is the one way a correction is replaced', () => {
+			// Given — already recorded as human-authored
+			const meta = {
+				'nav.contact': {
+					source_hash: hashOf('Contact us'),
+					target_hash: hashOf('Joignez-nous'),
+					provider: HUMAN_PROVIDER,
+					reviewed: true,
+				},
+			}
+
+			// When — the English moves on its own
+			const plan = planTranslation({
 				english: { nav: { contact: 'Get in touch' } },
 				french: { nav: { contact: 'Joignez-nous' } },
-				meta: stampFor('Contact us', 'Nous joindre'),
+				meta,
 				glossary: {},
 			})
 
-			// Then — no workflow can decide which wording is right
-			assert.equal(result.ok, false)
-			assert.match(result.problems.join('\n'), /changed in both/)
-			assert.deepEqual(result.pending, [])
+			// Then — editing only the English is a request for a fresh
+			// translation, and English remains the source of truth
+			assert.deepEqual(plan.translate.map((entry) => entry.key), ['nav.contact'])
 		})
 	})
 

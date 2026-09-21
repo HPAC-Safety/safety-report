@@ -311,8 +311,8 @@ describe('the command, when a French value was edited by hand', () => {
 		})
 	})
 
-	describe('given both languages moved', () => {
-		it('when it generates then it refuses and writes nothing', () => {
+	describe('given both languages moved in the same edit', () => {
+		it('when it generates then both are kept and recorded, because editing both was deliberate', () => {
 			// Given
 			const dir = locales({
 				'en-CA.json': { form: { submit: 'Send it' } },
@@ -323,14 +323,19 @@ describe('the command, when a French value was edited by hand', () => {
 			// When
 			const result = run(['--generate', '--locales', dir], stub)
 
-			// Then — overwriting here discards one of two deliberate edits
-			assert.equal(result.code, 1)
-			assert.match(result.output, /changed in both languages at once/)
-			assert.match(result.output, /form\.submit/)
+			// Then — neither side is second-guessed
+			assert.equal(result.code, 0)
+			assert.equal(read(dir, 'en-CA.json').form.submit, 'Send it')
 			assert.equal(read(dir, 'fr-CA.json').form.submit, 'Soumettre')
+
+			// and the stamp now records both sides as they were written
+			const stamp = read(dir, 'fr-CA.meta.json')['form.submit']
+			assert.equal(stamp.provider, 'human')
+			assert.equal(stamp.source_hash, hashOf('Send it'))
+			assert.equal(stamp.target_hash, hashOf('Soumettre'))
 		})
 
-		it('when it verifies then it fails even with --allow-pending-translation', () => {
+		it('when it verifies then it passes on a branch, as any correction does', () => {
 			// Given
 			const dir = locales({
 				'en-CA.json': { form: { submit: 'Send it' } },
@@ -341,9 +346,34 @@ describe('the command, when a French value was edited by hand', () => {
 			// When
 			const result = run(['--check', '--locales', dir, '--allow-pending-translation'])
 
-			// Then — no workflow can decide this one, so the flag does not apply
-			assert.equal(result.code, 1)
-			assert.match(result.output, /changed in both/)
+			// Then
+			assert.equal(result.code, 0)
+			assert.match(result.output, /was edited by hand/)
+		})
+	})
+
+	describe('given only the English moves afterwards', () => {
+		it('when it generates then the French is retranslated, which is the one way a correction is replaced', () => {
+			// Given — already recorded as human-authored
+			const dir = locales({
+				'en-CA.json': { form: { submit: 'Send it' } },
+				'fr-CA.json': { form: { submit: 'Soumettre' } },
+				'fr-CA.meta.json': {
+					'form.submit': {
+						source_hash: hashOf('Submit'),
+						target_hash: hashOf('Soumettre'),
+						provider: 'human',
+						reviewed: true,
+					},
+				},
+			})
+
+			// When
+			const result = run(['--generate', '--locales', dir], stub)
+
+			// Then — editing only the English asks for a fresh translation
+			assert.equal(result.code, 0)
+			assert.equal(read(dir, 'fr-CA.json').form.submit, '[fr-CA STUB] Send it')
 		})
 	})
 })

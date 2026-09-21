@@ -86,11 +86,11 @@ Feature: Web, localization, and design
     Then the edit is accepted as a human correction
     And verification says it will be recorded and never machine-translated again
 
-  Scenario: Changing both languages of one key stops and asks
+  Scenario: Editing both languages at once is one correction, not a conflict
     Given a key is edited in both en-CA.json and fr-CA.json
     When the locales are verified
-    Then verification fails and names the key
-    And nothing is translated or overwritten while it is unresolved
+    Then the edit is accepted as a human correction
+    And neither language is overwritten
 
   @ignore
   Scenario: Question content comes from the bilingual database revision

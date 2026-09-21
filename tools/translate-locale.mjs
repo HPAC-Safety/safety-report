@@ -160,17 +160,22 @@ export const HUMAN_PROVIDER = 'human'
  * the French cannot be judged either way, so nothing new is asserted about it
  * and it gains one the next time it is translated or pinned.
  *
- * @returns one of `unknown`, `current`, `corrected`, `stale`, or `conflicted`.
+ * The rule is one sentence: **if the French moved, a human asserted it.**
+ * Whether the English moved in the same change does not alter that — somebody
+ * editing both was editing both on purpose, and a check that stopped to ask
+ * would be second-guessing a deliberate act.
+ *
+ * Editing only the English is the other half of the same sentence: it is a
+ * request for a fresh translation, and it is the one way a corrected key is
+ * ever machine-translated again.
+ *
+ * @returns one of `unknown`, `current`, `corrected`, or `stale`.
  */
 export function classifyKey({ stamp, english, french }) {
 	if (!stamp || typeof stamp.target_hash !== 'string') return 'unknown'
 
-	const englishMoved = stamp.source_hash !== hashOf(english)
-	const frenchMoved = stamp.target_hash !== hashOf(french)
-
-	if (englishMoved && frenchMoved) return 'conflicted'
-	if (frenchMoved) return 'corrected'
-	if (englishMoved) return 'stale'
+	if (stamp.target_hash !== hashOf(french)) return 'corrected'
+	if (stamp.source_hash !== hashOf(english)) return 'stale'
 
 	return 'current'
 }
@@ -179,7 +184,7 @@ export function planTranslation({ english, french = {}, meta = {}, glossary = {}
 	const englishKeys = flatten(english)
 	const frenchByKey = new Map(flatten(french))
 
-	const plan = { translate: [], pin: [], unchanged: [], remove: [], conflicted: [], record: [] }
+	const plan = { translate: [], pin: [], unchanged: [], remove: [], record: [] }
 
 	for (const [key, text] of englishKeys) {
 		const pinned = glossaryFrench(key, glossary)
@@ -210,13 +215,11 @@ export function planTranslation({ english, french = {}, meta = {}, glossary = {}
 			// Its stamp still credits whatever provider last wrote it, so it
 			// is re-stamped as human-authored. Until that happens the
 			// provenance says a machine produced text a person did.
-			if (stamp.provider !== HUMAN_PROVIDER) {
+			// The English beside it is stamped too, so a change to one and not
+			// the other stays visible afterwards.
+			if (stamp.provider !== HUMAN_PROVIDER || stamp.source_hash !== hashOf(text)) {
 				plan.record.push({ key, text: frenchByKey.get(key), source: text })
 			}
-		} else if (state === 'conflicted') {
-			// Both languages moved. Overwriting would discard one of two
-			// deliberate edits with no trace, so this stops and says so.
-			plan.conflicted.push(key)
 		} else if (state === 'current' || (state === 'unknown' && stamp?.source_hash === hashOf(text))) {
 			plan.unchanged.push(key)
 		} else {
@@ -383,29 +386,17 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 
 		if (!stamp) {
 			problems.push(`'${key}' has no provenance in ${TARGET_LOCALE}.meta.json.`)
-		} else if (state === 'conflicted') {
-			// Both languages moved in the same change. A machine choosing a
-			// winner between two deliberate human edits is how one of them
-			// disappears silently, so this is a human's to resolve — and it is
-			// not pending, because no workflow can decide it.
-			problems.push(
-				`'${key}' changed in both ${SOURCE_LOCALE}.json and ${TARGET_LOCALE}.json. ` +
-					`Decide which wording is right: keep the ${SOURCE_LOCALE} edit and let the French regenerate, ` +
-					`or restore the ${SOURCE_LOCALE} text so the ${TARGET_LOCALE} edit stands as a correction.`,
-			)
 		} else if (state === 'corrected') {
-			// A hand-edited French with unchanged English. Accepted — it is a
-			// correction, and `--generate` re-stamps it as human-authored so
-			// the provenance stops claiming a provider wrote it.
+			// A hand-edited French. Accepted — `--generate` re-stamps it as
+			// human-authored so the provenance stops claiming a provider wrote
+			// it. This holds whether or not the English moved too: editing
+			// both was editing both on purpose.
 			if (stamp.provider !== HUMAN_PROVIDER && stamp.provider !== GLOSSARY_PROVIDER) {
-				pending.push(
+				const problem =
 					`'${key}' in ${TARGET_LOCALE}.json was edited by hand. It will be recorded as a human correction ` +
-						'and never machine-translated again.',
-				)
-				problems.push(
-					`'${key}' in ${TARGET_LOCALE}.json was edited by hand. It will be recorded as a human correction ` +
-						'and never machine-translated again.',
-				)
+					'and never machine-translated again.'
+				problems.push(problem)
+				pending.push(problem)
 			}
 		} else if (stamp.source_hash !== hashOf(text)) {
 			// The English was edited after it was translated. `planTranslation`
@@ -547,18 +538,6 @@ async function main() {
 	}
 
 	const plan = planTranslation({ english, french, meta, glossary })
-
-	if (plan.conflicted.length > 0) {
-		// Writing anything here would overwrite one of two deliberate human
-		// edits with no trace that it existed.
-		console.error(`::error::${plan.conflicted.length} key(s) changed in both languages at once:`)
-		for (const key of plan.conflicted) console.error(`::error::  ${key}`)
-		console.error('')
-		console.error('Decide which wording is right before translating: keep the English edit and let')
-		console.error('the French regenerate, or restore the English so the French edit stands as a')
-		console.error('correction. Nothing is written while this is unresolved.')
-		process.exit(1)
-	}
 
 	const total = plan.translate.length + plan.pin.length + plan.remove.length + plan.record.length
 	if (total === 0) {

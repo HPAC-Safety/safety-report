@@ -1,4 +1,6 @@
 import { createBdd } from "playwright-bdd"
+
+import { signInAs } from "./auth"
 import { expect, type Page } from "@playwright/test"
 
 const { Given, When, Then } = createBdd()
@@ -63,8 +65,7 @@ async function stubChoiceLists(page: Page) {
 }
 
 Given("a signed-in Administrator opens the manage-choice-lists page", async ({ page }) => {
-	await page.goto("/login")
-	await page.getByRole("button", { name: "Log in" }).click()
+	await signInAs(page, "administrator")
 	await stubChoiceLists(page)
 	await page.goto("/admin/choice-lists")
 	await expect(page.getByRole("list", { name: "Manage choice lists" })).toBeVisible()

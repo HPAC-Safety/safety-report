@@ -174,6 +174,9 @@ identity where source text does not exist.
 - [src/web/assets/hpac-logo.png](../src/web/assets/hpac-logo.png) — 260×125 raster placeholder; do not present as approved branding, replace only with supplied official asset.
 - [src/web/public/.gitkeep](../src/web/public/.gitkeep) — empty public-site placeholder; replace with report form/feed/detail static pages and modules.
 - [src/web/shared/.gitkeep](../src/web/shared/.gitkeep) — empty shared-code placeholder; add only genuinely shared locale/API/presentation utilities.
+- [src/web/src/auth/session.ts](../src/web/src/auth/session.ts) — the stored bearer session. The token is kept, never parsed; role and expiry come from the API's response (ADR-0048).
+- [src/web/src/auth/authApi.ts](../src/web/src/auth/authApi.ts) — the three auth endpoints as the browser calls them, including the config that decides whether a third-party sign-in option is offered (ADR-0066).
+- [src/web/src/auth/AuthContext.tsx](../src/web/src/auth/AuthContext.tsx) — holds the session, re-checks a stored token against `/api/auth/me` on load, and exposes the role the chrome reads.
 - [src/web/src/index.css](../src/web/src/index.css) — HPAC tokens, self-hosted font faces, components, and dark token overrides, compiled by `@tailwindcss/vite`; retain as shared design source.
 - [src/web/theme-preview.html](../src/web/theme-preview.html) — static token/component preview in both themes, served by the Vite dev server; retain as visual regression/design reference, not a product page.
 

@@ -3,26 +3,26 @@ Feature: Moderation, authentication, and publication
   review reports, and only a fully approved, consented, non-deleted report ever
   reaches the public feed.
 
-  @ui @ignore
+  @ui
   Scenario: In development the login page offers no third-party sign-in option
     Given a visitor activates the member-login action
     Then the login page shows a username field, a password field, and a login action
     And the login page shows no third-party sign-in option
 
-  @ui @ignore
+  @ui
   Scenario: Where a third-party provider is configured, the login page offers it
     Given the API reports that a third-party provider is configured
     When a visitor activates the member-login action
     Then the login page also shows a third-party sign-in option
 
-  @ui @ignore
+  @ui
   Scenario: Signing in with member credentials returns a session that survives a reload
     Given a visitor signs in with valid member credentials
     Then the header shows a logout action instead of the member-login action
     When the page reloads
     Then the header still shows the logout action
 
-  @ui @ignore
+  @ui
   Scenario: Bad credentials show one generic failure and no session
     Given a visitor submits credentials that are not valid
     Then the login page shows one generic failure message
@@ -38,21 +38,21 @@ Feature: Moderation, authentication, and publication
     When the visitor activates the logout action
     Then the header shows the member-login action again
 
-  @ui @ignore
+  @ui
   Scenario: A signed-in Administrator's Admin menu offers every option
     Given a visitor signs in as an Administrator
     Then the header shows an Admin menu and no other header nav change
     When the visitor activates the Admin menu
     Then it opens with manage-reports, manage-questions, and manage-choice-lists options
 
-  @ui @ignore
+  @ui
   Scenario: A signed-in SafetyOfficer's Admin menu offers manage-reports only
     Given a visitor signs in as a SafetyOfficer
     When the visitor activates the Admin menu
     Then it opens with a manage-reports option
     And it offers no manage-questions or manage-choice-lists option
 
-  @ui @ignore
+  @ui
   Scenario: A signed-in User sees no Admin menu
     Given a visitor signs in as a User
     Then the header shows a logout action

@@ -274,6 +274,11 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "page.login.errorGeneric": {
+    "source_hash": "5bd1b91f3c73112caea0d79006fe239ab63684cf068fa1d999a3e5a53d78ab79",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "page.login.googleButton": {
     "source_hash": "cce937e891444a7417c696cdd80c0eed11deb383f3c42bdb8b591d5dfcaa398e",
     "provider": "deepl:FR-CA:prefer_more",
@@ -286,6 +291,11 @@
   },
   "page.login.submitButton": {
     "source_hash": "c189840cf7e2d6f6fdeefde1ac59dfdf50bb75642eb569b4e38a5614d6f12ac2",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "page.login.submitting": {
+    "source_hash": "8b9d3de8ae00c89c3bdf6548b6acd402d64313654b93a3c8f4a4717324e13a00",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

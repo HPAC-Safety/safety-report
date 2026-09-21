@@ -1,4 +1,6 @@
 import { createBdd } from "playwright-bdd"
+
+import { signInAs } from "./auth"
 import { expect, type Page } from "@playwright/test"
 
 const { Given, When, Then } = createBdd()
@@ -203,8 +205,10 @@ async function signInAndOpenQuestions(
 	page: Page,
 	{ translation = true, standIn = false }: { translation?: boolean; standIn?: boolean } = {},
 ) {
-	await page.goto("/login")
-	await page.getByRole("button", { name: "Log in" }).click()
+	// Genuinely signed in as an Administrator. Clicking "Log in" with empty
+	// fields used to be enough only because the admin routes are unguarded by
+	// design (ADR-0048) — the page would render without a session at all.
+	await signInAs(page, "administrator")
 	await stubAdminApi(page)
 	await stubTranslation(page, { available: translation, standIn })
 	await page.goto("/admin/questions")

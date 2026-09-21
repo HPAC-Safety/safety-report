@@ -1,15 +1,13 @@
 /*
  * The admin question-bank client.
  *
- * Every call carries the member-session marker as a header, because the
- * authorization boundary is the API and never hidden markup (ADR-0048). The
- * marker itself is a stub standing in for ADR-0005's authenticator — see
- * src/HpacSafety.Api/Admin/AdminGate.cs. When that lands, the header here is
- * replaced by a real token and nothing else on this page changes.
+ * Every call carries the member's bearer token, because the authorization
+ * boundary is the API and never hidden markup (ADR-0048). A 401 means the
+ * token is gone or no longer valid, so the stored session is cleared rather
+ * than left to draw chrome it cannot back up.
  */
 
-const SESSION_HEADER = "X-Hpac-Member-Session"
-const SESSION_STORAGE_KEY = "hpac.memberSession"
+import { clearSession, readSession } from "../auth/session"
 
 /** Every type a question can be, in the order the authoring form offers them. */
 export const QUESTION_TYPES = [
@@ -114,14 +112,12 @@ export class ApiError extends Error {
 	}
 }
 
-function sessionMarker(): string {
-	try {
-		return sessionStorage.getItem(SESSION_STORAGE_KEY) ?? ""
-	} catch {
-		// Storage can be unavailable; the call then fails with 401, which the
-		// page reports honestly rather than pretending to be signed in.
-		return ""
-	}
+function authorization(): Record<string, string> {
+	const session = readSession()
+
+	// No header at all when signed out: the API answers 401 and the page
+	// reports that honestly rather than pretending to be signed in.
+	return session ? { Authorization: `Bearer ${session.accessToken}` } : {}
 }
 
 // Signature split across lines on purpose: tools/check-hardcoded-strings.mjs
@@ -135,10 +131,17 @@ async function call<T>(
 		...init,
 		headers: {
 			"Content-Type": "application/json",
-			[SESSION_HEADER]: sessionMarker(),
+			...authorization(),
 			...init?.headers,
 		},
 	})
+
+	if (response.status === 401) {
+		// The token expired or was revoked while this page was open. Drop it,
+		// so the next render draws a signed-out header instead of an admin
+		// menu whose every call fails.
+		clearSession()
+	}
 
 	if (!response.ok) {
 		const problem = await response.json().catch(() => null)

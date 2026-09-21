@@ -39,6 +39,8 @@
   "page.login.usernameLabel": "Username",
   "page.login.passwordLabel": "Password",
   "page.login.googleButton": "Continue with Google",
+  "page.login.errorGeneric": "We could not sign you in. Check your username and password, then try again.",
+  "page.login.submitting": "Signing in…",
   "page.login.submitButton": "Log in",
   "notFound.title": "Page not found",
   "notFound.body": "There is nothing at this address.",

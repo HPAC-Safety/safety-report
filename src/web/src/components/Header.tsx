@@ -26,7 +26,7 @@ function CloseIcon() {
 
 export function Header() {
 	const { t } = useLocale()
-	const { isSignedIn, signOut } = useAuth()
+	const { isSignedIn, role, signOut } = useAuth()
 	const [menuOpen, setMenuOpen] = useState(false)
 	const toggleButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -53,7 +53,7 @@ export function Header() {
 
 				<div className="hidden flex-wrap items-center justify-end gap-x-4 gap-y-2 lg:flex">
 					<Nav />
-					{isSignedIn && <AdminMenu />}
+					{isSignedIn && role !== "user" && <AdminMenu />}
 					<div className="flex items-center gap-1">
 						<LanguageToggle />
 						<ThemeToggle />
@@ -106,7 +106,7 @@ export function Header() {
 
 						<div className="flex flex-col gap-1 px-6 py-4">
 							<Nav stacked onNavigate={() => setMenuOpen(false)} />
-							{isSignedIn && <AdminMenu stacked onNavigate={() => setMenuOpen(false)} />}
+							{isSignedIn && role !== "user" && <AdminMenu stacked onNavigate={() => setMenuOpen(false)} />}
 						</div>
 
 						{isSignedIn ? (

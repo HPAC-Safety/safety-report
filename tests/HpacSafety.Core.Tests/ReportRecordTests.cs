@@ -119,7 +119,7 @@ public class ReportRecordTests
     {
         // Given
         var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-        summary.Approve(TinyId.New(), Now);
+        summary.Approve("subject-officer", Now);
 
         // When
         summary.RewriteEn("A pilot landed hard in gusty conditions.", Now);
@@ -134,7 +134,7 @@ public class ReportRecordTests
     {
         // Given
         var summary = Summary.Generate(TinyId.New(), "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-        summary.Approve(TinyId.New(), Now);
+        summary.Approve("subject-officer", Now);
 
         // When
         summary.RewriteFr("Un pilote a atterri durement, dans des conditions venteuses.", Now);
@@ -188,50 +188,31 @@ public class ReportRecordTests
         Should.Throw<DomainRuleViolationException>(() => report.MarkPublished(Now));
     }
 
-    [Fact]
-    public void Given_an_administrator_When_they_are_revoked_Then_they_may_no_longer_edit_questions()
+    [Theory]
+    [InlineData(MemberRole.User, MemberRole.SafetyOfficer)]
+    [InlineData(MemberRole.SafetyOfficer, MemberRole.Administrator)]
+    public void Given_two_member_roles_When_they_are_compared_Then_the_more_privileged_one_is_greater(
+        MemberRole lesser, MemberRole greater)
     {
-        // Given
-        var admin = new AdminUser("member-1", AdminRole.Administrator, Now);
-        admin.MayEditQuestions.ShouldBeTrue();
+        // Given / When
+        var ordered = lesser < greater;
 
-        // When
-        admin.Revoke();
-
-        // Then
-        admin.IsActive.ShouldBeFalse();
-        admin.MayEditQuestions.ShouldBeFalse();
-    }
-
-    [Fact]
-    public void Given_a_safety_officer_When_their_permissions_are_checked_Then_they_may_not_edit_questions()
-    {
-        // Given
-        var officer = new AdminUser("member-2", AdminRole.SafetyOfficer, Now);
-
-        // When
-        var mayEdit = officer.MayEditQuestions;
-
-        // Then
-        mayEdit.ShouldBeFalse();
-
-        // And when promoted
-        officer.ChangeRole(AdminRole.Administrator);
-        officer.MayEditQuestions.ShouldBeTrue();
+        // Then - the enum is ordered so "the highest role claim wins" is a comparison
+        ordered.ShouldBeTrue();
     }
 
     [Fact]
     public void Given_a_moderation_action_When_it_is_audited_Then_it_records_who_and_when_and_not_the_content()
     {
         // Given
-        var adminId = TinyId.New();
+        const string actorSubject = "auth0|synthetic-officer";
         var reportId = TinyId.New();
 
         // When
-        var entry = new AuditLogEntry(adminId, AuditAction.ViewedRawReport, nameof(Report), reportId, Now);
+        var entry = new AuditLogEntry(actorSubject, AuditAction.ViewedRawReport, nameof(Report), reportId, Now);
 
         // Then — log identifiers, not report content
-        entry.AdminUserId.ShouldBe(adminId);
+        entry.ActorSubject.ShouldBe(actorSubject);
         entry.TargetId.ShouldBe(reportId);
         entry.Action.ShouldBe(AuditAction.ViewedRawReport);
         entry.OccurredAt.ShouldBe(Now);

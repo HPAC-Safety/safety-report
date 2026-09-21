@@ -181,11 +181,10 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
         // Approve()/ClearApproval() always set or clear both together.
         builder.ToTable(t => t.HasCheckConstraint(
             "ck_summaries_approval_coherence",
-            "(approved_by IS NULL) = (approved_at IS NULL)"));
+            "(approved_by_subject IS NULL) = (approved_at IS NULL)"));
 
-        builder.HasOne<Core.Features.Moderation.AdminUser>()
-            .WithMany()
-            .HasForeignKey(summary => summary.ApprovedBy)
-            .OnDelete(DeleteBehavior.Restrict);
+        // The approver is a token subject, not a key. There is no user table
+        // to point a foreign key at — see ADR-0065.
+        builder.Property(summary => summary.ApprovedBySubject).HasMaxLength(256);
     }
 }

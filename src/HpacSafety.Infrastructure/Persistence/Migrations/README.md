@@ -61,8 +61,6 @@ erDiagram
     question_revisions ||--o{ report_answers : "answered under"
     report_answers ||--o{ report_files : "uploaded for"
 
-    admin_users ||--o{ audit_log : "acted"
-
     questions {
         char(11) id PK
         varchar(128) key UK "stable, invariant, never changes"
@@ -171,16 +169,9 @@ erDiagram
         timestamptz deleted
     }
 
-    admin_users {
-        char(11) id PK
-        text member_identifier UK "upstream; never a credential"
-        varchar(64) role
-        timestamptz deleted
-    }
-
     audit_log {
         char(11) id PK
-        char(11) actor_id
+        varchar(256) actor_subject "token subject; opaque, no foreign key"
         varchar(64) action
         char(11) target_id "names a row with no foreign key"
         timestamptz occurred_at
@@ -266,6 +257,7 @@ this.
 | `20260827013637_MigrateCanonicalDomainAndPersistence` | Moved to complete immutable revisions, removed the application-side field cipher, and reached the current baseline (ADR-0040). |
 | `20260921021720_AddQuestionAuthoring` | Added `option_sets`/`option_set_items`, the conditional-question and option-set provenance columns, and the `time` and `autocomplete` question types. |
 | `20260921034154_AddReporterAddedChoices` | Added `option_set_items.added_by_reporter` and an index on `(option_set_id, added_by_reporter)`, which is the curation query. |
+| `20260921152356_DropAdminUsersForJwtIdentity` | Dropped `admin_users` and renamed/widened its two referencing columns to opaque token subjects — `audit_log.actor_subject` and `summaries.approved_by_subject` (ADR-0065). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

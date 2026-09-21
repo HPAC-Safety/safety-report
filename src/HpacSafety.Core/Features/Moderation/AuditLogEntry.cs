@@ -19,10 +19,10 @@ public class AuditLogEntry
     }
 #pragma warning restore CS8618
 
-    public AuditLogEntry(TinyId adminUserId, AuditAction action, string targetType, TinyId targetId, DateTimeOffset at, string? detail = null)
+    public AuditLogEntry(string actorSubject, AuditAction action, string targetType, TinyId targetId, DateTimeOffset at, string? detail = null)
     {
         Id = TinyId.New();
-        AdminUserId = adminUserId;
+        ActorSubject = actorSubject;
         Action = action;
         TargetType = targetType;
         TargetId = targetId;
@@ -33,8 +33,11 @@ public class AuditLogEntry
     /// <summary>Surrogate key.</summary>
     public TinyId Id { get; private init; }
 
-    /// <summary>Who acted.</summary>
-    public TinyId AdminUserId { get; private init; }
+    /// <summary>
+    /// Who acted, as the subject claim of their validated token. Opaque, and
+    /// deliberately not a key — there is no user table to join to (ADR-0065).
+    /// </summary>
+    public string ActorSubject { get; private init; }
 
     /// <summary>What they did.</summary>
     public AuditAction Action { get; private init; }

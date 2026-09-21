@@ -37,7 +37,6 @@ public sealed class ModelTests
     [InlineData(typeof(Question), "questions")]
     [InlineData(typeof(QuestionRevision), "question_revisions")]
     [InlineData(typeof(QuestionRevisionOption), "question_revision_options")]
-    [InlineData(typeof(AdminUser), "admin_users")]
     [InlineData(typeof(AuditLogEntry), "audit_log")]
     [InlineData(typeof(OutboxMessage), "outbox_messages")]
     public void Given_the_model_When_an_entity_is_mapped_Then_it_lands_in_the_table_the_issue_named(Type entity, string table)
@@ -122,7 +121,6 @@ public sealed class ModelTests
     [InlineData(typeof(Question))]
     [InlineData(typeof(QuestionRevision))]
     [InlineData(typeof(QuestionRevisionOption))]
-    [InlineData(typeof(AdminUser))]
     [InlineData(typeof(OutboxMessage))]
     public void Given_every_table_except_audit_log_When_its_model_is_read_Then_it_has_a_deleted_column_and_a_live_row_filter(Type entity)
     {

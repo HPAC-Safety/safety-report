@@ -33,10 +33,6 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
         "outbox_messages",
         "INSERT INTO outbox_messages (id, aggregate_id, type, payload, occurred_at, next_attempt_at, attempts) " +
         "VALUES ('oooooooooo1', 'rrrrrrrrrr1', 'not_a_type', '{}', @at, @at, 0)")]
-    [InlineData(
-        "admin_users",
-        "INSERT INTO admin_users (id, member_identifier, role, is_active, created_at) " +
-        "VALUES ('aaaaaaaaaa1', 'nobody@example.test', 'not_a_role', TRUE, @at)")]
     public async Task Given_a_bad_enum_code_When_it_is_inserted_Then_the_check_constraint_rejects_it(string table, string sql)
     {
         // Given
@@ -51,7 +47,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_summary_with_only_one_of_approved_by_and_approved_at_set_When_it_is_inserted_Then_it_is_refused()
+    public async Task Given_a_summary_with_only_one_of_approved_by_subject_and_approved_at_set_When_it_is_inserted_Then_it_is_refused()
     {
         // Given — Summary.Approve/ClearApproval always set or clear both together
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -62,8 +58,8 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
         // When
         Task inserting() => ExecuteAsync(
             connectionString,
-            "INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by, approved_at, generated_at, updated_at) " +
-            "VALUES ('ssssssssss1', 'rrrrrrrrrr3', 'en', 'fr', 'model', 'v1', 'aaaaaaaaaa2', NULL, @at, @at)");
+            "INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by_subject, approved_at, generated_at, updated_at) " +
+            "VALUES ('ssssssssss1', 'rrrrrrrrrr3', 'en', 'fr', 'model', 'v1', 'auth0|synthetic-approver', NULL, @at, @at)");
 
         // Then
         var exception = await Should.ThrowAsync<PostgresException>(inserting);
@@ -129,32 +125,6 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
         // Then
         var exception = await Should.ThrowAsync<PostgresException>(inserting);
         exception.SqlState.ShouldBe("23514");
-    }
-
-    [Fact]
-    public async Task Given_a_soft_deleted_admin_user_When_the_same_member_identifier_is_re_added_Then_it_succeeds()
-    {
-        // Given — the unique index on member_identifier must be partial
-        // (filtered on deleted IS NULL): a soft-deleted administrator's row
-        // is hidden by the query filter but must not permanently block
-        // re-adding the same upstream member identifier.
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        await ExecuteAsync(
-            connectionString,
-            "INSERT INTO admin_users (id, member_identifier, role, is_active, created_at) " +
-            "VALUES ('aaaaaaaaaa3', 'officer@example.test', 'safety_officer', TRUE, @at)");
-        await ExecuteAsync(
-            connectionString,
-            "UPDATE admin_users SET deleted = @at WHERE id = 'aaaaaaaaaa3'");
-
-        // When
-        Task readding() => ExecuteAsync(
-            connectionString,
-            "INSERT INTO admin_users (id, member_identifier, role, is_active, created_at) " +
-            "VALUES ('aaaaaaaaaa4', 'officer@example.test', 'safety_officer', TRUE, @at)");
-
-        // Then
-        await Should.NotThrowAsync(readding);
     }
 
     private static async Task ExecuteAsync(string connectionString, string sql)

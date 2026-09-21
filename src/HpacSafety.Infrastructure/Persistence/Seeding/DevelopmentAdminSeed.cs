@@ -1,18 +1,25 @@
 using System.Globalization;
 using HpacSafety.Core;
-using HpacSafety.Core.Features.Moderation;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// One obviously-fake local administrator, so a developer can open the admin UI
-/// on a database they created five seconds ago.
+/// <b>History. This seeds a table that no longer exists.</b>
 /// </summary>
 /// <remarks>
 /// <para>
-/// The real safety-officer allowlist is not here and is not seeded by any
-/// migration. It is a later issue, and it is a list of real people that belongs
-/// in an operational process rather than in source control.
+/// It wrote one obviously-fake local administrator into <c>admin_users</c> so a
+/// developer could open the admin UI on a database they had just created. That
+/// table is dropped by <c>DropAdminUsersForJwtIdentity</c>, and roles now come
+/// from a claim on a validated token rather than from a row — see ADR-0065. A
+/// developer signs in against the development token issuer instead (ADR-0066).
+/// </para>
+/// <para>
+/// This class survives only because <c>20260823001528_InitialSchema</c> calls
+/// it, and a committed migration is never edited. On a fresh database the
+/// insert still runs and the later migration drops what it wrote; on an
+/// existing one the guard was almost certainly never set. Either way it is
+/// inert. Do not call it from anything new.
 /// </para>
 /// <para>
 /// The guard is written into the SQL rather than evaluated in C#. A C# guard
@@ -39,6 +46,14 @@ public static class DevelopmentAdminSeed
     /// </summary>
     public const string MemberIdentifier = "admin@localhost";
 
+    /// <summary>
+    /// The role code this wrote. A literal rather than
+    /// <c>EnumCode.Of(AdminRole.Administrator)</c>, because that enum is gone
+    /// and the SQL of a committed migration has to keep producing exactly the
+    /// bytes it always did.
+    /// </summary>
+    private const string AdministratorRoleCode = "administrator";
+
     /// <summary>The identifier of the seeded row.</summary>
     public static TinyId Id => SeedIds.For($"admin_user:{MemberIdentifier}");
 
@@ -54,7 +69,7 @@ public static class DevelopmentAdminSeed
              INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
              SELECT '{Id}',
                     '{MemberIdentifier}',
-                    '{EnumCode.Of(AdminRole.Administrator)}',
+                    '{AdministratorRoleCode}',
                     TRUE,
                     TIMESTAMPTZ '{QuestionBankSeed.SeededAt:yyyy-MM-dd HH:mm:sszzz}'
              WHERE current_setting('{SettingName}', true) = 'true'

@@ -24,6 +24,16 @@ blending a client-observable assertion with a server-authoritative one
 splits into an `@ui` scenario and an untagged one rather than carrying both
 concerns together.
 
+**`@ignore` means "not built yet," never "no longer true."** When a decision
+supersedes what a scenario asserts, **delete the scenario** in the pull request
+that records the decision. Do not park an obsolete scenario behind `@ignore` —
+that leaves the repository stating something false and waiting for an
+implementation that will never come, which is exactly the contradiction
+[ADR-0047](../../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)
+forbids. Git history preserves the deleted text if the reasoning is ever
+needed. `@ignore` is only ever a promise that somebody is coming back to
+implement the scenario as written.
+
 Authentication fixtures mint a real token through the booted host rather than
 faking a `ClaimsPrincipal`, so the test exercises the validation production
 runs. Cover the three-role matrix at every admin endpoint, the refusal of an

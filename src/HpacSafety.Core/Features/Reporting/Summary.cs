@@ -51,8 +51,12 @@ public class Summary
     /// <summary>The prompt version that produced it.</summary>
     public string PromptVersion { get; private init; }
 
-    /// <summary>The safety officer who approved the pair.</summary>
-    public TinyId? ApprovedBy { get; private set; }
+    /// <summary>
+    /// The safety officer who approved the pair, as the subject claim of their
+    /// validated token. Opaque, and deliberately not a key — there is no user
+    /// table to join to (ADR-0065).
+    /// </summary>
+    public string? ApprovedBySubject { get; private set; }
 
     /// <summary>When the pair was approved.</summary>
     public DateTimeOffset? ApprovedAt { get; private set; }
@@ -97,15 +101,15 @@ public class Summary
     }
 
     /// <summary>Records a safety officer's approval of the whole pair.</summary>
-    public void Approve(TinyId adminUserId, DateTimeOffset at)
+    public void Approve(string approverSubject, DateTimeOffset at)
     {
-        ApprovedBy = adminUserId;
+        ApprovedBySubject = approverSubject;
         ApprovedAt = at;
     }
 
     private void ClearApproval()
     {
-        ApprovedBy = null;
+        ApprovedBySubject = null;
         ApprovedAt = null;
     }
 

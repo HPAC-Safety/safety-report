@@ -44,10 +44,12 @@ token, per request, and are never written down
 is nothing to reference.
 
 Audit rows written before `admin_users` was dropped keep the identifiers they
-were created with. Those values no longer resolve to anything. They are left
-as they are: the audit log is append-only, and rewriting historic attribution
-would be a destructive transform that discards the only attribution those rows
-ever had.
+were created with: `DropAdminUsersForJwtIdentity` renames and widens the column
+rather than replacing it, so an existing eleven-character tiny id survives
+verbatim as a string. Those values no longer resolve to anything, and they are
+left that way — the audit log is append-only, and rewriting historic
+attribution would be a destructive transform that discards the only attribution
+those rows ever had.
 
 No report, answer, file, or outbox row records who submitted a report
 ([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).

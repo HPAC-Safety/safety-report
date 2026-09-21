@@ -35,7 +35,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
             SELECT table_name || '.' || column_name || ' ' || data_type || '(' || COALESCE(character_maximum_length, 0) || ')'
             FROM information_schema.columns
             WHERE table_schema = 'public'
-              AND (column_name = 'id' OR column_name LIKE '%\_id' OR column_name = 'approved_by')
+              AND (column_name = 'id' OR column_name LIKE '%\_id')
             ORDER BY 1
             """,
             connection);

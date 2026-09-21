@@ -16,7 +16,6 @@ public sealed class SchemaTests(PostgresFixture postgres)
 {
     private static readonly string[] ExpectedTables =
     [
-        "admin_users",
         "audit_log",
         "option_set_items",
         "option_sets",

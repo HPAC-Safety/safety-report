@@ -409,6 +409,11 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.translate.action": {
+    "source_hash": "8fe147696fbf47f30d37aeb7ba669ce027c1a598e0d260cbbf0532c64f88a57e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "questions.translate.draftWarning": {
     "source_hash": "d9448392c273e1149c0f91f1242bc62e3b3e872ecb70aedae0e673411128a9ba",
     "provider": "deepl:FR-CA:prefer_more",

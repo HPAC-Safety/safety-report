@@ -46,6 +46,13 @@ public sealed class QuestionBankSteps
         // Contextual, as above.
     }
 
+    [Given(@"at most one live question exists for a stable key")]
+    public void GivenOneLiveQuestionPerKey()
+    {
+        // Contextual. Enforced by the partial unique index (ADR-0071) and
+        // asserted by the fork scenarios.
+    }
+
     // ------------------------------------------------------------ required --
 
     [Given(@"an Administrator authors an ordinary question")]

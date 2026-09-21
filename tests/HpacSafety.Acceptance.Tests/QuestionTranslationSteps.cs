@@ -128,7 +128,20 @@ public sealed class QuestionTranslationSteps
             .ShouldNotContain(name => name.Contains("Save", StringComparison.Ordinal));
     }
 
-    [Then(@"no report, answer, or summary is ever translated this way")]
+    [Then(@"the same action is available for the second language of a select answer awaiting translation")]
+    public void ThenTheActionIsAvailableForAnAnswer()
+    {
+        // The same route and the same policy. What an administrator may draft
+        // now includes an answer's second language (ADR-0072); what fills it is
+        // still their deliberate save.
+        Assembly.Load("HpacSafety.Api")
+            .GetType("HpacSafety.Api.Admin.AnswerTranslationEndpoints")
+            .ShouldNotBeNull()
+            .GetMethod("MapAdminAnswerTranslation", BindingFlags.Static | BindingFlags.Public)
+            .ShouldNotBeNull();
+    }
+
+    [Then(@"no narrative, free-text answer, or summary is ever translated this way")]
     public void ThenNoReportContentIsTranslated()
     {
         // One caller, and it is the authoring endpoint. If a second appears,
@@ -141,6 +154,20 @@ public sealed class QuestionTranslationSteps
             .ToList();
 
         callers.ShouldBe(["TranslationEndpoints"]);
+    }
+
+    [Then(@"nothing is translated unless an Administrator asked for it")]
+    public void ThenNothingTranslatesOnItsOwn()
+    {
+        // The submission path used to translate a reporter's typed choice.
+        // It does not any more (ADR-0072), and Core holds no translator caller
+        // at all — the only one is the administrator-gated endpoint above.
+        Assembly.Load("HpacSafety.Core")
+            .GetTypes()
+            .SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.Static
+                | BindingFlags.Public | BindingFlags.NonPublic))
+            .ShouldNotContain(method =>
+                method.GetParameters().Any(parameter => parameter.ParameterType == typeof(ITranslator)));
     }
 
     [Then(@"it is told that translation is unavailable")]

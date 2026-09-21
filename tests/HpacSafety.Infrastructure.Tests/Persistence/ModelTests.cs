@@ -60,7 +60,8 @@ public sealed class ModelTests
 
         // Then
         columns.ShouldContain("question_revision_id");
-        columns.ShouldContain("selected_option_codes");
+        columns.ShouldContain("needs_translation");
+        columns.ShouldContain("translated_value");
         columns.ShouldContain("answered_at");
         columns.ShouldContain("is_private");
     }

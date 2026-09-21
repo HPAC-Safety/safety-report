@@ -79,6 +79,28 @@ over the cheaper one: every select answer is handled identically, and there is
 no second path where an answer is silently filled in from a list it is no longer
 attached to.
 
+### Dropping `selected_option_codes`, argued on its own facts
+
+Product invariant #8 forbids physically deleting application records, and
+[ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md) says
+plainly that its one carved exception — dropping `admin_users` — does not
+generalize and that any future drop needs its own argument. This is that
+argument.
+
+`report_answers.selected_option_codes` has never held a value in any deployed
+environment, because nothing can write to it. There is no report submission
+endpoint: `POST /api/v1/reports` is specified and unimplemented, every
+submission scenario in `/features/report-submission` carries `@ignore`, and
+`docs/implementation-status.md` records "no report endpoint". The only code
+that has ever produced a `report_answers` row is a test, against a database
+created and discarded by Testcontainers.
+
+So the column is dropped rather than retained empty. The facts are the same
+shape as the `admin_users` argument and they are equally narrow: this rests on
+"no writer exists in any deployed environment", not on "the data is not worth
+keeping". The moment the submission endpoint ships, this argument expires, and
+a later change to the answer shape would owe a backfill rather than a drop.
+
 ### An administrator supplies the second language
 
 A flagged answer appears in an administrator queue. They type the other language

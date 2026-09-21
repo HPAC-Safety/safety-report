@@ -151,8 +151,13 @@ public static class QuestionEndpoints
             {
                 var dependsOn = ResolvedDependency(request, questions, question.Id);
                 var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
+                var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
+                    .ConfigureAwait(false);
 
-                question.Revise(
+                // Revises while nothing has answered it, and otherwise retires
+                // this question and returns its replacement (ADR-0071).
+                var live = question.ApplyEdit(
+                    hasBeenAnswered,
                     type,
                     request.LabelEn,
                     request.LabelFr,
@@ -170,11 +175,16 @@ public static class QuestionEndpoints
                     ParsedOptionSet(request),
                     options);
 
+                if (!ReferenceEquals(live, question))
+                {
+                    database.Questions.Add(live);
+                }
+
                 await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
                 var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
 
-                return Results.Ok(QuestionView.Of(question, SetFor(question, sets)));
+                return Results.Ok(QuestionView.Of(live, SetFor(live, sets)));
             }).ConfigureAwait(false);
     }
 
@@ -271,6 +281,21 @@ public static class QuestionEndpoints
     /// Every live shared choice list, by id. An autocomplete renders the live
     /// list rather than its snapshot (ADR-0063), so the screen needs them.
     /// </summary>
+    /// <summary>
+    /// Whether any answer anywhere references this question, which is what
+    /// decides between revising it and replacing it (ADR-0071).
+    /// </summary>
+    /// <remarks>
+    /// Query filters are ignored deliberately: an answer on a soft-deleted
+    /// report is still a record of what somebody was asked, so it forces the
+    /// fork exactly as a live one does.
+    /// </remarks>
+    private static Task<bool> HasBeenAnsweredAsync(
+        HpacSafetyDbContext database, TinyId questionId, CancellationToken cancellationToken) =>
+        database.ReportAnswers
+            .IgnoreQueryFilters()
+            .AnyAsync(answer => answer.QuestionId == questionId, cancellationToken);
+
     private static async Task<Dictionary<TinyId, OptionSet>> LiveSetsAsync(
         HpacSafetyDbContext database, CancellationToken cancellationToken)
     {

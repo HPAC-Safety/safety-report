@@ -22,6 +22,11 @@
  * ## Two modes, and only one of them can spend money
  *
  *   --check      Verify parity and provenance. Reads files, calls nothing.
+ *   --allow-pending-translation
+ *                With --check, report a French value still carrying its local
+ *                `#` stub as a notice rather than an error. For the
+ *                pre-commit hook on a branch only — the workflow that fills
+ *                it commits onto that branch (ADR-0057). Never passed in CI.
  *                This is what runs on `pull_request`.
  *   --generate   Translate what changed and write the files. Runs on `main`
  *                only, and opens a pull request rather than pushing.
@@ -256,6 +261,14 @@ function sortKeys(object) {
  */
 export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }) {
 	const problems = []
+
+	// The subset of `problems` that a translation workflow will resolve on its
+	// own: a French value still carrying its local `#` stub. It is a real
+	// problem — it can never reach main — but it is the one the pre-commit
+	// hook tolerates on a branch, because ADR-0057 has i18n-translate.yml
+	// commit the French straight onto that branch. Everything else here means
+	// somebody has to do something.
+	const pending = []
 	const englishKeys = flatten(english)
 	const frenchByKey = new Map(flatten(french))
 	const wanted = new Set(englishKeys.map(([key]) => key))
@@ -276,7 +289,9 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 		}
 
 		if (frenchByKey.get(key).startsWith('#')) {
-			problems.push(`'${key}' in ${TARGET_LOCALE}.json is still a local # stub (ADR-0054). Merge to main so CI can translate it.`)
+			const problem = `'${key}' in ${TARGET_LOCALE}.json is still a local # stub (ADR-0054). Merge to main so CI can translate it.`
+			problems.push(problem)
+			pending.push(problem)
 			continue
 		}
 
@@ -306,7 +321,33 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 		}
 	}
 
-	return { ok: problems.length === 0, problems }
+	return { ok: problems.length === 0, problems, pending }
+}
+
+/**
+ * Splits what `verifyLocales` found into what blocks a commit and what is
+ * merely pending.
+ *
+ * `allowPending` downgrades exactly one problem — a French value still
+ * carrying its local `#` stub — to a notice. The pre-commit hook passes it on
+ * a branch, where i18n-translate.yml is about to commit the French onto that
+ * same branch (ADR-0057). Nothing passes it on main or in CI, so a stub still
+ * cannot land there, and every other problem blocks either way.
+ */
+export function checkVerdict({ problems, pending }, { allowPending = false } = {}) {
+	const tolerated = allowPending ? pending : []
+	const toleratedSet = new Set(tolerated)
+	const blocking = problems.filter((problem) => !toleratedSet.has(problem))
+
+	return {
+		blocking,
+		tolerated,
+		ok: blocking.length === 0,
+		summary:
+			tolerated.length > 0
+				? `${SOURCE_LOCALE} and ${TARGET_LOCALE} are in step, with ${tolerated.length} translation(s) pending.`
+				: `${SOURCE_LOCALE}, ${TARGET_LOCALE}, and their provenance are in step.`,
+	}
 }
 
 // --- the command ------------------------------------------------------------
@@ -327,7 +368,12 @@ function parseArgs(argv) {
 		}
 	}
 
-	return { check: flags.has('--check'), generate: flags.has('--generate'), dir }
+	return {
+		check: flags.has('--check'),
+		generate: flags.has('--generate'),
+		allowPending: flags.has('--allow-pending-translation'),
+		dir,
+	}
 }
 
 const readJson = (path, fallback) => (existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : fallback)
@@ -342,7 +388,7 @@ function setOutput(pairs) {
 }
 
 async function main() {
-	const { check, generate, dir } = parseArgs(process.argv.slice(2))
+	const { check, generate, allowPending, dir } = parseArgs(process.argv.slice(2))
 
 	if (check === generate) {
 		console.error('::error::Exactly one of --check or --generate is required.')
@@ -377,16 +423,20 @@ async function main() {
 	const glossary = readJson(glossaryPath, {})
 
 	if (check) {
-		const { ok, problems } = verifyLocales({ english, french, meta, glossary })
-		if (!ok) {
-			for (const problem of problems) console.error(`::error::${problem}`)
+		const verdict = checkVerdict(verifyLocales({ english, french, meta, glossary }), { allowPending })
+
+		for (const problem of verdict.tolerated) console.log(`::notice::${problem}`)
+
+		if (verdict.blocking.length > 0) {
+			for (const problem of verdict.blocking) console.error(`::error::${problem}`)
 			console.error('')
 			console.error(`${SOURCE_LOCALE} is the source of truth and ${TARGET_LOCALE}.json is generated.`)
 			console.error('This job never translates on a pull request — merge to main and let the')
 			console.error('translation workflow open one with the French in it. See ADR-0021.')
 			process.exit(1)
 		}
-		console.log(`${SOURCE_LOCALE}, ${TARGET_LOCALE}, and their provenance are in step.`)
+
+		console.log(verdict.summary)
 		return
 	}
 

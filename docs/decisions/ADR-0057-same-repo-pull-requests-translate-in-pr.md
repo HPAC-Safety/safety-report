@@ -100,6 +100,20 @@ second pull request. Nothing here lets any French reach `main` unreviewed.
   trusted PRs before they merge; a softened check would still help fork
   PRs, where French genuinely isn't available yet.
 
+## The pre-commit hook had to follow (#207)
+
+This decision was made for CI and initially left the local hook alone, which
+put the two in direct conflict: the workflow existed to fill a `#` stub on a
+branch, and the hook refused to let one be committed at all. With no DeepL
+credential locally there was nothing a developer could do to satisfy it
+except `git commit --no-verify` — which also skipped the hook's unrelated
+`dotnet format` check, because `set -e` let the locale failure abort the
+script before formatting ran.
+
+The hook now runs both checks independently and tolerates a pending French
+stub on a branch, while `main` and CI stay strict. A guardrail that has to
+be bypassed routinely is not a guardrail.
+
 ## Consequences
 
 - `.github/workflows/i18n-translate.yml` gains a `pull_request_target`

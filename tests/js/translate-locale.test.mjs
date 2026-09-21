@@ -10,6 +10,7 @@ import {
 	planTranslation,
 	unflatten,
 	verifyLocales,
+	checkVerdict,
 } from '../../tools/translate-locale.mjs'
 
 /** The smallest English set that still has a nested shape. */
@@ -499,6 +500,38 @@ describe('verifying the locales without translating', () => {
 		})
 	})
 
+	describe('given a French value still carrying its # marker', () => {
+		it('when the problems are classified then only that one is pending, so the hook can tolerate it on a branch (ADR-0057)', () => {
+			// Given
+			const source = { nav: { contact: 'Contact' } }
+
+			// When
+			const result = verifyLocales({ english: source, french: { nav: { contact: '#Contact' } }, meta: {}, glossary: {} })
+
+			// Then — a workflow resolves this one on its own; nothing else here does
+			assert.equal(result.pending.length, 1)
+			assert.match(result.pending[0], /nav\.contact.*# stub/)
+			assert.deepEqual(result.problems, result.pending)
+		})
+	})
+
+	describe('given a missing French key alongside a pending stub', () => {
+		it('when the problems are classified then the missing key is not pending, so it still blocks a commit', () => {
+			// Given
+			const source = { nav: { contact: 'Contact', help: 'Help' } }
+
+			// When
+			const result = verifyLocales({ english: source, french: { nav: { contact: '#Contact' } }, meta: {}, glossary: {} })
+
+			// Then — a workflow fills a stub; nothing fills a key somebody forgot
+			assert.equal(result.ok, false)
+			assert.equal(result.pending.length, 1)
+			assert.equal(result.problems.length, 2)
+			assert.ok(result.problems.some((problem) => /missing 'nav\.help'/.test(problem)))
+			assert.ok(!result.pending.some((problem) => /nav\.help/.test(problem)))
+		})
+	})
+
 	describe('given an English value still carrying stub-missing-translations.mjs\'s # marker', () => {
 		it('when it is verified then it fails, so an untranslated French-only key can never merge (ADR-0054)', () => {
 			// Given
@@ -515,6 +548,9 @@ describe('verifying the locales without translating', () => {
 			// Then
 			assert.equal(result.ok, false)
 			assert.match(result.problems.join('\n'), /nav\.onlyFrench.*# stub/)
+
+			// No workflow writes English. This one is always the author's to fix.
+			assert.deepEqual(result.pending, [])
 		})
 	})
 })
@@ -568,6 +604,60 @@ describe('placeholders in a translated string', () => {
 
 			// Then
 			assert.equal(result.french.admin.queue, 'sur {total}, {count}')
+		})
+	})
+})
+
+describe('deciding what blocks a commit', () => {
+	const stub = "'nav.contact' in fr-CA.json is still a local # stub (ADR-0054). Merge to main so CI can translate it."
+	const missing = "fr-CA is missing 'nav.help'. Regenerate it — never hand-edit fr-CA.json."
+
+	describe('given a pending French stub and no allowance', () => {
+		it('when the verdict is taken then it blocks, which is the path main and CI take', () => {
+			// Given / When
+			const verdict = checkVerdict({ problems: [stub], pending: [stub] })
+
+			// Then
+			assert.equal(verdict.ok, false)
+			assert.deepEqual(verdict.blocking, [stub])
+			assert.deepEqual(verdict.tolerated, [])
+		})
+	})
+
+	describe('given a pending French stub and the allowance', () => {
+		it('when the verdict is taken then it passes as a notice, which is the path a branch takes (ADR-0057)', () => {
+			// Given / When
+			const verdict = checkVerdict({ problems: [stub], pending: [stub] }, { allowPending: true })
+
+			// Then
+			assert.equal(verdict.ok, true)
+			assert.deepEqual(verdict.blocking, [])
+			assert.deepEqual(verdict.tolerated, [stub])
+			assert.match(verdict.summary, /1 translation\(s\) pending/)
+		})
+	})
+
+	describe('given a real problem sitting alongside a pending stub', () => {
+		it('when the verdict is taken with the allowance then the real problem still blocks', () => {
+			// Given — the case a naive "ignore stub problems" filter would swallow
+			const verdict = checkVerdict({ problems: [stub, missing], pending: [stub] }, { allowPending: true })
+
+			// Then
+			assert.equal(verdict.ok, false)
+			assert.deepEqual(verdict.blocking, [missing])
+			assert.deepEqual(verdict.tolerated, [stub])
+		})
+	})
+
+	describe('given nothing wrong', () => {
+		it('when the verdict is taken then it says so without mentioning pending work', () => {
+			// Given / When
+			const verdict = checkVerdict({ problems: [], pending: [] }, { allowPending: true })
+
+			// Then
+			assert.equal(verdict.ok, true)
+			assert.match(verdict.summary, /in step/)
+			assert.ok(!/pending/.test(verdict.summary))
 		})
 	})
 })

@@ -1,17 +1,31 @@
 #!/usr/bin/env sh
 #
-# Two independent checks, each gated on the kind of file actually staged so
-# an unrelated commit pays nothing. This file is the tracked template;
-# ./init-dev.sh copies it into the real hooks directory (see that file for
-# why it's a copy rather than core.hooksPath) — edit this copy, not the
-# installed one, and re-run ./init-dev.sh to pick up the change.
+# Two genuinely independent checks, each gated on the kind of file actually
+# staged so an unrelated commit pays nothing. This file is the tracked
+# template; ./init-dev.sh copies it into the real hooks directory (see that
+# file for why it's a copy rather than core.hooksPath) — edit this copy, not
+# the installed one, and re-run ./init-dev.sh to pick up the change.
 #
-# 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, a
-#    local `#`-stub (tools/stub-missing-translations.mjs, ADR-0054) that must
-#    never reach a PR, or stale fr-CA.meta.json provenance. Runs the exact
-#    same checks as the "i18n" CI job (tools/check-locales.mjs,
-#    tools/translate-locale.mjs --check) but locally, before the commit
-#    exists, instead of after a push.
+# "Independent" is load-bearing and was not true before: `set -e` let a locale
+# failure abort the script before `dotnet format` ran, so a commit refused for
+# a missing French key also silently skipped its formatting. Both checks now
+# always run, and the hook fails at the end if either did.
+#
+# 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, an
+#    English `#`-stub, stale fr-CA.meta.json provenance, or a glossary
+#    mismatch. Runs the exact same checks as the "i18n" CI job
+#    (tools/check-locales.mjs, tools/translate-locale.mjs --check) but
+#    locally, before the commit exists, instead of after a push.
+#
+#    One exception, on a branch only: a FRENCH value still carrying its local
+#    `#` stub is reported and allowed through. ADR-0057 has
+#    i18n-translate.yml commit the French straight onto a same-repo pull
+#    request's branch, so the stub is a known, temporary state that a workflow
+#    resolves — and with no DeepL credential locally there is nothing a
+#    developer could do to satisfy the old rule except `--no-verify`, which
+#    also skipped the formatting check for a reason that had nothing to do
+#    with formatting. On main the stub is still fatal, and CI never passes
+#    --allow-pending-translation, so one still cannot reach main.
 #
 # 2. C# formatting: dotnet format --include <staged files>, auto-fixing and
 #    re-staging just those files, so formatting drift never reaches a commit
@@ -19,36 +33,62 @@
 #    the whole solution with --verify-no-changes as a server-side backstop
 #    for anyone who skipped this hook.
 
-set -eu
+set -u
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-cd "$REPO_ROOT"
 
-if git diff --cached --name-only --diff-filter=ACMR | grep -q '^locales/'; then
+# `set -e` is deliberately not used — it is what made the two checks
+# dependent — so this cd guards itself.
+cd "$REPO_ROOT" || exit 1
+
+status=0
+
+staged() {
+	git diff --cached --name-only --diff-filter=ACMR
+}
+
+# A detached HEAD is not main, and is not somewhere a translation lands
+# either; treat it like a branch rather than refusing to commit at all.
+branch=$(git symbolic-ref --quiet --short HEAD || echo "")
+
+if [ "$branch" = "main" ]; then
+	pending_translation_flag=""
+else
+	pending_translation_flag="--allow-pending-translation"
+fi
+
+if staged | grep -q '^locales/'; then
 	if ! command -v node >/dev/null 2>&1; then
 		echo "pre-commit: node is not on PATH, cannot verify locales/ — see README.md" >&2
-		exit 1
-	fi
+		status=1
+	else
+		node tools/check-locales.mjs || status=1
 
-	node tools/check-locales.mjs
-	node tools/translate-locale.mjs --check --locales locales
+		# shellcheck disable=SC2086 # empty on main, one flag elsewhere
+		node tools/translate-locale.mjs --check --locales locales $pending_translation_flag || status=1
+	fi
 fi
 
-if git diff --cached --name-only --diff-filter=ACMR | grep -qE '\.(cs|csproj)$'; then
+if staged | grep -qE '\.(cs|csproj)$'; then
 	if ! command -v dotnet >/dev/null 2>&1; then
 		echo "pre-commit: dotnet is not on PATH, cannot run dotnet format — see README.md" >&2
-		exit 1
+		status=1
+	else
+		STAGED_CS=$(staged | grep -E '\.(cs|csproj)$')
+
+		# --include scopes formatting to the staged files, not the whole
+		# solution, so a commit touching two files never rewrites (and
+		# re-stages) unrelated ones elsewhere in the tree that also happen to
+		# be out of format.
+		# shellcheck disable=SC2086 # word-split on purpose: one path per --include arg
+		if dotnet format HpacSafety.slnx --include $STAGED_CS; then
+			echo "$STAGED_CS" | while IFS= read -r f; do
+				[ -f "$f" ] && git add -- "$f"
+			done
+		else
+			status=1
+		fi
 	fi
-
-	STAGED_CS=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(cs|csproj)$')
-
-	# --include scopes formatting to the staged files, not the whole solution,
-	# so a commit touching two files never rewrites (and re-stages) unrelated
-	# ones elsewhere in the tree that also happen to be out of format.
-	# shellcheck disable=SC2086 # word-split on purpose: one path per --include arg
-	dotnet format HpacSafety.slnx --include $STAGED_CS
-
-	echo "$STAGED_CS" | while IFS= read -r f; do
-		[ -f "$f" ] && git add -- "$f"
-	done
 fi
+
+exit "$status"

@@ -1,6 +1,3 @@
-using HpacSafety.Core;
-using HpacSafety.Core.Features.Moderation;
-
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;

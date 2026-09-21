@@ -1,12 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-
 using HpacSafety.Api.Authentication;
-using HpacSafety.Core.Features.Moderation;
-
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
-
+using Microsoft.AspNetCore.Mvc.Testing;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests.Authentication;

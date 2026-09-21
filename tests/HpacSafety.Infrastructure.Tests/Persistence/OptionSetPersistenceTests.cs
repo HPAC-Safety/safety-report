@@ -1,6 +1,4 @@
 using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 
 using Shouldly;

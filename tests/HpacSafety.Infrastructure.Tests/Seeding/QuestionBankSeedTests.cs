@@ -1,6 +1,4 @@
-using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
-using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence.Seeding;
 
 using Microsoft.EntityFrameworkCore.Migrations;

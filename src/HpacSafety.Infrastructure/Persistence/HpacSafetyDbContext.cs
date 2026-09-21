@@ -8,8 +8,6 @@ using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ChangeTracking;
-
 using Npgsql;
 
 namespace HpacSafety.Infrastructure.Persistence;

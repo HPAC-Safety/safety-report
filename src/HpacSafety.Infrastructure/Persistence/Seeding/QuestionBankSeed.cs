@@ -1,4 +1,3 @@
-using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 
 namespace HpacSafety.Infrastructure.Persistence.Seeding;

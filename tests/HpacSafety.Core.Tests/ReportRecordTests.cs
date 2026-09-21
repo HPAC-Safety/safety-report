@@ -1,5 +1,4 @@
 using HpacSafety.Core.Features.Moderation;
-using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using Shouldly;

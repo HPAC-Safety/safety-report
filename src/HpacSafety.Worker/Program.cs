@@ -2,7 +2,6 @@ using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Worker;
 
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>

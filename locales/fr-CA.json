@@ -20,7 +20,8 @@
     "memberLogout": "Se déconnecter",
     "admin": "Admin",
     "manageReports": "Gérer les rapports",
-    "manageQuestions": "Gérer les questions"
+    "manageQuestions": "Gérer les questions",
+    "manageChoiceLists": "Gérer les listes de choix"
   },
   "language": {
     "optionEnglish": "Anglais",
@@ -152,6 +153,37 @@
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "action": "Traduire",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
+    }
+  },
+  "choiceLists": {
+    "title": "Gérer les listes de choix",
+    "intro": "Listes communes des choix proposés par les questions à saisie semi-automatique et à sélection. L’enregistrement d’une liste la remplace par exactement ce qui est affiché ici.",
+    "loading": "Chargement des listes de choix…",
+    "empty": "Il n'y a pas encore de listes de choix. Ajoutez la première.",
+    "addList": "Ajouter une liste de choix",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "itemCount": "{count} choix",
+    "reporterAdded": "Ajouté par un journaliste",
+    "reporterAddedCount": "{count} Ces choix ont été ajoutés par les journalistes et n’ont pas été vérifiés. Vérifiez l’orthographe et le français, et supprimez tout ce qui ne devrait pas figurer dans la liste.",
+    "editorTitleNew": "Nouvelle liste de choix",
+    "editorTitleEdit": "Modifier la liste de choix",
+    "error": {
+      "unexpected": "Une erreur s'est produite. Veuillez réessayer."
+    },
+    "field": {
+      "key": "Clé",
+      "nameEn": "Nom (en anglais)",
+      "nameFr": "Nom (en français)",
+      "items": "Choix",
+      "itemsHelp": "Une option qui ne figure pas dans cette liste est retirée. Les questions qui proposaient déjà cette option conservent leur propre version; il n’y a donc aucun changement dans les rapports déposés.",
+      "itemCode": "Code",
+      "itemLabelEn": "Choix (anglais)",
+      "itemLabelFr": "Choix (français)",
+      "addItem": "Ajouter une option",
+      "removeItem": "Supprimez ce choix"
     }
   }
 }

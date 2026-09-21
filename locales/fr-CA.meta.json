@@ -9,6 +9,131 @@
     "provider": "glossary",
     "reviewed": true
   },
+  "choiceLists.addList": {
+    "source_hash": "960766f467dffaf1c3442232a51b0e63c88ab08379bd7ff3fbbb9d38838a04f1",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.cancel": {
+    "source_hash": "19766ed6ccb2f4a32778eed80d1928d2c87a18d7c275ccb163ec6709d3eb2e27",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.delete": {
+    "source_hash": "e2d0a54968ead24efc0dffa6ac78fc606dceec34a0f586177a74a54cc2272cf8",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.edit": {
+    "source_hash": "464c4ffd019e1e9691dcf0537c797353ef2b1c1d4833d3d463e5b74ae4547344",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.editorTitleEdit": {
+    "source_hash": "ee6002591514998fcc82e549cab8e2c33d9ce031fe3464f682a90be2f8e8c025",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.editorTitleNew": {
+    "source_hash": "05ce6f8caf84e69d5fe82298232bd77c03029d5379f0a2aa4a57763b1e419498",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.empty": {
+    "source_hash": "a7f5f9935995ab4213e036929704fa58daaf9fb4f8226c0199a12f43a01d20b8",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.error.unexpected": {
+    "source_hash": "3ccd9d6586ef9143f1e1cc09831532fc2342c50ee76e5cb3c151190acbc50b51",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.addItem": {
+    "source_hash": "d0612297b6107158bb99037d254e9b751b35f5e487f7521eda95ddf8bf2ddf7c",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.itemCode": {
+    "source_hash": "340f463033e0fd5ddeabb922df4d4f1b5747494d0f5ed9894f13b6e13ca831f5",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.itemLabelEn": {
+    "source_hash": "ef3e33a7de5673ffde4447bda3dac51c6946fb49e532bb985fe1e932be5965c9",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.itemLabelFr": {
+    "source_hash": "4328f94d8b04546a7f40d9f3fa39153d890767520c0505105f47de645d33d6e4",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.items": {
+    "source_hash": "2f75b64ac9163e816311e5c21589498f54c449f2da1d1436cb9ab2f10c160af5",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.itemsHelp": {
+    "source_hash": "0eca8e713eaf3b57279601dda729643f2cc565ac70d754b6e4f182510f6ce510",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.key": {
+    "source_hash": "99a52df3ff3d499488e2fa28150c4106a2cb5e928891a830a9aa3922b2d32160",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.nameEn": {
+    "source_hash": "77acd8444a6ad9060daf85c8f7cfa30b3191a54dc521ba0373d08b8ac4c2741d",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.nameFr": {
+    "source_hash": "aee908b55b820fd0b9750cc3b0da4b52c0c6457796d7d2552c88e78eaa01efc8",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.field.removeItem": {
+    "source_hash": "0f230a99eecddbe5898049aae284b2b3ddacc48eb68fcee32be41018b768c854",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.intro": {
+    "source_hash": "3abf53b6499f077c4e9e561815f8e738e35124e43e0ffa4dfdbab75819ba4b07",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.itemCount": {
+    "source_hash": "6306f458839935f0f5ab70b5fcd57403dfb3e81d8f7e2324241ca9ab26f790d2",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.loading": {
+    "source_hash": "6389168119ae6b3a9d9f30fe6e4f6bcec5629aaf678945773595da10e160d2ba",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.reporterAdded": {
+    "source_hash": "a181ca628b75da0f1ee4624cc6ded30ca7bbbedfec8fdf023db98b7f35602af4",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.reporterAddedCount": {
+    "source_hash": "ac79aed7f7aa05dbae9374fe17584719208cbd4968dd11dd19f37aa35994c8e9",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.save": {
+    "source_hash": "1509f561f2416598629b886ad7d3c05a7e221e4e0675c84bbff4ee6d9e03913d",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "choiceLists.title": {
+    "source_hash": "54aa089ac60db8354cd91e8fd5d1eab9e0e359fe81a38eaf16369f017322d764",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "footer.copyright": {
     "source_hash": "8615fda338344cec2d1769d84fa9526873123c0a92f8368e0f74fc3261a76460",
     "provider": "glossary",
@@ -91,6 +216,11 @@
   },
   "nav.contact": {
     "source_hash": "2b5c3d26721ae9c350cf3009318b626f0fc8a90b4a2ac0ca8099c05aa849282e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "nav.manageChoiceLists": {
+    "source_hash": "54aa089ac60db8354cd91e8fd5d1eab9e0e359fe81a38eaf16369f017322d764",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

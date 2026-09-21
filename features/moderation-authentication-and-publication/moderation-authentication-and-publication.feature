@@ -25,6 +25,12 @@ Feature: Moderation, authentication, and publication
     Then it opens with manage-reports and manage-questions options
 
   @ui
+  Scenario: An open Admin menu keeps every option on a single line
+    Given a visitor signs in from the member login page
+    When the visitor activates the Admin menu
+    Then every option is on one line and none is truncated
+
+  @ui
   Scenario Outline: Activating an Admin menu option navigates to its placeholder page
     Given a visitor signs in from the member login page
     When the visitor activates the Admin menu

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 
 const rowLinkClassName =
-	"touch-target flex items-center rounded px-4 font-sans text-sm font-medium text-ink underline-offset-4 hover:underline"
+	"touch-target flex items-center whitespace-nowrap rounded px-4 font-sans text-sm font-medium text-ink underline-offset-4 hover:underline"
 
 const stackedLinkClassName =
 	"touch-target flex items-center rounded px-2 font-sans text-base font-medium text-ink underline-offset-4 hover:underline"
@@ -63,7 +63,7 @@ export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; 
 					className={
 						stacked
 							? "mt-1 flex flex-col gap-1 border-l border-rule pl-4"
-							: "absolute right-0 top-full z-50 mt-1 flex flex-col gap-1 rounded border border-rule bg-surface py-2 shadow-lg"
+							: "absolute right-0 top-full z-50 mt-1 flex w-max flex-col gap-1 rounded border border-rule bg-surface py-2 shadow-lg"
 					}
 				>
 					<Link role="menuitem" to="/admin/reports" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>

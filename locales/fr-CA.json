@@ -150,7 +150,8 @@
       "draftWarning": "Une traduction n’est qu’un premier jet. Lisez-la et corrigez-la avant de l’enregistrer.",
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
-      "action": "Traduire"
+      "action": "Traduire",
+      "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     }
   }
 }

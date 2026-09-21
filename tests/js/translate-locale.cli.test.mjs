@@ -5,6 +5,8 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync } from 
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
+import { hashOf } from '../../tools/translate-locale.mjs'
+
 const TOOL = new URL('../../tools/translate-locale.mjs', import.meta.url).pathname
 
 let counter = 0
@@ -270,6 +272,108 @@ describe('the locale translation command', () => {
 			// Then
 			assert.equal(code, 2)
 			assert.match(output, /--check|--generate/)
+		})
+	})
+})
+
+describe('the command, when a French value was edited by hand', () => {
+	// A stamp as a real generate leaves it: both hashes recorded.
+	const stampedFor = (englishText, frenchText) => ({
+		'form.submit': {
+			source_hash: hashOf(englishText),
+			target_hash: hashOf(frenchText),
+			provider: 'stub',
+			reviewed: false,
+		},
+	})
+
+	describe('given only the French moved', () => {
+		it('when it generates then the correction is kept and recorded, not retranslated', () => {
+			// Given — stamped against "Envoyer", the file now says something else
+			const dir = locales({
+				'en-CA.json': { form: { submit: 'Submit' } },
+				'fr-CA.json': { form: { submit: 'Soumettre' } },
+				'fr-CA.meta.json': stampedFor('Submit', 'Envoyer'),
+			})
+
+			// When
+			const result = run(['--generate', '--locales', dir], stub)
+
+			// Then — the wording a human chose survives
+			assert.equal(result.code, 0)
+			assert.equal(read(dir, 'fr-CA.json').form.submit, 'Soumettre')
+
+			// and the stamp stops crediting a provider for it
+			const stamp = read(dir, 'fr-CA.meta.json')['form.submit']
+			assert.equal(stamp.provider, 'human')
+			assert.equal(stamp.reviewed, true)
+			assert.match(result.output, /recording them as human-authored/)
+		})
+	})
+
+	describe('given both languages moved in the same edit', () => {
+		it('when it generates then both are kept and recorded, because editing both was deliberate', () => {
+			// Given
+			const dir = locales({
+				'en-CA.json': { form: { submit: 'Send it' } },
+				'fr-CA.json': { form: { submit: 'Soumettre' } },
+				'fr-CA.meta.json': stampedFor('Submit', 'Envoyer'),
+			})
+
+			// When
+			const result = run(['--generate', '--locales', dir], stub)
+
+			// Then — neither side is second-guessed
+			assert.equal(result.code, 0)
+			assert.equal(read(dir, 'en-CA.json').form.submit, 'Send it')
+			assert.equal(read(dir, 'fr-CA.json').form.submit, 'Soumettre')
+
+			// and the stamp now records both sides as they were written
+			const stamp = read(dir, 'fr-CA.meta.json')['form.submit']
+			assert.equal(stamp.provider, 'human')
+			assert.equal(stamp.source_hash, hashOf('Send it'))
+			assert.equal(stamp.target_hash, hashOf('Soumettre'))
+		})
+
+		it('when it verifies then it passes on a branch, as any correction does', () => {
+			// Given
+			const dir = locales({
+				'en-CA.json': { form: { submit: 'Send it' } },
+				'fr-CA.json': { form: { submit: 'Soumettre' } },
+				'fr-CA.meta.json': stampedFor('Submit', 'Envoyer'),
+			})
+
+			// When
+			const result = run(['--check', '--locales', dir, '--allow-pending-translation'])
+
+			// Then
+			assert.equal(result.code, 0)
+			assert.match(result.output, /was edited by hand/)
+		})
+	})
+
+	describe('given only the English moves afterwards', () => {
+		it('when it generates then the French is retranslated, which is the one way a correction is replaced', () => {
+			// Given — already recorded as human-authored
+			const dir = locales({
+				'en-CA.json': { form: { submit: 'Send it' } },
+				'fr-CA.json': { form: { submit: 'Soumettre' } },
+				'fr-CA.meta.json': {
+					'form.submit': {
+						source_hash: hashOf('Submit'),
+						target_hash: hashOf('Soumettre'),
+						provider: 'human',
+						reviewed: true,
+					},
+				},
+			})
+
+			// When
+			const result = run(['--generate', '--locales', dir], stub)
+
+			// Then — editing only the English asks for a fresh translation
+			assert.equal(result.code, 0)
+			assert.equal(read(dir, 'fr-CA.json').form.submit, '[fr-CA STUB] Send it')
 		})
 	})
 })

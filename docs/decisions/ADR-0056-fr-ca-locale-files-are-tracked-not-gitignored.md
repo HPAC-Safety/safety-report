@@ -7,7 +7,10 @@ keywords: i18n, DeepL, gitignore, ADR-0021, ADR-0054
 
 # ADR-0056 — `locales/fr-CA.json` and `locales/fr-CA.meta.json` are tracked files, not gitignored
 
-**Status:** Accepted. Narrows
+**Status:** Accepted. Narrows Narrowed by
+[ADR-0070](ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md):
+the files stay tracked and generated, and a hand edit to `fr-CA.json` is now
+recorded as a human correction rather than silently overwritten.
 [ADR-0054](ADR-0054-local-build-stubs-missing-translations.md), whose
 `.gitignore` consequence rested on a premise that was never true for this
 repository.

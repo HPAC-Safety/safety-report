@@ -107,10 +107,13 @@ contradicting the code.
   snapshot still exists.
 - A site added by one reporter is visible to every other reporter immediately.
   With an anonymous form that is a spam and privacy surface — a free-text box
-  accepts anything, including a person's name. The owner's position is that the
-  form will require authentication; **that decision is not made by this ADR and
-  is not implemented here.** Until it is, the exposure is real and the
-  curation screen is the only control.
+  accepts anything, including a person's name. The owner's position was that the
+  form would require authentication; that decision has since been made by
+  [ADR-0067](ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md), so
+  the free-text box is now reachable only by a signed-in HPAC member. That
+  narrows the exposure to a known population without removing it — the member
+  is not recorded, so a bad entry still cannot be traced to whoever typed it —
+  and the curation screen remains the control.
 - `QuestionView` gains `ChoicesComeFromLiveList`, so the authoring screen shows
   an administrator the same list a reporter would see.
 

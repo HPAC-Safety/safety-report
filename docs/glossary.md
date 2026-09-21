@@ -18,8 +18,11 @@
 | Question key | Stable non-localized logical identifier joining the immutable revisions of the same question. |
 | Question revision | Exact immutable form record referenced by an answer, including bilingual copy/options and all behavior/display flags. |
 | Report content | Labeled non-private answered fields eligible to supply safety facts to the model. |
-| Reporter | Any person submitting an occurrence; authentication is not required for public submission. |
+| Reporter | An HPAC member submitting an occurrence. Sign-in is required and proves membership only; nothing stored records who filed the report. |
+| Member role | The role claim on a validated token: `User`, `SafetyOfficer`, or `Administrator`. Never stored — this system holds no user records. |
+| User | The lowest role. Proves HPAC membership and may submit a report; has no review, authoring, or publication capability. |
 | Safety officer | Authorized reviewer who can see private reports, edit/approve the summary pair, publish when consent permits, and soft-delete reports. |
+| Token subject | The `sub` claim of a validated token, stored as an opaque string on an audit entry or a summary approval. Joins to nothing; there is no user table. |
 | Summary pair | One row and one review unit containing English and French anonymized summaries with shared model/prompt provenance and approval. |
 | TinyId | Opaque compact application identifier used externally instead of sequential database IDs. |
 | Worker | Long-running .NET service that consumes outbox work, processes attachments, and performs the one-call bilingual summarization operation. |

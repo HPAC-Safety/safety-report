@@ -1,8 +1,9 @@
 # Web site
 
-One React/TypeScript single-page application, built with Vite. The
-anonymous report form is the default route; the authenticated
-review/administration UI lives at `/admin` in the same app and build — see
+One React/TypeScript single-page application, built with Vite. The report form
+is the default route and requires a signed-in HPAC member, though nothing about
+that member is recorded against the report; the review/administration UI lives
+at `/admin` in the same app and build — see
 [ADR-0043](../../docs/decisions/ADR-0043-react-typescript-vite-web-front-end.md)
 and
 [ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md).

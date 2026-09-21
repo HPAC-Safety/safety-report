@@ -1,6 +1,20 @@
+---
+status: partially-superseded
+date: 2026-08-26
+decision-makers: Chase Florell
+keywords: migration, canonical model, persistence, schema, admin_users, soft deletion
+---
+
 # ADR-0040: Migrate to the canonical domain and persistence model
 
-**Status:** Accepted
+**Status:** Partially superseded by
+[ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md): the
+`admin_users` table, its `role` check constraint, its partial unique index on
+`member_identifier`, and the two foreign keys pointing at it
+(`summaries.approved_by`, `audit_log.admin_user_id`) are all removed. Those two
+columns become opaque token-subject strings — `approved_by_subject` and
+`actor_subject`, `varchar(256)`, with no foreign key — because this system
+stores no user records. Everything else below stands.
 **Date:** 2026-08-26
 
 ## Context
@@ -26,6 +40,11 @@ ADR records the decisions made while writing the migration that gets current
 main there, and why the alternatives below were rejected.
 
 ## Schema
+
+The diagram below is the schema **as this migration left it**. `admin_users`
+and its edge to `summaries` were removed later by
+[ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md); see
+`docs/data-and-persistence.md` for the current shape.
 
 ```mermaid
 erDiagram
@@ -362,6 +381,10 @@ always set or clear together in code; the constraint is a second, independent
 enforcement of an invariant application code already holds.
 
 ### 13. `admin_users.member_identifier` is unique among live rows only
+
+**Removed by [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md)
+along with the table itself.** The rest of this section records what that
+migration did, not what the schema holds today.
 
 The original unique index covered every row regardless of `deleted`, so a
 soft-deleted administrator's upstream member identifier stayed permanently

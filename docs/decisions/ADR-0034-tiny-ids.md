@@ -77,8 +77,18 @@ This is not a preference about how identifiers look.
   announces how many reports HPAC has ever received.
 - **It survives being seen.** Identifiers here appear in URLs, blob keys, email
   links, and logs. Sixty-six bits of unguessable identifier is not an access
-  control — human review and the admin allowlist are — but it means a leaked
-  link is one leaked report rather than a way in to the rest.
+  control — human review and the API's role-claim authorization are — but it
+  means a leaked link is one leaked report rather than a way in to the rest.
+
+### A token subject is not a TinyId
+
+[ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md) turns
+`audit_log`'s actor column and `summaries`' approver column into
+`varchar(256)` strings holding an identity provider's `sub` claim. Those two
+columns are a deliberate exception to this ADR: the value is minted elsewhere,
+its format is the provider's to choose, and this system stores it without
+interpreting it. Every identifier this application itself generates is still a
+TinyId.
 
 ### The trade-off, honestly
 

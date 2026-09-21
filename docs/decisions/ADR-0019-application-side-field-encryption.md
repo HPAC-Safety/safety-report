@@ -79,6 +79,10 @@ The exception message never carries the ciphertext, the plaintext, or the key.
 
 ### 3. `admin_users.member_identifier` stays in plaintext
 
+**Moot since [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md):**
+there is no `admin_users` table and no stored member identifier to encrypt or
+leave in plaintext. The reasoning below is kept for the record.
+
 It is the lookup key at sign-in, and a randomized-nonce ciphertext cannot be
 looked up. It is an administrator's own working identity rather than a
 reporter's, and it never reaches a published summary. Encrypting it would buy

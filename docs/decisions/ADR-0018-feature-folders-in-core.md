@@ -46,8 +46,7 @@ src/HpacSafety.Core/
     Reporting/      Report, ReportAnswer, ReportFile, Summary,
                     report lifecycle and real external-boundary ports
     QuestionBank/   complete immutable bilingual question revisions
-    Moderation/     AdminUser, AdminRole, AuditLogEntry, AuditAction,
-                    IMemberAuthenticator
+    Moderation/     MemberRole, MemberIdentity, AuditLogEntry, AuditAction
     Outbox/         OutboxMessage
   SharedKernel/     identifiers, locale, time, and genuinely shared rules
 ```

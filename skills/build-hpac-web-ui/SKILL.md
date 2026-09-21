@@ -23,6 +23,15 @@ contrast, and self-hosted assets.
 - Public and admin are routes within the same application, build, and
   container ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
   Treat API authorization, not hidden markup, as the admin boundary.
+- Role-gate the chrome, never the route. A `User` sees no Admin menu; a
+  `SafetyOfficer` sees review options; an `Administrator` sees authoring too.
+  Do not add client-side route guards — the API authorizes every request.
+- The browser never parses a JWT. Role and expiry come from the token response
+  body, and the token travels as `Authorization: Bearer`.
+- Ask the API which authentication mode it is in (`GET /api/auth/config`);
+  never branch on a build flag. The third-party sign-in button is hidden, not
+  disabled, where no provider is configured
+  ([ADR-0066](../../docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
 - No `<script>` tag in any HTML file contains JavaScript. Every script is an
   external, type-checked `.ts` module under `src/web/src/`, referenced with
   `<script type="module" src="...">`

@@ -44,7 +44,7 @@ Lambda function, the web container, and Worker tasks are attached to private
 subnets; security groups narrowly allow API/Worker to RDS and necessary
 egress. S3 public access is blocked. Managed encryption is
 enabled for RDS, snapshots/backups, logs, secrets, and every bucket. TLS is
-required for browsers, HPAC authentication, AWS service access, database
+required for browsers, the identity provider, AWS service access, database
 connections, and the model provider.
 
 A small deployment may use one NAT gateway and the relevant AWS endpoints to
@@ -56,15 +56,31 @@ application code.
 
 Configuration includes database/storage endpoints, attachment count and 50 MB size
 limit, accepted attachment types, document malware scanner, trusted proxy
-networks, the site origin,
-cookie settings, rate limits/lockout, Turnstile site/secret settings, HPAC auth
-kill switch and hardcoded endpoint, model/prompt version, retry bounds, and
-stuck-work thresholds.
+networks, the site origin, rate limits, the authentication issuer, audience,
+and role-claim name, model/prompt version, retry bounds, and stuck-work
+thresholds.
+
+There are no cookie settings, no Turnstile configuration, and no HPAC auth kill
+switch or hardcoded endpoint. Sessions are bearer tokens, Turnstile is gone
+([ADR-0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)),
+and this system never contacts a member login endpoint
+([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 
 Secret values live in Secrets Manager and never in Terraform state, GitHub
 variables, source, appsettings committed to the repository, logs, or task
 definitions. Terraform creates secret containers/references; an authorized
-operator supplies values out of band.
+operator supplies values out of band. The identity provider's client secret is
+one of these.
+
+**The development JWT signing key is deliberately not a secret.** It is a
+throwaway symmetric key committed to `appsettings.Development.json`, following
+the pattern already set by the committed development encryption key: it signs
+tokens that only a developer's own machine will ever accept, and it appears in
+no deployed environment because the development token issuer is not mapped
+outside Development
+([ADR-0066](decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
+Production validates against the provider's published keys and holds no signing
+key of its own.
 
 ## Deployment
 
@@ -106,8 +122,8 @@ publication features. The application itself does not send reporter/reviewer
 email.
 
 Runbooks cover first deployment, migration failure, rollback, stuck/poison work,
-model outage, Turnstile outage, HPAC authentication kill switch, safe derivative
-failure, restore-from-backup verification, credential rotation, and security
+model outage, identity-provider outage, safe derivative
+failure, restore-from-backup verification, secret rotation, and security
 incident response. Restore drills verify retained private data stays private.
 
 ## Storage lifecycles and backups

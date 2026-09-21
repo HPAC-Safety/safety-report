@@ -34,8 +34,8 @@ relies on API behavior, a server-side test covering that behavior
   file indexes map exactly once to their file-upload answers;
 - known superseded revisions are accepted, while unknown/deleted revisions and
   invalid historical options are rejected;
-- Turnstile, trusted-IP extraction, throttling, multipart count/size bounds, and
-  safe localized errors fail closed; and
+- bearer-token validation, trusted-IP extraction, throttling, multipart
+  count/size bounds, and safe localized errors fail closed; and
 - report, answers, files, and all outbox work commit or roll back together.
 
 ### AI and privacy
@@ -77,10 +77,13 @@ a live third-party provider or send real incident data.
 
 ### Moderation, deletion, and publication
 
-- credentials are not stored/logged and the adapter permits only the hardcoded
-  TLS HPAC host; kill switch, timeout, cookie, CSRF, lockout, and revocation are
-  tested;
-- role matrix is tested at every admin endpoint;
+- a token that is unsigned, signed by an unknown key, tampered with, expired,
+  or issued for another audience is refused, and `alg: none` is refused;
+- a token carrying no recognized role authenticates as `User`, and no claim
+  beyond the subject and the role is ever read;
+- the development token endpoint does not exist outside Development;
+- the three-role matrix is tested at every admin endpoint;
+- a submitted report contains no reference to the member who filed it;
 - editing either language clears pair approval and removes public visibility;
 - every positive publication prerequisite and every negative case is tested at
   both domain and public-query boundaries;
@@ -99,9 +102,9 @@ and no `deleted` on `audit_log`.
 
 Terraform CI runs formatting, validation, static/security checks, and a plan
 without AWS credentials where possible. Assertions cover Canadian region,
-private/encrypted attachments, RDS backups, separate public/admin hosting, OIDC roles,
-least privilege, migration task, Turnstile configuration, and absence of SES or
-long-lived keys.
+private/encrypted attachments, RDS backups, one website with the admin surface
+as a route, deploy OIDC roles, least privilege, migration task, identity
+provider configuration, and absence of SES or long-lived keys.
 
 ## Repository quality gates
 

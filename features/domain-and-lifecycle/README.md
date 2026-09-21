@@ -27,9 +27,11 @@ even though retained rows still contain their prior status.
 ## Aggregate boundaries
 
 The report aggregate owns its answers, files, bilingual summary pair, and
-report-related outbox work for invariants and deletion. Question revisions and
-admin users are separate aggregates. Audit-log entries are append-only
-records. Storage objects are referenced by opaque keys but are not database
+report-related outbox work for invariants and deletion. Question revisions are
+a separate aggregate. There is no user aggregate — identity lives in the
+token, never in the database
+([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+Audit-log entries are append-only records. Storage objects are referenced by opaque keys but are not database
 entities.
 
 ## Soft deletion mechanics

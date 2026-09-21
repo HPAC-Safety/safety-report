@@ -43,8 +43,8 @@ the repository delivery contract.
   [`docs/agent-workflow.md`](docs/agent-workflow.md).
 
 When a change touches reports, questions, model input/output, attachments,
-authentication, logging, deletion, review, or publication, add a focused privacy
-or boundary test. Use only synthetic identities, locations, files, and report
+authentication, authorization, logging, deletion, review, or publication, add a
+focused privacy or boundary test. Use only synthetic identities, locations, files, and report
 content. Runtime prompt changes create a new prompt version; they do not add a
 second model stage.
 

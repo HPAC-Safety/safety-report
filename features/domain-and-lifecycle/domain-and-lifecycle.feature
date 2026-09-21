@@ -58,7 +58,7 @@ Feature: Domain and lifecycle
   Scenario: Editing a summary text unpublishes the report
     Given a report is Published
     When either the English or French summary text is edited
-    Then the pair's approver and approval timestamp are cleared
+    Then the pair's approver subject and approval timestamp are cleared
     And the report immediately stops satisfying the publication invariant
 
   @ignore
@@ -77,13 +77,6 @@ Feature: Domain and lifecycle
     And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
     And public and normal admin queries hide the report immediately
     And there is no restore transition
-
-  @ignore
-  Scenario: Deleting an admin user revokes access but preserves history
-    Given an admin user is soft-deleted
-    When the deletion transaction commits
-    Then that admin's authorization is revoked
-    And historical audit rows remain and may still reference that admin's ID
 
   @ignore
   Scenario: A question revision can be deleted only when unreferenced
@@ -117,14 +110,14 @@ Feature: Domain and lifecycle
   Scenario Outline: An audited action is recorded in the immutable audit log
     Given <action> occurs
     When the action completes
-    Then an audit log entry records identifiers and action metadata
+    Then an audit log entry records the acting token subject and action metadata
+    And the subject is an opaque string that joins to no user record
     And it never contains raw answers, names, credentials, tokens, or client filenames
 
     Examples:
       | action                                                    |
-      | an authentication outcome that matters to authorization   |
+      | an authorization denial that matters to a privileged path |
       | a question revision is created or deleted                 |
-      | an admin allowlist or role change                         |
       | a report is deleted                                       |
       | summary generation fails                                  |
       | a summary is manually edited                               |

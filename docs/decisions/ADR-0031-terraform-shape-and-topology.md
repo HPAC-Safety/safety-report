@@ -98,7 +98,9 @@ a report as well. Origin-level isolation between the two areas is gone.
 **Why that is acceptable here.** The admin bundle is static HTML and JavaScript,
 byte-identical for every visitor, and it contains **no report data**. Every piece
 of report data a reviewer sees arrives from the API, which authorizes each
-request against the `admin_users` allowlist (#24, [ADR-0005](ADR-0005-authentication.md)).
+request against the role claim on a validated bearer token (#24,
+[ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md); this said
+the `admin_users` allowlist and ADR-0005 when it was written).
 The delivery path was never the security boundary; serving the admin *shell*
 publicly discloses the application's structure and its UI strings and nothing
 else. This does mean the mitigation is load-bearing: **if the admin bundle ever

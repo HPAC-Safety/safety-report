@@ -24,9 +24,15 @@ know what was exposed, and you will not be penalised for reporting it.
 - **Anonymization failure.** A published summary containing a name, phone
   number, email, member number, site name, or aircraft make and model. This is
   the failure this system exists to prevent.
-- **Credential handling.** Admin login proxies credentials to
-  `members.hpac.ca`. Any path where a credential is persisted, cached, logged,
-  or lands in an exception message is a serious finding.
+- **Token handling.** Identity is a signed JWT from an external identity
+  provider; this system never sees a password. Any path where a bearer token is
+  persisted, cached, logged, or lands in an exception message is a serious
+  finding, as is any token accepted without a valid signature, issuer,
+  audience, and lifetime.
+- **Reporter attribution.** Filing a report requires a signed-in member and
+  must record nothing about them. Any stored value, log line, or timing or
+  ordering side channel that links a report to the member who filed it is a
+  serious finding.
 - **Unauthorized access to raw reports**, which are admin-only and contain
   unredacted personal information.
 - **Attachment access or processing.** Unauthorized access to an original or

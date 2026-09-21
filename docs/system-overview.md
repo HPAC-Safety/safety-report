@@ -30,25 +30,28 @@ forms platform, document-management suite, or publishing network.
 
 ```mermaid
 flowchart LR
-    reporter[Reporter browser] --> public[Public React/TS site]
-    officer[Safety officer browser] --> admin[Admin React/TS site]
-    public --> api[ASP.NET Core API]
-    admin --> api
+    reporter[Reporter browser] --> web[React/TS website]
+    officer[Safety officer browser] --> web
+    web --> idp[Identity provider]
+    idp -->|signed token| web
+    web -->|bearer token| api[ASP.NET Core API]
     api --> db[(PostgreSQL)]
     api --> media[(Private attachment storage)]
     db --> worker[.NET Worker]
     worker --> llm[LLM]
     worker --> media
     worker --> db
-    api --> member[HPAC member authenticator]
 ```
 
-- The public React/TS site renders the form and keeps unfinished answers only
-  in that browser. No report data reaches the API, database, or object storage
-  until it submits one finalized multipart request. It also renders public
-  summaries.
-- The separate admin React/TS site manages questions and authorized members,
-  reviews reports and derivatives, edits summaries, and records approval.
+- One React/TS website serves both audiences, with the admin surface as a route
+  rather than a separate site
+  ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). It renders
+  the form and keeps unfinished answers only in that browser. No report data
+  reaches the API, database, or object storage until it submits one finalized
+  multipart request. It also renders public summaries.
+- The `/admin` route manages questions and shared choice lists, reviews reports
+  and derivatives, edits summaries, and records approval. It appears only for a
+  token carrying the SafetyOfficer or Administrator role.
 - The API owns validation, authorization, persistence orchestration, read DTOs,
   and the public publication boundary. It never calls the model.
 - PostgreSQL is the system of record and its outbox is the durable Worker handoff.
@@ -56,8 +59,9 @@ flowchart LR
 - The Worker claims outbox rows, validates attachments, creates image/video derivatives, builds the
   partitioned summary DTO, calls the model once, validates its response, and
   persists the summary pair. Documents are not model input.
-- The member-authentication adapter proves an admin's identity; the local
-  allowlist determines authorization.
+- An identity provider signs a token; the API validates it and reads the
+  subject and role claims. Filing a report requires a member of any role, and
+  records nothing about them. No user record is stored anywhere.
 
 ## Primary flow
 
@@ -92,9 +96,10 @@ sequenceDiagram
 
 The target includes a data-driven form, optional image, video, and document
 attachments,
-bilingual UI and summary text, admin question editing, a member allowlist, an
-internal review queue, public feed and detail views, audit logging, soft
-deletion, and one Canadian AWS production environment.
+bilingual UI and summary text, admin question editing, member authentication
+against an external identity provider, an internal review queue, public feed
+and detail views, audit logging, soft deletion, and one Canadian AWS
+production environment.
 
 ## Explicitly out of scope
 
@@ -111,8 +116,11 @@ deletion, and one Canadian AWS production environment.
 
 ## Design ownership
 
-Core owns domain rules and small ports. Infrastructure implements persistence,
-storage, authentication, attachment tooling, and the model client. API and Worker
+Core owns domain rules and small ports. Token validation and role policies are
+framework middleware configured in the API, not an Infrastructure adapter —
+the API validates a token the provider already signed rather than calling
+anything. Infrastructure implements persistence,
+storage, attachment tooling, and the model client. API and Worker
 compose those pieces into use cases. The web sites consume HTTP DTOs and share
 only static assets and presentation utilities. See
 [interfaces and data flow](interfaces-and-data-flow.md) for exact boundaries.

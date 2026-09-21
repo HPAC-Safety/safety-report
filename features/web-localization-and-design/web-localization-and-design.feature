@@ -99,6 +99,7 @@ Feature: Web, localization, and design
   Scenario: The form explains local storage and warns about attachments
     Given a reporter is filling out the form
     Then a privacy explanation of the 15-day local storage is shown before submission
+    And a notice states that signing in only confirms HPAC membership and that the report is not linked to their account
     And attachment selection appears last with type/count/size guidance and a warning that files are not restored after reload
 
   @ignore @ui

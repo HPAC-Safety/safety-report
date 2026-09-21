@@ -60,15 +60,28 @@ privacy-sensitive.
 6. Publication requires positive consent, a non-deleted report, and human
    approval of the current bilingual pair. Editing either language clears the
    pair approval.
-7. HPAC member credentials are never stored, logged, cached, or included in an
-   exception. The current hardcoded-TLS credential proxy and a future OIDC
-   adapter both sit behind `IMemberAuthenticator`.
+7. Identity arrives as a signed JWT that the API validates, reading the subject
+   and the role claim and nothing else. This system never handles a member's
+   password and stores no user records of any kind: there is no user table, no
+   allowlist, and no session store, and an approver or audit actor is an opaque
+   token subject that joins to nothing
+   ([ADR-0064](docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+   [ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+   There are three roles — `User`, `SafetyOfficer`, `Administrator`. Filing a
+   report requires a member of any role and records nothing about them; the
+   form tells the reporter so
+   ([ADR-0067](docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 8. Use managed encryption at rest and TLS. Do not add application-level field
    encryption, log report content, or physically delete application records.
+   The one carved exception is dropping `admin_users`, a table that never held
+   data in any deployed environment; it does not generalize, and any future
+   `DROP TABLE` needs its own argument on its own facts
+   ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 
 There is no deterministic scrubber, separate PII auditor, report translator,
 specialized aircraft processing, outbound email flow, pre-submit
-upload session, or speculative publication channel. Machine translation exists
+upload session, speculative publication channel, user table, allowlist,
+credential proxy, CSRF machinery, or Turnstile verification. Machine translation exists
 for two purposes only — drafting question wording while authoring, and filling
 the second language of a choice a reporter added to a type-ahead — and never
 touches a narrative, an answer, or a summary.

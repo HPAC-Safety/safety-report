@@ -32,10 +32,25 @@ constraints permit, but it must preserve these logical records:
 | `reports` | ID, language, status, nullable ConsentPublish projection, submitted/published timestamps, safe summary failure state, Deleted. No ordinary typed projections. |
 | `report_answers` | ID, report ID, exact question revision ID, privacy snapshot, nullable scalar value or selected option-code representation, answered/recorded timestamp, Deleted. Includes skipped shown questions, including file-upload controls. |
 | `report_files` | ID, report ID, file-upload report-answer ID, attachment kind, server-minted original and nullable derivative keys, detected/safe types and sizes, processing status/timestamps, safe error code, Deleted. The answer identifies the exact revision. Documents normally have no derivative. No client filename or extracted document text. |
-| `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, generated/updated timestamps, nullable ApprovedBy/ApprovedAt, Deleted. One row per report. |
-| `admin_users` | ID, upstream member identifier (unique among live rows), role, active/created metadata, Deleted. Never credentials. |
+| `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, generated/updated timestamps, nullable ApprovedBySubject/ApprovedAt, Deleted. One row per report. |
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
-| `audit_log` | ID, actor ID where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
+| `audit_log` | ID, acting token subject where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
+
+**There is no user table.** Identity and role come from claims on a validated
+token, per request, and are never written down
+([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+`summaries.approved_by_subject` and `audit_log.actor_subject` hold the token's
+`sub` claim as an opaque `varchar(256)` string with **no foreign key** — there
+is nothing to reference.
+
+Audit rows written before `admin_users` was dropped keep the identifiers they
+were created with. Those values no longer resolve to anything. They are left
+as they are: the audit log is append-only, and rewriting historic attribution
+would be a destructive transform that discards the only attribution those rows
+ever had.
+
+No report, answer, file, or outbox row records who submitted a report
+([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 
 Selected options may instead use immutable child rows when that gives stronger
 constraints. Whichever representation is used must distinguish a skipped
@@ -56,7 +71,7 @@ Required database protection includes:
   queue, live public reports,
   report dependencies, unprocessed outbox rows, and question-reference deletion
   checks;
-- check constraints for valid status/role/type codes and coherent nullable
+- check constraints for valid status/type codes and coherent nullable
   approval and processing fields; and
 - foreign keys that prevent physical orphan rows while application code owns
   soft-delete stamping.

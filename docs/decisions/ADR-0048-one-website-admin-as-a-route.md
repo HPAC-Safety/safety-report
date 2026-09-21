@@ -37,8 +37,10 @@ not a separately deployed application.
 One Vite/React application, one build output, served by one Nginx container
 (one ECS Fargate service, one CloudFront distribution, one hostname:
 `safety.hpac.ca`). The admin review queue lives at `/admin`, gated by
-client-side route protection backed by the API's existing
-`admin_users`-allowlist authorization on every data request — the same
+client-side route protection backed by the API's role-claim authorization on
+every data request
+([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md); this said
+`admin_users`-allowlist authorization when it was written) — the same
 security argument ADR-0031 already made: the delivery path was never the
 security boundary, the API is.
 

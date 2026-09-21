@@ -21,6 +21,11 @@ header with links to view reports, submit a report, contact, and member
 login, each its own route, plus an `/admin` stub confirming ADR-0048's
 shape.
 
+Choosing a redirect-based identity provider
+([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)) will add
+one more route this ADR did not contemplate — the provider's callback — which
+the router handles like any other.
+
 ## Decision
 
 Adopt `react-router-dom` (declarative mode — `BrowserRouter`, `Routes`,

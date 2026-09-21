@@ -220,6 +220,57 @@ Feature: Question bank and form
     Then the list takes that order
     And an arrangement that omits or repeats an option is rejected
 
+  Scenario: Translation is offered only for question wording
+    Given an Administrator is authoring a question in one official language
+    When they ask for the other language to be translated
+    Then the request goes to the application's own API rather than to a provider from the browser
+    And the translated text is returned as a draft that is not saved anywhere
+    And no report, answer, or summary is ever translated this way
+
+  Scenario: A server with no translation credential still authors questions
+    Given no translation provider is configured outside development
+    When the authoring screen asks whether translation is available
+    Then it is told that translation is unavailable
+    And the answer carries no credential and no provider detail
+
+  Scenario: A development server translates through a stand-in rather than refusing
+    Given a development server has no translation provider configured
+    When an Administrator asks for the other language to be translated
+    Then the text comes back unchanged through the same interface
+    And the screen is told it is a stand-in so nobody mistakes it for a translation
+    And a server outside development never substitutes one
+
+  @ui
+  Scenario: An Administrator drafts the French from the English
+    Given a signed-in Administrator is authoring a new question
+    When they write the English wording and press Translate
+    Then the French field is filled with the translation
+    And the French field remains editable
+
+  @ui
+  Scenario: An Administrator drafts the English from the French
+    Given a signed-in Administrator is authoring a new question
+    When they write the French wording and press Translate
+    Then the English field is filled with the translation
+
+  @ui
+  Scenario: A question cannot be saved in one language
+    Given a signed-in Administrator is authoring a new question
+    When only one official language has been written
+    Then saving is unavailable
+    When the other language is written as well
+    Then saving becomes available
+
+  @ui
+  Scenario: Translation is not offered when the server has no provider
+    Given a signed-in Administrator is authoring a question on a server with no translation provider
+    Then the Translate action is unavailable and says so
+
+  @ui
+  Scenario: A development stand-in says what it is
+    Given a signed-in Administrator is authoring a question on a development server
+    Then the Translate action works and the screen says the text is copied unchanged
+
   @ui
   Scenario: An Administrator authors a question from the dashboard
     Given a signed-in Administrator opens the manage-questions page

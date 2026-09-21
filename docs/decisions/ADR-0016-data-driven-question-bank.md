@@ -29,8 +29,11 @@ the reporter was asked.
 - Report answers reference the exact revision shown, including a stored skip.
 - Publication consent is the only system/required question and the only answer
   projected onto the report. Every ordinary answer remains generic data.
-- Administrators provide both language versions; no translation service writes
-  question content.
+- Administrators author both language versions. Since
+  [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md) they
+  may use machine translation as a drafting aid while authoring, but nothing
+  writes question content on its own: a revision holds exactly what an
+  administrator saved, and a question cannot be saved in one language.
 
 The earlier normalized child-row model, typed ordinary-answer projections,
 automatic question translation, and creation-time privacy identity are retired.
@@ -48,3 +51,4 @@ no special processing path for one category of ordinary question.
 - [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)
 - [`/features/report-submission/report-submission.feature`](../../features/report-submission/report-submission.feature)
 - [ADR-0038](ADR-0038-question-privacy-and-llm-anonymization.md)
+- [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md)

@@ -1,5 +1,6 @@
 using HpacSafety.Api.Admin;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Infrastructure.Translation;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -10,6 +11,15 @@ builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
+
+// Machine translation for the question-authoring screen. In Development with
+// no credential this resolves a stand-in that echoes its input, so the control
+// works locally and exercises the same endpoint and port as production. A
+// non-development deployment with no credential reports translation
+// unavailable instead. See ADR-0062.
+builder.Services.AddHpacSafetyTranslation(
+    builder.Configuration,
+    useStandInWhenUnconfigured: builder.Environment.IsDevelopment());
 
 var app = builder.Build();
 
@@ -36,6 +46,7 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 // (ADR-0016). These are the endpoints that edit it.
 app.MapAdminQuestions();
 app.MapAdminOptionSets();
+app.MapAdminTranslation();
 
 await app.RunAsync().ConfigureAwait(false);
 

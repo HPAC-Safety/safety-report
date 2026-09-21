@@ -166,3 +166,25 @@ export function deleteQuestion(id: string): Promise<void> {
 export function listOptionSets(): Promise<OptionSetView[]> {
 	return call<OptionSetView[]>("/api/admin/option-sets")
 }
+
+/**
+ * Whether the server has a translation provider configured. Asked once, so the
+ * Translate control can be disabled rather than offered and then failing.
+ */
+export function translationAvailable(): Promise<{ available: boolean; standIn: boolean }> {
+	return call<{ available: boolean; standIn: boolean }>("/api/admin/translate")
+}
+
+/**
+ * Translates authored question text between the two official languages.
+ *
+ * The request goes to our own API, never to a translation provider from the
+ * browser — the credential stays on the server (ADR-0062). Blank entries come
+ * back blank, and results line up positionally with what was sent.
+ */
+export function translate(texts: string[], from: string, to: string): Promise<{ texts: string[] }> {
+	return call<{ texts: string[] }>("/api/admin/translate", {
+		method: "POST",
+		body: JSON.stringify({ texts, from, to }),
+	})
+}

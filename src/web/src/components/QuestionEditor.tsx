@@ -1,7 +1,10 @@
+import { useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import {
+	ApiError,
 	OPTION_TYPES,
 	QUESTION_TYPES,
+	translate,
 	type OptionSetView,
 	type QuestionType,
 	type QuestionView,
@@ -12,9 +15,15 @@ import {
  * The authoring form for one question.
  *
  * Both official languages are authored here, together, because a revision is
- * born complete — there is no partially translated question, and no translation
- * service writes question text (ADR-0021, product invariant #1). The French
- * fields are therefore as required as the English ones.
+ * born complete — there is no partially translated question in the database,
+ * and Save stays disabled until both languages are present.
+ *
+ * Translate fills the empty side from the filled one. It is a drafting aid, not
+ * a pipeline: the result lands in an ordinary editable field, the administrator
+ * corrects it, and what they save is theirs. Nothing records that a machine
+ * suggested it, because the person who pressed Save is accountable for the
+ * wording either way (ADR-0062). The call goes to our own API — the credential
+ * never reaches this page.
  */
 
 export interface QuestionDraft {
@@ -82,6 +91,8 @@ export function QuestionEditor({
 	optionSets,
 	booleanQuestions,
 	isEditing,
+	translationAvailable,
+	translationIsStandIn,
 	onChange,
 	onCancel,
 	onSave,
@@ -90,6 +101,8 @@ export function QuestionEditor({
 	optionSets: OptionSetView[]
 	booleanQuestions: QuestionView[]
 	isEditing: boolean
+	translationAvailable: boolean
+	translationIsStandIn: boolean
 	onChange: (draft: QuestionDraft) => void
 	onCancel: () => void
 	onSave: (draft: QuestionDraft) => void
@@ -98,8 +111,68 @@ export function QuestionEditor({
 	const request = draft.request
 	const takesOptions = OPTION_TYPES.includes(request.type)
 
+	const [translating, setTranslating] = useState(false)
+	const [translationError, setTranslationError] = useState<string | null>(null)
+
+	const hasEnglish = request.labelEn.trim().length > 0
+	const hasFrench = request.labelFr.trim().length > 0
+
+	// A question is stored as one complete bilingual revision, so a half-written
+	// one cannot be saved at all. Translate fills the empty side; the
+	// administrator still edits and saves it deliberately (ADR-0062).
+	const canSave = hasEnglish && hasFrench
+	const translationDirection = hasEnglish && !hasFrench ? "toFrench" : !hasEnglish && hasFrench ? "toEnglish" : null
+
 	function update(changes: Partial<SaveQuestionRequest>) {
 		onChange({ request: { ...request, ...changes } })
+	}
+
+	async function translateMissingLanguage() {
+		if (!translationDirection) return
+
+		const toFrench = translationDirection === "toFrench"
+		const from = toFrench ? "en-CA" : "fr-CA"
+		const to = toFrench ? "fr-CA" : "en-CA"
+
+		setTranslating(true)
+		setTranslationError(null)
+
+		try {
+			// Label, help text, placeholder, and every option label in one
+			// request rather than one per field.
+			const source = toFrench
+				? [request.labelEn, request.helpTextEn ?? "", request.placeholderEn ?? "", ...request.options.map((o) => o.labelEn)]
+				: [request.labelFr, request.helpTextFr ?? "", request.placeholderFr ?? "", ...request.options.map((o) => o.labelFr)]
+
+			const { texts } = await translate(source, from, to)
+			const [label, help, placeholder, ...optionLabels] = texts
+
+			const options = request.options.map((option, index) =>
+				toFrench
+					? { ...option, labelFr: optionLabels[index] ?? option.labelFr }
+					: { ...option, labelEn: optionLabels[index] ?? option.labelEn },
+			)
+
+			update(
+				toFrench
+					? {
+							labelFr: label,
+							helpTextFr: help || null,
+							placeholderFr: placeholder || null,
+							options,
+						}
+					: {
+							labelEn: label,
+							helpTextEn: help || null,
+							placeholderEn: placeholder || null,
+							options,
+						},
+			)
+		} catch (cause) {
+			setTranslationError(cause instanceof ApiError ? cause.detail : t("questions.translate.failed"))
+		} finally {
+			setTranslating(false)
+		}
 	}
 
 	function updateOption(index: number, changes: Partial<{ code: string; labelEn: string; labelFr: string }>) {
@@ -213,6 +286,33 @@ export function QuestionEditor({
 					/>
 				</div>
 			</div>
+
+			<div className="flex flex-wrap items-center gap-3">
+				<button
+					type="button"
+					className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface disabled:opacity-40"
+					disabled={!translationAvailable || translationDirection === null || translating}
+					onClick={() => void translateMissingLanguage()}
+				>
+					{translating ? t("questions.translate.working") : t("questions.translate.action")}
+				</button>
+
+				<p className="font-sans text-xs text-ink-muted">
+					{!translationAvailable
+						? t("questions.translate.unavailable")
+						: translationIsStandIn
+							? t("questions.translate.standIn")
+							: translationDirection === null
+								? t("questions.translate.hint")
+								: t("questions.translate.draftWarning")}
+				</p>
+			</div>
+
+			{translationError && (
+				<p role="alert" className="font-sans text-sm text-ink">
+					{translationError}
+				</p>
+			)}
 
 			<fieldset className="flex flex-wrap gap-6">
 				<legend className="font-sans text-sm font-medium text-ink">{t("questions.field.behaviour")}</legend>
@@ -349,7 +449,8 @@ export function QuestionEditor({
 			<div className="flex gap-3">
 				<button
 					type="submit"
-					className="touch-target inline-flex items-center rounded bg-brand-700 px-5 font-sans font-medium text-ink-inverse hover:bg-brand-600"
+					className="touch-target inline-flex items-center rounded bg-brand-700 px-5 font-sans font-medium text-ink-inverse hover:bg-brand-600 disabled:opacity-40 disabled:hover:bg-brand-700"
+					disabled={!canSave}
 				>
 					{t("questions.save")}
 				</button>

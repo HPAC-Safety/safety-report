@@ -27,7 +27,8 @@
     "admin": "Admin",
     "manageReports": "Gérer les rapports",
     "manageQuestions": "Gérer les questions",
-    "manageChoiceLists": "Gérer les listes de choix"
+    "manageChoiceLists": "Gérer les listes de choix",
+    "manageAnswerTranslations": "#Answers awaiting translation"
   },
   "language": {
     "switchTo": "Passer à {language}",
@@ -162,7 +163,8 @@
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
-    }
+    },
+    "forkWarning": "#This question has been answered. Saving retires it and creates a new question in its place, so the answers already given keep the wording they were given under."
   },
   "choiceLists": {
     "title": "Gérer les listes de choix",
@@ -193,6 +195,20 @@
       "itemLabelFr": "Choix (français)",
       "addItem": "Ajouter une option",
       "removeItem": "Supprimez ce choix"
+    }
+  },
+  "answerTranslations": {
+    "title": "#Answers awaiting translation",
+    "intro": "#A reporter answers a picker or a type-ahead in one official language, and nothing translates it on its way in. Supply the other language here; what the reporter wrote is never changed.",
+    "loading": "#Loading answers…",
+    "empty": "#No answers are waiting for a second language.",
+    "waitingCount": "#Waiting for a second language: {count}.",
+    "givenIn": "#Given in {locale}",
+    "supply": "#Supply {locale}",
+    "translate": "#Translate",
+    "save": "#Save",
+    "error": {
+      "unexpected": "#Something went wrong. Please try again."
     }
   }
 }

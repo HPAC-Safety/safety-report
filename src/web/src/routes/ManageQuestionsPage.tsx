@@ -139,6 +139,7 @@ export function ManageQuestionsPage() {
 					optionSets={optionSets}
 					booleanQuestions={booleanQuestions}
 					isEditing={editing !== null}
+					hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 					translationAvailable={canTranslate}
 					translationIsStandIn={translationIsStandIn}
 					onChange={setDraft}

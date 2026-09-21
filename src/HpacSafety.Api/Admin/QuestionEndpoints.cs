@@ -46,12 +46,14 @@ public static class QuestionEndpoints
     {
         var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
         var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+        var answered = await AnsweredQuestionIdsAsync(database, cancellationToken).ConfigureAwait(false);
 
         return Results.Ok(
             questions
                 .OrderBy(question => question.DisplayOrder)
                 .ThenBy(question => question.Key, StringComparer.Ordinal)
-                .Select(question => QuestionView.Of(question, SetFor(question, sets)))
+                .Select(question => QuestionView.Of(
+                    question, SetFor(question, sets), answered.Contains(question.Id)))
                 .ToList());
     }
 
@@ -175,7 +177,9 @@ public static class QuestionEndpoints
                     ParsedOptionSet(request),
                     options);
 
-                if (!ReferenceEquals(live, question))
+                var forked = !ReferenceEquals(live, question);
+
+                if (forked)
                 {
                     database.Questions.Add(live);
                 }
@@ -184,7 +188,8 @@ public static class QuestionEndpoints
 
                 var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
 
-                return Results.Ok(QuestionView.Of(live, SetFor(live, sets)));
+                // The replacement is new, so nothing has answered it yet.
+                return Results.Ok(QuestionView.Of(live, SetFor(live, sets), hasBeenAnswered && !forked));
             }).ConfigureAwait(false);
     }
 
@@ -290,6 +295,19 @@ public static class QuestionEndpoints
     /// report is still a record of what somebody was asked, so it forces the
     /// fork exactly as a live one does.
     /// </remarks>
+    /// <summary>
+    /// Every question that any answer references, so the list can mark which
+    /// ones an edit would replace rather than revise.
+    /// </summary>
+    private static async Task<HashSet<TinyId>> AnsweredQuestionIdsAsync(
+        HpacSafetyDbContext database, CancellationToken cancellationToken) =>
+        [.. await database.ReportAnswers
+            .IgnoreQueryFilters()
+            .Select(answer => answer.QuestionId)
+            .Distinct()
+            .ToListAsync(cancellationToken)
+            .ConfigureAwait(false)];
+
     private static Task<bool> HasBeenAnsweredAsync(
         HpacSafetyDbContext database, TinyId questionId, CancellationToken cancellationToken) =>
         database.ReportAnswers

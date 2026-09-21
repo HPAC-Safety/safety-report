@@ -40,3 +40,40 @@ When("the visitor activates the logout action", async ({ page }) => {
 Then("the header shows the member-login action again", async ({ page }) => {
 	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
 })
+
+Then("the header shows an Admin menu and no other header nav change", async ({ page }) => {
+	const header = page.locator("header")
+	await expect(header.getByRole("button", { name: "Admin" })).toBeVisible()
+	await expect(header.getByRole("link", { name: "View safety reports" })).toBeVisible()
+	await expect(header.getByRole("link", { name: "Submit a safety report" })).toBeVisible()
+	await expect(header.getByRole("link", { name: "Contact" })).toBeVisible()
+})
+
+When("the visitor activates the Admin menu", async ({ page }) => {
+	await page.locator("header").getByRole("button", { name: "Admin" }).click()
+})
+
+Then("it opens with manage-reports and manage-questions options", async ({ page }) => {
+	const menu = page.getByRole("menu", { name: "Admin" })
+	await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
+	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
+})
+
+const ADMIN_MENU_DESTINATIONS: Record<string, string> = {
+	"manage-reports": "/admin/reports",
+	"manage-questions": "/admin/questions",
+}
+
+When(/^the visitor activates the (.+) option$/, async ({ page }, option: string) => {
+	await page.getByRole("menuitem", { name: option }).click()
+})
+
+Then(/^the browser navigates to the (.+) placeholder page$/, async ({ page }, destination: string) => {
+	const path = ADMIN_MENU_DESTINATIONS[destination]
+	await expect(page).toHaveURL(new RegExp(`${path}$`))
+	await expect(page.locator("main h1")).toBeVisible()
+})
+
+Then("the header shows no Admin menu", async ({ page }) => {
+	await expect(page.locator("header").getByRole("button", { name: "Admin" })).toBeHidden()
+})

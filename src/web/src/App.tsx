@@ -7,6 +7,8 @@ import { SubmitReportPage } from "./routes/SubmitReportPage"
 import { ContactPage } from "./routes/ContactPage"
 import { MemberLoginPage } from "./routes/MemberLoginPage"
 import { AdminPage } from "./routes/AdminPage"
+import { ManageReportsPage } from "./routes/ManageReportsPage"
+import { ManageQuestionsPage } from "./routes/ManageQuestionsPage"
 import { NotFoundPage } from "./routes/NotFoundPage"
 
 function App() {
@@ -21,6 +23,8 @@ function App() {
 					<Route path="/contact" element={<ContactPage />} />
 					<Route path="/login" element={<MemberLoginPage />} />
 					<Route path="/admin" element={<AdminPage />} />
+					<Route path="/admin/reports" element={<ManageReportsPage />} />
+					<Route path="/admin/questions" element={<ManageQuestionsPage />} />
 					<Route path="*" element={<NotFoundPage />} />
 				</Routes>
 			</div>

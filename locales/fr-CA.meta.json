@@ -79,6 +79,11 @@
     "provider": "glossary",
     "reviewed": true
   },
+  "nav.admin": {
+    "source_hash": "c1c224b03cd9bc7b6a86d77f5dace40191766c485cd55dc48caf9ac873335d6f",
+    "provider": "manual",
+    "reviewed": true
+  },
   "nav.closeMenuLabel": {
     "source_hash": "6ccd5c7856042d36476ffd35a41b54518be95621cc741ac3ed55b8108ea41586",
     "provider": "glossary",
@@ -88,6 +93,16 @@
     "source_hash": "2b5c3d26721ae9c350cf3009318b626f0fc8a90b4a2ac0ca8099c05aa849282e",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
+  },
+  "nav.manageQuestions": {
+    "source_hash": "e901a2bbbac2b7c5e45afb6fa1775222d1087332593d58e233f392db7e94488a",
+    "provider": "manual",
+    "reviewed": true
+  },
+  "nav.manageReports": {
+    "source_hash": "85db85149e808af00e148b4388d2574c895b4cc20cedd5ce9c3a025590aaa8a4",
+    "provider": "manual",
+    "reviewed": true
   },
   "nav.memberLogin": {
     "source_hash": "fe7747440a0526f0ccdeb42924b76f94c011997233f4f0e23dd60e3b0da9ded4",

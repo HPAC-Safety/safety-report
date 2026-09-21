@@ -10,10 +10,12 @@
 
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" PrivateAssets="all" IncludeAssets="build" />
     <PackageReference Include="Reqnroll.xUnit" />
     <PackageReference Include="Shouldly" />
+    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -22,8 +24,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
-  <!-- The question-bank scenarios describe rules that live in the domain, so
-       they execute against it directly rather than through the API. -->
+  <!-- Most scenarios describe rules that live in the domain, so they execute
+       against it directly. The authorization scenarios describe what the API
+       refuses over HTTP, so those boot it — see BootedApiFixture. -->
   <ItemGroup>
     <ProjectReference Include="../../src/HpacSafety.Core/HpacSafety.Core.csproj" />
     <!-- The translation scenarios assert which types may depend on ITranslator,

@@ -114,19 +114,16 @@ Feature: Moderation, authentication, and publication
     Then it reads only the subject and the role claim
     And no other claim reaches domain code, a log, or the database
 
-  @ignore
   Scenario: The development token endpoint does not exist outside development
     Given the API is not running in development
     When the development token endpoint is called
     Then the route does not exist
 
-  @ignore
   Scenario: An unauthenticated request to an admin endpoint is refused before the handler
     Given a request carries no bearer token
     When it reaches an admin endpoint
     Then the API refuses it before the handler runs
 
-  @ignore
   Scenario: Every operation is authorized by the API, not just the UI
     Given an authenticated member without the required role calls an admin operation
     When the API processes the request
@@ -152,7 +149,6 @@ Feature: Moderation, authentication, and publication
     Then the member has every SafetyOfficer capability
     And can additionally create question revisions and manage shared choice lists
 
-  @ignore
   Scenario Outline: Only an Administrator may author a question revision
     Given a member has the <role> role
     When that member attempts to create a question revision

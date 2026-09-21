@@ -52,6 +52,18 @@ forbids. Git history preserves the deleted text if the reasoning is ever
 needed. `@ignore` is only ever a promise that somebody is coming back to
 implement the scenario as written.
 
+Most untagged scenarios execute against the domain directly — no host, no
+database. The ones that describe what the API *refuses* boot it instead, via
+`BootedApi` in the acceptance project: "the API rejects the operation
+regardless of what the UI would have shown" cannot be shown by calling a
+domain method. `BootedApi` starts on first use rather than at test-run start,
+so a domain-only run still pays nothing.
+
+A Reqnroll step string is a **Cucumber Expression**, not a regex. Parentheses
+mean "optional text", so `(User|SafetyOfficer|Administrator)` matches nothing
+and the scenario reports as pending. Use a `{word}` parameter. A literal `/`
+is alternation and needs escaping as `\/`.
+
 Authentication fixtures mint a real token through the booted host rather than
 faking a `ClaimsPrincipal`, so the test exercises the validation production
 runs. Cover the three-role matrix at every admin endpoint, the refusal of an

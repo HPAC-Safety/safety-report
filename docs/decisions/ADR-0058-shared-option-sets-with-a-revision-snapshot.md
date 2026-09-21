@@ -1,0 +1,106 @@
+---
+status: accepted
+date: 2026-09-20
+decision-makers: Chase Florell
+keywords: option sets, question bank, immutable revisions, snapshot, autocomplete
+---
+
+# ADR-0058 — A shared choice list is authored once and snapshotted into every revision that uses it
+
+## Context
+
+Several questions need the same list of choices. A province list, an aerodrome
+list, and a glider-make list are each long, each maintained by hand, and each
+wanted by more than one question. Today
+`question_revision_options` is the only place a choice can live, and it belongs
+to exactly one revision, so offering the same forty aerodromes on two questions
+means typing them twice and maintaining them twice — in both official
+languages.
+
+The obvious fix is a shared table the questions join to. That fix collides
+head-on with the rule the question bank is built around: a revision is complete
+and immutable, and a report has to render exactly what its reporter was shown
+(ADR-0016, product invariant #1). If a revision reads its choices from a shared
+table at render time, then adding an aerodrome silently rewrites what a report
+from last year appears to have been offered, and removing one makes a stored
+answer point at nothing.
+
+Both of those are real needs, and neither is negotiable: an administrator has
+to be able to add an aerodrome without touching every question, and a report
+from last year has to keep showing what it actually asked.
+
+## Decision
+
+**Two tables, two different mutability rules, and a copy between them.**
+
+`option_sets` and `option_set_items` are the working lists. They are
+**mutable**: an administrator adds, relabels, reorders, and removes items, and
+a removal is a soft delete like everything else here. This is the list as a
+thing an administrator maintains.
+
+`question_revision_options` stays exactly what it is: the **frozen** set of
+choices one revision offers, created with that revision and never touched
+again.
+
+When a revision is created from a shared list, the list's live items are
+**copied** into that revision's own option rows. From that moment the revision
+answers from its own copy and never consults the set again. Editing the set
+changes what the *next* revision will offer, and changes nothing about any
+revision that already exists.
+
+Two nullable columns record where a copy came from:
+`question_revisions.option_set_id` and
+`question_revision_options.source_item_id`. They are **provenance only** — they
+let the authoring screen say "these choices came from the Aerodromes list" and
+offer to refresh them. Nothing reads them to render a question or to validate
+an answer. `source_item_id` is `ON DELETE RESTRICT` and `option_set_id` is
+`ON DELETE SET NULL`, so retiring a list can never reach back into a revision
+and change what it offered.
+
+`QuestionType.Autocomplete` is added alongside this, because a shared list is
+what makes an autocomplete worth having: it is domain-identical to
+`SingleSelect` — one stored option code — and differs only in how many choices
+are practical to show at once.
+
+## Consequences
+
+- An administrator maintains the aerodrome list in one place, and every
+  question authored afterwards picks it up.
+- A revision stays self-contained. Rendering a historical report still reads
+  one revision and its own option rows, exactly as before, with no join to a
+  table that has since changed.
+- **Choices are duplicated on purpose.** A list of four hundred aerodromes
+  used by three questions is twelve hundred option rows, and a new revision of
+  one of those questions is four hundred more. At HPAC's volume — a few hundred
+  question rows, dozens of reports a year (ADR-0034) — this is nothing, and
+  paying it buys the immutability guarantee outright rather than by convention.
+- A revision can drift from the list it was built from, and that is the correct
+  behaviour rather than a bug. The authoring screen shows the provenance so an
+  administrator can create a fresh revision when they want the current list.
+
+## Alternatives rejected
+
+**Point a revision at the shared set and read it at render time.** The
+smallest schema and the least duplication. Rejected because it breaks the one
+rule the question bank exists to enforce: a report would render choices it was
+never offered, and an answer could point at an item that has since been
+removed. Product invariant #1 and ADR-0016 both fall over.
+
+**Keep only per-revision options and accept the retyping.** No new tables and
+nothing to explain. Rejected because it makes an aerodrome list unmaintainable
+in practice — every correction is repeated per question, per language, and a
+transcription slip between two questions is invisible until a reporter meets
+it.
+
+**Version the shared set instead, and point a revision at a set version.**
+Immutability preserved without copying rows. Rejected as a second, parallel
+revision mechanism: the bank would then have two different things that version,
+with their own numbering and their own edge cases, to save duplicate rows that
+this system's volume makes free.
+
+## Related
+
+- [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
+- [ADR-0034](ADR-0034-tiny-ids.md) — why the volume argument above holds
+- [ADR-0040](ADR-0040-migrate-canonical-domain-and-persistence.md) — the schema baseline
+- [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)

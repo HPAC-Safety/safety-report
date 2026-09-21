@@ -21,7 +21,8 @@ public class QuestionRevisionOption
     }
 #pragma warning restore CS8618
 
-    private QuestionRevisionOption(TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr)
+    private QuestionRevisionOption(
+        TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr, TinyId? sourceItemId)
     {
         Id = TinyId.New();
         QuestionRevisionId = questionRevisionId;
@@ -29,6 +30,7 @@ public class QuestionRevisionOption
         DisplayOrder = displayOrder;
         LabelEn = NotBlank(labelEn);
         LabelFr = NotBlank(labelFr);
+        SourceItemId = sourceItemId;
     }
 
     /// <summary>Surrogate key.</summary>
@@ -48,6 +50,15 @@ public class QuestionRevisionOption
     /// </summary>
     public int DisplayOrder { get; private init; }
 
+    /// <summary>
+    /// The <see cref="OptionSetItem"/> this option was copied from, if it came
+    /// from a shared set rather than being typed out for this question alone.
+    /// Provenance only — see <see cref="QuestionOptionInput.SourceItemId"/> and
+    /// ADR-0058. This option keeps its own wording whatever later happens to
+    /// that item, including the item being removed from the set.
+    /// </summary>
+    public TinyId? SourceItemId { get; private init; }
+
     /// <summary>When this option was deleted along with its revision, if it was.</summary>
     public DateTimeOffset? Deleted { get; private set; }
 
@@ -61,8 +72,9 @@ public class QuestionRevisionOption
     public string Label(Locale locale) => locale == Locale.FrCa ? LabelFr : LabelEn;
 
     internal static QuestionRevisionOption Create(
-        TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr) =>
-        new(questionRevisionId, code, displayOrder, labelEn, labelFr);
+        TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr,
+        TinyId? sourceItemId = null) =>
+        new(questionRevisionId, code, displayOrder, labelEn, labelFr, sourceItemId);
 
     private static string NotBlank(string label) =>
         string.IsNullOrWhiteSpace(label)

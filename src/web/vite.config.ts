@@ -14,6 +14,16 @@ export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	server: {
 		host: true,
+		// The admin screens call the API on the same origin, so there is no CORS
+		// configuration to get wrong in production and none to weaken in
+		// development. HPAC_API_ORIGIN covers running the API outside the
+		// compose network.
+		proxy: {
+			"/api": {
+				target: process.env.HPAC_API_ORIGIN ?? "http://localhost:5025",
+				changeOrigin: true,
+			},
+		},
 		fs: {
 			allow: [repoRoot],
 		},

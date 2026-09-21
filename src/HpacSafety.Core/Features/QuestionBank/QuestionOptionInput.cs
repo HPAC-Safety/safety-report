@@ -10,4 +10,11 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// <param name="Code">The invariant code stored against an answer. Never display text.</param>
 /// <param name="LabelEn">The English wording.</param>
 /// <param name="LabelFr">The French wording.</param>
-public sealed record QuestionOptionInput(string Code, string LabelEn, string LabelFr);
+/// <param name="SourceItemId">
+/// The <see cref="OptionSetItem"/> this option was copied from, when the
+/// revision was built from a shared <see cref="OptionSet"/>. Provenance only:
+/// it lets the authoring UI say where a snapshot came from and offer to
+/// refresh it. Nothing consults it to render or validate an answer — the
+/// snapshot on the revision is the whole truth. See ADR-0058.
+/// </param>
+public sealed record QuestionOptionInput(string Code, string LabelEn, string LabelFr, TinyId? SourceItemId = null);

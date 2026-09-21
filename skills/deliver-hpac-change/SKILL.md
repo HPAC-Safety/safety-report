@@ -66,6 +66,12 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    change to an existing one (an UPDATE) needs both before and after.
 7. Watch required checks, fix failures in the worktree, and finish only when
    they are green.
+8. After pushing, bring the local Docker environment up on the pushed code:
+   `./dev-up.sh` from the worktree (`./dev-up.sh --down` first if containers
+   from another branch are running). It starts the containers detached, waits
+   until the API and the dev server actually answer, prints their URLs, and
+   returns — it does not tail logs. The running environment should be the
+   change under review, not whatever branch was built last.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,
 update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill

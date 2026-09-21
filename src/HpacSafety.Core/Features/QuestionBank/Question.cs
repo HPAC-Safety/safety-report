@@ -75,6 +75,13 @@ public class Question
     /// </summary>
     public bool IsPrivate => CurrentRevision.IsPrivate;
 
+    /// <summary>Whether a reporter must answer this question today. Authored —
+    /// see <see cref="QuestionRevision.IsRequired"/> and ADR-0061.</summary>
+    public bool IsRequired => CurrentRevision.IsRequired;
+
+    /// <summary>The question this one is conditional on today, if any.</summary>
+    public TinyId? DependsOnQuestionId => CurrentRevision.DependsOnQuestionId;
+
     /// <summary>Where this question sits on the form today. Not versioned
     /// independently — see the class remarks.</summary>
     public int DisplayOrder => CurrentRevision.DisplayOrder;
@@ -123,14 +130,17 @@ public class Question
         string? placeholderEn = null,
         string? placeholderFr = null,
         QuestionRole role = QuestionRole.None,
+        bool isRequired = false,
         bool isPrivate = true,
         bool isActive = false,
         int displayOrder = 0,
         string? sectionKey = null,
+        TinyId? dependsOnQuestionId = null,
+        TinyId? optionSetId = null,
         IReadOnlyList<QuestionOptionInput>? options = null) =>
         Create(
             key, type, labelEn, labelFr, at, isSystem: false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            role, isPrivate, isActive, displayOrder, sectionKey, options);
+            role, isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId, options);
 
     /// <summary>
     /// Creates the publication-consent question. The only question the system
@@ -155,10 +165,13 @@ public class Question
             placeholderEn: null,
             placeholderFr: null,
             QuestionRole.ConsentPublish,
+            isRequired: true,
             isPrivate: true,
             isActive: true,
             displayOrder,
             sectionKey: null,
+            dependsOnQuestionId: null,
+            optionSetId: null,
             options: null);
 
     private static Question Create(
@@ -173,17 +186,21 @@ public class Question
         string? placeholderEn,
         string? placeholderFr,
         QuestionRole role,
+        bool isRequired,
         bool isPrivate,
         bool isActive,
         int displayOrder,
         string? sectionKey,
+        TinyId? dependsOnQuestionId,
+        TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput>? options)
     {
         var question = new Question(key, isSystem, role, at);
         question._revisions.Add(
             QuestionRevision.Create(
                 question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-                isSystem, isPrivate, isActive, displayOrder, sectionKey, options ?? [], at));
+                isSystem, isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+                options ?? [], at));
         return question;
     }
 
@@ -208,6 +225,9 @@ public class Question
         string? helpTextFr = null,
         string? placeholderEn = null,
         string? placeholderFr = null,
+        bool isRequired = false,
+        TinyId? dependsOnQuestionId = null,
+        TinyId? optionSetId = null,
         IReadOnlyList<QuestionOptionInput>? options = null)
     {
         if (IsSystem && type != Type)
@@ -217,25 +237,30 @@ public class Question
         }
 
         return ReviseInternal(
-            type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isPrivate, isActive, displayOrder, sectionKey, options ?? [], at);
+            new RevisionDraft(
+                type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
+                isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+                options ?? []),
+            at);
     }
 
     /// <summary>Moves the question on the form, as a new revision. Every other
     /// field is carried forward unchanged from <see cref="CurrentRevision"/>.</summary>
     public QuestionRevision Reorder(int displayOrder, DateTimeOffset at) =>
-        ReviseInternal(
-            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
-            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, CurrentRevision.IsActive,
-            displayOrder, CurrentRevision.SectionKey, CurrentOptions(), at);
+        ReviseInternal(CurrentDraft() with { DisplayOrder = displayOrder }, at);
 
     /// <summary>Moves the question into a section, or out of one, as a new
     /// revision. Every other field is carried forward unchanged.</summary>
     public QuestionRevision MoveToSection(string? sectionKey, DateTimeOffset at) =>
-        ReviseInternal(
-            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
-            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, CurrentRevision.IsActive,
-            CurrentRevision.DisplayOrder, sectionKey, CurrentOptions(), at);
+        ReviseInternal(CurrentDraft() with { SectionKey = sectionKey }, at);
+
+    /// <summary>
+    /// Makes the question conditional on another question, or unconditional
+    /// again, as a new revision. Whether the named question is a yes/no
+    /// question is checked by <see cref="QuestionDependencies"/>, which can see it.
+    /// </summary>
+    public QuestionRevision DependOn(TinyId? dependsOnQuestionId, DateTimeOffset at) =>
+        ReviseInternal(CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId }, at);
 
     /// <summary>Reassigns what logic reads this answer for. A role lives on at
     /// most one active question at a time; that is enforced by the question bank,
@@ -258,10 +283,7 @@ public class Question
     /// here beyond whether the question itself is still live.
     /// </summary>
     public QuestionRevision Activate(DateTimeOffset at) =>
-        ReviseInternal(
-            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
-            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, isActive: true,
-            CurrentRevision.DisplayOrder, CurrentRevision.SectionKey, CurrentOptions(), at);
+        ReviseInternal(CurrentDraft() with { IsActive = true }, at);
 
     /// <summary>Stops asking this question, as a new revision. Every answer
     /// already given to it is kept.</summary>
@@ -273,10 +295,7 @@ public class Question
                 $"'{Key}' gates publication. A form that does not ask it cannot publish anything.");
         }
 
-        return ReviseInternal(
-            Type, CurrentRevision.LabelEn, CurrentRevision.LabelFr, CurrentRevision.HelpTextEn, CurrentRevision.HelpTextFr,
-            CurrentRevision.PlaceholderEn, CurrentRevision.PlaceholderFr, CurrentRevision.IsPrivate, isActive: false,
-            CurrentRevision.DisplayOrder, CurrentRevision.SectionKey, CurrentOptions(), at);
+        return ReviseInternal(CurrentDraft() with { IsActive = false }, at);
     }
 
     /// <summary>
@@ -299,33 +318,41 @@ public class Question
         Deleted = at;
     }
 
-    private QuestionRevision ReviseInternal(
-        QuestionType type,
-        string labelEn,
-        string labelFr,
-        string? helpTextEn,
-        string? helpTextFr,
-        string? placeholderEn,
-        string? placeholderFr,
-        bool isPrivate,
-        bool isActive,
-        int displayOrder,
-        string? sectionKey,
-        IReadOnlyList<QuestionOptionInput> options,
-        DateTimeOffset at)
+    private QuestionRevision ReviseInternal(RevisionDraft draft, DateTimeOffset at)
     {
         EnsureNotDeleted();
 
         var revision = QuestionRevision.Create(
-            Id, CurrentRevision.RevisionNumber + 1, type, labelEn, labelFr, helpTextEn, helpTextFr,
-            placeholderEn, placeholderFr, IsSystem, isPrivate, isActive, displayOrder, sectionKey, options, at);
+            Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
+            draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
+            IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder, draft.SectionKey,
+            draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at);
         _revisions.Add(revision);
         return revision;
     }
 
+    /// <summary>
+    /// The current revision, field for field, as input for the next one. A
+    /// change that touches one field says so with a <c>with</c> expression, so
+    /// adding a revision field cannot quietly drop it from the five methods
+    /// that carry everything else forward.
+    /// </summary>
+    private RevisionDraft CurrentDraft()
+    {
+        var current = CurrentRevision;
+
+        return new RevisionDraft(
+            current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
+            current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
+            current.DisplayOrder, current.SectionKey, current.DependsOnQuestionId, current.OptionSetId,
+            CurrentOptions());
+    }
+
     /// <summary>The current revision's option set, in order, as input for a new revision.</summary>
     private List<QuestionOptionInput> CurrentOptions() =>
-        [.. CurrentRevision.Options.Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr))];
+        [.. CurrentRevision.Options
+            .OrderBy(option => option.DisplayOrder)
+            .Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr, option.SourceItemId))];
 
     private void EnsureNotDeleted()
     {
@@ -334,4 +361,26 @@ public class Question
             throw new DomainRuleViolationException($"'{Key}' was deleted and cannot be changed.");
         }
     }
+
+    /// <summary>
+    /// Every field of a revision-to-be. Exists so that a change to one field is
+    /// written as one <c>with</c> expression rather than as a positional
+    /// argument list that a reader has to count.
+    /// </summary>
+    private sealed record RevisionDraft(
+        QuestionType Type,
+        string LabelEn,
+        string LabelFr,
+        string? HelpTextEn,
+        string? HelpTextFr,
+        string? PlaceholderEn,
+        string? PlaceholderFr,
+        bool IsRequired,
+        bool IsPrivate,
+        bool IsActive,
+        int DisplayOrder,
+        string? SectionKey,
+        TinyId? DependsOnQuestionId,
+        TinyId? OptionSetId,
+        IReadOnlyList<QuestionOptionInput> Options);
 }

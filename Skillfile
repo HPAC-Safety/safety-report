@@ -47,5 +47,6 @@ local  skill  hpac-safety-conventions  skills/hpac-safety-conventions/SKILL.md
 local  skill  incident-domain-model  skills/incident-domain-model/SKILL.md
 local  skill  localize-hpac-app  skills/localize-hpac-app/SKILL.md
 local  skill  manage-hpac-infrastructure  skills/manage-hpac-infrastructure/SKILL.md
+local  skill  manage-hpac-migrations  skills/manage-hpac-migrations/SKILL.md
 local  skill  persist-hpac-data  skills/persist-hpac-data/SKILL.md
 local  skill  test-hpac-safety  skills/test-hpac-safety/SKILL.md

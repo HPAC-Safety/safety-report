@@ -18,6 +18,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
     [
         "admin_users",
         "audit_log",
+        "option_set_items",
+        "option_sets",
         "outbox_messages",
         "question_revision_options",
         "question_revisions",

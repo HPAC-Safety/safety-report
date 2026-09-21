@@ -1,3 +1,4 @@
+using HpacSafety.Api.Admin;
 using HpacSafety.Infrastructure.Persistence;
 
 using Microsoft.EntityFrameworkCore;
@@ -5,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+builder.Services.AddProblemDetails();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
 
@@ -28,6 +31,11 @@ await using (var scope = app.Services.CreateAsyncScope())
 // Endpoints are added as features land. See the Foundation and Phase 1
 // milestones, and src/HpacSafety.Api/README.md.
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
+
+// The question bank is data an administrator edits, not code that ships
+// (ADR-0016). These are the endpoints that edit it.
+app.MapAdminQuestions();
+app.MapAdminOptionSets();
 
 await app.RunAsync().ConfigureAwait(false);
 

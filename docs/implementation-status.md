@@ -8,11 +8,11 @@ substantially enforce the target behavior, not merely that an issue was closed.
 
 | Capability | Main on the audit baseline | Target disposition |
 |---|---|---|
-| API host | Minimal ASP.NET Core host with `/health`; unmapped routes return 404. | Keep host; build the specified public/admin API. |
+| API host | ASP.NET Core host with `/health` and the admin question-authoring endpoints under `/api/admin/` (#180); unmapped routes return 404. Those endpoints sit behind one honest session-header stub standing in for ADR-0005. | Keep host; build the remaining public/admin API and replace the stub with the real authenticator. |
 | Worker host | Long-running service that logs startup; no outbox loop or handlers. | Implement outbox claims, one summary handler, and per-attachment handlers. |
-| Question bank | Implemented. `Question` is a stable key/role/system-flag shell; every order/section/privacy/active/type/copy/option fact lives on an immutable `QuestionRevision`, selected by highest revision number. Revising creates a new revision rather than mutating fields. | Keep. |
+| Question bank | Implemented, and now authorable. `Question` is a stable key/role/system-flag shell; every order/section/privacy/active/required/type/copy/option/dependency fact lives on an immutable `QuestionRevision`, selected by highest revision number. Revising creates a new revision rather than mutating fields. A revision may be conditional on a yes/no question (ADR-0060) and may snapshot a shared `option_set` (ADR-0058). | Keep. |
 | Form query and UI | Seed/form specification exists; public web directory is empty. | Implement latest-revision-per-key filtering and bilingual static form without resurrecting inactive/deleted questions. |
-| Required behavior | Implemented. `Report.Project` only reads `QuestionRole.ConsentPublish`; every other answer is stored as data with no typed projection. | Keep. |
+| Required behavior | Implemented. `Report.Project` only reads `QuestionRole.ConsentPublish`; every other answer is stored as data with no typed projection. `is_required` is now authored per revision and consent is forced required (ADR-0061); **submission-time enforcement of a required ordinary question is not built yet** and lands with the reporter-facing form. | Build the enforcement with the public form. |
 | Submission | Domain aggregate and transactional persistence primitives exist; no report endpoint. The pre-submit upload-slot entity was removed (#100); `IBlobStore.CreateUploadUrlAsync` remains as a port method but nothing in Core calls it outside the removed slot flow. | Implement one finalized multipart endpoint, accept known superseded revisions, stream attachments, and atomically enqueue work. |
 | Browser continuity | Not implemented. | Same-browser answer/revision persistence for 15 days; never restore files or write unfinished report state to the API, database, or object storage. |
 | Abuse prevention | Turnstile port and Terraform resources exist; no endpoint enforcement/rate limit. | Verify Turnstile and trusted-IP rate limits on public submit; separate admin lockout. |
@@ -25,7 +25,7 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Documents | No PDF, DOC, DOCX, RTF, Markdown, text, or ODT support. | Validate/scan and retain private originals; authorized forced download only; never extract, anonymize, send to LLM, or publish. |
 | Blob access | Filesystem/S3 stores implement pre-signed upload/read URLs; reviewer link is derivative-only. The pre-submit `MediaUploadSlot` entity was removed (#100), but `IBlobStore.CreateUploadUrlAsync` still exists on the port with no current caller. | Confirm the finalized multipart endpoint streams uploads server-side rather than reintroducing a pre-signed PUT flow; keep private streaming and short-lived reads for verified derivatives/private documents. |
 | Authentication | `IMemberAuthenticator`, roles, admin allowlist entity, and audit entity exist; no API adapter/session flow. | Implement hardcoded-TLS HPAC adapter with kill switch, secure cookie/CSRF/lockout; preserve adapter seam. |
-| Review/admin web | Domain review methods exist; admin web directory is empty. | Implement queue/detail, pair editing/approval, safe attachment access, questions, allowlist, deletion. |
+| Review/admin web | `/admin/questions` is a working authoring screen (#180) — create, edit, reorder by pointer or keyboard, options, shared lists, conditions. The review queue and the rest of `/admin` remain placeholders. | Implement queue/detail, pair editing/approval, safe attachment access, allowlist, deletion. |
 | Publication | Domain currently checks consent, report state, and separately approved locale rows; no public endpoints/UI. Publication-channel abstraction exists. | Implement minimal feed/detail allowlist over one approved pair; remove external-channel abstraction. |
 | Soft deletion | Implemented. Every entity except `AuditLogEntry` has a `Deleted` timestamp and an EF global query filter; `ModelTests` asserts both the universal filter and the audit-log exception. No restore or physical delete path exists. | Keep. |
 | Retention | Storage lifecycle handles some quarantine states; no complete report-retention/deletion flow. | Retain until explicit soft deletion; expire only unreferenced quarantine; keep report-linked bytes private. |
@@ -37,15 +37,19 @@ substantially enforce the target behavior, not merely that an issue was closed.
 
 ## Current database shape
 
-The baseline has 9 tables: `reports`, `report_answers`, `report_files`,
+The baseline has 12 tables: `reports`, `report_answers`, `report_files`,
 `summaries`, `questions`, `question_revisions`, `question_revision_options`,
-`admin_users`, and `outbox_messages`. Three migrations create that shape:
+`option_sets`, `option_set_items`, `admin_users`, `audit_log`, and
+`outbox_messages`. Four migrations create that shape:
 the initial schema, replacing the earlier sensitivity scheme with question
 privacy, and `MigrateCanonicalDomainAndPersistence` (#100), which collapsed
 the old `question_versions`/`question_options`/`question_translations`/
 `question_option_translations` tables into `question_revisions`/
 `question_revision_options`, dropped `report_aircraft`, and removed the
-application-side field-encryption columns/converters. Every table except
+application-side field-encryption columns/converters; and
+`AddQuestionAuthoring` (#180), which added `option_sets`/`option_set_items`,
+the conditional-question and option-set provenance columns, and the `time` and
+`autocomplete` question types. Every table except
 `audit_log` carries a `Deleted` timestamp and an EF global query filter. The
 target shape and required migration are specified in
 [data and persistence](data-and-persistence.md).

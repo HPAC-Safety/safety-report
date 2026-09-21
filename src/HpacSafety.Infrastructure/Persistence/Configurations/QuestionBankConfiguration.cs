@@ -26,6 +26,8 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         // IsActive are computed pass-throughs to CurrentRevision and are
         // therefore not mapped.
         builder.Ignore(question => question.IsPrivate);
+        builder.Ignore(question => question.IsRequired);
+        builder.Ignore(question => question.DependsOnQuestionId);
         builder.Ignore(question => question.DisplayOrder);
         builder.Ignore(question => question.SectionKey);
         builder.Ignore(question => question.IsActive);
@@ -70,6 +72,25 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
         builder.Property(revision => revision.DisplayOrder).IsRequired();
         builder.Property(revision => revision.SectionKey).HasMaxLength(128);
 
+        // A conditional question names the stable question, not a revision of
+        // it, so rewording the parent cannot break the child. Restrict, not
+        // Cascade: a parent is soft-deleted like everything else here, and a
+        // real cascade would take the child's history with it. See ADR-0060.
+        builder.HasOne<Question>()
+            .WithMany()
+            .HasForeignKey(revision => revision.DependsOnQuestionId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasIndex(revision => revision.DependsOnQuestionId);
+
+        // Provenance of the option snapshot, never consulted to render one.
+        // SetNull so retiring a set leaves every revision built from it intact
+        // and merely unattributed. See ADR-0058.
+        builder.HasOne<OptionSet>()
+            .WithMany()
+            .HasForeignKey(revision => revision.OptionSetId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Unique stable key + revision number.
         builder.HasIndex(revision => new { revision.QuestionId, revision.RevisionNumber }).IsUnique();
 
@@ -80,7 +101,8 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
         builder.ToTable(t => t.HasCheckConstraint(
             "ck_question_revisions_type",
             "type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', " +
-            "'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group')"));
+            "'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group', 'time', " +
+            "'autocomplete')"));
 
         builder.HasMany(revision => revision.Options)
             .WithOne()
@@ -114,5 +136,14 @@ public sealed class QuestionRevisionOptionConfiguration : IEntityTypeConfigurati
         // what lets a rename be a translation change rather than a data
         // migration.
         builder.HasIndex(option => new { option.QuestionRevisionId, option.Code }).IsUnique();
+
+        // Which shared item this was copied from, when it was copied from one.
+        // Restrict rather than Cascade: the snapshot outlives the item on
+        // purpose, and losing it would rewrite what a reporter was shown. See
+        // ADR-0058.
+        builder.HasOne<OptionSetItem>()
+            .WithMany()
+            .HasForeignKey(option => option.SourceItemId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

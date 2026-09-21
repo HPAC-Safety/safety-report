@@ -25,7 +25,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
     private const string PriorMigration = "ReplaceSensitivityWithQuestionPrivacy";
 
     [Fact]
-    public async Task Given_a_question_version_with_no_French_translation_When_the_migration_runs_Then_the_revision_inherits_the_English_wording()
+    public async Task GivenQuestionVersionWithNoFrenchTranslation_WhenMigrationRuns_ThenRevisionInheritsEnglishWording()
     {
         // Given — current-main allows a version with only its source
         // translation, before a machine translation is attached. The target
@@ -67,7 +67,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_two_approved_per_language_summaries_When_the_migration_runs_Then_they_become_one_approved_bilingual_row()
+    public async Task GivenTwoApprovedPerLanguageSummaries_WhenMigrationRuns_ThenTheyBecomeOneApprovedBilingualRow()
     {
         // Given
         var connectionString = await postgres.CreateDatabaseAsync();
@@ -109,7 +109,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_only_one_language_approved_When_the_migration_runs_Then_the_merged_pair_starts_unapproved()
+    public async Task GivenOnlyOneLanguageApproved_WhenMigrationRuns_ThenMergedPairStartsUnapproved()
     {
         // Given — the pair is approved only if every existing language row
         // was individually approved; a half-approved pair is not a defined
@@ -153,7 +153,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_encrypted_legacy_answer_value_When_the_migration_runs_Then_the_value_is_plaintext()
+    public async Task GivenEncryptedLegacyAnswerValue_WhenMigrationRuns_ThenValueIsPlaintext()
     {
         // Given — current-main stores every non-null report_answers.value as
         // v1 AES-GCM ciphertext (see the now-deleted EncryptedStringConverter
@@ -211,7 +211,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_only_one_approved_legacy_summary_row_When_the_migration_runs_Then_the_merged_pair_starts_unapproved()
+    public async Task GivenOnlyOneApprovedLegacySummaryRow_WhenMigrationRuns_ThenMergedPairStartsUnapproved()
     {
         // Given — a report that only ever had one language's summary
         // generated and approved. The migration's earlier UPDATEs duplicate

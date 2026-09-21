@@ -13,7 +13,7 @@ public class BlobKeyTests
     private const string ReportId = "dQw4w9WgXcQ";
 
     [Fact]
-    public void Given_a_reports_media_When_a_key_is_built_Then_the_report_id_is_the_top_level_directory()
+    public void GivenReportsMedia_WhenKeyIsBuilt_ThenReportIdIsTopLevelDirectory()
     {
         // Given / When
         var original = BlobKey.For(ReportId, MediaCompartment.Original, "photo.jpg");
@@ -25,7 +25,7 @@ public class BlobKeyTests
     }
 
     [Fact]
-    public void Given_an_unverified_upload_When_a_key_is_built_Then_quarantine_is_the_top_level_directory()
+    public void GivenUnverifiedUpload_WhenKeyIsBuilt_ThenQuarantineIsTopLevelDirectory()
     {
         // Given / When
         var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
@@ -42,7 +42,7 @@ public class BlobKeyTests
     [InlineData("dQw4w9WgXcQ/original/photo.jpg", MediaCompartment.Original)]
     [InlineData("dQw4w9WgXcQ/stripped/photo.jpg", MediaCompartment.Stripped)]
     [InlineData("quarantine/dQw4w9WgXcQ/photo.jpg", MediaCompartment.Quarantine)]
-    public void Given_a_stored_key_When_it_is_parsed_Then_the_report_and_compartment_round_trip(string candidate, MediaCompartment expected)
+    public void GivenStoredKey_WhenParsed_ThenReportAndCompartmentRoundTrip(string candidate, MediaCompartment expected)
     {
         // Given / When
         var key = BlobKey.Parse(candidate);
@@ -82,7 +82,7 @@ public class BlobKeyTests
     [InlineData("quarantine/short/photo.jpg")]
     [InlineData("")]
     [InlineData(null)]
-    public void Given_a_key_that_is_not_one_of_the_three_shapes_When_it_is_parsed_Then_it_is_refused(string? candidate)
+    public void GivenKeyIsNotOneOfThreeShapes_WhenParsed_ThenRefused(string? candidate)
     {
         // Given / When
         var parsed = BlobKey.TryParse(candidate, out _);
@@ -93,7 +93,7 @@ public class BlobKeyTests
     }
 
     [Fact]
-    public void Given_a_key_that_only_looks_like_a_derivative_When_it_is_parsed_Then_it_is_not_a_stripped_key()
+    public void GivenKeyOnlyLooksLikeDerivative_WhenParsed_ThenNotStrippedKey()
     {
         // Given
         // "strippedish" is not "stripped". The compartment is a whole segment,
@@ -105,7 +105,7 @@ public class BlobKeyTests
     }
 
     [Fact]
-    public void Given_a_report_id_that_is_not_a_tiny_id_When_a_key_is_built_Then_it_is_refused()
+    public void GivenReportIdIsNotTinyId_WhenKeyIsBuilt_ThenRefused()
     {
         // Given / When / Then
         // Identifiers here are 11 characters of A-Za-z0-9-_ — see ADR-0026.
@@ -115,7 +115,7 @@ public class BlobKeyTests
     }
 
     [Fact]
-    public void Given_a_file_name_longer_than_the_limit_When_a_key_is_built_Then_it_is_refused()
+    public void GivenFileNameLongerThanLimit_WhenKeyIsBuilt_ThenRefused()
     {
         // Given
         var fileName = new string('a', BlobKey.MaxFileNameLength + 1);
@@ -129,7 +129,7 @@ public class BlobKeyTests
     [InlineData("123.jpg")]
     [InlineData("dash-name.jpg")]
     [InlineData("under_score.jpg")]
-    public void Given_a_file_name_using_the_allowed_alphabet_When_a_key_is_built_Then_it_is_preserved(string fileName)
+    public void GivenFileNameUsingAllowedAlphabet_WhenKeyIsBuilt_ThenPreserved(string fileName)
     {
         // Given / When
         var key = BlobKey.For(ReportId, MediaCompartment.Original, fileName);
@@ -139,7 +139,7 @@ public class BlobKeyTests
     }
 
     [Fact]
-    public void Given_a_quarantined_upload_When_it_moves_compartment_Then_the_report_and_file_are_carried_across()
+    public void GivenQuarantinedUpload_WhenMovesCompartment_ThenReportAndFileAreCarriedAcross()
     {
         // Given
         var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
@@ -157,7 +157,7 @@ public class BlobKeyTests
     }
 
     [Fact]
-    public void Given_two_reports_When_their_keys_are_built_Then_neither_can_reach_the_others_directory()
+    public void GivenTwoReports_WhenTheirKeysAreBuilt_ThenNeitherCanReachOthersDirectory()
     {
         // Given
         var mine = BlobKey.For(ReportId, MediaCompartment.Original, "photo.jpg");

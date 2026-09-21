@@ -14,7 +14,7 @@ namespace HpacSafety.Core.Tests.Media;
 public class MediaRejectionTests
 {
     [Fact]
-    public void Given_every_rejection_reason_When_its_key_is_requested_Then_one_is_returned()
+    public void GivenEveryRejectionReason_WhenKeyIsRequested_ThenOneIsReturned()
     {
         // Given
         var reasons = Enum.GetValues<MediaRejectionReason>().Where(r => r is not MediaRejectionReason.None);
@@ -28,7 +28,7 @@ public class MediaRejectionTests
     }
 
     [Fact]
-    public void Given_an_accepted_upload_When_a_rejection_key_is_requested_Then_it_throws()
+    public void GivenAcceptedUpload_WhenRejectionKeyIsRequested_ThenThrows()
     {
         // Given / When / Then
         // There is nothing to tell the reporter, and returning a key for "None"
@@ -37,7 +37,7 @@ public class MediaRejectionTests
     }
 
     [Fact]
-    public void Given_every_rejection_reason_When_the_english_locale_is_read_Then_each_key_has_wording()
+    public void GivenEveryRejectionReason_WhenEnglishLocaleIsRead_ThenEachKeyHasWording()
     {
         // Given
         var locale = JsonSerializer.Deserialize<Dictionary<string, string>>(

@@ -39,7 +39,7 @@ public sealed class ModelTests
     [InlineData(typeof(QuestionRevisionOption), "question_revision_options")]
     [InlineData(typeof(AuditLogEntry), "audit_log")]
     [InlineData(typeof(OutboxMessage), "outbox_messages")]
-    public void Given_the_model_When_an_entity_is_mapped_Then_it_lands_in_the_table_the_issue_named(Type entity, string table)
+    public void GivenModel_WhenEntityIsMapped_ThenLandsInTableIssueNamed(Type entity, string table)
     {
         // Given / When
         var mapped = Model().FindEntityType(entity!);
@@ -50,7 +50,7 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Given_the_model_When_a_column_is_named_Then_it_is_snake_case()
+    public void GivenModel_WhenColumnIsNamed_ThenSnakeCase()
     {
         // Given
         var answer = Model().FindEntityType(typeof(ReportAnswer))!;
@@ -66,7 +66,7 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Given_the_model_When_a_domain_enum_is_mapped_Then_it_is_stored_as_its_invariant_code()
+    public void GivenModel_WhenDomainEnumIsMapped_ThenStoredAsInvariantCode()
     {
         // Given / When
         var converter = Model().FindEntityType(typeof(Report))!
@@ -79,7 +79,7 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Given_the_model_When_a_locale_is_mapped_Then_it_is_stored_as_its_code()
+    public void GivenModel_WhenLocaleIsMapped_ThenStoredAsCode()
     {
         // Given / When
         var converter = Model().FindEntityType(typeof(Report))!
@@ -92,7 +92,7 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Given_a_stored_code_that_no_longer_names_a_domain_value_When_it_is_read_Then_it_is_refused_rather_than_guessed()
+    public void GivenStoredCodeNoLongerNamesDomainValue_WhenRead_ThenRefusedRatherThanGuessed()
     {
         // Given
         var converter = new EnumCodeConverter<ReportStatus>();
@@ -107,7 +107,7 @@ public sealed class ModelTests
     [InlineData("PK_Reports", "pk_reports")]
     [InlineData("IX_ReportAnswers_ReportId", "ix_report_answers_report_id")]
     [InlineData("already_snake", "already_snake")]
-    public void Given_a_name_When_it_is_converted_Then_it_reads_the_way_postgres_folds_it(string name, string expected)
+    public void GivenName_WhenConverted_ThenReadsWayPostgresFolds(string name, string expected)
     {
         // Given / When / Then
         SnakeCaseNames.ToSnakeCase(name).ShouldBe(expected);
@@ -122,7 +122,7 @@ public sealed class ModelTests
     [InlineData(typeof(QuestionRevision))]
     [InlineData(typeof(QuestionRevisionOption))]
     [InlineData(typeof(OutboxMessage))]
-    public void Given_every_table_except_audit_log_When_its_model_is_read_Then_it_has_a_deleted_column_and_a_live_row_filter(Type entity)
+    public void GivenEveryTableExceptAuditLog_WhenModelIsRead_ThenHasDeletedColumnAndLiveRowFilter(Type entity)
     {
         // Given / When
         var mapped = Model().FindEntityType(entity!)!;
@@ -133,7 +133,7 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Given_the_append_only_audit_log_When_its_model_is_read_Then_it_has_no_deleted_column()
+    public void GivenAppendOnlyAuditLog_WhenModelIsRead_ThenHasNoDeletedColumn()
     {
         // Given / When
         var mapped = Model().FindEntityType(typeof(AuditLogEntry))!;
@@ -144,7 +144,7 @@ public sealed class ModelTests
     }
 
     [Fact]
-    public void Given_design_time_tooling_When_it_asks_for_a_context_Then_it_gets_one_without_an_application()
+    public void GivenDesignTimeTooling_WhenAsksForContext_ThenGetsOneWithoutApplication()
     {
         // Given
         var factory = new HpacSafetyDbContextFactory();

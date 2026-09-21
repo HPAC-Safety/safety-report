@@ -29,7 +29,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
             _clock);
 
     [Fact]
-    public async Task Given_an_upload_url_When_it_is_issued_Then_it_is_not_an_http_url_anything_could_serve()
+    public async Task GivenUploadUrl_WhenIssued_ThenNotHttpUrlAnythingCouldServe()
     {
         // Given / When
         var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
@@ -41,7 +41,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Given_an_upload_url_When_it_is_presented_as_a_read_url_Then_it_is_refused()
+    public async Task GivenUploadUrl_WhenPresentedAsReadUrl_ThenRefused()
     {
         // Given
         var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
@@ -51,7 +51,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Given_an_upload_url_When_its_expiry_is_pushed_out_by_hand_Then_it_is_refused()
+    public async Task GivenUploadUrl_WhenExpiryIsPushedOutByHand_ThenRefused()
     {
         // Given
         var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
@@ -67,7 +67,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Given_an_upload_url_When_it_is_used_after_it_expires_Then_it_is_refused()
+    public async Task GivenUploadUrl_WhenUsedAfterExpires_ThenRefused()
     {
         // Given
         var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
@@ -82,7 +82,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Given_an_upload_url_signed_by_another_store_When_it_is_presented_Then_it_is_refused()
+    public async Task GivenUploadUrlSignedByAnotherStore_WhenPresented_ThenRefused()
     {
         // Given
         var other = new FileSystemBlobStore(
@@ -101,7 +101,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
     }
 
     [Fact]
-    public async Task Given_an_upload_through_a_signed_url_When_the_blob_is_read_Then_the_signed_content_type_was_recorded()
+    public async Task GivenUploadThroughSignedUrl_WhenBlobIsRead_ThenSignedContentTypeWasRecorded()
     {
         // Given
         var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);

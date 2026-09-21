@@ -12,7 +12,7 @@ public class MediaPolicyTests
     private static readonly MediaPolicy Policy = new(maxByteSize: 1_000, MediaType.All);
 
     [Fact]
-    public void Given_a_jpeg_that_really_is_a_jpeg_When_it_is_validated_Then_it_is_accepted()
+    public void GivenJpegReallyIsJpeg_WhenValidated_ThenAccepted()
     {
         // Given / When
         var result = Policy.Validate("image/jpeg", MediaType.Jpeg, byteSize: 500);
@@ -24,7 +24,7 @@ public class MediaPolicyTests
     }
 
     [Fact]
-    public void Given_a_file_claiming_image_jpeg_but_containing_a_png_When_it_is_validated_Then_it_is_rejected()
+    public void GivenFileClaimingImageJpegButContainingPng_WhenValidated_ThenRejected()
     {
         // Given / When
         var result = Policy.Validate("image/jpeg", MediaType.Png, byteSize: 500);
@@ -35,7 +35,7 @@ public class MediaPolicyTests
     }
 
     [Fact]
-    public void Given_a_file_claiming_image_jpeg_but_containing_something_unrecognisable_When_it_is_validated_Then_it_is_rejected()
+    public void GivenFileClaimingImageJpegButContainingSomethingUnrecognisable_WhenValidated_ThenRejected()
     {
         // Given / When
         var result = Policy.Validate("image/jpeg", sniffed: null, byteSize: 500);
@@ -46,7 +46,7 @@ public class MediaPolicyTests
     }
 
     [Fact]
-    public void Given_a_file_larger_than_the_limit_When_it_is_validated_Then_it_is_rejected()
+    public void GivenFileLargerThanLimit_WhenValidated_ThenRejected()
     {
         // Given / When
         var result = Policy.Validate("image/jpeg", MediaType.Jpeg, byteSize: 1_001);
@@ -57,7 +57,7 @@ public class MediaPolicyTests
     }
 
     [Fact]
-    public void Given_an_empty_file_When_it_is_validated_Then_it_is_rejected()
+    public void GivenEmptyFile_WhenValidated_ThenRejected()
     {
         // Given / When
         var result = Policy.Validate("image/jpeg", MediaType.Jpeg, byteSize: 0);
@@ -68,7 +68,7 @@ public class MediaPolicyTests
     }
 
     [Fact]
-    public void Given_a_type_this_deployment_does_not_accept_When_it_is_validated_Then_it_is_rejected()
+    public void GivenTypeThisDeploymentDoesNotAccept_WhenValidated_ThenRejected()
     {
         // Given
         var jpegOnly = new MediaPolicy(maxByteSize: 1_000, [MediaType.Jpeg]);

@@ -23,7 +23,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     private static readonly DateTimeOffset At = new(2026, 8, 22, 17, 30, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Given_a_report_and_its_outbox_message_When_they_are_saved_in_one_call_Then_both_rows_are_present()
+    public async Task GivenReportAndOutboxMessage_WhenTheyAreSavedInOneCall_ThenBothRowsArePresent()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -42,7 +42,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_report_and_its_outbox_message_When_the_transaction_is_rolled_back_Then_neither_row_is_present()
+    public async Task GivenReportAndOutboxMessage_WhenTransactionIsRolledBack_ThenNeitherRowIsPresent()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -66,7 +66,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_report_and_its_outbox_message_When_the_write_fails_part_way_Then_neither_row_is_present()
+    public async Task GivenReportAndOutboxMessage_WhenWriteFailsPartWay_ThenNeitherRowIsPresent()
     {
         // Given — an answer pointing at a question version that is not there.
         // The database refuses it, and the report and the outbox row have to go
@@ -90,7 +90,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_outbox_message_When_it_is_read_back_Then_it_is_due_and_has_never_been_attempted()
+    public async Task GivenOutboxMessage_WhenReadBack_ThenDueAndHasNeverBeenAttempted()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

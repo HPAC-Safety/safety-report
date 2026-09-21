@@ -14,7 +14,7 @@ public class QuestionBankEdgeTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_a_deleted_question_When_it_is_edited_Then_it_is_refused()
+    public void GivenDeletedQuestion_WhenEdited_ThenRefused()
     {
         // Given
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
@@ -28,7 +28,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_question_deleted_twice_When_the_second_delete_runs_Then_the_first_time_stands()
+    public void GivenQuestionDeletedTwice_WhenSecondDeleteRuns_ThenFirstTimeStands()
     {
         // Given
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
@@ -42,7 +42,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_role_bearing_question_When_the_role_moves_to_another_question_Then_the_new_one_carries_it()
+    public void GivenRoleBearingQuestion_WhenRoleMovesToAnotherQuestion_ThenNewOneCarries()
     {
         // Given — consent is the only role that must live somewhere, so moving
         // it away has to land it on another question, not clear it to None.
@@ -59,7 +59,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_the_consent_question_When_its_role_is_reassigned_Then_it_is_refused()
+    public void GivenConsentQuestion_WhenRoleIsReassigned_ThenRefused()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
@@ -72,7 +72,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_question_When_it_is_moved_into_a_section_Then_the_section_key_is_normalized()
+    public void GivenQuestion_WhenMovedIntoSection_ThenSectionKeyIsNormalized()
     {
         // Given
         var question = Question.Create("manufacturer", QuestionType.ShortText, "Manufacturer", "Fabricant", Now);
@@ -85,7 +85,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_non_private_question_When_it_is_answered_Then_the_answer_carries_that_classification()
+    public void GivenNonPrivateQuestion_WhenAnswered_ThenAnswerCarriesClassification()
     {
         // Given
         var question = Question.Create(
@@ -100,7 +100,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_duplicate_option_code_When_the_revision_is_created_Then_it_is_refused()
+    public void GivenDuplicateOptionCode_WhenRevisionIsCreated_ThenRefused()
     {
         // Given / When — options are supplied once, complete, at creation
         var creating = () => Question.Create(
@@ -116,7 +116,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_an_option_missing_French_wording_When_the_revision_is_created_Then_it_is_refused()
+    public void GivenOptionMissingFrenchWording_WhenRevisionIsCreated_ThenRefused()
     {
         // Given / When
         var creating = () => Question.Create(
@@ -128,7 +128,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_options_supplied_in_a_specific_order_When_the_revision_is_created_Then_their_display_order_matches()
+    public void GivenOptionsSuppliedInSpecificOrder_WhenRevisionIsCreated_ThenTheirDisplayOrderMatches()
     {
         // Given / When — the complete ordered option set is fixed at
         // creation; there is no in-place reorder on an existing revision.
@@ -147,7 +147,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_select_question_When_it_is_answered_with_free_text_Then_it_is_refused()
+    public void GivenSelectQuestion_WhenAnsweredWithFreeText_ThenRefused()
     {
         // Given
         var question = Question.Create(
@@ -163,7 +163,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_statement_When_it_is_answered_Then_it_is_refused()
+    public void GivenStatement_WhenAnswered_ThenRefused()
     {
         // Given
         var statement = Question.Create(
@@ -178,7 +178,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_the_consent_question_When_nothing_is_chosen_Then_it_is_refused()
+    public void GivenConsentQuestion_WhenNothingIsChosen_ThenRefused()
     {
         // Given — consent_publish is the only question the system ever
         // requires; IsRequired can no longer be set on an ordinary question.
@@ -193,7 +193,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_single_select_question_When_two_answers_are_given_Then_it_is_refused()
+    public void GivenSingleSelectQuestion_WhenTwoAnswersAreGiven_ThenRefused()
     {
         // Given
         var question = Question.Create(
@@ -209,7 +209,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_multi_select_question_When_several_answers_are_given_Then_all_are_recorded()
+    public void GivenMultiSelectQuestion_WhenSeveralAnswersAreGiven_ThenAllAreRecorded()
     {
         // Given
         var question = Question.Create(
@@ -226,7 +226,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_key_of_only_punctuation_When_it_is_normalized_Then_it_is_refused()
+    public void GivenKeyOfOnlyPunctuation_WhenNormalized_ThenRefused()
     {
         // Given / When
         var normalizing = () => QuestionKey.Normalize("!!! ???");
@@ -236,7 +236,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_blank_label_When_a_question_is_created_Then_it_is_refused()
+    public void GivenBlankLabel_WhenQuestionIsCreated_ThenRefused()
     {
         // Given / When
         var creating = () => Question.Create("where", QuestionType.ShortText, "   ", "Où ?", Now);
@@ -246,7 +246,7 @@ public class QuestionBankEdgeTests
     }
 
     [Fact]
-    public void Given_a_supported_locale_code_When_it_is_parsed_Then_it_resolves()
+    public void GivenSupportedLocaleCode_WhenParsed_ThenResolves()
     {
         // Given / When
         var parsed = Locale.TryParse("FR-ca", out var locale);

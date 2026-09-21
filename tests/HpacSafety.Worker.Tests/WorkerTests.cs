@@ -46,7 +46,7 @@ public class WorkerTests
     }
 
     [Fact]
-    public async Task Given_a_worker_When_it_runs_Then_it_logs_that_it_started()
+    public async Task GivenWorker_WhenRuns_ThenLogsStarted()
     {
         // Given / When
         var logger = await RunToCompletionAsync();
@@ -57,7 +57,7 @@ public class WorkerTests
     }
 
     [Fact]
-    public async Task Given_a_worker_When_it_runs_Then_the_start_record_is_informational()
+    public async Task GivenWorker_WhenRuns_ThenStartRecordIsInformational()
     {
         // Given / When
         var logger = await RunToCompletionAsync();
@@ -67,7 +67,7 @@ public class WorkerTests
     }
 
     [Fact]
-    public async Task Given_a_started_worker_When_it_is_stopped_Then_it_completes_without_hanging()
+    public async Task GivenStartedWorker_WhenStopped_ThenCompletesWithoutHanging()
     {
         // Given
         var worker = new Worker(new FakeLogger<Worker>());
@@ -82,7 +82,7 @@ public class WorkerTests
     }
 
     [Fact]
-    public async Task Given_a_cancelled_token_When_the_worker_is_started_Then_it_does_not_throw()
+    public async Task GivenCancelledToken_WhenWorkerIsStarted_ThenDoesNotThrow()
     {
         // Given
         var worker = new Worker(new FakeLogger<Worker>());

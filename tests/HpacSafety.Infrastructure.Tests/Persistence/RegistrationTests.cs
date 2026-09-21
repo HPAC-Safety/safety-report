@@ -19,7 +19,7 @@ public sealed class RegistrationTests
             .Build();
 
     [Fact]
-    public void Given_a_configured_application_When_persistence_is_added_Then_the_context_resolves()
+    public void GivenConfiguredApplication_WhenPersistenceIsAdded_ThenContextResolves()
     {
         // Given
         var services = new ServiceCollection();
@@ -33,7 +33,7 @@ public sealed class RegistrationTests
     }
 
     [Fact]
-    public void Given_no_connection_string_When_persistence_is_added_Then_the_application_refuses_to_start()
+    public void GivenNoConnectionString_WhenPersistenceIsAdded_ThenApplicationRefusesToStart()
     {
         // Given
         var services = new ServiceCollection();

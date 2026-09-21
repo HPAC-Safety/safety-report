@@ -15,7 +15,7 @@ namespace HpacSafety.Infrastructure.Tests.Seeding;
 public sealed class DevelopmentAdminSeedSqlTests
 {
     [Fact]
-    public void Given_the_seed_statement_When_it_is_read_Then_it_writes_nothing_unless_the_database_asked_for_it()
+    public void GivenSeedStatement_WhenRead_ThenWritesNothingUnlessDatabaseAskedFor()
     {
         // Given / When
         var sql = DevelopmentAdminSeed.InsertSql();
@@ -26,7 +26,7 @@ public sealed class DevelopmentAdminSeedSqlTests
     }
 
     [Fact]
-    public void Given_the_seed_statement_When_it_is_read_Then_it_seeds_one_obviously_local_identifier()
+    public void GivenSeedStatement_WhenRead_ThenSeedsOneObviouslyLocalIdentifier()
     {
         // Given / When
         var sql = DevelopmentAdminSeed.InsertSql();
@@ -38,7 +38,7 @@ public sealed class DevelopmentAdminSeedSqlTests
     }
 
     [Fact]
-    public void Given_the_seed_statement_When_it_is_read_Then_it_does_nothing_a_second_time()
+    public void GivenSeedStatement_WhenRead_ThenDoesNothingSecondTime()
     {
         // Given / When
         var sql = DevelopmentAdminSeed.InsertSql();
@@ -48,7 +48,7 @@ public sealed class DevelopmentAdminSeedSqlTests
     }
 
     [Fact]
-    public void Given_the_seed_statement_When_the_role_enum_no_longer_exists_Then_it_still_writes_the_literal_code()
+    public void GivenSeedStatement_WhenRoleEnumNoLongerExists_ThenStillWritesLiteralCode()
     {
         // Given / When
         var sql = DevelopmentAdminSeed.InsertSql();
@@ -59,7 +59,7 @@ public sealed class DevelopmentAdminSeedSqlTests
     }
 
     [Fact]
-    public void Given_the_seeded_administrator_When_its_identifier_is_derived_Then_it_is_stable()
+    public void GivenSeededAdministrator_WhenIdentifierIsDerived_ThenStable()
     {
         // Given / When / Then
         DevelopmentAdminSeed.Id.ShouldBe(SeedIds.For("admin_user:admin@localhost"));

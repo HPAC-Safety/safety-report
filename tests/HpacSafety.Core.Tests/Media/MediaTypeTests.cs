@@ -6,7 +6,7 @@ namespace HpacSafety.Core.Tests.Media;
 public class MediaTypeTests
 {
     [Fact]
-    public void Given_an_accepted_content_type_When_it_is_parsed_Then_it_is_recognised()
+    public void GivenAcceptedContentType_WhenParsed_ThenRecognised()
     {
         // Given
         const string declared = "image/jpeg";
@@ -21,7 +21,7 @@ public class MediaTypeTests
     }
 
     [Fact]
-    public void Given_a_content_type_with_parameters_and_casing_When_it_is_parsed_Then_it_is_recognised()
+    public void GivenContentTypeWithParametersAndCasing_WhenParsed_ThenRecognised()
     {
         // Given
         const string declared = "IMAGE/JPEG; charset=binary";
@@ -41,7 +41,7 @@ public class MediaTypeTests
     [InlineData("video/x-matroska")]
     [InlineData("")]
     [InlineData(null)]
-    public void Given_a_content_type_this_system_does_not_accept_When_it_is_parsed_Then_it_is_refused(string? declared)
+    public void GivenContentTypeThisSystemDoesNotAccept_WhenParsed_ThenRefused(string? declared)
     {
         // Given / When
         var parsed = MediaType.TryParse(declared, out _);
@@ -55,7 +55,7 @@ public class MediaTypeTests
     [InlineData("image/heic")]
     [InlineData("video/mp4")]
     [InlineData("video/quicktime")]
-    public void Given_a_format_a_phone_produces_by_default_When_it_is_parsed_Then_it_is_accepted(string declared)
+    public void GivenFormatPhoneProducesByDefault_WhenParsed_ThenAccepted(string declared)
     {
         // Given / When
         var parsed = MediaType.TryParse(declared, out _);
@@ -65,7 +65,7 @@ public class MediaTypeTests
     }
 
     [Fact]
-    public void Given_a_heic_photo_When_its_stripped_form_is_read_Then_it_is_a_jpeg()
+    public void GivenHeicPhoto_WhenStrippedFormIsRead_ThenJpeg()
     {
         // Given / When
         var strippedForm = MediaType.Heic.StrippedForm;
@@ -81,7 +81,7 @@ public class MediaTypeTests
     [InlineData("image/jpeg")]
     [InlineData("image/png")]
     [InlineData("image/webp")]
-    public void Given_an_ordinary_image_When_its_stripped_form_is_read_Then_it_keeps_its_own_format(string declared)
+    public void GivenOrdinaryImage_WhenStrippedFormIsRead_ThenKeepsOwnFormat(string declared)
     {
         // Given
         var type = MediaType.Parse(declared);
@@ -96,7 +96,7 @@ public class MediaTypeTests
     [Theory]
     [InlineData("video/mp4")]
     [InlineData("video/quicktime")]
-    public void Given_a_video_When_its_stripped_form_is_read_Then_there_is_none(string declared)
+    public void GivenVideo_WhenStrippedFormIsRead_ThenNone(string declared)
     {
         // Given
         var type = MediaType.Parse(declared);
@@ -113,7 +113,7 @@ public class MediaTypeTests
     }
 
     [Fact]
-    public void Given_the_strippable_set_When_it_is_read_Then_it_is_every_accepted_type_that_has_a_stripped_form()
+    public void GivenStrippableSet_WhenRead_ThenEveryAcceptedTypeHasStrippedForm()
     {
         // Given / When
         var strippable = MediaType.Strippable;
@@ -124,7 +124,7 @@ public class MediaTypeTests
     }
 
     [Fact]
-    public void Given_the_accepted_set_When_it_is_read_Then_every_member_is_an_image_or_a_video()
+    public void GivenAcceptedSet_WhenRead_ThenEveryMemberIsImageOrVideo()
     {
         // Given / When
         var all = MediaType.All;

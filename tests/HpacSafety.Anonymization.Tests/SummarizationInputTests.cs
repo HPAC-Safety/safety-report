@@ -7,7 +7,7 @@ namespace HpacSafety.Anonymization.Tests;
 public sealed class SummarizationInputTests
 {
     [Fact]
-    public void Given_classified_answers_When_the_model_input_is_built_Then_private_fields_are_isolated_from_report_content()
+    public void GivenClassifiedAnswers_WhenModelInputIsBuilt_ThenPrivateFieldsAreIsolatedFromReportContent()
     {
         // Given
         ClassifiedReportField[] fields =
@@ -25,7 +25,7 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_private_context_When_the_model_input_is_built_Then_it_is_available_only_as_a_separate_section()
+    public void GivenPrivateContext_WhenModelInputIsBuilt_ThenAvailableOnlyAsSeparateSection()
     {
         // Given
         var privateName = new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace");
@@ -39,7 +39,7 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_no_fields_When_the_model_input_is_built_Then_both_sections_are_empty()
+    public void GivenNoFields_WhenModelInputIsBuilt_ThenBothSectionsAreEmpty()
     {
         // Given / When
         var input = SummarizationInput.Partition([]);
@@ -50,7 +50,7 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_a_null_field_collection_When_the_model_input_is_built_Then_it_is_rejected()
+    public void GivenNullFieldCollection_WhenModelInputIsBuilt_ThenRejected()
     {
         // Given
         IEnumerable<ClassifiedReportField> fields = null!;
@@ -63,7 +63,7 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_a_null_classified_field_When_the_model_input_is_built_Then_it_is_rejected()
+    public void GivenNullClassifiedField_WhenModelInputIsBuilt_ThenRejected()
     {
         // Given
         ClassifiedReportField[] fields = [null!];
@@ -76,7 +76,7 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_a_classification_without_a_field_When_the_model_input_is_built_Then_it_is_rejected()
+    public void GivenClassificationWithoutField_WhenModelInputIsBuilt_ThenRejected()
     {
         // Given
         ClassifiedReportField[] fields = [new(null!, IsPrivate: true)];
@@ -89,7 +89,7 @@ public sealed class SummarizationInputTests
     }
 
     [Fact]
-    public void Given_the_summarizer_port_When_its_parameters_are_inspected_Then_it_accepts_report_input()
+    public void GivenSummarizerPort_WhenParametersAreInspected_ThenAcceptsReportInput()
     {
         // Given / When
         var summarizerParameters = ParametersOf(typeof(ISummarizer));

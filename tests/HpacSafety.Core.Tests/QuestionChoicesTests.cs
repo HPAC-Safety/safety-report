@@ -26,7 +26,7 @@ public class QuestionChoicesTests
             isActive: true, optionSetId: set.Id, options: set.AsRevisionOptions());
 
     [Fact]
-    public void Given_a_type_ahead_When_the_list_grows_Then_it_offers_the_new_choice()
+    public void GivenTypeAhead_WhenListGrows_ThenOffersNewChoice()
     {
         // Given
         var set = Sites();
@@ -42,7 +42,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_type_ahead_When_the_list_grows_Then_its_revision_still_records_what_was_shown()
+    public void GivenTypeAhead_WhenListGrows_ThenRevisionStillRecordsWhatWasShown()
     {
         // Given
         var set = Sites();
@@ -60,7 +60,7 @@ public class QuestionChoicesTests
     [Theory]
     [InlineData(QuestionType.SingleSelect)]
     [InlineData(QuestionType.MultiSelect)]
-    public void Given_a_closed_list_type_When_the_shared_list_grows_Then_it_still_renders_its_snapshot(QuestionType type)
+    public void GivenClosedListType_WhenSharedListGrows_ThenStillRendersSnapshot(QuestionType type)
     {
         // Given — a curated, closed set; showing an unmentioned choice would
         // make the revision's record misleading
@@ -78,7 +78,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_type_ahead_When_its_shared_list_is_retired_Then_it_falls_back_to_the_snapshot()
+    public void GivenTypeAhead_WhenSharedListIsRetired_ThenFallsBackToSnapshot()
     {
         // Given
         var set = Sites();
@@ -96,7 +96,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_no_shared_list_is_loaded_When_choices_are_resolved_Then_the_snapshot_is_used()
+    public void GivenNoSharedListIsLoaded_WhenChoicesAreResolved_ThenSnapshotIsUsed()
     {
         // Given
         var set = Sites();
@@ -109,7 +109,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_different_list_When_choices_are_resolved_Then_the_snapshot_is_used()
+    public void GivenDifferentList_WhenChoicesAreResolved_ThenSnapshotIsUsed()
     {
         // Given — a revision never renders a set it does not name
         var set = Sites();
@@ -125,7 +125,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_hand_typed_question_When_choices_are_resolved_Then_the_snapshot_is_used()
+    public void GivenHandTypedQuestion_WhenChoicesAreResolved_ThenSnapshotIsUsed()
     {
         // Given — an autocomplete whose options were typed for it alone
         var question = Question.Create(
@@ -139,7 +139,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_value_the_list_does_not_offer_When_a_reporter_submits_it_Then_it_is_added_and_marked()
+    public void GivenValueListDoesNotOffer_WhenReporterSubmits_ThenAddedAndMarked()
     {
         // Given
         var set = Sites();
@@ -156,7 +156,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_value_already_offered_When_a_reporter_submits_it_Then_nothing_is_added_or_relabelled()
+    public void GivenValueAlreadyOffered_WhenReporterSubmits_ThenNothingIsAddedOrRelabelled()
     {
         // Given — a reporter's spelling never overwrites an administrator's
         var set = Sites();
@@ -171,7 +171,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_two_reporters_naming_the_same_new_site_When_both_submit_Then_one_choice_exists()
+    public void GivenTwoReportersNamingSameNewSite_WhenBothSubmit_ThenOneChoiceExists()
     {
         // Given
         var set = Sites();
@@ -187,7 +187,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_choice_an_administrator_removed_When_a_reporter_retypes_it_Then_it_is_not_revived()
+    public void GivenChoiceAdministratorRemoved_WhenReporterRetypes_ThenNotRevived()
     {
         // Given — removal is the only curation tool there is
         var set = Sites();
@@ -204,7 +204,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_retired_list_When_a_reporter_adds_to_it_Then_it_is_refused()
+    public void GivenRetiredList_WhenReporterAddsTo_ThenRefused()
     {
         // Given
         var set = Sites();
@@ -215,7 +215,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_blank_label_When_a_reporter_adds_a_choice_Then_it_is_refused()
+    public void GivenBlankLabel_WhenReporterAddsChoice_ThenRefused()
     {
         // Given — both official languages are required here as everywhere else
         var set = Sites();
@@ -226,7 +226,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_an_administrator_adds_a_choice_When_it_is_read_Then_it_is_not_marked_reporter_added()
+    public void GivenAdministratorAddsChoice_WhenRead_ThenNotMarkedReporterAdded()
     {
         // Given / When
         var set = Sites();
@@ -236,7 +236,7 @@ public class QuestionChoicesTests
     }
 
     [Fact]
-    public void Given_a_reporter_added_choice_When_an_administrator_relabels_it_Then_the_marker_stays()
+    public void GivenReporterAddedChoice_WhenAdministratorRelabels_ThenMarkerStays()
     {
         // Given — the flag records where a choice came from, not whether
         // anyone has touched it since

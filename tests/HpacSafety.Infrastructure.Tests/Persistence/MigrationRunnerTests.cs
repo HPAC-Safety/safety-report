@@ -17,7 +17,7 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 public sealed class MigrationRunnerTests(PostgresFixture postgres)
 {
     [Fact]
-    public async Task Given_a_fresh_database_When_two_processes_call_EnsureMigratedAsync_concurrently_Then_both_succeed_and_the_schema_is_migrated_once()
+    public async Task GivenFreshDatabase_WhenTwoProcessesCallEnsureMigratedAsyncConcurrently_ThenBothSucceedAndSchemaIsMigratedOnce()
     {
         // Given
         var connectionString = await postgres.CreateDatabaseAsync();
@@ -36,7 +36,7 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_already_migrated_database_When_EnsureMigratedAsync_runs_again_Then_it_is_a_no_op()
+    public async Task GivenAlreadyMigratedDatabase_WhenEnsureMigratedAsyncRunsAgain_ThenNoOp()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

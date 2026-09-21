@@ -30,7 +30,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     ];
 
     [Fact]
-    public async Task Given_a_clean_postgres_17_When_the_migrations_are_applied_Then_every_table_exists()
+    public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenEveryTableExists()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -45,7 +45,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_pending_migrations_are_checked_Then_there_are_none()
+    public async Task GivenMigratedDatabase_WhenPendingMigrationsAreChecked_ThenNone()
     {
         // Given — this proves EF's own bookkeeping, not that the migration's
         // content is safe to re-run. `dotnet ef database update` reads
@@ -63,7 +63,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_the_outbox_index_is_read_Then_it_covers_only_the_rows_a_worker_may_claim()
+    public async Task GivenMigratedDatabase_WhenOutboxIndexIsRead_ThenCoversOnlyRowsWorkerMayClaim()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -82,7 +82,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_the_summaries_table_is_read_Then_exactly_one_row_may_exist_per_report()
+    public async Task GivenMigratedDatabase_WhenSummariesTableIsRead_ThenExactlyOneRowMayExistPerReport()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -98,7 +98,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_migrated_database_When_an_answer_column_is_read_Then_the_option_codes_are_stored_as_an_array()
+    public async Task GivenMigratedDatabase_WhenAnswerColumnIsRead_ThenOptionCodesAreStoredAsArray()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();

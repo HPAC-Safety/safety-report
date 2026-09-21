@@ -18,7 +18,7 @@ public class HealthEndpointTests(ApiPostgresFixture fixture)
     private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
     [Fact]
-    public async Task Given_the_api_is_running_When_health_is_requested_Then_it_returns_ok()
+    public async Task GivenApiIsRunning_WhenHealthIsRequested_ThenReturnsOk()
     {
         // Given
         using var client = _factory.CreateClient();
@@ -31,7 +31,7 @@ public class HealthEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_the_api_is_running_When_health_is_requested_Then_the_body_reports_status_ok()
+    public async Task GivenApiIsRunning_WhenHealthIsRequested_ThenBodyReportsStatusOk()
     {
         // Given
         using var client = _factory.CreateClient();
@@ -44,7 +44,7 @@ public class HealthEndpointTests(ApiPostgresFixture fixture)
     }
 
     [Fact]
-    public async Task Given_the_api_is_running_When_an_unmapped_route_is_requested_Then_it_returns_not_found()
+    public async Task GivenApiIsRunning_WhenUnmappedRouteIsRequested_ThenReturnsNotFound()
     {
         // Given
         using var client = _factory.CreateClient();

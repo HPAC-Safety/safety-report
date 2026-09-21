@@ -18,7 +18,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
     private static readonly DateTimeOffset At = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public async Task Given_a_shared_list_When_it_is_saved_Then_it_round_trips_with_tiny_id_keys()
+    public async Task GivenSharedList_WhenSaved_ThenRoundTripsWithTinyIdKeys()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -45,7 +45,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_removed_item_When_the_list_is_read_back_Then_the_row_is_retained_and_filtered_out()
+    public async Task GivenRemovedItem_WhenListIsReadBack_ThenRowIsRetainedAndFilteredOut()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -79,7 +79,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_revision_built_from_a_list_When_the_list_is_deleted_Then_the_snapshot_survives_intact()
+    public async Task GivenRevisionBuiltFromList_WhenListIsDeleted_ThenSnapshotSurvivesIntact()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -127,7 +127,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_conditional_question_When_it_is_read_back_Then_it_names_the_parent_question()
+    public async Task GivenConditionalQuestion_WhenReadBack_ThenNamesParentQuestion()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -164,7 +164,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_a_reporter_added_choice_When_the_list_is_read_back_Then_the_marker_survives()
+    public async Task GivenReporterAddedChoice_WhenListIsReadBack_ThenMarkerSurvives()
     {
         // Given
         var connectionString = await postgres.CreateMigratedDatabaseAsync();
@@ -190,7 +190,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
     }
 
     [Fact]
-    public async Task Given_an_existing_list_When_the_migration_is_applied_Then_its_choices_are_administrator_authored()
+    public async Task GivenExistingList_WhenMigrationIsApplied_ThenChoicesAreAdministratorAuthored()
     {
         // Given — every row that existed before this column did was authored
         // by an administrator, which is what the default records

@@ -16,7 +16,7 @@ namespace HpacSafety.Infrastructure.Tests.Translation;
 public class TranslationRegistrationTests
 {
     [Fact]
-    public void Given_no_configuration_at_all_When_translation_is_registered_Then_it_resolves_and_reports_unconfigured()
+    public void GivenNoConfigurationAtAll_WhenTranslationIsRegistered_ThenResolvesAndReportsUnconfigured()
     {
         // Given — an ordinary local checkout
         using var provider = Provider([]);
@@ -31,7 +31,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_a_key_in_the_translation_section_When_it_is_registered_Then_it_is_configured()
+    public void GivenKeyInTranslationSection_WhenRegistered_ThenConfigured()
     {
         // Given
         using var provider = Provider(new Dictionary<string, string?>
@@ -47,7 +47,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_only_the_bare_environment_name_When_it_is_registered_Then_that_key_is_used()
+    public void GivenOnlyBareEnvironmentName_WhenRegistered_ThenKeyIsUsed()
     {
         // Given — DEEPL_API_KEY is the name the credential already has, in
         // repository settings and in tools/translator.mjs
@@ -65,7 +65,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_both_names_When_it_is_registered_Then_the_explicit_section_wins()
+    public void GivenBothNames_WhenRegistered_ThenExplicitSectionWins()
     {
         // Given
         using var provider = Provider(new Dictionary<string, string?>
@@ -82,7 +82,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_a_configured_formality_When_it_is_registered_Then_it_overrides_the_default()
+    public void GivenConfiguredFormality_WhenRegistered_ThenOverridesDefault()
     {
         // Given
         using var provider = Provider(new Dictionary<string, string?>
@@ -98,7 +98,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_no_formality_When_it_is_registered_Then_it_defaults_to_the_formal_form()
+    public void GivenNoFormality_WhenRegistered_ThenDefaultsToFormalForm()
     {
         // Given — a national association addressing pilots uses "vous"
         using var provider = Provider([]);
@@ -111,7 +111,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_development_and_no_credential_When_it_is_registered_Then_the_stand_in_is_used()
+    public void GivenDevelopmentAndNoCredential_WhenRegistered_ThenStandInIsUsed()
     {
         // Given — a developer's checkout
         using var provider = Provider([], useStandIn: true);
@@ -125,7 +125,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_development_and_a_credential_When_it_is_registered_Then_the_real_provider_wins()
+    public void GivenDevelopmentAndCredential_WhenRegistered_ThenRealProviderWins()
     {
         // Given — a developer who does have a key wants the real thing
         using var provider = Provider(
@@ -136,7 +136,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_no_credential_outside_development_When_it_is_registered_Then_no_stand_in_is_used()
+    public void GivenNoCredentialOutsideDevelopment_WhenRegistered_ThenNoStandInIsUsed()
     {
         // Given — copying English into the French column of a live question
         // bank would put untranslated English in front of French-speaking
@@ -152,7 +152,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public async Task Given_the_stand_in_When_text_is_translated_Then_it_comes_back_unchanged()
+    public async Task GivenStandIn_WhenTextIsTranslated_ThenComesBackUnchanged()
     {
         // Given
         var translator = new EchoTranslator();
@@ -166,7 +166,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public async Task Given_the_stand_in_When_one_language_is_translated_into_itself_Then_it_is_refused()
+    public async Task GivenStandIn_WhenOneLanguageIsTranslatedIntoItself_ThenRefused()
     {
         // Given — the stand-in still honours the contract it stands in for
         var translator = new EchoTranslator();
@@ -177,7 +177,7 @@ public class TranslationRegistrationTests
     }
 
     [Fact]
-    public void Given_a_null_argument_When_translation_is_registered_Then_it_is_refused()
+    public void GivenNullArgument_WhenTranslationIsRegistered_ThenRefused()
     {
         // Given / When / Then
         Should.Throw<ArgumentNullException>(() =>
@@ -206,7 +206,7 @@ public class TranslationRegistrationTests
 public class TranslationUnavailableExceptionTests
 {
     [Fact]
-    public void Given_no_message_When_it_is_created_Then_it_still_says_something_usable()
+    public void GivenNoMessage_WhenCreated_ThenStillSaysSomethingUsable()
     {
         // Given / When
         var cause = new TranslationUnavailableException();
@@ -216,7 +216,7 @@ public class TranslationUnavailableExceptionTests
     }
 
     [Fact]
-    public void Given_a_message_When_it_is_created_Then_the_message_is_kept()
+    public void GivenMessage_WhenCreated_ThenMessageIsKept()
     {
         // Given / When
         var cause = new TranslationUnavailableException("The translation service answered 403.");
@@ -227,7 +227,7 @@ public class TranslationUnavailableExceptionTests
     }
 
     [Fact]
-    public void Given_an_underlying_failure_When_it_is_wrapped_Then_the_cause_is_kept_but_not_the_message()
+    public void GivenUnderlyingFailure_WhenWrapped_ThenCauseIsKeptButNotMessage()
     {
         // Given
         var underlying = new HttpRequestException("connection refused to api.deepl.com with key abc:fx");

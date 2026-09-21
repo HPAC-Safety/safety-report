@@ -16,7 +16,7 @@ public class ConditionalQuestionTests
             key, type, $"Question {key}", $"Question {key} (fr)", At, isActive: true, dependsOnQuestionId: dependsOn);
 
     [Fact]
-    public void Given_a_parent_question_When_a_child_names_it_Then_the_child_records_the_dependency()
+    public void GivenParentQuestion_WhenChildNames_ThenChildRecordsDependency()
     {
         // Given
         var parent = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -30,7 +30,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_question_When_it_names_itself_Then_it_is_rejected()
+    public void GivenQuestion_WhenNamesItself_ThenRejected()
     {
         // Given
         var question = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -40,7 +40,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_publication_consent_When_it_is_made_conditional_Then_it_is_rejected()
+    public void GivenPublicationConsent_WhenMadeConditional_ThenRejected()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
@@ -53,7 +53,7 @@ public class ConditionalQuestionTests
     [Theory]
     [InlineData(QuestionType.Statement)]
     [InlineData(QuestionType.Group)]
-    public void Given_a_question_that_collects_no_answer_When_it_is_made_conditional_Then_it_is_rejected(QuestionType type)
+    public void GivenQuestionCollectsNoAnswer_WhenMadeConditional_ThenRejected(QuestionType type)
     {
         // Given
         var parent = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -64,7 +64,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_conditional_question_When_the_dependency_is_cleared_Then_a_new_revision_records_that()
+    public void GivenConditionalQuestion_WhenDependencyIsCleared_ThenNewRevisionRecords()
     {
         // Given
         var parent = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -79,7 +79,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_non_boolean_parent_When_the_bank_checks_the_dependency_Then_it_is_rejected()
+    public void GivenNonBooleanParent_WhenBankChecksDependency_ThenRejected()
     {
         // Given
         var parent = Ordinary("glider_make", QuestionType.ShortText);
@@ -92,7 +92,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_parent_that_does_not_exist_When_the_bank_checks_the_dependency_Then_it_is_rejected()
+    public void GivenParentDoesNotExist_WhenBankChecksDependency_ThenRejected()
     {
         // Given
         var parent = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -103,7 +103,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_deleted_parent_When_the_bank_checks_the_dependency_Then_it_is_rejected()
+    public void GivenDeletedParent_WhenBankChecksDependency_ThenRejected()
     {
         // Given
         var parent = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -115,7 +115,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_child_When_the_bank_is_asked_to_make_its_parent_depend_on_it_Then_the_cycle_is_rejected()
+    public void GivenChild_WhenBankIsAskedToMakeParentDependOn_ThenCycleIsRejected()
     {
         // Given
         var parent = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -127,7 +127,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_longer_chain_When_it_would_close_into_a_cycle_Then_it_is_rejected()
+    public void GivenLongerChain_WhenWouldCloseIntoCycle_ThenRejected()
     {
         // Given — first depends on nothing, second on first, third on second
         var first = Ordinary("first", QuestionType.YesNo);
@@ -140,7 +140,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_chain_that_does_not_close_When_the_bank_checks_it_Then_it_is_allowed()
+    public void GivenChainDoesNotClose_WhenBankChecks_ThenAllowed()
     {
         // Given
         var first = Ordinary("first", QuestionType.YesNo);
@@ -153,7 +153,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_question_that_is_its_own_parent_When_the_bank_checks_it_Then_it_is_rejected()
+    public void GivenQuestionIsOwnParent_WhenBankChecks_ThenRejected()
     {
         // Given
         var question = Ordinary("were_you_injured", QuestionType.YesNo);
@@ -164,7 +164,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_an_ordinary_question_When_it_is_authored_required_Then_the_revision_records_it()
+    public void GivenOrdinaryQuestion_WhenAuthoredRequired_ThenRevisionRecords()
     {
         // Given / When
         var question = Question.Create(
@@ -175,7 +175,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_publication_consent_When_it_is_revised_as_optional_Then_it_stays_required()
+    public void GivenPublicationConsent_WhenRevisedAsOptional_ThenStaysRequired()
     {
         // Given
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
@@ -191,7 +191,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_required_question_When_it_is_reordered_Then_the_required_state_carries_forward()
+    public void GivenRequiredQuestion_WhenReordered_ThenRequiredStateCarriesForward()
     {
         // Given
         var question = Question.Create(
@@ -212,7 +212,7 @@ public class ConditionalQuestionTests
     [InlineData(QuestionType.YesNo, false)]
     [InlineData(QuestionType.Time, false)]
     [InlineData(QuestionType.ShortText, false)]
-    public void Given_a_question_type_When_its_option_behaviour_is_read_Then_it_matches_the_contract(
+    public void GivenQuestionType_WhenOptionBehaviourIsRead_ThenMatchesContract(
         QuestionType type, bool acceptsOptionSet)
     {
         // Given
@@ -223,7 +223,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_an_autocomplete_question_When_it_is_created_with_options_Then_it_stores_and_accepts_them()
+    public void GivenAutocompleteQuestion_WhenCreatedWithOptions_ThenStoresAndAcceptsThem()
     {
         // Given / When
         var question = Question.Create(
@@ -238,7 +238,7 @@ public class ConditionalQuestionTests
     }
 
     [Fact]
-    public void Given_a_time_question_When_it_is_created_with_options_Then_it_is_rejected()
+    public void GivenTimeQuestion_WhenCreatedWithOptions_ThenRejected()
     {
         // Given / When / Then
         Should.Throw<DomainRuleViolationException>(() => Question.Create(

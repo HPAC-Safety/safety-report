@@ -13,7 +13,7 @@ public class MediaSnifferChainTests
     private readonly MediaSnifferChain _chain = MediaSnifferChain.Default();
 
     [Fact]
-    public async Task Given_a_heic_photo_When_the_chain_sniffs_it_Then_the_image_link_answers_before_the_video_link()
+    public async Task GivenHeicPhoto_WhenChainSniffs_ThenImageLinkAnswersBeforeVideoLink()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
@@ -28,7 +28,7 @@ public class MediaSnifferChainTests
     }
 
     [Fact]
-    public async Task Given_a_video_When_the_chain_sniffs_it_Then_a_later_link_still_gets_the_whole_stream()
+    public async Task GivenVideo_WhenChainSniffs_ThenLaterLinkStillGetsWholeStream()
     {
         // Given
         // The image link runs first and consumes the stream. If the chain did not
@@ -43,7 +43,7 @@ public class MediaSnifferChainTests
     }
 
     [Fact]
-    public async Task Given_a_jpeg_When_the_chain_sniffs_it_Then_it_is_recognised()
+    public async Task GivenJpeg_WhenChainSniffs_ThenRecognised()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.JpegWithGpsExif());
@@ -56,7 +56,7 @@ public class MediaSnifferChainTests
     }
 
     [Fact]
-    public async Task Given_something_no_link_recognises_When_the_chain_sniffs_it_Then_it_is_unrecognised()
+    public async Task GivenSomethingNoLinkRecognises_WhenChainSniffs_ThenUnrecognised()
     {
         // Given
         using var content = new MemoryStream(ExifFixtures.NotMedia());
@@ -69,7 +69,7 @@ public class MediaSnifferChainTests
     }
 
     [Fact]
-    public void Given_a_chain_with_no_links_When_it_is_built_Then_it_is_refused()
+    public void GivenChainWithNoLinks_WhenBuilt_ThenRefused()
     {
         // Given / When / Then
         // A chain that recognises nothing would reject every upload.

@@ -9,7 +9,7 @@ namespace HpacSafety.Core.Tests;
 public class LocaleTests
 {
     [Fact]
-    public void Given_an_official_locale_When_its_counterpart_is_asked_for_Then_it_is_the_other_one()
+    public void GivenOfficialLocale_WhenCounterpartIsAskedFor_ThenOtherOne()
     {
         // Given / When / Then
         Locale.EnCa.Counterpart.ShouldBe(Locale.FrCa);
@@ -17,7 +17,7 @@ public class LocaleTests
     }
 
     [Fact]
-    public void Given_an_unsupported_code_When_it_is_parsed_Then_it_is_refused()
+    public void GivenUnsupportedCode_WhenParsed_ThenRefused()
     {
         // Given / When
         static void Parsing() => Locale.Parse("es-MX");
@@ -30,7 +30,7 @@ public class LocaleTests
     [InlineData(ReportStatus.SummaryFailed, "summary_failed")]
     [InlineData(ReportStatus.PendingReview, "pending_review")]
     [InlineData(QuestionRole.ConsentPublish, "consent_publish")]
-    public void Given_a_domain_value_When_it_is_written_as_a_code_Then_it_round_trips(Enum value, string expected)
+    public void GivenDomainValue_WhenWrittenAsCode_ThenRoundTrips(Enum value, string expected)
     {
         // Given / When
         var code = value switch
@@ -45,7 +45,7 @@ public class LocaleTests
     }
 
     [Fact]
-    public void Given_an_unknown_code_When_it_is_parsed_Then_nothing_is_guessed()
+    public void GivenUnknownCode_WhenParsed_ThenNothingIsGuessed()
     {
         // Given / When
         var parsed = EnumCode.TryParse<ReportStatus>("mildly_startled", out var status);

@@ -11,7 +11,7 @@ namespace HpacSafety.Core.Tests;
 public class BlobUrlLifetimeTests
 {
     [Fact]
-    public void Given_a_lifetime_within_the_cap_When_it_is_validated_Then_it_is_returned_unchanged()
+    public void GivenLifetimeWithinCap_WhenValidated_ThenReturnedUnchanged()
     {
         // Given
         var lifetime = TimeSpan.FromMinutes(5);
@@ -24,7 +24,7 @@ public class BlobUrlLifetimeTests
     }
 
     [Fact]
-    public void Given_a_lifetime_beyond_the_cap_When_it_is_validated_Then_it_is_refused()
+    public void GivenLifetimeBeyondCap_WhenValidated_ThenRefused()
     {
         // Given
         var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromSeconds(1);
@@ -36,7 +36,7 @@ public class BlobUrlLifetimeTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void Given_a_lifetime_that_never_expires_or_has_expired_When_it_is_validated_Then_it_is_refused(int seconds)
+    public void GivenLifetimeNeverExpiresOrHasExpired_WhenValidated_ThenRefused(int seconds)
     {
         // Given
         var lifetime = TimeSpan.FromSeconds(seconds);
@@ -46,7 +46,7 @@ public class BlobUrlLifetimeTests
     }
 
     [Fact]
-    public void Given_the_cap_When_it_is_read_Then_it_is_measured_in_minutes_not_hours()
+    public void GivenCap_WhenRead_ThenMeasuredInMinutesNotHours()
     {
         // Given / When
         var maximum = BlobUrlLifetime.Maximum;

@@ -12,7 +12,7 @@ public class ReportTests
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
     [Fact]
-    public void Given_a_report_without_consent_When_it_is_approved_Then_it_is_not_publishable()
+    public void GivenReportWithoutConsent_WhenApproved_ThenNotPublishable()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -28,7 +28,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_consent_is_unanswered_When_submission_is_attempted_Then_it_is_refused()
+    public void GivenConsentIsUnanswered_WhenSubmissionIsAttempted_ThenRefused()
     {
         // Given — no default, no third state: the reporter must choose
         var report = new Report(Locale.EnCa, Now);
@@ -44,7 +44,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_consent_is_answered_no_When_submission_is_checked_Then_it_is_allowed()
+    public void GivenConsentIsAnsweredNo_WhenSubmissionIsChecked_ThenAllowed()
     {
         // Given — "no" is a complete answer; it only blocks publication
         var report = new Report(Locale.EnCa, Now);
@@ -59,7 +59,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_an_unreadable_consent_answer_When_it_is_recorded_Then_it_is_refused()
+    public void GivenUnreadableConsentAnswer_WhenRecorded_ThenRefused()
     {
         // Given
         var consent = ConsentQuestion();
@@ -73,7 +73,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_consent_and_an_approved_summary_When_publication_is_attempted_Then_it_succeeds()
+    public void GivenConsentAndApprovedSummary_WhenPublicationIsAttempted_ThenSucceeds()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -94,7 +94,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_the_summary_is_not_approved_When_publication_is_attempted_Then_it_is_blocked()
+    public void GivenSummaryIsNotApproved_WhenPublicationIsAttempted_ThenBlocked()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);
@@ -113,7 +113,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_an_answer_When_it_is_recorded_Then_it_references_the_revision_it_was_asked_under()
+    public void GivenAnswer_WhenRecorded_ThenReferencesRevisionAskedUnder()
     {
         // Given
         var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
@@ -132,7 +132,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_a_private_question_When_it_is_answered_Then_the_answer_snapshots_the_private_classification()
+    public void GivenPrivateQuestion_WhenAnswered_ThenAnswerSnapshotsPrivateClassification()
     {
         // Given
         var question = Question.Create("where", QuestionType.ShortText, "Where?", "Où ?", Now);
@@ -144,7 +144,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_an_unknown_option_code_When_it_is_answered_Then_it_is_refused()
+    public void GivenUnknownOptionCode_WhenAnswered_ThenRefused()
     {
         // Given
         var question = Question.Create(
@@ -160,7 +160,7 @@ public class ReportTests
     }
 
     [Fact]
-    public void Given_summarization_fails_When_the_failure_is_recorded_Then_the_report_still_reaches_a_human()
+    public void GivenSummarizationFails_WhenFailureIsRecorded_ThenReportStillReachesHuman()
     {
         // Given
         var report = new Report(Locale.EnCa, Now);

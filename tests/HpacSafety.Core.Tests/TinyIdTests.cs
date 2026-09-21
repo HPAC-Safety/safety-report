@@ -10,7 +10,7 @@ namespace HpacSafety.Core.Tests;
 public sealed class TinyIdTests
 {
     [Fact]
-    public void Given_a_new_identifier_When_it_is_read_Then_it_is_eleven_characters_of_the_alphabet()
+    public void GivenNewIdentifier_WhenRead_ThenElevenCharactersOfAlphabet()
     {
         // Given / When
         var id = TinyId.New();
@@ -21,7 +21,7 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_many_new_identifiers_When_they_are_compared_Then_none_of_them_repeat()
+    public void GivenManyNewIdentifiers_WhenTheyAreCompared_ThenNoneOfThemRepeat()
     {
         // Given / When
         var ids = Enumerable.Range(0, 10_000).Select(_ => TinyId.New()).ToList();
@@ -31,7 +31,7 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_the_alphabet_When_it_is_inspected_Then_it_is_sixty_four_distinct_url_safe_symbols()
+    public void GivenAlphabet_WhenInspected_ThenSixtyFourDistinctUrlSafeSymbols()
     {
         // Given / When / Then — sixty-four is what makes each character exactly
         // six bits, and what keeps the masking in New() uniform.
@@ -43,7 +43,7 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_an_identifier_written_down_When_it_is_read_back_Then_it_is_the_same_identifier()
+    public void GivenIdentifierWrittenDown_WhenReadBack_ThenSameIdentifier()
     {
         // Given
         var id = TinyId.New();
@@ -56,7 +56,7 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_two_identifiers_differing_only_in_case_When_they_are_compared_Then_they_are_not_the_same()
+    public void GivenTwoIdentifiersDifferingOnlyInCase_WhenTheyAreCompared_ThenTheyAreNotSame()
     {
         // Given / When / Then — the alphabet is case-sensitive, so folding case
         // would collapse two real identifiers into one.
@@ -71,7 +71,7 @@ public sealed class TinyIdTests
     [InlineData("has space!!")]
     [InlineData("plus+slash/")]
     [InlineData("équateur123")]
-    public void Given_text_that_is_not_an_identifier_When_it_is_parsed_Then_it_is_refused(string? candidate)
+    public void GivenTextIsNotIdentifier_WhenParsed_ThenRefused(string? candidate)
     {
         // Given / When / Then — a malformed identifier is unrepresentable, so
         // nothing downstream has to check.
@@ -80,7 +80,7 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_the_same_entropy_When_an_identifier_is_derived_twice_Then_it_is_the_same_identifier()
+    public void GivenSameEntropy_WhenIdentifierIsDerivedTwice_ThenSameIdentifier()
     {
         // Given — this is what keeps the seeded question bank idempotent.
         var entropy = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
@@ -90,7 +90,7 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_entropy_that_differs_only_beyond_the_eleventh_byte_When_identifiers_are_derived_Then_they_are_the_same()
+    public void GivenEntropyDiffersOnlyBeyondEleventhByte_WhenIdentifiersAreDerived_ThenTheyAreSame()
     {
         // Given / When / Then — only the first eleven bytes are read, and that
         // is stated rather than accidental.
@@ -99,14 +99,14 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_too_few_bytes_When_an_identifier_is_derived_Then_it_is_refused()
+    public void GivenTooFewBytes_WhenIdentifierIsDerived_ThenRefused()
     {
         // Given / When / Then
         Should.Throw<ArgumentException>(() => TinyId.FromEntropy(new byte[10]));
     }
 
     [Fact]
-    public void Given_a_default_identifier_When_it_is_inspected_Then_it_says_it_is_empty_rather_than_throwing()
+    public void GivenDefaultIdentifier_WhenInspected_ThenSaysEmptyRatherThanThrowing()
     {
         // Given
         TinyId id = default;
@@ -118,14 +118,14 @@ public sealed class TinyIdTests
     }
 
     [Fact]
-    public void Given_a_real_identifier_When_it_is_inspected_Then_it_is_not_empty()
+    public void GivenRealIdentifier_WhenInspected_ThenNotEmpty()
     {
         // Given / When / Then
         TinyId.New().IsEmpty.ShouldBeFalse();
     }
 
     [Fact]
-    public void Given_an_identifier_When_it_is_written_into_a_url_or_a_blob_key_Then_it_needs_no_escaping()
+    public void GivenIdentifier_WhenWrittenIntoUrlOrBlobKey_ThenNeedsNoEscaping()
     {
         // Given — #16 namespaces a blob key by report id.
         var id = TinyId.New();

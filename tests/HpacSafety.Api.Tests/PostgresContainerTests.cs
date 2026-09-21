@@ -26,7 +26,7 @@ public sealed class PostgresContainerTests : IAsyncLifetime
     public Task DisposeAsync() => _postgres.DisposeAsync().AsTask();
 
     [Fact]
-    public async Task Given_a_postgres_container_When_a_connection_is_opened_Then_it_succeeds()
+    public async Task GivenPostgresContainer_WhenConnectionIsOpened_ThenSucceeds()
     {
         // Given
         await using var connection = new NpgsqlConnection(_postgres.GetConnectionString());
@@ -39,7 +39,7 @@ public sealed class PostgresContainerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_postgres_container_When_the_server_version_is_read_Then_it_is_the_pinned_major_version()
+    public async Task GivenPostgresContainer_WhenServerVersionIsRead_ThenPinnedMajorVersion()
     {
         // Given
         await using var connection = new NpgsqlConnection(_postgres.GetConnectionString());

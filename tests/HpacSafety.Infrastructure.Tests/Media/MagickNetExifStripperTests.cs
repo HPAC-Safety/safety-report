@@ -39,7 +39,7 @@ public class MagickNetExifStripperTests
     private readonly MagickNetExifStripper _stripper = new(MediaType.All);
 
     [Fact]
-    public async Task Given_a_photo_with_GPS_EXIF_When_it_is_stripped_Then_no_metadata_profile_survives()
+    public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenNoMetadataProfileSurvives()
     {
         // Given
         var original = ExifFixtures.JpegWithGpsExif();
@@ -59,7 +59,7 @@ public class MagickNetExifStripperTests
     }
 
     [Fact]
-    public async Task Given_a_photo_with_GPS_EXIF_When_it_is_stripped_Then_the_APP1_segment_and_its_ascii_are_gone_from_the_bytes()
+    public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenAPP1SegmentAndAsciiAreGoneFromBytes()
     {
         // Given
         var original = ExifFixtures.JpegWithGpsExif();
@@ -84,7 +84,7 @@ public class MagickNetExifStripperTests
     }
 
     [Fact]
-    public async Task Given_a_heic_photo_with_GPS_EXIF_When_it_is_stripped_Then_the_derivative_is_a_jpeg_with_no_location_data()
+    public async Task GivenHeicPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsJpegWithNoLocationData()
     {
         // Given
         var original = ExifFixtures.HeicWithGpsExif();
@@ -111,7 +111,7 @@ public class MagickNetExifStripperTests
     }
 
     [Fact]
-    public async Task Given_a_photo_with_GPS_EXIF_When_it_is_stripped_Then_the_derivative_is_still_a_readable_image()
+    public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsStillReadableImage()
     {
         // Given
         using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
@@ -128,7 +128,7 @@ public class MagickNetExifStripperTests
     }
 
     [Fact]
-    public async Task Given_a_video_When_it_is_handed_to_the_stripper_Then_it_refuses_rather_than_writing_a_derivative()
+    public async Task GivenVideo_WhenHandedToStripper_ThenRefusesRatherThanWritingDerivative()
     {
         // Given
         using var source = new MemoryStream(ExifFixtures.Mp4());
@@ -143,7 +143,7 @@ public class MagickNetExifStripperTests
     }
 
     [Fact]
-    public async Task Given_bytes_that_are_not_the_declared_format_When_they_are_stripped_Then_it_throws_rather_than_writing_a_derivative()
+    public async Task GivenBytesAreNotDeclaredFormat_WhenTheyAreStripped_ThenThrowsRatherThanWritingDerivative()
     {
         // Given
         using var source = new MemoryStream(ExifFixtures.NotMedia());

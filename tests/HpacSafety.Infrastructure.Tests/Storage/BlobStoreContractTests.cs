@@ -55,7 +55,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     public virtual Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
-    public async Task Given_bytes_written_to_a_key_When_they_are_read_back_Then_they_are_unchanged()
+    public async Task GivenBytesWrittenToKey_WhenTheyAreReadBack_ThenTheyAreUnchanged()
     {
         // Given
         var content = Encoding.UTF8.GetBytes("the original bytes, kept exactly as uploaded");
@@ -69,7 +69,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_presigned_upload_url_into_quarantine_When_it_is_used_Then_the_bytes_land_there()
+    public async Task GivenPresignedUploadUrlIntoQuarantine_WhenUsed_ThenBytesLand()
     {
         // Given
         var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
@@ -85,7 +85,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_presigned_upload_url_When_it_is_reused_for_a_different_key_Then_the_upload_is_refused()
+    public async Task GivenPresignedUploadUrl_WhenReusedForDifferentKey_ThenUploadIsRefused()
     {
         // Given
         var url = await Store.CreateUploadUrlAsync(Quarantined, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
@@ -102,7 +102,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_presigned_read_url_When_it_is_reused_for_a_different_key_Then_the_read_is_refused()
+    public async Task GivenPresignedReadUrl_WhenReusedForDifferentKey_ThenReadIsRefused()
     {
         // Given
         using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
@@ -117,7 +117,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_lifetime_beyond_the_cap_When_a_read_url_is_requested_Then_it_is_refused()
+    public async Task GivenLifetimeBeyondCap_WhenReadUrlIsRequested_ThenRefused()
     {
         // Given
         var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromMinutes(1);
@@ -130,7 +130,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_photo_with_GPS_EXIF_When_it_is_ingested_Then_the_derivative_has_no_location_data()
+    public async Task GivenPhotoWithGPSEXIF_WhenIngested_ThenDerivativeHasNoLocationData()
     {
         // Given
         var original = ExifFixtures.JpegWithGpsExif();
@@ -166,7 +166,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_heic_photo_with_GPS_EXIF_When_it_is_ingested_Then_the_derivative_is_a_stripped_jpeg()
+    public async Task GivenHeicPhotoWithGPSEXIF_WhenIngested_ThenDerivativeIsStrippedJpeg()
     {
         // Given
         var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.heic");
@@ -185,7 +185,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_photo_with_GPS_EXIF_When_it_is_ingested_Then_the_original_bytes_are_retained_untouched()
+    public async Task GivenPhotoWithGPSEXIF_WhenIngested_ThenOriginalBytesAreRetainedUntouched()
     {
         // Given
         var original = ExifFixtures.JpegWithGpsExif();
@@ -205,7 +205,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_video_When_it_is_ingested_Then_it_is_retained_and_no_reviewer_link_can_be_issued()
+    public async Task GivenVideo_WhenIngested_ThenRetainedAndNoReviewerLinkCanBeIssued()
     {
         // Given
         var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
@@ -226,7 +226,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_an_ingested_photo_When_a_reviewer_link_is_requested_Then_only_the_derivative_is_issued()
+    public async Task GivenIngestedPhoto_WhenReviewerLinkIsRequested_ThenOnlyDerivativeIsIssued()
     {
         // Given
         await SeedQuarantineAsync(Quarantined, ExifFixtures.JpegWithGpsExif(), MediaType.Jpeg);
@@ -245,7 +245,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_file_claiming_image_jpeg_but_containing_something_else_When_it_is_ingested_Then_it_is_rejected()
+    public async Task GivenFileClaimingImageJpegButContainingSomethingElse_WhenIngested_ThenRejected()
     {
         // Given
         await SeedQuarantineAsync(Quarantined, ExifFixtures.NotMedia(), MediaType.Jpeg);
@@ -259,7 +259,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_png_uploaded_as_a_jpeg_When_it_is_ingested_Then_it_is_rejected()
+    public async Task GivenPngUploadedAsJpeg_WhenIngested_ThenRejected()
     {
         // Given
         await SeedQuarantineAsync(Quarantined, ExifFixtures.Png(), MediaType.Jpeg);
@@ -272,7 +272,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task Given_a_refused_upload_When_it_is_ingested_Then_nothing_is_promoted_out_of_quarantine()
+    public async Task GivenRefusedUpload_WhenIngested_ThenNothingIsPromotedOutOfQuarantine()
     {
         // Given
         await SeedQuarantineAsync(Quarantined, ExifFixtures.NotMedia(), MediaType.Jpeg);

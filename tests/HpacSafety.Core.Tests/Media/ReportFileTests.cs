@@ -18,7 +18,7 @@ public class ReportFileTests
         new(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
 
     [Fact]
-    public void Given_a_file_with_no_derivative_When_a_viewable_key_is_asked_for_Then_it_fails_closed()
+    public void GivenFileWithNoDerivative_WhenViewableKeyIsAskedFor_ThenFailsClosed()
     {
         // Given
         var file = NewFile();
@@ -31,7 +31,7 @@ public class ReportFileTests
     }
 
     [Fact]
-    public void Given_a_stripped_file_When_a_viewable_key_is_asked_for_Then_it_is_the_derivative()
+    public void GivenStrippedFile_WhenViewableKeyIsAskedFor_ThenDerivative()
     {
         // Given
         var file = NewFile();
@@ -47,7 +47,7 @@ public class ReportFileTests
     }
 
     [Fact]
-    public void Given_a_video_When_it_is_recorded_Then_it_stays_unviewable()
+    public void GivenVideo_WhenRecorded_ThenStaysUnviewable()
     {
         // Given
         // A video is retained with no derivative until #65. It must read as
@@ -60,7 +60,7 @@ public class ReportFileTests
     }
 
     [Fact]
-    public void Given_a_key_outside_the_stripped_compartment_When_it_is_recorded_as_a_derivative_Then_it_is_refused()
+    public void GivenKeyOutsideStrippedCompartment_WhenRecordedAsDerivative_ThenRefused()
     {
         // Given
         var file = NewFile();
@@ -72,7 +72,7 @@ public class ReportFileTests
     }
 
     [Fact]
-    public void Given_a_derivative_is_recorded_When_the_row_is_read_Then_both_facts_were_written_together()
+    public void GivenDerivativeIsRecorded_WhenRowIsRead_ThenBothFactsWereWrittenTogether()
     {
         // Given
         var file = NewFile();

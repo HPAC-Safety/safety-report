@@ -151,9 +151,7 @@
       "email": "Adresse courriel",
       "phone": "Numéro de téléphone",
       "checkbox": "Case à cocher",
-      "file_upload": "Téléversement de fichiers",
-      "statement": "Déclaration",
-      "group": "Titre de la section"
+      "file_upload": "Téléversement de fichiers"
     },
     "translate": {
       "action": "Traduire",

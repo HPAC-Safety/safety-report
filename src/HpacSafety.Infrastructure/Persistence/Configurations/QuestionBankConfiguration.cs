@@ -20,16 +20,15 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
         builder.Property(question => question.Role).IsRequired();
         builder.Property(question => question.IsSystem).IsRequired();
 
-        // Order, section, privacy, and active state live on the revision, not
+        // Order, privacy, and active state live on the revision, not
         // here — a referenced revision must preserve the complete question
-        // exactly as it was shown. Question.IsPrivate/DisplayOrder/SectionKey/
+        // exactly as it was shown. Question.IsPrivate/DisplayOrder/
         // IsActive are computed pass-throughs to CurrentRevision and are
         // therefore not mapped.
         builder.Ignore(question => question.IsPrivate);
         builder.Ignore(question => question.IsRequired);
         builder.Ignore(question => question.DependsOnQuestionId);
         builder.Ignore(question => question.DisplayOrder);
-        builder.Ignore(question => question.SectionKey);
         builder.Ignore(question => question.IsActive);
 
         // Unique among live questions only. A fork chain shares one key — the
@@ -75,7 +74,6 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
         builder.Property(revision => revision.IsPrivate).IsRequired();
         builder.Property(revision => revision.IsActive).IsRequired();
         builder.Property(revision => revision.DisplayOrder).IsRequired();
-        builder.Property(revision => revision.SectionKey).HasMaxLength(128);
 
         // A conditional question names the stable question, not a revision of
         // it, so rewording the parent cannot break the child. Restrict, not

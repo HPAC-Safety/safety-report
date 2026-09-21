@@ -30,7 +30,6 @@ interface StubQuestion {
 	isPrivate: boolean
 	isActive: boolean
 	displayOrder: number
-	sectionKey: string | null
 	dependsOnQuestionId: string | null
 	optionSetId: string | null
 	labelEn: string
@@ -55,7 +54,6 @@ function question(id: string, key: string, labelEn: string, type: string, displa
 		isPrivate: true,
 		isActive: true,
 		displayOrder,
-		sectionKey: null,
 		dependsOnQuestionId: null,
 		optionSetId: null,
 		labelEn,

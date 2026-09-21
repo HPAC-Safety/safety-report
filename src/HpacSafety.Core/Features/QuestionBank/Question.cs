@@ -20,13 +20,13 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// questions and answers directly. See <c>docs/data-and-persistence.md</c>.
 /// </para>
 /// <para>
-/// Order, section, privacy, active state, system state, required state, and the
+/// Order, privacy, active state, system state, required state, and the
 /// complete ordered option set all live on <see cref="QuestionRevision"/>, not
 /// here — a referenced revision has to preserve the complete question exactly
 /// as it was shown, and none of those facts can be reconstructed from the
 /// current state of a mutable question row. Every read here that looks
 /// question-scoped (<see cref="IsPrivate"/>, <see cref="DisplayOrder"/>,
-/// <see cref="SectionKey"/>, <see cref="IsActive"/>) reads through to
+/// <see cref="IsActive"/>) reads through to
 /// <see cref="CurrentRevision"/>, and every change to one of them is made by
 /// creating a new revision. See
 /// <c>features/question-bank-and-form/question-bank-and-form.feature</c>.
@@ -86,9 +86,6 @@ public class Question
     /// independently — see the class remarks.</summary>
     public int DisplayOrder => CurrentRevision.DisplayOrder;
 
-    /// <summary>The section this question is grouped under today, if any.</summary>
-    public string? SectionKey => CurrentRevision.SectionKey;
-
     /// <summary>Whether the public form asks this question today. Always false
     /// once the question itself is deleted, regardless of what the current
     /// revision says.</summary>
@@ -134,13 +131,12 @@ public class Question
         bool isPrivate = true,
         bool isActive = false,
         int displayOrder = 0,
-        string? sectionKey = null,
         TinyId? dependsOnQuestionId = null,
         TinyId? optionSetId = null,
         IReadOnlyList<QuestionOptionInput>? options = null) =>
         Create(
             key, type, labelEn, labelFr, at, isSystem: false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            role, isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId, options);
+            role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId, options);
 
     /// <summary>
     /// Creates the publication-consent question. The only question the system
@@ -169,7 +165,6 @@ public class Question
             isPrivate: true,
             isActive: true,
             displayOrder,
-            sectionKey: null,
             dependsOnQuestionId: null,
             optionSetId: null,
             options: null);
@@ -190,7 +185,6 @@ public class Question
         bool isPrivate,
         bool isActive,
         int displayOrder,
-        string? sectionKey,
         TinyId? dependsOnQuestionId,
         TinyId? optionSetId,
         IReadOnlyList<QuestionOptionInput>? options)
@@ -199,7 +193,7 @@ public class Question
         question._revisions.Add(
             QuestionRevision.Create(
                 question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-                isSystem, isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+                isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
                 options ?? [], at));
         return question;
     }
@@ -209,7 +203,7 @@ public class Question
     /// or changes the options of this question, producing one new complete
     /// bilingual revision. Answers already given keep pointing at the revision
     /// they were given under, so an old report still shows exactly what it was
-    /// actually asked, including the order, section, privacy, and active state
+    /// actually asked, including the order, privacy, and active state
     /// in force at the time.
     /// </summary>
     public QuestionRevision Revise(
@@ -219,7 +213,6 @@ public class Question
         bool isPrivate,
         bool isActive,
         int displayOrder,
-        string? sectionKey,
         DateTimeOffset at,
         string? helpTextEn = null,
         string? helpTextFr = null,
@@ -239,7 +232,7 @@ public class Question
         return ReviseInternal(
             new RevisionDraft(
                 type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-                isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+                isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
                 options ?? []),
             at);
     }
@@ -275,7 +268,6 @@ public class Question
         bool isPrivate,
         bool isActive,
         int displayOrder,
-        string? sectionKey,
         DateTimeOffset at,
         string? helpTextEn = null,
         string? helpTextFr = null,
@@ -288,13 +280,13 @@ public class Question
     {
         var draft = new RevisionDraft(
             type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-            isRequired, isPrivate, isActive, displayOrder, sectionKey, dependsOnQuestionId, optionSetId,
+            isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, optionSetId,
             options ?? []);
 
         if (!ForksWhenEdited(hasBeenAnswered))
         {
             Revise(
-                type, labelEn, labelFr, isPrivate, isActive, displayOrder, sectionKey, at,
+                type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
                 helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
                 optionSetId, options);
             return this;
@@ -314,11 +306,6 @@ public class Question
     /// field is carried forward unchanged from <see cref="CurrentRevision"/>.</summary>
     public QuestionRevision Reorder(int displayOrder, DateTimeOffset at) =>
         ReviseInternal(CurrentDraft() with { DisplayOrder = displayOrder }, at);
-
-    /// <summary>Moves the question into a section, or out of one, as a new
-    /// revision. Every other field is carried forward unchanged.</summary>
-    public QuestionRevision MoveToSection(string? sectionKey, DateTimeOffset at) =>
-        ReviseInternal(CurrentDraft() with { SectionKey = sectionKey }, at);
 
     /// <summary>
     /// Makes the question conditional on another question, or unconditional
@@ -406,7 +393,7 @@ public class Question
                 replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
                 draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
                 isSystem: false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-                draft.SectionKey, draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at));
+                draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at));
 
         Delete(at);
         return replacement;
@@ -419,7 +406,7 @@ public class Question
         var revision = QuestionRevision.Create(
             Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
             draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
-            IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder, draft.SectionKey,
+            IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
             draft.DependsOnQuestionId, draft.OptionSetId, draft.Options, at);
         _revisions.Add(revision);
         return revision;
@@ -438,7 +425,7 @@ public class Question
         return new RevisionDraft(
             current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
             current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
-            current.DisplayOrder, current.SectionKey, current.DependsOnQuestionId, current.OptionSetId,
+            current.DisplayOrder, current.DependsOnQuestionId, current.OptionSetId,
             CurrentOptions());
     }
 
@@ -473,7 +460,6 @@ public class Question
         bool IsPrivate,
         bool IsActive,
         int DisplayOrder,
-        string? SectionKey,
         TinyId? DependsOnQuestionId,
         TinyId? OptionSetId,
         IReadOnlyList<QuestionOptionInput> Options);

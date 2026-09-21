@@ -162,7 +162,6 @@ public sealed class QuestionBankSteps
             _snapshotted.IsPrivate,
             isActive: true,
             _snapshotted.DisplayOrder,
-            _snapshotted.SectionKey,
             Noon.AddHours(2),
             optionSetId: _optionSet!.Id,
             options: _optionSet.AsRevisionOptions());
@@ -431,7 +430,7 @@ public sealed class QuestionBankSteps
 
         _question.Revise(
             current.Type, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
-            current.DisplayOrder, current.SectionKey, Noon.AddHours(1), isRequired: isRequired);
+            current.DisplayOrder, Noon.AddHours(1), isRequired: isRequired);
     }
 
     private static DomainRuleViolationException? Record(Action act)

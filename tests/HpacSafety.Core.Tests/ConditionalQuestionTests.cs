@@ -50,19 +50,6 @@ public class ConditionalQuestionTests
         Should.Throw<DomainRuleViolationException>(() => consent.DependOn(other.Id, At.AddHours(1)));
     }
 
-    [Theory]
-    [InlineData(QuestionType.Statement)]
-    [InlineData(QuestionType.Group)]
-    public void GivenQuestionCollectsNoAnswer_WhenMadeConditional_ThenRejected(QuestionType type)
-    {
-        // Given
-        var parent = Ordinary("were_you_injured", QuestionType.YesNo);
-        var question = Ordinary("section", type);
-
-        // When / Then
-        Should.Throw<DomainRuleViolationException>(() => question.DependOn(parent.Id, At.AddHours(1)));
-    }
-
     [Fact]
     public void GivenConditionalQuestion_WhenDependencyIsCleared_ThenNewRevisionRecords()
     {
@@ -183,7 +170,7 @@ public class ConditionalQuestionTests
         // When
         var revision = consent.Revise(
             QuestionType.YesNo, "May we publish a summary?", "Pouvons-nous publier un résumé ?",
-            isPrivate: true, isActive: true, displayOrder: 0, sectionKey: null, At.AddHours(1), isRequired: false);
+            isPrivate: true, isActive: true, displayOrder: 0, At.AddHours(1), isRequired: false);
 
         // Then — consent cannot be made skippable, whatever the caller asks for
         revision.IsRequired.ShouldBeTrue();

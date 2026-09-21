@@ -118,14 +118,14 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
     {
         var report = new Report(Locale.EnCa, At);
-        var consent = await QuestionAsync(context, QuestionKey.ConsentPublish);
+        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+        context.Questions.Add(consent);
+        await context.SaveChangesAsync();
+
         report.Answer(consent, ["yes"], At);
         report.EnsureReadyForSubmission();
         return report;
     }
-
-    private static Task<Question> QuestionAsync(HpacSafetyDbContext context, string key) =>
-        context.Questions.Include(q => q.Revisions).SingleAsync(q => q.Key == key);
 
     /// <summary>
     /// A question the database has never seen, so an answer to it cannot be

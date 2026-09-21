@@ -19,14 +19,8 @@ public enum QuestionType
     Checkbox = 9,
     FileUpload = 10,
 
-    /// <summary>Copy shown to the reporter that collects no answer.</summary>
-    Statement = 11,
-
-    /// <summary>A heading that owns nested questions and collects no answer itself.</summary>
-    Group = 12,
-
     /// <summary>A local wall-clock time, with no date. Stored as <c>TimeOnly</c> — ADR-0035.</summary>
-    Time = 13,
+    Time = 11,
 
     /// <summary>
     /// A type-ahead over a known list. Domain-identical to
@@ -34,5 +28,5 @@ public enum QuestionType
     /// difference is only how many choices are practical to show at once. A
     /// province list is a picker; an aerodrome list is an autocomplete.
     /// </summary>
-    Autocomplete = 14,
+    Autocomplete = 12,
 }

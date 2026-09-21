@@ -24,7 +24,7 @@ public class QuestionForkTests
         var live = question.ApplyEdit(
             hasBeenAnswered: false, QuestionType.YesNo, "Did you need medical attention?",
             "Avez-vous eu besoin de soins médicaux ?", isPrivate: true, isActive: true,
-            displayOrder: 3, sectionKey: null, Now);
+            displayOrder: 3, Now);
 
         // Then
         live.ShouldBeSameAs(question);
@@ -44,7 +44,7 @@ public class QuestionForkTests
         var live = question.ApplyEdit(
             hasBeenAnswered: true, QuestionType.YesNo, "Did you need medical attention?",
             "Avez-vous eu besoin de soins médicaux ?", isPrivate: true, isActive: true,
-            displayOrder: 3, sectionKey: null, Now);
+            displayOrder: 3, Now);
 
         // Then
         live.ShouldNotBeSameAs(question);
@@ -114,7 +114,7 @@ public class QuestionForkTests
         var live = consent.ApplyEdit(
             hasBeenAnswered: true, QuestionType.YesNo, "May we publish an anonymized version?",
             "Pouvons-nous publier une version rendue anonyme ?", isPrivate: true, isActive: true,
-            displayOrder: 0, sectionKey: null, Now);
+            displayOrder: 0, Now);
 
         // Then
         live.ShouldBeSameAs(consent);
@@ -151,5 +151,5 @@ public class QuestionForkTests
         question.ApplyEdit(
             hasBeenAnswered, question.Type, $"Were you injured? ({Guid.NewGuid():N})",
             "Avez-vous été blessé ?", isPrivate: true, isActive: true, displayOrder: 3,
-            sectionKey: null, Now);
+            Now);
 }

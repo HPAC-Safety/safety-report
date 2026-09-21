@@ -86,7 +86,7 @@ public class QuestionTests
         // When
         question.Revise(
             QuestionType.LongText, "Describe the damage", "Décrivez les dommages",
-            question.IsPrivate, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
+            question.IsPrivate, question.IsActive, question.DisplayOrder, Now.AddDays(1));
 
         // Then
         question.Revisions.Count.ShouldBe(2);
@@ -104,7 +104,7 @@ public class QuestionTests
         // When
         var retyping = () => consent.Revise(
             QuestionType.LongText, "May we publish?", "Pouvons-nous publier ?",
-            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, consent.SectionKey, Now);
+            consent.IsPrivate, consent.IsActive, consent.DisplayOrder, Now);
 
         // Then — its wording can change; its type cannot
         retyping.ShouldThrow<DomainRuleViolationException>();
@@ -238,7 +238,7 @@ public class QuestionTests
 
         // When
         var revised = question.Revise(
-            question.Type, "Where?", "Où ?", isPrivate: false, question.IsActive, question.DisplayOrder, question.SectionKey, Now.AddDays(1));
+            question.Type, "Where?", "Où ?", isPrivate: false, question.IsActive, question.DisplayOrder, Now.AddDays(1));
 
         // Then — the old revision, already possibly referenced by an answer, is unchanged
         original.IsPrivate.ShouldBeTrue();

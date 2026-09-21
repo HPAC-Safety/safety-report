@@ -73,7 +73,6 @@ Feature: Report submission
       | a duplicate or out-of-range file index                         |
       | a files part that is never referenced by any answer            |
       | a files part referenced by more than one answer                |
-      | an answer entry for a statement or group revision              |
       | an unknown question_revision_id                                |
       | a question_revision_id for a deleted revision                  |
       | no explicit answer to the consent_publish revision             |

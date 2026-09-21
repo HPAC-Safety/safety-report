@@ -43,7 +43,7 @@ public static class QuestionBankSeedWriter
     public static void Write(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.Sql(Sql());
+        AppendIfAny(migrationBuilder, Sql());
     }
 
     /// <summary>
@@ -54,7 +54,19 @@ public static class QuestionBankSeedWriter
     public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        migrationBuilder.Sql(Sql(legacySensitivitySchema: true));
+        AppendIfAny(migrationBuilder, Sql(legacySensitivitySchema: true));
+    }
+
+    /// <summary>
+    /// <see cref="MigrationBuilder.Sql(string, bool)"/> refuses an empty
+    /// string, which an empty <see cref="QuestionBankSeed"/> produces.
+    /// </summary>
+    private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
+    {
+        if (sql.Length > 0)
+        {
+            migrationBuilder.Sql(sql);
+        }
     }
 
     /// <summary>
@@ -80,8 +92,8 @@ public static class QuestionBankSeedWriter
                 AppendGuardedInsert(
                     sql,
                     "questions",
-                    ["id", "key", "is_system", "role", "sensitivity", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
-                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                    ["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
+                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
                     guardColumn: "id",
                     guardValue: Id(questionId));
             }
@@ -90,8 +102,8 @@ public static class QuestionBankSeedWriter
                 AppendGuardedInsert(
                     sql,
                     "questions",
-                    ["id", "key", "is_system", "role", "is_private", "display_order", "section_key", "is_active", "created_at", "deleted_at"],
-                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), StrOrNull(question.SectionKey), Bool(true), Timestamp(at), "NULL"],
+                    ["id", "key", "is_system", "role", "is_private", "display_order", "is_active", "created_at", "deleted_at"],
+                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
                     guardColumn: "id",
                     guardValue: Id(questionId));
             }

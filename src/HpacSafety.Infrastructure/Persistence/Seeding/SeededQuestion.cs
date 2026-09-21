@@ -14,7 +14,6 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// <param name="IsPrivate">Whether the answer is private redaction context. Immutable after creation.</param>
 /// <param name="IsRequired">Whether the form refuses to submit without an answer.</param>
 /// <param name="IsSystem">Whether the question may be deleted, deactivated, or retyped.</param>
-/// <param name="SectionKey">The key of the group question this sits inside, if any.</param>
 /// <param name="LabelEn">The English label, the source wording.</param>
 /// <param name="LabelFr">The French label, machine-translated and unreviewed.</param>
 /// <param name="HelpEn">The English help text, the source wording.</param>
@@ -27,7 +26,6 @@ public sealed record SeededQuestion(
     bool IsPrivate,
     bool IsRequired,
     bool IsSystem,
-    string? SectionKey,
     string LabelEn,
     string LabelFr,
     string? HelpEn,

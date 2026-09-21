@@ -24,6 +24,13 @@ blending a client-observable assertion with a server-authoritative one
 splits into an `@ui` scenario and an untagged one rather than carrying both
 concerns together.
 
+Authentication fixtures mint a real token through the booted host rather than
+faking a `ClaimsPrincipal`, so the test exercises the validation production
+runs. Cover the three-role matrix at every admin endpoint, the refusal of an
+unsigned, foreign-key-signed, tampered, expired, wrong-audience or `alg: none`
+token, and the assertion that a stored report holds no reference to the member
+who filed it.
+
 Test observable contracts:
 
 - complete question revisions are immutable; latest-revision selection cannot

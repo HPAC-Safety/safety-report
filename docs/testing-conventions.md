@@ -12,10 +12,14 @@ prose.
 
 Prioritize boundaries described in
 [`testing-and-quality.md`](testing-and-quality.md): immutable
-question selection, multipart mapping/atomicity, Turnstile/rate limits, one-call
-bilingual output, role replacement with no identity fragments, attachment
-derivatives/private documents, authentication/audit, pair approval, soft
-deletion, and exact public DTO allowlists.
+question selection, multipart mapping/atomicity, token validation and rate
+limits, one-call bilingual output, role replacement with no identity fragments,
+attachment derivatives/private documents, the three-role authorization matrix,
+audit, pair approval, soft deletion, and exact public DTO allowlists.
+
+Authentication fixtures mint a real development-issuer token through the booted
+host rather than faking a principal, so a test exercises the same validation
+production runs.
 
 Common commands:
 

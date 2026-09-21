@@ -37,8 +37,14 @@ write the summary manually.
 | `report_files` | Blob keys for uploads, an `AttachmentKind`, and (once wired up) the file-upload answer they belong to. |
 | `summaries` | **One row per report**, holding `ai_summary_en`, `ai_summary_fr`, shared model/prompt provenance, and one approval covering the pair. |
 | `outbox_messages` | Work to be done, written in the same transaction as the report. |
-| `admin_users` | The authorization allowlist. Authentication is upstream; roles are ours. |
-| `audit_log` | Who approved, edited, or rejected what, and when. The one table with no `Deleted` column — it is append-only. |
+| `audit_log` | Which token subject approved, edited, or rejected what, and when. The one table with no `Deleted` column — it is append-only. |
+
+**There is no user table.** Identity and role come from claims on a validated
+bearer token, per request, and are never persisted
+([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+An approver or audit actor is an opaque `varchar(256)` subject with no foreign
+key. The three roles are `User`, `SafetyOfficer`, and `Administrator`; a report
+records nothing about the member who filed it.
 
 Every table above except `audit_log` has a `Deleted timestamptz` column and a
 default live-row query filter. See ADR-0040.

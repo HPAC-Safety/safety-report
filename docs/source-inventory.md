@@ -20,11 +20,11 @@ identity where source text does not exist.
 
 ### Moderation and outbox
 
-- [src/HpacSafety.Core/Features/Moderation/AdminRole.cs](../src/HpacSafety.Core/Features/Moderation/AdminRole.cs) — SafetyOfficer/Administrator roles; retain exactly.
-- [src/HpacSafety.Core/Features/Moderation/AdminUser.cs](../src/HpacSafety.Core/Features/Moderation/AdminUser.cs) — allowlist aggregate with role/active flag; add universal `Deleted` behavior and preserve credential-free identity.
+- [src/HpacSafety.Core/Features/Moderation/AdminRole.cs](../src/HpacSafety.Core/Features/Moderation/AdminRole.cs) — SafetyOfficer/Administrator roles; **delete**, replaced by a three-value `MemberRole` read from a token claim (ADR-0064).
+- [src/HpacSafety.Core/Features/Moderation/AdminUser.cs](../src/HpacSafety.Core/Features/Moderation/AdminUser.cs) — allowlist aggregate with role/active flag; **delete** with its table. This system stores no user records (ADR-0065).
 - [src/HpacSafety.Core/Features/Moderation/AuditAction.cs](../src/HpacSafety.Core/Features/Moderation/AuditAction.cs) — stable audit action codes; expand for target revisions, pair review, publication, and deletion.
 - [src/HpacSafety.Core/Features/Moderation/AuditLogEntry.cs](../src/HpacSafety.Core/Features/Moderation/AuditLogEntry.cs) — immutable actor/action/target record; retain and intentionally do not add `Deleted`.
-- [src/HpacSafety.Core/Features/Moderation/IMemberAuthenticator.cs](../src/HpacSafety.Core/Features/Moderation/IMemberAuthenticator.cs) — upstream identity port; retain for HPAC credential-proxy and later OIDC/OAuth adapters.
+- [src/HpacSafety.Core/Features/Moderation/IMemberAuthenticator.cs](../src/HpacSafety.Core/Features/Moderation/IMemberAuthenticator.cs) — upstream identity port; **delete**. The API validates a token the provider already signed rather than calling a membership system (ADR-0064).
 - [src/HpacSafety.Core/Features/Outbox/OutboxMessage.cs](../src/HpacSafety.Core/Features/Outbox/OutboxMessage.cs) — identifier-only durable work with retries/poison threshold; retain concept, add claims and soft deletion.
 
 ### Question bank
@@ -82,7 +82,7 @@ identity where source text does not exist.
 - [src/HpacSafety.Core/IEmailSender.cs](../src/HpacSafety.Core/IEmailSender.cs) — unused outbound-email port; remove.
 - [src/HpacSafety.Core/IFieldCipher.cs](../src/HpacSafety.Core/IFieldCipher.cs) — application encryption port; remove.
 - [src/HpacSafety.Core/ITranslator.cs](../src/HpacSafety.Core/ITranslator.cs) — runtime summary translation port; remove.
-- [src/HpacSafety.Core/ITurnstileVerifier.cs](../src/HpacSafety.Core/ITurnstileVerifier.cs) — anti-bot boundary; retain and implement at final submission.
+- [src/HpacSafety.Core/ITurnstileVerifier.cs](../src/HpacSafety.Core/ITurnstileVerifier.cs) — anti-bot boundary; **delete**. The member bearer token is the abuse control on submission (ADR-0068).
 - [src/HpacSafety.Core/Locale.cs](../src/HpacSafety.Core/Locale.cs) — exact `en-CA`/`fr-CA` value; retain.
 - [src/HpacSafety.Core/MediaCompartment.cs](../src/HpacSafety.Core/MediaCompartment.cs) — quarantine/original/derivative compartments; rename/generalize for attachments while preserving private boundaries.
 - [src/HpacSafety.Core/TinyId.cs](../src/HpacSafety.Core/TinyId.cs) — validated opaque compact identifier; retain.
@@ -104,7 +104,7 @@ identity where source text does not exist.
 
 ### Persistence
 
-- [src/HpacSafety.Infrastructure/Persistence/Configurations/ModerationConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/ModerationConfiguration.cs) — admin/audit/outbox mappings; revise for Deleted filters/constraints and immutable audit exception.
+- [src/HpacSafety.Infrastructure/Persistence/Configurations/ModerationConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/ModerationConfiguration.cs) — audit/outbox mappings; drop the `admin_users` mapping and its foreign keys, and revise for Deleted filters/constraints and the immutable audit exception.
 - [src/HpacSafety.Infrastructure/Persistence/Configurations/QuestionBankConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/QuestionBankConfiguration.cs) — current normalized question/version/translation mappings; replace with complete-revision mappings.
 - [src/HpacSafety.Infrastructure/Persistence/Configurations/ReportConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/ReportConfiguration.cs) — current report/answer/aircraft/file/locale-summary mappings and encryption converters; simplify to target records and managed encryption only.
 - [src/HpacSafety.Infrastructure/Persistence/Conventions/SnakeCaseNames.cs](../src/HpacSafety.Infrastructure/Persistence/Conventions/SnakeCaseNames.cs) — deterministic snake_case relational naming; retain.
@@ -124,7 +124,7 @@ identity where source text does not exist.
 - [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.cs) — replaces sensitivity with current question privacy snapshot; migrate forward to revision-owned privacy.
 - [src/HpacSafety.Infrastructure/Persistence/Migrations/HpacSafetyDbContextModelSnapshot.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/HpacSafetyDbContextModelSnapshot.cs) — generated current model snapshot; regenerate from target model.
 - [src/HpacSafety.Infrastructure/Persistence/README.md](../src/HpacSafety.Infrastructure/Persistence/README.md) — aligned canonical-schema summary with explicit legacy migration gaps.
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs) — environment-guarded synthetic local admin SQL; retain only for development.
+- [src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs) — environment-guarded synthetic local admin SQL; **frozen history**. It cannot be deleted because a committed migration calls it, but the table it writes to is dropped by a later migration, so it is inert (ADR-0065).
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeed.cs) — Typeform-derived bilingual seed definitions; convert to initial complete revisions.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeedWriter.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeedWriter.cs) — migration SQL writer for current normalized schema; rewrite for target complete revisions.
 - [src/HpacSafety.Infrastructure/Persistence/Seeding/SeedIds.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/SeedIds.cs) — deterministic seed TinyIds; retain.
@@ -156,7 +156,7 @@ identity where source text does not exist.
 ## Web — 21 paths
 
 - [src/web/README.md](../src/web/README.md) — aligned static-site, form-continuity, accessibility, and current-page gap summary.
-- [src/web/admin/.gitkeep](../src/web/admin/.gitkeep) — empty admin-site placeholder; replace with sign-in/review/question/allowlist static pages and modules.
+- [src/web/admin/.gitkeep](../src/web/admin/.gitkeep) — empty admin-site placeholder; **remove**. The admin surface is a route on the one React site (ADR-0048), and there is no allowlist screen.
 - [src/web/assets/README.md](../src/web/assets/README.md) — asset provenance/pinning guidance; retain.
 - [src/web/assets/fonts/OFL-Aleo.txt](../src/web/assets/fonts/OFL-Aleo.txt) — Aleo SIL Open Font License; retain with font.
 - [src/web/assets/fonts/OFL-Poppins.txt](../src/web/assets/fonts/OFL-Poppins.txt) — Poppins SIL Open Font License; retain with font.

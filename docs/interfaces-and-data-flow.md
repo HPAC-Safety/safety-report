@@ -11,26 +11,36 @@ capability boundaries are normative.
 |---|---|---|
 | `GET /health` | Service health for platform probes | Minimal health response; no dependency details publicly exposed. |
 | `GET /api/v1/questions/current` | Load the ordered current form | Bilingual question-revision DTO, cache validator/version allowed. |
-| `POST /api/v1/reports` | Submit final report JSON plus optional attachments | `202` with opaque report ID/status. Turnstile and rate limited. |
+| `POST /api/v1/reports` | Submit final report JSON plus optional attachments | `202` with opaque report ID/status. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
 | `GET /api/v1/public/reports` | Paginated public feed | Only publishable public DTO fields. |
 | `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. |
 
 There are no draft, upload-slot, blob-proxy, public-answer, or publication-
 channel endpoints.
-Before `POST /api/v1/reports`, the reporter-facing API is read-only: unfinished
-answers remain browser-local and create no report, attachment, reserved ID, or
-database state.
+Before `POST /api/v1/reports`, the reporter-facing API is read-only:
+unfinished answers remain browser-local and create no report, attachment,
+reserved ID, or database state.
+
+### Authentication API
+
+| Capability | Authorization |
+|---|---|
+| Read the authentication configuration, including whether a third-party provider is offered | Anonymous; present in every environment. |
+| Exchange development credentials for a signed token | Anonymous, **Development only** — the route does not exist elsewhere. Generic failure. |
+| Inspect the current identity's subject and role | Any authenticated member. |
 
 ### Admin API
 
 | Capability | Authorization |
 |---|---|
-| Sign in/out and inspect current session | Allowlisted member; login itself is throttled and generic on failure. |
 | List review work and read report detail | SafetyOfficer or Administrator. |
-| Edit both summary texts; approve/reject/publish/delete a report | SafetyOfficer or Administrator; CSRF protected and audited. |
+| Edit both summary texts; approve/reject/publish/delete a report | SafetyOfficer or Administrator; audited. No CSRF protection is needed — a bearer token carries no ambient authority. |
 | Obtain a short-lived attachment URL | SafetyOfficer or Administrator; safe image/video derivatives or validated private document originals only. |
 | List/create/delete eligible question revisions | Administrator; every write audited. |
-| List/add/change/revoke/delete admin allowlist entries | Administrator; every write audited. |
+| Manage shared choice lists and machine-translate question wording | Administrator; every write audited. |
+
+There is no allowlist-management endpoint. Roles come from the token, and
+access is granted or revoked at the identity provider.
 
 Admin mutation routes use explicit command DTOs and concurrency tokens where a
 stale edit could overwrite another officer's work. Error bodies are localized
@@ -40,20 +50,23 @@ problem details with stable machine codes and no secrets/private values.
 
 Keep ports only at real external boundaries:
 
-- a member authenticator for the current HPAC adapter and future standards-based
-  adapter;
 - a model summarizer accepting the partitioned DTO and returning the strict
   bilingual draft plus provenance;
 - a private blob store supporting bounded stream write/read and short-lived
   derivative read access;
 - an attachment detector/processor for controlled image/video derivatives and
-  document validation;
-- a Turnstile verifier; and
+  document validation; and
 - `TimeProvider` for testable expiry, retries, and lifecycle decisions.
 
+**Authentication needs no port.** The API does not call the identity provider;
+it validates a token the provider already signed, which is framework
+middleware reading two claims. A port would name a boundary that is not
+crossed at request time
+([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+
 Do not keep ports whose only reason was a removed feature: field cipher,
-translator, PII auditor, publication channel, email sender, upload-URL slot, or
-specialized aircraft processing. A concrete implementation may be used directly
+translator, PII auditor, publication channel, email sender, upload-URL slot,
+member authenticator, Turnstile verifier, or specialized aircraft processing. A concrete implementation may be used directly
 when no domain boundary or second adapter exists.
 
 ## Submission-to-review data flow
@@ -99,9 +112,9 @@ documents into the summary flow.
 Structured logs may contain request correlation ID, opaque report/work IDs,
 route, result code, duration, attempt number, safe attachment type, and stable error
 code. They must not contain DTO bodies, answers, question copy when it embeds
-answers, private context, model prompts/responses, credentials, session/CSRF/
-Turnstile tokens, IP addresses beyond ephemeral security processing, client
-filenames, or object URLs.
+answers, private context, model prompts/responses, credentials, bearer tokens,
+the submitting member's subject, IP addresses beyond ephemeral security
+processing, client filenames, or object URLs.
 
 Metrics aggregate counts and latency. Alerts identify stuck/failed work by
 opaque ID so authorized operators can investigate in the application.

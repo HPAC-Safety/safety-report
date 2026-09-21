@@ -39,7 +39,7 @@ The report language is exactly `en-CA` or `fr-CA`.
 
 The API performs, in order:
 
-1. request-size, multipart-shape, trusted-client-IP, rate-limit, and Turnstile
+1. request-size, multipart-shape, trusted-client-IP, rate-limit, and bearer-token
    checks;
 2. DTO syntax, locale, duplicate, and count checks;
 3. revision lookup including soft-deleted rows;
@@ -67,8 +67,27 @@ The first target version does not add a durable idempotency subsystem. If
 production evidence shows duplicate reports are material, an idempotency key
 can be added as a focused change.
 
-## Administrative authentication
+## Authentication, and what is not recorded
 
-Administrative authentication has separate, stricter throttling and lockout
-rules than reporter submission; see
+Submitting requires a signed-in HPAC member. Every role may submit —
+membership is what the endpoint requires, not privilege
+([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+
+**The identity is then discarded.** No report, answer, file, consent
+projection, outbox message, audit entry, or log line records who submitted.
+There is no column, join table, or hash linking a report to the member who
+filed it, so "who filed this?" has no answer to retrieve. The form tells the
+reporter so, in their own language, because a guarantee they cannot see does
+not change what they are willing to write down.
+
+This also means a reporter cannot retrieve, amend, or withdraw a submission,
+and abuse cannot be attributed after the fact. Both are accepted costs.
+
+Turnstile is not used. The member token is the abuse control, alongside per-IP
+rate limiting
+([ADR-0068](../../docs/decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
+There is no per-reporter throttle, because a per-reporter throttle would mean
+identifying the reporter.
+
+Administrative operations are authorized by role on the same token; see
 [moderation, authentication, and publication](../moderation-authentication-and-publication/moderation-authentication-and-publication.feature).

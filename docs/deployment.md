@@ -6,7 +6,7 @@ The target deployment is a small AWS environment in `ca-central-1`:
 - RDS PostgreSQL with backups;
 - private S3 attachment storage;
 - separate public and admin static S3/CloudFront sites;
-- Secrets Manager, Turnstile configuration, explicit migrations, and focused
+- Secrets Manager, identity-provider configuration, explicit migrations, and focused
   alerts for failed or stuck Worker work.
 
 GitHub Actions assumes AWS roles through OIDC. Do not create long-lived AWS

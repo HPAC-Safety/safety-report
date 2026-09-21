@@ -79,6 +79,12 @@ as reproducible as the Terraform it enables.
 - Terraform creates Secrets Manager **entries**, never their **values**. A value
   in a `.tfvars` file ends up in state, and state is a file in S3 readable by
   more people than should see an API key.
+- The identity provider's signing configuration and client secret
+  ([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)) are
+  ordinary Secrets Manager entries under this rule — the entry is created by
+  Terraform, the value never is. The development signing key is not a secret at
+  all; it is a throwaway committed to `appsettings.Development.json`
+  ([ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
 - **One deliberate exception:** `cloudflare_turnstile_widget` exposes the
   widget's secret as an attribute, so managing the widget in Terraform puts that
   secret in state. It is accepted because a leaked Turnstile secret is contained

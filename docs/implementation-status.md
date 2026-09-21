@@ -8,14 +8,14 @@ substantially enforce the target behavior, not merely that an issue was closed.
 
 | Capability | Main on the audit baseline | Target disposition |
 |---|---|---|
-| API host | ASP.NET Core host with `/health` and the admin question-authoring endpoints under `/api/admin/` (#180); unmapped routes return 404. Those endpoints sit behind one honest session-header stub standing in for ADR-0005. | Keep host; build the remaining public/admin API and replace the stub with the real authenticator. |
+| API host | ASP.NET Core host with `/health` and the admin question-authoring endpoints under `/api/admin/` (#180); unmapped routes return 404. Those endpoints sit behind one honest session-header stub that proves nothing about who is asking. | Keep host; build the remaining public/admin API and replace the stub with JWT bearer validation and role policies (ADR-0064). |
 | Worker host | Long-running service that logs startup; no outbox loop or handlers. | Implement outbox claims, one summary handler, and per-attachment handlers. |
 | Question bank | Implemented, and now authorable. `Question` is a stable key/role/system-flag shell; every order/section/privacy/active/required/type/copy/option/dependency fact lives on an immutable `QuestionRevision`, selected by highest revision number. Revising creates a new revision rather than mutating fields. A revision may be conditional on a yes/no question (ADR-0060) and may snapshot a shared `option_set` (ADR-0058). | Keep. |
 | Form query and UI | Seed/form specification exists; public web directory is empty. | Implement latest-revision-per-key filtering and bilingual static form without resurrecting inactive/deleted questions. |
 | Required behavior | Implemented. `Report.Project` only reads `QuestionRole.ConsentPublish`; every other answer is stored as data with no typed projection. `is_required` is now authored per revision and consent is forced required (ADR-0061); **submission-time enforcement of a required ordinary question is not built yet** and lands with the reporter-facing form. | Build the enforcement with the public form. |
 | Submission | Domain aggregate and transactional persistence primitives exist; no report endpoint. The pre-submit upload-slot entity was removed (#100); `IBlobStore.CreateUploadUrlAsync` remains as a port method but nothing in Core calls it outside the removed slot flow. | Implement one finalized multipart endpoint, accept known superseded revisions, stream attachments, and atomically enqueue work. |
 | Browser continuity | Not implemented. | Same-browser answer/revision persistence for 15 days; never restore files or write unfinished report state to the API, database, or object storage. |
-| Abuse prevention | Turnstile port and Terraform resources exist; no endpoint enforcement/rate limit. | Verify Turnstile and trusted-IP rate limits on public submit; separate admin lockout. |
+| Abuse prevention | A Turnstile port and Terraform resources exist but are no longer the design; no endpoint enforcement or rate limit. | Require a member bearer token on submit and enforce trusted-IP rate limits. Delete the Turnstile port and its infrastructure (ADR-0068). |
 | Summarization DTO | Partitioned `report_content`/`private_context` Core model and tests exist. | Keep concept; query exact revision labels/answers and exclude consent and all attachments. |
 | AI orchestration | No Worker execution exists. Issue #78 removed the legacy active prompt set and added one aligned Worker-owned prompt; #100 removed the retired `IPiiAuditor`, `IPublicationChannel`, `ITranslator`, and `IEmailSender` ports, leaving `ISummarizer`/`SummarizationInput` as the one boundary. | One Worker prompt, one call, strict bilingual JSON, bounded retry, one pair row. Implement the call. |
 | Aircraft handling | Implemented. `ReportAircraft` and the typed `Discipline`/`InjurySeverity`/`PilotRating`/`Province`/`TimeOfDay` enums were deleted (#100); aircraft responses are ordinary `ReportAnswer` rows against revision-bound questions like any other. | Keep. |
@@ -24,8 +24,8 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Media videos | MP4/QuickTime are detected and retained but deliberately have no reviewer derivative. | Add metadata-safe remux/transcode derivative; fail closed. |
 | Documents | No PDF, DOC, DOCX, RTF, Markdown, text, or ODT support. | Validate/scan and retain private originals; authorized forced download only; never extract, anonymize, send to LLM, or publish. |
 | Blob access | Filesystem/S3 stores implement pre-signed upload/read URLs; reviewer link is derivative-only. The pre-submit `MediaUploadSlot` entity was removed (#100), but `IBlobStore.CreateUploadUrlAsync` still exists on the port with no current caller. | Confirm the finalized multipart endpoint streams uploads server-side rather than reintroducing a pre-signed PUT flow; keep private streaming and short-lived reads for verified derivatives/private documents. |
-| Authentication | `IMemberAuthenticator`, roles, admin allowlist entity, and audit entity exist; no API adapter/session flow. | Implement hardcoded-TLS HPAC adapter with kill switch, secure cookie/CSRF/lockout; preserve adapter seam. |
-| Review/admin web | `/admin/questions` is a working authoring screen (#180) — create, edit, reorder by pointer or keyboard, options, shared lists, conditions, and Translate. `/admin/choice-lists` (#184) curates the shared lists and flags reporter-added choices. The review queue and the rest of `/admin` remain placeholders. | Implement queue/detail, pair editing/approval, safe attachment access, allowlist, deletion. |
+| Authentication | `IMemberAuthenticator`, two roles, the `admin_users` allowlist entity, and the audit entity exist; nothing reads any of them, and the web session is a `sessionStorage` marker. | Delete the port, the allowlist, and the roles enum; add three role claims, JWT bearer validation, role policies, and a development token issuer (ADR-0064, ADR-0065, ADR-0066). |
+| Review/admin web | `/admin/questions` is a working authoring screen (#180) — create, edit, reorder by pointer or keyboard, options, shared lists, conditions, and Translate. `/admin/choice-lists` (#184) curates the shared lists and flags reporter-added choices. The review queue and the rest of `/admin` remain placeholders, and no screen is role-aware. | Implement queue/detail, pair editing/approval, safe attachment access, deletion, and role-aware chrome. There is no allowlist screen to build. |
 | Publication | Domain currently checks consent, report state, and separately approved locale rows; no public endpoints/UI. Publication-channel abstraction exists. | Implement minimal feed/detail allowlist over one approved pair; remove external-channel abstraction. |
 | Soft deletion | Implemented. Every entity except `AuditLogEntry` has a `Deleted` timestamp and an EF global query filter; `ModelTests` asserts both the universal filter and the audit-log exception. No restore or physical delete path exists. | Keep. |
 | Retention | Storage lifecycle handles some quarantine states; no complete report-retention/deletion flow. | Retain until explicit soft deletion; expire only unreferenced quarantine; keep report-linked bytes private. |
@@ -40,7 +40,9 @@ substantially enforce the target behavior, not merely that an issue was closed.
 The baseline has 12 tables: `reports`, `report_answers`, `report_files`,
 `summaries`, `questions`, `question_revisions`, `question_revision_options`,
 `option_sets`, `option_set_items`, `admin_users`, `audit_log`, and
-`outbox_messages`. Five migrations create that shape:
+`outbox_messages`. `admin_users` is on its way out — nothing reads it, and
+[ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)
+drops it, leaving 11. Five migrations create that shape:
 the initial schema, replacing the earlier sensitivity scheme with question
 privacy, and `MigrateCanonicalDomainAndPersistence` (#100), which collapsed
 the old `question_versions`/`question_options`/`question_translations`/
@@ -96,11 +98,11 @@ Worker.
 1. ~~Align the domain and migration: complete question revisions, consent-only
    report, bilingual summary row, attachment kinds, and universal soft
    delete.~~ Done (#100).
-2. Implement current-form and finalized multipart submission with Turnstile,
+2. Implement current-form and finalized multipart submission with a required member token,
    streaming quarantine, transaction, and outbox.
 3. Implement Worker summary and attachment handlers, including documents and
    safe video derivatives.
-4. Implement member authentication, review UI/API, pair approval, deletion, and
+4. Implement JWT member authentication, review UI/API, pair approval, deletion, and
    the exact public DTO.
 5. Complete both React/TypeScript sites and end-to-end bilingual/privacy tests.
 6. Prune and split infrastructure, deploy through explicit migration, and

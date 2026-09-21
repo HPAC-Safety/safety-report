@@ -6,25 +6,49 @@ that doesn't fit Gherkin.
 
 ## Authentication boundary
 
-Core retains one small `IMemberAuthenticator` port. Its result establishes the
-stable upstream HPAC member identifier; the local allowlist then decides
-whether that identity can enter the admin application and with which role.
-Domain and authorization code do not depend on the upstream protocol.
+Identity arrives as a signed JWT, presented as `Authorization: Bearer <jwt>`.
+The API validates the signature, the issuer, the audience `hpac-safety-api`,
+and the lifetime, then reads exactly two claims: the subject and the role.
+Nothing else — not a name, not an email address, not a picture
+([ADR-0064](../../docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 
-The current target adapter may proxy credentials to HPAC's hardcoded TLS
-member login endpoint and supports a configuration kill switch. When HPAC
-offers OIDC/OAuth, another adapter can replace it without changing roles or
-the allowlist contract.
+There is no allowlist and no user table. **This system stores no user records
+at all** ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+Where a report's approver or an audit entry's actor is recorded, it is the
+token subject as an opaque string that joins to nothing. Revoking access is the
+identity provider's decision, and it takes effect when a token stops being
+issued or expires.
 
-State-changing admin requests require CSRF protection in addition to the
-session cookie.
+The role claim's **name** is configuration; its **values** are the invariant
+codes `user`, `safety_officer`, and `administrator`. A claim may be a string or
+an array, and the highest role present wins. A validated token with no
+recognized role authenticates as `User`.
+
+The production provider is not yet chosen — Auth0 and AWS Cognito are the
+candidates, and any provider emitting the claim shape above satisfies the
+contract. In development the API issues its own genuinely signed token and
+validates it through the same middleware, so only the issuer and the key differ
+([ADR-0066](../../docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
+The third-party sign-in option is production-only; the browser learns whether
+to offer it from `GET /api/auth/config`, never from a build flag.
+
+A bearer token carries no ambient authority, so state-changing admin requests
+need no CSRF protection.
 
 ## Roles
 
 | Role | Capabilities |
 |---|---|
+| User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
 | SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; approve, reject, publish, and soft-delete reports. |
-| Administrator | Every SafetyOfficer capability, plus create question revisions and manage the admin allowlist/roles. |
+| Administrator | Every SafetyOfficer capability, plus create question revisions and manage shared choice lists. |
+
+Submission is a membership capability rather than a privileged one, so any of
+the three roles may file a report — and the report records nothing about who
+did ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+
+`Administrator` is not a superuser. No Administrator, migration, background
+worker, or direct API caller can bypass a publication guard.
 
 ## Public DTO edge state
 

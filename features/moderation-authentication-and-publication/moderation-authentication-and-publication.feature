@@ -1,12 +1,33 @@
 Feature: Moderation, authentication, and publication
-  Members authenticate through a small port, get one of two roles, review
-  reports, and only a fully approved, consented, non-deleted report ever
+  Members present a signed token, get one of three roles from its claims,
+  review reports, and only a fully approved, consented, non-deleted report ever
   reaches the public feed.
 
-  @ui
-  Scenario: The member login page presents credential fields and a third-party sign-in option
+  @ui @ignore
+  Scenario: In development the login page offers no third-party sign-in option
     Given a visitor activates the member-login action
-    Then the login page shows a username field, a password field, a third-party sign-in option, and a login action
+    Then the login page shows a username field, a password field, and a login action
+    And the login page shows no third-party sign-in option
+
+  @ui @ignore
+  Scenario: Where a third-party provider is configured, the login page offers it
+    Given the API reports that a third-party provider is configured
+    When a visitor activates the member-login action
+    Then the login page also shows a third-party sign-in option
+
+  @ui @ignore
+  Scenario: Signing in with member credentials returns a session that survives a reload
+    Given a visitor signs in with valid member credentials
+    Then the header shows a logout action instead of the member-login action
+    When the page reloads
+    Then the header still shows the logout action
+
+  @ui @ignore
+  Scenario: Bad credentials show one generic failure and no session
+    Given a visitor submits credentials that are not valid
+    Then the login page shows one generic failure message
+    And the failure does not say whether the username or the password was wrong
+    And the header still shows the member-login action
 
   @ui
   Scenario: A member's signed-in session persists across a reload and clears on logout
@@ -17,12 +38,25 @@ Feature: Moderation, authentication, and publication
     When the visitor activates the logout action
     Then the header shows the member-login action again
 
-  @ui
-  Scenario: A signed-in member's header exposes an Admin menu with manage-reports and manage-questions options
-    Given a visitor signs in from the member login page
+  @ui @ignore
+  Scenario: A signed-in Administrator's Admin menu offers every option
+    Given a visitor signs in as an Administrator
     Then the header shows an Admin menu and no other header nav change
     When the visitor activates the Admin menu
-    Then it opens with manage-reports and manage-questions options
+    Then it opens with manage-reports, manage-questions, and manage-choice-lists options
+
+  @ui @ignore
+  Scenario: A signed-in SafetyOfficer's Admin menu offers manage-reports only
+    Given a visitor signs in as a SafetyOfficer
+    When the visitor activates the Admin menu
+    Then it opens with a manage-reports option
+    And it offers no manage-questions or manage-choice-lists option
+
+  @ui @ignore
+  Scenario: A signed-in User sees no Admin menu
+    Given a visitor signs in as a User
+    Then the header shows a logout action
+    And the header shows no Admin menu
 
   @ui
   Scenario: An open Admin menu keeps every option on a single line
@@ -48,44 +82,67 @@ Feature: Moderation, authentication, and publication
     Then the header shows no Admin menu
 
   @ignore
-  Scenario: Signing in through the third-party option completes the same authentication path
-    Given a member selects the third-party sign-in option on the login page
-    When that identity flow completes successfully
-    Then the result is authenticated the same way as the credential form, through IMemberAuthenticator
-    And the local allowlist still governs whether that identity receives a role
+  Scenario: A token signed by an unknown key is rejected
+    Given a bearer token signed with a key the API does not trust
+    When it is presented to any authenticated endpoint
+    Then the API refuses the request
+    And it does not disclose why the token was refused
 
   @ignore
-  Scenario: Successful authentication issues a short-lived secure cookie
-    Given a member authenticates through IMemberAuthenticator
-    And the local allowlist grants that identity a role
-    When authentication succeeds
-    Then a short-lived Secure, HttpOnly, SameSite cookie is issued
+  Scenario: A token whose signature has been altered is rejected
+    Given a validly issued bearer token whose signature segment has been changed
+    When it is presented to any authenticated endpoint
+    Then the API refuses the request
 
   @ignore
-  Scenario: Credentials are never stored, logged, or cached
-    Given a member submits credentials to the authenticator adapter
-    When the adapter proxies them to the upstream member login endpoint
-    Then the credentials are never stored, logged, cached, enqueued, or put in a URL
-    And the adapter uses no caller-supplied upstream host and follows a narrow redirect policy with timeouts
+  Scenario: An expired token is rejected
+    Given a bearer token whose expiry has passed
+    When it is presented to any authenticated endpoint
+    Then the API refuses the request
 
   @ignore
-  Scenario: Login does not reveal allowlist membership
-    Given an identity is not on the admin allowlist
-    When that identity attempts to sign in
-    Then the login response does not reveal whether the identity is allowlisted
-    And the attempt is subject to trusted-IP rate limiting and per-identity lockout
+  Scenario: A token for the wrong audience is rejected
+    Given a bearer token issued for a different audience
+    When it is presented to any authenticated endpoint
+    Then the API refuses the request
 
   @ignore
-  Scenario: A revoked or soft-deleted admin's session becomes invalid
-    Given an admin is currently signed in
-    When that admin is revoked or soft-deleted
-    Then the admin's session becomes invalid
+  Scenario: A token with no recognized role claim authenticates as User
+    Given a validly signed bearer token carrying no recognized role claim
+    When it is presented to the API
+    Then the request is authenticated
+    And the identity has the User role and no administrative capability
+
+  @ignore
+  Scenario: The API never reads a name, an email, or any other claim
+    Given a validly signed bearer token carrying a name, an email, and a picture claim
+    When the API establishes the caller's identity
+    Then it reads only the subject and the role claim
+    And no other claim reaches domain code, a log, or the database
+
+  @ignore
+  Scenario: The development token endpoint does not exist outside development
+    Given the API is not running in development
+    When the development token endpoint is called
+    Then the route does not exist
+
+  @ignore
+  Scenario: An unauthenticated request to an admin endpoint is refused before the handler
+    Given a request carries no bearer token
+    When it reaches an admin endpoint
+    Then the API refuses it before the handler runs
 
   @ignore
   Scenario: Every operation is authorized by the API, not just the UI
     Given an authenticated member without the required role calls an admin operation
     When the API processes the request
     Then the API rejects the operation regardless of what the UI would have shown
+
+  @ignore
+  Scenario: User capabilities
+    Given a member has the User role
+    Then the member can submit an occurrence report
+    And the member has no review, authoring, or publication capability
 
   @ignore
   Scenario: SafetyOfficer capabilities
@@ -99,26 +156,26 @@ Feature: Moderation, authentication, and publication
   Scenario: Administrator capabilities include everything SafetyOfficer has
     Given a member has the Administrator role
     Then the member has every SafetyOfficer capability
-    And can additionally create question revisions and manage the admin allowlist and roles
+    And can additionally create question revisions and manage shared choice lists
 
   @ignore
-  Scenario: Only an active Administrator manages the allowlist
-    Given a member is not an active Administrator
-    When that member attempts to list, add, change, revoke, or delete an allowlist entry
-    Then the API rejects the attempt
+  Scenario Outline: Only an Administrator may author a question revision
+    Given a member has the <role> role
+    When that member attempts to create a question revision
+    Then the API <outcome> the attempt
 
-  @ignore
-  Scenario: A stale allowlist change fails instead of overwriting a newer decision
-    Given two Administrators load the same allowlist entry
-    When one saves a role or access change and the other then submits a stale concurrency token
-    Then the second, stale change is rejected
-    And the first change is not overwritten
+    Examples:
+      | role          | outcome  |
+      | User          | rejects  |
+      | SafetyOfficer | rejects  |
+      | Administrator | accepts  |
 
   @ignore
   Scenario: Sensitive admin actions are audited without report content
     Given a sensitive read or material mutation occurs in the admin application
     When the action completes
-    Then an audit entry records actor, action, target, and time
+    Then an audit entry records the acting token subject, action, target, and time
+    And the subject is stored as an opaque string that joins to no user record
     And it never records report content
 
   @ignore
@@ -145,6 +202,7 @@ Feature: Moderation, authentication, and publication
     Given a reviewer approves the current English/French summary pair
     When the approval is recorded
     Then it applies to that pair as a whole, not to one language
+    And the approving token subject is recorded as an opaque string
 
   @ignore
   Scenario: Rejection blocks publication but keeps the report for learning
@@ -165,7 +223,7 @@ Feature: Moderation, authentication, and publication
     Given a report is published
     When the public API returns it
     Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, and the publication timestamp
-    And it never contains question keys, labels, answers, consent value, report language, private flags, raw reports, attachment metadata or URLs, admin identities, model provenance, or audit records
+    And it never contains question keys, labels, answers, consent value, report language, private flags, raw reports, attachment metadata or URLs, member or reviewer identities, model provenance, or audit records
 
   @ignore
   Scenario: The public feed lists only publishable reports
@@ -196,9 +254,9 @@ Feature: Moderation, authentication, and publication
     And ordinary Worker processing for it stops
 
   @ignore
-  Scenario: Soft-deleting an admin preserves historic audit attribution
-    Given an admin user is soft-deleted
-    When the deletion is recorded
-    Then the admin's current access is revoked
-    And historic audit attribution to that admin is preserved
-    And there is no restore workflow and no UI action that physically deletes either record
+  Scenario: Revoking a member's access is the identity provider's decision
+    Given a member's access is revoked at the identity provider
+    When their current token expires or stops being issued
+    Then they can no longer authenticate
+    And this system holds no record of them to revoke
+    And historic audit rows keep the opaque subject they were written with

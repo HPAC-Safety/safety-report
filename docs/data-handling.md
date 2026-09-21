@@ -14,6 +14,16 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
 - Use AWS-managed encryption at rest and TLS. Do not maintain application AES
   keys or ciphertext converters.
 - Keep raw reports private until an authorized officer soft-deletes them.
+- **Filing a report requires a signed-in HPAC member, and nothing about that
+  member is persisted.** No report, answer, file, consent projection, outbox
+  message, audit entry, or log line records the submitter's subject, and no
+  column, join table, or hash links a report to whoever filed it. Sign-in
+  proves membership; its answer is discarded
+  ([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+- Store no user records at all. Identity and role come from claims on a
+  validated token, per request. Where an approver or an audit actor is
+  recorded, it is an opaque token subject that joins to nothing
+  ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 - Every application record except append-only `audit_log` has an irreversible
   deletion timestamp. Report deletion cascade-stamps dependents in one
   transaction; there is no restore or physical-delete workflow.

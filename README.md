@@ -54,12 +54,13 @@ publication channels.
 | API and Worker | .NET 10 / ASP.NET Core |
 | Database | PostgreSQL with EF Core |
 | Web | React 18 + TypeScript, built with Vite; Tailwind v4 via `@tailwindcss/vite`; `@dnd-kit` for reordering, behind one owned component ([ADR-0059](docs/decisions/ADR-0059-dnd-kit-for-reordering.md)) |
+| Authentication | Bearer JWT from an external OAuth/OIDC provider — Auth0 or AWS Cognito, not yet chosen — with three roles read from a claim and no user records stored ([ADR-0064](docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md), [ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)). Development signs its own tokens ([ADR-0066](docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)) |
 | Tests | xUnit, Shouldly, Testcontainers, `node:test`, Playwright |
 | Hosting target | AWS `ca-central-1`, deployed through GitHub OIDC |
 
-One Vite/React app serves the public form as its default route and the
-authenticated review queue at `/admin`; the API's `admin_users` allowlist is
-the security boundary, not the delivery path
+One Vite/React app serves the report form as its default route and the
+review queue at `/admin`; the API's role-claim authorization is the security
+boundary, not the delivery path
 ([ADR-0048](docs/decisions/ADR-0048-one-website-admin-as-a-route.md)). The API
 runs as a container image on Lambda behind the ALB, sized for sparse traffic
 with a Fargate migration path if that changes

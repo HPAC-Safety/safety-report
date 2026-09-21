@@ -51,6 +51,12 @@ would run on Fargate, ECS, or a developer's machine.
 
 ## Why these choices
 
+**Authentication stays stateless.** A bearer token validated per request
+([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)) carries no
+server-side session, so nothing here depends on a warm instance or a shared
+session store. That is a point in this hosting choice's favour that was not
+available when it was written.
+
 **ALB → Lambda target group, not API Gateway.** The ALB already exists for
 the static sites and the admin route. Adding API Gateway would mean a second
 public entry point with its own domain mapping, WAF association, and access

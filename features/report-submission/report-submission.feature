@@ -5,8 +5,9 @@ Feature: Report submission
 
   Background:
     Given the only write endpoint for a reporter is POST /api/v1/reports
-    And it accepts multipart/form-data with one report JSON part, zero or more files parts, and one Turnstile response token
-    And the Turnstile token is transport/security metadata, not persisted report content
+    And it requires a valid member bearer token
+    And it accepts multipart/form-data with one report JSON part and zero or more files parts
+    And the bearer token is transport/security metadata, not persisted report content
 
   @ignore @ui
   Scenario: The browser holds report state locally until submission
@@ -81,7 +82,7 @@ Feature: Report submission
     Given a submission fails validation
     When the API returns an error to the reporter
     Then the error is localized and safe
-    And it never echoes an answer, client filename, Turnstile token, credential, or storage key
+    And it never echoes an answer, client filename, bearer token, credential, or storage key
     And routine invalid requests are not logged with body content
 
   @ignore
@@ -124,7 +125,55 @@ Feature: Report submission
   @ignore
   Scenario: Submission is rejected without valid abuse-control checks
     Given a submission request arrives
-    When Turnstile verification fails, or Turnstile is required but unavailable or misconfigured, or the per-IP rate limit is exceeded
+    When the bearer token is missing or invalid, or the per-IP rate limit is exceeded
     Then the API rejects the request
     And a rate-limited request receives 429 with a safe retry signal
     And the client IP used for rate limiting comes only from explicitly trusted proxy headers and is never stored on the report
+    And the authenticated subject is never stored on the report
+
+  @ignore
+  Scenario: An unauthenticated submission is rejected
+    Given a submission request carries no bearer token
+    When the API processes the request
+    Then the API rejects it before any report state is created
+
+  @ignore
+  Scenario Outline: A member of any role may submit a report
+    Given a reporter holds a valid member token with the <role> role
+    When a valid submission is made
+    Then the API accepts it
+
+    Examples:
+      | role          |
+      | User          |
+      | SafetyOfficer |
+      | Administrator |
+
+  @ignore
+  Scenario: A stored report carries no submitter subject, user id, or link
+    Given a reporter submits a valid report while signed in
+    When the submission is committed
+    Then no stored report, answer, file, consent projection, or outbox message records the submitter's subject
+    And no column, join table, or hash anywhere links the report to the member who filed it
+
+  @ignore
+  Scenario: No audit entry or log line records who submitted a report
+    Given a reporter submits a valid report while signed in
+    When the submission completes
+    Then no audit entry attributes the submission to a subject
+    And no log line records the submitting subject at any level
+
+  @ignore @ui
+  Scenario: A signed-out visitor is asked to sign in before the report form is offered
+    Given a signed-out visitor opens the report form
+    Then the form is not shown
+    And the page explains that filing a report requires an HPAC member sign-in
+    And it offers a sign-in action
+
+  @ignore @ui
+  Scenario: The form tells the reporter that signing in does not attach them to the report
+    Given a signed-in member opens the report form
+    Then the form is shown
+    And a notice states that signing in only confirms HPAC membership
+    And the notice states that the report is not linked to their account
+    And the notice appears in the reporter's chosen language

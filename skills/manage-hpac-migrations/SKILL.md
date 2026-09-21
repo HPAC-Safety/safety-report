@@ -27,6 +27,12 @@ persistence contract.
    Retirement is a `deleted timestamptz` stamp, and every new table gets that
    column plus the default live-row filter
    ([ADR-0040](../../docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
+   **One carved exception exists**: `admin_users` is dropped by
+   [ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
+   on the specific ground that it never held application data in any deployed
+   environment. It does not generalize. A widening cast that loses no value —
+   `char(11)` to `varchar(256)` — is not destructive and needs no exception.
+   Any other physical delete needs its own ADR arguing its own facts.
 4. **Both paths have to work**: a fresh, empty database and a database sitting
    at current `main`. A new column is nullable, or has a default, or is
    backfilled by the same migration — never `NOT NULL` with no answer for the

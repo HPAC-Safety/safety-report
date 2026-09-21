@@ -81,10 +81,12 @@ specification rather than preserving competing designs.
 
 ## Product contract in one paragraph
 
-A reporter sees the latest active immutable revision of each bilingual database
-question in its configured order, may skip every ordinary question, must make
-an explicit publication-consent choice, and submits the answers and optional
-attachments once. The API saves the report, exact question revisions, files, and
+A reporter signs in as an HPAC member — which proves membership and is never
+recorded against the report — sees the latest active immutable revision of each
+bilingual database question in its configured order, may skip every ordinary
+question, must make an explicit publication-consent choice, and submits the
+answers and optional attachments once. The API saves the report, exact question
+revisions, files, and
 outbox work atomically. The Worker makes exactly one model call using one
 versioned prompt to produce an anonymized English/French summary pair, using
 private answers only as recognition context. A safety officer reviews that pair
@@ -100,3 +102,13 @@ call, specialized aircraft processing, outbound email, external publication
 channels, application-layer field encryption, restore workflow, or automated
 raw-report purge. New abstractions are justified by a real boundary or a second
 implementation, not by a hypothetical future.
+
+Authentication is the one external identity dependency, and it is deliberately
+thin: an identity provider signs a token, the API validates it and reads two
+claims, and **no user record is stored anywhere**
+([ADR-0064](../docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+[ADR-0065](../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+There is no allowlist, no user table, no session store, no CSRF machinery, no
+password handling, and no Turnstile. Requiring a member to submit is what let
+the last of those go
+([ADR-0068](../docs/decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).

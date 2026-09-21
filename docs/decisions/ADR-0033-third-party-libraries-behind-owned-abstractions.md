@@ -146,8 +146,17 @@ The rule is being written down, not invented. `Core` already declares:
 | Private blob store | Bounded private object storage and authorized short-lived reads |
 | Model summarizer | The one call that writes the bilingual summary pair |
 | Attachment processor | Format detection and controlled image/video/document handling |
-| `ITurnstileVerifier` | Cloudflare Turnstile |
-| `IMemberAuthenticator` | The HPAC membership system |
+
+`ITurnstileVerifier` and `IMemberAuthenticator` were both on this list. Neither
+survives: Turnstile is removed from submission
+([ADR-0068](ADR-0068-the-member-token-replaces-turnstile-on-submission.md)), and
+identity arrives as a signed JWT the API validates rather than a membership
+system it calls
+([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)). **This
+rule still governs the identity provider**: when Auth0 or AWS Cognito is chosen,
+any SDK it brings is a third-party library, and it sits behind an abstraction
+this repository owns rather than spreading provider types through the
+application.
 
 **Image processing is explicitly included.** Magick.NET sits behind the blob
 port's ingest path (issue #16, in flight) and is the newest instance: EXIF

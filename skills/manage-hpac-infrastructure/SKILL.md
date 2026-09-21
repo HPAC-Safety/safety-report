@@ -6,8 +6,8 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 # Manage HPAC Safety infrastructure
 
 Target one small API service, one small Worker service, RDS PostgreSQL, private
-S3 attachment storage, and separate public/admin static S3+CloudFront sites in
-`ca-central-1`. Use Terraform and GitHub OIDC; never create long-lived AWS keys.
+S3 attachment storage, and one website serving the admin surface as a route in
+`ca-central-1` ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)). Use Terraform and GitHub OIDC; never create long-lived AWS keys.
 
 - Use AWS-managed encryption at rest and TLS.
 - Keep runtime secret values in Secrets Manager and out of Terraform state and
@@ -18,7 +18,14 @@ S3 attachment storage, and separate public/admin static S3+CloudFront sites in
   objects private.
 - Alert on terminal summary failures and stuck/aged outbox work. Keep logs
   content-free.
-- Preserve least privilege and separate public/admin static origins.
+- Preserve least privilege.
+- The identity provider's client secret is a Secrets Manager entry like any
+  other; the development JWT signing key is a committed throwaway and not a
+  secret. Production holds no signing key of its own — it validates against the
+  provider's published keys
+  ([ADR-0064](../../docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+- Residency matters when the provider is chosen: `ca-central-1` is a point in
+  AWS Cognito's favour, but the decision is deferred and not yet made.
 
 Remove SES/email resources, combined-site assumptions, external publication
 integrations, speculative scaling, and secrets or alarms that exist only for

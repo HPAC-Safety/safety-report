@@ -24,7 +24,10 @@ Follow [`../../docs/data-and-persistence.md`](../../docs/data-and-persistence.md
   ciphertext converters, and field-cipher ports.
 
 Migrations must support both a fresh database and the current-main upgrade
-path. Do not physically delete records or add restore behavior.
+path. Do not physically delete records or add restore behavior — the sole
+carved exception is dropping `admin_users`
+([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+Do not add a user, member, or session entity: identity lives in the token.
 
 ## Schema changes, raw SQL, and migration application (ADR-0055)
 

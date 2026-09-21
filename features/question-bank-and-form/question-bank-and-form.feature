@@ -16,14 +16,14 @@ Feature: Question bank and form
     And the previous revision is left unchanged
 
   @ignore
-  Scenario: Only an active Administrator may create a revision
-    Given a member is not an active Administrator
+  Scenario: Only an Administrator may create a revision
+    Given a member does not have the Administrator role
     When that member attempts to save a question revision
     Then the API rejects the attempt
 
   @ignore
   Scenario: Editing a question copies the latest revision into a new one
-    Given an active Administrator requests to edit a question with an existing revision
+    Given an Administrator requests to edit a question with an existing revision
     When the API prepares the edit DTO
     Then it loads the latest revision and copies all fields into that DTO
     When the Administrator saves the edit

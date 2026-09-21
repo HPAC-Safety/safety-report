@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell
 keywords: authentication, IMemberAuthenticator, credential proxy, HPAC membership
@@ -7,7 +7,16 @@ keywords: authentication, IMemberAuthenticator, credential proxy, HPAC membershi
 
 # ADR-0005 — Credential proxy for admin authentication
 
-**Status:** Accepted, with a planned replacement
+**Status:** Superseded by
+[ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md). The
+credential proxy was never built and never will be: production authentication
+uses a standards-based OAuth/OIDC provider, and this system never sees a
+member's password. `IMemberAuthenticator` is deleted rather than implemented.
+The premise below that "reporting is anonymous" is also reversed — submission
+now requires a member, who is not recorded
+([ADR-0067](ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)) — and
+`admin_users` no longer exists
+([ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 
 ## Context
 

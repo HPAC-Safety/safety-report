@@ -35,7 +35,10 @@ the repository delivery contract.
 - Prefer direct code. Add a port only for a real external boundary or a proven
   second implementation.
 - Use Shouldly, not `Xunit.Assert` or another assertion library.
-- Name .NET tests `Given_..._When_..._Then_...` and mark those sections.
+- Name .NET tests `GivenX_WhenY_ThenZ` — three PascalCase segments joined by
+  single underscores, no articles
+  ([ADR-0069](docs/decisions/ADR-0069-scannable-given-when-then-test-names.md))
+  — and mark those sections in the body.
 - Use Mermaid for diagrams.
 - Put user-facing UI text in the locale catalogues and keep English/French keys
   in parity. Database question text is manually authored in both languages.

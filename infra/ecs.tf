@@ -88,12 +88,7 @@ resource "aws_ecs_task_definition" "api" {
       ]
 
       environment = local.common_environment
-      secrets = concat(local.common_secrets, [
-        {
-          name      = "Turnstile__SecretKey"
-          valueFrom = aws_secretsmanager_secret.this["turnstile_secret_key"].arn
-        },
-      ])
+      secrets     = local.common_secrets
 
       logConfiguration = {
         logDriver = "awslogs"

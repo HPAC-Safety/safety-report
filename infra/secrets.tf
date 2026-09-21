@@ -14,10 +14,9 @@
 #
 # Consequence, stated plainly because it looks like a bug the first time: a task
 # whose secret has no version FAILS TO START, with a ResourceNotFoundException in
-# the ECS event log. That is the correct behaviour — an API booting without its
-# Turnstile key would accept unverified submissions — but it means the
-# put-secret-value calls are part of first deploy, not a later tidy-up. They are
-# listed in docs/deployment.md.
+# the ECS event log. That is the correct behaviour — a task should not boot
+# without a secret it needs — but it means the put-secret-value calls are part
+# of first deploy, not a later tidy-up. They are listed in docs/deployment.md.
 
 locals {
   # Description is the whole documentation surface an operator sees in the
@@ -26,10 +25,6 @@ locals {
     anthropic_api_key = {
       name        = "${local.name}/anthropic-api-key"
       description = "Anthropic API key. Read by the Worker for summarize, PII audit, and translate."
-    }
-    turnstile_secret_key = {
-      name        = "${local.name}/turnstile-secret-key"
-      description = "Cloudflare Turnstile secret key. Read by the API for server-side siteverify. Never reaches a static bundle."
     }
     connection_string = {
       name        = "${local.name}/connection-string"

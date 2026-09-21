@@ -7,8 +7,8 @@ Deployable ASP.NET Core HTTP surface. The target contract is in
 
 - Return the ordered current bilingual question revisions.
 - Receive one final multipart report request: JSON DTO plus optional files.
-- Verify Turnstile, rate limits, exact revision/answer shapes, attachment bounds,
-  and consent.
+- Verify the member bearer token, rate limits, exact revision/answer shapes,
+  attachment bounds, and consent.
 - Stream files to private quarantine and atomically store the report, asked
   questions/answers, file rows, and outbox work; return `202`.
 - Expose authenticated review/administration commands and minimal public

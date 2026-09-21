@@ -76,14 +76,24 @@ public static class QuestionBankSeedWriter
     /// </summary>
     public static string Sql() => Sql(legacySensitivitySchema: false);
 
-    private static string Sql(bool legacySensitivitySchema)
+    private static string Sql(bool legacySensitivitySchema) => Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
+
+    /// <summary>
+    /// The guarded SQL for an arbitrary question list. Exposed so a test can
+    /// exercise every row this writer produces — the question, its version,
+    /// both languages, and any options, in either schema shape — without
+    /// depending on what <see cref="QuestionBankSeed"/> currently seeds.
+    /// </summary>
+    public static string Sql(IReadOnlyList<SeededQuestion> questions, bool legacySensitivitySchema = false)
     {
+        ArgumentNullException.ThrowIfNull(questions);
+
         var sql = new StringBuilder();
         var at = QuestionBankSeed.SeededAt;
 
-        for (var order = 0; order < QuestionBankSeed.Questions.Count; order++)
+        for (var order = 0; order < questions.Count; order++)
         {
-            var question = QuestionBankSeed.Questions[order];
+            var question = questions[order];
             var questionId = SeedIds.For($"question:{question.Key}");
             var versionId = SeedIds.For($"question_version:{question.Key}:1");
 

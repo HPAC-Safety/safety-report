@@ -65,6 +65,13 @@
       "title": "{pageName}",
       "body": "Cette page est une page temporaire. Le contenu de {pageName} sera bientôt disponible."
     },
+    "report": {
+      "signInRequiredTitle": "#Sign in to file a report",
+      "signInRequiredBody": "#Filing an occurrence report requires an HPAC member sign-in. Signing in only confirms that you are a member — your report is not linked to your account.",
+      "signInAction": "#Sign in",
+      "notTrackedTitle": "#Your report is not linked to you",
+      "notTrackedBody": "#Signing in only confirms that you are an HPAC member. We do not record your name, your membership, or any trace of who submitted this report."
+    },
     "login": {
       "title": "Connexion des membres",
       "usernameLabel": "Nom d'utilisateur",

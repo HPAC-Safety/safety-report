@@ -487,6 +487,39 @@ public class Question
 	}
 
 	/// <summary>
+	///     Deletes one revision out of this question's history — distinct from
+	///     <see cref="Delete" />, which retires the whole question. A revision
+	///     leaving the form because it was superseded already happened when the
+	///     next one was created; this is an administrator cleaning up a revision
+	///     nobody answered, not a change to what the form asks.
+	/// </summary>
+	/// <remarks>
+	///     Whether an answer references it — including one on a deleted report —
+	///     is a fact about reports, which this aggregate cannot see, so the caller
+	///     reads it and passes it in, the same arrangement <see cref="Delete" />
+	///     and <see cref="ApplyEdit" /> use.
+	/// </remarks>
+	public void DeleteRevision(TinyId revisionId, bool hasBeenAnswered, DateTimeOffset at)
+	{
+		var revision = _revisions.Find(candidate => candidate.Id == revisionId)
+			?? throw new DomainRuleViolationException("That revision does not belong to this question.");
+
+		if (revision.Id == CurrentRevision.Id)
+		{
+			throw new DomainRuleViolationException(
+				"This is the current revision. It is what the form asks today, not history to clean up.");
+		}
+
+		if (hasBeenAnswered)
+		{
+			throw new DomainRuleViolationException(
+				"An answer references this revision. It stays exactly as that reporter was asked.");
+		}
+
+		revision.Delete(at);
+	}
+
+	/// <summary>
 	///     Soft-deletes without the reference check. Retiring a question that has
 	///     been answered is exactly what a fork does (ADR-0071), so the check
 	///     belongs on the administrator's delete, not on every path to Deleted.

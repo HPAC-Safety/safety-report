@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-271 claims across 8 areas: 180 covered by a step definition today, 91 still `@ignore`. 50 constraints.
+271 claims across 8 areas: 182 covered by a step definition today, 89 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -44,8 +44,8 @@ type: guide
 | `REQ-DOM-005` | domain-and-lifecycle | Editing a summary text unpublishes the report | Reqnroll | Planned |
 | `REQ-DOM-006` | domain-and-lifecycle | Negative consent still allows internal review | Reqnroll | Planned |
 | `REQ-DOM-007` | domain-and-lifecycle | Soft deletion removes a report from every normal path | Reqnroll | Planned |
-| `REQ-DOM-008` | domain-and-lifecycle | A question revision can be deleted only when unreferenced | Reqnroll | Planned |
-| `REQ-DOM-009` | domain-and-lifecycle | Retiring a question is a soft delete with no way back | Reqnroll | Planned |
+| `REQ-DOM-008` | domain-and-lifecycle | A question revision can be deleted only when unreferenced | Reqnroll | Covered |
+| `REQ-DOM-009` | domain-and-lifecycle | Retiring a question is a soft delete with no way back | Reqnroll | Covered |
 | `REQ-DOM-010` | domain-and-lifecycle | Raw reports are retained until explicit deletion | Reqnroll | Covered |
 | `REQ-DOM-011` | domain-and-lifecycle | Soft-deleted and private data remain under managed retention | Reqnroll | Planned |
 | `REQ-DOM-012` | domain-and-lifecycle | Unreferenced quarantine objects expire without affecting reports | Reqnroll | Planned |

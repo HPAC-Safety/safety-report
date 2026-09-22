@@ -205,7 +205,10 @@ public sealed class QuestionTranslationSteps
 	{
 		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-		while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "src", "web", "src"))) directory = directory.Parent;
+		while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "src", "web", "src")))
+		{
+			directory = directory.Parent;
+		}
 
 		return Path.Combine(
 			directory?.FullName ?? throw new DirectoryNotFoundException("Could not find src/web/src."),

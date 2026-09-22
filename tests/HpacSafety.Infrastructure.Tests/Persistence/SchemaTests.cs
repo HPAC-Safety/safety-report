@@ -141,7 +141,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		await using var reader = await command.ExecuteReaderAsync();
 
 		var values = new List<string>();
-		while (await reader.ReadAsync()) values.Add(reader.GetString(0));
+		while (await reader.ReadAsync())
+		{
+			values.Add(reader.GetString(0));
+		}
 
 		return [.. values];
 	}

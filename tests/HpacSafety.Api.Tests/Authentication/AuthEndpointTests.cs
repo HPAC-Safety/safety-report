@@ -160,7 +160,10 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 	{
 		return _factory.WithWebHostBuilder(builder =>
 		{
-			foreach (var (key, value) in settings) builder.UseSetting(key, value);
+			foreach (var (key, value) in settings)
+			{
+				builder.UseSetting(key, value);
+			}
 		});
 	}
 

@@ -71,9 +71,11 @@ public readonly record struct TinyId
 	public static TinyId FromEntropy(ReadOnlySpan<byte> entropy)
 	{
 		if (entropy.Length < Length)
+		{
 			throw new ArgumentException(
 				$"An identifier needs at least {Length} bytes to derive from, not {entropy.Length}.",
 				nameof(entropy));
+		}
 
 		return new TinyId(string.Create(
 			Length,
@@ -82,8 +84,10 @@ public readonly record struct TinyId
 			static (span, source) =>
 			{
 				for (var i = 0; i < Length; i++)
+				{
 					// 64 divides 256, so masking stays uniform.
 					span[i] = Alphabet[source[i] & ((1 << BitsPerSymbol) - 1)];
+				}
 			}));
 	}
 
@@ -108,11 +112,18 @@ public readonly record struct TinyId
 	{
 		id = default;
 
-		if (candidate is null || candidate.Length != Length) return false;
+		if (candidate is null || candidate.Length != Length)
+		{
+			return false;
+		}
 
 		foreach (var character in candidate)
+		{
 			if (!Alphabet.Contains(character, StringComparison.Ordinal))
+			{
 				return false;
+			}
+		}
 
 		id = new TinyId(candidate);
 		return true;

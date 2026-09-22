@@ -43,7 +43,10 @@ public static class QuestionDependencies
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
-		if (childId == parentId) throw new DomainRuleViolationException("A question cannot be conditional on itself.");
+		if (childId == parentId)
+		{
+			throw new DomainRuleViolationException("A question cannot be conditional on itself.");
+		}
 
 		var parent = questions.FirstOrDefault(question => question.Id == parentId && question.Deleted is null)
 					 ?? throw new DomainRuleViolationException(
@@ -76,8 +79,10 @@ public static class QuestionDependencies
 		}
 
 		if (childId is { } child && LeadsTo(questions, parentId, child))
+		{
 			throw new DomainRuleViolationException(
 				$"'{parent.Key}' already depends on this question, directly or through another one. A cycle would leave both permanently disabled.");
+		}
 	}
 
 	/// <summary>
@@ -94,9 +99,15 @@ public static class QuestionDependencies
 		{
 			var question = questions.FirstOrDefault(candidate => candidate.Id == current);
 
-			if (question?.DependsOnQuestionId is not { } next) return false;
+			if (question?.DependsOnQuestionId is not { } next)
+			{
+				return false;
+			}
 
-			if (next == target) return true;
+			if (next == target)
+			{
+				return true;
+			}
 
 			current = next;
 		}

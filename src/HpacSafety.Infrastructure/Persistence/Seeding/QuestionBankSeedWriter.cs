@@ -74,7 +74,10 @@ public static class QuestionBankSeedWriter
 	/// </summary>
 	private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
 	{
-		if (sql.Length > 0) migrationBuilder.Sql(sql);
+		if (sql.Length > 0)
+		{
+			migrationBuilder.Sql(sql);
+		}
 	}
 
 	private static string Sql(bool legacySensitivitySchema)
@@ -102,6 +105,7 @@ public static class QuestionBankSeedWriter
 			var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
 			if (legacySensitivitySchema)
+			{
 				AppendGuardedInsert(
 					sql,
 					"questions",
@@ -109,7 +113,9 @@ public static class QuestionBankSeedWriter
 					[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
 					"id",
 					Id(questionId));
+			}
 			else
+			{
 				AppendGuardedInsert(
 					sql,
 					"questions",
@@ -117,6 +123,7 @@ public static class QuestionBankSeedWriter
 					[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
 					"id",
 					Id(questionId));
+			}
 
 			AppendGuardedInsert(
 				sql,

@@ -63,16 +63,20 @@ public static class TranslationEndpoints
 		ArgumentNullException.ThrowIfNull(translator);
 
 		if (!Locale.TryParse(request.From, out var source) || !Locale.TryParse(request.To, out var target))
+		{
 			return Problem(
 				"unknown-locale",
 				"That is not one of the two official languages.",
 				StatusCodes.Status400BadRequest);
+		}
 
 		if (source == target)
+		{
 			return Problem(
 				"same-locale",
 				"A translation needs two different languages.",
 				StatusCodes.Status400BadRequest);
+		}
 
 		// Blank fields are dropped rather than sent: an administrator may leave
 		// the help text empty, and a provider charged per request should not be
@@ -84,7 +88,10 @@ public static class TranslationEndpoints
 			.Where(entry => !string.IsNullOrWhiteSpace(entry.text))
 			.ToList();
 
-		if (translatable.Count == 0) return Results.Ok(new TranslateResponse([.. texts.Select(_ => string.Empty)]));
+		if (translatable.Count == 0)
+		{
+			return Results.Ok(new TranslateResponse([.. texts.Select(_ => string.Empty)]));
+		}
 
 		try
 		{
@@ -95,7 +102,10 @@ public static class TranslationEndpoints
 			var results = new string[texts.Count];
 			Array.Fill(results, string.Empty);
 
-			for (var i = 0; i < translatable.Count; i++) results[translatable[i].index] = translated[i];
+			for (var i = 0; i < translatable.Count; i++)
+			{
+				results[translatable[i].index] = translated[i];
+			}
 
 			return Results.Ok(new TranslateResponse(results));
 		}

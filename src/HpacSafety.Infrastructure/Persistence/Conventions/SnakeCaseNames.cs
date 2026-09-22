@@ -26,17 +26,32 @@ public static class SnakeCaseNames
 		{
 			if (entity.FindAnnotation(RelationalAnnotationNames.TableName) is null
 				&& entity.GetTableName() is { } table)
+			{
 				entity.SetTableName(ToSnakeCase(table));
+			}
 
 			foreach (var property in entity.GetProperties())
+			{
 				if (property.FindAnnotation(RelationalAnnotationNames.ColumnName) is null)
+				{
 					property.SetColumnName(ToSnakeCase(property.Name));
+				}
+			}
 
-			foreach (var key in entity.GetKeys()) key.SetName(ToSnakeCase(key.GetName() ?? string.Empty));
+			foreach (var key in entity.GetKeys())
+			{
+				key.SetName(ToSnakeCase(key.GetName() ?? string.Empty));
+			}
 
-			foreach (var foreignKey in entity.GetForeignKeys()) foreignKey.SetConstraintName(ToSnakeCase(foreignKey.GetConstraintName() ?? string.Empty));
+			foreach (var foreignKey in entity.GetForeignKeys())
+			{
+				foreignKey.SetConstraintName(ToSnakeCase(foreignKey.GetConstraintName() ?? string.Empty));
+			}
 
-			foreach (var index in entity.GetIndexes()) index.SetDatabaseName(ToSnakeCase(index.GetDatabaseName() ?? string.Empty));
+			foreach (var index in entity.GetIndexes())
+			{
+				index.SetDatabaseName(ToSnakeCase(index.GetDatabaseName() ?? string.Empty));
+			}
 		}
 	}
 
@@ -52,7 +67,10 @@ public static class SnakeCaseNames
 		{
 			var character = name[i];
 
-			if (char.IsUpper(character) && i > 0 && name[i - 1] != '_' && !char.IsUpper(name[i - 1])) builder.Append('_');
+			if (char.IsUpper(character) && i > 0 && name[i - 1] != '_' && !char.IsUpper(name[i - 1]))
+			{
+				builder.Append('_');
+			}
 
 			builder.Append(char.ToLower(character, CultureInfo.InvariantCulture));
 		}

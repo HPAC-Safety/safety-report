@@ -38,7 +38,10 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		await using var reader = await command.ExecuteReaderAsync();
 
 		var columns = new List<string>();
-		while (await reader.ReadAsync()) columns.Add(reader.GetString(0));
+		while (await reader.ReadAsync())
+		{
+			columns.Add(reader.GetString(0));
+		}
 
 		// Then — no mixed-type joins, and nothing left as uuid.
 		columns.Count.ShouldBeGreaterThan(15);

@@ -91,16 +91,21 @@ public readonly record struct MediaType
 	{
 		type = default;
 
-		if (string.IsNullOrWhiteSpace(candidate)) return false;
+		if (string.IsNullOrWhiteSpace(candidate))
+		{
+			return false;
+		}
 
 		var essence = candidate.Split(';')[0].Trim();
 
 		foreach (var known in All)
+		{
 			if (string.Equals(known.ContentType, essence, StringComparison.OrdinalIgnoreCase))
 			{
 				type = known;
 				return true;
 			}
+		}
 
 		return false;
 	}

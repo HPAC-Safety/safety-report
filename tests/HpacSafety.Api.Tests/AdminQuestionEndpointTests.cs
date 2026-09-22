@@ -598,7 +598,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var listed = await ListAsync(client);
 		var consent = listed.FirstOrDefault(question => question.GetProperty("isSystem").GetBoolean());
 
-		if (consent.ValueKind == JsonValueKind.Undefined) return; // No seeded consent question in this database; nothing to assert.
+		if (consent.ValueKind == JsonValueKind.Undefined)
+		{
+			return; // No seeded consent question in this database; nothing to assert.
+		}
 
 		// When
 		var id = consent.GetProperty("id").GetString();

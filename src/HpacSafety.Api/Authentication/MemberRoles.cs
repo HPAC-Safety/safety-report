@@ -38,8 +38,12 @@ public static class MemberRoles
 		MemberRole? highest = null;
 
 		foreach (var claim in principal.FindAll(roleClaimType))
+		{
 			if (EnumCode.TryParse<MemberRole>(claim.Value, out var role) && (highest is null || role > highest))
+			{
 				highest = role;
+			}
+		}
 
 		return highest;
 	}

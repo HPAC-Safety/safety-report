@@ -517,8 +517,12 @@ public sealed class QuestionBankSteps
 		var arranged = new List<Question> { _questions[2], _questions[0], _questions[1] };
 
 		for (var position = 0; position < arranged.Count; position++)
+		{
 			if (arranged[position].DisplayOrder != position)
+			{
 				arranged[position].Reorder(position, Noon.AddHours(1));
+			}
+		}
 
 		_questions.Clear();
 		_questions.AddRange(arranged);
@@ -541,7 +545,10 @@ public sealed class QuestionBankSteps
 		var settled = _questions[0];
 		var before = settled.CurrentRevision.RevisionNumber;
 
-		if (settled.DisplayOrder != 0) settled.Reorder(0, Noon.AddHours(2));
+		if (settled.DisplayOrder != 0)
+		{
+			settled.Reorder(0, Noon.AddHours(2));
+		}
 
 		settled.CurrentRevision.RevisionNumber.ShouldBe(before);
 	}

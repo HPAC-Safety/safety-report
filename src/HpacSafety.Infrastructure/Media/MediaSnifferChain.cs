@@ -22,7 +22,10 @@ public sealed class MediaSnifferChain : IMediaSniffer
 	{
 		ArgumentNullException.ThrowIfNull(sniffers);
 
-		if (sniffers.Length == 0) throw new ArgumentException("A sniffer chain with no links recognises nothing.", nameof(sniffers));
+		if (sniffers.Length == 0)
+		{
+			throw new ArgumentException("A sniffer chain with no links recognises nothing.", nameof(sniffers));
+		}
 
 		_sniffers = sniffers;
 	}
@@ -42,7 +45,10 @@ public sealed class MediaSnifferChain : IMediaSniffer
 			// shows up as "video uploads stopped working" months later.
 			buffered.Position = 0;
 
-			if (await sniffer.SniffAsync(buffered, cancellationToken).ConfigureAwait(false) is { } recognised) return recognised;
+			if (await sniffer.SniffAsync(buffered, cancellationToken).ConfigureAwait(false) is { } recognised)
+			{
+				return recognised;
+			}
 		}
 
 		return null;

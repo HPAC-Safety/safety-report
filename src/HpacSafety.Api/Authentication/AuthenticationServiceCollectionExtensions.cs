@@ -48,7 +48,10 @@ public static class AuthenticationServiceCollectionExtensions
 				jwt.TokenValidationParameters = parameters;
 				jwt.MapInboundClaims = false;
 
-				if (!useDevelopmentIssuer) jwt.Authority = options.Authority;
+				if (!useDevelopmentIssuer)
+				{
+					jwt.Authority = options.Authority;
+				}
 
 				jwt.Events = ProblemDetailsEvents();
 			});
@@ -64,7 +67,10 @@ public static class AuthenticationServiceCollectionExtensions
 				.RequireAssertion(context =>
 					MemberRoles.EffectiveRole(context.User, options.RoleClaimType) >= MemberRole.Administrator));
 
-		if (useDevelopmentIssuer) services.AddSingleton<DevelopmentTokenIssuer>();
+		if (useDevelopmentIssuer)
+		{
+			services.AddSingleton<DevelopmentTokenIssuer>();
+		}
 
 		return services;
 	}
@@ -89,15 +95,19 @@ public static class AuthenticationServiceCollectionExtensions
 	private static TokenValidationParameters DevelopmentParameters(HpacAuthenticationOptions options)
 	{
 		if (string.IsNullOrWhiteSpace(options.DevelopmentSigningKey))
+		{
 			throw new InvalidOperationException(
 				$"{HpacAuthenticationOptions.SectionName}:DevelopmentSigningKey is required in Development. "
 				+ "It signs the tokens this host issues and then validates.");
+		}
 
 		if (Encoding.UTF8.GetByteCount(options.DevelopmentSigningKey) < DevelopmentTokenIssuer.MinimumKeyBytes)
+		{
 			throw new InvalidOperationException(
 				$"{HpacAuthenticationOptions.SectionName}:DevelopmentSigningKey must be at least "
 				+ $"{DevelopmentTokenIssuer.MinimumKeyBytes} bytes. A shorter HS256 key weakens the signature, and a "
 				+ "developer should not learn a habit here that would be wrong anywhere else.");
+		}
 
 		return Common(options, DevelopmentTokenIssuer.IssuerName, DevelopmentTokenIssuer.KeyFrom(options.DevelopmentSigningKey));
 	}
@@ -105,9 +115,11 @@ public static class AuthenticationServiceCollectionExtensions
 	private static TokenValidationParameters ProviderParameters(HpacAuthenticationOptions options)
 	{
 		if (string.IsNullOrWhiteSpace(options.Authority))
+		{
 			throw new InvalidOperationException(
 				$"{HpacAuthenticationOptions.SectionName}:Authority is required outside Development. "
 				+ "Without it there are no signing keys to validate against.");
+		}
 
 		// No IssuerSigningKey: the authority's published keys are fetched and
 		// rotated by the handler.

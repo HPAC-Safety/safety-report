@@ -250,8 +250,10 @@ public class Question
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		if (IsSystem && type != Type)
+		{
 			throw new DomainRuleViolationException(
 				$"'{Key}' is a system question. Its wording can change; its type cannot.");
+		}
 
 		return ReviseInternal(
 			new RevisionDraft(
@@ -379,7 +381,10 @@ public class Question
 	{
 		EnsureNotDeleted();
 
-		if (IsSystem && role != QuestionRole.ConsentPublish) throw new DomainRuleViolationException($"'{Key}' carries publication consent and cannot give up that role.");
+		if (IsSystem && role != QuestionRole.ConsentPublish)
+		{
+			throw new DomainRuleViolationException($"'{Key}' carries publication consent and cannot give up that role.");
+		}
 
 		Role = role;
 	}
@@ -401,8 +406,10 @@ public class Question
 	public QuestionRevision Deactivate(DateTimeOffset at)
 	{
 		if (IsSystem)
+		{
 			throw new DomainRuleViolationException(
 				$"'{Key}' gates publication. A form that does not ask it cannot publish anything.");
+		}
 
 		return ReviseInternal(CurrentDraft() with { IsActive = false }, at);
 	}
@@ -420,10 +427,15 @@ public class Question
 	public void Delete(DateTimeOffset at)
 	{
 		if (IsSystem)
+		{
 			throw new DomainRuleViolationException(
 				$"'{Key}' is publication consent and cannot be deleted. Nothing may be published without it.");
+		}
 
-		if (Deleted is not null) return;
+		if (Deleted is not null)
+		{
+			return;
+		}
 
 		Deleted = at;
 	}
@@ -495,7 +507,10 @@ public class Question
 
 	private void EnsureNotDeleted()
 	{
-		if (Deleted is not null) throw new DomainRuleViolationException($"'{Key}' was deleted and cannot be changed.");
+		if (Deleted is not null)
+		{
+			throw new DomainRuleViolationException($"'{Key}' was deleted and cannot be changed.");
+		}
 	}
 
 	/// <summary>

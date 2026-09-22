@@ -40,7 +40,10 @@ public sealed class WebLocalizationAndDesignSteps
 			}
 		};
 		process.StartInfo.ArgumentList.Add(relativeScriptPath);
-		foreach (var arg in args) process.StartInfo.ArgumentList.Add(arg);
+		foreach (var arg in args)
+		{
+			process.StartInfo.ArgumentList.Add(arg);
+		}
 
 		process.Start();
 		var output = process.StandardOutput.ReadToEnd();
@@ -49,7 +52,10 @@ public sealed class WebLocalizationAndDesignSteps
 
 		combinedOutput = $"{output}\n{error}";
 
-		if (expectSuccess) process.ExitCode.ShouldBe(0, $"{relativeScriptPath} failed:\n{output}\n{error}");
+		if (expectSuccess)
+		{
+			process.ExitCode.ShouldBe(0, $"{relativeScriptPath} failed:\n{output}\n{error}");
+		}
 
 		return process.ExitCode;
 	}
@@ -58,7 +64,10 @@ public sealed class WebLocalizationAndDesignSteps
 	{
 		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx"))) directory = directory.Parent;
+		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
+		{
+			directory = directory.Parent;
+		}
 
 		return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
 	}

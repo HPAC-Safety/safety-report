@@ -112,7 +112,10 @@ public class ReportFile
 	{
 		var parsed = Core.BlobKey.Parse(strippedBlobKey);
 
-		if (parsed.Compartment is not MediaCompartment.Stripped) throw new DomainRuleViolationException("A derivative must live in the stripped compartment.");
+		if (parsed.Compartment is not MediaCompartment.Stripped)
+		{
+			throw new DomainRuleViolationException("A derivative must live in the stripped compartment.");
+		}
 
 		StrippedBlobKey = parsed.Value;
 		ExifStrippedAt = at;

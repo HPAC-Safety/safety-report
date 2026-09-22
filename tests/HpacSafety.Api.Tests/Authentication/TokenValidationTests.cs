@@ -227,7 +227,10 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 	{
 		var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, "dev:admin") };
 
-		foreach (var value in roles ?? (role is null ? [] : new[] { role })) claims.Add(new Claim("roles", value));
+		foreach (var value in roles ?? (role is null ? [] : new[] { role }))
+		{
+			claims.Add(new Claim("roles", value));
+		}
 
 		claims.AddRange(extra ?? []);
 

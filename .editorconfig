@@ -36,8 +36,9 @@ csharp_style_expression_bodied_methods = false:suggestion
 csharp_style_expression_bodied_constructors = false:suggestion
 csharp_style_expression_bodied_operators = false:suggestion
 csharp_style_expression_bodied_local_functions = false:suggestion
-# Braces only once a block spans more than one line.
-csharp_prefer_braces = when_multiline:suggestion
+# Always braced, even for a one-line body.
+csharp_prefer_braces = true:error
+dotnet_diagnostic.IDE0011.severity = error
 
 [*.md]
 trim_trailing_whitespace = false

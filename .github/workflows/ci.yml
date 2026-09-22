@@ -213,8 +213,16 @@ jobs:
           echo "::notice::UI/e2e changes are covered by a matching .feature change, or none were made."
 
   coverage:
-    needs: changes
-    if: needs.changes.outputs.dotnet == 'true'
+    # Depends on e2e (not just changes) so it can download that job's
+    # Playwright test count instead of reinstalling Playwright itself — see
+    # the "Count Playwright tests" step on the e2e job and #263. e2e is
+    # itself conditional, so `always()` plus the explicit result check is
+    # needed: a plain `needs: e2e` would skip this job whenever e2e does.
+    needs: [changes, e2e]
+    if: >-
+      always() &&
+      (needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') &&
+      (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -242,6 +250,10 @@ jobs:
       # ADR-0053/ADR-0073 and the matching filter on the `test` job's
       # `dotnet test` step. Skipped scenarios would not move coverage either
       # way; the filter keeps the two runs collecting the same set.
+      # No explicit trx filename: dotnet test runs one vstest host per project,
+      # and a shared filename would make each one overwrite the last. Without
+      # one, each host gets a unique name and tools/test-count.mjs reads the
+      # project name back out of the trx's own `storage` attribute.
       - name: Collect .NET coverage
         run: >
           dotnet test HpacSafety.slnx
@@ -249,6 +261,7 @@ jobs:
           --filter "Category!=ui"
           --collect:"XPlat Code Coverage"
           --settings coverlet.runsettings
+          --logger trx
           --results-directory ./artifacts/coverage
 
       - name: Collect JavaScript coverage
@@ -332,6 +345,33 @@ jobs:
               echo "</details>"
             } >> "$GITHUB_STEP_SUMMARY"
           fi
+
+      # Only present when the e2e job actually ran (needs.e2e.result ==
+      # 'success'); a dotnet-only PR has nothing to download here, and the
+      # merge step below tolerates that with its own "not run" line.
+      - name: Download the Playwright test count
+        if: needs.e2e.result == 'success'
+        uses: actions/download-artifact@v7
+        with:
+          name: test-count-e2e
+          path: ./artifacts/test-count
+
+      # Appended to comment.md (already written by the Gate step above)
+      # rather than a separate comment, per #263 - one table pair, not two
+      # comments to scroll past.
+      - name: Add test counts
+        run: |
+          {
+            echo ""
+            echo "## Test counts"
+            echo ""
+            node tools/test-count.mjs --section csharp --trx-dir ./artifacts/coverage
+            if [ -f ./artifacts/test-count/e2e.md ]; then
+              cat ./artifacts/test-count/e2e.md
+            else
+              echo "_Playwright suite not run in this job._"
+            fi
+          } >> comment.md
 
       # Skipped on fork pull requests, whose token cannot write. The job summary
       # above carries the same information, so nothing is lost - a failing gate
@@ -459,6 +499,23 @@ jobs:
 
       - name: Playwright
         run: npm --prefix tests/e2e test
+
+      # npm test above already ran bddgen, so .features-gen reflects exactly
+      # what this job just executed. The `coverage` job depends on this job
+      # (see ci.yml's coverage job) and downloads this fragment rather than
+      # regenerating it — only this job has actually run Playwright. See #263.
+      - name: Count Playwright tests
+        if: always()
+        run: |
+          mkdir -p ./artifacts/test-count
+          node tools/test-count.mjs --section e2e > ./artifacts/test-count/e2e.md
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: test-count-e2e
+          path: ./artifacts/test-count/e2e.md
+          if-no-files-found: warn
 
   agent-config:
     runs-on: ubuntu-latest

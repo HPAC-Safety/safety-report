@@ -11,10 +11,21 @@ authority is [`features/README.md`](../features/README.md).
 3. Load only the project skills relevant to the task.
 4. Work from current `main` on `issue-<number>/<short-description>`.
 
-Project-owned skill sources live under `skills/`. `skillfile install` generates
-tool-specific copies under `.claude/`; never edit or commit those copies. Keep
-local skills concise and HPAC-specific. Search before adding generic guidance,
-and do not install a skill whose architecture conflicts with `/features`.
+Project-owned skill sources live under `skills/` and role agents under
+`agents/`. `skillfile install` generates tool-specific copies under `.claude/`;
+never edit or commit those copies. Keep local skills concise and
+HPAC-specific. Search before adding generic guidance, and do not install a
+skill whose architecture conflicts with `/features`.
+
+A skill and an agent are not the same thing. A skill is knowledge, loaded when
+its topic is in play, and it constrains nothing. An agent is a role, and what
+makes it useful is what it refuses: the four declared here — `spec-author`,
+`test-writer`, `implementer`, `spec-reviewer` — are the steps of the
+specification-driven chain, each holding one job and trusting only the artifact
+from the step before it
+([ADR-0086](decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)).
+They are definitions an operator invokes, not a pipeline: the repository's
+gates remain the enforcement.
 
 Runtime AI instructions are not coding-agent skills. The one current prompt
 lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
@@ -23,7 +34,7 @@ lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
 
 | Output | Owning command |
 |---|---|
-| `.claude/skills/` | `skillfile install` |
+| `.claude/skills/`, `.claude/agents/` | `skillfile install` |
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
 | `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` |

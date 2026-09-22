@@ -9,6 +9,7 @@ Background:
   And it accepts multipart/form-data with one report JSON part and zero or more files parts
   And the bearer token is transport/security metadata, not persisted report content
 
+@REQ-SUB-001
 @ignore
 @ui
 Scenario: The browser holds report state locally until submission
@@ -18,6 +19,7 @@ Scenario: The browser holds report state locally until submission
   And image, video, and document attachments are never placed in browser storage
   And no server draft, report ID reservation, upload token, or resumable upload protocol exists
 
+@REQ-SUB-002
 @ignore
 @ui
 Scenario: A successful submission clears local browser state
@@ -25,6 +27,7 @@ Scenario: A successful submission clears local browser state
   When the final multipart request succeeds
   Then the browser clears that local state
 
+@REQ-SUB-003
 @ignore
 @ui
 Scenario: Expired local state is not restored
@@ -32,6 +35,7 @@ Scenario: Expired local state is not restored
   When the reporter returns to the form
   Then the browser ignores or removes the expired state
 
+@REQ-SUB-004
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
   When the reporter submits the form
@@ -40,12 +44,14 @@ Scenario: One answer entry per shown answer-producing revision
   And file-upload answers additionally use zero-based indexes into the repeated files parts
   And fields for the other answer shapes are null
 
+@REQ-SUB-005
 Scenario: A skipped answer is represented by an empty value, not omission
   Given a reporter skips an answer-producing question
   When the submission DTO is built
   Then a skipped answer of any type has a null value
   And a skipped file upload has an empty attachment_part_indexes list
 
+@REQ-SUB-006
 Scenario: A submitted select value must be one the revision offered
   Given a reporter submits a value for a picker or multi-select question
   When the API validates the submission
@@ -53,6 +59,7 @@ Scenario: A submitted select value must be one the revision offered
   And a value the revision never offered is rejected
   And a type-ahead, or a multi-select with reporter additions allowed, backed by a live shared list also accepts a value the list does not yet offer
 
+@REQ-SUB-007
 Scenario: The submission path never calls a translation provider
   Given a submission contains select answers and a value typed into a type-ahead or a multi-select with reporter additions allowed
   When the API commits the submission
@@ -77,6 +84,7 @@ Scenario: An administrator's correction always wins over the Worker's translatio
   Then the stored translated value is the administrator's
   And the translation source is marked "human"
 
+@REQ-SUB-008
 Scenario Outline: The API rejects a malformed submission DTO
   Given a submission DTO contains <problem>
   When the API validates it
@@ -93,6 +101,7 @@ Examples:
   | a question_revision_id for a deleted revision       |
   | no explicit answer to the consent_publish revision  |
 
+@REQ-SUB-009
 Scenario: A submission may answer a known superseded revision
   Given the browser's session began before an Administrator edited the form
   And an answered revision is a known, non-deleted, superseded revision
@@ -100,12 +109,14 @@ Scenario: A submission may answer a known superseded revision
   Then the API validates the answer against that revision's historical type, options, and privacy
   And does not require the submitted set to equal the latest form
 
+@REQ-SUB-010
 @ignore
 Scenario: A revision that was never shown as answer-producing is rejectable
   Given a submitted answer references a revision that the client was never shown as answer-producing, or the submitted revisions form an internally inconsistent combination for the same stable key
   When the API validates the submission
   Then the API may reject the submission
 
+@REQ-SUB-011
 Scenario: Reporter-visible errors never echo submitted content
   Given a submission fails validation
   When the API returns an error to the reporter
@@ -113,6 +124,7 @@ Scenario: Reporter-visible errors never echo submitted content
   And it never echoes an answer, client filename, bearer token, credential, or storage key
   And routine invalid requests are not logged with body content
 
+@REQ-SUB-012
 Scenario: Accepted attachments are streamed into quarantine under a bound
   Given a submission includes one or more files parts
   When the API accepts an attachment
@@ -121,23 +133,27 @@ Scenario: Accepted attachments are streamed into quarantine under a bound
   And never buffers the whole file in memory
   And never persists or logs the client filename
 
+@REQ-SUB-013
 Scenario: A valid submission is persisted atomically
   Given a multipart submission passes every validation step
   When the API commits the submission
   Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file
 
+@REQ-SUB-014
 Scenario: A failed transaction leaves no visible report and no leaked blobs
   Given the persistence transaction for a submission fails
   When the API returns from the failed request
   Then no report is visible
   And any already-written quarantine blobs are unreferenced and expire through the storage lifecycle rule
 
+@REQ-SUB-015
 Scenario: A successful submission returns an opaque accepted receipt
   Given a submission passes validation and persists successfully
   When the API responds
   Then the response is 202 Accepted with an opaque report ID and the status "submitted"
   And the response contains no raw answers or attachment URLs
 
+@REQ-SUB-016
 @ignore
 @ui
 Scenario: The UI prevents duplicate submission while a request is in flight
@@ -147,17 +163,20 @@ Scenario: The UI prevents duplicate submission while a request is in flight
   And retains local state if the network result is uncertain
   And clears saved local state only after a definite 202 response
 
+@REQ-SUB-017
 Scenario: A rate-limited submission is rejected
   Given a submission request arrives
   When the per-IP rate limit is exceeded
   Then the API rejects the request with 429 and a safe retry signal
   And the client IP used for rate limiting comes only from explicitly trusted proxy headers and is never stored on the report
 
+@REQ-SUB-018
 Scenario: An unauthenticated submission is rejected
   Given a submission request carries no bearer token
   When the API processes the submission
   Then the API rejects it before any report state is created
 
+@REQ-SUB-019
 Scenario Outline: A member of any role may submit a report
   Given a reporter holds a valid member token with the <role> role
   When a valid submission is made
@@ -169,12 +188,14 @@ Examples:
   | SafetyOfficer |
   | Administrator |
 
+@REQ-SUB-020
 Scenario: A stored report carries no submitter subject, user id, or link
   Given a reporter submits a valid report while signed in
   When the submission is committed
   Then no stored report, answer, file, consent projection, or outbox message records the submitter's subject
   And no column, join table, or hash anywhere links the report to the member who filed it
 
+@REQ-SUB-021
 @ignore
 Scenario: No audit entry or log line records who submitted a report
   Given a reporter submits a valid report while signed in
@@ -182,6 +203,7 @@ Scenario: No audit entry or log line records who submitted a report
   Then no audit entry attributes the submission to a subject
   And no log line records the submitting subject at any level
 
+@REQ-SUB-022
 @ui
 Scenario: A signed-out visitor is asked to sign in before the report page is offered
   Given a signed-out visitor opens the report page
@@ -189,6 +211,7 @@ Scenario: A signed-out visitor is asked to sign in before the report page is off
   And the page explains that filing a report requires an HPAC member sign-in
   And it offers a sign-in action
 
+@REQ-SUB-023
 @ui
 Scenario: The report page tells the reporter that signing in does not attach them to the report
   Given a signed-in member opens the report page
@@ -196,6 +219,7 @@ Scenario: The report page tells the reporter that signing in does not attach the
   And a notice states that signing in only confirms HPAC membership
   And the notice states that the report is not linked to their account
 
+@REQ-SUB-024
 @ui
 Scenario: The not-tracked notice is shown in the reporter's chosen language
   Given a signed-in member opens the report page in French

@@ -3,6 +3,7 @@ The public form and the admin review queue are routes within one
 React/TypeScript single-page application that renders bilingual content,
 preserves local report state, and meets WCAG 2.2 AA.
 
+@REQ-WLD-001
 @ignore
 @ui
 Scenario: The admin review queue is a route on the one deployed site
@@ -10,6 +11,7 @@ Scenario: The admin review queue is a route on the one deployed site
   Then the public form and the admin review queue are routes within the same React/TypeScript application, built with Vite and served from one containerized deployment
   And loading the site requires JavaScript
 
+@REQ-WLD-002
 @ui
 Scenario: The homepage header exposes navigation to reporting, submission, and contact, and a distinct member-login action
   Given a visitor loads the homepage
@@ -18,6 +20,7 @@ Scenario: The homepage header exposes navigation to reporting, submission, and c
   When a visitor activates any of those links or the member-login action
   Then the browser navigates to that destination's page
 
+@REQ-WLD-003
 @ui
 Scenario: The contact page shows HPAC's organization details, mailing address, email, and social links
   Given a visitor loads the contact page
@@ -25,6 +28,7 @@ Scenario: The contact page shows HPAC's organization details, mailing address, e
   And the page shows an email link addressed to the current locale's contact address
   And the page shows Facebook, YouTube, and WhatsApp links that open in a new tab
 
+@REQ-WLD-004
 @ui
 Scenario: On a mobile-width viewport, header navigation is reached through a hamburger toggle
   Given a visitor loads the homepage on a mobile-width viewport
@@ -34,6 +38,7 @@ Scenario: On a mobile-width viewport, header navigation is reached through a ham
   When the visitor activates the menu toggle again
   Then the dialog closes
 
+@REQ-WLD-005
 @ui
 Scenario Outline: The initial locale is selected in priority order
   Given a visitor has <signal>
@@ -46,6 +51,7 @@ Examples:
   | no stored choice but a supported browser language of fr-CA | the browser language, fr-CA |
   | no stored choice and no supported browser language         | English, as the fallback    |
 
+@REQ-WLD-006
 @ui
 Scenario: Switching the language toggle updates the document language and persists the choice
   Given a visitor is on any page
@@ -53,6 +59,7 @@ Scenario: Switching the language toggle updates the document language and persis
   Then the document lang attribute and page title update
   And the language choice persists to local storage across a reload
 
+@REQ-WLD-007
 @ignore
 @ui
 Scenario: Switching the language toggle rerenders without losing answers
@@ -62,6 +69,7 @@ Scenario: Switching the language toggle rerenders without losing answers
   And the document lang attribute and page title update
   And entered answers are neither cleared nor remapped
 
+@REQ-WLD-008
 @ui
 Scenario: A visitor can toggle and persist a light/dark theme choice
   Given a visitor has no stored theme preference
@@ -71,6 +79,7 @@ Scenario: A visitor can toggle and persist a light/dark theme choice
   And the header logo matches the active theme
   And the theme choice persists to local storage across a reload
 
+@REQ-WLD-009
 @ui
 Scenario: The footer sits at the bottom of the viewport on a short page but below the fold on a long one
   Given a visitor loads a page whose content is shorter than the viewport
@@ -78,30 +87,35 @@ Scenario: The footer sits at the bottom of the viewport on a short page but belo
   Given a visitor loads a page whose content is taller than the viewport
   Then the footer sits below the content, not pinned to the viewport
 
+@REQ-WLD-010
 Scenario: Application chrome strings come from committed locale catalogues
   Given the UI renders chrome or a stable validation/error message
   When the string is displayed
   Then it comes from a committed locale catalogue with key parity between en-CA and fr-CA
   And no user-facing literal appears directly in code
 
+@REQ-WLD-011
 Scenario: A translation missing locally is stubbed with a visible marker, and CI must replace it before merge
   Given a key exists in en-CA.json but not in fr-CA.json, or in fr-CA.json but not in en-CA.json
   When the local build runs, or a commit is made that stages a locales/ file
   Then the file missing that key gains it, with the other file's text prefixed with a # marker
   And a key still carrying that # marker fails locale verification, so it can never reach main untranslated
 
+@REQ-WLD-012
 Scenario: A French value edited by hand is recorded rather than overwritten
   Given a French value is edited by hand and its English is unchanged
   When the locales are verified
   Then the edit is accepted as a human correction
   And verification says it will be recorded and never machine-translated again
 
+@REQ-WLD-013
 Scenario: Editing both languages at once is one correction, not a conflict
   Given a key is edited in both en-CA.json and fr-CA.json
   When the locales are verified
   Then the edit is accepted as a human correction
   And neither language is overwritten
 
+@REQ-WLD-014
 @ignore
 Scenario: Question content comes from the bilingual database revision
   Given a question revision has English and French labels, help, and options authored by an Administrator
@@ -109,6 +123,7 @@ Scenario: Question content comes from the bilingual database revision
   Then both languages come from the database revision
   And no runtime or CI auto-translation service produces question rendering
 
+@REQ-WLD-015
 @ignore
 @ui
 Scenario: Only publication consent is marked required on the form
@@ -118,6 +133,7 @@ Scenario: Only publication consent is marked required on the form
   And every optional question offers a natural blank/skipped state with no coerced answer
   And consent_publish has no selected default and requires an explicit yes or no
 
+@REQ-WLD-016
 @ignore
 @ui
 Scenario: The form explains local storage and warns about attachments
@@ -126,6 +142,7 @@ Scenario: The form explains local storage and warns about attachments
   And a notice states that signing in only confirms HPAC membership and that the report is not linked to their account
   And attachment selection appears last with type/count/size guidance and a warning that files are not restored after reload
 
+@REQ-WLD-017
 @ignore
 @ui
 Scenario: The client shows inline validation before submission
@@ -133,12 +150,14 @@ Scenario: The client shows inline validation before submission
   When the client validates it before submission
   Then the client shows inline validation using the same stable type/option rules and localized messages the API uses
 
+@REQ-WLD-018
 @ignore
 Scenario: Client validation never replaces server validation
   Given a submission reaches the API
   When the API independently validates it
   Then the API's validation is authoritative regardless of what the client allowed or displayed
 
+@REQ-WLD-019
 @ignore
 @ui
 Scenario: The active locale controls which summary text is primary
@@ -147,6 +166,7 @@ Scenario: The active locale controls which summary text is primary
   Then that locale's text is shown first
   And the visitor can switch to the counterpart text
 
+@REQ-WLD-020
 @ignore
 @ui
 Scenario: Admin pages distinguish private, ordinary, and output content
@@ -156,6 +176,7 @@ Scenario: Admin pages distinguish private, ordinary, and output content
   And editing either summary text visibly invalidates approval
   And question editing explains that saving always creates a new immutable revision
 
+@REQ-WLD-021
 @ignore
 Scenario: Assets are self-hosted, never loaded from third-party CDNs
   Given the site renders fonts, styles, or imagery
@@ -163,6 +184,7 @@ Scenario: Assets are self-hosted, never loaded from third-party CDNs
   And no asset is loaded from a third-party CDN
   And the logo is the approved HPAC mark, as light/dark SVG variants
 
+@REQ-WLD-022
 @ignore
 @ui
 Scenario: Dark mode renders correctly in every state
@@ -170,6 +192,7 @@ Scenario: Dark mode renders correctly in every state
   When the page renders
   Then contrast, focus, error, disabled, and success states work in both themes and languages
 
+@REQ-WLD-023
 @ignore
 @ui
 Scenario: The form meets baseline accessibility requirements
@@ -181,6 +204,7 @@ Scenario: The form meets baseline accessibility requirements
   And motion respects reduced-motion and touch targets/contrast are sufficient
   And media previews are never required to complete a report
 
+@REQ-WLD-024
 @ignore
 @ui
 Scenario: A JavaScript failure never exposes or erases report data
@@ -190,6 +214,7 @@ Scenario: A JavaScript failure never exposes or erases report data
   And nothing is silently published
   And saved local answers are not erased
 
+@REQ-WLD-025
 @ignore
 @ui
 Scenario: A network failure preserves local state and explains retry

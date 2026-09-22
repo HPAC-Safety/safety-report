@@ -3,6 +3,7 @@ A report moves through a fixed set of states from submission to
 publication, and soft deletion can remove it from that lifecycle at any
 point.
 
+@REQ-DOM-001
 @ignore
 Scenario Outline: A report follows the defined lifecycle transitions
   Given a report is in state <from>
@@ -22,6 +23,7 @@ Examples:
   | Approved      | consent is yes and the report is not deleted | Published     |
   | Published     | either summary text is edited                | PendingReview |
 
+@REQ-DOM-002
 @ignore
 Scenario: SummaryFailed remains visible to safety officers
   Given a report's summarization retries are exhausted
@@ -29,6 +31,7 @@ Scenario: SummaryFailed remains visible to safety officers
   Then it remains visible in the safety officer review queue
   And it does not disappear because AI processing failed
 
+@REQ-DOM-003
 @ignore
 Scenario: A report is publishable only when every invariant holds
   Given a report and its summary row are not deleted
@@ -39,6 +42,7 @@ Scenario: A report is publishable only when every invariant holds
   When the public query evaluates the report
   Then the report is publishable
 
+@REQ-DOM-004
 @ignore
 Scenario Outline: A report is not publishable when one invariant fails
   Given a report otherwise satisfies every publication invariant
@@ -54,6 +58,7 @@ Examples:
   | the pair has no current human approval      |
   | the report has been rejected                |
 
+@REQ-DOM-005
 @ignore
 Scenario: Editing a summary text unpublishes the report
   Given a report is Published
@@ -61,6 +66,7 @@ Scenario: Editing a summary text unpublishes the report
   Then the pair's approver subject and approval timestamp are cleared
   And the report immediately stops satisfying the publication invariant
 
+@REQ-DOM-006
 @ignore
 Scenario: Negative consent still allows internal review
   Given a reporter has not consented to publication
@@ -68,6 +74,7 @@ Scenario: Negative consent still allows internal review
   Then internal summarization and safety review proceed normally
   And the report can never satisfy the public query
 
+@REQ-DOM-007
 @ignore
 Scenario: Soft deletion removes a report from every normal path
   Given a report exists in any lifecycle state
@@ -78,6 +85,7 @@ Scenario: Soft deletion removes a report from every normal path
   And public and normal admin queries hide the report immediately
   And there is no restore transition
 
+@REQ-DOM-008
 @ignore
 Scenario: A question revision can be deleted only when unreferenced
   Given a question revision is referenced by no answer, including answers on deleted reports
@@ -85,6 +93,7 @@ Scenario: A question revision can be deleted only when unreferenced
   Then the revision and its option children are stamped with one deleted timestamp
   And once any answer references a revision, that revision is never deletable again
 
+@REQ-DOM-009
 @ignore
 Scenario: Retiring a question is a soft delete with no way back
   Given a question is retired, either by an Administrator or by being replaced through an edit
@@ -93,6 +102,7 @@ Scenario: Retiring a question is a soft delete with no way back
   And its revisions, options, and every answer given to it are untouched
   And there is no restore transition
 
+@REQ-DOM-010
 @ignore
 Scenario: Raw reports are retained until explicit deletion
   Given a report has been submitted
@@ -100,6 +110,7 @@ Scenario: Raw reports are retained until explicit deletion
   Then the report is retained indefinitely
   And there is no scheduled report purge and no physical-delete path in the application
 
+@REQ-DOM-011
 @ignore
 Scenario: Soft-deleted and private data remain under managed retention
   Given a report has been soft-deleted, or a question revision has a private original or derivative
@@ -107,6 +118,7 @@ Scenario: Soft-deleted and private data remain under managed retention
   Then it remains under managed storage/database retention rather than being purged
   And backups of that data follow infrastructure policy
 
+@REQ-DOM-012
 @ignore
 Scenario: Unreferenced quarantine objects expire without affecting reports
   Given a multipart request fails or is abandoned before the transaction commits
@@ -114,6 +126,7 @@ Scenario: Unreferenced quarantine objects expire without affecting reports
   Then those objects may expire automatically through storage lifecycle rules
   And that operational cleanup does not change report retention
 
+@REQ-DOM-013
 @ignore
 Scenario Outline: An audited action is recorded in the immutable audit log
   Given <action> occurs

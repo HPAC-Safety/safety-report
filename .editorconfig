@@ -17,6 +17,15 @@ dotnet_diagnostic.CA1062.severity = warning
 csharp_style_namespace_declarations = file_scoped:warning
 dotnet_sort_system_directives_first = true
 
+# Block bodies for anything with a method-like signature; arrows stay for
+# simple get-only properties/indexers, which `dotnet format` leaves alone.
+csharp_style_expression_bodied_methods = false:suggestion
+csharp_style_expression_bodied_constructors = false:suggestion
+csharp_style_expression_bodied_operators = false:suggestion
+csharp_style_expression_bodied_local_functions = false:suggestion
+# Braces only once a block spans more than one line.
+csharp_prefer_braces = when_multiline:suggestion
+
 [*.md]
 trim_trailing_whitespace = false
 

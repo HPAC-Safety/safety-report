@@ -33,3 +33,21 @@ order (which breaks the moment the two language forms diverge).
 
 Not yet built — every scenario above carries `@ignore`. See
 [implementation status](../../docs/implementation-status.md).
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- A live connection to Typeform: no API sync, no webhook, no scheduled poll.
+  Import and export move files a human supplies or downloads.
+- Auto-mapping a real branching rule. Every one is recorded as pending for an
+  administrator to wire by hand
+  ([ADR-0078](../../docs/decisions/ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md)).
+- Importing a question straight into the bank. An import produces drafts that
+  an administrator reviews through the ordinary editor.
+- QSF or any other vendor format
+  ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
+- Machine-translating an imported question. The import carries what the two
+  files say; an administrator authors the rest.

@@ -54,3 +54,22 @@ worker, or direct API caller can bypass a publication guard.
 
 The requested UI locale may determine which text is displayed first but is
 edge state, not extra report data.
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- A user table, an allowlist, an allowlist-management screen, or a session
+  store. Roles come from the token
+  ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+- Handling a member's password, outside the one Development-only carve-out
+  ([ADR-0079](../../docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+- CSRF machinery or Turnstile. A bearer token carries no ambient authority
+  ([ADR-0068](../../docs/decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)).
+- Email, push, or chat notification of a reviewer, a reporter, or anyone else.
+- Any publication channel besides the HPAC public feed.
+- Automatic approval or publication, including "approve if the model is
+  confident."
+- A per-reporter rate limit, which would mean identifying the reporter.

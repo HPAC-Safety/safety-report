@@ -65,12 +65,17 @@ judges a diff against those claims and the ADRs. Each trusts only the artifact
 from the role before it; none of them is required, and a contributor who never
 invokes one is unaffected.
 
-Two mechanisms are still being adopted and arrive with their own pull requests:
-stable claim IDs and a generated traceability matrix
-([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md))
-and lessons that flow upstream after a bug
+A bug fix that reveals a specification gap writes a lesson under
+[`docs/lessons/`](docs/lessons/README.md) — symptom, root cause, spec delta,
+and the claim that now proves it — in the same pull request as the fix
 ([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
-Both records are `proposed` until the change that applies them lands.
+Read them on a design pass, alongside `/features` and the ADRs: a bug fixed
+with the specification unchanged is the same bug next quarter.
+
+One mechanism is still being adopted and arrives with its own pull request:
+stable claim IDs and a generated traceability matrix
+([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+That record is `proposed` until the change that applies it lands.
 
 ## Product invariants
 

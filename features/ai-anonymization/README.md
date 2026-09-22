@@ -57,3 +57,21 @@ one-language summary rows describe earlier designs. They are migration input,
 not additional stages to preserve. The target implementation should keep one
 concise anonymization skill explaining the purpose and rules above and remove
 redundant pipeline-specific guidance.
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- A second model call of any kind — no separate PII-audit pass, no verification
+  call, no re-summarization stage. One versioned prompt, one call per attempt.
+- A deterministic scrubber beyond the narrow private-value marking pass that
+  precedes the one call
+  ([ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+- Sending a document, an attachment, or extracted document text to the model.
+- Translating a narrative or a free-text answer. The one call returns both
+  languages; nothing else translates report prose.
+- Publishing, notifying, or advancing a report's state because a summary
+  succeeded. Publication is a human decision.
+- Per-sentence or per-field redaction output. The result is one bilingual pair.

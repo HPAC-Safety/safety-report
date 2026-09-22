@@ -8,7 +8,8 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
 1. Before implementing, orient with `graphify query`/`graphify explain`
    (when `graphify-out/graph.json` exists) and read
    [`features/README.md`](../../features/README.md), the affected canonical
-   pages, and any ADR that bears on the change — do this even when the task
+   pages, that area's **out of scope** section, any ADR that bears on the
+   change, and [`docs/lessons/`](../../docs/lessons/README.md) — do this even when the task
    looks small or familiar; drift comes from skipping this step, not from
    the change itself. Treat source/tests as current-state evidence and
    ADRs/issues as history when they conflict.

@@ -46,3 +46,24 @@ role can change, while wording/type/options live below `QuestionVersion`. It
 also projects several ordinary answers onto typed report properties. Both
 choices are superseded by the complete-revision model in the feature file. See
 [implementation status](../../docs/implementation-status.md).
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- A general-purpose form builder: scoring, surveys, quizzes, form templates, or
+  arbitrary branching. A question may be conditional on a yes/no question or on
+  a single-select question naming a required option, and that is the whole of
+  it ([ADR-0060](../../docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
+  [ADR-0074](../../docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
+- Machine translation on the submission path. Translation is administrator-
+  initiated while authoring, or Worker-run off the submission path
+  ([ADR-0080](../../docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).
+- Mutating a revision, reviving a retired question, or any edit that loses the
+  wording an answer was given against.
+- Saving a question in one language.
+- A reporter editing, curating, or removing a shared choice list. A reporter
+  may add a missing choice; an administrator curates
+  ([ADR-0063](../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).

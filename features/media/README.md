@@ -47,3 +47,21 @@ upload-slot flow with API streaming and requires a safe derivative for videos
 as well as images. It does not yet accept or privately expose the document
 types specified above. See
 [implementation status](../../docs/implementation-status.md).
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- Parsing, extracting, indexing, or searching the contents of a document.
+- Inline rendering or preview of a document, including a thumbnail or a first
+  page.
+- Any public delivery of an attachment, before or after publication.
+- Anonymizing or transforming a document. A validated original is retained
+  exactly as it arrived.
+- Client-side processing, resizing, or stripping before upload. Validation and
+  metadata removal happen server-side, where they can be trusted.
+- A pre-submit upload session, resumable protocol, or pre-signed PUT for a
+  reporter ([ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md)
+  governs how verified bytes are read back, not how they arrive).

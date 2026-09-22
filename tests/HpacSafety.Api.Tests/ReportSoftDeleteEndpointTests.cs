@@ -1,4 +1,8 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net;
+using System.Security.Claims;
+using System.Text;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
@@ -8,6 +12,7 @@ using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -102,6 +107,45 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 
 		entry.TargetType.ShouldBe("Report");
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
+	}
+
+	[Fact]
+	public async Task GivenAValidatedTokenWithNoSubjectClaim_WhenReportIsDeleted_ThenTheAuditRowRecordsUnknownRatherThanFailing()
+	{
+		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
+		// subject claim is not separately enforced, so the endpoint has to cope
+		// with a validated token that lacks one, the same stance /me takes
+		var reportId = await SeedReportAsync();
+		var token = ForgeTokenWithNoSubject();
+		using var client = SignedInClient.Bearing(_factory, token);
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entry = await database.AuditLog
+			.Where(e => e.Action == AuditAction.DeletedReport && e.TargetId == reportId)
+			.SingleAsync();
+
+		entry.ActorSubject.ShouldBe("(unknown)");
+	}
+
+	private static string ForgeTokenWithNoSubject()
+	{
+		var token = new JwtSecurityToken(
+			DevelopmentTokenIssuer.IssuerName,
+			"hpac-safety-api",
+			[new Claim("roles", "safety_officer")],
+			DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime,
+			DateTimeOffset.UtcNow.AddHours(1).UtcDateTime,
+			new SigningCredentials(
+				new SymmetricSecurityKey(Encoding.UTF8.GetBytes(ApiPostgresFixture.SigningKey)), SecurityAlgorithms.HmacSha256));
+
+		return new JwtSecurityTokenHandler().WriteToken(token);
 	}
 
 	[Fact]

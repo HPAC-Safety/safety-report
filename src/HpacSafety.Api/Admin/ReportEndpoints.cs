@@ -67,6 +67,9 @@ public static class ReportEndpoints
 			message.Delete(at);
 		}
 
+		// A validated token should always carry a subject, but the /me endpoint
+		// already treats that as unguaranteed rather than assumed — a role claim
+		// alone does not prove a subject claim exists. Same stance here.
 		var subject = MemberRoles.SubjectOf(context.User) ?? "(unknown)";
 		database.AuditLog.Add(new AuditLogEntry(subject, AuditAction.DeletedReport, "Report", reportId, at));
 

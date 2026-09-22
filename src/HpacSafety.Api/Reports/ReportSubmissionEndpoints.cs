@@ -127,6 +127,15 @@ public static class ReportSubmissionEndpoints
 			return Problem(cause.Message);
 		}
 
+		try
+		{
+			await RecordReporterChoices(report, revisionLookup, database, cancellationToken).ConfigureAwait(false);
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Problem(cause.Message);
+		}
+
 		var attachmentProblem = await IngestFiles(
 				report, fileAnswers, form.Files, blobStore, ingestor, clock, cancellationToken)
 			.ConfigureAwait(false);
@@ -312,6 +321,48 @@ public static class ReportSubmissionEndpoints
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///     Adds each type-ahead value the reporter typed to the shared list behind
+	///     it, in the language they answered in, inside the same transaction as the
+	///     report (ADR-0063). A value the list already offers, in that language or
+	///     under the same code, is the existing choice and changes nothing. A
+	///     type-ahead with no live shared list keeps the reporter's words as the
+	///     answer and has no list to add them to.
+	/// </summary>
+	private static async Task RecordReporterChoices(
+		Report report,
+		Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup,
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
+	{
+		var typed = report.Answers
+			.Select(answer => (answer.Value, revisionLookup[answer.QuestionRevisionId].Revision))
+			.Where(pair => pair.Revision.Type == QuestionType.Autocomplete
+						   && pair.Revision.OptionSetId is not null
+						   && !string.IsNullOrWhiteSpace(pair.Value))
+			.ToList();
+
+		if (typed.Count == 0)
+		{
+			return;
+		}
+
+		var setIds = typed.Select(pair => pair.Revision.OptionSetId!.Value).Distinct().ToList();
+		var sets = await database.OptionSets
+			.Include("_items")
+			.Where(set => setIds.Contains(set.Id) && set.Deleted == null)
+			.ToDictionaryAsync(set => set.Id, cancellationToken)
+			.ConfigureAwait(false);
+
+		foreach (var (value, revision) in typed)
+		{
+			if (sets.TryGetValue(revision.OptionSetId!.Value, out var set))
+			{
+				set.AddFromReporter(value!, report.Language);
+			}
+		}
 	}
 
 	private static async Task<Dictionary<TinyId, (Question Question, QuestionRevision Revision)>> LoadRevisionsAsync(

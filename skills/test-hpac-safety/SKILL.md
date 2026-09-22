@@ -50,6 +50,15 @@ scenario is incomplete — amend it rather than encoding the missing fact in C#
 or TypeScript
 ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
 
+**A step that asserts nothing proves nothing.** An empty `Then` binding is
+allowed only when an earlier step in the same scenario already made that
+assertion. It never points at another suite ("covered by Api.Tests") — if the
+behavior is worth a sentence in the scenario, the binding proves it here, or
+the sentence goes. A claim proven only against a domain method is not proof
+that the endpoint calls it: when the scenario describes what a submission or
+request does, one binding goes through `BootedApi`
+([lesson 0006](../../docs/lessons/0006-an-internal-identifier-leaked-into-the-authoring-screen.md)).
+
 **`@ignore` means "not built yet," never "no longer true."** When a decision
 supersedes what a scenario asserts, **delete the scenario** in the pull request
 that records the decision. Do not park an obsolete scenario behind `@ignore` —

@@ -62,6 +62,10 @@ public sealed class OptionSetItemConfiguration : IEntityTypeConfiguration<Option
 		builder.Property(item => item.AddedByReporter).IsRequired().HasDefaultValue(false);
 		builder.Property(item => item.NeedsTranslation).IsRequired().HasDefaultValue(false);
 
+		// Nullable: only a reporter-added choice has a language it was typed
+		// in, and every row that already exists was authored by an administrator.
+		builder.Property(item => item.ReporterLocale);
+
 		// The curation query is "show me what reporters have added to this
 		// list", so it is worth an index on the pair.
 		builder.HasIndex(item => new { item.OptionSetId, item.AddedByReporter });

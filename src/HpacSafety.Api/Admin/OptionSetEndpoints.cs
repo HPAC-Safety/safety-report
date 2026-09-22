@@ -74,9 +74,9 @@ public static class OptionSetEndpoints
 		{
 			var set = OptionSet.Create(key, request.NameEn, request.NameFr, clock.GetUtcNow());
 
-			foreach (var item in request.Items)
+			foreach (var (code, item) in OptionInput.Resolve(request.Items))
 			{
-				set.Add(item.Code, item.LabelEn, item.LabelFr);
+				set.Add(code, item.LabelEn, item.LabelFr);
 			}
 
 			database.OptionSets.Add(set);
@@ -122,7 +122,8 @@ public static class OptionSetEndpoints
 		try
 		{
 			var at = clock.GetUtcNow();
-			var wanted = request.Items.Select(item => QuestionKey.Normalize(item.Code)).ToList();
+			var items = OptionInput.Resolve(request.Items);
+			var wanted = items.Select(pair => pair.Code).ToList();
 
 			set.Rename(request.NameEn, request.NameFr);
 
@@ -133,10 +134,8 @@ public static class OptionSetEndpoints
 
 			var live = set.Items.Select(item => item.Code).ToList();
 
-			foreach (var item in request.Items)
+			foreach (var (code, item) in items)
 			{
-				var code = QuestionKey.Normalize(item.Code);
-
 				if (live.Contains(code, StringComparer.Ordinal))
 				{
 					set.Relabel(code, item.LabelEn, item.LabelFr);

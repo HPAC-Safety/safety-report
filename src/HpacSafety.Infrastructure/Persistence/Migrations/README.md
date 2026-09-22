@@ -123,6 +123,7 @@ erDiagram
         text label_en
         text label_fr
         boolean added_by_reporter "typed into a type-ahead, awaiting curation"
+        varchar(8) reporter_locale "the language a reporter typed it in"
         timestamptz deleted
     }
 
@@ -260,6 +261,7 @@ this.
 | `20260921192412_ForkAnsweredQuestionsAndStringAnswers` | Narrowed the unique index on `questions.key` to live rows so a fork chain can share one (ADR-0071). Replaced `report_answers.selected_option_codes` with `locale`, `translated_value`, and `needs_translation` alongside the existing `value`, dropped the uniqueness of `(report_id, question_id)` so a multi-select records one row per chosen value, indexed the translation queue, and added `option_set_items.needs_translation` (ADR-0072). |
 | `20260921205551_RemoveStatementGroupSectionKey`        | Dropped `question_revisions.section_key` after removing the `statement` and `group` question types it existed to support — neither had a built renderer, and nothing distinguished them from each other in code.                                                                                                                                                                                                                                  |
 | `20260921224859_AddDependsOnOptionCode`                | Added `question_revisions.depends_on_option_code`, the required option a `single_select` parent must be answered with (ADR-0074). Null for a `yes_no` parent, whose condition stays the invariant "yes".                                                                                                                                                                                                                                          |
+| `20260922222239_RecordReporterChoiceLocale`           | Added nullable `option_set_items.reporter_locale`, the language a reporter typed a type-ahead choice in (ADR-0063). Null for every choice an administrator authored, which is every row that already existed. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

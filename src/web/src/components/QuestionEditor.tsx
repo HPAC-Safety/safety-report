@@ -233,7 +233,7 @@ export function QuestionEditor({
 		}
 	}
 
-	function updateOption(index: number, changes: Partial<{ code: string; labelEn: string; labelFr: string }>) {
+	function updateOption(index: number, changes: Partial<{ labelEn: string; labelFr: string }>) {
 		const options = request.options.map((option, current) => (current === index ? { ...option, ...changes } : option))
 		update({ options })
 	}
@@ -533,15 +533,7 @@ export function QuestionEditor({
 							<h3 className="font-sans text-sm font-medium text-ink">{t("questions.field.options")}</h3>
 
 							{request.options.map((option, index) => (
-								<div key={index} className="grid gap-2 sm:grid-cols-3">
-									<input
-										className={fieldClassName}
-										value={option.code}
-										required
-										aria-label={t("questions.field.optionCode")}
-										placeholder={t("questions.field.optionCode")}
-										onChange={(event) => updateOption(index, { code: event.target.value })}
-									/>
+								<div key={index} className="grid gap-2 sm:grid-cols-2">
 									<input
 										className={fieldClassName}
 										value={option.labelEn}
@@ -577,7 +569,7 @@ export function QuestionEditor({
 								type="button"
 								className="touch-target self-start rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
 								onClick={() =>
-									update({ options: [...request.options, { code: "", labelEn: "", labelFr: "" }] })
+									update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })
 								}
 							>
 								{t("questions.field.addOption")}

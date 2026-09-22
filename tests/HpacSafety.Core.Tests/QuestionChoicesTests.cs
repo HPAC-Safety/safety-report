@@ -239,13 +239,45 @@ public class QuestionChoicesTests
 	}
 
 	[Fact]
+	public void GivenFrenchReporter_WhenTheyAddAChoice_ThenRecordedInFrenchWithCodeFromTheFrench()
+	{
+		// Given
+		var set = Sites();
+
+		// When
+		var added = set.AddFromReporter("Élévation Sainte-Anne", Locale.FrCa);
+
+		// Then
+		added.Code.ShouldBe("elevation_sainte_anne");
+		added.LabelFr.ShouldBe("Élévation Sainte-Anne");
+		added.ReporterLocale.ShouldBe(Locale.FrCa);
+		added.NeedsTranslation.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenChoiceWordedThatWayInReportersLanguage_WhenTheyTypeIt_ThenExistingChoiceIsReused()
+	{
+		// Given
+		var set = Sites();
+		set.Add("mount_7", "Mount 7", "Mont 7");
+
+		// When
+		var reused = set.AddFromReporter("mont 7", Locale.FrCa);
+
+		// Then
+		reused.Code.ShouldBe("mount_7");
+		reused.AddedByReporter.ShouldBeFalse();
+		set.Items.Count.ShouldBe(3);
+	}
+
+	[Fact]
 	public void GivenValueListDoesNotOffer_WhenReporterSubmits_ThenAddedAndMarked()
 	{
 		// Given
 		var set = Sites();
 
 		// When
-		var added = set.AddFromReporter("Mount 7");
+		var added = set.AddFromReporter("Mount 7", Locale.EnCa);
 
 		// Then
 		added.Code.ShouldBe("mount_7");
@@ -266,7 +298,7 @@ public class QuestionChoicesTests
 		var set = Sites();
 
 		// When
-		var added = set.AddFromReporter("coopers");
+		var added = set.AddFromReporter("coopers", Locale.EnCa);
 
 		// Then
 		added.LabelEn.ShouldBe("Cooper's");
@@ -281,8 +313,8 @@ public class QuestionChoicesTests
 		var set = Sites();
 
 		// When — the second types it differently; both normalize to one code
-		var first = set.AddFromReporter("Mount 7");
-		var second = set.AddFromReporter("mount  7");
+		var first = set.AddFromReporter("Mount 7", Locale.EnCa);
+		var second = set.AddFromReporter("mount  7", Locale.EnCa);
 
 		// Then
 		second.Id.ShouldBe(first.Id);
@@ -298,7 +330,7 @@ public class QuestionChoicesTests
 		set.Remove("woodside", At.AddHours(1));
 
 		// When
-		var added = set.AddFromReporter("Woodside");
+		var added = set.AddFromReporter("Woodside", Locale.EnCa);
 
 		// Then — the answer points at a real row, but the list still does not
 		// offer it
@@ -315,7 +347,7 @@ public class QuestionChoicesTests
 		set.Delete(At.AddHours(1));
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7"));
+		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7", Locale.EnCa));
 	}
 
 	[Fact]
@@ -325,8 +357,8 @@ public class QuestionChoicesTests
 		var set = Sites();
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter(""));
-		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("   "));
+		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("", Locale.EnCa));
+		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("   ", Locale.EnCa));
 	}
 
 	[Fact]
@@ -345,7 +377,7 @@ public class QuestionChoicesTests
 		// Given — the flag records where a choice came from, not whether
 		// anyone has touched it since
 		var set = Sites();
-		set.AddFromReporter("Mount 7");
+		set.AddFromReporter("Mount 7", Locale.EnCa);
 
 		// When
 		set.Relabel("mount_7", "Mount 7", "Mont 7");

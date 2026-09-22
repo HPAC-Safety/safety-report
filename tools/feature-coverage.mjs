@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // A behavior change is covered by a scenario, or it cites the claims it
-// preserves (ADR-0083, ADR-0089).
+// preserves (ADR-0083, ADR-0090).
 //
 // CI cannot judge whether a change is behavioral — only a person or an agent
 // can. What it can do is refuse to accept an unexamined assertion. The old
@@ -176,7 +176,7 @@ export function main({ changed, features, body, matrix }) {
 	console.error(`Categories: ${Object.entries(CATEGORIES).map(([name, meaning]) => `${name} (${meaning})`).join('; ')}.`)
 	console.error('')
 	console.error('An exemption is a citation, not an assertion — the claims are checked')
-	console.error('against docs/traceability.md (ADR-0089).')
+	console.error('against docs/traceability.md (ADR-0090).')
 	return 1
 }
 

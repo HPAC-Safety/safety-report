@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: feature-coverage, exemption, escape hatch, gates, claim IDs, agents
 ---
 
-# ADR-0089 — An exemption cites the claims it preserves
+# ADR-0090 — An exemption cites the claims it preserves
 
 ## Status
 

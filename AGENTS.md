@@ -261,3 +261,5 @@ Rules:
 - If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
 - Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
 - After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
+- The specification reaches the graph through [`docs/traceability.md`](docs/traceability.md), not through the `.feature` files. graphify ingests markdown and cannot ingest Gherkin, and this repository does not fork it to change that ([ADR-0088](docs/decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)). The matrix carries every claim ID, its area, its scenario name, its engine, and whether it is covered — so ask the graph about a claim, and read the `.feature` file when you need the step text.
+- A markdown change reaches the graph one step later than a code change: `graphify update .` re-extracts code only, and a document needs the semantic pass. A newly tagged scenario is in the matrix immediately and in the graph at the next semantic extraction.

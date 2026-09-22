@@ -30,6 +30,19 @@ gates remain the enforcement.
 Runtime AI instructions are not coding-agent skills. The one current prompt
 lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
 
+## The specification in the graph
+
+graphify ingests markdown and cannot ingest a `.feature` file — its document
+extensions are a hardcoded set with no configuration hook — and this repository
+does not fork it to change that
+([ADR-0088](decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)).
+
+[`docs/traceability.md`](traceability.md) is the bridge. It is markdown, so it
+enters the graph, and it carries every claim ID with its area, scenario name,
+executing engine, and covered-or-planned status, plus every constraint and what
+verifies it. Ask the graph about a claim; open the `.feature` file when you need
+the `Given`/`When`/`Then` text behind it.
+
 ## Generated files
 
 | Output | Owning command |

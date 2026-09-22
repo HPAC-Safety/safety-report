@@ -2,7 +2,8 @@ import { Link } from "react-router-dom"
 
 import { useAuth } from "../auth/useAuth"
 import { useLocale } from "../i18n/useLocale"
-import { PlaceholderPage } from "./PlaceholderPage"
+import { ReportForm } from "../report-form/ReportForm"
+import { ReportFormErrorBoundary } from "../report-form/ReportFormErrorBoundary"
 
 /**
  * Filing a report requires a signed-in HPAC member, and records nothing about
@@ -38,7 +39,7 @@ export function SubmitReportPage() {
 	}
 
 	return (
-		<>
+		<main>
 			<section className="mx-auto max-w-measure px-6 pt-16">
 				<div className="rounded border border-rule bg-surface px-4 py-3">
 					<h2 className="font-sans text-sm font-semibold text-ink">{t("page.report.notTrackedTitle")}</h2>
@@ -46,7 +47,9 @@ export function SubmitReportPage() {
 				</div>
 			</section>
 
-			<PlaceholderPage pageName={t("nav.submitReport")} />
-		</>
+			<ReportFormErrorBoundary t={t}>
+				<ReportForm />
+			</ReportFormErrorBoundary>
+		</main>
 	)
 }

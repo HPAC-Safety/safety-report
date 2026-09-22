@@ -60,7 +60,6 @@ Scenario: Switching the language toggle updates the document language and persis
   And the language choice persists to local storage across a reload
 
 @REQ-WLD-007
-@ignore
 @ui
 Scenario: Switching the language toggle rerenders without losing answers
   Given a reporter has entered answers in one locale
@@ -124,7 +123,6 @@ Scenario: Question content comes from the bilingual database revision
   And no runtime or CI auto-translation service produces question rendering
 
 @REQ-WLD-015
-@ignore
 @ui
 Scenario: Only publication consent is marked required on the form
   Given the form renders its questions in database order
@@ -134,7 +132,6 @@ Scenario: Only publication consent is marked required on the form
   And consent_publish has no selected default and requires an explicit yes or no
 
 @REQ-WLD-016
-@ignore
 @ui
 Scenario: The form explains local storage and warns about attachments
   Given a reporter is filling out the form
@@ -143,7 +140,6 @@ Scenario: The form explains local storage and warns about attachments
   And attachment selection appears last with type/count/size guidance and a warning that files are not restored after reload
 
 @REQ-WLD-017
-@ignore
 @ui
 Scenario: The client shows inline validation before submission
   Given a reporter enters an answer
@@ -193,7 +189,6 @@ Scenario: Dark mode renders correctly in every state
   Then contrast, focus, error, disabled, and success states work in both themes and languages
 
 @REQ-WLD-023
-@ignore
 @ui
 Scenario: The form meets baseline accessibility requirements
   Given a reporter uses assistive technology to complete the form
@@ -205,7 +200,6 @@ Scenario: The form meets baseline accessibility requirements
   And media previews are never required to complete a report
 
 @REQ-WLD-024
-@ignore
 @ui
 Scenario: A JavaScript failure never exposes or erases report data
   Given a script error occurs while a reporter is filling out the form
@@ -215,7 +209,6 @@ Scenario: A JavaScript failure never exposes or erases report data
   And saved local answers are not erased
 
 @REQ-WLD-025
-@ignore
 @ui
 Scenario: A network failure preserves local state and explains retry
   Given a submission request fails due to a network error

@@ -95,6 +95,43 @@
       "whatsappLabel": "WhatsApp"
     }
   },
+  "report": {
+    "loading": "#Loading the report form…",
+    "loadError": "#The report form could not be loaded. Please reload the page.",
+    "progress": "#Step {current} of {total}",
+    "privacy": {
+      "localStorage": "#Your answers are saved in this browser only, for up to 15 days, until you submit. Photos, videos, and documents are never saved in the browser."
+    },
+    "nav": {
+      "next": "#Next",
+      "back": "#Back",
+      "submit": "#Submit report",
+      "submitting": "#Submitting…"
+    },
+    "required": {
+      "badge": "#Required",
+      "error": "#This question is required.",
+      "summary": "#Please answer the following before continuing:"
+    },
+    "booleanYes": "#Yes",
+    "booleanNo": "#No",
+    "select": {
+      "placeholder": "#Choose one"
+    },
+    "attachments": {
+      "selectedCount": "#{count} file(s) selected",
+      "guidance": "#Attach photos, videos, or documents related to this occurrence, if you have them.",
+      "notRestored": "#Attached files are not saved between visits — if you reload this page, you will need to choose them again."
+    },
+    "error": {
+      "network": "#Your report could not be sent. Your answers are still saved in this browser — please check your connection and try again.",
+      "submitFailed": "#We could not submit your report. Please try again."
+    },
+    "submitted": {
+      "title": "#Report submitted",
+      "body": "#Thank you. Your report has been received."
+    }
+  },
   "notFound": {
     "title": "Page introuvable",
     "body": "Il n'y a rien à cette adresse."

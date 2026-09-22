@@ -10,7 +10,6 @@ Background:
   And the bearer token is transport/security metadata, not persisted report content
 
 @REQ-SUB-001
-@ignore
 @ui
 Scenario: The browser holds report state locally until submission
   Given a reporter is filling out the form
@@ -20,7 +19,6 @@ Scenario: The browser holds report state locally until submission
   And no server draft, report ID reservation, upload token, or resumable upload protocol exists
 
 @REQ-SUB-002
-@ignore
 @ui
 Scenario: A successful submission clears local browser state
   Given a reporter has entered answers in local browser storage
@@ -28,12 +26,59 @@ Scenario: A successful submission clears local browser state
   Then the browser clears that local state
 
 @REQ-SUB-003
-@ignore
 @ui
 Scenario: Expired local state is not restored
   Given local browser state is older than 15 days
   When the reporter returns to the form
   Then the browser ignores or removes the expired state
+
+@REQ-SUB-028
+@ui
+Scenario: The leading statement question renders as an introduction
+  Given the current form's first question is a live statement
+  When a reporter opens the report page
+  Then the statement renders with a Next control and no Back control
+  And no answer is collected for it
+
+@REQ-SUB-029
+@ui
+Scenario: A reporter pages through questions one at a time
+  Given the current form has more than one answer-producing question
+  When a reporter presses Next
+  Then exactly one question, or one group and its children, is shown per page
+  And a Back control returns to the previous page without losing its answer
+
+@REQ-SUB-030
+@ui
+Scenario: A group question and its children page together
+  Given a group question has children grouped under it
+  When a reporter reaches that group's page
+  Then the group heading and every child render together on one page
+  And advancing counts that page as a single step
+
+@REQ-SUB-031
+@ui
+Scenario: A required question blocks Next until answered
+  Given the current page shows a required, unanswered question
+  When a reporter presses Next
+  Then the page does not advance
+  And an inline, localized message explains that an answer is required
+
+@REQ-SUB-032
+@ui
+Scenario: A conditional question is absent from paging until its parent condition is met
+  Given a question depends on a yes/no or single-select question
+  When the parent's current answer does not meet the condition
+  Then the dependent question's page is skipped entirely
+  When the reporter then answers the parent so the condition is met
+  Then the dependent question's page appears in the sequence
+
+@REQ-SUB-033
+@ui
+Scenario: The Next button becomes Submit on the final page
+  Given a reporter has reached the last page of the form
+  Then the control that was Next now reads Submit
+  And pressing it sends the one final multipart request
 
 @REQ-SUB-004
 Scenario: One answer entry per shown answer-producing revision
@@ -157,7 +202,6 @@ Scenario: A successful submission returns an opaque accepted receipt
   And the response contains no raw answers or attachment URLs
 
 @REQ-SUB-016
-@ignore
 @ui
 Scenario: The UI prevents duplicate submission while a request is in flight
   Given a reporter has just submitted the form

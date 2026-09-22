@@ -393,7 +393,7 @@ Scenario: A question may be grouped under a group question
   Then the question's saved revision names that group as its heading
 
 @REQ-QB-047
-@ignore
+@ui
 Scenario: A form renders a question together with its group heading and siblings
   Given a group question exists as a section heading
   And another question is grouped under it

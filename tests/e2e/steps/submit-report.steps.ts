@@ -2,6 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
+import { stubCurrentQuestions } from "./report-form-fixture"
 
 const { Given, Then } = createBdd()
 
@@ -29,11 +30,13 @@ Given("a signed-in member opens the report page", async ({ page }) => {
 	// Any role may file a report: submission is a membership capability, not a
 	// privileged one (ADR-0067). `User` is the weakest, so it is the honest
 	// one to assert with.
+	await stubCurrentQuestions(page)
 	await signInAs(page, "user")
 	await page.goto("/report")
 })
 
 Given("a signed-in member opens the report page in French", async ({ page }) => {
+	await stubCurrentQuestions(page)
 	await signInAs(page, "user")
 	await page.goto("/report")
 	await page.getByRole("button", { name: "Français" }).click()

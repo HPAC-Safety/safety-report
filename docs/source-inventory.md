@@ -171,7 +171,8 @@ identity where source text does not exist.
 - [src/web/assets/fonts/poppins-600-latin.woff2](../src/web/assets/fonts/poppins-600-latin.woff2) — Poppins 600 Latin WOFF2 binary; retained UI font asset.
 - [src/web/assets/fonts/poppins-700-latin-ext.woff2](../src/web/assets/fonts/poppins-700-latin-ext.woff2) — Poppins 700 Latin-ext WOFF2 binary; retained UI font asset.
 - [src/web/assets/fonts/poppins-700-latin.woff2](../src/web/assets/fonts/poppins-700-latin.woff2) — Poppins 700 Latin WOFF2 binary; retained UI font asset.
-- [src/web/assets/hpac-logo.png](../src/web/assets/hpac-logo.png) — 260×125 raster placeholder; do not present as approved branding, replace only with supplied official asset.
+- [src/web/assets/hpac-light.svg](../src/web/assets/hpac-light.svg) — HPAC mark for the light theme.
+- [src/web/assets/hpac-dark.svg](../src/web/assets/hpac-dark.svg) — HPAC mark for the dark theme.
 - [src/web/public/.gitkeep](../src/web/public/.gitkeep) — empty public-site placeholder; replace with report form/feed/detail static pages and modules.
 - [src/web/shared/.gitkeep](../src/web/shared/.gitkeep) — empty shared-code placeholder; add only genuinely shared locale/API/presentation utilities.
 - [src/web/src/auth/session.ts](../src/web/src/auth/session.ts) — the stored bearer session. The token is kept, never parsed; role and expiry come from the API's response (ADR-0048).

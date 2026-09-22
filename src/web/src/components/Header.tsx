@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
-import logo from "../../assets/hpac-logo.png"
+import logoLight from "../../assets/hpac-light.svg"
+import logoDark from "../../assets/hpac-dark.svg"
 import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
+import { useTheme } from "../theme/useTheme"
 import { Nav } from "./Nav"
 import { AdminMenu } from "./AdminMenu"
 import { LanguageToggle } from "./LanguageToggle"
 import { ThemeToggle } from "./ThemeToggle"
+
+function prefersDark(): boolean {
+	return typeof window !== "undefined" && window.matchMedia("(prefers-color-scheme: dark)").matches
+}
 
 function MenuIcon() {
 	return (
@@ -27,8 +33,11 @@ function CloseIcon() {
 export function Header() {
 	const { t } = useLocale()
 	const { isSignedIn, role, signOut } = useAuth()
+	const { theme } = useTheme()
 	const [menuOpen, setMenuOpen] = useState(false)
 	const toggleButtonRef = useRef<HTMLButtonElement>(null)
+	const effectiveDark = theme === "dark" || (theme === null && prefersDark())
+	const logo = effectiveDark ? logoDark : logoLight
 
 	useEffect(() => {
 		if (!menuOpen) return
@@ -47,8 +56,8 @@ export function Header() {
 	return (
 		<header className="relative border-b border-rule bg-surface">
 			<div className="relative z-50 mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-4">
-				<Link to="/" className="touch-target inline-flex items-center rounded bg-logo-plate px-3 py-2">
-					<img src={logo} alt={t("header.logoAlt")} width={260} height={125} className="h-10 w-auto" />
+				<Link to="/" className="touch-target inline-flex items-center rounded px-3">
+					<img src={logo} alt={t("header.logoAlt")} width={1085.5} height={1071} className="h-14 w-auto" />
 				</Link>
 
 				<div className="hidden flex-wrap items-center justify-end gap-x-4 gap-y-2 lg:flex">

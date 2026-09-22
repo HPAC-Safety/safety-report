@@ -8,25 +8,17 @@ but this origin — see
 | | |
 |---|---|
 | `fonts/` | Poppins and Aleo as woff2, with their OFL licence texts. [`fonts/README.md`](fonts/README.md) |
-| `hpac-logo.png` | The HPAC mark, 260×125. **Placeholder** — see below. |
+| `hpac-light.svg` | The HPAC mark for the light theme. |
+| `hpac-dark.svg` | The HPAC mark for the dark theme. |
 
-## The logo is a placeholder
+## The logo
 
-`hpac-logo.png` is `2024/04/logoNL.png` from hpac.ca's media library, at
-260×125. It is the largest HPAC mark publicly available; the commonly linked one
-is 49×50, and there is no SVG in that library.
-
-That is not good enough for launch, for two reasons.
-
-It is soft at any size worth using on a retina display. And it is the
-**reversed** artwork: the "HPAC ACVL" wordmark is white, so on a light surface
-only the red maple leaf shows and the wordmark vanishes. Open
-`../theme-preview.html` and toggle the theme to see it.
-
-**A vector or high-resolution source, with a dark-ink variant, is an open
-item** — recorded in
-[`docs/design-system.md`](../../../docs/design-system.md#logo). Replacing the
-file is the whole fix: nothing references its dimensions or its colours.
+`hpac-light.svg` and `hpac-dark.svg` are theme-matched vector variants of the
+HPAC mark, replacing the earlier raster placeholder (`hpac-logo.png`, a
+reversed, soft 260×125 crop of hpac.ca's `2024/04/logoNL.png`) that only read
+correctly in dark mode. `Header.tsx` picks between them using the same theme
+state `ThemeToggle` reads. See
+[`docs/design-system.md`](../../../docs/design-system.md#logo).
 
 ## Adding an asset
 

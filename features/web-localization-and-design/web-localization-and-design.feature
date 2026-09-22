@@ -68,6 +68,7 @@ Scenario: A visitor can toggle and persist a light/dark theme choice
   Then the page follows the operating system's light/dark preference
   When the visitor toggles the theme control
   Then the data-theme attribute updates immediately
+  And the header logo matches the active theme
   And the theme choice persists to local storage across a reload
 
 @ui
@@ -160,7 +161,7 @@ Scenario: Assets are self-hosted, never loaded from third-party CDNs
   Given the site renders fonts, styles, or imagery
   Then Aleo, Poppins, and other assets are bundled and served from the site's own origin, WOFF2 vendored via a committed npm lockfile
   And no asset is loaded from a third-party CDN
-  And the current logo is a placeholder that may only be replaced with an approved HPAC asset
+  And the logo is the approved HPAC mark, as light/dark SVG variants
 
 @ignore
 @ui

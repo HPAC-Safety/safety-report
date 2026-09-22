@@ -24,6 +24,11 @@ Then("the data-theme attribute updates immediately", async ({ page }) => {
 	await expect(page.locator("html")).toHaveAttribute("data-theme", /light|dark/)
 })
 
+Then("the header logo matches the active theme", async ({ page }) => {
+	const theme = await page.locator("html").getAttribute("data-theme")
+	await expect(page.getByRole("banner").getByRole("img")).toHaveAttribute("src", new RegExp(`hpac-${theme}`))
+})
+
 Then("the theme choice persists to local storage across a reload", async ({ page }) => {
 	const applied = await page.locator("html").getAttribute("data-theme")
 	const stored = await page.evaluate(() => localStorage.getItem("hpac.theme"))

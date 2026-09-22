@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank.Typeform;
@@ -7,8 +8,9 @@ using Microsoft.EntityFrameworkCore;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-///     Importing the question bank from a Typeform English/French export pair.
-///     See ADR-0077, amended by ADR-0078.
+///     Importing the question bank from a Typeform English/French export pair,
+///     and exporting it back to the same two-file shape. See ADR-0077, amended
+///     by ADR-0078.
 /// </summary>
 /// <remarks>
 ///     Import never saves a <see cref="Core.Features.QuestionBank.Question" />
@@ -38,8 +40,48 @@ public static class TypeformImportEndpoints
 		group.MapPost("/import", ImportAsync).DisableAntiforgery();
 		group.MapGet("/pending-logic", ListPendingLogicAsync);
 		group.MapDelete("/pending-logic/{id}", DeletePendingLogicAsync);
+		group.MapGet("/export", ExportAsync);
 
 		return group;
+	}
+
+	/// <summary>
+	///     The live question bank as a zip of an English and a French
+	///     Typeform-shaped file, each field carrying an <c>hpac</c> extension
+	///     object for everything Typeform has no field for. See
+	///     <see cref="TypeformExportBuilder" />.
+	/// </summary>
+	private static async Task<IResult> ExportAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	{
+		var questions = await QuestionEndpoints.LiveQuestions(database)
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+		var ordered = questions
+			.OrderBy(question => question.DisplayOrder)
+			.ThenBy(question => question.Key, StringComparer.Ordinal)
+			.ToList();
+		var sets = await QuestionEndpoints.LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+
+		var (english, french) = TypeformExportBuilder.Build(ordered, sets);
+
+		using var zipStream = new MemoryStream();
+
+		using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			await WriteEntryAsync(archive, "form-en.json", english.ToJson(), cancellationToken).ConfigureAwait(false);
+			await WriteEntryAsync(archive, "form-fr.json", french.ToJson(), cancellationToken).ConfigureAwait(false);
+		}
+
+		return Results.File(zipStream.ToArray(), "application/zip", "question-bank.zip");
+	}
+
+	private static async Task WriteEntryAsync(
+		ZipArchive archive, string entryName, string contents, CancellationToken cancellationToken)
+	{
+		var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
+		await using var entryStream = entry.Open();
+		await using var writer = new StreamWriter(entryStream);
+		await writer.WriteAsync(contents.AsMemory(), cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>

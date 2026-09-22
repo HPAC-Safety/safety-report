@@ -603,3 +603,9 @@ Scenario: Reviewing an imported Typeform draft prefills the editor
   Then the imported drafts are listed
   When they choose to review the first imported draft
   Then the editor is filled with that draft's key, type, and both languages
+
+@ui
+Scenario: An Administrator downloads the question bank as Typeform JSON
+  Given a signed-in Administrator opens the manage-questions page
+  When they choose to export the question bank
+  Then a zip file download begins

@@ -89,6 +89,27 @@ export async function listPendingImportLogic(): Promise<PendingImportLogicView[]
 	return (await response.json()) as PendingImportLogicView[]
 }
 
+/**
+ * The live question bank as a zip of an English and a French Typeform-shaped
+ * file. A plain `<a href>` can't carry the bearer token, so this fetches the
+ * bytes itself and hands back a Blob for the caller to trigger a download
+ * from.
+ */
+export async function exportTypeform(): Promise<Blob> {
+	const response = await fetch("/api/admin/typeform/export", { headers: authorization() })
+
+	if (response.status === 401) {
+		clearSession()
+	}
+
+	if (!response.ok) {
+		const problem = await response.json().catch(() => null)
+		throw new ApiError(response.status, problem?.detail ?? problem?.title ?? response.statusText)
+	}
+
+	return response.blob()
+}
+
 export async function deletePendingImportLogic(id: string): Promise<void> {
 	const response = await fetch(`/api/admin/typeform/pending-logic/${id}`, {
 		method: "DELETE",

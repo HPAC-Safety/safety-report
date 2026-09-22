@@ -207,6 +207,10 @@
       "error": {
         "unexpected": "Une erreur s'est produite. Veuillez réessayer."
       }
+    },
+    "export": {
+      "action": "#Export to Typeform JSON",
+      "working": "#Exporting…"
     }
   },
   "choiceLists": {

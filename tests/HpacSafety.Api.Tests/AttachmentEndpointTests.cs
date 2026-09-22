@@ -108,6 +108,47 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAMalformedAttachmentId_WhenViewed_ThenNotFound()
+	{
+		// Given
+		var (reportId, _) = await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(ViewUrl(reportId, "not-a-tiny-id"));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenAnUnknownDocumentAttachment_WhenDownloaded_ThenNotFound()
+	{
+		// Given
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(DownloadUrl(TinyId.New().Value, TinyId.New().Value));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenAFailedDocument_WhenDownloaded_ThenNotFound()
+	{
+		// Given
+		var (reportId, attachmentId) = await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: true);
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(DownloadUrl(reportId, attachmentId));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
 	public async Task GivenAValidatedDocument_WhenDownloaded_ThenUrlIssued()
 	{
 		// Given

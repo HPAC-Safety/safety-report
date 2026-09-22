@@ -42,3 +42,9 @@ Provenance over an input tells you nothing about what happened to the output.
 
 `REQ-WLD-012` — "A French value edited by hand is recorded rather than
 overwritten" — and `REQ-WLD-013`, which covers both languages changing at once.
+
+## Skill
+
+[`localize-hpac-app`](../../skills/localize-hpac-app/SKILL.md) carries the
+general rule: a record of where a value came from covers the value, not the
+input it was derived from. Hash what you are claiming authorship of.

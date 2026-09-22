@@ -85,7 +85,7 @@ public class ReportAnswer
     public string? Value { get; private set; }
 
     /// <summary>The official language <see cref="Value" /> is written in.</summary>
-    public Locale Locale { get; }
+    public Locale Locale { get; private init; }
 
     /// <summary>
     ///     The other official language of <see cref="Value" />, once an

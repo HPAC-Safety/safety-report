@@ -32,14 +32,14 @@ public class Report
     }
 
     /// <summary>Surrogate key.</summary>
-    public TinyId Id { get; }
+    public TinyId Id { get; private init; }
 
     /// <summary>
     ///     The locale the report was written in. The Worker summarizes in this
     ///     language and produces the other in the same call; the raw narrative is
     ///     never translated.
     /// </summary>
-    public Locale Language { get; }
+    public Locale Language { get; private init; }
 
     /// <summary>Where the report is in its lifecycle.</summary>
     public ReportStatus Status { get; private set; }

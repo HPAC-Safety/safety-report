@@ -87,7 +87,7 @@ public class QuestionRevision
     }
 
     /// <summary>Surrogate key. Answers reference this, never the question row.</summary>
-    public TinyId Id { get; }
+    public TinyId Id { get; private init; }
 
     /// <summary>The question this is a revision of.</summary>
     public TinyId QuestionId { get; private init; }
@@ -96,7 +96,7 @@ public class QuestionRevision
     public int RevisionNumber { get; private init; }
 
     /// <summary>What this revision asks for.</summary>
-    public QuestionType Type { get; }
+    public QuestionType Type { get; private init; }
 
     /// <summary>
     ///     True only for the publication-consent revision. Copied from the
@@ -141,7 +141,7 @@ public class QuestionRevision
     ///     <see cref="QuestionDependencies" /> rather than here. See ADR-0060,
     ///     ADR-0074.
     /// </remarks>
-    public TinyId? DependsOnQuestionId { get; }
+    public TinyId? DependsOnQuestionId { get; private init; }
 
     /// <summary>
     ///     The invariant option code a <see cref="QuestionType.SingleSelect" />
@@ -150,7 +150,7 @@ public class QuestionRevision
     ///     <see cref="QuestionType.YesNo" /> parent, whose condition is the
     ///     invariant "yes" instead. See ADR-0074.
     /// </summary>
-    public string? DependsOnOptionCode { get; }
+    public string? DependsOnOptionCode { get; private init; }
 
     /// <summary>
     ///     The shared <see cref="OptionSet" /> this revision's options were copied
@@ -161,16 +161,16 @@ public class QuestionRevision
     public TinyId? OptionSetId { get; private init; }
 
     /// <summary>The English wording.</summary>
-    public string LabelEn { get; }
+    public string LabelEn { get; private init; }
 
     /// <summary>The French wording.</summary>
-    public string LabelFr { get; }
+    public string LabelFr { get; private init; }
 
     /// <summary>Supporting English copy shown under the label.</summary>
-    public string? HelpTextEn { get; }
+    public string? HelpTextEn { get; private init; }
 
     /// <summary>Supporting French copy shown under the label.</summary>
-    public string? HelpTextFr { get; }
+    public string? HelpTextFr { get; private init; }
 
     /// <summary>English placeholder text, for free-text types.</summary>
     public string? PlaceholderEn { get; private init; }

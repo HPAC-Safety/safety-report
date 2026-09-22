@@ -46,10 +46,10 @@ public class OptionSet
     }
 
     /// <summary>Surrogate key.</summary>
-    public TinyId Id { get; }
+    public TinyId Id { get; private init; }
 
     /// <summary>Stable invariant identity, so a set can be referred to in a seed or an export.</summary>
-    public string Key { get; }
+    public string Key { get; private init; }
 
     /// <summary>The English name an administrator picks this set by. Never shown to a reporter.</summary>
     public string NameEn { get; private set; }

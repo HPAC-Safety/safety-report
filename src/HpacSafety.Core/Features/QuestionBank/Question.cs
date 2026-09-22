@@ -55,13 +55,13 @@ public class Question
     }
 
     /// <summary>Surrogate key.</summary>
-    public TinyId Id { get; }
+    public TinyId Id { get; private init; }
 
     /// <summary>Stable invariant identity, used by exports and integrations.</summary>
-    public string Key { get; }
+    public string Key { get; private init; }
 
     /// <summary>True only for publication consent.</summary>
-    public bool IsSystem { get; }
+    public bool IsSystem { get; private init; }
 
     /// <summary>What downstream logic reads this answer for, if anything.</summary>
     public QuestionRole Role { get; private set; }

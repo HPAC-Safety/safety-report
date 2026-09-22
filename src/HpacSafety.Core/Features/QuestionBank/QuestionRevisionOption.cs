@@ -61,10 +61,10 @@ public class QuestionRevisionOption
     public DateTimeOffset? Deleted { get; private set; }
 
     /// <summary>The English wording.</summary>
-    public string LabelEn { get; }
+    public string LabelEn { get; private init; }
 
     /// <summary>The French wording.</summary>
-    public string LabelFr { get; }
+    public string LabelFr { get; private init; }
 
     /// <summary>This option's wording in one locale.</summary>
     public string Label(Locale locale)

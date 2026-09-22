@@ -89,6 +89,11 @@ privacy-sensitive.
    report requires a member of any role and records nothing about them; the
    form tells the reporter so
    ([ADR-0067](docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+   The one carved exception is Development, where a fourth sign-in path may
+   verify a real member's password against the live members site for the
+   single call that checks it, never logging or storing it; it does not
+   generalize, and it never runs outside Development
+   ([ADR-0078](docs/decisions/ADR-0078-a-development-login-may-verify-against-the-live-members-site.md)).
 8. Use managed encryption at rest and TLS. Do not add application-level field
    encryption, log report content, or physically delete application records.
    The one carved exception is dropping `admin_users`, a table that never held
@@ -99,7 +104,14 @@ privacy-sensitive.
 There is no deterministic scrubber, separate PII auditor, report translator,
 specialized aircraft processing, outbound email flow, pre-submit
 upload session, speculative publication channel, user table, allowlist,
-credential proxy, CSRF machinery, or Turnstile verification. Machine translation
+credential proxy, CSRF machinery, or Turnstile verification. The one carved
+exception is Development's members-site-verified login (item 7 above,
+[ADR-0078](docs/decisions/ADR-0078-a-development-login-may-verify-against-the-live-members-site.md)):
+a hardcoded, Development-only email allowlist for role, and CSRF/session
+handling scoped entirely to that one credential source. It does not
+generalize, never reaches Production, and any future allowlist or
+credential-proxy-shaped code outside this scope needs its own argument on
+its own facts. Machine translation
 is always administrator-initiated behind the `Administrator` policy, never runs
 on the submission path, and exists for two purposes only — drafting question
 wording while authoring, and filling the second language of a short select

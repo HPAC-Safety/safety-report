@@ -65,15 +65,31 @@ public static class AuthEndpoints
 			: TypedResults.Ok(new MeResponse(identity.Subject, MemberRoles.CodeFor(identity.Role)));
 	}
 
-	private static Results<Ok<TokenResponse>, ProblemHttpResult> TokenAsync(
-		[FromBody] TokenRequest request, DevelopmentTokenIssuer issuer)
+	private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> TokenAsync(
+		[FromBody] TokenRequest request, DevelopmentTokenIssuer issuer, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		var token = issuer.Issue(request.Username, request.Password);
+		DevelopmentToken? token;
+
+		try
+		{
+			token = await issuer.IssueAsync(request.Username, request.Password, cancellationToken)
+				.ConfigureAwait(false);
+		}
+		catch (MembersSiteUnavailableException cause)
+		{
+			// Distinct from bad credentials: the members site could not be
+			// asked, so nothing about this login attempt was actually judged.
+			return TypedResults.Problem(
+				title: "The members site could not be reached.",
+				detail: cause.Message,
+				statusCode: StatusCodes.Status502BadGateway,
+				type: "https://hpac.ca/problems/members-site-unavailable");
+		}
 
 		// One generic failure. Nothing distinguishes an unknown username from a
-		// wrong password.
+		// wrong password, or which development credential source was tried.
 		return token is null
 			? TypedResults.Problem(
 				title: "Those credentials were not accepted.",

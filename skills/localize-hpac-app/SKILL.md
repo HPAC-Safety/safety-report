@@ -17,6 +17,14 @@ description: Keep HPAC Safety application chrome, database questions, validation
   silently falling back to English, until CI replaces it for real after
   merge (ADR-0054). A committed `#`-prefixed value fails
   `translate-locale.mjs --check` and must never reach main.
+- A record of where a value came from covers **the value**, not the input it
+  was derived from. `fr-CA.meta.json` hashes the French as well as the English,
+  so a hand-edited French value is detected and recorded as a correction rather
+  than assumed to be the translator's and silently overwritten on the next run
+  ([lesson 0002](../../docs/lessons/0002-provenance-that-hashes-only-one-side-of-a-pair.md),
+  [ADR-0070](../../docs/decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
+  The same test applies to any provenance this repository adds: hash what you
+  are claiming authorship of.
 - Every immutable database question revision stores both English and French
   label/help/option text. Administrators author and review both. While
   authoring they may press Translate to draft the other language through

@@ -3,7 +3,9 @@
 ## Test strategy
 
 **CON-TQ-001** Tests protect user-visible privacy and lifecycle contracts, not obsolete
-internal architecture. Use fast Core unit tests for invariants, shared contract
+internal architecture.
+*Verified by: none — a rule about what the suites are for, not about what the
+system does.* Use fast Core unit tests for invariants, shared contract
 suites for genuine ports, PostgreSQL integration tests for schema/query/
 transaction behavior, API tests for HTTP and authorization, Worker tests for
 outbox/model/attachment orchestration, and browser tests for the two-language end-to-
@@ -16,7 +18,9 @@ synthetic people, locations, reports, and attachments.
 *Verified by: none — a rule about the tests themselves, enforced by the suites
 and the CI gates rather than by a scenario.*
 
-**CON-TQ-003** A UI behavior change ships with a Playwright test and, when it touches or
+**CON-TQ-003** *Verified by: none — a delivery rule, enforced by the `feature-coverage` job
+and review.*
+A UI behavior change ships with a Playwright test and, when it touches or
 relies on API behavior, a server-side test covering that behavior
 ([ADR-0045](decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
 

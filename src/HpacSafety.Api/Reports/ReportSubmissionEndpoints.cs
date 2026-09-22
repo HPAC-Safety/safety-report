@@ -354,3 +354,5 @@ public static class ReportSubmissionEndpoints
 			type: "https://hpac.ca/problems/report-submission");
 	}
 }
+
+// citation check — branch deleted after CI reports.

@@ -72,7 +72,6 @@ Scenario: Editing a question copies the latest revision into a new one
   When the Administrator saves the edit
   Then the API validates both languages and all options, then saves a new complete row rather than patching the existing revision
 
-@ignore
 Scenario: Only the latest active, non-deleted revision is shown on the form
   Given a stable key has multiple revisions
   And only one of them is both active and not deleted
@@ -80,12 +79,28 @@ Scenario: Only the latest active, non-deleted revision is shown on the form
   Then that revision is the one included for the key
   And an older active revision never reappears after a later revision deactivates or deletes the question
 
-@ignore
 Scenario: Form questions are ordered deterministically
   Given the current form includes several question revisions
   When the API orders them for display
   Then they are ordered by sort order
   And ties are broken by stable key
+
+Scenario: The current form is public
+  Given no bearer token is presented
+  When a request asks for the current form
+  Then the API answers rather than refusing the request
+
+Scenario: A group question's response nests its children rather than repeating them
+  Given a live group question exists as a section heading
+  And another live question is grouped under it
+  When the API assembles the current form
+  Then the group's entry carries that question as a child, in order
+  And the child does not also appear as its own top-level entry
+
+Scenario: The current form's response includes a question's conditional dependency
+  Given a question is conditional on a yes-or-no question
+  When the API assembles the current form
+  Then the conditional question's entry names the question it depends on
 
 @ignore
 Scenario: consent_publish is the only question that can never be optional

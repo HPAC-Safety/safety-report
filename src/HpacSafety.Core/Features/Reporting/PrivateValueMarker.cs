@@ -115,16 +115,10 @@ public static class PrivateValueMarker
 
 	private static string Marker(Match match, List<Candidate> candidates)
 	{
-		for (var i = 0; i < candidates.Count; i++)
-		{
-			if (match.Groups[$"c{i}"].Success)
-			{
-				return $"[PRIVATE:{candidates[i].QuestionKey}]";
-			}
-		}
-
-		// Unreachable: the pattern is built from exactly these named groups.
-		throw new InvalidOperationException("Matched text did not correspond to a known candidate.");
+		// The pattern is built from exactly these named groups, so one is always
+		// the one that matched.
+		var index = Enumerable.Range(0, candidates.Count).First(i => match.Groups[$"c{i}"].Success);
+		return $"[PRIVATE:{candidates[index].QuestionKey}]";
 	}
 
 	private static string CollapseWhitespace(string value)

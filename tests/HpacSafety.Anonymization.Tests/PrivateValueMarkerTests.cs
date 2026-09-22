@@ -151,6 +151,23 @@ public sealed class PrivateValueMarkerTests
 	}
 
 	[Fact]
+	public void GivenTwoPrivateFieldsShareTheSameValue_WhenMarked_ThenTheDuplicateCandidateIsNotAddedTwice()
+	{
+		// Given — a pilot and a witness who happen to share a name
+		var input = SummarizationInput.Partition([
+			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
+			new ClassifiedReportField(new SummarizationField("witness_name", "Witness name", "Ada Lovelace"), true),
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false)
+		]);
+
+		// When
+		var marked = PrivateValueMarker.Mark(input);
+
+		// Then — the first private field to offer the value wins the marker
+		marked.ReportContent.Single().Value.ShouldBe("[PRIVATE:pilot_name] reported the failure.");
+	}
+
+	[Fact]
 	public void GivenNullInput_WhenMarked_ThenRejected()
 	{
 		// Given

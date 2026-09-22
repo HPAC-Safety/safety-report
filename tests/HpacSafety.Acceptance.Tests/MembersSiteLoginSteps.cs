@@ -10,7 +10,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     The members-site-verified development login scenarios in
 ///     <c>features/moderation-authentication-and-publication/</c>. See
-///     ADR-0078.
+///     ADR-0079.
 /// </summary>
 /// <remarks>
 ///     Runs against the booted host, with the members-site transport stubbed

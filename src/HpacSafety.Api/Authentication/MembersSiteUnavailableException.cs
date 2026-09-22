@@ -4,7 +4,7 @@ namespace HpacSafety.Api.Authentication;
 ///     The live members site could not be reached, timed out, or answered with
 ///     something <see cref="MembersSiteCredentialSource" /> did not expect —
 ///     distinct from bad credentials, which is a plain verification failure, not
-///     an exception. See ADR-0078.
+///     an exception. See ADR-0079.
 /// </summary>
 /// <remarks>
 ///     The message is safe to show a developer. It never contains the password

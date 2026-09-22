@@ -3,7 +3,7 @@ namespace HpacSafety.Api.Authentication;
 /// <summary>
 ///     Configuration for <see cref="MembersSiteCredentialSource" />, bound from
 ///     the <c>MembersSiteLogin</c> configuration section. Development-only —
-///     see ADR-0078.
+///     see ADR-0079.
 /// </summary>
 /// <remarks>
 ///     The email lists here are a throwaway, Development-only convenience —

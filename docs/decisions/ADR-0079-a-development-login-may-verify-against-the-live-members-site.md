@@ -5,7 +5,7 @@ decision-makers: Chase Florell
 keywords: development, mock authentication, members site, email allowlist, credential verification
 ---
 
-# ADR-0078 — A development login may verify against the live members site
+# ADR-0079 — A development login may verify against the live members site
 
 **Status:** Accepted. Supersedes [ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)
 for this one case.

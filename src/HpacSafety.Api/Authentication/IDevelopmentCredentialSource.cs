@@ -5,7 +5,7 @@ namespace HpacSafety.Api.Authentication;
 /// <summary>
 ///     One way to verify a development credential pair. <see cref="DevelopmentTokenIssuer" />
 ///     tries each registered source in order and mints a token for the first
-///     one that resolves a role. See ADR-0078.
+///     one that resolves a role. See ADR-0079.
 /// </summary>
 public interface IDevelopmentCredentialSource
 {

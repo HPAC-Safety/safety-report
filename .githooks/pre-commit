@@ -121,6 +121,13 @@ if staged | grep -qE '\.(md|mdc)$'; then
 
 		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
 		node tools/check-frontmatter.mjs $STAGED_MARKDOWN || status=1
+
+		# A decision record's number is claimed by naming a file, and two
+		# branches claim the same one often enough that it is worth catching
+		# here rather than after a rebase (ADR-0091, lesson 0003).
+		if echo "$STAGED_MARKDOWN" | grep -q '^docs/decisions/ADR-'; then
+			node tools/adr-numbers.mjs || status=1
+		fi
 	fi
 fi
 

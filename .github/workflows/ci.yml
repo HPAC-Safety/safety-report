@@ -178,6 +178,11 @@ jobs:
       # catches a committed matrix that no longer matches the artifacts it
       # summarizes - the same shape as "No drift from installing skills" and
       # dotnet format --verify-no-changes. ADR-0084.
+      # An ADR's number is its identity and is claimed by naming a file, so two
+      # branches can claim the same one and only a rebase notices. ADR-0091.
+      - name: Decision records are numbered without collision
+        run: node tools/adr-numbers.mjs
+
       - name: The traceability matrix matches the specification
         run: |
           set -euo pipefail

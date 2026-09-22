@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: audit, authorization, admin routes, 401, 403, atomicity, security
 ---
 
-# ADR-0090 — Admin routes answer with real 401/403, and an audit write is atomic with its action
+# ADR-0091 — Admin routes answer with real 401/403, and an audit write is atomic with its action
 
 ## Status
 

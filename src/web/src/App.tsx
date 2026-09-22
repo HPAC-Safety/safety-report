@@ -1,6 +1,7 @@
 import { Route, Routes } from "react-router-dom"
 import { Header } from "./components/Header"
 import { Footer } from "./components/Footer"
+import { AdminRouteGuard } from "./components/AdminRouteGuard"
 import { HomePage } from "./routes/HomePage"
 import { ViewReportsPage } from "./routes/ViewReportsPage"
 import { SubmitReportPage } from "./routes/SubmitReportPage"
@@ -24,11 +25,46 @@ function App() {
 					<Route path="/report" element={<SubmitReportPage />} />
 					<Route path="/contact" element={<ContactPage />} />
 					<Route path="/login" element={<MemberLoginPage />} />
-					<Route path="/admin" element={<AdminPage />} />
-					<Route path="/admin/reports" element={<ManageReportsPage />} />
-					<Route path="/admin/questions" element={<ManageQuestionsPage />} />
-					<Route path="/admin/choice-lists" element={<ManageChoiceListsPage />} />
-					<Route path="/admin/answer-translations" element={<ManageAnswerTranslationsPage />} />
+					<Route
+						path="/admin"
+						element={
+							<AdminRouteGuard requires="reviewer">
+								<AdminPage />
+							</AdminRouteGuard>
+						}
+					/>
+					<Route
+						path="/admin/reports"
+						element={
+							<AdminRouteGuard requires="reviewer">
+								<ManageReportsPage />
+							</AdminRouteGuard>
+						}
+					/>
+					<Route
+						path="/admin/questions"
+						element={
+							<AdminRouteGuard requires="administrator">
+								<ManageQuestionsPage />
+							</AdminRouteGuard>
+						}
+					/>
+					<Route
+						path="/admin/choice-lists"
+						element={
+							<AdminRouteGuard requires="administrator">
+								<ManageChoiceListsPage />
+							</AdminRouteGuard>
+						}
+					/>
+					<Route
+						path="/admin/answer-translations"
+						element={
+							<AdminRouteGuard requires="administrator">
+								<ManageAnswerTranslationsPage />
+							</AdminRouteGuard>
+						}
+					/>
 					<Route path="*" element={<NotFoundPage />} />
 				</Routes>
 			</div>

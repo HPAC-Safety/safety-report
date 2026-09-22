@@ -74,4 +74,12 @@ public static class MemberRoles
 			? null
 			: new MemberIdentity(subject, EffectiveRole(principal, roleClaimType));
 	}
+
+	/// <summary>The subject claim alone, or <c>null</c> when the principal carries none.</summary>
+	public static string? SubjectOf(ClaimsPrincipal principal)
+	{
+		ArgumentNullException.ThrowIfNull(principal);
+
+		return principal.FindFirstValue(ClaimTypes.NameIdentifier) ?? principal.FindFirstValue("sub");
+	}
 }

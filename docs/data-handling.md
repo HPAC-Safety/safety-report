@@ -45,8 +45,8 @@ boundary. Model prompts/responses and report values are never logged.
 ## Attachments
 
 The API streams final multipart attachments to private quarantine with a
-configurable count (default 5) and 50 MB per-file limit. It sniffs format,
-malware-checks files, and uses server-generated names.
+configurable count (default 5) and 50 MB per-file limit. It sniffs format and
+uses server-generated names. There is no malware scan (ADR-0089).
 
 Safe image/video derivatives may be previewed by authorized reviewers through
 short-lived access. Validated documents remain unmodified private originals and

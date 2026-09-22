@@ -79,10 +79,10 @@ Scenario: Every video is remuxed or transcoded to strip metadata
 
 @REQ-MED-008
 @ignore
-Scenario: A document is validated and scanned but never transformed
+Scenario: A document is validated but never transformed
   Given an accepted document attachment enters Worker processing
   When the Worker processes it
-  Then the Worker scans it for known malware and validates its actual format, including internal package shape for DOCX/ODT and bounded text decoding for Markdown/plain text
+  Then the Worker validates its actual format, including internal package shape for DOCX/ODT and bounded text decoding for Markdown/plain text
   And the Worker never extracts its text, and the document is never sent to the model and never published
   And the document remains the reporter-supplied original, available for private download, and the review UI labels it as unredacted private evidence
 
@@ -106,7 +106,7 @@ Scenario: A reviewer gets a short-lived URL only for successfully processed medi
 @REQ-MED-011
 @ignore
 Scenario: A reviewer downloads a validated document as an unredacted original
-  Given a document attachment has passed validation and malware scanning
+  Given a document attachment has passed validation
   When an authorized reviewer requests it
   Then the reviewer receives a short-lived URL to the private original
   And there is no API blob proxy or public URL
@@ -123,7 +123,7 @@ Scenario: The admin site never inline-renders a private document
 @REQ-MED-013
 @ignore
 Scenario: A failed attachment is inaccessible to reviewers
-  Given signature validation, malware scanning, decoding, metadata removal, re-encoding/remuxing, writing, or verification fails for an attachment
+  Given signature validation, decoding, metadata removal, re-encoding/remuxing, writing, or verification fails for an attachment
   When the Worker finishes processing it
   Then the file is marked failed
   And the file is inaccessible to any reviewer

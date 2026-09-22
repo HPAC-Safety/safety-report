@@ -92,9 +92,8 @@ REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-014.*
 - synthetic video fixtures prove container/device/location/timestamp metadata
   removal after remux/transcode;
 - only verified image/video derivative keys yield preview URLs; validated
-  malware-cleared document originals yield forced-download URLs only to
-  authorized reviewers;
-- document format/malware failures are inaccessible and safely logged;
+  document originals yield forced-download URLs only to authorized reviewers;
+- document format-validation failures are inaccessible and safely logged;
 - documents are never parsed into summary input, anonymized, or public, and
   active content is not inline-rendered; and
 - failed database writes leave only lifecycle-expirable unreferenced quarantine

@@ -135,7 +135,8 @@ export class ApiError extends Error {
 	}
 }
 
-function authorization(): Record<string, string> {
+/** Exposed so a sibling client module (import/export) can reuse the same bearer header. */
+export function authorization(): Record<string, string> {
 	const session = readSession()
 
 	// No header at all when signed out: the API answers 401 and the page

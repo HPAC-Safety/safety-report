@@ -186,7 +186,28 @@
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     },
-    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données."
+    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données.",
+    "import": {
+      "openDialog": "Importer depuis Typeform",
+      "title": "Importer depuis Typeform",
+      "intro": "Téléversez un fichier d'exportation en anglais et son équivalent en français en un seul ensemble. Rien n'est enregistré tant que vous n'avez pas vérifié et enregistré chaque question vous-même.",
+      "englishFile": "Exportation en anglais (.json)",
+      "frenchFile": "Exportation en français (.json)",
+      "action": "Importation",
+      "working": "Importation en cours…",
+      "draftsTitle": "Questions importées",
+      "review": "Critique",
+      "reviewed": "Révisé",
+      "frenchDefaultedToEnglish": "Aucun texte en français n'a été trouvé pour ce champ; le texte anglais a donc été utilisé pour les deux langues. Veuillez corriger le texte en français avant d'enregistrer.",
+      "rejectedTitle": "Champs non importés",
+      "rejectedIntro": "Ces champs n'ont pas d'équivalent dans la banque de questions et ont été ignorés.",
+      "pendingLogicTitle": "Logique de branchement à configurer manuellement",
+      "pendingLogicIntro": "Ces champs comportaient une logique conditionnelle que l'importateur n'a pas pu traduire automatiquement. Veuillez configurer manuellement le paramètre « Dépend de » correspondant, puis corrigez la note.",
+      "pendingLogicResolve": "Résolu",
+      "error": {
+        "unexpected": "Une erreur s'est produite. Veuillez réessayer."
+      }
+    }
   },
   "choiceLists": {
     "title": "Gérer les listes de choix",

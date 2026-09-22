@@ -37,6 +37,7 @@ lives under `src/HpacSafety.Worker/Prompts/` and is deployed with the Worker.
 | `.claude/skills/`, `.claude/agents/` | `skillfile install` |
 | `Skillfile.lock` | `skillfile add`, `skillfile remove`, or `skillfile upgrade`; then `skillfile install` |
 | `docs/form-spec.md` | `tools/extract-typeform.py` |
+| `docs/traceability.md` | `node tools/traceability.mjs` |
 | `locales/fr-CA.json`, `locales/fr-CA.meta.json` | `tools/translate-locale.mjs` |
 | `src/web/dist/` | `npm --prefix src/web run build` |
 

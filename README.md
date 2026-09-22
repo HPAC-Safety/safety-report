@@ -11,6 +11,44 @@ requires human approval before publication.
 > [`docs/implementation-status.md`](docs/implementation-status.md). Do not infer
 > feature completion from an old closed issue or README.
 
+## How this repository works
+
+HPAC Safety is built specification-first
+([ADR-0083](docs/decisions/ADR-0083-specification-driven-development.md)).
+Behavior is written down as an executable scenario before it is implemented,
+and every hop between a need and the code is a tracked file rather than a
+message in a conversation:
+
+```
+need (issue)
+  → scenario            features/<area>/<area>.feature
+  → supporting detail   features/<area>/README.md, docs/*.md
+  → step definitions    tests/HpacSafety.Acceptance.Tests | tests/e2e/steps
+  → code                src/**
+```
+
+Three consequences are worth knowing before you open a pull request:
+
+- **The specification is corrected, not the conversation.** When the code does
+  the wrong thing, the first question is whether the scenario said the wrong
+  thing. If it did, the scenario changes and the chain re-runs from there.
+- **Every claim has a stable ID.** A scenario carries one `@REQ-<AREA>-<NNN>`
+  tag and a normative constraint in `docs/` carries a `CON-<PAGE>-<NNN>` ID, so
+  a claim can be cited from an ADR, an issue, a review finding, or a commit
+  already in history. IDs are never reused or renumbered
+  ([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+  [`docs/traceability.md`](docs/traceability.md) is generated from those files
+  by `node tools/traceability.mjs`, never maintained by hand, and CI fails on a
+  difference.
+- **Out of scope is part of the specification.** What not to build is written
+  down beside what to build, because a specification that states only the
+  target invites an implementation to over-deliver.
+
+Scenarios are not decorative: one without `@ui` executes as an xUnit test
+through Reqnroll, and one tagged `@ui` executes through `playwright-bdd`
+against the real browser. A scenario still waiting for its step definitions
+carries `@ignore`.
+
 ## Canonical specification
 
 [`features/README.md`](features/README.md) is the design authority and index for every
@@ -98,6 +136,7 @@ Common verification commands:
 dotnet build HpacSafety.slnx
 dotnet test HpacSafety.slnx
 node --test $(find tests/js -name '*.test.mjs')
+node tools/traceability.mjs
 npm --prefix src/web ci && npm --prefix src/web run build
 ```
 
@@ -120,11 +159,11 @@ the `gh` fetch and enforces only the floor.
 
 | Path | Purpose |
 |---|---|
-| [`features/`](features/README.md) | Canonical product and system specification |
+| [`features/`](features/README.md) | Canonical product and system specification, one claim per scenario |
 | [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and the React/Vite web app |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
 | [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused project-specific coding-agent guidance |
-| [`docs/`](docs/architecture.md) | Concise operational notes and historical ADRs |
+| [`docs/`](docs/architecture.md) | Constraints, operational notes, the generated [traceability matrix](docs/traceability.md), and historical ADRs |
 | [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding |
 | [`locales/`](locales/en-CA.json) | Reviewed application UI catalogues |
 

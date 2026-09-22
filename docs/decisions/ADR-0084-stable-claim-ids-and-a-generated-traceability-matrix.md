@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: traceability, claim IDs, Gherkin tags, generated documentation, CI gate, drift
@@ -7,9 +7,7 @@ keywords: traceability, claim IDs, Gherkin tags, generated documentation, CI gat
 
 # ADR-0084 — A claim has a stable ID, and the traceability matrix is generated
 
-**Status:** Proposed. Accepted when [#286](https://github.com/HPAC-Safety/safety-report/issues/286)
-lands and every scenario carries its ID; until then the feature files do not
-yet assert what this record decides.
+**Status:** Accepted
 
 ## Context
 
@@ -52,7 +50,11 @@ matrix quietly incomplete rather than visibly incomplete.
 
 **The matrix is generated from the artifacts, committed, and drift-checked.**
 `tools/traceability.mjs` reads the feature files and the `CON-*` claims and
-writes `docs/traceability.md`. CI regenerates it and fails on a difference, in
+writes `docs/traceability.md`. It is dependency-free, like every other tool in
+`tools/`: the grammar it consumes is two line shapes, and
+`tools/gherkin/verify.mjs` has already proved with the official Cucumber parser
+that the files are valid Gherkin, so the generator never has to be the thing
+that discovers a syntax error. CI regenerates it and fails on a difference, in
 the same shape as the existing skill-install and `dotnet format` drift checks.
 The generator exits non-zero on a duplicate ID, a malformed ID, a scenario with
 no ID, or a `Verified by:` naming an ID that does not exist.

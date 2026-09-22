@@ -7,7 +7,18 @@ using HpacSafety.Worker.Outbox;
 using HpacSafety.Worker.Summarization;
 using Microsoft.EntityFrameworkCore;
 
-var builder = Host.CreateApplicationBuilder(args);
+// The Generic Host reads DOTNET_ENVIRONMENT by default; this project's own
+// convention (docker-compose.yml, infra/ecs.tf) is ASPNETCORE_ENVIRONMENT,
+// the variable WebApplication-based HpacSafety.Api reads automatically.
+// Preferring it here, and falling back to the Generic Host's own resolution
+// when it is unset, keeps both hosts driven by the one variable a deploy
+// actually sets rather than silently disabling the Development
+// translation stand-in below.
+var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
+{
+	Args = args,
+	EnvironmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+});
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));

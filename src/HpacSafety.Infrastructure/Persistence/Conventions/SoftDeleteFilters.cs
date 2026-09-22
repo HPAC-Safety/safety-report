@@ -18,7 +18,10 @@ public static class SoftDeleteFilters
 
 		foreach (var entity in modelBuilder.Model.GetEntityTypes())
 		{
-			if (entity.FindProperty("Deleted") is null) continue;
+			if (entity.FindProperty("Deleted") is null)
+			{
+				continue;
+			}
 
 			var parameter = Expression.Parameter(entity.ClrType, "e");
 			var property = Expression.Property(parameter, "Deleted");

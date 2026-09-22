@@ -30,7 +30,10 @@ public static class AuthEndpoints
 		// Proves a token was validated rather than merely minted.
 		group.MapGet("/me", Me).RequireAuthorization(HpacPolicies.Member);
 
-		if (isDevelopment) group.MapPost("/token", TokenAsync).AllowAnonymous();
+		if (isDevelopment)
+		{
+			group.MapPost("/token", TokenAsync).AllowAnonymous();
+		}
 
 		return group;
 	}

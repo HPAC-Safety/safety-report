@@ -68,13 +68,19 @@ public static class AnswerTranslationEndpoints
 		ArgumentNullException.ThrowIfNull(request);
 		ArgumentNullException.ThrowIfNull(database);
 
-		if (!TinyId.TryParse(id, out var answerId)) return Results.NotFound();
+		if (!TinyId.TryParse(id, out var answerId))
+		{
+			return Results.NotFound();
+		}
 
 		var answer = await database.ReportAnswers
 			.FirstOrDefaultAsync(candidate => candidate.Id == answerId, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (answer is null) return Results.NotFound();
+		if (answer is null)
+		{
+			return Results.NotFound();
+		}
 
 		try
 		{

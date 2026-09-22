@@ -33,7 +33,10 @@ public class OutboxMessageTests
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "{}", Now);
 
 		// When
-		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++) message.RecordFailure("timeout", Now);
+		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
+		{
+			message.RecordFailure("timeout", Now);
+		}
 
 		// Then — set aside for a human rather than retried forever
 		message.IsPoisoned.ShouldBeTrue();

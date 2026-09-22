@@ -74,14 +74,22 @@ public readonly record struct BlobKey
 		ArgumentNullException.ThrowIfNull(fileName);
 
 		if (!IsReportId(reportId))
+		{
 			// Not echoed: a report id identifies a real report, and this message
 			// may end up in a log. docs/data-handling.md — log identifiers only
 			// where they belong, never by accident.
 			throw new DomainRuleViolationException("A blob key must be namespaced by a well-formed report id.");
+		}
 
-		if (!IsFileName(fileName)) throw new DomainRuleViolationException("The value is not a valid blob file name.");
+		if (!IsFileName(fileName))
+		{
+			throw new DomainRuleViolationException("The value is not a valid blob file name.");
+		}
 
-		if (!Enum.IsDefined(compartment)) throw new DomainRuleViolationException("The value is not a known media compartment.");
+		if (!Enum.IsDefined(compartment))
+		{
+			throw new DomainRuleViolationException("The value is not a known media compartment.");
+		}
 
 		return new BlobKey(reportId, compartment, fileName);
 	}
@@ -103,12 +111,21 @@ public readonly record struct BlobKey
 	{
 		key = default;
 
-		if (string.IsNullOrEmpty(candidate)) return false;
+		if (string.IsNullOrEmpty(candidate))
+		{
+			return false;
+		}
 
 		var segments = candidate.Split('/');
-		if (segments.Length != 3) return false;
+		if (segments.Length != 3)
+		{
+			return false;
+		}
 
-		if (string.Equals(segments[0], QuarantineSegment, StringComparison.Ordinal)) return TryBuild(segments[1], MediaCompartment.Quarantine, segments[2], out key);
+		if (string.Equals(segments[0], QuarantineSegment, StringComparison.Ordinal))
+		{
+			return TryBuild(segments[1], MediaCompartment.Quarantine, segments[2], out key);
+		}
 
 		var compartment = segments[1] switch
 		{
@@ -136,7 +153,10 @@ public readonly record struct BlobKey
 	{
 		key = default;
 
-		if (!IsReportId(reportId) || !IsFileName(fileName)) return false;
+		if (!IsReportId(reportId) || !IsFileName(fileName))
+		{
+			return false;
+		}
 
 		key = new BlobKey(reportId, compartment, fileName);
 		return true;
@@ -158,14 +178,20 @@ public readonly record struct BlobKey
 	// #62 lands - two implementations of one format is how they drift apart.
 	private static bool IsReportId(string? candidate)
 	{
-		if (candidate is not { Length: ReportIdLength }) return false;
+		if (candidate is not { Length: ReportIdLength })
+		{
+			return false;
+		}
 
 		foreach (var character in candidate)
 		{
 			var allowed = character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9'
 				or '-' or '_';
 
-			if (!allowed) return false;
+			if (!allowed)
+			{
+				return false;
+			}
 		}
 
 		return true;
@@ -175,14 +201,20 @@ public readonly record struct BlobKey
 	{
 		// A leading dot would make a hidden file on disk, and "." and ".." are
 		// the traversal FileSystemBlobStore must never see.
-		if (candidate is not { Length: > 0 } || candidate.Length > MaxFileNameLength || candidate[0] == '.') return false;
+		if (candidate is not { Length: > 0 } || candidate.Length > MaxFileNameLength || candidate[0] == '.')
+		{
+			return false;
+		}
 
 		foreach (var character in candidate)
 		{
 			var allowed = character is >= 'a' and <= 'z' or >= 'A' and <= 'Z' or >= '0' and <= '9'
 				or '-' or '_' or '.';
 
-			if (!allowed) return false;
+			if (!allowed)
+			{
+				return false;
+			}
 		}
 
 		return true;

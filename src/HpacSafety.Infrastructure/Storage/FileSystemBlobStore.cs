@@ -140,23 +140,33 @@ public sealed class FileSystemBlobStore : IBlobStore
 	{
 		ArgumentNullException.ThrowIfNull(signedUrl);
 
-		if (!string.Equals(signedUrl.Scheme, UrlScheme, StringComparison.Ordinal)) throw new PresignedUrlRejectedException();
+		if (!string.Equals(signedUrl.Scheme, UrlScheme, StringComparison.Ordinal))
+		{
+			throw new PresignedUrlRejectedException();
+		}
 
 		var query = ParseQuery(signedUrl.Query);
 
 		if (!query.TryGetValue("op", out var operation)
 			|| !query.TryGetValue("expires", out var expires)
 			|| !query.TryGetValue("sig", out var presented))
+		{
 			throw new PresignedUrlRejectedException();
+		}
 
 		query.TryGetValue("ct", out var contentType);
 		contentType ??= string.Empty;
 
 		if (!string.Equals(operation, expectedOperation, StringComparison.Ordinal)
 			|| !long.TryParse(expires, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiresAt))
+		{
 			throw new PresignedUrlRejectedException();
+		}
 
-		if (!BlobKey.TryParse(Uri.UnescapeDataString(signedUrl.AbsolutePath.TrimStart('/')), out var key)) throw new PresignedUrlRejectedException();
+		if (!BlobKey.TryParse(Uri.UnescapeDataString(signedUrl.AbsolutePath.TrimStart('/')), out var key))
+		{
+			throw new PresignedUrlRejectedException();
+		}
 
 		var expected = Signature(operation, key.Value, contentType, expiresAt);
 
@@ -165,9 +175,14 @@ public sealed class FileSystemBlobStore : IBlobStore
 		if (!CryptographicOperations.FixedTimeEquals(
 				Encoding.ASCII.GetBytes(expected),
 				Encoding.ASCII.GetBytes(presented)))
+		{
 			throw new PresignedUrlRejectedException();
+		}
 
-		if (_clock.GetUtcNow().ToUnixTimeSeconds() > expiresAt) throw new PresignedUrlRejectedException("The pre-signed URL has expired.");
+		if (_clock.GetUtcNow().ToUnixTimeSeconds() > expiresAt)
+		{
+			throw new PresignedUrlRejectedException("The pre-signed URL has expired.");
+		}
 
 		return new SignedTicket(key, contentType);
 	}
@@ -186,7 +201,10 @@ public sealed class FileSystemBlobStore : IBlobStore
 		foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
 		{
 			var separator = pair.IndexOf('=', StringComparison.Ordinal);
-			if (separator > 0) parsed[pair[..separator]] = Uri.UnescapeDataString(pair[(separator + 1)..]);
+			if (separator > 0)
+			{
+				parsed[pair[..separator]] = Uri.UnescapeDataString(pair[(separator + 1)..]);
+			}
 		}
 
 		return parsed;

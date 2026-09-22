@@ -78,7 +78,10 @@ public sealed class DevelopmentTokenIssuer
 			string.Equals(account.User, username, StringComparison.Ordinal)
 			&& string.Equals(account.Password, password, StringComparison.Ordinal));
 
-		if (match.User is null) return null;
+		if (match.User is null)
+		{
+			return null;
+		}
 
 		var signingKey = _options.DevelopmentSigningKey
 						 ?? throw new InvalidOperationException("The development signing key is not configured.");

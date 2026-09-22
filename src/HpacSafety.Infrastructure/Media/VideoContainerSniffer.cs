@@ -30,14 +30,20 @@ public sealed class VideoContainerSniffer : IMediaSniffer
 		var read = await content.ReadAtLeastAsync(header, HeaderLength, false, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (read < HeaderLength || !header.AsSpan(4, 4).SequenceEqual("ftyp"u8)) return null;
+		if (read < HeaderLength || !header.AsSpan(4, 4).SequenceEqual("ftyp"u8))
+		{
+			return null;
+		}
 
 		return FromBrand(header.AsSpan(8, 4));
 	}
 
 	private static MediaType? FromBrand(ReadOnlySpan<byte> brand)
 	{
-		if (brand.SequenceEqual("qt  "u8)) return MediaType.QuickTime;
+		if (brand.SequenceEqual("qt  "u8))
+		{
+			return MediaType.QuickTime;
+		}
 
 		var isMp4 = brand.SequenceEqual("isom"u8)
 					|| brand.SequenceEqual("iso2"u8)

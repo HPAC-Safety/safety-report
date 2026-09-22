@@ -95,7 +95,10 @@ public class OptionSet
 
 		if (_items.Find(item => item.Code == normalized) is { } existing)
 		{
-			if (existing.Deleted is null) throw new DomainRuleViolationException($"'{Key}' already offers an option coded '{normalized}'.");
+			if (existing.Deleted is null)
+			{
+				throw new DomainRuleViolationException($"'{Key}' already offers an option coded '{normalized}'.");
+			}
 
 			existing.Restore(NextDisplayOrder(), labelEn, labelFr);
 			return existing;
@@ -155,7 +158,10 @@ public class OptionSet
 
 		var normalized = QuestionKey.Normalize(label);
 
-		if (_items.Find(item => item.Code == normalized) is { } existing) return existing;
+		if (_items.Find(item => item.Code == normalized) is { } existing)
+		{
+			return existing;
+		}
 
 		var item = OptionSetItem.Create(
 			Id, normalized, NextDisplayOrder(),
@@ -187,10 +193,15 @@ public class OptionSet
 
 		if (normalized.Count != live.Count || normalized.Distinct(StringComparer.Ordinal).Count() != normalized.Count
 										   || !live.All(code => normalized.Contains(code, StringComparer.Ordinal)))
+		{
 			throw new DomainRuleViolationException(
 				$"An arrangement of '{Key}' has to list every live option exactly once.");
+		}
 
-		for (var i = 0; i < normalized.Count; i++) Live(normalized[i]).MoveTo(i);
+		for (var i = 0; i < normalized.Count; i++)
+		{
+			Live(normalized[i]).MoveTo(i);
+		}
 	}
 
 	/// <summary>
@@ -210,11 +221,17 @@ public class OptionSet
 	/// </summary>
 	public void Delete(DateTimeOffset at)
 	{
-		if (Deleted is not null) return;
+		if (Deleted is not null)
+		{
+			return;
+		}
 
 		Deleted = at;
 
-		foreach (var item in _items.Where(item => item.Deleted is null)) item.Delete(at);
+		foreach (var item in _items.Where(item => item.Deleted is null))
+		{
+			item.Delete(at);
+		}
 	}
 
 	/// <summary>
@@ -242,7 +259,10 @@ public class OptionSet
 
 	private void EnsureNotDeleted()
 	{
-		if (Deleted is not null) throw new DomainRuleViolationException($"'{Key}' was deleted and cannot be changed.");
+		if (Deleted is not null)
+		{
+			throw new DomainRuleViolationException($"'{Key}' was deleted and cannot be changed.");
+		}
 	}
 
 	private static string NotBlank(string name)

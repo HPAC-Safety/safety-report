@@ -112,6 +112,10 @@ export function ManageQuestionsPage() {
 		(question) => (question.type === "yes_no" || question.type === "single_select") && question.id !== editing,
 	)
 
+	// Only a group question can have other questions displayed under it, and a
+	// group cannot itself be grouped under another one (ADR-0076).
+	const groupQuestions = questions.filter((question) => question.type === "group" && question.id !== editing)
+
 	return (
 		<main className="mx-auto max-w-4xl px-6 py-12">
 			<h1 className="font-display text-3xl font-bold">{t("questions.title")}</h1>
@@ -141,6 +145,7 @@ export function ManageQuestionsPage() {
 					draft={draft}
 					optionSets={optionSets}
 					conditionQuestions={conditionQuestions}
+					groupQuestions={groupQuestions}
 					isEditing={editing !== null}
 					hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 					translationAvailable={canTranslate}
@@ -202,6 +207,7 @@ function QuestionRow({
 }) {
 	const { t } = useLocale()
 	const parent = questions.find((candidate) => candidate.id === question.dependsOnQuestionId)
+	const groupParent = questions.find((candidate) => candidate.id === question.groupedUnderQuestionId)
 
 	return (
 		<div className="flex flex-wrap items-start justify-between gap-4">
@@ -224,6 +230,11 @@ function QuestionRow({
 										question.dependsOnOptionCode,
 								})
 							: t("questions.dependsOnSummary", { question: parent.labelEn })}
+					</p>
+				)}
+				{groupParent && (
+					<p className="mt-1 font-sans text-xs text-ink-muted">
+						{t("questions.groupedUnderSummary", { question: groupParent.labelEn })}
 					</p>
 				)}
 			</div>

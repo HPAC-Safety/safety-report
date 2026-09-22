@@ -56,6 +56,7 @@ public class QuestionRevision
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
 		TinyId? optionSetId,
+		TinyId? groupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput> options,
 		DateTimeOffset at)
 	{
@@ -63,6 +64,13 @@ public class QuestionRevision
 		QuestionId = questionId;
 		RevisionNumber = revisionNumber;
 		Type = type;
+
+		if (CollectsNoAnswerType(type) && (isRequired || isPrivate))
+		{
+			throw new DomainRuleViolationException(
+				$"A {type} question collects no answer and cannot be marked required or private.");
+		}
+
 		// Only the publication-consent question is a system question, and it is
 		// always required — a form that lets a reporter skip consent cannot
 		// publish anything. Every other question's required state is authored
@@ -72,9 +80,10 @@ public class QuestionRevision
 		IsPrivate = isPrivate;
 		IsActive = isActive;
 		DisplayOrder = displayOrder;
-		DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, isSystem);
+		DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
 		DependsOnOptionCode = ValidatedOptionCode(dependsOnOptionCode, DependsOnQuestionId);
 		OptionSetId = optionSetId;
+		GroupedUnderQuestionId = ValidatedGrouping(groupedUnderQuestionId, questionId);
 		LabelEn = NotBlank(labelEn);
 		LabelFr = NotBlank(labelFr);
 		HelpTextEn = helpTextEn;
@@ -160,6 +169,15 @@ public class QuestionRevision
 	/// </summary>
 	public TinyId? OptionSetId { get; private init; }
 
+	/// <summary>
+	///     The <see cref="QuestionType.Group" /> question this revision renders
+	///     together with, if any. Distinct from <see cref="DependsOnQuestionId" />:
+	///     this is "display together," never "conditional on." Names the stable
+	///     <see cref="Question" />, not a revision of it, for the same reason a
+	///     dependency does. See ADR-0076.
+	/// </summary>
+	public TinyId? GroupedUnderQuestionId { get; private init; }
+
 	/// <summary>The English wording.</summary>
 	public string LabelEn { get; private init; }
 
@@ -197,6 +215,13 @@ public class QuestionRevision
 	public bool ExpectsOptions =>
 		Type is QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.YesNo
 			or QuestionType.Autocomplete;
+
+	/// <summary>
+	///     True when this type is instructional or structural rather than
+	///     something a reporter answers. Neither type may be required, private,
+	///     system, a conditional parent, or a conditional child. See ADR-0076.
+	/// </summary>
+	public bool CollectsNoAnswer => CollectsNoAnswerType(Type);
 
 	/// <summary>
 	///     True when an answer to this type is stored in the reporter's language and
@@ -257,13 +282,14 @@ public class QuestionRevision
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
 		TinyId? optionSetId,
+		TinyId? groupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput> options,
 		DateTimeOffset at)
 	{
 		return new QuestionRevision(
 			questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-			optionSetId, options, at);
+			optionSetId, groupedUnderQuestionId, options, at);
 	}
 
 	/// <summary>
@@ -312,20 +338,31 @@ public class QuestionRevision
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
-		if (options.Count == 0) return;
+		if (options.Count == 0)
+		{
+			return;
+		}
 
 		if (Type == QuestionType.YesNo)
+		{
 			throw new DomainRuleViolationException(
 				"A yes/no question has exactly two answers, yes and no. It cannot be given more, and it has no default.");
+		}
 
-		if (!ExpectsOptions) throw new DomainRuleViolationException($"A {Type} question does not have options.");
+		if (!ExpectsOptions)
+		{
+			throw new DomainRuleViolationException($"A {Type} question does not have options.");
+		}
 
 		for (var i = 0; i < options.Count; i++)
 		{
 			var input = options[i];
 			var normalized = QuestionKey.Normalize(input.Code);
 
-			if (_options.Exists(o => o.Code == normalized)) throw new DomainRuleViolationException($"This question already has an option coded '{normalized}'.");
+			if (_options.Exists(o => o.Code == normalized))
+			{
+				throw new DomainRuleViolationException($"This question already has an option coded '{normalized}'.");
+			}
 
 			_options.Add(QuestionRevisionOption.Create(Id, normalized, i, input.LabelEn, input.LabelFr, input.SourceItemId));
 		}
@@ -333,22 +370,63 @@ public class QuestionRevision
 
 	/// <summary>
 	///     Checks the part of a dependency this row can see on its own: that it
-	///     does not point at itself, and that the question is not the
-	///     publication-consent system question. Whether the <i>parent</i> is a
+	///     does not point at itself, that the question is not the
+	///     publication-consent system question, and that a question collecting no
+	///     answer is not made conditional. Whether the <i>parent</i> is a
 	///     question type that can enable another one is a fact about a different
-	///     row, so <see cref="QuestionDependencies" /> checks that. See ADR-0060.
+	///     row, so <see cref="QuestionDependencies" /> checks that. See ADR-0060,
+	///     ADR-0076.
 	/// </summary>
-	private static TinyId? ValidatedDependency(TinyId? dependsOnQuestionId, TinyId questionId, bool isSystem)
+	private static TinyId? ValidatedDependency(TinyId? dependsOnQuestionId, TinyId questionId, QuestionType type, bool isSystem)
 	{
-		if (dependsOnQuestionId is not { } parent) return null;
+		if (dependsOnQuestionId is not { } parent)
+		{
+			return null;
+		}
 
-		if (parent == questionId) throw new DomainRuleViolationException("A question cannot be conditional on itself.");
+		if (parent == questionId)
+		{
+			throw new DomainRuleViolationException("A question cannot be conditional on itself.");
+		}
 
 		if (isSystem)
+		{
 			throw new DomainRuleViolationException(
 				"Publication consent is always asked. Making it conditional would let a report reach the form with no consent question at all.");
+		}
+
+		if (CollectsNoAnswerType(type))
+		{
+			throw new DomainRuleViolationException($"A {type} question collects no answer and cannot be made conditional.");
+		}
 
 		return parent;
+	}
+
+	/// <summary>
+	///     Checks the part of a grouping this row can see on its own: that it
+	///     does not name itself. Whether the named question is currently a
+	///     <see cref="QuestionType.Group" /> is a fact about a different row, so
+	///     <see cref="QuestionGrouping" /> checks that. See ADR-0076.
+	/// </summary>
+	private static TinyId? ValidatedGrouping(TinyId? groupedUnderQuestionId, TinyId questionId)
+	{
+		if (groupedUnderQuestionId is not { } parent)
+		{
+			return null;
+		}
+
+		if (parent == questionId)
+		{
+			throw new DomainRuleViolationException("A question cannot be grouped under itself.");
+		}
+
+		return parent;
+	}
+
+	private static bool CollectsNoAnswerType(QuestionType type)
+	{
+		return type is QuestionType.Statement or QuestionType.Group;
 	}
 
 	/// <summary>
@@ -361,9 +439,15 @@ public class QuestionRevision
 	/// </summary>
 	private static string? ValidatedOptionCode(string? dependsOnOptionCode, TinyId? dependsOnQuestionId)
 	{
-		if (dependsOnOptionCode is null) return null;
+		if (dependsOnOptionCode is null)
+		{
+			return null;
+		}
 
-		if (dependsOnQuestionId is null) throw new DomainRuleViolationException("A required option needs a parent question to name it.");
+		if (dependsOnQuestionId is null)
+		{
+			throw new DomainRuleViolationException("A required option needs a parent question to name it.");
+		}
 
 		return QuestionKey.Normalize(dependsOnOptionCode);
 	}
@@ -384,9 +468,15 @@ public class QuestionRevision
 	/// <param name="locale">The locale <paramref name="parentAnswerValue" /> was given in.</param>
 	public bool IsEnabledGiven(Question? parent, string? parentAnswerValue, Locale locale)
 	{
-		if (DependsOnQuestionId is null) return true;
+		if (DependsOnQuestionId is null)
+		{
+			return true;
+		}
 
-		if (parent is null || parentAnswerValue is null) return false;
+		if (parent is null || parentAnswerValue is null)
+		{
+			return false;
+		}
 
 		var parentRevision = parent.CurrentRevision;
 

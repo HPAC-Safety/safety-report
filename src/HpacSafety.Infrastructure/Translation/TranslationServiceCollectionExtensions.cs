@@ -51,9 +51,13 @@ public static class TranslationServiceCollectionExtensions
 			configuration[$"{DeepLOptions.SectionName}:ApiKey"] ?? configuration["DEEPL_API_KEY"]);
 
 		if (useStandInWhenUnconfigured && !configured)
+		{
 			services.AddScoped<ITranslator, EchoTranslator>();
+		}
 		else
+		{
 			services.AddScoped<ITranslator, DeepLTranslator>();
+		}
 
 		return services;
 	}

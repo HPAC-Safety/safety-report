@@ -64,19 +64,29 @@ public static class QuestionEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		if (!EnumCode.TryParse<QuestionType>(request.Type, out var type)) return UnknownType(request.Type);
+		if (!EnumCode.TryParse<QuestionType>(request.Type, out var type))
+		{
+			return UnknownType(request.Type);
+		}
 
-		if (string.IsNullOrWhiteSpace(request.Key)) return Problem("missing-key", "A question needs a key.", "A question needs a stable key that never changes.");
+		if (string.IsNullOrWhiteSpace(request.Key))
+		{
+			return Problem("missing-key", "A question needs a key.", "A question needs a stable key that never changes.");
+		}
 
 		var at = clock.GetUtcNow();
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
 		var key = QuestionKey.Normalize(request.Key);
 
-		if (questions.Exists(question => question.Key == key)) return Problem("duplicate-key", "That key is taken.", $"Another question already uses the key '{key}'.");
+		if (questions.Exists(question => question.Key == key))
+		{
+			return Problem("duplicate-key", "That key is taken.", $"Another question already uses the key '{key}'.");
+		}
 
 		return await Save(async () =>
 		{
 			var dependsOn = ResolvedDependency(request, questions, null);
+			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
 			var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
 
 			var question = Question.Create(
@@ -97,6 +107,7 @@ public static class QuestionEndpoints
 				dependsOn.ParentId,
 				dependsOn.OptionCode,
 				ParsedOptionSet(request),
+				groupedUnderQuestionId,
 				options);
 
 			database.Questions.Add(question);
@@ -119,18 +130,28 @@ public static class QuestionEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		if (!TinyId.TryParse(id, out var questionId)) return Results.NotFound();
+		if (!TinyId.TryParse(id, out var questionId))
+		{
+			return Results.NotFound();
+		}
 
-		if (!EnumCode.TryParse<QuestionType>(request.Type, out var type)) return UnknownType(request.Type);
+		if (!EnumCode.TryParse<QuestionType>(request.Type, out var type))
+		{
+			return UnknownType(request.Type);
+		}
 
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
 		var question = questions.Find(candidate => candidate.Id == questionId);
 
-		if (question is null) return Results.NotFound();
+		if (question is null)
+		{
+			return Results.NotFound();
+		}
 
 		return await Save(async () =>
 		{
 			var dependsOn = ResolvedDependency(request, questions, question.Id);
+			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
 			var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
 			var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
 				.ConfigureAwait(false);
@@ -154,11 +175,15 @@ public static class QuestionEndpoints
 				dependsOn.ParentId,
 				dependsOn.OptionCode,
 				ParsedOptionSet(request),
+				groupedUnderQuestionId,
 				options);
 
 			var forked = !ReferenceEquals(live, question);
 
-			if (forked) database.Questions.Add(live);
+			if (forked)
+			{
+				database.Questions.Add(live);
+			}
 
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -188,25 +213,33 @@ public static class QuestionEndpoints
 		foreach (var candidate in request.QuestionIdsInOrder)
 		{
 			if (!TinyId.TryParse(candidate, out var id) || questions.Find(question => question.Id == id) is not { } question)
+			{
 				return Problem(
 					"unknown-question",
 					"That question no longer exists.",
 					"The form changed while it was being rearranged. Reload and try again.");
+			}
 
 			ordered.Add(question);
 		}
 
 		if (ordered.Count != questions.Count)
+		{
 			return Problem(
 				"incomplete-order",
 				"Every question has to be listed.",
 				"A partial arrangement would leave the questions it omits in an arbitrary position.");
+		}
 
 		var at = clock.GetUtcNow();
 
 		for (var position = 0; position < ordered.Count; position++)
+		{
 			if (ordered[position].DisplayOrder != position)
+			{
 				ordered[position].Reorder(position, at);
+			}
+		}
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
@@ -226,13 +259,19 @@ public static class QuestionEndpoints
 		TimeProvider clock,
 		CancellationToken cancellationToken)
 	{
-		if (!TinyId.TryParse(id, out var questionId)) return Results.NotFound();
+		if (!TinyId.TryParse(id, out var questionId))
+		{
+			return Results.NotFound();
+		}
 
 		var question = await LiveQuestions(database)
 			.FirstOrDefaultAsync(candidate => candidate.Id == questionId, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (question is null) return Results.NotFound();
+		if (question is null)
+		{
+			return Results.NotFound();
+		}
 
 		return await Save(async () =>
 		{
@@ -326,13 +365,34 @@ public static class QuestionEndpoints
 	private static (TinyId? ParentId, string? OptionCode) ResolvedDependency(
 		SaveQuestionRequest request, List<Question> questions, TinyId? childId)
 	{
-		if (!TinyId.TryParse(request.DependsOnQuestionId, out var parentId)) return (null, null);
+		if (!TinyId.TryParse(request.DependsOnQuestionId, out var parentId))
+		{
+			return (null, null);
+		}
 
 		var optionCode = string.IsNullOrWhiteSpace(request.DependsOnOptionCode) ? null : request.DependsOnOptionCode;
 
 		QuestionDependencies.EnsureDependencyAllowed(questions, childId, parentId, optionCode);
 
 		return (parentId, optionCode);
+	}
+
+	/// <summary>
+	///     Resolves the group question this one renders under, checking the
+	///     part of the rule that needs to see the rest of the bank: the group
+	///     exists, is live, is currently a group question, and does not lead
+	///     back here. See ADR-0076.
+	/// </summary>
+	private static TinyId? ResolvedGrouping(SaveQuestionRequest request, List<Question> questions, TinyId? childId)
+	{
+		if (!TinyId.TryParse(request.GroupedUnderQuestionId, out var groupId))
+		{
+			return null;
+		}
+
+		QuestionGrouping.EnsureGroupingAllowed(questions, childId, groupId);
+
+		return groupId;
 	}
 
 	/// <summary>

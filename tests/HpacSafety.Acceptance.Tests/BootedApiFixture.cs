@@ -48,7 +48,10 @@ public static class BootedApi
 	/// <summary>The booted host, starting it if this is the first scenario to ask.</summary>
 	public static async Task<WebApplicationFactory<Program>> FactoryAsync()
 	{
-		if (factory is not null) return factory;
+		if (factory is not null)
+		{
+			return factory;
+		}
 
 		await Gate.WaitAsync().ConfigureAwait(false);
 

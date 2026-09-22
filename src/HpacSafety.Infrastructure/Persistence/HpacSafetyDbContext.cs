@@ -101,7 +101,10 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 				? $"tiny_id_attempt_{attempt}"
 				: null;
 
-			if (savepoint is not null) await transaction!.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+			if (savepoint is not null)
+			{
+				await transaction!.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+			}
 
 			try
 			{
@@ -110,7 +113,10 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 			catch (DbUpdateException cause)
 				when (attempt < IdentifierAttempts && IsIdentifierCollision(cause))
 			{
-				if (savepoint is not null) await transaction!.RollbackToSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+				if (savepoint is not null)
+				{
+					await transaction!.RollbackToSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+				}
 
 				MintNewIdentifiers(cause);
 			}
@@ -210,9 +216,15 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 		foreach (var entry in entries)
 		{
-			if (entry.State != EntityState.Added) continue;
+			if (entry.State != EntityState.Added)
+			{
+				continue;
+			}
 
-			if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType } || clrType != typeof(TinyId)) continue;
+			if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType } || clrType != typeof(TinyId))
+			{
+				continue;
+			}
 
 			var property = entry.Property("Id");
 			var replacement = TinyId.New();
@@ -220,15 +232,26 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 			property.CurrentValue = replacement;
 		}
 
-		if (replacements.Count == 0) return;
+		if (replacements.Count == 0)
+		{
+			return;
+		}
 
 		foreach (var entry in ChangeTracker.Entries().Where(entry => entry.State == EntityState.Added))
+		{
 			foreach (var name in LooseReferences)
 			{
-				if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType } || clrType != typeof(TinyId)) continue;
+				if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType } || clrType != typeof(TinyId))
+				{
+					continue;
+				}
 
 				var property = entry.Property(name);
-				if (property.CurrentValue is TinyId pointed && replacements.TryGetValue(pointed, out var replacement)) property.CurrentValue = replacement;
+				if (property.CurrentValue is TinyId pointed && replacements.TryGetValue(pointed, out var replacement))
+				{
+					property.CurrentValue = replacement;
+				}
 			}
+		}
 	}
 }

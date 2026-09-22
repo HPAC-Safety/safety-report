@@ -22,9 +22,16 @@ public static class QuestionKey
 
 		var builder = new StringBuilder(candidate.Length);
 		foreach (var character in candidate.Trim().ToLowerInvariant())
+		{
 			if (char.IsAsciiLetterOrDigit(character))
+			{
 				builder.Append(character);
-			else if (builder.Length > 0 && builder[^1] != '_') builder.Append('_');
+			}
+			else if (builder.Length > 0 && builder[^1] != '_')
+			{
+				builder.Append('_');
+			}
+		}
 
 		var key = builder.ToString().Trim('_');
 

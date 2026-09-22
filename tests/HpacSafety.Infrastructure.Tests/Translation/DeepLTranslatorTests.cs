@@ -323,7 +323,10 @@ public class DeepLTranslatorTests
 		{
 			Requests.Add(request);
 
-			if (request.Content is not null) _bodies.Add(await request.Content.ReadAsStringAsync(cancellationToken));
+			if (request.Content is not null)
+			{
+				_bodies.Add(await request.Content.ReadAsStringAsync(cancellationToken));
+			}
 
 			return _failure is not null ? throw _failure : _response!;
 		}

@@ -42,7 +42,10 @@ public static partial class MigrationRunner
 		var connection = context.Database.GetDbConnection();
 		var wasClosed = connection.State != ConnectionState.Open;
 
-		if (wasClosed) await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+		if (wasClosed)
+		{
+			await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+		}
 
 		try
 		{
@@ -83,7 +86,10 @@ public static partial class MigrationRunner
 		}
 		finally
 		{
-			if (wasClosed) await connection.CloseAsync().ConfigureAwait(false);
+			if (wasClosed)
+			{
+				await connection.CloseAsync().ConfigureAwait(false);
+			}
 		}
 	}
 

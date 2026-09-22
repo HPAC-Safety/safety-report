@@ -18,7 +18,10 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
 
 	public void Dispose()
 	{
-		if (Directory.Exists(_root)) Directory.Delete(_root, true);
+		if (Directory.Exists(_root))
+		{
+			Directory.Delete(_root, true);
+		}
 	}
 
 	protected override Task<IBlobStore> CreateStoreAsync()

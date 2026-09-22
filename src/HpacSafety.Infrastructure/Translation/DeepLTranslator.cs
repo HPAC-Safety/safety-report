@@ -74,14 +74,21 @@ public sealed partial class DeepLTranslator : ITranslator
 		ArgumentNullException.ThrowIfNull(texts);
 
 		if (!IsConfigured)
+		{
 			throw new TranslationUnavailableException(
 				"Translation is not configured on this server.");
+		}
 
 		if (source == target)
+		{
 			throw new TranslationUnavailableException(
 				"A translation needs two different languages.");
+		}
 
-		if (texts.Count == 0) return [];
+		if (texts.Count == 0)
+		{
+			return [];
+		}
 
 		var request = new DeepLRequest(
 			[.. texts.Select(ProtectPlaceholders)],
@@ -105,11 +112,13 @@ public sealed partial class DeepLTranslator : ITranslator
 				.ConfigureAwait(false);
 
 			if (!response.IsSuccessStatusCode)
+			{
 				// The status only. A DeepL error body can echo the submitted
 				// text back, and that text is question wording an administrator
 				// is drafting — it does not belong in an exception or a log.
 				throw new TranslationUnavailableException(
 					$"The translation service answered {(int)response.StatusCode}.");
+			}
 
 			payload = await response.Content
 				.ReadFromJsonAsync<DeepLResponse>(cancellationToken)
@@ -130,8 +139,10 @@ public sealed partial class DeepLTranslator : ITranslator
 		// silently shift every field by one — French help text landing in the
 		// label. Refusing is the only safe answer.
 		if (translations is null || translations.Count != texts.Count)
+		{
 			throw new TranslationUnavailableException(
 				"The translation service returned a different number of results than were sent.");
+		}
 
 		return [.. translations.Select(translation => UnprotectPlaceholders(translation.Text))];
 	}

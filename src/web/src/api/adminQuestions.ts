@@ -24,12 +24,21 @@ export const QUESTION_TYPES = [
 	"phone",
 	"checkbox",
 	"file_upload",
+	"statement",
+	"group",
 ] as const
 
 export type QuestionType = (typeof QUESTION_TYPES)[number]
 
 /** Types whose answer is an option code rather than free text. */
 export const OPTION_TYPES: readonly QuestionType[] = ["single_select", "multi_select", "autocomplete"]
+
+/**
+ * Types that collect no answer — instructional copy or a section heading.
+ * Neither can be required, private, a conditional parent, or a conditional
+ * child (ADR-0076).
+ */
+export const NO_ANSWER_TYPES: readonly QuestionType[] = ["statement", "group"]
 
 export interface OptionView {
 	code: string
@@ -54,6 +63,8 @@ export interface QuestionView {
 	dependsOnQuestionId: string | null
 	dependsOnOptionCode: string | null
 	optionSetId: string | null
+	/** The group question this one renders together with, if any. Distinct from a conditional dependency (ADR-0076). */
+	groupedUnderQuestionId: string | null
 	labelEn: string
 	labelFr: string
 	helpTextEn: string | null
@@ -90,6 +101,7 @@ export interface SaveQuestionRequest {
 	dependsOnQuestionId: string | null
 	dependsOnOptionCode: string | null
 	optionSetId: string | null
+	groupedUnderQuestionId: string | null
 	options: { code: string; labelEn: string; labelFr: string }[]
 }
 

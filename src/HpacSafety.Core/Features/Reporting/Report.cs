@@ -117,13 +117,18 @@ public class Report
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(values);
 
-		if (values.Count == 0) return [Answer(question, value: null, at)];
+		if (values.Count == 0)
+		{
+			return [Answer(question, value: null, at)];
+		}
 
 		// Multi-select is the only type that produces several rows. Everything
 		// else — a picker, a date, a line of prose — is one answer.
 		if (values.Count > 1 && question.CurrentRevision.Type != QuestionType.MultiSelect)
+		{
 			throw new DomainRuleViolationException(
 				$"'{question.Key}' takes one answer, not {values.Count}.");
+		}
 
 		return [.. values.Select(value => Answer(question, value, at))];
 	}
@@ -141,7 +146,10 @@ public class Report
 	{
 		ArgumentNullException.ThrowIfNull(summary);
 
-		if (Summary is not null) throw new DomainRuleViolationException("This report already has a summary.");
+		if (Summary is not null)
+		{
+			throw new DomainRuleViolationException("This report already has a summary.");
+		}
 
 		Summary = summary;
 	}
@@ -154,8 +162,10 @@ public class Report
 	public void EnsureReadyForSubmission()
 	{
 		if (!HasAnsweredConsent)
+		{
 			throw new DomainRuleViolationException(
 				"A report cannot be submitted until the publication-consent question is answered yes or no.");
+		}
 	}
 
 	/// <summary>The worker has claimed this report.</summary>
@@ -200,14 +210,18 @@ public class Report
 	public void MarkPublished(DateTimeOffset at)
 	{
 		if (ConsentPublish is not true)
+		{
 			throw new DomainRuleViolationException(
 				ConsentPublish is null
 					? "This report has no answer to the publication-consent question. An unanswered consent is not a consent."
 					: "This reporter did not consent to publication. The report is stored, summarized, and counted internally, and never published.");
+		}
 
 		if (!IsPublishable)
+		{
 			throw new DomainRuleViolationException(
 				"A report is published only once a safety officer has approved it and its summary pair.");
+		}
 
 		Status = ReportStatus.Published;
 		PublishedAt = at;
@@ -215,7 +229,10 @@ public class Report
 
 	private void Project(Question question, ReportAnswer answer)
 	{
-		if (question.Role == QuestionRole.ConsentPublish) ConsentPublish = ReadConsent(answer);
+		if (question.Role == QuestionRole.ConsentPublish)
+		{
+			ConsentPublish = ReadConsent(answer);
+		}
 	}
 
 	/// <summary>
@@ -228,9 +245,15 @@ public class Report
 		// "yes" and "no" are the invariant stored forms of every boolean answer
 		// (ADR-0072), so this reads the same two tokens whichever language the
 		// reporter used.
-		if (string.Equals(answer.Value, "yes", StringComparison.Ordinal)) return true;
+		if (string.Equals(answer.Value, "yes", StringComparison.Ordinal))
+		{
+			return true;
+		}
 
-		if (string.Equals(answer.Value, "no", StringComparison.Ordinal)) return false;
+		if (string.Equals(answer.Value, "no", StringComparison.Ordinal))
+		{
+			return false;
+		}
 
 		throw new DomainRuleViolationException(
 			"Publication consent must be answered yes or no. There is no default and no third state.");

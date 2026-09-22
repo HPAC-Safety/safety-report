@@ -125,9 +125,15 @@ public class ReportAnswer
 	{
 		var revision = question.CurrentRevision;
 
-		if (revision.IsRequired && string.IsNullOrWhiteSpace(value)) throw new DomainRuleViolationException($"'{question.Key}' is required.");
+		if (revision.IsRequired && string.IsNullOrWhiteSpace(value))
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' is required.");
+		}
 
-		if (value is not null && revision.ExpectsOptions && !revision.Offers(value, locale)) throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
+		if (value is not null && revision.ExpectsOptions && !revision.Offers(value, locale))
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
+		}
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
 		{
@@ -142,9 +148,15 @@ public class ReportAnswer
 	/// </summary>
 	public void SupplyTranslation(string translated)
 	{
-		if (!NeedsTranslation) throw new DomainRuleViolationException("This answer is not waiting for a translation.");
+		if (!NeedsTranslation)
+		{
+			throw new DomainRuleViolationException("This answer is not waiting for a translation.");
+		}
 
-		if (string.IsNullOrWhiteSpace(translated)) throw new DomainRuleViolationException("A supplied translation cannot be blank.");
+		if (string.IsNullOrWhiteSpace(translated))
+		{
+			throw new DomainRuleViolationException("A supplied translation cannot be blank.");
+		}
 
 		TranslatedValue = translated;
 		NeedsTranslation = false;

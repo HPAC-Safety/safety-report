@@ -69,7 +69,10 @@ public sealed class MediaIngestor
 		string? declaredContentType,
 		CancellationToken cancellationToken)
 	{
-		if (quarantineKey.Compartment is not MediaCompartment.Quarantine) throw new DomainRuleViolationException("Ingest reads from quarantine and nowhere else.");
+		if (quarantineKey.Compartment is not MediaCompartment.Quarantine)
+		{
+			throw new DomainRuleViolationException("Ingest reads from quarantine and nowhere else.");
+		}
 
 		// Buffered rather than streamed past this point: the bytes are read three
 		// more times - for the digest, for the sniff and for the strip - and
@@ -91,17 +94,26 @@ public sealed class MediaIngestor
 			exceedsLimit = await CopyBoundedAsync(source, original, _policy.MaxByteSize, cancellationToken).ConfigureAwait(false);
 		}
 
-		if (exceedsLimit) return MediaIngestOutcome.Rejected(MediaRejectionReason.TooLarge);
+		if (exceedsLimit)
+		{
+			return MediaIngestOutcome.Rejected(MediaRejectionReason.TooLarge);
+		}
 
 		var byteSize = original.Length;
 
-		if (byteSize <= 0) return MediaIngestOutcome.Rejected(MediaRejectionReason.Empty);
+		if (byteSize <= 0)
+		{
+			return MediaIngestOutcome.Rejected(MediaRejectionReason.Empty);
+		}
 
 		original.Position = 0;
 		var sniffed = await _sniffer.SniffAsync(original, cancellationToken).ConfigureAwait(false);
 
 		var verdict = _policy.Validate(declaredContentType, sniffed, byteSize);
-		if (!verdict.IsAccepted) return MediaIngestOutcome.Rejected(verdict.RejectionReason);
+		if (!verdict.IsAccepted)
+		{
+			return MediaIngestOutcome.Rejected(verdict.RejectionReason);
+		}
 
 		var sha256 = Convert.ToHexStringLower(SHA256.HashData(original.GetBuffer().AsSpan(0, (int)byteSize)));
 
@@ -110,8 +122,10 @@ public sealed class MediaIngestor
 		await _blobStore.WriteAsync(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
 
 		if (verdict.Type.StrippedForm is not { } derivativeType)
+		{
 			// Retained, and deliberately not viewable. See #65.
 			return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
+		}
 
 		original.Position = 0;
 		using var stripped = new MemoryStream();
@@ -146,11 +160,17 @@ public sealed class MediaIngestor
 			// exceeded without reading a whole extra chunk to find out.
 			var toRead = (int)Math.Min(buffer.Length, maxByteSize + 1 - total);
 
-			if (toRead <= 0) return true;
+			if (toRead <= 0)
+			{
+				return true;
+			}
 
 			var read = await source.ReadAsync(buffer.AsMemory(0, toRead), cancellationToken).ConfigureAwait(false);
 
-			if (read == 0) return false;
+			if (read == 0)
+			{
+				return false;
+			}
 
 			total += read;
 			await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);

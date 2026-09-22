@@ -39,7 +39,10 @@ public sealed class MagickNetExifStripper : IExifStripper
 		ArgumentNullException.ThrowIfNull(source);
 		ArgumentNullException.ThrowIfNull(destination);
 
-		if (type.StrippedForm is not { } strippedForm) throw new NotSupportedException($"There is no way to strip '{type}' yet. See issue #65.");
+		if (type.StrippedForm is not { } strippedForm)
+		{
+			throw new NotSupportedException($"There is no way to strip '{type}' yet. See issue #65.");
+		}
 
 		var readFormat = MagickFormats.For(type);
 		var writeFormat = MagickFormats.For(strippedForm);

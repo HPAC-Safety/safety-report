@@ -54,7 +54,10 @@ public static class OptionSetEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		if (string.IsNullOrWhiteSpace(request.Key)) return Problem("missing-key", "A choice list needs a key.", "A choice list needs a stable key that never changes.");
+		if (string.IsNullOrWhiteSpace(request.Key))
+		{
+			return Problem("missing-key", "A choice list needs a key.", "A choice list needs a stable key that never changes.");
+		}
 
 		var key = QuestionKey.Normalize(request.Key);
 
@@ -62,13 +65,19 @@ public static class OptionSetEndpoints
 			.AnyAsync(set => set.Key == key, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (taken) return Problem("duplicate-key", "That key is taken.", $"Another choice list already uses the key '{key}'.");
+		if (taken)
+		{
+			return Problem("duplicate-key", "That key is taken.", $"Another choice list already uses the key '{key}'.");
+		}
 
 		try
 		{
 			var set = OptionSet.Create(key, request.NameEn, request.NameFr, clock.GetUtcNow());
 
-			foreach (var item in request.Items) set.Add(item.Code, item.LabelEn, item.LabelFr);
+			foreach (var item in request.Items)
+			{
+				set.Add(item.Code, item.LabelEn, item.LabelFr);
+			}
 
 			database.OptionSets.Add(set);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -96,13 +105,19 @@ public static class OptionSetEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		if (!TinyId.TryParse(id, out var setId)) return Results.NotFound();
+		if (!TinyId.TryParse(id, out var setId))
+		{
+			return Results.NotFound();
+		}
 
 		var set = await Live(database)
 			.FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (set is null) return Results.NotFound();
+		if (set is null)
+		{
+			return Results.NotFound();
+		}
 
 		try
 		{
@@ -111,7 +126,10 @@ public static class OptionSetEndpoints
 
 			set.Rename(request.NameEn, request.NameFr);
 
-			foreach (var gone in set.Items.Select(item => item.Code).Where(code => !wanted.Contains(code, StringComparer.Ordinal)).ToList()) set.Remove(gone, at);
+			foreach (var gone in set.Items.Select(item => item.Code).Where(code => !wanted.Contains(code, StringComparer.Ordinal)).ToList())
+			{
+				set.Remove(gone, at);
+			}
 
 			var live = set.Items.Select(item => item.Code).ToList();
 
@@ -120,9 +138,13 @@ public static class OptionSetEndpoints
 				var code = QuestionKey.Normalize(item.Code);
 
 				if (live.Contains(code, StringComparer.Ordinal))
+				{
 					set.Relabel(code, item.LabelEn, item.LabelFr);
+				}
 				else
+				{
 					set.Add(code, item.LabelEn, item.LabelFr);
+				}
 			}
 
 			set.Arrange(wanted);
@@ -143,13 +165,19 @@ public static class OptionSetEndpoints
 		TimeProvider clock,
 		CancellationToken cancellationToken)
 	{
-		if (!TinyId.TryParse(id, out var setId)) return Results.NotFound();
+		if (!TinyId.TryParse(id, out var setId))
+		{
+			return Results.NotFound();
+		}
 
 		var set = await Live(database)
 			.FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (set is null) return Results.NotFound();
+		if (set is null)
+		{
+			return Results.NotFound();
+		}
 
 		set.Delete(clock.GetUtcNow());
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

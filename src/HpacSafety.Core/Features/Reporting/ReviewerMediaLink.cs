@@ -36,8 +36,10 @@ public sealed class ReviewerMediaLink
 	public Task<Uri> CreateViewUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		if (!IsViewable(key))
+		{
 			throw new DomainRuleViolationException(
 				"A reviewer may only be shown a stripped derivative, never the original upload.");
+		}
 
 		return _blobStore.CreateReadUrlAsync(key, lifetime, cancellationToken);
 	}

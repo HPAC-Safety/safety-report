@@ -42,11 +42,13 @@ public readonly record struct Locale
 	public static bool TryParse(string? code, out Locale locale)
 	{
 		foreach (var candidate in All)
+		{
 			if (string.Equals(candidate.Code, code, StringComparison.OrdinalIgnoreCase))
 			{
 				locale = candidate;
 				return true;
 			}
+		}
 
 		locale = default;
 		return false;

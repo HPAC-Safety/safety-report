@@ -21,7 +21,9 @@ contributors run the script from Git Bash.
 1. Find or open a focused issue.
 2. Branch from current `main` using `issue-<number>/<short-description>`.
 3. Implement the smallest change that satisfies `/features` and the issue.
-4. Run the checks relevant to the changed surface.
+4. Run the checks relevant to the changed surface. `./check-coverage.sh` runs
+   the same coverage floor/ratchet CI does, so a drop is caught before you
+   push rather than in the PR.
 5. Open a pull request with a squash-ready title and `Closes #<number>` on its
    own line in the body.
 6. Address review and CI until every required check is green; squash merge only.

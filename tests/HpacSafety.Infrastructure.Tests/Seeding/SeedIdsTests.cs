@@ -66,7 +66,10 @@ public sealed class SeedIdsTests
 			ids.Add(SeedIds.For($"question:{question.Key}"));
 			ids.Add(SeedIds.For($"question_version:{question.Key}:1"));
 
-			foreach (var option in question.Options) ids.Add(SeedIds.For($"question_option:{question.Key}:{option.Code}"));
+			foreach (var option in question.Options)
+			{
+				ids.Add(SeedIds.For($"question_option:{question.Key}:{option.Code}"));
+			}
 		}
 
 		// Then

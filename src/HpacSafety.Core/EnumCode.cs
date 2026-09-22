@@ -17,7 +17,10 @@ public static class EnumCode
 
 		for (var i = 0; i < name.Length; i++)
 		{
-			if (i > 0 && char.IsUpper(name[i]) && !char.IsUpper(name[i - 1])) code.Append('_');
+			if (i > 0 && char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+			{
+				code.Append('_');
+			}
 
 			code.Append(char.ToLowerInvariant(name[i]));
 		}
@@ -34,16 +37,21 @@ public static class EnumCode
 	{
 		value = default;
 
-		if (string.IsNullOrWhiteSpace(code)) return false;
+		if (string.IsNullOrWhiteSpace(code))
+		{
+			return false;
+		}
 
 		var wanted = Strip(code);
 
 		foreach (var candidate in Enum.GetValues<TEnum>())
+		{
 			if (string.Equals(Strip(candidate.ToString()), wanted, StringComparison.OrdinalIgnoreCase))
 			{
 				value = candidate;
 				return true;
 			}
+		}
 
 		return false;
 	}

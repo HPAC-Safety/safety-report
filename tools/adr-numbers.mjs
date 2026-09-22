@@ -12,7 +12,7 @@
 //
 // The exit code is the contract.
 import { execFileSync } from 'node:child_process'
-import { readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { lstatSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = process.cwd()
@@ -107,17 +107,34 @@ export function nextNumber(claimed) {
 	return pad(highest + 1)
 }
 
-/** Every tracked file that could mention an ADR number. */
+/**
+ * Every tracked file that could mention an ADR number. Symlinks are skipped:
+ * `CLAUDE.md` and `.cursor/rules/agents.mdc` resolve to `AGENTS.md`, so
+ * following them would rewrite the same bytes three times and report the
+ * change under a path nobody edits.
+ */
 function referencingFiles(root) {
 	return execFileSync('git', ['-C', root, 'ls-files', '*.md', '*.mdc', '*.mjs', '*.yml', '*.yaml', '*.cs', '*.json'], { encoding: 'utf8' })
 		.split('\n')
 		.filter(Boolean)
+		.filter((file) => {
+			try {
+				return !lstatSync(join(root, file)).isSymbolicLink()
+			} catch {
+				return false
+			}
+		})
 }
 
 /**
  * Moves ADR-<old> to ADR-<new> and rewrites every reference: the filename in a
  * link, the heading, and bare prose like "(ADR-0089)". Missing one leaves a
  * link that resolves to somebody else's decision, which reads as correct.
+ *
+ * It rewrites every *textual* occurrence, which includes a test fixture that
+ * names the number on purpose. That is the honest trade for catching prose
+ * references, so it prints every file it touched — read the diff before
+ * committing, the same as any other mechanical edit.
  */
 export function renumber(root, oldNumber, newNumber) {
 	const adr = localAdrs(root).find((entry) => entry.number === oldNumber)

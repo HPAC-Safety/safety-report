@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -150,6 +150,20 @@ describe('renumber', () => {
 
 		const moved = readFileSync(join(root, 'docs/decisions/ADR-0091-taken.md'), 'utf8')
 		assert.match(moved, /# ADR-0091 — Taken/)
+	})
+
+	it('rewrites the real file rather than a symlink pointing at it', () => {
+		const root = repository({ 'ADR-0089-taken.md': adr('0089', 'Taken') })
+		writeFileSync(join(root, 'NOTES.md'), 'See ADR-0089.\n')
+		symlinkSync('NOTES.md', join(root, 'ALIAS.md'))
+		execFileSync('git', ['-C', root, 'add', '-A'])
+		execFileSync('git', ['-C', root, 'commit', '--quiet', '-m', 'notes and an alias'])
+
+		const result = renumber(root, '0089', '0091')
+
+		assert.ok(result.touched.includes('NOTES.md'))
+		assert.ok(!result.touched.includes('ALIAS.md'), 'a symlink is not reported as a second edit')
+		assert.match(readFileSync(join(root, 'NOTES.md'), 'utf8'), /ADR-0091/)
 	})
 
 	it('refuses a number that is already taken', () => {

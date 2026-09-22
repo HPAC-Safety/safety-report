@@ -77,6 +77,12 @@ The delivery contract says so.
   would be the kind of make-work this repository avoids.
 - `--next` is only as current as the last `git fetch`. It says what it
   consulted, and the delivery contract pairs it with the rebase.
+- `--renumber` rewrites every *textual* occurrence, which includes a test
+  fixture naming the number on purpose. That is the honest trade for catching
+  prose references like "(ADR-0089)", so it prints every file it touched and
+  the diff is read before committing, like any other mechanical edit. Symlinked
+  instruction files are skipped, because they resolve to `AGENTS.md` and would
+  otherwise be rewritten three times.
 
 ## Alternatives
 

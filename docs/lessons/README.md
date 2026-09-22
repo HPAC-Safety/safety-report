@@ -74,3 +74,4 @@ in its frontmatter status, like an ADR.
 | [0002 — Provenance that hashes only one side of a pair](0002-provenance-that-hashes-only-one-side-of-a-pair.md) | Hand-written French silently overwritten by the translator | `localize-hpac-app` |
 | [0003 — A number is claimed the moment someone else merges](0003-a-number-is-claimed-the-moment-someone-else-merges.md) | Three ADR numbers taken out from under a branch in one afternoon | `deliver-hpac-change` |
 | [0004 — A rule read once is not a rule checked again](0004-a-rule-read-once-is-not-a-rule-checked-again.md) | Eleven files edited directly on `main` on the second issue of a session, after the worktree rule was followed correctly on the first | `deliver-hpac-change` |
+| [0005 — An outcome computed and never recorded](0005-an-outcome-computed-and-never-recorded.md) | Every submitted image/video stayed unviewable forever; no reviewer endpoint could have worked | `REQ-MED-010` |

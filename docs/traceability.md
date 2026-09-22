@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-264 claims across 8 areas: 169 covered by a step definition today, 95 still `@ignore`. 50 constraints.
+264 claims across 8 areas: 172 covered by a step definition today, 92 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -60,9 +60,9 @@ type: guide
 | `REQ-MED-008` | media | A document is validated but never transformed | Reqnroll | Planned |
 | `REQ-MED-009` | media | Each attachment fails and processes independently of the report | Reqnroll | Planned |
 | `REQ-MED-010` | media | A reviewer gets a short-lived URL only for successfully processed media | Reqnroll | Planned |
-| `REQ-MED-011` | media | A reviewer downloads a validated document as an unredacted original | Reqnroll | Planned |
+| `REQ-MED-011` | media | A reviewer downloads a validated document as an unredacted original | Reqnroll | Covered |
 | `REQ-MED-012` | media | The admin site never inline-renders a private document | playwright-bdd | Planned |
-| `REQ-MED-013` | media | A failed attachment is inaccessible to reviewers | Reqnroll | Planned |
+| `REQ-MED-013` | media | A failed attachment is inaccessible to reviewers | playwright-bdd | Covered |
 | `REQ-MED-014` | media | Attachments are never exposed publicly, even after publication | Reqnroll | Planned |
 | `REQ-MOD-001` | moderation-authentication-and-publication | In development the login page offers no third-party sign-in option | playwright-bdd | Covered |
 | `REQ-MOD-002` | moderation-authentication-and-publication | Where a third-party provider is configured, the login page offers it | playwright-bdd | Covered |
@@ -109,7 +109,7 @@ type: guide
 | `REQ-MOD-043` | moderation-authentication-and-publication | A signed-in member without the required role sees a real 403, not a 404 or the page content | playwright-bdd | Covered |
 | `REQ-MOD-044` | moderation-authentication-and-publication | A successful sign-in writes an audit row | Reqnroll | Covered |
 | `REQ-MOD-045` | moderation-authentication-and-publication | A failed sign-in attempt writes an audit row | Reqnroll | Covered |
-| `REQ-MOD-046` | moderation-authentication-and-publication | A reviewer's attachment view writes its own audit row, distinct from a raw-report view | Reqnroll | Planned |
+| `REQ-MOD-046` | moderation-authentication-and-publication | A reviewer's attachment view writes its own audit row, distinct from a raw-report view | Reqnroll | Covered |
 | `REQ-MOD-047` | moderation-authentication-and-publication | A failed audit write blocks the action it would have recorded | Reqnroll | Planned |
 | `REQ-MOD-048` | moderation-authentication-and-publication | Sign-out is not an audited event | Reqnroll | Planned |
 | `REQ-QB-001` | question-bank-and-form | Editing an unanswered question creates a new revision instead of mutating one | Reqnroll | Planned |

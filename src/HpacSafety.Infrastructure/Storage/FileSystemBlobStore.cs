@@ -59,9 +59,10 @@ public sealed class FileSystemBlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public Task<Uri> CreateReadUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
-		return Task.FromResult(Sign(ReadOperation, key, string.Empty, lifetime));
+		ArgumentException.ThrowIfNullOrWhiteSpace(downloadFileName);
+		return Task.FromResult(Sign(ReadOperation, key, string.Empty, lifetime, downloadFileName));
 	}
 
 	/// <inheritdoc />
@@ -124,14 +125,14 @@ public sealed class FileSystemBlobStore : IBlobStore
 			: null;
 	}
 
-	private Uri Sign(string operation, BlobKey key, string contentType, TimeSpan lifetime)
+	private Uri Sign(string operation, BlobKey key, string contentType, TimeSpan lifetime, string downloadFileName = "")
 	{
 		var expiresAt = _clock.GetUtcNow().Add(BlobUrlLifetime.Validate(lifetime)).ToUnixTimeSeconds();
-		var signature = Signature(operation, key.Value, contentType, expiresAt);
+		var signature = Signature(operation, key.Value, contentType, downloadFileName, expiresAt);
 
 		var query = string.Create(
 			CultureInfo.InvariantCulture,
-			$"?op={operation}&ct={Uri.EscapeDataString(contentType)}&expires={expiresAt}&sig={signature}");
+			$"?op={operation}&ct={Uri.EscapeDataString(contentType)}&fn={Uri.EscapeDataString(downloadFileName)}&expires={expiresAt}&sig={signature}");
 
 		return new Uri($"{UrlScheme}://local/{key.Value}{query}");
 	}
@@ -157,6 +158,9 @@ public sealed class FileSystemBlobStore : IBlobStore
 		query.TryGetValue("ct", out var contentType);
 		contentType ??= string.Empty;
 
+		query.TryGetValue("fn", out var downloadFileName);
+		downloadFileName ??= string.Empty;
+
 		if (!string.Equals(operation, expectedOperation, StringComparison.Ordinal)
 			|| !long.TryParse(expires, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiresAt))
 		{
@@ -168,7 +172,7 @@ public sealed class FileSystemBlobStore : IBlobStore
 			throw new PresignedUrlRejectedException();
 		}
 
-		var expected = Signature(operation, key.Value, contentType, expiresAt);
+		var expected = Signature(operation, key.Value, contentType, downloadFileName, expiresAt);
 
 		// Fixed-time comparison: a signature check that leaks its progress through
 		// timing is a signature check an attacker can walk.
@@ -187,9 +191,9 @@ public sealed class FileSystemBlobStore : IBlobStore
 		return new SignedTicket(key, contentType);
 	}
 
-	private string Signature(string operation, string key, string contentType, long expiresAt)
+	private string Signature(string operation, string key, string contentType, string downloadFileName, long expiresAt)
 	{
-		var payload = string.Create(CultureInfo.InvariantCulture, $"{operation}\n{key}\n{contentType}\n{expiresAt}");
+		var payload = string.Create(CultureInfo.InvariantCulture, $"{operation}\n{key}\n{contentType}\n{downloadFileName}\n{expiresAt}");
 		var mac = HMACSHA256.HashData(_signingKey, Encoding.UTF8.GetBytes(payload));
 		return Convert.ToHexStringLower(mac);
 	}

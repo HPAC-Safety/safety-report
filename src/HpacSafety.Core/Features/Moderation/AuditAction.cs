@@ -19,5 +19,6 @@ public enum AuditAction
 	DeactivatedQuestion = 13,
 	DeletedQuestion = 14,
 	SignedInSucceeded = 20,
-	SignedInFailed = 21
+	SignedInFailed = 21,
+	ViewedAttachment = 22
 }

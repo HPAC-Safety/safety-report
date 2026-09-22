@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HpacSafety.Api.Reports;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
@@ -272,6 +274,17 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
+
+		var body = await response.Content.ReadFromJsonAsync<SubmitReportResponse>();
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var file = await database.ReportFiles.SingleAsync(f => f.ReportId == TinyId.Parse(body!.Id));
+
+		// A successfully stripped image must be viewable by a reviewer as soon
+		// as submission completes — ingestion runs synchronously, so nothing
+		// else will ever record the derivative if this endpoint does not.
+		file.AwaitsStripping.ShouldBeFalse();
+		Should.NotThrow(() => file.ViewableKey);
 	}
 
 	[Fact]

@@ -58,6 +58,7 @@ public static class MediaServiceCollectionExtensions
 		}
 
 		services.AddScoped<MediaIngestor>();
+		services.AddScoped<ReviewerMediaLink>();
 
 		return services;
 	}

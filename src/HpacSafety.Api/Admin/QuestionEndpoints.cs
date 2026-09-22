@@ -295,7 +295,7 @@ public static class QuestionEndpoints
 
 		// Counts answers on deleted reports too: a deleted report is still a
 		// record of what somebody was asked (REQ-QB-030, REQ-QB-031).
-		var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
+		var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
 			.ConfigureAwait(false);
 
 		return await Save(async () =>

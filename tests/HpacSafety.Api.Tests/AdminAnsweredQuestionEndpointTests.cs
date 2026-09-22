@@ -73,10 +73,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnsweredQuestion_WhenDeleted_ThenRefusedAndKept()
 	{
 		// Given — REQ-QB-031: an answer records what somebody was asked
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("answered_delete"));
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("answered_delete"));
 		var id = created.GetProperty("id").GetString()!;
-		await AnswerAsync(id, "Wind gradient on short final.");
+		await Answer(id, "Wind gradient on short final.");
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
@@ -84,7 +84,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var live = await ListAsync(client);
+		var live = await List(client);
 		live.ShouldContain(question => question.GetProperty("id").GetString() == id);
 	}
 
@@ -93,10 +93,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — REQ-QB-031: the reference check ignores the soft-delete filter,
 		// so an answer hidden behind a deleted report still protects the question
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("deleted_report_delete"));
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("deleted_report_delete"));
 		var id = created.GetProperty("id").GetString()!;
-		await AnswerAsync(id, "Thermal collapse over the ridge.", true);
+		await Answer(id, "Thermal collapse over the ridge.", true);
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
@@ -104,7 +104,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		var live = await ListAsync(client);
+		var live = await List(client);
 		live.ShouldContain(question => question.GetProperty("id").GetString() == id);
 	}
 
@@ -112,8 +112,8 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUnansweredQuestion_WhenDeleted_ThenRemovedFromTheForm()
 	{
 		// Given — REQ-QB-030: nothing references it, so it can go
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("unanswered_delete"));
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("unanswered_delete"));
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
@@ -122,7 +122,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-		var live = await ListAsync(client);
+		var live = await List(client);
 		live.ShouldNotContain(question => question.GetProperty("id").GetString() == id);
 	}
 

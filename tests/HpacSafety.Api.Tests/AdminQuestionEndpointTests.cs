@@ -192,6 +192,160 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
+	// -------------------------------------------- statement/group (ADR-0076) --
+
+	private static SaveQuestion NoAnswerDraft(string key, string type)
+	{
+		return Draft(key, type) with { IsRequired = false, IsPrivate = false };
+	}
+
+	[Fact]
+	public async Task GivenStatementType_WhenCreatedWithoutRequiredOrPrivate_ThenCreated()
+	{
+		// Given
+		using var client = await SignedInAsync();
+
+		// When
+		var created = await CreateAsync(client, NoAnswerDraft(UniqueKey("intro"), "statement"));
+
+		// Then
+		created.GetProperty("type").GetString().ShouldBe("statement");
+		created.GetProperty("isRequired").GetBoolean().ShouldBeFalse();
+		created.GetProperty("isPrivate").GetBoolean().ShouldBeFalse();
+	}
+
+	[Fact]
+	public async Task GivenStatementType_WhenCreatedRequired_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedInAsync();
+
+		// When
+		using var response = await client.PostAsJsonAsync(
+			Questions, NoAnswerDraft(UniqueKey("intro"), "statement") with { IsRequired = true });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("cannot be marked required or private");
+	}
+
+	[Fact]
+	public async Task GivenGroupType_WhenCreatedPrivate_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedInAsync();
+
+		// When
+		using var response = await client.PostAsJsonAsync(
+			Questions, NoAnswerDraft(UniqueKey("aircraft"), "group") with { IsPrivate = true });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("cannot be marked required or private");
+	}
+
+	[Fact]
+	public async Task GivenNoAnswerType_WhenMadeConditionalOnAnother_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var parent = await CreateAsync(client, Draft(UniqueKey("were_you_injured"), "yes_no"));
+
+		// When
+		var child = NoAnswerDraft(UniqueKey("heading"), "statement") with
+		{
+			DependsOnQuestionId = parent.GetProperty("id").GetString()
+		};
+		using var response = await client.PostAsJsonAsync(Questions, child);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("collects no answer and cannot be made conditional");
+	}
+
+	[Fact]
+	public async Task GivenGroupQuestion_WhenAnotherIsGroupedUnderIt_ThenGroupingIsStored()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var group = await CreateAsync(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+		var groupId = group.GetProperty("id").GetString();
+
+		// When
+		var child = Draft(UniqueKey("manufacturer"), "short_text") with { GroupedUnderQuestionId = groupId };
+		var created = await CreateAsync(client, child);
+
+		// Then
+		created.GetProperty("groupedUnderQuestionId").GetString().ShouldBe(groupId);
+	}
+
+	[Fact]
+	public async Task GivenNonGroupQuestion_WhenAnotherIsGroupedUnderIt_ThenApiRejectsGrouping()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var notAGroup = await CreateAsync(client, Draft(UniqueKey("manufacturer"), "short_text"));
+
+		// When
+		var child = Draft(UniqueKey("model"), "short_text") with
+		{
+			GroupedUnderQuestionId = notAGroup.GetProperty("id").GetString()
+		};
+		using var response = await client.PostAsJsonAsync(Questions, child);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("group question");
+	}
+
+	[Fact]
+	public async Task GivenTwoGroupQuestions_WhenOneIsGroupedUnderTheOther_ThenApiRejectsNesting()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var outer = await CreateAsync(client, NoAnswerDraft(UniqueKey("form"), "group"));
+		var inner = await CreateAsync(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+
+		// When
+		var edit = NoAnswerDraft(UniqueKey("aircraft"), "group") with
+		{
+			GroupedUnderQuestionId = outer.GetProperty("id").GetString()
+		};
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{inner.GetProperty("id").GetString()}", UriKind.Relative), edit);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("cannot itself be grouped");
+	}
+
+	[Fact]
+	public async Task GivenQuestion_WhenGroupedUnderItself_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var group = await CreateAsync(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+		var groupId = group.GetProperty("id").GetString();
+
+		// When
+		var edit = NoAnswerDraft(UniqueKey("aircraft"), "group") with { GroupedUnderQuestionId = groupId };
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{groupId}", UriKind.Relative), edit);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
 	[Fact]
 	public async Task GivenSharedChoiceList_WhenQuestionUses_ThenRevisionSnapshotsOptions()
 	{
@@ -721,7 +875,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	private static SaveQuestion Draft(string key, string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
-			false, true, true, null, null, null, []);
+			false, true, true, null, null, null, null, []);
 	}
 
 	private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
@@ -767,6 +921,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		string? DependsOnQuestionId,
 		string? DependsOnOptionCode,
 		string? OptionSetId,
+		string? GroupedUnderQuestionId,
 		IReadOnlyList<Option> Options);
 
 	private sealed record Reorder(IReadOnlyList<string> QuestionIdsInOrder);

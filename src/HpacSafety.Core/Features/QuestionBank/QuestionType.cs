@@ -27,5 +27,17 @@ public enum QuestionType
 	///     difference is only how many choices are practical to show at once. A
 	///     province list is a picker; an aerodrome list is an autocomplete.
 	/// </summary>
-	Autocomplete = 12
+	Autocomplete = 12,
+
+	/// <summary>
+	///     Instructional copy shown to the reporter. Collects no answer. See
+	///     ADR-0076.
+	/// </summary>
+	Statement = 13,
+
+	/// <summary>
+	///     A section heading that owns nested questions and, like
+	///     <see cref="Statement" />, collects no answer itself. See ADR-0076.
+	/// </summary>
+	Group = 14
 }

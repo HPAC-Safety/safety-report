@@ -120,6 +120,7 @@
     "revisionNumber": "Version{number}",
     "dependsOnSummary": "Cette question n’est posée que si la réponse à «{question} » est « oui »",
     "dependsOnOptionSummary": "Cette question n’est posée que lorsque la réponse à «{question} » est «{option} ».",
+    "groupedUnderSummary": "#Displayed under “{question}”",
     "editorTitleNew": "Nouvelle question",
     "editorTitleEdit": "Modifier la question",
     "error": {
@@ -144,6 +145,9 @@
       "dependsOnOption": "Réponse obligatoire",
       "dependsOnOptionNone": "Choisissez l'option souhaitée",
       "dependsOnOptionHelp": "Le journaliste doit choisir cette option pour la question ci-dessus avant que celle-ci ne soit posée.",
+      "groupedUnder": "#Display together under a section heading",
+      "groupedUnderNone": "#Not grouped",
+      "groupedUnderHelp": "#Only a group question can have other questions displayed under it.",
       "optionSet": "Liste de choix partagée",
       "optionSetNone": "Veuillez inscrire les choix ici à la place",
       "optionSetHelp": "Les choix sont copiés dans cette version lorsqu’elle est sauvegardée. Toute modification ultérieure de la liste partagée n’aura aucune incidence sur ce qui a déjà été affiché à un journaliste.",
@@ -167,7 +171,9 @@
       "email": "Adresse courriel",
       "phone": "Numéro de téléphone",
       "checkbox": "Case à cocher",
-      "file_upload": "Téléversement de fichiers"
+      "file_upload": "Téléversement de fichiers",
+      "statement": "#Instructional text",
+      "group": "#Section heading"
     },
     "translate": {
       "action": "Traduire",

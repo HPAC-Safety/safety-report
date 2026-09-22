@@ -85,6 +85,17 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 
 		builder.HasIndex(revision => revision.DependsOnQuestionId);
 
+		// A group membership names the stable question too, for the same
+		// reason a dependency does, and is deliberately a separate column from
+		// DependsOnQuestionId — "display together" is never "conditional on".
+		// See ADR-0076.
+		builder.HasOne<Question>()
+			.WithMany()
+			.HasForeignKey(revision => revision.GroupedUnderQuestionId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+		builder.HasIndex(revision => revision.GroupedUnderQuestionId);
+
 		// The required option code on a single-select parent — never a
 		// localized label, matching every other invariant option code in
 		// this schema. See ADR-0074.

@@ -2,6 +2,7 @@ import { useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import {
 	ApiError,
+	NO_ANSWER_TYPES,
 	OPTION_TYPES,
 	QUESTION_TYPES,
 	translate,
@@ -50,6 +51,7 @@ export function blankDraft(): QuestionDraft {
 			dependsOnQuestionId: null,
 			dependsOnOptionCode: null,
 			optionSetId: null,
+			groupedUnderQuestionId: null,
 			options: [],
 		},
 	}
@@ -72,6 +74,7 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			dependsOnOptionCode: question.dependsOnOptionCode,
 			optionSetId: question.optionSetId,
+			groupedUnderQuestionId: question.groupedUnderQuestionId,
 			options: question.options.map((option) => ({
 				code: option.code,
 				labelEn: option.labelEn,
@@ -90,6 +93,7 @@ export function QuestionEditor({
 	draft,
 	optionSets,
 	conditionQuestions,
+	groupQuestions,
 	isEditing,
 	hasBeenAnswered,
 	translationAvailable,
@@ -101,6 +105,7 @@ export function QuestionEditor({
 	draft: QuestionDraft
 	optionSets: OptionSetView[]
 	conditionQuestions: QuestionView[]
+	groupQuestions: QuestionView[]
 	isEditing: boolean
 	hasBeenAnswered: boolean
 	translationAvailable: boolean
@@ -112,6 +117,9 @@ export function QuestionEditor({
 	const { t } = useLocale()
 	const request = draft.request
 	const takesOptions = OPTION_TYPES.includes(request.type)
+	// A statement or a group collects no answer, so it can be neither required,
+	// private, a conditional child, nor a conditional parent (ADR-0076).
+	const collectsNoAnswer = NO_ANSWER_TYPES.includes(request.type)
 	const dependsOnParent = conditionQuestions.find((question) => question.id === request.dependsOnQuestionId)
 
 	const [translating, setTranslating] = useState(false)
@@ -233,11 +241,14 @@ export function QuestionEditor({
 							// Options and a shared list only mean something for the
 							// types that take them; carrying them across a retype
 							// would save choices the question no longer offers.
-							update(
-								OPTION_TYPES.includes(type)
-									? { type }
-									: { type, options: [], optionSetId: null },
-							)
+							const clearedOptions = OPTION_TYPES.includes(type) ? {} : { options: [], optionSetId: null }
+							// A statement or a group collects no answer, so it cannot
+							// be required, private, or conditional on anything
+							// (ADR-0076).
+							const clearedForNoAnswer = NO_ANSWER_TYPES.includes(type)
+								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnOptionCode: null }
+								: {}
+							update({ type, ...clearedOptions, ...clearedForNoAnswer })
 						}}
 					>
 						{QUESTION_TYPES.map((type) => (
@@ -329,23 +340,27 @@ export function QuestionEditor({
 			<fieldset className="flex flex-wrap gap-6">
 				<legend className="font-sans text-sm font-medium text-ink">{t("questions.field.behaviour")}</legend>
 
-				<label className="flex items-center gap-2 font-sans text-sm text-ink">
-					<input
-						type="checkbox"
-						checked={request.isRequired}
-						onChange={(event) => update({ isRequired: event.target.checked })}
-					/>
-					{t("questions.field.required")}
-				</label>
+				{!collectsNoAnswer && (
+					<>
+						<label className="flex items-center gap-2 font-sans text-sm text-ink">
+							<input
+								type="checkbox"
+								checked={request.isRequired}
+								onChange={(event) => update({ isRequired: event.target.checked })}
+							/>
+							{t("questions.field.required")}
+						</label>
 
-				<label className="flex items-center gap-2 font-sans text-sm text-ink">
-					<input
-						type="checkbox"
-						checked={request.isPrivate}
-						onChange={(event) => update({ isPrivate: event.target.checked })}
-					/>
-					{t("questions.field.private")}
-				</label>
+						<label className="flex items-center gap-2 font-sans text-sm text-ink">
+							<input
+								type="checkbox"
+								checked={request.isPrivate}
+								onChange={(event) => update({ isPrivate: event.target.checked })}
+							/>
+							{t("questions.field.private")}
+						</label>
+					</>
+				)}
 
 				<label className="flex items-center gap-2 font-sans text-sm text-ink">
 					<input
@@ -357,52 +372,76 @@ export function QuestionEditor({
 				</label>
 			</fieldset>
 
-			<p className="font-sans text-xs text-ink-muted">{t("questions.field.privateHelp")}</p>
+			{!collectsNoAnswer && <p className="font-sans text-xs text-ink-muted">{t("questions.field.privateHelp")}</p>}
 
-			<div>
-				<label className={labelClassName} htmlFor="question-depends-on">
-					{t("questions.field.dependsOn")}
-				</label>
-				<select
-					id="question-depends-on"
-					className={fieldClassName}
-					value={request.dependsOnQuestionId ?? ""}
-					onChange={(event) =>
-						update({ dependsOnQuestionId: event.target.value || null, dependsOnOptionCode: null })
-					}
-				>
-					<option value="">{t("questions.field.dependsOnNone")}</option>
-					{conditionQuestions.map((question) => (
-						<option key={question.id} value={question.id}>
-							{question.labelEn}
-						</option>
-					))}
-				</select>
-				<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.dependsOnHelp")}</p>
+			{!collectsNoAnswer && (
+				<div>
+					<label className={labelClassName} htmlFor="question-depends-on">
+						{t("questions.field.dependsOn")}
+					</label>
+					<select
+						id="question-depends-on"
+						className={fieldClassName}
+						value={request.dependsOnQuestionId ?? ""}
+						onChange={(event) =>
+							update({ dependsOnQuestionId: event.target.value || null, dependsOnOptionCode: null })
+						}
+					>
+						<option value="">{t("questions.field.dependsOnNone")}</option>
+						{conditionQuestions.map((question) => (
+							<option key={question.id} value={question.id}>
+								{question.labelEn}
+							</option>
+						))}
+					</select>
+					<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.dependsOnHelp")}</p>
 
-				{dependsOnParent?.type === "single_select" && (
-					<div className="mt-3">
-						<label className={labelClassName} htmlFor="question-depends-on-option">
-							{t("questions.field.dependsOnOption")}
-						</label>
-						<select
-							id="question-depends-on-option"
-							className={fieldClassName}
-							value={request.dependsOnOptionCode ?? ""}
-							required
-							onChange={(event) => update({ dependsOnOptionCode: event.target.value || null })}
-						>
-							<option value="">{t("questions.field.dependsOnOptionNone")}</option>
-							{dependsOnParent.options.map((option) => (
-								<option key={option.code} value={option.code}>
-									{option.labelEn}
-								</option>
-							))}
-						</select>
-						<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.dependsOnOptionHelp")}</p>
-					</div>
-				)}
-			</div>
+					{dependsOnParent?.type === "single_select" && (
+						<div className="mt-3">
+							<label className={labelClassName} htmlFor="question-depends-on-option">
+								{t("questions.field.dependsOnOption")}
+							</label>
+							<select
+								id="question-depends-on-option"
+								className={fieldClassName}
+								value={request.dependsOnOptionCode ?? ""}
+								required
+								onChange={(event) => update({ dependsOnOptionCode: event.target.value || null })}
+							>
+								<option value="">{t("questions.field.dependsOnOptionNone")}</option>
+								{dependsOnParent.options.map((option) => (
+									<option key={option.code} value={option.code}>
+										{option.labelEn}
+									</option>
+								))}
+							</select>
+							<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.dependsOnOptionHelp")}</p>
+						</div>
+					)}
+				</div>
+			)}
+
+			{request.type !== "group" && (
+				<div>
+					<label className={labelClassName} htmlFor="question-grouped-under">
+						{t("questions.field.groupedUnder")}
+					</label>
+					<select
+						id="question-grouped-under"
+						className={fieldClassName}
+						value={request.groupedUnderQuestionId ?? ""}
+						onChange={(event) => update({ groupedUnderQuestionId: event.target.value || null })}
+					>
+						<option value="">{t("questions.field.groupedUnderNone")}</option>
+						{groupQuestions.map((question) => (
+							<option key={question.id} value={question.id}>
+								{question.labelEn}
+							</option>
+						))}
+					</select>
+					<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.groupedUnderHelp")}</p>
+				</div>
+			)}
 
 			{takesOptions && (
 				<div className="flex flex-col gap-3 rounded border border-rule bg-surface p-4">

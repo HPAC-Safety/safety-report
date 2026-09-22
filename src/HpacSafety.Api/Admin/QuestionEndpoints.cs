@@ -77,6 +77,7 @@ public static class QuestionEndpoints
 		return await Save(async () =>
 		{
 			var dependsOn = ResolvedDependency(request, questions, null);
+			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
 			var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
 
 			var question = Question.Create(
@@ -97,6 +98,7 @@ public static class QuestionEndpoints
 				dependsOn.ParentId,
 				dependsOn.OptionCode,
 				ParsedOptionSet(request),
+				groupedUnderQuestionId,
 				options);
 
 			database.Questions.Add(question);
@@ -131,6 +133,7 @@ public static class QuestionEndpoints
 		return await Save(async () =>
 		{
 			var dependsOn = ResolvedDependency(request, questions, question.Id);
+			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
 			var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
 			var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
 				.ConfigureAwait(false);
@@ -154,6 +157,7 @@ public static class QuestionEndpoints
 				dependsOn.ParentId,
 				dependsOn.OptionCode,
 				ParsedOptionSet(request),
+				groupedUnderQuestionId,
 				options);
 
 			var forked = !ReferenceEquals(live, question);
@@ -333,6 +337,21 @@ public static class QuestionEndpoints
 		QuestionDependencies.EnsureDependencyAllowed(questions, childId, parentId, optionCode);
 
 		return (parentId, optionCode);
+	}
+
+	/// <summary>
+	///     Resolves the group question this one renders under, checking the
+	///     part of the rule that needs to see the rest of the bank: the group
+	///     exists, is live, is currently a group question, and does not lead
+	///     back here. See ADR-0076.
+	/// </summary>
+	private static TinyId? ResolvedGrouping(SaveQuestionRequest request, List<Question> questions, TinyId? childId)
+	{
+		if (!TinyId.TryParse(request.GroupedUnderQuestionId, out var groupId)) return null;
+
+		QuestionGrouping.EnsureGroupingAllowed(questions, childId, groupId);
+
+		return groupId;
 	}
 
 	/// <summary>

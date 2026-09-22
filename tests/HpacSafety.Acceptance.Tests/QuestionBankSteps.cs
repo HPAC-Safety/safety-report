@@ -355,6 +355,147 @@ public sealed class QuestionBankSteps
 		_question!.DependsOnOptionCode.ShouldBeNull();
 	}
 
+	// --------------------------------------------------- statement and group --
+
+	[Then(@"it cannot be marked required or private")]
+	public void ThenItCannotBeMarkedRequiredOrPrivate()
+	{
+		Should.Throw<DomainRuleViolationException>(() =>
+			Question.Create("heading_required", _pendingType, "Heading", "Titre", Noon, isRequired: true));
+		Should.Throw<DomainRuleViolationException>(() =>
+			Question.Create("heading_private", _pendingType, "Heading", "Titre", Noon, isPrivate: true));
+	}
+
+	[Then(@"it cannot be made conditional on another question")]
+	public void ThenItCannotBeMadeConditional()
+	{
+		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
+
+		Should.Throw<DomainRuleViolationException>(() =>
+			Question.Create(
+				"heading_conditional", _pendingType, "Heading", "Titre", Noon, isPrivate: false,
+				dependsOnQuestionId: parent.Id));
+	}
+
+	[Then(@"it cannot be the condition for another question")]
+	public void ThenItCannotBeTheCondition()
+	{
+		var heading = Question.Create("heading_parent", _pendingType, "Heading", "Titre", Noon, isPrivate: false);
+
+		Should.Throw<DomainRuleViolationException>(() =>
+			QuestionDependencies.EnsureDependencyAllowed([heading], null, heading.Id));
+	}
+
+	// ------------------------------------------------------------- grouping --
+
+	[Given(@"a group question exists as a section heading")]
+	public void GivenAGroupQuestionExistsAsASectionHeading()
+	{
+		_questions.Add(Group("aircraft"));
+	}
+
+	[When(@"an Administrator makes another question grouped under it")]
+	public void WhenAnotherQuestionIsGroupedUnderIt()
+	{
+		var group = _questions.Single(question => question.Type == QuestionType.Group);
+
+		_question = Question.Create(
+			"manufacturer", QuestionType.ShortText, "Manufacturer", "Manufacturier", Noon,
+			isActive: true, isPrivate: false, groupedUnderQuestionId: group.Id);
+		_questions.Add(_question);
+	}
+
+	[Then(@"the question's saved revision names that group as its heading")]
+	public void ThenTheRevisionNamesTheGroup()
+	{
+		var group = _questions.Single(question => question.Type == QuestionType.Group);
+		_question!.GroupedUnderQuestionId.ShouldBe(group.Id);
+	}
+
+	[Given(@"a question that is not a group")]
+	public void GivenAQuestionThatIsNotAGroup()
+	{
+		_questions.Add(Ordinary("manufacturer", QuestionType.ShortText));
+	}
+
+	[When(@"an Administrator tries to group another question under it")]
+	public void WhenTryingToGroupAnotherQuestionUnderIt()
+	{
+		var notAGroup = _questions.Single(question => question.Key == "manufacturer");
+
+		_rejection = Record(() => QuestionGrouping.EnsureGroupingAllowed(_questions, null, notAGroup.Id));
+	}
+
+	[Given(@"two group questions exist")]
+	public void GivenTwoGroupQuestionsExist()
+	{
+		_questions.Add(Group("form"));
+		_questions.Add(Group("aircraft"));
+	}
+
+	[When(@"an Administrator tries to group one under the other")]
+	public void WhenTryingToGroupOneGroupUnderAnother()
+	{
+		var outer = _questions[0];
+		var inner = _questions[1];
+
+		_rejection = Record(() => QuestionGrouping.EnsureGroupingAllowed(_questions, inner.Id, outer.Id));
+	}
+
+	[Given(@"a group question exists$")]
+	public void GivenAGroupQuestionExists()
+	{
+		_question = Group("aircraft");
+		_questions.Add(_question);
+	}
+
+	[When(@"an Administrator tries to group it under itself")]
+	public void WhenTryingToGroupItUnderItself()
+	{
+		_rejection = Record(() => _question!.GroupUnder(_question.Id, Noon.AddHours(1)));
+	}
+
+	[Given(@"a question is both conditional on a yes\/no question and grouped under a group question")]
+	public void GivenAQuestionBothConditionalAndGrouped()
+	{
+		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
+		var group = Group("aircraft");
+		_questions.Add(parent);
+		_questions.Add(group);
+
+		_question = Question.Create(
+			"manufacturer", QuestionType.ShortText, "Manufacturer", "Manufacturier", Noon,
+			isActive: true, isPrivate: false, dependsOnQuestionId: parent.Id, groupedUnderQuestionId: group.Id);
+		_questions.Add(_question);
+	}
+
+	[When(@"an Administrator reads its saved revision")]
+	public void WhenReadingItsSavedRevision()
+	{
+		// Contextual — the following Then steps read _question directly.
+	}
+
+	[Then(@"both facts are recorded independently")]
+	public void ThenBothFactsAreRecordedIndependently()
+	{
+		var parent = _questions.Single(question => question.Type == QuestionType.YesNo);
+		var group = _questions.Single(question => question.Type == QuestionType.Group);
+
+		_question!.DependsOnQuestionId.ShouldBe(parent.Id);
+		_question.GroupedUnderQuestionId.ShouldBe(group.Id);
+	}
+
+	[Then(@"clearing one leaves the other unchanged")]
+	public void ThenClearingOneLeavesTheOtherUnchanged()
+	{
+		var group = _questions.Single(question => question.Type == QuestionType.Group);
+
+		_question!.DependOn(null, null, Noon.AddHours(1));
+
+		_question.DependsOnQuestionId.ShouldBeNull();
+		_question.GroupedUnderQuestionId.ShouldBe(group.Id);
+	}
+
 	// ---------------------------------------------------------- reordering --
 
 	[Given(@"several active questions sit in a known order")]
@@ -560,6 +701,12 @@ public sealed class QuestionBankSteps
 	private static Question Ordinary(string key, QuestionType type, int displayOrder = 0)
 	{
 		return Question.Create(key, type, $"Question {key}", $"Question {key} (fr)", Noon, isActive: true, displayOrder: displayOrder);
+	}
+
+	private static Question Group(string key)
+	{
+		return Question.Create(
+			key, QuestionType.Group, $"Question {key}", $"Question {key} (fr)", Noon, isActive: true, isPrivate: false);
 	}
 
 	private static Question PilotType()

@@ -88,6 +88,9 @@ public class Question
 	/// </summary>
 	public string? DependsOnOptionCode => CurrentRevision.DependsOnOptionCode;
 
+	/// <summary>The group question this one renders together with today, if any. See ADR-0076.</summary>
+	public TinyId? GroupedUnderQuestionId => CurrentRevision.GroupedUnderQuestionId;
+
 	/// <summary>
 	///     Where this question sits on the form today. Not versioned
 	///     independently — see the class remarks.
@@ -144,12 +147,13 @@ public class Question
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
 		TinyId? optionSetId = null,
+		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-			options);
+			groupedUnderQuestionId, options);
 	}
 
 	/// <summary>
@@ -183,6 +187,7 @@ public class Question
 			null,
 			null,
 			null,
+			null,
 			null);
 	}
 
@@ -205,6 +210,7 @@ public class Question
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
 		TinyId? optionSetId,
+		TinyId? groupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput>? options)
 	{
 		var question = new Question(key, isSystem, role, at);
@@ -212,7 +218,7 @@ public class Question
 			QuestionRevision.Create(
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-				optionSetId, options ?? [], at));
+				optionSetId, groupedUnderQuestionId, options ?? [], at));
 		return question;
 	}
 
@@ -240,6 +246,7 @@ public class Question
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
 		TinyId? optionSetId = null,
+		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		if (IsSystem && type != Type)
@@ -250,7 +257,7 @@ public class Question
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-				options ?? []),
+				groupedUnderQuestionId, options ?? []),
 			at);
 	}
 
@@ -294,19 +301,20 @@ public class Question
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
 		TinyId? optionSetId = null,
+		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		var draft = new RevisionDraft(
 			type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-			options ?? []);
+			groupedUnderQuestionId, options ?? []);
 
 		if (!ForksWhenEdited(hasBeenAnswered))
 		{
 			Revise(
 				type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
 				helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-				dependsOnOptionCode, optionSetId, options);
+				dependsOnOptionCode, optionSetId, groupedUnderQuestionId, options);
 			return this;
 		}
 
@@ -347,6 +355,19 @@ public class Question
 		return ReviseInternal(
 			CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId, DependsOnOptionCode = dependsOnOptionCode },
 			at);
+	}
+
+	/// <summary>
+	///     Groups the question under a <see cref="QuestionType.Group" /> heading,
+	///     or ungroups it, as a new revision. Whether the named question is
+	///     currently a group — and does not lead back to this one — is checked
+	///     by <see cref="QuestionGrouping" />, which can see the rest of the
+	///     bank. Distinct from <see cref="DependOn" />: this never hides the
+	///     question, it only says which heading it renders under. See ADR-0076.
+	/// </summary>
+	public QuestionRevision GroupUnder(TinyId? groupedUnderQuestionId, DateTimeOffset at)
+	{
+		return ReviseInternal(CurrentDraft() with { GroupedUnderQuestionId = groupedUnderQuestionId }, at);
 	}
 
 	/// <summary>
@@ -423,7 +444,8 @@ public class Question
 				replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
 				draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 				false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.Options, at));
+				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
+				draft.Options, at));
 
 		Delete(at);
 		return replacement;
@@ -437,7 +459,8 @@ public class Question
 			Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
 			draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 			IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.Options, at);
+			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
+			draft.Options, at);
 		_revisions.Add(revision);
 		return revision;
 	}
@@ -456,7 +479,7 @@ public class Question
 			current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
 			current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
 			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode, current.OptionSetId,
-			CurrentOptions());
+			current.GroupedUnderQuestionId, CurrentOptions());
 	}
 
 	/// <summary>The current revision's option set, in order, as input for a new revision.</summary>
@@ -495,5 +518,6 @@ public class Question
 		TinyId? DependsOnQuestionId,
 		string? DependsOnOptionCode,
 		TinyId? OptionSetId,
+		TinyId? GroupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput> Options);
 }

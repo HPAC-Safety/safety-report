@@ -26,6 +26,7 @@ public sealed record QuestionView(
 	string? DependsOnQuestionId,
 	string? DependsOnOptionCode,
 	string? OptionSetId,
+	string? GroupedUnderQuestionId,
 	string LabelEn,
 	string LabelFr,
 	string? HelpTextEn,
@@ -71,6 +72,7 @@ public sealed record QuestionView(
 			revision.DependsOnQuestionId?.Value,
 			revision.DependsOnOptionCode,
 			revision.OptionSetId?.Value,
+			revision.GroupedUnderQuestionId?.Value,
 			revision.LabelEn,
 			revision.LabelFr,
 			revision.HelpTextEn,
@@ -122,6 +124,7 @@ public sealed record SaveQuestionRequest(
 	string? DependsOnQuestionId,
 	string? DependsOnOptionCode,
 	string? OptionSetId,
+	string? GroupedUnderQuestionId,
 	IReadOnlyList<OptionInput>? Options);
 
 /// <summary>One option as authored. A code is normalized server-side.</summary>

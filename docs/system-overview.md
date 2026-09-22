@@ -13,18 +13,32 @@ forms platform, document-management suite, or publishing network.
 
 ## Non-negotiable outcomes
 
-- Questions are bilingual database records and complete revisions are
-  immutable.
-- Only publication consent is mandatory; it has no default.
-- Raw answers and originals are private and never returned by a public API.
-- One Worker-owned prompt and one model call produce both official-language
-  summary texts.
-- Private answers help the model recognize identifying material but may not
-  contribute facts to a summary.
-- Both summary texts are one reviewable unit with one human approval.
-- Positive consent and approval are independent, mandatory publication gates.
-- Deletion immediately hides a report while preserving the audit trail and
-  retained records.
+Each outcome carries a stable constraint ID and names the claims that verify it
+([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+
+- **CON-SO-001** Questions are bilingual database records and complete
+  revisions are immutable.
+  *Verified by: REQ-QB-001, REQ-QB-002, REQ-QB-009.*
+- **CON-SO-002** Only publication consent is mandatory; it has no default.
+  *Verified by: REQ-QB-014, REQ-QB-016, REQ-WLD-015.*
+- **CON-SO-003** Raw answers and originals are private and never returned by a
+  public API.
+  *Verified by: REQ-MOD-036, REQ-MED-014.*
+- **CON-SO-004** One Worker-owned prompt and one model call produce both
+  official-language summary texts.
+  *Verified by: REQ-AI-001, REQ-AI-011.*
+- **CON-SO-005** Private answers help the model recognize identifying material
+  but may not contribute facts to a summary.
+  *Verified by: REQ-AI-007, REQ-AI-010, REQ-AI-015.*
+- **CON-SO-006** Both summary texts are one reviewable unit with one human
+  approval.
+  *Verified by: REQ-AI-017, REQ-MOD-033.*
+- **CON-SO-007** Positive consent and approval are independent, mandatory
+  publication gates.
+  *Verified by: REQ-DOM-003, REQ-MOD-035.*
+- **CON-SO-008** Deletion immediately hides a report while preserving the audit
+  trail and retained records.
+  *Verified by: REQ-DOM-007, REQ-MOD-040.*
 
 ## Components
 
@@ -102,6 +116,11 @@ and detail views, audit logging, soft deletion, and one Canadian AWS
 production environment.
 
 ## Explicitly out of scope
+
+**CON-SO-009** The system does not include any of the following, and an
+implementation that adds one has exceeded its scope.
+*Verified by: REQ-MOD-039 for the publication channel; none for the rest — a
+scenario can assert what the system does, not enumerate what it never grew.*
 
 - General-purpose form branching, surveys, scoring, or form templates
 - Server-side drafts or resumable upload sessions

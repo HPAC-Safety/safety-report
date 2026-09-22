@@ -2,26 +2,31 @@
 
 ## Persistence principles
 
-PostgreSQL is authoritative for questions, reports, answers, moderation state,
+**CON-DP-001** PostgreSQL is authoritative for questions, reports, answers, moderation state,
 and durable work. EF Core entities enforce write invariants; API and Worker
 queries project directly into purpose-specific DTOs. Persistence entities are
 not serialized over HTTP or passed wholesale to the model.
+*Verified by: REQ-MOD-036, REQ-AI-009.*
 
-Tables and columns use `snake_case`; C# uses PascalCase. External identifiers
+**CON-DP-002** Tables and columns use `snake_case`; C# uses PascalCase. External identifiers
 are opaque TinyIds. Instants are `timestamptz`. Every table below except
 `audit_log` has `deleted timestamptz null` mapped from `Deleted` and is covered
 by a default global query filter.
+*Verified by: REQ-DOM-007, REQ-DOM-011.*
 
-Database, backups, and object storage use AWS-managed encryption at rest and
+**CON-DP-003** Database, backups, and object storage use AWS-managed encryption at rest and
 TLS in transit. The application does not encrypt individual fields, carry an
 AES key, use EF encryption converters, or maintain a second ciphertext format.
 Database access, authorization, and public DTO minimization are the privacy
 controls.
+*Verified by: none — managed encryption is an infrastructure property, not
+something a scenario can observe through the application.*
 
 ## Target records
 
-The physical model may combine stable question identity and revision data where
-constraints permit, but it must preserve these logical records:
+**CON-DP-004** The physical model may combine stable question identity and revision data where
+constraints permit, but it must preserve these logical records.
+*Verified by: REQ-QB-019, REQ-QB-026, REQ-QB-028.*
 
 | Record | Essential fields and relationships |
 |---|---|
@@ -37,12 +42,13 @@ constraints permit, but it must preserve these logical records:
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
 | `audit_log` | ID, acting token subject where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
 
-**There is no user table.** Identity and role come from claims on a validated
+**CON-DP-005** **There is no user table.** Identity and role come from claims on a validated
 token, per request, and are never written down
 ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 `summaries.approved_by_subject` and `audit_log.actor_subject` hold the token's
 `sub` claim as an opaque `varchar(256)` string with **no foreign key** — there
 is nothing to reference.
+*Verified by: REQ-MOD-018.*
 
 Audit rows written before `admin_users` was dropped keep the identifiers they
 were created with: `DropAdminUsersForJwtIdentity` renames and widens the column
@@ -52,8 +58,9 @@ left that way — the audit log is append-only, and rewriting historic
 attribution would be a destructive transform that discards the only attribution
 those rows ever had.
 
-No report, answer, file, or outbox row records who submitted a report
+**CON-DP-006** No report, answer, file, or outbox row records who submitted a report
 ([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+*Verified by: REQ-SUB-020, REQ-SUB-021.*
 
 Selected options may instead use immutable child rows when that gives stronger
 constraints. Whichever representation is used must distinguish a skipped
@@ -61,7 +68,8 @@ selection from selected codes and validate codes against the exact revision.
 
 ## Constraints and indexes
 
-Required database protection includes:
+**CON-DP-007** Required database protection includes the following.
+*Verified by: REQ-QB-005, REQ-QB-030, REQ-QB-031.*
 
 - unique question stable key + revision number and at most one stable-key
   revision chain link;
@@ -90,23 +98,29 @@ timestamp and the audit entry must share the transaction.
 
 ## Write transactions
 
-Final submission writes the report, answer snapshot, file metadata, and all
-initial outbox messages in one transaction. A committed report therefore
+**CON-DP-008** Final submission writes the report, answer snapshot, file metadata, and all
+initial outbox messages in one transaction.
+*Verified by: REQ-SUB-013, REQ-SUB-014.* A committed report therefore
 always has durable work; an uncommitted report never appears to the Worker.
 
-The Worker claims eligible messages with PostgreSQL locking that permits
+**CON-DP-009** The Worker claims eligible messages with PostgreSQL locking that permits
 multiple workers without double-processing, such as `FOR UPDATE SKIP LOCKED`.
 It rechecks report deletion and current work state, keeps claims short, records
 bounded attempts/backoff, and marks poison work visibly. Model/network work does
 not hold a database transaction open.
+*Verified by: REQ-AI-008.*
 
-Question revision creation, summary edit/approval/publication, report deletion,
+**CON-DP-010** Question revision creation, summary edit/approval/publication, report deletion,
 and admin changes each write their audit record in the same transaction as the
 state change.
+*Verified by: REQ-DOM-013, REQ-MOD-029.*
 
 ## Query DTOs
 
-The application needs four primary read shapes:
+**CON-DP-011** The application needs four primary read shapes, and a public query is a
+positive allowlist rather than an entity projection with fields removed later.
+*Verified by: REQ-MOD-031, REQ-MOD-036.*
+
 
 1. Current form DTO: latest revision per key only when it is active/live, with
    both languages and all render/validation metadata.
@@ -121,8 +135,9 @@ positive allowlists rather than entity projections with fields removed later.
 
 ## Migrations and seeding
 
-Schema changes are explicit EF migrations run as a deployment step before new
-API/Worker traffic; services never migrate on startup. A migration may seed the
+**CON-DP-012** Schema changes are explicit EF migrations run as a deployment step before new
+API/Worker traffic; services never migrate on startup.
+*Verified by: none — a deployment-time property no running scenario observes.* A migration may seed the
 initial Typeform-derived bilingual question revisions with deterministic IDs.
 Production admin membership is configuration/data managed through the admin
 flow, not a real identity embedded in a migration. Development may seed one

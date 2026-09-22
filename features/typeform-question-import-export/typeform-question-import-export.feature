@@ -125,7 +125,6 @@ Scenario: Export preserves data Typeform has no field for
   Then the exported field carries that data in a namespaced extension object
   And a plain Typeform file otherwise validates without it
 
-@ignore
 Scenario: Exporting and reimporting reproduces the same drafts
   Given the question bank has several live questions
   When an Administrator exports it and imports the result back in

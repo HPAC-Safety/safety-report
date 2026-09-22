@@ -1,4 +1,5 @@
 using System.Text.Json;
+using HpacSafety.Core;
 
 namespace HpacSafety.Core.Features.QuestionBank.Typeform;
 
@@ -31,6 +32,21 @@ namespace HpacSafety.Core.Features.QuestionBank.Typeform;
 ///         wire the wrong dependency, which is worse than not wiring one at
 ///         all. This first pass captures every field with a real (non-"always")
 ///         condition as a <see cref="PendingTypeformLogic" /> note instead.
+///     </para>
+///     <para>
+///         <b>The <c>hpac</c> extension, when present, wins.</b> A field
+///         <see cref="TypeformExportBuilder" /> wrote carries a namespaced
+///         <c>hpac</c> object naming the exact HpacSafety type (disambiguating
+///         <see cref="QuestionType.Group" /> from <see cref="QuestionType.Statement" />,
+///         both plain <c>statement</c>; <see cref="QuestionType.Autocomplete" />
+///         from <see cref="QuestionType.SingleSelect" />, both plain
+///         <c>multiple_choice</c>), privacy, required, and the
+///         depends-on/grouped-under relationship by key — an export is flat, so
+///         that relationship cannot be recovered from Typeform's own
+///         <c>group</c>/<c>contact_info</c> nesting the way it is for a real
+///         Typeform export. A file with no <c>hpac</c> object — a real Typeform
+///         export, or a hand-authored fixture — keeps today's native-type-derived
+///         behavior exactly as before.
 ///     </para>
 /// </remarks>
 public static class TypeformQuestionMapper
@@ -172,9 +188,11 @@ public static class TypeformQuestionMapper
 		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
 
-		return new ImportedQuestionDraft(
+		var draft = new ImportedQuestionDraft(
 			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
 			AllowsReporterAdditions: false, Options: []);
+
+		return ApplyHpac(draft, field, groupedUnderKey);
 	}
 
 	private static ImportedQuestionDraft SimpleDraft(
@@ -183,9 +201,11 @@ public static class TypeformQuestionMapper
 		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
 
-		return new ImportedQuestionDraft(
+		var draft = new ImportedQuestionDraft(
 			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
 			AllowsReporterAdditions: false, Options: []);
+
+		return ApplyHpac(draft, field, groupedUnderKey);
 	}
 
 	private static ImportedQuestionDraft ChoiceDraft(
@@ -211,9 +231,39 @@ public static class TypeformQuestionMapper
 			})
 			.ToList();
 
-		return new ImportedQuestionDraft(
+		var draft = new ImportedQuestionDraft(
 			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
 			allowsReporterAdditions, options);
+
+		return ApplyHpac(draft, field, groupedUnderKey);
+	}
+
+	/// <summary>
+	///     Overrides a draft's type, privacy, required, reporter-additions, and
+	///     depends-on/grouped-under relationship from the field's <c>hpac</c>
+	///     extension, when present. See the class remarks.
+	/// </summary>
+	private static ImportedQuestionDraft ApplyHpac(ImportedQuestionDraft draft, TypeformField field, string? groupedUnderKey)
+	{
+		var hpac = field.Properties.Hpac;
+
+		if (hpac is null)
+		{
+			return draft with { IsPrivate = draft.Type is QuestionType.Statement or QuestionType.Group ? false : draft.IsPrivate };
+		}
+
+		var type = EnumCode.TryParse<QuestionType>(hpac.Type, out var realType) ? realType : draft.Type;
+
+		return draft with
+		{
+			Type = type,
+			IsPrivate = hpac.IsPrivate,
+			IsRequired = hpac.IsRequired,
+			AllowsReporterAdditions = hpac.AllowsReporterAdditions,
+			DependsOnKey = hpac.DependsOnKey,
+			DependsOnOptionCode = hpac.DependsOnOptionCode,
+			GroupedUnderKey = hpac.GroupedUnderKey ?? groupedUnderKey,
+		};
 	}
 
 	/// <summary>

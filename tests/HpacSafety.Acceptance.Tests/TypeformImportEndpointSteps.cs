@@ -40,6 +40,8 @@ public sealed class TypeformImportEndpointSteps
 	private string? _noteId;
 	private string? _exportedKey;
 	private byte[]? _exportedZipBytes;
+	private string[] _originalKeys = [];
+	private JsonElement _reimportedPreview;
 
 	[When(@"an Administrator submits only one of the two files")]
 	public async Task WhenOnlyOneFileIsSubmitted()
@@ -111,8 +113,11 @@ public sealed class TypeformImportEndpointSteps
 	{
 		_client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
 
-		await CreateQuestionAsync(_client, UniqueKey("acceptance_export_a"));
-		await CreateQuestionAsync(_client, UniqueKey("acceptance_export_b"));
+		var keyA = UniqueKey("acceptance_export_a");
+		var keyB = UniqueKey("acceptance_export_b");
+		await CreateQuestionAsync(_client, keyA);
+		await CreateQuestionAsync(_client, keyB, type: "yes_no");
+		_originalKeys = [keyA, keyB];
 	}
 
 	[Given(@"a live question has a stable key, a dependency, and a group membership")]
@@ -186,6 +191,37 @@ public sealed class TypeformImportEndpointSteps
 
 		field.GetProperty("title").GetString().ShouldNotBeNullOrEmpty();
 		field.GetProperty("type").GetString().ShouldNotBeNullOrEmpty();
+	}
+
+	[When(@"an Administrator exports it and imports the result back in")]
+	public async Task WhenAnAdministratorExportsItAndImportsTheResultBackIn()
+	{
+		_response = await _client!.GetAsync(Export);
+		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+		using var archive = await OpenExportedZipAsync();
+		var englishJson = await ReadEntryAsync(archive, "form-en.json");
+		var frenchJson = await ReadEntryAsync(archive, "form-fr.json");
+
+		using var content = new MultipartFormDataContent
+		{
+			{ JsonContent(englishJson), "english", "form-en.json" }, { JsonContent(frenchJson), "french", "form-fr.json" }
+		};
+		var reimported = await _client.PostAsync(Import, content);
+		reimported.StatusCode.ShouldBe(HttpStatusCode.OK, await reimported.Content.ReadAsStringAsync());
+
+		_reimportedPreview = await reimported.Content.ReadFromJsonAsync<JsonElement>();
+	}
+
+	[Then(@"the resulting drafts match the original questions' key, type, wording, and options")]
+	public void ThenTheResultingDraftsMatchTheOriginalQuestions()
+	{
+		var drafts = _reimportedPreview.GetProperty("drafts").EnumerateArray().ToList();
+
+		foreach (var key in _originalKeys)
+		{
+			drafts.ShouldContain(draft => draft.GetProperty("key").GetString() == key);
+		}
 	}
 
 	[Given(@"a member does not have the Administrator role")]

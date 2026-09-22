@@ -69,12 +69,23 @@ Scenario: Every image is re-encoded to strip metadata
   And EXIF, GPS, profiles, comments, thumbnails, and other metadata are removed
 
 @REQ-MED-007
-@ignore
-Scenario: Every video is remuxed or transcoded to strip metadata
-  Given an accepted video attachment enters Worker processing
-  When the Worker produces its derivative
-  Then the video is decoded/remuxed or transcoded through a controlled toolchain that removes container metadata, location, device, creation, and filename fields
+Scenario: Every video is remuxed to strip metadata, never transcoded
+  Given an accepted video attachment enters processing
+  When its derivative is produced
+  Then the video is remuxed through a controlled toolchain without decoding its picture
+  And the derivative carries no container metadata, location, device, creation, or filename fields
+  And the derivative carries only the video and any audio stream, with timed-metadata, data, and subtitle tracks dropped
+  And the derivative is verified to hold none of those before it is accepted
   And a byte-for-byte copy of the original video is never used as the derivative
+
+@REQ-MED-015
+Scenario: A video that cannot be stripped is kept rather than refused
+  Given an accepted video attachment cannot be remuxed into a verified derivative
+  When processing finishes
+  Then the upload still succeeds and the original is retained
+  And the attachment is marked as having no derivative
+  And an authorized reviewer receives a short-lived forced download of the unredacted original
+  And it is never rendered inline and never published
 
 @REQ-MED-008
 Scenario: A document is validated but never transformed
@@ -118,10 +129,11 @@ Scenario: The admin site never inline-renders a private document
 
 @REQ-MED-013
 Scenario: A failed attachment is inaccessible to reviewers
-  Given signature validation, decoding, metadata removal, re-encoding/remuxing, writing, or verification fails for an attachment
-  When the Worker finishes processing it
+  Given signature validation, decoding, metadata removal, writing, or verification fails for an image
+  When processing finishes
   Then the file is marked failed
   And the file is inaccessible to any reviewer
+  And a video whose remux fails is not a failure of this kind: it is retained under its own rule
 
 @REQ-MED-014
 @ignore

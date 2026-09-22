@@ -140,6 +140,40 @@ public sealed class MembersSiteCredentialSourceTests
 	}
 
 	[Fact]
+	public async Task GivenThePostCannotReachTheMembersSite_WhenVerified_ThenMembersSiteUnavailable()
+	{
+		// Given — the GET succeeds, but the site drops off before the POST
+		var (source, _) = Source(LoginPage(), new HttpRequestException("no route to host"));
+
+		// When / Then
+		var cause = await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
+			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+		cause.Message.ShouldNotContain("correct-password");
+	}
+
+	[Fact]
+	public async Task GivenTheLoginPageTimesOut_WhenVerified_ThenMembersSiteUnavailable()
+	{
+		// Given
+		var (source, _) = Source(new TaskCanceledException("the request timed out"), Redirect());
+
+		// When / Then
+		await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
+			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+	}
+
+	[Fact]
+	public async Task GivenThePostTimesOut_WhenVerified_ThenMembersSiteUnavailable()
+	{
+		// Given
+		var (source, _) = Source(LoginPage(), new TaskCanceledException("the request timed out"));
+
+		// When / Then
+		await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
+			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+	}
+
+	[Fact]
 	public async Task GivenThePostAnswersWithAnUnexpectedStatus_WhenVerified_ThenMembersSiteUnavailable()
 	{
 		// Given — neither a redirect (success) nor a 200 (bad credentials)

@@ -364,7 +364,7 @@ Scenario: A failed sign-in attempt writes an audit row
   When the attempt is rejected
   Then an audit entry records a sign-in-failed action and the time
   And it never records the attempted credentials
-  And, where no valid subject exists yet, the actor is recorded as the attempted identity rather than left blank
+  And the actor is recorded as the attempted identity rather than left blank
 
 @REQ-MOD-046
 @ignore

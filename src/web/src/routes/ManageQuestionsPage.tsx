@@ -138,6 +138,25 @@ export function ManageQuestionsPage() {
 	// group cannot itself be grouped under another one (ADR-0076).
 	const groupQuestions = questions.filter((question) => question.type === "group" && question.id !== editing)
 
+	const editor = draft && (
+		<QuestionEditor
+			draft={draft}
+			optionSets={optionSets}
+			conditionQuestions={conditionQuestions}
+			groupQuestions={groupQuestions}
+			isEditing={editing !== null}
+			hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
+			translationAvailable={canTranslate}
+			translationIsStandIn={translationIsStandIn}
+			onChange={setDraft}
+			onCancel={() => {
+				setDraft(null)
+				setEditing(null)
+			}}
+			onSave={save}
+		/>
+	)
+
 	return (
 		<main className="mx-auto max-w-4xl px-6 py-12">
 			<h1 className="font-display text-3xl font-bold">{t("questions.title")}</h1>
@@ -200,24 +219,9 @@ export function ManageQuestionsPage() {
 				/>
 			)}
 
-			{draft && (
-				<QuestionEditor
-					draft={draft}
-					optionSets={optionSets}
-					conditionQuestions={conditionQuestions}
-					groupQuestions={groupQuestions}
-					isEditing={editing !== null}
-					hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
-					translationAvailable={canTranslate}
-					translationIsStandIn={translationIsStandIn}
-					onChange={setDraft}
-					onCancel={() => {
-						setDraft(null)
-						setEditing(null)
-					}}
-					onSave={save}
-				/>
-			)}
+			{/* A new question is authored above the list; an existing one is
+			    edited in its own row, where the administrator clicked Edit. */}
+			{draft && editing === null && <div className="mt-6">{editor}</div>}
 
 			<h2 className="mt-12 font-display text-2xl font-bold">{t("questions.listTitle")}</h2>
 
@@ -233,17 +237,22 @@ export function ManageQuestionsPage() {
 						onReorder={reorder}
 						label={t("questions.listTitle")}
 					>
-						{(question) => (
-							<QuestionRow
-								question={question}
-								questions={questions}
-								onEdit={() => {
-									setEditing(question.id)
-									setDraft(draftOf(question))
-								}}
-								onDelete={() => void remove(question)}
-							/>
-						)}
+						{(question) =>
+							draft && question.id === editing ? (
+								editor
+							) : (
+								<QuestionRow
+									question={question}
+									questions={questions}
+									onEdit={() => {
+										setImporting(false)
+										setEditing(question.id)
+										setDraft(draftOf(question))
+									}}
+									onDelete={() => void remove(question)}
+								/>
+							)
+						}
 					</SortableList>
 				</div>
 			)}

@@ -588,3 +588,46 @@ Then("the choice is sent without a code", async ({ page }) => {
 
 	expect(body?.options).toEqual([{ code: null, labelEn: "King Eddy", labelFr: "King Eddy" }])
 })
+
+
+When("they open the second question for editing", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await rows.nth(1).getByRole("button", { name: "Edit" }).click()
+})
+
+Then("the editor takes the second question's place in the list", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await expect(rows.nth(1).getByRole("heading", { name: "Edit question" })).toBeVisible()
+	await expect(rows.nth(1).getByLabel("Question (English)")).toHaveValue("What happened?")
+	await expect(page.getByRole("heading", { name: "Edit question" })).toHaveCount(1)
+})
+
+Then("the editor's top edge lines up with that row's move-up control", async ({ page }) => {
+	const row = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem").nth(1)
+	const editor = await row.locator("form").boundingBox()
+	const moveUp = await row.getByRole("button", { name: "Move up" }).boundingBox()
+
+	expect(Math.abs((editor?.y ?? 0) - (moveUp?.y ?? Number.POSITIVE_INFINITY))).toBeLessThanOrEqual(1)
+})
+
+Then("every other question is still shown in its place", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await expect(rows).toHaveCount(3)
+	await expect(rows.nth(0)).toContainText("Were you injured?")
+	await expect(rows.nth(2)).toContainText("Hang glider or paraglider?")
+})
+
+When("they cancel the edit", async ({ page }) => {
+	await page.getByRole("button", { name: "Cancel" }).click()
+})
+
+Then("the second question is shown in its place again", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+
+	await expect(page.getByRole("heading", { name: "Edit question" })).toHaveCount(0)
+	await expect(rows.nth(1)).toContainText("What happened?")
+	await expect(rows.nth(1).getByRole("button", { name: "Edit" })).toBeVisible()
+})

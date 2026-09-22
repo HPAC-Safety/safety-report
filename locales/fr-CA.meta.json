@@ -227,6 +227,18 @@
     "provider": "glossary",
     "reviewed": true
   },
+  "forbidden.body": {
+    "source_hash": "d7f6fbc36ff0761a79fc7fc97ee5a51250722e356d023a935238bc41bda1e250",
+    "target_hash": "c4dd19fe149fd0bca3a2b4973ef1700769308d791850e608df97ca187ffc7537",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "forbidden.title": {
+    "source_hash": "45ea46283de88b0c5b0248e143ddbb24c94adba99f64275a61368e8e45b67937",
+    "target_hash": "93365100d95b3d06c6900623d14c151481b5c1e473df8754de329da549b28840",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "header.logoAlt": {
     "source_hash": "526fac4ead6b1f032f6b3d8cfa0f6d0a26f89abda830f633b3f245a8ce44ff45",
     "target_hash": "f726c6b768f9f111b8979c05dca34f19b96d3c0b7dfc9b12bcb69000c85e0534",

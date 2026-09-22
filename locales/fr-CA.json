@@ -137,8 +137,8 @@
     "body": "Il n'y a rien à cette adresse."
   },
   "forbidden": {
-    "title": "#You cannot open this page",
-    "body": "#Your account does not have access to this admin page."
+    "title": "Vous ne pouvez pas ouvrir cette page",
+    "body": "Votre compte n'a pas accès à cette page d'administration."
   },
   "questions": {
     "title": "Gérer les questions",

@@ -11,7 +11,7 @@ outside the report request.
   and all attachments.
 - Before building the prompt, deterministically mark any exact or token-level
   occurrence of a private value found in `report_content` (see
-  [ADR-0081](../../docs/decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+  [ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
   Load one current prompt from [`Prompts/`](Prompts/), make exactly one model
   call, validate strict English/French JSON, and persist one pair row with
   shared provenance.

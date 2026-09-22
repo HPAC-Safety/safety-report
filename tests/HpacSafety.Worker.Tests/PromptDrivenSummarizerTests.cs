@@ -63,7 +63,7 @@ public sealed class PromptDrivenSummarizerTests
 		await summarizer.SummarizeAsync(SampleInput(), CancellationToken.None);
 
 		// Then — report_content is marked; private_context still carries the raw value
-		// as recognition context (ADR-0081), so only the report_content field is checked.
+		// as recognition context (ADR-0082), so only the report_content field is checked.
 		var messages = client.LastMessages.ShouldNotBeNull();
 		var userMessage = messages[^1].Content;
 		userMessage.ShouldContain("""value":"[PRIVATE:pilot_name] reported a hard landing.""");

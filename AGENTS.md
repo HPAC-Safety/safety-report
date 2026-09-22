@@ -68,7 +68,7 @@ privacy-sensitive.
    summary attempt. Before that call, a deterministic marking pass replaces
    any exact or token-level occurrence of a private answer's value found in
    `report_content` with a `[PRIVATE:<question-key>]` marker
-   ([ADR-0081](docs/decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md));
+   ([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md));
    `report_content` supplies eligible facts, and labeled `private_context`
    (still sent in full) may only help recognize identifying text the marking
    pass did not catch. The response is one strict English/French summary

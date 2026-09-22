@@ -5,7 +5,7 @@ decision-makers: Chase Florell
 keywords: privacy, anonymization, worker, deterministic marking, question bank
 ---
 
-# ADR-0081 — A deterministic marking pass precedes the one model call
+# ADR-0082 — A deterministic marking pass precedes the one model call
 
 **Status:** Supersedes the "deterministic scrub, regex stages, scrub
 vocabulary, markers" removal clause of

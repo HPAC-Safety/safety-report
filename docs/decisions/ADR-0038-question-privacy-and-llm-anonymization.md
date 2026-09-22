@@ -13,7 +13,7 @@ keywords: privacy, LLM, anonymization, question bank
 privacy partition remains; separate audit/translation and identity-level
 privacy rules do not. The "deterministic scrub... removed" clause below is
 further superseded by
-[ADR-0081](ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md):
+[ADR-0082](ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md):
 a narrow deterministic marking pass now runs on `report_content` before the
 one model call; text anonymization itself, and everything the marking pass
 does not catch, remains the model's job.
@@ -63,7 +63,7 @@ Text anonymization is exclusively an LLM responsibility under versioned runtime
 prompts. The deterministic scrub, regex stages, scrub vocabulary, markers, and
 their tests are removed. Deterministic file validation and metadata stripping
 remain separate media controls. (A narrow exception: see
-[ADR-0081](ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md)
+[ADR-0082](ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)
 for the deterministic marking pass reintroduced for exact/near-exact private
 value matches.)
 

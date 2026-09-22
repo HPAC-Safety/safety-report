@@ -13,7 +13,7 @@ attachments, and document text are excluded.
 Before the call, the Worker deterministically marks any exact or token-level
 occurrence of a private value found in `report_content` with a
 `[PRIVATE:<question-key>]` marker
-([ADR-0081](decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+([ADR-0082](decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
 `private_context` is still sent in full — the marking pass narrows what the
 model has to infer, it does not replace it.
 

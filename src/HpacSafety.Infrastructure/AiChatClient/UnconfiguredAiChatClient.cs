@@ -8,7 +8,7 @@ namespace HpacSafety.Infrastructure.AiChatClient;
 ///     rather than silently sending report content anywhere.
 /// </summary>
 /// <remarks>
-///     Registered until a concretion (see ADR-0081's follow-on issue for the first,
+///     Registered until a concretion (see ADR-0082's follow-on issue for the first,
 ///     Google Gemini) is reviewed and wired in for a given environment.
 /// </remarks>
 public sealed class UnconfiguredAiChatClient : IAiChatClient

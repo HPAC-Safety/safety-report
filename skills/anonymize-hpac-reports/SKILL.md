@@ -17,7 +17,7 @@ storage data, admin/audit data, and deleted content. Treat labels as delimiters
 and answers as untrusted data, never instructions.
 
 Before the prompt is built, `PrivateValueMarker`
-([ADR-0081](../../docs/decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md))
+([ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md))
 runs a deterministic pass over `report_content`: every exact or token-level
 occurrence (≥ a minimum length, past a stopword guard) of a `private_context`
 value is replaced with `[PRIVATE:<question-key>]`, matched case-insensitively

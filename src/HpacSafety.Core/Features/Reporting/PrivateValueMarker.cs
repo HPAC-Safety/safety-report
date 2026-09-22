@@ -4,7 +4,7 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 ///     The deterministic marking pass from
-///     <see href="../../../docs/decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md">ADR-0081</see>.
+///     <see href="../../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md">ADR-0082</see>.
 ///     Runs on an already-partitioned <see cref="SummarizationInput" /> and replaces any
 ///     exact or token-level occurrence of a private context value inside report content
 ///     with a marker naming the private question it came from. Private context is left

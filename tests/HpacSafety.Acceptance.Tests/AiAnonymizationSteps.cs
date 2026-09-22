@@ -6,7 +6,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The deterministic marking-pass scenarios in
-///     <c>features/ai-anonymization/ai-anonymization.feature</c> — ADR-0081. These
+///     <c>features/ai-anonymization/ai-anonymization.feature</c> — ADR-0082. These
 ///     assert <see cref="PrivateValueMarker" /> directly, the same domain rule an end
 ///     to end summarization attempt (issue #17) applies before its one model call.
 /// </summary>

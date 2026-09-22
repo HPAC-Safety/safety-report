@@ -1,4 +1,7 @@
 ---
+title: Credential proxy for admin authentication
+description: "Admin authentication proxies the member site's login rather than storing credentials, since reporting itself is anonymous."
+type: adr
 status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell

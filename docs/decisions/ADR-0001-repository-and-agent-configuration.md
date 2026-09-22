@@ -1,4 +1,7 @@
 ---
+title: Agent-agnostic configuration via AGENTS.md and skillfile
+description: AGENTS.md at the repository root is the single canonical instruction file.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

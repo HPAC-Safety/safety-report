@@ -1,3 +1,9 @@
+---
+title: Data handling
+description: What personal information a report can contain and how each boundary treats it.
+type: guide
+---
+
 # Data handling
 
 Occurrence reports can contain identities, contact details, injuries, and

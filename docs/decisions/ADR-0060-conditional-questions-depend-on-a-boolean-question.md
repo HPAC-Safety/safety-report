@@ -1,4 +1,7 @@
 ---
+title: A conditional question names a parent question, which must be a yes/no question
+description: A conditional question names a parent question by its stable key rather than a revision, and that parent must be a yes/no question.
+type: adr
 status: partially-superseded
 date: 2026-09-20
 decision-makers: Chase Florell

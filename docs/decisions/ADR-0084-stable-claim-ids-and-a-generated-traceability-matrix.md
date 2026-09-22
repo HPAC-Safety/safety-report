@@ -1,4 +1,7 @@
 ---
+title: A claim has a stable ID, and the traceability matrix is generated
+description: Every scenario carries one stable claim ID as a tag, every normative docs constraint carries a CON id naming what verifies it, and docs/traceability.md is generated from both.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

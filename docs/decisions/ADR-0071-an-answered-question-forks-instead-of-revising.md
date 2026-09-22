@@ -1,4 +1,7 @@
 ---
+title: A question that has been answered forks instead of revising
+description: An edit forks the question once any answer exists.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

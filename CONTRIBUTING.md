@@ -1,3 +1,9 @@
+---
+title: Contributing
+description: How to set up the repository, branch, verify a change, and open a pull request.
+type: guide
+---
+
 # Contributing
 
 Read [`AGENTS.md`](AGENTS.md) and the canonical
@@ -49,6 +55,11 @@ the repository delivery contract.
 - Use Mermaid for diagrams.
 - Put user-facing UI text in the locale catalogues and keep English/French keys
   in parity. Database question text is manually authored in both languages.
+- Open every markdown file with YAML frontmatter naming its `title`,
+  `description`, and `type`
+  ([ADR-0087](docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+  `node tools/check-frontmatter.mjs` checks the tree; the pre-commit hook
+  checks what you staged.
 - Never hand-edit generated files. Generated paths and commands are listed in
   [`docs/agent-workflow.md`](docs/agent-workflow.md).
 

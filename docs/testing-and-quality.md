@@ -1,3 +1,10 @@
+---
+title: Testing and quality
+description: The canonical test strategy, required contract coverage, and quality gates.
+type: spec
+area: testing-and-quality
+---
+
 # Testing and quality
 
 ## Test strategy

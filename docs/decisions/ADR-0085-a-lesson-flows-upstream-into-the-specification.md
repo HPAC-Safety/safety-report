@@ -1,4 +1,7 @@
 ---
+title: A lesson flows upstream into the specification
+description: A bug fix that reveals a specification gap records a lesson under docs/lessons/ stating symptom, root cause, spec delta, and the claim that now proves it.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

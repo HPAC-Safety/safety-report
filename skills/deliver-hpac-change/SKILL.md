@@ -110,6 +110,11 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 - A lesson about **product requirements** does not change a skill. Its remedy
   is a claim and a scenario, and restating product behavior in a skill creates
   a second place for it to drift from `/features`.
+- Every markdown file you add opens with frontmatter naming its `title`,
+  `description`, and `type`
+  ([ADR-0087](../../docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+  A `SKILL.md` or an `agents/*.md` carries the `name`/`description` pair its
+  loader expects instead. `node tools/check-frontmatter.mjs` is the authority.
 - ADRs are historical rationale, one per durable architectural decision
   (technology choice, rejected alternative, durable trade-off). This is
   mandatory, not discretionary — if a change makes such a decision, add the ADR

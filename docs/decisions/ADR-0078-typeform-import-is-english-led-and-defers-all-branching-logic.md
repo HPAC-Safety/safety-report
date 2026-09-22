@@ -1,4 +1,7 @@
 ---
+title: Typeform import is English-led, and every real branching rule is pending, not auto-mapped
+description: Typeform import is led by the English file, and every real branching rule is recorded as pending for an administrator rather than auto-mapped.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

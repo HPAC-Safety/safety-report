@@ -1,3 +1,10 @@
+---
+title: Infrastructure and operations
+description: The canonical minimal AWS topology, deployment, secrets, backups, and alerting.
+type: spec
+area: infrastructure-and-operations
+---
+
 # Infrastructure and operations
 
 ## Production topology

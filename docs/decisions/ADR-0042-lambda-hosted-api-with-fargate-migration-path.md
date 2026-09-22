@@ -1,4 +1,7 @@
 ---
+title: Host the API on Lambda, built for a later Fargate migration
+description: The API is hosted on Lambda, written so a later move to Fargate needs no application change.
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

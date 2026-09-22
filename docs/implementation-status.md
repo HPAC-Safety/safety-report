@@ -1,3 +1,9 @@
+---
+title: Implementation status
+description: How far main is from the target specification, capability by capability.
+type: guide
+---
+
 # Implementation status
 
 This page compares the target specification with audited main at

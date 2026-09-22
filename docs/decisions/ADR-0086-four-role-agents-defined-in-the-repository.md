@@ -1,4 +1,7 @@
 ---
+title: Four roles are defined as repository agents
+description: Four roles — spec author, test writer, implementer, and reviewer — are declared as agents under agents/ and installed by skillfile.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: Migrate to the canonical domain and persistence model
+description: Collapses the versioned-question and translation tables into complete immutable revisions and removes the superseded aircraft and encryption columns.
+type: adr
 status: partially-superseded
 date: 2026-08-26
 decision-makers: Chase Florell

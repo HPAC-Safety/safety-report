@@ -1,4 +1,7 @@
 ---
+title: JWT bearer authentication with three roles
+description: "Identity arrives as a signed JWT, presented as Authorization: Bearer <jwt>."
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

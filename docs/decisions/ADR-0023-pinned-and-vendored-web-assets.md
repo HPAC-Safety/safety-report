@@ -1,4 +1,7 @@
 ---
+title: "The web build's inputs are pinned, verified, and vendored"
+description: Every input to the web build is pinned to a version, verified by checksum, and vendored into the repository.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

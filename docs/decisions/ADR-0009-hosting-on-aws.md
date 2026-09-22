@@ -1,4 +1,7 @@
 ---
+title: Host on AWS, in ca-central-1
+description: AWS, ca-central-1 for every service that touches report data.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

@@ -1,3 +1,9 @@
+---
+title: Persistence
+description: The slice that owns every table, EF Core mapping, migration, transaction, and query DTO.
+type: readme
+---
+
 # Persistence
 
 This slice owns every PostgreSQL table, EF Core mapping, migration, transaction,

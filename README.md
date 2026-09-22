@@ -1,3 +1,9 @@
+---
+title: HPAC Safety occurrence reporting
+description: What the system is, how to run it locally, and where the specification lives.
+type: readme
+---
+
 # HPAC Safety Occurrence Reporting
 
 HPAC Safety is the bilingual occurrence-reporting system for the Hang Gliding

@@ -1,4 +1,7 @@
 ---
+title: Every row is identified by an eleven-character tiny id
+description: "One identifier type for every table: TinyId, eleven case-sensitive characters over the URL-safe base64 alphabet, about sixty-six bits."
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

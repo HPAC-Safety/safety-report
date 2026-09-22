@@ -1,4 +1,7 @@
 ---
+title: React, TypeScript, and Vite replace the no-framework web build
+description: "React 18 + TypeScript, built with Vite, styled with Tailwind v4 via @tailwindcss/vite (replacing the standalone CLI)."
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: The migration seeds the question bank, and guards the one local administrator
+description: The question bank is seeded as SQL inside a migration rather than through HasData, so the seed is versioned with the schema.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

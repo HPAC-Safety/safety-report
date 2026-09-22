@@ -1,4 +1,7 @@
 ---
+title: "A conditional question's parent may be yes/no or single-select, naming a required option"
+description: "A conditional question's parent may also be a single-select question naming the option that enables the child."
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

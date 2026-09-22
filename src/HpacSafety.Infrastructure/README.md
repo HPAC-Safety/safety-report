@@ -1,3 +1,9 @@
+---
+title: HpacSafety.Infrastructure
+description: The non-deployable adapters and persistence behind the ports Core, the API, and the Worker own.
+type: readme
+---
+
 # HpacSafety.Infrastructure
 
 Non-deployable adapters and persistence for the ports/use cases owned by Core,

@@ -1,3 +1,10 @@
+---
+title: HPAC Safety system specification
+description: "The canonical target design: the authority rules, the specification index, and the product contract."
+type: spec
+area: index
+---
+
 # HPAC Safety system specification
 
 This directory and `docs/` together are the canonical specification for the

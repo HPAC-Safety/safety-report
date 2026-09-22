@@ -1,3 +1,10 @@
+---
+title: Interfaces and data flow
+description: The canonical HTTP surface, ports, and end-to-end flow of a report through the system.
+type: spec
+area: interfaces-and-data-flow
+---
+
 # Interfaces and data flow
 
 ## HTTP surface

@@ -1,3 +1,10 @@
+---
+title: Question bank and form
+description: Supporting detail for the immutable bilingual question and form assembly scenarios.
+type: spec
+area: question-bank-and-form
+---
+
 # Question bank and form
 
 Supporting detail for [`question-bank-and-form.feature`](question-bank-and-form.feature)

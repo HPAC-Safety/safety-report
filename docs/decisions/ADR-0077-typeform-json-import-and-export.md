@@ -1,4 +1,7 @@
 ---
+title: "Question bank import/export uses Typeform's own JSON, not QSF"
+description: "The question bank imports and exports Typeform's own JSON rather than QSF, carrying what Typeform has no slot for in an hpac extension object."
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

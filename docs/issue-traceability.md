@@ -1,3 +1,9 @@
+---
+title: Issue traceability
+description: Every audited GitHub issue and how it relates to the target specification.
+type: guide
+---
+
 # Issue traceability
 
 This audit covers every GitHub issue visible in the repository through issue

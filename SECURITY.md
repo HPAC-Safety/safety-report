@@ -1,3 +1,9 @@
+---
+title: Security policy
+description: How to report a vulnerability or a privacy concern privately rather than in a public issue.
+type: guide
+---
+
 # Security policy
 
 This system stores accounts of real aviation accidents, including names, phone

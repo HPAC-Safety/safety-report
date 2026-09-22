@@ -1,3 +1,10 @@
+---
+title: Report submission
+description: Supporting detail for the browser continuity, multipart API, DTO, and validation scenarios.
+type: spec
+area: report-submission
+---
+
 # Report submission
 
 Supporting detail for [`report-submission.feature`](report-submission.feature)

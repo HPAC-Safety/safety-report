@@ -1,3 +1,9 @@
+---
+title: HPAC Safety agent instructions
+description: The always-loaded instructions for any coding agent working in this repository.
+type: instructions
+---
+
 # AGENTS.md
 
 Instructions for any coding agent working in this repository. `CLAUDE.md`,
@@ -240,6 +246,16 @@ Mermaid for diagrams
 ([ADR-0046](docs/decisions/ADR-0046-mermaid-for-diagrams.md)), locale
 catalogues for UI copy, and synthetic data in tests and docs. Never hand-edit
 generated files.
+
+Every tracked markdown file opens with YAML frontmatter declaring `title`,
+`description`, and `type` — one of `adr`, `spec`, `guide`, `readme`, `lesson`,
+`instructions`, or `template` — plus the keys that type adds
+([ADR-0087](docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+A `skills/*/SKILL.md` and an `agents/*.md` instead carry exactly the `name` and
+`description` their loader expects; their type comes from their path. The
+Worker's runtime prompts are exempt, because their bytes are the model payload.
+`node tools/check-frontmatter.mjs` is the authority, and the pre-commit hook
+runs it over staged markdown.
 
 ## Where to look
 

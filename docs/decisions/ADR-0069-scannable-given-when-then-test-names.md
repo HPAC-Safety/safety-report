@@ -1,4 +1,7 @@
 ---
+title: Scannable Given/When/Then test names
+description: A .NET test method is named as three PascalCase segments joined by single underscores, each opening with Given, When, or Then.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: Magick.NET strips EXIF and sniffs content types
+description: Magick.NET implements both the metadata-stripping and the content-type-sniffing ports, chosen over the alternatives on licence and metadata removal.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

@@ -1,3 +1,10 @@
+---
+title: AI anonymization
+description: Supporting detail for the one-call bilingual summarization and anonymization scenarios.
+type: spec
+area: ai-anonymization
+---
+
 # AI anonymization
 
 Supporting detail for [`ai-anonymization.feature`](ai-anonymization.feature)

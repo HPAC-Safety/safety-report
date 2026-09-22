@@ -1,3 +1,10 @@
+---
+title: Web, localization, and design
+description: Supporting detail for the bilingual React sites, design system, and accessibility scenarios.
+type: spec
+area: web-localization-and-design
+---
+
 # Web, localization, and design
 
 Supporting detail for

@@ -1,3 +1,9 @@
+---
+title: Anonymization policy
+description: The identity-replacement rules a published summary must satisfy, pointing at the normative contract.
+type: guide
+---
+
 # Anonymization policy
 
 The normative contract is

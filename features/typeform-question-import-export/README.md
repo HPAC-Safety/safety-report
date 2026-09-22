@@ -1,3 +1,10 @@
+---
+title: Typeform question import and export
+description: Supporting detail for importing and exporting the question bank as Typeform JSON.
+type: spec
+area: typeform-question-import-export
+---
+
 # Typeform question import and export
 
 Supporting detail for

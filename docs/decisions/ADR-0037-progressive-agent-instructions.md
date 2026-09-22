@@ -1,4 +1,7 @@
 ---
+title: Progressive agent instructions
+description: Keep AGENTS.md as the always-loaded safety contract.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

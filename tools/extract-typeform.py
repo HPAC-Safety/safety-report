@@ -102,6 +102,15 @@ def render_field(field: dict, out: list[str], depth: int = 0) -> None:
 
 def render_markdown(fields: list[dict]) -> str:
     out = [
+        # Every tracked markdown file declares what it is (ADR-0087), and a
+        # generated file's frontmatter is emitted here rather than hand-added,
+        # so regenerating never drops it.
+        "---",
+        "title: Occurrence report form specification",
+        "description: Generated evidence of the current Typeform question set; never hand-edited.",
+        "type: guide",
+        "---",
+        "",
         "# Occurrence report — form specification",
         "",
         "> **Generated file — do not edit by hand.**",

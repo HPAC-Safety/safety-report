@@ -1,4 +1,7 @@
 ---
+title: "@ui tags the .feature scenarios that need a Playwright companion"
+description: "ADR-0049 makes every features/**/*.feature scenario execute via Reqnroll/xUnit, with no separate bucket for browser-driven scenarios."
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: "Path-gated required checks via job-level if:, never paths:"
+description: "Filter with a job-level if:, fed by an always-runs changes job — not a trigger-level paths: filter."
+type: adr
 status: accepted
 date: 2026-08-26
 decision-makers: Chase Florell

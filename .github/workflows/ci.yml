@@ -154,6 +154,22 @@ jobs:
           npm --prefix tools/gherkin ci
           node tools/gherkin/verify.mjs
 
+  # Every tracked markdown file declares its title, description, and type
+  # (ADR-0087). The Worker's runtime prompts are exempt - their bytes are the
+  # model payload - and the validator names that exemption itself. The
+  # pre-commit hook runs the same check over staged markdown, so this is the
+  # backstop for a commit made without it, not the only place the rule lives.
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Every markdown file declares what it is
+        run: node tools/check-frontmatter.mjs
+
   # Cannot judge whether a change is behavioral - only a human/agent can - so
   # this only flags the specific gap issue #163 found: PR #156 added
   # Playwright coverage for the mobile hamburger nav but never added the

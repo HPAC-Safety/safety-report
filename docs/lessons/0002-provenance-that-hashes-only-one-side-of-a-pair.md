@@ -1,4 +1,7 @@
 ---
+title: Provenance that hashes only one side of a pair
+description: Hand-written French survived under a stamp claiming a machine wrote it, then was silently overwritten, because only the English was hashed.
+type: lesson
 date: 2026-09-21
 issue: 215
 status: accepted

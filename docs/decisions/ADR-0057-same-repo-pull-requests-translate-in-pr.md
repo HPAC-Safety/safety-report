@@ -1,4 +1,7 @@
 ---
+title: A same-repo pull request gets its French translated onto its own branch; a fork PR still waits until after merge
+description: Add a pull_request_target trigger to i18n-translate.yml, gated to github.event.pull_request.head.repo.full_name == github.repository.
+type: adr
 status: accepted
 date: 2026-09-20
 decision-makers: Chase Florell

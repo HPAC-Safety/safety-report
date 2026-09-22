@@ -1,4 +1,7 @@
 ---
+title: EF Core is the only path to schema change; SQL lives in files; the app applies its own migrations
+description: Every schema change is an EF Core migration, any SQL it needs lives in a file, and the application applies its own migrations at start-up.
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

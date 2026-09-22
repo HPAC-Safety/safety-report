@@ -1,3 +1,9 @@
+---
+title: Lessons
+description: What a lesson records, when to write one, and the index of the lessons written so far.
+type: guide
+---
+
 # Lessons
 
 A bug is usually a specification defect wearing implementation clothes. The code

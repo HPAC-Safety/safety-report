@@ -1,4 +1,7 @@
 ---
+title: No user records; identity is the token subject
+description: This system stores no user records of any kind.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

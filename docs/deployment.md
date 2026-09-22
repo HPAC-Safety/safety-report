@@ -1,3 +1,9 @@
+---
+title: Deployment
+description: How the application reaches the target AWS environment.
+type: guide
+---
+
 # Deployment
 
 The target deployment is a small AWS environment in `ca-central-1`:

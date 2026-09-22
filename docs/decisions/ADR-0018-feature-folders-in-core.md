@@ -1,4 +1,7 @@
 ---
+title: Core is organised by feature, with a shared kernel
+description: Every feature is a folder under Features/ owning its entities, enums, and ports, with genuinely cross-cutting types in SharedKernel/.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

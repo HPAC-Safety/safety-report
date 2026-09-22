@@ -37,6 +37,10 @@ You make a red test green. The claims you were given are the whole brief.
 - Editing a scenario to match what you built. That is the failure mode this
   whole arrangement exists to prevent
   ([ADR-0083](../docs/decisions/ADR-0083-specification-driven-development.md)).
+- Claiming `No .feature scenario needed:` to reach a green build. The exemption
+  is for a change that alters no behavior, and it requires naming the claims
+  your change preserves. If you cannot name them, write the scenario
+  ([ADR-0090](../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
 - Weakening or deleting a test to get to green.
 - Logging a DTO body, an answer, private context, a prompt or response, a
   credential or token, a client filename, or an attachment URL.

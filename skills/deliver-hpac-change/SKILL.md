@@ -76,6 +76,14 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 - `/features` describes the target. Every user-facing requirement is covered by
   a scenario in a `.feature` file. This is mandatory, not discretionary — if a
   change adds or changes behavior, add or update the scenario in the same PR.
+- A behavior change with no scenario fails `feature-coverage`. An exemption is
+  a **citation**, never an assertion: a closed category, a reason that says what
+  changed and why no behavior did, and the claim IDs the change leaves standing,
+  each checked against the matrix
+  ([ADR-0090](../../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+  Do not reach for it because writing the scenario is slower — if you cannot
+  name the claims your change preserves, the change needs a scenario. Run
+  `node tools/feature-coverage.mjs` locally rather than discovering this in CI.
 - Write the scenario before the implementation, and when the implementation
   turns out to do the wrong thing, correct the scenario rather than arguing it
   out in conversation

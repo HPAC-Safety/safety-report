@@ -56,6 +56,24 @@ Four rules follow, and they are not discretionary.
    where the scenarios are read, not only in the global list in
    [`docs/system-overview.md`](docs/system-overview.md).
 
+A behavior change that touches no scenario fails `feature-coverage`. You may
+claim an exemption only by **citing the claims the change leaves standing** —
+a closed category, a real reason, and claim IDs that exist in the matrix
+([ADR-0090](docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)):
+
+```
+No .feature scenario needed: refactor — extracted the ingest loop; the endpoint
+still validates, streams, and persists exactly as before
+Claims preserved: REQ-SUB-012, REQ-SUB-013
+```
+
+**This is not a shortcut you are permitted to take because writing the scenario
+is slower.** The exemption exists for a change that genuinely alters no
+behavior, and it costs the same honesty as compliance: to skip the scenario you
+must know, and say, what your change preserves. If you cannot name the claims,
+that is the answer — the change needs a scenario. Reaching for the exemption to
+get a green build is the one use of it this repository forbids outright.
+
 You are not trusted to improvise the missing half of a requirement. If reading
 the specification leaves a material question, ask it — see
 [`clarify-hpac-requirements`](skills/clarify-hpac-requirements/SKILL.md) — and

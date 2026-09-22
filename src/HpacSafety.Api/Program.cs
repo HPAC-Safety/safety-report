@@ -1,5 +1,6 @@
 using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
+using HpacSafety.Api.PublicQuestions;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +56,10 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 // Sign-in, and who the caller is. The development token endpoint inside is
 // mapped only in Development.
 app.MapAuth(app.Environment.IsDevelopment());
+
+// Today's live question set, as the reporter-facing form renders it. Public,
+// unlike everything below it.
+app.MapPublicQuestions();
 
 // The question bank is data an administrator edits, not code that ships
 // (ADR-0016). These are the endpoints that edit it.

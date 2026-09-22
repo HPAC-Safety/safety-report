@@ -162,7 +162,7 @@ public sealed class MediaValidationSteps
 			return Task.FromResult<Stream>(new MemoryStream(_blobs[key.Value]));
 		}
 
-		public async Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+		public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 		{
 			using var buffer = new MemoryStream();
 			await content.CopyToAsync(buffer, cancellationToken);

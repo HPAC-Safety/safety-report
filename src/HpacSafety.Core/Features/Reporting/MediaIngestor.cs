@@ -119,7 +119,7 @@ public sealed class MediaIngestor
 
 		var originalKey = quarantineKey.In(MediaCompartment.Original);
 		original.Position = 0;
-		await _blobStore.WriteAsync(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
+		await _blobStore.Write(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
 
 		if (verdict.Type.StrippedForm is not { } derivativeType)
 		{
@@ -133,7 +133,7 @@ public sealed class MediaIngestor
 
 		var derivativeKey = quarantineKey.In(MediaCompartment.Stripped);
 		stripped.Position = 0;
-		await _blobStore.WriteAsync(derivativeKey, stripped, derivativeType.ContentType, cancellationToken).ConfigureAwait(false);
+		await _blobStore.Write(derivativeKey, stripped, derivativeType.ContentType, cancellationToken).ConfigureAwait(false);
 
 		return MediaIngestOutcome.Ingested(verdict.Type, byteSize, sha256, originalKey, derivativeKey, _clock.GetUtcNow());
 	}

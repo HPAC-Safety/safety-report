@@ -79,7 +79,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the reporter submits the form")]
 	public async Task WhenTheReporterSubmitsTheForm()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -113,7 +113,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the submission DTO is built")]
 	public async Task WhenTheSubmissionDtoIsBuilt()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -148,7 +148,7 @@ public sealed class ReportSubmissionEndpointSteps
 	{
 		if (_supersededRevisionId is not null)
 		{
-			_response = await PostAsync(new
+			_response = await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -161,7 +161,7 @@ public sealed class ReportSubmissionEndpointSteps
 			return;
 		}
 
-		using var accepted = await PostAsync(new
+		using var accepted = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -173,7 +173,7 @@ public sealed class ReportSubmissionEndpointSteps
 		accepted.StatusCode.ShouldBe(HttpStatusCode.Accepted, await accepted.Content.ReadAsStringAsync());
 		_selectedLabel = "Blue";
 
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -238,7 +238,7 @@ public sealed class ReportSubmissionEndpointSteps
 				}
 			};
 
-		_response = await PostAsync(dto);
+		_response = await Post(dto);
 	}
 
 	[Then(@"no translation provider is called")]
@@ -267,7 +267,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_selectRevisionId = await RevisionIdFor(key);
 		_selectedLabel = "Blue";
 
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -359,7 +359,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_selectRevisionId = await RevisionIdFor(key);
 		_selectedLabel = "Blue";
 
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -475,7 +475,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 		// A duplicate-revision submission fails validation; its value carries a
 		// secret so the assertion below can prove it never comes back.
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -611,7 +611,7 @@ public sealed class ReportSubmissionEndpointSteps
 		// submission that never validates never reaches persistence, so no
 		// report exists for it. A true mid-transaction failure needs fault
 		// injection this suite does not have.
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = (string?)"unknown-revision", value = (string?)"x" } }
@@ -644,7 +644,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the API responds")]
 	public async Task WhenTheApiResponds()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -708,7 +708,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 		// The one permit this policy allows — consumed here so the next request
 		// is the one that exceeds it.
-		await PostAsync(new
+		await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -718,7 +718,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the per-IP rate limit is exceeded")]
 	public async Task WhenThePerIpRateLimitIsExceeded()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -757,7 +757,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"a valid submission is made")]
 	public async Task WhenAValidSubmissionIsMade()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -777,7 +777,7 @@ public sealed class ReportSubmissionEndpointSteps
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -818,7 +818,7 @@ public sealed class ReportSubmissionEndpointSteps
 		return _responseBody ??= await _response!.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task<HttpResponseMessage> PostAsync(object dto)
+	private async Task<HttpResponseMessage> Post(object dto)
 	{
 		return await _reporter!.PostAsync(Submit, ReportPart(dto));
 	}
@@ -838,7 +838,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 		return problem switch
 		{
-			"a duplicate question_revision_id" => await PostAsync(new
+			"a duplicate question_revision_id" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -847,7 +847,7 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = consent, value = (string?)"no" }
 								}
 			}),
-			"an unknown question_revision_id" => await PostAsync(new
+			"an unknown question_revision_id" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -856,7 +856,7 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = (string?)"not-a-real-id", value = (string?)"x" }
 				}
 			}),
-			"a question_revision_id for a deleted revision" => await PostAsync(new
+			"a question_revision_id for a deleted revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -865,7 +865,7 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = (string?)await DeletedRevisionId(), value = (string?)"x" }
 				}
 			}),
-			"no explicit answer to the consent_publish revision" => await PostAsync(new
+			"no explicit answer to the consent_publish revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -873,7 +873,7 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"), value = (string?)"x" }
 				}
 			}),
-			"a non-null field from the wrong answer shape" => await PostAsync(new
+			"a non-null field from the wrong answer shape" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -886,7 +886,7 @@ public sealed class ReportSubmissionEndpointSteps
 						}
 				}
 			}),
-			"a duplicate or out-of-range file index" => await PostAsync(new
+			"a duplicate or out-of-range file index" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]

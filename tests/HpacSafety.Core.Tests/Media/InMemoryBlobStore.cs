@@ -30,7 +30,7 @@ internal sealed class InMemoryBlobStore : IBlobStore
 			: throw new KeyNotFoundException(key.Value);
 	}
 
-	public async Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 	{
 		using var buffer = new MemoryStream();
 		await content.CopyToAsync(buffer, cancellationToken);

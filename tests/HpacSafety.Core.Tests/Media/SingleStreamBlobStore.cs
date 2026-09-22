@@ -23,7 +23,7 @@ internal sealed class SingleStreamBlobStore(Stream source) : IBlobStore
 		return Task.FromResult(source);
 	}
 
-	public Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 	{
 		throw new InvalidOperationException("An oversized, rejected upload must never reach a write.");
 	}

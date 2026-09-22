@@ -88,7 +88,7 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);

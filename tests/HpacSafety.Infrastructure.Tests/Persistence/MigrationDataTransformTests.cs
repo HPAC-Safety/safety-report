@@ -40,7 +40,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
 			await connection.OpenAsync();
-			await ExecuteAsync(
+			await Execute(
 				connection,
 				"""
                 INSERT INTO questions (id, key, is_system, role, is_private, display_order, section_key, is_active, created_at, deleted_at)
@@ -79,7 +79,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
 			await connection.OpenAsync();
-			await ExecuteAsync(
+			await Execute(
 				connection,
 				"""
                 INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
@@ -124,7 +124,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
 			await connection.OpenAsync();
-			await ExecuteAsync(
+			await Execute(
 				connection,
 				"""
                 INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
@@ -227,7 +227,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		await using (var connection = new NpgsqlConnection(connectionString))
 		{
 			await connection.OpenAsync();
-			await ExecuteAsync(
+			await Execute(
 				connection,
 				"""
                 INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
@@ -286,7 +286,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		await migrator.MigrateAsync(targetMigration);
 	}
 
-	private static async Task ExecuteAsync(NpgsqlConnection connection, string sql)
+	private static async Task Execute(NpgsqlConnection connection, string sql)
 	{
 		await using var command = new NpgsqlCommand(sql, connection);
 		await command.ExecuteNonQueryAsync();

@@ -24,5 +24,5 @@ public interface IBlobStore
 	Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken);
 
 	/// <summary>Writes bytes, such as the EXIF-stripped derivative.</summary>
-	Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken);
+	Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken);
 }

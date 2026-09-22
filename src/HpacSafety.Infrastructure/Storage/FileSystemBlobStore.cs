@@ -78,7 +78,7 @@ public sealed class FileSystemBlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
@@ -104,7 +104,7 @@ public sealed class FileSystemBlobStore : IBlobStore
 	public async Task ExecuteUpload(Uri signedUrl, Stream content, CancellationToken cancellationToken)
 	{
 		var ticket = Verify(signedUrl, UploadOperation);
-		await WriteAsync(ticket.Key, content, ticket.ContentType, cancellationToken).ConfigureAwait(false);
+		await Write(ticket.Key, content, ticket.ContentType, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>Serves the bytes a signed GET authorises, and only those bytes.</summary>

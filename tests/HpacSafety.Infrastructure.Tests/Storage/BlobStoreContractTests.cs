@@ -69,7 +69,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		using var source = new MemoryStream(content);
 
 		// When
-		await Store.WriteAsync(Quarantined, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+		await Store.Write(Quarantined, source, MediaType.Jpeg.ContentType, CancellationToken.None);
 
 		// Then
 		(await ReadAll(Quarantined)).ShouldBe(content);
@@ -113,7 +113,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 	{
 		// Given
 		using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
-		await Store.WriteAsync(AnotherReportsUpload, source, MediaType.Jpeg.ContentType, CancellationToken.None);
+		await Store.Write(AnotherReportsUpload, source, MediaType.Jpeg.ContentType, CancellationToken.None);
 		var url = await Store.CreateReadUrl(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// When
@@ -304,7 +304,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 	private async Task SeedQuarantine(BlobKey key, byte[] content, MediaType declaredType)
 	{
 		using var source = new MemoryStream(content);
-		await Store.WriteAsync(key, source, declaredType.ContentType, CancellationToken.None);
+		await Store.Write(key, source, declaredType.ContentType, CancellationToken.None);
 	}
 
 	private async Task<byte[]> ReadAll(BlobKey key)

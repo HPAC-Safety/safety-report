@@ -32,7 +32,7 @@ public static class QuestionEndpoints
 		group.MapPost("/", Create);
 		group.MapPut("/{id}", Revise);
 		group.MapPost("/order", Reorder);
-		group.MapDelete("/{id}", DeleteAsync);
+		group.MapDelete("/{id}", Delete);
 
 		return group;
 	}
@@ -272,7 +272,7 @@ public static class QuestionEndpoints
 	///     Retires a question. Always a soft delete — answers already given to it
 	///     belong to a real report and are never removed with it.
 	/// </summary>
-	private static async Task<IResult> DeleteAsync(
+	private static async Task<IResult> Delete(
 		string id,
 		HpacSafetyDbContext database,
 		TimeProvider clock,

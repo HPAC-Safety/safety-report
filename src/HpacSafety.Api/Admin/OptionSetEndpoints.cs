@@ -31,7 +31,7 @@ public static class OptionSetEndpoints
 		group.MapGet("/", List);
 		group.MapPost("/", Create);
 		group.MapPut("/{id}", Replace);
-		group.MapDelete("/{id}", DeleteAsync);
+		group.MapDelete("/{id}", Delete);
 
 		return group;
 	}
@@ -159,7 +159,7 @@ public static class OptionSetEndpoints
 		}
 	}
 
-	private static async Task<IResult> DeleteAsync(
+	private static async Task<IResult> Delete(
 		string id,
 		HpacSafetyDbContext database,
 		TimeProvider clock,

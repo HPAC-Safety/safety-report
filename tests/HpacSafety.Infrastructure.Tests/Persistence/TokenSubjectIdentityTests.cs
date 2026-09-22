@@ -138,7 +138,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 
 		// When — the check constraint now names approved_by_subject; if the
 		// rename left it pointing at the old column this insert would succeed.
-		var writing = async () => await ExecuteAsync(
+		var writing = async () => await Execute(
 			connectionString,
 			$"""
              INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by_subject, approved_at, generated_at, updated_at)
@@ -161,7 +161,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		return Convert.ToInt32(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
 	}
 
-	private static async Task ExecuteAsync(string connectionString, string sql)
+	private static async Task Execute(string connectionString, string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();

@@ -289,7 +289,7 @@ public static class ReportSubmissionEndpoints
 
 				await using (var content = upload.OpenReadStream())
 				{
-					await blobStore.WriteAsync(quarantineKey, content, upload.ContentType, cancellationToken)
+					await blobStore.Write(quarantineKey, content, upload.ContentType, cancellationToken)
 						.ConfigureAwait(false);
 				}
 

@@ -2,8 +2,9 @@
 
 ## HTTP surface
 
-Resource names are illustrative where implementation has not begun, but the
+**CON-IF-001** Resource names are illustrative where implementation has not begun, but the
 capability boundaries are normative.
+*Verified by: REQ-QB-011, REQ-SUB-018, REQ-MOD-037, REQ-MOD-038.*
 
 ### Public/reporting API
 
@@ -15,13 +16,17 @@ capability boundaries are normative.
 | `GET /api/v1/public/reports` | Paginated public feed | Only publishable public DTO fields. |
 | `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. |
 
-There are no draft, upload-slot, blob-proxy, public-answer, or publication-
+**CON-IF-002** There are no draft, upload-slot, blob-proxy, public-answer, or publication-
 channel endpoints.
 Before `POST /api/v1/reports`, the reporter-facing API is read-only:
 unfinished answers remain browser-local and create no report, attachment,
 reserved ID, or database state.
+*Verified by: REQ-SUB-001, REQ-MOD-039.*
 
 ### Authentication API
+
+**CON-IF-003** Each authentication capability is reachable only as stated below.
+*Verified by: REQ-MOD-017, REQ-MOD-019.*
 
 | Capability | Authorization |
 |---|---|
@@ -31,6 +36,10 @@ reserved ID, or database state.
 
 ### Admin API
 
+**CON-IF-004** Every admin capability is authorized by the API at the role stated
+below, and a write is audited.
+*Verified by: REQ-MOD-023, REQ-MOD-024, REQ-MOD-028, REQ-MOD-029.*
+
 | Capability | Authorization |
 |---|---|
 | List review work and read report detail | SafetyOfficer or Administrator. |
@@ -39,16 +48,22 @@ reserved ID, or database state.
 | List/create/delete eligible question revisions | Administrator; every write audited. |
 | Manage shared choice lists and machine-translate question wording | Administrator; every write audited. |
 
-There is no allowlist-management endpoint. Roles come from the token, and
+**CON-IF-005** There is no allowlist-management endpoint. Roles come from the token, and
 access is granted or revoked at the identity provider.
+*Verified by: REQ-MOD-041.*
 
-Admin mutation routes use explicit command DTOs and concurrency tokens where a
+**CON-IF-006** Admin mutation routes use explicit command DTOs and concurrency tokens where a
 stale edit could overwrite another officer's work. Error bodies are localized
 problem details with stable machine codes and no secrets/private values.
+*Verified by: REQ-SUB-011.*
 
 ## Core ports
 
-Keep ports only at real external boundaries:
+**CON-IF-007** Keep ports only at real external boundaries, and keep no port whose only
+reason was a removed feature.
+*Verified by: none — an internal structural rule with no observable behavior;
+it is enforced in review and by the conventions skill.*
+
 
 - a model summarizer accepting the partitioned DTO and returning the strict
   bilingual draft plus provenance;
@@ -94,27 +109,30 @@ flowchart TD
 
 ## Worker coordination
 
-Summarization and each attachment file are separate typed outbox messages with
+**CON-IF-008** Summarization and each attachment file are separate typed outbox messages with
 identifier-only payloads. The Worker deployment registers handlers for both.
 A handler loads current database state rather than trusting content in the
 message. Work is idempotent: an already completed live summary/file is not
 duplicated, and a deleted report is ignored/marked complete without output.
+*Verified by: REQ-AI-008, REQ-MED-009, REQ-MOD-040.*
 
-The summary handler builds its DTO at runtime so privacy and labels come from
+**CON-IF-009** The summary handler builds its DTO at runtime so privacy and labels come from
 the immutable revision actually answered. It makes one provider call per
 attempt and commits the pair plus message completion coherently. Attachment
 handlers operate on one server-minted key, expose only verified image/video
 derivatives or validated private document originals, and never extract
 documents into the summary flow.
+*Verified by: REQ-AI-001, REQ-AI-009, REQ-AI-016, REQ-AI-019, REQ-MED-010.*
 
 ## Logging and telemetry boundary
 
-Structured logs may contain request correlation ID, opaque report/work IDs,
+**CON-IF-010** Structured logs may contain request correlation ID, opaque report/work IDs,
 route, result code, duration, attempt number, safe attachment type, and stable error
 code. They must not contain DTO bodies, answers, question copy when it embeds
 answers, private context, model prompts/responses, credentials, bearer tokens,
 the submitting member's subject, IP addresses beyond ephemeral security
 processing, client filenames, or object URLs.
+*Verified by: REQ-AI-021, REQ-SUB-021, REQ-MED-003.*
 
 Metrics aggregate counts and latency. Alerts identify stuck/failed work by
 opaque ID so authorized operators can investigate in the application.

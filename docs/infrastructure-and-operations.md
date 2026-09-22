@@ -2,7 +2,9 @@
 
 ## Production topology
 
-Production is one deliberately small AWS environment in `ca-central-1`:
+**CON-INF-001** Production is one deliberately small AWS environment in `ca-central-1`.
+*Verified by: none — an infrastructure property no application scenario can
+observe; Terraform validation and the `infra` job are its check.*
 
 ```mermaid
 flowchart TD
@@ -32,20 +34,24 @@ the Worker and the web site each a separate ECS Fargate service. RDS and
 attachment storage are private. Secrets Manager supplies runtime secrets.
 Terraform owns the topology; explicit migrations own schema changes.
 
-No SES/email resources, messaging integrations, public attachment distribution,
+**CON-INF-002** No SES/email resources, messaging integrations, public attachment distribution,
 application encryption key, speculative queueing platform, or autoscaling
-machinery is part of the target. Existing infrastructure for those removed
+machinery is part of the target.
+*Verified by: REQ-MOD-039 for the publication and messaging boundary; none for
+the rest.* Existing infrastructure for those removed
 features should be pruned when implementation aligns.
 
 ## Network and data protection
 
-Only the CloudFront distribution and the HTTPS ALB are public. The API
+**CON-INF-003** Only the CloudFront distribution and the HTTPS ALB are public. The API
 Lambda function, the web container, and Worker tasks are attached to private
 subnets; security groups narrowly allow API/Worker to RDS and necessary
 egress. S3 public access is blocked. Managed encryption is
 enabled for RDS, snapshots/backups, logs, secrets, and every bucket. TLS is
 required for browsers, the identity provider, AWS service access, database
 connections, and the model provider.
+*Verified by: none — an infrastructure property no application scenario can
+observe; Terraform validation and the `infra` job are its check.*
 
 A small deployment may use one NAT gateway and the relevant AWS endpoints to
 control cost. Availability, backup retention, deletion protection, and final
@@ -60,19 +66,22 @@ networks, the site origin, rate limits, the authentication issuer, audience,
 and role-claim name, model/prompt version, retry bounds, and stuck-work
 thresholds.
 
-There are no cookie settings, no Turnstile configuration, and no HPAC auth kill
+**CON-INF-004** There are no cookie settings, no Turnstile configuration, and no HPAC auth kill
 switch or hardcoded endpoint. Sessions are bearer tokens, Turnstile is gone
 ([ADR-0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)),
 and this system never contacts a member login endpoint
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+*Verified by: REQ-SUB-018, REQ-MOD-003.*
 
-Secret values live in Secrets Manager and never in Terraform state, GitHub
+**CON-INF-005** Secret values live in Secrets Manager and never in Terraform state, GitHub
 variables, source, appsettings committed to the repository, logs, or task
 definitions. Terraform creates secret containers/references; an authorized
 operator supplies values out of band. The identity provider's client secret is
 one of these.
+*Verified by: none — an infrastructure property no application scenario can
+observe; Terraform validation and the `infra` job are its check.*
 
-**The development JWT signing key is deliberately not a secret.** It is a
+**CON-INF-006** **The development JWT signing key is deliberately not a secret.** It is a
 throwaway symmetric key committed to `appsettings.Development.json`, following
 the pattern already set by the committed development encryption key: it signs
 tokens that only a developer's own machine will ever accept, and it appears in
@@ -81,10 +90,11 @@ outside Development
 ([ADR-0066](decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
 Production validates against the provider's published keys and holds no signing
 key of its own.
+*Verified by: REQ-MOD-019.*
 
 ## Deployment
 
-GitHub Actions authenticates to AWS through OIDC and short-lived role
+**CON-INF-007** GitHub Actions authenticates to AWS through OIDC and short-lived role
 assumption. There are no long-lived AWS access keys. Pull requests run build,
 test, security/configuration, web, and Terraform validation/plan checks without
 production mutation.
@@ -102,15 +112,22 @@ On an approved main deployment:
 Services never run migrations on startup. Rollback deploys a known image/static
 artifact; database migrations follow expand/contract compatibility when a
 release may be rolled back.
+*Verified by: none — an infrastructure property no application scenario can
+observe; Terraform validation and the `infra` job are its check.*
 
 ## Operations
 
-Logs are structured and privacy-safe. Metrics cover request rate/error/latency,
+**CON-INF-008** Logs are structured and privacy-safe. Metrics cover request rate/error/latency,
 submission rejection categories, outbox age and attempts, summary success/
 failure, attachment validation/derivative success/failure, database health, task health, and
 storage capacity. Dashboards avoid dimensions derived from report content.
+*Verified by: REQ-AI-021, REQ-MED-003.*
 
-Alerts stay focused and actionable:
+**CON-INF-009** Alerts stay focused and actionable, and the application itself sends no
+reporter or reviewer email.
+*Verified by: REQ-MOD-039 for the absence of an outbound channel; none for the
+alert set itself.*
+
 
 - oldest live summarization/attachment work exceeds a configured age;
 - a summary or attachment job reaches poison/failed state;
@@ -128,8 +145,9 @@ incident response. Restore drills verify retained private data stays private.
 
 ## Storage lifecycles and backups
 
-A short lifecycle expires unreferenced quarantine candidates. No lifecycle
+**CON-INF-010** A short lifecycle expires unreferenced quarantine candidates. No lifecycle
 physically purges report-linked originals/derivatives merely because a report
 was soft-deleted. RDS automated backups and final snapshots meet an explicit
 retention policy; backup access is audited and limited. This operational
 retention is distinct from application visibility.
+*Verified by: REQ-DOM-010, REQ-DOM-011, REQ-DOM-012, REQ-MED-005.*

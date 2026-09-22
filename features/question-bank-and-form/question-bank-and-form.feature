@@ -712,3 +712,29 @@ Scenario: An Administrator downloads the question bank as Typeform JSON
   Given a signed-in Administrator opens the manage-questions page
   When they choose to export the question bank
   Then a zip file download begins
+
+@REQ-QB-090
+@ui
+Scenario: An Administrator writes a question's choice by its wording alone
+  Given a signed-in Administrator is authoring a new question
+  When they choose the type-ahead list type
+  And they add a choice
+  Then the choice asks only for its English and French wording
+  When they save the question with that choice
+  Then the choice is sent without a code
+
+@REQ-QB-091
+@ui
+Scenario: An Administrator writes a shared choice list's choice by its wording alone
+  Given a signed-in Administrator opens the manage-choice-lists page
+  When they start a new choice list and add a choice
+  Then the choice asks only for its English and French wording
+
+@REQ-QB-092
+Scenario: A choice an Administrator writes is recorded under a code derived from its English wording
+  Given an Administrator saves a single-select question with the choices "King Eddy" and "Mara"
+  Then the choices are recorded under the codes "king_eddy" and "mara"
+  When they reword "King Eddy" to "King Edward" and save again
+  Then that choice is still recorded under the code "king_eddy"
+  When they save choices whose English wording reads "Site A-1" and "Site A 1"
+  Then the save is refused naming both wordings

@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-265 claims across 8 areas: 174 covered by a step definition today, 91 still `@ignore`. 50 constraints.
+268 claims across 8 areas: 177 covered by a step definition today, 91 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -202,6 +202,9 @@ type: guide
 | `REQ-QB-087` | question-bank-and-form | The editor carries an existing question's settings into the form | playwright-bdd | Covered |
 | `REQ-QB-088` | question-bank-and-form | Reviewing an imported Typeform draft prefills the editor | playwright-bdd | Covered |
 | `REQ-QB-089` | question-bank-and-form | An Administrator downloads the question bank as Typeform JSON | playwright-bdd | Covered |
+| `REQ-QB-090` | question-bank-and-form | An Administrator writes a question's choice by its wording alone | playwright-bdd | Covered |
+| `REQ-QB-091` | question-bank-and-form | An Administrator writes a shared choice list's choice by its wording alone | playwright-bdd | Covered |
+| `REQ-QB-092` | question-bank-and-form | A choice an Administrator writes is recorded under a code derived from its English wording | playwright-bdd | Covered |
 | `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Covered |
 | `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Covered |
 | `REQ-SUB-003` | report-submission | Expired local state is not restored | playwright-bdd | Covered |

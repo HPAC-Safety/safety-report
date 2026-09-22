@@ -92,6 +92,18 @@ export interface QuestionView {
 	hasBeenAnswered: boolean
 }
 
+/**
+ * One choice as authored. An administrator names a choice by its wording only:
+ * a new choice sends a null code and the server derives it from the English
+ * wording; an existing choice sends back the code it already has, so a relabel
+ * is never a recode.
+ */
+export interface OptionInput {
+	code: string | null
+	labelEn: string
+	labelFr: string
+}
+
 export interface SaveQuestionRequest {
 	key?: string
 	type: QuestionType
@@ -109,7 +121,7 @@ export interface SaveQuestionRequest {
 	optionSetId: string | null
 	groupedUnderQuestionId: string | null
 	allowsReporterAdditions: boolean
-	options: { code: string; labelEn: string; labelFr: string }[]
+	options: OptionInput[]
 }
 
 export interface OptionSetView {
@@ -202,7 +214,7 @@ export interface SaveOptionSetRequest {
 	key?: string
 	nameEn: string
 	nameFr: string
-	items: { code: string; labelEn: string; labelFr: string }[]
+	items: OptionInput[]
 }
 
 export function listOptionSets(): Promise<OptionSetView[]> {

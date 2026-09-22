@@ -44,7 +44,7 @@ async function stubChoiceLists(page: Page) {
 		const saved = JSON.parse(route.request().postData() ?? "{}") as {
 			nameEn: string
 			nameFr: string
-			items: { code: string; labelEn: string; labelFr: string }[]
+			items: { code: string | null; labelEn: string; labelFr: string }[]
 		}
 
 		// A relabel keeps the reporter-added marker: the flag records where the
@@ -55,6 +55,7 @@ async function stubChoiceLists(page: Page) {
 			nameFr: saved.nameFr,
 			items: saved.items.map((saving) => ({
 				...saving,
+				code: saving.code ?? saving.labelEn.toLowerCase(),
 				sourceItemId: `id-${saving.code}`,
 				addedByReporter: sets[0].items.find((existing) => existing.code === saving.code)?.addedByReporter ?? false,
 			})),
@@ -93,4 +94,9 @@ Then("the corrected wording is shown in the list", async ({ page }) => {
 	const list = page.getByRole("list", { name: "Manage choice lists" })
 
 	await expect(list.getByText("Mount 7", { exact: false })).toBeVisible()
+})
+
+When("they start a new choice list and add a choice", async ({ page }) => {
+	await page.getByRole("button", { name: "Add a choice list" }).click()
+	await page.getByRole("button", { name: "Add a choice", exact: true }).click()
 })

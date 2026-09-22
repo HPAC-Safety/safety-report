@@ -448,7 +448,7 @@ public static class QuestionEndpoints
 
 		return type is QuestionType.YesNo || request.Options is null
 			? []
-			: [.. request.Options.Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr))];
+			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr))];
 	}
 
 	/// <summary>

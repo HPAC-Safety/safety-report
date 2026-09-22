@@ -84,3 +84,6 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - A reporter editing, curating, or removing a shared choice list. A reporter
   may add a missing choice; an administrator curates
   ([ADR-0063](../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+- An administrator authoring, seeing, or recoding an option code. A new
+  choice's code is derived from its English wording, and a reworded choice
+  keeps the code it has (`REQ-QB-092`).

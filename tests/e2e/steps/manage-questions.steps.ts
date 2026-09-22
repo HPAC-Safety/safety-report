@@ -5,6 +5,10 @@ import { expect, type Page } from "@playwright/test"
 
 const { Given, When, Then } = createBdd()
 
+// The last question body each page sent, for the scenario that asserts what
+// the editor puts on the wire rather than what the stub answers.
+const savedBodies = new WeakMap<Page, { options: { code: string | null }[] }>()
+
 /*
  * The @ui scenarios for the manage-questions page (ADR-0053).
  *
@@ -550,4 +554,37 @@ Then("the list shows one question for that key, with the new wording", async ({ 
 		.filter({ hasText: "Did you need medical attention?" })
 
 	await expect(rows).toHaveCount(1)
+})
+
+When("they add a choice", async ({ page }) => {
+	await page.getByRole("button", { name: "Add a choice" }).click()
+})
+
+// Shared with the manage-choice-lists scenario: both editors write a choice
+// the same way, by its wording in the two official languages and nothing else.
+Then("the choice asks only for its English and French wording", async ({ page }) => {
+	await expect(page.getByLabel("Choice (English)").last()).toBeVisible()
+	await expect(page.getByLabel("Choice (French)").last()).toBeVisible()
+	await expect(page.getByLabel("Code", { exact: true })).toHaveCount(0)
+	await expect(page.getByPlaceholder("Code", { exact: true })).toHaveCount(0)
+})
+
+When("they save the question with that choice", async ({ page }) => {
+	await page.getByLabel("Key").fill("launch_site")
+	await page.getByLabel("Question (English)").fill("Where did you launch?")
+	await page.getByLabel("Question (French)").fill("D'où avez-vous décollé?")
+	await page.getByLabel("Choice (English)").last().fill("King Eddy")
+	await page.getByLabel("Choice (French)").last().fill("King Eddy")
+
+	const saving = page.waitForRequest(
+		(request) => request.method() === "POST" && request.url().endsWith("/api/admin/questions"),
+	)
+	await page.getByRole("button", { name: "Save" }).click()
+	savedBodies.set(page, JSON.parse((await saving).postData() ?? "{}") as { options: { code: string | null }[] })
+})
+
+Then("the choice is sent without a code", async ({ page }) => {
+	const body = savedBodies.get(page)
+
+	expect(body?.options).toEqual([{ code: null, labelEn: "King Eddy", labelFr: "King Eddy" }])
 })

@@ -938,6 +938,93 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			.ShouldAllBe(item => !item.GetProperty("addedByReporter").GetBoolean());
 	}
 
+	[Fact]
+	public async Task GivenOptionsWithoutCodes_WhenQuestionIsCreated_ThenCodesAreDerivedFromEnglishWording()
+	{
+		// Given
+		using var client = await SignedIn();
+
+		// When
+		var question = await Create(client, Draft(UniqueKey("launch_site"), "single_select") with
+		{
+			Options = [new Option(null, "King Eddy", "King Eddy"), new Option(null, "Mara", "Mara")]
+		});
+
+		// Then
+		Codes(question).ShouldBe(["king_eddy", "mara"]);
+	}
+
+	[Fact]
+	public async Task GivenExistingOption_WhenRewordedWithItsCode_ThenCodeIsUnchanged()
+	{
+		// Given
+		using var client = await SignedIn();
+		var question = await Create(client, Draft(UniqueKey("launch_site"), "single_select") with
+		{
+			Options = [new Option(null, "King Eddy", "King Eddy")]
+		});
+
+		// When
+		using var revised = await client.PutAsJsonAsync(
+			new Uri($"{Questions}/{question.GetProperty("id").GetString()}", UriKind.Relative),
+			Draft(null, "single_select") with
+			{
+				Options = [new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")]
+			});
+
+		// Then
+		revised.StatusCode.ShouldBe(HttpStatusCode.OK, await revised.Content.ReadAsStringAsync());
+		Codes(await revised.Content.ReadFromJsonAsync<JsonElement>()).ShouldBe(["king_eddy", "mara"]);
+	}
+
+	[Fact]
+	public async Task GivenWordingsReducingToSameCode_WhenQuestionIsCreated_ThenApiRefusesNamingBoth()
+	{
+		// Given
+		using var client = await SignedIn();
+
+		// When
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("launch_site"), "single_select") with
+		{
+			Options = [new Option(null, "Site A-1", "Site A-1"), new Option(null, "Site A 1", "Site A 1")]
+		});
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var detail = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("detail").GetString() ?? "";
+		detail.ShouldContain("'Site A-1'");
+		detail.ShouldContain("'Site A 1'");
+	}
+
+	[Fact]
+	public async Task GivenItemsWithoutCodes_WhenChoiceListIsCreatedAndExtended_ThenCodesAreDerivedFromEnglishWording()
+	{
+		// Given
+		using var client = await SignedIn();
+		using var created = await client.PostAsJsonAsync(OptionSets, new SaveOptionSet(
+			UniqueKey("sites"), "Sites", "Sites", [new Option(null, "King Eddy", "King Eddy")]));
+		created.StatusCode.ShouldBe(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+		var set = await created.Content.ReadFromJsonAsync<JsonElement>();
+
+		// When
+		using var replaced = await client.PutAsJsonAsync(
+			new Uri($"{OptionSets}/{set.GetProperty("id").GetString()}", UriKind.Relative),
+			new SaveOptionSet(null, "Sites", "Sites",
+				[new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")]));
+
+		// Then
+		replaced.StatusCode.ShouldBe(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
+		var items = (await replaced.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("items").EnumerateArray()
+			.Select(item => item.GetProperty("code").GetString())
+			.ToList();
+		items.ShouldBe(["king_eddy", "mara"]);
+	}
+
+	private static List<string?> Codes(JsonElement question)
+	{
+		return [.. question.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())];
+	}
+
 	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)
 	{
 		return SignedInClient.As(_factory, role);
@@ -949,7 +1036,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static SaveQuestion Draft(string key, string type)
+	private static SaveQuestion Draft(string? key, string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
 			false, true, true, null, null, null, null, false, []);
@@ -1006,5 +1093,5 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 	private sealed record SaveOptionSet(string? Key, string NameEn, string NameFr, IReadOnlyList<Option> Items);
 
-	private sealed record Option(string Code, string LabelEn, string LabelFr);
+	private sealed record Option(string? Code, string LabelEn, string LabelFr);
 }

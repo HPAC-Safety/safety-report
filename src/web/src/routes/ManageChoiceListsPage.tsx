@@ -204,7 +204,7 @@ function ListEditor({
 		onChange({ ...draft, ...changes })
 	}
 
-	function updateItem(index: number, changes: Partial<{ code: string; labelEn: string; labelFr: string }>) {
+	function updateItem(index: number, changes: Partial<{ labelEn: string; labelFr: string }>) {
 		update({ items: draft.items.map((item, current) => (current === index ? { ...item, ...changes } : item)) })
 	}
 
@@ -266,15 +266,7 @@ function ListEditor({
 			<p className="font-sans text-xs text-ink-muted">{t("choiceLists.field.itemsHelp")}</p>
 
 			{draft.items.map((item, index) => (
-				<div key={index} className="grid gap-2 sm:grid-cols-3">
-					<input
-						className={fieldClassName}
-						value={item.code}
-						required
-						aria-label={t("choiceLists.field.itemCode")}
-						placeholder={t("choiceLists.field.itemCode")}
-						onChange={(event) => updateItem(index, { code: event.target.value })}
-					/>
+				<div key={index} className="grid gap-2 sm:grid-cols-2">
 					<input
 						className={fieldClassName}
 						value={item.labelEn}
@@ -307,7 +299,7 @@ function ListEditor({
 			<button
 				type="button"
 				className="touch-target self-start rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface"
-				onClick={() => update({ items: [...draft.items, { code: "", labelEn: "", labelFr: "" }] })}
+				onClick={() => update({ items: [...draft.items, { code: null, labelEn: "", labelFr: "" }] })}
 			>
 				{t("choiceLists.field.addItem")}
 			</button>

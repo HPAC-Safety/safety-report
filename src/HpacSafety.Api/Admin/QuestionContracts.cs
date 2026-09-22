@@ -130,8 +130,44 @@ public sealed record SaveQuestionRequest(
 	bool AllowsReporterAdditions,
 	IReadOnlyList<OptionInput>? Options);
 
-/// <summary>One option as authored. A code is normalized server-side.</summary>
-public sealed record OptionInput(string Code, string LabelEn, string LabelFr);
+/// <summary>
+///     One option as authored. An administrator names a choice by its wording
+///     only; the code stored against answers is never theirs to invent.
+/// </summary>
+/// <param name="Code">
+///     The code a choice that already exists was recorded under, sent back
+///     unchanged so a relabel is never a recode. Null for a new choice, whose
+///     code is derived from <paramref name="LabelEn" /> exactly as a
+///     reporter-added choice's is (ADR-0063).
+/// </param>
+/// <param name="LabelEn">The English wording.</param>
+/// <param name="LabelFr">The French wording.</param>
+public sealed record OptionInput(string? Code, string LabelEn, string LabelFr)
+{
+	/// <summary>The normalized code this choice is recorded under.</summary>
+	public string ResolvedCode => QuestionKey.Normalize(string.IsNullOrWhiteSpace(Code) ? LabelEn : Code);
+
+	/// <summary>
+	///     Every option paired with its resolved code, refusing two choices that
+	///     would be recorded the same way. The refusal names the wording, because
+	///     the administrator never saw a code.
+	/// </summary>
+	public static IReadOnlyList<(string Code, OptionInput Option)> Resolve(IEnumerable<OptionInput> options)
+	{
+		ArgumentNullException.ThrowIfNull(options);
+
+		var resolved = options.Select(option => (Code: option.ResolvedCode, Option: option)).ToList();
+
+		if (resolved.GroupBy(pair => pair.Code, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1) is { } clash)
+		{
+			var wording = string.Join(" and ", clash.Select(pair => $"'{pair.Option.LabelEn}'"));
+			throw new DomainRuleViolationException(
+				$"The choices {wording} are too alike to tell apart. Word one of them differently.");
+		}
+
+		return resolved;
+	}
+}
 
 /// <summary>Every question in the order the administrator arranged them.</summary>
 public sealed record ReorderQuestionsRequest(IReadOnlyList<string> QuestionIdsInOrder);

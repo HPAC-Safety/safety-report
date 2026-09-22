@@ -125,12 +125,6 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "choiceLists.field.itemCode": {
-    "source_hash": "340f463033e0fd5ddeabb922df4d4f1b5747494d0f5ed9894f13b6e13ca831f5",
-    "target_hash": "340f463033e0fd5ddeabb922df4d4f1b5747494d0f5ed9894f13b6e13ca831f5",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
   "choiceLists.field.itemLabelEn": {
     "source_hash": "ef3e33a7de5673ffde4447bda3dac51c6946fb49e532bb985fe1e932be5965c9",
     "target_hash": "2009c0a42ba5ceb3db49bf68b5eedddf6ca51783b5bad77abccf7ac5354d599e",
@@ -746,12 +740,6 @@
   "questions.field.labelFr": {
     "source_hash": "81ad0c905adcba4e91724f4e21d3672961f12422d5ec9976281c93d631cc9892",
     "target_hash": "905dd6efa57084c683a702cd6eb5d472aa4b22ef9b6f3a45c78e24929f2b362a",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
-  "questions.field.optionCode": {
-    "source_hash": "340f463033e0fd5ddeabb922df4d4f1b5747494d0f5ed9894f13b6e13ca831f5",
-    "target_hash": "340f463033e0fd5ddeabb922df4d4f1b5747494d0f5ed9894f13b6e13ca831f5",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

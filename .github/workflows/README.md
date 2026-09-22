@@ -1,3 +1,9 @@
+---
+title: GitHub workflows
+description: What each workflow under .github/workflows is responsible for.
+type: readme
+---
+
 # GitHub workflows
 
 | Workflow | Responsibility |

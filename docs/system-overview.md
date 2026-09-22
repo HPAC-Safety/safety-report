@@ -1,3 +1,10 @@
+---
+title: System overview
+description: The canonical purpose, boundaries, components, and explicit out-of-scope list.
+type: spec
+area: system-overview
+---
+
 # System overview
 
 ## Purpose

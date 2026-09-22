@@ -1,4 +1,7 @@
 ---
+title: A deterministic marking pass precedes the one model call
+description: "Before the prompt is built, a deterministic pass replaces occurrences of a private answer's value in report_content with a [PRIVATE:<question-key>] marker."
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: locales/fr-CA.json and locales/fr-CA.meta.json are tracked files, not gitignored
+description: Remove locales/fr-CA.json and locales/fr-CA.meta.json from .gitignore.
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

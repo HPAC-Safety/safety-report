@@ -1,3 +1,9 @@
+---
+title: Media test fixtures
+description: The one committed binary fixture, and why it is the exception to synthetic generation.
+type: readme
+---
+
 # fixtures
 
 One committed binary, and a note on why it is the exception.

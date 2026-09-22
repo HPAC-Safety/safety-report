@@ -1,3 +1,9 @@
+---
+title: Web site
+description: The one React/TypeScript application serving the reporter form and the admin routes.
+type: readme
+---
+
 # Web site
 
 One React/TypeScript single-page application, built with Vite. The report form

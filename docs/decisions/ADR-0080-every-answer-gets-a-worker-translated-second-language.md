@@ -1,4 +1,7 @@
 ---
+title: Every answer gets a Worker-translated second language; the submitted value is immutable
+description: Every answer with a value gets translated into the other official language, mechanically, off the request path.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

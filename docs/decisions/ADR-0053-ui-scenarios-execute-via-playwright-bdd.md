@@ -1,4 +1,7 @@
 ---
+title: "@ui scenarios execute via Playwright, not Reqnroll"
+description: "Reqnroll is for scenarios a C# step definition can actually assert — non-@ui scenarios, unchanged from ADR-0049."
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: "Coverage: an absolute floor plus a ratchet, from main's last artifact"
+description: "Measured before excluding anything, HpacSafety.Api reported 4.8% line coverage while Program.cs was at 100%."
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

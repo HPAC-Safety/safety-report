@@ -1,4 +1,7 @@
 ---
+title: Question privacy partitions an LLM-only anonymization request
+description: Every question carries an immutable boolean IsPrivate, chosen when the question is created and defaulting to true.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

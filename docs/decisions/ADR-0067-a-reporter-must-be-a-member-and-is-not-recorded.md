@@ -1,4 +1,7 @@
 ---
+title: A reporter must be a member, and is not recorded
+description: Submitting a report requires a signed-in HPAC member.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

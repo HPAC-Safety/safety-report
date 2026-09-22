@@ -1,4 +1,7 @@
 ---
+title: A hand-edited French value is a recorded correction
+description: English stays the source of truth.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

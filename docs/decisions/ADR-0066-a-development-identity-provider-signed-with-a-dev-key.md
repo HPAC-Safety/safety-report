@@ -1,4 +1,7 @@
 ---
+title: A development identity provider, signed with a dev key
+description: In Development, the API issues its own tokens.
+type: adr
 status: superseded by ADR-0079
 date: 2026-09-21
 decision-makers: Chase Florell

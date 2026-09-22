@@ -1,4 +1,7 @@
 ---
+title: Rulesets, and no CODEOWNERS
+description: Development happens in public — anyone may fork and open a pull request — but only the repository administrators should be able to approve.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

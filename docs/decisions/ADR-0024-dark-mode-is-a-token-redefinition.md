@@ -1,4 +1,7 @@
 ---
+title: Dark mode is a token redefinition, not a variant
+description: The palette is declared once as roles, and dark mode redefines those roles.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

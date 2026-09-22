@@ -1,4 +1,7 @@
 ---
+title: Bilingual, with CI-time translation
+description: "HPAC is a national bilingual association and the existing Typeform is titled \"(English)\", implying a French counterpart."
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

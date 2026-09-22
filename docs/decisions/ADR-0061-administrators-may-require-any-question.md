@@ -1,4 +1,7 @@
 ---
+title: An administrator may make any question mandatory; consent is merely the one that cannot be optional
+description: question_revisions.is_required becomes an authored field.
+type: adr
 status: accepted
 date: 2026-09-20
 decision-makers: Chase Florell

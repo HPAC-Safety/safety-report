@@ -1,3 +1,9 @@
+---
+title: HpacSafety.Core
+description: The non-deployable domain library with no runtime package dependency.
+type: readme
+---
+
 # HpacSafety.Core
 
 Non-deployable domain library with no runtime package dependency. The target

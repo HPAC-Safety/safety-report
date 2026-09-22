@@ -1,4 +1,7 @@
 ---
+title: A shared choice list is authored once and snapshotted into every revision that uses it
+description: Two tables, two different mutability rules, and a copy between them.
+type: adr
 status: accepted
 date: 2026-09-20
 decision-makers: Chase Florell

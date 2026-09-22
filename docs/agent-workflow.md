@@ -1,3 +1,9 @@
+---
+title: Working with coding agents
+description: How instructions, skills, and generated files are arranged for the agents that work here.
+type: guide
+---
+
 # Working with coding agents
 
 [`AGENTS.md`](../AGENTS.md) is the only always-loaded repository instruction;

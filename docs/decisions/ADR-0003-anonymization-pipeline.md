@@ -1,4 +1,7 @@
 ---
+title: Five-stage anonymization, deterministic first
+description: The core promise of the system is that a published summary cannot identify the pilot.
+type: adr
 status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell

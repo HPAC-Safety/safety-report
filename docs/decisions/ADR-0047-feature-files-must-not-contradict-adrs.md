@@ -1,4 +1,7 @@
 ---
+title: A feature file may never contradict an accepted ADR
+description: A feature file scenario and an accepted (non-superseded) ADR must never say two different things about the same behavior or architecture, in either direction, at the moment a pull request merges.
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

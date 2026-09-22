@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 #
-# Two genuinely independent checks, each gated on the kind of file actually
+# Three genuinely independent checks, each gated on the kind of file actually
 # staged so an unrelated commit pays nothing. This file is the tracked
 # template; ./init-dev.sh copies it into the real hooks directory (see that
 # file for why it's a copy rather than core.hooksPath) — edit this copy, not
@@ -8,8 +8,8 @@
 #
 # "Independent" is load-bearing and was not true before: `set -e` let a locale
 # failure abort the script before `dotnet format` ran, so a commit refused for
-# a missing French key also silently skipped its formatting. Both checks now
-# always run, and the hook fails at the end if either did.
+# a missing French key also silently skipped its formatting. Every check now
+# runs, and the hook fails at the end if any of them did.
 #
 # 1. locales/en-CA.json and locales/fr-CA.json parity: a missing/extra key, an
 #    English `#`-stub, stale fr-CA.meta.json provenance, or a glossary
@@ -38,7 +38,14 @@
 #    stub is fatal everywhere — no workflow ever writes English — so adding a
 #    key in French only still requires you to write the real English by hand.
 #
-# 2. C# formatting: dotnet format --include <staged files>, auto-fixing and
+# 2. Markdown frontmatter: every tracked .md/.mdc declares its title,
+#    description, and type (ADR-0087). Only the staged markdown is checked,
+#    and the Worker's runtime prompts are exempt because their bytes are the
+#    model payload. CI's "docs" job re-checks the whole tree as a backstop for
+#    anyone who skipped this hook — but a rule that lives only in CI is not a
+#    rule (ADR-0073), which is why it is here first.
+#
+# 3. C# formatting: dotnet format --include <staged files>, auto-fixing and
 #    re-staging just those files, so formatting drift never reaches a commit
 #    without touching files outside the diff. CI's "build" job re-verifies
 #    the whole solution with --verify-no-changes as a server-side backstop
@@ -102,6 +109,18 @@ if staged | grep -q '^locales/'; then
 
 		# shellcheck disable=SC2086 # empty on main, one flag elsewhere
 		node tools/translate-locale.mjs --check --locales locales $pending_translation_flag || status=1
+	fi
+fi
+
+if staged | grep -qE '\.(md|mdc)$'; then
+	if ! command -v node >/dev/null 2>&1; then
+		echo "pre-commit: node is not on PATH, cannot verify markdown frontmatter — see README.md" >&2
+		status=1
+	else
+		STAGED_MARKDOWN=$(staged | grep -E '\.(md|mdc)$')
+
+		# shellcheck disable=SC2086 # word-split on purpose: one path per argument
+		node tools/check-frontmatter.mjs $STAGED_MARKDOWN || status=1
 	fi
 fi
 

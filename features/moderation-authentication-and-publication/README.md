@@ -1,3 +1,10 @@
+---
+title: Moderation, authentication, and publication
+description: Supporting detail for the member authentication, review, and public feed scenarios.
+type: spec
+area: moderation-authentication-and-publication
+---
+
 # Moderation, authentication, and publication
 
 Supporting detail for

@@ -1,4 +1,7 @@
 ---
+title: Report values are encrypted by the application, not by the database
+description: Report values were encrypted with AES-256-GCM in the application behind a Core port; superseded by managed encryption at rest.
+type: adr
 status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell

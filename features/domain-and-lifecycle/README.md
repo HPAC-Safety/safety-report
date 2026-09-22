@@ -1,3 +1,10 @@
+---
+title: Domain and lifecycle
+description: Supporting detail for the report states, invariants, deletion, and retention scenarios.
+type: spec
+area: domain-and-lifecycle
+---
+
 # Domain and lifecycle
 
 Supporting detail for

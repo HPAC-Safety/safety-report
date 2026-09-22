@@ -1,4 +1,7 @@
 ---
+title: React Router for client-side navigation
+description: Adopt react-router-dom (declarative mode — BrowserRouter, Routes, Route; no loaders/actions, which this app has no server-rendered data dependency to justify) as the client-side router.
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

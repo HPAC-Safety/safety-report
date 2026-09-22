@@ -1,4 +1,7 @@
 ---
+title: Diagrams in Markdown are Mermaid, not images
+description: "Every diagram inside a Markdown file in this repository is Mermaid, written as a fenced mermaid ` code block."
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

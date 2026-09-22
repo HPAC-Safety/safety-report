@@ -1,3 +1,9 @@
+---
+title: HpacSafety.Worker
+description: The deployable long-running outbox consumer that keeps slow work out of the report request.
+type: readme
+---
+
 # HpacSafety.Worker
 
 Deployable long-running outbox consumer. It keeps slow/failure-prone processing

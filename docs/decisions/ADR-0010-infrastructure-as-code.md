@@ -1,4 +1,7 @@
 ---
+title: Terraform, with a scripted one-time bootstrap
+description: Terraform, in infra/, run from GitHub Actions.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

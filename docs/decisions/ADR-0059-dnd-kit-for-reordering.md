@@ -1,4 +1,7 @@
 ---
+title: "Reordering uses @dnd-kit, behind one owned component, and never requires a pointer"
+description: "Use @dnd-kit (core, sortable, modifiers, utilities), and wrap it in one component this repository owns: src/web/src/components/SortableList.tsx."
+type: adr
 status: accepted
 date: 2026-09-20
 decision-makers: Chase Florell

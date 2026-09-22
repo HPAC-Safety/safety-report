@@ -1,4 +1,7 @@
 ---
+title: Reqnroll executes the .feature files
+description: "features/*.feature files are the canonical specification (features/README.md) — Gherkin scenarios that describe target behavior."
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

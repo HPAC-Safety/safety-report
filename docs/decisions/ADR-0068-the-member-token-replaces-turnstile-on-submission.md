@@ -1,4 +1,7 @@
 ---
+title: The member token replaces Turnstile on submission
+description: Turnstile is removed from report submission.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

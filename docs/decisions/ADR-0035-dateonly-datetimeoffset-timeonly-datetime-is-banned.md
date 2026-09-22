@@ -1,4 +1,7 @@
 ---
+title: DateOnly, DateTimeOffset, TimeOnly; DateTime is banned
+description: Model the temporal fact that is actually known, and let the type say which one it is.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

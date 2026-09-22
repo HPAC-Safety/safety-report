@@ -1,4 +1,7 @@
 ---
+title: No inline JavaScript in HTML; every script is an external TypeScript module
+description: "No <script> tag in src/web/index.html, or any other HTML in this repository, contains JavaScript."
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

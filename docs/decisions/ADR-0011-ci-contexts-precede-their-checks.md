@@ -1,4 +1,7 @@
 ---
+title: CI contexts exist before the things they check
+description: The main ruleset deliberately shipped without required_status_checks, because a required context that never reports blocks every pull request permanently.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

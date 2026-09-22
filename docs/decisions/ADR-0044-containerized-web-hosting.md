@@ -1,4 +1,7 @@
 ---
+title: The web front end is a Docker container, not S3 + CloudFront
+description: ADR-0043 moves the web front end to a React/TypeScript/Vite build.
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

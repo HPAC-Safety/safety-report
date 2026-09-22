@@ -1,4 +1,7 @@
 ---
+title: Trust forwarded headers because the security group is the trust boundary, not a static proxy list
+description: Trust X-Forwarded-For/X-Forwarded-Proto unconditionally at the application layer, because the network layer already guarantees the direct connection is the ALB.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

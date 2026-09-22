@@ -1,4 +1,7 @@
 ---
+title: The deterministic scrub is a closed chain over labelled fields
+description: The zero value of ScrubFieldKind is the safe one.
+type: adr
 status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell

@@ -31,6 +31,7 @@ fix it here — or the change exceeded its scope.
 
 - [ ] Product behavior matches `/features`, or the affected specification pages are updated here
 - [ ] The scenario was written or amended before the implementation, and nothing here is untraced to one
+- [ ] If this claims `No .feature scenario needed:`, it names a closed category and the claim IDs the change leaves standing (ADR-0090)
 - [ ] Report/question/model/attachment/auth/publication changes have a focused boundary test
 - [ ] Runtime summarization still uses one prompt and one model call per attempt
 - [ ] Documents remain private and are not anonymized, parsed, sent to AI, inline-rendered, or published

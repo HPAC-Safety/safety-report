@@ -143,7 +143,9 @@ code ratchet, web asset/CSS checks, localization parity and hardcoded-string
 lint, end-to-end tests, agent/skill validation, Terraform validation, and linked
 issue enforcement. Two of them guard the specification itself: a behavior change
 anywhere under `src/` or in an e2e spec fails unless it touches a
-`features/**/*.feature` file or states its exemption in the pull-request body,
+`features/**/*.feature` file or cites, from a closed category vocabulary, the
+existing claims it leaves standing
+([ADR-0090](decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)),
 and a committed [traceability matrix](traceability.md) that no longer matches
 the claims and constraints it summarizes fails the same way a stale generated
 file does

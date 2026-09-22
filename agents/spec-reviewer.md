@@ -34,6 +34,12 @@ it cites, and nothing else?"**
    summary.
 7. **A missing lesson** when the diff fixes a bug that a claim should have
    caught.
+8. **An exemption that does not hold.** When the pull request claims
+   `No .feature scenario needed:`, verify it rather than accept it: read the
+   claims it says it preserves and check the diff really leaves them standing.
+   An exemption covering a change that alters behavior is a finding, and the
+   remedy is the scenario that should have been written
+   ([ADR-0090](../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
 
 ## How you report
 

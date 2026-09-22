@@ -1,0 +1,64 @@
+name: Feature coverage
+
+# A behavior change is covered by a scenario, or it cites the claims it
+# preserves (ADR-0083, ADR-0090). The exemption lives in the pull request body,
+# which becomes the squash commit message because the repository is configured
+# with squash_merge_commit_message=PR_BODY — so the body is what gets enforced,
+# and the commit history is the record of every exemption ever claimed.
+#
+# This lives in its own workflow rather than in ci.yml, for the same reason
+# linked-issue.yml does: it has to subscribe to `edited`. Without that, a body
+# could pass the check with a citation and then have the citation edited away
+# before merge, and the commit message would claim something no check ever saw.
+# Re-running the whole build on every body edit to close that hole would be
+# absurd.
+#
+# It also runs unconditionally rather than behind the `changes` path filter:
+# tools/feature-coverage.mjs already exits 0 when no behavior-bearing file
+# changed, and a gate that decides for itself whether it applies cannot be
+# skipped by a filter that disagrees.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: feature-coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  feature-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Behavior changes are covered by a .feature scenario
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+
+          # ':(glob)' magic is required for '**' to match — git's default
+          # pathspec matching (fnmatch, no FNM_PATHNAME) treats a bare '**'
+          # as a single '*' and silently fails to match nested paths.
+          #
+          # Exclusions, each for a stated reason: tests/e2e/steps/**/*.ts are
+          # the execution half of a scenario (ADR-0053), not a second place
+          # requiring one; .features-gen is generated; a README documents a
+          # component and cannot change its behavior.
+          CHANGED_BEHAVIOR=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
+            | grep -v '/\.features-gen/' \
+            | grep -v '^tests/e2e/steps/' \
+            | grep -v '/README\.md$' || true)
+          CHANGED_FEATURES=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)features/**/*.feature' || true)
+          export CHANGED_BEHAVIOR CHANGED_FEATURES
+
+          node tools/feature-coverage.mjs

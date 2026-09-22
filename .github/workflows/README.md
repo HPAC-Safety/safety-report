@@ -10,6 +10,7 @@ type: readme
 |---|---|
 | `ci.yml` | Build, tests, coverage, web, localization, skill/agent validation |
 | `linked-issue.yml` | Require a closing issue reference in each PR |
+| `feature-coverage.yml` | Require a scenario for a behavior change, or a citation of the claims it preserves |
 | `i18n-translate.yml` | Prepare French application-catalogue changes only |
 | `terraform.yml` | Validate/plan/apply infrastructure |
 | `deploy-api.yml` | Publish API image and run explicit migrations |

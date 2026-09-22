@@ -61,6 +61,34 @@ describe('parseFrontmatter', () => {
 		assert.match(error, /contains a tab/)
 	})
 
+	it('ignores a blank line and a comment inside the block', () => {
+		const { entries } = parseFrontmatter('---\ntitle: A\n\n# a comment\ndescription: B\n---\n')
+
+		assert.deepEqual(
+			entries.map((entry) => entry.key),
+			['title', 'description'],
+		)
+	})
+
+	it('reports an indented line that follows no key', () => {
+		const { error } = parseFrontmatter('---\n  - orphan\ntitle: A\n---\n')
+
+		assert.match(error, /indented but follows no key/)
+	})
+
+	it('reports a line that is not a key: value pair', () => {
+		const { error } = parseFrontmatter('---\ntitle: A\nnonsense\n---\n')
+
+		assert.match(error, /is not a "key: value" pair/)
+	})
+
+	it('treats a nested map as a value rather than an empty key', () => {
+		const { entries } = parseFrontmatter('---\nmetadata:\n  version: 2\n---\n')
+
+		assert.equal(entries.length, 1)
+		assert.equal(entries[0].nested, true)
+	})
+
 	it('keeps a block list attached to the key above it', () => {
 		const { entries } = parseFrontmatter('---\ntitle: A\nkeywords:\n  - one\n  - two\n---\n')
 
@@ -88,6 +116,12 @@ describe('checkFile', () => {
 
 		assert.equal(problems.length, 1)
 		assert.match(problems[0], /"description" is declared but empty/)
+	})
+
+	it('accepts a key whose value is a nested map rather than calling it empty', () => {
+		const source = '---\ntitle: A\ndescription:\n  short: B\ntype: guide\n---\n'
+
+		assert.deepEqual(checkFile('docs/glossary.md', source), [])
 	})
 
 	it('rejects a type outside the vocabulary', () => {
@@ -187,6 +221,15 @@ describe('main', () => {
 
 		assert.equal(code, 0)
 		assert.match(output.log.join('\n'), /0 markdown file\(s\) checked/)
+	})
+
+	it('walks the tree when there is no git repository to list', () => {
+		const root = tree({ 'docs/a.md': guide('A'), 'docs/nested/b.md': guide('B'), 'docs/notes.txt': 'ignored' })
+
+		const { code, output } = runMain(root)
+
+		assert.equal(code, 0)
+		assert.match(output.log.join('\n'), /2 markdown file\(s\) checked/)
 	})
 
 	it('skips a symlink, which resolves to a file checked on its own path', () => {

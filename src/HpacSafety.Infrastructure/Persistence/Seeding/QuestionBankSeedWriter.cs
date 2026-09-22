@@ -104,7 +104,14 @@ public static class QuestionBankSeedWriter
 		{
 			var question = questions[displayOrder];
 			var questionId = SeedIds.For($"question:{question.Key}");
-			var revisionId = SeedIds.For($"question_revision:{question.Key}:1");
+			// Named "question_version", not "question_revision": a fresh
+			// database seeds through InitialSchema's legacy schema first, and
+			// MigrateCanonicalDomainAndPersistence carries that row forward by
+			// reusing its id verbatim as the question_revisions row's id. This
+			// name has to keep matching that carried-forward derivation, or a
+			// from-scratch database seeds every revision twice under two
+			// different ids and violates the one-revision-per-number index.
+			var revisionId = SeedIds.For($"question_version:{question.Key}:1");
 
 			AppendGuardedInsert(
 				sql,
@@ -139,7 +146,10 @@ public static class QuestionBankSeedWriter
 			for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
 			{
 				var option = question.Options[optionOrder];
-				var optionId = SeedIds.For($"question_revision_option:{question.Key}:{option.Code}");
+				// Same reasoning as revisionId above: "question_option", not
+				// "question_revision_option", to match what
+				// MigrateCanonicalDomainAndPersistence carries forward.
+				var optionId = SeedIds.For($"question_option:{question.Key}:{option.Code}");
 
 				AppendGuardedInsert(
 					sql,

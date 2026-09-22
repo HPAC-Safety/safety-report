@@ -755,3 +755,14 @@ Scenario: Submitting a report records a type-ahead value the list did not offer
   And the answer is stored as "Élévation Sainte-Anne", in French
   And the shared list now offers "Élévation Sainte-Anne" as a reporter-added choice coded "elevation_sainte_anne"
   And the next reporter is offered "Élévation Sainte-Anne"
+
+
+@REQ-QB-093
+@ui
+Scenario: Editing a question opens the editor in that question's place
+  Given a signed-in Administrator opens the manage-questions page
+  When they open the second question for editing
+  Then the editor takes the second question's place in the list
+  And every other question is still shown in its place
+  When they cancel the edit
+  Then the second question is shown in its place again

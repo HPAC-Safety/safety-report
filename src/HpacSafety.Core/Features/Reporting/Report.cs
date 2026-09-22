@@ -82,13 +82,15 @@ public class Report
 
 	/// <summary>
 	///     True only when a reporter consented, a safety officer approved the report,
-	///     and the summary pair was approved. Every clause is load bearing: nothing
-	///     reaches the public without all three.
+	///     the summary pair was approved, and neither the report nor its summary has
+	///     been soft-deleted. Every clause is load bearing: nothing reaches the
+	///     public without all of them (REQ-DOM-003/004).
 	/// </summary>
 	public bool IsPublishable =>
-		ConsentPublish is true
+		Deleted is null
+		&& ConsentPublish is true
 		&& Status is ReportStatus.Approved or ReportStatus.Published
-		&& Summary is { IsApproved: true };
+		&& Summary is { IsApproved: true, Deleted: null };
 
 	/// <summary>
 	///     Records one answer against the question's current revision, in the
@@ -252,6 +254,35 @@ public class Report
 
 		Status = ReportStatus.Published;
 		PublishedAt = at;
+	}
+
+	/// <summary>
+	///     Soft-deletes this report and everything it owns — its answers, files, and
+	///     summary — with one shared timestamp, in memory. The caller persists it and
+	///     the report's outbox rows (not part of this aggregate) in the same
+	///     transaction, so the whole cascade commits or fails together
+	///     (REQ-DOM-007). Irreversible: there is no restore transition.
+	/// </summary>
+	public void SoftDelete(DateTimeOffset at)
+	{
+		if (Deleted is not null)
+		{
+			return;
+		}
+
+		Deleted = at;
+
+		foreach (var answer in _answers)
+		{
+			answer.Delete(at);
+		}
+
+		foreach (var file in _files)
+		{
+			file.Delete(at);
+		}
+
+		Summary?.Delete(at);
 	}
 
 	private void Project(Question question, ReportAnswer answer)

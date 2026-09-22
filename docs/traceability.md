@@ -46,7 +46,7 @@ type: guide
 | `REQ-DOM-007` | domain-and-lifecycle | Soft deletion removes a report from every normal path | Reqnroll | Planned |
 | `REQ-DOM-008` | domain-and-lifecycle | A question revision can be deleted only when unreferenced | Reqnroll | Planned |
 | `REQ-DOM-009` | domain-and-lifecycle | Retiring a question is a soft delete with no way back | Reqnroll | Planned |
-| `REQ-DOM-010` | domain-and-lifecycle | Raw reports are retained until explicit deletion | Reqnroll | Planned |
+| `REQ-DOM-010` | domain-and-lifecycle | Raw reports are retained until explicit deletion | Reqnroll | Covered |
 | `REQ-DOM-011` | domain-and-lifecycle | Soft-deleted and private data remain under managed retention | Reqnroll | Planned |
 | `REQ-DOM-012` | domain-and-lifecycle | Unreferenced quarantine objects expire without affecting reports | Reqnroll | Planned |
 | `REQ-DOM-013` | domain-and-lifecycle | An audited action is recorded in the immutable audit log | Reqnroll | Planned |

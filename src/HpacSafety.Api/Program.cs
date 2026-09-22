@@ -117,6 +117,9 @@ app.MapAdminTranslation();
 app.MapAdminAnswerTranslation();
 app.MapAdminTypeformImport();
 
+// Soft deletion (issue #82). The review queue itself is issue #25.
+app.MapAdminReports();
+
 await app.RunAsync().ConfigureAwait(false);
 
 /// <summary>

@@ -304,18 +304,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		if (deleteReport)
 		{
-			// Report deletion is specified but not built yet, so the soft-delete
-			// stamp is written directly. What matters here is only that an
-			// answer behind a deleted report still forces the fork.
-			await database.Reports
-				.IgnoreQueryFilters()
-				.Where(candidate => candidate.Id == report.Id)
-				.ExecuteUpdateAsync(update => update.SetProperty(candidate => candidate.Deleted, At));
-
-			await database.ReportAnswers
-				.IgnoreQueryFilters()
-				.Where(candidate => candidate.ReportId == report.Id)
-				.ExecuteUpdateAsync(update => update.SetProperty(candidate => candidate.Deleted, At));
+			// What matters here is only that an answer behind a deleted report
+			// still forces the fork (issue #82 built the real soft delete).
+			report.SoftDelete(At);
+			await database.SaveChangesAsync();
 		}
 
 		return answer.Id.ToString();

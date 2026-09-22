@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
 using Shouldly;
 
@@ -23,12 +24,13 @@ public class MediaIngestorTests
 		InMemoryBlobStore store,
 		MediaType? sniffed,
 		IExifStripper stripper,
-		long maxByteSize = 1_000_000)
+		long maxByteSize = 1_000_000,
+		IVideoRemuxer? remuxer = null)
 	{
 		return new MediaIngestor(store,
 			new StubMediaSniffer(sniffed),
-			stripper, new RecordingVideoRemuxer(),
-
+			stripper,
+			remuxer ?? new RecordingVideoRemuxer(),
 			new MediaPolicy(maxByteSize, MediaType.All),
 			new FixedClock(Now));
 	}
@@ -55,6 +57,78 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
+	public async Task GivenQuarantinedVideo_WhenRemuxed_ThenDerivativeIsPromotedAndIsNotTheOriginal()
+	{
+		// Given — REQ-MED-007: a video gets a derivative, and never a copy of itself
+		var store = new InMemoryBlobStore();
+		var content = Encoding.ASCII.GetBytes("pretend-mp4-bytes");
+		store.Seed(Quarantined, content);
+		var remuxer = new RecordingVideoRemuxer();
+
+		// When
+		var outcome = await Ingestor(store, MediaType.Mp4, new RecordingExifStripper(), remuxer: remuxer)
+			.Ingest(Quarantined, "video/mp4", CancellationToken.None);
+
+		// Then
+		outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
+		store.Read(outcome.OriginalKey).ShouldBe(content);
+		store.Read(outcome.DerivativeKey).ShouldNotBe(content);
+		remuxer.Invocations.ShouldBe(1);
+	}
+
+	[Fact]
+	public async Task GivenVideoThatCannotBeRemuxed_WhenIngested_ThenOriginalIsRetainedWithoutDerivative()
+	{
+		// Given — REQ-MED-015: the reporter does not lose their footage because
+		// our toolchain could not clean the container
+		var store = new InMemoryBlobStore();
+		var content = Encoding.ASCII.GetBytes("pretend-mov-bytes");
+		store.Seed(Quarantined, content);
+
+		// When
+		var outcome = await Ingestor(
+				store, MediaType.QuickTime, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
+			.Ingest(Quarantined, "video/quicktime", CancellationToken.None);
+
+		// Then — accepted and kept, with nothing a reviewer may be shown inline
+		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
+		outcome.IsAccepted.ShouldBeTrue();
+		store.Read(outcome.OriginalKey).ShouldBe(content);
+		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
+	}
+
+	[Fact]
+	public async Task GivenVideoThatCannotBeRemuxed_WhenIngested_ThenNothingIsWrittenToTheStrippedCompartment()
+	{
+		// Given — a partial write must never be mistaken for a derivative
+		var store = new InMemoryBlobStore();
+		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-mov-bytes"));
+
+		// When
+		await Ingestor(
+				store, MediaType.QuickTime, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
+			.Ingest(Quarantined, "video/quicktime", CancellationToken.None);
+
+		// Then
+		store.Keys.ShouldNotContain(key => key.Contains("/stripped/", StringComparison.Ordinal));
+	}
+
+	[Fact]
+	public async Task GivenQuarantinedVideo_WhenIngested_ThenTheImageStripperIsNeverAsked()
+	{
+		// Given — ADR-0025 and ADR-0094: Magick.NET must not touch video
+		var store = new InMemoryBlobStore();
+		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
+		var stripper = new RecordingExifStripper();
+
+		// When
+		await Ingestor(store, MediaType.Mp4, stripper).Ingest(Quarantined, "video/mp4", CancellationToken.None);
+
+		// Then
+		stripper.Invocations.ShouldBe(0);
+	}
+
+	[Fact]
 	public async Task GivenQuarantinedPhoto_WhenIngested_ThenOutcomeCarriesSniffedTypeSizeAndDigest()
 	{
 		// Given
@@ -74,9 +148,10 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
-	public async Task GivenVideo_WhenIngested_ThenRetainedButNothingIsViewable()
+	public async Task GivenVideoThatCannotBeRemuxed_WhenIngested_ThenRetainedButNothingIsViewable()
 	{
-		// Given
+		// Given — until ADR-0094 no video had a derivative; now only one that
+		// cannot be remuxed is retained this way (REQ-MED-015)
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-mp4-bytes");
 		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
@@ -84,7 +159,8 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Mp4, stripper).Ingest(quarantined, "video/mp4", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Mp4, stripper, remuxer: new RecordingVideoRemuxer(false))
+			.Ingest(quarantined, "video/mp4", CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
@@ -96,19 +172,20 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
-	public async Task GivenVideo_WhenDerivativeIsAskedFor_ThenFailsClosedRatherThanReturningOriginal()
+	public async Task GivenVideoThatCannotBeRemuxed_WhenDerivativeIsAskedFor_ThenFailsClosedRatherThanReturningOriginal()
 	{
-		// Given
+		// Given — a retained video keeps its metadata, so the one thing that must
+		// never happen is falling through to it as though it were a derivative
 		var store = new InMemoryBlobStore();
 		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
 		store.Seed(quarantined, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Mp4, new RecordingExifStripper()).Ingest(quarantined, "video/mp4", CancellationToken.None);
+		var outcome = await Ingestor(
+				store, MediaType.Mp4, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
+			.Ingest(quarantined, "video/mp4", CancellationToken.None);
 
 		// Then
-		// The failure that must never happen is falling through to the unstripped
-		// original. See #65.
 		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
 		store.Keys.ShouldNotContain("dQw4w9WgXcQ/stripped/clip.mp4");
 	}

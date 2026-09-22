@@ -66,7 +66,8 @@ public sealed class MediaIngestOutcome
 	/// <summary>
 	///     Where the stripped derivative lives. Reading this on anything but
 	///     <see cref="MediaIngestStatus.Stripped" /> throws rather than returning a
-	///     key — including for an accepted video, which has no derivative until #65.
+	///     key — including for a document, and for a video whose remux could not
+	///     produce a verified derivative (ADR-0094, REQ-MED-015).
 	///     A caller that asks for something to show a reviewer when there is nothing
 	///     safe to show has a bug worth failing loudly, and falling back to the
 	///     original would be the leak.
@@ -82,7 +83,10 @@ public sealed class MediaIngestOutcome
 		return new MediaIngestOutcome(MediaIngestStatus.Rejected, reason, default, 0, string.Empty, default, default, null);
 	}
 
-	/// <summary>The upload was retained, but this system cannot strip the format yet.</summary>
+	/// <summary>
+	///     The upload was retained with no derivative: a document, which is never
+	///     transformed, or a video whose remux could not produce a verified one.
+	/// </summary>
 	public static MediaIngestOutcome Retained(
 		MediaType contentType,
 		long byteSize,

@@ -210,9 +210,10 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 	}
 
 	[Fact]
-	public async Task GivenVideo_WhenIngested_ThenRetainedAndNoReviewerLinkCanBeIssued()
+	public async Task GivenVideoThatCannotBeRemuxed_WhenIngested_ThenRetainedAndNoReviewerLinkCanBeIssued()
 	{
-		// Given
+		// Given — the remux could not clean it, so the original is kept and there
+		// is still nothing a reviewer may be shown inline (REQ-MED-015)
 		var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
 		await SeedQuarantine(key, ExifFixtures.Mp4(), MediaType.Mp4);
 
@@ -224,7 +225,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		(await ReadAll(outcome.OriginalKey)).ShouldBe(ExifFixtures.Mp4());
 
 		// Fails closed: there is nothing to open, rather than a fall-through to
-		// the unstripped original. See #65.
+		// the unstripped original (ADR-0094).
 		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
 		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(Store).CreateViewUrl(outcome.OriginalKey, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
@@ -292,12 +293,12 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		(await Exists(Quarantined)).ShouldBeTrue();
 	}
 
-	private MediaIngestor Ingestor()
+	private MediaIngestor Ingestor(bool remuxProduces = false)
 	{
 		return new MediaIngestor(Store,
 			MediaSnifferChain.Default(),
 			new MagickNetExifStripper(MediaType.All),
-			new RecordingVideoRemuxer(),
+			new RecordingVideoRemuxer(remuxProduces),
 			new MediaPolicyOptions().ToPolicy(),
 			TimeProvider.System);
 	}

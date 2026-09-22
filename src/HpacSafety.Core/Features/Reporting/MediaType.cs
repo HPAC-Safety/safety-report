@@ -33,7 +33,7 @@ public readonly record struct MediaType
 	/// <summary>MP4. Accepted and retained; no derivative until #65.</summary>
 	public static readonly MediaType Mp4 = new("video/mp4", "mp4", MediaKind.Video);
 
-	/// <summary>QuickTime, an iPhone's video default. Accepted and retained; no derivative until #65.</summary>
+	/// <summary>QuickTime, an iPhone's video default. Remuxed into an MP4 derivative (ADR-0094).</summary>
 	public static readonly MediaType QuickTime = new("video/quicktime", "mov", MediaKind.Video);
 
 	/// <summary>PDF. Accepted, validated, and retained; documents never have a derivative.</summary>
@@ -103,9 +103,16 @@ public readonly record struct MediaType
 
 	/// <summary>
 	///     What this type's stripped derivative is written as, or <see langword="null" />
-	///     when this system cannot strip it yet. HEIC becomes JPEG; every other image
-	///     keeps its own format; video has no answer until #65; a document never has
-	///     one at all — the original is the only record and it is never transformed.
+	///     when this system cannot strip it. HEIC becomes JPEG and every other image
+	///     keeps its own format. A document never has one — the original is the only
+	///     record and it is never transformed.
+	///     <para>
+	///         Video answers null here too, but for a different reason: it is not
+	///         <i>stripped</i>, it is remuxed, and whether that succeeds is known only
+	///         after the attempt (ADR-0094). <see cref="MediaIngestor" /> asks
+	///         <see cref="IVideoRemuxer" /> rather than reading this property, so a
+	///         video that remuxes cleanly does get a derivative.
+	///     </para>
 	/// </summary>
 	public MediaType? StrippedForm =>
 		Kind is MediaKind.Video or MediaKind.Document ? null

@@ -5,9 +5,9 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// Publication consent is the only answer read by name. Every other question,
-/// whatever role an administrator assigns it, is simply recorded — the admin
-/// review DTO reads exact asked questions and answers directly.
+///     Publication consent is the only answer read by name. Every other question,
+///     whatever role an administrator assigns it, is simply recorded — the admin
+///     review DTO reads exact asked questions and answers directly.
 /// </summary>
 public class ProjectionTests
 {

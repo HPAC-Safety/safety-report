@@ -1,31 +1,32 @@
+using System.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace HpacSafety.Infrastructure.Persistence;
 
 /// <summary>
-/// Applies pending migrations idempotently, whichever of the API or the
-/// Worker calls it first after a deploy. See ADR-0055.
+///     Applies pending migrations idempotently, whichever of the API or the
+///     Worker calls it first after a deploy. See ADR-0055.
 /// </summary>
 public static partial class MigrationRunner
 {
     /// <summary>
-    /// A fixed, arbitrary key for the session-level advisory lock that
-    /// serializes migration application. Any two processes calling
-    /// <c>pg_advisory_lock</c> with the same key contend for the same lock,
-    /// regardless of which database session holds it.
+    ///     A fixed, arbitrary key for the session-level advisory lock that
+    ///     serializes migration application. Any two processes calling
+    ///     <c>pg_advisory_lock</c> with the same key contend for the same lock,
+    ///     regardless of which database session holds it.
     /// </summary>
     private const long AdvisoryLockKey = 725_318_004_411;
 
     /// <summary>
-    /// Takes a PostgreSQL advisory lock, then applies any migration still
-    /// pending once the lock is held.
+    ///     Takes a PostgreSQL advisory lock, then applies any migration still
+    ///     pending once the lock is held.
     /// </summary>
     /// <remarks>
-    /// Pending migrations are checked only after the advisory lock is held,
-    /// not before — a caller that blocked waiting for the lock may find the
-    /// migration that was pending when it started already applied by whoever
-    /// held the lock first, and this avoids doing that work twice.
+    ///     Pending migrations are checked only after the advisory lock is held,
+    ///     not before — a caller that blocked waiting for the lock may find the
+    ///     migration that was pending when it started already applied by whoever
+    ///     held the lock first, and this avoids doing that work twice.
     /// </remarks>
     /// <param name="context">The context whose schema is migrated.</param>
     /// <param name="logger">Where the outcome is logged.</param>
@@ -39,12 +40,9 @@ public static partial class MigrationRunner
         ArgumentNullException.ThrowIfNull(logger);
 
         var connection = context.Database.GetDbConnection();
-        var wasClosed = connection.State != System.Data.ConnectionState.Open;
+        var wasClosed = connection.State != ConnectionState.Open;
 
-        if (wasClosed)
-        {
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-        }
+        if (wasClosed) await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -85,10 +83,7 @@ public static partial class MigrationRunner
         }
         finally
         {
-            if (wasClosed)
-            {
-                await connection.CloseAsync().ConfigureAwait(false);
-            }
+            if (wasClosed) await connection.CloseAsync().ConfigureAwait(false);
         }
     }
 

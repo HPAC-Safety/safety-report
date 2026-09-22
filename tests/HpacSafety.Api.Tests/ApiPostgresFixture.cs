@@ -8,21 +8,21 @@ using Testcontainers.PostgreSql;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// One PostgreSQL 17 container and one <see cref="WebApplicationFactory{TEntryPoint}"/>
-/// shared across every test in the collection. The API migrates the container
-/// itself at startup (<c>HpacSafetyDbContext.EnsureMigratedAsync</c>, ADR-0055),
-/// so booting the factory at all proves that path works.
+///     One PostgreSQL 17 container and one <see cref="WebApplicationFactory{TEntryPoint}" />
+///     shared across every test in the collection. The API migrates the container
+///     itself at startup (<c>HpacSafetyDbContext.EnsureMigratedAsync</c>, ADR-0055),
+///     so booting the factory at all proves that path works.
 /// </summary>
 public sealed class ApiPostgresFixture : IAsyncLifetime
 {
-    // Pinned rather than floating on `latest` — see PostgresContainerTests.
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
-
     /// <summary>
-    /// The signing key the booted API issues and validates development tokens
-    /// with. Long enough to satisfy the minimum the host enforces at startup.
+    ///     The signing key the booted API issues and validates development tokens
+    ///     with. Long enough to satisfy the minimum the host enforces at startup.
     /// </summary>
     public const string SigningKey = "hpac-safety-api-test-signing-key-not-a-secret";
+
+    // Pinned rather than floating on `latest` — see PostgresContainerTests.
+    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
     /// <summary>The API, booted in process against the container above.</summary>
     public WebApplicationFactory<Program> Factory { get; private set; } = null!;
@@ -49,25 +49,28 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 }
 
 /// <summary>
-/// Signs a test client in by asking the booted API for a real token.
+///     Signs a test client in by asking the booted API for a real token.
 /// </summary>
 /// <remarks>
-/// Deliberately not a faked <c>ClaimsPrincipal</c> or a test authentication
-/// handler: the token is minted by the host and then validated by the same
-/// middleware production runs, so a test exercises signature verification,
-/// issuer and audience checks, expiry, claim extraction, and policy evaluation
-/// rather than trusting a stub. See ADR-0066.
+///     Deliberately not a faked <c>ClaimsPrincipal</c> or a test authentication
+///     handler: the token is minted by the host and then validated by the same
+///     middleware production runs, so a test exercises signature verification,
+///     issuer and audience checks, expiry, claim extraction, and policy evaluation
+///     rather than trusting a stub. See ADR-0066.
 /// </remarks>
 public static class SignedInClient
 {
     /// <summary>The development credential pair for each role.</summary>
-    public static (string Username, string Password) CredentialsFor(MemberRole role) => role switch
+    public static (string Username, string Password) CredentialsFor(MemberRole role)
     {
-        MemberRole.Administrator => ("admin", "admin"),
-        MemberRole.SafetyOfficer => ("officer", "officer"),
-        MemberRole.User => ("user", "user"),
-        _ => throw new ArgumentOutOfRangeException(nameof(role)),
-    };
+        return role switch
+        {
+            MemberRole.Administrator => ("admin", "admin"),
+            MemberRole.SafetyOfficer => ("officer", "officer"),
+            MemberRole.User => ("user", "user"),
+            _ => throw new ArgumentOutOfRangeException(nameof(role))
+        };
+    }
 
     /// <summary>Asks the booted API for a signed token in that role.</summary>
     public static async Task<string> TokenForAsync(WebApplicationFactory<Program> factory, MemberRole role)

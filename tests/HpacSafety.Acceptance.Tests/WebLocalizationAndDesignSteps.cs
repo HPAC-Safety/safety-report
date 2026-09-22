@@ -1,5 +1,6 @@
 using System.Diagnostics;
-using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Reqnroll;
 using Shouldly;
@@ -15,6 +16,52 @@ namespace HpacSafety.Acceptance.Tests;
 [Binding]
 public sealed class WebLocalizationAndDesignSteps
 {
+    private static void RunNodeTool(string relativeScriptPath)
+    {
+        RunNodeTool(relativeScriptPath, true);
+    }
+
+    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, params string[] args)
+    {
+        return RunNodeTool(relativeScriptPath, expectSuccess, out _, args);
+    }
+
+    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, out string combinedOutput, params string[] args)
+    {
+        var repositoryRoot = RepositoryRoot();
+
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo("node")
+            {
+                WorkingDirectory = repositoryRoot,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            }
+        };
+        process.StartInfo.ArgumentList.Add(relativeScriptPath);
+        foreach (var arg in args) process.StartInfo.ArgumentList.Add(arg);
+
+        process.Start();
+        var output = process.StandardOutput.ReadToEnd();
+        var error = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+
+        combinedOutput = $"{output}\n{error}";
+
+        if (expectSuccess) process.ExitCode.ShouldBe(0, $"{relativeScriptPath} failed:\n{output}\n{error}");
+
+        return process.ExitCode;
+    }
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx"))) directory = directory.Parent;
+
+        return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
+    }
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
     [Given(@"the UI renders chrome or a stable validation\/error message")]
@@ -63,7 +110,7 @@ public sealed class WebLocalizationAndDesignSteps
     [When(@"the local build runs, or a commit is made that stages a locales\/ file")]
     public void WhenTheStubberRuns()
     {
-        RunNodeTool("tools/stub-missing-translations.mjs", expectSuccess: true, "--locales", _localesDir);
+        RunNodeTool("tools/stub-missing-translations.mjs", true, "--locales", _localesDir);
 
         // The commit half of that sentence. Running git here would prove
         // little that the hook's own three verified cases do not already
@@ -98,7 +145,7 @@ public sealed class WebLocalizationAndDesignSteps
     [Then(@"a key still carrying that # marker fails locale verification, so it can never reach main untranslated")]
     public void ThenAStubbedKeyFailsVerification()
     {
-        var exitCode = RunNodeTool("tools/translate-locale.mjs", expectSuccess: false, "--check", "--locales", _localesDir);
+        var exitCode = RunNodeTool("tools/translate-locale.mjs", false, "--check", "--locales", _localesDir);
         exitCode.ShouldNotBe(0);
     }
 
@@ -109,8 +156,8 @@ public sealed class WebLocalizationAndDesignSteps
     private string _verifyOutput = string.Empty;
 
     /// <summary>
-    /// A locale set as a real generate would leave it: both hashes stamped, so
-    /// a later edit to either side is visible.
+    ///     A locale set as a real generate would leave it: both hashes stamped, so
+    ///     a later edit to either side is visible.
     /// </summary>
     private void WriteCorrectionFixture(string english, string french, string stampedEnglish, string stampedFrench)
     {
@@ -132,34 +179,40 @@ public sealed class WebLocalizationAndDesignSteps
                     source_hash = Sha256(stampedEnglish),
                     target_hash = Sha256(stampedFrench),
                     provider = "deepl:FR-CA:prefer_more",
-                    reviewed = false,
-                },
+                    reviewed = false
+                }
             }));
     }
 
     [Given(@"a French value is edited by hand and its English is unchanged")]
-    public void GivenAFrenchValueEditedByHand() =>
+    public void GivenAFrenchValueEditedByHand()
+    {
         // Stamped against "Nous joindre"; the file now says something else.
         WriteCorrectionFixture(
-            english: "Contact us", french: "Joignez-nous",
-            stampedEnglish: "Contact us", stampedFrench: "Nous joindre");
+            "Contact us", "Joignez-nous",
+            "Contact us", "Nous joindre");
+    }
 
     [Given(@"a key is edited in both en-CA\.json and fr-CA\.json")]
-    public void GivenBothLanguagesEdited() =>
+    public void GivenBothLanguagesEdited()
+    {
         WriteCorrectionFixture(
-            english: "Get in touch", french: "Joignez-nous",
-            stampedEnglish: "Contact us", stampedFrench: "Nous joindre");
+            "Get in touch", "Joignez-nous",
+            "Contact us", "Nous joindre");
+    }
 
     [When(@"the locales are verified")]
-    public void WhenTheLocalesAreVerified() =>
+    public void WhenTheLocalesAreVerified()
+    {
         _verifyExitCode = RunNodeTool(
             "tools/translate-locale.mjs",
-            expectSuccess: false,
+            false,
             out _verifyOutput,
             "--check",
             "--locales",
             _correctionDir,
             "--allow-pending-translation");
+    }
 
     [Then(@"the edit is accepted as a human correction")]
     public void ThenAcceptedAsACorrection()
@@ -189,59 +242,10 @@ public sealed class WebLocalizationAndDesignSteps
         french.ShouldContain("Joignez-nous");
     }
 
-    private static string Sha256(string value) =>
-        Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(value)));
+    private static string Sha256(string value)
+    {
+        return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
+    }
 
 #pragma warning restore CA1822
-
-    private static void RunNodeTool(string relativeScriptPath) => RunNodeTool(relativeScriptPath, expectSuccess: true);
-
-    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, params string[] args) =>
-        RunNodeTool(relativeScriptPath, expectSuccess, out _, args);
-
-    private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, out string combinedOutput, params string[] args)
-    {
-        var repositoryRoot = RepositoryRoot();
-
-        using var process = new Process
-        {
-            StartInfo = new ProcessStartInfo("node")
-            {
-                WorkingDirectory = repositoryRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
-        };
-        process.StartInfo.ArgumentList.Add(relativeScriptPath);
-        foreach (var arg in args)
-        {
-            process.StartInfo.ArgumentList.Add(arg);
-        }
-
-        process.Start();
-        var output = process.StandardOutput.ReadToEnd();
-        var error = process.StandardError.ReadToEnd();
-        process.WaitForExit();
-
-        combinedOutput = $"{output}\n{error}";
-
-        if (expectSuccess)
-        {
-            process.ExitCode.ShouldBe(0, $"{relativeScriptPath} failed:\n{output}\n{error}");
-        }
-
-        return process.ExitCode;
-    }
-
-    private static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
-        {
-            directory = directory.Parent;
-        }
-
-        return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
-    }
 }

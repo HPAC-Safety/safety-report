@@ -4,15 +4,15 @@ namespace HpacSafety.Core.Features.Reporting;
 public sealed record SummarizationField(string QuestionKey, string Label, string Value);
 
 /// <summary>
-/// An answer paired with the immutable privacy classification copied from its
-/// question when the report was submitted.
+///     An answer paired with the immutable privacy classification copied from its
+///     question when the report was submitted.
 /// </summary>
 public sealed record ClassifiedReportField(SummarizationField Field, bool IsPrivate);
 
 /// <summary>
-/// The only input shape accepted by a summarizer. Report content supplies facts
-/// for the summary; private context supplies redaction hints and must not be
-/// restated as facts.
+///     The only input shape accepted by a summarizer. Report content supplies facts
+///     for the summary; private context supplies redaction hints and must not be
+///     restated as facts.
 /// </summary>
 public sealed class SummarizationInput
 {

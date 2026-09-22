@@ -1,19 +1,16 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Translation;
-
 using Microsoft.Extensions.Options;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Translation;
 
 /// <summary>
-/// The DeepL adapter, against a stubbed transport. Nothing here reaches the
-/// network, and no real credential is used.
+///     The DeepL adapter, against a stubbed transport. Nothing here reaches the
+///     network, and no real credential is used.
 /// </summary>
 public class DeepLTranslatorTests
 {
@@ -161,7 +158,7 @@ public class DeepLTranslatorTests
         var (translator, _) = Translator(new StubTransport(
             new HttpResponseMessage(HttpStatusCode.Forbidden)
             {
-                Content = new StringContent("{\"message\":\"Wrong endpoint. Use api-free. Text: Were you injured?\"}"),
+                Content = new StringContent("{\"message\":\"Wrong endpoint. Use api-free. Text: Were you injured?\"}")
             }));
 
         // When
@@ -196,7 +193,7 @@ public class DeepLTranslatorTests
         var (translator, _) = Translator(new StubTransport(
             new HttpResponseMessage(HttpStatusCode.OK)
             {
-                Content = new StringContent("{}", Encoding.UTF8, "application/json"),
+                Content = new StringContent("{}", Encoding.UTF8, "application/json")
             }));
 
         // When / Then
@@ -221,7 +218,7 @@ public class DeepLTranslatorTests
     {
         // Given — DeepL marks free keys with ':fx' and serves the tiers from
         // different hosts; getting this wrong is a 403 that reads like a bad key
-        var (translator, transport) = Translator(Responds("Un"), apiKey: "abc:fx");
+        var (translator, transport) = Translator(Responds("Un"), "abc:fx");
 
         // When
         await translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
@@ -234,7 +231,7 @@ public class DeepLTranslatorTests
     public async Task GivenPaidKey_WhenTranslationIsRequested_ThenPaidHostIsUsed()
     {
         // Given
-        var (translator, transport) = Translator(Responds("Un"), apiKey: "abc");
+        var (translator, transport) = Translator(Responds("Un"), "abc");
 
         // When
         await translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
@@ -272,14 +269,16 @@ public class DeepLTranslatorTests
         authorization.Parameter.ShouldBe(Key);
     }
 
-    private static StubTransport Responds(params string[] translations) =>
-        new(new HttpResponseMessage(HttpStatusCode.OK)
+    private static StubTransport Responds(params string[] translations)
+    {
+        return new StubTransport(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StringContent(
                 JsonSerializer.Serialize(new { translations = translations.Select(text => new { text }) }),
                 Encoding.UTF8,
-                "application/json"),
+                "application/json")
         });
+    }
 
     private static (DeepLTranslator Translator, StubTransport Transport) Translator(
         StubTransport? transport = null, string? apiKey = Key, string? endpoint = null)
@@ -289,7 +288,7 @@ public class DeepLTranslatorTests
         var options = Options.Create(new DeepLOptions
         {
             ApiKey = apiKey,
-            Endpoint = endpoint,
+            Endpoint = endpoint
         });
 
         return (new DeepLTranslator(new StubClientFactory(transport), options), transport);
@@ -298,27 +297,33 @@ public class DeepLTranslatorTests
     /// <summary>Captures what was sent and replays a canned response.</summary>
     private sealed class StubTransport : HttpMessageHandler
     {
-        private readonly HttpResponseMessage? _response;
-        private readonly Exception? _failure;
         private readonly List<string> _bodies = [];
+        private readonly Exception? _failure;
+        private readonly HttpResponseMessage? _response;
 
-        public StubTransport(HttpResponseMessage response) => _response = response;
+        public StubTransport(HttpResponseMessage response)
+        {
+            _response = response;
+        }
 
-        public StubTransport(Exception failure) => _failure = failure;
+        public StubTransport(Exception failure)
+        {
+            _failure = failure;
+        }
 
         public List<HttpRequestMessage> Requests { get; } = [];
 
-        public JsonElement LastBody() => JsonDocument.Parse(_bodies[^1]).RootElement;
+        public JsonElement LastBody()
+        {
+            return JsonDocument.Parse(_bodies[^1]).RootElement;
+        }
 
         protected override async Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add(request);
 
-            if (request.Content is not null)
-            {
-                _bodies.Add(await request.Content.ReadAsStringAsync(cancellationToken));
-            }
+            if (request.Content is not null) _bodies.Add(await request.Content.ReadAsStringAsync(cancellationToken));
 
             return _failure is not null ? throw _failure : _response!;
         }
@@ -326,6 +331,9 @@ public class DeepLTranslatorTests
 
     private sealed class StubClientFactory(HttpMessageHandler handler) : IHttpClientFactory
     {
-        public HttpClient CreateClient(string name) => new(handler, disposeHandler: false);
+        public HttpClient CreateClient(string name)
+        {
+            return new HttpClient(handler, false);
+        }
     }
 }

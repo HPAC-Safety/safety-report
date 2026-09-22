@@ -5,9 +5,9 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// The edges of editing a question bank: retired questions, roles moving
-/// between questions, duplicate options, and answers that do not fit the type
-/// they were given for.
+///     The edges of editing a question bank: retired questions, roles moving
+///     between questions, duplicate options, and answers that do not fit the type
+///     they were given for.
 /// </summary>
 public class QuestionBankEdgeTests
 {
@@ -95,7 +95,7 @@ public class QuestionBankEdgeTests
             options:
             [
                 new QuestionOptionInput("morning", "Morning", "Matin"),
-                new QuestionOptionInput("Morning", "Morning again", "Encore le matin"),
+                new QuestionOptionInput("Morning", "Morning again", "Encore le matin")
             ]);
 
         // Then — the code is normalized before the duplicate check
@@ -124,7 +124,7 @@ public class QuestionBankEdgeTests
             options:
             [
                 new QuestionOptionInput("evening", "Evening", "Soirée"),
-                new QuestionOptionInput("morning", "Morning", "Matin"),
+                new QuestionOptionInput("morning", "Morning", "Matin")
             ]);
 
         // Then

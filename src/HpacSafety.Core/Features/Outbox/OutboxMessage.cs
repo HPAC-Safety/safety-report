@@ -1,10 +1,9 @@
-
 namespace HpacSafety.Core.Features.Outbox;
 
 /// <summary>
-/// Work to be done, written in the same transaction as the report that caused
-/// it. Summarization rides this — there is no "save, then notify", because that
-/// loses reports whenever the process dies between the two.
+///     Work to be done, written in the same transaction as the report that caused
+///     it. Summarization rides this — there is no "save, then notify", because that
+///     loses reports whenever the process dies between the two.
 /// </summary>
 public class OutboxMessage
 {
@@ -43,8 +42,8 @@ public class OutboxMessage
     public OutboxMessageType Type { get; private init; }
 
     /// <summary>
-    /// The message body. Identifiers only, never report content — an outbox row
-    /// is read by logs and operators. See docs/data-handling.md.
+    ///     The message body. Identifiers only, never report content — an outbox row
+    ///     is read by logs and operators. See docs/data-handling.md.
     /// </summary>
     public string Payload { get; private init; }
 
@@ -83,9 +82,9 @@ public class OutboxMessage
     }
 
     /// <summary>
-    /// Records a failure, backing off exponentially and moving the message aside
-    /// once it crosses <see cref="PoisonThreshold"/> rather than retrying it
-    /// forever.
+    ///     Records a failure, backing off exponentially and moving the message aside
+    ///     once it crosses <see cref="PoisonThreshold" /> rather than retrying it
+    ///     forever.
     /// </summary>
     public void RecordFailure(string error, DateTimeOffset at)
     {
@@ -101,7 +100,9 @@ public class OutboxMessage
         NextAttemptAt = at + BackoffFor(Attempts);
     }
 
-    /// <summary>The delay before attempt <paramref name="attempts"/> + 1.</summary>
-    public static TimeSpan BackoffFor(int attempts) =>
-        TimeSpan.FromSeconds(Math.Pow(2, Math.Clamp(attempts, 1, 10)));
+    /// <summary>The delay before attempt <paramref name="attempts" /> + 1.</summary>
+    public static TimeSpan BackoffFor(int attempts)
+    {
+        return TimeSpan.FromSeconds(Math.Pow(2, Math.Clamp(attempts, 1, 10)));
+    }
 }

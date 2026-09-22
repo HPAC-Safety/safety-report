@@ -3,8 +3,8 @@ using HpacSafety.Core.Features.Reporting;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// Stands in for the real stripper. It writes a marker rather than an image, so
-/// a test can tell the derivative apart from the original without decoding it.
+///     Stands in for the real stripper. It writes a marker rather than an image, so
+///     a test can tell the derivative apart from the original without decoding it.
 /// </summary>
 internal sealed class RecordingExifStripper : IExifStripper
 {

@@ -1,13 +1,12 @@
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Persistence.Seeding;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Seeding;
 
 /// <summary>
-/// Seeded identifiers have to be the same on every database the migration is
-/// applied to, and the same again in a generated SQL script.
+///     Seeded identifiers have to be the same on every database the migration is
+///     applied to, and the same again in a generated SQL script.
 /// </summary>
 public sealed class SeedIdsTests
 {
@@ -67,10 +66,7 @@ public sealed class SeedIdsTests
             ids.Add(SeedIds.For($"question:{question.Key}"));
             ids.Add(SeedIds.For($"question_version:{question.Key}:1"));
 
-            foreach (var option in question.Options)
-            {
-                ids.Add(SeedIds.For($"question_option:{question.Key}:{option.Code}"));
-            }
+            foreach (var option in question.Options) ids.Add(SeedIds.For($"question_option:{question.Key}:{option.Code}"));
         }
 
         // Then

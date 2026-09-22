@@ -1,22 +1,19 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-
 using HpacSafety.Core.Features.Moderation;
-
 using Microsoft.AspNetCore.Mvc.Testing;
-
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// The admin question-authoring endpoints, against a real PostgreSQL container.
+///     The admin question-authoring endpoints, against a real PostgreSQL container.
 /// </summary>
 /// <remarks>
-/// Every question here is synthetic. The question bank is form definition, not
-/// report content, so nothing in these tests touches a report, an answer, or
-/// anything a reporter wrote.
+///     Every question here is synthetic. The question bank is form definition, not
+///     report content, so nothing in these tests touches a report, an answer, or
+///     anything a reporter wrote.
 /// </remarks>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -92,7 +89,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         // When
         var child = Draft(UniqueKey("glider_detail"), "long_text") with
         {
-            DependsOnQuestionId = parent.GetProperty("id").GetString(),
+            DependsOnQuestionId = parent.GetProperty("id").GetString()
         };
 
         using var response = await client.PostAsJsonAsync(Questions, child);
@@ -120,17 +117,19 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         created.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
     }
 
-    private static async Task<JsonElement> CreatePilotTypeAsync(HttpClient client) =>
-        await CreateAsync(
+    private static async Task<JsonElement> CreatePilotTypeAsync(HttpClient client)
+    {
+        return await CreateAsync(
             client,
             Draft(UniqueKey("pilot_type"), "single_select") with
             {
                 Options =
                 [
                     new Option("hang_glider", "Hang glider", "Deltaplane"),
-                    new Option("paraglider", "Paraglider", "Parapente"),
-                ],
+                    new Option("paraglider", "Paraglider", "Parapente")
+                ]
             });
+    }
 
     [Fact]
     public async Task GivenSingleSelectQuestion_WhenAnotherDependsOnItsOption_ThenDependencyIsStored()
@@ -144,7 +143,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         var child = Draft(UniqueKey("rating"), "short_text") with
         {
             DependsOnQuestionId = parentId,
-            DependsOnOptionCode = "hang_glider",
+            DependsOnOptionCode = "hang_glider"
         };
         var created = await CreateAsync(client, child);
 
@@ -164,7 +163,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         var child = Draft(UniqueKey("rating"), "short_text") with
         {
             DependsOnQuestionId = parent.GetProperty("id").GetString(),
-            DependsOnOptionCode = "trike",
+            DependsOnOptionCode = "trike"
         };
         using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -185,7 +184,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         // When
         var child = Draft(UniqueKey("rating"), "short_text") with
         {
-            DependsOnQuestionId = parent.GetProperty("id").GetString(),
+            DependsOnQuestionId = parent.GetProperty("id").GetString()
         };
         using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -203,7 +202,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         // When
         var question = Draft(UniqueKey("launch_site"), "autocomplete") with
         {
-            OptionSetId = set.GetProperty("id").GetString(),
+            OptionSetId = set.GetProperty("id").GetString()
         };
 
         var created = await CreateAsync(client, question);
@@ -445,10 +444,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         var listed = await ListAsync(client);
         var consent = listed.FirstOrDefault(question => question.GetProperty("isSystem").GetBoolean());
 
-        if (consent.ValueKind == JsonValueKind.Undefined)
-        {
-            return; // No seeded consent question in this database; nothing to assert.
-        }
+        if (consent.ValueKind == JsonValueKind.Undefined) return; // No seeded consent question in this database; nothing to assert.
 
         // When
         var id = consent.GetProperty("id").GetString();
@@ -637,7 +633,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
             [
                 new Option("alberta", "Alberta", "Alberta"),
                 new Option("yukon", "Yukon", "Yukon"),
-                new Option("mount_7", "Mount 7", "Mont 7"),
+                new Option("mount_7", "Mount 7", "Mont 7")
             ]);
 
         using var replaced = await client.PutAsJsonAsync(
@@ -648,8 +644,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         // Then the question offers it, while its revision still records what
         // it was saved with
         var listed = await ListAsync(client);
-        var question = listed.Single(
-            candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
+        var question = listed.Single(candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
 
         question.GetProperty("options").EnumerateArray()
             .Select(option => option.GetProperty("code").GetString())
@@ -679,7 +674,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
             [
                 new Option("alberta", "Alberta", "Alberta"),
                 new Option("yukon", "Yukon", "Yukon"),
-                new Option("nunavut", "Nunavut", "Nunavut"),
+                new Option("nunavut", "Nunavut", "Nunavut")
             ]);
 
         using var replaced = await client.PutAsJsonAsync(
@@ -689,8 +684,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
         // Then
         var listed = await ListAsync(client);
-        var question = listed.Single(
-            candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
+        var question = listed.Single(candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
 
         question.GetProperty("options").EnumerateArray()
             .Select(option => option.GetProperty("code").GetString())
@@ -713,8 +707,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
             .ShouldAllBe(item => !item.GetProperty("addedByReporter").GetBoolean());
     }
 
-    private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator) =>
-        SignedInClient.AsAsync(_factory, role);
+    private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+    {
+        return SignedInClient.AsAsync(_factory, role);
+    }
 
     private static string UniqueKey(string prefix)
     {
@@ -722,9 +718,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
         return key[..Math.Min(key.Length, 40)];
     }
 
-    private static SaveQuestion Draft(string key, string type) =>
-        new(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
-            IsRequired: false, IsPrivate: true, IsActive: true, null, null, null, []);
+    private static SaveQuestion Draft(string key, string type)
+    {
+        return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
+            false, true, true, null, null, null, []);
+    }
 
     private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
     {

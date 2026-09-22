@@ -12,11 +12,11 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// The explicit, tested rules <c>MigrateCanonicalDomainAndPersistence</c>
-/// applies to data written under the schema it replaces: complete a question
-/// revision missing its French counterpart from the English wording, and
-/// collapse two per-language summary rows into one bilingual row, approved
-/// only when both languages were.
+///     The explicit, tested rules <c>MigrateCanonicalDomainAndPersistence</c>
+///     applies to data written under the schema it replaces: complete a question
+///     revision missing its French counterpart from the English wording, and
+///     collapse two per-language summary rows into one bilingual row, approved
+///     only when both languages were.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]
@@ -55,7 +55,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
         // When
         await using (var context = PostgresFixture.ContextFor(connectionString))
         {
-            await MigrateToAsync(context, targetMigration: null);
+            await MigrateToAsync(context, null);
         }
 
         // Then
@@ -96,7 +96,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
         // When
         await using (var context = PostgresFixture.ContextFor(connectionString))
         {
-            await MigrateToAsync(context, targetMigration: null);
+            await MigrateToAsync(context, null);
         }
 
         // Then
@@ -141,7 +141,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
         // When
         await using (var context = PostgresFixture.ContextFor(connectionString))
         {
-            await MigrateToAsync(context, targetMigration: null);
+            await MigrateToAsync(context, null);
         }
 
         // Then
@@ -195,7 +195,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
         try
         {
             await using var context = PostgresFixture.ContextFor(connectionString);
-            await MigrateToAsync(context, targetMigration: null);
+            await MigrateToAsync(context, null);
         }
         finally
         {
@@ -242,7 +242,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
         // When
         await using (var context = PostgresFixture.ContextFor(connectionString))
         {
-            await MigrateToAsync(context, targetMigration: null);
+            await MigrateToAsync(context, null);
         }
 
         // Then
@@ -254,9 +254,9 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
     }
 
     /// <summary>
-    /// Reproduces the stored format the now-deleted AesGcmFieldCipher wrote —
-    /// "v1." + base64(nonce[12] || tag[16] || ciphertext) — purely to build a
-    /// legacy fixture. Does not reintroduce the deleted cipher.
+    ///     Reproduces the stored format the now-deleted AesGcmFieldCipher wrote —
+    ///     "v1." + base64(nonce[12] || tag[16] || ciphertext) — purely to build a
+    ///     legacy fixture. Does not reintroduce the deleted cipher.
     /// </summary>
     private static string EncryptLegacyV1(string plaintext, string keyBase64)
     {

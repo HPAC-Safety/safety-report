@@ -1,17 +1,15 @@
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence.Seeding;
-
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Migrations.Operations;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Seeding;
 
 /// <summary>
-/// The guarded-insert SQL this writer builds, exercised against a synthetic
-/// question rather than <see cref="QuestionBankSeed"/> — which seeds nothing
-/// right now (see its remarks) and so cannot exercise this on its own.
+///     The guarded-insert SQL this writer builds, exercised against a synthetic
+///     question rather than <see cref="QuestionBankSeed" /> — which seeds nothing
+///     right now (see its remarks) and so cannot exercise this on its own.
 /// </summary>
 public sealed class QuestionBankSeedWriterTests
 {
@@ -19,24 +17,26 @@ public sealed class QuestionBankSeedWriterTests
         "sample_question",
         QuestionType.SingleSelect,
         QuestionRole.None,
-        IsPrivate: true,
-        IsRequired: false,
-        IsSystem: false,
+        true,
+        false,
+        false,
         "Sample question",
         "Question exemple",
         "Some help",
         "Une certaine aide",
         [new SeededOption("a", "Option A", "Option A (fr)")]);
 
-    /// <summary>Not private, and with no help text — the other side of both
-    /// ternaries <see cref="Question"/> alone leaves untouched.</summary>
+    /// <summary>
+    ///     Not private, and with no help text — the other side of both
+    ///     ternaries <see cref="Question" /> alone leaves untouched.
+    /// </summary>
     private static readonly SeededQuestion NonPrivateQuestionWithNoHelp = new(
         "another_question",
         QuestionType.ShortText,
         QuestionRole.None,
-        IsPrivate: false,
-        IsRequired: false,
-        IsSystem: false,
+        false,
+        false,
+        false,
         "Another question",
         "Une autre question",
         null,
@@ -100,7 +100,7 @@ public sealed class QuestionBankSeedWriterTests
     [Fact]
     public void GivenSeededQuestions_WhenWrittenAgainstLegacySensitivitySchema_ThenUsesSensitivityNotPrivacyFlag()
     {
-        var sql = QuestionBankSeedWriter.Sql([Question, NonPrivateQuestionWithNoHelp], legacySensitivitySchema: true);
+        var sql = QuestionBankSeedWriter.Sql([Question, NonPrivateQuestionWithNoHelp], true);
 
         sql.ShouldContain("'restricted'");
         sql.ShouldContain("'publishable'");

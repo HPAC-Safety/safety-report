@@ -1,14 +1,13 @@
 using HpacSafety.Core.Features.QuestionBank;
 using Microsoft.EntityFrameworkCore;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Shared choice lists, and the property the whole design exists for: a
-/// revision built from one keeps its own copy whatever later happens to the
-/// list. See ADR-0058.
+///     Shared choice lists, and the property the whole design exists for: a
+///     revision built from one keeps its own copy whatever later happens to the
+///     list. See ADR-0058.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]
@@ -214,5 +213,8 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
         loaded.Items.ShouldAllBe(item => !item.AddedByReporter);
     }
 
-    private static string UniqueKey(string prefix) => $"{prefix}_{Guid.NewGuid():N}"[..24];
+    private static string UniqueKey(string prefix)
+    {
+        return $"{prefix}_{Guid.NewGuid():N}"[..24];
+    }
 }

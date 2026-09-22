@@ -3,24 +3,21 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Security.Claims;
 using System.Text;
-
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core.Features.Moderation;
-
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.IdentityModel.Tokens;
-
 using Shouldly;
 
 namespace HpacSafety.Api.Tests.Authentication;
 
 /// <summary>
-/// The development token is genuinely <em>validated</em>, not merely minted.
+///     The development token is genuinely <em>validated</em>, not merely minted.
 /// </summary>
 /// <remarks>
-/// This is the suite that earns ADR-0066's claim. Every case below is refused
-/// by the same middleware and the same validation parameters a production
-/// deployment runs — only the issuer and the key differ.
+///     This is the suite that earns ADR-0066's claim. Every case below is refused
+///     by the same middleware and the same validation parameters a production
+///     deployment runs — only the issuer and the key differ.
 /// </remarks>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -64,7 +61,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
     public async Task GivenTokenSignedWithUnknownKey_WhenPresented_ThenApiRefuses()
     {
         // Given — correctly shaped, correctly issued, wrong key
-        var forged = Forge(key: "a-completely-different-signing-key-entirely");
+        var forged = Forge("a-completely-different-signing-key-entirely");
 
         // When
         using var client = SignedInClient.Bearing(_factory, forged);
@@ -141,8 +138,8 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
         // Given — the classic downgrade: claims intact, signature removed
         var header = Base64Url("""{"alg":"none","typ":"JWT"}""");
         var payload = Base64Url($$"""
-            {"sub":"dev:admin","aud":"hpac-safety-api","iss":"{{DevelopmentTokenIssuer.IssuerName}}","roles":"administrator","exp":{{DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds()}}}
-            """);
+                                  {"sub":"dev:admin","aud":"hpac-safety-api","iss":"{{DevelopmentTokenIssuer.IssuerName}}","roles":"administrator","exp":{{DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds()}}}
+                                  """);
         var unsigned = $"{header}.{payload}.";
 
         // When
@@ -193,7 +190,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
         [
             new Claim("name", "A Synthetic Person"),
             new Claim("email", "synthetic@example.test"),
-            new Claim("picture", "https://example.test/avatar.png"),
+            new Claim("picture", "https://example.test/avatar.png")
         ]);
 
         // When
@@ -209,12 +206,14 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
         body.ShouldNotContain("avatar.png");
     }
 
-    private static string Base64Url(string value) =>
-        Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    private static string Base64Url(string value)
+    {
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes(value)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
 
     /// <summary>
-    /// Builds a token this API would otherwise accept, varying exactly one
-    /// thing so each test names the single reason it is refused.
+    ///     Builds a token this API would otherwise accept, varying exactly one
+    ///     thing so each test names the single reason it is refused.
     /// </summary>
     private static string Forge(
         string key = ApiPostgresFixture.SigningKey,
@@ -228,22 +227,19 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
     {
         var claims = new List<Claim> { new(JwtRegisteredClaimNames.Sub, "dev:admin") };
 
-        foreach (var value in roles ?? (role is null ? [] : new[] { role }))
-        {
-            claims.Add(new Claim("roles", value));
-        }
+        foreach (var value in roles ?? (role is null ? [] : new[] { role })) claims.Add(new Claim("roles", value));
 
         claims.AddRange(extra ?? []);
 
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
+            issuer,
+            audience,
+            claims,
             // JwtSecurityToken wants DateTime. Convert at this boundary and
             // never carry one past it (ADR-0035).
-            notBefore: (notBefore ?? DateTimeOffset.UtcNow.AddMinutes(-1)).UtcDateTime,
-            expires: (expires ?? DateTimeOffset.UtcNow.AddHours(1)).UtcDateTime,
-            signingCredentials: new SigningCredentials(
+            (notBefore ?? DateTimeOffset.UtcNow.AddMinutes(-1)).UtcDateTime,
+            (expires ?? DateTimeOffset.UtcNow.AddHours(1)).UtcDateTime,
+            new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256));
 
         return new JwtSecurityTokenHandler().WriteToken(token);

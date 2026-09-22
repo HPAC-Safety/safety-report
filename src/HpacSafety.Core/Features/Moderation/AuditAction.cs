@@ -1,9 +1,8 @@
-
 namespace HpacSafety.Core.Features.Moderation;
 
 /// <summary>
-/// The moderation actions written to the audit log. In a non-punitive reporting
-/// system, being able to show who saw what is part of keeping the promise.
+///     The moderation actions written to the audit log. In a non-punitive reporting
+///     system, being able to show who saw what is part of keeping the promise.
 /// </summary>
 public enum AuditAction
 {
@@ -17,5 +16,5 @@ public enum AuditAction
     RevisedQuestion = 11,
     ReorderedQuestions = 12,
     DeactivatedQuestion = 13,
-    DeletedQuestion = 14,
+    DeletedQuestion = 14
 }

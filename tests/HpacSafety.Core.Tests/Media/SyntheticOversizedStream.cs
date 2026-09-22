@@ -1,16 +1,16 @@
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// A source stream that behaves as though it were an enormous upload — far
-/// larger than any deployment's <c>MediaPolicy.MaxByteSize</c> — without
-/// actually allocating that much memory. It hands back zero bytes on request and
-/// records how many it was asked for.
-/// <para>
-/// This is what lets a test prove "the oversized object is never pulled fully
-/// into memory before it is rejected" without needing gigabytes of RAM to make
-/// the point: if <see cref="TotalBytesServed" /> stays small after ingest
-/// rejects the file, the ingestor stopped reading long before reaching the end.
-/// </para>
+///     A source stream that behaves as though it were an enormous upload — far
+///     larger than any deployment's <c>MediaPolicy.MaxByteSize</c> — without
+///     actually allocating that much memory. It hands back zero bytes on request and
+///     records how many it was asked for.
+///     <para>
+///         This is what lets a test prove "the oversized object is never pulled fully
+///         into memory before it is rejected" without needing gigabytes of RAM to make
+///         the point: if <see cref="TotalBytesServed" /> stays small after ingest
+///         rejects the file, the ingestor stopped reading long before reaching the end.
+///     </para>
 /// </summary>
 internal sealed class SyntheticOversizedStream(long length) : Stream
 {
@@ -46,13 +46,20 @@ internal sealed class SyntheticOversizedStream(long length) : Stream
         return served;
     }
 
-    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken) =>
-        Task.FromResult(Read(buffer, offset, count));
+    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Read(buffer, offset, count));
+    }
 
-    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default) =>
-        ValueTask.FromResult(ReadSpan(buffer.Span));
+    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(ReadSpan(buffer.Span));
+    }
 
-    public override int Read(Span<byte> buffer) => ReadSpan(buffer);
+    public override int Read(Span<byte> buffer)
+    {
+        return ReadSpan(buffer);
+    }
 
     private int ReadSpan(Span<byte> buffer)
     {
@@ -66,11 +73,23 @@ internal sealed class SyntheticOversizedStream(long length) : Stream
         return served;
     }
 
-    public override void Flush() => throw new NotSupportedException();
+    public override void Flush()
+    {
+        throw new NotSupportedException();
+    }
 
-    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+    public override long Seek(long offset, SeekOrigin origin)
+    {
+        throw new NotSupportedException();
+    }
 
-    public override void SetLength(long value) => throw new NotSupportedException();
+    public override void SetLength(long value)
+    {
+        throw new NotSupportedException();
+    }
 
-    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    public override void Write(byte[] buffer, int offset, int count)
+    {
+        throw new NotSupportedException();
+    }
 }

@@ -1,44 +1,44 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <IsPackable>false</IsPackable>
-    <!-- The .feature files live outside this project (see the ReqnrollFeatureFile
-         item below), so their generated code-behind goes to obj/ rather than
-         next to the physical file - keeps features/ free of generated output. -->
-    <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
-  </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="coverlet.collector" />
+        <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" IncludeAssets="build" PrivateAssets="all" />
+        <PackageReference Include="Reqnroll.xUnit" />
+        <PackageReference Include="Shouldly" />
+        <PackageReference Include="Testcontainers.PostgreSql" />
+        <PackageReference Include="xunit" />
+        <PackageReference Include="xunit.runner.visualstudio" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" PrivateAssets="all" IncludeAssets="build" />
-    <PackageReference Include="Reqnroll.xUnit" />
-    <PackageReference Include="Shouldly" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-  </ItemGroup>
+    <ItemGroup>
+        <Using Include="Xunit" />
+    </ItemGroup>
 
-  <ItemGroup>
-    <Using Include="Xunit" />
-  </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="../../src/HpacSafety.Core/HpacSafety.Core.csproj" />
+        <!-- The translation scenarios assert which types may depend on ITranslator,
+             which means loading the API assembly and reading its metadata. -->
+        <ProjectReference Include="../../src/HpacSafety.Api/HpacSafety.Api.csproj" />
+        <ProjectReference Include="../../src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj" />
+    </ItemGroup>
 
-  <!-- Most scenarios describe rules that live in the domain, so they execute
-       against it directly. The authorization scenarios describe what the API
-       refuses over HTTP, so those boot it — see BootedApiFixture. -->
-  <ItemGroup>
-    <ProjectReference Include="../../src/HpacSafety.Core/HpacSafety.Core.csproj" />
-    <!-- The translation scenarios assert which types may depend on ITranslator,
-         which means loading the API assembly and reading its metadata. -->
-    <ProjectReference Include="../../src/HpacSafety.Api/HpacSafety.Api.csproj" />
-    <ProjectReference Include="../../src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj" />
-  </ItemGroup>
+    <!-- Most scenarios describe rules that live in the domain, so they execute
+         against it directly. The authorization scenarios describe what the API
+         refuses over HTTP, so those boot it — see BootedApiFixture. -->
+    <ItemGroup>
+        <ReqnrollFeatureFile Include="../../features/**/*.feature" />
+    </ItemGroup>
 
-  <!-- The canonical .feature files live under features/, outside this
-       project's folder, and stay there - see ADR-0049. -->
-  <ItemGroup>
-    <ReqnrollFeatureFile Include="../../features/**/*.feature" />
-  </ItemGroup>
+    <!-- The canonical .feature files live under features/, outside this
+         project's folder, and stay there - see ADR-0049. -->
+    <PropertyGroup>
+        <IsPackable>false</IsPackable>
+        <!-- The .feature files live outside this project (see the ReqnrollFeatureFile
+             item below), so their generated code-behind goes to obj/ rather than
+             next to the physical file - keeps features/ free of generated output. -->
+        <ReqnrollUseIntermediateOutputPathForCodeBehind>true</ReqnrollUseIntermediateOutputPathForCodeBehind>
+    </PropertyGroup>
 
 </Project>

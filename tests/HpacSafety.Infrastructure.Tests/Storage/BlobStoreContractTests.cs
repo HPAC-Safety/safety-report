@@ -1,4 +1,5 @@
 using System.Text;
+using Amazon.S3;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Media;
@@ -9,36 +10,48 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Storage;
 
 /// <summary>
-/// The contract every <see cref="IBlobStore" /> keeps, run unchanged against
-/// MinIO and against the filesystem store.
-/// <para>
-/// One suite rather than two is the point: a development stand-in that is not
-/// held to the production adapter's guarantees is how a guarantee quietly stops
-/// being true in the environment people actually run. See ADR-0026 and
-/// <c>skills/test-hpac-safety/SKILL.md</c>.
-/// </para>
+///     The contract every <see cref="IBlobStore" /> keeps, run unchanged against
+///     MinIO and against the filesystem store.
+///     <para>
+///         One suite rather than two is the point: a development stand-in that is not
+///         held to the production adapter's guarantees is how a guarantee quietly stops
+///         being true in the environment people actually run. See ADR-0026 and
+///         <c>skills/test-hpac-safety/SKILL.md</c>.
+///     </para>
 /// </summary>
 public abstract class BlobStoreContractTests : IAsyncLifetime
 {
     private const string ReportId = "dQw4w9WgXcQ";
     private const string OtherReportId = "kJQP7kiw5Fk";
 
-    // "Exif" followed by two NULs - the APP1 marker introducing an EXIF block.
-    private static ReadOnlySpan<byte> ExifApp1Marker => [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
-
     private static readonly BlobKey Quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
     private static readonly BlobKey AnotherReportsUpload = BlobKey.For(OtherReportId, MediaCompartment.Quarantine, "photo.jpg");
 
+    // "Exif" followed by two NULs - the APP1 marker introducing an EXIF block.
+    private static ReadOnlySpan<byte> ExifApp1Marker => [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+
     /// <summary>The store under test.</summary>
     protected IBlobStore Store { get; private set; } = null!;
+
+    /// <inheritdoc />
+    public virtual async Task InitializeAsync()
+    {
+        Store = await CreateStoreAsync();
+    }
+
+    /// <inheritdoc />
+    public virtual Task DisposeAsync()
+    {
+        return Task.CompletedTask;
+    }
 
     /// <summary>Builds the store. Called once the environment it needs is up.</summary>
     protected abstract Task<IBlobStore> CreateStoreAsync();
 
     /// <summary>
-    /// Attempts the upload a pre-signed URL authorises, returning whether the
-    /// store accepted it. S3 answers with a status code and the filesystem store
-    /// throws; both collapse to the same answer here so the test can be shared.
+    ///     Attempts the upload a pre-signed URL authorises, returning whether the
+    ///     store accepted it. S3 answers with a status code and the filesystem store
+    ///     throws; both collapse to the same answer here so the test can be shared.
     /// </summary>
     protected abstract Task<bool> TryUploadAsync(Uri uploadUrl, byte[] content, string contentType);
 
@@ -47,12 +60,6 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 
     /// <summary>Points a pre-signed URL at a different key, leaving the signature alone.</summary>
     protected abstract Uri RetargetToKey(Uri url, BlobKey key);
-
-    /// <inheritdoc />
-    public virtual async Task InitializeAsync() => Store = await CreateStoreAsync();
-
-    /// <inheritdoc />
-    public virtual Task DisposeAsync() => Task.CompletedTask;
 
     [Fact]
     public async Task GivenBytesWrittenToKey_WhenTheyAreReadBack_ThenTheyAreUnchanged()
@@ -123,10 +130,8 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromMinutes(1);
 
         // When / Then
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => Store.CreateReadUrlAsync(Quarantined, lifetime, CancellationToken.None));
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => Store.CreateUploadUrlAsync(Quarantined, MediaType.Jpeg.ContentType, lifetime, CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => Store.CreateReadUrlAsync(Quarantined, lifetime, CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => Store.CreateUploadUrlAsync(Quarantined, MediaType.Jpeg.ContentType, lifetime, CancellationToken.None));
     }
 
     [Fact]
@@ -221,8 +226,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         // Fails closed: there is nothing to open, rather than a fall-through to
         // the unstripped original. See #65.
         Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => new ReviewerMediaLink(Store).CreateViewUrlAsync(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(Store).CreateViewUrlAsync(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     [Fact]
@@ -238,10 +242,8 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 
         // Then
         derivativeUrl.ShouldNotBeNull();
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => links.CreateViewUrlAsync(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => links.CreateViewUrlAsync(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => links.CreateViewUrlAsync(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => links.CreateViewUrlAsync(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     [Fact]
@@ -290,12 +292,14 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         (await ExistsAsync(Quarantined)).ShouldBeTrue();
     }
 
-    private MediaIngestor Ingestor() =>
-        new(Store,
+    private MediaIngestor Ingestor()
+    {
+        return new MediaIngestor(Store,
             MediaSnifferChain.Default(),
             new MagickNetExifStripper(MediaType.All),
             new MediaPolicyOptions().ToPolicy(),
             TimeProvider.System);
+    }
 
     private async Task SeedQuarantineAsync(BlobKey key, byte[] content, MediaType declaredType)
     {
@@ -322,7 +326,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
         {
             return false;
         }
-        catch (Amazon.S3.AmazonS3Exception)
+        catch (AmazonS3Exception)
         {
             return false;
         }

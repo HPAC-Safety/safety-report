@@ -6,16 +6,16 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// "Private bucket, no public object URLs, ever. Admin views use short-lived
-/// pre-signed GETs" — docs/data-handling.md.
-/// <para>
-/// The rule is about what the API is *not*: there is no route that reads a blob
-/// and writes its bytes to the response, because such a route would be a second
-/// door onto private media with its own access-control story to get wrong.
-/// This test walks the live route table and fails if one ever appears, which is
-/// the only moment the rule can be enforced cheaply — at review time, on the
-/// pull request that adds it.
-/// </para>
+///     "Private bucket, no public object URLs, ever. Admin views use short-lived
+///     pre-signed GETs" — docs/data-handling.md.
+///     <para>
+///         The rule is about what the API is *not*: there is no route that reads a blob
+///         and writes its bytes to the response, because such a route would be a second
+///         door onto private media with its own access-control story to get wrong.
+///         This test walks the live route table and fails if one ever appears, which is
+///         the only moment the rule can be enforced cheaply — at review time, on the
+///         pull request that adds it.
+///     </para>
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -39,7 +39,7 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
         "files/content",
         "download",
         "/raw",
-        "attachment",
+        "attachment"
     ];
 
     private readonly WebApplicationFactory<Program> _factory = fixture.Factory;

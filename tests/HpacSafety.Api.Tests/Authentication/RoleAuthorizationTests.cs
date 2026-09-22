@@ -1,21 +1,18 @@
 using System.Net;
 using System.Net.Http.Json;
-
 using HpacSafety.Core.Features.Moderation;
-
 using Microsoft.AspNetCore.Mvc.Testing;
-
 using Shouldly;
 
 namespace HpacSafety.Api.Tests.Authentication;
 
 /// <summary>
-/// The role matrix, at every admin endpoint. Authoring the question bank is an
-/// Administrator capability; proving membership is not enough.
+///     The role matrix, at every admin endpoint. Authoring the question bank is an
+///     Administrator capability; proving membership is not enough.
 /// </summary>
 /// <remarks>
-/// The API is the authorization boundary — never hidden markup, and never a
-/// client-side route guard (ADR-0048). These tests are what make that true.
+///     The API is the authorization boundary — never hidden markup, and never a
+///     client-side route guard (ADR-0048). These tests are what make that true.
 /// </remarks>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -72,7 +69,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
                 labelFr = "Interdit",
                 isPrivate = true,
                 isRequired = false,
-                isActive = true,
+                isActive = true
             });
 
         // Then — the write is refused before anything is persisted.

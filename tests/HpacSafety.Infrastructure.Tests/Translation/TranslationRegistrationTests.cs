@@ -1,17 +1,15 @@
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Translation;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Translation;
 
 /// <summary>
-/// How the translation provider is wired up, including the case that matters
-/// most in practice: a checkout with no credential at all.
+///     How the translation provider is wired up, including the case that matters
+///     most in practice: a checkout with no credential at all.
 /// </summary>
 public class TranslationRegistrationTests
 {
@@ -36,7 +34,7 @@ public class TranslationRegistrationTests
         // Given
         using var provider = Provider(new Dictionary<string, string?>
         {
-            ["Translation:ApiKey"] = "abc:fx",
+            ["Translation:ApiKey"] = "abc:fx"
         });
 
         // When
@@ -53,7 +51,7 @@ public class TranslationRegistrationTests
         // repository settings and in tools/translator.mjs
         using var provider = Provider(new Dictionary<string, string?>
         {
-            ["DEEPL_API_KEY"] = "abc:fx",
+            ["DEEPL_API_KEY"] = "abc:fx"
         });
 
         // When
@@ -71,7 +69,7 @@ public class TranslationRegistrationTests
         using var provider = Provider(new Dictionary<string, string?>
         {
             ["Translation:ApiKey"] = "explicit",
-            ["DEEPL_API_KEY"] = "fallback",
+            ["DEEPL_API_KEY"] = "fallback"
         });
 
         // When
@@ -87,7 +85,7 @@ public class TranslationRegistrationTests
         // Given
         using var provider = Provider(new Dictionary<string, string?>
         {
-            ["Translation:Formality"] = "prefer_less",
+            ["Translation:Formality"] = "prefer_less"
         });
 
         // When
@@ -114,7 +112,7 @@ public class TranslationRegistrationTests
     public void GivenDevelopmentAndNoCredential_WhenRegistered_ThenStandInIsUsed()
     {
         // Given — a developer's checkout
-        using var provider = Provider([], useStandIn: true);
+        using var provider = Provider([], true);
 
         // When
         var translator = provider.GetRequiredService<ITranslator>();
@@ -129,7 +127,7 @@ public class TranslationRegistrationTests
     {
         // Given — a developer who does have a key wants the real thing
         using var provider = Provider(
-            new Dictionary<string, string?> { ["Translation:ApiKey"] = "abc:fx" }, useStandIn: true);
+            new Dictionary<string, string?> { ["Translation:ApiKey"] = "abc:fx" }, true);
 
         // When / Then
         provider.GetRequiredService<ITranslator>().ShouldBeOfType<DeepLTranslator>();
@@ -199,9 +197,9 @@ public class TranslationRegistrationTests
 }
 
 /// <summary>
-/// <see cref="TranslationUnavailableException"/> is what every translation
-/// failure becomes, and its message is the one thing a caller is allowed to
-/// show.
+///     <see cref="TranslationUnavailableException" /> is what every translation
+///     failure becomes, and its message is the one thing a caller is allowed to
+///     show.
 /// </summary>
 public class TranslationUnavailableExceptionTests
 {

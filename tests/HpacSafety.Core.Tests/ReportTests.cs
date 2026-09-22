@@ -5,7 +5,7 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// Consent gates publication, and it is the only answer a report reads by name.
+///     Consent gates publication, and it is the only answer a report reads by name.
 /// </summary>
 public class ReportTests
 {
@@ -174,6 +174,8 @@ public class ReportTests
         report.SummaryError.ShouldBe("the model returned 503");
     }
 
-    private static Question ConsentQuestion() =>
-        Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
+    private static Question ConsentQuestion()
+    {
+        return Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
+    }
 }

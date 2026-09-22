@@ -7,9 +7,9 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// Boots the API in process through <see cref="WebApplicationFactory{TEntryPoint}"/>.
-/// The endpoint under test is trivial; the harness is not, and this is what
-/// proves the harness works before any real endpoint depends on it.
+///     Boots the API in process through <see cref="WebApplicationFactory{TEntryPoint}" />.
+///     The endpoint under test is trivial; the harness is not, and this is what
+///     proves the harness works before any real endpoint depends on it.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]

@@ -1,5 +1,4 @@
 using HpacSafety.Core.Features.Reporting;
-
 using Shouldly;
 
 namespace HpacSafety.Anonymization.Tests;
@@ -12,8 +11,8 @@ public sealed class SummarizationInputTests
         // Given
         ClassifiedReportField[] fields =
         [
-            new(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), IsPrivate: true),
-            new(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), IsPrivate: false),
+            new(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
+            new(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), false)
         ];
 
         // When
@@ -31,7 +30,7 @@ public sealed class SummarizationInputTests
         var privateName = new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace");
 
         // When
-        var input = SummarizationInput.Partition([new(privateName, IsPrivate: true)]);
+        var input = SummarizationInput.Partition([new ClassifiedReportField(privateName, true)]);
 
         // Then
         input.ReportContent.ShouldBeEmpty();
@@ -79,7 +78,7 @@ public sealed class SummarizationInputTests
     public void GivenClassificationWithoutField_WhenModelInputIsBuilt_ThenRejected()
     {
         // Given
-        ClassifiedReportField[] fields = [new(null!, IsPrivate: true)];
+        ClassifiedReportField[] fields = [new(null!, true)];
 
         // When
         var act = () => SummarizationInput.Partition(fields);
@@ -98,6 +97,8 @@ public sealed class SummarizationInputTests
         summarizerParameters.ShouldContain(typeof(SummarizationInput));
     }
 
-    private static Type[] ParametersOf(Type port) =>
-        [.. port.GetMethods().SelectMany(method => method.GetParameters()).Select(parameter => parameter.ParameterType)];
+    private static Type[] ParametersOf(Type port)
+    {
+        return [.. port.GetMethods().SelectMany(method => method.GetParameters()).Select(parameter => parameter.ParameterType)];
+    }
 }

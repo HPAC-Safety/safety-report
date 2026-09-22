@@ -6,7 +6,6 @@ using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence.Configurations;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
-
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -14,21 +13,21 @@ namespace HpacSafety.Infrastructure.Persistence;
 
 /// <summary>The one database context. Owns the schema and the migrations.</summary>
 /// <remarks>
-/// A report and its outbox row are written through one
-/// <see cref="DbContext.SaveChangesAsync(CancellationToken)"/>, which is a
-/// single transaction. That is the whole of ADR-0002's guarantee, and it is why
-/// the outbox is a table in this context rather than a queue somewhere else.
-/// Storage and transport encryption are managed by PostgreSQL and TLS; this
-/// context holds no application-side cipher. See ADR-0019 (superseded).
+///     A report and its outbox row are written through one
+///     <see cref="DbContext.SaveChangesAsync(CancellationToken)" />, which is a
+///     single transaction. That is the whole of ADR-0002's guarantee, and it is why
+///     the outbox is a table in this context rather than a queue somewhere else.
+///     Storage and transport encryption are managed by PostgreSQL and TLS; this
+///     context holds no application-side cipher. See ADR-0019 (superseded).
 /// </remarks>
 /// <remarks>Creates the context.</remarks>
 /// <param name="options">Provider and connection options.</param>
 public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) : DbContext(options)
 {
     /// <summary>
-    /// How many times a save will mint fresh identifiers and try again. Three
-    /// consecutive collisions at sixty-six bits is not a run of bad luck; it is
-    /// a broken random source, and failing is the right answer.
+    ///     How many times a save will mint fresh identifiers and try again. Three
+    ///     consecutive collisions at sixty-six bits is not a run of bad luck; it is
+    ///     a broken random source, and failing is the right answer.
     /// </summary>
     private const int IdentifierAttempts = 3;
 
@@ -36,8 +35,8 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
     private const string UniqueViolation = "23505";
 
     /// <summary>
-    /// Columns that name a row without a foreign key to it, because they point
-    /// at more than one kind of thing. EF cannot fix these up, so a retry does.
+    ///     Columns that name a row without a foreign key to it, because they point
+    ///     at more than one kind of thing. EF cannot fix these up, so a retry does.
     /// </summary>
     private static readonly string[] LooseReferences = ["AggregateId", "TargetId"];
 
@@ -75,22 +74,22 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     /// <summary>
-    /// Saves, and mints a new identifier for anything that lost a collision.
+    ///     Saves, and mints a new identifier for anything that lost a collision.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Sixty-six bits of entropy makes a collision vanishingly unlikely. That is
-    /// not the same as handled: a unique constraint turns one into a rejected
-    /// write rather than a silently overwritten report, and this turns the
-    /// rejected write into a second attempt with a fresh identifier. See
-    /// ADR-0034.
-    /// </para>
-    /// <para>
-    /// PostgreSQL abandons the whole transaction on any error, so when a caller
-    /// has opened one — as the report endpoint does, writing the report and its
-    /// outbox row together — a savepoint is taken first and the retry rolls back
-    /// to it. The outer transaction, and ADR-0002's guarantee, survive.
-    /// </para>
+    ///     <para>
+    ///         Sixty-six bits of entropy makes a collision vanishingly unlikely. That is
+    ///         not the same as handled: a unique constraint turns one into a rejected
+    ///         write rather than a silently overwritten report, and this turns the
+    ///         rejected write into a second attempt with a fresh identifier. See
+    ///         ADR-0034.
+    ///     </para>
+    ///     <para>
+    ///         PostgreSQL abandons the whole transaction on any error, so when a caller
+    ///         has opened one — as the report endpoint does, writing the report and its
+    ///         outbox row together — a savepoint is taken first and the retry rolls back
+    ///         to it. The outer transaction, and ADR-0002's guarantee, survive.
+    ///     </para>
     /// </remarks>
     /// <param name="cancellationToken">Cancels the save.</param>
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
@@ -102,10 +101,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
                 ? $"tiny_id_attempt_{attempt}"
                 : null;
 
-            if (savepoint is not null)
-            {
-                await transaction!.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
-            }
+            if (savepoint is not null) await transaction!.CreateSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
 
             try
             {
@@ -114,10 +110,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
             catch (DbUpdateException cause)
                 when (attempt < IdentifierAttempts && IsIdentifierCollision(cause))
             {
-                if (savepoint is not null)
-                {
-                    await transaction!.RollbackToSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
-                }
+                if (savepoint is not null) await transaction!.RollbackToSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
 
                 MintNewIdentifiers(cause);
             }
@@ -179,31 +172,33 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
     }
 
     /// <summary>
-    /// Whether a failed write was a primary key that already existed — as
-    /// opposed to a unique constraint the domain put there on purpose, such as
-    /// one summary per report, which is a real conflict and not luck.
+    ///     Whether a failed write was a primary key that already existed — as
+    ///     opposed to a unique constraint the domain put there on purpose, such as
+    ///     one summary per report, which is a real conflict and not luck.
     /// </summary>
-    private static bool IsIdentifierCollision(DbUpdateException cause) =>
-        cause.InnerException is PostgresException postgres
-        && postgres.SqlState == UniqueViolation
-        && postgres.ConstraintName?.StartsWith("pk_", StringComparison.Ordinal) == true;
+    private static bool IsIdentifierCollision(DbUpdateException cause)
+    {
+        return cause.InnerException is PostgresException postgres
+               && postgres.SqlState == UniqueViolation
+               && postgres.ConstraintName?.StartsWith("pk_", StringComparison.Ordinal) == true;
+    }
 
     /// <summary>
-    /// Mints a fresh identifier for every row the failed write was inserting,
-    /// and repoints anything that referred to the old one by value.
+    ///     Mints a fresh identifier for every row the failed write was inserting,
+    ///     and repoints anything that referred to the old one by value.
     /// </summary>
     /// <remarks>
-    /// The identifier property is <c>private init</c>, so it is set through EF's
-    /// own accessor rather than by the domain — nothing outside persistence may
-    /// change an identifier once a row has one.
-    /// <para>
-    /// EF fixes up real relationships itself. What it cannot fix up is a
-    /// reference held as a bare value: <c>outbox_messages.aggregate_id</c> and
-    /// <c>audit_log.target_id</c> both name a row without a foreign key to it,
-    /// deliberately, because they point at more than one kind of thing. Those
-    /// are rewritten here, or a retried report would commit alongside an outbox
-    /// message pointing at an identifier that no longer exists.
-    /// </para>
+    ///     The identifier property is <c>private init</c>, so it is set through EF's
+    ///     own accessor rather than by the domain — nothing outside persistence may
+    ///     change an identifier once a row has one.
+    ///     <para>
+    ///         EF fixes up real relationships itself. What it cannot fix up is a
+    ///         reference held as a bare value: <c>outbox_messages.aggregate_id</c> and
+    ///         <c>audit_log.target_id</c> both name a row without a foreign key to it,
+    ///         deliberately, because they point at more than one kind of thing. Those
+    ///         are rewritten here, or a retried report would commit alongside an outbox
+    ///         message pointing at an identifier that no longer exists.
+    ///     </para>
     /// </remarks>
     private void MintNewIdentifiers(DbUpdateException cause)
     {
@@ -215,15 +210,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
         foreach (var entry in entries)
         {
-            if (entry.State != EntityState.Added)
-            {
-                continue;
-            }
+            if (entry.State != EntityState.Added) continue;
 
-            if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType } || clrType != typeof(TinyId))
-            {
-                continue;
-            }
+            if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType } || clrType != typeof(TinyId)) continue;
 
             var property = entry.Property("Id");
             var replacement = TinyId.New();
@@ -231,26 +220,15 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
             property.CurrentValue = replacement;
         }
 
-        if (replacements.Count == 0)
-        {
-            return;
-        }
+        if (replacements.Count == 0) return;
 
         foreach (var entry in ChangeTracker.Entries().Where(entry => entry.State == EntityState.Added))
-        {
             foreach (var name in LooseReferences)
             {
-                if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType } || clrType != typeof(TinyId))
-                {
-                    continue;
-                }
+                if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType } || clrType != typeof(TinyId)) continue;
 
                 var property = entry.Property(name);
-                if (property.CurrentValue is TinyId pointed && replacements.TryGetValue(pointed, out var replacement))
-                {
-                    property.CurrentValue = replacement;
-                }
+                if (property.CurrentValue is TinyId pointed && replacements.TryGetValue(pointed, out var replacement)) property.CurrentValue = replacement;
             }
-        }
     }
 }

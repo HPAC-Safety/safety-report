@@ -1,21 +1,17 @@
 using System.Globalization;
-
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
-
 using Microsoft.EntityFrameworkCore;
-
 using Npgsql;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Identity is a token subject and nothing else: no user table, no foreign
-/// key, and an existing audit row's attribution survives the migration that
-/// took the table away. See ADR-0065.
+///     Identity is a token subject and nothing else: no user table, no foreign
+///     key, and an existing audit row's attribution survives the migration that
+///     took the table away. See ADR-0065.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]

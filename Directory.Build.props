@@ -1,40 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project>
-	<PropertyGroup>
-		<TargetFramework>net10.0</TargetFramework>
-		<LangVersion>latest</LangVersion>
-		<Nullable>enable</Nullable>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<WarningsAsErrors>true</WarningsAsErrors>
-		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-		<AnalysisLevel>latest-recommended</AnalysisLevel>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<NoWarn>$(NoWarn);CS1591</NoWarn>
-		<!-- This application formats dates and numbers for en-CA and fr-CA, so
-		     invariant globalization must stay off. See docs/localization.md. -->
-		<InvariantGlobalization>false</InvariantGlobalization>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Roslynator.Analyzers">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
-	</ItemGroup>
-	<PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
-		<IsPackable>false</IsPackable>
-	</PropertyGroup>
-	<!-- Every project, src/ and tests/ alike. A ban enforced in test projects only
-	     is documentation wearing a build error's clothes, and the DateTime ban in
-	     particular is a rule about production code. Failing in the editor and in a
-	     local build, not only after a push, is the whole point. Xunit.Assert simply
-	     does not resolve in src/, where xunit is not referenced, so the assertion
-	     ban costs nothing there. See tests/BannedSymbols.txt, ADR-0013, ADR-0035. -->
-	<ItemGroup>
-		<PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
-			<PrivateAssets>all</PrivateAssets>
-			<IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-		</PackageReference>
-		<AdditionalFiles Include="$(MSBuildThisFileDirectory)tests/BannedSymbols.txt" />
-	</ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Roslynator.Analyzers">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+    <ItemGroup>
+        <AdditionalFiles Include="$(MSBuildThisFileDirectory)tests/BannedSymbols.txt" />
+        <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+    <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+        <IsPackable>false</IsPackable>
+    </PropertyGroup>
+    <!-- Every project, src/ and tests/ alike. A ban enforced in test projects only
+         is documentation wearing a build error's clothes, and the DateTime ban in
+         particular is a rule about production code. Failing in the editor and in a
+         local build, not only after a push, is the whole point. Xunit.Assert simply
+         does not resolve in src/, where xunit is not referenced, so the assertion
+         ban costs nothing there. See tests/BannedSymbols.txt, ADR-0013, ADR-0035. -->
+    <PropertyGroup>
+        <AnalysisLevel>latest-recommended</AnalysisLevel>
+        <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <InvariantGlobalization>false</InvariantGlobalization>
+        <LangVersion>latest</LangVersion>
+        <NoWarn>$(NoWarn);CS1591</NoWarn>
+        <Nullable>enable</Nullable>
+        <TargetFramework>net10.0</TargetFramework>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <!-- This application formats dates and numbers for en-CA and fr-CA, so
+             invariant globalization must stay off. See docs/localization.md. -->
+        <WarningsAsErrors>true</WarningsAsErrors>
+    </PropertyGroup>
 </Project>

@@ -1,11 +1,10 @@
-
 using Shouldly;
 
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// The identifier every row carries. Eleven characters, sixty-four symbols,
-/// nothing encoded in it. See ADR-0034.
+///     The identifier every row carries. Eleven characters, sixty-four symbols,
+///     nothing encoded in it. See ADR-0034.
 /// </summary>
 public sealed class TinyIdTests
 {

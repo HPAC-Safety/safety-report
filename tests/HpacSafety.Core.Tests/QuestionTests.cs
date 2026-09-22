@@ -4,9 +4,9 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// The question bank is data: an administrator adds, rewords, reorders, and
-/// removes questions without a deploy. Publication consent is the one
-/// exception. Every revision is born complete in both official languages.
+///     The question bank is data: an administrator adds, rewords, reorders, and
+///     removes questions without a deploy. Publication consent is the one
+///     exception. Every revision is born complete in both official languages.
 /// </summary>
 public class QuestionTests
 {
@@ -238,7 +238,7 @@ public class QuestionTests
 
         // When
         var revised = question.Revise(
-            question.Type, "Where?", "Où ?", isPrivate: false, question.IsActive, question.DisplayOrder, Now.AddDays(1));
+            question.Type, "Where?", "Où ?", false, question.IsActive, question.DisplayOrder, Now.AddDays(1));
 
         // Then — the old revision, already possibly referenced by an answer, is unchanged
         original.IsPrivate.ShouldBeTrue();
@@ -252,7 +252,7 @@ public class QuestionTests
         // Given
         var question = Question.Create(
             "where", QuestionType.ShortText, "Where?", "Où ?", Now,
-            helpTextEn: "Tell us where.", helpTextFr: "Dites-nous où.");
+            "Tell us where.", "Dites-nous où.");
         var revision = question.CurrentRevision;
 
         // Then

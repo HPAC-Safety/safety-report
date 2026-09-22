@@ -1,9 +1,9 @@
 namespace HpacSafety.Infrastructure.Storage;
 
 /// <summary>
-/// A pre-signed URL was presented for a key, an operation, or a moment it was
-/// not signed for. S3 answers this case with <c>403</c>; the filesystem store
-/// throws, so the development stand-in refuses exactly what production refuses.
+///     A pre-signed URL was presented for a key, an operation, or a moment it was
+///     not signed for. S3 answers this case with <c>403</c>; the filesystem store
+///     throws, so the development stand-in refuses exactly what production refuses.
 /// </summary>
 public sealed class PresignedUrlRejectedException : Exception
 {

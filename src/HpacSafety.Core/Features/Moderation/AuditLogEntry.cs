@@ -1,9 +1,8 @@
-
 namespace HpacSafety.Core.Features.Moderation;
 
 /// <summary>
-/// One moderation action, with who and when. Records identifiers, never report
-/// content — see docs/data-handling.md.
+///     One moderation action, with who and when. Records identifiers, never report
+///     content — see docs/data-handling.md.
 /// </summary>
 public class AuditLogEntry
 {
@@ -34,8 +33,8 @@ public class AuditLogEntry
     public TinyId Id { get; private init; }
 
     /// <summary>
-    /// Who acted, as the subject claim of their validated token. Opaque, and
-    /// deliberately not a key — there is no user table to join to (ADR-0065).
+    ///     Who acted, as the subject claim of their validated token. Opaque, and
+    ///     deliberately not a key — there is no user table to join to (ADR-0065).
     /// </summary>
     public string ActorSubject { get; private init; }
 

@@ -4,8 +4,10 @@ using Shouldly;
 
 namespace HpacSafety.Core.Tests;
 
-/// <summary>Locales are a closed pair, and domain values round-trip as stable
-/// invariant codes rather than display text.</summary>
+/// <summary>
+///     Locales are a closed pair, and domain values round-trip as stable
+///     invariant codes rather than display text.
+/// </summary>
 public class LocaleTests
 {
     [Fact]
@@ -20,7 +22,10 @@ public class LocaleTests
     public void GivenUnsupportedCode_WhenParsed_ThenRefused()
     {
         // Given / When
-        static void Parsing() => Locale.Parse("es-MX");
+        static void Parsing()
+        {
+            Locale.Parse("es-MX");
+        }
 
         // Then
         Should.Throw<DomainRuleViolationException>(Parsing);
@@ -37,7 +42,7 @@ public class LocaleTests
         {
             ReportStatus status => EnumCode.Of(status),
             QuestionRole role => EnumCode.Of(role),
-            _ => throw new ArgumentOutOfRangeException(nameof(value)),
+            _ => throw new ArgumentOutOfRangeException(nameof(value))
         };
 
         // Then

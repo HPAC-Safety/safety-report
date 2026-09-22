@@ -7,36 +7,36 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Media;
 
 /// <summary>
-/// A note on scope, from PR review (#60): the fixtures here carry GPS, a camera
-/// make, and a capture timestamp in the top-level IFD, but none embeds a
-/// thumbnail in EXIF's IFD1 — so thumbnail removal is demonstrated only by the
-/// mechanism (the whole APP1 EXIF segment is gone, IFD1 included) rather than by
-/// a fixture built specifically to carry one.
-/// <para>
-/// This is a documented gap, not an oversight. Magick.NET's <c>ExifProfile</c>
-/// exposes <c>ThumbnailOffset</c>/<c>ThumbnailLength</c> as read-only and a
-/// <c>RemoveThumbnail()</c>, but no supported way to <i>embed</i> one — doing so
-/// would mean hand-constructing the raw TIFF/IFD1 bytes ourselves rather than
-/// using the library under test to build the fixture, which is the "much extra
-/// machinery" the review comment anticipated might make this not worth forcing.
-/// </para>
-/// <para>
-/// The byte-level assertions below are why the mechanism argument holds: IFD0
-/// and IFD1 share one APP1 segment under a single TIFF header, so there is no
-/// code path in which <c>Strip()</c> removes the segment's top-level tags while
-/// leaving a thumbnail sub-IFD behind. Confirming the segment is absent
-/// confirms the thumbnail is too, by construction of the format rather than by
-/// observing a thumbnail directly.
-/// </para>
+///     A note on scope, from PR review (#60): the fixtures here carry GPS, a camera
+///     make, and a capture timestamp in the top-level IFD, but none embeds a
+///     thumbnail in EXIF's IFD1 — so thumbnail removal is demonstrated only by the
+///     mechanism (the whole APP1 EXIF segment is gone, IFD1 included) rather than by
+///     a fixture built specifically to carry one.
+///     <para>
+///         This is a documented gap, not an oversight. Magick.NET's <c>ExifProfile</c>
+///         exposes <c>ThumbnailOffset</c>/<c>ThumbnailLength</c> as read-only and a
+///         <c>RemoveThumbnail()</c>, but no supported way to <i>embed</i> one — doing so
+///         would mean hand-constructing the raw TIFF/IFD1 bytes ourselves rather than
+///         using the library under test to build the fixture, which is the "much extra
+///         machinery" the review comment anticipated might make this not worth forcing.
+///     </para>
+///     <para>
+///         The byte-level assertions below are why the mechanism argument holds: IFD0
+///         and IFD1 share one APP1 segment under a single TIFF header, so there is no
+///         code path in which <c>Strip()</c> removes the segment's top-level tags while
+///         leaving a thumbnail sub-IFD behind. Confirming the segment is absent
+///         confirms the thumbnail is too, by construction of the format rather than by
+///         observing a thumbnail directly.
+///     </para>
 /// </summary>
 public class MagickNetExifStripperTests
 {
+    private readonly MagickNetExifStripper _stripper = new(MediaType.All);
+
     // "Exif" followed by two NULs - the APP1 marker that introduces an EXIF
     // block in a JPEG. Written as bytes rather than as a string literal because
     // two of them are NULs, which do not survive a copy-paste intact.
     private static ReadOnlySpan<byte> ExifApp1Marker => [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
-
-    private readonly MagickNetExifStripper _stripper = new(MediaType.All);
 
     [Fact]
     public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenNoMetadataProfileSurvives()
@@ -137,8 +137,7 @@ public class MagickNetExifStripperTests
         // When / Then
         // Nothing can strip a video yet - see #65 - and producing a derivative
         // that had not been stripped would be the leak.
-        await Should.ThrowAsync<NotSupportedException>(
-            () => _stripper.StripAsync(source, destination, MediaType.Mp4, CancellationToken.None));
+        await Should.ThrowAsync<NotSupportedException>(() => _stripper.StripAsync(source, destination, MediaType.Mp4, CancellationToken.None));
         destination.Length.ShouldBe(0);
     }
 
@@ -150,7 +149,6 @@ public class MagickNetExifStripperTests
         using var destination = new MemoryStream();
 
         // When / Then
-        await Should.ThrowAsync<MagickException>(
-            () => _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None));
+        await Should.ThrowAsync<MagickException>(() => _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None));
     }
 }

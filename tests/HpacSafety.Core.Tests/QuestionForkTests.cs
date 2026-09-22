@@ -4,11 +4,11 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// A question whose wording changed after somebody answered it is a different
-/// question. Editing an unanswered one revises it; editing an answered one
-/// retires it and creates its replacement, carrying the same stable key, so an
-/// old answer always correlates to the wording it was given under. See
-/// ADR-0071.
+///     A question whose wording changed after somebody answered it is a different
+///     question. Editing an unanswered one revises it; editing an answered one
+///     retires it and creates its replacement, carrying the same stable key, so an
+///     old answer always correlates to the wording it was given under. See
+///     ADR-0071.
 /// </summary>
 public class QuestionForkTests
 {
@@ -22,9 +22,9 @@ public class QuestionForkTests
 
         // When
         var live = question.ApplyEdit(
-            hasBeenAnswered: false, QuestionType.YesNo, "Did you need medical attention?",
-            "Avez-vous eu besoin de soins médicaux ?", isPrivate: true, isActive: true,
-            displayOrder: 3, Now);
+            false, QuestionType.YesNo, "Did you need medical attention?",
+            "Avez-vous eu besoin de soins médicaux ?", true, true,
+            3, Now);
 
         // Then
         live.ShouldBeSameAs(question);
@@ -42,9 +42,9 @@ public class QuestionForkTests
 
         // When
         var live = question.ApplyEdit(
-            hasBeenAnswered: true, QuestionType.YesNo, "Did you need medical attention?",
-            "Avez-vous eu besoin de soins médicaux ?", isPrivate: true, isActive: true,
-            displayOrder: 3, Now);
+            true, QuestionType.YesNo, "Did you need medical attention?",
+            "Avez-vous eu besoin de soins médicaux ?", true, true,
+            3, Now);
 
         // Then
         live.ShouldNotBeSameAs(question);
@@ -64,7 +64,7 @@ public class QuestionForkTests
         var question = Injury();
 
         // When
-        var live = Reword(question, hasBeenAnswered: true);
+        var live = Reword(question, true);
 
         // Then — exports resolve by key, so the key survives the fork and only
         // the live member of the chain answers to it.
@@ -78,12 +78,12 @@ public class QuestionForkTests
     {
         // Given — a question already on its third revision
         var question = Injury();
-        Reword(question, hasBeenAnswered: false);
-        Reword(question, hasBeenAnswered: false);
+        Reword(question, false);
+        Reword(question, false);
         question.CurrentRevision.RevisionNumber.ShouldBe(3);
 
         // When
-        var live = Reword(question, hasBeenAnswered: true);
+        var live = Reword(question, true);
 
         // Then — the chain is no longer the history; the key is
         live.CurrentRevision.RevisionNumber.ShouldBe(1);
@@ -94,10 +94,10 @@ public class QuestionForkTests
     {
         // Given
         var question = Injury();
-        Reword(question, hasBeenAnswered: true);
+        Reword(question, true);
 
         // When
-        var editing = () => Reword(question, hasBeenAnswered: true);
+        var editing = () => Reword(question, true);
 
         // Then — there is no undelete, and no revising a frozen row
         editing.ShouldThrow<DomainRuleViolationException>();
@@ -112,9 +112,9 @@ public class QuestionForkTests
 
         // When
         var live = consent.ApplyEdit(
-            hasBeenAnswered: true, QuestionType.YesNo, "May we publish an anonymized version?",
-            "Pouvons-nous publier une version rendue anonyme ?", isPrivate: true, isActive: true,
-            displayOrder: 0, Now);
+            true, QuestionType.YesNo, "May we publish an anonymized version?",
+            "Pouvons-nous publier une version rendue anonyme ?", true, true,
+            0, Now);
 
         // Then
         live.ShouldBeSameAs(consent);
@@ -139,17 +139,21 @@ public class QuestionForkTests
         var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
         // When / Then
-        consent.ForksWhenEdited(hasBeenAnswered: true).ShouldBeFalse();
+        consent.ForksWhenEdited(true).ShouldBeFalse();
     }
 
-    private static Question Injury() =>
-        Question.Create(
+    private static Question Injury()
+    {
+        return Question.Create(
             "injury", QuestionType.YesNo, "Were you injured?", "Avez-vous été blessé ?", Now,
             isActive: true, displayOrder: 3);
+    }
 
-    private static Question Reword(Question question, bool hasBeenAnswered) =>
-        question.ApplyEdit(
+    private static Question Reword(Question question, bool hasBeenAnswered)
+    {
+        return question.ApplyEdit(
             hasBeenAnswered, question.Type, $"Were you injured? ({Guid.NewGuid():N})",
-            "Avez-vous été blessé ?", isPrivate: true, isActive: true, displayOrder: 3,
+            "Avez-vous été blessé ?", true, true, 3,
             Now);
+    }
 }

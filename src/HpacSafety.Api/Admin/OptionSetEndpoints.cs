@@ -2,22 +2,23 @@ using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-/// Endpoints for the reusable choice lists a question can offer — ADR-0058.
+///     Endpoints for the reusable choice lists a question can offer — ADR-0058.
 /// </summary>
 /// <remarks>
-/// These rows are editable, which is the point: an administrator adds an
-/// aerodrome once rather than to every question that asks for one. Editing a
-/// list changes what the <i>next</i> revision offers and changes nothing about
-/// any revision that already snapshotted it.
+///     These rows are editable, which is the point: an administrator adds an
+///     aerodrome once rather than to every question that asks for one. Editing a
+///     list changes what the <i>next</i> revision offers and changes nothing about
+///     any revision that already snapshotted it.
 /// </remarks>
 public static class OptionSetEndpoints
 {
+    private const string ItemsNavigation = "_items";
+
     /// <summary>Maps the admin choice-list endpoints.</summary>
     /// <param name="app">The route builder.</param>
     /// <returns>The group, so the caller can see what was mapped.</returns>
@@ -53,10 +54,7 @@ public static class OptionSetEndpoints
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (string.IsNullOrWhiteSpace(request.Key))
-        {
-            return Problem("missing-key", "A choice list needs a key.", "A choice list needs a stable key that never changes.");
-        }
+        if (string.IsNullOrWhiteSpace(request.Key)) return Problem("missing-key", "A choice list needs a key.", "A choice list needs a stable key that never changes.");
 
         var key = QuestionKey.Normalize(request.Key);
 
@@ -64,19 +62,13 @@ public static class OptionSetEndpoints
             .AnyAsync(set => set.Key == key, cancellationToken)
             .ConfigureAwait(false);
 
-        if (taken)
-        {
-            return Problem("duplicate-key", "That key is taken.", $"Another choice list already uses the key '{key}'.");
-        }
+        if (taken) return Problem("duplicate-key", "That key is taken.", $"Another choice list already uses the key '{key}'.");
 
         try
         {
             var set = OptionSet.Create(key, request.NameEn, request.NameFr, clock.GetUtcNow());
 
-            foreach (var item in request.Items)
-            {
-                set.Add(item.Code, item.LabelEn, item.LabelFr);
-            }
+            foreach (var item in request.Items) set.Add(item.Code, item.LabelEn, item.LabelFr);
 
             database.OptionSets.Add(set);
             await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -90,10 +82,10 @@ public static class OptionSetEndpoints
     }
 
     /// <summary>
-    /// Brings a list in line with what the administrator submitted: relabels
-    /// what stayed, adds what is new, removes what is gone, and arranges the
-    /// result. A removal is a soft delete, so every revision that snapshotted
-    /// the removed choice keeps its own copy.
+    ///     Brings a list in line with what the administrator submitted: relabels
+    ///     what stayed, adds what is new, removes what is gone, and arranges the
+    ///     result. A removal is a soft delete, so every revision that snapshotted
+    ///     the removed choice keeps its own copy.
     /// </summary>
     private static async Task<IResult> ReplaceAsync(
         string id,
@@ -104,19 +96,13 @@ public static class OptionSetEndpoints
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        if (!TinyId.TryParse(id, out var setId))
-        {
-            return Results.NotFound();
-        }
+        if (!TinyId.TryParse(id, out var setId)) return Results.NotFound();
 
         var set = await Live(database)
             .FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (set is null)
-        {
-            return Results.NotFound();
-        }
+        if (set is null) return Results.NotFound();
 
         try
         {
@@ -125,10 +111,7 @@ public static class OptionSetEndpoints
 
             set.Rename(request.NameEn, request.NameFr);
 
-            foreach (var gone in set.Items.Select(item => item.Code).Where(code => !wanted.Contains(code, StringComparer.Ordinal)).ToList())
-            {
-                set.Remove(gone, at);
-            }
+            foreach (var gone in set.Items.Select(item => item.Code).Where(code => !wanted.Contains(code, StringComparer.Ordinal)).ToList()) set.Remove(gone, at);
 
             var live = set.Items.Select(item => item.Code).ToList();
 
@@ -137,13 +120,9 @@ public static class OptionSetEndpoints
                 var code = QuestionKey.Normalize(item.Code);
 
                 if (live.Contains(code, StringComparer.Ordinal))
-                {
                     set.Relabel(code, item.LabelEn, item.LabelFr);
-                }
                 else
-                {
                     set.Add(code, item.LabelEn, item.LabelFr);
-                }
             }
 
             set.Arrange(wanted);
@@ -164,19 +143,13 @@ public static class OptionSetEndpoints
         TimeProvider clock,
         CancellationToken cancellationToken)
     {
-        if (!TinyId.TryParse(id, out var setId))
-        {
-            return Results.NotFound();
-        }
+        if (!TinyId.TryParse(id, out var setId)) return Results.NotFound();
 
         var set = await Live(database)
             .FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (set is null)
-        {
-            return Results.NotFound();
-        }
+        if (set is null) return Results.NotFound();
 
         set.Delete(clock.GetUtcNow());
         await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -185,19 +158,21 @@ public static class OptionSetEndpoints
     }
 
     /// <summary>
-    /// Loads a set with its items. The navigation is the backing field, not
-    /// <see cref="OptionSet.Items"/> — that property filters out removed items
-    /// and orders what is left, so it is a projection EF cannot include.
+    ///     Loads a set with its items. The navigation is the backing field, not
+    ///     <see cref="OptionSet.Items" /> — that property filters out removed items
+    ///     and orders what is left, so it is a projection EF cannot include.
     /// </summary>
-    private static IQueryable<OptionSet> Live(HpacSafetyDbContext database) =>
-        database.OptionSets.Include(ItemsNavigation);
+    private static IQueryable<OptionSet> Live(HpacSafetyDbContext database)
+    {
+        return database.OptionSets.Include(ItemsNavigation);
+    }
 
-    private const string ItemsNavigation = "_items";
-
-    private static IResult Problem(string code, string title, string detail) =>
-        Results.Problem(
+    private static IResult Problem(string code, string title, string detail)
+    {
+        return Results.Problem(
             title: title,
             detail: detail,
             statusCode: StatusCodes.Status400BadRequest,
             type: $"https://hpac.ca/problems/{code}");
+    }
 }

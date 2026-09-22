@@ -4,10 +4,10 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// "Original bytes stay in the private source record; the stripped derivative is
-/// what a reviewer sees" — docs/data-handling.md. Storage will sign a URL for any
-/// key, so the rule is enforced here, once, rather than remembered at every call
-/// site.
+///     "Original bytes stay in the private source record; the stripped derivative is
+///     what a reviewer sees" — docs/data-handling.md. Storage will sign a URL for any
+///     key, so the rule is enforced here, once, rather than remembered at every call
+///     site.
 /// </summary>
 public class ReviewerMediaLinkTests
 {
@@ -36,8 +36,7 @@ public class ReviewerMediaLinkTests
         var key = BlobKey.For(ReportId, compartment, "photo.jpg");
 
         // When / Then
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrlAsync(key, TimeSpan.FromMinutes(5), CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrlAsync(key, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     [Fact]
@@ -51,8 +50,7 @@ public class ReviewerMediaLinkTests
         var video = BlobKey.For(ReportId, MediaCompartment.Original, "clip.mp4");
 
         // When / Then
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrlAsync(video, TimeSpan.FromMinutes(5), CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrlAsync(video, TimeSpan.FromMinutes(5), CancellationToken.None));
     }
 
     [Fact]

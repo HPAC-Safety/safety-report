@@ -1,13 +1,12 @@
 using HpacSafety.Core.Features.QuestionBank;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HpacSafety.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// The <c>option_sets</c> table: reusable choice lists an administrator
-/// maintains, shared by every question that offers the same list — ADR-0058.
+///     The <c>option_sets</c> table: reusable choice lists an administrator
+///     maintains, shared by every question that offers the same list — ADR-0058.
 /// </summary>
 public sealed class OptionSetConfiguration : IEntityTypeConfiguration<OptionSet>
 {
@@ -40,8 +39,8 @@ public sealed class OptionSetConfiguration : IEntityTypeConfiguration<OptionSet>
 }
 
 /// <summary>
-/// The <c>option_set_items</c> table. Editable, unlike
-/// <c>question_revision_options</c>, which is the frozen copy a revision took.
+///     The <c>option_set_items</c> table. Editable, unlike
+///     <c>question_revision_options</c>, which is the frozen copy a revision took.
 /// </summary>
 public sealed class OptionSetItemConfiguration : IEntityTypeConfiguration<OptionSetItem>
 {

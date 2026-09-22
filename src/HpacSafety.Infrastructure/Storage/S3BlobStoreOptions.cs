@@ -4,8 +4,8 @@ namespace HpacSafety.Infrastructure.Storage;
 public sealed class S3BlobStoreOptions
 {
     /// <summary>
-    /// The private bucket. It has no public read policy and never gains one —
-    /// see docs/data-handling.md.
+    ///     The private bucket. It has no public read policy and never gains one —
+    ///     see docs/data-handling.md.
     /// </summary>
     public string BucketName { get; set; } = string.Empty;
 }

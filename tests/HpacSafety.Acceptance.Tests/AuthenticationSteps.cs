@@ -1,29 +1,26 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core.Features.Moderation;
-
 using Microsoft.IdentityModel.Tokens;
-
 using Reqnroll;
 using Shouldly;
 
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-/// The non-<c>@ui</c> authentication scenarios in
-/// <c>features/moderation-authentication-and-publication/</c>.
+///     The non-<c>@ui</c> authentication scenarios in
+///     <c>features/moderation-authentication-and-publication/</c>.
 /// </summary>
 /// <remarks>
-/// These validate a token with
-/// <see cref="AuthenticationServiceCollectionExtensions.ValidationParametersFor"/>
-/// — the same parameters the API registers, from one definition, so a scenario
-/// asserts the validation this system actually performs rather than a copy that
-/// could drift. The whole HTTP path, including the policies and the problem
-/// shape, is covered by <c>HpacSafety.Api.Tests</c>. Every token here is
-/// synthetic.
+///     These validate a token with
+///     <see cref="AuthenticationServiceCollectionExtensions.ValidationParametersFor" />
+///     — the same parameters the API registers, from one definition, so a scenario
+///     asserts the validation this system actually performs rather than a copy that
+///     could drift. The whole HTTP path, including the policies and the problem
+///     shape, is covered by <c>HpacSafety.Api.Tests</c>. Every token here is
+///     synthetic.
 /// </remarks>
 [Binding]
 public sealed class AuthenticationSteps
@@ -36,7 +33,7 @@ public sealed class AuthenticationSteps
     private static readonly HpacAuthenticationOptions Options = new()
     {
         Audience = Audience,
-        DevelopmentSigningKey = SigningKey,
+        DevelopmentSigningKey = SigningKey
     };
 
     private string? _token;
@@ -44,8 +41,10 @@ public sealed class AuthenticationSteps
     private bool _refused;
 
     [Given(@"a bearer token signed with a key the API does not trust")]
-    public void GivenTokenSignedWithAnUnknownKey() =>
-        _token = Forge(key: "an-entirely-different-signing-key-nobody-here-knows");
+    public void GivenTokenSignedWithAnUnknownKey()
+    {
+        _token = Forge("an-entirely-different-signing-key-nobody-here-knows");
+    }
 
     [Given(@"a validly issued bearer token whose signature segment has been changed")]
     public void GivenTamperedSignature()
@@ -56,24 +55,35 @@ public sealed class AuthenticationSteps
     }
 
     [Given(@"a bearer token whose expiry has passed")]
-    public void GivenExpiredToken() =>
+    public void GivenExpiredToken()
+    {
         _token = Forge(
             notBefore: DateTimeOffset.UtcNow.AddHours(-3),
             expires: DateTimeOffset.UtcNow.AddHours(-2));
+    }
 
     [Given(@"a bearer token issued for a different audience")]
-    public void GivenWrongAudience() => _token = Forge(audience: "somebody-elses-api");
+    public void GivenWrongAudience()
+    {
+        _token = Forge(audience: "somebody-elses-api");
+    }
 
     [Given(@"a validly signed bearer token carrying no recognized role claim")]
-    public void GivenNoRecognizedRole() => _token = Forge(roles: ["wing-commander"]);
+    public void GivenNoRecognizedRole()
+    {
+        _token = Forge(roles: ["wing-commander"]);
+    }
 
     [Given(@"a validly signed bearer token carrying a name, an email, and a picture claim")]
-    public void GivenChattyToken() => _token = Forge(extra:
-    [
-        new Claim("name", "A Synthetic Person"),
-        new Claim("email", "synthetic@example.test"),
-        new Claim("picture", "https://example.test/avatar.png"),
-    ]);
+    public void GivenChattyToken()
+    {
+        _token = Forge(extra:
+        [
+            new Claim("name", "A Synthetic Person"),
+            new Claim("email", "synthetic@example.test"),
+            new Claim("picture", "https://example.test/avatar.png")
+        ]);
+    }
 
     [When(@"it is presented to any authenticated endpoint")]
     [When(@"it is presented to the API")]
@@ -81,7 +91,7 @@ public sealed class AuthenticationSteps
     public void WhenItIsValidated()
     {
         var parameters = AuthenticationServiceCollectionExtensions.ValidationParametersFor(
-            Options, useDevelopmentIssuer: true);
+            Options, true);
 
         try
         {
@@ -96,7 +106,10 @@ public sealed class AuthenticationSteps
     }
 
     [Then(@"the API refuses the request")]
-    public void ThenRefused() => _refused.ShouldBeTrue();
+    public void ThenRefused()
+    {
+        _refused.ShouldBeTrue();
+    }
 
     [Then(@"it does not disclose why the token was refused")]
     public void ThenNoReasonDisclosed()
@@ -116,8 +129,10 @@ public sealed class AuthenticationSteps
     }
 
     [Then(@"the identity has the User role and no administrative capability")]
-    public void ThenUserRole() =>
+    public void ThenUserRole()
+    {
         MemberRoles.EffectiveRole(_principal!, Options.RoleClaimType).ShouldBe(MemberRole.User);
+    }
 
     [Then(@"it reads only the subject and the role claim")]
     public void ThenOnlySubjectAndRole()
@@ -157,15 +172,15 @@ public sealed class AuthenticationSteps
         claims.AddRange(extra ?? []);
 
         var token = new JwtSecurityToken(
-            issuer: issuer,
-            audience: audience,
-            claims: claims,
+            issuer,
+            audience,
+            claims,
 
             // JwtSecurityToken wants DateTime. Convert at this boundary and
             // never carry one past it (ADR-0035).
-            notBefore: (notBefore ?? DateTimeOffset.UtcNow.AddMinutes(-1)).UtcDateTime,
-            expires: (expires ?? DateTimeOffset.UtcNow.AddHours(1)).UtcDateTime,
-            signingCredentials: new SigningCredentials(
+            (notBefore ?? DateTimeOffset.UtcNow.AddMinutes(-1)).UtcDateTime,
+            (expires ?? DateTimeOffset.UtcNow.AddHours(1)).UtcDateTime,
+            new SigningCredentials(
                 new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)), SecurityAlgorithms.HmacSha256));
 
         return new JwtSecurityTokenHandler().WriteToken(token);

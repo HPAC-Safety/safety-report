@@ -7,5 +7,5 @@ public enum MediaKind
     Image = 0,
 
     /// <summary>A video. Accepted and retained, but not yet strippable — see issue #65.</summary>
-    Video = 1,
+    Video = 1
 }

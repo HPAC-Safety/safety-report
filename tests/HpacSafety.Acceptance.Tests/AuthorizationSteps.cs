@@ -1,23 +1,21 @@
 using System.Net;
 using System.Net.Http.Json;
-
 using HpacSafety.Core.Features.Moderation;
-
 using Reqnroll;
 using Shouldly;
 
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-/// The moderation scenarios that describe what the API refuses over HTTP.
+///     The moderation scenarios that describe what the API refuses over HTTP.
 /// </summary>
 /// <remarks>
-/// These run against the booted host rather than the domain, because that is
-/// what they are about: "the API rejects the operation regardless of what the
-/// UI would have shown" cannot be shown by calling a domain method. Detailed
-/// coverage — every rejected token shape, every role at every endpoint — lives
-/// in <c>HpacSafety.Api.Tests</c>; these prove the feature file's sentences are
-/// true of the running system.
+///     These run against the booted host rather than the domain, because that is
+///     what they are about: "the API rejects the operation regardless of what the
+///     UI would have shown" cannot be shown by calling a domain method. Detailed
+///     coverage — every rejected token shape, every role at every endpoint — lives
+///     in <c>HpacSafety.Api.Tests</c>; these prove the feature file's sentences are
+///     true of the running system.
 /// </remarks>
 [Binding]
 public sealed class AuthorizationSteps
@@ -69,12 +67,16 @@ public sealed class AuthorizationSteps
     }
 
     [When(@"the development token endpoint is called")]
-    public async Task WhenDevelopmentTokenEndpointIsCalled() =>
+    public async Task WhenDevelopmentTokenEndpointIsCalled()
+    {
         _response = await _client!.PostAsJsonAsync(DevelopmentToken, new { username = "admin", password = "admin" });
+    }
 
     [When(@"it reaches an admin endpoint")]
-    public async Task WhenItReachesAnAdminEndpoint() =>
+    public async Task WhenItReachesAnAdminEndpoint()
+    {
         _response = await _client!.GetAsync(Questions);
+    }
 
     [When(@"the API processes the request")]
     public void WhenTheApiProcessesTheRequest()
@@ -84,7 +86,8 @@ public sealed class AuthorizationSteps
     }
 
     [When(@"that member attempts to create a question revision")]
-    public async Task WhenMemberAttemptsToCreateRevision() =>
+    public async Task WhenMemberAttemptsToCreateRevision()
+    {
         _response = await _client!.PostAsJsonAsync(
             Questions,
             new
@@ -95,8 +98,9 @@ public sealed class AuthorizationSteps
                 labelFr = "Une question d'acceptation",
                 isPrivate = true,
                 isRequired = false,
-                isActive = true,
+                isActive = true
             });
+    }
 
     [Then(@"the route does not exist")]
     public void ThenRouteDoesNotExist()

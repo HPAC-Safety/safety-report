@@ -1,13 +1,13 @@
 namespace HpacSafety.Infrastructure.Media;
 
 /// <summary>
-/// The runtime's imaging library cannot decode a format this deployment accepts.
-/// <para>
-/// Thrown when the stripper is constructed, so the process fails to start rather
-/// than degrading silently. The failure mode this prevents is specific and
-/// nasty: without libheif, every iPhone reporter's upload would be refused as
-/// unrecognisable content, and nothing in the logs would say why.
-/// </para>
+///     The runtime's imaging library cannot decode a format this deployment accepts.
+///     <para>
+///         Thrown when the stripper is constructed, so the process fails to start rather
+///         than degrading silently. The failure mode this prevents is specific and
+///         nasty: without libheif, every iPhone reporter's upload would be refused as
+///         unrecognisable content, and nothing in the logs would say why.
+///     </para>
 /// </summary>
 public sealed class MissingImagingCodecException : Exception
 {

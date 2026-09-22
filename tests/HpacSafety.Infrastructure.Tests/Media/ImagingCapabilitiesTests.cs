@@ -6,14 +6,14 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Media;
 
 /// <summary>
-/// Proves the runtime can actually do what this deployment promises.
-/// <para>
-/// Magick.NET ships native binaries per platform and the delegates compiled into
-/// them are not guaranteed to be identical everywhere. If libheif were missing,
-/// every iPhone reporter's upload would be refused as unrecognisable content and
-/// nothing would say why. These tests are what turn that into a red build on the
-/// machine that lacks it rather than a mystery in production.
-/// </para>
+///     Proves the runtime can actually do what this deployment promises.
+///     <para>
+///         Magick.NET ships native binaries per platform and the delegates compiled into
+///         them are not guaranteed to be identical everywhere. If libheif were missing,
+///         every iPhone reporter's upload would be refused as unrecognisable content and
+///         nothing would say why. These tests are what turn that into a red build on the
+///         machine that lacks it rather than a mystery in production.
+///     </para>
 /// </summary>
 public class ImagingCapabilitiesTests
 {

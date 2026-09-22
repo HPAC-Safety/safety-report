@@ -8,10 +8,10 @@ namespace HpacSafety.Api.Authentication;
 public static class AuthEndpoints
 {
     /// <summary>
-    /// Maps them. The development token endpoint is mapped <b>only</b> in
-    /// Development, so elsewhere the route does not exist — a 404, not a 401.
-    /// There is no flag that turns it on in a deployed environment, because
-    /// there is no code path that maps it there. See ADR-0066.
+    ///     Maps them. The development token endpoint is mapped <b>only</b> in
+    ///     Development, so elsewhere the route does not exist — a 404, not a 401.
+    ///     There is no flag that turns it on in a deployed environment, because
+    ///     there is no code path that maps it there. See ADR-0066.
     /// </summary>
     /// <param name="app">The route builder.</param>
     /// <param name="isDevelopment">Whether this host issues its own tokens.</param>
@@ -30,10 +30,7 @@ public static class AuthEndpoints
         // Proves a token was validated rather than merely minted.
         group.MapGet("/me", Me).RequireAuthorization(HpacPolicies.Member);
 
-        if (isDevelopment)
-        {
-            group.MapPost("/token", TokenAsync).AllowAnonymous();
-        }
+        if (isDevelopment) group.MapPost("/token", TokenAsync).AllowAnonymous();
 
         return group;
     }
@@ -44,9 +41,9 @@ public static class AuthEndpoints
         var provider = !string.IsNullOrWhiteSpace(configured.Authority);
 
         return TypedResults.Ok(new AuthConfigResponse(
-            Mode: provider ? "provider" : "development",
-            ThirdPartySignIn: provider,
-            Authority: configured.Authority));
+            provider ? "provider" : "development",
+            provider,
+            configured.Authority));
     }
 
     private static Results<Ok<MeResponse>, ProblemHttpResult> Me(
@@ -102,7 +99,10 @@ public sealed record TokenRequest(string? Username, string? Password);
 /// <param name="Subject">The subject it carries.</param>
 /// <param name="Role">The role code it carries.</param>
 public sealed record TokenResponse(
-    string AccessToken, DateTimeOffset ExpiresAt, string Subject, string Role);
+    string AccessToken,
+    DateTimeOffset ExpiresAt,
+    string Subject,
+    string Role);
 
 /// <summary>Who the caller is, according to their validated token.</summary>
 /// <param name="Subject">The subject claim.</param>

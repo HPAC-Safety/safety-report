@@ -1,3 +1,4 @@
+using System.Data;
 using Npgsql;
 using Shouldly;
 using Testcontainers.PostgreSql;
@@ -5,14 +6,14 @@ using Testcontainers.PostgreSql;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// Proves the Testcontainers harness works — a real PostgreSQL container starts,
-/// accepts a connection, and is torn down.
-/// <para>
-/// There is no schema to assert against yet; the DbContext and its migrations
-/// arrive with the database issue. This exists now because every later
-/// integration test depends on this harness, and a harness that has never run is
-/// a harness nobody can distinguish from a broken one.
-/// </para>
+///     Proves the Testcontainers harness works — a real PostgreSQL container starts,
+///     accepts a connection, and is torn down.
+///     <para>
+///         There is no schema to assert against yet; the DbContext and its migrations
+///         arrive with the database issue. This exists now because every later
+///         integration test depends on this harness, and a harness that has never run is
+///         a harness nobody can distinguish from a broken one.
+///     </para>
 /// </summary>
 [Trait("Category", "Integration")]
 public sealed class PostgresContainerTests : IAsyncLifetime
@@ -21,9 +22,15 @@ public sealed class PostgresContainerTests : IAsyncLifetime
     // underneath the suite is a test failure nobody can reproduce.
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
-    public Task InitializeAsync() => _postgres.StartAsync();
+    public Task InitializeAsync()
+    {
+        return _postgres.StartAsync();
+    }
 
-    public Task DisposeAsync() => _postgres.DisposeAsync().AsTask();
+    public Task DisposeAsync()
+    {
+        return _postgres.DisposeAsync().AsTask();
+    }
 
     [Fact]
     public async Task GivenPostgresContainer_WhenConnectionIsOpened_ThenSucceeds()
@@ -35,7 +42,7 @@ public sealed class PostgresContainerTests : IAsyncLifetime
         await connection.OpenAsync();
 
         // Then
-        connection.State.ShouldBe(System.Data.ConnectionState.Open);
+        connection.State.ShouldBe(ConnectionState.Open);
     }
 
     [Fact]

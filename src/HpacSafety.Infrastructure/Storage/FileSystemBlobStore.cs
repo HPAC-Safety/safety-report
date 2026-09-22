@@ -6,18 +6,18 @@ using HpacSafety.Core;
 namespace HpacSafety.Infrastructure.Storage;
 
 /// <summary>
-/// The development store: an <b>Adapter</b> over the local filesystem, so a
-/// contributor can run the whole upload path without AWS or Docker.
-/// <para>
-/// It is deliberately not a weaker stand-in. A development double that skips the
-/// guarantee the production adapter makes is how a guarantee stops being tested,
-/// so this class signs its URLs too: an HMAC over the operation, the key, the
-/// content type, and the expiry. Retarget a URL at another key and
-/// <see cref="ExecuteUploadAsync" /> refuses it, exactly as S3 answers
-/// <c>403</c>. The shared contract suite runs the same tests against both.
-/// See ADR-0026. A development stand-in must never weaken a production
-/// guarantee while this legacy signed-URL contract remains in use.
-/// </para>
+///     The development store: an <b>Adapter</b> over the local filesystem, so a
+///     contributor can run the whole upload path without AWS or Docker.
+///     <para>
+///         It is deliberately not a weaker stand-in. A development double that skips the
+///         guarantee the production adapter makes is how a guarantee stops being tested,
+///         so this class signs its URLs too: an HMAC over the operation, the key, the
+///         content type, and the expiry. Retarget a URL at another key and
+///         <see cref="ExecuteUploadAsync" /> refuses it, exactly as S3 answers
+///         <c>403</c>. The shared contract suite runs the same tests against both.
+///         See ADR-0026. A development stand-in must never weaken a production
+///         guarantee while this legacy signed-URL contract remains in use.
+///     </para>
 /// </summary>
 public sealed class FileSystemBlobStore : IBlobStore
 {
@@ -28,9 +28,9 @@ public sealed class FileSystemBlobStore : IBlobStore
     private const string ReadOperation = "get";
 
     private readonly string _blobRoot;
+    private readonly TimeProvider _clock;
     private readonly string _metaRoot;
     private readonly byte[] _signingKey;
-    private readonly TimeProvider _clock;
 
     /// <summary>Creates the store, generating a per-process signing key when none is configured.</summary>
     public FileSystemBlobStore(FileSystemBlobStoreOptions options, TimeProvider clock)
@@ -59,8 +59,10 @@ public sealed class FileSystemBlobStore : IBlobStore
     }
 
     /// <inheritdoc />
-    public Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken) =>
-        Task.FromResult(Sign(ReadOperation, key, string.Empty, lifetime));
+    public Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(Sign(ReadOperation, key, string.Empty, lifetime));
+    }
 
     /// <inheritdoc />
     public Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken)
@@ -95,9 +97,9 @@ public sealed class FileSystemBlobStore : IBlobStore
     }
 
     /// <summary>
-    /// Performs the upload a signed URL authorises. This is what the local
-    /// development endpoint calls in place of S3 accepting a PUT; a URL signed
-    /// for another key, another operation, or an expired moment is refused.
+    ///     Performs the upload a signed URL authorises. This is what the local
+    ///     development endpoint calls in place of S3 accepting a PUT; a URL signed
+    ///     for another key, another operation, or an expired moment is refused.
     /// </summary>
     public async Task ExecuteUploadAsync(Uri signedUrl, Stream content, CancellationToken cancellationToken)
     {
@@ -138,33 +140,23 @@ public sealed class FileSystemBlobStore : IBlobStore
     {
         ArgumentNullException.ThrowIfNull(signedUrl);
 
-        if (!string.Equals(signedUrl.Scheme, UrlScheme, StringComparison.Ordinal))
-        {
-            throw new PresignedUrlRejectedException();
-        }
+        if (!string.Equals(signedUrl.Scheme, UrlScheme, StringComparison.Ordinal)) throw new PresignedUrlRejectedException();
 
         var query = ParseQuery(signedUrl.Query);
 
         if (!query.TryGetValue("op", out var operation)
             || !query.TryGetValue("expires", out var expires)
             || !query.TryGetValue("sig", out var presented))
-        {
             throw new PresignedUrlRejectedException();
-        }
 
         query.TryGetValue("ct", out var contentType);
         contentType ??= string.Empty;
 
         if (!string.Equals(operation, expectedOperation, StringComparison.Ordinal)
             || !long.TryParse(expires, NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiresAt))
-        {
             throw new PresignedUrlRejectedException();
-        }
 
-        if (!BlobKey.TryParse(Uri.UnescapeDataString(signedUrl.AbsolutePath.TrimStart('/')), out var key))
-        {
-            throw new PresignedUrlRejectedException();
-        }
+        if (!BlobKey.TryParse(Uri.UnescapeDataString(signedUrl.AbsolutePath.TrimStart('/')), out var key)) throw new PresignedUrlRejectedException();
 
         var expected = Signature(operation, key.Value, contentType, expiresAt);
 
@@ -173,14 +165,9 @@ public sealed class FileSystemBlobStore : IBlobStore
         if (!CryptographicOperations.FixedTimeEquals(
                 Encoding.ASCII.GetBytes(expected),
                 Encoding.ASCII.GetBytes(presented)))
-        {
             throw new PresignedUrlRejectedException();
-        }
 
-        if (_clock.GetUtcNow().ToUnixTimeSeconds() > expiresAt)
-        {
-            throw new PresignedUrlRejectedException("The pre-signed URL has expired.");
-        }
+        if (_clock.GetUtcNow().ToUnixTimeSeconds() > expiresAt) throw new PresignedUrlRejectedException("The pre-signed URL has expired.");
 
         return new SignedTicket(key, contentType);
     }
@@ -199,10 +186,7 @@ public sealed class FileSystemBlobStore : IBlobStore
         foreach (var pair in query.TrimStart('?').Split('&', StringSplitOptions.RemoveEmptyEntries))
         {
             var separator = pair.IndexOf('=', StringComparison.Ordinal);
-            if (separator > 0)
-            {
-                parsed[pair[..separator]] = Uri.UnescapeDataString(pair[(separator + 1)..]);
-            }
+            if (separator > 0) parsed[pair[..separator]] = Uri.UnescapeDataString(pair[(separator + 1)..]);
         }
 
         return parsed;

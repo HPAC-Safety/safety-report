@@ -1,21 +1,20 @@
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-
 using Reqnroll;
 using Shouldly;
 
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-/// The non-<c>@ui</c> scenarios for a reporter adding a missing type-ahead
-/// choice, and for which list a question renders — ADR-0063.
+///     The non-<c>@ui</c> scenarios for a reporter adding a missing type-ahead
+///     choice, and for which list a question renders — ADR-0063.
 /// </summary>
 /// <remarks>
-/// These run against the domain. The submission path that will call
-/// <see cref="OptionSet.AddFromReporter"/> does not exist yet; what exists is
-/// the rule it will call, and that is what these pin down. Every site name
-/// here is synthetic.
+///     These run against the domain. The submission path that will call
+///     <see cref="OptionSet.AddFromReporter" /> does not exist yet; what exists is
+///     the rule it will call, and that is what these pin down. Every site name
+///     here is synthetic.
 /// </remarks>
 [Binding]
 public sealed class ReporterAddedChoiceSteps
@@ -39,15 +38,21 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [Given(@"a type-ahead revision was saved when the shared list was shorter")]
-    public void GivenARevisionSavedEarlier() => GivenATypeAheadBackedByAList();
+    public void GivenARevisionSavedEarlier()
+    {
+        GivenATypeAheadBackedByAList();
+    }
 
     [Given(@"a type-ahead revision was built from a shared choice list")]
-    public void GivenARevisionBuiltFromAList() => GivenATypeAheadBackedByAList();
+    public void GivenARevisionBuiltFromAList()
+    {
+        GivenATypeAheadBackedByAList();
+    }
 
     [Given(@"a (.*) revision is backed by a shared choice list")]
     public void GivenARevisionOfType(string type)
     {
-        EnumCode.TryParse<QuestionType>(type, out _pendingType).ShouldBeTrue();
+        EnumCode.TryParse(type, out _pendingType).ShouldBeTrue();
 
         _set = Sites();
         _question = QuestionOfType(_pendingType);
@@ -69,21 +74,34 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [When(@"a reporter submits an answer naming a site the list does not offer")]
-    public void WhenAReporterNamesANewSite() => _added = _set.AddFromReporter("Mount 7");
+    public void WhenAReporterNamesANewSite()
+    {
+        _added = _set.AddFromReporter("Mount 7");
+    }
 
     [When(@"another reporter submits the same site name")]
-    public void WhenAnotherReporterNamesTheSameSite() =>
+    public void WhenAnotherReporterNamesTheSameSite()
+    {
         _added = _set.AddFromReporter("mount 7");
+    }
 
     [When(@"a reporter submits that same value again")]
-    public void WhenAReporterRetypesARemovedValue() =>
+    public void WhenAReporterRetypesARemovedValue()
+    {
         _added = _set.AddFromReporter("Woodside");
+    }
 
     [When(@"a choice is added to that list afterwards")]
-    public void WhenAChoiceIsAddedAfterwards() => _set.Add("mount_7", "Mount 7", "Mont 7");
+    public void WhenAChoiceIsAddedAfterwards()
+    {
+        _set.Add("mount_7", "Mount 7", "Mont 7");
+    }
 
     [When(@"that shared list is retired entirely")]
-    public void WhenTheListIsRetired() => _set.Delete(Noon.AddHours(1));
+    public void WhenTheListIsRetired()
+    {
+        _set.Delete(Noon.AddHours(1));
+    }
 
     [Then(@"the site is added to the shared list as a reporter-added choice")]
     public void ThenItIsAddedAsReporterAdded()
@@ -93,7 +111,10 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [Then(@"it carries the language the reporter typed it in")]
-    public void ThenItCarriesTheTypedLanguage() => _added!.LabelEn.ShouldBe("Mount 7");
+    public void ThenItCarriesTheTypedLanguage()
+    {
+        _added!.LabelEn.ShouldBe("Mount 7");
+    }
 
     [Then(@"it is marked for an Administrator to supply the other language")]
     public void ThenItIsMarkedForTranslation()
@@ -105,8 +126,10 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [Then(@"the next reporter is offered it")]
-    public void ThenTheNextReporterIsOfferedIt() =>
+    public void ThenTheNextReporterIsOfferedIt()
+    {
         _set.Items.Where(item => item.Deleted is null).Select(item => item.Code).ShouldContain("mount_7");
+    }
 
     [Then(@"the reporter's answer still records the value they typed")]
     public void ThenTheAnswerRecordsTheTypedValue()
@@ -120,15 +143,22 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [Then(@"the existing choice is reused rather than duplicated")]
-    public void ThenTheExistingChoiceIsReused() =>
+    public void ThenTheExistingChoiceIsReused()
+    {
         _set.Items.Count(item => item.Code == "mount_7").ShouldBe(1);
+    }
 
     [Then(@"an administrator's wording is never replaced by a reporter's")]
-    public void ThenTheWordingIsNotReplaced() => _added!.LabelEn.ShouldBe("Mount 7");
+    public void ThenTheWordingIsNotReplaced()
+    {
+        _added!.LabelEn.ShouldBe("Mount 7");
+    }
 
     [Then(@"the choice stays removed from the list")]
-    public void ThenItStaysRemoved() =>
+    public void ThenItStaysRemoved()
+    {
         _set.Items.Select(item => item.Code).ShouldNotContain("woodside");
+    }
 
     [Then(@"the reporter's answer still refers to the existing row")]
     public void ThenTheAnswerStillRefersToARow()
@@ -139,12 +169,16 @@ public sealed class ReporterAddedChoiceSteps
     }
 
     [Then(@"the question now offers the longer list")]
-    public void ThenItOffersTheLongerList() =>
+    public void ThenItOffersTheLongerList()
+    {
         QuestionChoices.For(_revision, _set).Select(option => option.Code).ShouldContain("mount_7");
+    }
 
     [Then(@"the revision still records the shorter one")]
-    public void ThenTheRevisionRecordsTheShorterOne() =>
+    public void ThenTheRevisionRecordsTheShorterOne()
+    {
         QuestionChoices.Snapshot(_revision).Select(option => option.Code).ShouldNotContain("mount_7");
+    }
 
     [Then(@"the question offers the live list")]
     public void ThenItOffersTheLiveList()
@@ -178,8 +212,9 @@ public sealed class ReporterAddedChoiceSteps
         return set;
     }
 
-    private Question QuestionOfType(QuestionType type) =>
-        Question.Create(
+    private Question QuestionOfType(QuestionType type)
+    {
+        return Question.Create(
             "where_did_this_happen",
             type,
             "Where did this happen?",
@@ -188,4 +223,5 @@ public sealed class ReporterAddedChoiceSteps
             isActive: true,
             optionSetId: _set.Id,
             options: _set.AsRevisionOptions());
+    }
 }

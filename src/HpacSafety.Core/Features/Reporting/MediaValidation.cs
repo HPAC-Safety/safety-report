@@ -20,8 +20,14 @@ public readonly record struct MediaValidation
     public MediaType Type { get; }
 
     /// <summary>The file may be ingested, as the sniffed type.</summary>
-    public static MediaValidation Accepted(MediaType type) => new(true, MediaRejectionReason.None, type);
+    public static MediaValidation Accepted(MediaType type)
+    {
+        return new MediaValidation(true, MediaRejectionReason.None, type);
+    }
 
     /// <summary>The file is refused.</summary>
-    public static MediaValidation Rejected(MediaRejectionReason reason) => new(false, reason, default);
+    public static MediaValidation Rejected(MediaRejectionReason reason)
+    {
+        return new MediaValidation(false, reason, default);
+    }
 }

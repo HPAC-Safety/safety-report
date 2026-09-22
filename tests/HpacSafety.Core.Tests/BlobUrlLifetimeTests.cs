@@ -3,10 +3,10 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// There are no public object URLs, ever. Every URL this system hands out is
-/// pre-signed and short-lived, and the cap is a domain rule rather than a
-/// per-adapter setting so that no implementation can quietly widen it.
-/// See docs/data-handling.md and ADR-0026.
+///     There are no public object URLs, ever. Every URL this system hands out is
+///     pre-signed and short-lived, and the cap is a domain rule rather than a
+///     per-adapter setting so that no implementation can quietly widen it.
+///     See docs/data-handling.md and ADR-0026.
 /// </summary>
 public class BlobUrlLifetimeTests
 {

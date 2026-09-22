@@ -119,7 +119,7 @@ public class MediaTypeTests
         var strippable = MediaType.Strippable;
 
         // Then
-        strippable.ShouldBe(MediaType.All.Where(t => t.CanBeStripped).ToArray(), ignoreOrder: true);
+        strippable.ShouldBe(MediaType.All.Where(t => t.CanBeStripped).ToArray(), true);
         strippable.ShouldAllBe(t => t.Kind == MediaKind.Image);
     }
 
@@ -134,6 +134,6 @@ public class MediaTypeTests
         all.ShouldContain(MediaType.Heic);
         all.ShouldContain(MediaType.Mp4);
         all.ShouldAllBe(t => t.ContentType.StartsWith("image/", StringComparison.Ordinal)
-            || t.ContentType.StartsWith("video/", StringComparison.Ordinal));
+                             || t.ContentType.StartsWith("video/", StringComparison.Ordinal));
     }
 }

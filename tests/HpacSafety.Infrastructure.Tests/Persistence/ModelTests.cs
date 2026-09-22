@@ -6,17 +6,15 @@ using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// The model, without a database. These assert the mapping decisions a
-/// migration then writes down.
+///     The model, without a database. These assert the mapping decisions a
+///     migration then writes down.
 /// </summary>
 public sealed class ModelTests
 {
@@ -26,8 +24,10 @@ public sealed class ModelTests
         return context.Model;
     }
 
-    private static HpacSafetyDbContext Context() =>
-        new(new DbContextOptionsBuilder<HpacSafetyDbContext>().UseNpgsql("Host=nowhere;Database=unused").Options);
+    private static HpacSafetyDbContext Context()
+    {
+        return new HpacSafetyDbContext(new DbContextOptionsBuilder<HpacSafetyDbContext>().UseNpgsql("Host=nowhere;Database=unused").Options);
+    }
 
     [Theory]
     [InlineData(typeof(Report), "reports")]

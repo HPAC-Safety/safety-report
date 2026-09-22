@@ -50,11 +50,11 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
         var statuses = new List<HttpStatusCode>();
 
         foreach (var (username, password) in new[]
-        {
-            ("admin", "wrong"),
-            ("nobody", "nobody"),
-            ("", ""),
-        })
+                 {
+                     ("admin", "wrong"),
+                     ("nobody", "nobody"),
+                     ("", "")
+                 })
         {
             using var response = await client.PostAsJsonAsync(Token, new { username, password });
             statuses.Add(response.StatusCode);
@@ -156,14 +156,13 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    private sealed record ProblemShape(string? Type, string? Title, string? Detail, int? Status);
-
-    private WebApplicationFactory<Program> WithSettings(params (string Key, string Value)[] settings) =>
-        _factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> WithSettings(params (string Key, string Value)[] settings)
+    {
+        return _factory.WithWebHostBuilder(builder =>
         {
-            foreach (var (key, value) in settings)
-            {
-                builder.UseSetting(key, value);
-            }
+            foreach (var (key, value) in settings) builder.UseSetting(key, value);
         });
+    }
+
+    private sealed record ProblemShape(string? Type, string? Title, string? Detail, int? Status);
 }

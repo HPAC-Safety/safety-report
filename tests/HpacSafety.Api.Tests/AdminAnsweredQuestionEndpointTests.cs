@@ -1,28 +1,24 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
-using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// Editing a question that has been answered, and the queue of answers waiting
-/// for a second official language. See ADR-0071 and ADR-0072.
+///     Editing a question that has been answered, and the queue of answers waiting
+///     for a second official language. See ADR-0071 and ADR-0072.
 /// </summary>
 /// <remarks>
-/// These tests write a report answer directly, because no submission endpoint
-/// exists yet. Every value here is synthetic.
+///     These tests write a report answer directly, because no submission endpoint
+///     exists yet. Every value here is synthetic.
 /// </remarks>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -80,7 +76,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
         using var client = await SignedInAsync();
         var created = await CreateAsync(client, UniqueKey("deleted_report"));
         var id = created.GetProperty("id").GetString()!;
-        await AnswerAsync(id, "Gusting crosswind.", deleteReport: true);
+        await AnswerAsync(id, "Gusting crosswind.", true);
 
         // When
         var edited = await ReviseAsync(client, id, "Reworded anyway");
@@ -171,7 +167,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
     {
         // Given — a free-text answer is never translated
         using var client = await SignedInAsync();
-        var created = await CreateAsync(client, UniqueKey("narrative"), "long_text");
+        var created = await CreateAsync(client, UniqueKey("narrative"));
         var answerId = await AnswerAsync(created.GetProperty("id").GetString()!, "It all happened quickly.");
 
         // When
@@ -201,8 +197,8 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
     }
 
     /// <summary>
-    /// Writes one report answer straight to the database, because there is no
-    /// submission endpoint to post one through yet.
+    ///     Writes one report answer straight to the database, because there is no
+    ///     submission endpoint to post one through yet.
     /// </summary>
     private async Task<string> AnswerAsync(string questionId, string value, bool deleteReport = false)
     {
@@ -239,8 +235,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
         return answer.Id.ToString();
     }
 
-    private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator) =>
-        SignedInClient.AsAsync(_factory, role);
+    private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+    {
+        return SignedInClient.AsAsync(_factory, role);
+    }
 
     private static string UniqueKey(string prefix)
     {
@@ -265,7 +263,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
                 isRequired = false,
                 isPrivate = true,
                 isActive = true,
-                options,
+                options
             });
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
@@ -283,8 +281,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
         return await response.Content.ReadFromJsonAsync<JsonElement>();
     }
 
-    private static object Draft(string labelEn) =>
-        new
+    private static object Draft(string labelEn)
+    {
+        return new
         {
             type = "long_text",
             labelEn,
@@ -292,8 +291,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
             isRequired = false,
             isPrivate = true,
             isActive = true,
-            options = Array.Empty<object>(),
+            options = Array.Empty<object>()
         };
+    }
 
     private static async Task<List<JsonElement>> ListAsync(HttpClient client)
     {

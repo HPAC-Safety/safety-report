@@ -1,13 +1,13 @@
 namespace HpacSafety.Core.Features.Moderation;
 
 /// <summary>
-/// What a signed-in member may do. Read from a claim on a validated token and
-/// never persisted — this system stores no user records. See
-/// docs/authentication.md.
+///     What a signed-in member may do. Read from a claim on a validated token and
+///     never persisted — this system stores no user records. See
+///     docs/authentication.md.
 /// </summary>
 /// <remarks>
-/// The values are ordered so that "the highest role wins" is a comparison. A
-/// token carrying several recognized role claims resolves to the greatest one.
+///     The values are ordered so that "the highest role wins" is a comparison. A
+///     token carrying several recognized role claims resolves to the greatest one.
 /// </remarks>
 public enum MemberRole
 {
@@ -18,5 +18,5 @@ public enum MemberRole
     SafetyOfficer = 1,
 
     /// <summary>Everything a safety officer may do, plus authoring the question bank.</summary>
-    Administrator = 2,
+    Administrator = 2
 }

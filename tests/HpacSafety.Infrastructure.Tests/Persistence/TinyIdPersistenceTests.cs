@@ -2,16 +2,14 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.Reporting;
 using Microsoft.EntityFrameworkCore;
-
 using Npgsql;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Identifiers in the database: one shape everywhere, and a collision handled
-/// rather than assumed away. See ADR-0034.
+///     Identifiers in the database: one shape everywhere, and a collision handled
+///     rather than assumed away. See ADR-0034.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]
@@ -40,10 +38,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
         await using var reader = await command.ExecuteReaderAsync();
 
         var columns = new List<string>();
-        while (await reader.ReadAsync())
-        {
-            columns.Add(reader.GetString(0));
-        }
+        while (await reader.ReadAsync()) columns.Add(reader.GetString(0));
 
         // Then — no mixed-type joins, and nothing left as uuid.
         columns.Count.ShouldBeGreaterThan(15);

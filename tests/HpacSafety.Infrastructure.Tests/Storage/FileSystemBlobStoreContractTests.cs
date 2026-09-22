@@ -4,14 +4,22 @@ using HpacSafety.Infrastructure.Storage;
 namespace HpacSafety.Infrastructure.Tests.Storage;
 
 /// <summary>
-/// The contract suite against the development store. No Docker, so it runs
-/// everywhere — which is exactly why it must not be the only place the contract
-/// is checked. See <see cref="MinioBlobStoreContractTests" />.
+///     The contract suite against the development store. No Docker, so it runs
+///     everywhere — which is exactly why it must not be the only place the contract
+///     is checked. See <see cref="MinioBlobStoreContractTests" />.
 /// </summary>
 public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, IDisposable
 {
     private readonly string _root = Path.Combine(Path.GetTempPath(), "hpac-blob-tests", Guid.NewGuid().ToString("n"));
     private FileSystemBlobStore _store = null!;
+
+    // The store reports a missing blob as FileNotFoundException, which is what
+    // the contract suite's existence check expects.
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, true);
+    }
 
     protected override Task<IBlobStore> CreateStoreAsync()
     {
@@ -50,17 +58,8 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
         }
     }
 
-    protected override Uri RetargetToKey(Uri url, BlobKey key) =>
-        new(new UriBuilder(url) { Path = "/" + key.Value }.Uri.ToString());
-
-    // The store reports a missing blob as FileNotFoundException, which is what
-    // the contract suite's existence check expects.
-
-    public void Dispose()
+    protected override Uri RetargetToKey(Uri url, BlobKey key)
     {
-        if (Directory.Exists(_root))
-        {
-            Directory.Delete(_root, recursive: true);
-        }
+        return new Uri(new UriBuilder(url) { Path = "/" + key.Value }.Uri.ToString());
     }
 }

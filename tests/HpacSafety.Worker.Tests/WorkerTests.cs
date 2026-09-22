@@ -5,32 +5,36 @@ using Shouldly;
 namespace HpacSafety.Worker.Tests;
 
 /// <summary>
-/// The Worker has no outbox consumer yet — the claim loop lands with the outbox
-/// issue. What it does have is a lifecycle, and these pin it down: it starts, it
-/// announces itself, and it stops without hanging. A background service that
-/// throws or hangs on start fails silently inside a container, so this is worth
-/// asserting before there is anything more interesting to assert.
+///     The Worker has no outbox consumer yet — the claim loop lands with the outbox
+///     issue. What it does have is a lifecycle, and these pin it down: it starts, it
+///     announces itself, and it stops without hanging. A background service that
+///     throws or hangs on start fails silently inside a container, so this is worth
+///     asserting before there is anything more interesting to assert.
 /// </summary>
 public class WorkerTests
 {
     /// <summary>
-    /// Starts the Worker, waits for execution to actually finish, and returns
-    /// the log it produced.
+    ///     Starts the Worker, waits for execution to actually finish, and returns
+    ///     the log it produced.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// <c>StartAsync</c> dispatches <c>ExecuteAsync</c> rather than running it
-    /// inline, and <c>StopAsync</c> cancels the stopping token before awaiting.
-    /// Start-then-stop can therefore cancel the dispatched work <em>before the
-    /// thread pool ever runs it</em>, so the body never executes and the log is
-    /// empty. That is not hypothetical: it failed exactly that way here.
-    /// </para>
-    /// <para>
-    /// <c>ExecuteTask</c> is the public handle on that dispatched work. Awaiting
-    /// it is deterministic. Polling the log with a timeout would be a race
-    /// dressed as a test, and a flaky observation would also make the coverage
-    /// number flaky — which matters now that a ratchet gates on it.
-    /// </para>
+    ///     <para>
+    ///         <c>StartAsync</c> dispatches <c>ExecuteAsync</c> rather than running it
+    ///         inline, and <c>StopAsync</c> cancels the stopping token before awaiting.
+    ///         Start-then-stop can therefore cancel the dispatched work
+    ///         <em>
+    ///             before the
+    ///             thread pool ever runs it
+    ///         </em>
+    ///         , so the body never executes and the log is
+    ///         empty. That is not hypothetical: it failed exactly that way here.
+    ///     </para>
+    ///     <para>
+    ///         <c>ExecuteTask</c> is the public handle on that dispatched work. Awaiting
+    ///         it is deterministic. Polling the log with a timeout would be a race
+    ///         dressed as a test, and a flaky observation would also make the coverage
+    ///         number flaky — which matters now that a ratchet gates on it.
+    ///     </para>
     /// </remarks>
     private static async Task<FakeLogger<Worker>> RunToCompletionAsync()
     {

@@ -1,43 +1,39 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-
 using HpacSafety.Core.Features.Moderation;
-
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-
 using Reqnroll;
-
 using Testcontainers.PostgreSql;
 
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-/// The API, booted in process, for the scenarios that describe what it
-/// refuses over HTTP.
+///     The API, booted in process, for the scenarios that describe what it
+///     refuses over HTTP.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Most scenarios in <c>features/</c> describe rules that live in the domain
-/// and execute against it directly — no host, no database, no container. The
-/// authorization scenarios are different: "the API rejects the operation
-/// regardless of what the UI would have shown" is a statement about a real
-/// request reaching a real policy, and there is no honest way to assert it
-/// without one.
-/// </para>
-/// <para>
-/// <b>Started on first use, not at test-run start.</b> Reqnroll's
-/// <c>[BeforeTestRun]</c> would pay for a container on every acceptance run,
-/// including the domain-only ones that are the large majority. The host
-/// applies migrations at startup (ADR-0055), so a database is required even
-/// though most of these requests are refused before any handler runs.
-/// </para>
-/// <para>
-/// This is deliberately not a second copy of <c>HpacSafety.Api.Tests</c>.
-/// That suite proves the behaviour in detail — every rejected token shape,
-/// every role at every endpoint. This one proves that the sentences in the
-/// feature file are true of the running system.
-/// </para>
+///     <para>
+///         Most scenarios in <c>features/</c> describe rules that live in the domain
+///         and execute against it directly — no host, no database, no container. The
+///         authorization scenarios are different: "the API rejects the operation
+///         regardless of what the UI would have shown" is a statement about a real
+///         request reaching a real policy, and there is no honest way to assert it
+///         without one.
+///     </para>
+///     <para>
+///         <b>Started on first use, not at test-run start.</b> Reqnroll's
+///         <c>[BeforeTestRun]</c> would pay for a container on every acceptance run,
+///         including the domain-only ones that are the large majority. The host
+///         applies migrations at startup (ADR-0055), so a database is required even
+///         though most of these requests are refused before any handler runs.
+///     </para>
+///     <para>
+///         This is deliberately not a second copy of <c>HpacSafety.Api.Tests</c>.
+///         That suite proves the behaviour in detail — every rejected token shape,
+///         every role at every endpoint. This one proves that the sentences in the
+///         feature file are true of the running system.
+///     </para>
 /// </remarks>
 public static class BootedApi
 {
@@ -52,10 +48,7 @@ public static class BootedApi
     /// <summary>The booted host, starting it if this is the first scenario to ask.</summary>
     public static async Task<WebApplicationFactory<Program>> FactoryAsync()
     {
-        if (factory is not null)
-        {
-            return factory;
-        }
+        if (factory is not null) return factory;
 
         await Gate.WaitAsync().ConfigureAwait(false);
 
@@ -85,20 +78,22 @@ public static class BootedApi
     }
 
     /// <summary>
-    /// A host that is not in Development, validating against a provider it can
-    /// never reach — which is all these scenarios need, because the routes they
-    /// ask about either do not exist there or refuse before any handler runs.
+    ///     A host that is not in Development, validating against a provider it can
+    ///     never reach — which is all these scenarios need, because the routes they
+    ///     ask about either do not exist there or refuse before any handler runs.
     /// </summary>
-    public static async Task<WebApplicationFactory<Program>> ProductionShapedAsync() =>
-        (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+    public static async Task<WebApplicationFactory<Program>> ProductionShapedAsync()
+    {
+        return (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Production");
             builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
         });
+    }
 
     /// <summary>
-    /// A client carrying a real token for that role, minted by the booted host
-    /// and validated by the same middleware production runs (ADR-0066).
+    ///     A client carrying a real token for that role, minted by the booted host
+    ///     and validated by the same middleware production runs (ADR-0066).
     /// </summary>
     public static async Task<HttpClient> SignedInAsAsync(MemberRole role)
     {
@@ -107,7 +102,7 @@ public static class BootedApi
             MemberRole.Administrator => ("admin", "admin"),
             MemberRole.SafetyOfficer => ("officer", "officer"),
             MemberRole.User => ("user", "user"),
-            _ => throw new ArgumentOutOfRangeException(nameof(role)),
+            _ => throw new ArgumentOutOfRangeException(nameof(role))
         };
 
         var host = await FactoryAsync().ConfigureAwait(false);

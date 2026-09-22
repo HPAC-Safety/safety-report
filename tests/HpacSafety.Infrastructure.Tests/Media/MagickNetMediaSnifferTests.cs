@@ -5,7 +5,7 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Media;
 
 /// <summary>
-/// "Content type is sniffed, not trusted from the client" — docs/data-handling.md.
+///     "Content type is sniffed, not trusted from the client" — docs/data-handling.md.
 /// </summary>
 public class MagickNetMediaSnifferTests
 {

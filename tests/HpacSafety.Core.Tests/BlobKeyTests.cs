@@ -3,10 +3,10 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// A blob key is the only thing standing between an attacker-supplied string and
-/// the filesystem in <c>FileSystemBlobStore</c>, and it is also where the storage
-/// layout stops being a convention and becomes a rule: a key that is not
-/// namespaced by a report id cannot be constructed. See ADR-0026.
+///     A blob key is the only thing standing between an attacker-supplied string and
+///     the filesystem in <c>FileSystemBlobStore</c>, and it is also where the storage
+///     layout stops being a convention and becomes a rule: a key that is not
+///     namespaced by a report id cannot be constructed. See ADR-0026.
 /// </summary>
 public class BlobKeyTests
 {

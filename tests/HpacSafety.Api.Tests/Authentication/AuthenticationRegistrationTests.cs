@@ -1,19 +1,17 @@
 using HpacSafety.Api.Authentication;
-
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 using Shouldly;
 
 namespace HpacSafety.Api.Tests.Authentication;
 
 /// <summary>
-/// Which concrete registration the environment decision produces, and the
-/// misconfigurations the host refuses to start on.
+///     Which concrete registration the environment decision produces, and the
+///     misconfigurations the host refuses to start on.
 /// </summary>
 /// <remarks>
-/// A host that silently accepts nothing, or silently accepts everything, is
-/// worse than one that will not start.
+///     A host that silently accepts nothing, or silently accepts everything, is
+///     worse than one that will not start.
 /// </remarks>
 public sealed class AuthenticationRegistrationTests
 {
@@ -23,7 +21,7 @@ public sealed class AuthenticationRegistrationTests
     public void GivenDevelopment_WhenAuthenticationIsRegistered_ThenDevelopmentIssuerResolves()
     {
         // Given
-        var services = Build(new() { ["HpacSafety:Authentication:DevelopmentSigningKey"] = GoodKey }, development: true);
+        var services = Build(new Dictionary<string, string?> { ["HpacSafety:Authentication:DevelopmentSigningKey"] = GoodKey }, true);
 
         // When
         var issuer = services.GetService<DevelopmentTokenIssuer>();
@@ -36,7 +34,7 @@ public sealed class AuthenticationRegistrationTests
     public void GivenNonDevelopmentEnvironment_WhenAuthenticationIsRegistered_ThenNoDevelopmentIssuerExists()
     {
         // Given
-        var services = Build(new() { ["HpacSafety:Authentication:Authority"] = "https://provider.example.test" }, development: false);
+        var services = Build(new Dictionary<string, string?> { ["HpacSafety:Authentication:Authority"] = "https://provider.example.test" }, false);
 
         // When
         var issuer = services.GetService<DevelopmentTokenIssuer>();
@@ -49,7 +47,7 @@ public sealed class AuthenticationRegistrationTests
     public void GivenNoSigningKeyInDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
     {
         // Given / When
-        var registering = () => Build([], development: true);
+        var registering = () => Build([], true);
 
         // Then
         var exception = Should.Throw<InvalidOperationException>(registering);
@@ -64,7 +62,7 @@ public sealed class AuthenticationRegistrationTests
 
         // When
         var registering = () => Build(
-            new() { ["HpacSafety:Authentication:DevelopmentSigningKey"] = shortKey }, development: true);
+            new Dictionary<string, string?> { ["HpacSafety:Authentication:DevelopmentSigningKey"] = shortKey }, true);
 
         // Then
         var exception = Should.Throw<InvalidOperationException>(registering);
@@ -75,7 +73,7 @@ public sealed class AuthenticationRegistrationTests
     public void GivenNoAuthorityOutsideDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
     {
         // Given / When — without an authority there are no keys to validate against
-        var registering = () => Build([], development: false);
+        var registering = () => Build([], false);
 
         // Then
         var exception = Should.Throw<InvalidOperationException>(registering);
@@ -88,7 +86,7 @@ public sealed class AuthenticationRegistrationTests
 
         return new ServiceCollection()
             .AddLogging()
-            .AddHpacSafetyAuthentication(configuration, useDevelopmentIssuer: development)
+            .AddHpacSafetyAuthentication(configuration, development)
             .AddSingleton(TimeProvider.System)
             .BuildServiceProvider();
     }

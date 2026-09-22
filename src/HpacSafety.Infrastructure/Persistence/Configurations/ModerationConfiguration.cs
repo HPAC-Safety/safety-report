@@ -1,14 +1,13 @@
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace HpacSafety.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// The <c>audit_log</c> table. Every moderation action, with who and when —
-/// see <c>docs/data-handling.md</c>, "Access and audit".
+///     The <c>audit_log</c> table. Every moderation action, with who and when —
+///     see <c>docs/data-handling.md</c>, "Access and audit".
 /// </summary>
 public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditLogEntry>
 {
@@ -38,15 +37,15 @@ public sealed class AuditLogEntryConfiguration : IEntityTypeConfiguration<AuditL
 }
 
 /// <summary>
-/// The <c>outbox_messages</c> table. The report and its outbox row commit in one
-/// transaction — see ADR-0002.
+///     The <c>outbox_messages</c> table. The report and its outbox row commit in one
+///     transaction — see ADR-0002.
 /// </summary>
 public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<OutboxMessage>
 {
     /// <summary>
-    /// The rows the worker is allowed to claim: not yet processed, and not set
-    /// aside as poison. A partial index keeps the claim query reading only
-    /// those, however long the processed history grows.
+    ///     The rows the worker is allowed to claim: not yet processed, and not set
+    ///     aside as poison. A partial index keeps the claim query reading only
+    ///     those, however long the processed history grows.
     /// </summary>
     public const string ClaimableFilter = "processed_at IS NULL AND poisoned_at IS NULL";
 

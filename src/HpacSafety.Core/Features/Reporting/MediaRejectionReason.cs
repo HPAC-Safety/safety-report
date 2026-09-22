@@ -1,9 +1,9 @@
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// Why an upload was refused. A code rather than a sentence: the edge localizes
-/// it, so no user-facing string is written here. See
-/// <c>skills/localize-hpac-app/SKILL.md</c>.
+///     Why an upload was refused. A code rather than a sentence: the edge localizes
+///     it, so no user-facing string is written here. See
+///     <c>skills/localize-hpac-app/SKILL.md</c>.
 /// </summary>
 public enum MediaRejectionReason
 {
@@ -23,5 +23,5 @@ public enum MediaRejectionReason
     UnacceptedMediaType = 4,
 
     /// <summary>The client claimed one format and uploaded another.</summary>
-    DeclaredTypeMismatch = 5,
+    DeclaredTypeMismatch = 5
 }

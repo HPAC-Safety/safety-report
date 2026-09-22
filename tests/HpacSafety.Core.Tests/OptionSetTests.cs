@@ -1,13 +1,12 @@
 using HpacSafety.Core.Features.QuestionBank;
-
 using Shouldly;
 
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// The mutable side of the question bank: a reusable choice list an
-/// administrator maintains. Its whole reason for being safe is that a revision
-/// takes a copy — see <see cref="OptionSet.AsRevisionOptions"/> and ADR-0058.
+///     The mutable side of the question bank: a reusable choice list an
+///     administrator maintains. Its whole reason for being safe is that a revision
+///     takes a copy — see <see cref="OptionSet.AsRevisionOptions" /> and ADR-0058.
 /// </summary>
 public class OptionSetTests
 {

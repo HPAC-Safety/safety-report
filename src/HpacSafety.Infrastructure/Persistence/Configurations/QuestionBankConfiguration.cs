@@ -1,5 +1,4 @@
 using HpacSafety.Core.Features.QuestionBank;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -53,8 +52,8 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 }
 
 /// <summary>
-/// The <c>question_revisions</c> table. A revision is complete and immutable
-/// once written: both official languages are present from the start.
+///     The <c>question_revisions</c> table. A revision is complete and immutable
+///     once written: both official languages are present from the start.
 /// </summary>
 public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<QuestionRevision>
 {
@@ -123,8 +122,8 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 }
 
 /// <summary>
-/// The <c>question_revision_options</c> table, complete in both official
-/// languages.
+///     The <c>question_revision_options</c> table, complete in both official
+///     languages.
 /// </summary>
 public sealed class QuestionRevisionOptionConfiguration : IEntityTypeConfiguration<QuestionRevisionOption>
 {

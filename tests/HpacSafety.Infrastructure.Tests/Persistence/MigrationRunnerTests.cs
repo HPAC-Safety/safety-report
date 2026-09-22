@@ -1,16 +1,14 @@
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// Whichever of the API or the Worker starts first after a deploy applies
-/// pending migrations; the other must not fail or double-apply them. See
-/// ADR-0055.
+///     Whichever of the API or the Worker starts first after a deploy applies
+///     pending migrations; the other must not fail or double-apply them. See
+///     ADR-0055.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]

@@ -1,12 +1,10 @@
-
-
 namespace HpacSafety.Core.Features.QuestionBank;
 
 /// <summary>
-/// One choice on a select-style question revision, in both official languages.
-/// The <see cref="Code"/> is invariant and never changes — it is what every
-/// historical answer points at, so a rename is impossible: a relabel requires a
-/// new revision, the same as any other wording change.
+///     One choice on a select-style question revision, in both official languages.
+///     The <see cref="Code" /> is invariant and never changes — it is what every
+///     historical answer points at, so a rename is impossible: a relabel requires a
+///     new revision, the same as any other wording change.
 /// </summary>
 public class QuestionRevisionOption
 {
@@ -43,19 +41,19 @@ public class QuestionRevisionOption
     public string Code { get; private init; }
 
     /// <summary>
-    /// Where this option sits among its siblings. Fixed at creation: the
-    /// complete ordered option set belongs to the revision it was born with,
-    /// and reordering options means creating a new revision with a new list,
-    /// not moving one in place.
+    ///     Where this option sits among its siblings. Fixed at creation: the
+    ///     complete ordered option set belongs to the revision it was born with,
+    ///     and reordering options means creating a new revision with a new list,
+    ///     not moving one in place.
     /// </summary>
     public int DisplayOrder { get; private init; }
 
     /// <summary>
-    /// The <see cref="OptionSetItem"/> this option was copied from, if it came
-    /// from a shared set rather than being typed out for this question alone.
-    /// Provenance only — see <see cref="QuestionOptionInput.SourceItemId"/> and
-    /// ADR-0058. This option keeps its own wording whatever later happens to
-    /// that item, including the item being removed from the set.
+    ///     The <see cref="OptionSetItem" /> this option was copied from, if it came
+    ///     from a shared set rather than being typed out for this question alone.
+    ///     Provenance only — see <see cref="QuestionOptionInput.SourceItemId" /> and
+    ///     ADR-0058. This option keeps its own wording whatever later happens to
+    ///     that item, including the item being removed from the set.
     /// </summary>
     public TinyId? SourceItemId { get; private init; }
 
@@ -63,21 +61,28 @@ public class QuestionRevisionOption
     public DateTimeOffset? Deleted { get; private set; }
 
     /// <summary>The English wording.</summary>
-    public string LabelEn { get; private init; }
+    public string LabelEn { get; }
 
     /// <summary>The French wording.</summary>
-    public string LabelFr { get; private init; }
+    public string LabelFr { get; }
 
     /// <summary>This option's wording in one locale.</summary>
-    public string Label(Locale locale) => locale == Locale.FrCa ? LabelFr : LabelEn;
+    public string Label(Locale locale)
+    {
+        return locale == Locale.FrCa ? LabelFr : LabelEn;
+    }
 
     internal static QuestionRevisionOption Create(
         TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr,
-        TinyId? sourceItemId = null) =>
-        new(questionRevisionId, code, displayOrder, labelEn, labelFr, sourceItemId);
+        TinyId? sourceItemId = null)
+    {
+        return new QuestionRevisionOption(questionRevisionId, code, displayOrder, labelEn, labelFr, sourceItemId);
+    }
 
-    private static string NotBlank(string label) =>
-        string.IsNullOrWhiteSpace(label)
+    private static string NotBlank(string label)
+    {
+        return string.IsNullOrWhiteSpace(label)
             ? throw new DomainRuleViolationException("A question option needs a label in both official languages.")
             : label;
+    }
 }

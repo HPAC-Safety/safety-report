@@ -1,12 +1,10 @@
-
-
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// The anonymized bilingual summary of a report. Exactly one row per report: the
-/// Worker's single model call produces both languages together, so there is
-/// nothing to keep in sync between them, and one shared approval covers the
-/// pair. See product invariant #6 and <c>docs/data-and-persistence.md</c>.
+///     The anonymized bilingual summary of a report. Exactly one row per report: the
+///     Worker's single model call produces both languages together, so there is
+///     nothing to keep in sync between them, and one shared approval covers the
+///     pair. See product invariant #6 and <c>docs/data-and-persistence.md</c>.
 /// </summary>
 public class Summary
 {
@@ -52,9 +50,9 @@ public class Summary
     public string PromptVersion { get; private init; }
 
     /// <summary>
-    /// The safety officer who approved the pair, as the subject claim of their
-    /// validated token. Opaque, and deliberately not a key — there is no user
-    /// table to join to (ADR-0065).
+    ///     The safety officer who approved the pair, as the subject claim of their
+    ///     validated token. Opaque, and deliberately not a key — there is no user
+    ///     table to join to (ADR-0065).
     /// </summary>
     public string? ApprovedBySubject { get; private set; }
 
@@ -75,12 +73,14 @@ public class Summary
 
     /// <summary>Creates the summary generated from one Worker call.</summary>
     public static Summary Generate(
-        TinyId reportId, string aiSummaryEn, string aiSummaryFr, string model, string promptVersion, DateTimeOffset at) =>
-        new(reportId, aiSummaryEn, aiSummaryFr, model, promptVersion, at);
+        TinyId reportId, string aiSummaryEn, string aiSummaryFr, string model, string promptVersion, DateTimeOffset at)
+    {
+        return new Summary(reportId, aiSummaryEn, aiSummaryFr, model, promptVersion, at);
+    }
 
     /// <summary>
-    /// Replaces the English text by hand — the escape hatch when the model
-    /// failed. Editing either language clears the pair's approval.
+    ///     Replaces the English text by hand — the escape hatch when the model
+    ///     failed. Editing either language clears the pair's approval.
     /// </summary>
     public void RewriteEn(string text, DateTimeOffset at)
     {
@@ -90,8 +90,8 @@ public class Summary
     }
 
     /// <summary>
-    /// Replaces the French text by hand. Editing either language clears the
-    /// pair's approval.
+    ///     Replaces the French text by hand. Editing either language clears the
+    ///     pair's approval.
     /// </summary>
     public void RewriteFr(string text, DateTimeOffset at)
     {
@@ -113,8 +113,10 @@ public class Summary
         ApprovedAt = null;
     }
 
-    private static string NotBlank(string text) =>
-        string.IsNullOrWhiteSpace(text)
+    private static string NotBlank(string text)
+    {
+        return string.IsNullOrWhiteSpace(text)
             ? throw new DomainRuleViolationException("A summary cannot be blank.")
             : text;
+    }
 }

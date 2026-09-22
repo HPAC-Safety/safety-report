@@ -6,11 +6,11 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// Ingest is where a client-supplied file stops being trusted. Nothing leaves
-/// quarantine until this system has decided what it is; the original bytes are
-/// then retained exactly as uploaded — they are the private source record — and the
-/// derivative a reviewer sees is the stripped one, when there can be one at all.
-/// See docs/data-handling.md.
+///     Ingest is where a client-supplied file stops being trusted. Nothing leaves
+///     quarantine until this system has decided what it is; the original bytes are
+///     then retained exactly as uploaded — they are the private source record — and the
+///     derivative a reviewer sees is the stripped one, when there can be one at all.
+///     See docs/data-handling.md.
 /// </summary>
 public class MediaIngestorTests
 {
@@ -23,12 +23,14 @@ public class MediaIngestorTests
         InMemoryBlobStore store,
         MediaType? sniffed,
         IExifStripper stripper,
-        long maxByteSize = 1_000_000) =>
-        new(store,
+        long maxByteSize = 1_000_000)
+    {
+        return new MediaIngestor(store,
             new StubMediaSniffer(sniffed),
             stripper,
             new MediaPolicy(maxByteSize, MediaType.All),
             new FixedClock(Now));
+    }
 
     [Fact]
     public async Task GivenQuarantinedPhoto_WhenIngested_ThenOriginalAndDerivativeArePromoted()
@@ -135,7 +137,7 @@ public class MediaIngestorTests
         store.Seed(Quarantined, Encoding.ASCII.GetBytes("this is not an image at all"));
 
         // When
-        var outcome = await Ingestor(store, sniffed: null, new RecordingExifStripper()).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+        var outcome = await Ingestor(store, null, new RecordingExifStripper()).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
 
         // Then
         // The bytes stay where the browser put them and expire on their own. No
@@ -175,7 +177,7 @@ public class MediaIngestorTests
         // rest of a 500 MB object was never requested. A naive
         // "download everything, then check Length" implementation would have
         // served the full 500 MB here.
-        source.TotalBytesServed.ShouldBeLessThan(maxByteSize + (4 * 1024 * 1024));
+        source.TotalBytesServed.ShouldBeLessThan(maxByteSize + 4 * 1024 * 1024);
     }
 
     [Fact]
@@ -187,7 +189,7 @@ public class MediaIngestorTests
         var stripper = new RecordingExifStripper();
 
         // When
-        var outcome = await Ingestor(store, MediaType.Jpeg, stripper, maxByteSize: 32).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+        var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
 
         // Then
         outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
@@ -207,12 +209,14 @@ public class MediaIngestorTests
         // Ingest reads unverified bytes and nothing else. Pointing it at a
         // report's private source record would re-run stripping over a file that has
         // already been accepted, which is not what this is for.
-        await Should.ThrowAsync<DomainRuleViolationException>(
-            () => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).IngestAsync(original, "image/jpeg", CancellationToken.None));
+        await Should.ThrowAsync<DomainRuleViolationException>(() => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).IngestAsync(original, "image/jpeg", CancellationToken.None));
     }
 }
 
 internal sealed class FixedClock(DateTimeOffset now) : TimeProvider
 {
-    public override DateTimeOffset GetUtcNow() => now;
+    public override DateTimeOffset GetUtcNow()
+    {
+        return now;
+    }
 }

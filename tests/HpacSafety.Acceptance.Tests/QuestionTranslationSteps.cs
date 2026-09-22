@@ -1,29 +1,27 @@
 using System.Reflection;
-
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Translation;
-
 using Reqnroll;
 using Shouldly;
 
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-/// The non-<c>@ui</c> translation scenarios in
-/// <c>features/question-bank-and-form/question-bank-and-form.feature</c>.
+///     The non-<c>@ui</c> translation scenarios in
+///     <c>features/question-bank-and-form/question-bank-and-form.feature</c>.
 /// </summary>
 /// <remarks>
-/// <para>
-/// These assert the shape of the contract rather than a provider's output:
-/// that translation is a port with one purpose, that it is reached through the
-/// application's own API, and that an unconfigured server says so without
-/// leaking anything. The DeepL adapter's own behaviour is covered by
-/// <c>HpacSafety.Infrastructure.Tests</c>, and the endpoint's by
-/// <c>HpacSafety.Api.Tests</c>.
-/// </para>
-/// <para>
-/// No credential and no network are involved, and no text here is a reporter's.
-/// </para>
+///     <para>
+///         These assert the shape of the contract rather than a provider's output:
+///         that translation is a port with one purpose, that it is reached through the
+///         application's own API, and that an unconfigured server says so without
+///         leaking anything. The DeepL adapter's own behaviour is covered by
+///         <c>HpacSafety.Infrastructure.Tests</c>, and the endpoint's by
+///         <c>HpacSafety.Api.Tests</c>.
+///     </para>
+///     <para>
+///         No credential and no network are involved, and no text here is a reporter's.
+///     </para>
 /// </remarks>
 [Binding]
 public sealed class QuestionTranslationSteps
@@ -36,18 +34,29 @@ public sealed class QuestionTranslationSteps
     private bool _available;
 
     [Given(@"an Administrator is authoring a question in one official language")]
-    public void GivenAQuestionInOneLanguage() => _translator.Configured = true;
+    public void GivenAQuestionInOneLanguage()
+    {
+        _translator.Configured = true;
+    }
 
     [Given(@"no translation provider is configured outside development")]
-    public void GivenNoProvider() => _translator.Configured = false;
+    public void GivenNoProvider()
+    {
+        _translator.Configured = false;
+    }
 
     [Given(@"a development server has no translation provider configured")]
-    public void GivenADevelopmentStandIn() => _standIn = new EchoTranslator();
+    public void GivenADevelopmentStandIn()
+    {
+        _standIn = new EchoTranslator();
+    }
 
     [When(@"an Administrator asks for the other language to be translated")]
-    public async Task WhenTheStandInIsAsked() =>
+    public async Task WhenTheStandInIsAsked()
+    {
         _translated = await _standIn!.TranslateAsync(
             ["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+    }
 
     [Then(@"the text comes back unchanged through the same interface")]
     public void ThenItComesBackUnchanged()
@@ -84,12 +93,17 @@ public sealed class QuestionTranslationSteps
     }
 
     [When(@"they ask for the other language to be translated")]
-    public async Task WhenTheOtherLanguageIsAskedFor() =>
+    public async Task WhenTheOtherLanguageIsAskedFor()
+    {
         _translated = await _translator.TranslateAsync(
             ["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+    }
 
     [When(@"the authoring screen asks whether translation is available")]
-    public void WhenAvailabilityIsAsked() => _available = _translator.IsConfigured;
+    public void WhenAvailabilityIsAsked()
+    {
+        _available = _translator.IsConfigured;
+    }
 
     [Then(@"the request goes to the application's own API rather than to a provider from the browser")]
     public void ThenTheRequestGoesToOurOwnApi()
@@ -165,13 +179,16 @@ public sealed class QuestionTranslationSteps
         Assembly.Load("HpacSafety.Core")
             .GetTypes()
             .SelectMany(type => type.GetMethods(BindingFlags.Instance | BindingFlags.Static
-                | BindingFlags.Public | BindingFlags.NonPublic))
+                                                                      | BindingFlags.Public | BindingFlags.NonPublic))
             .ShouldNotContain(method =>
                 method.GetParameters().Any(parameter => parameter.ParameterType == typeof(ITranslator)));
     }
 
     [Then(@"it is told that translation is unavailable")]
-    public void ThenTranslationIsUnavailable() => _available.ShouldBeFalse();
+    public void ThenTranslationIsUnavailable()
+    {
+        _available.ShouldBeFalse();
+    }
 
     [Then(@"the answer carries no credential and no provider detail")]
     public async Task ThenTheAnswerCarriesNothingSensitive()
@@ -179,7 +196,7 @@ public sealed class QuestionTranslationSteps
         var cause = await Should.ThrowAsync<TranslationUnavailableException>(() =>
             _translator.TranslateAsync(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 
-        cause.Message.ShouldNotContain("key", Case.Insensitive);
+        cause.Message.ShouldNotContain("key");
         cause.Message.ShouldNotContain("Were you injured?");
     }
 
@@ -188,10 +205,7 @@ public sealed class QuestionTranslationSteps
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "src", "web", "src")))
-        {
-            directory = directory.Parent;
-        }
+        while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "src", "web", "src"))) directory = directory.Parent;
 
         return Path.Combine(
             directory?.FullName ?? throw new DirectoryNotFoundException("Could not find src/web/src."),
@@ -206,9 +220,11 @@ public sealed class QuestionTranslationSteps
         public bool IsConfigured => Configured;
 
         public Task<IReadOnlyList<string>> TranslateAsync(
-            IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken) =>
-            Configured
+            IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
+        {
+            return Configured
                 ? Task.FromResult<IReadOnlyList<string>>([.. texts.Select(text => $"[{target.Code}] {text}")])
                 : throw new TranslationUnavailableException("Translation is not configured on this server.");
+        }
     }
 }

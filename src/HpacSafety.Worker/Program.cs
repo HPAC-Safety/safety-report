@@ -1,6 +1,5 @@
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Worker;
-
 using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);

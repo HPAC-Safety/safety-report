@@ -1,13 +1,12 @@
 using System.Linq.Expressions;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace HpacSafety.Infrastructure.Persistence.Conventions;
 
 /// <summary>
-/// Every application table except the append-only <c>audit_log</c> carries a
-/// <c>Deleted timestamptz null</c> column and is filtered to its live rows by
-/// default. See <c>docs/data-and-persistence.md</c>.
+///     Every application table except the append-only <c>audit_log</c> carries a
+///     <c>Deleted timestamptz null</c> column and is filtered to its live rows by
+///     default. See <c>docs/data-and-persistence.md</c>.
 /// </summary>
 public static class SoftDeleteFilters
 {
@@ -19,10 +18,7 @@ public static class SoftDeleteFilters
 
         foreach (var entity in modelBuilder.Model.GetEntityTypes())
         {
-            if (entity.FindProperty("Deleted") is null)
-            {
-                continue;
-            }
+            if (entity.FindProperty("Deleted") is null) continue;
 
             var parameter = Expression.Parameter(entity.ClrType, "e");
             var property = Expression.Property(parameter, "Deleted");

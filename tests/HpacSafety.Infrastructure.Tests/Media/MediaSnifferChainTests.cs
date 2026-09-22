@@ -5,8 +5,8 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Media;
 
 /// <summary>
-/// The chain is what lets images and video be identified by different means
-/// without the caller knowing there is more than one sniffer.
+///     The chain is what lets images and video be identified by different means
+///     without the caller knowing there is more than one sniffer.
 /// </summary>
 public class MediaSnifferChainTests
 {

@@ -5,10 +5,10 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// Every answer is one string — the words the reporter saw, in the language
-/// they saw them. A select value is flagged for an administrator to supply the
-/// other language; a boolean and a date have one invariant written form in both.
-/// See ADR-0072.
+///     Every answer is one string — the words the reporter saw, in the language
+///     they saw them. A select value is flagged for an administrator to supply the
+///     other language; a boolean and a date have one invariant written form in both.
+///     See ADR-0072.
 /// </summary>
 public class StringAnswerTests
 {
@@ -38,8 +38,8 @@ public class StringAnswerTests
 
         // When — a later revision renames the choice entirely
         question.Revise(
-            QuestionType.SingleSelect, "Province", "Province", isPrivate: true, isActive: true,
-            displayOrder: 1, Now,
+            QuestionType.SingleSelect, "Province", "Province", true, true,
+            1, Now,
             options: [new QuestionOptionInput("alberta", "Province of Alberta", "Province de l'Alberta")]);
 
         // Then — the answer carries its own words and resolves through nothing
@@ -237,16 +237,22 @@ public class StringAnswerTests
         answer.NeedsTranslation.ShouldBeFalse();
     }
 
-    private static Question Province() =>
-        Question.Create(
+    private static Question Province()
+    {
+        return Question.Create(
             "province", QuestionType.SingleSelect, "Province", "Province", Now, isActive: true, displayOrder: 1,
             options: [new QuestionOptionInput("alberta", "Alberta", "Alberta")]);
+    }
 
-    private static Question Injury() =>
-        Question.Create(
+    private static Question Injury()
+    {
+        return Question.Create(
             "injury", QuestionType.YesNo, "Were you injured?", "Avez-vous été blessé ?", Now, isActive: true);
+    }
 
-    private static Question Narrative() =>
-        Question.Create(
+    private static Question Narrative()
+    {
+        return Question.Create(
             "narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", Now, isActive: true);
+    }
 }

@@ -4,9 +4,9 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// <see cref="MediaIngestOutcome" /> is transient; <see cref="ReportFile" /> is
-/// the row an admin UI will actually project from. The fail-closed rule has to
-/// hold on both, or it holds only until the first page is written.
+///     <see cref="MediaIngestOutcome" /> is transient; <see cref="ReportFile" /> is
+///     the row an admin UI will actually project from. The fail-closed rule has to
+///     hold on both, or it holds only until the first page is written.
 /// </summary>
 public class ReportFileTests
 {
@@ -14,8 +14,10 @@ public class ReportFileTests
 
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
-    private static ReportFile NewFile(string fileName = "photo.jpg") =>
-        new(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
+    private static ReportFile NewFile(string fileName = "photo.jpg")
+    {
+        return new ReportFile(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
+    }
 
     [Fact]
     public void GivenFileWithNoDerivative_WhenViewableKeyIsAskedFor_ThenFailsClosed()

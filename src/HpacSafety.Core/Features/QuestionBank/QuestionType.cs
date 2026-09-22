@@ -1,9 +1,8 @@
-
 namespace HpacSafety.Core.Features.QuestionBank;
 
 /// <summary>
-/// What a question asks for. The picker style — dropdown versus radio buttons —
-/// is presentation, not domain: both are <see cref="SingleSelect"/>.
+///     What a question asks for. The picker style — dropdown versus radio buttons —
+///     is presentation, not domain: both are <see cref="SingleSelect" />.
 /// </summary>
 public enum QuestionType
 {
@@ -23,10 +22,10 @@ public enum QuestionType
     Time = 11,
 
     /// <summary>
-    /// A type-ahead over a known list. Domain-identical to
-    /// <see cref="SingleSelect"/> — it stores one option code, and the
-    /// difference is only how many choices are practical to show at once. A
-    /// province list is a picker; an aerodrome list is an autocomplete.
+    ///     A type-ahead over a known list. Domain-identical to
+    ///     <see cref="SingleSelect" /> — it stores one option code, and the
+    ///     difference is only how many choices are practical to show at once. A
+    ///     province list is a picker; an aerodrome list is an autocomplete.
     /// </summary>
-    Autocomplete = 12,
+    Autocomplete = 12
 }

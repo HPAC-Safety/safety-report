@@ -2,7 +2,6 @@ using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
-
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,7 +19,7 @@ builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
 // unavailable instead. See ADR-0062.
 builder.Services.AddHpacSafetyTranslation(
     builder.Configuration,
-    useStandInWhenUnconfigured: builder.Environment.IsDevelopment());
+    builder.Environment.IsDevelopment());
 
 // Identity is a signed JWT this API validates; it never sees a password. In
 // Development the API also issues the tokens it validates, so the same
@@ -28,14 +27,11 @@ builder.Services.AddHpacSafetyTranslation(
 // differ. See ADR-0064 and ADR-0066.
 builder.Services.AddHpacSafetyAuthentication(
     builder.Configuration,
-    useDevelopmentIssuer: builder.Environment.IsDevelopment());
+    builder.Environment.IsDevelopment());
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-}
+if (app.Environment.IsDevelopment()) app.MapOpenApi();
 
 app.UseHttpsRedirection();
 app.UseAuthentication();
@@ -67,8 +63,8 @@ app.MapAdminAnswerTranslation();
 await app.RunAsync().ConfigureAwait(false);
 
 /// <summary>
-/// Exposed so <c>WebApplicationFactory&lt;Program&gt;</c> can boot the API in
-/// process for integration tests. Top-level statements generate an internal
-/// <c>Program</c>, which the factory cannot reach.
+///     Exposed so <c>WebApplicationFactory&lt;Program&gt;</c> can boot the API in
+///     process for integration tests. Top-level statements generate an internal
+///     <c>Program</c>, which the factory cannot reach.
 /// </summary>
 public partial class Program;

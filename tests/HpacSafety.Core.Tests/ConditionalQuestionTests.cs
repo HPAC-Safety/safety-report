@@ -1,19 +1,20 @@
 using HpacSafety.Core.Features.QuestionBank;
-
 using Shouldly;
 
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// Conditional questions (ADR-0060) and the authored required flag (ADR-0061).
+///     Conditional questions (ADR-0060) and the authored required flag (ADR-0061).
 /// </summary>
 public class ConditionalQuestionTests
 {
     private static readonly DateTimeOffset At = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 
-    private static Question Ordinary(string key, QuestionType type, TinyId? dependsOn = null) =>
-        Question.Create(
+    private static Question Ordinary(string key, QuestionType type, TinyId? dependsOn = null)
+    {
+        return Question.Create(
             key, type, $"Question {key}", $"Question {key} (fr)", At, isActive: true, dependsOnQuestionId: dependsOn);
+    }
 
     [Fact]
     public void GivenParentQuestion_WhenChildNames_ThenChildRecordsDependency()
@@ -73,7 +74,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         var cause = Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id));
 
         cause.Message.ShouldContain("yes/no");
     }
@@ -86,7 +87,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([], childId: null, parent.Id));
+            QuestionDependencies.EnsureDependencyAllowed([], null, parent.Id));
     }
 
     [Fact]
@@ -98,7 +99,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id));
     }
 
     [Fact]
@@ -188,7 +189,7 @@ public class ConditionalQuestionTests
         // When
         var revision = consent.Revise(
             QuestionType.YesNo, "May we publish a summary?", "Pouvons-nous publier un résumé ?",
-            isPrivate: true, isActive: true, displayOrder: 0, At.AddHours(1), isRequired: false);
+            true, true, 0, At.AddHours(1), isRequired: false);
 
         // Then — consent cannot be made skippable, whatever the caller asks for
         revision.IsRequired.ShouldBeTrue();
@@ -253,15 +254,17 @@ public class ConditionalQuestionTests
 
     // ------------------------------------------ single-select parents (ADR-0074) --
 
-    private static Question PilotType() =>
-        Question.Create(
+    private static Question PilotType()
+    {
+        return Question.Create(
             "pilot_type", QuestionType.SingleSelect, "Hang glider or paraglider?", "Deltaplane ou parapente ?", At,
             isActive: true,
             options:
             [
                 new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
-                new QuestionOptionInput("paraglider", "Paraglider", "Parapente"),
+                new QuestionOptionInput("paraglider", "Paraglider", "Parapente")
             ]);
+    }
 
     [Fact]
     public void GivenSingleSelectParentAndValidOption_WhenBankChecksDependency_ThenAllowed()
@@ -271,7 +274,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         Should.NotThrow(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "hang_glider"));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "hang_glider"));
     }
 
     [Fact]
@@ -282,7 +285,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         var cause = Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "trike"));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "trike"));
 
         cause.Message.ShouldContain("trike");
     }
@@ -295,7 +298,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id));
     }
 
     [Fact]
@@ -307,7 +310,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "yes"));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "yes"));
     }
 
     [Fact]
@@ -321,7 +324,7 @@ public class ConditionalQuestionTests
 
         // When / Then
         var cause = Should.Throw<DomainRuleViolationException>(() =>
-            QuestionDependencies.EnsureDependencyAllowed([parent], childId: null, parent.Id, "hang_glider"));
+            QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "hang_glider"));
 
         cause.Message.ShouldContain("yes/no or single-select");
     }

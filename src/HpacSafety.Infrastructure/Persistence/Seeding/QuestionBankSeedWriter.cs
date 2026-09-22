@@ -6,47 +6,50 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// Writes <see cref="QuestionBankSeed"/> into a fresh database, so a clean
-/// install asks exactly the question set HPAC has been collecting.
+///     Writes <see cref="QuestionBankSeed" /> into a fresh database, so a clean
+///     install asks exactly the question set HPAC has been collecting.
 /// </summary>
 /// <remarks>
-/// <para>
-/// The rows are written by the migration rather than declared with
-/// <c>HasData</c>. <c>HasData</c> makes seed rows part of the model snapshot,
-/// and the whole point of ADR-0016 is that an administrator edits these rows
-/// after deployment — every one of those edits would then show up as a model
-/// difference that the next migration tries to undo. See ADR-0020.
-/// </para>
-/// <para>
-/// Identifiers are derived from the question key rather than drawn at random,
-/// so the same migration produces the same rows on every database and in a
-/// generated SQL script. See <see cref="SeedIds"/>.
-/// </para>
-/// <para>
-/// Every row is written with an <c>INSERT ... SELECT ... WHERE NOT EXISTS</c>
-/// guard on its own identifier, the same shape <see cref="DevelopmentAdminSeed"/>
-/// uses for its one row — not EF's <c>InsertData</c>, which has no guard and
-/// errors on a second write. That makes re-applying this seed a safe no-op:
-/// against a database that only lost its <c>__EFMigrationsHistory</c> row, or
-/// against one a future migration deliberately re-seeds because an
-/// administrator emptied the question bank by hand. Deleting and re-inserting
-/// was considered and rejected — a seeded question a report has already
-/// answered is referenced by <c>report_answers</c> with
-/// <c>DeleteBehavior.Restrict</c>, so a delete would fail once real answers
-/// exist. See ADR-0020.
-/// </para>
+///     <para>
+///         The rows are written by the migration rather than declared with
+///         <c>HasData</c>. <c>HasData</c> makes seed rows part of the model snapshot,
+///         and the whole point of ADR-0016 is that an administrator edits these rows
+///         after deployment — every one of those edits would then show up as a model
+///         difference that the next migration tries to undo. See ADR-0020.
+///     </para>
+///     <para>
+///         Identifiers are derived from the question key rather than drawn at random,
+///         so the same migration produces the same rows on every database and in a
+///         generated SQL script. See <see cref="SeedIds" />.
+///     </para>
+///     <para>
+///         Every row is written with an <c>INSERT ... SELECT ... WHERE NOT EXISTS</c>
+///         guard on its own identifier, the same shape <see cref="DevelopmentAdminSeed" />
+///         uses for its one row — not EF's <c>InsertData</c>, which has no guard and
+///         errors on a second write. That makes re-applying this seed a safe no-op:
+///         against a database that only lost its <c>__EFMigrationsHistory</c> row, or
+///         against one a future migration deliberately re-seeds because an
+///         administrator emptied the question bank by hand. Deleting and re-inserting
+///         was considered and rejected — a seeded question a report has already
+///         answered is referenced by <c>report_answers</c> with
+///         <c>DeleteBehavior.Restrict</c>, so a delete would fail once real answers
+///         exist. See ADR-0020.
+///     </para>
 /// </remarks>
 public static class QuestionBankSeedWriter
 {
     /// <summary>Writes every seeded row through the migration.</summary>
     /// <param name="migrationBuilder">The migration being applied.</param>
-    public static void Write(MigrationBuilder migrationBuilder) => Write(migrationBuilder, QuestionBankSeed.Questions);
+    public static void Write(MigrationBuilder migrationBuilder)
+    {
+        Write(migrationBuilder, QuestionBankSeed.Questions);
+    }
 
     /// <summary>
-    /// Writes an arbitrary question list through the migration. Exposed so a
-    /// test can exercise the guarded-insert SQL actually being scheduled,
-    /// without depending on what <see cref="QuestionBankSeed"/> currently
-    /// seeds.
+    ///     Writes an arbitrary question list through the migration. Exposed so a
+    ///     test can exercise the guarded-insert SQL actually being scheduled,
+    ///     without depending on what <see cref="QuestionBankSeed" /> currently
+    ///     seeds.
     /// </summary>
     public static void Write(MigrationBuilder migrationBuilder, IReadOnlyList<SeededQuestion> questions)
     {
@@ -55,35 +58,35 @@ public static class QuestionBankSeedWriter
     }
 
     /// <summary>
-    /// Writes the seed against the sensitivity columns used by the original
-    /// schema. Only the original migration calls this; the following migration
-    /// replaces those columns with immutable privacy flags.
+    ///     Writes the seed against the sensitivity columns used by the original
+    ///     schema. Only the original migration calls this; the following migration
+    ///     replaces those columns with immutable privacy flags.
     /// </summary>
     public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
     {
         ArgumentNullException.ThrowIfNull(migrationBuilder);
-        AppendIfAny(migrationBuilder, Sql(legacySensitivitySchema: true));
+        AppendIfAny(migrationBuilder, Sql(true));
     }
 
     /// <summary>
-    /// <see cref="MigrationBuilder.Sql(string, bool)"/> refuses an empty
-    /// string, which an empty <see cref="QuestionBankSeed"/> produces.
+    ///     <see cref="MigrationBuilder.Sql(string, bool)" /> refuses an empty
+    ///     string, which an empty <see cref="QuestionBankSeed" /> produces.
     /// </summary>
     private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
     {
-        if (sql.Length > 0)
-        {
-            migrationBuilder.Sql(sql);
-        }
+        if (sql.Length > 0) migrationBuilder.Sql(sql);
     }
 
-    private static string Sql(bool legacySensitivitySchema) => Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
+    private static string Sql(bool legacySensitivitySchema)
+    {
+        return Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
+    }
 
     /// <summary>
-    /// The guarded SQL for an arbitrary question list. Exposed so a test can
-    /// exercise every row this writer produces — the question, its version,
-    /// both languages, and any options, in either schema shape — without
-    /// depending on what <see cref="QuestionBankSeed"/> currently seeds.
+    ///     The guarded SQL for an arbitrary question list. Exposed so a test can
+    ///     exercise every row this writer produces — the question, its version,
+    ///     both languages, and any options, in either schema shape — without
+    ///     depending on what <see cref="QuestionBankSeed" /> currently seeds.
     /// </summary>
     public static string Sql(IReadOnlyList<SeededQuestion> questions, bool legacySensitivitySchema = false)
     {
@@ -99,36 +102,32 @@ public static class QuestionBankSeedWriter
             var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
             if (legacySensitivitySchema)
-            {
                 AppendGuardedInsert(
                     sql,
                     "questions",
                     ["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
                     [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
-                    guardColumn: "id",
-                    guardValue: Id(questionId));
-            }
+                    "id",
+                    Id(questionId));
             else
-            {
                 AppendGuardedInsert(
                     sql,
                     "questions",
                     ["id", "key", "is_system", "role", "is_private", "display_order", "is_active", "created_at", "deleted_at"],
                     [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
-                    guardColumn: "id",
-                    guardValue: Id(questionId));
-            }
+                    "id",
+                    Id(questionId));
 
             AppendGuardedInsert(
                 sql,
                 "question_versions",
                 ["id", "question_id", "version_number", "type", "is_required", "created_at"],
                 [Id(versionId), Id(questionId), Int(1), Str(EnumCode.Of(question.Type)), Bool(question.IsRequired), Timestamp(at)],
-                guardColumn: "id",
-                guardValue: Id(versionId));
+                "id",
+                Id(versionId));
 
-            AppendQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, isSource: true);
-            AppendQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, isSource: false);
+            AppendQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, true);
+            AppendQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, false);
 
             for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
             {
@@ -140,11 +139,11 @@ public static class QuestionBankSeedWriter
                     "question_options",
                     ["id", "question_version_id", "code", "display_order"],
                     [Id(optionId), Id(versionId), Str(option.Code), Int(optionOrder)],
-                    guardColumn: "id",
-                    guardValue: Id(optionId));
+                    "id",
+                    Id(optionId));
 
-                AppendOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, isSource: true);
-                AppendOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, isSource: false);
+                AppendOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, true);
+                AppendOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, false);
             }
         }
 
@@ -168,8 +167,8 @@ public static class QuestionBankSeedWriter
             "question_translations",
             ["id", "question_version_id", "locale", "label", "help_text", "placeholder", "is_source", "is_machine_translated", "translated_at", "updated_at"],
             [Id(id), Id(versionId), Str(locale.Code), Str(label), StrOrNull(helpText), "NULL", Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
-            guardColumn: "id",
-            guardValue: Id(id));
+            "id",
+            Id(id));
     }
 
     private static void AppendOptionTranslation(
@@ -189,14 +188,17 @@ public static class QuestionBankSeedWriter
             "question_option_translations",
             ["id", "question_option_id", "locale", "label", "is_source", "is_machine_translated", "translated_at", "updated_at"],
             [Id(id), Id(optionId), Str(locale.Code), Str(label), Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
-            guardColumn: "id",
-            guardValue: Id(id));
+            "id",
+            Id(id));
     }
 
     /// <summary>
-    /// <c>INSERT INTO table (columns) SELECT values WHERE NOT EXISTS (SELECT 1
-    /// FROM table WHERE guardColumn = guardValue);</c> — one row, written once,
-    /// however many times this statement runs.
+    ///     <c>
+    ///         INSERT INTO table (columns) SELECT values WHERE NOT EXISTS (SELECT 1
+    ///         FROM table WHERE guardColumn = guardValue);
+    ///     </c>
+    ///     — one row, written once,
+    ///     however many times this statement runs.
     /// </summary>
     private static void AppendGuardedInsert(
         StringBuilder sql, string table, string[] columns, string[] values, string guardColumn, string guardValue)
@@ -209,16 +211,33 @@ public static class QuestionBankSeedWriter
             .Append('\n');
     }
 
-    private static string Id(TinyId id) => Str(id.Value);
+    private static string Id(TinyId id)
+    {
+        return Str(id.Value);
+    }
 
-    private static string Str(string value) => "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+    private static string Str(string value)
+    {
+        return "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+    }
 
-    private static string StrOrNull(string? value) => value is null ? "NULL" : Str(value);
+    private static string StrOrNull(string? value)
+    {
+        return value is null ? "NULL" : Str(value);
+    }
 
-    private static string Bool(bool value) => value ? "TRUE" : "FALSE";
+    private static string Bool(bool value)
+    {
+        return value ? "TRUE" : "FALSE";
+    }
 
-    private static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
+    private static string Int(int value)
+    {
+        return value.ToString(CultureInfo.InvariantCulture);
+    }
 
-    private static string Timestamp(DateTimeOffset value) =>
-        $"TIMESTAMPTZ '{value.ToString("yyyy-MM-dd HH:mm:sszzz", CultureInfo.InvariantCulture)}'";
+    private static string Timestamp(DateTimeOffset value)
+    {
+        return $"TIMESTAMPTZ '{value.ToString("yyyy-MM-dd HH:mm:sszzz", CultureInfo.InvariantCulture)}'";
+    }
 }

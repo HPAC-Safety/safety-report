@@ -1,5 +1,5 @@
+using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -92,12 +92,12 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 
         // An answer references the revision it was answered under, and that
         // revision may never be deleted out from under it.
-        builder.HasOne<Core.Features.QuestionBank.QuestionRevision>()
+        builder.HasOne<QuestionRevision>()
             .WithMany()
             .HasForeignKey(answer => answer.QuestionRevisionId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Core.Features.QuestionBank.Question>()
+        builder.HasOne<Question>()
             .WithMany()
             .HasForeignKey(answer => answer.QuestionId)
             .OnDelete(DeleteBehavior.Restrict);
@@ -105,8 +105,8 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 }
 
 /// <summary>
-/// The <c>report_files</c> table. This project owns the table's shape; the blob
-/// storage that fills it is issue #16.
+///     The <c>report_files</c> table. This project owns the table's shape; the blob
+///     storage that fills it is issue #16.
 /// </summary>
 public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFile>
 {
@@ -135,7 +135,7 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
         // what actually enforces it. A null ReportAnswerId still satisfies
         // the constraint (Postgres MATCH SIMPLE), so the not-yet-linked
         // window before AddFile's answer is known is unaffected.
-        builder.HasOne<Core.Features.Reporting.ReportAnswer>()
+        builder.HasOne<ReportAnswer>()
             .WithMany()
             .HasForeignKey(file => new { file.ReportId, file.ReportAnswerId })
             .HasPrincipalKey(answer => new { answer.ReportId, answer.Id })
@@ -158,8 +158,8 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 }
 
 /// <summary>
-/// The <c>summaries</c> table. Exactly one bilingual row per report, with shared
-/// provenance and one approval covering both languages.
+///     The <c>summaries</c> table. Exactly one bilingual row per report, with shared
+///     provenance and one approval covering both languages.
 /// </summary>
 public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 {

@@ -7,26 +7,33 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Storage;
 
 /// <summary>
-/// The guarantees that are specific to the local store: nothing it hands out is
-/// a plain path, and a signed URL is bound to its operation and its clock as
-/// well as its key.
+///     The guarantees that are specific to the local store: nothing it hands out is
+///     a plain path, and a signed URL is bound to its operation and its clock as
+///     well as its key.
 /// </summary>
 public sealed class FileSystemBlobStoreTests : IDisposable
 {
     private static readonly BlobKey Photo = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Quarantine, "photo.jpg");
+    private readonly MutableClock _clock = new(new DateTimeOffset(2026, 8, 22, 12, 0, 0, TimeSpan.Zero));
 
     private readonly string _root = Path.Combine(Path.GetTempPath(), "hpac-blob-tests", Guid.NewGuid().ToString("n"));
-    private readonly MutableClock _clock = new(new DateTimeOffset(2026, 8, 22, 12, 0, 0, TimeSpan.Zero));
     private readonly FileSystemBlobStore _store;
 
-    public FileSystemBlobStoreTests() =>
+    public FileSystemBlobStoreTests()
+    {
         _store = new FileSystemBlobStore(
             new FileSystemBlobStoreOptions
             {
                 RootPath = _root,
-                SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+                SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             },
             _clock);
+    }
+
+    public void Dispose()
+    {
+        if (Directory.Exists(_root)) Directory.Delete(_root, true);
+    }
 
     [Fact]
     public async Task GivenUploadUrl_WhenIssued_ThenNotHttpUrlAnythingCouldServe()
@@ -62,8 +69,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 
         // When / Then
         using var content = new MemoryStream([1, 2, 3]);
-        await Should.ThrowAsync<PresignedUrlRejectedException>(
-            () => _store.ExecuteUploadAsync(tampered, content, CancellationToken.None));
+        await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUploadAsync(tampered, content, CancellationToken.None));
     }
 
     [Fact]
@@ -77,8 +83,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 
         // Then
         using var content = new MemoryStream([1, 2, 3]);
-        await Should.ThrowAsync<PresignedUrlRejectedException>(
-            () => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
+        await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
     }
 
     [Fact]
@@ -89,15 +94,14 @@ public sealed class FileSystemBlobStoreTests : IDisposable
             new FileSystemBlobStoreOptions
             {
                 RootPath = _root,
-                SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
+                SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
             },
             _clock);
         var url = await other.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
         // When / Then
         using var content = new MemoryStream([1, 2, 3]);
-        await Should.ThrowAsync<PresignedUrlRejectedException>(
-            () => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
+        await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
     }
 
     [Fact]
@@ -114,21 +118,19 @@ public sealed class FileSystemBlobStoreTests : IDisposable
         var recorded = await _store.ReadContentTypeAsync(Photo, CancellationToken.None);
         recorded.ShouldBe(MediaType.Jpeg.ContentType);
     }
-
-    public void Dispose()
-    {
-        if (Directory.Exists(_root))
-        {
-            Directory.Delete(_root, recursive: true);
-        }
-    }
 }
 
 internal sealed class MutableClock(DateTimeOffset now) : TimeProvider
 {
     private DateTimeOffset _now = now;
 
-    public override DateTimeOffset GetUtcNow() => _now;
+    public override DateTimeOffset GetUtcNow()
+    {
+        return _now;
+    }
 
-    public void Advance(TimeSpan by) => _now = _now.Add(by);
+    public void Advance(TimeSpan by)
+    {
+        _now = _now.Add(by);
+    }
 }

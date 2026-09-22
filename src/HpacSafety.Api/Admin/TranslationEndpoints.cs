@@ -5,21 +5,21 @@ using HpacSafety.Infrastructure.Translation;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-/// Machine translation for an administrator authoring a question.
+///     Machine translation for an administrator authoring a question.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Translation happens here, in the API, and never in the browser. The
-/// credential stays on the server: nothing ships it to a page, and no page
-/// calls the provider directly. This is the same reason
-/// <see cref="ITranslator"/> exists rather than a fetch in the authoring
-/// screen.
-/// </para>
-/// <para>
-/// What comes back is a <b>draft</b>. The administrator edits it and saves it
-/// deliberately, and the saved revision is theirs — see ADR-0062. Nothing here
-/// writes to the question bank.
-/// </para>
+///     <para>
+///         Translation happens here, in the API, and never in the browser. The
+///         credential stays on the server: nothing ships it to a page, and no page
+///         calls the provider directly. This is the same reason
+///         <see cref="ITranslator" /> exists rather than a fetch in the authoring
+///         screen.
+///     </para>
+///     <para>
+///         What comes back is a <b>draft</b>. The administrator edits it and saves it
+///         deliberately, and the saved revision is theirs — see ADR-0062. Nothing here
+///         writes to the question bank.
+///     </para>
 /// </remarks>
 public static class TranslationEndpoints
 {
@@ -39,9 +39,9 @@ public static class TranslationEndpoints
     }
 
     /// <summary>
-    /// Whether translation is usable on this server. The authoring screen asks
-    /// once and disables the button when the answer is no, rather than offering
-    /// a control that fails on click.
+    ///     Whether translation is usable on this server. The authoring screen asks
+    ///     once and disables the button when the answer is no, rather than offering
+    ///     a control that fails on click.
     /// </summary>
     private static IResult Availability(ITranslator translator)
     {
@@ -63,20 +63,16 @@ public static class TranslationEndpoints
         ArgumentNullException.ThrowIfNull(translator);
 
         if (!Locale.TryParse(request.From, out var source) || !Locale.TryParse(request.To, out var target))
-        {
             return Problem(
                 "unknown-locale",
                 "That is not one of the two official languages.",
                 StatusCodes.Status400BadRequest);
-        }
 
         if (source == target)
-        {
             return Problem(
                 "same-locale",
                 "A translation needs two different languages.",
                 StatusCodes.Status400BadRequest);
-        }
 
         // Blank fields are dropped rather than sent: an administrator may leave
         // the help text empty, and a provider charged per request should not be
@@ -88,10 +84,7 @@ public static class TranslationEndpoints
             .Where(entry => !string.IsNullOrWhiteSpace(entry.text))
             .ToList();
 
-        if (translatable.Count == 0)
-        {
-            return Results.Ok(new TranslateResponse([.. texts.Select(_ => string.Empty)]));
-        }
+        if (translatable.Count == 0) return Results.Ok(new TranslateResponse([.. texts.Select(_ => string.Empty)]));
 
         try
         {
@@ -102,10 +95,7 @@ public static class TranslationEndpoints
             var results = new string[texts.Count];
             Array.Fill(results, string.Empty);
 
-            for (var i = 0; i < translatable.Count; i++)
-            {
-                results[translatable[i].index] = translated[i];
-            }
+            for (var i = 0; i < translatable.Count; i++) results[translatable[i].index] = translated[i];
 
             return Results.Ok(new TranslateResponse(results));
         }
@@ -118,28 +108,30 @@ public static class TranslationEndpoints
         }
     }
 
-    private static IResult Problem(string code, string detail, int statusCode) =>
-        Results.Problem(
+    private static IResult Problem(string code, string detail, int statusCode)
+    {
+        return Results.Problem(
             title: "Translation failed.",
             detail: detail,
             statusCode: statusCode,
             type: $"https://hpac.ca/problems/{code}");
+    }
 }
 
 /// <summary>Whether a translation provider is configured on this server.</summary>
 /// <param name="Available">True when the Translate control should be offered.</param>
 /// <param name="StandIn">
-/// True when the provider is the development stand-in, which returns its input
-/// unchanged. The screen says so, so nobody mistakes copied English for a
-/// translation.
+///     True when the provider is the development stand-in, which returns its input
+///     unchanged. The screen says so, so nobody mistakes copied English for a
+///     translation.
 /// </param>
 public sealed record TranslationAvailability(bool Available, bool StandIn);
 
 /// <summary>
-/// Text to translate between the two official languages.
+///     Text to translate between the two official languages.
 /// </summary>
 /// <param name="Texts">
-/// The strings to translate, in order. Blank entries come back blank.
+///     The strings to translate, in order. Blank entries come back blank.
 /// </param>
 /// <param name="From">The locale the text is written in.</param>
 /// <param name="To">The locale to translate into.</param>

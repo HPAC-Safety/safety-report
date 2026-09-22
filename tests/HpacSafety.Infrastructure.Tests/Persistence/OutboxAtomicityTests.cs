@@ -3,18 +3,16 @@ using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// ADR-0002's guarantee, against a real database: a report and its outbox row
-/// are one write. There is no "save, then notify", because that loses a report
-/// whenever the process dies between the two — and a lost safety report is not
-/// recoverable from anywhere.
+///     ADR-0002's guarantee, against a real database: a report and its outbox row
+///     are one write. There is no "save, then notify", because that loses a report
+///     whenever the process dies between the two — and a lost safety report is not
+///     recoverable from anywhere.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]
@@ -113,8 +111,10 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
         message.Type.ShouldBe(OutboxMessageType.SummarizeReport);
     }
 
-    private static OutboxMessage SummarizationRequestFor(Report report) =>
-        new(report.Id, OutboxMessageType.SummarizeReport, $$"""{"reportId":"{{report.Id}}"}""", At);
+    private static OutboxMessage SummarizationRequestFor(Report report)
+    {
+        return new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, $$"""{"reportId":"{{report.Id}}"}""", At);
+    }
 
     private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
     {
@@ -129,9 +129,11 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
     }
 
     /// <summary>
-    /// A question the database has never seen, so an answer to it cannot be
-    /// stored. Built in memory only.
+    ///     A question the database has never seen, so an answer to it cannot be
+    ///     stored. Built in memory only.
     /// </summary>
-    private static Question OrphanedQuestion() =>
-        Question.Create("never_asked", QuestionType.LongText, "Never asked", "Jamais demandé", At);
+    private static Question OrphanedQuestion()
+    {
+        return Question.Create("never_asked", QuestionType.LongText, "Never asked", "Jamais demandé", At);
+    }
 }

@@ -1,22 +1,19 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
-
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Infrastructure.Translation;
-
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-/// The admin translation endpoint, with a deterministic translator in place of
-/// a provider. No credential and no network are involved.
+///     The admin translation endpoint, with a deterministic translator in place of
+///     a provider. No credential and no network are involved.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -202,7 +199,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
         // Given
         await using var factory = WithTranslator(new FakeTranslator
         {
-            Failure = new TranslationUnavailableException("The translation service answered 403."),
+            Failure = new TranslationUnavailableException("The translation service answered 403.")
         });
 
         using var client = await SignedInAsync(factory);
@@ -237,22 +234,29 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
         translator.Calls.ShouldBe(0);
     }
 
-    private static object Request(string[] texts) => new { texts, from = "en-CA", to = "fr-CA" };
+    private static object Request(string[] texts)
+    {
+        return new { texts, from = "en-CA", to = "fr-CA" };
+    }
 
-    private WebApplicationFactory<Program> WithTranslator(ITranslator translator) =>
-        _factory.WithWebHostBuilder(builder =>
+    private WebApplicationFactory<Program> WithTranslator(ITranslator translator)
+    {
+        return _factory.WithWebHostBuilder(builder =>
             builder.ConfigureServices(services =>
             {
                 services.RemoveAll<ITranslator>();
                 services.AddSingleton(translator);
             }));
+    }
 
-    private static Task<HttpClient> SignedInAsync(WebApplicationFactory<Program> factory) =>
-        SignedInClient.AsAsync(factory, MemberRole.Administrator);
+    private static Task<HttpClient> SignedInAsync(WebApplicationFactory<Program> factory)
+    {
+        return SignedInClient.AsAsync(factory, MemberRole.Administrator);
+    }
 
     /// <summary>
-    /// Stands in for a provider. Deterministic on purpose: these tests assert
-    /// the endpoint's behaviour, never the quality of a translation.
+    ///     Stands in for a provider. Deterministic on purpose: these tests assert
+    ///     the endpoint's behaviour, never the quality of a translation.
     /// </summary>
     private sealed class FakeTranslator : ITranslator
     {

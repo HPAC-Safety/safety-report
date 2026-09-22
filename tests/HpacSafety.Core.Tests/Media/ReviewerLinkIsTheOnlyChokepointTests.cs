@@ -4,20 +4,20 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// <c>ReviewerMediaLink</c> is documented as the only sanctioned way to mint a
-/// link to uploaded media — but <c>IBlobStore.CreateReadUrlAsync</c> is a public
-/// port with no guard of its own, and it will sign a GET for a report's
-/// unstripped original as readily as for its derivative.
-/// <para>
-/// Convention is not enforcement. This walks the source of the shipping projects
-/// and fails if anything outside the places allowed to call it does, so the
-/// chokepoint is a rule rather than something a future contributor has to have
-/// read.
-/// </para>
-/// <para>
-/// A source scan rather than IL analysis: it is legible, it fails with a file
-/// name a reviewer can open, and there is nothing clever in it to go wrong.
-/// </para>
+///     <c>ReviewerMediaLink</c> is documented as the only sanctioned way to mint a
+///     link to uploaded media — but <c>IBlobStore.CreateReadUrlAsync</c> is a public
+///     port with no guard of its own, and it will sign a GET for a report's
+///     unstripped original as readily as for its derivative.
+///     <para>
+///         Convention is not enforcement. This walks the source of the shipping projects
+///         and fails if anything outside the places allowed to call it does, so the
+///         chokepoint is a rule rather than something a future contributor has to have
+///         read.
+///     </para>
+///     <para>
+///         A source scan rather than IL analysis: it is legible, it fails with a file
+///         name a reviewer can open, and there is nothing clever in it to go wrong.
+///     </para>
 /// </summary>
 public class ReviewerLinkIsTheOnlyChokepointTests
 {
@@ -70,10 +70,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
-        {
-            directory = directory.Parent;
-        }
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx"))) directory = directory.Parent;
 
         return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
     }

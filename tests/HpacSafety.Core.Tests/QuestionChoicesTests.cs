@@ -1,12 +1,11 @@
 using HpacSafety.Core.Features.QuestionBank;
-
 using Shouldly;
 
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// Which list a question renders, and what a reporter typing a missing value
-/// does to a shared set — ADR-0063.
+///     Which list a question renders, and what a reporter typing a missing value
+///     does to a shared set — ADR-0063.
 /// </summary>
 public class QuestionChoicesTests
 {
@@ -20,10 +19,12 @@ public class QuestionChoicesTests
         return set;
     }
 
-    private static Question BackedBy(OptionSet set, QuestionType type = QuestionType.Autocomplete) =>
-        Question.Create(
+    private static Question BackedBy(OptionSet set, QuestionType type = QuestionType.Autocomplete)
+    {
+        return Question.Create(
             "where_did_this_happen", type, "Where did this happen?", "Où cela s'est-il produit ?", At,
             isActive: true, optionSetId: set.Id, options: set.AsRevisionOptions());
+    }
 
     [Fact]
     public void GivenTypeAhead_WhenListGrows_ThenOffersNewChoice()
@@ -103,7 +104,7 @@ public class QuestionChoicesTests
         var question = BackedBy(set);
 
         // When / Then
-        QuestionChoices.For(question.CurrentRevision, optionSet: null)
+        QuestionChoices.For(question.CurrentRevision, null)
             .Select(option => option.Code)
             .ShouldBe(["coopers", "woodside"]);
     }
@@ -133,7 +134,7 @@ public class QuestionChoicesTests
             options: [new QuestionOptionInput("golden", "Golden", "Golden")]);
 
         // When / Then
-        QuestionChoices.For(question.CurrentRevision, optionSet: null)
+        QuestionChoices.For(question.CurrentRevision, null)
             .Select(option => option.Code)
             .ShouldBe(["golden"]);
     }

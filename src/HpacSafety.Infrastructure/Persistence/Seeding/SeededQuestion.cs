@@ -1,15 +1,16 @@
 using HpacSafety.Core.Features.QuestionBank;
+
 namespace HpacSafety.Infrastructure.Persistence.Seeding;
 
 /// <summary>
-/// One question of the seeded form, in both locales, exactly as
-/// <c>docs/form-spec.md</c> describes it.
+///     One question of the seeded form, in both locales, exactly as
+///     <c>docs/form-spec.md</c> describes it.
 /// </summary>
 /// <param name="Key">The stable key. Never changes, never re-used.</param>
 /// <param name="Type">The question type.</param>
 /// <param name="Role">
-/// The optional role that projects this answer onto a typed property of the
-/// report. See ADR-0016.
+///     The optional role that projects this answer onto a typed property of the
+///     report. See ADR-0016.
 /// </param>
 /// <param name="IsPrivate">Whether the answer is private redaction context. Immutable after creation.</param>
 /// <param name="IsRequired">Whether the form refuses to submit without an answer.</param>

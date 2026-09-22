@@ -1,14 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-
 using Npgsql;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// <c>dotnet ef database update</c> against a clean PostgreSQL 17, and the
-/// shape it leaves behind.
+///     <c>dotnet ef database update</c> against a clean PostgreSQL 17, and the
+///     shape it leaves behind.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedPostgres.Name)]
@@ -26,7 +24,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
         "report_answers",
         "report_files",
         "reports",
-        "summaries",
+        "summaries"
     ];
 
     [Fact]
@@ -143,10 +141,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
         await using var reader = await command.ExecuteReaderAsync();
 
         var values = new List<string>();
-        while (await reader.ReadAsync())
-        {
-            values.Add(reader.GetString(0));
-        }
+        while (await reader.ReadAsync()) values.Add(reader.GetString(0));
 
         return [.. values];
     }

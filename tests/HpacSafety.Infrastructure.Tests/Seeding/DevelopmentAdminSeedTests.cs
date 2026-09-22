@@ -1,16 +1,15 @@
 using HpacSafety.Infrastructure.Persistence.Seeding;
-
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.Seeding;
 
 /// <summary>
-/// <b>History.</b> The seeded local administrator wrote to a table that no
-/// longer exists — ADR-0065 drops <c>admin_users</c>. These tests survive
-/// because <c>20260823001528_InitialSchema</c> still calls the seed and a
-/// committed migration is never edited: the SQL has to keep producing exactly
-/// the bytes it always did, including against a fresh database where a later
-/// migration then drops what it wrote.
+///     <b>History.</b> The seeded local administrator wrote to a table that no
+///     longer exists — ADR-0065 drops <c>admin_users</c>. These tests survive
+///     because <c>20260823001528_InitialSchema</c> still calls the seed and a
+///     committed migration is never edited: the SQL has to keep producing exactly
+///     the bytes it always did, including against a fresh database where a later
+///     migration then drops what it wrote.
 /// </summary>
 public sealed class DevelopmentAdminSeedSqlTests
 {

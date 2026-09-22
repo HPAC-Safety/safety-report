@@ -1,13 +1,13 @@
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-/// What this deployment accepts as an upload, and the order the checks run in.
-/// <para>
-/// The client's <c>Content-Type</c> is evidence, never authority: the sniffed
-/// type decides, and a file claiming one format while containing another is
-/// refused outright rather than quietly reclassified. A mismatch is a signal,
-/// and silently accepting it would throw the signal away.
-/// </para>
+///     What this deployment accepts as an upload, and the order the checks run in.
+///     <para>
+///         The client's <c>Content-Type</c> is evidence, never authority: the sniffed
+///         type decides, and a file claiming one format while containing another is
+///         refused outright rather than quietly reclassified. A mismatch is a signal,
+///         and silently accepting it would throw the signal away.
+///     </para>
 /// </summary>
 public sealed class MediaPolicy
 {
@@ -30,30 +30,15 @@ public sealed class MediaPolicy
     /// <summary>Judges one upload against the policy.</summary>
     public MediaValidation Validate(string? declaredContentType, MediaType? sniffed, long byteSize)
     {
-        if (byteSize <= 0)
-        {
-            return MediaValidation.Rejected(MediaRejectionReason.Empty);
-        }
+        if (byteSize <= 0) return MediaValidation.Rejected(MediaRejectionReason.Empty);
 
-        if (byteSize > MaxByteSize)
-        {
-            return MediaValidation.Rejected(MediaRejectionReason.TooLarge);
-        }
+        if (byteSize > MaxByteSize) return MediaValidation.Rejected(MediaRejectionReason.TooLarge);
 
-        if (sniffed is not { } actual)
-        {
-            return MediaValidation.Rejected(MediaRejectionReason.UnrecognisedContent);
-        }
+        if (sniffed is not { } actual) return MediaValidation.Rejected(MediaRejectionReason.UnrecognisedContent);
 
-        if (!AcceptedTypes.Contains(actual))
-        {
-            return MediaValidation.Rejected(MediaRejectionReason.UnacceptedMediaType);
-        }
+        if (!AcceptedTypes.Contains(actual)) return MediaValidation.Rejected(MediaRejectionReason.UnacceptedMediaType);
 
-        if (!MediaType.TryParse(declaredContentType, out var declared) || declared != actual)
-        {
-            return MediaValidation.Rejected(MediaRejectionReason.DeclaredTypeMismatch);
-        }
+        if (!MediaType.TryParse(declaredContentType, out var declared) || declared != actual) return MediaValidation.Rejected(MediaRejectionReason.DeclaredTypeMismatch);
 
         return MediaValidation.Accepted(actual);
     }

@@ -6,8 +6,8 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-/// The rest of the record a report carries: media, its summary, the allowlist,
-/// and the audit trail.
+///     The rest of the record a report carries: media, its summary, the allowlist,
+///     and the audit trail.
 /// </summary>
 public class ReportRecordTests
 {

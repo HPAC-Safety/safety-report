@@ -1,40 +1,43 @@
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
-
 using Npgsql;
-
 using Testcontainers.PostgreSql;
 
 namespace HpacSafety.Infrastructure.Tests.Persistence;
 
 /// <summary>
-/// One PostgreSQL 17 container for the whole suite, with a fresh database per
-/// test so nothing a test writes can be seen by another.
+///     One PostgreSQL 17 container for the whole suite, with a fresh database per
+///     test so nothing a test writes can be seen by another.
 /// </summary>
 /// <remarks>
-/// The version is pinned rather than floating on <c>latest</c>: a database
-/// version that moves underneath the suite is a failure nobody can reproduce.
-/// See <c>docs/testing-conventions.md</c>.
+///     The version is pinned rather than floating on <c>latest</c>: a database
+///     version that moves underneath the suite is a failure nobody can reproduce.
+///     See <c>docs/testing-conventions.md</c>.
 /// </remarks>
 public sealed class PostgresFixture : IAsyncLifetime
 {
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
 
     /// <summary>Starts the container.</summary>
-    public Task InitializeAsync() => _postgres.StartAsync();
+    public Task InitializeAsync()
+    {
+        return _postgres.StartAsync();
+    }
 
     /// <summary>Stops and removes the container.</summary>
-    public Task DisposeAsync() => _postgres.DisposeAsync().AsTask();
+    public Task DisposeAsync()
+    {
+        return _postgres.DisposeAsync().AsTask();
+    }
 
     /// <summary>
-    /// Creates an empty database and returns a connection string for it.
+    ///     Creates an empty database and returns a connection string for it.
     /// </summary>
     /// <param name="startupOptions">
-    /// PostgreSQL <c>options</c> for the session, if any, passed through to
-    /// the connection string. No caller sets one today — the development
-    /// administrator this used to opt into was retired with the
-    /// <c>admin_users</c> table (ADR-0065).
+    ///     PostgreSQL <c>options</c> for the session, if any, passed through to
+    ///     the connection string. No caller sets one today — the development
+    ///     administrator this used to opt into was retired with the
+    ///     <c>admin_users</c> table (ADR-0065).
     /// </param>
     public async Task<string> CreateDatabaseAsync(string? startupOptions = null)
     {
@@ -50,14 +53,14 @@ public sealed class PostgresFixture : IAsyncLifetime
         return new NpgsqlConnectionStringBuilder(_postgres.GetConnectionString())
         {
             Database = name,
-            Options = startupOptions,
+            Options = startupOptions
         }.ConnectionString;
     }
 
     /// <summary>
-    /// Creates an empty database, applies every migration to it, and returns
-    /// the connection string. This is <c>dotnet ef database update</c> against a
-    /// clean PostgreSQL 17, run by the test.
+    ///     Creates an empty database, applies every migration to it, and returns
+    ///     the connection string. This is <c>dotnet ef database update</c> against a
+    ///     clean PostgreSQL 17, run by the test.
     /// </summary>
     public async Task<string> CreateMigratedDatabaseAsync(string? startupOptions = null)
     {

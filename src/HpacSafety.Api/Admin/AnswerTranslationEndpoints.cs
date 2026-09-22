@@ -6,21 +6,21 @@ using Microsoft.EntityFrameworkCore;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-/// The queue of select answers waiting for their second official language.
+///     The queue of select answers waiting for their second official language.
 /// </summary>
 /// <remarks>
-/// <para>
-/// A reporter answers a picker or a type-ahead in one language, and nothing on
-/// the submission path translates it (ADR-0072). The answer is stored as they
-/// gave it and flagged; this is where an administrator clears that flag, by
-/// typing the other language or by pressing Translate and saving what comes
-/// back.
-/// </para>
-/// <para>
-/// Everything here requires the <c>Administrator</c> policy. The queue spans
-/// reports, so it shows reporter-entered text in a list rather than one report
-/// at a time — which is why it is not offered to a safety officer.
-/// </para>
+///     <para>
+///         A reporter answers a picker or a type-ahead in one language, and nothing on
+///         the submission path translates it (ADR-0072). The answer is stored as they
+///         gave it and flagged; this is where an administrator clears that flag, by
+///         typing the other language or by pressing Translate and saving what comes
+///         back.
+///     </para>
+///     <para>
+///         Everything here requires the <c>Administrator</c> policy. The queue spans
+///         reports, so it shows reporter-entered text in a list rather than one report
+///         at a time — which is why it is not offered to a safety officer.
+///     </para>
 /// </remarks>
 public static class AnswerTranslationEndpoints
 {
@@ -68,19 +68,13 @@ public static class AnswerTranslationEndpoints
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(database);
 
-        if (!TinyId.TryParse(id, out var answerId))
-        {
-            return Results.NotFound();
-        }
+        if (!TinyId.TryParse(id, out var answerId)) return Results.NotFound();
 
         var answer = await database.ReportAnswers
             .FirstOrDefaultAsync(candidate => candidate.Id == answerId, cancellationToken)
             .ConfigureAwait(false);
 
-        if (answer is null)
-        {
-            return Results.NotFound();
-        }
+        if (answer is null) return Results.NotFound();
 
         try
         {
@@ -113,7 +107,11 @@ public sealed record AwaitingTranslationResponse(IReadOnlyList<AwaitingTranslati
 /// <param name="Locale">The language they gave them in.</param>
 /// <param name="Into">The language an administrator is being asked to supply.</param>
 public sealed record AwaitingTranslationView(
-    string Id, string QuestionKey, string Value, string Locale, string Into);
+    string Id,
+    string QuestionKey,
+    string Value,
+    string Locale,
+    string Into);
 
 /// <summary>An administrator's wording for an answer's second language.</summary>
 /// <param name="Value">The other language, typed or accepted from Translate.</param>

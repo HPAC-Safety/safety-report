@@ -3,8 +3,10 @@ using Shouldly;
 
 namespace HpacSafety.Core.Tests;
 
-/// <summary>Failures back off exponentially and move aside after a poison
-/// threshold rather than retrying forever.</summary>
+/// <summary>
+///     Failures back off exponentially and move aside after a poison
+///     threshold rather than retrying forever.
+/// </summary>
 public class OutboxMessageTests
 {
     private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
@@ -31,10 +33,7 @@ public class OutboxMessageTests
         var message = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "{}", Now);
 
         // When
-        for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
-        {
-            message.RecordFailure("timeout", Now);
-        }
+        for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++) message.RecordFailure("timeout", Now);
 
         // Then — set aside for a human rather than retried forever
         message.IsPoisoned.ShouldBeTrue();

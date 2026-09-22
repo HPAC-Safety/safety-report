@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+#
+# The rebase half of the same fix post-merge covers — see that file. `git
+# rebase` doesn't fire post-merge, but it does fire post-rewrite with $1
+# "rebase" once the whole rebase has finished and the working tree is in its
+# final state, which is exactly when regenerating is safe to do. Intermediate
+# commits mid-rebase are not touched: only the tip matters here, since this
+# repository squash-merges PRs and a rewritten-but-uncommitted
+# docs/traceability.md is picked up by the next commit either way.
+#
+# A dev-machine convenience, not a CI gate — see .githooks/post-merge. This
+# file is the tracked template; ./init-dev.sh copies it into the real hooks
+# directory — edit this copy, not the installed one.
+
+set -u
+
+[ "${1-}" = "rebase" ] || exit 0
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 0
+
+command -v node >/dev/null 2>&1 || exit 0
+
+node tools/traceability.mjs >/dev/null 2>&1 || exit 0
+
+if ! git diff --quiet -- docs/traceability.md; then
+	git add -- docs/traceability.md
+	echo "post-rewrite: docs/traceability.md regenerated and staged — include it in your next commit."
+fi
+
+exit 0

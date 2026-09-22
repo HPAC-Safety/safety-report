@@ -224,40 +224,86 @@ fi
 # between en-CA.json and fr-CA.json (a stray `#`-stub, a missing key, stale
 # provenance), and dotnet format on staged C# files — the exact classes of
 # drift that otherwise only surface after a push, in CI's "i18n" and "build"
-# jobs.
+# jobs. .githooks/post-merge and .githooks/post-rewrite regenerate
+# docs/traceability.md after a merge or rebase finishes — see those files and
+# the .gitattributes note below for why.
 #
-# Installed by copying it into the real hooks directory rather than by
+# Installed by copying each into the real hooks directory rather than by
 # setting core.hooksPath: that directory is where graphify's own `graphify
 # hook install` (below) puts post-checkout/post-commit, and core.hooksPath
 # repoints git at a single directory for *every* hook, which would silently
-# stop those from running. Different hook name (pre-commit vs.
-# post-checkout/post-commit), so both coexist with no collision. Resolved with
-# `git rev-parse --git-path hooks` rather than a hardcoded `.git/hooks`
-# because this repository is worked in primarily through git worktrees (see
-# skills/deliver-hpac-change/SKILL.md), where `.git` is a file, not a
-# directory, and hooks live in the shared main-checkout gitdir instead.
-# Idempotent by content comparison, so a second run only touches the file when
-# .githooks/pre-commit itself changed.
+# stop those from running. Every name here (pre-commit, post-merge,
+# post-rewrite) is distinct from post-checkout/post-commit, so all coexist
+# with no collision. Resolved with `git rev-parse --git-path hooks` rather
+# than a hardcoded `.git/hooks` because this repository is worked in
+# primarily through git worktrees (see skills/deliver-hpac-change/SKILL.md),
+# where `.git` is a file, not a directory, and hooks live in the shared
+# main-checkout gitdir instead. Idempotent by content comparison, so a second
+# run only touches a hook file when its tracked template changed.
 #
-# A dev-machine convenience, not a CI gate — CI enforces the same checks
-# directly, in the "i18n" and "build" jobs — so a missing hook is reported
-# with note(), not missing(): it must never fail a fresh CI checkout's
-# `--check` step.
+# A dev-machine convenience, not a CI gate — CI enforces the pre-commit
+# checks directly in the "i18n" and "build" jobs, and re-checks
+# docs/traceability.md itself in the "docs" job — so a missing hook is
+# reported with note(), not missing(): it must never fail a fresh CI
+# checkout's `--check` step.
 HOOKS_DIR=$(git rev-parse --git-path hooks)
-if [ "$CHECK_ONLY" -eq 1 ]; then
-	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then
-		ok "git pre-commit hook (locale parity + dotnet format)"
+for hook in pre-commit post-merge post-rewrite; do
+	if [ "$CHECK_ONLY" -eq 1 ]; then
+		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s ".githooks/$hook" "$HOOKS_DIR/$hook"; then
+			ok "git $hook hook"
+		else
+			note "git $hook hook not installed — run without --check"
+		fi
 	else
-		note "git pre-commit hook not installed — run without --check"
+		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s ".githooks/$hook" "$HOOKS_DIR/$hook"; then
+			ok "git $hook hook already installed"
+		else
+			mkdir -p "$HOOKS_DIR"
+			cp ".githooks/$hook" "$HOOKS_DIR/$hook"
+			chmod +x "$HOOKS_DIR/$hook"
+			added "git $hook hook"
+		fi
+	fi
+done
+
+# --------------------------------------------------- traceability merge attr --
+#
+# docs/traceability.md is generated entirely from features/**/*.feature
+# (ADR-0084): a summary line plus one row per claim across the whole
+# repository. Any two branches that touch different scenarios routinely
+# conflict on it during a rebase, even when their actual changes don't
+# overlap, because git's default 3-way text merge compares this file's own
+# lines with no idea they're derived. `merge=ours` tells git never to attempt
+# that comparison at all — always keep whichever side is already checked
+# out, so this file can never conflict — and the post-merge/post-rewrite
+# hooks above regenerate it for real immediately afterward, once the tree
+# (including the .feature files it's derived from) is in its final state.
+#
+# .gitattributes is deliberately clone-local in this repository (see
+# .gitignore) rather than a tracked file, so it is written here rather than
+# shipped. Idempotent by checking for the exact line first.
+ATTR_LINE="docs/traceability.md merge=ours"
+ATTR_PRESENT=0
+[ -f .gitattributes ] && grep -qxF "$ATTR_LINE" .gitattributes && ATTR_PRESENT=1
+
+if [ "$CHECK_ONLY" -eq 1 ]; then
+	if [ "$ATTR_PRESENT" -eq 1 ]; then
+		ok "docs/traceability.md merge=ours attribute"
+	else
+		note "docs/traceability.md merge=ours attribute not set — run without --check"
 	fi
 else
-	if [ -x "$HOOKS_DIR/pre-commit" ] && cmp -s .githooks/pre-commit "$HOOKS_DIR/pre-commit"; then
-		ok "git pre-commit hook already installed"
+	if [ "$ATTR_PRESENT" -eq 1 ]; then
+		ok "docs/traceability.md merge=ours attribute already set"
 	else
-		mkdir -p "$HOOKS_DIR"
-		cp .githooks/pre-commit "$HOOKS_DIR/pre-commit"
-		chmod +x "$HOOKS_DIR/pre-commit"
-		added "git pre-commit hook (locale parity + dotnet format)"
+		printf '%s\n' "$ATTR_LINE" >>.gitattributes
+		added "docs/traceability.md merge=ours attribute"
+	fi
+
+	if [ "$CONFIGURED" -eq 1 ]; then
+		added "docs/traceability.md merge driver"
+	else
+		ok "docs/traceability.md merge driver already registered"
 	fi
 fi
 

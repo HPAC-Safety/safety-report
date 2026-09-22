@@ -15,8 +15,12 @@ no `admin_users` table, no allowlist, and no seeded `admin@localhost`, so the
 `hpac.seed_development_admin` guard and its connection-string opt-in are gone.
 A developer now signs in against the development token issuer
 ([ADR-0066](ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md))
-instead. The question-bank seeding half below still stands. This record
-describes the current migration history, not the target model.
+instead. The question-bank seeding **mechanism** below still stands — a
+migration-run, guarded SQL insert, not `HasData`. Its **source** does not:
+[ADR-0077](ADR-0077-typeform-json-import-and-export.md) replaces
+`docs/form-spec.md` transcription with the Typeform JSON importer; see
+"Amended by ADR-0077" below. This record describes the current migration
+history, not the target model.
 **Date:** 2026-08-22
 
 ## Context
@@ -124,6 +128,24 @@ The risk this accepts is a **quality** one — wording that reads as translated
 until somebody improves it. It is not a privacy one: no reporter's data passes
 through it, and nothing here reaches a published summary.
 
+### Amended by ADR-0077: the seed is transcribed from Typeform JSON, not `docs/form-spec.md`
+
+[ADR-0077](ADR-0077-typeform-json-import-and-export.md) generates
+`QuestionBankSeed`'s content by running the Typeform-JSON importer once
+against the organization's real `formENG.json`/`formFR.json` exports and
+reviewing the result, rather than by hand-transcribing
+`docs/form-spec.md` prose. `QuestionBankSeedTests`' drift check moves with
+it: it now compares the seed against the checked-in Typeform JSON fixtures,
+not `docs/form-spec.md`. `docs/form-spec.md` stops being authoritative for
+seed content; it remains hand-maintained evidence of what the live Typeform
+page currently asks, regenerable by `tools/extract-typeform.py`, useful for
+noticing when the live form has drifted from what was last imported.
+
+Everything else this ADR decided is unaffected: the SQL-in-migration
+mechanism, `SeedIds`' deterministic hashing, the guarded
+`INSERT ... SELECT ... WHERE NOT EXISTS` shape, and seeding both languages
+so a clean database asks the real form immediately.
+
 ## Consequences
 
 - A clean `dotnet ef database update` produces a database that asks the real
@@ -184,6 +206,7 @@ most careful:
 ## Related
 
 - [ADR-0016](ADR-0016-data-driven-question-bank.md), [ADR-0019](ADR-0019-application-side-field-encryption.md)
+- [ADR-0077](ADR-0077-typeform-json-import-and-export.md) — amends the seed's source
 - `docs/form-spec.md`, `docs/localization.md`, `docs/data-handling.md`
 - `AGENTS.md`, "Both languages are first-class"
 - `src/HpacSafety.Infrastructure/Persistence/README.md`

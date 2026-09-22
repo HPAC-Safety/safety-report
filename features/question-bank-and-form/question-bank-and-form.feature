@@ -285,6 +285,70 @@ Scenario: A retired shared list leaves a type-ahead showing what it recorded
   When that shared list is retired entirely
   Then the question still offers the choices its revision recorded
 
+@ignore
+Scenario: A multi-select may allow reporter additions the same way a type-ahead does
+  Given an Administrator authors a multi-select question backed by a shared choice list
+  When they enable reporter additions on it
+  Then the question offers the live list the same way a type-ahead does
+  And a single-select question offers no such control
+
+@ignore
+Scenario: A reporter adds a choice a multi-select did not offer
+  Given a multi-select question with reporter additions allowed is backed by a shared choice list
+  When a reporter submits a value the list does not offer
+  Then the value is added to the shared list as a reporter-added choice
+  And it is marked for an Administrator to curate, exactly like a type-ahead's reporter-added choice
+
+@ignore
+Scenario: An ordinary multi-select never accepts an unlisted value
+  Given a multi-select question does not have reporter additions allowed
+  When a reporter submits a value the list does not offer
+  Then the submission is rejected
+
+@ignore
+Scenario: A statement or a group collects no answer
+  Given an Administrator authors a statement or a group question
+  Then it cannot be marked required, private, or system
+  And it cannot be made conditional on another question or be the condition for one
+  And it does not appear in the set of answer-producing revisions a submission must record
+
+@ignore
+Scenario: A question may be grouped under a group question
+  Given a group question exists as a section heading
+  When an Administrator makes another question grouped under it
+  Then the form renders that question together with the group heading and its other children
+
+@ignore
+Scenario: Only a group question may be a grouping parent
+  Given a question that is not a group
+  When an Administrator tries to group another question under it
+  Then the attempt is rejected
+
+@ignore
+Scenario: A group cannot itself be grouped under another group
+  Given two group questions exist
+  When an Administrator tries to group one under the other
+  Then the attempt is rejected
+
+@ignore
+Scenario: A question cannot be grouped under itself
+  Given a group question exists
+  When an Administrator tries to group it under itself
+  Then the attempt is rejected
+
+@ignore
+Scenario: Grouping is unaffected by conditional dependency and vice versa
+  Given a question is both conditional on a yes/no question and grouped under a group question
+  When an Administrator reads its saved revision
+  Then both facts are recorded independently
+  And clearing one leaves the other unchanged
+
+@ignore
+Scenario: Regrouping follows a parent that stops being a group
+  Given a question is grouped under a group question
+  When an Administrator retypes that parent away from the group type, or deletes it
+  Then the child's next revision is ungrouped rather than naming a heading that no longer exists
+
 Scenario: A question can be made conditional only on a yes/no or single-select question
   Given an active question asks for something other than yes/no or single-select
   When an Administrator tries to make another question conditional on it

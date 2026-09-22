@@ -4,8 +4,8 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 ///     The question bank a clean database seeds. Empty for now — the previous
 ///     transcription of <c>docs/form-spec.md</c> was retired along with the
 ///     <c>Statement</c>/<c>Group</c> question types and the <c>SectionKey</c>
-///     field it depended on. A new, correct question set lands in a follow-up
-///     change.
+///     field it depended on. Populated from the Typeform JSON importer once
+///     both land — see ADR-0076 and ADR-0077.
 /// </summary>
 public static class QuestionBankSeed
 {

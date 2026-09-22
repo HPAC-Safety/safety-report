@@ -68,6 +68,7 @@ specification rather than preserving competing designs.
 |---|---|
 | Purpose, boundaries, and components | [System overview](../docs/system-overview.md) |
 | Immutable bilingual questions and form assembly | [Question bank and form](question-bank-and-form/question-bank-and-form.feature) |
+| Importing/exporting the question bank as Typeform JSON | [Typeform question import and export](typeform-question-import-export/typeform-question-import-export.feature) |
 | Browser continuity, multipart API, DTOs, and validation | [Report submission](report-submission/report-submission.feature) |
 | Report states, invariants, deletion, and retention | [Domain and lifecycle](domain-and-lifecycle/domain-and-lifecycle.feature) |
 | One-call bilingual summarization and anonymization | [AI anonymization](ai-anonymization/ai-anonymization.feature) |

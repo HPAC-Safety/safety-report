@@ -1,0 +1,146 @@
+Feature: Typeform question import and export
+An Administrator brings the question bank in from a pair of Typeform JSON
+exports — one English, one French — instead of authoring every question by
+hand, and can export the current bank back to the same two-file shape. Import
+never saves a question by itself; it prefills the ordinary authoring screen,
+which an Administrator still reviews and saves one question at a time.
+
+Background:
+  Given an Administrator has an English Typeform export and a matching French one
+
+@ignore
+Scenario: Import requires both languages
+  When an Administrator submits only one of the two files
+  Then the import is rejected
+  And no draft is produced
+
+@ignore
+Scenario: Every field must be matched across both files
+  Given a field's ref appears in the English file but not the French one
+  When an Administrator submits the pair
+  Then the import is rejected before any draft is produced
+  And the rejection names the unmatched ref
+
+@ignore
+Scenario Outline: A Typeform field type maps to a question type
+  Given a Typeform field of type <typeform_type>
+  When the pair is imported
+  Then it produces a draft of type <question_type>
+
+Examples:
+  | typeform_type   | question_type |
+  | short_text      | short_text    |
+  | long_text       | long_text     |
+  | email           | email         |
+  | phone_number    | phone         |
+  | date            | date          |
+  | file_upload     | file_upload   |
+  | yes_no          | yes_no        |
+  | dropdown        | single_select |
+  | statement       | statement     |
+
+@ignore
+Scenario: A single-select multiple-choice field imports as single-select
+  Given a Typeform multiple_choice field that does not allow multiple selection
+  When the pair is imported
+  Then it produces a single-select draft with a new shared choice list seeded from its choices
+
+@ignore
+Scenario: A multi-select multiple-choice field imports as multi-select
+  Given a Typeform multiple_choice field that allows multiple selection
+  When the pair is imported
+  Then it produces a multi-select draft with a new shared choice list seeded from its choices
+
+@ignore
+Scenario: A multi-select field with a free-text choice enables reporter additions
+  Given a Typeform multiple_choice field that allows multiple selection and an other choice
+  When the pair is imported
+  Then it produces a multi-select draft with reporter additions enabled
+
+@ignore
+Scenario: A group field flattens into a heading and its children
+  Given a Typeform group field containing several nested fields
+  When the pair is imported
+  Then it produces one group draft from the field's title
+  And one draft per nested field, each grouped under it
+
+@ignore
+Scenario: A contact-info field flattens the same way a group does
+  Given a Typeform contact_info field containing name, phone, and email subfields
+  When the pair is imported
+  Then it produces one group draft from the field's title
+  And one draft per subfield, each grouped under it
+
+@ignore
+Scenario: The generated answer-recap screen is not imported
+  Given a Typeform statement field whose description only interpolates other fields
+  When the pair is imported
+  Then no draft is produced for it
+
+@ignore
+Scenario: A field type with no equivalent is rejected, not silently dropped
+  Given a Typeform field of a type this system does not support
+  When the pair is imported
+  Then the import report lists it as not imported
+  And no draft is produced for it
+
+@ignore
+Scenario: Branching logic reducible to one yes/no gate imports as a dependency
+  Given a Typeform field whose jump logic depends only on one yes/no field's answer
+  When the pair is imported
+  Then the produced draft is conditional on that field
+
+@ignore
+Scenario: Branching logic beyond one yes/no gate is flagged, not silently dropped
+  Given a Typeform field whose jump logic combines more than one condition
+  When the pair is imported
+  Then the produced draft is unconditional
+  And a pending logic note is recorded naming that field and its original logic
+
+@ignore
+Scenario: An Administrator resolves a pending logic note
+  Given a pending logic note exists from a prior import
+  When an Administrator wires the equivalent condition by hand and deletes the note
+  Then the note no longer appears in the pending list
+
+@ignore
+Scenario: Import never saves a question by itself
+  Given a pair of Typeform files is imported
+  Then no question exists in the bank until an Administrator reviews and saves its draft
+
+@ignore
+Scenario: The imported stable key comes from the Typeform ref
+  Given a Typeform field with a given ref
+  When its draft is saved for the first time
+  Then the question's stable key equals that ref
+
+@ignore
+Scenario: Re-importing the same form updates in place
+  Given a question was previously saved from an imported draft
+  When the same Typeform pair is imported and reviewed again
+  Then saving the draft revises or forks the existing question rather than creating a duplicate
+
+@ignore
+Scenario: Export produces a zip of two Typeform-shaped files
+  Given the question bank has several live questions
+  When an Administrator exports it
+  Then the result is a zip containing an English Typeform-shaped file and a French one
+
+@ignore
+Scenario: Export preserves data Typeform has no field for
+  Given a live question has a stable key, a dependency, and a group membership
+  When it is exported
+  Then the exported field carries that data in a namespaced extension object
+  And a plain Typeform file otherwise validates without it
+
+@ignore
+Scenario: Exporting and reimporting reproduces the same drafts
+  Given the question bank has several live questions
+  When an Administrator exports it and imports the result back in
+  Then the resulting drafts match the original questions' key, type, wording, and options
+
+@ignore
+Scenario: Only an Administrator may import or export
+  Given a member does not have the Administrator role
+  When that member attempts to import or export
+  Then the API rejects the attempt

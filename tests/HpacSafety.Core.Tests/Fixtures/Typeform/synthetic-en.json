@@ -1,0 +1,146 @@
+{
+  "id": "synthetic",
+  "type": "quiz",
+  "title": "Synthetic test form (English)",
+  "fields": [
+    {
+      "id": "1", "ref": "intro-ref", "title": "Introduction", "type": "statement",
+      "properties": { "description": "Welcome to the synthetic form." }
+    },
+    {
+      "id": "2", "ref": "recap-ref", "title": "Summary", "type": "statement",
+      "properties": { "description": "Name: {{field:name-ref}}" }
+    },
+    {
+      "id": "3", "ref": "name-ref", "title": "Name:", "type": "short_text",
+      "properties": { "description": "Your name." }
+    },
+    {
+      "id": "4", "ref": "notes-ref", "title": "Notes:", "type": "long_text",
+      "properties": {}
+    },
+    {
+      "id": "5", "ref": "email-ref", "title": "Email:", "type": "email",
+      "properties": {}
+    },
+    {
+      "id": "6", "ref": "phone-ref", "title": "Phone:", "type": "phone_number",
+      "properties": {}
+    },
+    {
+      "id": "7", "ref": "date-ref", "title": "Date:", "type": "date",
+      "properties": {}
+    },
+    {
+      "id": "8", "ref": "number-ref", "title": "Age:", "type": "number",
+      "properties": {}
+    },
+    {
+      "id": "9", "ref": "file-ref", "title": "Photo:", "type": "file_upload",
+      "properties": {}
+    },
+    {
+      "id": "10", "ref": "yesno-ref", "title": "Agree:", "type": "yes_no",
+      "properties": {}
+    },
+    {
+      "id": "11", "ref": "dropdown-ref", "title": "Province:", "type": "dropdown",
+      "properties": {
+        "choices": [
+          { "id": "c1", "ref": "ab", "label": "Alberta" },
+          { "id": "c2", "ref": "bc", "label": "British Columbia" }
+        ]
+      }
+    },
+    {
+      "id": "12", "ref": "single-ref", "title": "Pick one:", "type": "multiple_choice",
+      "properties": {
+        "allow_multiple_selection": false,
+        "allow_other_choice": false,
+        "choices": [
+          { "id": "c3", "ref": "x", "label": "X" },
+          { "id": "c4", "ref": "y", "label": "Y" }
+        ]
+      }
+    },
+    {
+      "id": "13", "ref": "multi-ref", "title": "Pick many:", "type": "multiple_choice",
+      "properties": {
+        "allow_multiple_selection": true,
+        "allow_other_choice": false,
+        "choices": [
+          { "id": "c5", "ref": "m1", "label": "M1" },
+          { "id": "c6", "ref": "m2", "label": "M2" }
+        ]
+      }
+    },
+    {
+      "id": "14", "ref": "multiother-ref", "title": "Ratings:", "type": "multiple_choice",
+      "properties": {
+        "allow_multiple_selection": true,
+        "allow_other_choice": true,
+        "choices": [
+          { "id": "c7", "ref": "r1", "label": "R1" }
+        ]
+      }
+    },
+    {
+      "id": "15", "ref": "group-ref", "title": "Aircraft:", "type": "group",
+      "properties": {
+        "fields": [
+          { "id": "16", "ref": "make-ref", "title": "Make:", "type": "short_text", "properties": {} },
+          { "id": "17", "ref": "model-ref", "title": "Model:", "type": "short_text", "properties": {} }
+        ]
+      }
+    },
+    {
+      "id": "18", "ref": "contact-ref", "title": "From:", "type": "contact_info",
+      "properties": {
+        "fields": [
+          { "id": "19", "ref": "first-ref", "title": "First name", "subfield_key": "first_name", "type": "short_text", "properties": {} },
+          { "id": "20", "ref": "cemail-ref", "title": "Email", "subfield_key": "email", "type": "email", "properties": {} }
+        ]
+      }
+    },
+    {
+      "id": "21", "ref": "unsupported-ref", "title": "Rank these:", "type": "ranking",
+      "properties": {}
+    },
+    {
+      "id": "22", "ref": "extra-ref", "title": "Extra:", "type": "short_text",
+      "properties": {}
+    }
+  ],
+  "logic": [
+    {
+      "type": "field",
+      "ref": "date-ref",
+      "actions": [
+        {
+          "action": "jump",
+          "details": { "to": { "type": "field", "value": "number-ref" } },
+          "condition": { "op": "is", "vars": [
+            { "type": "field", "value": "yesno-ref" },
+            { "type": "constant", "value": true }
+          ] }
+        },
+        {
+          "action": "jump",
+          "details": { "to": { "type": "field", "value": "file-ref" } },
+          "condition": { "op": "always", "vars": [] }
+        }
+      ]
+    },
+    {
+      "type": "field",
+      "ref": "name-ref",
+      "actions": [
+        {
+          "action": "jump",
+          "details": { "to": { "type": "field", "value": "notes-ref" } },
+          "condition": { "op": "always", "vars": [] }
+        }
+      ]
+    }
+  ]
+}

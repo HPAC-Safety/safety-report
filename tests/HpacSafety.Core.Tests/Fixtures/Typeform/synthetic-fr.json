@@ -1,0 +1,110 @@
+{
+  "id": "synthetic-fr",
+  "type": "quiz",
+  "title": "Formulaire de test synthétique (Français)",
+  "fields": [
+    {
+      "id": "1", "ref": "intro-ref", "title": "Introduction", "type": "statement",
+      "properties": { "description": "Bienvenue au formulaire synthétique." }
+    },
+    {
+      "id": "2", "ref": "recap-ref", "title": "Résumé", "type": "statement",
+      "properties": { "description": "Nom : {{field:name-ref}}" }
+    },
+    {
+      "id": "3", "ref": "name-ref", "title": "Nom :", "type": "short_text",
+      "properties": { "description": "Votre nom." }
+    },
+    {
+      "id": "4", "ref": "notes-ref", "title": "Notes :", "type": "long_text",
+      "properties": {}
+    },
+    {
+      "id": "5", "ref": "email-ref", "title": "Courriel :", "type": "email",
+      "properties": {}
+    },
+    {
+      "id": "6", "ref": "phone-ref", "title": "Téléphone :", "type": "phone_number",
+      "properties": {}
+    },
+    {
+      "id": "7", "ref": "date-ref", "title": "Date :", "type": "date",
+      "properties": {}
+    },
+    {
+      "id": "8", "ref": "number-ref", "title": "Âge :", "type": "number",
+      "properties": {}
+    },
+    {
+      "id": "9", "ref": "file-ref", "title": "Photo :", "type": "file_upload",
+      "properties": {}
+    },
+    {
+      "id": "10", "ref": "yesno-ref", "title": "D'accord :", "type": "yes_no",
+      "properties": {}
+    },
+    {
+      "id": "11", "ref": "dropdown-ref", "title": "Province :", "type": "dropdown",
+      "properties": {
+        "choices": [
+          { "id": "c1", "ref": "ab", "label": "Alberta" },
+          { "id": "c2", "ref": "bc", "label": "Colombie-Britannique" }
+        ]
+      }
+    },
+    {
+      "id": "12", "ref": "single-ref", "title": "Choisissez-en un :", "type": "multiple_choice",
+      "properties": {
+        "allow_multiple_selection": false,
+        "allow_other_choice": false,
+        "choices": [
+          { "id": "c3", "ref": "x", "label": "X (fr)" }
+        ]
+      }
+    },
+    {
+      "id": "13", "ref": "multi-ref", "title": "Choisissez-en plusieurs :", "type": "multiple_choice",
+      "properties": {
+        "allow_multiple_selection": true,
+        "allow_other_choice": false,
+        "choices": [
+          { "id": "c5", "ref": "m1", "label": "M1 (fr)" },
+          { "id": "c6", "ref": "m2", "label": "M2 (fr)" }
+        ]
+      }
+    },
+    {
+      "id": "14", "ref": "multiother-ref", "title": "Qualifications :", "type": "multiple_choice",
+      "properties": {
+        "allow_multiple_selection": true,
+        "allow_other_choice": true,
+        "choices": [
+          { "id": "c7", "ref": "r1", "label": "R1 (fr)" }
+        ]
+      }
+    },
+    {
+      "id": "15", "ref": "group-ref", "title": "Aéronef :", "type": "group",
+      "properties": {
+        "fields": [
+          { "id": "16", "ref": "make-ref", "title": "Fabricant :", "type": "short_text", "properties": {} },
+          { "id": "17", "ref": "model-ref", "title": "Modèle :", "type": "short_text", "properties": {} }
+        ]
+      }
+    },
+    {
+      "id": "18", "ref": "contact-ref", "title": "De :", "type": "contact_info",
+      "properties": {
+        "fields": [
+          { "id": "19", "ref": "first-ref", "title": "Prénom", "subfield_key": "first_name", "type": "short_text", "properties": {} },
+          { "id": "20", "ref": "cemail-ref", "title": "Courriel", "subfield_key": "email", "type": "email", "properties": {} }
+        ]
+      }
+    },
+    {
+      "id": "21", "ref": "unsupported-ref", "title": "Classez ceux-ci :", "type": "ranking",
+      "properties": {}
+    }
+  ],
+  "logic": []
+}

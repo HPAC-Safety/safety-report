@@ -16,6 +16,10 @@
         <ProjectReference Include="..\..\src\HpacSafety.Core\HpacSafety.Core.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="Fixtures\**\*.json" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
     <PropertyGroup>
         <IsPackable>false</IsPackable>
     </PropertyGroup>

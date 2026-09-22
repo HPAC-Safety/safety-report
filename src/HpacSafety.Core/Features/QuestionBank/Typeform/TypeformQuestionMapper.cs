@@ -1,0 +1,263 @@
+using System.Text.Json;
+
+namespace HpacSafety.Core.Features.QuestionBank.Typeform;
+
+/// <summary>
+///     Turns a matched English/French Typeform export pair into review drafts.
+///     See ADR-0077 for the full type-mapping table and rationale.
+/// </summary>
+/// <remarks>
+///     <para>
+///         <b>English-led, not hard-reject-on-mismatch.</b> An earlier version of
+///         this design rejected the whole pair the moment one field's <c>ref</c>
+///         was missing from either file. Reviewing the organization's own real
+///         export pair found exactly that case — the publication-consent field
+///         carries a different <c>ref</c> in each language — which would make
+///         this importer unable to import the organization's actual form.
+///         Instead, the English file drives which fields exist and their order;
+///         a field or choice with no French counterpart by <c>ref</c> defaults
+///         its French text to the English text and is flagged
+///         <see cref="ImportedQuestionDraft.FrenchDefaultedToEnglish" />, so an
+///         Administrator sees exactly what still needs real French wording
+///         before saving. A French-only field (no English counterpart) has
+///         nothing to anchor it and is not imported.
+///     </para>
+///     <para>
+///         <b>Every real branching rule is pending, none are auto-mapped.</b>
+///         Typeform's own logic model is "jump to a different field next," not
+///         "show or hide this one question" — translating one correctly into
+///         the other requires reasoning about the whole flow graph, not one
+///         field's rule in isolation. Getting that subtly wrong would silently
+///         wire the wrong dependency, which is worse than not wiring one at
+///         all. This first pass captures every field with a real (non-"always")
+///         condition as a <see cref="PendingTypeformLogic" /> note instead.
+///     </para>
+/// </remarks>
+public static class TypeformQuestionMapper
+{
+	/// <summary>Maps a matched English/French pair into drafts, rejections, and pending-logic notes.</summary>
+	public static TypeformImportResult Map(TypeformDocument english, TypeformDocument french)
+	{
+		ArgumentNullException.ThrowIfNull(english);
+		ArgumentNullException.ThrowIfNull(french);
+
+		var frenchByRef = IndexByRef(french.Fields);
+		var logicByRef = english.Logic.ToDictionary(rule => rule.Ref);
+
+		var drafts = new List<ImportedQuestionDraft>();
+		var rejected = new List<RejectedTypeformField>();
+		var pendingLogic = new List<PendingTypeformLogic>();
+
+		foreach (var field in english.Fields)
+		{
+			MapField(field, frenchByRef, logicByRef, groupedUnderKey: null, drafts, rejected, pendingLogic);
+		}
+
+		return new TypeformImportResult(drafts, rejected, pendingLogic);
+	}
+
+	private static void MapField(
+		TypeformField field,
+		IReadOnlyDictionary<string, TypeformField> frenchByRef,
+		IReadOnlyDictionary<string, TypeformLogicRule> logicByRef,
+		string? groupedUnderKey,
+		List<ImportedQuestionDraft> drafts,
+		List<RejectedTypeformField> rejected,
+		List<PendingTypeformLogic> pendingLogic)
+	{
+		frenchByRef.TryGetValue(field.Ref, out var frenchField);
+		RecordPendingLogic(field, logicByRef, pendingLogic);
+
+		switch (field.Type)
+		{
+			case "statement":
+				if (IsGeneratedRecapScreen(field))
+				{
+					return;
+				}
+
+				drafts.Add(HeadingDraft(field, frenchField, QuestionType.Statement, groupedUnderKey));
+				return;
+
+			case "group":
+			case "contact_info":
+				var groupKey = QuestionKey.Normalize(field.Ref);
+				drafts.Add(HeadingDraft(field, frenchField, QuestionType.Group, groupedUnderKey));
+
+				foreach (var child in field.Properties.Fields ?? [])
+				{
+					MapField(child, frenchByRef, logicByRef, groupKey, drafts, rejected, pendingLogic);
+				}
+
+				return;
+
+			case "short_text":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.ShortText, groupedUnderKey));
+				return;
+
+			case "long_text":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.LongText, groupedUnderKey));
+				return;
+
+			case "email":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.Email, groupedUnderKey));
+				return;
+
+			case "phone_number":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.Phone, groupedUnderKey));
+				return;
+
+			case "date":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.Date, groupedUnderKey));
+				return;
+
+			case "number":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.Number, groupedUnderKey));
+				return;
+
+			case "file_upload":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.FileUpload, groupedUnderKey));
+				return;
+
+			case "yes_no":
+				drafts.Add(SimpleDraft(field, frenchField, QuestionType.YesNo, groupedUnderKey));
+				return;
+
+			case "dropdown":
+				drafts.Add(ChoiceDraft(field, frenchField, QuestionType.SingleSelect, groupedUnderKey, allowsReporterAdditions: false));
+				return;
+
+			case "multiple_choice":
+				var multiSelect = field.Properties.AllowMultipleSelection == true;
+				var allowsAdditions = multiSelect && field.Properties.AllowOtherChoice == true;
+				drafts.Add(
+					ChoiceDraft(
+						field, frenchField, multiSelect ? QuestionType.MultiSelect : QuestionType.SingleSelect,
+						groupedUnderKey, allowsAdditions));
+				return;
+
+			default:
+				rejected.Add(new RejectedTypeformField(field.Ref, field.Title, field.Type));
+				return;
+		}
+	}
+
+	/// <summary>
+	///     Typeform appends a statement summarizing prior answers with
+	///     <c>{{field:...}}</c> merge tags. It carries no authored content of its
+	///     own and would only ever show a reporter literal, unresolved tag text.
+	/// </summary>
+	private static bool IsGeneratedRecapScreen(TypeformField field)
+	{
+		return field.Properties.Description?.Contains("{{field:", StringComparison.Ordinal) == true;
+	}
+
+	private static void RecordPendingLogic(
+		TypeformField field,
+		IReadOnlyDictionary<string, TypeformLogicRule> logicByRef,
+		List<PendingTypeformLogic> pendingLogic)
+	{
+		if (!logicByRef.TryGetValue(field.Ref, out var rule) || !rule.HasRealCondition())
+		{
+			return;
+		}
+
+		var raw = JsonSerializer.Serialize(rule.Actions);
+		pendingLogic.Add(new PendingTypeformLogic(field.Ref, field.Title, raw));
+	}
+
+	private static ImportedQuestionDraft HeadingDraft(
+		TypeformField field, TypeformField? frenchField, QuestionType type, string? groupedUnderKey)
+	{
+		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
+		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
+
+		return new ImportedQuestionDraft(
+			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
+			AllowsReporterAdditions: false, Options: []);
+	}
+
+	private static ImportedQuestionDraft SimpleDraft(
+		TypeformField field, TypeformField? frenchField, QuestionType type, string? groupedUnderKey)
+	{
+		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
+		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
+
+		return new ImportedQuestionDraft(
+			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
+			AllowsReporterAdditions: false, Options: []);
+	}
+
+	private static ImportedQuestionDraft ChoiceDraft(
+		TypeformField field,
+		TypeformField? frenchField,
+		QuestionType type,
+		string? groupedUnderKey,
+		bool allowsReporterAdditions)
+	{
+		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
+		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
+
+		var frenchChoicesByRef = (frenchField?.Properties.Choices ?? [])
+			.ToDictionary(choice => choice.Ref);
+
+		var options = (field.Properties.Choices ?? [])
+			.Select(choice =>
+			{
+				frenchChoicesByRef.TryGetValue(choice.Ref, out var frenchChoice);
+				var (optionEn, optionFr, optionDefaulted) = Pair(choice.Label, frenchChoice?.Label);
+
+				return new ImportedOption(choice.Ref, optionEn, optionFr, optionDefaulted);
+			})
+			.ToList();
+
+		return new ImportedQuestionDraft(
+			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
+			allowsReporterAdditions, options);
+	}
+
+	/// <summary>
+	///     Pairs a required English value with its French counterpart, if one
+	///     was found by <c>ref</c>. Defaults to the English text, flagged, when
+	///     French is missing — see the class remarks.
+	/// </summary>
+	private static (string En, string Fr, bool Defaulted) Pair(string english, string? french)
+	{
+		return string.IsNullOrWhiteSpace(french) ? (english, english, true) : (english, french, false);
+	}
+
+	/// <summary>
+	///     Pairs optional help text the same way <see cref="Pair" /> does,
+	///     except a missing English side stays <c>null</c> rather than
+	///     defaulting anything.
+	/// </summary>
+	private static (string? En, string? Fr, bool Defaulted) PairHelp(string? english, string? french)
+	{
+		if (string.IsNullOrWhiteSpace(english))
+		{
+			return (null, null, false);
+		}
+
+		return string.IsNullOrWhiteSpace(french) ? (english, english, true) : (english, french, false);
+	}
+
+	private static Dictionary<string, TypeformField> IndexByRef(IReadOnlyList<TypeformField> fields)
+	{
+		var index = new Dictionary<string, TypeformField>();
+		Index(fields, index);
+		return index;
+	}
+
+	private static void Index(IReadOnlyList<TypeformField> fields, Dictionary<string, TypeformField> index)
+	{
+		foreach (var field in fields)
+		{
+			index[field.Ref] = field;
+
+			if (field.Properties.Fields is { } nested)
+			{
+				Index(nested, index);
+			}
+		}
+	}
+}

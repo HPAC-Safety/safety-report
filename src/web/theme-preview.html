@@ -25,7 +25,7 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="robots" content="noindex">
 	<title>HPAC theme tokens</title>
-	<link rel="icon" href="./assets/hpac-logo.png">
+	<link rel="icon" href="./assets/hpac-light.svg">
 	<link rel="preload" href="./assets/fonts/poppins-400-latin.woff2" as="font" type="font/woff2" crossorigin>
 	<link rel="preload" href="./assets/fonts/aleo-latin.woff2" as="font" type="font/woff2" crossorigin>
 	<link rel="stylesheet" href="/src/index.css">
@@ -34,7 +34,7 @@
 	<div class="mx-auto max-w-3xl px-6 py-10">
 
 		<header class="flex flex-wrap items-center justify-between gap-4 border-b border-rule pb-6">
-			<img src="./assets/hpac-logo.png" width="260" height="125" alt="HPAC" class="h-16 w-auto">
+			<img id="logo" src="./assets/hpac-light.svg" width="1085.5" height="1071" alt="HPAC" class="h-16 w-auto">
 			<button
 				id="theme-toggle"
 				type="button"
@@ -97,10 +97,12 @@
 		// follow prefers-color-scheme on their own.
 		const root = document.documentElement;
 		const state = document.getElementById('theme-state');
+		const logo = document.getElementById('logo');
 		document.getElementById('theme-toggle').addEventListener('click', () => {
 			const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
 			root.dataset.theme = next;
 			state.textContent = next;
+			logo.src = `./assets/hpac-${next}.svg`;
 		});
 	</script>
 </body>

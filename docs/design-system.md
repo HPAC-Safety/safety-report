@@ -126,8 +126,7 @@ either surface.
 take them from. They are a neutral ramp mirroring the light one step for step
 and clearing AA for body text. They are the only part of the palette without
 provenance, and replacing them is an edit to two adjacent blocks in
-`tailwind.css` and nothing else — **an open item for a designer**, alongside the
-logo.
+`tailwind.css` and nothing else — **an open item for a designer**.
 
 ## Fonts are self-hosted
 
@@ -146,29 +145,12 @@ are committed rather than fetched at build time:
 
 ## Logo
 
-The best HPAC mark publicly available is **260×125** (`2024/04/logoNL.png`); the
-commonly linked one is 49×50. No SVG of the mark exists in their media library.
-A vector or high-resolution source is needed before launch — tracked as an open
-item.
-
-That file is now committed at `src/web/assets/hpac-logo.png` so the theme has a
-mark to lay out against. **Committing it does not close the open item**, and
-rendering it revealed a second problem: `logoNL.png` is the *reversed* artwork.
-Its "HPAC ACVL" wordmark is white, so on a light surface only the red maple leaf
-is visible and the wordmark disappears entirely. It is legible in dark mode and
-invisible in light mode.
-
-So the open item is now two things, and both need the same answer:
-
-1. A **vector or high-resolution** source. At 260×125 the mark is soft on a
-   retina display at any size worth using.
-2. A **dark-ink variant** for light surfaces, or a single-colour mark that can
-   be recoloured with `currentColor`. The only other mark on hpac.ca —
-   `2021/10/HPAC-ACVL_logo.png` — is 113×109 and carries no wordmark, so it is
-   not the answer either.
-
-Replacing the file is the entire fix; nothing in the CSS references its
-dimensions or its colours.
+`src/web/assets/hpac-light.svg` and `src/web/assets/hpac-dark.svg` are the HPAC
+mark, one variant per theme. The light variant renders on the light surface,
+the dark variant on the dark surface; `Header.tsx` picks between them from the
+same theme state `ThemeToggle` uses. Being vector, this also closes the earlier
+softness problem with the raster placeholder. See
+[`src/web/assets/README.md`](../src/web/assets/README.md) for provenance.
 
 ## Related
 

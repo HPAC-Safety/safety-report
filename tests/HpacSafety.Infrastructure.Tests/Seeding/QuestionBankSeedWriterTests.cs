@@ -109,26 +109,44 @@ public sealed class QuestionBankSeedWriterTests
 	}
 
 	[Fact]
-	public void GivenCurrentSeed_WhenWritten_ThenNoOperationIsScheduled()
+	public void GivenAnEmptyQuestionList_WhenWritten_ThenNoOperationIsScheduled()
 	{
-		// The current seed is empty (see QuestionBankSeed's remarks), and
 		// MigrationBuilder.Sql refuses an empty string — Write must skip it
 		// rather than pass one through.
 		var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");
 
-		QuestionBankSeedWriter.Write(migration);
+		QuestionBankSeedWriter.Write(migration, []);
 
 		migration.Operations.ShouldBeEmpty();
 	}
 
 	[Fact]
-	public void GivenCurrentSeed_WhenWrittenAgainstLegacySensitivitySchema_ThenNoOperationIsScheduled()
+	public void GivenCurrentSeed_WhenWritten_ThenOneSqlOperationIsScheduled()
 	{
+		// The current seed now seeds the real form (see QuestionBankSeed's
+		// remarks) — this exercises Write(migrationBuilder) against whatever
+		// it currently holds, the same call the seed migration makes.
+		var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");
+
+		QuestionBankSeedWriter.Write(migration);
+
+		var operation = migration.Operations.ShouldHaveSingleItem().ShouldBeOfType<SqlOperation>();
+		operation.Sql.ShouldContain("INSERT INTO questions");
+	}
+
+	[Fact]
+	public void GivenCurrentSeed_WhenWrittenAgainstLegacySensitivitySchema_ThenOneSqlOperationIsScheduled()
+	{
+		// Only the already-shipped InitialSchema migration calls this, but it
+		// still reads QuestionBankSeed.Questions at Up()-execution time — a
+		// fresh database seeds the real form through this path too, then
+		// MigrateCanonicalDomainAndPersistence carries it forward.
 		var migration = new MigrationBuilder("Npgsql.EntityFrameworkCore.PostgreSQL");
 
 		QuestionBankSeedWriter.WriteLegacySensitivitySchema(migration);
 
-		migration.Operations.ShouldBeEmpty();
+		var operation = migration.Operations.ShouldHaveSingleItem().ShouldBeOfType<SqlOperation>();
+		operation.Sql.ShouldContain("INSERT INTO questions");
 	}
 
 	[Fact]

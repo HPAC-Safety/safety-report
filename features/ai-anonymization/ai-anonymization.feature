@@ -4,7 +4,6 @@ call both summarizes and anonymizes the report and returns one
 English/French summary pair.
 
 @REQ-AI-001
-@ignore
 Scenario: Exactly one model call summarizes and anonymizes a report
   Given a report has been submitted and its summarization outbox item is due
   When the Worker processes the summarization attempt
@@ -54,7 +53,6 @@ Scenario: private_context is still supplied alongside the marking pass
   And the model receives both the marked report_content and the unmarked private_context
 
 @REQ-AI-008
-@ignore
 Scenario: Concurrent workers cannot claim the same summarization outbox item twice
   Given a summarization outbox item is pending
   When two Worker instances attempt to claim it concurrently
@@ -62,10 +60,9 @@ Scenario: Concurrent workers cannot claim the same summarization outbox item twi
   And the other Worker finds no work and makes no model call
 
 @REQ-AI-009
-@ignore
 Scenario: Only eligible, labeled fields reach the model
   Given a report has non-private answered fields and private answered fields
-  When the Worker builds the model input DTO
+  When the Worker claims the message and builds the model input DTO
   Then report_content contains only non-private answered fields eligible to contribute facts
   And private_context contains only private answered fields, supplied to help recognize identifying details that recur in report content
   And skipped/null answers, the system consent answer, and file-upload answers are excluded from both arrays
@@ -125,7 +122,6 @@ Scenario: A private-only fact is never added merely for completeness
   Then the fact is not added to either summary text
 
 @REQ-AI-016
-@ignore
 Scenario: Documents never reach the model
   Given a report has document attachments
   When the Worker builds the summarization input
@@ -133,7 +129,6 @@ Scenario: Documents never reach the model
   And document text is not extracted, summarized, translated, or anonymized
 
 @REQ-AI-017
-@ignore
 Scenario: A valid response is persisted as one pair-level summary row
   Given the model returns a valid two-field response
   When the Worker persists it
@@ -149,7 +144,6 @@ Scenario: The reviewer may correct either text before approval
   And the reviewer is responsible for the final privacy decision
 
 @REQ-AI-019
-@ignore
 Scenario: Retries repeat the single-call operation without adding stages
   Given a summarization attempt fails with a transient provider error or invalid output
   When the outbox retries the attempt within its bounded budget
@@ -157,7 +151,6 @@ Scenario: Retries repeat the single-call operation without adding stages
   And no repair or audit call is added
 
 @REQ-AI-020
-@ignore
 Scenario: Exhausted retries surface a manually authorable failure
   Given a report's summarization retry budget is exhausted
   When the Worker gives up on the attempt
@@ -166,7 +159,6 @@ Scenario: Exhausted retries surface a manually authorable failure
   And a human can author both summary texts manually and continue review
 
 @REQ-AI-021
-@ignore
 Scenario: Sensitive summarization data is never logged
   Given a summarization attempt runs, succeeds, or fails
   When the Worker emits application logs

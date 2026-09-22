@@ -284,6 +284,28 @@ public class QuestionRevision
 		return locale == Locale.FrCa ? HelpTextFr : HelpTextEn;
 	}
 
+	/// <summary>
+	///     Deletes this one revision out of its question's history — distinct from
+	///     <see cref="Question.Delete" />, which retires the whole question. Stamps
+	///     this row and its options with one timestamp rather than removing them.
+	///     Idempotent, and the caller (<see cref="Question" />) has already checked
+	///     that no answer references it and that it is not the current revision.
+	/// </summary>
+	internal void Delete(DateTimeOffset at)
+	{
+		if (Deleted is not null)
+		{
+			return;
+		}
+
+		Deleted = at;
+
+		foreach (var option in _options)
+		{
+			option.Delete(at);
+		}
+	}
+
 	internal static QuestionRevision Create(
 		TinyId questionId,
 		int revisionNumber,

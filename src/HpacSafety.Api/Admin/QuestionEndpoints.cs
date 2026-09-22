@@ -33,6 +33,7 @@ public static class QuestionEndpoints
 		group.MapPut("/{id}", Revise);
 		group.MapPost("/order", Reorder);
 		group.MapDelete("/{id}", Delete);
+		group.MapDelete("/{id}/revisions/{revisionId}", DeleteRevision);
 
 		return group;
 	}
@@ -310,6 +311,48 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>
+	///     Deletes one historical revision out of a live question's chain —
+	///     distinct from <see cref="Delete" />, which retires the whole question.
+	/// </summary>
+	private static async Task<IResult> DeleteRevision(
+		string id,
+		string revisionId,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		HttpContext context,
+		CancellationToken cancellationToken)
+	{
+		if (!TinyId.TryParse(id, out var questionId) || !TinyId.TryParse(revisionId, out var parsedRevisionId))
+		{
+			return Results.NotFound();
+		}
+
+		var question = await LiveQuestions(database)
+			.FirstOrDefaultAsync(candidate => candidate.Id == questionId, cancellationToken)
+			.ConfigureAwait(false);
+
+		if (question is null || question.Revisions.All(revision => revision.Id != parsedRevisionId))
+		{
+			return Results.NotFound();
+		}
+
+		// Counts answers on deleted reports too: a deleted report is still a
+		// record of what somebody was asked (REQ-DOM-008).
+		var hasBeenAnswered = await HasBeenAnsweredRevision(database, parsedRevisionId, cancellationToken)
+			.ConfigureAwait(false);
+
+		return await Save(async () =>
+		{
+			var at = clock.GetUtcNow();
+			question.DeleteRevision(parsedRevisionId, hasBeenAnswered, at);
+			Audit(database, context, AuditAction.DeletedQuestionRevision, parsedRevisionId, at, targetType: "QuestionRevision");
+			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+			return Results.NoContent();
+		}).ConfigureAwait(false);
+	}
+
+	/// <summary>
 	///     Every live shared choice list, by id. An autocomplete renders the live
 	///     list rather than its snapshot (ADR-0063), so the screen needs them.
 	/// </summary>
@@ -346,6 +389,23 @@ public static class QuestionEndpoints
 		return database.ReportAnswers
 			.IgnoreQueryFilters()
 			.AnyAsync(answer => answer.QuestionId == questionId, cancellationToken);
+	}
+
+	/// <summary>
+	///     Whether any answer references this one revision, which is what decides
+	///     whether it may be deleted out of its question's history (REQ-DOM-008).
+	/// </summary>
+	/// <remarks>
+	///     Query filters are ignored deliberately, the same as
+	///     <see cref="HasBeenAnswered" />: an answer on a soft-deleted report is
+	///     still a record of what somebody was asked.
+	/// </remarks>
+	private static Task<bool> HasBeenAnsweredRevision(
+		HpacSafetyDbContext database, TinyId revisionId, CancellationToken cancellationToken)
+	{
+		return database.ReportAnswers
+			.IgnoreQueryFilters()
+			.AnyAsync(answer => answer.QuestionRevisionId == revisionId, cancellationToken);
 	}
 
 	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>

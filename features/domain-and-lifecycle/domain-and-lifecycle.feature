@@ -85,10 +85,9 @@ Scenario: Soft deletion removes a report from every normal path
   And there is no restore transition
 
 @REQ-DOM-008
-@ignore
 Scenario: A question revision can be deleted only when unreferenced
   Given a question revision is referenced by no answer, including answers on deleted reports
-  When an Administrator deletes it
+  When an Administrator deletes that revision
   Then the revision and its option children are stamped with one deleted timestamp
   And once any answer references a revision, that revision is never deletable again
 

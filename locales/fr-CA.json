@@ -136,6 +136,10 @@
     "title": "Page introuvable",
     "body": "Il n'y a rien à cette adresse."
   },
+  "forbidden": {
+    "title": "Vous ne pouvez pas ouvrir cette page",
+    "body": "Votre compte n'a pas accès à cette page d'administration."
+  },
   "questions": {
     "title": "Gérer les questions",
     "intro": "Le formulaire de signalement se compose de ces questions. Lorsque vous modifiez l’une d’entre elles, vous créez une nouvelle version; si vous modifiez une question à laquelle une réponse a déjà été donnée, celle-ci est remplacée par une nouvelle question. Ainsi, un rapport déjà soumis conserve exactement le contenu initial de la question posée.",

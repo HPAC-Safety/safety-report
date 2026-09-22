@@ -1,4 +1,7 @@
 using HpacSafety.Api.RateLimiting;
+using HpacSafety.Core;
+using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -67,7 +70,11 @@ public static class AuthEndpoints
 	}
 
 	private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> TokenAsync(
-		[FromBody] TokenRequest request, DevelopmentTokenIssuer issuer, CancellationToken cancellationToken)
+		[FromBody] TokenRequest request,
+		DevelopmentTokenIssuer issuer,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
@@ -82,12 +89,24 @@ public static class AuthEndpoints
 		{
 			// Distinct from bad credentials: the members site could not be
 			// asked, so nothing about this login attempt was actually judged.
+			// Not an audited outcome either, for the same reason.
 			return TypedResults.Problem(
 				title: "The members site could not be reached.",
 				detail: cause.Message,
 				statusCode: StatusCodes.Status502BadGateway,
 				type: "https://hpac.ca/problems/members-site-unavailable");
 		}
+
+		var at = clock.GetUtcNow();
+
+		// One content-free row either way — never the username or the password
+		// (ADR-0092). Written and saved before the response is returned, so a
+		// failure to audit fails the sign-in attempt the same way.
+		var attemptedIdentity = string.IsNullOrWhiteSpace(request.Username) ? "(unknown)" : request.Username;
+		database.AuditLog.Add(token is null
+			? new AuditLogEntry(attemptedIdentity, AuditAction.SignedInFailed, "Authentication", TinyId.New(), at)
+			: new AuditLogEntry(token.Subject, AuditAction.SignedInSucceeded, "Authentication", TinyId.New(), at));
+		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 		// One generic failure. Nothing distinguishes an unknown username from a
 		// wrong password, or which development credential source was tried.

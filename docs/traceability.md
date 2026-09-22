@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-264 claims across 8 areas: 163 covered by a step definition today, 101 still `@ignore`. 50 constraints.
+264 claims across 8 areas: 167 covered by a step definition today, 97 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -105,10 +105,10 @@ type: guide
 | `REQ-MOD-039` | moderation-authentication-and-publication | There is no publication channel besides the HPAC public feed | Reqnroll | Planned |
 | `REQ-MOD-040` | moderation-authentication-and-publication | Soft-deleting a report stops it everywhere immediately | Reqnroll | Planned |
 | `REQ-MOD-041` | moderation-authentication-and-publication | Revoking a member's access is the identity provider's decision | Reqnroll | Planned |
-| `REQ-MOD-042` | moderation-authentication-and-publication | A signed-out visitor who navigates to an admin route is sent to sign in | playwright-bdd | Planned |
-| `REQ-MOD-043` | moderation-authentication-and-publication | A signed-in member without the required role sees a real 403, not a 404 or the page content | playwright-bdd | Planned |
-| `REQ-MOD-044` | moderation-authentication-and-publication | A successful sign-in writes an audit row | Reqnroll | Planned |
-| `REQ-MOD-045` | moderation-authentication-and-publication | A failed sign-in attempt writes an audit row | Reqnroll | Planned |
+| `REQ-MOD-042` | moderation-authentication-and-publication | A signed-out visitor who navigates to an admin route is sent to sign in | playwright-bdd | Covered |
+| `REQ-MOD-043` | moderation-authentication-and-publication | A signed-in member without the required role sees a real 403, not a 404 or the page content | playwright-bdd | Covered |
+| `REQ-MOD-044` | moderation-authentication-and-publication | A successful sign-in writes an audit row | Reqnroll | Covered |
+| `REQ-MOD-045` | moderation-authentication-and-publication | A failed sign-in attempt writes an audit row | Reqnroll | Covered |
 | `REQ-MOD-046` | moderation-authentication-and-publication | A reviewer's attachment view writes its own audit row, distinct from a raw-report view | Reqnroll | Planned |
 | `REQ-MOD-047` | moderation-authentication-and-publication | A failed audit write blocks the action it would have recorded | Reqnroll | Planned |
 | `REQ-MOD-048` | moderation-authentication-and-publication | Sign-out is not an audited event | Reqnroll | Planned |

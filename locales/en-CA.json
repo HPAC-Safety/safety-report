@@ -70,6 +70,8 @@
   "page.login.submitButton": "Log in",
   "notFound.title": "Page not found",
   "notFound.body": "There is nothing at this address.",
+  "forbidden.title": "You cannot open this page",
+  "forbidden.body": "Your account does not have access to this admin page.",
   "questions.title": "Manage questions",
   "questions.intro": "The incident form is made of these questions. Editing one creates a new version, and editing one that has already been answered replaces it with a new question, so a report already filed still shows exactly what it was asked.",
   "questions.listTitle": "Questions on the form",

@@ -1,5 +1,6 @@
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
+using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,7 @@ public static class QuestionEndpoints
 		SaveQuestionRequest request,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
+		HttpContext context,
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
@@ -112,6 +114,7 @@ public static class QuestionEndpoints
 				options);
 
 			database.Questions.Add(question);
+			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
@@ -127,6 +130,7 @@ public static class QuestionEndpoints
 		SaveQuestionRequest request,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
+		HttpContext context,
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
@@ -149,6 +153,9 @@ public static class QuestionEndpoints
 			return Results.NotFound();
 		}
 
+		var wasActive = question.IsActive;
+		var at = clock.GetUtcNow();
+
 		return await Save(async () =>
 		{
 			var dependsOn = ResolvedDependency(request, questions, question.Id);
@@ -167,7 +174,7 @@ public static class QuestionEndpoints
 				request.IsPrivate,
 				request.IsActive,
 				question.DisplayOrder,
-				clock.GetUtcNow(),
+				at,
 				request.HelpTextEn,
 				request.HelpTextFr,
 				request.PlaceholderEn,
@@ -187,6 +194,8 @@ public static class QuestionEndpoints
 				database.Questions.Add(live);
 			}
 
+			var action = wasActive && !request.IsActive ? AuditAction.DeactivatedQuestion : AuditAction.RevisedQuestion;
+			Audit(database, context, action, live.Id, at, forked ? "forked" : null);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
@@ -205,6 +214,7 @@ public static class QuestionEndpoints
 		ReorderQuestionsRequest request,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
+		HttpContext context,
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
@@ -234,13 +244,20 @@ public static class QuestionEndpoints
 		}
 
 		var at = clock.GetUtcNow();
+		var moved = 0;
 
 		for (var position = 0; position < ordered.Count; position++)
 		{
 			if (ordered[position].DisplayOrder != position)
 			{
 				ordered[position].Reorder(position, at);
+				moved++;
 			}
+		}
+
+		if (moved > 0)
+		{
+			Audit(database, context, AuditAction.ReorderedQuestions, TinyId.New(), at, $"moved={moved}", "QuestionOrder");
 		}
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
@@ -259,6 +276,7 @@ public static class QuestionEndpoints
 		string id,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
+		HttpContext context,
 		CancellationToken cancellationToken)
 	{
 		if (!TinyId.TryParse(id, out var questionId))
@@ -277,7 +295,9 @@ public static class QuestionEndpoints
 
 		return await Save(async () =>
 		{
-			question.Delete(clock.GetUtcNow());
+			var at = clock.GetUtcNow();
+			question.Delete(at);
+			Audit(database, context, AuditAction.DeletedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			return Results.NoContent();
@@ -445,6 +465,20 @@ public static class QuestionEndpoints
 	private static IResult UnknownType(string type)
 	{
 		return Problem("unknown-type", "That is not a question type.", $"'{type}' does not name a question type.");
+	}
+
+	/// <summary>
+	///     Queues one audit row on the same <see cref="HpacSafetyDbContext" /> the
+	///     caller is about to call <c>SaveChangesAsync</c> on, so it commits in the
+	///     same transaction as the change it describes — a failed audit write rolls
+	///     the change back too (ADR-0092).
+	/// </summary>
+	private static void Audit(
+		HpacSafetyDbContext database, HttpContext context, AuditAction action, TinyId targetId, DateTimeOffset at,
+		string? detail = null, string targetType = "Question")
+	{
+		var subject = MemberRoles.SubjectOf(context.User) ?? "(unknown)";
+		database.AuditLog.Add(new AuditLogEntry(subject, action, targetType, targetId, at, detail));
 	}
 
 	private static IResult Problem(string code, string title, string detail)

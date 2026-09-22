@@ -90,7 +90,7 @@ app.UseRateLimiter();
 await using (var scope = app.Services.CreateAsyncScope())
 {
 	var context = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-	await context.EnsureMigratedAsync(app.Logger).ConfigureAwait(false);
+	await context.EnsureMigrated(app.Logger).ConfigureAwait(false);
 }
 
 // Endpoints are added as features land. See the Foundation and Phase 1

@@ -37,10 +37,10 @@ public static class TypeformImportEndpoints
 		// antiforgery to protect — consistent with AGENTS.md's "no CSRF
 		// machinery." ASP.NET Core otherwise requires it by default on any
 		// endpoint with an IFormFile parameter.
-		group.MapPost("/import", ImportAsync).DisableAntiforgery();
-		group.MapGet("/pending-logic", ListPendingLogicAsync);
-		group.MapDelete("/pending-logic/{id}", DeletePendingLogicAsync);
-		group.MapGet("/export", ExportAsync);
+		group.MapPost("/import", Import).DisableAntiforgery();
+		group.MapGet("/pending-logic", ListPendingLogic);
+		group.MapDelete("/pending-logic/{id}", DeletePendingLogic);
+		group.MapGet("/export", Export);
 
 		return group;
 	}
@@ -51,7 +51,7 @@ public static class TypeformImportEndpoints
 	///     object for everything Typeform has no field for. See
 	///     <see cref="TypeformExportBuilder" />.
 	/// </summary>
-	private static async Task<IResult> ExportAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> Export(HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var questions = await QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
@@ -60,7 +60,7 @@ public static class TypeformImportEndpoints
 			.OrderBy(question => question.DisplayOrder)
 			.ThenBy(question => question.Key, StringComparer.Ordinal)
 			.ToList();
-		var sets = await QuestionEndpoints.LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+		var sets = await QuestionEndpoints.LiveSets(database, cancellationToken).ConfigureAwait(false);
 
 		var (english, french) = TypeformExportBuilder.Build(ordered, sets);
 
@@ -68,14 +68,14 @@ public static class TypeformImportEndpoints
 
 		using (var archive = new ZipArchive(zipStream, ZipArchiveMode.Create, leaveOpen: true))
 		{
-			await WriteEntryAsync(archive, "form-en.json", english.ToJson(), cancellationToken).ConfigureAwait(false);
-			await WriteEntryAsync(archive, "form-fr.json", french.ToJson(), cancellationToken).ConfigureAwait(false);
+			await WriteEntry(archive, "form-en.json", english.ToJson(), cancellationToken).ConfigureAwait(false);
+			await WriteEntry(archive, "form-fr.json", french.ToJson(), cancellationToken).ConfigureAwait(false);
 		}
 
 		return Results.File(zipStream.ToArray(), "application/zip", "question-bank.zip");
 	}
 
-	private static async Task WriteEntryAsync(
+	private static async Task WriteEntry(
 		ZipArchive archive, string entryName, string contents, CancellationToken cancellationToken)
 	{
 		var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
@@ -88,7 +88,7 @@ public static class TypeformImportEndpoints
 	///     Parses the pair and previews the result. Both files are required —
 	///     a request missing one is rejected by model binding before this runs.
 	/// </summary>
-	private static async Task<IResult> ImportAsync(
+	private static async Task<IResult> Import(
 		IFormFile english,
 		IFormFile french,
 		HpacSafetyDbContext database,
@@ -99,8 +99,8 @@ public static class TypeformImportEndpoints
 
 		try
 		{
-			var englishDocument = await ParseAsync(english, cancellationToken).ConfigureAwait(false);
-			var frenchDocument = await ParseAsync(french, cancellationToken).ConfigureAwait(false);
+			var englishDocument = await Parse(english, cancellationToken).ConfigureAwait(false);
+			var frenchDocument = await Parse(french, cancellationToken).ConfigureAwait(false);
 			result = TypeformQuestionMapper.Map(englishDocument, frenchDocument);
 		}
 		catch (DomainRuleViolationException cause)
@@ -124,7 +124,7 @@ public static class TypeformImportEndpoints
 				[.. notes.Select(note => note.Id.Value)]));
 	}
 
-	private static async Task<TypeformDocument> ParseAsync(IFormFile file, CancellationToken cancellationToken)
+	private static async Task<TypeformDocument> Parse(IFormFile file, CancellationToken cancellationToken)
 	{
 		await using var stream = file.OpenReadStream();
 		using var reader = new StreamReader(stream);
@@ -134,7 +134,7 @@ public static class TypeformImportEndpoints
 	}
 
 	/// <summary>Every unresolved pending-logic note, oldest first.</summary>
-	private static async Task<IResult> ListPendingLogicAsync(
+	private static async Task<IResult> ListPendingLogic(
 		HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var notes = await database.PendingImportLogic
@@ -150,7 +150,7 @@ public static class TypeformImportEndpoints
 	///     condition by hand. A real, hard delete — see the class remarks on
 	///     <see cref="PendingImportLogic" />.
 	/// </summary>
-	private static async Task<IResult> DeletePendingLogicAsync(
+	private static async Task<IResult> DeletePendingLogic(
 		string id, HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		if (!TinyId.TryParse(id, out var noteId))

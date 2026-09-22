@@ -26,7 +26,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	public async Task GivenRoleBelowAdministrator_WhenAdminEndpointIsRead_ThenApiForbidsIt(MemberRole role)
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, role);
+		using var client = await SignedInClient.As(_factory, role);
 
 		// When
 		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
@@ -41,7 +41,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	public async Task GivenAdministrator_WhenAdminEndpointIsRead_ThenItSucceeds()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.Administrator);
+		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
 		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
@@ -56,7 +56,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	public async Task GivenRoleBelowAdministrator_WhenQuestionIsCreated_ThenApiForbidsIt(MemberRole role)
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, role);
+		using var client = await SignedInClient.As(_factory, role);
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -83,7 +83,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	{
 		// Given — translation is a question-authoring aid (ADR-0062), so it
 		// carries the same role as authoring.
-		using var client = await SignedInClient.AsAsync(_factory, role);
+		using var client = await SignedInClient.As(_factory, role);
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -98,7 +98,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	public async Task GivenAnyRole_WhenMemberEndpointIsCalled_ThenItSucceeds()
 	{
 		// Given — membership is what /me requires, not privilege
-		using var user = await SignedInClient.AsAsync(_factory, MemberRole.User);
+		using var user = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
 		using var response = await user.GetAsync(new Uri("/api/auth/me", UriKind.Relative));
@@ -111,7 +111,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	public async Task GivenForbiddenRequest_WhenApiRefuses_ThenProblemNamesInsufficientRoleWithoutSayingWhichWouldDo()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.User);
+		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
 		using var response = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));

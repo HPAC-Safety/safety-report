@@ -28,7 +28,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 	public OutboxMessageType HandlesType => OutboxMessageType.SummarizeReport;
 
 	/// <inheritdoc />
-	public async Task ProcessAsync(OutboxMessage message, CancellationToken cancellationToken)
+	public async Task Process(OutboxMessage message, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(message);
 
@@ -47,12 +47,12 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 
 		report.BeginSummarizing();
 
-		var dto = await LoadForSummaryAsync(report.Id, report.Language, cancellationToken).ConfigureAwait(false);
+		var dto = await LoadForSummary(report.Id, report.Language, cancellationToken).ConfigureAwait(false);
 		var input = SummarizationInput.Partition(dto.Fields);
 
 		try
 		{
-			var draft = await summarizer.SummarizeAsync(input, cancellationToken).ConfigureAwait(false);
+			var draft = await summarizer.Summarize(input, cancellationToken).ConfigureAwait(false);
 
 			var summary = Summary.Generate(report.Id, draft.TextEn, draft.TextFr, draft.Model, draft.PromptVersion, clock.GetUtcNow());
 			report.AttachSummary(summary);
@@ -75,7 +75,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		}
 	}
 
-	private async Task<ReportForSummaryDto> LoadForSummaryAsync(TinyId reportId, Locale language, CancellationToken cancellationToken)
+	private async Task<ReportForSummaryDto> LoadForSummary(TinyId reportId, Locale language, CancellationToken cancellationToken)
 	{
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId

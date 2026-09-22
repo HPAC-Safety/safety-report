@@ -3,7 +3,7 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <summary>
 ///     The only sanctioned way to hand a safety officer a link to uploaded media.
 ///     <para>
-///         <see cref="IBlobStore.CreateReadUrlAsync" /> will mint a URL for any key it is
+///         <see cref="IBlobStore.CreateReadUrl" /> will mint a URL for any key it is
 ///         given — the quarantined upload and the private original included. It is
 ///         generic storage and knows nothing about which bytes are safe to look at. This
 ///         does: only <see cref="MediaCompartment.Stripped" /> is ever issued.
@@ -33,7 +33,7 @@ public sealed class ReviewerMediaLink
 	///     A short-lived pre-signed GET for a stripped derivative. Throws for
 	///     anything else, including the original and the quarantined upload.
 	/// </summary>
-	public Task<Uri> CreateViewUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateViewUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		if (!IsViewable(key))
 		{
@@ -41,7 +41,7 @@ public sealed class ReviewerMediaLink
 				"A reviewer may only be shown a stripped derivative, never the original upload.");
 		}
 
-		return _blobStore.CreateReadUrlAsync(key, lifetime, cancellationToken);
+		return _blobStore.CreateReadUrl(key, lifetime, cancellationToken);
 	}
 
 	/// <summary>True when the key names a stripped derivative rather than an original or a quarantined upload.</summary>

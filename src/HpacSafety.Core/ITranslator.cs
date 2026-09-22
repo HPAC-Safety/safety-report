@@ -49,7 +49,7 @@ public interface ITranslator
 	/// <exception cref="TranslationUnavailableException">
 	///     No provider is configured, or the provider could not be reached.
 	/// </exception>
-	Task<IReadOnlyList<string>> TranslateAsync(
+	Task<IReadOnlyList<string>> Translate(
 		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken);
 }
 

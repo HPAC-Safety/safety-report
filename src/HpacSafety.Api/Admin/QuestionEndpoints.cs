@@ -28,11 +28,11 @@ public static class QuestionEndpoints
 
 		var group = app.MapGroup("/api/admin/questions").RequireAuthorization(HpacPolicies.Administrator);
 
-		group.MapGet("/", ListAsync);
-		group.MapPost("/", CreateAsync);
-		group.MapPut("/{id}", ReviseAsync);
-		group.MapPost("/order", ReorderAsync);
-		group.MapDelete("/{id}", DeleteAsync);
+		group.MapGet("/", List);
+		group.MapPost("/", Create);
+		group.MapPut("/{id}", Revise);
+		group.MapPost("/order", Reorder);
+		group.MapDelete("/{id}", Delete);
 
 		return group;
 	}
@@ -42,11 +42,11 @@ public static class QuestionEndpoints
 	///     sort order break by stable key, which is what makes the order
 	///     deterministic rather than whatever PostgreSQL returned.
 	/// </summary>
-	private static async Task<IResult> ListAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> List(HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
-		var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
-		var answered = await AnsweredQuestionIdsAsync(database, cancellationToken).ConfigureAwait(false);
+		var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
+		var answered = await AnsweredQuestionIds(database, cancellationToken).ConfigureAwait(false);
 
 		return Results.Ok(
 			questions
@@ -57,7 +57,7 @@ public static class QuestionEndpoints
 				.ToList());
 	}
 
-	private static async Task<IResult> CreateAsync(
+	private static async Task<IResult> Create(
 		SaveQuestionRequest request,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
@@ -89,7 +89,7 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, questions, null);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
-			var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
+			var options = await OptionsFor(request, database, type, cancellationToken).ConfigureAwait(false);
 
 			var question = Question.Create(
 				key,
@@ -117,7 +117,7 @@ public static class QuestionEndpoints
 			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-			var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+			var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
 
 			return Results.Created(
 				$"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question, SetFor(question, sets)));
@@ -125,7 +125,7 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>Saves an edit as a new revision. The previous one is left exactly as it was.</summary>
-	private static async Task<IResult> ReviseAsync(
+	private static async Task<IResult> Revise(
 		string id,
 		SaveQuestionRequest request,
 		HpacSafetyDbContext database,
@@ -160,8 +160,8 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, questions, question.Id);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
-			var options = await OptionsForAsync(request, database, type, cancellationToken).ConfigureAwait(false);
-			var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
+			var options = await OptionsFor(request, database, type, cancellationToken).ConfigureAwait(false);
+			var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
 				.ConfigureAwait(false);
 
 			// Revises while nothing has answered it, and otherwise retires
@@ -198,7 +198,7 @@ public static class QuestionEndpoints
 			Audit(database, context, action, live.Id, at, forked ? "forked" : null);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-			var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+			var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
 
 			// The replacement is new, so nothing has answered it yet.
 			return Results.Ok(QuestionView.Of(live, SetFor(live, sets), hasBeenAnswered && !forked));
@@ -210,7 +210,7 @@ public static class QuestionEndpoints
 	///     them are written in one <c>SaveChangesAsync</c> — a half-applied reorder
 	///     would leave two questions claiming the same position.
 	/// </summary>
-	private static async Task<IResult> ReorderAsync(
+	private static async Task<IResult> Reorder(
 		ReorderQuestionsRequest request,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
@@ -262,7 +262,7 @@ public static class QuestionEndpoints
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-		var sets = await LiveSetsAsync(database, cancellationToken).ConfigureAwait(false);
+		var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
 
 		return Results.Ok(
 			ordered.Select(question => QuestionView.Of(question, SetFor(question, sets))).ToList());
@@ -272,7 +272,7 @@ public static class QuestionEndpoints
 	///     Retires a question. Always a soft delete — answers already given to it
 	///     belong to a real report and are never removed with it.
 	/// </summary>
-	private static async Task<IResult> DeleteAsync(
+	private static async Task<IResult> Delete(
 		string id,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
@@ -295,7 +295,7 @@ public static class QuestionEndpoints
 
 		// Counts answers on deleted reports too: a deleted report is still a
 		// record of what somebody was asked (REQ-QB-030, REQ-QB-031).
-		var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
+		var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
 			.ConfigureAwait(false);
 
 		return await Save(async () =>
@@ -326,7 +326,7 @@ public static class QuestionEndpoints
 	///     Every question that any answer references, so the list can mark which
 	///     ones an edit would replace rather than revise.
 	/// </summary>
-	private static async Task<HashSet<TinyId>> AnsweredQuestionIdsAsync(
+	private static async Task<HashSet<TinyId>> AnsweredQuestionIds(
 		HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		return
@@ -340,7 +340,7 @@ public static class QuestionEndpoints
 		];
 	}
 
-	private static Task<bool> HasBeenAnsweredAsync(
+	private static Task<bool> HasBeenAnswered(
 		HpacSafetyDbContext database, TinyId questionId, CancellationToken cancellationToken)
 	{
 		return database.ReportAnswers
@@ -349,7 +349,7 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>
-	internal static async Task<Dictionary<TinyId, OptionSet>> LiveSetsAsync(
+	internal static async Task<Dictionary<TinyId, OptionSet>> LiveSets(
 		HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var sets = await database.OptionSets
@@ -429,7 +429,7 @@ public static class QuestionEndpoints
 	///     is named, its live items are <b>copied</b> — the revision answers from
 	///     that copy forever, whatever later happens to the set. See ADR-0058.
 	/// </summary>
-	private static async Task<IReadOnlyList<QuestionOptionInput>> OptionsForAsync(
+	private static async Task<IReadOnlyList<QuestionOptionInput>> OptionsFor(
 		SaveQuestionRequest request,
 		HpacSafetyDbContext database,
 		QuestionType type,

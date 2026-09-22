@@ -71,15 +71,15 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"the client says it showed the reporter a set of answer-producing revisions")]
 	public async Task GivenTheClientShowedASetOfAnswerProducingRevisions()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		_extraRevisionId = await CreateSyntheticQuestionAsync("short_text");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_extraRevisionId = await CreateSyntheticQuestion("short_text");
 	}
 
 	[When(@"the reporter submits the form")]
 	public async Task WhenTheReporterSubmitsTheForm()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -104,16 +104,16 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a reporter skips an answer-producing question")]
 	public async Task GivenAReporterSkipsAnAnswerProducingQuestion()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		_extraRevisionId = await CreateSyntheticQuestionAsync("short_text");
-		_fileRevisionId = await CreateSyntheticQuestionAsync("file_upload");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_extraRevisionId = await CreateSyntheticQuestion("short_text");
+		_fileRevisionId = await CreateSyntheticQuestion("file_upload");
 	}
 
 	[When(@"the submission DTO is built")]
 	public async Task WhenTheSubmissionDtoIsBuilt()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -137,10 +137,10 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a reporter submits a value for a picker or multi-select question")]
 	public async Task GivenAReporterSubmitsAValueForAPickerQuestion()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		var key = await CreateSelectQuestionAsync();
-		_selectRevisionId = await RevisionIdForAsync(key);
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
 	}
 
 	[When(@"the API validates the submission")]
@@ -148,7 +148,7 @@ public sealed class ReportSubmissionEndpointSteps
 	{
 		if (_supersededRevisionId is not null)
 		{
-			_response = await PostAsync(new
+			_response = await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -161,7 +161,7 @@ public sealed class ReportSubmissionEndpointSteps
 			return;
 		}
 
-		using var accepted = await PostAsync(new
+		using var accepted = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -173,7 +173,7 @@ public sealed class ReportSubmissionEndpointSteps
 		accepted.StatusCode.ShouldBe(HttpStatusCode.Accepted, await accepted.Content.ReadAsStringAsync());
 		_selectedLabel = "Blue";
 
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -208,10 +208,10 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission contains select answers and a value typed into a type-ahead or a multi-select with reporter additions allowed")]
 	public async Task GivenASubmissionContainsSelectAnswers()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		var key = await CreateSelectQuestionAsync();
-		_selectRevisionId = await RevisionIdForAsync(key);
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
 		_selectedLabel = "Blue";
 	}
 
@@ -238,7 +238,7 @@ public sealed class ReportSubmissionEndpointSteps
 				}
 			};
 
-		_response = await PostAsync(dto);
+		_response = await Post(dto);
 	}
 
 	[Then(@"no translation provider is called")]
@@ -250,7 +250,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[Then(@"the answers are stored in the language the reporter gave them in, with no translation yet")]
 	public async Task ThenTheAnswersAreStoredWithNoTranslationYet()
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var queue = await _admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
 		var entries = queue.GetProperty("answers").EnumerateArray().ToList();
 		entries.ShouldContain(entry => entry.GetProperty("value").GetString() == _selectedLabel);
@@ -261,13 +261,13 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a report has been submitted")]
 	public async Task GivenAReportHasBeenSubmitted()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		var key = await CreateSelectQuestionAsync();
-		_selectRevisionId = await RevisionIdForAsync(key);
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
 		_selectedLabel = "Blue";
 
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -282,7 +282,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[Then(@"no endpoint ever changes an answer's value or the locale it was given in")]
 	public async Task ThenNoEndpointEverChangesValueOrLocale()
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var queue = await _admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
 		var entry = queue.GetProperty("answers").EnumerateArray()
 			.Single(candidate => candidate.GetProperty("value").GetString() == _selectedLabel);
@@ -297,7 +297,7 @@ public sealed class ReportSubmissionEndpointSteps
 			new { value = "Bleu (admin)" });
 		put.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(answerId));
 		stored.Value.ShouldBe(_selectedLabel);
@@ -353,13 +353,13 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"an answer already has a translation the Worker supplied automatically")]
 	public async Task GivenAnAnswerAlreadyHasAnAutoTranslation()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		var key = await CreateSelectQuestionAsync();
-		_selectRevisionId = await RevisionIdForAsync(key);
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
 		_selectedLabel = "Blue";
 
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -371,7 +371,7 @@ public sealed class ReportSubmissionEndpointSteps
 		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
 		var reportId = body.GetProperty("id").GetString()!;
 
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var answer = await database.ReportAnswers.FirstAsync(candidate =>
 			candidate.ReportId == TinyId.Parse(reportId) && candidate.Value == _selectedLabel);
@@ -386,7 +386,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"an administrator supplies or corrects that answer's translated value")]
 	public async Task WhenAnAdministratorSuppliesOrCorrectsTheTranslatedValue()
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		using var put = await _admin.PutAsJsonAsync(
 			new Uri($"/api/admin/answers/{_answerId}/translation", UriKind.Relative),
 			new { value = "Bleu (humain)" });
@@ -396,7 +396,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[Then(@"the stored translated value is the administrator's")]
 	public async Task ThenTheStoredTranslatedValueIsTheAdministrators()
 	{
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
 		stored.TranslatedValue.ShouldBe("Bleu (humain)");
@@ -405,7 +405,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[Then(@"the translation source is marked ""human""")]
 	public async Task ThenTheTranslationSourceIsMarkedHuman()
 	{
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
 		stored.TranslationSource.ShouldBe(TranslationSource.Human);
@@ -416,8 +416,8 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission DTO contains (.*)$")]
 	public async Task GivenASubmissionDtoContains(string problem)
 	{
-		_reporter ??= await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
+		_reporter ??= await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
 		_problem = problem;
 	}
 
@@ -438,19 +438,19 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"the browser's session began before an Administrator edited the form")]
 	public async Task GivenTheBrowsersSessionBeganBeforeAnEdit()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
 	}
 
 	[Given(@"an answered revision is a known, non-deleted, superseded revision")]
 	public async Task GivenAnAnsweredRevisionIsAKnownSupersededRevision()
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
-		var created = await CreateAsync(key, "short_text", "Original wording");
+		var created = await Create(key, "short_text", "Original wording");
 		var questionId = created.GetProperty("id").GetString()!;
 		_supersededRevisionId = created.GetProperty("revisionId").GetString();
-		await ReviseAsync(questionId, key, "short_text", "Reworded once");
+		await Revise(questionId, key, "short_text", "Reworded once");
 	}
 
 	[Then(@"the API validates the answer against that revision's historical type, options, and privacy")]
@@ -470,12 +470,12 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission fails validation")]
 	public async Task GivenASubmissionFailsValidation()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
 
 		// A duplicate-revision submission fails validation; its value carries a
 		// secret so the assertion below can prove it never comes back.
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
@@ -519,9 +519,9 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission includes one or more files parts")]
 	public async Task GivenASubmissionIncludesFilesParts()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		_fileRevisionId = await CreateSyntheticQuestionAsync("file_upload");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_fileRevisionId = await CreateSyntheticQuestion("file_upload");
 	}
 
 	[When(@"the API accepts an attachment")]
@@ -568,9 +568,9 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a multipart submission passes every validation step")]
 	public async Task GivenAMultipartSubmissionPassesEveryValidationStep()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		_extraRevisionId = await CreateSyntheticQuestionAsync("long_text");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_extraRevisionId = await CreateSyntheticQuestion("long_text");
 	}
 
 	[Then(@"one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file")]
@@ -580,7 +580,7 @@ public sealed class ReportSubmissionEndpointSteps
 		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
 		var reportId = body.GetProperty("id").GetString();
 
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var report = await database.Reports.FirstAsync(candidate => candidate.Id == TinyId.Parse(reportId!));
 		await database.Entry(report).Collection(nameof(Report.Answers)).LoadAsync();
@@ -599,9 +599,9 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"the persistence transaction for a submission fails")]
 	public async Task GivenThePersistenceTransactionForASubmissionFails()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		_reportCountBefore = await ReportCountAsync();
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_reportCountBefore = await ReportCount();
 	}
 
 	[When(@"the API returns from the failed request")]
@@ -611,7 +611,7 @@ public sealed class ReportSubmissionEndpointSteps
 		// submission that never validates never reaches persistence, so no
 		// report exists for it. A true mid-transaction failure needs fault
 		// injection this suite does not have.
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = (string?)"unknown-revision", value = (string?)"x" } }
@@ -622,7 +622,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenNoReportIsVisible()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await ReportCountAsync()).ShouldBe(_reportCountBefore);
+		(await ReportCount()).ShouldBe(_reportCountBefore);
 	}
 
 	[Then(@"any already-written quarantine blobs are unreferenced and expire through the storage lifecycle rule")]
@@ -637,14 +637,14 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission passes validation and persists successfully")]
 	public async Task GivenASubmissionPassesValidation()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
 	}
 
 	[When(@"the API responds")]
 	public async Task WhenTheApiResponds()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -655,7 +655,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenTheResponseIs202WithAnOpaqueReportId()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
-		var body = await ResponseBodyAsync();
+		var body = await ResponseBody();
 		body.GetProperty("status").GetString().ShouldBe("submitted");
 		body.GetProperty("id").GetString().ShouldNotBeNullOrWhiteSpace();
 	}
@@ -663,7 +663,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[Then(@"the response contains no raw answers or attachment URLs")]
 	public async Task ThenTheResponseContainsNoRawAnswersOrAttachmentUrls()
 	{
-		var body = await ResponseBodyAsync();
+		var body = await ResponseBody();
 		var properties = body.EnumerateObject().Select(property => property.Name).ToList();
 		properties.ShouldBe(["id", "status"], ignoreOrder: true);
 	}
@@ -673,14 +673,14 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission request carries no bearer token")]
 	public async Task GivenASubmissionRequestCarriesNoBearerToken()
 	{
-		_reportCountBefore = await ReportCountAsync();
+		_reportCountBefore = await ReportCount();
 	}
 
 	[When(@"the API processes the submission")]
 	public async Task WhenTheApiProcessesTheSubmission()
 	{
-		await EnsureConsentQuestionAsync();
-		using var anonymous = (await BootedApi.FactoryAsync()).CreateClient();
+		await EnsureConsentQuestion();
+		using var anonymous = (await BootedApi.Factory()).CreateClient();
 		var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -693,7 +693,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenTheApiRejectsItBeforeAnyReportStateIsCreated()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-		(await ReportCountAsync()).ShouldBe(_reportCountBefore);
+		(await ReportCount()).ShouldBe(_reportCountBefore);
 	}
 
 	// --- A rate-limited submission is rejected ---
@@ -701,14 +701,14 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission request arrives")]
 	public async Task GivenASubmissionRequestArrives()
 	{
-		await EnsureConsentQuestionAsync();
+		await EnsureConsentQuestion();
 
-		var limited = await BootedApi.RateLimitedAsync("PublicSubmission");
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User, limited);
+		var limited = await BootedApi.RateLimited("PublicSubmission");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User, limited);
 
 		// The one permit this policy allows — consumed here so the next request
 		// is the one that exceeds it.
-		await PostAsync(new
+		await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -718,7 +718,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the per-IP rate limit is exceeded")]
 	public async Task WhenThePerIpRateLimitIsExceeded()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -738,7 +738,7 @@ public sealed class ReportSubmissionEndpointSteps
 		var body = await _response!.Content.ReadAsStringAsync();
 		body.ShouldNotContain("ip", Case.Insensitive);
 
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportColumns = database.Model.FindEntityType(typeof(Report))!.GetProperties()
 			.Select(property => property.Name);
@@ -750,14 +750,14 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a reporter holds a valid member token with the (.*) role")]
 	public async Task GivenAReporterHoldsAValidMemberTokenWithTheRole(string role)
 	{
-		_reporter = await BootedApi.SignedInAsAsync(Enum.Parse<MemberRole>(role));
-		await EnsureConsentQuestionAsync();
+		_reporter = await BootedApi.SignedInAs(Enum.Parse<MemberRole>(role));
+		await EnsureConsentQuestion();
 	}
 
 	[When(@"a valid submission is made")]
 	public async Task WhenAValidSubmissionIsMade()
 	{
-		_response = await PostAsync(new
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -775,9 +775,9 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a reporter submits a valid report while signed in")]
 	public async Task GivenAReporterSubmitsAValidReportWhileSignedIn()
 	{
-		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
-		await EnsureConsentQuestionAsync();
-		_response = await PostAsync(new
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
@@ -813,12 +813,12 @@ public sealed class ReportSubmissionEndpointSteps
 
 	// --- Helpers ---
 
-	private async Task<JsonElement> ResponseBodyAsync()
+	private async Task<JsonElement> ResponseBody()
 	{
 		return _responseBody ??= await _response!.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task<HttpResponseMessage> PostAsync(object dto)
+	private async Task<HttpResponseMessage> Post(object dto)
 	{
 		return await _reporter!.PostAsync(Submit, ReportPart(dto));
 	}
@@ -838,7 +838,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 		return problem switch
 		{
-			"a duplicate question_revision_id" => await PostAsync(new
+			"a duplicate question_revision_id" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -847,7 +847,7 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = consent, value = (string?)"no" }
 								}
 			}),
-			"an unknown question_revision_id" => await PostAsync(new
+			"an unknown question_revision_id" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -856,24 +856,24 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = (string?)"not-a-real-id", value = (string?)"x" }
 				}
 			}),
-			"a question_revision_id for a deleted revision" => await PostAsync(new
+			"a question_revision_id for a deleted revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
 						new { questionRevisionId = consent, value = (string?)"yes" },
-						new { questionRevisionId = (string?)await DeletedRevisionIdAsync(), value = (string?)"x" }
+						new { questionRevisionId = (string?)await DeletedRevisionId(), value = (string?)"x" }
 				}
 			}),
-			"no explicit answer to the consent_publish revision" => await PostAsync(new
+			"no explicit answer to the consent_publish revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = (string?)await CreateSyntheticQuestionAsync("short_text"), value = (string?)"x" }
+						new { questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"), value = (string?)"x" }
 				}
 			}),
-			"a non-null field from the wrong answer shape" => await PostAsync(new
+			"a non-null field from the wrong answer shape" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -881,12 +881,12 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = consent, value = (string?)"yes" },
 						new
 						{
-							questionRevisionId = (string?)await CreateSyntheticQuestionAsync("short_text"),
+							questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"),
 							optionCodes = new[] { "x" }
 						}
 				}
 			}),
-			"a duplicate or out-of-range file index" => await PostAsync(new
+			"a duplicate or out-of-range file index" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -894,17 +894,17 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = consent, value = (string?)"yes" },
 						new
 						{
-							questionRevisionId = (string?)await CreateSyntheticQuestionAsync("file_upload"),
+							questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
 							attachmentPartIndexes = new[] { 0 }
 						}
 				}
 			}),
-			"a files part that is never referenced by any answer" => await PostWithGarbageFileAsync(new
+			"a files part that is never referenced by any answer" => await PostWithGarbageFile(new
 			{
 				language = "en-CA",
 				answers = new object[] { new { questionRevisionId = consent, value = (string?)"yes" } }
 			}),
-			"a files part referenced by more than one answer" => await PostWithGarbageFileAsync(new
+			"a files part referenced by more than one answer" => await PostWithGarbageFile(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -912,12 +912,12 @@ public sealed class ReportSubmissionEndpointSteps
 						new { questionRevisionId = consent, value = (string?)"yes" },
 						new
 						{
-							questionRevisionId = (string?)await CreateSyntheticQuestionAsync("file_upload"),
+							questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
 							attachmentPartIndexes = new[] { 0 }
 						},
 						new
 						{
-							questionRevisionId = (string?)await CreateSyntheticQuestionAsync("file_upload"),
+							questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
 							attachmentPartIndexes = new[] { 0 }
 						}
 				}
@@ -926,7 +926,7 @@ public sealed class ReportSubmissionEndpointSteps
 		};
 	}
 
-	private async Task<HttpResponseMessage> PostWithGarbageFileAsync(object dto)
+	private async Task<HttpResponseMessage> PostWithGarbageFile(object dto)
 	{
 		var content = new MultipartFormDataContent
 		{
@@ -938,14 +938,14 @@ public sealed class ReportSubmissionEndpointSteps
 		return await _reporter!.PostAsync(Submit, content);
 	}
 
-	private async Task<string> DeletedRevisionIdAsync()
+	private async Task<string> DeletedRevisionId()
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
-		var created = await CreateAsync(key, "short_text");
+		var created = await Create(key, "short_text");
 		var revisionId = created.GetProperty("revisionId").GetString()!;
 
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var question = await database.Questions.FirstAsync(q => q.Key == key);
 		// Nothing has answered it yet: this fixture deletes the question in
@@ -957,9 +957,9 @@ public sealed class ReportSubmissionEndpointSteps
 		return revisionId;
 	}
 
-	private async Task<string> CreateSelectQuestionAsync()
+	private async Task<string> CreateSelectQuestion()
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
 
 		var request = new
@@ -993,23 +993,23 @@ public sealed class ReportSubmissionEndpointSteps
 		return key;
 	}
 
-	private async Task<string> RevisionIdForAsync(string key)
+	private async Task<string> RevisionIdFor(string key)
 	{
-		using var client = (await BootedApi.FactoryAsync()).CreateClient();
+		using var client = (await BootedApi.Factory()).CreateClient();
 		var body = await client.GetFromJsonAsync<JsonElement>(PublicQuestions);
 		return body.EnumerateArray().Single(candidate => candidate.GetProperty("key").GetString() == key)
 			.GetProperty("revisionId").GetString()!;
 	}
 
-	private async Task<string> CreateSyntheticQuestionAsync(string type)
+	private async Task<string> CreateSyntheticQuestion(string type)
 	{
-		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
-		var created = await CreateAsync(key, type);
+		var created = await Create(key, type);
 		return created.GetProperty("revisionId").GetString()!;
 	}
 
-	private async Task<JsonElement> CreateAsync(string key, string type, string? labelEn = null)
+	private async Task<JsonElement> Create(string key, string type, string? labelEn = null)
 	{
 		var request = new
 		{
@@ -1038,7 +1038,7 @@ public sealed class ReportSubmissionEndpointSteps
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task ReviseAsync(string id, string key, string type, string labelEn)
+	private async Task Revise(string id, string key, string type, string labelEn)
 	{
 		var request = new
 		{
@@ -1065,9 +1065,9 @@ public sealed class ReportSubmissionEndpointSteps
 		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
 	}
 
-	private async Task EnsureConsentQuestionAsync()
+	private async Task EnsureConsentQuestion()
 	{
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		var consent = await database.Questions
@@ -1087,9 +1087,9 @@ public sealed class ReportSubmissionEndpointSteps
 		_consentRevisionId = consent.CurrentRevision.Id.Value;
 	}
 
-	private async Task<int> ReportCountAsync()
+	private async Task<int> ReportCount()
 	{
-		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		return await database.Reports.CountAsync();
 	}

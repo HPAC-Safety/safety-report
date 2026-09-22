@@ -15,5 +15,5 @@ public interface IMediaSniffer
 	///     not a format this system recognises. Never throws for unrecognised input —
 	///     "I do not know what this is" is an answer, not a failure.
 	/// </summary>
-	Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken);
+	Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken);
 }

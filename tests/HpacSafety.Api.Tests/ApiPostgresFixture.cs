@@ -10,7 +10,7 @@ namespace HpacSafety.Api.Tests;
 /// <summary>
 ///     One PostgreSQL 17 container and one <see cref="WebApplicationFactory{TEntryPoint}" />
 ///     shared across every test in the collection. The API migrates the container
-///     itself at startup (<c>HpacSafetyDbContext.EnsureMigratedAsync</c>, ADR-0055),
+///     itself at startup (<c>HpacSafetyDbContext.EnsureMigrated</c>, ADR-0055),
 ///     so booting the factory at all proves that path works.
 /// </summary>
 public sealed class ApiPostgresFixture : IAsyncLifetime
@@ -84,7 +84,7 @@ public static class SignedInClient
 	}
 
 	/// <summary>Asks the booted API for a signed token in that role.</summary>
-	public static async Task<string> TokenForAsync(WebApplicationFactory<Program> factory, MemberRole role)
+	public static async Task<string> TokenFor(WebApplicationFactory<Program> factory, MemberRole role)
 	{
 		ArgumentNullException.ThrowIfNull(factory);
 
@@ -100,11 +100,11 @@ public static class SignedInClient
 	}
 
 	/// <summary>A client carrying a real bearer token for that role.</summary>
-	public static async Task<HttpClient> AsAsync(WebApplicationFactory<Program> factory, MemberRole role)
+	public static async Task<HttpClient> As(WebApplicationFactory<Program> factory, MemberRole role)
 	{
 		ArgumentNullException.ThrowIfNull(factory);
 
-		var token = await TokenForAsync(factory, role);
+		var token = await TokenFor(factory, role);
 		var client = factory.CreateClient();
 		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
 

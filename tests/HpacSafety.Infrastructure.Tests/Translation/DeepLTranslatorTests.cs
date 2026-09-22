@@ -26,7 +26,7 @@ public class DeepLTranslatorTests
 		translator.IsConfigured.ShouldBeFalse();
 
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			translator.Translate(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 	}
 
 	[Fact]
@@ -37,7 +37,7 @@ public class DeepLTranslatorTests
 
 		// When / Then
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["Were you injured?"], Locale.EnCa, Locale.EnCa, CancellationToken.None));
+			translator.Translate(["Were you injured?"], Locale.EnCa, Locale.EnCa, CancellationToken.None));
 	}
 
 	[Fact]
@@ -47,7 +47,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator();
 
 		// When
-		var translated = await translator.TranslateAsync([], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+		var translated = await translator.Translate([], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then — a provider charged per request is not asked to translate nothing
 		translated.ShouldBeEmpty();
@@ -61,7 +61,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Avez-vous été blessé ?"));
 
 		// When
-		var translated = await translator.TranslateAsync(
+		var translated = await translator.Translate(
 			["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
@@ -81,7 +81,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Were you injured?"));
 
 		// When
-		await translator.TranslateAsync(
+		await translator.Translate(
 			["Avez-vous été blessé ?"], Locale.FrCa, Locale.EnCa, CancellationToken.None);
 
 		// Then
@@ -98,7 +98,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Montrant <ph>{count}</ph> rapports"));
 
 		// When
-		var translated = await translator.TranslateAsync(
+		var translated = await translator.Translate(
 			["Showing {count} reports"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then — '{count}' is never translated to '{compte}'
@@ -117,7 +117,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Altitude &lt; 500 pieds &amp; en descente"));
 
 		// When
-		var translated = await translator.TranslateAsync(
+		var translated = await translator.Translate(
 			["Altitude < 500 feet & descending"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
@@ -133,7 +133,7 @@ public class DeepLTranslatorTests
 		var (translator, _) = Translator(Responds("Un", "Deux", "Trois"));
 
 		// When
-		var translated = await translator.TranslateAsync(
+		var translated = await translator.Translate(
 			["One", "Two", "Three"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
@@ -148,7 +148,7 @@ public class DeepLTranslatorTests
 
 		// When / Then
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["One", "Two"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			translator.Translate(["One", "Two"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 	}
 
 	[Fact]
@@ -163,7 +163,7 @@ public class DeepLTranslatorTests
 
 		// When
 		var cause = await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			translator.Translate(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 
 		// Then
 		cause.Message.ShouldContain("403");
@@ -179,7 +179,7 @@ public class DeepLTranslatorTests
 
 		// When
 		var cause = await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			translator.Translate(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 
 		// Then
 		cause.Message.ShouldBe("The translation service could not be reached.");
@@ -198,7 +198,7 @@ public class DeepLTranslatorTests
 
 		// When / Then
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			translator.Translate(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 	}
 
 	[Fact]
@@ -210,7 +210,7 @@ public class DeepLTranslatorTests
 
 		// When / Then
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			translator.Translate(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 	}
 
 	[Fact]
@@ -221,7 +221,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Un"), "abc:fx");
 
 		// When
-		await translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+		await translator.Translate(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("api-free.deepl.com");
@@ -234,7 +234,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Un"), "abc");
 
 		// When
-		await translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+		await translator.Translate(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("api.deepl.com");
@@ -248,7 +248,7 @@ public class DeepLTranslatorTests
 			Responds("Un"), endpoint: "https://translate.example.invalid/v2/translate");
 
 		// When
-		await translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+		await translator.Translate(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("translate.example.invalid");
@@ -261,7 +261,7 @@ public class DeepLTranslatorTests
 		var (translator, transport) = Translator(Responds("Un"));
 
 		// When
-		await translator.TranslateAsync(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
+		await translator.Translate(["One"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
 		var authorization = transport.Requests[0].Headers.Authorization;

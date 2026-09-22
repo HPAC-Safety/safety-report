@@ -41,13 +41,13 @@ public sealed class PublicQuestionEndpointSteps
 	[Given(@"a stable key has multiple revisions")]
 	public async Task GivenAStableKeyHasMultipleRevisions()
 	{
-		_adminClient = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
-		var created = await CreateAsync(Draft(UniqueKey("stable_wind"), "short_text"));
+		_adminClient = await BootedApi.SignedInAs(MemberRole.Administrator);
+		var created = await Create(Draft(UniqueKey("stable_wind"), "short_text"));
 		_keyUnderTest = created.GetProperty("key").GetString();
 
 		// A second, non-deactivating revision — the question is still edited
 		// twice before the "only one active" step below deactivates it.
-		await ReviseAsync(created.GetProperty("id").GetString()!, Draft(_keyUnderTest!, "short_text") with
+		await Revise(created.GetProperty("id").GetString()!, Draft(_keyUnderTest!, "short_text") with
 		{
 			LabelEn = "Reworded once"
 		});
@@ -56,10 +56,10 @@ public sealed class PublicQuestionEndpointSteps
 	[Given(@"only one of them is both active and not deleted")]
 	public async Task GivenOnlyOneRevisionIsActive()
 	{
-		var listed = await ListAdminAsync();
+		var listed = await ListAdmin();
 		var current = listed.Single(candidate => candidate.GetProperty("key").GetString() == _keyUnderTest);
 
-		await ReviseAsync(current.GetProperty("id").GetString()!, Draft(_keyUnderTest!, "short_text") with
+		await Revise(current.GetProperty("id").GetString()!, Draft(_keyUnderTest!, "short_text") with
 		{
 			LabelEn = "Currently active wording"
 		});
@@ -68,16 +68,16 @@ public sealed class PublicQuestionEndpointSteps
 	[Given(@"the current form includes several question revisions")]
 	public async Task GivenSeveralQuestionRevisions()
 	{
-		_adminClient ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
-		await CreateAsync(Draft(UniqueKey("alpha"), "short_text"));
-		await CreateAsync(Draft(UniqueKey("beta"), "short_text"));
+		_adminClient ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		await Create(Draft(UniqueKey("alpha"), "short_text"));
+		await Create(Draft(UniqueKey("beta"), "short_text"));
 	}
 
 	[Given(@"a live group question exists as a section heading")]
 	public async Task GivenALiveGroupQuestion()
 	{
-		_adminClient ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
-		var group = await CreateAsync(
+		_adminClient ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		var group = await Create(
 			Draft(UniqueKey("aircraft"), "group") with { IsRequired = false, IsPrivate = false });
 		_groupId = group.GetProperty("id").GetString();
 	}
@@ -86,17 +86,17 @@ public sealed class PublicQuestionEndpointSteps
 	public async Task GivenAnotherLiveQuestionIsGroupedUnderIt()
 	{
 		_childKey = UniqueKey("aircraft_type");
-		await CreateAsync(Draft(_childKey, "short_text") with { GroupedUnderQuestionId = _groupId });
+		await Create(Draft(_childKey, "short_text") with { GroupedUnderQuestionId = _groupId });
 	}
 
 	[Given(@"a question is conditional on a yes-or-no question")]
 	public async Task GivenAQuestionIsConditionalOnAYesNoQuestion()
 	{
-		_adminClient ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
-		var parent = await CreateAsync(Draft(UniqueKey("were_you_injured"), "yes_no"));
+		_adminClient ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		var parent = await Create(Draft(UniqueKey("were_you_injured"), "yes_no"));
 		_parentId = parent.GetProperty("id").GetString();
 		_childKey = UniqueKey("injury_detail");
-		await CreateAsync(Draft(_childKey, "long_text") with { DependsOnQuestionId = _parentId });
+		await Create(Draft(_childKey, "long_text") with { DependsOnQuestionId = _parentId });
 	}
 
 	[Given(@"no bearer token is presented")]
@@ -109,7 +109,7 @@ public sealed class PublicQuestionEndpointSteps
 	[When(@"the API orders them for display")]
 	public async Task WhenTheApiAssemblesTheCurrentForm()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var client = host.CreateClient();
 		_form = await client.GetFromJsonAsync<JsonElement>(PublicQuestions);
 	}
@@ -117,7 +117,7 @@ public sealed class PublicQuestionEndpointSteps
 	[When(@"a request asks for the current form")]
 	public async Task WhenARequestAsksForTheCurrentForm()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var client = host.CreateClient();
 		_response = await client.GetAsync(PublicQuestions);
 	}
@@ -194,7 +194,7 @@ public sealed class PublicQuestionEndpointSteps
 			false, true, true, null, null, null, null, false, []);
 	}
 
-	private async Task<JsonElement> CreateAsync(SaveQuestion request)
+	private async Task<JsonElement> Create(SaveQuestion request)
 	{
 		using var response = await _adminClient!.PostAsJsonAsync(AdminQuestions, request);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
@@ -202,13 +202,13 @@ public sealed class PublicQuestionEndpointSteps
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task ReviseAsync(string id, SaveQuestion request)
+	private async Task Revise(string id, SaveQuestion request)
 	{
 		using var response = await _adminClient!.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), request);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
 	}
 
-	private async Task<List<JsonElement>> ListAdminAsync()
+	private async Task<List<JsonElement>> ListAdmin()
 	{
 		var body = await _adminClient!.GetFromJsonAsync<JsonElement>(AdminQuestions);
 		return [.. body.EnumerateArray()];

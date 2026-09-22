@@ -42,7 +42,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, stripper).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, stripper).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
@@ -63,7 +63,7 @@ public class MediaIngestorTests
 		var expected = Convert.ToHexStringLower(SHA256.HashData(content));
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
 
 		// Then
 		outcome.ContentType.ShouldBe(MediaType.Jpeg);
@@ -83,7 +83,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Mp4, stripper).IngestAsync(quarantined, "video/mp4", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Mp4, stripper).Ingest(quarantined, "video/mp4", CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
@@ -103,7 +103,7 @@ public class MediaIngestorTests
 		store.Seed(quarantined, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Mp4, new RecordingExifStripper()).IngestAsync(quarantined, "video/mp4", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Mp4, new RecordingExifStripper()).Ingest(quarantined, "video/mp4", CancellationToken.None);
 
 		// Then
 		// The failure that must never happen is falling through to the unstripped
@@ -123,7 +123,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Pdf, stripper).IngestAsync(quarantined, "application/pdf", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Pdf, stripper).Ingest(quarantined, "application/pdf", CancellationToken.None);
 
 		// Then
 		// A document has no derivative at all — it is validated and kept
@@ -144,7 +144,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Png, stripper).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Png, stripper).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.Rejected);
@@ -160,7 +160,7 @@ public class MediaIngestorTests
 		store.Seed(Quarantined, Encoding.ASCII.GetBytes("this is not an image at all"));
 
 		// When
-		var outcome = await Ingestor(store, null, new RecordingExifStripper()).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, null, new RecordingExifStripper()).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
 
 		// Then
 		// The bytes stay where the browser put them and expire on their own. No
@@ -189,7 +189,7 @@ public class MediaIngestorTests
 			new FixedClock(Now));
 
 		// When
-		var outcome = await ingestor.IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await ingestor.Ingest(Quarantined, "image/jpeg", CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
@@ -212,7 +212,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).IngestAsync(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
@@ -232,7 +232,7 @@ public class MediaIngestorTests
 		// Ingest reads unverified bytes and nothing else. Pointing it at a
 		// report's private source record would re-run stripping over a file that has
 		// already been accepted, which is not what this is for.
-		await Should.ThrowAsync<DomainRuleViolationException>(() => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).IngestAsync(original, "image/jpeg", CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(original, "image/jpeg", CancellationToken.None));
 	}
 }
 

@@ -18,7 +18,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.JpegWithGpsExif());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Jpeg);
@@ -31,7 +31,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Png());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Png);
@@ -44,7 +44,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Heic);
@@ -57,7 +57,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Mp4());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		// MP4 and HEIC share the ISO base media container and differ only by
@@ -73,7 +73,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.NotMedia());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -89,7 +89,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream(bytes);
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -102,7 +102,7 @@ public class MagickNetMediaSnifferTests
 		using var content = new MemoryStream();
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();

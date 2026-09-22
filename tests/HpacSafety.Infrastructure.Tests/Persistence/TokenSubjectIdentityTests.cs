@@ -21,10 +21,10 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenTablesAreListed_ThenAdminUsersIsAbsent()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var present = await ScalarAsync(
+		var present = await Scalar(
 			connectionString,
 			"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'admin_users'");
 
@@ -37,10 +37,10 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenIdentityColumnsAreRead_ThenNeitherCarriesForeignKey()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var foreignKeys = await ScalarAsync(
+		var foreignKeys = await Scalar(
 			connectionString,
 			"""
             SELECT COUNT(*)
@@ -60,14 +60,14 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenActorColumnIsRead_ThenWidenedStringWithLookupIndex()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var width = await ScalarAsync(
+		var width = await Scalar(
 			connectionString,
 			"SELECT character_maximum_length FROM information_schema.columns WHERE table_name = 'audit_log' AND column_name = 'actor_subject'");
 
-		var indexes = await ScalarAsync(
+		var indexes = await Scalar(
 			connectionString,
 			"SELECT COUNT(*) FROM pg_indexes WHERE tablename = 'audit_log' AND indexname = 'ix_audit_log_actor_subject'");
 
@@ -80,7 +80,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 	public async Task GivenAuditRowWrittenWithTokenSubject_WhenReadBack_ThenSubjectSurvivesRoundTrip()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		const string subject = "auth0|synthetic-officer-0123456789";
 		var targetId = TinyId.New();
 
@@ -104,7 +104,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 	public async Task GivenApprovedSummary_WhenApproverIsReadBack_ThenOpaqueString()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		const string approver = "auth0|synthetic-approver";
 		var reportId = TinyId.New();
 
@@ -134,11 +134,11 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 	public async Task GivenSummaryApproval_WhenOnlyOneHalfOfPairIsSet_ThenDatabaseRefuses()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When — the check constraint now names approved_by_subject; if the
 		// rename left it pointing at the old column this insert would succeed.
-		var writing = async () => await ExecuteAsync(
+		var writing = async () => await Execute(
 			connectionString,
 			$"""
              INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by_subject, approved_at, generated_at, updated_at)
@@ -153,7 +153,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		exception.SqlState.ShouldBe("23514");
 	}
 
-	private static async Task<int> ScalarAsync(string connectionString, string sql)
+	private static async Task<int> Scalar(string connectionString, string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();
@@ -161,7 +161,7 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		return Convert.ToInt32(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
 	}
 
-	private static async Task ExecuteAsync(string connectionString, string sql)
+	private static async Task Execute(string connectionString, string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();

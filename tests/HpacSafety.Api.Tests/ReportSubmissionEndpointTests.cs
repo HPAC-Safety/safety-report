@@ -46,8 +46,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenValidConsentOnlySubmission_WhenPosted_ThenAcceptedWithAnOpaqueId()
 	{
 		// Given
-		using var reporter = await SignedInAsync();
-		var consentRevisionId = await ConsentRevisionIdAsync();
+		using var reporter = await SignedIn();
+		var consentRevisionId = await ConsentRevisionId();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -72,8 +72,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		var role = Enum.Parse<MemberRole>(roleName);
-		using var reporter = await SignedInAsync(role);
-		var consentRevisionId = await ConsentRevisionIdAsync();
+		using var reporter = await SignedIn(role);
+		var consentRevisionId = await ConsentRevisionId();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -91,10 +91,10 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoAnswerToConsent_WhenSubmitted_ThenRejected()
 	{
 		// Given
-		using var admin = await SignedInAsync(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestionAsync(admin);
-		var revisionId = await RevisionIdForAsync(key);
-		using var reporter = await SignedInAsync();
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var key = await CreateSyntheticQuestion(admin);
+		var revisionId = await RevisionIdFor(key);
+		using var reporter = await SignedIn();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -112,8 +112,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUnknownRevisionId_WhenSubmitted_ThenRejected()
 	{
 		// Given
-		using var reporter = await SignedInAsync();
-		var consentRevisionId = await ConsentRevisionIdAsync();
+		using var reporter = await SignedIn();
+		var consentRevisionId = await ConsentRevisionId();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -135,8 +135,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDuplicateRevisionId_WhenSubmitted_ThenRejected()
 	{
 		// Given
-		using var reporter = await SignedInAsync();
-		var consentRevisionId = await ConsentRevisionIdAsync();
+		using var reporter = await SignedIn();
+		var consentRevisionId = await ConsentRevisionId();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -158,11 +158,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSkippedOptionalQuestion_WhenSubmitted_ThenAccepted()
 	{
 		// Given
-		using var admin = await SignedInAsync(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestionAsync(admin);
-		var revisionId = await RevisionIdForAsync(key);
-		var consentRevisionId = await ConsentRevisionIdAsync();
-		using var reporter = await SignedInAsync();
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var key = await CreateSyntheticQuestion(admin);
+		var revisionId = await RevisionIdFor(key);
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -185,11 +185,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — a long-text answer is not a select, but ADR-0080 still queues
 		// it for translation, and nothing on this path ever translates it
-		using var admin = await SignedInAsync(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestionAsync(admin, type: "long_text");
-		var revisionId = await RevisionIdForAsync(key);
-		var consentRevisionId = await ConsentRevisionIdAsync();
-		using var reporter = await SignedInAsync();
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var key = await CreateSyntheticQuestion(admin, type: "long_text");
+		var revisionId = await RevisionIdFor(key);
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
 		const string narrative = "Wind picked up on final approach.";
 		using var content = ReportPart(new
 		{
@@ -216,8 +216,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAttachmentCountOverLimit_WhenSubmitted_ThenRejected()
 	{
 		// Given — the default limit is 5; six garbage parts is over it
-		using var reporter = await SignedInAsync();
-		var consentRevisionId = await ConsentRevisionIdAsync();
+		using var reporter = await SignedIn();
+		var consentRevisionId = await ConsentRevisionId();
 		var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -243,11 +243,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAFileUploadAnswer_WhenSubmittedWithAValidImage_ThenAcceptedAndFileIsLinked()
 	{
 		// Given
-		using var admin = await SignedInAsync(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestionAsync(admin, type: "file_upload");
-		var revisionId = await RevisionIdForAsync(key);
-		var consentRevisionId = await ConsentRevisionIdAsync();
-		using var reporter = await SignedInAsync();
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var key = await CreateSyntheticQuestion(admin, type: "file_upload");
+		var revisionId = await RevisionIdFor(key);
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
 
 		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
 		var bytes = image.ToByteArray();
@@ -278,11 +278,11 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAFileIndexNeverUploaded_WhenSubmitted_ThenRejected()
 	{
 		// Given
-		using var admin = await SignedInAsync(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestionAsync(admin, type: "file_upload");
-		var revisionId = await RevisionIdForAsync(key);
-		var consentRevisionId = await ConsentRevisionIdAsync();
-		using var reporter = await SignedInAsync();
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var key = await CreateSyntheticQuestion(admin, type: "file_upload");
+		var revisionId = await RevisionIdFor(key);
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
@@ -300,9 +300,9 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
-	private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.User)
+	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.User)
 	{
-		return SignedInClient.AsAsync(_factory, role);
+		return SignedInClient.As(_factory, role);
 	}
 
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
@@ -315,10 +315,10 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		return content;
 	}
 
-	private async Task<string> ConsentRevisionIdAsync()
+	private async Task<string> ConsentRevisionId()
 	{
-		await EnsureConsentQuestionExistsAsync();
-		return await RevisionIdForAsync(QuestionKey.ConsentPublish);
+		await EnsureConsentQuestionExists();
+		return await RevisionIdFor(QuestionKey.ConsentPublish);
 	}
 
 	/// <summary>
@@ -331,7 +331,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	///     same way <c>OutboxAtomicityTests</c> does — idempotently, since this
 	///     collection shares one database across every test in it.
 	/// </summary>
-	private async Task EnsureConsentQuestionExistsAsync()
+	private async Task EnsureConsentQuestionExists()
 	{
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
@@ -349,15 +349,15 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		await database.SaveChangesAsync();
 	}
 
-	private async Task<string> RevisionIdForAsync(string key)
+	private async Task<string> RevisionIdFor(string key)
 	{
 		using var client = _factory.CreateClient();
-		var questions = await FlattenedPublicQuestionsAsync(client);
+		var questions = await FlattenedPublicQuestions(client);
 		var question = questions.Single(candidate => candidate.GetProperty("key").GetString() == key);
 		return question.GetProperty("revisionId").GetString()!;
 	}
 
-	private static async Task<List<JsonElement>> FlattenedPublicQuestionsAsync(HttpClient client)
+	private static async Task<List<JsonElement>> FlattenedPublicQuestions(HttpClient client)
 	{
 		var body = await client.GetFromJsonAsync<JsonElement>(PublicQuestions);
 		var flattened = new List<JsonElement>();
@@ -379,7 +379,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		return flattened;
 	}
 
-	private static async Task<string> CreateSyntheticQuestionAsync(HttpClient admin, string type = "short_text")
+	private static async Task<string> CreateSyntheticQuestion(HttpClient admin, string type = "short_text")
 	{
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
 		var request = new

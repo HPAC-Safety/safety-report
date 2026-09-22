@@ -46,7 +46,7 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 	}
 
 	/// <inheritdoc />
-	public async Task<SummaryDraft> SummarizeAsync(SummarizationInput input, CancellationToken cancellationToken)
+	public async Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(input);
 
@@ -57,7 +57,7 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 		string response;
 		try
 		{
-			response = await _aiChatClient.CompleteAsync(
+			response = await _aiChatClient.Complete(
 				_model,
 				[new ChatMessage(ChatRole.System, systemPrompt), new ChatMessage(ChatRole.User, userMessage)],
 				cancellationToken).ConfigureAwait(false);

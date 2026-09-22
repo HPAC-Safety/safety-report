@@ -42,7 +42,7 @@ public sealed class GeminiChatClient : IAiChatClient
 	public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
 
 	/// <inheritdoc />
-	public async Task<string> CompleteAsync(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken)
+	public async Task<string> Complete(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(model);
 		ArgumentNullException.ThrowIfNull(messages);

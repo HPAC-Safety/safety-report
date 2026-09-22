@@ -27,7 +27,7 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 	public async Task GivenARegisteredProcessor_WhenAMatchingMessageIsDue_ThenTheWorkerLoopClaimsAndRunsIt()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		await using (var seed = WorkerPostgresFixture.ContextFor(connectionString))
 		{
@@ -81,7 +81,7 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 	public async Task GivenNoDueMessage_WhenTheIdlePollIsCancelled_ThenTheLoopStopsWithoutThrowing()
 	{
 		// Given — no processor registered, so the loop always idles.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var services = new ServiceCollection();
 		services.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -109,7 +109,7 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 	public async Task GivenNoDueMessage_WhenTheIdleIntervalElapsesOnItsOwn_ThenTheLoopPollsAgainWithoutStopping()
 	{
 		// Given — no processor registered, so the loop always idles.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var services = new ServiceCollection();
 		services.AddDbContext<HpacSafetyDbContext>(options => options.UseNpgsql(connectionString));
 

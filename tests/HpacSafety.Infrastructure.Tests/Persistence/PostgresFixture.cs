@@ -39,7 +39,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 	///     administrator this used to opt into was retired with the
 	///     <c>admin_users</c> table (ADR-0065).
 	/// </param>
-	public async Task<string> CreateDatabaseAsync(string? startupOptions = null)
+	public async Task<string> CreateDatabase(string? startupOptions = null)
 	{
 		var name = "db_" + Guid.NewGuid().ToString("n");
 
@@ -62,9 +62,9 @@ public sealed class PostgresFixture : IAsyncLifetime
 	///     the connection string. This is <c>dotnet ef database update</c> against a
 	///     clean PostgreSQL 17, run by the test.
 	/// </summary>
-	public async Task<string> CreateMigratedDatabaseAsync(string? startupOptions = null)
+	public async Task<string> CreateMigratedDatabase(string? startupOptions = null)
 	{
-		var connectionString = await CreateDatabaseAsync(startupOptions);
+		var connectionString = await CreateDatabase(startupOptions);
 		await using var context = ContextFor(connectionString);
 		await context.Database.MigrateAsync();
 		return connectionString;

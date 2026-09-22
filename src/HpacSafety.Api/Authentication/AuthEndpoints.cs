@@ -36,7 +36,7 @@ public static class AuthEndpoints
 
 		if (isDevelopment)
 		{
-			group.MapPost("/token", TokenAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.SignIn);
+			group.MapPost("/token", Token).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.SignIn);
 		}
 
 		return group;
@@ -69,7 +69,7 @@ public static class AuthEndpoints
 			: TypedResults.Ok(new MeResponse(identity.Subject, MemberRoles.CodeFor(identity.Role)));
 	}
 
-	private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> TokenAsync(
+	private static async Task<Results<Ok<TokenResponse>, ProblemHttpResult>> Token(
 		[FromBody] TokenRequest request,
 		DevelopmentTokenIssuer issuer,
 		HpacSafetyDbContext database,
@@ -82,7 +82,7 @@ public static class AuthEndpoints
 
 		try
 		{
-			token = await issuer.IssueAsync(request.Username, request.Password, cancellationToken)
+			token = await issuer.Issue(request.Username, request.Password, cancellationToken)
 				.ConfigureAwait(false);
 		}
 		catch (MembersSiteUnavailableException cause)

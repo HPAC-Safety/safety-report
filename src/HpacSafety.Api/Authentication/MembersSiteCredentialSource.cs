@@ -54,7 +54,7 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 	}
 
 	/// <inheritdoc />
-	public async Task<MemberRole?> VerifyAsync(string username, string password, CancellationToken cancellationToken)
+	public async Task<MemberRole?> Verify(string username, string password, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(username);
 		ArgumentNullException.ThrowIfNull(password);

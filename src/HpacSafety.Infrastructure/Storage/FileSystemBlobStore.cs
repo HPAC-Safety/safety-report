@@ -13,7 +13,7 @@ namespace HpacSafety.Infrastructure.Storage;
 ///         guarantee the production adapter makes is how a guarantee stops being tested,
 ///         so this class signs its URLs too: an HMAC over the operation, the key, the
 ///         content type, and the expiry. Retarget a URL at another key and
-///         <see cref="ExecuteUploadAsync" /> refuses it, exactly as S3 answers
+///         <see cref="ExecuteUpload" /> refuses it, exactly as S3 answers
 ///         <c>403</c>. The shared contract suite runs the same tests against both.
 ///         See ADR-0026. A development stand-in must never weaken a production
 ///         guarantee while this legacy signed-URL contract remains in use.
@@ -52,20 +52,20 @@ public sealed class FileSystemBlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public Task<Uri> CreateUploadUrlAsync(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateUploadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
 		return Task.FromResult(Sign(UploadOperation, key, contentType, lifetime));
 	}
 
 	/// <inheritdoc />
-	public Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateReadUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		return Task.FromResult(Sign(ReadOperation, key, string.Empty, lifetime));
 	}
 
 	/// <inheritdoc />
-	public Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken)
+	public Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)
 	{
 		var path = PathFor(_blobRoot, key);
 
@@ -78,7 +78,7 @@ public sealed class FileSystemBlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
@@ -101,21 +101,21 @@ public sealed class FileSystemBlobStore : IBlobStore
 	///     development endpoint calls in place of S3 accepting a PUT; a URL signed
 	///     for another key, another operation, or an expired moment is refused.
 	/// </summary>
-	public async Task ExecuteUploadAsync(Uri signedUrl, Stream content, CancellationToken cancellationToken)
+	public async Task ExecuteUpload(Uri signedUrl, Stream content, CancellationToken cancellationToken)
 	{
 		var ticket = Verify(signedUrl, UploadOperation);
-		await WriteAsync(ticket.Key, content, ticket.ContentType, cancellationToken).ConfigureAwait(false);
+		await Write(ticket.Key, content, ticket.ContentType, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>Serves the bytes a signed GET authorises, and only those bytes.</summary>
-	public async Task<Stream> ExecuteReadAsync(Uri signedUrl, CancellationToken cancellationToken)
+	public async Task<Stream> ExecuteRead(Uri signedUrl, CancellationToken cancellationToken)
 	{
 		var ticket = Verify(signedUrl, ReadOperation);
-		return await OpenReadAsync(ticket.Key, cancellationToken).ConfigureAwait(false);
+		return await OpenRead(ticket.Key, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>The content type recorded when a blob was written.</summary>
-	public async Task<string?> ReadContentTypeAsync(BlobKey key, CancellationToken cancellationToken)
+	public async Task<string?> ReadContentType(BlobKey key, CancellationToken cancellationToken)
 	{
 		var path = PathFor(_metaRoot, key);
 

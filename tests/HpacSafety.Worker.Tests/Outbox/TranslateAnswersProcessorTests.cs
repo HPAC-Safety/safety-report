@@ -35,7 +35,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	public async Task GivenNarrativeAndSelectAnswers_WhenProcessed_ThenBothGetAnAutoTranslation()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var province = Province();
 		var narrative = Narrative();
@@ -53,7 +53,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		var message = new OutboxMessage(report.Id, OutboxMessageType.TranslateAnswers, report.Id.Value, At);
 
 		// When
-		await processor.ProcessAsync(message, CancellationToken.None);
+		await processor.Process(message, CancellationToken.None);
 		await context.SaveChangesAsync();
 
 		// Then
@@ -77,7 +77,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	public async Task GivenASkippedAnswer_WhenProcessed_ThenItIsNeverSentToTheTranslator()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var narrative = Narrative();
 		context.Questions.Add(narrative);
@@ -93,7 +93,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		var message = new OutboxMessage(report.Id, OutboxMessageType.TranslateAnswers, report.Id.Value, At);
 
 		// When
-		await processor.ProcessAsync(message, CancellationToken.None);
+		await processor.Process(message, CancellationToken.None);
 		await context.SaveChangesAsync();
 
 		// Then
@@ -110,7 +110,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	public async Task GivenAnAlreadyTranslatedAnswer_WhenProcessedAgain_ThenItIsNotRetranslated()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var narrative = Narrative();
 		context.Questions.Add(narrative);
@@ -127,7 +127,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		var message = new OutboxMessage(report.Id, OutboxMessageType.TranslateAnswers, report.Id.Value, At);
 
 		// When
-		await processor.ProcessAsync(message, CancellationToken.None);
+		await processor.Process(message, CancellationToken.None);
 		await context.SaveChangesAsync();
 
 		// Then

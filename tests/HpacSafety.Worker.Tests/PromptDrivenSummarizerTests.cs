@@ -29,7 +29,7 @@ public sealed class PromptDrivenSummarizerTests
 		var summarizer = BuildSummarizer(client);
 
 		// When
-		var draft = await summarizer.SummarizeAsync(SampleInput(), CancellationToken.None);
+		var draft = await summarizer.Summarize(SampleInput(), CancellationToken.None);
 
 		// Then
 		draft.TextEn.ShouldBe("The pilot reported a hard landing.");
@@ -46,7 +46,7 @@ public sealed class PromptDrivenSummarizerTests
 		var summarizer = BuildSummarizer(client);
 
 		// When
-		await summarizer.SummarizeAsync(SampleInput(), CancellationToken.None);
+		await summarizer.Summarize(SampleInput(), CancellationToken.None);
 
 		// Then
 		client.CallCount.ShouldBe(1);
@@ -60,7 +60,7 @@ public sealed class PromptDrivenSummarizerTests
 		var summarizer = BuildSummarizer(client);
 
 		// When
-		await summarizer.SummarizeAsync(SampleInput(), CancellationToken.None);
+		await summarizer.Summarize(SampleInput(), CancellationToken.None);
 
 		// Then — report_content is marked; private_context still carries the raw value
 		// as recognition context (ADR-0082), so only the report_content field is checked.
@@ -83,7 +83,7 @@ public sealed class PromptDrivenSummarizerTests
 		var summarizer = BuildSummarizer(client);
 
 		// When
-		var act = async () => await summarizer.SummarizeAsync(SampleInput(), CancellationToken.None);
+		var act = async () => await summarizer.Summarize(SampleInput(), CancellationToken.None);
 
 		// Then
 		await act.ShouldThrowAsync<SummarizationFailedException>();
@@ -97,7 +97,7 @@ public sealed class PromptDrivenSummarizerTests
 		var summarizer = BuildSummarizer(client);
 
 		// When
-		var act = async () => await summarizer.SummarizeAsync(SampleInput(), CancellationToken.None);
+		var act = async () => await summarizer.Summarize(SampleInput(), CancellationToken.None);
 
 		// Then
 		var exception = await act.ShouldThrowAsync<SummarizationFailedException>();

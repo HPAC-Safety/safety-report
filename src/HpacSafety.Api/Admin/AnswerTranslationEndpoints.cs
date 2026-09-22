@@ -34,13 +34,13 @@ public static class AnswerTranslationEndpoints
 
 		var group = app.MapGroup("/api/admin/answers").RequireAuthorization(HpacPolicies.Administrator);
 
-		group.MapGet("/awaiting-translation", AwaitingAsync);
-		group.MapPut("/{id}/translation", SupplyAsync);
+		group.MapGet("/awaiting-translation", Awaiting);
+		group.MapPut("/{id}/translation", Supply);
 
 		return group;
 	}
 
-	private static async Task<IResult> AwaitingAsync(
+	private static async Task<IResult> Awaiting(
 		HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(database);
@@ -60,7 +60,7 @@ public static class AnswerTranslationEndpoints
 		return Results.Ok(new AwaitingTranslationResponse(waiting, waiting.Count));
 	}
 
-	private static async Task<IResult> SupplyAsync(
+	private static async Task<IResult> Supply(
 		string id,
 		SupplyTranslationRequest request,
 		HpacSafetyDbContext database,

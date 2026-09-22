@@ -18,7 +18,7 @@ namespace HpacSafety.Api.PublicQuestions;
 ///     and the Administrator-only authoring endpoints in
 ///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints" />, whose
 ///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions" /> and
-///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints.LiveSetsAsync" />
+///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints.LiveSets" />
 ///     this reuses rather than re-querying the same tables a second way.
 /// </remarks>
 public static class QuestionEndpoints
@@ -32,7 +32,7 @@ public static class QuestionEndpoints
 
 		var group = app.MapGroup("/api/v1/questions");
 
-		group.MapGet("/", ListAsync);
+		group.MapGet("/", List);
 
 		return group;
 	}
@@ -44,12 +44,12 @@ public static class QuestionEndpoints
 	///     revision, because a question's history before its current revision
 	///     is not a thing the public form has ever asked.
 	/// </summary>
-	private static async Task<IResult> ListAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> List(HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var questions = await HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
-		var sets = await HpacSafety.Api.Admin.QuestionEndpoints.LiveSetsAsync(database, cancellationToken)
+		var sets = await HpacSafety.Api.Admin.QuestionEndpoints.LiveSets(database, cancellationToken)
 			.ConfigureAwait(false);
 
 		var live = questions

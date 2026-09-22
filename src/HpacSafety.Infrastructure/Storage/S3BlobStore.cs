@@ -48,7 +48,7 @@ public sealed class S3BlobStore : IBlobStore
 			: Protocol.HTTPS;
 
 	/// <inheritdoc />
-	public async Task<Uri> CreateUploadUrlAsync(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+	public async Task<Uri> CreateUploadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
 
@@ -66,7 +66,7 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public async Task<Uri> CreateReadUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		var url = await _s3.GetPreSignedURLAsync(new GetPreSignedUrlRequest
 		{
@@ -81,14 +81,14 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken)
+	public async Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)
 	{
 		var response = await _s3.GetObjectAsync(_bucketName, key.Value, cancellationToken).ConfigureAwait(false);
 		return response.ResponseStream;
 	}
 
 	/// <inheritdoc />
-	public async Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);

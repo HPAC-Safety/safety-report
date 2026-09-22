@@ -38,7 +38,7 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAMemberSession_WhenExportIsAttempted_ThenApiRefuses()
 	{
 		// Given
-		using var client = await SignedInAsync(MemberRole.User);
+		using var client = await SignedIn(MemberRole.User);
 
 		// When
 		using var response = await client.GetAsync(Export);
@@ -51,9 +51,9 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenALiveQuestion_WhenExported_ThenTheResultIsAZipOfAnEnglishAndAFrenchFile()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("wind_direction");
-		await CreateAsync(client, key);
+		await Create(client, key);
 
 		// When
 		using var response = await client.GetAsync(Export);
@@ -65,11 +65,11 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		using var archive = new ZipArchive(await response.Content.ReadAsStreamAsync(), ZipArchiveMode.Read);
 		archive.Entries.Select(entry => entry.Name).ShouldBe(["form-en.json", "form-fr.json"]);
 
-		var english = await ReadEntryAsync(archive, "form-en.json");
+		var english = await ReadEntry(archive, "form-en.json");
 		english.ShouldContain($"\"ref\":\"{key}\"");
 		english.ShouldContain("\"title\":\"A synthetic question\"");
 
-		var french = await ReadEntryAsync(archive, "form-fr.json");
+		var french = await ReadEntry(archive, "form-fr.json");
 		french.ShouldContain("\"title\":\"Une question synthétique\"");
 	}
 
@@ -77,14 +77,14 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAPrivateQuestion_WhenExported_ThenTheHpacExtensionCarriesItButAPlainFieldStillParses()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("injury_description");
-		await CreateAsync(client, key);
+		await Create(client, key);
 
 		// When
 		using var response = await client.GetAsync(Export);
 		using var archive = new ZipArchive(await response.Content.ReadAsStreamAsync(), ZipArchiveMode.Read);
-		var english = await ReadEntryAsync(archive, "form-en.json");
+		var english = await ReadEntry(archive, "form-en.json");
 
 		// Then
 		english.ShouldContain("\"hpac\":{");
@@ -95,9 +95,9 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		english.ShouldContain("\"type\":\"short_text\"");
 	}
 
-	private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)
 	{
-		return SignedInClient.AsAsync(_factory, role);
+		return SignedInClient.As(_factory, role);
 	}
 
 	private static string UniqueKey(string prefix)
@@ -106,7 +106,7 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static async Task CreateAsync(HttpClient client, string key)
+	private static async Task Create(HttpClient client, string key)
 	{
 		var request = new
 		{
@@ -133,7 +133,7 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 	}
 
-	private static async Task<string> ReadEntryAsync(ZipArchive archive, string entryName)
+	private static async Task<string> ReadEntry(ZipArchive archive, string entryName)
 	{
 		using var stream = archive.GetEntry(entryName)!.Open();
 		using var reader = new StreamReader(stream);

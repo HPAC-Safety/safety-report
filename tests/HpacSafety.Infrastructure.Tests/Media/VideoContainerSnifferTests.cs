@@ -15,7 +15,7 @@ public class VideoContainerSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Mp4());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Mp4);
@@ -28,7 +28,7 @@ public class VideoContainerSnifferTests
 		using var content = new MemoryStream(ExifFixtures.QuickTime());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.QuickTime);
@@ -41,7 +41,7 @@ public class VideoContainerSnifferTests
 		using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		// HEIC is the same container with a different brand. Claiming it here
@@ -59,7 +59,7 @@ public class VideoContainerSnifferTests
 		using var content = new MemoryStream(bytes);
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -72,7 +72,7 @@ public class VideoContainerSnifferTests
 		using var content = new MemoryStream([0, 0, 0, 0x18, (byte)'f', (byte)'t']);
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();

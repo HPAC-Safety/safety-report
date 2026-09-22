@@ -156,7 +156,7 @@ public class TranslationRegistrationTests
 		var translator = new EchoTranslator();
 
 		// When
-		var translated = await translator.TranslateAsync(
+		var translated = await translator.Translate(
 			["Were you injured?", "Describe the weather"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 
 		// Then
@@ -171,7 +171,7 @@ public class TranslationRegistrationTests
 
 		// When / Then
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.TranslateAsync(["One"], Locale.EnCa, Locale.EnCa, CancellationToken.None));
+			translator.Translate(["One"], Locale.EnCa, Locale.EnCa, CancellationToken.None));
 	}
 
 	[Fact]

@@ -75,7 +75,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 	public async Task GivenAQuestionIsCreated_ThenAnAuditRowRecordsTheActorAndTheQuestion()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.Administrator);
+		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 		var key = $"audit_{Guid.NewGuid():N}"[..30];
 
 		// When

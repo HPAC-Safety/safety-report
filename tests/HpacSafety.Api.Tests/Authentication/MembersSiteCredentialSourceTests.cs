@@ -29,7 +29,7 @@ public sealed class MembersSiteCredentialSourceTests
 		var (source, _) = Source(LoginPage(), Redirect(), administratorEmails: ["chase.florell@gmail.com"]);
 
 		// When
-		var role = await source.VerifyAsync("chase.florell@gmail.com", "correct-password", CancellationToken.None);
+		var role = await source.Verify("chase.florell@gmail.com", "correct-password", CancellationToken.None);
 
 		// Then
 		role.ShouldBe(MemberRole.Administrator);
@@ -42,7 +42,7 @@ public sealed class MembersSiteCredentialSourceTests
 		var (source, _) = Source(LoginPage(), Redirect(), administratorEmails: ["Chase.Florell@Gmail.com"]);
 
 		// When
-		var role = await source.VerifyAsync("chase.florell@gmail.com", "correct-password", CancellationToken.None);
+		var role = await source.Verify("chase.florell@gmail.com", "correct-password", CancellationToken.None);
 
 		// Then
 		role.ShouldBe(MemberRole.Administrator);
@@ -55,7 +55,7 @@ public sealed class MembersSiteCredentialSourceTests
 		var (source, _) = Source(LoginPage(), Redirect(), safetyOfficerEmails: ["officer@example.test"]);
 
 		// When
-		var role = await source.VerifyAsync("officer@example.test", "correct-password", CancellationToken.None);
+		var role = await source.Verify("officer@example.test", "correct-password", CancellationToken.None);
 
 		// Then
 		role.ShouldBe(MemberRole.SafetyOfficer);
@@ -68,7 +68,7 @@ public sealed class MembersSiteCredentialSourceTests
 		var (source, _) = Source(LoginPage(), Redirect());
 
 		// When
-		var role = await source.VerifyAsync("nobody-special@example.test", "correct-password", CancellationToken.None);
+		var role = await source.Verify("nobody-special@example.test", "correct-password", CancellationToken.None);
 
 		// Then
 		role.ShouldBe(MemberRole.User);
@@ -81,7 +81,7 @@ public sealed class MembersSiteCredentialSourceTests
 		var (source, _) = Source(LoginPage(), LoginPage());
 
 		// When
-		var role = await source.VerifyAsync("nobody-special@example.test", "wrong-password", CancellationToken.None);
+		var role = await source.Verify("nobody-special@example.test", "wrong-password", CancellationToken.None);
 
 		// Then
 		role.ShouldBeNull();
@@ -95,7 +95,7 @@ public sealed class MembersSiteCredentialSourceTests
 			LoginPage(setCookie: "_hpac-rails-session=abc123; path=/; HttpOnly"), Redirect());
 
 		// When
-		await source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None);
+		await source.Verify("member@example.test", "correct-password", CancellationToken.None);
 
 		// Then
 		transport.Bodies[1].ShouldContain("authenticity_token=csrf-token-abc123");
@@ -111,7 +111,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 	}
 
 	[Fact]
@@ -123,7 +123,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		var cause = await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 		cause.Message.ShouldContain("CSRF");
 	}
 
@@ -135,7 +135,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		var cause = await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 		cause.Message.ShouldNotContain("correct-password");
 	}
 
@@ -147,7 +147,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		var cause = await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 		cause.Message.ShouldNotContain("correct-password");
 	}
 
@@ -159,7 +159,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 	}
 
 	[Fact]
@@ -170,7 +170,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 	}
 
 	[Fact]
@@ -181,7 +181,7 @@ public sealed class MembersSiteCredentialSourceTests
 
 		// When / Then
 		await Should.ThrowAsync<MembersSiteUnavailableException>(() =>
-			source.VerifyAsync("member@example.test", "correct-password", CancellationToken.None));
+			source.Verify("member@example.test", "correct-password", CancellationToken.None));
 	}
 
 	private static HttpResponseMessage LoginPage(string? setCookie = null)

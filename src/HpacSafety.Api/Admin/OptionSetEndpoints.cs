@@ -28,15 +28,15 @@ public static class OptionSetEndpoints
 
 		var group = app.MapGroup("/api/admin/option-sets").RequireAuthorization(HpacPolicies.Administrator);
 
-		group.MapGet("/", ListAsync);
-		group.MapPost("/", CreateAsync);
-		group.MapPut("/{id}", ReplaceAsync);
-		group.MapDelete("/{id}", DeleteAsync);
+		group.MapGet("/", List);
+		group.MapPost("/", Create);
+		group.MapPut("/{id}", Replace);
+		group.MapDelete("/{id}", Delete);
 
 		return group;
 	}
 
-	private static async Task<IResult> ListAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> List(HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var sets = await Live(database)
 			.OrderBy(set => set.Key)
@@ -46,7 +46,7 @@ public static class OptionSetEndpoints
 		return Results.Ok(sets.Select(OptionSetView.Of).ToList());
 	}
 
-	private static async Task<IResult> CreateAsync(
+	private static async Task<IResult> Create(
 		SaveOptionSetRequest request,
 		HpacSafetyDbContext database,
 		TimeProvider clock,
@@ -96,7 +96,7 @@ public static class OptionSetEndpoints
 	///     result. A removal is a soft delete, so every revision that snapshotted
 	///     the removed choice keeps its own copy.
 	/// </summary>
-	private static async Task<IResult> ReplaceAsync(
+	private static async Task<IResult> Replace(
 		string id,
 		SaveOptionSetRequest request,
 		HpacSafetyDbContext database,
@@ -159,7 +159,7 @@ public static class OptionSetEndpoints
 		}
 	}
 
-	private static async Task<IResult> DeleteAsync(
+	private static async Task<IResult> Delete(
 		string id,
 		HpacSafetyDbContext database,
 		TimeProvider clock,

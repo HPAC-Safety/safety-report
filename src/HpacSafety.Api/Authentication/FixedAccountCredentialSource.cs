@@ -17,7 +17,7 @@ public sealed class FixedAccountCredentialSource : IDevelopmentCredentialSource
 	];
 
 	/// <inheritdoc />
-	public Task<MemberRole?> VerifyAsync(string username, string password, CancellationToken cancellationToken)
+	public Task<MemberRole?> Verify(string username, string password, CancellationToken cancellationToken)
 	{
 		var match = Accounts.FirstOrDefault(account =>
 			string.Equals(account.User, username, StringComparison.Ordinal)

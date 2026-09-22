@@ -33,7 +33,7 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 	private static ReadOnlySpan<byte> RtfSignature => "{\\rtf1"u8;
 
 	/// <inheritdoc />
-	public async Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
+	public async Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 

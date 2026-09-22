@@ -266,6 +266,12 @@ decision-record number, counting every fetched remote branch;
 `--renumber <old> <new>` moves the file and rewrites every reference if somebody
 took it first ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 
+A method this repository names carries no `Async` suffix: the return type says
+it is asynchronous. A member implementing a contract we do not own keeps the
+name that contract gives it
+([ADR-0093](docs/decisions/ADR-0093-the-return-type-says-a-method-is-asynchronous.md)).
+This overrides the upstream `csharp-async` skill on that one point.
+
 Use Shouldly for .NET assertions, `GivenX_WhenY_ThenZ` test names
 ([ADR-0069](docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)),
 Mermaid for diagrams

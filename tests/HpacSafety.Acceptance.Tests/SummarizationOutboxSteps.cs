@@ -33,15 +33,15 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a report has been submitted and its summarization outbox item is due")]
 	public async Task GivenAReportIsDue()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
 	}
 
 	[When(@"the Worker processes the summarization attempt")]
 	public async Task WhenTheWorkerProcessesTheAttempt()
 	{
 		_summarizer = new FakeSummarizer(("The pilot reported a hard landing.", "Le pilote a signalé un atterrissage brutal."));
-		await ClaimAndProcessAsync(_db!, _summarizer);
+		await ClaimAndProcess(_db!, _summarizer);
 	}
 
 	[Then(@"the Worker makes exactly one call to the model")]
@@ -68,8 +68,8 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a summarization outbox item is pending")]
 	public async Task GivenAPendingItem()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
 	}
 
 	[When(@"two Worker instances attempt to claim it concurrently")]
@@ -83,8 +83,8 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		var processorB = new SummarizeReportProcessor(dbB, summarizerB, TimeProvider.System);
 
 		_concurrentResults = await Task.WhenAll(
-			OutboxClaimer.ClaimNextAsync(dbA, OutboxMessageType.SummarizeReport, At, processorA.ProcessAsync, CancellationToken.None),
-			OutboxClaimer.ClaimNextAsync(dbB, OutboxMessageType.SummarizeReport, At, processorB.ProcessAsync, CancellationToken.None));
+			OutboxClaimer.ClaimNext(dbA, OutboxMessageType.SummarizeReport, At, processorA.Process, CancellationToken.None),
+			OutboxClaimer.ClaimNext(dbB, OutboxMessageType.SummarizeReport, At, processorB.Process, CancellationToken.None));
 
 		_concurrentModelCalls = summarizerA.CallCount + summarizerB.CallCount;
 	}
@@ -105,15 +105,15 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a report has non-private answered fields and private answered fields")]
 	public async Task GivenMixedFields()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedWithExclusionsAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await SeedWithExclusions(_db);
 	}
 
 	[When(@"the Worker claims the message and builds the model input DTO")]
 	public async Task WhenBuildsInputDto()
 	{
 		_summarizer = new FakeSummarizer(("en", "fr"));
-		await ClaimAndProcessAsync(_db!, _summarizer);
+		await ClaimAndProcess(_db!, _summarizer);
 	}
 
 	[Then(@"report_content contains only non-private answered fields eligible to contribute facts")]
@@ -152,8 +152,8 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a report has document attachments")]
 	public async Task GivenDocumentAttachments()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
 		_report.AddFile("reports/private-original.pdf", "application/pdf", 4096, At);
 		await _db.SaveChangesAsync();
 	}
@@ -162,7 +162,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	public async Task WhenBuildsSummarizationInput()
 	{
 		_summarizer = new FakeSummarizer(("en", "fr"));
-		await ClaimAndProcessAsync(_db!, _summarizer);
+		await ClaimAndProcess(_db!, _summarizer);
 	}
 
 	[Then(@"no document or document-derived text is sent to the model")]
@@ -188,15 +188,15 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"the model returns a valid two-field response")]
 	public async Task GivenAValidResponse()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
 		_summarizer = new FakeSummarizer(("The pilot reported a hard landing.", "Le pilote a signalé un atterrissage brutal."));
 	}
 
 	[When(@"the Worker persists it")]
 	public async Task WhenPersisted()
 	{
-		await ClaimAndProcessAsync(_db!, _summarizer!);
+		await ClaimAndProcess(_db!, _summarizer!);
 	}
 
 	[Then(@"one summary row is created or replaced with AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and creation\/update timestamps")]
@@ -220,17 +220,17 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a summarization attempt fails with a transient provider error or invalid output")]
 	public async Task GivenATransientFailure()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
 		_summarizer = new FakeSummarizer(failing: true);
-		await ClaimAndProcessAsync(_db, _summarizer, _now);
+		await ClaimAndProcess(_db, _summarizer, _now);
 		_now = _now.AddMinutes(1);
 	}
 
 	[When(@"the outbox retries the attempt within its bounded budget")]
 	public async Task WhenRetried()
 	{
-		await ClaimAndProcessAsync(_db!, _summarizer!, _now);
+		await ClaimAndProcess(_db!, _summarizer!, _now);
 	}
 
 	[Then(@"the retry repeats the single model call")]
@@ -249,8 +249,8 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a report's summarization retry budget is exhausted")]
 	public async Task GivenTheRetryBudgetWillBeExhausted()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
-		_report = await SeedAsync(_db);
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
 		_summarizer = new FakeSummarizer(failing: true);
 	}
 
@@ -259,7 +259,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	{
 		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
 		{
-			await ClaimAndProcessAsync(_db!, _summarizer!, _now);
+			await ClaimAndProcess(_db!, _summarizer!, _now);
 			_now = _now.AddMinutes(1);
 		}
 	}
@@ -294,17 +294,17 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Given(@"a summarization attempt runs, succeeds, or fails")]
 	public async Task GivenAnAttemptWillRunSucceedAndFail()
 	{
-		_db = await WorkerDatabase.NewMigratedContextAsync();
+		_db = await WorkerDatabase.NewMigratedContext();
 	}
 
 	[When(@"the Worker emits application logs")]
 	public async Task WhenLogsAreEmitted()
 	{
-		var succeeding = await SeedAsync(_db!, questionKeySuffix: "1", pilotName: "Ada Lovelace", narrative: "Ada Lovelace reported a hard landing.");
-		await ClaimAndProcessAsync(_db!, new FakeSummarizer(("en", "fr")));
+		var succeeding = await Seed(_db!, questionKeySuffix: "1", pilotName: "Ada Lovelace", narrative: "Ada Lovelace reported a hard landing.");
+		await ClaimAndProcess(_db!, new FakeSummarizer(("en", "fr")));
 
-		var failing = await SeedAsync(_db!, questionKeySuffix: "2", pilotName: "Grace Hopper", narrative: "Grace Hopper reported a fuel leak.");
-		await ClaimAndProcessAsync(_db!, new FakeSummarizer(failing: true));
+		var failing = await Seed(_db!, questionKeySuffix: "2", pilotName: "Grace Hopper", narrative: "Grace Hopper reported a fuel leak.");
+		await ClaimAndProcess(_db!, new FakeSummarizer(failing: true));
 
 		_report = succeeding;
 	}
@@ -329,14 +329,14 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		}
 	}
 
-	private static async Task<bool> ClaimAndProcessAsync(HpacSafetyDbContext db, ISummarizer summarizer, DateTimeOffset? now = null)
+	private static async Task<bool> ClaimAndProcess(HpacSafetyDbContext db, ISummarizer summarizer, DateTimeOffset? now = null)
 	{
 		var processor = new SummarizeReportProcessor(db, summarizer, TimeProvider.System);
-		return await OutboxClaimer.ClaimNextAsync(db, OutboxMessageType.SummarizeReport, now ?? At, processor.ProcessAsync, CancellationToken.None)
+		return await OutboxClaimer.ClaimNext(db, OutboxMessageType.SummarizeReport, now ?? At, processor.Process, CancellationToken.None)
 			.ConfigureAwait(false);
 	}
 
-	private static async Task<Report> SeedAsync(
+	private static async Task<Report> Seed(
 		HpacSafetyDbContext db, string questionKeySuffix = "", string pilotName = "Ada Lovelace", string narrative = "Ada Lovelace reported a hard landing.")
 	{
 		// A second report seeded into the same database (e.g. the logging scenario,
@@ -369,7 +369,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		return report;
 	}
 
-	private static async Task<Report> SeedWithExclusionsAsync(HpacSafetyDbContext db)
+	private static async Task<Report> SeedWithExclusions(HpacSafetyDbContext db)
 	{
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
 		var pilotName = Question.Create("pilot_name", QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);
@@ -414,7 +414,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 
 		public SummarizationInput? LastInput { get; private set; }
 
-		public Task<SummaryDraft> SummarizeAsync(SummarizationInput input, CancellationToken cancellationToken)
+		public Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken)
 		{
 			CallCount++;
 			LastInput = input;

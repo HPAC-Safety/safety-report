@@ -41,12 +41,12 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenActiveQuestion_WhenListedPublicly_ThenBothLanguagesArePresent()
 	{
 		// Given
-		using var admin = await SignedInAsync();
+		using var admin = await SignedIn();
 		var key = UniqueKey("wind_direction");
-		await CreateAsync(admin, Draft(key, "short_text"));
+		await Create(admin, Draft(key, "short_text"));
 
 		// When
-		var listed = await ListPublicAsync();
+		var listed = await ListPublic();
 
 		// Then
 		var question = listed.Single(candidate => candidate.GetProperty("key").GetString() == key);
@@ -59,12 +59,12 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenInactiveQuestion_WhenListedPublicly_ThenOmitted()
 	{
 		// Given
-		using var admin = await SignedInAsync();
+		using var admin = await SignedIn();
 		var key = UniqueKey("never_asked");
-		await CreateAsync(admin, Draft(key, "short_text") with { IsActive = false });
+		await Create(admin, Draft(key, "short_text") with { IsActive = false });
 
 		// When
-		var listed = await ListPublicAsync();
+		var listed = await ListPublic();
 
 		// Then
 		listed.ShouldNotContain(candidate => candidate.GetProperty("key").GetString() == key);
@@ -74,9 +74,9 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDeletedQuestion_WhenListedPublicly_ThenOmittedRatherThanFallingBackToAnOlderRevision()
 	{
 		// Given
-		using var admin = await SignedInAsync();
+		using var admin = await SignedIn();
 		var key = UniqueKey("retired");
-		var created = await CreateAsync(admin, Draft(key, "short_text"));
+		var created = await Create(admin, Draft(key, "short_text"));
 		var id = created.GetProperty("id").GetString();
 
 		// When
@@ -84,7 +84,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		delete.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// Then
-		var listed = await ListPublicAsync();
+		var listed = await ListPublic();
 		listed.ShouldNotContain(candidate => candidate.GetProperty("key").GetString() == key);
 	}
 
@@ -92,9 +92,9 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenEditedQuestion_WhenListedPublicly_ThenOnlyTheCurrentRevisionIsShown()
 	{
 		// Given
-		using var admin = await SignedInAsync();
+		using var admin = await SignedIn();
 		var key = UniqueKey("surface_wind");
-		var created = await CreateAsync(admin, Draft(key, "short_text"));
+		var created = await Create(admin, Draft(key, "short_text"));
 		var id = created.GetProperty("id").GetString();
 
 		// When
@@ -103,7 +103,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		revise.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
-		var listed = await ListPublicAsync();
+		var listed = await ListPublic();
 		var question = listed.Single(candidate => candidate.GetProperty("key").GetString() == key);
 		question.GetProperty("labelEn").GetString().ShouldBe("Reworded question");
 	}
@@ -112,16 +112,16 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGroupWithChildren_WhenListedPublicly_ThenChildrenAreNestedAndNotRepeatedAtTopLevel()
 	{
 		// Given
-		using var admin = await SignedInAsync();
+		using var admin = await SignedIn();
 		var groupKey = UniqueKey("aircraft");
-		var group = await CreateAsync(admin, Draft(groupKey, "group") with { IsRequired = false, IsPrivate = false });
+		var group = await Create(admin, Draft(groupKey, "group") with { IsRequired = false, IsPrivate = false });
 		var groupId = group.GetProperty("id").GetString();
 
 		var childKey = UniqueKey("aircraft_type");
-		await CreateAsync(admin, Draft(childKey, "short_text") with { GroupedUnderQuestionId = groupId });
+		await Create(admin, Draft(childKey, "short_text") with { GroupedUnderQuestionId = groupId });
 
 		// When
-		var listed = await ListPublicAsync();
+		var listed = await ListPublic();
 
 		// Then
 		listed.ShouldNotContain(candidate => candidate.GetProperty("key").GetString() == childKey);
@@ -136,24 +136,24 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenConditionalQuestion_WhenListedPublicly_ThenDependencyIsIncluded()
 	{
 		// Given
-		using var admin = await SignedInAsync();
-		var parent = await CreateAsync(admin, Draft(UniqueKey("were_you_injured"), "yes_no"));
+		using var admin = await SignedIn();
+		var parent = await Create(admin, Draft(UniqueKey("were_you_injured"), "yes_no"));
 		var parentId = parent.GetProperty("id").GetString();
 
 		var childKey = UniqueKey("injury_detail");
-		await CreateAsync(admin, Draft(childKey, "long_text") with { DependsOnQuestionId = parentId });
+		await Create(admin, Draft(childKey, "long_text") with { DependsOnQuestionId = parentId });
 
 		// When
-		var listed = await ListPublicAsync();
+		var listed = await ListPublic();
 
 		// Then
 		var child = listed.Single(candidate => candidate.GetProperty("key").GetString() == childKey);
 		child.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
 	}
 
-	private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)
 	{
-		return SignedInClient.AsAsync(_factory, role);
+		return SignedInClient.As(_factory, role);
 	}
 
 	private static string UniqueKey(string prefix)
@@ -168,7 +168,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 			false, true, true, null, null, null, null, false, []);
 	}
 
-	private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
+	private static async Task<JsonElement> Create(HttpClient client, SaveQuestion request)
 	{
 		using var response = await client.PostAsJsonAsync(AdminQuestions, request);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
@@ -176,7 +176,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task<List<JsonElement>> ListPublicAsync()
+	private async Task<List<JsonElement>> ListPublic()
 	{
 		using var client = _factory.CreateClient();
 		var body = await client.GetFromJsonAsync<JsonElement>(PublicQuestions);

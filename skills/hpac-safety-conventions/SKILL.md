@@ -36,6 +36,15 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
    boundaries. Use synthetic data only.
 6. Use .NET 10, nullable reference types, async APIs for I/O, and cancellation
    tokens at public async boundaries. `Core` has no runtime package dependency.
+   Name a method for what it does, with no `Async` suffix — the return type
+   already says it is asynchronous
+   ([ADR-0093](../../docs/decisions/ADR-0093-the-return-type-says-a-method-is-asynchronous.md)).
+   The one exception is a member implementing or overriding a contract this
+   repository does not own — `DisposeAsync`, `InitializeAsync`,
+   `BackgroundService.ExecuteAsync`, `SaveChangesAsync`, `Stream.ReadAsync`,
+   `HttpMessageHandler.SendAsync`, and every EF Core or BCL call — where the
+   name is fixed by somebody else. This overrides the upstream `csharp-async`
+   skill on that one point; the rest of it still applies.
 7. Use `DateOnly` for reported dates, `TimeOnly` for local wall time,
    `DateTimeOffset` for instants, and never `DateTime`.
 8. Use Shouldly, and name tests `GivenX_WhenY_ThenZ`

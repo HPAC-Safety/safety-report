@@ -21,7 +21,7 @@ public class ReviewerMediaLinkTests
 
 		// When
 		var url = await new ReviewerMediaLink(new InMemoryBlobStore())
-			.CreateViewUrlAsync(derivative, TimeSpan.FromMinutes(5), CancellationToken.None);
+			.CreateViewUrl(derivative, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// Then
 		url.ShouldNotBeNull();
@@ -36,7 +36,7 @@ public class ReviewerMediaLinkTests
 		var key = BlobKey.For(ReportId, compartment, "photo.jpg");
 
 		// When / Then
-		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrlAsync(key, TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(key, TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 
 	[Fact]
@@ -50,7 +50,7 @@ public class ReviewerMediaLinkTests
 		var video = BlobKey.For(ReportId, MediaCompartment.Original, "clip.mp4");
 
 		// When / Then
-		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrlAsync(video, TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(video, TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 
 	[Fact]

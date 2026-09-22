@@ -83,7 +83,11 @@ it is why a well-formed exemption is evidence rather than an excuse.
 
 - An exemption is auditable. The pull-request body becomes the squash commit
   message, so `git log --grep 'No .feature scenario needed'` is the history of
-  every exemption ever claimed, with the claims each one cited.
+  every exemption ever claimed, with the claims each one cited. That audit only
+  holds if the body cannot be edited after the check passes, so the gate moved
+  into `.github/workflows/feature-coverage.yml` and subscribes to `edited`, the
+  same reason `linked-issue.yml` is its own workflow. Its job id is unchanged,
+  so it remains the required `feature-coverage` context.
 - A reviewer verifies an exemption instead of accepting it — the claims are
   named, so "does this change really leave those standing?" is a question with
   an answer. `agents/spec-reviewer.md` treats an unverified exemption as a

@@ -27,7 +27,9 @@ env:
 jobs:
   # Job ids are the status-check contexts named in docs/github-ruleset.json.
   # Renaming a job renames the context and silently drops it from the required
-  # set — the ruleset keeps waiting on a name nothing reports.
+  # set — the ruleset keeps waiting on a name nothing reports. Moving a job to
+  # another workflow file keeps its context, which is how `feature-coverage`
+  # and `linked-issue` live in their own files while staying required.
 
   # NOT a `paths:` filter on the trigger above — that is the trap ADR-0011 and
   # terraform.yml document: a required context whose *workflow* never runs
@@ -185,58 +187,6 @@ jobs:
             git diff -- docs/traceability.md
             exit 1
           fi
-
-  # Cannot judge whether a change is behavioral - only a human/agent can - so
-  # this flags the shape and lets a human answer. It began as the specific gap
-  # issue #163 found (PR #156 added Playwright coverage for the mobile
-  # hamburger nav and no .feature scenario) and was scoped to src/web/src/**,
-  # which left every other behavior change unguarded: the API, the Worker,
-  # Core and Infrastructure could all ship without a scenario while the rule
-  # in AGENTS.md said otherwise. It now covers all of src/**.
-  #
-  # The judgement lives in tools/feature-coverage.mjs, which is unit-tested and
-  # runnable locally rather than only inside this runner - a rule enforced only
-  # where a workflow types it holds only there (ADR-0073, lesson 0001). This
-  # step collects the diff and hands it over.
-  #
-  # An exemption is a citation, not an assertion: a change that needs no new
-  # scenario preserves behavior an existing claim already states, so it names
-  # those claims and they are checked against docs/traceability.md (ADR-0090).
-  feature-coverage:
-    needs: changes
-    if: (needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') && github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-
-      - name: Behavior changes are covered by a .feature scenario
-        env:
-          PR_BODY: ${{ github.event.pull_request.body }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: |
-          set -euo pipefail
-
-          # ':(glob)' magic is required for '**' to match — git's default
-          # pathspec matching (fnmatch, no FNM_PATHNAME) treats a bare '**'
-          # as a single '*' and silently fails to match nested paths.
-          #
-          # Exclusions, each for a stated reason: tests/e2e/steps/**/*.ts are
-          # the execution half of a scenario (ADR-0053), not a second place
-          # requiring one; .features-gen is generated; a README documents a
-          # component and cannot change its behavior.
-          CHANGED_BEHAVIOR=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
-            | grep -v '/\.features-gen/' \
-            | grep -v '^tests/e2e/steps/' \
-            | grep -v '/README\.md$' || true)
-          CHANGED_FEATURES=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)features/**/*.feature' || true)
-          export CHANGED_BEHAVIOR CHANGED_FEATURES
-
-          node tools/feature-coverage.mjs
 
   coverage:
     # Depends on e2e (not just changes) so it can download that job's

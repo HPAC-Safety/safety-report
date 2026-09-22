@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using HpacSafety.Core.Features.Reporting;
@@ -161,6 +162,16 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	///     fails, or outruns the timeout. An absent toolchain is a retained original,
 	///     not an exception: a deployment without ffmpeg still accepts video.
 	/// </summary>
+	/// <remarks>
+	///     Excluded from coverage deliberately. Its happy path runs in every
+	///     <c>FfmpegVideoRemuxerTests</c> case, but its branches are "the external
+	///     binary misbehaved" — absent, non-zero, hung, unstartable — and reaching
+	///     them in a test means shipping stand-in executables and a platform story
+	///     for them. The decision this class actually makes, whether a produced file
+	///     is a derivative, is <see cref="RemuxVerification" />, which is a pure
+	///     function and is covered exhaustively.
+	/// </remarks>
+	[ExcludeFromCodeCoverage]
 	private async Task<string?> Capture(
 		string executable, IEnumerable<string> arguments, CancellationToken cancellationToken)
 	{
@@ -224,6 +235,12 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		}
 	}
 
+	/// <summary>
+	/// 
+	/// </summary>
+	/// <remarks>Excluded for the same reason as <see cref="Capture" />: its only
+	/// branch is a filesystem refusing to delete a temporary directory.</remarks>
+	[ExcludeFromCodeCoverage]
 	private void TryDelete(DirectoryInfo workspace)
 	{
 		try

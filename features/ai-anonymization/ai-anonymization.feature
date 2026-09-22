@@ -9,7 +9,42 @@ Scenario: Exactly one model call summarizes and anonymizes a report
   When the Worker processes the summarization attempt
   Then the Worker makes exactly one call to the model
   And that call produces both the English and French summary texts
-  And no deterministic text scrubber, separate redaction pass, PII-audit call, or translation call runs
+  And no second model call, separate PII-audit call, or translation call runs
+
+Scenario: An exact private value in report content is deterministically marked before the model call
+  Given a private answer's value appears verbatim in a report_content field
+  When the Worker builds the marked report_content
+  Then that occurrence is replaced with a marker naming the private question it came from
+  And the replacement happens before the model call, not as a separate call or stage
+
+Scenario: A token from a multi-word private value is also marked
+  Given a private answer's value is multiple words
+  And one of its words, at or above the minimum match length and not on the stopword list, appears alone in a report_content field
+  When the Worker builds the marked report_content
+  Then that occurrence is replaced with a marker naming the private question it came from
+
+Scenario: A common short word is never marked as a false positive
+  Given a report_content field contains a word that is below the minimum match length or on the stopword list
+  And that word also appears as a token of a private answer's value
+  When the Worker builds the marked report_content
+  Then that word is left unmarked
+
+Scenario: Overlapping candidate matches resolve longest match first
+  Given a report_content field contains a private answer's whole multi-word value verbatim
+  When the Worker builds the marked report_content
+  Then the whole value is replaced with a single marker
+  And its individual words are not separately marked inside that same span
+
+Scenario: Matching is case-insensitive and whitespace-normalized
+  Given a private answer's value appears in a report_content field with different casing or extra whitespace
+  When the Worker builds the marked report_content
+  Then that occurrence is still replaced with a marker
+
+Scenario: private_context is still supplied alongside the marking pass
+  Given the Worker has built the marked report_content for a report
+  When the Worker builds the model input DTO
+  Then private_context still contains every private answered field, unchanged
+  And the model receives both the marked report_content and the unmarked private_context
 
 @ignore
 Scenario: Concurrent workers cannot claim the same summarization outbox item twice

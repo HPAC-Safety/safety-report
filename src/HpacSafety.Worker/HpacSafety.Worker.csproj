@@ -11,6 +11,10 @@
         <ProjectReference Include="..\HpacSafety.Infrastructure\HpacSafety.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="Prompts\**\*.md" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
     <PropertyGroup>
         <UserSecretsId>dotnet-HpacSafety.Worker-491eec12-f207-44d6-8f55-4f750d827303</UserSecretsId>
     </PropertyGroup>

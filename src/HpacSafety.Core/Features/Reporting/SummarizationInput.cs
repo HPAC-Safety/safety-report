@@ -47,4 +47,20 @@ public sealed class SummarizationInput
 
 		return new SummarizationInput(reportContent.AsReadOnly(), privateContext.AsReadOnly());
 	}
+
+	/// <summary>
+	///     Rebuilds an input with report content replaced, keeping the same private
+	///     context. Used only by <see cref="PrivateValueMarker" /> to apply its
+	///     deterministic marking pass without letting other callers construct an
+	///     input that mixes the two sections arbitrarily.
+	/// </summary>
+	internal static SummarizationInput WithReportContent(
+		SummarizationInput input,
+		IReadOnlyList<SummarizationField> reportContent)
+	{
+		ArgumentNullException.ThrowIfNull(input);
+		ArgumentNullException.ThrowIfNull(reportContent);
+
+		return new SummarizationInput(reportContent, input.PrivateContext);
+	}
 }

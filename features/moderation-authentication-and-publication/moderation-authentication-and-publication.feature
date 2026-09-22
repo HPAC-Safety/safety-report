@@ -29,6 +29,12 @@ Scenario: Bad credentials show one generic failure and no session
   And the failure does not say whether the username or the password was wrong
   And the header still shows the member-login action
 
+Scenario: Repeated sign-in attempts for one identity are rate limited
+  Given repeated sign-in attempts arrive for the same username
+  When the sign-in rate limit for that identity is exceeded
+  Then the API rejects further attempts with 429 and a safe retry signal
+  And the rejection does not reveal whether any attempted username or password was valid
+
 @ui
 Scenario: A member's signed-in session persists across a reload and clears on logout
   Given a visitor signs in from the member login page

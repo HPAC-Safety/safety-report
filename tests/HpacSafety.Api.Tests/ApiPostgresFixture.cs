@@ -37,6 +37,17 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 			builder.UseEnvironment("Development");
 			builder.UseSetting("ConnectionStrings:HpacSafety", _postgres.GetConnectionString());
 			builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
+
+			// This factory is shared across every test in the collection, many of
+			// which sign in or submit repeatedly against the same identity/IP
+			// partition. Effectively unlimited here so ordinary test traffic never
+			// trips a policy meant for a real client. A test that actually proves
+			// 429 behavior derives its own factory with a tiny limit instead — see
+			// RateLimitingEndpointTests. See issue #15.
+			builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:PermitLimit", "100000");
+			builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:WindowSeconds", "60");
+			builder.UseSetting("HpacSafety:RateLimiting:SignIn:PermitLimit", "100000");
+			builder.UseSetting("HpacSafety:RateLimiting:SignIn:WindowSeconds", "60");
 		});
 	}
 

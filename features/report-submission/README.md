@@ -98,5 +98,16 @@ rate limiting
 There is no per-reporter throttle, because a per-reporter throttle would mean
 identifying the reporter.
 
+The rate limit itself is a sliding-window `RateLimiter` policy, partitioned by
+client IP, using ASP.NET Core's built-in middleware rather than a third-party
+package. The client IP comes from `X-Forwarded-For`, trusted unconditionally
+because the API's security group admits traffic only from the one AWS ALB in
+front of it — the network layer is the actual trust boundary, not a static
+proxy allowlist
+([ADR-0081](../../docs/decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
+The client IP is used only in memory for the rate-limiter partition key; it is
+never persisted on a report or logged. A rejected request gets `429` with a
+safe, content-free problem response.
+
 Administrative operations are authorized by role on the same token; see
 [moderation, authentication, and publication](../moderation-authentication-and-publication/moderation-authentication-and-publication.feature).

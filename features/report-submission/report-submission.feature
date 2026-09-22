@@ -129,10 +129,6 @@ Scenario: The UI prevents duplicate submission while a request is in flight
   And retains local state if the network result is uncertain
   And clears saved local state only after a definite 202 response
 
-# Deferred to issue #15: the endpoint requires a valid bearer token today
-# (proven by the two scenarios around this one), but nothing here yet
-# enforces a per-IP rate limit.
-@ignore
 Scenario: A rate-limited submission is rejected
   Given a submission request arrives
   When the per-IP rate limit is exceeded

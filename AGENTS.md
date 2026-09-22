@@ -80,7 +80,11 @@ A bug fix that reveals a specification gap writes a lesson under
 and the claim that now proves it — in the same pull request as the fix
 ([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
 Read them on a design pass, alongside `/features` and the ADRs: a bug fixed
-with the specification unchanged is the same bug next quarter.
+with the specification unchanged is the same bug next quarter. When the lesson
+is about the development process rather than the product, it also updates the
+skill that would have prevented it, in the same pull request — the skill
+carries the general rule, the lesson keeps the incident. A lesson about product
+requirements does not touch a skill; its remedy is a claim.
 
 ## Product invariants
 

@@ -763,6 +763,7 @@ Scenario: Editing a question opens the editor in that question's place
   Given a signed-in Administrator opens the manage-questions page
   When they open the second question for editing
   Then the editor takes the second question's place in the list
+  And the editor's top edge lines up with that row's move-up control
   And every other question is still shown in its place
   When they cancel the edit
   Then the second question is shown in its place again

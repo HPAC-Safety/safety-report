@@ -604,6 +604,14 @@ Then("the editor takes the second question's place in the list", async ({ page }
 	await expect(page.getByRole("heading", { name: "Edit question" })).toHaveCount(1)
 })
 
+Then("the editor's top edge lines up with that row's move-up control", async ({ page }) => {
+	const row = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem").nth(1)
+	const editor = await row.locator("form").boundingBox()
+	const moveUp = await row.getByRole("button", { name: "Move up" }).boundingBox()
+
+	expect(Math.abs((editor?.y ?? 0) - (moveUp?.y ?? Number.POSITIVE_INFINITY))).toBeLessThanOrEqual(1)
+})
+
 Then("every other question is still shown in its place", async ({ page }) => {
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
 

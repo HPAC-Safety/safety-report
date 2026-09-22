@@ -221,7 +221,7 @@ export function ManageQuestionsPage() {
 
 			{/* A new question is authored above the list; an existing one is
 			    edited in its own row, where the administrator clicked Edit. */}
-			{draft && editing === null && editor}
+			{draft && editing === null && <div className="mt-6">{editor}</div>}
 
 			<h2 className="mt-12 font-display text-2xl font-bold">{t("questions.listTitle")}</h2>
 

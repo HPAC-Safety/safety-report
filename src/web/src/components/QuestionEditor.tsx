@@ -240,7 +240,7 @@ export function QuestionEditor({
 
 	return (
 		<form
-			className="mt-6 flex flex-col gap-5 rounded border border-rule bg-surface-2 p-6"
+			className="flex flex-col gap-5 rounded border border-rule bg-surface-2 p-6"
 			onSubmit={(event) => {
 				event.preventDefault()
 				onSave(draft)

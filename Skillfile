@@ -1,8 +1,14 @@
-# HPAC safety-report — focused coding-agent skills.
+# HPAC safety-report — focused coding-agent skills and role agents.
 #
-# Skills are managed declaratively so every contributor and agent gets the same
-# setup from `skillfile install`. Installed copies land in `.claude/` and are
-# gitignored; `Skillfile.lock` reproduces upstream sources exactly.
+# Skills and agents are managed declaratively so every contributor and agent
+# gets the same setup from `skillfile install`. Installed copies land in
+# `.claude/` and are gitignored; `Skillfile.lock` reproduces upstream sources
+# exactly.
+#
+# A skill is knowledge, loaded when its topic is in play. An agent is a role,
+# and it constrains what its holder may do — the four here are the steps of the
+# specification-driven chain, each trusting only the artifact from the step
+# before it (ADR-0086).
 #
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
 # upstream guidance only when it matches the repository. Keep local skills for
@@ -13,6 +19,14 @@
 
 # install  <platform>  <scope>
 install  claude-code  local
+
+# --- Agents ---
+# github  agent  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]
+
+local  agent  agents/implementer.md
+local  agent  agents/spec-author.md
+local  agent  agents/spec-reviewer.md
+local  agent  agents/test-writer.md
 
 # --- Skills ---
 # github  skill  [name]  <owner/repo[@ref]>  <path-or-dir>  [ref]

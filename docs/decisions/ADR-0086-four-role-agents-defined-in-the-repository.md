@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: agents, skillfile, roles, spec author, test writer, implementer, reviewer
@@ -7,8 +7,7 @@ keywords: agents, skillfile, roles, spec author, test writer, implementer, revie
 
 # ADR-0086 — Four roles are defined as repository agents
 
-**Status:** Proposed. Accepted when [#288](https://github.com/HPAC-Safety/safety-report/issues/288)
-lands and the four agents are declared in `Skillfile`.
+**Status:** Accepted
 
 ## Context
 

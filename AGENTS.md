@@ -56,14 +56,21 @@ the specification leaves a material question, ask it — see
 write the answer back into the specification as a scenario or an out-of-scope
 line, so the next run starts from the answer rather than from the question.
 
-Three mechanisms are being adopted alongside these rules and arrive with their
-own pull requests: stable claim IDs and a generated traceability matrix
-([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)),
-lessons that flow upstream after a bug
-([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)),
-and four roles declared as agents
-([ADR-0086](docs/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)).
-Each of those records is `proposed` until the change that applies it lands.
+Four roles hold the steps of that chain, declared under `agents/` and installed
+by `skillfile` ([ADR-0086](docs/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)):
+**spec-author** writes scenarios and states what is out of scope,
+**test-writer** turns a claim into a failing step definition, **implementer**
+makes it pass against the cited claims and nothing else, and **spec-reviewer**
+judges a diff against those claims and the ADRs. Each trusts only the artifact
+from the role before it; none of them is required, and a contributor who never
+invokes one is unaffected.
+
+Two mechanisms are still being adopted and arrive with their own pull requests:
+stable claim IDs and a generated traceability matrix
+([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md))
+and lessons that flow upstream after a bug
+([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+Both records are `proposed` until the change that applies them lands.
 
 ## Product invariants
 

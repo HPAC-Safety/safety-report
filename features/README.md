@@ -58,7 +58,14 @@ through issue #82. The audited implementation baseline is main at
    argues why a technology or pattern was chosen, and an ADR never restates
    acceptance criteria.
 
-7. Behavior is specified before it is implemented, and a wrong behavior is
+7. Every scenario carries one stable claim ID as a tag, and a normative
+   constraint on a canonical `docs/` page carries a `CON-*` ID naming what
+   verifies it
+   ([ADR-0084](../docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+   An ID is never reused or renumbered, and
+   [the traceability matrix](../docs/traceability.md) is generated from these
+   files rather than maintained by hand.
+8. Behavior is specified before it is implemented, and a wrong behavior is
    corrected here rather than argued in a conversation
    ([ADR-0083](../docs/decisions/ADR-0083-specification-driven-development.md)).
    Each area page also records what **not** to build in that area, because a

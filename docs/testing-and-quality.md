@@ -2,18 +2,24 @@
 
 ## Test strategy
 
-Tests protect user-visible privacy and lifecycle contracts, not obsolete
-internal architecture. Use fast Core unit tests for invariants, shared contract
+**CON-TQ-001** Tests protect user-visible privacy and lifecycle contracts, not obsolete
+internal architecture.
+*Verified by: none — a rule about what the suites are for, not about what the
+system does.* Use fast Core unit tests for invariants, shared contract
 suites for genuine ports, PostgreSQL integration tests for schema/query/
 transaction behavior, API tests for HTTP and authorization, Worker tests for
 outbox/model/attachment orchestration, and browser tests for the two-language end-to-
 end journey.
 
-All .NET tests use xUnit, Shouldly, and Given/When/Then structure. Integration
+**CON-TQ-002** All .NET tests use xUnit, Shouldly, and Given/When/Then structure. Integration
 tests use the actual supported PostgreSQL major version through Testcontainers.
 JavaScript uses `node:test`; browser journeys use Playwright. Tests must use
 synthetic people, locations, reports, and attachments.
+*Verified by: none — a rule about the tests themselves, enforced by the suites
+and the CI gates rather than by a scenario.*
 
+**CON-TQ-003** *Verified by: none — a delivery rule, enforced by the `feature-coverage` job
+and review.*
 A UI behavior change ships with a Playwright test and, when it touches or
 relies on API behavior, a server-side test covering that behavior
 ([ADR-0045](decisions/ADR-0045-ui-changes-require-playwright-and-server-tests.md)).
@@ -21,6 +27,10 @@ relies on API behavior, a server-side test covering that behavior
 ## Required contract coverage
 
 ### Questions and submission
+
+**CON-TQ-004** These contracts are covered by test.
+*Verified by: REQ-QB-001, REQ-QB-009, REQ-QB-016, REQ-SUB-004, REQ-SUB-005,
+REQ-SUB-009, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018.*
 
 - every display-affecting edit creates a complete immutable revision;
 - current-form query examines the latest revision per key, does not resurrect an
@@ -39,6 +49,10 @@ relies on API behavior, a server-side test covering that behavior
 - report, answers, files, and all outbox work commit or roll back together.
 
 ### AI and privacy
+
+**CON-TQ-005** These contracts are covered by test.
+*Verified by: REQ-AI-001, REQ-AI-009, REQ-AI-010, REQ-AI-011, REQ-AI-012,
+REQ-AI-013, REQ-AI-020, REQ-AI-021.*
 
 - partitioning never puts a private field in `report_content` and never treats
   private-only facts as summary facts;
@@ -59,6 +73,10 @@ a live third-party provider or send real incident data.
 
 ### Attachments
 
+**CON-TQ-006** These contracts are covered by test.
+*Verified by: REQ-MED-001, REQ-MED-002, REQ-MED-003, REQ-MED-006, REQ-MED-007,
+REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-014.*
+
 - all allowed image, video, and document formats and declared-type agreement are exercised;
 - configured default count and exact 50 MB boundary are covered with streaming
   tests that detect accidental whole-file buffering;
@@ -76,6 +94,10 @@ a live third-party provider or send real incident data.
   blobs.
 
 ### Moderation, deletion, and publication
+
+**CON-TQ-007** These contracts are covered by test.
+*Verified by: REQ-MOD-024, REQ-MOD-029, REQ-MOD-032, REQ-MOD-033,
+REQ-MOD-035, REQ-MOD-036, REQ-MOD-040, REQ-DOM-007.*
 
 - a token that is unsigned, signed by an unknown key, tampered with, expired,
   or issued for another audience is refused, and `alg: none` is refused;
@@ -95,7 +117,7 @@ a live third-party provider or send real incident data.
 
 ## Migration and infrastructure tests
 
-A fresh PostgreSQL database and the supported migration from the current main
+**CON-TQ-008** A fresh PostgreSQL database and the supported migration from the current main
 schema must both match the target model. Tests assert column types, names,
 constraints, indexes, global filters, lack of application-encrypted columns,
 and no `deleted` on `audit_log`.
@@ -105,10 +127,12 @@ without AWS credentials where possible. Assertions cover Canadian region,
 private/encrypted attachments, RDS backups, one website with the admin surface
 as a route, deploy OIDC roles, least privilege, migration task, identity
 provider configuration, and absence of SES or long-lived keys.
+*Verified by: none — a rule about the tests themselves, enforced by the suites
+and the CI gates rather than by a scenario.*
 
 ## Repository quality gates
 
-Required checks retain the repository's build, test, coverage floor plus added-
+**CON-TQ-009** Required checks retain the repository's build, test, coverage floor plus added-
 code ratchet, web asset/CSS checks, localization parity and hardcoded-string
 lint, end-to-end tests, agent/skill validation, Terraform validation, and linked
 issue enforcement. `DateTime` and assertion libraries other than Shouldly stay
@@ -119,3 +143,5 @@ is represented in [source inventory](source-inventory.md), and verify every
 GitHub issue through #82 is represented in
 [issue traceability](issue-traceability.md). No test fixture or specification
 may contain a real reporter's personal information.
+*Verified by: none — a rule about the tests themselves, enforced by the suites
+and the CI gates rather than by a scenario.*

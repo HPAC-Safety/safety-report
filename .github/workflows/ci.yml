@@ -170,26 +170,46 @@ jobs:
       - name: Every markdown file declares what it is
         run: node tools/check-frontmatter.mjs
 
+      # The matrix is generated from the claim tags and the CON ids, so a
+      # scenario added without an id, a duplicate, or a constraint naming a
+      # claim that does not exist fails here. Regenerating and diffing also
+      # catches a committed matrix that no longer matches the artifacts it
+      # summarizes - the same shape as "No drift from installing skills" and
+      # dotnet format --verify-no-changes. ADR-0084.
+      - name: The traceability matrix matches the specification
+        run: |
+          set -euo pipefail
+          node tools/traceability.mjs
+          if ! git diff --exit-code --stat -- docs/traceability.md; then
+            echo "::error file=docs/traceability.md::Out of date. Run 'node tools/traceability.mjs' and commit the result."
+            git diff -- docs/traceability.md
+            exit 1
+          fi
+
   # Cannot judge whether a change is behavioral - only a human/agent can - so
-  # this only flags the specific gap issue #163 found: PR #156 added
-  # Playwright coverage for the mobile hamburger nav but never added the
-  # .feature scenario the spec is supposed to describe it with. A change under
-  # src/web/src/** or a plain tests/e2e/*.ts spec, with no matching
-  # features/**/*.feature change, needs either a scenario or an explicit
-  # opt-out for the genuine false positives (styling only, refactor,
-  # dependency bump). tests/e2e/steps/**/*.ts is excluded: step definitions
-  # are the execution half of a scenario per ADR-0053, not a second place
-  # requiring one, and .features-gen is generated output, never hand-edited.
+  # this flags the shape and lets a human answer. It began as the specific gap
+  # issue #163 found (PR #156 added Playwright coverage for the mobile
+  # hamburger nav and no .feature scenario) and was scoped to src/web/src/**,
+  # which left every other behavior change unguarded: the API, the Worker,
+  # Core and Infrastructure could all ship without a scenario while the rule
+  # in AGENTS.md said otherwise. It now covers all of src/**.
+  #
+  # Exclusions: tests/e2e/steps/**/*.ts, because step definitions are the
+  # execution half of a scenario per ADR-0053, not a second place requiring
+  # one; .features-gen, which is generated output; and src/**/README.md, which
+  # documents a component and cannot change its behavior. Everything else in
+  # src/** is judged by a person, with the PR-body opt-out for the genuine
+  # false positives (styling only, refactor, dependency bump).
   feature-coverage:
     needs: changes
-    if: needs.changes.outputs.e2e == 'true' && github.event_name == 'pull_request'
+    if: (needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') && github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - name: UI behavior changes are covered by a .feature scenario
+      - name: Behavior changes are covered by a .feature scenario
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
@@ -204,20 +224,21 @@ jobs:
           # ':(glob)' magic is required for '**' to match — git's default
           # pathspec matching (fnmatch, no FNM_PATHNAME) treats a bare '**'
           # as a single '*' and silently fails to match nested paths.
-          changed_behavior=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/web/src/**' ':(glob)tests/e2e/**/*.ts' \
+          changed_behavior=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
             | grep -v '/\.features-gen/' \
-            | grep -v '^tests/e2e/steps/' || true)
+            | grep -v '^tests/e2e/steps/' \
+            | grep -v '/README\.md$' || true)
           changed_features=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)features/**/*.feature' || true)
 
           if [ -n "$changed_behavior" ] && [ -z "$changed_features" ]; then
-            echo "::error::This pull request changes web UI or e2e test code but touches no features/**/*.feature file."
+            echo "::error::This pull request changes behavior under src/ or e2e test code but touches no features/**/*.feature file."
             echo ""
             echo "Changed files with no matching scenario:"
             printf '%s\n' "$changed_behavior"
             echo ""
-            echo "AGENTS.md and skills/build-hpac-web-ui/SKILL.md require every"
-            echo "user-facing behavior change to add or update its Gherkin scenario"
-            echo "in the same pull request."
+            echo "AGENTS.md requires the scenario to be written before the"
+            echo "implementation, and updated in the same pull request when"
+            echo "behavior changes (ADR-0083)."
             echo ""
             echo "If this change is genuinely not user-facing (styling only, refactor,"
             echo "dependency bump), add a line to the pull request body:"
@@ -226,7 +247,7 @@ jobs:
             exit 1
           fi
 
-          echo "::notice::UI/e2e changes are covered by a matching .feature change, or none were made."
+          echo "::notice::Behavior changes are covered by a matching .feature change, or none were made."
 
   coverage:
     # Depends on e2e (not just changes) so it can download that job's

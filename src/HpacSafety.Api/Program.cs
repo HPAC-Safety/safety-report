@@ -1,8 +1,11 @@
 using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Api.PublicQuestions;
+using HpacSafety.Api.Reports;
+using HpacSafety.Infrastructure.Media;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -29,6 +32,25 @@ builder.Services.AddHpacSafetyTranslation(
 builder.Services.AddHpacSafetyAuthentication(
 	builder.Configuration,
 	builder.Environment.IsDevelopment());
+
+// Private object storage and the media-ingest pipeline behind report
+// submission. In Development this writes to local disk instead of a real
+// bucket, so the same code path runs everywhere. See issue #14.
+builder.Services.AddHpacSafetyMedia(
+	builder.Configuration,
+	builder.Environment.IsDevelopment());
+
+// The multipart body carries the JSON report part plus every attachment. The
+// per-file/count bound the submission endpoint enforces is the real limit;
+// this is generous headroom so a legitimate submission is never rejected by
+// the framework before that code runs.
+builder.Services.Configure<FormOptions>(options =>
+{
+	var media = builder.Configuration.GetSection("HpacSafety:Media:Policy").Get<MediaPolicyOptions>()
+				?? new MediaPolicyOptions();
+	options.MultipartBodyLengthLimit = (media.MaxByteSize * media.MaxAttachmentCount) + (1024 * 1024);
+	options.ValueCountLimit = 8;
+});
 
 var app = builder.Build();
 
@@ -60,6 +82,10 @@ app.MapAuth(app.Environment.IsDevelopment());
 // Today's live question set, as the reporter-facing form renders it. Public,
 // unlike everything below it.
 app.MapPublicQuestions();
+
+// The only reporter-facing write. Requires a member token; creates no state
+// before the one final multipart request succeeds. See issue #14.
+app.MapReportSubmission();
 
 // The question bank is data an administrator edits, not code that ships
 // (ADR-0016). These are the endpoints that edit it.

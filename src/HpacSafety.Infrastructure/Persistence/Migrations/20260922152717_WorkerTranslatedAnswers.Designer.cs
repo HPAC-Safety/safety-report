@@ -3,6 +3,7 @@ using System;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HpacSafety.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(HpacSafetyDbContext))]
-    partial class HpacSafetyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922152717_WorkerTranslatedAnswers")]
+    partial class WorkerTranslatedAnswers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -146,7 +149,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
                     b.ToTable("outbox_messages", null, t =>
                         {
-                            t.HasCheckConstraint("ck_outbox_messages_type", "type IN ('summarize_report', 'process_attachment', 'translate_answers')");
+                            t.HasCheckConstraint("ck_outbox_messages_type", "type IN ('summarize_report')");
                         });
                 });
 

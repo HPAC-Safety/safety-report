@@ -62,8 +62,8 @@ public sealed class ModelTests
 
 		// Then
 		columns.ShouldContain("question_revision_id");
-		columns.ShouldContain("needs_translation");
 		columns.ShouldContain("translated_value");
+		columns.ShouldContain("translation_source");
 		columns.ShouldContain("answered_at");
 		columns.ShouldContain("is_private");
 	}
@@ -79,6 +79,20 @@ public sealed class ModelTests
 		converter.ShouldBeOfType<EnumCodeConverter<ReportStatus>>();
 		converter!.ConvertToProvider(ReportStatus.Published).ShouldBe("published");
 		converter.ConvertFromProvider("approved").ShouldBe(ReportStatus.Approved);
+	}
+
+	[Fact]
+	public void GivenModel_WhenTranslationSourceIsMapped_ThenStoredAsInvariantCode()
+	{
+		// Given / When — a nullable enum, unlike every other enum this suite
+		// covers, so this also proves the conversion applies through Nullable<T>
+		var converter = Model().FindEntityType(typeof(ReportAnswer))!
+			.GetProperty(nameof(ReportAnswer.TranslationSource)).GetValueConverter();
+
+		// Then
+		converter.ShouldBeOfType<EnumCodeConverter<TranslationSource>>();
+		converter!.ConvertToProvider(TranslationSource.Auto).ShouldBe("auto");
+		converter.ConvertFromProvider("human").ShouldBe(TranslationSource.Human);
 	}
 
 	[Fact]

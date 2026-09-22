@@ -13,9 +13,13 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         choice tomorrow cannot change what this answer says (ADR-0072).
 ///     </para>
 ///     <para>
-///         A select answer is recorded in the reporter's language only, and
-///         <see cref="NeedsTranslation" /> puts it in front of an administrator to supply
-///         the other one. Nothing on the submission path translates anything.
+///         Every answer is recorded in the reporter's language only, and is immutable
+///         once written — nothing on the submission path, or anywhere else, ever
+///         overwrites <see cref="Value" /> or <see cref="Locale" />.
+///         <see cref="TranslatedValue" /> starts null and is filled later, off the
+///         submission path: mechanically by the Worker
+///         (<see cref="TranslationSource.Auto" />), or by an administrator editing it
+///         afterward (<see cref="TranslationSource.Human" />). See ADR-0080.
 ///     </para>
 ///     <para>
 ///         A multi-select produces one of these per chosen value, so "an answer is one
@@ -79,26 +83,37 @@ public class ReportAnswer
 	public bool IsPrivate { get; private init; }
 
 	/// <summary>
-	///     The whole answer, as one string. Null for a question the reporter
-	///     skipped — nothing is ever synthesized in its place.
+	///     The whole answer, as one string, exactly as the reporter submitted it.
+	///     Null for a question the reporter skipped — nothing is ever synthesized in
+	///     its place. Immutable once written (ADR-0080): nothing ever edits this after
+	///     submission.
 	/// </summary>
-	public string? Value { get; private set; }
+	public string? Value { get; private init; }
 
-	/// <summary>The official language <see cref="Value" /> is written in.</summary>
+	/// <summary>
+	///     The official language <see cref="Value" /> is written in. Immutable, like
+	///     <see cref="Value" /> itself.
+	/// </summary>
 	public Locale Locale { get; private init; }
 
 	/// <summary>
-	///     The other official language of <see cref="Value" />, once an
-	///     administrator has supplied it. Null until then, and null forever for the
-	///     types whose stored form is the same in both languages.
+	///     The other official language of <see cref="Value" />, once it has been
+	///     supplied. Null until then, and null forever for a skipped answer.
 	/// </summary>
 	public string? TranslatedValue { get; private set; }
 
 	/// <summary>
-	///     Whether this answer is waiting for an administrator to supply its second
-	///     language. True only for a localized select value.
+	///     How <see cref="TranslatedValue" /> was produced, or null while it is still
+	///     unset. See ADR-0080.
 	/// </summary>
-	public bool NeedsTranslation { get; private set; }
+	public TranslationSource? TranslationSource { get; private set; }
+
+	/// <summary>
+	///     True while this answer has a value but no translation of it yet. False for
+	///     a skipped answer — there is nothing to translate — and false once
+	///     <see cref="TranslatedValue" /> has been supplied.
+	/// </summary>
+	public bool NeedsTranslation => Value is not null && TranslatedValue is null;
 
 	/// <summary>When the answer was given.</summary>
 	public DateTimeOffset AnsweredAt { get; private init; }
@@ -116,14 +131,31 @@ public class ReportAnswer
 	}
 
 	/// <summary>
-	///     Records one answer, of any type. A select value is checked against the
-	///     choices the revision offered; everything else is taken as given, in the
-	///     invariant written form its type calls for.
+	///     Records one answer, of any type, against the question's current revision. A
+	///     select value is checked against the choices that revision offered;
+	///     everything else is taken as given, in the invariant written form its type
+	///     calls for.
 	/// </summary>
 	internal static ReportAnswer For(
 		TinyId reportId, Question question, string? value, Locale locale, DateTimeOffset at)
 	{
-		var revision = question.CurrentRevision;
+		return For(reportId, question, question.CurrentRevision, value, locale, at);
+	}
+
+	/// <summary>
+	///     Records one answer against an exact revision — the current one, or a known,
+	///     non-deleted, superseded one a reporter's browser session spanned an
+	///     Administrator's edit across. Validation always runs against that exact
+	///     revision's historical type, options, and privacy, never against whatever
+	///     the question's current revision happens to be now.
+	/// </summary>
+	internal static ReportAnswer For(
+		TinyId reportId, Question question, QuestionRevision revision, string? value, Locale locale, DateTimeOffset at)
+	{
+		if (revision.QuestionId != question.Id)
+		{
+			throw new DomainRuleViolationException("That revision does not belong to this question.");
+		}
 
 		if (revision.IsRequired && string.IsNullOrWhiteSpace(value))
 		{
@@ -137,20 +169,40 @@ public class ReportAnswer
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
 		{
-			Value = value,
-			NeedsTranslation = value is not null && revision.StoresLocalizedValue
+			Value = value
 		};
 	}
 
 	/// <summary>
-	///     Supplies the second language of a select value. The reporter's own value
-	///     is never touched — this fills the language they did not answer in.
+	///     Supplies the second language of this answer, mechanically. The reporter's
+	///     own <see cref="Value" /> is never touched — this fills the language they
+	///     did not answer in.
 	/// </summary>
-	public void SupplyTranslation(string translated)
+	public void SupplyAutoTranslation(string translated)
 	{
-		if (!NeedsTranslation)
+		SupplyTranslation(translated, Reporting.TranslationSource.Auto);
+	}
+
+	/// <summary>
+	///     Supplies or corrects the second language of this answer by hand. Unlike the
+	///     automatic path, an administrator may overwrite an existing translation —
+	///     including one the Worker already produced.
+	/// </summary>
+	public void SupplyHumanTranslation(string translated)
+	{
+		SupplyTranslation(translated, Reporting.TranslationSource.Human, allowOverwrite: true);
+	}
+
+	private void SupplyTranslation(string translated, Reporting.TranslationSource source, bool allowOverwrite = false)
+	{
+		if (Value is null)
 		{
-			throw new DomainRuleViolationException("This answer is not waiting for a translation.");
+			throw new DomainRuleViolationException("A skipped answer has nothing to translate.");
+		}
+
+		if (TranslatedValue is not null && !allowOverwrite)
+		{
+			throw new DomainRuleViolationException("This answer already has a translation.");
 		}
 
 		if (string.IsNullOrWhiteSpace(translated))
@@ -159,6 +211,6 @@ public class ReportAnswer
 		}
 
 		TranslatedValue = translated;
-		NeedsTranslation = false;
+		TranslationSource = source;
 	}
 }

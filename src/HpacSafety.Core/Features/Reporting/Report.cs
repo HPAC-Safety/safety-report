@@ -91,46 +91,73 @@ public class Report
 		&& Summary is { IsApproved: true };
 
 	/// <summary>
-	///     Records one answer, in the report's own language, projecting it if the
-	///     question carries a role. Every type takes this path: the value is the
-	///     words the reporter saw, and a skip is a null value rather than an
-	///     omission.
+	///     Records one answer against the question's current revision, in the
+	///     report's own language, projecting it if the question carries a role.
 	/// </summary>
 	public ReportAnswer Answer(Question question, string? value, DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 
-		var answer = ReportAnswer.For(Id, question, value, Language, at);
+		return Answer(question, question.CurrentRevision, value, at);
+	}
+
+	/// <summary>
+	///     Records one answer against an exact revision — the current one, or a
+	///     known, non-deleted, superseded one a reporter's browser session spanned
+	///     an Administrator's edit across. Validation always runs against that exact
+	///     revision's historical type, options, and privacy; a submission never has
+	///     to equal the latest form.
+	/// </summary>
+	public ReportAnswer Answer(Question question, QuestionRevision revision, string? value, DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(question);
+		ArgumentNullException.ThrowIfNull(revision);
+
+		var answer = ReportAnswer.For(Id, question, revision, value, Language, at);
 		_answers.Add(answer);
 		Project(question, answer);
 		return answer;
 	}
 
 	/// <summary>
-	///     Records a multi-select answer as one row per chosen value, so each value
-	///     is a string in its own right and is translated on its own (ADR-0072). An
-	///     empty list records one skipped answer rather than nothing at all.
+	///     Records a multi-select answer against the question's current revision, as
+	///     one row per chosen value, so each value is a string in its own right and
+	///     is translated on its own (ADR-0072). An empty list records one skipped
+	///     answer rather than nothing at all.
 	/// </summary>
 	public IReadOnlyList<ReportAnswer> Answer(
 		Question question, IReadOnlyList<string> values, DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(question);
+
+		return Answer(question, question.CurrentRevision, values, at);
+	}
+
+	/// <summary>
+	///     Records a multi-select answer against an exact revision. See the
+	///     single-value overload above for why the revision is explicit.
+	/// </summary>
+	public IReadOnlyList<ReportAnswer> Answer(
+		Question question, QuestionRevision revision, IReadOnlyList<string> values, DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(question);
+		ArgumentNullException.ThrowIfNull(revision);
 		ArgumentNullException.ThrowIfNull(values);
 
 		if (values.Count == 0)
 		{
-			return [Answer(question, value: null, at)];
+			return [Answer(question, revision, value: null, at)];
 		}
 
 		// Multi-select is the only type that produces several rows. Everything
 		// else — a picker, a date, a line of prose — is one answer.
-		if (values.Count > 1 && question.CurrentRevision.Type != QuestionType.MultiSelect)
+		if (values.Count > 1 && revision.Type != QuestionType.MultiSelect)
 		{
 			throw new DomainRuleViolationException(
 				$"'{question.Key}' takes one answer, not {values.Count}.");
 		}
 
-		return [.. values.Select(value => Answer(question, value, at))];
+		return [.. values.Select(value => Answer(question, revision, value, at))];
 	}
 
 	/// <summary>Adds an uploaded file.</summary>

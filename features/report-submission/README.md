@@ -35,6 +35,15 @@ Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
 clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
 The report language is exactly `en-CA` or `fr-CA`.
 
+## Bilingual answers (ADR-0080)
+
+`value` and `locale` are written once, here, and never again — no endpoint
+ever updates either column after this one inserts them. `value_translated`
+and `translation_source` stay null on insert; this endpoint enqueues one
+answer-translation outbox message so the Worker can fill them later,
+mechanically, via the same `ITranslator` port ADR-0062 built for admin-drafted
+translation. This endpoint never calls a translation provider itself.
+
 ## Validation order
 
 The API performs, in order:

@@ -189,6 +189,41 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	[Fact]
+	public async Task GivenRetriesAreExhaustedAndTheReportWasSoftDeletedMeanwhile_WhenTheFinalAttemptFails_ThenTheReportIsNotMarkedSummaryFailed()
+	{
+		// Given — the report is deleted between the second-to-last and the final
+		// attempt, so by the time the poison threshold is reached there is nothing
+		// left to mark (REQ-DOM-007)
+		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
+		var report = await SeedAsync(context);
+		var summarizer = new FakeSummarizer(failing: true);
+		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
+		var now = At;
+
+		// When
+		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
+		{
+			if (attempt == OutboxMessage.PoisonThreshold - 1)
+			{
+				await using var deleter = WorkerPostgresFixture.ContextFor(connectionString);
+				var deleting = await deleter.Reports.SingleAsync(r => r.Id == report.Id);
+				deleting.SoftDelete(now);
+				await deleter.SaveChangesAsync();
+			}
+
+			await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, now, processor.ProcessAsync, CancellationToken.None);
+			now = now.AddMinutes(10);
+		}
+
+		// Then
+		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
+		var persistedReport = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id);
+		persistedReport.Status.ShouldNotBe(ReportStatus.SummaryFailed);
+		persistedReport.SummaryError.ShouldBeNull();
+	}
+
+	[Fact]
 	public async Task GivenAReportAlreadyPastSummarization_WhenProcessed_ThenNothingChangesAndTheSummarizerIsNeverCalled()
 	{
 		// Given — some other path already produced a pair before this attempt ran

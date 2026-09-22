@@ -118,6 +118,19 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAMalformedReportId_WhenDeleted_ThenApiReturns404()
+	{
+		// Given
+		using var client = await SignedInClient.AsAsync(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await client.DeleteAsync(new Uri("/api/admin/reports/not-a-tiny-id", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
 	public async Task GivenAnAlreadyDeletedReport_WhenDeletedAgain_ThenApiReturns404()
 	{
 		// Given — soft-deleted reports are excluded from the endpoint's own query

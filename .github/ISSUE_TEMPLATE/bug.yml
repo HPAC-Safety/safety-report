@@ -28,6 +28,16 @@ body:
       label: Steps to reproduce
     validations:
       required: true
+  - type: textarea
+    id: spec-delta
+    attributes:
+      label: What the specification should have said
+      description: >-
+        A bug is usually a specification defect wearing implementation
+        clothes. Which scenario was wrong, or which case does no scenario
+        cover? "Not sure" is an acceptable answer; a blank one is not.
+    validations:
+      required: true
   - type: dropdown
     id: area
     attributes:

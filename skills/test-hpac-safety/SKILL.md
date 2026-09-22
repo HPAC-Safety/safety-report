@@ -44,6 +44,12 @@ blending a client-observable assertion with a server-authoritative one
 splits into an `@ui` scenario and an untagged one rather than carrying both
 concerns together.
 
+Write a step definition from the scenario, not from the conversation that
+produced it. If a binding needs a fact the scenario does not state, the
+scenario is incomplete — amend it rather than encoding the missing fact in C#
+or TypeScript
+([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
 **`@ignore` means "not built yet," never "no longer true."** When a decision
 supersedes what a scenario asserts, **delete the scenario** in the pull request
 that records the decision. Do not park an obsolete scenario behind `@ignore` —

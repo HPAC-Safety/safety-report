@@ -58,6 +58,15 @@ through issue #82. The audited implementation baseline is main at
    argues why a technology or pattern was chosen, and an ADR never restates
    acceptance criteria.
 
+7. Behavior is specified before it is implemented, and a wrong behavior is
+   corrected here rather than argued in a conversation
+   ([ADR-0083](../docs/decisions/ADR-0083-specification-driven-development.md)).
+   Each area page also records what **not** to build in that area, because a
+   page that states only the target invites an implementation to over-deliver
+   into territory nobody asked for. The global boundary in
+   [system overview](../docs/system-overview.md) still holds; a per-area
+   section narrows it, and never contradicts it.
+
 Source, tests, historical ADRs, and issue history remain useful audit evidence.
 Active READMEs, skills, and the Worker prompt are kept aligned with this
 specification rather than preserving competing designs.

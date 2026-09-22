@@ -19,7 +19,10 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
    "just get something working" framing. Name the gap, the options, and a
    recommendation if you have one.
 3. Keep the implementation direct. Add an interface only at a real external
-   boundary or when two implementations already need a shared contract.
+   boundary or when two implementations already need a shared contract. When
+   a real seam or a second concrete case does justify structure, reach for
+   SOLID and named Gang-of-Four patterns as the vocabulary — but the seam
+   earns the pattern; naming a pattern never earns the seam.
 4. Protect privacy at DTO, storage, model, logging, review, and publication
    boundaries. Use synthetic data only.
 5. Use .NET 10, nullable reference types, async APIs for I/O, and cancellation

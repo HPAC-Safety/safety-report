@@ -194,12 +194,14 @@ jobs:
   # Core and Infrastructure could all ship without a scenario while the rule
   # in AGENTS.md said otherwise. It now covers all of src/**.
   #
-  # Exclusions: tests/e2e/steps/**/*.ts, because step definitions are the
-  # execution half of a scenario per ADR-0053, not a second place requiring
-  # one; .features-gen, which is generated output; and src/**/README.md, which
-  # documents a component and cannot change its behavior. Everything else in
-  # src/** is judged by a person, with the PR-body opt-out for the genuine
-  # false positives (styling only, refactor, dependency bump).
+  # The judgement lives in tools/feature-coverage.mjs, which is unit-tested and
+  # runnable locally rather than only inside this runner - a rule enforced only
+  # where a workflow types it holds only there (ADR-0073, lesson 0001). This
+  # step collects the diff and hands it over.
+  #
+  # An exemption is a citation, not an assertion: a change that needs no new
+  # scenario preserves behavior an existing claim already states, so it names
+  # those claims and they are checked against docs/traceability.md (ADR-0089).
   feature-coverage:
     needs: changes
     if: (needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') && github.event_name == 'pull_request'
@@ -208,6 +210,9 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
 
       - name: Behavior changes are covered by a .feature scenario
         env:
@@ -216,38 +221,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          if printf '%s' "$PR_BODY" | grep -Eiq '^No `?\.feature`? scenario needed:'; then
-            echo "::notice::PR body opts out of .feature scenario coverage."
-            exit 0
-          fi
-
           # ':(glob)' magic is required for '**' to match — git's default
           # pathspec matching (fnmatch, no FNM_PATHNAME) treats a bare '**'
           # as a single '*' and silently fails to match nested paths.
-          changed_behavior=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
+          #
+          # Exclusions, each for a stated reason: tests/e2e/steps/**/*.ts are
+          # the execution half of a scenario (ADR-0053), not a second place
+          # requiring one; .features-gen is generated; a README documents a
+          # component and cannot change its behavior.
+          CHANGED_BEHAVIOR=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
             | grep -v '/\.features-gen/' \
             | grep -v '^tests/e2e/steps/' \
             | grep -v '/README\.md$' || true)
-          changed_features=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)features/**/*.feature' || true)
+          CHANGED_FEATURES=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)features/**/*.feature' || true)
+          export CHANGED_BEHAVIOR CHANGED_FEATURES
 
-          if [ -n "$changed_behavior" ] && [ -z "$changed_features" ]; then
-            echo "::error::This pull request changes behavior under src/ or e2e test code but touches no features/**/*.feature file."
-            echo ""
-            echo "Changed files with no matching scenario:"
-            printf '%s\n' "$changed_behavior"
-            echo ""
-            echo "AGENTS.md requires the scenario to be written before the"
-            echo "implementation, and updated in the same pull request when"
-            echo "behavior changes (ADR-0083)."
-            echo ""
-            echo "If this change is genuinely not user-facing (styling only, refactor,"
-            echo "dependency bump), add a line to the pull request body:"
-            echo ""
-            echo "    No .feature scenario needed: <reason>"
-            exit 1
-          fi
-
-          echo "::notice::Behavior changes are covered by a matching .feature change, or none were made."
+          node tools/feature-coverage.mjs
 
   coverage:
     # Depends on e2e (not just changes) so it can download that job's

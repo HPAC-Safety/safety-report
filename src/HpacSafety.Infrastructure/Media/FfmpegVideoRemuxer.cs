@@ -235,11 +235,11 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		}
 	}
 
-	/// <summary>
-	/// 
-	/// </summary>
-	/// <remarks>Excluded for the same reason as <see cref="Capture" />: its only
-	/// branch is a filesystem refusing to delete a temporary directory.</remarks>
+	/// <summary>Clears the temporary workspace, whatever happened inside it.</summary>
+	/// <remarks>
+	///     Excluded from coverage for the same reason as <see cref="Capture" />: its
+	///     only branch is a filesystem refusing to delete a temporary directory.
+	/// </remarks>
 	[ExcludeFromCodeCoverage]
 	private void TryDelete(DirectoryInfo workspace)
 	{

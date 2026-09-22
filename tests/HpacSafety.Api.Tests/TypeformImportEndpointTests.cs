@@ -139,13 +139,26 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAnUnknownPendingLogicId_WhenDeleted_ThenApiReturnsNotFound()
+	public async Task GivenAMalformedPendingLogicId_WhenDeleted_ThenApiReturnsNotFound()
 	{
-		// Given
+		// Given — not even a well-formed TinyId (12 characters, not 11)
 		using var client = await SignedInAsync();
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/unknown00000", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenAWellFormedButUnknownPendingLogicId_WhenDeleted_ThenApiReturnsNotFound()
+	{
+		// Given — a syntactically valid TinyId that simply names no row
+		using var client = await SignedInAsync();
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/AAAAAAAAAAA", UriKind.Relative));
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -168,14 +181,32 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAFileThatIsNotATypeformExport_WhenImported_ThenApiRejects()
+	public async Task GivenAWellFormedJsonFileMissingFields_WhenImported_ThenApiRejects()
 	{
-		// Given
+		// Given — valid JSON, but not shaped like a Typeform export
 		using var client = await SignedInAsync();
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent("{\"not\":\"a typeform export\"}"), "english", "bad.json" },
 			{ new StringContent("{\"not\":\"a typeform export\"}"), "french", "bad.json" }
+		};
+
+		// When
+		using var response = await client.PostAsync(Import, content);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenAFileThatIsNotValidJson_WhenImported_ThenApiRejects()
+	{
+		// Given — malformed JSON, not merely the wrong shape
+		using var client = await SignedInAsync();
+		using var content = new MultipartFormDataContent
+		{
+			{ new StringContent("{this is not json"), "english", "bad.json" },
+			{ new StringContent("{this is not json"), "french", "bad.json" }
 		};
 
 		// When

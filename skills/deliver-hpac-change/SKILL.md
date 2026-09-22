@@ -48,6 +48,14 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   `git push -u origin issue-<number>/<short-description>` from inside the
   worktree. This also replaces the `origin/main` upstream that
   `git worktree add` sets, so a later bare `git push` targets the issue branch.
+- Label the session with the issue it owns, in the same step:
+  `tools/session-label.sh "#<number> <short-description>"`. Several agents run
+  at once, one terminal tab each, and the person running them finds the tab
+  that owns an issue or pull request by this label — not by reading scrollback.
+  Relabel when the pull request opens and when its checks go green (see
+  "Verify and publish"), and open every final report to the person with
+  `[#<number> · PR #<pr>]` (just `[#<number>]` before the pull request exists),
+  even when the report is one line.
 - Commit and push each unit of work as soon as it is complete — a scenario
   written, a test passing, a step definition wired up, a document updated —
   rather than holding everything until the change is ready for a pull request.
@@ -170,7 +178,11 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    of work are already committed and pushed (see "Start"); this is the last of
    them, not the first. A pull request is never opened from a branch that is
    behind `origin/main`.
-4. Open a pull request with a squash-ready title.
+4. Open a pull request with a squash-ready title, then relabel the session
+   with it: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
+   After the worktree is removed the session runs from the primary checkout
+   on `main`, so this label is the only thing still saying which pull request
+   the session owns.
 5. Put `Closes #<number>` on its own line in the PR body, and name the
    scenarios the change satisfies. If it built anything the specification does
    not describe, either the specification was incomplete — fix it — or the
@@ -203,7 +215,8 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    fix, committing, rebasing onto fresh `origin/main`, and pushing each fix as
    it lands, repeat step 7, then
    remove the worktree again. Finish only when
-   checks are green and no worktree remains.
+   checks are green and no worktree remains, and mark the session done:
+   `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,
 update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill

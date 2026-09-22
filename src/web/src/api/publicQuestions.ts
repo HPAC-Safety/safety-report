@@ -1,6 +1,6 @@
 /*
  * The public, unauthenticated read side of the question bank
- * (src/HpacSafety.Api/PublicQuestions/QuestionEndpoints.cs, issue #270).
+ * (src/HpacSafety.Api/PublicQuestions/QuestionEndpoints.cs, issue no. 270).
  *
  * No bearer token: this is public content, distinct from the admin authoring
  * endpoints and from the member-gated submission endpoint (reportSubmission.ts).

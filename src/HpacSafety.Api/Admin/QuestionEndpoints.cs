@@ -471,7 +471,7 @@ public static class QuestionEndpoints
 	///     Queues one audit row on the same <see cref="HpacSafetyDbContext" /> the
 	///     caller is about to call <c>SaveChangesAsync</c> on, so it commits in the
 	///     same transaction as the change it describes — a failed audit write rolls
-	///     the change back too (ADR-0091).
+	///     the change back too (ADR-0092).
 	/// </summary>
 	private static void Audit(
 		HpacSafetyDbContext database, HttpContext context, AuditAction action, TinyId targetId, DateTimeOffset at,

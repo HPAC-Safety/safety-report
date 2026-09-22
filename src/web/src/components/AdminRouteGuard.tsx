@@ -4,7 +4,7 @@ import { useAuth } from "../auth/useAuth"
 import { ForbiddenPage } from "../routes/ForbiddenPage"
 
 /**
- * Wraps an `/admin/*` route element (ADR-0091).
+ * Wraps an `/admin/*` route element (ADR-0092).
  *
  * The API authorizes every admin request on its own (ADR-0048) — this guard
  * only decides what the browser draws before a request is even made, so a

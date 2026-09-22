@@ -9,7 +9,7 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     The sign-in audit scenarios — ADR-0091, REQ-MOD-044, REQ-MOD-045. Detailed
+///     The sign-in audit scenarios — ADR-0092, REQ-MOD-044, REQ-MOD-045. Detailed
 ///     coverage of every audited action lives in <c>HpacSafety.Api.Tests</c>; this
 ///     proves the feature file's sentences are true against the booted host.
 /// </summary>

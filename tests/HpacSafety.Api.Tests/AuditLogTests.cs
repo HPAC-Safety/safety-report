@@ -12,7 +12,7 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-///     Content-free audit rows for sign-in and question-bank actions — ADR-0091,
+///     Content-free audit rows for sign-in and question-bank actions — ADR-0092,
 ///     REQ-MOD-029, REQ-MOD-044, REQ-MOD-045, REQ-MOD-047.
 /// </summary>
 [Trait("Category", "Integration")]

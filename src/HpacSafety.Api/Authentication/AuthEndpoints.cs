@@ -100,7 +100,7 @@ public static class AuthEndpoints
 		var at = clock.GetUtcNow();
 
 		// One content-free row either way — never the username or the password
-		// (ADR-0091). Written and saved before the response is returned, so a
+		// (ADR-0092). Written and saved before the response is returned, so a
 		// failure to audit fails the sign-in attempt the same way.
 		var attemptedIdentity = string.IsNullOrWhiteSpace(request.Username) ? "(unknown)" : request.Username;
 		database.AuditLog.Add(token is null

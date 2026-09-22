@@ -6,7 +6,7 @@ import { signInAs, stubAuth, type Role } from "./auth"
 const { Given, When, Then } = createBdd()
 
 /*
- * The client-side admin route guard (ADR-0091). The API authorizes every
+ * The client-side admin route guard (ADR-0092). The API authorizes every
  * request on its own (ADR-0048/REQ-MOD-023/024); these scenarios only assert
  * what the browser draws before any such request is made.
  */

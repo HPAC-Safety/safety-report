@@ -1,6 +1,6 @@
 import { useLocale } from "../i18n/useLocale"
 
-/** Shown in place of an admin route's content when the signed-in member's role cannot use it (ADR-0091). */
+/** Shown in place of an admin route's content when the signed-in member's role cannot use it (ADR-0092). */
 export function ForbiddenPage() {
 	const { t } = useLocale()
 

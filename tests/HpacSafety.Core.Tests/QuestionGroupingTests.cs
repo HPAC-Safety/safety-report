@@ -193,4 +193,57 @@ public class QuestionGroupingTests
 		// When / Then
 		Should.NotThrow(() => QuestionGrouping.EnsureGroupingAllowed([group, child], child.Id, group.Id));
 	}
+
+	[Fact]
+	public void GivenChain_WhenWouldCloseIntoCycle_ThenRejected()
+	{
+		// Given — a shape only direct construction can produce: the no-nesting
+		// rule stops the bank checker from ever creating this through the
+		// ordinary API, but the checker still has to refuse it if bad data
+		// ever reaches it, exactly as QuestionDependencies does for a
+		// conditional cycle.
+		var leaf = Ordinary("manufacturer", QuestionType.ShortText);
+		var group = Group("aircraft");
+		group.GroupUnder(leaf.Id, At.AddHours(1));
+
+		// When / Then — grouping "leaf" under "group" would close the loop
+		var cause = Should.Throw<DomainRuleViolationException>(() =>
+			QuestionGrouping.EnsureGroupingAllowed([group, leaf], leaf.Id, group.Id));
+
+		cause.Message.ShouldContain("cycle");
+	}
+
+	[Fact]
+	public void GivenLongerChainDoesNotClose_WhenBankChecks_ThenAllowed()
+	{
+		// Given — group is (directly constructed) grouped under leaf, leaf
+		// has nothing above it, and unrelated is a third, disconnected
+		// question. Walking from group reaches leaf, never unrelated.
+		var leaf = Ordinary("manufacturer", QuestionType.ShortText);
+		var group = Group("aircraft");
+		group.GroupUnder(leaf.Id, At.AddHours(1));
+		var unrelated = Ordinary("model", QuestionType.ShortText);
+
+		// When / Then
+		Should.NotThrow(() =>
+			QuestionGrouping.EnsureGroupingAllowed([group, leaf, unrelated], unrelated.Id, group.Id));
+	}
+
+	[Fact]
+	public void GivenExistingCycleAmongOtherQuestions_WhenCheckedAgainstUnrelatedTarget_ThenAllowed()
+	{
+		// Given — two groups already (directly constructed) grouped under
+		// each other, a shape only this construction can produce. Walking
+		// from one must notice it has already visited both and stop, rather
+		// than loop forever or wrongly report reaching an unrelated target.
+		var groupA = Group("form");
+		var groupB = Group("aircraft");
+		groupA.GroupUnder(groupB.Id, At.AddHours(1));
+		groupB.GroupUnder(groupA.Id, At.AddHours(1));
+		var unrelated = Ordinary("manufacturer", QuestionType.ShortText);
+
+		// When / Then
+		Should.NotThrow(() =>
+			QuestionGrouping.EnsureGroupingAllowed([groupA, groupB, unrelated], unrelated.Id, groupA.Id));
+	}
 }

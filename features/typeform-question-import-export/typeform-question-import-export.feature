@@ -108,11 +108,11 @@ Scenario: The imported draft's key comes from the Typeform ref
   When the pair is mapped
   Then the produced draft's key is that ref, normalized
 
-@ignore
+@ui
 Scenario: Re-importing the same form updates in place
-  Given a question was previously saved from an imported draft
-  When the same Typeform pair is imported and reviewed again
-  Then saving the draft revises or forks the existing question rather than creating a duplicate
+  Given a signed-in Administrator opens the manage-questions page
+  When they import a Typeform draft whose key matches an existing question
+  Then choosing to review it opens the existing question for editing instead of creating a new one
 
 Scenario: Export produces a zip of two Typeform-shaped files
   Given the question bank has several live questions

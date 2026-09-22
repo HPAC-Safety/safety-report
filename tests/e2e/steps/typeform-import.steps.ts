@@ -1,7 +1,12 @@
 import { createBdd } from "playwright-bdd"
 import { expect, type Download, type Page } from "@playwright/test"
 
-const { When, Then } = createBdd()
+const { Given, When, Then } = createBdd()
+
+// The feature file's Background — bound for real against the mapper in
+// HpacSafety.Core.Tests (TypeformImportSteps.cs); this @ui scenario builds
+// its own stubbed pair below, so there's nothing to do here.
+Given("an Administrator has an English Typeform export and a matching French one", async () => {})
 
 /*
  * The @ui scenario for the Typeform import dialog (ADR-0077, ADR-0078).
@@ -26,7 +31,7 @@ const IMPORTED_DRAFT = {
 	options: [],
 }
 
-async function stubTypeformImport(page: Page) {
+async function stubTypeformImport(page: Page, draft: typeof IMPORTED_DRAFT = IMPORTED_DRAFT) {
 	await page.route("**/api/admin/typeform/pending-logic", async (route) => {
 		await route.fulfill({ status: 200, contentType: "application/json", body: "[]" })
 	})
@@ -35,7 +40,7 @@ async function stubTypeformImport(page: Page) {
 		await route.fulfill({
 			status: 200,
 			contentType: "application/json",
-			body: JSON.stringify({ drafts: [IMPORTED_DRAFT], rejected: [], pendingLogicNoteIds: [] }),
+			body: JSON.stringify({ drafts: [draft], rejected: [], pendingLogicNoteIds: [] }),
 		})
 	})
 }
@@ -108,3 +113,43 @@ When("they choose to export the question bank", async ({ page }) => {
 Then("a zip file download begins", async () => {
 	expect(exportedDownload?.suggestedFilename()).toBe("question-bank.zip")
 })
+
+When("they import a Typeform draft whose key matches an existing question", async ({ page }) => {
+	await stubTypeformImport(page, {
+		...IMPORTED_DRAFT,
+		key: "occurrence_notes",
+		labelEn: "What happened? (reimported)",
+	})
+
+	await page.getByRole("button", { name: "Import from Typeform" }).click()
+
+	const fileContents = JSON.stringify({
+		fields: [{ id: "f1", ref: "occurrence_notes", title: "What happened? (reimported)", type: "short_text", properties: {} }],
+		logic: [],
+	})
+
+	await page.getByLabel("English export (.json)").setInputFiles({
+		name: "form-en.json",
+		mimeType: "application/json",
+		buffer: Buffer.from(fileContents),
+	})
+	await page.getByLabel("French export (.json)").setInputFiles({
+		name: "form-fr.json",
+		mimeType: "application/json",
+		buffer: Buffer.from(fileContents),
+	})
+
+	await page.getByRole("button", { name: "Import", exact: true }).click()
+})
+
+Then(
+	"choosing to review it opens the existing question for editing instead of creating a new one",
+	async ({ page }) => {
+		await page.getByRole("button", { name: "Review", exact: true }).first().click()
+
+		// Read-only key is exactly what the ordinary edit flow does — see
+		// "The editor carries an existing question's settings into the form".
+		await expect(page.getByLabel("Key")).toHaveAttribute("readonly", "")
+		await expect(page.getByLabel("Key")).toHaveValue("occurrence_notes")
+	},
+)

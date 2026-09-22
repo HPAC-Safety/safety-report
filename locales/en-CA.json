@@ -182,6 +182,8 @@
   "questions.import.pendingLogicIntro": "These fields had conditional logic the importer could not translate automatically. Wire up the equivalent \"Depends on\" setting by hand, then resolve the note.",
   "questions.import.pendingLogicResolve": "Resolved",
   "questions.import.error.unexpected": "Something went wrong. Please try again.",
+  "questions.export.action": "Export to Typeform JSON",
+  "questions.export.working": "Exporting…",
   "page.contact.title": "Contact",
   "page.contact.orgName": "Hang Gliding and Paragliding Association of Canada (HPAC) Safety Committee",
   "page.contact.addressLabel": "Mailing address",

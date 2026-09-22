@@ -114,13 +114,11 @@ Scenario: Re-importing the same form updates in place
   When the same Typeform pair is imported and reviewed again
   Then saving the draft revises or forks the existing question rather than creating a duplicate
 
-@ignore
 Scenario: Export produces a zip of two Typeform-shaped files
   Given the question bank has several live questions
   When an Administrator exports it
   Then the result is a zip containing an English Typeform-shaped file and a French one
 
-@ignore
 Scenario: Export preserves data Typeform has no field for
   Given a live question has a stable key, a dependency, and a group membership
   When it is exported
@@ -133,8 +131,7 @@ Scenario: Exporting and reimporting reproduces the same drafts
   When an Administrator exports it and imports the result back in
   Then the resulting drafts match the original questions' key, type, wording, and options
 
-@ignore
 Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role
   When that member attempts to import or export
-  Then the API rejects the attempt
+  Then the API rejects both attempts

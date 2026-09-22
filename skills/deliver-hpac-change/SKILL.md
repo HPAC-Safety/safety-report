@@ -54,6 +54,16 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   The first commit never waits for the whole change to be finished. Work that
   exists only in a local worktree is invisible to other agents and
   contributors and is lost if the worktree or session goes away.
+- Rebase onto fresh `origin/main` before every push — each unit of work, the
+  final push before opening a pull request, and each fix while watching
+  checks, whether or not a pull request exists yet:
+  `git fetch origin main && git rebase origin/main`. Other agents merge to
+  `main` continuously; a branch that is not rebased before it is pushed is
+  out of date, and often conflicted, the moment it lands. Resolve any
+  conflicts locally, and if the rebase brought in new commits, re-run the
+  checks the change affects before pushing. When the rebase rewrote commits
+  already on `origin`, push with `git push --force-with-lease`, never plain
+  `--force`, so a push someone else made to the branch is never discarded.
 - Do all work for the issue inside that worktree. Remove it once the pull
   request is open — see "Verify and publish" for exactly when it comes down
   and how it comes back if a check fails.
@@ -106,8 +116,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 1. Run focused tests, then the repository checks proportional to risk.
 2. Inspect `git diff --check`, links, generated artifacts, and `git status`.
 3. Commit any remaining work with a concise imperative message and no
-   co-author trailer, and push. Earlier units of work are already committed
-   and pushed (see "Start"); this is the last of them, not the first.
+   co-author trailer, rebase onto fresh `origin/main`, and push. Earlier units
+   of work are already committed and pushed (see "Start"); this is the last of
+   them, not the first. A pull request is never opened from a branch that is
+   behind `origin/main`.
 4. Open a pull request with a squash-ready title.
 5. Put `Closes #<number>` on its own line in the PR body, and name the
    scenarios the change satisfies. If it built anything the specification does
@@ -138,7 +150,8 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 9. Watch required checks from the primary checkout. If one fails, recreate the
    worktree on the *same* branch (no `-b`, it already exists —
    `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`),
-   fix, committing and pushing each fix as it lands, repeat step 7, then
+   fix, committing, rebasing onto fresh `origin/main`, and pushing each fix as
+   it lands, repeat step 7, then
    remove the worktree again. Finish only when
    checks are green and no worktree remains.
 

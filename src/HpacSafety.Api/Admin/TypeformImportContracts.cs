@@ -20,7 +20,11 @@ public sealed record ImportedQuestionDraftView(
 	string? HelpTextFr,
 	string? GroupedUnderKey,
 	bool AllowsReporterAdditions,
-	IReadOnlyList<ImportedOptionView> Options)
+	IReadOnlyList<ImportedOptionView> Options,
+	bool IsPrivate,
+	bool IsRequired,
+	string? DependsOnKey,
+	string? DependsOnOptionCode)
 {
 	/// <summary>Flattens a draft for the wire, converting its type to the invariant code every other view uses.</summary>
 	public static ImportedQuestionDraftView Of(ImportedQuestionDraft draft)
@@ -30,7 +34,8 @@ public sealed record ImportedQuestionDraftView(
 		return new ImportedQuestionDraftView(
 			draft.Key, EnumCode.Of(draft.Type), draft.LabelEn, draft.LabelFr, draft.FrenchDefaultedToEnglish,
 			draft.HelpTextEn, draft.HelpTextFr, draft.GroupedUnderKey, draft.AllowsReporterAdditions,
-			[.. draft.Options.Select(ImportedOptionView.Of)]);
+			[.. draft.Options.Select(ImportedOptionView.Of)], draft.IsPrivate, draft.IsRequired, draft.DependsOnKey,
+			draft.DependsOnOptionCode);
 	}
 }
 

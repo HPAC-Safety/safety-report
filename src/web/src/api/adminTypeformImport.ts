@@ -28,6 +28,10 @@ export interface ImportedQuestionDraftView {
 	groupedUnderKey: string | null
 	allowsReporterAdditions: boolean
 	options: ImportedOptionView[]
+	isPrivate: boolean
+	isRequired: boolean
+	dependsOnKey: string | null
+	dependsOnOptionCode: string | null
 }
 
 export interface RejectedTypeformFieldView {

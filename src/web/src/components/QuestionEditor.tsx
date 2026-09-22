@@ -97,7 +97,9 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 	const group = imported.groupedUnderKey
 		? questions.find((question) => question.key === imported.groupedUnderKey)
 		: undefined
-	const collectsNoAnswer = NO_ANSWER_TYPES.includes(imported.type)
+	const dependsOn = imported.dependsOnKey
+		? questions.find((question) => question.key === imported.dependsOnKey)
+		: undefined
 
 	return {
 		request: {
@@ -109,11 +111,11 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			helpTextFr: imported.helpTextFr,
 			placeholderEn: null,
 			placeholderFr: null,
-			isRequired: false,
-			isPrivate: !collectsNoAnswer,
+			isRequired: imported.isRequired,
+			isPrivate: imported.isPrivate,
 			isActive: true,
-			dependsOnQuestionId: null,
-			dependsOnOptionCode: null,
+			dependsOnQuestionId: dependsOn?.id ?? null,
+			dependsOnOptionCode: dependsOn ? imported.dependsOnOptionCode : null,
 			optionSetId: null,
 			groupedUnderQuestionId: group?.id ?? null,
 			allowsReporterAdditions: imported.allowsReporterAdditions,

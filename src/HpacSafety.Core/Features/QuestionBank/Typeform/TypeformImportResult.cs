@@ -28,7 +28,11 @@ public sealed record ImportedQuestionDraft(
 	string? HelpTextFr,
 	string? GroupedUnderKey,
 	bool AllowsReporterAdditions,
-	IReadOnlyList<ImportedOption> Options);
+	IReadOnlyList<ImportedOption> Options,
+	bool IsPrivate = true,
+	bool IsRequired = false,
+	string? DependsOnKey = null,
+	string? DependsOnOptionCode = null);
 
 /// <summary>One choice on an imported draft.</summary>
 public sealed record ImportedOption(string Code, string LabelEn, string LabelFr, bool FrenchDefaultedToEnglish);

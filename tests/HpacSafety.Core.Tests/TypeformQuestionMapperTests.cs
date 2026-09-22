@@ -1,3 +1,4 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.QuestionBank.Typeform;
 using Shouldly;
@@ -250,5 +251,159 @@ public class TypeformQuestionMapperTests
 		// Then
 		consent.Type.ShouldBe(QuestionType.YesNo);
 		consent.FrenchDefaultedToEnglish.ShouldBeTrue();
+	}
+
+	// -------------------------------------------------------- hpac extension --
+
+	private static TypeformField Field(string reference, string title, string typeformType, TypeformHpacExtension? hpac = null)
+	{
+		return new TypeformField(reference, reference, title, typeformType, SubfieldKey: null, new TypeformFieldProperties(
+			Description: null, AllowMultipleSelection: null, AllowOtherChoice: null, Choices: null, Fields: null, hpac));
+	}
+
+	private static TypeformDocument Document(params TypeformField[] fields)
+	{
+		return new TypeformDocument(fields, []);
+	}
+
+	[Theory]
+	[InlineData("statement", "group")]
+	[InlineData("statement", "statement")]
+	[InlineData("multiple_choice", "autocomplete")]
+	[InlineData("multiple_choice", "single_select")]
+	public void GivenAnHpacType_WhenMapped_ThenItOverridesTheAmbiguousNativeType(string nativeType, string hpacType)
+	{
+		// Given
+		var hpac = new TypeformHpacExtension(hpacType, false, false, false, null, null, null);
+		var english = Document(Field("field-ref", "Field", nativeType, hpac));
+		var french = Document(Field("field-ref", "Champ", nativeType, hpac));
+
+		// When
+		var result = TypeformQuestionMapper.Map(english, french);
+
+		// Then
+		DraftFor(result, "field-ref").Type.ShouldBe(EnumCode.TryParse<QuestionType>(hpacType, out var expected) ? expected : default);
+	}
+
+	[Fact]
+	public void GivenAnHpacExtension_WhenMapped_ThenPrivacyRequiredAndReporterAdditionsCarryOver()
+	{
+		// Given
+		var hpac = new TypeformHpacExtension("short_text", true, true, false, null, null, null);
+		var english = Document(Field("field-ref", "Field", "short_text", hpac));
+		var french = Document(Field("field-ref", "Champ", "short_text", hpac));
+
+		// When
+		var draft = DraftFor(TypeformQuestionMapper.Map(english, french), "field-ref");
+
+		// Then
+		draft.IsPrivate.ShouldBeTrue();
+		draft.IsRequired.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenAnHpacExtensionNamingADependencyAndAGroup_WhenMapped_ThenTheyAreSetByKeyEvenThoughTheExportIsFlat()
+	{
+		// Given — a flat export: no native Typeform group/contact_info nesting
+		// carries this relationship, only the hpac extension does.
+		var hpac = new TypeformHpacExtension("short_text", false, false, false, "parent-ref", "yes", "group-ref");
+		var english = Document(Field("child-ref", "Child", "short_text", hpac));
+		var french = Document(Field("child-ref", "Enfant", "short_text", hpac));
+
+		// When
+		var draft = DraftFor(TypeformQuestionMapper.Map(english, french), "child-ref");
+
+		// Then
+		draft.DependsOnKey.ShouldBe("parent-ref");
+		draft.DependsOnOptionCode.ShouldBe("yes");
+		draft.GroupedUnderKey.ShouldBe("group-ref");
+	}
+
+	[Fact]
+	public void GivenNoHpacExtension_WhenMapped_ThenBehaviorIsUnchangedFromBeforeTheExtensionExisted()
+	{
+		// Given — a real Typeform export, or a hand-authored fixture, has no
+		// hpac object at all.
+		var english = Document(Field("field-ref", "Field", "short_text"));
+		var french = Document(Field("field-ref", "Champ", "short_text"));
+
+		// When
+		var draft = DraftFor(TypeformQuestionMapper.Map(english, french), "field-ref");
+
+		// Then
+		draft.IsPrivate.ShouldBeTrue();
+		draft.IsRequired.ShouldBeFalse();
+		draft.DependsOnKey.ShouldBeNull();
+		draft.GroupedUnderKey.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenNoHpacExtensionOnAGroupField_WhenMapped_ThenItIsNotMarkedPrivate()
+	{
+		// Given — a real Typeform group/contact_info field, never exported by
+		// TypeformExportBuilder, so it carries no hpac object.
+		var english = Document(Field("group-ref", "Group", "statement"));
+		var french = Document(Field("group-ref", "Groupe", "statement"));
+
+		// When
+		var draft = DraftFor(TypeformQuestionMapper.Map(english, french), "group-ref");
+
+		// Then
+		draft.IsPrivate.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenAnHpacExtensionWithAnUnknownType_WhenMapped_ThenTheNativelyDerivedTypeIsKept()
+	{
+		// Given — defensive: an extension this system did not write, or from a
+		// future version, names a type this version does not recognize.
+		var hpac = new TypeformHpacExtension("some_future_type", false, false, false, null, null, null);
+		var english = Document(Field("field-ref", "Field", "short_text", hpac));
+		var french = Document(Field("field-ref", "Champ", "short_text", hpac));
+
+		// When
+		var draft = DraftFor(TypeformQuestionMapper.Map(english, french), "field-ref");
+
+		// Then
+		draft.Type.ShouldBe(QuestionType.ShortText);
+	}
+
+	[Fact]
+	public void GivenALiveQuestionBank_WhenExportedAndReimported_ThenTheDraftsMatchTheOriginalQuestions()
+	{
+		// Given
+		var at = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft:", "Aéronef:", at, isPrivate: false);
+		var parent = Question.Create("country", QuestionType.YesNo, "Country?", "Pays?", at, isPrivate: false);
+		var child = Question.Create(
+			"model", QuestionType.ShortText, "Model", "Modèle", at, isPrivate: true, isRequired: true,
+			dependsOnQuestionId: parent.Id, groupedUnderQuestionId: group.Id);
+		var multi = Question.Create(
+			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", at, isPrivate: false,
+			allowsReporterAdditions: true,
+			options: [new QuestionOptionInput("p1", "P1", "P1", null)]);
+
+		// When
+		var (english, french) = TypeformExportBuilder.Build(
+			[group, parent, child, multi], new Dictionary<TinyId, OptionSet>());
+		var result = TypeformQuestionMapper.Map(english, french);
+
+		// Then
+		var groupDraft = DraftFor(result, "aircraft");
+		groupDraft.Type.ShouldBe(QuestionType.Group);
+		groupDraft.LabelEn.ShouldBe("Aircraft:");
+		groupDraft.LabelFr.ShouldBe("Aéronef:");
+
+		var childDraft = DraftFor(result, "model");
+		childDraft.Type.ShouldBe(QuestionType.ShortText);
+		childDraft.IsPrivate.ShouldBeTrue();
+		childDraft.IsRequired.ShouldBeTrue();
+		childDraft.DependsOnKey.ShouldBe("country");
+		childDraft.GroupedUnderKey.ShouldBe("aircraft");
+
+		var multiDraft = DraftFor(result, "ratings");
+		multiDraft.Type.ShouldBe(QuestionType.MultiSelect);
+		multiDraft.AllowsReporterAdditions.ShouldBeTrue();
+		multiDraft.Options.Single().Code.ShouldBe("p1");
 	}
 }

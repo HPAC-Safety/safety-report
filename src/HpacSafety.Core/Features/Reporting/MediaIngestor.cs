@@ -36,6 +36,7 @@ public sealed class MediaIngestor
 	private readonly TimeProvider _clock;
 	private readonly MediaPolicy _policy;
 	private readonly IMediaSniffer _sniffer;
+	private readonly IVideoRemuxer _remuxer;
 	private readonly IExifStripper _stripper;
 
 	/// <summary>Creates an ingestor over the ports it needs.</summary>
@@ -43,18 +44,21 @@ public sealed class MediaIngestor
 		IBlobStore blobStore,
 		IMediaSniffer sniffer,
 		IExifStripper stripper,
+		IVideoRemuxer remuxer,
 		MediaPolicy policy,
 		TimeProvider clock)
 	{
 		ArgumentNullException.ThrowIfNull(blobStore);
 		ArgumentNullException.ThrowIfNull(sniffer);
 		ArgumentNullException.ThrowIfNull(stripper);
+		ArgumentNullException.ThrowIfNull(remuxer);
 		ArgumentNullException.ThrowIfNull(policy);
 		ArgumentNullException.ThrowIfNull(clock);
 
 		_blobStore = blobStore;
 		_sniffer = sniffer;
 		_stripper = stripper;
+		_remuxer = remuxer;
 		_policy = policy;
 		_clock = clock;
 	}
@@ -121,9 +125,38 @@ public sealed class MediaIngestor
 		original.Position = 0;
 		await _blobStore.Write(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
 
+		// Video is remuxed rather than decoded: the packets move into a fresh
+		// container and every tag and non-audiovisual track is left behind
+		// (ADR-0094). A file that cannot be remuxed into a verified derivative
+		// is kept anyway — the reporter does not lose their footage because our
+		// toolchain could not clean the container (REQ-MED-015).
+		if (verdict.Type.Kind is MediaKind.Video)
+		{
+			original.Position = 0;
+			using var remuxed = new MemoryStream();
+			var produced = await _remuxer
+				.TryRemux(original, remuxed, verdict.Type, cancellationToken)
+				.ConfigureAwait(false);
+
+			if (!produced)
+			{
+				return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
+			}
+
+			var remuxedKey = quarantineKey.In(MediaCompartment.Stripped);
+			remuxed.Position = 0;
+			await _blobStore
+				.Write(remuxedKey, remuxed, verdict.Type.ContentType, cancellationToken)
+				.ConfigureAwait(false);
+
+			return MediaIngestOutcome.Ingested(
+				verdict.Type, byteSize, sha256, originalKey, remuxedKey, _clock.GetUtcNow());
+		}
+
 		if (verdict.Type.StrippedForm is not { } derivativeType)
 		{
-			// Retained, and deliberately not viewable. See #65.
+			// A document is retained and deliberately not viewable: the original
+			// is the only record and it is never transformed.
 			return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
 		}
 

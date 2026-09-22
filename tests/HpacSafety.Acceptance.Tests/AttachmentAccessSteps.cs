@@ -41,8 +41,8 @@ public sealed class AttachmentAccessSteps
 		await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: false);
 	}
 
-	[Given(@"signature validation, decoding, metadata removal, re-encoding\/remuxing, writing, or verification fails for an attachment")]
-	public async Task GivenProcessingFailsForAnAttachment()
+	[Given(@"signature validation, decoding, metadata removal, writing, or verification fails for an image")]
+	public async Task GivenProcessingFailsForAnImage()
 	{
 		await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: true);
 	}
@@ -67,15 +67,6 @@ public sealed class AttachmentAccessSteps
 		{
 			_body = await _response.Content.ReadFromJsonAsync<AttachmentLinkPayload>();
 		}
-	}
-
-	[When(@"the Worker finishes processing it")]
-	public async Task WhenTheWorkerFinishesProcessingIt()
-	{
-		// The failure was recorded when the attachment was seeded — this
-		// scenario asserts the read-side guarantee, not the write path that
-		// records a failure, which is future outbox-processing work.
-		await WhenAnAuthorizedReviewerRequestsIt();
 	}
 
 	[Then(@"the reviewer receives a short-lived read URL to the derivative")]
@@ -113,9 +104,19 @@ public sealed class AttachmentAccessSteps
 	}
 
 	[Then(@"the file is inaccessible to any reviewer")]
-	public void ThenTheFileIsInaccessibleToAnyReviewer()
+	public async Task ThenTheFileIsInaccessibleToAnyReviewer()
 	{
+		await WhenAnAuthorizedReviewerRequestsIt();
 		_response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Then(@"a video whose remux fails is not a failure of this kind: it is retained under its own rule")]
+	public void ThenAVideoWhoseRemuxFailsIsNotAFailureOfThisKind()
+	{
+		// REQ-MED-015 (MediaValidationSteps) proves a video that cannot be
+		// remuxed is retained and accepted, never marked failed — the
+		// opposite of the image failure this scenario asserts. Nothing to
+		// exercise here; the distinction is the two scenarios' outcomes.
 	}
 
 	[Then(@"an audit entry records an attachment-viewed action naming that attachment as the target")]

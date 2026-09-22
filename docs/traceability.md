@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-264 claims across 8 areas: 172 covered by a step definition today, 92 still `@ignore`. 50 constraints.
+265 claims across 8 areas: 174 covered by a step definition today, 91 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -56,8 +56,9 @@ type: guide
 | `REQ-MED-004` | media | An accepted attachment starts in a private quarantine compartment | Reqnroll | Planned |
 | `REQ-MED-005` | media | Unreferenced quarantine blobs expire automatically | Reqnroll | Planned |
 | `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Planned |
-| `REQ-MED-007` | media | Every video is remuxed or transcoded to strip metadata | Reqnroll | Planned |
-| `REQ-MED-008` | media | A document is validated but never transformed | Reqnroll | Planned |
+| `REQ-MED-007` | media | Every video is remuxed to strip metadata, never transcoded | Reqnroll | Planned |
+| `REQ-MED-015` | media | A video that cannot be stripped is kept rather than refused | Reqnroll | Covered |
+| `REQ-MED-008` | media | A document is validated but never transformed | Reqnroll | Covered |
 | `REQ-MED-009` | media | Each attachment fails and processes independently of the report | Reqnroll | Planned |
 | `REQ-MED-010` | media | A reviewer gets a short-lived URL only for successfully processed media | Reqnroll | Planned |
 | `REQ-MED-011` | media | A reviewer downloads a validated document as an unredacted original | Reqnroll | Covered |

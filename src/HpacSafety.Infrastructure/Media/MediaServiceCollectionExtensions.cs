@@ -4,6 +4,7 @@ using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace HpacSafety.Infrastructure.Media;
@@ -36,6 +37,12 @@ public static class MediaServiceCollectionExtensions
 		services.AddSingleton(provider =>
 			new MagickNetExifStripper(provider.GetRequiredService<MediaPolicy>().AcceptedTypes));
 		services.AddSingleton<IExifStripper>(provider => provider.GetRequiredService<MagickNetExifStripper>());
+
+		// Video is remuxed rather than decoded, by ffmpeg as a child process
+		// (ADR-0094). A deployment without ffmpeg still accepts video: the
+		// remuxer reports that it produced nothing and the original is retained.
+		services.AddSingleton<IVideoRemuxer>(provider =>
+			new FfmpegVideoRemuxer(provider.GetRequiredService<ILogger<FfmpegVideoRemuxer>>()));
 
 		if (isDevelopment)
 		{

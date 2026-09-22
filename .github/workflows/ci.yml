@@ -122,6 +122,14 @@ jobs:
       # regresses. Reqnroll's xUnit generator emits a `[Trait("Category", tag)]`
       # per Gherkin tag, which is what this filters on. UiScenarioHooksTests is
       # what actually catches a removed hook, since this filter would hide it.
+      # Video derivatives are produced by remuxing through ffmpeg (ADR-0094).
+      # Installed explicitly rather than relying on the runner image happening
+      # to carry it: FfmpegVideoRemuxerTests generates its fixtures with it and
+      # would otherwise fail for a reason that has nothing to do with the change
+      # under test.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: dotnet test
         run: dotnet test HpacSafety.slnx --configuration Release --filter "Category!=ui"
 
@@ -235,6 +243,14 @@ jobs:
       # and a shared filename would make each one overwrite the last. Without
       # one, each host gets a unique name and tools/test-count.mjs reads the
       # project name back out of the trx's own `storage` attribute.
+      # Video derivatives are produced by remuxing through ffmpeg (ADR-0094).
+      # Installed explicitly rather than relying on the runner image happening
+      # to carry it: FfmpegVideoRemuxerTests generates its fixtures with it and
+      # would otherwise fail for a reason that has nothing to do with the change
+      # under test.
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
       - name: Collect .NET coverage
         run: >
           dotnet test HpacSafety.slnx

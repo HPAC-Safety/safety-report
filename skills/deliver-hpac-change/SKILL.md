@@ -8,6 +8,34 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 ## Start
 
 - Work from a focused GitHub issue.
+- When creating a new issue, check its real relationships to existing open
+  issues before filing it, and wire them in with GitHub's native issue
+  relations (`gh api graphql`; there is no `blocked` label) rather than only
+  describing them in prose:
+  - **Blocked by**: if the new issue's scope genuinely cannot be implemented
+    or verified until another open issue lands (a schema/endpoint/DTO it
+    consumes, a domain method it calls, a screen it extends), add the
+    relation with the `addBlockedBy` mutation
+    (`issueId` = the new issue, `blockingIssueId` = the prerequisite).
+    State it in the body too (`Blocked by #N — <why>`, first paragraph) so it
+    reads without opening the GitHub sidebar. Don't add a relation for a
+    soft/parallel dependency ("touches similar code," "related area") —
+    only a hard prerequisite.
+  - **Parent / sub-issue**: only when the new issue is actually a piece
+    carved out of a larger issue being split up (the larger issue's scope
+    shrinks to what's left once the new issue is filed) — use `addSubIssue`
+    to attach it to that parent. Do not create a parent/child link between
+    independently-scoped issues that merely happen to be prerequisites of
+    each other or of a checklist/capstone issue; that's a `blocked by`
+    relation, not a hierarchy — forcing one misrepresents GitHub's rollup
+    completion percentage.
+  - **Duplicate of**: if filing would duplicate an already-open issue's
+    scope instead of narrowing or splitting it, don't file a second issue —
+    either extend the existing one or, if both must exist for tracking
+    reasons, mark the new one `duplicateOf` the original.
+  - When an issue closes or a design change removes a dependency, remove the
+    now-stale relation (`removeBlockedBy`) in the same pass rather than
+    leaving it pointing at resolved work.
 - Never create work directly on a branch in the primary checkout. Fetch fresh
   `origin/main`, then create a git worktree off it at
   `.claude/worktrees/issue-<number>/<short-description>` (already gitignored),

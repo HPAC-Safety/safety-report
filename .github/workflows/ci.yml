@@ -170,6 +170,22 @@ jobs:
       - name: Every markdown file declares what it is
         run: node tools/check-frontmatter.mjs
 
+      # The matrix is generated from the claim tags and the CON ids, so a
+      # scenario added without an id, a duplicate, or a constraint naming a
+      # claim that does not exist fails here. Regenerating and diffing also
+      # catches a committed matrix that no longer matches the artifacts it
+      # summarizes - the same shape as "No drift from installing skills" and
+      # dotnet format --verify-no-changes. ADR-0084.
+      - name: The traceability matrix matches the specification
+        run: |
+          set -euo pipefail
+          node tools/traceability.mjs
+          if ! git diff --exit-code --stat -- docs/traceability.md; then
+            echo "::error file=docs/traceability.md::Out of date. Run 'node tools/traceability.mjs' and commit the result."
+            git diff -- docs/traceability.md
+            exit 1
+          fi
+
   # Cannot judge whether a change is behavioral - only a human/agent can - so
   # this only flags the specific gap issue #163 found: PR #156 added
   # Playwright coverage for the mobile hamburger nav but never added the

@@ -19,6 +19,8 @@ no malware scan (ADR-0089) — the format allowlist and sniffing are the gate.
 - Preserve a validated document original unchanged. Never parse, transform,
   anonymize, send it to AI, inline-render it, or publish it.
 
-Current main implements strong image detection/re-encoding and video container
-detection, but video derivatives and document support are not yet implemented.
-Tests use generated synthetic fixtures except the documented tiny HEIC fixture.
+Current main implements strong image detection/re-encoding, video container
+detection, and document sniffing/validation (magic number, internal package
+shape for DOCX/ODT, bounded text decoding for MD/TXT); video derivatives are
+not yet implemented. Tests use generated synthetic fixtures except the
+documented tiny HEIC fixture.

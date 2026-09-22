@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-264 claims across 8 areas: 162 covered by a step definition today, 102 still `@ignore`. 50 constraints.
+264 claims across 8 areas: 163 covered by a step definition today, 101 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -50,7 +50,7 @@ type: guide
 | `REQ-DOM-011` | domain-and-lifecycle | Soft-deleted and private data remain under managed retention | Reqnroll | Planned |
 | `REQ-DOM-012` | domain-and-lifecycle | Unreferenced quarantine objects expire without affecting reports | Reqnroll | Planned |
 | `REQ-DOM-013` | domain-and-lifecycle | An audited action is recorded in the immutable audit log | Reqnroll | Planned |
-| `REQ-MED-001` | media | Only allowlisted content types are accepted | Reqnroll | Planned |
+| `REQ-MED-001` | media | Only allowlisted content types are accepted | Reqnroll | Covered |
 | `REQ-MED-002` | media | Declared content type must agree with detected content type | Reqnroll | Planned |
 | `REQ-MED-003` | media | The client filename never leaves the HTTP boundary | Reqnroll | Planned |
 | `REQ-MED-004` | media | An accepted attachment starts in a private quarantine compartment | Reqnroll | Planned |

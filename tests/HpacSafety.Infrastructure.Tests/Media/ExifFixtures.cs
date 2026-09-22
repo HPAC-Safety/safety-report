@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using System.Text;
+using HpacSafety.Core.Features.Reporting;
 using ImageMagick;
 
 namespace HpacSafety.Infrastructure.Tests.Media;
@@ -61,10 +63,106 @@ internal static class ExifFixtures
 		return IsoBaseMediaContainer("qt  ");
 	}
 
-	/// <summary>Bytes that are not media in any format this system accepts.</summary>
+	/// <summary>
+	///     Bytes that are not an image or a video — a PDF is a document this system
+	///     now accepts (issue #310), which is exactly why this fixture is useful
+	///     where it is used: to prove an image/video-specific sniffer does not claim
+	///     something that plainly is not one.
+	/// </summary>
 	public static byte[] NotMedia()
 	{
 		return "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n"u8.ToArray();
+	}
+
+	/// <summary>
+	///     Bytes no sniffer this system runs recognises at all — not an image, video,
+	///     or document magic number, and not plausible text either (an embedded NUL
+	///     byte rules that out).
+	/// </summary>
+	public static byte[] UnrecognisedByAnySniffer()
+	{
+		return [0x00, 0xDE, 0xAD, 0xBE, 0xEF, 0x00, 0xFF, 0x00, 0x13, 0x37, 0x00, 0x00];
+	}
+
+	/// <summary>A minimal, syntactically valid PDF.</summary>
+	public static byte[] Pdf()
+	{
+		return "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n"u8.ToArray();
+	}
+
+	/// <summary>The OLE2 compound-file header a legacy <c>.doc</c> starts with.</summary>
+	public static byte[] Doc()
+	{
+		var bytes = new byte[16];
+		byte[] header = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
+		header.CopyTo(bytes.AsSpan());
+		return bytes;
+	}
+
+	/// <summary>The plainest possible RTF document.</summary>
+	public static byte[] Rtf()
+	{
+		return "{\\rtf1\\ansi Hello}"u8.ToArray();
+	}
+
+	/// <summary>A minimal OOXML package — the shape any DOCX/XLSX/PPTX shares.</summary>
+	public static byte[] Docx()
+	{
+		using var buffered = new MemoryStream();
+		using (var archive = new ZipArchive(buffered, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			var entry = archive.CreateEntry("[Content_Types].xml");
+			using var writer = new StreamWriter(entry.Open());
+			writer.Write("<?xml version=\"1.0\"?><Types/>");
+		}
+
+		return buffered.ToArray();
+	}
+
+	/// <summary>A minimal OpenDocument Text package — first entry an uncompressed <c>mimetype</c>.</summary>
+	public static byte[] Odt()
+	{
+		using var buffered = new MemoryStream();
+		using (var archive = new ZipArchive(buffered, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			var entry = archive.CreateEntry("mimetype", CompressionLevel.NoCompression);
+			using var writer = new StreamWriter(entry.Open());
+			writer.Write(MediaType.Odt.ContentType);
+		}
+
+		return buffered.ToArray();
+	}
+
+	/// <summary>A well-formed zip that is neither DOCX nor ODT — an ordinary archive.</summary>
+	public static byte[] PlainZip()
+	{
+		using var buffered = new MemoryStream();
+		using (var archive = new ZipArchive(buffered, ZipArchiveMode.Create, leaveOpen: true))
+		{
+			var entry = archive.CreateEntry("readme.txt");
+			using var writer = new StreamWriter(entry.Open());
+			writer.Write("not a document package");
+		}
+
+		return buffered.ToArray();
+	}
+
+	/// <summary>Bytes that claim the zip magic number but are not a valid archive.</summary>
+	public static byte[] MalformedZip()
+	{
+		return [0x50, 0x4B, 0x03, 0x04, 0x00, 0x00, 0x00, 0x00];
+	}
+
+	/// <summary>Plausible plain-text bytes — ordinary prose, the shape Markdown and TXT share.</summary>
+	public static byte[] PlainText()
+	{
+		return "Line one\nLine two\r\nTab\there.\n"u8.ToArray();
+	}
+
+	/// <summary>Binary garbage that must never be mistaken for text — an embedded NUL byte.</summary>
+	public static byte[] BinaryGarbage()
+	{
+		return [0x41, 0x42, 0x00, 0x43, 0x44, 0x01, 0x02, 0x03];
 	}
 
 	private static ExifProfile GpsProfile()

@@ -8,10 +8,9 @@ Background:
   And each file is limited to 50 MB
 
 @REQ-MED-001
-@ignore
 Scenario Outline: Only allowlisted content types are accepted
   Given an attachment part has detected content type <mime>
-  When the API validates it
+  When the API validates the attachment's content type
   Then the attachment is accepted as an allowlisted <kind>
 
 Examples:
@@ -78,7 +77,6 @@ Scenario: Every video is remuxed or transcoded to strip metadata
   And a byte-for-byte copy of the original video is never used as the derivative
 
 @REQ-MED-008
-@ignore
 Scenario: A document is validated but never transformed
   Given an accepted document attachment enters Worker processing
   When the Worker processes it

@@ -35,10 +35,11 @@ public class MediaTypeTests
 	}
 
 	[Theory]
-	[InlineData("application/pdf")]
+	[InlineData("application/pdf-fake")]
 	[InlineData("image/svg+xml")]
 	[InlineData("image/gif")]
 	[InlineData("video/x-matroska")]
+	[InlineData("application/zip")]
 	[InlineData("")]
 	[InlineData(null)]
 	public void GivenContentTypeThisSystemDoesNotAccept_WhenParsed_ThenRefused(string? declared)
@@ -124,7 +125,7 @@ public class MediaTypeTests
 	}
 
 	[Fact]
-	public void GivenAcceptedSet_WhenRead_ThenEveryMemberIsImageOrVideo()
+	public void GivenAcceptedSet_WhenRead_ThenEveryMemberIsImageVideoOrDocument()
 	{
 		// Given / When
 		var all = MediaType.All;
@@ -133,7 +134,44 @@ public class MediaTypeTests
 		all.ShouldContain(MediaType.Jpeg);
 		all.ShouldContain(MediaType.Heic);
 		all.ShouldContain(MediaType.Mp4);
-		all.ShouldAllBe(t => t.ContentType.StartsWith("image/", StringComparison.Ordinal)
-							 || t.ContentType.StartsWith("video/", StringComparison.Ordinal));
+		all.ShouldContain(MediaType.Pdf);
+		all.ShouldAllBe(t => t.Kind == MediaKind.Image || t.Kind == MediaKind.Video || t.Kind == MediaKind.Document);
+	}
+
+	[Theory]
+	[InlineData("application/pdf", MediaKind.Document)]
+	[InlineData("application/msword", MediaKind.Document)]
+	[InlineData("application/vnd.openxmlformats-officedocument.wordprocessingml.document", MediaKind.Document)]
+	[InlineData("application/rtf", MediaKind.Document)]
+	[InlineData("text/plain", MediaKind.Document)]
+	[InlineData("application/vnd.oasis.opendocument.text", MediaKind.Document)]
+	public void GivenADocumentContentType_WhenParsed_ThenAcceptedAsDocument(string declared, MediaKind kind)
+	{
+		// Given / When
+		var parsed = MediaType.TryParse(declared, out var type);
+
+		// Then
+		parsed.ShouldBeTrue();
+		type.Kind.ShouldBe(kind);
+		type.StrippedForm.ShouldBeNull();
+		type.CanBeStripped.ShouldBeFalse();
+	}
+
+	[Theory]
+	[InlineData("text/rtf", "application/rtf")]
+	[InlineData("text/markdown", "text/plain")]
+	public void GivenAnAliasContentType_WhenParsed_ThenResolvesToTheCanonicalType(string alias, string canonical)
+	{
+		// Given — a format with more than one real-world MIME declaration for the
+		// same bytes; a sniffer only ever sees bytes, so it reports one canonical
+		// answer regardless of which alias a client declared
+		var expected = MediaType.Parse(canonical);
+
+		// When
+		var parsed = MediaType.TryParse(alias, out var type);
+
+		// Then
+		parsed.ShouldBeTrue();
+		type.ShouldBe(expected);
 	}
 }

@@ -113,6 +113,29 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
+	public async Task GivenDocument_WhenIngested_ThenRetainedUnchangedWithNoDerivative()
+	{
+		// Given
+		var store = new InMemoryBlobStore();
+		var content = Encoding.ASCII.GetBytes("pretend-pdf-bytes");
+		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "report.pdf");
+		store.Seed(quarantined, content);
+		var stripper = new RecordingExifStripper();
+
+		// When
+		var outcome = await Ingestor(store, MediaType.Pdf, stripper).IngestAsync(quarantined, "application/pdf", CancellationToken.None);
+
+		// Then
+		// A document has no derivative at all — it is validated and kept
+		// private, byte-for-byte, as the reporter-supplied original. See #310.
+		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
+		outcome.IsAccepted.ShouldBeTrue();
+		outcome.IsViewable.ShouldBeFalse();
+		store.Read(outcome.OriginalKey).ShouldBe(content);
+		stripper.Invocations.ShouldBe(0);
+	}
+
+	[Fact]
 	public async Task GivenFileClaimingImageJpegButContainingPng_WhenIngested_ThenRejected()
 	{
 		// Given

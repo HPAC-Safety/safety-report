@@ -92,6 +92,14 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   same PR that implements the behavior.
 - Component READMEs describe their scope and current implementation status
   without duplicating the specification.
+- Each `features/<area>/README.md` records what **not** to build in that area,
+  and a change that draws a new boundary writes it there rather than only in
+  the pull request that argued about it.
+- A bug fix that reveals a specification gap writes a lesson under
+  [`docs/lessons/`](../../docs/lessons/README.md) in the same pull request —
+  symptom, root cause, spec delta, and the claim that now proves it
+  ([ADR-0085](../../docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+  A fix that reveals nothing does not.
 - ADRs are historical rationale, one per durable architectural decision
   (technology choice, rejected alternative, durable trade-off). This is
   mandatory, not discretionary — if a change makes such a decision, add the ADR

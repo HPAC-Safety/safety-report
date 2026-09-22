@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
@@ -7,8 +7,7 @@ keywords: lessons, bug fixes, specification drift, postmortem, docs/lessons
 
 # ADR-0085 — A lesson flows upstream into the specification
 
-**Status:** Proposed. Accepted when [#289](https://github.com/HPAC-Safety/safety-report/issues/289)
-lands and `docs/lessons/` exists.
+**Status:** Accepted
 
 ## Context
 

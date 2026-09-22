@@ -45,6 +45,8 @@ Thumbs.db
 
 # Graphify tooling and output are clone-local.
 /graphify-out/
+# Written by `./init-dev.sh --obsidian` from the graph — regenerated, never committed.
+/obsidian-vault/
 /.graphify-tool/
 /.graphify-version
 /.graphify-agent

@@ -16,6 +16,11 @@ cd safety-report
 Use `./init-dev.sh --check` to inspect prerequisites without installing. Windows
 contributors run the script from Git Bash.
 
+`./init-dev.sh --obsidian` additionally renders the graphify knowledge graph
+into `obsidian-vault/` — notes plus a canvas, openable as an Obsidian vault.
+It is opt-in, clone-local, gitignored, and rebuilt from the graph on each run
+with the flag; nothing else in the repository reads it.
+
 ## Workflow
 
 1. Find or open a focused issue.

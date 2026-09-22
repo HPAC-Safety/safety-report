@@ -4,8 +4,9 @@
 #
 # One file, POSIX sh, invoked the same way on every platform:
 #
-#     ./init-dev.sh            install whatever is missing
-#     ./init-dev.sh --check    report only; install nothing
+#     ./init-dev.sh             install whatever is missing
+#     ./init-dev.sh --check     report only; install nothing
+#     ./init-dev.sh --obsidian  also hydrate obsidian-vault/ from the graphify graph
 #     ./init-dev.sh --help
 #
 # macOS and Linux run it natively. Windows runs it under Git Bash, which every
@@ -68,16 +69,18 @@ die() { printf '%serror:%s %s\n' "$C_BAD" "$C_OFF" "$*" >&2; exit 1; }
 have() { command -v "$1" >/dev/null 2>&1; }
 
 usage() {
-	sed -n '3,27p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,28p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit 0
 }
 
 # ------------------------------------------------------------------- options --
 
 CHECK_ONLY=0
+OBSIDIAN=0
 for arg in "$@"; do
 	case "$arg" in
 		--check) CHECK_ONLY=1 ;;
+		--obsidian) OBSIDIAN=1 ;;
 		-h|--help) usage ;;
 		*) die "unknown option: $arg (try --help)" ;;
 	esac
@@ -502,12 +505,13 @@ fi
 heading "graphify (optional)"
 
 GRAPHIFY_AGENT_FILE="$REPO_ROOT/.graphify-agent"
+OBSIDIAN_VAULT="$REPO_ROOT/obsidian-vault"
 
 if have graphify; then
 	ok "graphify is installed"
 
 	if [ "$CHECK_ONLY" -eq 1 ]; then
-		note "skipped: --check does not build the graph, install a git hook, install extraction extras, or register an agent"
+		note "skipped: --check does not build the graph, hydrate an Obsidian vault, install a git hook, install extraction extras, or register an agent"
 	else
 		# This repository has Terraform (see manage-hpac-infrastructure), and
 		# extracting .tf/.hcl/.tfvars needs tree-sitter-hcl, an optional extra
@@ -555,6 +559,31 @@ if have graphify; then
 			note "graphify extract failed — install the claude CLI, or set an LLM backend API key (see: graphify extract --help)"
 		fi
 
+		# An Obsidian vault is opt-in, built only under --obsidian. `graphify
+		# export obsidian` renders graph.json as notes plus a canvas — no LLM
+		# call, no network — so it is cheap and safe to re-run, and it rewrites
+		# the vault from the graph this run just refreshed. It is written to
+		# obsidian-vault/ at the repository root rather than the default
+		# graphify-out/obsidian so the vault can be opened in Obsidian directly,
+		# without it also indexing the graph artifacts sitting beside it. Both
+		# paths are gitignored. The post-commit and post-checkout hooks are
+		# `graphify hook install` output and are not hand-edited, so a later
+		# commit refreshes the graph but not the vault — re-run
+		# ./init-dev.sh --obsidian for that.
+		if [ "$OBSIDIAN" -eq 1 ]; then
+			GRAPHIFY_HAD_VAULT=0
+			[ -d "$OBSIDIAN_VAULT" ] && GRAPHIFY_HAD_VAULT=1
+			if graphify export obsidian --dir "$OBSIDIAN_VAULT" >/dev/null 2>&1; then
+				if [ "$GRAPHIFY_HAD_VAULT" -eq 1 ]; then
+					ok "obsidian vault refreshed (obsidian-vault/)"
+				else
+					added "obsidian vault hydrated (obsidian-vault/)"
+				fi
+			else
+				note "graphify export obsidian failed — run it directly to see why"
+			fi
+		fi
+
 		GRAPHIFY_PLATFORM=''
 		if [ -s "$GRAPHIFY_AGENT_FILE" ]; then
 			GRAPHIFY_PLATFORM=$(cat "$GRAPHIFY_AGENT_FILE")
@@ -600,6 +629,9 @@ if have graphify; then
 	fi
 else
 	note "graphify is not installed — install with: uv tool install --upgrade graphifyy -q (or: python3 -m pip install graphifyy -q)"
+	if [ "$OBSIDIAN" -eq 1 ]; then
+		note "skipped: --obsidian needs graphify, which builds the vault from the graph"
+	fi
 fi
 
 # ------------------------------------------------------- repository restore ---

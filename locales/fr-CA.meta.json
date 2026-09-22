@@ -659,6 +659,24 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.field.groupedUnder": {
+    "source_hash": "2477f21026d3d0e9b1548b19bcfa7e3e457795fd48cb4a4438ff0c52e77307d7",
+    "target_hash": "cc99b8467caa092153ec4d7199b667a3a268719a226c365afb6694c79bab9a1e",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.field.groupedUnderHelp": {
+    "source_hash": "41edb364f3a9d3913c1c6f7350a09b8d3a8502d6c3791438ef42c965cb86f4f1",
+    "target_hash": "39c290433156361cbb7edc8ce67f210c8910bb629d17a7383fc8e5678b7d351b",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.field.groupedUnderNone": {
+    "source_hash": "c5e7c4079977c23f7091088b2032eeed98013398b658a2f1ab11a41e87b25389",
+    "target_hash": "ce488aaacd0a3ef154bcec52f291aa842b0c402fda2604708926188eed69e108",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "questions.field.helpEn": {
     "source_hash": "4659379da8ef66ccc602c5a3f1beecfd19b2a375493747211129e9707e94085b",
     "target_hash": "bbcc1302e471034917d32714e11586024f5c397113688cc6f2a85b04d66906e9",
@@ -770,6 +788,12 @@
   "questions.forkWarning": {
     "source_hash": "946c8d02b6ca671ec537b0bfa843d15288b0897e55839532feecd1112be67b31",
     "target_hash": "1a8db559cc1019b1ea862c4d3485b7aab81cf99b35ca254c52f7f77daaddfff5",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.groupedUnderSummary": {
+    "source_hash": "7f37e147a44eb9f651f707dd0ab0ed4818b1b8708a0ab6015e597227bc196753",
+    "target_hash": "a1d96468ce21d2670337f2d21b62acc18d04fa63d5217e93a26b141288fa81ab",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
@@ -917,6 +941,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.type.group": {
+    "source_hash": "7ae41e8e786b7289454f40b28570246e5ee7880e043e4b2b8e48246552116f20",
+    "target_hash": "1b8a777e2c7b368977feba29a246efdfaf84d9cee8dfe7a44aca806b9e25880a",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "questions.type.long_text": {
     "source_hash": "aa3aef934cddd77eb47c9eacf8ec3c4ee4503e5cc1d7dec40e2b1b09b7032290",
     "target_hash": "09451346a897b3b9bd5a307b9ecadab96349b977b304e94d8b26dba1c06fff10",
@@ -950,6 +980,12 @@
   "questions.type.single_select": {
     "source_hash": "a880a59db4d3a8cc078941a6200f3491f2354673f83ee7528af6b535247d39b4",
     "target_hash": "03c2209043223fe516ccc555033c9370238a9f4e7fe524bc1fb3bc551425a9d6",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.type.statement": {
+    "source_hash": "d5f30ad0270ee3f42f628cc81618146cd29f20a4aa21c58f55ae88cc91b49834",
+    "target_hash": "a1710537f81645d6e3da86f129063bfdd8e22d02cf1ca5da9015dfe4f9499772",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

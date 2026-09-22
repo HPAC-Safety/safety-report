@@ -17,6 +17,10 @@
         <ProjectReference Include="..\..\src\HpacSafety.Worker\HpacSafety.Worker.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <None Include="..\..\src\HpacSafety.Worker\Prompts\**\*.md" LinkBase="Prompts" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
     <PropertyGroup>
         <IsPackable>false</IsPackable>
     </PropertyGroup>

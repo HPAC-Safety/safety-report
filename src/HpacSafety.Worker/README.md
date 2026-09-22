@@ -9,7 +9,10 @@ outside the report request.
 - Query exact revision-bound answers, partition answered values into eligible
   `report_content` and recognition-only `private_context`, and exclude consent
   and all attachments.
-- Load one current prompt from [`Prompts/`](Prompts/), make exactly one model
+- Before building the prompt, deterministically mark any exact or token-level
+  occurrence of a private value found in `report_content` (see
+  [ADR-0081](../../docs/decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+  Load one current prompt from [`Prompts/`](Prompts/), make exactly one model
   call, validate strict English/French JSON, and persist one pair row with
   shared provenance.
 - Process each attachment independently: safe image/video derivative or
@@ -17,7 +20,8 @@ outside the report request.
 - Retry within a bounded budget; expose terminal summary failure for manual
   bilingual entry and alert on failed/stuck work.
 
-There is no separate PII audit, runtime translation, deterministic scrub,
+There is no separate PII audit, runtime translation, general-purpose
+deterministic scrub beyond the narrow private-value marking pass above,
 specialized aircraft processing, notification email, or extra model repair
 stage. Documents never enter model input.
 

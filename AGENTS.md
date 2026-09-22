@@ -65,9 +65,14 @@ privacy-sensitive.
    API stores the report, exact question revisions, answers, files, and outbox
    work atomically, then returns `202` without making a model call.
 3. The Worker owns one versioned prompt and makes exactly one model call per
-   summary attempt. `report_content` supplies eligible facts; labeled
-   `private_context` may only help recognize identifying text. The response is
-   one strict English/French summary pair.
+   summary attempt. Before that call, a deterministic marking pass replaces
+   any exact or token-level occurrence of a private answer's value found in
+   `report_content` with a `[PRIVATE:<question-key>]` marker
+   ([ADR-0081](docs/decisions/ADR-0081-a-deterministic-marking-pass-precedes-the-one-model-call.md));
+   `report_content` supplies eligible facts, and labeled `private_context`
+   (still sent in full) may only help recognize identifying text the marking
+   pass did not catch. The response is one strict English/French summary
+   pair.
 4. Replace a private person's complete identity with a role. A pilot's name
    repeated in eligible narrative becomes exactly “the pilot” / “le pilote,”
    with no name fragment remaining. Private-only facts never become summary
@@ -101,7 +106,8 @@ privacy-sensitive.
    `DROP TABLE` needs its own argument on its own facts
    ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 
-There is no deterministic scrubber, separate PII auditor, report translator,
+There is no deterministic scrubber beyond the narrow private-value marking
+pass in item 3 above, no separate PII auditor, no report translator,
 specialized aircraft processing, outbound email flow, pre-submit
 upload session, speculative publication channel, user table, allowlist,
 credential proxy, CSRF machinery, or Turnstile verification. The one carved

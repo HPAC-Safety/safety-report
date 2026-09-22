@@ -1,10 +1,16 @@
+using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Infrastructure.AiChatClient;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Worker;
+using HpacSafety.Worker.Summarization;
 using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
+builder.Services.Configure<AiChatClientOptions>(builder.Configuration.GetSection(AiChatClientOptions.SectionName));
+builder.Services.AddHpacSafetyAiChatClient();
+builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

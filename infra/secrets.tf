@@ -6,7 +6,7 @@
 # in once:
 #
 #   aws secretsmanager put-secret-value \
-#     --secret-id hpac-safety/anthropic-api-key \
+#     --secret-id hpac-safety/connection-string \
 #     --secret-string '…'
 #
 # There is deliberately no `aws_secretsmanager_secret_version` resource anywhere
@@ -22,10 +22,6 @@ locals {
   # Description is the whole documentation surface an operator sees in the
   # console, so it says what the value is and who reads it.
   secret_entries = {
-    anthropic_api_key = {
-      name        = "${local.name}/anthropic-api-key"
-      description = "Anthropic API key. Read by the Worker for summarize, PII audit, and translate."
-    }
     connection_string = {
       name        = "${local.name}/connection-string"
       description = "ConnectionStrings__Default. Built from the RDS endpoint and the RDS-managed master password secret; not derivable by Terraform without putting the password in state."

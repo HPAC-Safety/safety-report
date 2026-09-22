@@ -4,7 +4,7 @@ name: CI
 # `pull_request` and NEVER `pull_request_target` — the latter would run
 # fork-authored code with a write token and repository secrets in scope.
 #
-# No job below reads a secret. Anything that needs one (the Anthropic client,
+# No job below reads a secret. Anything that needs one (the Gemini client,
 # for instance) runs against recorded fixtures instead. Keep it that way.
 on:
   push:

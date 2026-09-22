@@ -44,9 +44,19 @@ jobs:
   # Secrets:   AWS_DEPLOY_ROLE_ARN
   # Variables: AWS_REGION, ECR_REPOSITORY_WORKER, ECS_CLUSTER, ECS_SERVICE_WORKER
   #
-  # ANTHROPIC_API_KEY lives in AWS Secrets Manager and is injected into the task
-  # definition. The Worker is the only component that holds it. It is never a
-  # GitHub secret.
+  # Gemini__ApiKey is the second documented exception to "runtime secrets live
+  # only in AWS Secrets Manager" — see deploy-api.yml's Translation__ApiKey /
+  # DEEPL_API_KEY comment for the first. GEMINI_API_KEY_PROD is a repository
+  # secret rather than a Secrets Manager entry, by the same reasoning: it is
+  # the Worker's only credential, and duplicating it into Secrets Manager buys
+  # nothing an operator cannot already get from GitHub's own secret store.
+  # When the service roll below is implemented (#30), pass it into the task
+  # definition as:
+  #
+  #   Gemini__ApiKey = ${{ secrets.GEMINI_API_KEY_PROD }}
+  #
+  # GEMINI_API_KEY_DEV is the local-development counterpart — see
+  # docker-compose.yml — not consumed by this workflow.
   preflight:
     # Three conditions, not one. `branches: [main]` above filters on the
     # triggering run's head_branch, and a pull_request-triggered CI run reports

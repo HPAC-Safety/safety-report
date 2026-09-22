@@ -151,7 +151,9 @@ resource "aws_ecs_service" "api" {
 # --------------------------------------------------------------------------
 #
 # No load balancer, no ingress, no public IP. It claims outbox rows FOR UPDATE
-# SKIP LOCKED and calls out to Anthropic. See ADR-0002 and ADR-0003.
+# SKIP LOCKED and calls out to Gemini. Gemini__ApiKey is injected directly by
+# the deploy workflow from the GEMINI_API_KEY_PROD repository secret rather
+# than through this file — see deploy-worker.yml.
 
 resource "aws_ecs_task_definition" "worker" {
   family                   = "${local.name}-worker"
@@ -179,10 +181,6 @@ resource "aws_ecs_task_definition" "worker" {
       ])
 
       secrets = concat(local.common_secrets, [
-        {
-          name      = "Anthropic__ApiKey"
-          valueFrom = aws_secretsmanager_secret.this["anthropic_api_key"].arn
-        },
         {
           name      = "Notifications__To"
           valueFrom = aws_secretsmanager_secret.this["notifications_to"].arn

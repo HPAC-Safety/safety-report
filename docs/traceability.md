@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-248 claims across 8 areas: 133 covered by a step definition today, 115 still `@ignore`. 50 constraints.
+251 claims across 8 areas: 136 covered by a step definition today, 115 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -201,6 +201,9 @@ type: guide
 | `REQ-SUB-005` | report-submission | A skipped answer is represented by an empty value, not omission | Reqnroll | Covered |
 | `REQ-SUB-006` | report-submission | A submitted select value must be one the revision offered | Reqnroll | Covered |
 | `REQ-SUB-007` | report-submission | The submission path never calls a translation provider | Reqnroll | Covered |
+| `REQ-SUB-025` | report-submission | Every answer's value and locale are immutable once submitted | Reqnroll | Covered |
+| `REQ-SUB-026` | report-submission | The Worker mechanically translates every answer into its second language | Reqnroll | Covered |
+| `REQ-SUB-027` | report-submission | An administrator's correction always wins over the Worker's translation | Reqnroll | Covered |
 | `REQ-SUB-008` | report-submission | The API rejects a malformed submission DTO | Reqnroll | Covered |
 | `REQ-SUB-009` | report-submission | A submission may answer a known superseded revision | Reqnroll | Covered |
 | `REQ-SUB-010` | report-submission | A revision that was never shown as answer-producing is rejectable | Reqnroll | Planned |

@@ -66,11 +66,13 @@ Scenario: The submission path never calls a translation provider
   Then no translation provider is called
   And the answers are stored in the language the reporter gave them in, with no translation yet
 
+@REQ-SUB-025
 Scenario: Every answer's value and locale are immutable once submitted
   Given a report has been submitted
   Then no endpoint ever changes an answer's value or the locale it was given in
   And this holds for every answer type, not only select-shaped ones
 
+@REQ-SUB-026
 Scenario: The Worker mechanically translates every answer into its second language
   Given a submitted report has answers with values in one locale
   When the Worker claims that report's translation outbox message
@@ -78,6 +80,7 @@ Scenario: The Worker mechanically translates every answer into its second langua
   And it writes each answer's translated value and marks the translation source "auto"
   And a skipped answer, with no value, is never sent to the translator
 
+@REQ-SUB-027
 Scenario: An administrator's correction always wins over the Worker's translation
   Given an answer already has a translation the Worker supplied automatically
   When an administrator supplies or corrects that answer's translated value

@@ -346,6 +346,80 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
+	// ------------------------------------- multi-select reporter additions (ADR-0077) --
+
+	[Fact]
+	public async Task GivenMultiSelectWithSharedList_WhenAuthoredWithReporterAdditions_ThenFlagIsStored()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var set = await CreateOptionSetAsync(client, UniqueKey("ratings"));
+
+		// When
+		var created = await CreateAsync(
+			client,
+			Draft(UniqueKey("ratings"), "multi_select") with
+			{
+				OptionSetId = set.GetProperty("id").GetString(),
+				AllowsReporterAdditions = true
+			});
+
+		// Then
+		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeTrue();
+		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeTrue();
+	}
+
+	[Fact]
+	public async Task GivenMultiSelect_WhenAuthoredWithoutReporterAdditions_ThenDefaultsToClosed()
+	{
+		// Given
+		using var client = await SignedInAsync();
+		var set = await CreateOptionSetAsync(client, UniqueKey("ratings"));
+
+		// When
+		var created = await CreateAsync(
+			client, Draft(UniqueKey("ratings"), "multi_select") with { OptionSetId = set.GetProperty("id").GetString() });
+
+		// Then
+		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeFalse();
+		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeFalse();
+	}
+
+	[Fact]
+	public async Task GivenSingleSelect_WhenAuthoredWithReporterAdditions_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedInAsync();
+
+		// When
+		using var response = await client.PostAsJsonAsync(
+			Questions,
+			Draft(UniqueKey("pilot_type"), "single_select") with
+			{
+				AllowsReporterAdditions = true,
+				Options = [new Option("hang_glider", "Hang glider", "Deltaplane")]
+			});
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("cannot allow reporter additions");
+	}
+
+	[Fact]
+	public async Task GivenAutocomplete_WhenAuthoredWithoutReporterAdditions_ThenAlwaysStoredOn()
+	{
+		// Given
+		using var client = await SignedInAsync();
+
+		// When — the flag is redundant for autocomplete; the type alone decides
+		var created = await CreateAsync(client, Draft(UniqueKey("launch_site"), "autocomplete"));
+
+		// Then
+		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeTrue();
+	}
+
 	[Fact]
 	public async Task GivenSharedChoiceList_WhenQuestionUses_ThenRevisionSnapshotsOptions()
 	{
@@ -878,7 +952,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	private static SaveQuestion Draft(string key, string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
-			false, true, true, null, null, null, null, []);
+			false, true, true, null, null, null, null, false, []);
 	}
 
 	private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
@@ -925,6 +999,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		string? DependsOnOptionCode,
 		string? OptionSetId,
 		string? GroupedUnderQuestionId,
+		bool AllowsReporterAdditions,
 		IReadOnlyList<Option> Options);
 
 	private sealed record Reorder(IReadOnlyList<string> QuestionIdsInOrder);

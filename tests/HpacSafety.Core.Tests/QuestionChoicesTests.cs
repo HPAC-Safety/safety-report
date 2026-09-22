@@ -19,11 +19,13 @@ public class QuestionChoicesTests
 		return set;
 	}
 
-	private static Question BackedBy(OptionSet set, QuestionType type = QuestionType.Autocomplete)
+	private static Question BackedBy(
+		OptionSet set, QuestionType type = QuestionType.Autocomplete, bool allowsReporterAdditions = false)
 	{
 		return Question.Create(
 			"where_did_this_happen", type, "Where did this happen?", "Où cela s'est-il produit ?", At,
-			isActive: true, optionSetId: set.Id, options: set.AsRevisionOptions());
+			isActive: true, optionSetId: set.Id, allowsReporterAdditions: allowsReporterAdditions,
+			options: set.AsRevisionOptions());
 	}
 
 	[Fact]
@@ -76,6 +78,103 @@ public class QuestionChoicesTests
 		QuestionChoices.For(question.CurrentRevision, set)
 			.Select(option => option.Code)
 			.ShouldBe(["coopers", "woodside"]);
+	}
+
+	// ------------------------------------------------ AllowsReporterAdditions (ADR-0077) --
+
+	[Fact]
+	public void GivenAutocomplete_WhenCreatedWithFlagFalse_ThenAlwaysAllowsAdditionsAnyway()
+	{
+		// Given / When — the caller's value is irrelevant; autocomplete is
+		// always on, matching its pre-flag behaviour exactly.
+		var question = Question.Create(
+			"launch_site", QuestionType.Autocomplete, "Where from?", "D'où ?", At, isActive: true,
+			allowsReporterAdditions: false);
+
+		// Then
+		question.AllowsReporterAdditions.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenMultiSelect_WhenCreatedWithNoFlag_ThenDefaultsToClosed()
+	{
+		// Given / When
+		var question = Question.Create(
+			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isActive: true,
+			options: [new QuestionOptionInput("p3", "P3", "P3")]);
+
+		// Then
+		question.AllowsReporterAdditions.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenMultiSelect_WhenAuthoredWithFlagTrue_ThenAllowsAdditions()
+	{
+		// Given / When
+		var question = Question.Create(
+			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isActive: true,
+			allowsReporterAdditions: true, options: [new QuestionOptionInput("p3", "P3", "P3")]);
+
+		// Then
+		question.AllowsReporterAdditions.ShouldBeTrue();
+	}
+
+	[Theory]
+	[InlineData(QuestionType.SingleSelect)]
+	[InlineData(QuestionType.YesNo)]
+	[InlineData(QuestionType.ShortText)]
+	public void GivenTypeOtherThanAutocompleteOrMultiSelect_WhenFlagIsTrue_ThenRejected(QuestionType type)
+	{
+		// Given / When / Then
+		Should.Throw<DomainRuleViolationException>(() => Question.Create(
+			"authored", type, "A question", "Une question", At, isActive: true, allowsReporterAdditions: true));
+	}
+
+	[Fact]
+	public void GivenFlaggedMultiSelect_WhenSharedListGrows_ThenOffersNewChoice()
+	{
+		// Given
+		var set = Sites();
+		var question = BackedBy(set, QuestionType.MultiSelect, allowsReporterAdditions: true);
+
+		// When
+		set.Add("mount_7", "Mount 7", "Mont 7");
+
+		// Then — exactly like an autocomplete, once the flag is on
+		QuestionChoices.RendersLiveSet(question.CurrentRevision, set).ShouldBeTrue();
+		QuestionChoices.For(question.CurrentRevision, set)
+			.Select(option => option.Code)
+			.ShouldBe(["coopers", "woodside", "mount_7"]);
+	}
+
+	[Fact]
+	public void GivenUnflaggedMultiSelect_WhenSharedListGrows_ThenStillRendersSnapshot()
+	{
+		// Given — the default: an ordinary multi-select stays closed
+		var set = Sites();
+		var question = BackedBy(set, QuestionType.MultiSelect);
+
+		// When
+		set.Add("mount_7", "Mount 7", "Mont 7");
+
+		// Then
+		QuestionChoices.RendersLiveSet(question.CurrentRevision, set).ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenMultiSelect_WhenReporterAdditionsAreTurnedOn_ThenNewRevisionRecords()
+	{
+		// Given
+		var question = Question.Create(
+			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isActive: true,
+			options: [new QuestionOptionInput("p3", "P3", "P3")]);
+
+		// When
+		question.AllowReporterAdditions(true, At.AddHours(1));
+
+		// Then
+		question.AllowsReporterAdditions.ShouldBeTrue();
+		question.CurrentRevision.RevisionNumber.ShouldBe(2);
 	}
 
 	[Fact]

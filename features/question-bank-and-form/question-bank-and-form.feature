@@ -285,7 +285,6 @@ Scenario: A retired shared list leaves a type-ahead showing what it recorded
   When that shared list is retired entirely
   Then the question still offers the choices its revision recorded
 
-@ignore
 Scenario: A multi-select may allow reporter additions the same way a type-ahead does
   Given an Administrator authors a multi-select question backed by a shared choice list
   When they enable reporter additions on it

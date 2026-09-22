@@ -195,6 +195,45 @@ public sealed class QuestionBankSteps
 		_snapshotted!.Option("lumby")!.LabelEn.ShouldBe("Lumby");
 	}
 
+	// ---------------------------------------- multi-select reporter additions (ADR-0077) --
+
+	[Given(@"an Administrator authors a multi-select question backed by a shared choice list")]
+	public void GivenAMultiSelectQuestionBackedByASharedList()
+	{
+		_optionSet = OptionSet.Create("ratings", "Pilot ratings", "Qualifications du pilote", Noon);
+		_optionSet.Add("p3", "P3", "P3");
+
+		_question = Question.Create(
+			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", Noon,
+			isActive: true, optionSetId: _optionSet.Id, options: _optionSet.AsRevisionOptions());
+	}
+
+	[When(@"they enable reporter additions on it")]
+	public void WhenReporterAdditionsAreEnabled()
+	{
+		_question!.AllowReporterAdditions(true, Noon.AddHours(1));
+	}
+
+	[Then(@"the question offers the live list the same way a type-ahead does")]
+	public void ThenTheQuestionOffersTheLiveList()
+	{
+		_optionSet!.Add("p4", "P4", "P4");
+
+		QuestionChoices.RendersLiveSet(_question!.CurrentRevision, _optionSet).ShouldBeTrue();
+		QuestionChoices.For(_question.CurrentRevision, _optionSet)
+			.Select(option => option.Code)
+			.ShouldContain("p4");
+	}
+
+	[Then(@"a single-select question offers no such control")]
+	public void ThenASingleSelectQuestionOffersNoSuchControl()
+	{
+		Should.Throw<DomainRuleViolationException>(() => Question.Create(
+			"pilot_type", QuestionType.SingleSelect, "Pilot type", "Type de pilote", Noon,
+			allowsReporterAdditions: true,
+			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")]));
+	}
+
 	// ------------------------------------------------- conditional questions --
 
 	[Given(@"an active question asks for something other than yes\/no or single-select")]

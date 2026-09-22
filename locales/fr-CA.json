@@ -209,8 +209,8 @@
       }
     },
     "export": {
-      "action": "#Export to Typeform JSON",
-      "working": "#Exporting…"
+      "action": "Exporter vers Typeform au format JSON",
+      "working": "Exportation en cours…"
     }
   },
   "choiceLists": {

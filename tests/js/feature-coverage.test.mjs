@@ -166,6 +166,13 @@ describe('main', () => {
 		assert.match(errors, /REQ-SUB-999 is not a claim/)
 	})
 
+	it('tells a malformed exemption that it is malformed, not that it is missing', () => {
+		const { code, output } = runMain({ changed: ['src/a.cs'], features: [], body: 'No .feature scenario needed: refactor' })
+
+		assert.equal(code, 1)
+		assert.match(output.error.join('\n'), /not in the required shape/)
+	})
+
 	it('tells a bare behavior change to write the scenario', () => {
 		const { code, output } = runMain({ changed: ['src/a.cs'], features: [], body: '' })
 

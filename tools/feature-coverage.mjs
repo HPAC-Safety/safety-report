@@ -34,6 +34,11 @@ export const CATEGORIES = {
 }
 
 const EXEMPTION = /^No `?\.feature`? scenario needed:\s*([a-z-]+)\s*[—-]\s*(.+)$/im
+// A body that reaches for the exemption without its shape — the old one-line
+// form, or a category with no reason. Reported as a malformed exemption rather
+// than as no exemption at all, so the author fixes the line they wrote instead
+// of wondering why the one they wrote was ignored.
+const ATTEMPTED = /^No `?\.feature`? scenario needed:/im
 const PRESERVED = /^Claims preserved:\s*(.+)$/im
 const CLAIM = /REQ-[A-Z]+-\d{3}/g
 
@@ -130,7 +135,12 @@ export function judge({ changed, features, body, knownClaims }) {
 	if (features.length > 0) return { ok: true, note: `Scenarios changed alongside: ${features.join(', ')}.` }
 
 	const exemption = parseExemption(body)
-	if (!exemption) return { ok: false, changed, problems: [] }
+	if (!exemption) {
+		const malformed = ATTEMPTED.test(body)
+			? ['The exemption line is not in the required shape: "No .feature scenario needed: <category> — <reason>", with a "Claims preserved:" line naming real claim ids.']
+			: []
+		return { ok: false, changed, problems: malformed }
+	}
 
 	const problems = rejectExemption(exemption, changed, knownClaims)
 	if (problems.length > 0) return { ok: false, changed, exemption, problems }

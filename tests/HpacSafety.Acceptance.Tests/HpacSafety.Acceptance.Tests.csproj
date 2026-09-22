@@ -22,6 +22,9 @@
              which means loading the API assembly and reading its metadata. -->
         <ProjectReference Include="../../src/HpacSafety.Api/HpacSafety.Api.csproj" />
         <ProjectReference Include="../../src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj" />
+        <!-- The summarization-outbox scenarios run SummarizeReportProcessor and
+             OutboxClaimer directly against a real database — see WorkerDatabase. -->
+        <ProjectReference Include="../../src/HpacSafety.Worker/HpacSafety.Worker.csproj" />
     </ItemGroup>
 
     <!-- Most scenarios describe rules that live in the domain, so they execute

@@ -95,7 +95,7 @@ public class ConditionalQuestionTests
 	{
 		// Given
 		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
-		parent.Delete(At.AddHours(1));
+		parent.Delete(false, At.AddHours(1));
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() =>

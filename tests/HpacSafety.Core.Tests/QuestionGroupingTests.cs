@@ -151,7 +151,7 @@ public class QuestionGroupingTests
 	{
 		// Given
 		var group = Group("aircraft");
-		group.Delete(At.AddHours(1));
+		group.Delete(false, At.AddHours(1));
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() =>

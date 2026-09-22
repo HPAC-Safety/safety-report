@@ -256,14 +256,12 @@ Scenario: Unknown or deleted revisions are rejected at submission
   Then the API rejects the submission
 
 @REQ-QB-030
-@ignore
 Scenario: A revision can be soft-deleted only when no answer references it
   Given a question revision has never been referenced by any answer, including answers on deleted reports
   When an Administrator deletes it
   Then the deletion succeeds
 
 @REQ-QB-031
-@ignore
 Scenario: A referenced revision can never be deleted
   Given a question revision is referenced by at least one answer, including an answer on a deleted report
   When an Administrator attempts to delete it
@@ -503,7 +501,7 @@ Scenario: A question key is normalized and cannot be reused
 
 @REQ-QB-062
 Scenario: Retiring a question keeps it and its history
-  Given an active question has been asked
+  Given an active question nobody has answered
   When an Administrator deletes it
   Then the question is stamped as deleted rather than removed
   And it refuses any further revision
@@ -514,6 +512,7 @@ Scenario: Publication consent can never be deleted or deactivated
   When an Administrator tries to delete it
   Then the attempt is rejected
   And trying to stop asking it is rejected the same way
+  And an ordinary edit that clears its active flag is rejected the same way
 
 @REQ-QB-064
 Scenario: A retired choice list refuses further edits

@@ -262,6 +262,15 @@ public class Question
 				$"'{Key}' is a system question. Its wording can change; its type cannot.");
 		}
 
+		// Deactivate() refuses this, but an administrator's ordinary edit reaches
+		// the same state by clearing the active flag, and that path had no guard.
+		// A rule enforced on one route into a state is not enforced.
+		if (IsSystem && !isActive)
+		{
+			throw new DomainRuleViolationException(
+				$"'{Key}' gates publication. A form that does not ask it cannot publish anything.");
+		}
+
 		return ReviseInternal(
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
@@ -444,7 +453,22 @@ public class Question
 	///     not frozen (ADR-0071). An administrator who wants it again authors it
 	///     again.
 	/// </remarks>
-	public void Delete(DateTimeOffset at)
+	/// <remarks>
+	///     <para>
+	///         A question any answer references is history and is never removed:
+	///         the answer records what somebody was asked, and a question that can
+	///         vanish leaves it recording nothing. Deactivating it through a new
+	///         revision is how it stops appearing on the form.
+	///     </para>
+	///     <para>
+	///         Whether an answer references it is a fact about reports, which this
+	///         aggregate cannot see, so the caller reads it and passes it in — the
+	///         same arrangement <see cref="ApplyEdit" /> uses. It must count
+	///         answers on deleted reports too: a deleted report is still a record
+	///         of what somebody was asked.
+	///     </para>
+	/// </remarks>
+	public void Delete(bool hasBeenAnswered, DateTimeOffset at)
 	{
 		if (IsSystem)
 		{
@@ -452,6 +476,23 @@ public class Question
 				$"'{Key}' is publication consent and cannot be deleted. Nothing may be published without it.");
 		}
 
+		if (hasBeenAnswered)
+		{
+			throw new DomainRuleViolationException(
+				$"'{Key}' has been answered and is part of those reports. Deactivate it instead: "
+				+ "it stops appearing on the form and every answer keeps the wording it was given under.");
+		}
+
+		Retire(at);
+	}
+
+	/// <summary>
+	///     Soft-deletes without the reference check. Retiring a question that has
+	///     been answered is exactly what a fork does (ADR-0071), so the check
+	///     belongs on the administrator's delete, not on every path to Deleted.
+	/// </summary>
+	private void Retire(DateTimeOffset at)
+	{
 		if (Deleted is not null)
 		{
 			return;
@@ -479,7 +520,7 @@ public class Question
 				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
 				draft.AllowsReporterAdditions, draft.Options, at));
 
-		Delete(at);
+		Retire(at);
 		return replacement;
 	}
 

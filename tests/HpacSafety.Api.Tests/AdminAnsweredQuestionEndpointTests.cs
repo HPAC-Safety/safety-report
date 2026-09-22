@@ -70,6 +70,63 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAnsweredQuestion_WhenDeleted_ThenRefusedAndKept()
+	{
+		// Given — REQ-QB-031: an answer records what somebody was asked
+		using var client = await SignedInAsync();
+		var created = await CreateAsync(client, UniqueKey("answered_delete"));
+		var id = created.GetProperty("id").GetString()!;
+		await AnswerAsync(id, "Wind gradient on short final.");
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var live = await ListAsync(client);
+		live.ShouldContain(question => question.GetProperty("id").GetString() == id);
+	}
+
+	[Fact]
+	public async Task GivenAnswerOnDeletedReport_WhenQuestionIsDeleted_ThenStillRefused()
+	{
+		// Given — REQ-QB-031: the reference check ignores the soft-delete filter,
+		// so an answer hidden behind a deleted report still protects the question
+		using var client = await SignedInAsync();
+		var created = await CreateAsync(client, UniqueKey("deleted_report_delete"));
+		var id = created.GetProperty("id").GetString()!;
+		await AnswerAsync(id, "Thermal collapse over the ridge.", true);
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var live = await ListAsync(client);
+		live.ShouldContain(question => question.GetProperty("id").GetString() == id);
+	}
+
+	[Fact]
+	public async Task GivenUnansweredQuestion_WhenDeleted_ThenRemovedFromTheForm()
+	{
+		// Given — REQ-QB-030: nothing references it, so it can go
+		using var client = await SignedInAsync();
+		var created = await CreateAsync(client, UniqueKey("unanswered_delete"));
+		var id = created.GetProperty("id").GetString()!;
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		var live = await ListAsync(client);
+		live.ShouldNotContain(question => question.GetProperty("id").GetString() == id);
+	}
+
+	[Fact]
 	public async Task GivenAnswerOnDeletedReport_WhenQuestionIsEdited_ThenStillForks()
 	{
 		// Given — a deleted report is still a record of what somebody was asked

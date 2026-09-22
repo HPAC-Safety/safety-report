@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-264 claims across 8 areas: 167 covered by a step definition today, 97 still `@ignore`. 50 constraints.
+264 claims across 8 areas: 168 covered by a step definition today, 96 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -142,7 +142,7 @@ type: guide
 | `REQ-QB-028` | question-bank-and-form | A report may answer a known superseded revision | Reqnroll | Planned |
 | `REQ-QB-029` | question-bank-and-form | Unknown or deleted revisions are rejected at submission | Reqnroll | Planned |
 | `REQ-QB-030` | question-bank-and-form | A revision can be soft-deleted only when no answer references it | Reqnroll | Planned |
-| `REQ-QB-031` | question-bank-and-form | A referenced revision can never be deleted | Reqnroll | Planned |
+| `REQ-QB-031` | question-bank-and-form | A referenced revision can never be deleted | Reqnroll | Covered |
 | `REQ-QB-032` | question-bank-and-form | A shared choice list is copied into the revision that uses it | Reqnroll | Covered |
 | `REQ-QB-033` | question-bank-and-form | Editing a shared choice list never changes a revision already built from it | Reqnroll | Covered |
 | `REQ-QB-034` | question-bank-and-form | Removing an option from a shared list keeps every snapshot of it | Reqnroll | Covered |

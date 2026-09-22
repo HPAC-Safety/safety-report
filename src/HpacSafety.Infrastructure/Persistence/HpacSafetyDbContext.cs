@@ -2,6 +2,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.QuestionBank.Typeform;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence.Configurations;
 using HpacSafety.Infrastructure.Persistence.Conventions;
@@ -73,6 +74,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Outbox messages awaiting a worker.</summary>
 	public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
+	/// <summary>Typeform-imported fields whose branching logic still needs manual wiring.</summary>
+	public DbSet<PendingImportLogic> PendingImportLogic => Set<PendingImportLogic>();
+
 	/// <summary>
 	///     Saves, and mints a new identifier for anything that lost a collision.
 	/// </summary>
@@ -141,6 +145,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 		modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
 		modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
+		modelBuilder.ApplyConfiguration(new PendingImportLogicConfiguration());
 
 		// Every application table except the append-only audit log is filtered
 		// to its live rows by default. See docs/data-and-persistence.md.

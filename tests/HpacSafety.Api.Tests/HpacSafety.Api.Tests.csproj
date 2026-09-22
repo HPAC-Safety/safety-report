@@ -19,6 +19,11 @@
         <ProjectReference Include="..\..\src\HpacSafety.Api\HpacSafety.Api.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Reuses HpacSafety.Core.Tests' Typeform fixtures rather than duplicating them. -->
+        <None Include="..\HpacSafety.Core.Tests\Fixtures\Typeform\*.json" LinkBase="Fixtures\Typeform" CopyToOutputDirectory="PreserveNewest" />
+    </ItemGroup>
+
     <PropertyGroup>
         <IsPackable>false</IsPackable>
     </PropertyGroup>

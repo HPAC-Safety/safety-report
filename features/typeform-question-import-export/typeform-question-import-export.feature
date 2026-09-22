@@ -8,7 +8,6 @@ which an Administrator still reviews and saves one question at a time.
 Background:
   Given an Administrator has an English Typeform export and a matching French one
 
-@ignore
 Scenario: Import requires both languages
   When an Administrator submits only one of the two files
   Then the import is rejected
@@ -95,13 +94,11 @@ Scenario: Any real branching condition is flagged, not silently dropped or auto-
   Then the produced draft is unconditional
   And a pending logic note is recorded naming that field and its original logic
 
-@ignore
 Scenario: An Administrator resolves a pending logic note
   Given a pending logic note exists from a prior import
   When an Administrator wires the equivalent condition by hand and deletes the note
   Then the note no longer appears in the pending list
 
-@ignore
 Scenario: Import never saves a question by itself
   Given a pair of Typeform files is imported
   Then no question exists in the bank until an Administrator reviews and saves its draft

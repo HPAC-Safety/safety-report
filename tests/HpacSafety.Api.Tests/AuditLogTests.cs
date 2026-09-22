@@ -108,4 +108,56 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 		entry.TargetType.ShouldBe("Question");
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
 	}
+
+	[Fact]
+	public async Task GivenAnActiveQuestion_WhenRevisedToInactive_ThenTheAuditRowRecordsDeactivation()
+	{
+		// Given
+		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
+		var key = $"audit_{Guid.NewGuid():N}"[..30];
+
+		using var created = await client.PostAsJsonAsync(
+			Questions,
+			new
+			{
+				key,
+				type = "short_text",
+				labelEn = "Synthetic",
+				labelFr = "Synthétique",
+				isRequired = false,
+				isPrivate = true,
+				isActive = true,
+				allowsReporterAdditions = false,
+				options = Array.Empty<object>(),
+			});
+		created.StatusCode.ShouldBe(HttpStatusCode.Created);
+		var body = await created.Content.ReadFromJsonAsync<JsonElement>();
+		var questionId = TinyId.Parse(body.GetProperty("id").GetString()!);
+
+		// When — the same edit, only with isActive turned off
+		using var revised = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
+			new
+			{
+				key,
+				type = "short_text",
+				labelEn = "Synthetic",
+				labelFr = "Synthétique",
+				isRequired = false,
+				isPrivate = true,
+				isActive = false,
+				allowsReporterAdditions = false,
+				options = Array.Empty<object>(),
+			});
+		revised.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+		// Then
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entry = await database.AuditLog
+			.Where(e => e.Action == AuditAction.DeactivatedQuestion && e.TargetId == questionId)
+			.SingleAsync();
+
+		entry.TargetType.ShouldBe("Question");
+	}
 }

@@ -54,6 +54,15 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		{
 			var draft = await summarizer.Summarize(input, cancellationToken).ConfigureAwait(false);
 
+			// The model call takes real time, during which a safety officer may
+			// have soft-deleted this report. Reread rather than trust the entity
+			// loaded before the call, so a deletion mid-flight is never overwritten
+			// by output that arrives after it (REQ-DOM-007).
+			if (await IsDeleted(report.Id, cancellationToken).ConfigureAwait(false))
+			{
+				return;
+			}
+
 			var summary = Summary.Generate(report.Id, draft.TextEn, draft.TextFr, draft.Model, draft.PromptVersion, clock.GetUtcNow());
 			report.AttachSummary(summary);
 			report.AwaitReview();
@@ -65,14 +74,26 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			// method returns/throws — Attempts is still the pre-failure count here,
 			// so +1 is what it will become. Once that reaches the poison threshold
 			// the message stops being retried, so the report must not be left
-			// silently stuck in Summarizing.
-			if (message.Attempts + 1 >= OutboxMessage.PoisonThreshold)
+			// silently stuck in Summarizing — unless it was deleted while this
+			// attempt was in flight, in which case there is nothing left to update.
+			if (message.Attempts + 1 >= OutboxMessage.PoisonThreshold
+				&& !await IsDeleted(report.Id, cancellationToken).ConfigureAwait(false))
 			{
 				report.FailSummarization(exception.Message);
 			}
 
 			throw;
 		}
+	}
+
+	/// <summary>Whether the report has been soft-deleted since it was loaded, read past the default live-row filter.</summary>
+	private async Task<bool> IsDeleted(TinyId reportId, CancellationToken cancellationToken)
+	{
+		return await database.Reports.IgnoreQueryFilters()
+			.Where(candidate => candidate.Id == reportId)
+			.Select(candidate => candidate.Deleted != null)
+			.SingleAsync(cancellationToken)
+			.ConfigureAwait(false);
 	}
 
 	private async Task<ReportForSummaryDto> LoadForSummary(TinyId reportId, Locale language, CancellationToken cancellationToken)

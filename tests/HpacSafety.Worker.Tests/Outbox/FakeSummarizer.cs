@@ -13,10 +13,19 @@ public sealed class FakeSummarizer : ISummarizer
 {
 	private readonly (string TextEn, string TextFr)? _draft;
 	private readonly bool _failing;
+	private readonly Action? _onCall;
 
-	public FakeSummarizer((string TextEn, string TextFr) draft)
+	/// <summary>A fixture summarizer that returns a fixed pair.</summary>
+	/// <param name="draft">The pair to return.</param>
+	/// <param name="onCall">
+	///     Runs synchronously just before the pair is returned — lets a test act
+	///     as though something happened while the model call was in flight, such
+	///     as a concurrent soft deletion (REQ-DOM-007).
+	/// </param>
+	public FakeSummarizer((string TextEn, string TextFr) draft, Action? onCall = null)
 	{
 		_draft = draft;
+		_onCall = onCall;
 	}
 
 	public FakeSummarizer(bool failing)
@@ -37,6 +46,8 @@ public sealed class FakeSummarizer : ISummarizer
 		{
 			throw new SummarizationFailedException("The fixture summarizer was told to fail.");
 		}
+
+		_onCall?.Invoke();
 
 		return Task.FromResult(new SummaryDraft(_draft.Value.TextEn, _draft.Value.TextFr, "fixture-model", "fixture-v1"));
 	}

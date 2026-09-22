@@ -105,4 +105,14 @@ public class OutboxMessage
 	{
 		return TimeSpan.FromSeconds(Math.Pow(2, Math.Clamp(attempts, 1, 10)));
 	}
+
+	/// <summary>
+	///     Stamps this message deleted, as part of its aggregate's soft deletion
+	///     (REQ-DOM-007) — excluded from the claim query's default filter from this
+	///     point on, so no future attempt claims it.
+	/// </summary>
+	public void Delete(DateTimeOffset at)
+	{
+		Deleted ??= at;
+	}
 }

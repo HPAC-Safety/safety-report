@@ -213,4 +213,10 @@ public class ReportAnswer
 		TranslatedValue = translated;
 		TranslationSource = source;
 	}
+
+	/// <summary>Stamps this answer deleted, as part of its report's soft deletion (REQ-DOM-007).</summary>
+	internal void Delete(DateTimeOffset at)
+	{
+		Deleted ??= at;
+	}
 }

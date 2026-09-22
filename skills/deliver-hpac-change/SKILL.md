@@ -44,6 +44,18 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   Multiple agents may be working in this repository at once; a worktree per
   issue means no agent ever switches a branch out from under another one's
   in-progress checkout.
+  - **Check this at the moment of the first edit, not only once at the start
+    of a session.** Before the first `Edit` or `Write` call for an issue, run
+    `git branch --show-current`. If it reports `main`, stop and create the
+    worktree first — do not write the file "just this once" and fix it
+    later. A rule read once, hours earlier in a long conversation, is not a
+    rule checked again on its own; nothing about resuming a session, a
+    sequencing detour ("which of these blockers do we do first?"), or a
+    plain "continue"/"yes" looks like "starting an issue," which is exactly
+    why this is the moment the check gets skipped
+    ([Lesson 0004](../../docs/lessons/0004-a-rule-read-once-is-not-a-rule-checked-again.md)).
+    Having followed this rule correctly on an earlier issue in the same
+    session is not evidence it will hold on the next one — check every time.
 - Push the branch to `origin` the moment it exists, before any work begins:
   `git push -u origin issue-<number>/<short-description>` from inside the
   worktree. This also replaces the `origin/main` upstream that

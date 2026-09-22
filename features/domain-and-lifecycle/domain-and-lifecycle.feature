@@ -75,11 +75,10 @@ Scenario: Negative consent still allows internal review
   And the report can never satisfy the public query
 
 @REQ-DOM-007
-@ignore
 Scenario: Soft deletion removes a report from every normal path
   Given a report exists in any lifecycle state
   When a safety officer soft-deletes it
-  Then one application transaction stamps the same deleted timestamp on the report and all owned/dependent rows: answers, summary, files, and report outbox items
+  Then one application transaction stamps the same deleted timestamp on the report and all owned and dependent rows: answers, summary, files, and report outbox items
   And an immutable audit entry is recorded
   And pending Worker work for the report stops, and the Worker rechecks deletion before committing output
   And public and normal admin queries hide the report immediately
@@ -94,7 +93,6 @@ Scenario: A question revision can be deleted only when unreferenced
   And once any answer references a revision, that revision is never deletable again
 
 @REQ-DOM-009
-@ignore
 Scenario: Retiring a question is a soft delete with no way back
   Given a question is retired, either by an Administrator or by being replaced through an edit
   When the deletion is committed
@@ -103,9 +101,8 @@ Scenario: Retiring a question is a soft delete with no way back
   And there is no restore transition
 
 @REQ-DOM-010
-@ignore
 Scenario: Raw reports are retained until explicit deletion
-  Given a report has been submitted
+  Given a synthetic report has been submitted
   When no safety officer has deleted it
   Then the report is retained indefinitely
   And there is no scheduled report purge and no physical-delete path in the application

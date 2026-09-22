@@ -1,20 +1,20 @@
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.AiChatClient;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Shouldly;
 
 namespace HpacSafety.Infrastructure.Tests.AiChatClient;
 
-/// <summary>How the AI chat client is wired up, and the fail-closed default it registers.</summary>
+/// <summary>How the AI chat client is wired up, including the case that matters most in practice: no credential at all.</summary>
 public class AiChatClientRegistrationTests
 {
 	[Fact]
-	public void GivenNoProviderReviewedYet_WhenRegistered_ThenTheFailClosedDefaultIsUsed()
+	public void GivenNoConfigurationAtAll_WhenRegistered_ThenTheFailClosedDefaultIsUsed()
 	{
-		// Given
-		using var provider = new ServiceCollection()
-			.AddHpacSafetyAiChatClient()
-			.BuildServiceProvider();
+		// Given — an ordinary local checkout
+		using var provider = Provider([]);
 
 		// When
 		var client = provider.GetRequiredService<IAiChatClient>();
@@ -25,17 +25,81 @@ public class AiChatClientRegistrationTests
 	}
 
 	[Fact]
-	public void GivenNullServices_WhenRegistered_ThenRefused()
+	public void GivenKeyInGeminiSection_WhenRegistered_ThenGeminiIsUsed()
+	{
+		// Given
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["Gemini:ApiKey"] = "abc123"
+		});
+
+		// When
+		var client = provider.GetRequiredService<IAiChatClient>();
+
+		// Then
+		client.ShouldBeOfType<GeminiChatClient>();
+		client.IsConfigured.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenOnlyBareEnvironmentName_WhenRegistered_ThenKeyIsUsed()
+	{
+		// Given — GEMINI_API_KEY is the name the credential has in repository
+		// secrets and in the deploy workflow
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["GEMINI_API_KEY"] = "abc123"
+		});
+
+		// When
+		var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+
+		// Then
+		options.ApiKey.ShouldBe("abc123");
+		provider.GetRequiredService<IAiChatClient>().IsConfigured.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenBothNames_WhenRegistered_ThenExplicitSectionWins()
+	{
+		// Given
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["Gemini:ApiKey"] = "explicit",
+			["GEMINI_API_KEY"] = "fallback"
+		});
+
+		// When
+		var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+
+		// Then
+		options.ApiKey.ShouldBe("explicit");
+	}
+
+	[Fact]
+	public void GivenNullArguments_WhenRegistered_ThenRefused()
 	{
 		// Given / When / Then
 		Should.Throw<ArgumentNullException>(() =>
-			AiChatClientServiceCollectionExtensions.AddHpacSafetyAiChatClient(null!));
+			AiChatClientServiceCollectionExtensions.AddHpacSafetyAiChatClient(null!, new ConfigurationBuilder().Build()));
+
+		Should.Throw<ArgumentNullException>(() =>
+			new ServiceCollection().AddHpacSafetyAiChatClient(null!));
+	}
+
+	private static ServiceProvider Provider(Dictionary<string, string?> settings)
+	{
+		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+
+		return new ServiceCollection()
+			.AddHpacSafetyAiChatClient(configuration)
+			.BuildServiceProvider();
 	}
 }
 
 /// <summary>
 ///     <see cref="UnconfiguredAiChatClient" /> is the fail-closed default: it never
-///     silently proceeds without a reviewed provider.
+///     silently proceeds without a configured provider.
 /// </summary>
 public class UnconfiguredAiChatClientTests
 {

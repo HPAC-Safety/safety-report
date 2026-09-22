@@ -23,7 +23,7 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
 builder.Services.Configure<AiChatClientOptions>(builder.Configuration.GetSection(AiChatClientOptions.SectionName));
-builder.Services.AddHpacSafetyAiChatClient();
+builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
 builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
 
 // Same port and adapter selection question authoring uses: a real credential

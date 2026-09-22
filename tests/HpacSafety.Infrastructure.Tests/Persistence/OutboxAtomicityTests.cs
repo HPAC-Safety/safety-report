@@ -18,122 +18,122 @@ namespace HpacSafety.Infrastructure.Tests.Persistence;
 [Collection(SharedPostgres.Name)]
 public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 {
-    private static readonly DateTimeOffset At = new(2026, 8, 22, 17, 30, 0, TimeSpan.Zero);
+	private static readonly DateTimeOffset At = new(2026, 8, 22, 17, 30, 0, TimeSpan.Zero);
 
-    [Fact]
-    public async Task GivenReportAndOutboxMessage_WhenTheyAreSavedInOneCall_ThenBothRowsArePresent()
-    {
-        // Given
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        await using var context = PostgresFixture.ContextFor(connectionString);
-        var report = await SubmittedReportAsync(context);
-        context.Reports.Add(report);
-        context.OutboxMessages.Add(SummarizationRequestFor(report));
+	[Fact]
+	public async Task GivenReportAndOutboxMessage_WhenTheyAreSavedInOneCall_ThenBothRowsArePresent()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		await using var context = PostgresFixture.ContextFor(connectionString);
+		var report = await SubmittedReportAsync(context);
+		context.Reports.Add(report);
+		context.OutboxMessages.Add(SummarizationRequestFor(report));
 
-        // When
-        await context.SaveChangesAsync();
+		// When
+		await context.SaveChangesAsync();
 
-        // Then
-        await using var reader = PostgresFixture.ContextFor(connectionString);
-        (await reader.Reports.SingleAsync(r => r.Id == report.Id)).Id.ShouldBe(report.Id);
-        (await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id)).Value.ShouldBe("yes");
-        (await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(1);
-    }
+		// Then
+		await using var reader = PostgresFixture.ContextFor(connectionString);
+		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Id.ShouldBe(report.Id);
+		(await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id)).Value.ShouldBe("yes");
+		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(1);
+	}
 
-    [Fact]
-    public async Task GivenReportAndOutboxMessage_WhenTransactionIsRolledBack_ThenNeitherRowIsPresent()
-    {
-        // Given
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        await using var context = PostgresFixture.ContextFor(connectionString);
-        var report = await SubmittedReportAsync(context);
+	[Fact]
+	public async Task GivenReportAndOutboxMessage_WhenTransactionIsRolledBack_ThenNeitherRowIsPresent()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		await using var context = PostgresFixture.ContextFor(connectionString);
+		var report = await SubmittedReportAsync(context);
 
-        // When
-        await using (var transaction = await context.Database.BeginTransactionAsync())
-        {
-            context.Reports.Add(report);
-            context.OutboxMessages.Add(SummarizationRequestFor(report));
-            await context.SaveChangesAsync();
+		// When
+		await using (var transaction = await context.Database.BeginTransactionAsync())
+		{
+			context.Reports.Add(report);
+			context.OutboxMessages.Add(SummarizationRequestFor(report));
+			await context.SaveChangesAsync();
 
-            await transaction.RollbackAsync();
-        }
+			await transaction.RollbackAsync();
+		}
 
-        // Then
-        await using var reader = PostgresFixture.ContextFor(connectionString);
-        (await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(0);
-        (await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(0);
-    }
+		// Then
+		await using var reader = PostgresFixture.ContextFor(connectionString);
+		(await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(0);
+		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(0);
+	}
 
-    [Fact]
-    public async Task GivenReportAndOutboxMessage_WhenWriteFailsPartWay_ThenNeitherRowIsPresent()
-    {
-        // Given — an answer pointing at a question version that is not there.
-        // The database refuses it, and the report and the outbox row have to go
-        // with it rather than being left behind without their trigger.
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        await using var context = PostgresFixture.ContextFor(connectionString);
-        var report = await SubmittedReportAsync(context);
-        var orphan = OrphanedQuestion();
-        report.Answer(orphan, "A gust on final; the pilot walked away.", At);
+	[Fact]
+	public async Task GivenReportAndOutboxMessage_WhenWriteFailsPartWay_ThenNeitherRowIsPresent()
+	{
+		// Given — an answer pointing at a question version that is not there.
+		// The database refuses it, and the report and the outbox row have to go
+		// with it rather than being left behind without their trigger.
+		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		await using var context = PostgresFixture.ContextFor(connectionString);
+		var report = await SubmittedReportAsync(context);
+		var orphan = OrphanedQuestion();
+		report.Answer(orphan, "A gust on final; the pilot walked away.", At);
 
-        context.Reports.Add(report);
-        context.OutboxMessages.Add(SummarizationRequestFor(report));
+		context.Reports.Add(report);
+		context.OutboxMessages.Add(SummarizationRequestFor(report));
 
-        // When
-        await Should.ThrowAsync<DbUpdateException>(() => context.SaveChangesAsync());
+		// When
+		await Should.ThrowAsync<DbUpdateException>(() => context.SaveChangesAsync());
 
-        // Then
-        await using var reader = PostgresFixture.ContextFor(connectionString);
-        (await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(0);
-        (await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(0);
-    }
+		// Then
+		await using var reader = PostgresFixture.ContextFor(connectionString);
+		(await reader.Reports.CountAsync(r => r.Id == report.Id)).ShouldBe(0);
+		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(0);
+	}
 
-    [Fact]
-    public async Task GivenOutboxMessage_WhenReadBack_ThenDueAndHasNeverBeenAttempted()
-    {
-        // Given
-        var connectionString = await postgres.CreateMigratedDatabaseAsync();
-        await using var context = PostgresFixture.ContextFor(connectionString);
-        var report = await SubmittedReportAsync(context);
-        context.Reports.Add(report);
-        context.OutboxMessages.Add(SummarizationRequestFor(report));
-        await context.SaveChangesAsync();
+	[Fact]
+	public async Task GivenOutboxMessage_WhenReadBack_ThenDueAndHasNeverBeenAttempted()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		await using var context = PostgresFixture.ContextFor(connectionString);
+		var report = await SubmittedReportAsync(context);
+		context.Reports.Add(report);
+		context.OutboxMessages.Add(SummarizationRequestFor(report));
+		await context.SaveChangesAsync();
 
-        // When
-        await using var reader = PostgresFixture.ContextFor(connectionString);
-        var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
+		// When
+		await using var reader = PostgresFixture.ContextFor(connectionString);
+		var message = await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id);
 
-        // Then
-        message.IsProcessed.ShouldBeFalse();
-        message.IsPoisoned.ShouldBeFalse();
-        message.Attempts.ShouldBe(0);
-        message.NextAttemptAt.ShouldBe(message.OccurredAt);
-        message.Type.ShouldBe(OutboxMessageType.SummarizeReport);
-    }
+		// Then
+		message.IsProcessed.ShouldBeFalse();
+		message.IsPoisoned.ShouldBeFalse();
+		message.Attempts.ShouldBe(0);
+		message.NextAttemptAt.ShouldBe(message.OccurredAt);
+		message.Type.ShouldBe(OutboxMessageType.SummarizeReport);
+	}
 
-    private static OutboxMessage SummarizationRequestFor(Report report)
-    {
-        return new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, $$"""{"reportId":"{{report.Id}}"}""", At);
-    }
+	private static OutboxMessage SummarizationRequestFor(Report report)
+	{
+		return new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, $$"""{"reportId":"{{report.Id}}"}""", At);
+	}
 
-    private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
-    {
-        var report = new Report(Locale.EnCa, At);
-        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
-        context.Questions.Add(consent);
-        await context.SaveChangesAsync();
+	private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
+	{
+		var report = new Report(Locale.EnCa, At);
+		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+		context.Questions.Add(consent);
+		await context.SaveChangesAsync();
 
-        report.Answer(consent, ["yes"], At);
-        report.EnsureReadyForSubmission();
-        return report;
-    }
+		report.Answer(consent, ["yes"], At);
+		report.EnsureReadyForSubmission();
+		return report;
+	}
 
-    /// <summary>
-    ///     A question the database has never seen, so an answer to it cannot be
-    ///     stored. Built in memory only.
-    /// </summary>
-    private static Question OrphanedQuestion()
-    {
-        return Question.Create("never_asked", QuestionType.LongText, "Never asked", "Jamais demandé", At);
-    }
+	/// <summary>
+	///     A question the database has never seen, so an answer to it cannot be
+	///     stored. Built in memory only.
+	/// </summary>
+	private static Question OrphanedQuestion()
+	{
+		return Question.Create("never_asked", QuestionType.LongText, "Never asked", "Jamais demandé", At);
+	}
 }

@@ -10,32 +10,32 @@ namespace HpacSafety.Infrastructure.Persistence.Configurations;
 /// </summary>
 public sealed class OptionSetConfiguration : IEntityTypeConfiguration<OptionSet>
 {
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<OptionSet> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<OptionSet> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("option_sets");
-        builder.HasKey(set => set.Id);
+		builder.ToTable("option_sets");
+		builder.HasKey(set => set.Id);
 
-        builder.Property(set => set.Key).HasMaxLength(128).IsRequired();
-        builder.Property(set => set.NameEn).IsRequired();
-        builder.Property(set => set.NameFr).IsRequired();
+		builder.Property(set => set.Key).HasMaxLength(128).IsRequired();
+		builder.Property(set => set.NameEn).IsRequired();
+		builder.Property(set => set.NameFr).IsRequired();
 
-        builder.HasIndex(set => set.Key).IsUnique();
+		builder.HasIndex(set => set.Key).IsUnique();
 
-        // Items is a filtered, ordered projection over the backing field, not a
-        // mapped navigation — EF writes the field and the property reads it.
-        builder.Ignore(set => set.Items);
+		// Items is a filtered, ordered projection over the backing field, not a
+		// mapped navigation — EF writes the field and the property reads it.
+		builder.Ignore(set => set.Items);
 
-        builder.HasMany<OptionSetItem>("_items")
-            .WithOne()
-            .HasForeignKey(item => item.OptionSetId)
-            .OnDelete(DeleteBehavior.Cascade);
+		builder.HasMany<OptionSetItem>("_items")
+			.WithOne()
+			.HasForeignKey(item => item.OptionSetId)
+			.OnDelete(DeleteBehavior.Cascade);
 
-        builder.Metadata.FindNavigation("_items")!
-            .SetPropertyAccessMode(PropertyAccessMode.Field);
-    }
+		builder.Metadata.FindNavigation("_items")!
+			.SetPropertyAccessMode(PropertyAccessMode.Field);
+	}
 }
 
 /// <summary>
@@ -44,31 +44,31 @@ public sealed class OptionSetConfiguration : IEntityTypeConfiguration<OptionSet>
 /// </summary>
 public sealed class OptionSetItemConfiguration : IEntityTypeConfiguration<OptionSetItem>
 {
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<OptionSetItem> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<OptionSetItem> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("option_set_items");
-        builder.HasKey(item => item.Id);
+		builder.ToTable("option_set_items");
+		builder.HasKey(item => item.Id);
 
-        builder.Property(item => item.Code).HasMaxLength(128).IsRequired();
-        builder.Property(item => item.LabelEn).IsRequired();
-        builder.Property(item => item.LabelFr).IsRequired();
-        builder.Property(item => item.DisplayOrder).IsRequired();
+		builder.Property(item => item.Code).HasMaxLength(128).IsRequired();
+		builder.Property(item => item.LabelEn).IsRequired();
+		builder.Property(item => item.LabelFr).IsRequired();
+		builder.Property(item => item.DisplayOrder).IsRequired();
 
-        // Not nullable: an item was either typed by a reporter or authored by
-        // an administrator, and every row that already exists was the latter.
-        builder.Property(item => item.AddedByReporter).IsRequired().HasDefaultValue(false);
-        builder.Property(item => item.NeedsTranslation).IsRequired().HasDefaultValue(false);
+		// Not nullable: an item was either typed by a reporter or authored by
+		// an administrator, and every row that already exists was the latter.
+		builder.Property(item => item.AddedByReporter).IsRequired().HasDefaultValue(false);
+		builder.Property(item => item.NeedsTranslation).IsRequired().HasDefaultValue(false);
 
-        // The curation query is "show me what reporters have added to this
-        // list", so it is worth an index on the pair.
-        builder.HasIndex(item => new { item.OptionSetId, item.AddedByReporter });
+		// The curation query is "show me what reporters have added to this
+		// list", so it is worth an index on the pair.
+		builder.HasIndex(item => new { item.OptionSetId, item.AddedByReporter });
 
-        // A code is unique in its set, including across a removed item —
-        // re-adding a removed code revives that row rather than adding a
-        // second one claiming the same code, so history keeps one target.
-        builder.HasIndex(item => new { item.OptionSetId, item.Code }).IsUnique();
-    }
+		// A code is unique in its set, including across a removed item —
+		// re-adding a removed code revives that row rather than adding a
+		// second one claiming the same code, so history keeps one target.
+		builder.HasIndex(item => new { item.OptionSetId, item.Code }).IsUnique();
+	}
 }

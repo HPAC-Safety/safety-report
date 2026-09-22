@@ -9,20 +9,20 @@ namespace HpacSafety.Core;
 /// </summary>
 public static class BlobUrlLifetime
 {
-    /// <summary>
-    ///     Fifteen minutes: long enough for an administrator to open a photo or for a
-    ///     browser to finish one upload, short enough that a URL copied out of a
-    ///     browser's history is worthless by the time anyone reads it.
-    /// </summary>
-    public static readonly TimeSpan Maximum = TimeSpan.FromMinutes(15);
+	/// <summary>
+	///     Fifteen minutes: long enough for an administrator to open a photo or for a
+	///     browser to finish one upload, short enough that a URL copied out of a
+	///     browser's history is worthless by the time anyone reads it.
+	/// </summary>
+	public static readonly TimeSpan Maximum = TimeSpan.FromMinutes(15);
 
-    /// <summary>Returns the lifetime, or throws when it is not short-lived.</summary>
-    public static TimeSpan Validate(TimeSpan lifetime)
-    {
-        return lifetime <= TimeSpan.Zero
-            ? throw new DomainRuleViolationException("A pre-signed URL lifetime must be positive.")
-            : lifetime > Maximum
-                ? throw new DomainRuleViolationException($"A pre-signed URL may not live longer than {Maximum}.")
-                : lifetime;
-    }
+	/// <summary>Returns the lifetime, or throws when it is not short-lived.</summary>
+	public static TimeSpan Validate(TimeSpan lifetime)
+	{
+		return lifetime <= TimeSpan.Zero
+			? throw new DomainRuleViolationException("A pre-signed URL lifetime must be positive.")
+			: lifetime > Maximum
+				? throw new DomainRuleViolationException($"A pre-signed URL may not live longer than {Maximum}.")
+				: lifetime;
+	}
 }

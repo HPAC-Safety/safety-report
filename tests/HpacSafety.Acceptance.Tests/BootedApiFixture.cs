@@ -37,107 +37,107 @@ namespace HpacSafety.Acceptance.Tests;
 /// </remarks>
 public static class BootedApi
 {
-    /// <summary>Signs the tokens the booted host issues and then validates.</summary>
-    public const string SigningKey = "hpac-safety-acceptance-signing-key-not-a-secret";
+	/// <summary>Signs the tokens the booted host issues and then validates.</summary>
+	public const string SigningKey = "hpac-safety-acceptance-signing-key-not-a-secret";
 
-    private static readonly SemaphoreSlim Gate = new(1, 1);
+	private static readonly SemaphoreSlim Gate = new(1, 1);
 
-    private static PostgreSqlContainer? postgres;
-    private static WebApplicationFactory<Program>? factory;
+	private static PostgreSqlContainer? postgres;
+	private static WebApplicationFactory<Program>? factory;
 
-    /// <summary>The booted host, starting it if this is the first scenario to ask.</summary>
-    public static async Task<WebApplicationFactory<Program>> FactoryAsync()
-    {
-        if (factory is not null) return factory;
+	/// <summary>The booted host, starting it if this is the first scenario to ask.</summary>
+	public static async Task<WebApplicationFactory<Program>> FactoryAsync()
+	{
+		if (factory is not null) return factory;
 
-        await Gate.WaitAsync().ConfigureAwait(false);
+		await Gate.WaitAsync().ConfigureAwait(false);
 
-        try
-        {
-            if (factory is null)
-            {
-                var container = new PostgreSqlBuilder("postgres:17-alpine").Build();
-                await container.StartAsync().ConfigureAwait(false);
-                postgres = container;
+		try
+		{
+			if (factory is null)
+			{
+				var container = new PostgreSqlBuilder("postgres:17-alpine").Build();
+				await container.StartAsync().ConfigureAwait(false);
+				postgres = container;
 
-                factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-                {
-                    // Development, so the host issues the tokens it validates.
-                    builder.UseEnvironment("Development");
-                    builder.UseSetting("ConnectionStrings:HpacSafety", container.GetConnectionString());
-                    builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
-                });
-            }
-        }
-        finally
-        {
-            Gate.Release();
-        }
+				factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+				{
+					// Development, so the host issues the tokens it validates.
+					builder.UseEnvironment("Development");
+					builder.UseSetting("ConnectionStrings:HpacSafety", container.GetConnectionString());
+					builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
+				});
+			}
+		}
+		finally
+		{
+			Gate.Release();
+		}
 
-        return factory;
-    }
+		return factory;
+	}
 
-    /// <summary>
-    ///     A host that is not in Development, validating against a provider it can
-    ///     never reach — which is all these scenarios need, because the routes they
-    ///     ask about either do not exist there or refuse before any handler runs.
-    /// </summary>
-    public static async Task<WebApplicationFactory<Program>> ProductionShapedAsync()
-    {
-        return (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Production");
-            builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
-        });
-    }
+	/// <summary>
+	///     A host that is not in Development, validating against a provider it can
+	///     never reach — which is all these scenarios need, because the routes they
+	///     ask about either do not exist there or refuse before any handler runs.
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> ProductionShapedAsync()
+	{
+		return (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		{
+			builder.UseEnvironment("Production");
+			builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
+		});
+	}
 
-    /// <summary>
-    ///     A client carrying a real token for that role, minted by the booted host
-    ///     and validated by the same middleware production runs (ADR-0066).
-    /// </summary>
-    public static async Task<HttpClient> SignedInAsAsync(MemberRole role)
-    {
-        var (username, password) = role switch
-        {
-            MemberRole.Administrator => ("admin", "admin"),
-            MemberRole.SafetyOfficer => ("officer", "officer"),
-            MemberRole.User => ("user", "user"),
-            _ => throw new ArgumentOutOfRangeException(nameof(role))
-        };
+	/// <summary>
+	///     A client carrying a real token for that role, minted by the booted host
+	///     and validated by the same middleware production runs (ADR-0066).
+	/// </summary>
+	public static async Task<HttpClient> SignedInAsAsync(MemberRole role)
+	{
+		var (username, password) = role switch
+		{
+			MemberRole.Administrator => ("admin", "admin"),
+			MemberRole.SafetyOfficer => ("officer", "officer"),
+			MemberRole.User => ("user", "user"),
+			_ => throw new ArgumentOutOfRangeException(nameof(role))
+		};
 
-        var host = await FactoryAsync().ConfigureAwait(false);
+		var host = await FactoryAsync().ConfigureAwait(false);
 
-        using var anonymous = host.CreateClient();
-        using var response = await anonymous
-            .PostAsJsonAsync("/api/auth/token", new { username, password })
-            .ConfigureAwait(false);
+		using var anonymous = host.CreateClient();
+		using var response = await anonymous
+			.PostAsJsonAsync("/api/auth/token", new { username, password })
+			.ConfigureAwait(false);
 
-        response.EnsureSuccessStatusCode();
+		response.EnsureSuccessStatusCode();
 
-        var token = await response.Content.ReadFromJsonAsync<TokenPayload>().ConfigureAwait(false);
+		var token = await response.Content.ReadFromJsonAsync<TokenPayload>().ConfigureAwait(false);
 
-        var client = host.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
+		var client = host.CreateClient();
+		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
 
-        return client;
-    }
+		return client;
+	}
 
-    /// <summary>Stops the host and the container once, after the whole run.</summary>
-    [AfterTestRun]
-    public static async Task StopAsync()
-    {
-        if (factory is not null)
-        {
-            await factory.DisposeAsync().ConfigureAwait(false);
-            factory = null;
-        }
+	/// <summary>Stops the host and the container once, after the whole run.</summary>
+	[AfterTestRun]
+	public static async Task StopAsync()
+	{
+		if (factory is not null)
+		{
+			await factory.DisposeAsync().ConfigureAwait(false);
+			factory = null;
+		}
 
-        if (postgres is not null)
-        {
-            await postgres.DisposeAsync().ConfigureAwait(false);
-            postgres = null;
-        }
-    }
+		if (postgres is not null)
+		{
+			await postgres.DisposeAsync().ConfigureAwait(false);
+			postgres = null;
+		}
+	}
 
-    private sealed record TokenPayload(string AccessToken);
+	private sealed record TokenPayload(string AccessToken);
 }

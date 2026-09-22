@@ -6,6 +6,6 @@ namespace HpacSafety.Core.Features.Outbox;
 /// </summary>
 public enum OutboxMessageType
 {
-    /// <summary>Summarize a report: the Worker's one model call per report.</summary>
-    SummarizeReport = 0
+	/// <summary>Summarize a report: the Worker's one model call per report.</summary>
+	SummarizeReport = 0
 }

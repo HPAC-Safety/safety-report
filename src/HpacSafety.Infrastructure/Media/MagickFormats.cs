@@ -16,25 +16,25 @@ namespace HpacSafety.Infrastructure.Media;
 /// </summary>
 internal static class MagickFormats
 {
-    public static MagickFormat For(MediaType type)
-    {
-        return type == MediaType.Jpeg ? MagickFormat.Jpeg
-            : type == MediaType.Png ? MagickFormat.Png
-            : type == MediaType.WebP ? MagickFormat.WebP
-            : type == MediaType.Heic ? MagickFormat.Heic
-            : throw new NotSupportedException($"No ImageMagick format is mapped for '{type}'.");
-    }
+	public static MagickFormat For(MediaType type)
+	{
+		return type == MediaType.Jpeg ? MagickFormat.Jpeg
+			: type == MediaType.Png ? MagickFormat.Png
+			: type == MediaType.WebP ? MagickFormat.WebP
+			: type == MediaType.Heic ? MagickFormat.Heic
+			: throw new NotSupportedException($"No ImageMagick format is mapped for '{type}'.");
+	}
 
-    public static MediaType? From(MagickFormat format)
-    {
-        return format switch
-        {
-            MagickFormat.Jpeg or MagickFormat.Jpg or MagickFormat.Jpe => MediaType.Jpeg,
-            MagickFormat.Png or MagickFormat.Png00 or MagickFormat.Png8 or MagickFormat.Png24 or MagickFormat.Png32
-                or MagickFormat.Png48 or MagickFormat.Png64 => MediaType.Png,
-            MagickFormat.WebP => MediaType.WebP,
-            MagickFormat.Heic or MagickFormat.Heif => MediaType.Heic,
-            _ => null
-        };
-    }
+	public static MediaType? From(MagickFormat format)
+	{
+		return format switch
+		{
+			MagickFormat.Jpeg or MagickFormat.Jpg or MagickFormat.Jpe => MediaType.Jpeg,
+			MagickFormat.Png or MagickFormat.Png00 or MagickFormat.Png8 or MagickFormat.Png24 or MagickFormat.Png32
+				or MagickFormat.Png48 or MagickFormat.Png64 => MediaType.Png,
+			MagickFormat.WebP => MediaType.WebP,
+			MagickFormat.Heic or MagickFormat.Heif => MediaType.Heic,
+			_ => null
+		};
+	}
 }

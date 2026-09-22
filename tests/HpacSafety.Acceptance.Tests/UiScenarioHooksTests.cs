@@ -16,15 +16,15 @@ namespace HpacSafety.Acceptance.Tests;
 /// </remarks>
 public sealed class UiScenarioHooksTests
 {
-    [Fact]
-    public void GivenAcceptanceSuite_WhenHooksAreInspected_ThenABeforeScenarioHookIsScopedToTheUiTag()
-    {
-        var hook = typeof(UiScenarioHooks)
-            .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-            .Select(method => method.GetCustomAttribute<BeforeScenarioAttribute>())
-            .FirstOrDefault(attribute => attribute is not null);
+	[Fact]
+	public void GivenAcceptanceSuite_WhenHooksAreInspected_ThenABeforeScenarioHookIsScopedToTheUiTag()
+	{
+		var hook = typeof(UiScenarioHooks)
+			.GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+			.Select(method => method.GetCustomAttribute<BeforeScenarioAttribute>())
+			.FirstOrDefault(attribute => attribute is not null);
 
-        hook.ShouldNotBeNull();
-        hook.Tags.ShouldBe(["ui"]);
-    }
+		hook.ShouldNotBeNull();
+		hook.Tags.ShouldBe(["ui"]);
+	}
 }

@@ -21,14 +21,14 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// <param name="HelpFr">The French help text, machine-translated and unreviewed.</param>
 /// <param name="Options">The option set, in display order. Empty unless the type takes options.</param>
 public sealed record SeededQuestion(
-    string Key,
-    QuestionType Type,
-    QuestionRole Role,
-    bool IsPrivate,
-    bool IsRequired,
-    bool IsSystem,
-    string LabelEn,
-    string LabelFr,
-    string? HelpEn,
-    string? HelpFr,
-    IReadOnlyList<SeededOption> Options);
+	string Key,
+	QuestionType Type,
+	QuestionRole Role,
+	bool IsPrivate,
+	bool IsRequired,
+	bool IsSystem,
+	string LabelEn,
+	string LabelFr,
+	string? HelpEn,
+	string? HelpFr,
+	IReadOnlyList<SeededOption> Options);

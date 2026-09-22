@@ -20,31 +20,31 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public sealed class ReviewerMediaLink
 {
-    private readonly IBlobStore _blobStore;
+	private readonly IBlobStore _blobStore;
 
-    /// <summary>Creates the link issuer.</summary>
-    public ReviewerMediaLink(IBlobStore blobStore)
-    {
-        ArgumentNullException.ThrowIfNull(blobStore);
-        _blobStore = blobStore;
-    }
+	/// <summary>Creates the link issuer.</summary>
+	public ReviewerMediaLink(IBlobStore blobStore)
+	{
+		ArgumentNullException.ThrowIfNull(blobStore);
+		_blobStore = blobStore;
+	}
 
-    /// <summary>
-    ///     A short-lived pre-signed GET for a stripped derivative. Throws for
-    ///     anything else, including the original and the quarantined upload.
-    /// </summary>
-    public Task<Uri> CreateViewUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
-    {
-        if (!IsViewable(key))
-            throw new DomainRuleViolationException(
-                "A reviewer may only be shown a stripped derivative, never the original upload.");
+	/// <summary>
+	///     A short-lived pre-signed GET for a stripped derivative. Throws for
+	///     anything else, including the original and the quarantined upload.
+	/// </summary>
+	public Task<Uri> CreateViewUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	{
+		if (!IsViewable(key))
+			throw new DomainRuleViolationException(
+				"A reviewer may only be shown a stripped derivative, never the original upload.");
 
-        return _blobStore.CreateReadUrlAsync(key, lifetime, cancellationToken);
-    }
+		return _blobStore.CreateReadUrlAsync(key, lifetime, cancellationToken);
+	}
 
-    /// <summary>True when the key names a stripped derivative rather than an original or a quarantined upload.</summary>
-    public static bool IsViewable(BlobKey key)
-    {
-        return key.Compartment is MediaCompartment.Stripped;
-    }
+	/// <summary>True when the key names a stripped derivative rather than an original or a quarantined upload.</summary>
+	public static bool IsViewable(BlobKey key)
+	{
+		return key.Compartment is MediaCompartment.Stripped;
+	}
 }

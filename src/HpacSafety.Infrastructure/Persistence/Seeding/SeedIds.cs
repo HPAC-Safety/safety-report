@@ -21,27 +21,27 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// </remarks>
 public static class SeedIds
 {
-    /// <summary>
-    ///     The namespace every seeded name hangs off. Changing it re-identifies
-    ///     every seeded row, which is a data migration, not an edit.
-    /// </summary>
-    private static readonly byte[] Namespace =
-        Guid.Parse("6f2b7d0e-4a1c-4f7e-9c2a-1d5b3e8a7c40").ToByteArray(true);
+	/// <summary>
+	///     The namespace every seeded name hangs off. Changing it re-identifies
+	///     every seeded row, which is a data migration, not an edit.
+	/// </summary>
+	private static readonly byte[] Namespace =
+		Guid.Parse("6f2b7d0e-4a1c-4f7e-9c2a-1d5b3e8a7c40").ToByteArray(true);
 
-    /// <summary>Derives the identifier for a seeded row from its name.</summary>
-    /// <param name="name">
-    ///     A name unique within the seed — for example <c>question:province</c> or
-    ///     <c>option:province:alberta:fr-CA</c>.
-    /// </param>
-    public static TinyId For(string name)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+	/// <summary>Derives the identifier for a seeded row from its name.</summary>
+	/// <param name="name">
+	///     A name unique within the seed — for example <c>question:province</c> or
+	///     <c>option:province:alberta:fr-CA</c>.
+	/// </param>
+	public static TinyId For(string name)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(name);
 
-        var bytes = Encoding.UTF8.GetBytes(name);
-        var input = new byte[Namespace.Length + bytes.Length];
-        Namespace.CopyTo(input, 0);
-        bytes.CopyTo(input, Namespace.Length);
+		var bytes = Encoding.UTF8.GetBytes(name);
+		var input = new byte[Namespace.Length + bytes.Length];
+		Namespace.CopyTo(input, 0);
+		bytes.CopyTo(input, Namespace.Length);
 
-        return TinyId.FromEntropy(SHA256.HashData(input));
-    }
+		return TinyId.FromEntropy(SHA256.HashData(input));
+	}
 }

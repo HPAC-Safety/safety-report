@@ -15,79 +15,79 @@ namespace HpacSafety.Api.Tests.Authentication;
 /// </remarks>
 public sealed class AuthenticationRegistrationTests
 {
-    private const string GoodKey = "hpac-safety-registration-test-signing-key";
+	private const string GoodKey = "hpac-safety-registration-test-signing-key";
 
-    [Fact]
-    public void GivenDevelopment_WhenAuthenticationIsRegistered_ThenDevelopmentIssuerResolves()
-    {
-        // Given
-        var services = Build(new Dictionary<string, string?> { ["HpacSafety:Authentication:DevelopmentSigningKey"] = GoodKey }, true);
+	[Fact]
+	public void GivenDevelopment_WhenAuthenticationIsRegistered_ThenDevelopmentIssuerResolves()
+	{
+		// Given
+		var services = Build(new Dictionary<string, string?> { ["HpacSafety:Authentication:DevelopmentSigningKey"] = GoodKey }, true);
 
-        // When
-        var issuer = services.GetService<DevelopmentTokenIssuer>();
+		// When
+		var issuer = services.GetService<DevelopmentTokenIssuer>();
 
-        // Then
-        issuer.ShouldNotBeNull();
-    }
+		// Then
+		issuer.ShouldNotBeNull();
+	}
 
-    [Fact]
-    public void GivenNonDevelopmentEnvironment_WhenAuthenticationIsRegistered_ThenNoDevelopmentIssuerExists()
-    {
-        // Given
-        var services = Build(new Dictionary<string, string?> { ["HpacSafety:Authentication:Authority"] = "https://provider.example.test" }, false);
+	[Fact]
+	public void GivenNonDevelopmentEnvironment_WhenAuthenticationIsRegistered_ThenNoDevelopmentIssuerExists()
+	{
+		// Given
+		var services = Build(new Dictionary<string, string?> { ["HpacSafety:Authentication:Authority"] = "https://provider.example.test" }, false);
 
-        // When
-        var issuer = services.GetService<DevelopmentTokenIssuer>();
+		// When
+		var issuer = services.GetService<DevelopmentTokenIssuer>();
 
-        // Then — nothing can mint a token here, whatever configuration says.
-        issuer.ShouldBeNull();
-    }
+		// Then — nothing can mint a token here, whatever configuration says.
+		issuer.ShouldBeNull();
+	}
 
-    [Fact]
-    public void GivenNoSigningKeyInDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
-    {
-        // Given / When
-        var registering = () => Build([], true);
+	[Fact]
+	public void GivenNoSigningKeyInDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
+	{
+		// Given / When
+		var registering = () => Build([], true);
 
-        // Then
-        var exception = Should.Throw<InvalidOperationException>(registering);
-        exception.Message.ShouldContain("DevelopmentSigningKey");
-    }
+		// Then
+		var exception = Should.Throw<InvalidOperationException>(registering);
+		exception.Message.ShouldContain("DevelopmentSigningKey");
+	}
 
-    [Fact]
-    public void GivenSigningKeyShorterThanThirtyTwoBytes_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
-    {
-        // Given — one byte short of the minimum
-        var shortKey = new string('k', DevelopmentTokenIssuer.MinimumKeyBytes - 1);
+	[Fact]
+	public void GivenSigningKeyShorterThanThirtyTwoBytes_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
+	{
+		// Given — one byte short of the minimum
+		var shortKey = new string('k', DevelopmentTokenIssuer.MinimumKeyBytes - 1);
 
-        // When
-        var registering = () => Build(
-            new Dictionary<string, string?> { ["HpacSafety:Authentication:DevelopmentSigningKey"] = shortKey }, true);
+		// When
+		var registering = () => Build(
+			new Dictionary<string, string?> { ["HpacSafety:Authentication:DevelopmentSigningKey"] = shortKey }, true);
 
-        // Then
-        var exception = Should.Throw<InvalidOperationException>(registering);
-        exception.Message.ShouldContain("at least");
-    }
+		// Then
+		var exception = Should.Throw<InvalidOperationException>(registering);
+		exception.Message.ShouldContain("at least");
+	}
 
-    [Fact]
-    public void GivenNoAuthorityOutsideDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
-    {
-        // Given / When — without an authority there are no keys to validate against
-        var registering = () => Build([], false);
+	[Fact]
+	public void GivenNoAuthorityOutsideDevelopment_WhenAuthenticationIsRegistered_ThenItFailsLoudly()
+	{
+		// Given / When — without an authority there are no keys to validate against
+		var registering = () => Build([], false);
 
-        // Then
-        var exception = Should.Throw<InvalidOperationException>(registering);
-        exception.Message.ShouldContain("Authority");
-    }
+		// Then
+		var exception = Should.Throw<InvalidOperationException>(registering);
+		exception.Message.ShouldContain("Authority");
+	}
 
-    private static ServiceProvider Build(Dictionary<string, string?> settings, bool development)
-    {
-        var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
+	private static ServiceProvider Build(Dictionary<string, string?> settings, bool development)
+	{
+		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 
-        return new ServiceCollection()
-            .AddLogging()
-            .AddHpacSafetyAuthentication(configuration, development)
-            .AddSingleton(TimeProvider.System)
-            .BuildServiceProvider();
-    }
+		return new ServiceCollection()
+			.AddLogging()
+			.AddHpacSafetyAuthentication(configuration, development)
+			.AddSingleton(TimeProvider.System)
+			.BuildServiceProvider();
+	}
 }

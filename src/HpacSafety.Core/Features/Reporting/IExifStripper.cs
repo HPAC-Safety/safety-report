@@ -11,11 +11,11 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public interface IExifStripper
 {
-    /// <summary>
-    ///     Writes <paramref name="source" /> to <paramref name="destination" /> with
-    ///     every metadata profile removed. Throws when the bytes cannot be read as
-    ///     <paramref name="type" /> — an image that cannot be stripped must not
-    ///     produce a derivative.
-    /// </summary>
-    Task StripAsync(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken);
+	/// <summary>
+	///     Writes <paramref name="source" /> to <paramref name="destination" /> with
+	///     every metadata profile removed. Throws when the bytes cannot be read as
+	///     <paramref name="type" /> — an image that cannot be stripped must not
+	///     produce a derivative.
+	/// </summary>
+	Task StripAsync(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken);
 }

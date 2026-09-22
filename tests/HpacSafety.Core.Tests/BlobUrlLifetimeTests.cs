@@ -10,48 +10,48 @@ namespace HpacSafety.Core.Tests;
 /// </summary>
 public class BlobUrlLifetimeTests
 {
-    [Fact]
-    public void GivenLifetimeWithinCap_WhenValidated_ThenReturnedUnchanged()
-    {
-        // Given
-        var lifetime = TimeSpan.FromMinutes(5);
+	[Fact]
+	public void GivenLifetimeWithinCap_WhenValidated_ThenReturnedUnchanged()
+	{
+		// Given
+		var lifetime = TimeSpan.FromMinutes(5);
 
-        // When
-        var validated = BlobUrlLifetime.Validate(lifetime);
+		// When
+		var validated = BlobUrlLifetime.Validate(lifetime);
 
-        // Then
-        validated.ShouldBe(lifetime);
-    }
+		// Then
+		validated.ShouldBe(lifetime);
+	}
 
-    [Fact]
-    public void GivenLifetimeBeyondCap_WhenValidated_ThenRefused()
-    {
-        // Given
-        var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromSeconds(1);
+	[Fact]
+	public void GivenLifetimeBeyondCap_WhenValidated_ThenRefused()
+	{
+		// Given
+		var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromSeconds(1);
 
-        // When / Then
-        Should.Throw<DomainRuleViolationException>(() => BlobUrlLifetime.Validate(lifetime));
-    }
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => BlobUrlLifetime.Validate(lifetime));
+	}
 
-    [Theory]
-    [InlineData(0)]
-    [InlineData(-1)]
-    public void GivenLifetimeNeverExpiresOrHasExpired_WhenValidated_ThenRefused(int seconds)
-    {
-        // Given
-        var lifetime = TimeSpan.FromSeconds(seconds);
+	[Theory]
+	[InlineData(0)]
+	[InlineData(-1)]
+	public void GivenLifetimeNeverExpiresOrHasExpired_WhenValidated_ThenRefused(int seconds)
+	{
+		// Given
+		var lifetime = TimeSpan.FromSeconds(seconds);
 
-        // When / Then
-        Should.Throw<DomainRuleViolationException>(() => BlobUrlLifetime.Validate(lifetime));
-    }
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => BlobUrlLifetime.Validate(lifetime));
+	}
 
-    [Fact]
-    public void GivenCap_WhenRead_ThenMeasuredInMinutesNotHours()
-    {
-        // Given / When
-        var maximum = BlobUrlLifetime.Maximum;
+	[Fact]
+	public void GivenCap_WhenRead_ThenMeasuredInMinutesNotHours()
+	{
+		// Given / When
+		var maximum = BlobUrlLifetime.Maximum;
 
-        // Then
-        maximum.ShouldBeLessThanOrEqualTo(TimeSpan.FromMinutes(15));
-    }
+		// Then
+		maximum.ShouldBeLessThanOrEqualTo(TimeSpan.FromMinutes(15));
+	}
 }

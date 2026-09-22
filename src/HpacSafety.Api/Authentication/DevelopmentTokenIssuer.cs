@@ -26,82 +26,82 @@ namespace HpacSafety.Api.Authentication;
 /// </remarks>
 public sealed class DevelopmentTokenIssuer
 {
-    /// <summary>The issuer a development token names.</summary>
-    public const string IssuerName = "https://localhost/hpac-safety-dev";
+	/// <summary>The issuer a development token names.</summary>
+	public const string IssuerName = "https://localhost/hpac-safety-dev";
 
-    /// <summary>
-    ///     The shortest key this will sign with. HS256 keys shorter than 256 bits
-    ///     weaken the signature, and a developer should not learn a habit here that
-    ///     would be wrong anywhere else.
-    /// </summary>
-    public const int MinimumKeyBytes = 32;
+	/// <summary>
+	///     The shortest key this will sign with. HS256 keys shorter than 256 bits
+	///     weaken the signature, and a developer should not learn a habit here that
+	///     would be wrong anywhere else.
+	/// </summary>
+	public const int MinimumKeyBytes = 32;
 
-    // Username, password, role. The password matching the username is the point:
-    // it is memorable, obviously synthetic, and nothing here is a credential.
-    private static readonly (string User, string Password, MemberRole Role)[] Accounts =
-    [
-        ("admin", "admin", MemberRole.Administrator),
-        ("officer", "officer", MemberRole.SafetyOfficer),
-        ("user", "user", MemberRole.User)
-    ];
+	// Username, password, role. The password matching the username is the point:
+	// it is memorable, obviously synthetic, and nothing here is a credential.
+	private static readonly (string User, string Password, MemberRole Role)[] Accounts =
+	[
+		("admin", "admin", MemberRole.Administrator),
+		("officer", "officer", MemberRole.SafetyOfficer),
+		("user", "user", MemberRole.User)
+	];
 
-    private readonly HpacAuthenticationOptions _options;
-    private readonly TimeProvider _time;
+	private readonly HpacAuthenticationOptions _options;
+	private readonly TimeProvider _time;
 
-    /// <summary>Creates the issuer.</summary>
-    public DevelopmentTokenIssuer(IOptions<HpacAuthenticationOptions> options, TimeProvider time)
-    {
-        ArgumentNullException.ThrowIfNull(options);
+	/// <summary>Creates the issuer.</summary>
+	public DevelopmentTokenIssuer(IOptions<HpacAuthenticationOptions> options, TimeProvider time)
+	{
+		ArgumentNullException.ThrowIfNull(options);
 
-        _options = options.Value;
-        _time = time;
-    }
+		_options = options.Value;
+		_time = time;
+	}
 
-    /// <summary>The signing key, as the validation side must also derive it.</summary>
-    public static SymmetricSecurityKey KeyFrom(string signingKey)
-    {
-        return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
-    }
+	/// <summary>The signing key, as the validation side must also derive it.</summary>
+	public static SymmetricSecurityKey KeyFrom(string signingKey)
+	{
+		return new SymmetricSecurityKey(Encoding.UTF8.GetBytes(signingKey));
+	}
 
-    /// <summary>
-    ///     Issues a token for a known development credential pair, or <c>null</c>
-    ///     when the pair is not one.
-    /// </summary>
-    /// <remarks>
-    ///     The caller turns <c>null</c> into one generic failure. Nothing
-    ///     distinguishes an unknown username from a wrong password, here or in the
-    ///     response.
-    /// </remarks>
-    public DevelopmentToken? Issue(string? username, string? password)
-    {
-        var match = Accounts.FirstOrDefault(account =>
-            string.Equals(account.User, username, StringComparison.Ordinal)
-            && string.Equals(account.Password, password, StringComparison.Ordinal));
+	/// <summary>
+	///     Issues a token for a known development credential pair, or <c>null</c>
+	///     when the pair is not one.
+	/// </summary>
+	/// <remarks>
+	///     The caller turns <c>null</c> into one generic failure. Nothing
+	///     distinguishes an unknown username from a wrong password, here or in the
+	///     response.
+	/// </remarks>
+	public DevelopmentToken? Issue(string? username, string? password)
+	{
+		var match = Accounts.FirstOrDefault(account =>
+			string.Equals(account.User, username, StringComparison.Ordinal)
+			&& string.Equals(account.Password, password, StringComparison.Ordinal));
 
-        if (match.User is null) return null;
+		if (match.User is null) return null;
 
-        var signingKey = _options.DevelopmentSigningKey
-                         ?? throw new InvalidOperationException("The development signing key is not configured.");
+		var signingKey = _options.DevelopmentSigningKey
+						 ?? throw new InvalidOperationException("The development signing key is not configured.");
 
-        var issuedAt = _time.GetUtcNow();
-        var expiresAt = issuedAt + _options.TokenLifetime;
-        var subject = $"dev:{match.User}";
+		var issuedAt = _time.GetUtcNow();
+		var expiresAt = issuedAt + _options.TokenLifetime;
+		var subject = $"dev:{match.User}";
 
-        var token = new JwtSecurityToken(
-            IssuerName,
-            _options.Audience,
-            [
-                new Claim(JwtRegisteredClaimNames.Sub, subject),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("n")),
-                new Claim(_options.RoleClaimType, MemberRoles.CodeFor(match.Role))
-            ],
-            issuedAt.UtcDateTime,
-            expiresAt.UtcDateTime,
-            new SigningCredentials(KeyFrom(signingKey), SecurityAlgorithms.HmacSha256));
+		var token = new JwtSecurityToken(
+			IssuerName,
+			_options.Audience,
+			[
+				new Claim(JwtRegisteredClaimNames.Sub, subject),
+				new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("n")),
+				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(match.Role))
+			],
+			issuedAt.UtcDateTime,
+			expiresAt.UtcDateTime,
+			new SigningCredentials(KeyFrom(signingKey), SecurityAlgorithms.HmacSha256));
 
-        return new DevelopmentToken(
-            new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, match.Role);
-    }
+		return new DevelopmentToken(
+			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, match.Role);
+	}
 }
 
 /// <summary>A signed development token and what it says.</summary>
@@ -110,7 +110,7 @@ public sealed class DevelopmentTokenIssuer
 /// <param name="Subject">The subject claim it carries.</param>
 /// <param name="Role">The role claim it carries.</param>
 public sealed record DevelopmentToken(
-    string AccessToken,
-    DateTimeOffset ExpiresAt,
-    string Subject,
-    MemberRole Role);
+	string AccessToken,
+	DateTimeOffset ExpiresAt,
+	string Subject,
+	MemberRole Role);

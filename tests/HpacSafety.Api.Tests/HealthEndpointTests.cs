@@ -15,44 +15,44 @@ namespace HpacSafety.Api.Tests;
 [Collection(SharedApiPostgres.Name)]
 public class HealthEndpointTests(ApiPostgresFixture fixture)
 {
-    private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
+	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
-    [Fact]
-    public async Task GivenApiIsRunning_WhenHealthIsRequested_ThenReturnsOk()
-    {
-        // Given
-        using var client = _factory.CreateClient();
+	[Fact]
+	public async Task GivenApiIsRunning_WhenHealthIsRequested_ThenReturnsOk()
+	{
+		// Given
+		using var client = _factory.CreateClient();
 
-        // When
-        using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
+		// When
+		using var response = await client.GetAsync(new Uri("/health", UriKind.Relative));
 
-        // Then
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-    }
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
 
-    [Fact]
-    public async Task GivenApiIsRunning_WhenHealthIsRequested_ThenBodyReportsStatusOk()
-    {
-        // Given
-        using var client = _factory.CreateClient();
+	[Fact]
+	public async Task GivenApiIsRunning_WhenHealthIsRequested_ThenBodyReportsStatusOk()
+	{
+		// Given
+		using var client = _factory.CreateClient();
 
-        // When
-        var body = await client.GetFromJsonAsync<JsonElement>(new Uri("/health", UriKind.Relative));
+		// When
+		var body = await client.GetFromJsonAsync<JsonElement>(new Uri("/health", UriKind.Relative));
 
-        // Then
-        body.GetProperty("status").GetString().ShouldBe("ok");
-    }
+		// Then
+		body.GetProperty("status").GetString().ShouldBe("ok");
+	}
 
-    [Fact]
-    public async Task GivenApiIsRunning_WhenUnmappedRouteIsRequested_ThenReturnsNotFound()
-    {
-        // Given
-        using var client = _factory.CreateClient();
+	[Fact]
+	public async Task GivenApiIsRunning_WhenUnmappedRouteIsRequested_ThenReturnsNotFound()
+	{
+		// Given
+		using var client = _factory.CreateClient();
 
-        // When
-        using var response = await client.GetAsync(new Uri("/no-such-endpoint", UriKind.Relative));
+		// When
+		using var response = await client.GetAsync(new Uri("/no-such-endpoint", UriKind.Relative));
 
-        // Then
-        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
-    }
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
 }

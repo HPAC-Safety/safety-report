@@ -16,35 +16,35 @@ public sealed record ClassifiedReportField(SummarizationField Field, bool IsPriv
 /// </summary>
 public sealed class SummarizationInput
 {
-    private SummarizationInput(
-        IReadOnlyList<SummarizationField> reportContent,
-        IReadOnlyList<SummarizationField> privateContext)
-    {
-        ReportContent = reportContent;
-        PrivateContext = privateContext;
-    }
+	private SummarizationInput(
+		IReadOnlyList<SummarizationField> reportContent,
+		IReadOnlyList<SummarizationField> privateContext)
+	{
+		ReportContent = reportContent;
+		PrivateContext = privateContext;
+	}
 
-    /// <summary>Non-private fields eligible to contribute facts.</summary>
-    public IReadOnlyList<SummarizationField> ReportContent { get; }
+	/// <summary>Non-private fields eligible to contribute facts.</summary>
+	public IReadOnlyList<SummarizationField> ReportContent { get; }
 
-    /// <summary>Private values the model may use only to recognize and remove identifiers.</summary>
-    public IReadOnlyList<SummarizationField> PrivateContext { get; }
+	/// <summary>Private values the model may use only to recognize and remove identifiers.</summary>
+	public IReadOnlyList<SummarizationField> PrivateContext { get; }
 
-    /// <summary>Partitions fields so callers cannot mix private values into report content.</summary>
-    public static SummarizationInput Partition(IEnumerable<ClassifiedReportField> fields)
-    {
-        ArgumentNullException.ThrowIfNull(fields);
+	/// <summary>Partitions fields so callers cannot mix private values into report content.</summary>
+	public static SummarizationInput Partition(IEnumerable<ClassifiedReportField> fields)
+	{
+		ArgumentNullException.ThrowIfNull(fields);
 
-        var reportContent = new List<SummarizationField>();
-        var privateContext = new List<SummarizationField>();
+		var reportContent = new List<SummarizationField>();
+		var privateContext = new List<SummarizationField>();
 
-        foreach (var classified in fields)
-        {
-            ArgumentNullException.ThrowIfNull(classified);
-            ArgumentNullException.ThrowIfNull(classified.Field);
-            (classified.IsPrivate ? privateContext : reportContent).Add(classified.Field);
-        }
+		foreach (var classified in fields)
+		{
+			ArgumentNullException.ThrowIfNull(classified);
+			ArgumentNullException.ThrowIfNull(classified.Field);
+			(classified.IsPrivate ? privateContext : reportContent).Add(classified.Field);
+		}
 
-        return new SummarizationInput(reportContent.AsReadOnly(), privateContext.AsReadOnly());
-    }
+		return new SummarizationInput(reportContent.AsReadOnly(), privateContext.AsReadOnly());
+	}
 }

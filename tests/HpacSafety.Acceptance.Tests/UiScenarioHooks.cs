@@ -18,11 +18,11 @@ namespace HpacSafety.Acceptance.Tests;
 [Binding]
 public sealed class UiScenarioHooks
 {
-    [BeforeScenario("ui")]
-    public static async Task SkipUiScenarioAsync(ScenarioContext scenarioContext)
-    {
-        ArgumentNullException.ThrowIfNull(scenarioContext);
+	[BeforeScenario("ui")]
+	public static async Task SkipUiScenarioAsync(ScenarioContext scenarioContext)
+	{
+		ArgumentNullException.ThrowIfNull(scenarioContext);
 
-        await scenarioContext.ScenarioContainer.Resolve<ITestRunner>().SkipScenarioAsync();
-    }
+		await scenarioContext.ScenarioContainer.Resolve<ITestRunner>().SkipScenarioAsync();
+	}
 }

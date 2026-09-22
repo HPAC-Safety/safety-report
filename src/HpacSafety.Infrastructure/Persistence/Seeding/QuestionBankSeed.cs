@@ -9,12 +9,12 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// </summary>
 public static class QuestionBankSeed
 {
-    /// <summary>
-    ///     The instant every seeded row is stamped with. Fixed, so that applying
-    ///     the migration twice on two databases produces identical rows.
-    /// </summary>
-    public static readonly DateTimeOffset SeededAt = new(2026, 8, 22, 0, 0, 0, TimeSpan.Zero);
+	/// <summary>
+	///     The instant every seeded row is stamped with. Fixed, so that applying
+	///     the migration twice on two databases produces identical rows.
+	/// </summary>
+	public static readonly DateTimeOffset SeededAt = new(2026, 8, 22, 0, 0, 0, TimeSpan.Zero);
 
-    /// <summary>The seeded form, in display order.</summary>
-    public static IReadOnlyList<SeededQuestion> Questions { get; } = [];
+	/// <summary>The seeded form, in display order.</summary>
+	public static IReadOnlyList<SeededQuestion> Questions { get; } = [];
 }

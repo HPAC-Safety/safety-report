@@ -20,71 +20,71 @@ namespace HpacSafety.Infrastructure.Tests.Storage;
 [Trait("Category", "Integration")]
 public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDisposable
 {
-    private const string BucketName = "hpac-safety-uploads";
+	private const string BucketName = "hpac-safety-uploads";
 
-    private readonly HttpClient _http = new();
+	private readonly HttpClient _http = new();
 
-    // Pinned rather than floating on `latest`, for the same reason the Postgres
-    // container is: a server that moves underneath the suite is a failure nobody
-    // can reproduce. Pulled from quay.io: MinIO removed `minio/minio` from
-    // Docker Hub and now only publishes to quay.io/minio/minio.
-    private readonly MinioContainer _minio = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
-    private AmazonS3Client _s3 = null!;
+	// Pinned rather than floating on `latest`, for the same reason the Postgres
+	// container is: a server that moves underneath the suite is a failure nobody
+	// can reproduce. Pulled from quay.io: MinIO removed `minio/minio` from
+	// Docker Hub and now only publishes to quay.io/minio/minio.
+	private readonly MinioContainer _minio = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
+	private AmazonS3Client _s3 = null!;
 
-    public void Dispose()
-    {
-        _http.Dispose();
-        _s3?.Dispose();
-    }
+	public void Dispose()
+	{
+		_http.Dispose();
+		_s3?.Dispose();
+	}
 
-    public override async Task InitializeAsync()
-    {
-        await _minio.StartAsync();
+	public override async Task InitializeAsync()
+	{
+		await _minio.StartAsync();
 
-        _s3 = new AmazonS3Client(
-            new BasicAWSCredentials(_minio.GetAccessKey(), _minio.GetSecretKey()),
-            new AmazonS3Config
-            {
-                ServiceURL = _minio.GetConnectionString(),
-                ForcePathStyle = true,
-                AuthenticationRegion = "ca-central-1"
-            });
+		_s3 = new AmazonS3Client(
+			new BasicAWSCredentials(_minio.GetAccessKey(), _minio.GetSecretKey()),
+			new AmazonS3Config
+			{
+				ServiceURL = _minio.GetConnectionString(),
+				ForcePathStyle = true,
+				AuthenticationRegion = "ca-central-1"
+			});
 
-        // A private bucket, created with no public read policy. Nothing in this
-        // system ever adds one. See docs/data-handling.md.
-        await _s3.PutBucketAsync(BucketName, CancellationToken.None);
+		// A private bucket, created with no public read policy. Nothing in this
+		// system ever adds one. See docs/data-handling.md.
+		await _s3.PutBucketAsync(BucketName, CancellationToken.None);
 
-        await base.InitializeAsync();
-    }
+		await base.InitializeAsync();
+	}
 
-    public override async Task DisposeAsync()
-    {
-        await base.DisposeAsync();
-        await _minio.DisposeAsync();
-    }
+	public override async Task DisposeAsync()
+	{
+		await base.DisposeAsync();
+		await _minio.DisposeAsync();
+	}
 
-    protected override Task<IBlobStore> CreateStoreAsync()
-    {
-        return Task.FromResult<IBlobStore>(new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = BucketName }, TimeProvider.System));
-    }
+	protected override Task<IBlobStore> CreateStoreAsync()
+	{
+		return Task.FromResult<IBlobStore>(new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = BucketName }, TimeProvider.System));
+	}
 
-    protected override async Task<bool> TryUploadAsync(Uri uploadUrl, byte[] content, string contentType)
-    {
-        using var body = new ByteArrayContent(content);
-        body.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+	protected override async Task<bool> TryUploadAsync(Uri uploadUrl, byte[] content, string contentType)
+	{
+		using var body = new ByteArrayContent(content);
+		body.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
 
-        using var response = await _http.PutAsync(uploadUrl, body, CancellationToken.None);
-        return response.IsSuccessStatusCode;
-    }
+		using var response = await _http.PutAsync(uploadUrl, body, CancellationToken.None);
+		return response.IsSuccessStatusCode;
+	}
 
-    protected override async Task<bool> TryReadAsync(Uri readUrl)
-    {
-        using var response = await _http.GetAsync(readUrl, CancellationToken.None);
-        return response.IsSuccessStatusCode;
-    }
+	protected override async Task<bool> TryReadAsync(Uri readUrl)
+	{
+		using var response = await _http.GetAsync(readUrl, CancellationToken.None);
+		return response.IsSuccessStatusCode;
+	}
 
-    protected override Uri RetargetToKey(Uri url, BlobKey key)
-    {
-        return new UriBuilder(url) { Path = $"/{BucketName}/{key.Value}" }.Uri;
-    }
+	protected override Uri RetargetToKey(Uri url, BlobKey key)
+	{
+		return new UriBuilder(url) { Path = $"/{BucketName}/{key.Value}" }.Uri;
+	}
 }

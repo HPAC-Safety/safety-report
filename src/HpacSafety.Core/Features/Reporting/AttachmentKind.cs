@@ -8,7 +8,7 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public enum AttachmentKind
 {
-    Image = 0,
-    Video = 1,
-    Document = 2
+	Image = 0,
+	Video = 1,
+	Document = 2
 }

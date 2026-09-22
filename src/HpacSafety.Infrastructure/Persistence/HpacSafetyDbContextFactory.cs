@@ -13,23 +13,23 @@ namespace HpacSafety.Infrastructure.Persistence;
 /// </remarks>
 public sealed class HpacSafetyDbContextFactory : IDesignTimeDbContextFactory<HpacSafetyDbContext>
 {
-    /// <summary>
-    ///     The connection string design-time tooling uses when nothing else is set.
-    /// </summary>
-    public const string ConnectionStringVariable = "HPAC_SAFETY_CONNECTION";
+	/// <summary>
+	///     The connection string design-time tooling uses when nothing else is set.
+	/// </summary>
+	public const string ConnectionStringVariable = "HPAC_SAFETY_CONNECTION";
 
-    private const string DefaultConnection =
-        "Host=localhost;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres";
+	private const string DefaultConnection =
+		"Host=localhost;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres";
 
-    /// <inheritdoc />
-    public HpacSafetyDbContext CreateDbContext(string[] args)
-    {
-        var connection = Environment.GetEnvironmentVariable(ConnectionStringVariable) ?? DefaultConnection;
+	/// <inheritdoc />
+	public HpacSafetyDbContext CreateDbContext(string[] args)
+	{
+		var connection = Environment.GetEnvironmentVariable(ConnectionStringVariable) ?? DefaultConnection;
 
-        var options = new DbContextOptionsBuilder<HpacSafetyDbContext>()
-            .UseNpgsql(connection)
-            .Options;
+		var options = new DbContextOptionsBuilder<HpacSafetyDbContext>()
+			.UseNpgsql(connection)
+			.Options;
 
-        return new HpacSafetyDbContext(options);
-    }
+		return new HpacSafetyDbContext(options);
+	}
 }

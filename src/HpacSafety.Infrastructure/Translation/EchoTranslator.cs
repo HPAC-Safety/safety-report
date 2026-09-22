@@ -23,20 +23,20 @@ namespace HpacSafety.Infrastructure.Translation;
 /// </remarks>
 public sealed class EchoTranslator : ITranslator
 {
-    /// <summary>
-    ///     Always true. The stand-in has nothing to configure, and the point of it
-    ///     is that the control works locally.
-    /// </summary>
-    public bool IsConfigured => true;
+	/// <summary>
+	///     Always true. The stand-in has nothing to configure, and the point of it
+	///     is that the control works locally.
+	/// </summary>
+	public bool IsConfigured => true;
 
-    /// <inheritdoc />
-    public Task<IReadOnlyList<string>> TranslateAsync(
-        IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(texts);
+	/// <inheritdoc />
+	public Task<IReadOnlyList<string>> TranslateAsync(
+		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(texts);
 
-        return source == target
-            ? throw new TranslationUnavailableException("A translation needs two different languages.")
-            : Task.FromResult<IReadOnlyList<string>>([.. texts]);
-    }
+		return source == target
+			? throw new TranslationUnavailableException("A translation needs two different languages.")
+			: Task.FromResult<IReadOnlyList<string>>([.. texts]);
+	}
 }

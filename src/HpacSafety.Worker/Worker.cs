@@ -7,12 +7,12 @@ namespace HpacSafety.Worker;
 /// </summary>
 public sealed partial class Worker(ILogger<Worker> logger) : BackgroundService
 {
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        LogStarted(logger);
-        await Task.CompletedTask.ConfigureAwait(false);
-    }
+	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+	{
+		LogStarted(logger);
+		await Task.CompletedTask.ConfigureAwait(false);
+	}
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Worker started; no outbox consumer wired up yet.")]
-    private static partial void LogStarted(ILogger logger);
+	[LoggerMessage(Level = LogLevel.Information, Message = "Worker started; no outbox consumer wired up yet.")]
+	private static partial void LogStarted(ILogger logger);
 }

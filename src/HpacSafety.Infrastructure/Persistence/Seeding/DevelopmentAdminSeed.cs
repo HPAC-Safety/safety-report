@@ -32,41 +32,41 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// </remarks>
 public static class DevelopmentAdminSeed
 {
-    /// <summary>
-    ///     The PostgreSQL setting that has to be <c>true</c> for the row to be
-    ///     written. Unset — which is what every database is until somebody says
-    ///     otherwise — means no.
-    /// </summary>
-    public const string SettingName = "hpac.seed_development_admin";
+	/// <summary>
+	///     The PostgreSQL setting that has to be <c>true</c> for the row to be
+	///     written. Unset — which is what every database is until somebody says
+	///     otherwise — means no.
+	/// </summary>
+	public const string SettingName = "hpac.seed_development_admin";
 
-    /// <summary>
-    ///     The seeded identifier. Deliberately not a deliverable address: nothing
-    ///     can be sent to it, nobody can receive at it, and it is recognisable as a
-    ///     development artefact at a glance.
-    /// </summary>
-    public const string MemberIdentifier = "admin@localhost";
+	/// <summary>
+	///     The seeded identifier. Deliberately not a deliverable address: nothing
+	///     can be sent to it, nobody can receive at it, and it is recognisable as a
+	///     development artefact at a glance.
+	/// </summary>
+	public const string MemberIdentifier = "admin@localhost";
 
-    /// <summary>
-    ///     The role code this wrote. A literal rather than
-    ///     <c>EnumCode.Of(AdminRole.Administrator)</c>, because that enum is gone
-    ///     and the SQL of a committed migration has to keep producing exactly the
-    ///     bytes it always did.
-    /// </summary>
-    private const string AdministratorRoleCode = "administrator";
+	/// <summary>
+	///     The role code this wrote. A literal rather than
+	///     <c>EnumCode.Of(AdminRole.Administrator)</c>, because that enum is gone
+	///     and the SQL of a committed migration has to keep producing exactly the
+	///     bytes it always did.
+	/// </summary>
+	private const string AdministratorRoleCode = "administrator";
 
-    /// <summary>The identifier of the seeded row.</summary>
-    public static TinyId Id => SeedIds.For($"admin_user:{MemberIdentifier}");
+	/// <summary>The identifier of the seeded row.</summary>
+	public static TinyId Id => SeedIds.For($"admin_user:{MemberIdentifier}");
 
-    /// <summary>
-    ///     The guarded insert. Safe to run against any database: it writes nothing
-    ///     unless <see cref="SettingName" /> is <c>true</c> on the connection
-    ///     applying it, and nothing again if the row is already there.
-    /// </summary>
-    public static string InsertSql()
-    {
-        return string.Create(
-            CultureInfo.InvariantCulture,
-            $"""
+	/// <summary>
+	///     The guarded insert. Safe to run against any database: it writes nothing
+	///     unless <see cref="SettingName" /> is <c>true</c> on the connection
+	///     applying it, and nothing again if the row is already there.
+	/// </summary>
+	public static string InsertSql()
+	{
+		return string.Create(
+			CultureInfo.InvariantCulture,
+			$"""
              INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
              SELECT '{Id}',
                     '{MemberIdentifier}',
@@ -76,5 +76,5 @@ public static class DevelopmentAdminSeed
              WHERE current_setting('{SettingName}', true) = 'true'
                AND NOT EXISTS (SELECT 1 FROM admin_users WHERE member_identifier = '{MemberIdentifier}');
              """);
-    }
+	}
 }

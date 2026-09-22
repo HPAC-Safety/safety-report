@@ -21,9 +21,9 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public enum QuestionRole
 {
-    /// <summary>An ordinary question. Nothing reads it by name.</summary>
-    None = 0,
+	/// <summary>An ordinary question. Nothing reads it by name.</summary>
+	None = 0,
 
-    /// <summary>Gates publication entirely. Carried by the one system question.</summary>
-    ConsentPublish = 1
+	/// <summary>Gates publication entirely. Carried by the one system question.</summary>
+	ConsentPublish = 1
 }

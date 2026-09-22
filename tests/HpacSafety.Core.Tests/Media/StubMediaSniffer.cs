@@ -4,8 +4,8 @@ namespace HpacSafety.Core.Tests.Media;
 
 internal sealed class StubMediaSniffer(MediaType? result) : IMediaSniffer
 {
-    public Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(result);
-    }
+	public Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
+	{
+		return Task.FromResult(result);
+	}
 }

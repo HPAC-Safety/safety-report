@@ -6,50 +6,50 @@ namespace HpacSafety.Core.Features.Moderation;
 /// </summary>
 public class AuditLogEntry
 {
-    /// <summary>Records an action against a target.</summary>
-    // EF Core materializes an entity by calling this constructor and then
-    // setting every mapped property and backing field directly. It exists for
-    // the ORM and for nothing else — domain code still has to go through the
-    // constructor or factory that follows, so no caller can reach a half-built
-    // aggregate. See ADR-0019.
+	/// <summary>Records an action against a target.</summary>
+	// EF Core materializes an entity by calling this constructor and then
+	// setting every mapped property and backing field directly. It exists for
+	// the ORM and for nothing else — domain code still has to go through the
+	// constructor or factory that follows, so no caller can reach a half-built
+	// aggregate. See ADR-0019.
 #pragma warning disable CS8618 // Every mapped property is set by EF Core immediately after this runs.
-    private AuditLogEntry()
-    {
-    }
+	private AuditLogEntry()
+	{
+	}
 #pragma warning restore CS8618
 
-    public AuditLogEntry(string actorSubject, AuditAction action, string targetType, TinyId targetId, DateTimeOffset at, string? detail = null)
-    {
-        Id = TinyId.New();
-        ActorSubject = actorSubject;
-        Action = action;
-        TargetType = targetType;
-        TargetId = targetId;
-        OccurredAt = at;
-        Detail = detail;
-    }
+	public AuditLogEntry(string actorSubject, AuditAction action, string targetType, TinyId targetId, DateTimeOffset at, string? detail = null)
+	{
+		Id = TinyId.New();
+		ActorSubject = actorSubject;
+		Action = action;
+		TargetType = targetType;
+		TargetId = targetId;
+		OccurredAt = at;
+		Detail = detail;
+	}
 
-    /// <summary>Surrogate key.</summary>
-    public TinyId Id { get; private init; }
+	/// <summary>Surrogate key.</summary>
+	public TinyId Id { get; private init; }
 
-    /// <summary>
-    ///     Who acted, as the subject claim of their validated token. Opaque, and
-    ///     deliberately not a key — there is no user table to join to (ADR-0065).
-    /// </summary>
-    public string ActorSubject { get; private init; }
+	/// <summary>
+	///     Who acted, as the subject claim of their validated token. Opaque, and
+	///     deliberately not a key — there is no user table to join to (ADR-0065).
+	/// </summary>
+	public string ActorSubject { get; private init; }
 
-    /// <summary>What they did.</summary>
-    public AuditAction Action { get; private init; }
+	/// <summary>What they did.</summary>
+	public AuditAction Action { get; private init; }
 
-    /// <summary>What kind of thing they did it to.</summary>
-    public string TargetType { get; private init; }
+	/// <summary>What kind of thing they did it to.</summary>
+	public string TargetType { get; private init; }
 
-    /// <summary>Which one.</summary>
-    public TinyId TargetId { get; private init; }
+	/// <summary>Which one.</summary>
+	public TinyId TargetId { get; private init; }
 
-    /// <summary>When.</summary>
-    public DateTimeOffset OccurredAt { get; private init; }
+	/// <summary>When.</summary>
+	public DateTimeOffset OccurredAt { get; private init; }
 
-    /// <summary>Anything else worth keeping. Identifiers, never report content.</summary>
-    public string? Detail { get; private init; }
+	/// <summary>Anything else worth keeping. Identifiers, never report content.</summary>
+	public string? Detail { get; private init; }
 }

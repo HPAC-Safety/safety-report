@@ -6,15 +6,15 @@ namespace HpacSafety.Core.Features.Moderation;
 /// </summary>
 public enum AuditAction
 {
-    ViewedRawReport = 0,
-    EditedSummary = 1,
-    ApprovedSummary = 2,
-    ApprovedReport = 3,
-    RejectedReport = 4,
-    PublishedReport = 5,
-    CreatedQuestion = 10,
-    RevisedQuestion = 11,
-    ReorderedQuestions = 12,
-    DeactivatedQuestion = 13,
-    DeletedQuestion = 14
+	ViewedRawReport = 0,
+	EditedSummary = 1,
+	ApprovedSummary = 2,
+	ApprovedReport = 3,
+	RejectedReport = 4,
+	PublishedReport = 5,
+	CreatedQuestion = 10,
+	RevisedQuestion = 11,
+	ReorderedQuestions = 12,
+	DeactivatedQuestion = 13,
+	DeletedQuestion = 14
 }

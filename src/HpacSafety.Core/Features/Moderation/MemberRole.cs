@@ -11,12 +11,12 @@ namespace HpacSafety.Core.Features.Moderation;
 /// </remarks>
 public enum MemberRole
 {
-    /// <summary>Proves HPAC membership. May submit a report, and nothing else.</summary>
-    User = 0,
+	/// <summary>Proves HPAC membership. May submit a report, and nothing else.</summary>
+	User = 0,
 
-    /// <summary>Reviews, edits, approves, and rejects reports and summaries.</summary>
-    SafetyOfficer = 1,
+	/// <summary>Reviews, edits, approves, and rejects reports and summaries.</summary>
+	SafetyOfficer = 1,
 
-    /// <summary>Everything a safety officer may do, plus authoring the question bank.</summary>
-    Administrator = 2
+	/// <summary>Everything a safety officer may do, plus authoring the question bank.</summary>
+	Administrator = 2
 }

@@ -10,9 +10,9 @@ namespace HpacSafety.Infrastructure.Tests.Seeding;
 /// </summary>
 public sealed class QuestionBankSeedTests
 {
-    [Fact]
-    public void GivenCurrentQuestionBankSeed_WhenRead_ThenSeedsNoQuestions()
-    {
-        QuestionBankSeed.Questions.ShouldBeEmpty();
-    }
+	[Fact]
+	public void GivenCurrentQuestionBankSeed_WhenRead_ThenSeedsNoQuestions()
+	{
+		QuestionBankSeed.Questions.ShouldBeEmpty();
+	}
 }

@@ -9,75 +9,75 @@ namespace HpacSafety.Core.Tests.Media;
 /// </summary>
 public class MediaPolicyTests
 {
-    private static readonly MediaPolicy Policy = new(1_000, MediaType.All);
+	private static readonly MediaPolicy Policy = new(1_000, MediaType.All);
 
-    [Fact]
-    public void GivenJpegReallyIsJpeg_WhenValidated_ThenAccepted()
-    {
-        // Given / When
-        var result = Policy.Validate("image/jpeg", MediaType.Jpeg, 500);
+	[Fact]
+	public void GivenJpegReallyIsJpeg_WhenValidated_ThenAccepted()
+	{
+		// Given / When
+		var result = Policy.Validate("image/jpeg", MediaType.Jpeg, 500);
 
-        // Then
-        result.IsAccepted.ShouldBeTrue();
-        result.RejectionReason.ShouldBe(MediaRejectionReason.None);
-        result.Type.ShouldBe(MediaType.Jpeg);
-    }
+		// Then
+		result.IsAccepted.ShouldBeTrue();
+		result.RejectionReason.ShouldBe(MediaRejectionReason.None);
+		result.Type.ShouldBe(MediaType.Jpeg);
+	}
 
-    [Fact]
-    public void GivenFileClaimingImageJpegButContainingPng_WhenValidated_ThenRejected()
-    {
-        // Given / When
-        var result = Policy.Validate("image/jpeg", MediaType.Png, 500);
+	[Fact]
+	public void GivenFileClaimingImageJpegButContainingPng_WhenValidated_ThenRejected()
+	{
+		// Given / When
+		var result = Policy.Validate("image/jpeg", MediaType.Png, 500);
 
-        // Then
-        result.IsAccepted.ShouldBeFalse();
-        result.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
-    }
+		// Then
+		result.IsAccepted.ShouldBeFalse();
+		result.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
+	}
 
-    [Fact]
-    public void GivenFileClaimingImageJpegButContainingSomethingUnrecognisable_WhenValidated_ThenRejected()
-    {
-        // Given / When
-        var result = Policy.Validate("image/jpeg", null, 500);
+	[Fact]
+	public void GivenFileClaimingImageJpegButContainingSomethingUnrecognisable_WhenValidated_ThenRejected()
+	{
+		// Given / When
+		var result = Policy.Validate("image/jpeg", null, 500);
 
-        // Then
-        result.IsAccepted.ShouldBeFalse();
-        result.RejectionReason.ShouldBe(MediaRejectionReason.UnrecognisedContent);
-    }
+		// Then
+		result.IsAccepted.ShouldBeFalse();
+		result.RejectionReason.ShouldBe(MediaRejectionReason.UnrecognisedContent);
+	}
 
-    [Fact]
-    public void GivenFileLargerThanLimit_WhenValidated_ThenRejected()
-    {
-        // Given / When
-        var result = Policy.Validate("image/jpeg", MediaType.Jpeg, 1_001);
+	[Fact]
+	public void GivenFileLargerThanLimit_WhenValidated_ThenRejected()
+	{
+		// Given / When
+		var result = Policy.Validate("image/jpeg", MediaType.Jpeg, 1_001);
 
-        // Then
-        result.IsAccepted.ShouldBeFalse();
-        result.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
-    }
+		// Then
+		result.IsAccepted.ShouldBeFalse();
+		result.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
+	}
 
-    [Fact]
-    public void GivenEmptyFile_WhenValidated_ThenRejected()
-    {
-        // Given / When
-        var result = Policy.Validate("image/jpeg", MediaType.Jpeg, 0);
+	[Fact]
+	public void GivenEmptyFile_WhenValidated_ThenRejected()
+	{
+		// Given / When
+		var result = Policy.Validate("image/jpeg", MediaType.Jpeg, 0);
 
-        // Then
-        result.IsAccepted.ShouldBeFalse();
-        result.RejectionReason.ShouldBe(MediaRejectionReason.Empty);
-    }
+		// Then
+		result.IsAccepted.ShouldBeFalse();
+		result.RejectionReason.ShouldBe(MediaRejectionReason.Empty);
+	}
 
-    [Fact]
-    public void GivenTypeThisDeploymentDoesNotAccept_WhenValidated_ThenRejected()
-    {
-        // Given
-        var jpegOnly = new MediaPolicy(1_000, [MediaType.Jpeg]);
+	[Fact]
+	public void GivenTypeThisDeploymentDoesNotAccept_WhenValidated_ThenRejected()
+	{
+		// Given
+		var jpegOnly = new MediaPolicy(1_000, [MediaType.Jpeg]);
 
-        // When
-        var result = jpegOnly.Validate("image/png", MediaType.Png, 500);
+		// When
+		var result = jpegOnly.Validate("image/png", MediaType.Png, 500);
 
-        // Then
-        result.IsAccepted.ShouldBeFalse();
-        result.RejectionReason.ShouldBe(MediaRejectionReason.UnacceptedMediaType);
-    }
+		// Then
+		result.IsAccepted.ShouldBeFalse();
+		result.RejectionReason.ShouldBe(MediaRejectionReason.UnacceptedMediaType);
+	}
 }

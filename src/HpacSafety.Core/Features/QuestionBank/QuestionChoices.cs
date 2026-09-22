@@ -29,53 +29,53 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public static class QuestionChoices
 {
-    /// <summary>
-    ///     The choices to render for a revision.
-    /// </summary>
-    /// <param name="revision">The revision being shown.</param>
-    /// <param name="optionSet">
-    ///     The shared set the revision names, when it names one and the caller has
-    ///     loaded it. Null for a revision with hand-typed options, or when the set
-    ///     has since been retired.
-    /// </param>
-    /// <returns>
-    ///     The live set's items for an autocomplete backed by a set; the
-    ///     revision's own frozen snapshot otherwise.
-    /// </returns>
-    public static IReadOnlyList<QuestionOptionInput> For(QuestionRevision revision, OptionSet? optionSet)
-    {
-        ArgumentNullException.ThrowIfNull(revision);
+	/// <summary>
+	///     The choices to render for a revision.
+	/// </summary>
+	/// <param name="revision">The revision being shown.</param>
+	/// <param name="optionSet">
+	///     The shared set the revision names, when it names one and the caller has
+	///     loaded it. Null for a revision with hand-typed options, or when the set
+	///     has since been retired.
+	/// </param>
+	/// <returns>
+	///     The live set's items for an autocomplete backed by a set; the
+	///     revision's own frozen snapshot otherwise.
+	/// </returns>
+	public static IReadOnlyList<QuestionOptionInput> For(QuestionRevision revision, OptionSet? optionSet)
+	{
+		ArgumentNullException.ThrowIfNull(revision);
 
-        return optionSet is not null && RendersLiveSet(revision, optionSet)
-            ? optionSet.AsRevisionOptions()
-            : Snapshot(revision);
-    }
+		return optionSet is not null && RendersLiveSet(revision, optionSet)
+			? optionSet.AsRevisionOptions()
+			: Snapshot(revision);
+	}
 
-    /// <summary>
-    ///     Whether this revision renders the live set rather than its snapshot.
-    ///     False whenever the set is missing — a retired set leaves the revision
-    ///     showing exactly what it recorded, rather than nothing at all.
-    /// </summary>
-    public static bool RendersLiveSet(QuestionRevision revision, OptionSet? optionSet)
-    {
-        ArgumentNullException.ThrowIfNull(revision);
+	/// <summary>
+	///     Whether this revision renders the live set rather than its snapshot.
+	///     False whenever the set is missing — a retired set leaves the revision
+	///     showing exactly what it recorded, rather than nothing at all.
+	/// </summary>
+	public static bool RendersLiveSet(QuestionRevision revision, OptionSet? optionSet)
+	{
+		ArgumentNullException.ThrowIfNull(revision);
 
-        return revision.Type == QuestionType.Autocomplete
-               && optionSet is { Deleted: null }
-               && revision.OptionSetId == optionSet.Id;
-    }
+		return revision.Type == QuestionType.Autocomplete
+			   && optionSet is { Deleted: null }
+			   && revision.OptionSetId == optionSet.Id;
+	}
 
-    /// <summary>The revision's own recorded choices, in order.</summary>
-    public static IReadOnlyList<QuestionOptionInput> Snapshot(QuestionRevision revision)
-    {
-        ArgumentNullException.ThrowIfNull(revision);
+	/// <summary>The revision's own recorded choices, in order.</summary>
+	public static IReadOnlyList<QuestionOptionInput> Snapshot(QuestionRevision revision)
+	{
+		ArgumentNullException.ThrowIfNull(revision);
 
-        return
-        [
-            .. revision.Options
-                .OrderBy(option => option.DisplayOrder)
-                .Select(option => new QuestionOptionInput(
-                    option.Code, option.LabelEn, option.LabelFr, option.SourceItemId))
-        ];
-    }
+		return
+		[
+			.. revision.Options
+				.OrderBy(option => option.DisplayOrder)
+				.Select(option => new QuestionOptionInput(
+					option.Code, option.LabelEn, option.LabelFr, option.SourceItemId))
+		];
+	}
 }

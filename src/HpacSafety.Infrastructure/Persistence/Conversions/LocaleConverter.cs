@@ -13,9 +13,9 @@ namespace HpacSafety.Infrastructure.Persistence.Conversions;
 /// </remarks>
 public sealed class LocaleConverter : ValueConverter<Locale, string>
 {
-    /// <summary>Creates the converter.</summary>
-    public LocaleConverter()
-        : base(locale => locale.Code, code => Locale.Parse(code))
-    {
-    }
+	/// <summary>Creates the converter.</summary>
+	public LocaleConverter()
+		: base(locale => locale.Code, code => Locale.Parse(code))
+	{
+	}
 }

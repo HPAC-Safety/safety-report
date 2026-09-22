@@ -11,222 +11,222 @@ namespace HpacSafety.Core.Tests;
 /// </summary>
 public class QuestionBankEdgeTests
 {
-    private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
+	private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
-    [Fact]
-    public void GivenDeletedQuestion_WhenEdited_ThenRefused()
-    {
-        // Given
-        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
-        question.Delete(Now);
+	[Fact]
+	public void GivenDeletedQuestion_WhenEdited_ThenRefused()
+	{
+		// Given
+		var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
+		question.Delete(Now);
 
-        // When
-        var reordering = () => question.Reorder(2, Now);
+		// When
+		var reordering = () => question.Reorder(2, Now);
 
-        // Then
-        reordering.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		reordering.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenQuestionDeletedTwice_WhenSecondDeleteRuns_ThenFirstTimeStands()
-    {
-        // Given
-        var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
-        question.Delete(Now);
+	[Fact]
+	public void GivenQuestionDeletedTwice_WhenSecondDeleteRuns_ThenFirstTimeStands()
+	{
+		// Given
+		var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
+		question.Delete(Now);
 
-        // When
-        question.Delete(Now.AddDays(1));
+		// When
+		question.Delete(Now.AddDays(1));
 
-        // Then
-        question.Deleted.ShouldBe(Now);
-    }
+		// Then
+		question.Deleted.ShouldBe(Now);
+	}
 
-    [Fact]
-    public void GivenRoleBearingQuestion_WhenRoleMovesToAnotherQuestion_ThenNewOneCarries()
-    {
-        // Given — consent is the only role that must live somewhere, so moving
-        // it away has to land it on another question, not clear it to None.
-        var oldConsent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
-        var newConsent = Question.Create(
-            "consent_v2", QuestionType.YesNo, "Do you agree?", "Êtes-vous d'accord ?", Now);
+	[Fact]
+	public void GivenRoleBearingQuestion_WhenRoleMovesToAnotherQuestion_ThenNewOneCarries()
+	{
+		// Given — consent is the only role that must live somewhere, so moving
+		// it away has to land it on another question, not clear it to None.
+		var oldConsent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+		var newConsent = Question.Create(
+			"consent_v2", QuestionType.YesNo, "Do you agree?", "Êtes-vous d'accord ?", Now);
 
-        // When
-        newConsent.AssignRole(QuestionRole.ConsentPublish);
+		// When
+		newConsent.AssignRole(QuestionRole.ConsentPublish);
 
-        // Then
-        newConsent.Role.ShouldBe(QuestionRole.ConsentPublish);
-        oldConsent.Role.ShouldBe(QuestionRole.ConsentPublish);
-    }
+		// Then
+		newConsent.Role.ShouldBe(QuestionRole.ConsentPublish);
+		oldConsent.Role.ShouldBe(QuestionRole.ConsentPublish);
+	}
 
-    [Fact]
-    public void GivenConsentQuestion_WhenRoleIsReassigned_ThenRefused()
-    {
-        // Given
-        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+	[Fact]
+	public void GivenConsentQuestion_WhenRoleIsReassigned_ThenRefused()
+	{
+		// Given
+		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
-        // When
-        var reassigning = () => consent.AssignRole(QuestionRole.None);
+		// When
+		var reassigning = () => consent.AssignRole(QuestionRole.None);
 
-        // Then
-        reassigning.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		reassigning.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenNonPrivateQuestion_WhenAnswered_ThenAnswerCarriesClassification()
-    {
-        // Given
-        var question = Question.Create(
-            "province", QuestionType.ShortText, "Province", "Province", Now, isPrivate: false);
-        var report = new Report(Locale.EnCa, Now);
+	[Fact]
+	public void GivenNonPrivateQuestion_WhenAnswered_ThenAnswerCarriesClassification()
+	{
+		// Given
+		var question = Question.Create(
+			"province", QuestionType.ShortText, "Province", "Province", Now, isPrivate: false);
+		var report = new Report(Locale.EnCa, Now);
 
-        // When
-        var answer = report.Answer(question, "Alberta", Now);
+		// When
+		var answer = report.Answer(question, "Alberta", Now);
 
-        // Then
-        answer.IsPrivate.ShouldBeFalse();
-    }
+		// Then
+		answer.IsPrivate.ShouldBeFalse();
+	}
 
-    [Fact]
-    public void GivenDuplicateOptionCode_WhenRevisionIsCreated_ThenRefused()
-    {
-        // Given / When — options are supplied once, complete, at creation
-        var creating = () => Question.Create(
-            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
-            options:
-            [
-                new QuestionOptionInput("morning", "Morning", "Matin"),
-                new QuestionOptionInput("Morning", "Morning again", "Encore le matin")
-            ]);
+	[Fact]
+	public void GivenDuplicateOptionCode_WhenRevisionIsCreated_ThenRefused()
+	{
+		// Given / When — options are supplied once, complete, at creation
+		var creating = () => Question.Create(
+			"time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+			options:
+			[
+				new QuestionOptionInput("morning", "Morning", "Matin"),
+				new QuestionOptionInput("Morning", "Morning again", "Encore le matin")
+			]);
 
-        // Then — the code is normalized before the duplicate check
-        creating.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then — the code is normalized before the duplicate check
+		creating.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenOptionMissingFrenchWording_WhenRevisionIsCreated_ThenRefused()
-    {
-        // Given / When
-        var creating = () => Question.Create(
-            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
-            options: [new QuestionOptionInput("morning", "Morning", "   ")]);
+	[Fact]
+	public void GivenOptionMissingFrenchWording_WhenRevisionIsCreated_ThenRefused()
+	{
+		// Given / When
+		var creating = () => Question.Create(
+			"time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+			options: [new QuestionOptionInput("morning", "Morning", "   ")]);
 
-        // Then
-        creating.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		creating.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenOptionsSuppliedInSpecificOrder_WhenRevisionIsCreated_ThenTheirDisplayOrderMatches()
-    {
-        // Given / When — the complete ordered option set is fixed at
-        // creation; there is no in-place reorder on an existing revision.
-        var question = Question.Create(
-            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
-            options:
-            [
-                new QuestionOptionInput("evening", "Evening", "Soirée"),
-                new QuestionOptionInput("morning", "Morning", "Matin")
-            ]);
+	[Fact]
+	public void GivenOptionsSuppliedInSpecificOrder_WhenRevisionIsCreated_ThenTheirDisplayOrderMatches()
+	{
+		// Given / When — the complete ordered option set is fixed at
+		// creation; there is no in-place reorder on an existing revision.
+		var question = Question.Create(
+			"time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+			options:
+			[
+				new QuestionOptionInput("evening", "Evening", "Soirée"),
+				new QuestionOptionInput("morning", "Morning", "Matin")
+			]);
 
-        // Then
-        question.CurrentRevision.Option("evening")!.DisplayOrder.ShouldBe(0);
-        question.CurrentRevision.Option("morning")!.DisplayOrder.ShouldBe(1);
-        question.Revisions.Count.ShouldBe(1);
-    }
+		// Then
+		question.CurrentRevision.Option("evening")!.DisplayOrder.ShouldBe(0);
+		question.CurrentRevision.Option("morning")!.DisplayOrder.ShouldBe(1);
+		question.Revisions.Count.ShouldBe(1);
+	}
 
-    [Fact]
-    public void GivenSelectQuestion_WhenAnsweredWithFreeText_ThenRefused()
-    {
-        // Given
-        var question = Question.Create(
-            "time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
-            options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
-        var report = new Report(Locale.EnCa, Now);
+	[Fact]
+	public void GivenSelectQuestion_WhenAnsweredWithFreeText_ThenRefused()
+	{
+		// Given
+		var question = Question.Create(
+			"time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
+			options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
+		var report = new Report(Locale.EnCa, Now);
 
-        // When
-        var answering = () => report.Answer(question, "in the morning", Now);
+		// When
+		var answering = () => report.Answer(question, "in the morning", Now);
 
-        // Then
-        answering.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		answering.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenConsentQuestion_WhenNothingIsChosen_ThenRefused()
-    {
-        // Given — consent_publish is the only question the system ever
-        // requires; IsRequired can no longer be set on an ordinary question.
-        var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
-        var report = new Report(Locale.EnCa, Now);
+	[Fact]
+	public void GivenConsentQuestion_WhenNothingIsChosen_ThenRefused()
+	{
+		// Given — consent_publish is the only question the system ever
+		// requires; IsRequired can no longer be set on an ordinary question.
+		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+		var report = new Report(Locale.EnCa, Now);
 
-        // When
-        var answering = () => report.Answer(consent, [], Now);
+		// When
+		var answering = () => report.Answer(consent, [], Now);
 
-        // Then
-        answering.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		answering.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenSingleSelectQuestion_WhenTwoAnswersAreGiven_ThenRefused()
-    {
-        // Given
-        var question = Question.Create(
-            "province", QuestionType.SingleSelect, "Province", "Province", Now,
-            options: [new QuestionOptionInput("alberta", "Alberta", "Alberta"), new QuestionOptionInput("ontario", "Ontario", "Ontario")]);
-        var report = new Report(Locale.EnCa, Now);
+	[Fact]
+	public void GivenSingleSelectQuestion_WhenTwoAnswersAreGiven_ThenRefused()
+	{
+		// Given
+		var question = Question.Create(
+			"province", QuestionType.SingleSelect, "Province", "Province", Now,
+			options: [new QuestionOptionInput("alberta", "Alberta", "Alberta"), new QuestionOptionInput("ontario", "Ontario", "Ontario")]);
+		var report = new Report(Locale.EnCa, Now);
 
-        // When
-        var answering = () => report.Answer(question, ["Alberta", "Ontario"], Now);
+		// When
+		var answering = () => report.Answer(question, ["Alberta", "Ontario"], Now);
 
-        // Then
-        answering.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		answering.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenMultiSelectQuestion_WhenSeveralAnswersAreGiven_ThenAllAreRecorded()
-    {
-        // Given
-        var question = Question.Create(
-            "ratings", QuestionType.MultiSelect, "Pilot's ratings", "Qualifications du pilote", Now,
-            options: [new QuestionOptionInput("p3", "P3", "P3"), new QuestionOptionInput("paragliding_instructor", "Paragliding Instructor", "Instructeur de parapente")]);
-        var report = new Report(Locale.EnCa, Now);
+	[Fact]
+	public void GivenMultiSelectQuestion_WhenSeveralAnswersAreGiven_ThenAllAreRecorded()
+	{
+		// Given
+		var question = Question.Create(
+			"ratings", QuestionType.MultiSelect, "Pilot's ratings", "Qualifications du pilote", Now,
+			options: [new QuestionOptionInput("p3", "P3", "P3"), new QuestionOptionInput("paragliding_instructor", "Paragliding Instructor", "Instructeur de parapente")]);
+		var report = new Report(Locale.EnCa, Now);
 
-        // When — one row per chosen value, each a string in its own right
-        var answers = report.Answer(question, ["P3", "Paragliding Instructor"], Now);
+		// When — one row per chosen value, each a string in its own right
+		var answers = report.Answer(question, ["P3", "Paragliding Instructor"], Now);
 
-        // Then
-        answers.Count.ShouldBe(2);
-        answers.Select(answer => answer.Value).ShouldBe(["P3", "Paragliding Instructor"]);
-        answers.ShouldAllBe(answer => answer.NeedsTranslation);
-    }
+		// Then
+		answers.Count.ShouldBe(2);
+		answers.Select(answer => answer.Value).ShouldBe(["P3", "Paragliding Instructor"]);
+		answers.ShouldAllBe(answer => answer.NeedsTranslation);
+	}
 
-    [Fact]
-    public void GivenKeyOfOnlyPunctuation_WhenNormalized_ThenRefused()
-    {
-        // Given / When
-        var normalizing = () => QuestionKey.Normalize("!!! ???");
+	[Fact]
+	public void GivenKeyOfOnlyPunctuation_WhenNormalized_ThenRefused()
+	{
+		// Given / When
+		var normalizing = () => QuestionKey.Normalize("!!! ???");
 
-        // Then — a key nobody chose is a key nobody can find again
-        normalizing.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then — a key nobody chose is a key nobody can find again
+		normalizing.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenBlankLabel_WhenQuestionIsCreated_ThenRefused()
-    {
-        // Given / When
-        var creating = () => Question.Create("where", QuestionType.ShortText, "   ", "Où ?", Now);
+	[Fact]
+	public void GivenBlankLabel_WhenQuestionIsCreated_ThenRefused()
+	{
+		// Given / When
+		var creating = () => Question.Create("where", QuestionType.ShortText, "   ", "Où ?", Now);
 
-        // Then
-        creating.ShouldThrow<DomainRuleViolationException>();
-    }
+		// Then
+		creating.ShouldThrow<DomainRuleViolationException>();
+	}
 
-    [Fact]
-    public void GivenSupportedLocaleCode_WhenParsed_ThenResolves()
-    {
-        // Given / When
-        var parsed = Locale.TryParse("FR-ca", out var locale);
+	[Fact]
+	public void GivenSupportedLocaleCode_WhenParsed_ThenResolves()
+	{
+		// Given / When
+		var parsed = Locale.TryParse("FR-ca", out var locale);
 
-        // Then
-        parsed.ShouldBeTrue();
-        locale.ShouldBe(Locale.FrCa);
-        Locale.Parse("en-CA").ToString().ShouldBe("en-CA");
-    }
+		// Then
+		parsed.ShouldBeTrue();
+		locale.ShouldBe(Locale.FrCa);
+		Locale.Parse("en-CA").ToString().ShouldBe("en-CA");
+	}
 }

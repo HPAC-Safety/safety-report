@@ -8,14 +8,14 @@ namespace HpacSafety.Core.Tests.Media;
 /// </summary>
 internal sealed class RecordingExifStripper : IExifStripper
 {
-    public int Invocations { get; private set; }
+	public int Invocations { get; private set; }
 
-    public async Task StripAsync(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken)
-    {
-        Invocations++;
-        using var buffer = new MemoryStream();
-        await source.CopyToAsync(buffer, cancellationToken);
-        var stripped = "STRIPPED:"u8.ToArray().Concat(buffer.ToArray()).ToArray();
-        await destination.WriteAsync(stripped, cancellationToken);
-    }
+	public async Task StripAsync(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken)
+	{
+		Invocations++;
+		using var buffer = new MemoryStream();
+		await source.CopyToAsync(buffer, cancellationToken);
+		var stripped = "STRIPPED:"u8.ToArray().Concat(buffer.ToArray()).ToArray();
+		await destination.WriteAsync(stripped, cancellationToken);
+	}
 }

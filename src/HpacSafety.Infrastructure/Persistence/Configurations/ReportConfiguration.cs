@@ -8,100 +8,100 @@ namespace HpacSafety.Infrastructure.Persistence.Configurations;
 /// <summary>The <c>reports</c> table and everything hanging off it.</summary>
 public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 {
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<Report> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<Report> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("reports");
-        builder.HasKey(report => report.Id);
+		builder.ToTable("reports");
+		builder.HasKey(report => report.Id);
 
-        builder.Property(report => report.Language).IsRequired();
-        builder.Property(report => report.Status).IsRequired();
+		builder.Property(report => report.Language).IsRequired();
+		builder.Property(report => report.Status).IsRequired();
 
-        // Deliberately nullable, and deliberately not defaulted. An unanswered
-        // consent is not a "no" — see ADR-0016.
-        builder.Property(report => report.ConsentPublish);
+		// Deliberately nullable, and deliberately not defaulted. An unanswered
+		// consent is not a "no" — see ADR-0016.
+		builder.Property(report => report.ConsentPublish);
 
-        builder.Property(report => report.SummaryError).HasMaxLength(2000);
+		builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
-        // The review queue reads by status, oldest first.
-        builder.HasIndex(report => new { report.Status, report.SubmittedAt });
+		// The review queue reads by status, oldest first.
+		builder.HasIndex(report => new { report.Status, report.SubmittedAt });
 
-        builder.ToTable(t => t.HasCheckConstraint(
-            "ck_reports_language",
-            "language IN ('en-CA', 'fr-CA')"));
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_reports_language",
+			"language IN ('en-CA', 'fr-CA')"));
 
-        builder.ToTable(t => t.HasCheckConstraint(
-            "ck_reports_status",
-            "status IN ('submitted', 'summarizing', 'pending_review', 'summary_failed', 'approved', 'rejected', 'published')"));
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_reports_status",
+			"status IN ('submitted', 'summarizing', 'pending_review', 'summary_failed', 'approved', 'rejected', 'published')"));
 
-        builder.HasMany(report => report.Answers)
-            .WithOne()
-            .HasForeignKey(answer => answer.ReportId)
-            .OnDelete(DeleteBehavior.Cascade);
+		builder.HasMany(report => report.Answers)
+			.WithOne()
+			.HasForeignKey(answer => answer.ReportId)
+			.OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(report => report.Files)
-            .WithOne()
-            .HasForeignKey(file => file.ReportId)
-            .OnDelete(DeleteBehavior.Cascade);
+		builder.HasMany(report => report.Files)
+			.WithOne()
+			.HasForeignKey(file => file.ReportId)
+			.OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(report => report.Summary)
-            .WithOne()
-            .HasForeignKey<Summary>(summary => summary.ReportId)
-            .OnDelete(DeleteBehavior.Cascade);
+		builder.HasOne(report => report.Summary)
+			.WithOne()
+			.HasForeignKey<Summary>(summary => summary.ReportId)
+			.OnDelete(DeleteBehavior.Cascade);
 
-        // The collections are backed by private fields; the Summary reference
-        // is an ordinary auto-property and needs no field access mode.
-        builder.Metadata.FindNavigation(nameof(Report.Answers))!.SetPropertyAccessMode(PropertyAccessMode.Field);
-        builder.Metadata.FindNavigation(nameof(Report.Files))!.SetPropertyAccessMode(PropertyAccessMode.Field);
-    }
+		// The collections are backed by private fields; the Summary reference
+		// is an ordinary auto-property and needs no field access mode.
+		builder.Metadata.FindNavigation(nameof(Report.Answers))!.SetPropertyAccessMode(PropertyAccessMode.Field);
+		builder.Metadata.FindNavigation(nameof(Report.Files))!.SetPropertyAccessMode(PropertyAccessMode.Field);
+	}
 }
 
 /// <summary>The <c>report_answers</c> table.</summary>
 public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportAnswer>
 {
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<ReportAnswer> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<ReportAnswer> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("report_answers");
-        builder.HasKey(answer => answer.Id);
+		builder.ToTable("report_answers");
+		builder.HasKey(answer => answer.Id);
 
-        builder.Property(answer => answer.QuestionKey).HasMaxLength(128).IsRequired();
-        builder.Property(answer => answer.IsPrivate).IsRequired();
+		builder.Property(answer => answer.QuestionKey).HasMaxLength(128).IsRequired();
+		builder.Property(answer => answer.IsPrivate).IsRequired();
 
-        builder.Property(answer => answer.Locale).IsRequired();
-        builder.Property(answer => answer.NeedsTranslation).IsRequired();
+		builder.Property(answer => answer.Locale).IsRequired();
+		builder.Property(answer => answer.NeedsTranslation).IsRequired();
 
-        // Not unique on (report, question): a multi-select records one row per
-        // chosen value, so a report legitimately holds several answers to one
-        // question (ADR-0072).
-        builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId });
-        builder.HasIndex(answer => answer.QuestionRevisionId);
+		// Not unique on (report, question): a multi-select records one row per
+		// chosen value, so a report legitimately holds several answers to one
+		// question (ADR-0072).
+		builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId });
+		builder.HasIndex(answer => answer.QuestionRevisionId);
 
-        // The administrator's translation queue.
-        builder.HasIndex(answer => answer.NeedsTranslation)
-            .HasFilter("needs_translation");
+		// The administrator's translation queue.
+		builder.HasIndex(answer => answer.NeedsTranslation)
+			.HasFilter("needs_translation");
 
-        // Lets a report_files row enforce, at the database level, that the
-        // answer it links to belongs to the same report — see
-        // ReportFileConfiguration below.
-        builder.HasAlternateKey(answer => new { answer.ReportId, answer.Id });
+		// Lets a report_files row enforce, at the database level, that the
+		// answer it links to belongs to the same report — see
+		// ReportFileConfiguration below.
+		builder.HasAlternateKey(answer => new { answer.ReportId, answer.Id });
 
-        // An answer references the revision it was answered under, and that
-        // revision may never be deleted out from under it.
-        builder.HasOne<QuestionRevision>()
-            .WithMany()
-            .HasForeignKey(answer => answer.QuestionRevisionId)
-            .OnDelete(DeleteBehavior.Restrict);
+		// An answer references the revision it was answered under, and that
+		// revision may never be deleted out from under it.
+		builder.HasOne<QuestionRevision>()
+			.WithMany()
+			.HasForeignKey(answer => answer.QuestionRevisionId)
+			.OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne<Question>()
-            .WithMany()
-            .HasForeignKey(answer => answer.QuestionId)
-            .OnDelete(DeleteBehavior.Restrict);
-    }
+		builder.HasOne<Question>()
+			.WithMany()
+			.HasForeignKey(answer => answer.QuestionId)
+			.OnDelete(DeleteBehavior.Restrict);
+	}
 }
 
 /// <summary>
@@ -110,51 +110,51 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 /// </summary>
 public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFile>
 {
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<ReportFile> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<ReportFile> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("report_files");
-        builder.HasKey(file => file.Id);
+		builder.ToTable("report_files");
+		builder.HasKey(file => file.Id);
 
-        builder.Property(file => file.Kind).IsRequired();
-        builder.Property(file => file.BlobKey).HasMaxLength(512).IsRequired();
-        builder.Property(file => file.StrippedBlobKey).HasMaxLength(512);
-        builder.Property(file => file.ContentType).HasMaxLength(128).IsRequired();
-        builder.Property(file => file.ProcessingErrorCode).HasMaxLength(128);
+		builder.Property(file => file.Kind).IsRequired();
+		builder.Property(file => file.BlobKey).HasMaxLength(512).IsRequired();
+		builder.Property(file => file.StrippedBlobKey).HasMaxLength(512);
+		builder.Property(file => file.ContentType).HasMaxLength(128).IsRequired();
+		builder.Property(file => file.ProcessingErrorCode).HasMaxLength(128);
 
-        builder.HasIndex(file => file.ReportId);
-        builder.HasIndex(file => new { file.ReportId, file.ReportAnswerId });
+		builder.HasIndex(file => file.ReportId);
+		builder.HasIndex(file => new { file.ReportId, file.ReportAnswerId });
 
-        // A file belongs to exactly one file-upload answer on the same
-        // report — never one on a different report. An independent FK on
-        // report_answer_id alone cannot express that: it would accept
-        // ReportId = A with an answer that belongs to report B. The composite
-        // FK below, against the compound alternate key on ReportAnswer, is
-        // what actually enforces it. A null ReportAnswerId still satisfies
-        // the constraint (Postgres MATCH SIMPLE), so the not-yet-linked
-        // window before AddFile's answer is known is unaffected.
-        builder.HasOne<ReportAnswer>()
-            .WithMany()
-            .HasForeignKey(file => new { file.ReportId, file.ReportAnswerId })
-            .HasPrincipalKey(answer => new { answer.ReportId, answer.Id })
-            .OnDelete(DeleteBehavior.Restrict);
+		// A file belongs to exactly one file-upload answer on the same
+		// report — never one on a different report. An independent FK on
+		// report_answer_id alone cannot express that: it would accept
+		// ReportId = A with an answer that belongs to report B. The composite
+		// FK below, against the compound alternate key on ReportAnswer, is
+		// what actually enforces it. A null ReportAnswerId still satisfies
+		// the constraint (Postgres MATCH SIMPLE), so the not-yet-linked
+		// window before AddFile's answer is known is unaffected.
+		builder.HasOne<ReportAnswer>()
+			.WithMany()
+			.HasForeignKey(file => new { file.ReportId, file.ReportAnswerId })
+			.HasPrincipalKey(answer => new { answer.ReportId, answer.Id })
+			.OnDelete(DeleteBehavior.Restrict);
 
-        // The EXIF stripper claims work by looking for what it has not done yet.
-        builder.HasIndex(file => file.ExifStrippedAt).HasFilter("exif_stripped_at IS NULL");
+		// The EXIF stripper claims work by looking for what it has not done yet.
+		builder.HasIndex(file => file.ExifStrippedAt).HasFilter("exif_stripped_at IS NULL");
 
-        builder.ToTable(t => t.HasCheckConstraint(
-            "ck_report_files_kind",
-            "kind IN ('image', 'video', 'document')"));
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_files_kind",
+			"kind IN ('image', 'video', 'document')"));
 
-        // AwaitsStripping treats these two as one fact: a stripped-at time
-        // with no key, or a key with no stripped-at time, would read as a
-        // half-finished stripping nobody can act on.
-        builder.ToTable(t => t.HasCheckConstraint(
-            "ck_report_files_exif_stripped_coherence",
-            "(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)"));
-    }
+		// AwaitsStripping treats these two as one fact: a stripped-at time
+		// with no key, or a key with no stripped-at time, would read as a
+		// half-finished stripping nobody can act on.
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_files_exif_stripped_coherence",
+			"(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)"));
+	}
 }
 
 /// <summary>
@@ -163,33 +163,33 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 /// </summary>
 public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 {
-    /// <inheritdoc />
-    public void Configure(EntityTypeBuilder<Summary> builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<Summary> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
 
-        builder.ToTable("summaries");
-        builder.HasKey(summary => summary.Id);
+		builder.ToTable("summaries");
+		builder.HasKey(summary => summary.Id);
 
-        builder.Property(summary => summary.AiSummaryEn).IsRequired();
-        builder.Property(summary => summary.AiSummaryFr).IsRequired();
+		builder.Property(summary => summary.AiSummaryEn).IsRequired();
+		builder.Property(summary => summary.AiSummaryFr).IsRequired();
 
-        // Every published sentence traces back to exactly what produced it.
-        builder.Property(summary => summary.Model).HasMaxLength(200).IsRequired();
-        builder.Property(summary => summary.PromptVersion).HasMaxLength(50).IsRequired();
+		// Every published sentence traces back to exactly what produced it.
+		builder.Property(summary => summary.Model).HasMaxLength(200).IsRequired();
+		builder.Property(summary => summary.PromptVersion).HasMaxLength(50).IsRequired();
 
-        // Exactly one summary row per report.
-        builder.HasIndex(summary => summary.ReportId).IsUnique();
+		// Exactly one summary row per report.
+		builder.HasIndex(summary => summary.ReportId).IsUnique();
 
-        // IsApproved reads ApprovedAt alone, but a row with one of the pair
-        // set and not the other is not a state the domain can represent —
-        // Approve()/ClearApproval() always set or clear both together.
-        builder.ToTable(t => t.HasCheckConstraint(
-            "ck_summaries_approval_coherence",
-            "(approved_by_subject IS NULL) = (approved_at IS NULL)"));
+		// IsApproved reads ApprovedAt alone, but a row with one of the pair
+		// set and not the other is not a state the domain can represent —
+		// Approve()/ClearApproval() always set or clear both together.
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_summaries_approval_coherence",
+			"(approved_by_subject IS NULL) = (approved_at IS NULL)"));
 
-        // The approver is a token subject, not a key. There is no user table
-        // to point a foreign key at — see ADR-0065.
-        builder.Property(summary => summary.ApprovedBySubject).HasMaxLength(256);
-    }
+		// The approver is a token subject, not a key. There is no user table
+		// to point a foreign key at — see ADR-0065.
+		builder.Property(summary => summary.ApprovedBySubject).HasMaxLength(256);
+	}
 }

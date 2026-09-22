@@ -12,22 +12,22 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public static class MediaRejection
 {
-    /// <summary>The prefix every upload-rejection key shares.</summary>
-    public const string KeyPrefix = "upload.rejected.";
+	/// <summary>The prefix every upload-rejection key shares.</summary>
+	public const string KeyPrefix = "upload.rejected.";
 
-    /// <summary>The localization key for one rejection reason.</summary>
-    public static string LocalizationKeyFor(MediaRejectionReason reason)
-    {
-        return reason switch
-        {
-            MediaRejectionReason.Empty => KeyPrefix + "empty",
-            MediaRejectionReason.TooLarge => KeyPrefix + "tooLarge",
-            MediaRejectionReason.UnrecognisedContent => KeyPrefix + "unrecognisedContent",
-            MediaRejectionReason.UnacceptedMediaType => KeyPrefix + "unacceptedMediaType",
-            MediaRejectionReason.DeclaredTypeMismatch => KeyPrefix + "declaredTypeMismatch",
-            MediaRejectionReason.None => throw new ArgumentOutOfRangeException(
-                nameof(reason), "An accepted upload has no rejection to render."),
-            _ => throw new ArgumentOutOfRangeException(nameof(reason))
-        };
-    }
+	/// <summary>The localization key for one rejection reason.</summary>
+	public static string LocalizationKeyFor(MediaRejectionReason reason)
+	{
+		return reason switch
+		{
+			MediaRejectionReason.Empty => KeyPrefix + "empty",
+			MediaRejectionReason.TooLarge => KeyPrefix + "tooLarge",
+			MediaRejectionReason.UnrecognisedContent => KeyPrefix + "unrecognisedContent",
+			MediaRejectionReason.UnacceptedMediaType => KeyPrefix + "unacceptedMediaType",
+			MediaRejectionReason.DeclaredTypeMismatch => KeyPrefix + "declaredTypeMismatch",
+			MediaRejectionReason.None => throw new ArgumentOutOfRangeException(
+				nameof(reason), "An accepted upload has no rejection to render."),
+			_ => throw new ArgumentOutOfRangeException(nameof(reason))
+		};
+	}
 }

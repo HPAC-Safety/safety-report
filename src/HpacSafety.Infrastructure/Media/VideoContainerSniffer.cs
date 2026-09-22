@@ -19,37 +19,37 @@ namespace HpacSafety.Infrastructure.Media;
 /// </summary>
 public sealed class VideoContainerSniffer : IMediaSniffer
 {
-    private const int HeaderLength = 12;
+	private const int HeaderLength = 12;
 
-    /// <inheritdoc />
-    public async Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(content);
+	/// <inheritdoc />
+	public async Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(content);
 
-        var header = new byte[HeaderLength];
-        var read = await content.ReadAtLeastAsync(header, HeaderLength, false, cancellationToken)
-            .ConfigureAwait(false);
+		var header = new byte[HeaderLength];
+		var read = await content.ReadAtLeastAsync(header, HeaderLength, false, cancellationToken)
+			.ConfigureAwait(false);
 
-        if (read < HeaderLength || !header.AsSpan(4, 4).SequenceEqual("ftyp"u8)) return null;
+		if (read < HeaderLength || !header.AsSpan(4, 4).SequenceEqual("ftyp"u8)) return null;
 
-        return FromBrand(header.AsSpan(8, 4));
-    }
+		return FromBrand(header.AsSpan(8, 4));
+	}
 
-    private static MediaType? FromBrand(ReadOnlySpan<byte> brand)
-    {
-        if (brand.SequenceEqual("qt  "u8)) return MediaType.QuickTime;
+	private static MediaType? FromBrand(ReadOnlySpan<byte> brand)
+	{
+		if (brand.SequenceEqual("qt  "u8)) return MediaType.QuickTime;
 
-        var isMp4 = brand.SequenceEqual("isom"u8)
-                    || brand.SequenceEqual("iso2"u8)
-                    || brand.SequenceEqual("iso4"u8)
-                    || brand.SequenceEqual("iso5"u8)
-                    || brand.SequenceEqual("iso6"u8)
-                    || brand.SequenceEqual("mp41"u8)
-                    || brand.SequenceEqual("mp42"u8)
-                    || brand.SequenceEqual("avc1"u8)
-                    || brand.SequenceEqual("M4V "u8)
-                    || brand.SequenceEqual("dash"u8);
+		var isMp4 = brand.SequenceEqual("isom"u8)
+					|| brand.SequenceEqual("iso2"u8)
+					|| brand.SequenceEqual("iso4"u8)
+					|| brand.SequenceEqual("iso5"u8)
+					|| brand.SequenceEqual("iso6"u8)
+					|| brand.SequenceEqual("mp41"u8)
+					|| brand.SequenceEqual("mp42"u8)
+					|| brand.SequenceEqual("avc1"u8)
+					|| brand.SequenceEqual("M4V "u8)
+					|| brand.SequenceEqual("dash"u8);
 
-        return isMp4 ? MediaType.Mp4 : null;
-    }
+		return isMp4 ? MediaType.Mp4 : null;
+	}
 }

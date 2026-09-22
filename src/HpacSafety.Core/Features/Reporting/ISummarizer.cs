@@ -19,6 +19,6 @@ public sealed record SummaryDraft(string Text, string Model, string PromptVersio
 /// </remarks>
 public interface ISummarizer
 {
-    /// <summary>Summarizes partitioned report fields.</summary>
-    Task<SummaryDraft> SummarizeAsync(SummarizationInput input, Locale locale, CancellationToken cancellationToken);
+	/// <summary>Summarizes partitioned report fields.</summary>
+	Task<SummaryDraft> SummarizeAsync(SummarizationInput input, Locale locale, CancellationToken cancellationToken);
 }

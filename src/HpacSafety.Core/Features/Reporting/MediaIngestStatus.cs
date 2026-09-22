@@ -8,15 +8,15 @@ namespace HpacSafety.Core.Features.Reporting;
 /// </summary>
 public enum MediaIngestStatus
 {
-    /// <summary>Refused. The bytes stay in quarantine and expire; nothing was promoted.</summary>
-    Rejected = 0,
+	/// <summary>Refused. The bytes stay in quarantine and expire; nothing was promoted.</summary>
+	Rejected = 0,
 
-    /// <summary>
-    ///     Accepted and retained, but this system cannot strip the format yet, so no
-    ///     derivative exists and nothing is viewable. Fails closed by design.
-    /// </summary>
-    AwaitingStripping = 1,
+	/// <summary>
+	///     Accepted and retained, but this system cannot strip the format yet, so no
+	///     derivative exists and nothing is viewable. Fails closed by design.
+	/// </summary>
+	AwaitingStripping = 1,
 
-    /// <summary>Accepted, stripped, and viewable through a pre-signed GET.</summary>
-    Stripped = 2
+	/// <summary>Accepted, stripped, and viewable through a pre-signed GET.</summary>
+	Stripped = 2
 }

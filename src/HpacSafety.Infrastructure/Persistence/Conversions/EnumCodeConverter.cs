@@ -13,19 +13,19 @@ namespace HpacSafety.Infrastructure.Persistence.Conversions;
 /// </remarks>
 /// <typeparam name="TEnum">The domain enum.</typeparam>
 public sealed class EnumCodeConverter<TEnum> : ValueConverter<TEnum, string>
-    where TEnum : struct, Enum
+	where TEnum : struct, Enum
 {
-    /// <summary>Creates the converter.</summary>
-    public EnumCodeConverter()
-        : base(value => EnumCode.Of(value), code => Parse(code))
-    {
-    }
+	/// <summary>Creates the converter.</summary>
+	public EnumCodeConverter()
+		: base(value => EnumCode.Of(value), code => Parse(code))
+	{
+	}
 
-    private static TEnum Parse(string code)
-    {
-        return EnumCode.TryParse<TEnum>(code, out var value)
-            ? value
-            : throw new DomainRuleViolationException(
-                $"'{code}' is not a {typeof(TEnum).Name}. A stored code that no longer names a domain value needs a data migration, not a guess.");
-    }
+	private static TEnum Parse(string code)
+	{
+		return EnumCode.TryParse<TEnum>(code, out var value)
+			? value
+			: throw new DomainRuleViolationException(
+				$"'{code}' is not a {typeof(TEnum).Name}. A stored code that no longer names a domain value needs a data migration, not a guess.");
+	}
 }

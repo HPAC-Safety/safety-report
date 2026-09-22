@@ -21,57 +21,57 @@ namespace HpacSafety.Core.Tests.Media;
 /// </summary>
 public class ReviewerLinkIsTheOnlyChokepointTests
 {
-    [Theory]
-    [InlineData("CreateReadUrlAsync", "ReviewerMediaLink.cs")]
-    public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
-        string method,
-        string chokepointFile)
-    {
-        // Given
-        // The port itself declares the method, and the adapters implement it.
-        // Everything else has to go through the chokepoint.
-        var allowed = new[] { chokepointFile, "IBlobStore.cs", "S3BlobStore.cs", "FileSystemBlobStore.cs" };
-        var callSite = new Regex($@"\b{method}\s*\(", RegexOptions.None, TimeSpan.FromSeconds(5));
+	[Theory]
+	[InlineData("CreateReadUrlAsync", "ReviewerMediaLink.cs")]
+	public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
+		string method,
+		string chokepointFile)
+	{
+		// Given
+		// The port itself declares the method, and the adapters implement it.
+		// Everything else has to go through the chokepoint.
+		var allowed = new[] { chokepointFile, "IBlobStore.cs", "S3BlobStore.cs", "FileSystemBlobStore.cs" };
+		var callSite = new Regex($@"\b{method}\s*\(", RegexOptions.None, TimeSpan.FromSeconds(5));
 
-        // When
-        var offenders = Directory
-            .EnumerateFiles(Path.Combine(RepositoryRoot(), "src"), "*.cs", SearchOption.AllDirectories)
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
-            .Where(path => !allowed.Contains(Path.GetFileName(path), StringComparer.Ordinal))
-            .Where(path => callSite.IsMatch(File.ReadAllText(path)))
-            .Select(path => Path.GetFileName(path))
-            .ToArray();
+		// When
+		var offenders = Directory
+			.EnumerateFiles(Path.Combine(RepositoryRoot(), "src"), "*.cs", SearchOption.AllDirectories)
+			.Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+			.Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+			.Where(path => !allowed.Contains(Path.GetFileName(path), StringComparer.Ordinal))
+			.Where(path => callSite.IsMatch(File.ReadAllText(path)))
+			.Select(path => Path.GetFileName(path))
+			.ToArray();
 
-        // Then
-        offenders.ShouldBeEmpty(
-            $"'{method}' may only be called from {chokepointFile}. "
-            + "Signing a URL anywhere else bypasses the rule that a reviewer sees only stripped bytes "
-            + "and that an upload can only land in quarantine.");
-    }
+		// Then
+		offenders.ShouldBeEmpty(
+			$"'{method}' may only be called from {chokepointFile}. "
+			+ "Signing a URL anywhere else bypasses the rule that a reviewer sees only stripped bytes "
+			+ "and that an upload can only land in quarantine.");
+	}
 
-    [Fact]
-    public void GivenChokepointItself_WhenSourceIsScanned_ThenScanIsFindingRealCallSites()
-    {
-        // Given
-        var reviewerLink = Path.Combine(RepositoryRoot(), "src", "HpacSafety.Core", "Features", "Reporting", "ReviewerMediaLink.cs");
+	[Fact]
+	public void GivenChokepointItself_WhenSourceIsScanned_ThenScanIsFindingRealCallSites()
+	{
+		// Given
+		var reviewerLink = Path.Combine(RepositoryRoot(), "src", "HpacSafety.Core", "Features", "Reporting", "ReviewerMediaLink.cs");
 
-        // When
-        var source = File.ReadAllText(reviewerLink);
+		// When
+		var source = File.ReadAllText(reviewerLink);
 
-        // Then
-        // Guards the tests above: if the scan could not see a call it does not
-        // matter that it saw none elsewhere. A guard that cannot fail is not a
-        // guard.
-        source.ShouldContain("CreateReadUrlAsync(");
-    }
+		// Then
+		// Guards the tests above: if the scan could not see a call it does not
+		// matter that it saw none elsewhere. A guard that cannot fail is not a
+		// guard.
+		source.ShouldContain("CreateReadUrlAsync(");
+	}
 
-    internal static string RepositoryRoot()
-    {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+	internal static string RepositoryRoot()
+	{
+		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx"))) directory = directory.Parent;
+		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx"))) directory = directory.Parent;
 
-        return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
-    }
+		return directory?.FullName ?? throw new InvalidOperationException("Could not locate the repository root.");
+	}
 }

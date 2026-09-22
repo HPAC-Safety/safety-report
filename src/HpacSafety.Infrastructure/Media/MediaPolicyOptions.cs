@@ -12,18 +12,18 @@ namespace HpacSafety.Infrastructure.Media;
 /// </summary>
 public sealed class MediaPolicyOptions
 {
-    /// <summary>
-    ///     The configurable 50 MB default applied independently to every accepted
-    ///     attachment format.
-    /// </summary>
-    public const long DefaultMaxByteSize = 50L * 1024 * 1024;
+	/// <summary>
+	///     The configurable 50 MB default applied independently to every accepted
+	///     attachment format.
+	/// </summary>
+	public const long DefaultMaxByteSize = 50L * 1024 * 1024;
 
-    /// <summary>The largest upload this deployment accepts, in bytes.</summary>
-    public long MaxByteSize { get; set; } = DefaultMaxByteSize;
+	/// <summary>The largest upload this deployment accepts, in bytes.</summary>
+	public long MaxByteSize { get; set; } = DefaultMaxByteSize;
 
-    /// <summary>Builds the domain policy this deployment runs with.</summary>
-    public MediaPolicy ToPolicy()
-    {
-        return new MediaPolicy(MaxByteSize, MediaType.All);
-    }
+	/// <summary>Builds the domain policy this deployment runs with.</summary>
+	public MediaPolicy ToPolicy()
+	{
+		return new MediaPolicy(MaxByteSize, MediaType.All);
+	}
 }

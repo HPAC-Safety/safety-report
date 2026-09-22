@@ -15,9 +15,9 @@ namespace HpacSafety.Infrastructure.Persistence.Conversions;
 /// </remarks>
 public sealed class TinyIdConverter : ValueConverter<TinyId, string>
 {
-    /// <summary>Creates the converter.</summary>
-    public TinyIdConverter()
-        : base(id => id.Value, stored => TinyId.Parse(stored))
-    {
-    }
+	/// <summary>Creates the converter.</summary>
+	public TinyIdConverter()
+		: base(id => id.Value, stored => TinyId.Parse(stored))
+	{
+	}
 }

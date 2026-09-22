@@ -13,77 +13,77 @@ namespace HpacSafety.Api.Admin;
 ///     question bank is form definition, not report content.
 /// </remarks>
 public sealed record QuestionView(
-    string Id,
-    string Key,
-    string RevisionId,
-    int RevisionNumber,
-    string Type,
-    bool IsSystem,
-    bool IsRequired,
-    bool IsPrivate,
-    bool IsActive,
-    int DisplayOrder,
-    string? DependsOnQuestionId,
-    string? DependsOnOptionCode,
-    string? OptionSetId,
-    string LabelEn,
-    string LabelFr,
-    string? HelpTextEn,
-    string? HelpTextFr,
-    string? PlaceholderEn,
-    string? PlaceholderFr,
-    IReadOnlyList<OptionView> Options,
-    bool ChoicesComeFromLiveList,
-    bool HasBeenAnswered)
+	string Id,
+	string Key,
+	string RevisionId,
+	int RevisionNumber,
+	string Type,
+	bool IsSystem,
+	bool IsRequired,
+	bool IsPrivate,
+	bool IsActive,
+	int DisplayOrder,
+	string? DependsOnQuestionId,
+	string? DependsOnOptionCode,
+	string? OptionSetId,
+	string LabelEn,
+	string LabelFr,
+	string? HelpTextEn,
+	string? HelpTextFr,
+	string? PlaceholderEn,
+	string? PlaceholderFr,
+	IReadOnlyList<OptionView> Options,
+	bool ChoicesComeFromLiveList,
+	bool HasBeenAnswered)
 {
-    /// <summary>Flattens a question and its current revision for the screen.</summary>
-    /// <param name="question">The question to show.</param>
-    /// <param name="optionSet">
-    ///     The shared set the current revision names, when it names one. An
-    ///     autocomplete renders the live set rather than its snapshot, so the
-    ///     authoring screen shows an administrator the same list a reporter would
-    ///     see — including anything reporters have added. See ADR-0063.
-    /// </param>
-    /// <param name="hasBeenAnswered">
-    ///     Whether any answer references this question. The screen warns before a
-    ///     save, because an edit to an answered question retires it and creates a
-    ///     new one in its place (ADR-0071).
-    /// </param>
-    public static QuestionView Of(
-        Question question, OptionSet? optionSet = null, bool hasBeenAnswered = false)
-    {
-        ArgumentNullException.ThrowIfNull(question);
+	/// <summary>Flattens a question and its current revision for the screen.</summary>
+	/// <param name="question">The question to show.</param>
+	/// <param name="optionSet">
+	///     The shared set the current revision names, when it names one. An
+	///     autocomplete renders the live set rather than its snapshot, so the
+	///     authoring screen shows an administrator the same list a reporter would
+	///     see — including anything reporters have added. See ADR-0063.
+	/// </param>
+	/// <param name="hasBeenAnswered">
+	///     Whether any answer references this question. The screen warns before a
+	///     save, because an edit to an answered question retires it and creates a
+	///     new one in its place (ADR-0071).
+	/// </param>
+	public static QuestionView Of(
+		Question question, OptionSet? optionSet = null, bool hasBeenAnswered = false)
+	{
+		ArgumentNullException.ThrowIfNull(question);
 
-        var revision = question.CurrentRevision;
-        var choices = QuestionChoices.For(revision, optionSet);
+		var revision = question.CurrentRevision;
+		var choices = QuestionChoices.For(revision, optionSet);
 
-        return new QuestionView(
-            question.Id.Value,
-            question.Key,
-            revision.Id.Value,
-            revision.RevisionNumber,
-            EnumCode.Of(revision.Type),
-            question.IsSystem,
-            revision.IsRequired,
-            revision.IsPrivate,
-            revision.IsActive,
-            revision.DisplayOrder,
-            revision.DependsOnQuestionId?.Value,
-            revision.DependsOnOptionCode,
-            revision.OptionSetId?.Value,
-            revision.LabelEn,
-            revision.LabelFr,
-            revision.HelpTextEn,
-            revision.HelpTextFr,
-            revision.PlaceholderEn,
-            revision.PlaceholderFr,
-            [
-                .. choices.Select(option => new OptionView(
-                    option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value, false))
-            ],
-            QuestionChoices.RendersLiveSet(revision, optionSet),
-            hasBeenAnswered);
-    }
+		return new QuestionView(
+			question.Id.Value,
+			question.Key,
+			revision.Id.Value,
+			revision.RevisionNumber,
+			EnumCode.Of(revision.Type),
+			question.IsSystem,
+			revision.IsRequired,
+			revision.IsPrivate,
+			revision.IsActive,
+			revision.DisplayOrder,
+			revision.DependsOnQuestionId?.Value,
+			revision.DependsOnOptionCode,
+			revision.OptionSetId?.Value,
+			revision.LabelEn,
+			revision.LabelFr,
+			revision.HelpTextEn,
+			revision.HelpTextFr,
+			revision.PlaceholderEn,
+			revision.PlaceholderFr,
+			[
+				.. choices.Select(option => new OptionView(
+					option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value, false))
+			],
+			QuestionChoices.RendersLiveSet(revision, optionSet),
+			hasBeenAnswered);
+	}
 }
 
 /// <summary>One choice on a question revision, in both official languages.</summary>
@@ -97,32 +97,32 @@ public sealed record QuestionView(
 ///     administrator authoring it — the entries most worth curating. See ADR-0063.
 /// </param>
 public sealed record OptionView(
-    string Code,
-    string LabelEn,
-    string LabelFr,
-    string? SourceItemId,
-    bool AddedByReporter);
+	string Code,
+	string LabelEn,
+	string LabelFr,
+	string? SourceItemId,
+	bool AddedByReporter);
 
 /// <summary>
 ///     What an administrator submits to create a question or to save an edit. An
 ///     edit produces a new revision; nothing here patches a row that exists.
 /// </summary>
 public sealed record SaveQuestionRequest(
-    string? Key,
-    string Type,
-    string LabelEn,
-    string LabelFr,
-    string? HelpTextEn,
-    string? HelpTextFr,
-    string? PlaceholderEn,
-    string? PlaceholderFr,
-    bool IsRequired,
-    bool IsPrivate,
-    bool IsActive,
-    string? DependsOnQuestionId,
-    string? DependsOnOptionCode,
-    string? OptionSetId,
-    IReadOnlyList<OptionInput>? Options);
+	string? Key,
+	string Type,
+	string LabelEn,
+	string LabelFr,
+	string? HelpTextEn,
+	string? HelpTextFr,
+	string? PlaceholderEn,
+	string? PlaceholderFr,
+	bool IsRequired,
+	bool IsPrivate,
+	bool IsActive,
+	string? DependsOnQuestionId,
+	string? DependsOnOptionCode,
+	string? OptionSetId,
+	IReadOnlyList<OptionInput>? Options);
 
 /// <summary>One option as authored. A code is normalized server-side.</summary>
 public sealed record OptionInput(string Code, string LabelEn, string LabelFr);
@@ -132,32 +132,32 @@ public sealed record ReorderQuestionsRequest(IReadOnlyList<string> QuestionIdsIn
 
 /// <summary>A reusable choice list as the authoring screen needs it.</summary>
 public sealed record OptionSetView(
-    string Id,
-    string Key,
-    string NameEn,
-    string NameFr,
-    IReadOnlyList<OptionView> Items)
+	string Id,
+	string Key,
+	string NameEn,
+	string NameFr,
+	IReadOnlyList<OptionView> Items)
 {
-    /// <summary>Flattens a set and its live items.</summary>
-    public static OptionSetView Of(OptionSet set)
-    {
-        ArgumentNullException.ThrowIfNull(set);
+	/// <summary>Flattens a set and its live items.</summary>
+	public static OptionSetView Of(OptionSet set)
+	{
+		ArgumentNullException.ThrowIfNull(set);
 
-        return new OptionSetView(
-            set.Id.Value,
-            set.Key,
-            set.NameEn,
-            set.NameFr,
-            [
-                .. set.Items.Select(item => new OptionView(
-                    item.Code, item.LabelEn, item.LabelFr, item.Id.Value, item.AddedByReporter))
-            ]);
-    }
+		return new OptionSetView(
+			set.Id.Value,
+			set.Key,
+			set.NameEn,
+			set.NameFr,
+			[
+				.. set.Items.Select(item => new OptionView(
+					item.Code, item.LabelEn, item.LabelFr, item.Id.Value, item.AddedByReporter))
+			]);
+	}
 }
 
 /// <summary>What an administrator submits to create or replace a choice list.</summary>
 public sealed record SaveOptionSetRequest(
-    string? Key,
-    string NameEn,
-    string NameFr,
-    IReadOnlyList<OptionInput> Items);
+	string? Key,
+	string NameEn,
+	string NameFr,
+	IReadOnlyList<OptionInput> Items);

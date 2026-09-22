@@ -38,206 +38,206 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 /// </remarks>
 public static class QuestionBankSeedWriter
 {
-    /// <summary>Writes every seeded row through the migration.</summary>
-    /// <param name="migrationBuilder">The migration being applied.</param>
-    public static void Write(MigrationBuilder migrationBuilder)
-    {
-        Write(migrationBuilder, QuestionBankSeed.Questions);
-    }
+	/// <summary>Writes every seeded row through the migration.</summary>
+	/// <param name="migrationBuilder">The migration being applied.</param>
+	public static void Write(MigrationBuilder migrationBuilder)
+	{
+		Write(migrationBuilder, QuestionBankSeed.Questions);
+	}
 
-    /// <summary>
-    ///     Writes an arbitrary question list through the migration. Exposed so a
-    ///     test can exercise the guarded-insert SQL actually being scheduled,
-    ///     without depending on what <see cref="QuestionBankSeed" /> currently
-    ///     seeds.
-    /// </summary>
-    public static void Write(MigrationBuilder migrationBuilder, IReadOnlyList<SeededQuestion> questions)
-    {
-        ArgumentNullException.ThrowIfNull(migrationBuilder);
-        AppendIfAny(migrationBuilder, Sql(questions));
-    }
+	/// <summary>
+	///     Writes an arbitrary question list through the migration. Exposed so a
+	///     test can exercise the guarded-insert SQL actually being scheduled,
+	///     without depending on what <see cref="QuestionBankSeed" /> currently
+	///     seeds.
+	/// </summary>
+	public static void Write(MigrationBuilder migrationBuilder, IReadOnlyList<SeededQuestion> questions)
+	{
+		ArgumentNullException.ThrowIfNull(migrationBuilder);
+		AppendIfAny(migrationBuilder, Sql(questions));
+	}
 
-    /// <summary>
-    ///     Writes the seed against the sensitivity columns used by the original
-    ///     schema. Only the original migration calls this; the following migration
-    ///     replaces those columns with immutable privacy flags.
-    /// </summary>
-    public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
-    {
-        ArgumentNullException.ThrowIfNull(migrationBuilder);
-        AppendIfAny(migrationBuilder, Sql(true));
-    }
+	/// <summary>
+	///     Writes the seed against the sensitivity columns used by the original
+	///     schema. Only the original migration calls this; the following migration
+	///     replaces those columns with immutable privacy flags.
+	/// </summary>
+	public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
+	{
+		ArgumentNullException.ThrowIfNull(migrationBuilder);
+		AppendIfAny(migrationBuilder, Sql(true));
+	}
 
-    /// <summary>
-    ///     <see cref="MigrationBuilder.Sql(string, bool)" /> refuses an empty
-    ///     string, which an empty <see cref="QuestionBankSeed" /> produces.
-    /// </summary>
-    private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
-    {
-        if (sql.Length > 0) migrationBuilder.Sql(sql);
-    }
+	/// <summary>
+	///     <see cref="MigrationBuilder.Sql(string, bool)" /> refuses an empty
+	///     string, which an empty <see cref="QuestionBankSeed" /> produces.
+	/// </summary>
+	private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
+	{
+		if (sql.Length > 0) migrationBuilder.Sql(sql);
+	}
 
-    private static string Sql(bool legacySensitivitySchema)
-    {
-        return Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
-    }
+	private static string Sql(bool legacySensitivitySchema)
+	{
+		return Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
+	}
 
-    /// <summary>
-    ///     The guarded SQL for an arbitrary question list. Exposed so a test can
-    ///     exercise every row this writer produces — the question, its version,
-    ///     both languages, and any options, in either schema shape — without
-    ///     depending on what <see cref="QuestionBankSeed" /> currently seeds.
-    /// </summary>
-    public static string Sql(IReadOnlyList<SeededQuestion> questions, bool legacySensitivitySchema = false)
-    {
-        ArgumentNullException.ThrowIfNull(questions);
+	/// <summary>
+	///     The guarded SQL for an arbitrary question list. Exposed so a test can
+	///     exercise every row this writer produces — the question, its version,
+	///     both languages, and any options, in either schema shape — without
+	///     depending on what <see cref="QuestionBankSeed" /> currently seeds.
+	/// </summary>
+	public static string Sql(IReadOnlyList<SeededQuestion> questions, bool legacySensitivitySchema = false)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
 
-        var sql = new StringBuilder();
-        var at = QuestionBankSeed.SeededAt;
+		var sql = new StringBuilder();
+		var at = QuestionBankSeed.SeededAt;
 
-        for (var order = 0; order < questions.Count; order++)
-        {
-            var question = questions[order];
-            var questionId = SeedIds.For($"question:{question.Key}");
-            var versionId = SeedIds.For($"question_version:{question.Key}:1");
+		for (var order = 0; order < questions.Count; order++)
+		{
+			var question = questions[order];
+			var questionId = SeedIds.For($"question:{question.Key}");
+			var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
-            if (legacySensitivitySchema)
-                AppendGuardedInsert(
-                    sql,
-                    "questions",
-                    ["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
-                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
-                    "id",
-                    Id(questionId));
-            else
-                AppendGuardedInsert(
-                    sql,
-                    "questions",
-                    ["id", "key", "is_system", "role", "is_private", "display_order", "is_active", "created_at", "deleted_at"],
-                    [Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
-                    "id",
-                    Id(questionId));
+			if (legacySensitivitySchema)
+				AppendGuardedInsert(
+					sql,
+					"questions",
+					["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
+					[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
+					"id",
+					Id(questionId));
+			else
+				AppendGuardedInsert(
+					sql,
+					"questions",
+					["id", "key", "is_system", "role", "is_private", "display_order", "is_active", "created_at", "deleted_at"],
+					[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
+					"id",
+					Id(questionId));
 
-            AppendGuardedInsert(
-                sql,
-                "question_versions",
-                ["id", "question_id", "version_number", "type", "is_required", "created_at"],
-                [Id(versionId), Id(questionId), Int(1), Str(EnumCode.Of(question.Type)), Bool(question.IsRequired), Timestamp(at)],
-                "id",
-                Id(versionId));
+			AppendGuardedInsert(
+				sql,
+				"question_versions",
+				["id", "question_id", "version_number", "type", "is_required", "created_at"],
+				[Id(versionId), Id(questionId), Int(1), Str(EnumCode.Of(question.Type)), Bool(question.IsRequired), Timestamp(at)],
+				"id",
+				Id(versionId));
 
-            AppendQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, true);
-            AppendQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, false);
+			AppendQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, true);
+			AppendQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, false);
 
-            for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
-            {
-                var option = question.Options[optionOrder];
-                var optionId = SeedIds.For($"question_option:{question.Key}:{option.Code}");
+			for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
+			{
+				var option = question.Options[optionOrder];
+				var optionId = SeedIds.For($"question_option:{question.Key}:{option.Code}");
 
-                AppendGuardedInsert(
-                    sql,
-                    "question_options",
-                    ["id", "question_version_id", "code", "display_order"],
-                    [Id(optionId), Id(versionId), Str(option.Code), Int(optionOrder)],
-                    "id",
-                    Id(optionId));
+				AppendGuardedInsert(
+					sql,
+					"question_options",
+					["id", "question_version_id", "code", "display_order"],
+					[Id(optionId), Id(versionId), Str(option.Code), Int(optionOrder)],
+					"id",
+					Id(optionId));
 
-                AppendOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, true);
-                AppendOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, false);
-            }
-        }
+				AppendOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, true);
+				AppendOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, false);
+			}
+		}
 
-        return sql.ToString();
-    }
+		return sql.ToString();
+	}
 
-    private static void AppendQuestionTranslation(
-        StringBuilder sql,
-        SeededQuestion question,
-        TinyId versionId,
-        Locale locale,
-        string label,
-        string? helpText,
-        bool isSource)
-    {
-        var at = QuestionBankSeed.SeededAt;
-        var id = SeedIds.For($"question_translation:{question.Key}:1:{locale.Code}");
+	private static void AppendQuestionTranslation(
+		StringBuilder sql,
+		SeededQuestion question,
+		TinyId versionId,
+		Locale locale,
+		string label,
+		string? helpText,
+		bool isSource)
+	{
+		var at = QuestionBankSeed.SeededAt;
+		var id = SeedIds.For($"question_translation:{question.Key}:1:{locale.Code}");
 
-        AppendGuardedInsert(
-            sql,
-            "question_translations",
-            ["id", "question_version_id", "locale", "label", "help_text", "placeholder", "is_source", "is_machine_translated", "translated_at", "updated_at"],
-            [Id(id), Id(versionId), Str(locale.Code), Str(label), StrOrNull(helpText), "NULL", Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
-            "id",
-            Id(id));
-    }
+		AppendGuardedInsert(
+			sql,
+			"question_translations",
+			["id", "question_version_id", "locale", "label", "help_text", "placeholder", "is_source", "is_machine_translated", "translated_at", "updated_at"],
+			[Id(id), Id(versionId), Str(locale.Code), Str(label), StrOrNull(helpText), "NULL", Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
+			"id",
+			Id(id));
+	}
 
-    private static void AppendOptionTranslation(
-        StringBuilder sql,
-        SeededQuestion question,
-        SeededOption option,
-        TinyId optionId,
-        Locale locale,
-        string label,
-        bool isSource)
-    {
-        var at = QuestionBankSeed.SeededAt;
-        var id = SeedIds.For($"question_option_translation:{question.Key}:{option.Code}:{locale.Code}");
+	private static void AppendOptionTranslation(
+		StringBuilder sql,
+		SeededQuestion question,
+		SeededOption option,
+		TinyId optionId,
+		Locale locale,
+		string label,
+		bool isSource)
+	{
+		var at = QuestionBankSeed.SeededAt;
+		var id = SeedIds.For($"question_option_translation:{question.Key}:{option.Code}:{locale.Code}");
 
-        AppendGuardedInsert(
-            sql,
-            "question_option_translations",
-            ["id", "question_option_id", "locale", "label", "is_source", "is_machine_translated", "translated_at", "updated_at"],
-            [Id(id), Id(optionId), Str(locale.Code), Str(label), Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
-            "id",
-            Id(id));
-    }
+		AppendGuardedInsert(
+			sql,
+			"question_option_translations",
+			["id", "question_option_id", "locale", "label", "is_source", "is_machine_translated", "translated_at", "updated_at"],
+			[Id(id), Id(optionId), Str(locale.Code), Str(label), Bool(isSource), Bool(!isSource), isSource ? "NULL" : Timestamp(at), Timestamp(at)],
+			"id",
+			Id(id));
+	}
 
-    /// <summary>
-    ///     <c>
-    ///         INSERT INTO table (columns) SELECT values WHERE NOT EXISTS (SELECT 1
-    ///         FROM table WHERE guardColumn = guardValue);
-    ///     </c>
-    ///     — one row, written once,
-    ///     however many times this statement runs.
-    /// </summary>
-    private static void AppendGuardedInsert(
-        StringBuilder sql, string table, string[] columns, string[] values, string guardColumn, string guardValue)
-    {
-        sql.Append("INSERT INTO ").Append(table)
-            .Append(" (").AppendJoin(", ", columns).Append(')')
-            .Append(" SELECT ").AppendJoin(", ", values)
-            .Append(" WHERE NOT EXISTS (SELECT 1 FROM ").Append(table)
-            .Append(" WHERE ").Append(guardColumn).Append(" = ").Append(guardValue).Append(");")
-            .Append('\n');
-    }
+	/// <summary>
+	///     <c>
+	///         INSERT INTO table (columns) SELECT values WHERE NOT EXISTS (SELECT 1
+	///         FROM table WHERE guardColumn = guardValue);
+	///     </c>
+	///     — one row, written once,
+	///     however many times this statement runs.
+	/// </summary>
+	private static void AppendGuardedInsert(
+		StringBuilder sql, string table, string[] columns, string[] values, string guardColumn, string guardValue)
+	{
+		sql.Append("INSERT INTO ").Append(table)
+			.Append(" (").AppendJoin(", ", columns).Append(')')
+			.Append(" SELECT ").AppendJoin(", ", values)
+			.Append(" WHERE NOT EXISTS (SELECT 1 FROM ").Append(table)
+			.Append(" WHERE ").Append(guardColumn).Append(" = ").Append(guardValue).Append(");")
+			.Append('\n');
+	}
 
-    private static string Id(TinyId id)
-    {
-        return Str(id.Value);
-    }
+	private static string Id(TinyId id)
+	{
+		return Str(id.Value);
+	}
 
-    private static string Str(string value)
-    {
-        return "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
-    }
+	private static string Str(string value)
+	{
+		return "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
+	}
 
-    private static string StrOrNull(string? value)
-    {
-        return value is null ? "NULL" : Str(value);
-    }
+	private static string StrOrNull(string? value)
+	{
+		return value is null ? "NULL" : Str(value);
+	}
 
-    private static string Bool(bool value)
-    {
-        return value ? "TRUE" : "FALSE";
-    }
+	private static string Bool(bool value)
+	{
+		return value ? "TRUE" : "FALSE";
+	}
 
-    private static string Int(int value)
-    {
-        return value.ToString(CultureInfo.InvariantCulture);
-    }
+	private static string Int(int value)
+	{
+		return value.ToString(CultureInfo.InvariantCulture);
+	}
 
-    private static string Timestamp(DateTimeOffset value)
-    {
-        return $"TIMESTAMPTZ '{value.ToString("yyyy-MM-dd HH:mm:sszzz", CultureInfo.InvariantCulture)}'";
-    }
+	private static string Timestamp(DateTimeOffset value)
+	{
+		return $"TIMESTAMPTZ '{value.ToString("yyyy-MM-dd HH:mm:sszzz", CultureInfo.InvariantCulture)}'";
+	}
 }

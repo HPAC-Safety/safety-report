@@ -15,42 +15,42 @@ namespace HpacSafety.Infrastructure.Media;
 /// </summary>
 public sealed class MediaSnifferChain : IMediaSniffer
 {
-    private readonly IReadOnlyList<IMediaSniffer> _sniffers;
+	private readonly IReadOnlyList<IMediaSniffer> _sniffers;
 
-    /// <summary>Creates a chain over the sniffers, in the order they should be asked.</summary>
-    public MediaSnifferChain(params IMediaSniffer[] sniffers)
-    {
-        ArgumentNullException.ThrowIfNull(sniffers);
+	/// <summary>Creates a chain over the sniffers, in the order they should be asked.</summary>
+	public MediaSnifferChain(params IMediaSniffer[] sniffers)
+	{
+		ArgumentNullException.ThrowIfNull(sniffers);
 
-        if (sniffers.Length == 0) throw new ArgumentException("A sniffer chain with no links recognises nothing.", nameof(sniffers));
+		if (sniffers.Length == 0) throw new ArgumentException("A sniffer chain with no links recognises nothing.", nameof(sniffers));
 
-        _sniffers = sniffers;
-    }
+		_sniffers = sniffers;
+	}
 
-    /// <inheritdoc />
-    public async Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(content);
+	/// <inheritdoc />
+	public async Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(content);
 
-        using var buffered = new MemoryStream();
-        await content.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
+		using var buffered = new MemoryStream();
+		await content.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
 
-        foreach (var sniffer in _sniffers)
-        {
-            // Each link gets the stream from the start. A link that consumed it
-            // would silently starve the next one, which is the kind of bug that
-            // shows up as "video uploads stopped working" months later.
-            buffered.Position = 0;
+		foreach (var sniffer in _sniffers)
+		{
+			// Each link gets the stream from the start. A link that consumed it
+			// would silently starve the next one, which is the kind of bug that
+			// shows up as "video uploads stopped working" months later.
+			buffered.Position = 0;
 
-            if (await sniffer.SniffAsync(buffered, cancellationToken).ConfigureAwait(false) is { } recognised) return recognised;
-        }
+			if (await sniffer.SniffAsync(buffered, cancellationToken).ConfigureAwait(false) is { } recognised) return recognised;
+		}
 
-        return null;
-    }
+		return null;
+	}
 
-    /// <summary>The chain this system runs: images through Magick.NET, then video by magic number.</summary>
-    public static MediaSnifferChain Default()
-    {
-        return new MediaSnifferChain(new MagickNetMediaSniffer(), new VideoContainerSniffer());
-    }
+	/// <summary>The chain this system runs: images through Magick.NET, then video by magic number.</summary>
+	public static MediaSnifferChain Default()
+	{
+		return new MediaSnifferChain(new MagickNetMediaSniffer(), new VideoContainerSniffer());
+	}
 }

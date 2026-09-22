@@ -9,16 +9,16 @@ namespace HpacSafety.Core.Tests;
 /// </summary>
 public class ConventionsTests
 {
-    [Fact]
-    public void GivenSolutionScaffold_WhenTestSuiteRuns_ThenExecutes()
-    {
-        // Given
-        var scaffolded = true;
+	[Fact]
+	public void GivenSolutionScaffold_WhenTestSuiteRuns_ThenExecutes()
+	{
+		// Given
+		var scaffolded = true;
 
-        // When
-        var result = scaffolded;
+		// When
+		var result = scaffolded;
 
-        // Then
-        result.ShouldBeTrue();
-    }
+		// Then
+		result.ShouldBeTrue();
+	}
 }

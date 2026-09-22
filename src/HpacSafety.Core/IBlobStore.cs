@@ -14,15 +14,15 @@ namespace HpacSafety.Core;
 /// </summary>
 public interface IBlobStore
 {
-    /// <summary>A short-lived URL a browser may PUT one file to, and only that one key.</summary>
-    Task<Uri> CreateUploadUrlAsync(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken);
+	/// <summary>A short-lived URL a browser may PUT one file to, and only that one key.</summary>
+	Task<Uri> CreateUploadUrlAsync(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken);
 
-    /// <summary>A short-lived URL an administrator may GET one file from, and only that one key.</summary>
-    Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken);
+	/// <summary>A short-lived URL an administrator may GET one file from, and only that one key.</summary>
+	Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken);
 
-    /// <summary>Opens stored bytes for server-side work such as EXIF stripping.</summary>
-    Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken);
+	/// <summary>Opens stored bytes for server-side work such as EXIF stripping.</summary>
+	Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken);
 
-    /// <summary>Writes bytes, such as the EXIF-stripped derivative.</summary>
-    Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken);
+	/// <summary>Writes bytes, such as the EXIF-stripped derivative.</summary>
+	Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken);
 }

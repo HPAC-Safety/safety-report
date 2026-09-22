@@ -14,82 +14,82 @@ namespace HpacSafety.Core.Tests.Media;
 /// </summary>
 internal sealed class SyntheticOversizedStream(long length) : Stream
 {
-    private long _position;
+	private long _position;
 
-    /// <summary>How many bytes this stream has handed out so far.</summary>
-    public long TotalBytesServed { get; private set; }
+	/// <summary>How many bytes this stream has handed out so far.</summary>
+	public long TotalBytesServed { get; private set; }
 
-    public override bool CanRead => true;
+	public override bool CanRead => true;
 
-    public override bool CanSeek => false;
+	public override bool CanSeek => false;
 
-    public override bool CanWrite => false;
+	public override bool CanWrite => false;
 
-    public override long Length => length;
+	public override long Length => length;
 
-    public override long Position
-    {
-        get => _position;
-        set => throw new NotSupportedException();
-    }
+	public override long Position
+	{
+		get => _position;
+		set => throw new NotSupportedException();
+	}
 
-    public override int Read(byte[] buffer, int offset, int count)
-    {
-        var remaining = length - _position;
-        var served = (int)Math.Min(count, Math.Max(0, remaining));
+	public override int Read(byte[] buffer, int offset, int count)
+	{
+		var remaining = length - _position;
+		var served = (int)Math.Min(count, Math.Max(0, remaining));
 
-        // The buffer already contains zeros from allocation; there is nothing
-        // sensitive to fake here, only a count of how much was asked for.
-        _position += served;
-        TotalBytesServed += served;
+		// The buffer already contains zeros from allocation; there is nothing
+		// sensitive to fake here, only a count of how much was asked for.
+		_position += served;
+		TotalBytesServed += served;
 
-        return served;
-    }
+		return served;
+	}
 
-    public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(Read(buffer, offset, count));
-    }
+	public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+	{
+		return Task.FromResult(Read(buffer, offset, count));
+	}
 
-    public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult(ReadSpan(buffer.Span));
-    }
+	public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+	{
+		return ValueTask.FromResult(ReadSpan(buffer.Span));
+	}
 
-    public override int Read(Span<byte> buffer)
-    {
-        return ReadSpan(buffer);
-    }
+	public override int Read(Span<byte> buffer)
+	{
+		return ReadSpan(buffer);
+	}
 
-    private int ReadSpan(Span<byte> buffer)
-    {
-        var remaining = length - _position;
-        var served = (int)Math.Min(buffer.Length, Math.Max(0, remaining));
+	private int ReadSpan(Span<byte> buffer)
+	{
+		var remaining = length - _position;
+		var served = (int)Math.Min(buffer.Length, Math.Max(0, remaining));
 
-        buffer[..served].Clear();
-        _position += served;
-        TotalBytesServed += served;
+		buffer[..served].Clear();
+		_position += served;
+		TotalBytesServed += served;
 
-        return served;
-    }
+		return served;
+	}
 
-    public override void Flush()
-    {
-        throw new NotSupportedException();
-    }
+	public override void Flush()
+	{
+		throw new NotSupportedException();
+	}
 
-    public override long Seek(long offset, SeekOrigin origin)
-    {
-        throw new NotSupportedException();
-    }
+	public override long Seek(long offset, SeekOrigin origin)
+	{
+		throw new NotSupportedException();
+	}
 
-    public override void SetLength(long value)
-    {
-        throw new NotSupportedException();
-    }
+	public override void SetLength(long value)
+	{
+		throw new NotSupportedException();
+	}
 
-    public override void Write(byte[] buffer, int offset, int count)
-    {
-        throw new NotSupportedException();
-    }
+	public override void Write(byte[] buffer, int offset, int count)
+	{
+		throw new NotSupportedException();
+	}
 }

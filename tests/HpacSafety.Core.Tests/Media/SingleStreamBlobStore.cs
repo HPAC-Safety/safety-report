@@ -8,23 +8,23 @@ namespace HpacSafety.Core.Tests.Media;
 /// </summary>
 internal sealed class SingleStreamBlobStore(Stream source) : IBlobStore
 {
-    public Task<Uri> CreateUploadUrlAsync(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
+	public Task<Uri> CreateUploadUrlAsync(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+	{
+		throw new NotSupportedException();
+	}
 
-    public Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
-    {
-        throw new NotSupportedException();
-    }
+	public Task<Uri> CreateReadUrlAsync(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	{
+		throw new NotSupportedException();
+	}
 
-    public Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken)
-    {
-        return Task.FromResult(source);
-    }
+	public Task<Stream> OpenReadAsync(BlobKey key, CancellationToken cancellationToken)
+	{
+		return Task.FromResult(source);
+	}
 
-    public Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
-    {
-        throw new InvalidOperationException("An oversized, rejected upload must never reach a write.");
-    }
+	public Task WriteAsync(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	{
+		throw new InvalidOperationException("An oversized, rejected upload must never reach a write.");
+	}
 }

@@ -25,102 +25,102 @@ namespace HpacSafety.Core;
 /// </remarks>
 public readonly record struct TinyId
 {
-    /// <summary>How many characters an identifier has. Never more, never fewer.</summary>
-    public const int Length = 11;
+	/// <summary>How many characters an identifier has. Never more, never fewer.</summary>
+	public const int Length = 11;
 
-    /// <summary>
-    ///     The sixty-four symbols an identifier is built from — URL-safe base64's
-    ///     alphabet, and the one YouTube uses. Case-sensitive: <c>a</c> and
-    ///     <c>A</c> are different identifiers.
-    /// </summary>
-    public const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+	/// <summary>
+	///     The sixty-four symbols an identifier is built from — URL-safe base64's
+	///     alphabet, and the one YouTube uses. Case-sensitive: <c>a</c> and
+	///     <c>A</c> are different identifiers.
+	/// </summary>
+	public const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 
-    private const int BitsPerSymbol = 6;
+	private const int BitsPerSymbol = 6;
 
-    private readonly string? _value;
+	private readonly string? _value;
 
-    private TinyId(string value)
-    {
-        _value = value;
-    }
+	private TinyId(string value)
+	{
+		_value = value;
+	}
 
-    /// <summary>The identifier as text. Empty for a default-constructed value.</summary>
-    public string Value => _value ?? string.Empty;
+	/// <summary>The identifier as text. Empty for a default-constructed value.</summary>
+	public string Value => _value ?? string.Empty;
 
-    /// <summary>
-    ///     Whether this is the default value rather than a real identifier. A
-    ///     persisted row never holds one.
-    /// </summary>
-    public bool IsEmpty => _value is null;
+	/// <summary>
+	///     Whether this is the default value rather than a real identifier. A
+	///     persisted row never holds one.
+	/// </summary>
+	public bool IsEmpty => _value is null;
 
-    /// <summary>Mints a new identifier from a cryptographically secure source.</summary>
-    public static TinyId New()
-    {
-        return FromEntropy(RandomNumberGenerator.GetBytes(Length));
-    }
+	/// <summary>Mints a new identifier from a cryptographically secure source.</summary>
+	public static TinyId New()
+	{
+		return FromEntropy(RandomNumberGenerator.GetBytes(Length));
+	}
 
-    /// <summary>
-    ///     Derives an identifier from bytes that are already unpredictable — a
-    ///     hash, for instance, when the same input has to produce the same
-    ///     identifier on every machine.
-    /// </summary>
-    /// <param name="entropy">
-    ///     At least <see cref="Length" /> bytes. Only the low six bits of each of the
-    ///     first <see cref="Length" /> are read.
-    /// </param>
-    public static TinyId FromEntropy(ReadOnlySpan<byte> entropy)
-    {
-        if (entropy.Length < Length)
-            throw new ArgumentException(
-                $"An identifier needs at least {Length} bytes to derive from, not {entropy.Length}.",
-                nameof(entropy));
+	/// <summary>
+	///     Derives an identifier from bytes that are already unpredictable — a
+	///     hash, for instance, when the same input has to produce the same
+	///     identifier on every machine.
+	/// </summary>
+	/// <param name="entropy">
+	///     At least <see cref="Length" /> bytes. Only the low six bits of each of the
+	///     first <see cref="Length" /> are read.
+	/// </param>
+	public static TinyId FromEntropy(ReadOnlySpan<byte> entropy)
+	{
+		if (entropy.Length < Length)
+			throw new ArgumentException(
+				$"An identifier needs at least {Length} bytes to derive from, not {entropy.Length}.",
+				nameof(entropy));
 
-        return new TinyId(string.Create(
-            Length,
-            // string.Create cannot close over a span, so the bytes are copied.
-            entropy[..Length].ToArray(),
-            static (span, source) =>
-            {
-                for (var i = 0; i < Length; i++)
-                    // 64 divides 256, so masking stays uniform.
-                    span[i] = Alphabet[source[i] & ((1 << BitsPerSymbol) - 1)];
-            }));
-    }
+		return new TinyId(string.Create(
+			Length,
+			// string.Create cannot close over a span, so the bytes are copied.
+			entropy[..Length].ToArray(),
+			static (span, source) =>
+			{
+				for (var i = 0; i < Length; i++)
+					// 64 divides 256, so masking stays uniform.
+					span[i] = Alphabet[source[i] & ((1 << BitsPerSymbol) - 1)];
+			}));
+	}
 
-    /// <summary>Reads an identifier back from text.</summary>
-    /// <param name="candidate">The text to read.</param>
-    /// <exception cref="DomainRuleViolationException">
-    ///     The text is not exactly <see cref="Length" /> characters of
-    ///     <see cref="Alphabet" />.
-    /// </exception>
-    public static TinyId Parse(string? candidate)
-    {
-        return TryParse(candidate, out var id)
-            ? id
-            : throw new DomainRuleViolationException(
-                $"'{candidate}' is not an identifier. One is exactly {Length} characters of '{Alphabet}'.");
-    }
+	/// <summary>Reads an identifier back from text.</summary>
+	/// <param name="candidate">The text to read.</param>
+	/// <exception cref="DomainRuleViolationException">
+	///     The text is not exactly <see cref="Length" /> characters of
+	///     <see cref="Alphabet" />.
+	/// </exception>
+	public static TinyId Parse(string? candidate)
+	{
+		return TryParse(candidate, out var id)
+			? id
+			: throw new DomainRuleViolationException(
+				$"'{candidate}' is not an identifier. One is exactly {Length} characters of '{Alphabet}'.");
+	}
 
-    /// <summary>Reads an identifier back from text, without throwing.</summary>
-    /// <param name="candidate">The text to read.</param>
-    /// <param name="id">The identifier, if the text was one.</param>
-    public static bool TryParse(string? candidate, out TinyId id)
-    {
-        id = default;
+	/// <summary>Reads an identifier back from text, without throwing.</summary>
+	/// <param name="candidate">The text to read.</param>
+	/// <param name="id">The identifier, if the text was one.</param>
+	public static bool TryParse(string? candidate, out TinyId id)
+	{
+		id = default;
 
-        if (candidate is null || candidate.Length != Length) return false;
+		if (candidate is null || candidate.Length != Length) return false;
 
-        foreach (var character in candidate)
-            if (!Alphabet.Contains(character, StringComparison.Ordinal))
-                return false;
+		foreach (var character in candidate)
+			if (!Alphabet.Contains(character, StringComparison.Ordinal))
+				return false;
 
-        id = new TinyId(candidate);
-        return true;
-    }
+		id = new TinyId(candidate);
+		return true;
+	}
 
-    /// <inheritdoc />
-    public override string ToString()
-    {
-        return Value;
-    }
+	/// <inheritdoc />
+	public override string ToString()
+	{
+		return Value;
+	}
 }

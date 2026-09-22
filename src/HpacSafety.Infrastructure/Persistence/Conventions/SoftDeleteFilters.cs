@@ -10,22 +10,22 @@ namespace HpacSafety.Infrastructure.Persistence.Conventions;
 /// </summary>
 public static class SoftDeleteFilters
 {
-    /// <summary>Applies the default live-row filter to every entity with a <c>Deleted</c> property.</summary>
-    /// <param name="modelBuilder">The model being built.</param>
-    public static void Apply(ModelBuilder modelBuilder)
-    {
-        ArgumentNullException.ThrowIfNull(modelBuilder);
+	/// <summary>Applies the default live-row filter to every entity with a <c>Deleted</c> property.</summary>
+	/// <param name="modelBuilder">The model being built.</param>
+	public static void Apply(ModelBuilder modelBuilder)
+	{
+		ArgumentNullException.ThrowIfNull(modelBuilder);
 
-        foreach (var entity in modelBuilder.Model.GetEntityTypes())
-        {
-            if (entity.FindProperty("Deleted") is null) continue;
+		foreach (var entity in modelBuilder.Model.GetEntityTypes())
+		{
+			if (entity.FindProperty("Deleted") is null) continue;
 
-            var parameter = Expression.Parameter(entity.ClrType, "e");
-            var property = Expression.Property(parameter, "Deleted");
-            var isNull = Expression.Equal(property, Expression.Constant(null, property.Type));
-            var lambda = Expression.Lambda(isNull, parameter);
+			var parameter = Expression.Parameter(entity.ClrType, "e");
+			var property = Expression.Property(parameter, "Deleted");
+			var isNull = Expression.Equal(property, Expression.Constant(null, property.Type));
+			var lambda = Expression.Lambda(isNull, parameter);
 
-            modelBuilder.Entity(entity.ClrType).HasQueryFilter(lambda);
-        }
-    }
+			modelBuilder.Entity(entity.ClrType).HasQueryFilter(lambda);
+		}
+	}
 }

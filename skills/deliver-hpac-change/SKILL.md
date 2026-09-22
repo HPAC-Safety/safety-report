@@ -56,6 +56,13 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 - `/features` describes the target. Every user-facing requirement is covered by
   a scenario in a `.feature` file. This is mandatory, not discretionary — if a
   change adds or changes behavior, add or update the scenario in the same PR.
+- Write the scenario before the implementation, and when the implementation
+  turns out to do the wrong thing, correct the scenario rather than arguing it
+  out in conversation
+  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+  The PR body states what changed upstream — which scenario, which page, which
+  boundary — because the body becomes the squash commit message, so the
+  specification delta is what lands in history.
 - A scenario carries `@ignore` until its behavior is implemented (ADR-0049).
   When a decision supersedes what a scenario asserts, **delete the scenario**
   rather than parking it behind `@ignore` — `@ignore` means "not built yet,"
@@ -90,7 +97,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 2. Inspect `git diff --check`, links, generated artifacts, and `git status`.
 3. Commit with a concise imperative message and no co-author trailer.
 4. Push and open a pull request with a squash-ready title.
-5. Put `Closes #<number>` on its own line in the PR body.
+5. Put `Closes #<number>` on its own line in the PR body, and name the
+   scenarios the change satisfies. If it built anything the specification does
+   not describe, either the specification was incomplete — fix it — or the
+   change exceeded its scope.
 6. A PR that changes anything user-visible in `src/web` attaches screenshots
    demonstrating it, in the PR body or a comment — a browser tool
    (Playwright, Claude in Chrome) capturing the real running app, not a

@@ -2,6 +2,15 @@ name: Feature
 description: A change or addition to the system
 labels: ["enhancement"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        This repository is specification-driven: the scenario is written before
+        the implementation, and a wrong behaviour is corrected in the
+        specification rather than argued in a conversation
+        ([ADR-0081](../blob/main/docs/decisions/ADR-0083-specification-driven-development.md)).
+        Fill this in as the specification you want built, not as a description
+        of code to write.
   - type: textarea
     id: problem
     attributes:
@@ -13,13 +22,52 @@ body:
     id: proposal
     attributes:
       label: Proposed change
+      description: What the system should do. Behaviour, not implementation.
     validations:
       required: true
   - type: textarea
     id: acceptance
     attributes:
       label: Acceptance criteria
-      description: How will we know it is done? Name the tests that must exist.
+      description: >-
+        Write each one as a scenario — given a starting state, when something
+        happens, then something observable is true. These become the scenarios
+        in `features/<area>/<area>.feature`, so write what a test could fail on.
+      placeholder: |
+        Given a reporter has answered every required question
+        When the reporter submits the form
+        Then the report, its answers, and its outbox work commit together
+    validations:
+      required: true
+  - type: textarea
+    id: constraints
+    attributes:
+      label: Constraints
+      description: >-
+        Privacy, legal, retention, performance, platform, or locale limits this
+        must respect. Write "none known" if there are none.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: >-
+        What must NOT be built while satisfying this. Without it an
+        implementation over-delivers into territory nobody asked for, and the
+        extra work has to be reviewed and removed.
+      placeholder: |
+        - No server-side draft of any kind
+        - No change to how attachments are stored
+    validations:
+      required: true
+  - type: input
+    id: spec-page
+    attributes:
+      label: Affected specification page
+      description: >-
+        The `features/<area>/` page or `docs/` page this changes. If none
+        covers it, say so — a new area is a real answer.
     validations:
       required: true
   - type: dropdown

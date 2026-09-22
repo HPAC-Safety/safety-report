@@ -21,3 +21,8 @@ data, compatibility, or externally visible behavior. State:
 Do not turn routine implementation details into product questions. If the user
 changes the design, update the affected canonical specification pages and issue
 acceptance criteria in the same change.
+
+An answered question is written back into the specification in the same change,
+as a scenario or as an out-of-scope line, so the next run starts from the answer
+rather than from the question
+([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).

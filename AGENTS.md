@@ -20,6 +20,51 @@ The application receives real aviation occurrence reports containing personal
 and medical information. Keep the system small and treat every data boundary as
 privacy-sensitive.
 
+## Specification-driven development
+
+Behavior flows through an artifact chain, and every hop is a tracked file
+([ADR-0083](docs/decisions/ADR-0083-specification-driven-development.md)):
+
+```
+need (issue)
+  → scenario            features/<area>/<area>.feature
+  → supporting detail   features/<area>/README.md, docs/*.md
+  → step definitions    tests/HpacSafety.Acceptance.Tests | tests/e2e/steps
+  → code                src/**
+```
+
+Four rules follow, and they are not discretionary.
+
+1. **Specify before implementing.** When behavior is added or changed, author
+   or amend the scenario first, in the same pull request, and write the
+   implementation that makes it pass.
+2. **Correct the specification, not the chat.** When an implementation does the
+   wrong thing, first ask whether the scenario said the wrong thing. If it did,
+   change the scenario and re-run the chain from there. A correction argued in
+   conversation leaves no artifact and does not survive the next run.
+3. **The specification delta is the change.** A pull request that changes
+   behavior names what it changed upstream and cites what it satisfies. The
+   pull-request body becomes the commit message, so the delta lands in history.
+4. **Say what not to build.** A specification that states only the target
+   invites over-delivery into territory nobody asked for. Record the boundary
+   where the scenarios are read, not only in the global list in
+   [`docs/system-overview.md`](docs/system-overview.md).
+
+You are not trusted to improvise the missing half of a requirement. If reading
+the specification leaves a material question, ask it — see
+[`clarify-hpac-requirements`](skills/clarify-hpac-requirements/SKILL.md) — and
+write the answer back into the specification as a scenario or an out-of-scope
+line, so the next run starts from the answer rather than from the question.
+
+Three mechanisms are being adopted alongside these rules and arrive with their
+own pull requests: stable claim IDs and a generated traceability matrix
+([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)),
+lessons that flow upstream after a bug
+([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)),
+and four roles declared as agents
+([ADR-0086](docs/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)).
+Each of those records is `proposed` until the change that applies it lands.
+
 ## Product invariants
 
 1. Questions come from the database as complete immutable bilingual revisions.

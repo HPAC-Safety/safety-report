@@ -23,7 +23,7 @@ public static class ReportEndpoints
 
 		var group = app.MapGroup("/api/admin/reports").RequireAuthorization(HpacPolicies.Reviewer);
 
-		group.MapDelete("/{id}", DeleteAsync);
+		group.MapDelete("/{id}", Delete);
 
 		return group;
 	}
@@ -33,7 +33,7 @@ public static class ReportEndpoints
 	///     and pending outbox work — with one shared timestamp, in one transaction.
 	///     Irreversible: there is no restore endpoint (REQ-DOM-007).
 	/// </summary>
-	private static async Task<IResult> DeleteAsync(
+	private static async Task<IResult> Delete(
 		string id, HpacSafetyDbContext database, TimeProvider clock, HttpContext context, CancellationToken cancellationToken)
 	{
 		if (!TinyId.TryParse(id, out var reportId))

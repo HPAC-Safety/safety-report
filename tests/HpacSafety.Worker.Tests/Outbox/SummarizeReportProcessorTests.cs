@@ -194,9 +194,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		// Given — the report is deleted between the second-to-last and the final
 		// attempt, so by the time the poison threshold is reached there is nothing
 		// left to mark (REQ-DOM-007)
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 		var summarizer = new FakeSummarizer(failing: true);
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 		var now = At;
@@ -212,7 +212,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 				await deleter.SaveChangesAsync();
 			}
 
-			await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, now, processor.ProcessAsync, CancellationToken.None);
+			await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, now, processor.Process, CancellationToken.None);
 			now = now.AddMinutes(10);
 		}
 
@@ -257,9 +257,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	{
 		// Given — a safety officer deletes the report through a second connection
 		// during the one model call this processor is mid-way through (REQ-DOM-007)
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 
 		var summarizer = new FakeSummarizer(
 			("The pilot reported a hard landing.", "Le pilote a signalé un atterrissage brutal."),
@@ -273,7 +273,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then — the message is still marked processed (there is nothing left to
 		// retry), but no summary was attached to the now-deleted report

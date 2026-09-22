@@ -113,7 +113,7 @@ public class AuditLogTests(ApiPostgresFixture fixture)
 	public async Task GivenAnActiveQuestion_WhenRevisedToInactive_ThenTheAuditRowRecordsDeactivation()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.Administrator);
+		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 		var key = $"audit_{Guid.NewGuid():N}"[..30];
 
 		using var created = await client.PostAsJsonAsync(

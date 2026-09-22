@@ -33,7 +33,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoBearerToken_WhenReportIsDeleted_ThenApiRefuses()
 	{
 		// Given
-		var reportId = await SeedReportAsync();
+		var reportId = await SeedReport();
 		using var client = _factory.CreateClient();
 
 		// When
@@ -47,8 +47,8 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUserRole_WhenReportIsDeleted_ThenApiForbids()
 	{
 		// Given
-		var reportId = await SeedReportAsync();
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.User);
+		var reportId = await SeedReport();
+		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
@@ -61,8 +61,8 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSafetyOfficer_WhenReportIsDeleted_ThenEveryOwnedRowAndPendingOutboxShareOneTimestampAndAreHidden()
 	{
 		// Given
-		var (reportId, answerId, outboxId) = await SeedReportWithOutboxAsync();
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.SafetyOfficer);
+		var (reportId, answerId, outboxId) = await SeedReportWithOutbox();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
@@ -91,8 +91,8 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSafetyOfficer_WhenReportIsDeleted_ThenAContentFreeAuditRowIsWritten()
 	{
 		// Given
-		var reportId = await SeedReportAsync();
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.SafetyOfficer);
+		var reportId = await SeedReport();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
@@ -115,7 +115,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		// Given — a role claim alone satisfies RequireAuthorization(Reviewer); a
 		// subject claim is not separately enforced, so the endpoint has to cope
 		// with a validated token that lacks one, the same stance /me takes
-		var reportId = await SeedReportAsync();
+		var reportId = await SeedReport();
 		var token = ForgeTokenWithNoSubject();
 		using var client = SignedInClient.Bearing(_factory, token);
 
@@ -152,7 +152,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnUnknownReportId_WhenDeleted_ThenApiReturns404()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.SafetyOfficer);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{TinyId.New()}", UriKind.Relative));
@@ -165,7 +165,7 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAMalformedReportId_WhenDeleted_ThenApiReturns404()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.SafetyOfficer);
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
 		using var response = await client.DeleteAsync(new Uri("/api/admin/reports/not-a-tiny-id", UriKind.Relative));
@@ -179,8 +179,8 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — soft-deleted reports are excluded from the endpoint's own query
 		// too, the same as every other live-row read
-		var reportId = await SeedReportAsync();
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.SafetyOfficer);
+		var reportId = await SeedReport();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		await client.DeleteAsync(new Uri($"/api/admin/reports/{reportId}", UriKind.Relative));
 
 		// When
@@ -190,13 +190,13 @@ public class ReportSoftDeleteEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
-	private async Task<TinyId> SeedReportAsync()
+	private async Task<TinyId> SeedReport()
 	{
-		var (reportId, _, _) = await SeedReportWithOutboxAsync();
+		var (reportId, _, _) = await SeedReportWithOutbox();
 		return reportId;
 	}
 
-	private async Task<(TinyId ReportId, TinyId AnswerId, TinyId OutboxId)> SeedReportWithOutboxAsync()
+	private async Task<(TinyId ReportId, TinyId AnswerId, TinyId OutboxId)> SeedReportWithOutbox()
 	{
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

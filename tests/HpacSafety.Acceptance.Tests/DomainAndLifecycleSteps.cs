@@ -40,7 +40,7 @@ public sealed class DomainAndLifecycleSteps
 	[Given(@"a report exists in any lifecycle state")]
 	public async Task GivenAReportExists()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -65,7 +65,7 @@ public sealed class DomainAndLifecycleSteps
 	[When(@"a safety officer soft-deletes it")]
 	public async Task WhenASafetyOfficerSoftDeletesIt()
 	{
-		var client = await BootedApi.SignedInAsAsync(MemberRole.SafetyOfficer);
+		var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		_response = await client.DeleteAsync(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
@@ -73,7 +73,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"one application transaction stamps the same deleted timestamp on the report and all owned and dependent rows: answers, summary, files, and report outbox items")]
 	public async Task ThenOneTransactionStampsEveryOwnedRow()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -89,7 +89,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"an immutable audit entry is recorded")]
 	public async Task ThenAnAuditEntryIsRecorded()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -104,7 +104,7 @@ public sealed class DomainAndLifecycleSteps
 		// The Worker's own mid-flight recheck is proven directly in
 		// HpacSafety.Worker.Tests; here, what an HTTP-level scenario can prove is
 		// that the outbox row a future Worker claim would find is gone.
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -114,13 +114,13 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"public and normal admin queries hide the report immediately")]
 	public async Task ThenNormalQueriesHideTheReport()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		(await database.Reports.AnyAsync(r => r.Id == _reportId)).ShouldBeFalse();
 
-		var client = await BootedApi.SignedInAsAsync(MemberRole.SafetyOfficer);
+		var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		using var secondDelete = await client.DeleteAsync(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
 		secondDelete.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
@@ -128,7 +128,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"there is no restore transition")]
 	public async Task ThenThereIsNoRestoreTransition()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var routes = scope.ServiceProvider.GetRequiredService<EndpointDataSource>().Endpoints
 			.OfType<RouteEndpoint>()
@@ -143,7 +143,7 @@ public sealed class DomainAndLifecycleSteps
 	[Given(@"a question is retired, either by an Administrator or by being replaced through an edit")]
 	public async Task GivenAQuestionIsRetired()
 	{
-		var client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		var client = await BootedApi.SignedInAs(MemberRole.Administrator);
 		var key = $"retired_{Guid.NewGuid():n}"[..24];
 
 		using var created = await client.PostAsJsonAsync(
@@ -177,7 +177,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"the question is stamped with a deleted timestamp rather than removed")]
 	public async Task ThenTheQuestionIsStampedDeleted()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -188,7 +188,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"its revisions, options, and every answer given to it are untouched")]
 	public async Task ThenItsRevisionsAreUntouched()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -216,7 +216,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"the report is retained indefinitely")]
 	public async Task ThenTheReportIsRetainedIndefinitely()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -226,7 +226,7 @@ public sealed class DomainAndLifecycleSteps
 	[Then(@"there is no scheduled report purge and no physical-delete path in the application")]
 	public async Task ThenThereIsNoPurgeOrPhysicalDeletePath()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var routes = scope.ServiceProvider.GetRequiredService<EndpointDataSource>().Endpoints
 			.OfType<RouteEndpoint>()

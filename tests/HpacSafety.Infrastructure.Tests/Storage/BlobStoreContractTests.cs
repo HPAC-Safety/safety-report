@@ -297,6 +297,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		return new MediaIngestor(Store,
 			MediaSnifferChain.Default(),
 			new MagickNetExifStripper(MediaType.All),
+			new RecordingVideoRemuxer(),
 			new MediaPolicyOptions().ToPolicy(),
 			TimeProvider.System);
 	}

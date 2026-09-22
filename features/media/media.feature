@@ -83,9 +83,8 @@ Scenario: A video that cannot be stripped is kept rather than refused
   Given an accepted video attachment cannot be remuxed into a verified derivative
   When processing finishes
   Then the upload still succeeds and the original is retained
-  And the attachment is marked as having no derivative
-  And an authorized reviewer receives a short-lived forced download of the unredacted original
-  And it is never rendered inline and never published
+  And the attachment is marked as having no derivative to show
+  And it is not marked as a processing failure, because nothing failed that the reporter should lose their footage over
 
 @REQ-MED-008
 Scenario: A document is validated but never transformed

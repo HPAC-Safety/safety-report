@@ -27,7 +27,8 @@ public class MediaIngestorTests
 	{
 		return new MediaIngestor(store,
 			new StubMediaSniffer(sniffed),
-			stripper,
+			stripper, new RecordingVideoRemuxer(),
+
 			new MediaPolicy(maxByteSize, MediaType.All),
 			new FixedClock(Now));
 	}
@@ -184,7 +185,8 @@ public class MediaIngestorTests
 		var ingestor = new MediaIngestor(
 			store,
 			new StubMediaSniffer(MediaType.Jpeg),
-			new RecordingExifStripper(),
+			new RecordingExifStripper(), new RecordingVideoRemuxer(),
+
 			new MediaPolicy(maxByteSize, MediaType.All),
 			new FixedClock(Now));
 

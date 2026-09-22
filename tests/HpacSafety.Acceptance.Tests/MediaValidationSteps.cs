@@ -70,6 +70,7 @@ public sealed class MediaValidationSteps
 			_store,
 			new FixedMediaSniffer(MediaType.Pdf),
 			new UnreachableExifStripper(),
+			new RecordingVideoRemuxer(),
 			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
 			new FixedTimeProvider(Now));
 

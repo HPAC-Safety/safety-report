@@ -55,6 +55,20 @@ as well as images. It does not yet accept or privately expose the document
 types specified above. See
 [implementation status](../../docs/implementation-status.md).
 
+## A video with no derivative
+
+A video that cannot be remuxed into a verified derivative is retained rather
+than refused (REQ-MED-015,
+[ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
+It then behaves exactly as a document does: a private original, reachable only
+by an authorized reviewer as a short-lived forced download, never rendered
+inline and never published. That reviewer path is REQ-MED-011's rule and is
+built with the reviewer endpoints (#311); this page records that an unstripped
+video joins it rather than getting a rule of its own.
+
+The anonymity contract is unaffected. No attachment of any kind reaches the
+model or the public feed — the summary never sees one.
+
 ## Out of scope
 
 What not to build here. The global list in

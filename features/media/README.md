@@ -1,3 +1,10 @@
+---
+title: Attachments
+description: Supporting detail for the image, video, document, quarantine, and derivative scenarios.
+type: spec
+area: media
+---
+
 # Attachments
 
 Supporting detail for [`media.feature`](media.feature) that doesn't fit

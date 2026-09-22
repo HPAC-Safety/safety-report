@@ -1,3 +1,10 @@
+---
+title: Data and persistence
+description: The canonical target records, naming, transactions, constraints, and query DTOs.
+type: spec
+area: data-and-persistence
+---
+
 # Data and persistence
 
 ## Persistence principles

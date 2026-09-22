@@ -1,4 +1,7 @@
 ---
+title: Transactional outbox for AI processing
+description: The API writes the report and an outbox_messages row in one transaction.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

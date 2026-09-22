@@ -1,4 +1,7 @@
 ---
+title: Statement and Group are question types again, and a Group has children
+description: Statement and Group are question types again, and a Group heading records the children shown under it.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: Core has no SharedKernel folder; cross-cutting types sit at the namespace root
+description: Cross-cutting types move to the HpacSafety.Core namespace root rather than a named SharedKernel child folder, leaving feature folders unchanged.
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

@@ -1,3 +1,9 @@
+---
+title: Attachment processing
+description: How files streamed from the final multipart submission are detected and safely processed.
+type: readme
+---
+
 # Attachment processing
 
 This slice detects and safely processes files streamed from the final multipart

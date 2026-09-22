@@ -1,4 +1,7 @@
 ---
+title: One POSIX sh script for development environment setup
+description: init-dev.sh — a single POSIX sh script.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

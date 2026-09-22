@@ -1,3 +1,9 @@
+---
+title: Architecture
+description: A short orientation to the components and how they fit together.
+type: guide
+---
+
 # Architecture
 
 The complete target is specified in

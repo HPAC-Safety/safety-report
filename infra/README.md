@@ -1,3 +1,9 @@
+---
+title: Infrastructure
+description: The Terraform for the target AWS environment and the topology it builds.
+type: readme
+---
+
 # Infrastructure
 
 Terraform for the target AWS environment in `ca-central-1`. The intended

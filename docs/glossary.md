@@ -1,3 +1,9 @@
+---
+title: Glossary
+description: "The shared terms this repository's documents use, and what each one means."
+type: guide
+---
+
 # Glossary
 
 | Term | Meaning |

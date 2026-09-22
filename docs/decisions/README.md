@@ -1,3 +1,9 @@
+---
+title: Architecture decision records
+description: What an ADR is for in this repository, and how it relates to the specification.
+type: guide
+---
+
 # Architecture decision records
 
 ADRs preserve the reasoning and implementation context that existed when a

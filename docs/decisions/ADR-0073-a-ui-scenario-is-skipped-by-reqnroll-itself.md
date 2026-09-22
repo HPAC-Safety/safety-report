@@ -1,4 +1,7 @@
 ---
+title: "A @ui scenario is skipped by Reqnroll itself, not by a CI filter"
+description: "The acceptance suite skips a @ui scenario itself."
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

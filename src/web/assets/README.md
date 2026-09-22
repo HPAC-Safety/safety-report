@@ -1,3 +1,9 @@
+---
+title: Web assets
+description: Everything the front end loads that is not HTML, CSS, or JavaScript, all of it committed.
+type: readme
+---
+
 # assets
 
 Everything the two static front ends load that is not HTML, CSS, or JavaScript.

@@ -1,3 +1,9 @@
+---
+title: Localization
+description: How Canadian English and Canadian French are kept in step across chrome, questions, and summaries.
+type: guide
+---
+
 # Localization
 
 HPAC Safety supports Canadian English and Canadian French.

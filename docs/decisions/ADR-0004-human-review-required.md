@@ -1,4 +1,7 @@
 ---
+title: Mandatory human review before publication
+description: "No code path leads from submission to publication without a safety officer's approval."
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

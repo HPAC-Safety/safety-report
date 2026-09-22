@@ -1,4 +1,7 @@
 ---
+title: Tabs, not spaces, for indentation
+description: ".editorconfig's [*] section sets indent_style = tab."
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

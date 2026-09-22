@@ -1,3 +1,9 @@
+---
+title: Testing conventions
+description: How tests in this repository are named, structured, and written.
+type: guide
+---
+
 # Testing conventions
 
 Use xUnit and Shouldly for .NET, `node:test` for JavaScript, Playwright for

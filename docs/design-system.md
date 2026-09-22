@@ -1,3 +1,9 @@
+---
+title: Design system
+description: The tokens, type, and visual language the two front ends share.
+type: guide
+---
+
 # Design system
 
 The goal is **recognisably HPAC, visibly better**. Someone arriving from

@@ -1,4 +1,7 @@
 ---
+title: A development login may verify against the live members site
+description: "A fourth Development-only sign-in path may verify a real member's password against the live members site for the single call that checks it."
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

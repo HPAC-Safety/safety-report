@@ -1,4 +1,7 @@
 ---
+title: The CI translation job opens a pull request, and never translates on one
+description: locales/en-CA.json is the source of truth for every piece of UI chrome.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

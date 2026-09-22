@@ -1,3 +1,9 @@
+---
+title: Pull request template
+description: The checklist and sections every pull request in this repository opens with.
+type: template
+---
+
 ## What changed
 
 <!-- One or two sentences. The PR title becomes the squash commit message. -->
@@ -35,4 +41,5 @@ fix it here — or the change exceeded its scope.
 - [ ] UI copy is localized and English/French catalogue keys remain in parity
 - [ ] .NET assertions use Shouldly and tests use Given/When/Then structure
 - [ ] Generated files were regenerated with their owning tool
+- [ ] Every markdown file added or changed declares its title, description, and type
 - [ ] Documentation and issue acceptance criteria were updated where needed

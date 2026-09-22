@@ -1,3 +1,9 @@
+---
+title: Tests
+description: What each test project covers and the conventions every test in this repository follows.
+type: readme
+---
+
 # Tests
 
 CI runs .NET unit/integration/contract tests, JavaScript tests, and browser

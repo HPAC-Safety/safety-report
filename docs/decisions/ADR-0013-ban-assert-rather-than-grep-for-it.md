@@ -1,4 +1,7 @@
 ---
+title: Ban Xunit.Assert with an analyzer, not a CI grep
+description: "Microsoft.CodeAnalysis.BannedApiAnalyzers, with tests/BannedSymbols.txt listing T:Xunit.Assert and the reason."
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

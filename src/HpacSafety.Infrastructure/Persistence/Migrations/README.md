@@ -1,3 +1,9 @@
+---
+title: The HPAC Safety database
+description: One PostgreSQL database, one DbContext, and the one way to change the schema.
+type: readme
+---
+
 # The HPAC Safety database
 
 One PostgreSQL database, one `DbContext`

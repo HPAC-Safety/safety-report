@@ -1,4 +1,7 @@
 ---
+title: The local build stubs missing translations; CI still does the actual translating
+description: "Two separate mechanisms, kept deliberately apart by where they run: 1."
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

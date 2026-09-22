@@ -1,4 +1,7 @@
 ---
+title: Specification-driven development is how this repository works
+description: The repository already behaves this way without saying so.
+type: adr
 status: accepted
 date: 2026-09-22
 decision-makers: Chase Florell

@@ -1,3 +1,9 @@
+---
+title: Source inventory
+description: Every audited path under src/, with its disposition against the target.
+type: guide
+---
+
 # Source inventory
 
 This inventory accounts for every one of the 135 tracked paths under `src/` on

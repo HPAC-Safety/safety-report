@@ -1,3 +1,9 @@
+---
+title: Authentication and authorization
+description: Who must sign in, what a token carries, and what each role may do.
+type: guide
+---
+
 # Authentication and authorization
 
 Reading the public feed and a public report detail requires no account.

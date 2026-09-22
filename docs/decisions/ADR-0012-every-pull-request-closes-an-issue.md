@@ -1,4 +1,7 @@
 ---
+title: Every pull request closes an issue, enforced in CI
+description: Enforce the keyword in the pull request body, with a required CI check.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

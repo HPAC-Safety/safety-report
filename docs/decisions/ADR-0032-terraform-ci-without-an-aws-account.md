@@ -1,4 +1,7 @@
 ---
+title: Two roles, and a check that works without an AWS account
+description: Two OIDC roles rather than one widened role, and a Terraform check that still runs with no AWS account configured.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

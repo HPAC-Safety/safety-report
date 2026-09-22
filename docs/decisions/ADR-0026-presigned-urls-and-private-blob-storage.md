@@ -1,4 +1,7 @@
 ---
+title: Every blob is reached through a short-lived pre-signed URL
+description: Uploads and reads go directly to private storage through a pre-signed URL scoped to one key, and no API route ever serves blob bytes.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: The coverage ratchet judges added code, not the whole-repository ratio
+description: The coverage floor stays fixed and the ratchet switches to judging the lines a branch added once it adds enough of them.
+type: adr
 status: accepted
 date: 2026-08-22
 decision-makers: Chase Florell

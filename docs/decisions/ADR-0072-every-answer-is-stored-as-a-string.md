@@ -1,4 +1,7 @@
 ---
+title: "Every answer is stored as a string, in the reporter's language"
+description: One column, one string, for every answer of every type.
+type: adr
 status: accepted
 date: 2026-09-21
 decision-makers: Chase Florell

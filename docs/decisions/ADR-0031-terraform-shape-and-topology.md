@@ -1,4 +1,7 @@
 ---
+title: The shape of the Terraform, and the topology it builds
+description: One root module of flat .tf files split by area, no modules directory and no workspaces, building one environment.
+type: adr
 status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell

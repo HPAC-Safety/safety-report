@@ -1,4 +1,7 @@
 ---
+title: A name in a narrative becomes a role word, not a placeholder
+description: "Replace the name with the role word for the structured field it came from — \"the pilot\" for a name given in the pilot-in-command answer, \"the reporter\" for one given in the reporter answer."
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

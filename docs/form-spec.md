@@ -1,3 +1,9 @@
+---
+title: Occurrence report form specification
+description: Generated evidence of the current Typeform question set; never hand-edited.
+type: guide
+---
+
 # Occurrence report — form specification
 
 > **Generated file — do not edit by hand.**

@@ -1,4 +1,7 @@
 ---
+title: DeepL, behind a one-file adapter, after GitHub Models was retired
+description: DeepL, targeting FR-CA, behind an adapter that is the one file to change to swap provider.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

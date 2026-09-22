@@ -1,4 +1,7 @@
 ---
+title: Every UI change ships with a Playwright test and its server-side counterpart
+description: "A pull request that changes UI behavior includes both: 1."
+type: adr
 status: accepted
 date: 2026-09-18
 decision-makers: Chase Florell

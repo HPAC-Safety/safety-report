@@ -1,4 +1,7 @@
 ---
+title: A reporter may add a missing type-ahead choice, and an autocomplete renders the live list
+description: A reporter may add a missing choice to a type-ahead, recorded at submission for an administrator to curate, while the field renders the live shared list.
+type: adr
 status: partially-superseded
 date: 2026-09-21
 decision-makers: Chase Florell

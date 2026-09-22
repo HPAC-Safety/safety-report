@@ -1,3 +1,9 @@
+---
+title: Private attachment storage
+description: How bounded streams reach private quarantine and how verified bytes are reached afterwards.
+type: readme
+---
+
 # Private attachment storage
 
 The target store accepts bounded streams from the API into private quarantine,

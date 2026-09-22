@@ -1,4 +1,7 @@
 ---
+title: One website again; the admin review queue is a route, not a separate site
+description: "One Vite/React application, one build output, served by one Nginx container (one ECS Fargate service, one CloudFront distribution, one hostname: safety.hpac.ca)."
+type: adr
 status: accepted
 date: 2026-09-19
 decision-makers: Chase Florell

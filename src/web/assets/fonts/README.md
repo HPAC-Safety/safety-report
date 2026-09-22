@@ -1,3 +1,9 @@
+---
+title: Fonts
+description: "The self-hosted Poppins and Aleo families and where their @font-face rules are declared."
+type: readme
+---
+
 # fonts
 
 Poppins (UI) and Aleo (display), self-hosted. `src/web/src/index.css`

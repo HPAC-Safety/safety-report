@@ -1,3 +1,9 @@
+---
+title: HpacSafety.Api
+description: The deployable ASP.NET Core HTTP surface and its current implementation status.
+type: readme
+---
+
 # HpacSafety.Api
 
 Deployable ASP.NET Core HTTP surface. The target contract is in

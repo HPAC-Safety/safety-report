@@ -78,6 +78,9 @@
           },
           {
             "context": "feature-coverage"
+          },
+          {
+            "context": "docs"
           }
         ]
       }

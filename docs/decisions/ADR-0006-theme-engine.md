@@ -1,4 +1,7 @@
 ---
+title: Tailwind v4 standalone CLI
+description: Tailwind v4 via the standalone CLI binary — no npm, no node in the web build.
+type: adr
 status: superseded
 date: 2026-08-22
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: The question set is data, not code
+description: The question set lives in the database as rows an administrator edits, not as types a developer deploys.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

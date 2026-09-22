@@ -1,4 +1,7 @@
 ---
+title: Third-party libraries are used behind an abstraction we own
+description: A third-party library is reached through an interface declared in HpacSafety.Core and implemented by an adapter in HpacSafety.Infrastructure.
+type: adr
 status: partially-superseded
 date: 2026-08-22
 decision-makers: Chase Florell

@@ -1,4 +1,7 @@
 ---
+title: An administrator may machine-translate question text while authoring; the database still stores only what they saved
+description: An administrator may press Translate while authoring a question.
+type: adr
 status: accepted
 date: 2026-09-20
 decision-makers: Chase Florell

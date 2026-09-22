@@ -15,6 +15,7 @@ import {
 	type OptionSetView,
 	type QuestionView,
 } from "../api/adminQuestions"
+import { exportTypeform } from "../api/adminTypeformImport"
 
 /*
  * The question bank, as a safety officer edits it.
@@ -41,6 +42,7 @@ export function ManageQuestionsPage() {
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [importing, setImporting] = useState(false)
+	const [exporting, setExporting] = useState(false)
 
 	const report = useCallback(
 		(cause: unknown) => setError(cause instanceof ApiError ? cause.detail : t("questions.error.unexpected")),
@@ -98,6 +100,24 @@ export function ManageQuestionsPage() {
 		}
 	}
 
+	async function exportBank() {
+		try {
+			setExporting(true)
+			const blob = await exportTypeform()
+			const url = URL.createObjectURL(blob)
+			const link = document.createElement("a")
+
+			link.href = url
+			link.download = "question-bank.zip"
+			link.click()
+			URL.revokeObjectURL(url)
+		} catch (cause) {
+			report(cause)
+		} finally {
+			setExporting(false)
+		}
+	}
+
 	async function reorder(idsInOrder: string[]) {
 		try {
 			setQuestions(await reorderQuestions(idsInOrder))
@@ -151,6 +171,14 @@ export function ManageQuestionsPage() {
 					}}
 				>
 					{t("questions.import.openDialog")}
+				</button>
+				<button
+					type="button"
+					className="touch-target inline-flex items-center rounded border border-rule px-5 font-sans text-ink hover:bg-surface-2 disabled:opacity-40"
+					disabled={exporting}
+					onClick={() => void exportBank()}
+				>
+					{exporting ? t("questions.export.working") : t("questions.export.action")}
 				</button>
 			</div>
 

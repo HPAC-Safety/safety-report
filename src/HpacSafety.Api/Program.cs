@@ -120,6 +120,9 @@ app.MapAdminTypeformImport();
 // Soft deletion (issue #82). The review queue itself is issue #25.
 app.MapAdminReports();
 
+// A safety officer or administrator's only two ways to see an uploaded file.
+app.MapAdminAttachments();
+
 await app.RunAsync().ConfigureAwait(false);
 
 /// <summary>

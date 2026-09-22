@@ -303,6 +303,11 @@ public static class ReportSubmissionEndpoints
 
 				var file = report.AddFile(outcome.OriginalKey.Value, outcome.ContentType.ContentType, outcome.ByteSize, clock.GetUtcNow());
 				file.LinkToAnswer(answer.Id);
+
+				if (outcome.IsViewable)
+				{
+					file.RecordStripped(outcome.DerivativeKey.Value, outcome.StrippedAt!.Value);
+				}
 			}
 		}
 

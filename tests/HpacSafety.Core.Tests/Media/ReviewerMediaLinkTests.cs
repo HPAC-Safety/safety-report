@@ -21,7 +21,7 @@ public class ReviewerMediaLinkTests
 
 		// When
 		var url = await new ReviewerMediaLink(new InMemoryBlobStore())
-			.CreateViewUrl(derivative, TimeSpan.FromMinutes(5), CancellationToken.None);
+			.CreateViewUrl(derivative, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// Then
 		url.ShouldNotBeNull();
@@ -36,7 +36,7 @@ public class ReviewerMediaLinkTests
 		var key = BlobKey.For(ReportId, compartment, "photo.jpg");
 
 		// When / Then
-		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(key, TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(key, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 
 	[Fact]
@@ -50,7 +50,7 @@ public class ReviewerMediaLinkTests
 		var video = BlobKey.For(ReportId, MediaCompartment.Original, "clip.mp4");
 
 		// When / Then
-		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(video, TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(video, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 
 	[Fact]
@@ -68,5 +68,48 @@ public class ReviewerMediaLinkTests
 		ReviewerMediaLink.IsViewable(stripped).ShouldBeTrue();
 		ReviewerMediaLink.IsViewable(original).ShouldBeFalse();
 		ReviewerMediaLink.IsViewable(quarantined).ShouldBeFalse();
+	}
+
+	[Fact]
+	public async Task GivenDocumentOriginal_WhenDownloadUrlIsRequested_ThenOneIsIssued()
+	{
+		// Given
+		var original = BlobKey.For(ReportId, MediaCompartment.Original, "report.pdf");
+
+		// When
+		var url = await new ReviewerMediaLink(new InMemoryBlobStore())
+			.CreateDocumentDownloadUrl(original, AttachmentKind.Document, "report.pdf", TimeSpan.FromMinutes(5), CancellationToken.None);
+
+		// Then
+		url.ShouldNotBeNull();
+	}
+
+	[Theory]
+	[InlineData(AttachmentKind.Image)]
+	[InlineData(AttachmentKind.Video)]
+	public async Task GivenAnImageOrVideoOriginal_WhenDocumentDownloadUrlIsRequested_ThenRefused(AttachmentKind kind)
+	{
+		// Given
+		// Only a document has no stripped derivative to redirect a reviewer to
+		// instead — an image or video original must never be exposed this way,
+		// even if a caller passes the right compartment.
+		var original = BlobKey.For(ReportId, MediaCompartment.Original, "photo.jpg");
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateDocumentDownloadUrl(original, kind, "photo.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
+	}
+
+	[Theory]
+	[InlineData(MediaCompartment.Stripped)]
+	[InlineData(MediaCompartment.Quarantine)]
+	public async Task GivenDocumentKeyOutsideOriginalCompartment_WhenDocumentDownloadUrlIsRequested_ThenRefused(MediaCompartment compartment)
+	{
+		// Given
+		var key = BlobKey.For(ReportId, compartment, "report.pdf");
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateDocumentDownloadUrl(key, AttachmentKind.Document, "report.pdf", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 }

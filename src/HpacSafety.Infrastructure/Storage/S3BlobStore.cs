@@ -66,16 +66,26 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task<Uri> CreateReadUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public async Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
-		var url = await _s3.GetPreSignedURLAsync(new GetPreSignedUrlRequest
+		ArgumentException.ThrowIfNullOrWhiteSpace(downloadFileName);
+
+		var request = new GetPreSignedUrlRequest
 		{
 			BucketName = _bucketName,
 			Key = key.Value,
 			Verb = HttpVerb.GET,
 			Expires = ExpiryFor(lifetime),
 			Protocol = ConfiguredProtocol
-		}).ConfigureAwait(false);
+		};
+
+		// Forces a download rather than an inline render, regardless of what the
+		// browser would otherwise do with the object's content type — this is
+		// what makes REQ-MED-010/011's "no inline render, ever" true at the
+		// storage layer rather than relying on every caller to remember it.
+		request.ResponseHeaderOverrides.ContentDisposition = $"attachment; filename=\"{downloadFileName}\"";
+
+		var url = await _s3.GetPreSignedURLAsync(request).ConfigureAwait(false);
 
 		return new Uri(url);
 	}

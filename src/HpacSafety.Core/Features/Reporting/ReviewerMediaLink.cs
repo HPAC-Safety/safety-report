@@ -30,10 +30,11 @@ public sealed class ReviewerMediaLink
 	}
 
 	/// <summary>
-	///     A short-lived pre-signed GET for a stripped derivative. Throws for
-	///     anything else, including the original and the quarantined upload.
+	///     A short-lived, forced-download pre-signed GET for a stripped derivative.
+	///     Throws for anything else, including the original and the quarantined
+	///     upload. See REQ-MED-010.
 	/// </summary>
-	public Task<Uri> CreateViewUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateViewUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		if (!IsViewable(key))
 		{
@@ -41,7 +42,30 @@ public sealed class ReviewerMediaLink
 				"A reviewer may only be shown a stripped derivative, never the original upload.");
 		}
 
-		return _blobStore.CreateReadUrl(key, lifetime, cancellationToken);
+		return _blobStore.CreateReadUrl(key, downloadFileName, lifetime, cancellationToken);
+	}
+
+	/// <summary>
+	///     A short-lived, forced-download pre-signed GET for a document's validated
+	///     private original. Throws for anything that is not a document's original —
+	///     an image or video original is never issued this way, because only a
+	///     document has no stripped derivative to redirect a reviewer to instead. See
+	///     REQ-MED-011.
+	/// </summary>
+	public Task<Uri> CreateDocumentDownloadUrl(BlobKey originalKey, AttachmentKind kind, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+	{
+		if (kind is not AttachmentKind.Document)
+		{
+			throw new DomainRuleViolationException(
+				"Only a document's original may be downloaded directly; an image or video original is never exposed.");
+		}
+
+		if (originalKey.Compartment is not MediaCompartment.Original)
+		{
+			throw new DomainRuleViolationException("A document download must reference its private original.");
+		}
+
+		return _blobStore.CreateReadUrl(originalKey, downloadFileName, lifetime, cancellationToken);
 	}
 
 	/// <summary>True when the key names a stripped derivative rather than an original or a quarantined upload.</summary>

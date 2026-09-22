@@ -22,5 +22,9 @@ no malware scan (ADR-0089) — the format allowlist and sniffing are the gate.
 Current main implements strong image detection/re-encoding, video container
 detection, and document sniffing/validation (magic number, internal package
 shape for DOCX/ODT, bounded text decoding for MD/TXT); video derivatives are
-not yet implemented. Tests use generated synthetic fixtures except the
-documented tiny HEIC fixture.
+not yet implemented. A reviewer reaches an image/video derivative or a
+document's original only through `ReviewerMediaLink`, the one chokepoint over
+`IBlobStore.CreateReadUrlAsync` — enforced by a source scan, not only by
+convention — which the `/api/admin/reports/{reportId}/attachments/{attachmentId}/view`
+and `.../download` endpoints call. Tests use generated synthetic fixtures
+except the documented tiny HEIC fixture.

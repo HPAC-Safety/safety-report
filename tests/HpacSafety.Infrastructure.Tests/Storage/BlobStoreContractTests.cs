@@ -114,7 +114,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		// Given
 		using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
 		await Store.Write(AnotherReportsUpload, source, MediaType.Jpeg.ContentType, CancellationToken.None);
-		var url = await Store.CreateReadUrl(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await Store.CreateReadUrl(Quarantined, "download.bin", TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// When
 		var accepted = await TryRead(RetargetToKey(url, AnotherReportsUpload));
@@ -130,7 +130,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromMinutes(1);
 
 		// When / Then
-		await Should.ThrowAsync<DomainRuleViolationException>(() => Store.CreateReadUrl(Quarantined, lifetime, CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => Store.CreateReadUrl(Quarantined, "download.bin", lifetime, CancellationToken.None));
 		await Should.ThrowAsync<DomainRuleViolationException>(() => Store.CreateUploadUrl(Quarantined, MediaType.Jpeg.ContentType, lifetime, CancellationToken.None));
 	}
 
@@ -226,7 +226,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		// Fails closed: there is nothing to open, rather than a fall-through to
 		// the unstripped original. See #65.
 		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
-		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(Store).CreateViewUrl(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(Store).CreateViewUrl(outcome.OriginalKey, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 
 	[Fact]
@@ -238,12 +238,12 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		var links = new ReviewerMediaLink(Store);
 
 		// When
-		var derivativeUrl = await links.CreateViewUrl(outcome.DerivativeKey, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var derivativeUrl = await links.CreateViewUrl(outcome.DerivativeKey, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// Then
 		derivativeUrl.ShouldNotBeNull();
-		await Should.ThrowAsync<DomainRuleViolationException>(() => links.CreateViewUrl(outcome.OriginalKey, TimeSpan.FromMinutes(5), CancellationToken.None));
-		await Should.ThrowAsync<DomainRuleViolationException>(() => links.CreateViewUrl(Quarantined, TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => links.CreateViewUrl(outcome.OriginalKey, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => links.CreateViewUrl(Quarantined, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
 	}
 
 	[Fact]

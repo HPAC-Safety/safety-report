@@ -13,7 +13,7 @@ internal sealed class SingleStreamBlobStore(Stream source) : IBlobStore
 		throw new NotSupportedException();
 	}
 
-	public Task<Uri> CreateReadUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
 	{
 		throw new NotSupportedException();
 	}

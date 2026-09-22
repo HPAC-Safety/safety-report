@@ -152,9 +152,9 @@ public sealed class MediaValidationSteps
 			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=put&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
 		}
 
-		public Task<Uri> CreateReadUrl(BlobKey key, TimeSpan lifetime, CancellationToken cancellationToken)
+		public Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
 		{
-			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=get&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
+			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=get&fn={Uri.EscapeDataString(downloadFileName)}&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
 		}
 
 		public Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)

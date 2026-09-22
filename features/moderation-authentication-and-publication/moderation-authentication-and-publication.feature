@@ -363,7 +363,6 @@ Scenario: A failed sign-in attempt writes an audit row
   And the actor is recorded as the attempted identity rather than left blank
 
 @REQ-MOD-046
-@ignore
 Scenario: A reviewer's attachment view writes its own audit row, distinct from a raw-report view
   Given a reviewer opens a private attachment
   When the view completes

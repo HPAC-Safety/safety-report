@@ -93,7 +93,6 @@ Scenario: Each attachment fails and processes independently of the report
   And the slow or corrupt file neither rolls back the valid report nor forces an additional AI call
 
 @REQ-MED-010
-@ignore
 Scenario: A reviewer gets a short-lived URL only for successfully processed media
   Given an image or video attachment has finished processing successfully
   When an authorized reviewer requests to view it
@@ -102,7 +101,6 @@ Scenario: A reviewer gets a short-lived URL only for successfully processed medi
   And there is no API blob proxy or public URL
 
 @REQ-MED-011
-@ignore
 Scenario: A reviewer downloads a validated document as an unredacted original
   Given a document attachment has passed validation
   When an authorized reviewer requests it
@@ -119,7 +117,6 @@ Scenario: The admin site never inline-renders a private document
   And the reviewer is warned that the document is unredacted before download
 
 @REQ-MED-013
-@ignore
 Scenario: A failed attachment is inaccessible to reviewers
   Given signature validation, decoding, metadata removal, re-encoding/remuxing, writing, or verification fails for an attachment
   When the Worker finishes processing it

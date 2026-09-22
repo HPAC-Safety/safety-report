@@ -89,13 +89,18 @@ Each of those records is `proposed` until the change that applies it lands.
    live shared list while its revision snapshot remains the record of the
    complete set of choices that reporter was offered
    ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
-   Every answer is stored as one string. A select, picker, or type-ahead answer
-   holds the literal value as shown, in the reporter's language, with its locale
-   and a flag for an administrator to supply the second language. A boolean is
+   Every answer is stored as one string, in the reporter's own words, in the
+   language they answered in, and is immutable once written. Its second
+   language starts unset and is filled off the submission path — mechanically
+   by the Worker via the same machine-translation port question authoring
+   uses, or by an administrator correcting or supplying it by hand — with the
+   source (`auto` or `human`) recorded. This applies to every answer, select
+   or free text alike; there is no answer type this ever skips. A boolean is
    `yes` or `no`; a date, time, or date-and-time is ISO 8601 in the shape that
    fits. ISO 8601 is the storage form only — the domain still uses `DateOnly`,
    `TimeOnly`, and `DateTimeOffset`
    ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
+   [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
    [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
    A question may be made conditional on a yes/no question, or on a
    single-select question naming a required option, and its options may
@@ -152,7 +157,7 @@ Each of those records is `proposed` until the change that applies it lands.
    ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 
 There is no deterministic scrubber beyond the narrow private-value marking
-pass in item 3 above, no separate PII auditor, no report translator,
+pass in item 3 above, no separate PII auditor,
 specialized aircraft processing, outbound email flow, pre-submit
 upload session, speculative publication channel, user table, allowlist,
 credential proxy, CSRF machinery, or Turnstile verification. The one carved
@@ -162,12 +167,14 @@ a hardcoded, Development-only email allowlist for role, and CSRF/session
 handling scoped entirely to that one credential source. It does not
 generalize, never reaches Production, and any future allowlist or
 credential-proxy-shaped code outside this scope needs its own argument on
-its own facts. Machine translation
-is always administrator-initiated behind the `Administrator` policy, never runs
-on the submission path, and exists for two purposes only — drafting question
-wording while authoring, and filling the second language of a short select
-answer from the administrator's queue. It never touches a narrative, a free-text
-answer, or a summary.
+its own facts. Machine translation never runs on the submission path itself —
+nothing a reporter's request touches calls a translation provider. Off that
+path it now has three purposes: drafting question wording while authoring,
+and, for every answer including a narrative one, the Worker mechanically
+supplying its second language or an administrator correcting/supplying one by
+hand ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).
+It still never touches a summary — the bilingual summary pair comes from the
+Worker's one anonymized model call, never from a translation provider.
 
 ## Focused skills
 

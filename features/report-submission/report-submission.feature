@@ -57,7 +57,25 @@ Scenario: The submission path never calls a translation provider
   Given a submission contains select answers and a value typed into a type-ahead or a multi-select with reporter additions allowed
   When the API commits the submission
   Then no translation provider is called
-  And the answers are stored in the language the reporter gave them in, flagged for an Administrator
+  And the answers are stored in the language the reporter gave them in, with no translation yet
+
+Scenario: Every answer's value and locale are immutable once submitted
+  Given a report has been submitted
+  Then no endpoint ever changes an answer's value or the locale it was given in
+  And this holds for every answer type, not only select-shaped ones
+
+Scenario: The Worker mechanically translates every answer into its second language
+  Given a submitted report has answers with values in one locale
+  When the Worker claims that report's translation outbox message
+  Then it calls the mechanical translation port once per locale group, never the summarization model
+  And it writes each answer's translated value and marks the translation source "auto"
+  And a skipped answer, with no value, is never sent to the translator
+
+Scenario: An administrator's correction always wins over the Worker's translation
+  Given an answer already has a translation the Worker supplied automatically
+  When an administrator supplies or corrects that answer's translated value
+  Then the stored translated value is the administrator's
+  And the translation source is marked "human"
 
 Scenario Outline: The API rejects a malformed submission DTO
   Given a submission DTO contains <problem>

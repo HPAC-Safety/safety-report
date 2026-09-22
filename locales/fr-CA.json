@@ -68,7 +68,7 @@
     },
     "report": {
       "signInRequiredTitle": "Connectez-vous pour faire un signalement",
-      "signInRequiredBody": "Pour remplir un rapport d'incident, vous devez vous connecter en tant que membre de l'HPAC. La connexion sert uniquement à confirmer que vous êtes membre; votre rapport n'est pas lié à votre compte.",
+      "signInRequiredBody": "Pour remplir un rapport d’incident, vous devez vous connecter en tant que membre de la HPAC. La connexion sert uniquement à confirmer que vous êtes membre; votre rapport n’est pas lié à votre compte.",
       "signInAction": "Ouvrez une session",
       "notTrackedTitle": "Votre rapport n'est pas associé à votre profil",
       "notTrackedBody": "Le fait de vous connecter ne sert qu’à confirmer que vous êtes membre de la HPAC. Nous n’enregistrons ni votre nom, ni votre statut de membre, ni aucune information permettant d’identifier l’auteur de ce rapport."
@@ -83,16 +83,16 @@
       "submitButton": "Ouvrir une session"
     },
     "contact": {
-      "title": "#Contact",
-      "orgName": "#Hang Gliding and Paragliding Association of Canada (HPAC) Safety Committee",
-      "addressLabel": "#Mailing address",
-      "address": "#612 – 5307 Victoria Drive\nVancouver BC V5P 3V6\nCanada",
-      "emailLabel": "#Email",
-      "email": "#safety@hpac.ca",
-      "socialLabel": "#Follow us",
-      "facebookLabel": "#Facebook",
-      "youtubeLabel": "#YouTube",
-      "whatsappLabel": "#WhatsApp"
+      "title": "Contact",
+      "orgName": "Association Canadienne de Vol Libre (ACVL) - Comité de sécurité",
+      "addressLabel": "Adresse postale",
+      "address": "612 – 5307, promenade Victoria\nVancouver (C.-B.) V5P 3V6\nCanada",
+      "emailLabel": "Courriel",
+      "email": "securite@acvl.ca",
+      "socialLabel": "Suivez-nous",
+      "facebookLabel": "Facebook",
+      "youtubeLabel": "YouTube",
+      "whatsappLabel": "WhatsApp"
     }
   },
   "notFound": {
@@ -101,7 +101,7 @@
   },
   "questions": {
     "title": "Gérer les questions",
-    "intro": "Le formulaire de déclaration se compose de ces questions. La modification d’une question crée une nouvelle version, tandis que la modification d’une question à laquelle une réponse a déjà été donnée la remplace par une nouvelle question; ainsi, une déclaration déjà déposée reflète toujours exactement ce qui a été demandé.",
+    "intro": "Le formulaire de signalement se compose de ces questions. Lorsque vous modifiez l’une d’entre elles, vous créez une nouvelle version; si vous modifiez une question à laquelle une réponse a déjà été donnée, celle-ci est remplacée par une nouvelle question. Ainsi, un rapport déjà soumis conserve exactement le contenu initial de la question posée.",
     "listTitle": "Questions figurant sur le formulaire",
     "loading": "Chargement des questions…",
     "empty": "Il n'y a pas encore de questions. Ajoutez la première.",

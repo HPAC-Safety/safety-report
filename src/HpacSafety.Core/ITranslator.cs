@@ -6,16 +6,18 @@ namespace HpacSafety.Core;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         This exists for <b>one</b> caller: an administrator authoring a question who
-///         presses Translate to fill the other language. It is a drafting aid. The
-///         result is editable, the administrator saves it deliberately, and the stored
-///         revision is theirs — see ADR-0062.
+///         Two callers. An administrator authoring a question presses Translate to
+///         fill the other language, a drafting aid whose result is editable and saved
+///         deliberately (ADR-0062). The Worker calls it mechanically, off the
+///         submission path, to fill an answer's second language — including a
+///         narrative one — before an administrator ever needs to (ADR-0080). Either
+///         way the result is a literal machine translation, not a paraphrase, and an
+///         administrator can always overwrite what the Worker supplied.
 ///     </para>
 ///     <para>
-///         It is deliberately not used for anything else. A reporter's narrative is
-///         never translated (a translated account of a crash is a paraphrased account
-///         of a crash), and the bilingual summary comes from the Worker's single model
-///         call, not from here.
+///         It is never called on the submission path itself, and it never produces
+///         the bilingual summary — that comes from the Worker's single anonymized
+///         model call, not from here.
 ///     </para>
 ///     <para>
 ///         The port exists because the provider is expected to change: DeepL today,

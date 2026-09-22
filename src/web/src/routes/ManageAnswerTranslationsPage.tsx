@@ -10,13 +10,16 @@ import {
 } from "../api/adminQuestions"
 
 /*
- * The answers waiting for a second official language.
+ * The answers still waiting for a second official language: any answer type,
+ * narrative included, not only a picker or type-ahead value (ADR-0080).
  *
- * A reporter picks a value from a picker or a type-ahead in whichever language
- * they are using, and nothing on the submission path translates it (ADR-0072).
- * The answer is stored exactly as they gave it and flagged, and this is where
- * an administrator clears that flag — by typing the other language, or by
- * pressing Translate and saving what comes back.
+ * A reporter answers in whichever language they are using, and nothing on the
+ * submission path translates it (ADR-0062). Most answers are then filled in
+ * automatically by the Worker, off the request path, before an administrator
+ * ever sees them — this screen is what is left after that: unfilled ones, and
+ * ones an administrator wants to correct. Typing the other language, or
+ * pressing Translate and saving what comes back, both count as this
+ * administrator's own translation and overwrite whatever the Worker supplied.
  *
  * The reporter's own value is never editable here. Their words are the record
  * of what they answered; what this screen adds is the other language beside it.

@@ -5,7 +5,14 @@ outside the report request.
 
 ## Target work
 
-- Claim typed outbox messages safely and idempotently.
+- Claim typed outbox messages safely and idempotently — built:
+  [`Outbox/`](Outbox/), one `IOutboxMessageProcessor` per message type, claimed
+  via `OutboxClaimer`'s `FOR UPDATE SKIP LOCKED` query.
+- Mechanically supply the second language of every answer with a value —
+  narrative included — via the same `ITranslator` port question authoring
+  uses, never the summarization model. Built:
+  [`Outbox/TranslateAnswersProcessor.cs`](Outbox/TranslateAnswersProcessor.cs).
+  See ADR-0080.
 - Query exact revision-bound answers, partition answered values into eligible
   `report_content` and recognition-only `private_context`, and exclude consent
   and all attachments.
@@ -20,13 +27,16 @@ outside the report request.
 - Retry within a bounded budget; expose terminal summary failure for manual
   bilingual entry and alert on failed/stuck work.
 
-There is no separate PII audit, runtime translation, general-purpose
-deterministic scrub beyond the narrow private-value marking pass above,
-specialized aircraft processing, notification email, or extra model repair
-stage. Documents never enter model input.
+There is no separate PII audit, general-purpose deterministic scrub beyond the
+narrow private-value marking pass above, specialized aircraft processing,
+notification email, or extra model repair stage. Documents never enter model
+input. Answer translation (above) is mechanical and literal, not the
+anonymized summarization model — it never runs on the submission path and
+never produces the bilingual summary.
 
-Current main is mostly a Worker host scaffold; the legacy ports/prompts do not
-describe the target pipeline. See
+Current main claims and translates answers; the summarization pipeline is
+still a Worker host scaffold and the legacy ports/prompts do not describe the
+target pipeline. See
 [`../../docs/implementation-status.md`](../../docs/implementation-status.md).
 
 ```bash

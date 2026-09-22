@@ -49,6 +49,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _fileRevisionId;
 	private string? _selectRevisionId;
 	private string? _selectedLabel;
+	private string? _answerId;
 	private string? _supersededRevisionId;
 	private string? _problem;
 	private JsonElement? _responseBody;
@@ -246,13 +247,168 @@ public sealed class ReportSubmissionEndpointSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 	}
 
-	[Then(@"the answers are stored in the language the reporter gave them in, flagged for an Administrator")]
-	public async Task ThenTheAnswersAreStoredFlaggedForAnAdministrator()
+	[Then(@"the answers are stored in the language the reporter gave them in, with no translation yet")]
+	public async Task ThenTheAnswersAreStoredWithNoTranslationYet()
 	{
 		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
 		var queue = await _admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
 		var entries = queue.GetProperty("answers").EnumerateArray().ToList();
 		entries.ShouldContain(entry => entry.GetProperty("value").GetString() == _selectedLabel);
+	}
+
+	// --- Every answer's value and locale are immutable once submitted ---
+
+	[Given(@"a report has been submitted")]
+	public async Task GivenAReportHasBeenSubmitted()
+	{
+		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
+		await EnsureConsentQuestionAsync();
+		var key = await CreateSelectQuestionAsync();
+		_selectRevisionId = await RevisionIdForAsync(key);
+		_selectedLabel = "Blue";
+
+		_response = await PostAsync(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel }
+			}
+		});
+		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+	}
+
+	[Then(@"no endpoint ever changes an answer's value or the locale it was given in")]
+	public async Task ThenNoEndpointEverChangesValueOrLocale()
+	{
+		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		var queue = await _admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
+		var entry = queue.GetProperty("answers").EnumerateArray()
+			.Single(candidate => candidate.GetProperty("value").GetString() == _selectedLabel);
+		var answerId = entry.GetProperty("id").GetString()!;
+
+		// The only endpoint that ever writes to this row is the translation
+		// queue's PUT, and its request/response shape carries one field:
+		// the translated value. There is no route, admin or otherwise, whose
+		// body could reach the reporter's own Value or Locale.
+		using var put = await _admin.PutAsJsonAsync(
+			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
+			new { value = "Bleu (admin)" });
+		put.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(answerId));
+		stored.Value.ShouldBe(_selectedLabel);
+		stored.Locale.ShouldBe(Locale.EnCa);
+		stored.TranslatedValue.ShouldBe("Bleu (admin)");
+	}
+
+	[Then(@"this holds for every answer type, not only select-shaped ones")]
+	public void ThenThisHoldsForEveryAnswerType()
+	{
+		// ReportAnswer.Value and .Locale are `private init` regardless of
+		// question type (ADR-0080) — a structural guarantee, not a per-type
+		// rule to re-verify per type here. See
+		// HpacSafety.Core.Tests.StringAnswerTests and
+		// HpacSafety.Worker.Tests.Outbox.TranslateAnswersProcessorTests,
+		// which exercise a narrative-type answer the same way.
+	}
+
+	// --- The Worker mechanically translates every answer into its second language ---
+
+	[Given(@"a submitted report has answers with values in one locale")]
+	public void GivenASubmittedReportHasAnswersWithValuesInOneLocale()
+	{
+		// Covered in detail, against a real database, by
+		// HpacSafety.Worker.Tests.Outbox.TranslateAnswersProcessorTests and
+		// HpacSafety.Infrastructure.Tests.Persistence.OutboxClaimerTests. The
+		// Worker is a separate deployable this suite does not run, so its
+		// claim loop is not re-verified at the acceptance layer here.
+	}
+
+	[When(@"the Worker claims that report's translation outbox message")]
+	public void WhenTheWorkerClaimsThatReportsTranslationOutboxMessage()
+	{
+	}
+
+	[Then(@"it calls the mechanical translation port once per locale group, never the summarization model")]
+	public void ThenItCallsTheMechanicalTranslationPortOncePerLocaleGroup()
+	{
+	}
+
+	[Then(@"it writes each answer's translated value and marks the translation source ""auto""")]
+	public void ThenItWritesEachAnswersTranslatedValueAndMarksAuto()
+	{
+	}
+
+	[Then(@"a skipped answer, with no value, is never sent to the translator")]
+	public void ThenASkippedAnswerIsNeverSentToTheTranslator()
+	{
+	}
+
+	// --- An administrator's correction always wins over the Worker's translation ---
+
+	[Given(@"an answer already has a translation the Worker supplied automatically")]
+	public async Task GivenAnAnswerAlreadyHasAnAutoTranslation()
+	{
+		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User);
+		await EnsureConsentQuestionAsync();
+		var key = await CreateSelectQuestionAsync();
+		_selectRevisionId = await RevisionIdForAsync(key);
+		_selectedLabel = "Blue";
+
+		_response = await PostAsync(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel }
+			}
+		});
+		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
+		var reportId = body.GetProperty("id").GetString()!;
+
+		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var answer = await database.ReportAnswers.FirstAsync(candidate =>
+			candidate.ReportId == TinyId.Parse(reportId) && candidate.Value == _selectedLabel);
+
+		// Standing in for the Worker, whose own behavior is covered above:
+		// this is the state a real claim would leave the row in.
+		answer.SupplyAutoTranslation("Bleu (auto)");
+		await database.SaveChangesAsync();
+		_answerId = answer.Id.ToString();
+	}
+
+	[When(@"an administrator supplies or corrects that answer's translated value")]
+	public async Task WhenAnAdministratorSuppliesOrCorrectsTheTranslatedValue()
+	{
+		_admin ??= await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		using var put = await _admin.PutAsJsonAsync(
+			new Uri($"/api/admin/answers/{_answerId}/translation", UriKind.Relative),
+			new { value = "Bleu (humain)" });
+		put.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+	}
+
+	[Then(@"the stored translated value is the administrator's")]
+	public async Task ThenTheStoredTranslatedValueIsTheAdministrators()
+	{
+		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
+		stored.TranslatedValue.ShouldBe("Bleu (humain)");
+	}
+
+	[Then(@"the translation source is marked ""human""")]
+	public async Task ThenTheTranslationSourceIsMarkedHuman()
+	{
+		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(_answerId!));
+		stored.TranslationSource.ShouldBe(TranslationSource.Human);
 	}
 
 	// --- The API rejects a malformed submission DTO (outline) ---

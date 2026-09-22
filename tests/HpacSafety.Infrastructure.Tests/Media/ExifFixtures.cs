@@ -165,6 +165,16 @@ internal static class ExifFixtures
 		return [0x41, 0x42, 0x00, 0x43, 0x44, 0x01, 0x02, 0x03];
 	}
 
+	/// <summary>
+	///     Valid UTF-8 with no embedded NUL, disqualified only by a control character
+	///     other than tab/newline/carriage-return — the one text-rejection path a NUL
+	///     byte can never reach on its own.
+	/// </summary>
+	public static byte[] TextWithDisallowedControlCharacter()
+	{
+		return "Line one\x07Line two\n"u8.ToArray();
+	}
+
 	private static ExifProfile GpsProfile()
 	{
 		var exif = new ExifProfile();

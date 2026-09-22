@@ -19,6 +19,22 @@ public class ReportFileTests
 		return new ReportFile(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
 	}
 
+	[Theory]
+	[InlineData("image/jpeg", AttachmentKind.Image)]
+	[InlineData("video/mp4", AttachmentKind.Video)]
+	[InlineData("application/pdf", AttachmentKind.Document)]
+	[InlineData("application/octet-stream", AttachmentKind.Document)]
+	public void GivenAContentType_WhenRecorded_ThenKindReflectsIt(string contentType, AttachmentKind expected)
+	{
+		// Given / When
+		var file = new ReportFile(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, "file.bin").Value, contentType, 1024, Now);
+
+		// Then
+		// An unparseable content type falls back to Document, the same as any
+		// other format this system never strips — see #79.
+		file.Kind.ShouldBe(expected);
+	}
+
 	[Fact]
 	public void GivenFileWithNoDerivative_WhenViewableKeyIsAskedFor_ThenFailsClosed()
 	{

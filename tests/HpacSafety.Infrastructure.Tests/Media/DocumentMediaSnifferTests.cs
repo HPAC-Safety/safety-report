@@ -130,6 +130,19 @@ public class DocumentMediaSnifferTests
 	}
 
 	[Fact]
+	public async Task GivenTextWithADisallowedControlCharacter_WhenSniffed_ThenNotClaimedAsText()
+	{
+		// Given
+		using var content = new MemoryStream(ExifFixtures.TextWithDisallowedControlCharacter());
+
+		// When
+		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldBeNull();
+	}
+
+	[Fact]
 	public async Task GivenEmptyContent_WhenSniffed_ThenUnrecognised()
 	{
 		// Given

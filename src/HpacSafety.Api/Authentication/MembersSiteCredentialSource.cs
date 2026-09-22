@@ -9,7 +9,7 @@ namespace HpacSafety.Api.Authentication;
 ///     Verifies a development login against the live HPAC members site
 ///     (a Rails form-login application, not an identity provider), so a
 ///     developer can test the app as a real member without a fixed account.
-///     See ADR-0078.
+///     See ADR-0079.
 /// </summary>
 /// <remarks>
 ///     <para>

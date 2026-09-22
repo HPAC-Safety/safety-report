@@ -26,7 +26,7 @@ namespace HpacSafety.Api.Authentication;
 ///     <para>
 ///         Verification itself is delegated to each registered
 ///         <see cref="IDevelopmentCredentialSource" />, tried in order — the
-///         fixed accounts first, then the live members site (ADR-0078). This
+///         fixed accounts first, then the live members site (ADR-0079). This
 ///         type's only job is minting the token once a source resolves a role.
 ///     </para>
 /// </remarks>

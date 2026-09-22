@@ -131,7 +131,7 @@ public static class BootedApi
 	/// <summary>
 	///     A Development host whose members-site login goes through a stubbed
 	///     transport rather than the real network, with the given
-	///     Development-only role allowlists — see ADR-0078.
+	///     Development-only role allowlists — see ADR-0079.
 	/// </summary>
 	public static async Task<HttpClient> MembersSiteStubbedAsync(
 		HttpMessageHandler handler, IReadOnlyList<string>? administratorEmails = null,

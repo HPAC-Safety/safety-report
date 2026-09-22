@@ -8,7 +8,7 @@ namespace HpacSafety.Api.Tests.Authentication;
 
 /// <summary>
 ///     Verifying a development login against a stubbed members site — never
-///     the real network, and no real credential is used. See ADR-0078.
+///     the real network, and no real credential is used. See ADR-0079.
 /// </summary>
 public sealed class MembersSiteCredentialSourceTests
 {

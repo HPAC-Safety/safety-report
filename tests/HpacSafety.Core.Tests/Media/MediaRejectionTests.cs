@@ -5,54 +5,54 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-/// English and French are both first-class here, so a rejection is a key that the
-/// edge renders, never a sentence baked into the domain. These tests are what
-/// stop the two drifting: every reason has a key, and every key has English
-/// wording in <c>locales/en-CA.json</c>. See
-/// <c>skills/localize-hpac-app/SKILL.md</c> and docs/localization.md.
+///     English and French are both first-class here, so a rejection is a key that the
+///     edge renders, never a sentence baked into the domain. These tests are what
+///     stop the two drifting: every reason has a key, and every key has English
+///     wording in <c>locales/en-CA.json</c>. See
+///     <c>skills/localize-hpac-app/SKILL.md</c> and docs/localization.md.
 /// </summary>
 public class MediaRejectionTests
 {
-    [Fact]
-    public void GivenEveryRejectionReason_WhenKeyIsRequested_ThenOneIsReturned()
-    {
-        // Given
-        var reasons = Enum.GetValues<MediaRejectionReason>().Where(r => r is not MediaRejectionReason.None);
+	[Fact]
+	public void GivenEveryRejectionReason_WhenKeyIsRequested_ThenOneIsReturned()
+	{
+		// Given
+		var reasons = Enum.GetValues<MediaRejectionReason>().Where(r => r is not MediaRejectionReason.None);
 
-        // When
-        var keys = reasons.Select(MediaRejection.LocalizationKeyFor).ToArray();
+		// When
+		var keys = reasons.Select(MediaRejection.LocalizationKeyFor).ToArray();
 
-        // Then
-        keys.ShouldAllBe(key => key.StartsWith(MediaRejection.KeyPrefix, StringComparison.Ordinal));
-        keys.Distinct().Count().ShouldBe(keys.Length);
-    }
+		// Then
+		keys.ShouldAllBe(key => key.StartsWith(MediaRejection.KeyPrefix, StringComparison.Ordinal));
+		keys.Distinct().Count().ShouldBe(keys.Length);
+	}
 
-    [Fact]
-    public void GivenAcceptedUpload_WhenRejectionKeyIsRequested_ThenThrows()
-    {
-        // Given / When / Then
-        // There is nothing to tell the reporter, and returning a key for "None"
-        // would let a caller render a rejection for a file that was accepted.
-        Should.Throw<ArgumentOutOfRangeException>(() => MediaRejection.LocalizationKeyFor(MediaRejectionReason.None));
-    }
+	[Fact]
+	public void GivenAcceptedUpload_WhenRejectionKeyIsRequested_ThenThrows()
+	{
+		// Given / When / Then
+		// There is nothing to tell the reporter, and returning a key for "None"
+		// would let a caller render a rejection for a file that was accepted.
+		Should.Throw<ArgumentOutOfRangeException>(() => MediaRejection.LocalizationKeyFor(MediaRejectionReason.None));
+	}
 
-    [Fact]
-    public void GivenEveryRejectionReason_WhenEnglishLocaleIsRead_ThenEachKeyHasWording()
-    {
-        // Given
-        var locale = JsonSerializer.Deserialize<Dictionary<string, string>>(
-            File.ReadAllText(Path.Combine(ReviewerLinkIsTheOnlyChokepointTests.RepositoryRoot(), "locales", "en-CA.json")));
-        locale.ShouldNotBeNull();
+	[Fact]
+	public void GivenEveryRejectionReason_WhenEnglishLocaleIsRead_ThenEachKeyHasWording()
+	{
+		// Given
+		var locale = JsonSerializer.Deserialize<Dictionary<string, string>>(
+			File.ReadAllText(Path.Combine(ReviewerLinkIsTheOnlyChokepointTests.RepositoryRoot(), "locales", "en-CA.json")));
+		locale.ShouldNotBeNull();
 
-        // When
-        var missing = Enum.GetValues<MediaRejectionReason>()
-            .Where(r => r is not MediaRejectionReason.None)
-            .Select(MediaRejection.LocalizationKeyFor)
-            .Where(key => !locale.ContainsKey(key))
-            .ToArray();
+		// When
+		var missing = Enum.GetValues<MediaRejectionReason>()
+			.Where(r => r is not MediaRejectionReason.None)
+			.Select(MediaRejection.LocalizationKeyFor)
+			.Where(key => !locale.ContainsKey(key))
+			.ToArray();
 
-        // Then
-        // A reason with no English wording reaches a reporter as a raw key name.
-        missing.ShouldBeEmpty();
-    }
+		// Then
+		// A reason with no English wording reaches a reporter as a raw key name.
+		missing.ShouldBeEmpty();
+	}
 }

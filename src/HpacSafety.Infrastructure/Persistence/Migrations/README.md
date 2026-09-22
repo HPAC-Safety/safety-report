@@ -3,8 +3,7 @@
 One PostgreSQL database, one `DbContext`
 ([`HpacSafetyDbContext`](../HpacSafetyDbContext.cs)), and one way to change the
 schema: an EF Core migration in this folder. There is no second context for a
-"worker schema" or a "reporting schema," and no hand-written DDL anywhere
-([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+"worker schema" or a "reporting schema," and no hand-written DDL anywhere ([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 This file describes the database. The target *design* lives in
 [`docs/data-and-persistence.md`](../../../../docs/data-and-persistence.md) and
@@ -18,8 +17,7 @@ page, they win and this page is stale.
 every table, so there are no mixed-type joins, and — the actual reason — an
 identifier encodes no creation time and cannot be enumerated. A report id ends
 up in URLs, blob keys, and logs, and this system narrows a published occurrence
-to a month and a year on purpose; a UUIDv7 would hand the timestamp back
-([ADR-0034](../../../../docs/decisions/ADR-0034-tiny-ids.md)).
+to a month and a year on purpose; a UUIDv7 would hand the timestamp back ([ADR-0034](../../../../docs/decisions/ADR-0034-tiny-ids.md)).
 
 **Nothing is physically deleted.** Every table except `audit_log` carries
 `deleted timestamptz null` and a default query filter limiting reads to live
@@ -189,8 +187,7 @@ system question, and its role. Everything a reporter could see — wording, type
 order, section, privacy, required state, conditionality, and the whole option
 list — lives on `question_revisions`, and an edit inserts a new one rather than
 updating the old. `report_answers` points at a revision, never at a question, so
-a report filed two years ago still renders exactly what it asked
-([ADR-0016](../../../../docs/decisions/ADR-0016-data-driven-question-bank.md)).
+a report filed two years ago still renders exactly what it asked ([ADR-0016](../../../../docs/decisions/ADR-0016-data-driven-question-bank.md)).
 
 **A type-ahead reads the live list; everything else reads its snapshot.**
 `QuestionType.Autocomplete` backed by a live `option_set` renders that set's
@@ -198,22 +195,19 @@ current items, because it is the one type a reporter can add to and a choice
 nobody can see until an administrator republishes the question is no use to the
 next reporter. Its snapshot is still written and still records what that
 reporter was offered. Every other option type renders the snapshot, and
-`QuestionChoices` is the one place the rule lives
-([ADR-0063](../../../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+`QuestionChoices` is the one place the rule lives ([ADR-0063](../../../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
 
 **`option_sets` is mutable; `question_revision_options` is not.** The shared
 list is the working copy an administrator maintains. When a revision is built
 from one, the live items are *copied* into that revision's own rows, and it
 answers from that copy forever. `option_set_id` and `source_item_id` record
-where a copy came from and are never consulted to render or validate anything
-([ADR-0058](../../../../docs/decisions/ADR-0058-shared-option-sets-with-a-revision-snapshot.md)).
+where a copy came from and are never consulted to render or validate anything ([ADR-0058](../../../../docs/decisions/ADR-0058-shared-option-sets-with-a-revision-snapshot.md)).
 
 **One rule is deliberately not in the database.** "A conditional question's
 parent must be a `yes_no` question" depends on the parent's *current* revision —
 a different row — so a `CHECK` cannot express it and a trigger would hide a
 domain rule from everyone reading the C#. It is enforced in
-`QuestionDependencies` and at the API instead
-([ADR-0060](../../../../docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md)).
+`QuestionDependencies` and at the API instead ([ADR-0060](../../../../docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md)).
 
 **`outbox_messages.aggregate_id` and `audit_log.target_id` have no foreign
 key**, on purpose: each names more than one kind of row. Because EF cannot fix
@@ -228,8 +222,7 @@ PostgreSQL advisory lock, re-checks for pending migrations *after* acquiring it,
 and applies them only if any remain. Whichever process starts first after a
 deploy does the work; the other blocks briefly and finds nothing to do. That is
 what makes "the Worker booted before the API" safe by construction rather than
-by deployment ordering
-([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+by deployment ordering ([ADR-0055](../../../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 ## Adding a migration
 
@@ -250,17 +243,17 @@ this.
 
 ## The migrations, in order
 
-| Migration | What it did |
-|---|---|
-| `20260823001528_InitialSchema` | The first schema: questions, reports, answers, files, summaries, admin users, audit log, outbox. |
-| `20260823022839_ReplaceSensitivityWithQuestionPrivacy` | Replaced a three-tier sensitivity field with the private/eligible split the model actually needs (ADR-0038). |
-| `20260827013637_MigrateCanonicalDomainAndPersistence` | Moved to complete immutable revisions, removed the application-side field cipher, and reached the current baseline (ADR-0040). |
-| `20260921021720_AddQuestionAuthoring` | Added `option_sets`/`option_set_items`, the conditional-question and option-set provenance columns, and the `time` and `autocomplete` question types. |
-| `20260921034154_AddReporterAddedChoices` | Added `option_set_items.added_by_reporter` and an index on `(option_set_id, added_by_reporter)`, which is the curation query. |
-| `20260921152356_DropAdminUsersForJwtIdentity` | Dropped `admin_users` and renamed/widened its two referencing columns to opaque token subjects — `audit_log.actor_subject` and `summaries.approved_by_subject` (ADR-0065). |
+| Migration                                              | What it did                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+|--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `20260823001528_InitialSchema`                         | The first schema: questions, reports, answers, files, summaries, admin users, audit log, outbox.                                                                                                                                                                                                                                                                                                                                                  |
+| `20260823022839_ReplaceSensitivityWithQuestionPrivacy` | Replaced a three-tier sensitivity field with the private/eligible split the model actually needs (ADR-0038).                                                                                                                                                                                                                                                                                                                                      |
+| `20260827013637_MigrateCanonicalDomainAndPersistence`  | Moved to complete immutable revisions, removed the application-side field cipher, and reached the current baseline (ADR-0040).                                                                                                                                                                                                                                                                                                                    |
+| `20260921021720_AddQuestionAuthoring`                  | Added `option_sets`/`option_set_items`, the conditional-question and option-set provenance columns, and the `time` and `autocomplete` question types.                                                                                                                                                                                                                                                                                             |
+| `20260921034154_AddReporterAddedChoices`               | Added `option_set_items.added_by_reporter` and an index on `(option_set_id, added_by_reporter)`, which is the curation query.                                                                                                                                                                                                                                                                                                                     |
+| `20260921152356_DropAdminUsersForJwtIdentity`          | Dropped `admin_users` and renamed/widened its two referencing columns to opaque token subjects — `audit_log.actor_subject` and `summaries.approved_by_subject` (ADR-0065).                                                                                                                                                                                                                                                                        |
 | `20260921192412_ForkAnsweredQuestionsAndStringAnswers` | Narrowed the unique index on `questions.key` to live rows so a fork chain can share one (ADR-0071). Replaced `report_answers.selected_option_codes` with `locale`, `translated_value`, and `needs_translation` alongside the existing `value`, dropped the uniqueness of `(report_id, question_id)` so a multi-select records one row per chosen value, indexed the translation queue, and added `option_set_items.needs_translation` (ADR-0072). |
-| `20260921205551_RemoveStatementGroupSectionKey` | Dropped `question_revisions.section_key` after removing the `statement` and `group` question types it existed to support — neither had a built renderer, and nothing distinguished them from each other in code. |
-| `20260921224859_AddDependsOnOptionCode` | Added `question_revisions.depends_on_option_code`, the required option a `single_select` parent must be answered with (ADR-0074). Null for a `yes_no` parent, whose condition stays the invariant "yes". |
+| `20260921205551_RemoveStatementGroupSectionKey`        | Dropped `question_revisions.section_key` after removing the `statement` and `group` question types it existed to support — neither had a built renderer, and nothing distinguished them from each other in code.                                                                                                                                                                                                                                  |
+| `20260921224859_AddDependsOnOptionCode`                | Added `question_revisions.depends_on_option_code`, the required option a `single_select` parent must be answered with (ADR-0074). Null for a `yes_no` parent, whose condition stays the invariant "yes".                                                                                                                                                                                                                                          |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

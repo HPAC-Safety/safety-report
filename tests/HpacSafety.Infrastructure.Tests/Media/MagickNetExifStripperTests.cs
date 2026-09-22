@@ -7,150 +7,148 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Media;
 
 /// <summary>
-/// A note on scope, from PR review (#60): the fixtures here carry GPS, a camera
-/// make, and a capture timestamp in the top-level IFD, but none embeds a
-/// thumbnail in EXIF's IFD1 — so thumbnail removal is demonstrated only by the
-/// mechanism (the whole APP1 EXIF segment is gone, IFD1 included) rather than by
-/// a fixture built specifically to carry one.
-/// <para>
-/// This is a documented gap, not an oversight. Magick.NET's <c>ExifProfile</c>
-/// exposes <c>ThumbnailOffset</c>/<c>ThumbnailLength</c> as read-only and a
-/// <c>RemoveThumbnail()</c>, but no supported way to <i>embed</i> one — doing so
-/// would mean hand-constructing the raw TIFF/IFD1 bytes ourselves rather than
-/// using the library under test to build the fixture, which is the "much extra
-/// machinery" the review comment anticipated might make this not worth forcing.
-/// </para>
-/// <para>
-/// The byte-level assertions below are why the mechanism argument holds: IFD0
-/// and IFD1 share one APP1 segment under a single TIFF header, so there is no
-/// code path in which <c>Strip()</c> removes the segment's top-level tags while
-/// leaving a thumbnail sub-IFD behind. Confirming the segment is absent
-/// confirms the thumbnail is too, by construction of the format rather than by
-/// observing a thumbnail directly.
-/// </para>
+///     A note on scope, from PR review (#60): the fixtures here carry GPS, a camera
+///     make, and a capture timestamp in the top-level IFD, but none embeds a
+///     thumbnail in EXIF's IFD1 — so thumbnail removal is demonstrated only by the
+///     mechanism (the whole APP1 EXIF segment is gone, IFD1 included) rather than by
+///     a fixture built specifically to carry one.
+///     <para>
+///         This is a documented gap, not an oversight. Magick.NET's <c>ExifProfile</c>
+///         exposes <c>ThumbnailOffset</c>/<c>ThumbnailLength</c> as read-only and a
+///         <c>RemoveThumbnail()</c>, but no supported way to <i>embed</i> one — doing so
+///         would mean hand-constructing the raw TIFF/IFD1 bytes ourselves rather than
+///         using the library under test to build the fixture, which is the "much extra
+///         machinery" the review comment anticipated might make this not worth forcing.
+///     </para>
+///     <para>
+///         The byte-level assertions below are why the mechanism argument holds: IFD0
+///         and IFD1 share one APP1 segment under a single TIFF header, so there is no
+///         code path in which <c>Strip()</c> removes the segment's top-level tags while
+///         leaving a thumbnail sub-IFD behind. Confirming the segment is absent
+///         confirms the thumbnail is too, by construction of the format rather than by
+///         observing a thumbnail directly.
+///     </para>
 /// </summary>
 public class MagickNetExifStripperTests
 {
-    // "Exif" followed by two NULs - the APP1 marker that introduces an EXIF
-    // block in a JPEG. Written as bytes rather than as a string literal because
-    // two of them are NULs, which do not survive a copy-paste intact.
-    private static ReadOnlySpan<byte> ExifApp1Marker => [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
+	private readonly MagickNetExifStripper _stripper = new(MediaType.All);
 
-    private readonly MagickNetExifStripper _stripper = new(MediaType.All);
+	// "Exif" followed by two NULs - the APP1 marker that introduces an EXIF
+	// block in a JPEG. Written as bytes rather than as a string literal because
+	// two of them are NULs, which do not survive a copy-paste intact.
+	private static ReadOnlySpan<byte> ExifApp1Marker => [0x45, 0x78, 0x69, 0x66, 0x00, 0x00];
 
-    [Fact]
-    public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenNoMetadataProfileSurvives()
-    {
-        // Given
-        var original = ExifFixtures.JpegWithGpsExif();
-        using var originalImage = new MagickImage(original);
-        originalImage.GetExifProfile()!.GetValue(ExifTag.GPSLatitude).ShouldNotBeNull();
+	[Fact]
+	public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenNoMetadataProfileSurvives()
+	{
+		// Given
+		var original = ExifFixtures.JpegWithGpsExif();
+		using var originalImage = new MagickImage(original);
+		originalImage.GetExifProfile()!.GetValue(ExifTag.GPSLatitude).ShouldNotBeNull();
 
-        // When
-        using var source = new MemoryStream(original);
-        using var destination = new MemoryStream();
-        await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+		// When
+		using var source = new MemoryStream(original);
+		using var destination = new MemoryStream();
+		await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
 
-        // Then
-        using var stripped = new MagickImage(destination.ToArray());
-        stripped.GetExifProfile().ShouldBeNull();
-        stripped.GetXmpProfile().ShouldBeNull();
-        stripped.GetIptcProfile().ShouldBeNull();
-    }
+		// Then
+		using var stripped = new MagickImage(destination.ToArray());
+		stripped.GetExifProfile().ShouldBeNull();
+		stripped.GetXmpProfile().ShouldBeNull();
+		stripped.GetIptcProfile().ShouldBeNull();
+	}
 
-    [Fact]
-    public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenAPP1SegmentAndAsciiAreGoneFromBytes()
-    {
-        // Given
-        var original = ExifFixtures.JpegWithGpsExif();
+	[Fact]
+	public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenAPP1SegmentAndAsciiAreGoneFromBytes()
+	{
+		// Given
+		var original = ExifFixtures.JpegWithGpsExif();
 
-        // The same assertions run against the original first. A byte-level check
-        // that passes on both is a check that proves nothing, and that is exactly
-        // how a redaction test rots.
-        original.AsSpan().IndexOf(ExifApp1Marker).ShouldBeGreaterThanOrEqualTo(0);
-        Encoding.ASCII.GetString(original).ShouldContain(ExifFixtures.CameraMake);
-        Encoding.ASCII.GetString(original).ShouldContain(ExifFixtures.CapturedAt);
+		// The same assertions run against the original first. A byte-level check
+		// that passes on both is a check that proves nothing, and that is exactly
+		// how a redaction test rots.
+		original.AsSpan().IndexOf(ExifApp1Marker).ShouldBeGreaterThanOrEqualTo(0);
+		Encoding.ASCII.GetString(original).ShouldContain(ExifFixtures.CameraMake);
+		Encoding.ASCII.GetString(original).ShouldContain(ExifFixtures.CapturedAt);
 
-        // When
-        using var source = new MemoryStream(original);
-        using var destination = new MemoryStream();
-        await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+		// When
+		using var source = new MemoryStream(original);
+		using var destination = new MemoryStream();
+		await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
 
-        // Then
-        var derivative = destination.ToArray();
-        derivative.AsSpan().IndexOf(ExifApp1Marker).ShouldBe(-1);
-        Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
-        Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CapturedAt);
-    }
+		// Then
+		var derivative = destination.ToArray();
+		derivative.AsSpan().IndexOf(ExifApp1Marker).ShouldBe(-1);
+		Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
+		Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CapturedAt);
+	}
 
-    [Fact]
-    public async Task GivenHeicPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsJpegWithNoLocationData()
-    {
-        // Given
-        var original = ExifFixtures.HeicWithGpsExif();
-        using (var originalImage = new MagickImage(original))
-        {
-            originalImage.Format.ShouldBe(MagickFormat.Heic);
-            originalImage.GetExifProfile()!.GetValue(ExifTag.GPSLatitude).ShouldNotBeNull();
-        }
+	[Fact]
+	public async Task GivenHeicPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsJpegWithNoLocationData()
+	{
+		// Given
+		var original = ExifFixtures.HeicWithGpsExif();
+		using (var originalImage = new MagickImage(original))
+		{
+			originalImage.Format.ShouldBe(MagickFormat.Heic);
+			originalImage.GetExifProfile()!.GetValue(ExifTag.GPSLatitude).ShouldNotBeNull();
+		}
 
-        // When
-        using var source = new MemoryStream(original);
-        using var destination = new MemoryStream();
-        await _stripper.StripAsync(source, destination, MediaType.Heic, CancellationToken.None);
+		// When
+		using var source = new MemoryStream(original);
+		using var destination = new MemoryStream();
+		await _stripper.StripAsync(source, destination, MediaType.Heic, CancellationToken.None);
 
-        // Then
-        // HEIC cannot be encoded here, and a reviewer needs something every
-        // browser renders, so the derivative is a JPEG. See ADR-0025.
-        var derivative = destination.ToArray();
-        using var stripped = new MagickImage(derivative);
-        stripped.Format.ShouldBe(MagickFormat.Jpeg);
-        stripped.GetExifProfile().ShouldBeNull();
-        derivative.AsSpan().IndexOf(ExifApp1Marker).ShouldBe(-1);
-        Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
-    }
+		// Then
+		// HEIC cannot be encoded here, and a reviewer needs something every
+		// browser renders, so the derivative is a JPEG. See ADR-0025.
+		var derivative = destination.ToArray();
+		using var stripped = new MagickImage(derivative);
+		stripped.Format.ShouldBe(MagickFormat.Jpeg);
+		stripped.GetExifProfile().ShouldBeNull();
+		derivative.AsSpan().IndexOf(ExifApp1Marker).ShouldBe(-1);
+		Encoding.ASCII.GetString(derivative).ShouldNotContain(ExifFixtures.CameraMake);
+	}
 
-    [Fact]
-    public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsStillReadableImage()
-    {
-        // Given
-        using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
-        using var destination = new MemoryStream();
+	[Fact]
+	public async Task GivenPhotoWithGPSEXIF_WhenStripped_ThenDerivativeIsStillReadableImage()
+	{
+		// Given
+		using var source = new MemoryStream(ExifFixtures.JpegWithGpsExif());
+		using var destination = new MemoryStream();
 
-        // When
-        await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+		// When
+		await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
 
-        // Then
-        using var stripped = new MagickImage(destination.ToArray());
-        stripped.Width.ShouldBe(64u);
-        stripped.Height.ShouldBe(64u);
-        stripped.Format.ShouldBe(MagickFormat.Jpeg);
-    }
+		// Then
+		using var stripped = new MagickImage(destination.ToArray());
+		stripped.Width.ShouldBe(64u);
+		stripped.Height.ShouldBe(64u);
+		stripped.Format.ShouldBe(MagickFormat.Jpeg);
+	}
 
-    [Fact]
-    public async Task GivenVideo_WhenHandedToStripper_ThenRefusesRatherThanWritingDerivative()
-    {
-        // Given
-        using var source = new MemoryStream(ExifFixtures.Mp4());
-        using var destination = new MemoryStream();
+	[Fact]
+	public async Task GivenVideo_WhenHandedToStripper_ThenRefusesRatherThanWritingDerivative()
+	{
+		// Given
+		using var source = new MemoryStream(ExifFixtures.Mp4());
+		using var destination = new MemoryStream();
 
-        // When / Then
-        // Nothing can strip a video yet - see #65 - and producing a derivative
-        // that had not been stripped would be the leak.
-        await Should.ThrowAsync<NotSupportedException>(
-            () => _stripper.StripAsync(source, destination, MediaType.Mp4, CancellationToken.None));
-        destination.Length.ShouldBe(0);
-    }
+		// When / Then
+		// Nothing can strip a video yet - see #65 - and producing a derivative
+		// that had not been stripped would be the leak.
+		await Should.ThrowAsync<NotSupportedException>(() => _stripper.StripAsync(source, destination, MediaType.Mp4, CancellationToken.None));
+		destination.Length.ShouldBe(0);
+	}
 
-    [Fact]
-    public async Task GivenBytesAreNotDeclaredFormat_WhenTheyAreStripped_ThenThrowsRatherThanWritingDerivative()
-    {
-        // Given
-        using var source = new MemoryStream(ExifFixtures.NotMedia());
-        using var destination = new MemoryStream();
+	[Fact]
+	public async Task GivenBytesAreNotDeclaredFormat_WhenTheyAreStripped_ThenThrowsRatherThanWritingDerivative()
+	{
+		// Given
+		using var source = new MemoryStream(ExifFixtures.NotMedia());
+		using var destination = new MemoryStream();
 
-        // When / Then
-        await Should.ThrowAsync<MagickException>(
-            () => _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None));
-    }
+		// When / Then
+		await Should.ThrowAsync<MagickException>(() => _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None));
+	}
 }

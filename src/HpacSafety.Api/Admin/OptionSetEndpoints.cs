@@ -2,202 +2,177 @@ using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
-
 using Microsoft.EntityFrameworkCore;
 
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-/// Endpoints for the reusable choice lists a question can offer — ADR-0058.
+///     Endpoints for the reusable choice lists a question can offer — ADR-0058.
 /// </summary>
 /// <remarks>
-/// These rows are editable, which is the point: an administrator adds an
-/// aerodrome once rather than to every question that asks for one. Editing a
-/// list changes what the <i>next</i> revision offers and changes nothing about
-/// any revision that already snapshotted it.
+///     These rows are editable, which is the point: an administrator adds an
+///     aerodrome once rather than to every question that asks for one. Editing a
+///     list changes what the <i>next</i> revision offers and changes nothing about
+///     any revision that already snapshotted it.
 /// </remarks>
 public static class OptionSetEndpoints
 {
-    /// <summary>Maps the admin choice-list endpoints.</summary>
-    /// <param name="app">The route builder.</param>
-    /// <returns>The group, so the caller can see what was mapped.</returns>
-    public static RouteGroupBuilder MapAdminOptionSets(this IEndpointRouteBuilder app)
-    {
-        ArgumentNullException.ThrowIfNull(app);
+	private const string ItemsNavigation = "_items";
 
-        var group = app.MapGroup("/api/admin/option-sets").RequireAuthorization(HpacPolicies.Administrator);
+	/// <summary>Maps the admin choice-list endpoints.</summary>
+	/// <param name="app">The route builder.</param>
+	/// <returns>The group, so the caller can see what was mapped.</returns>
+	public static RouteGroupBuilder MapAdminOptionSets(this IEndpointRouteBuilder app)
+	{
+		ArgumentNullException.ThrowIfNull(app);
 
-        group.MapGet("/", ListAsync);
-        group.MapPost("/", CreateAsync);
-        group.MapPut("/{id}", ReplaceAsync);
-        group.MapDelete("/{id}", DeleteAsync);
+		var group = app.MapGroup("/api/admin/option-sets").RequireAuthorization(HpacPolicies.Administrator);
 
-        return group;
-    }
+		group.MapGet("/", ListAsync);
+		group.MapPost("/", CreateAsync);
+		group.MapPut("/{id}", ReplaceAsync);
+		group.MapDelete("/{id}", DeleteAsync);
 
-    private static async Task<IResult> ListAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
-    {
-        var sets = await Live(database)
-            .OrderBy(set => set.Key)
-            .ToListAsync(cancellationToken)
-            .ConfigureAwait(false);
+		return group;
+	}
 
-        return Results.Ok(sets.Select(OptionSetView.Of).ToList());
-    }
+	private static async Task<IResult> ListAsync(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	{
+		var sets = await Live(database)
+			.OrderBy(set => set.Key)
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
 
-    private static async Task<IResult> CreateAsync(
-        SaveOptionSetRequest request,
-        HpacSafetyDbContext database,
-        TimeProvider clock,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(request);
+		return Results.Ok(sets.Select(OptionSetView.Of).ToList());
+	}
 
-        if (string.IsNullOrWhiteSpace(request.Key))
-        {
-            return Problem("missing-key", "A choice list needs a key.", "A choice list needs a stable key that never changes.");
-        }
+	private static async Task<IResult> CreateAsync(
+		SaveOptionSetRequest request,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
 
-        var key = QuestionKey.Normalize(request.Key);
+		if (string.IsNullOrWhiteSpace(request.Key)) return Problem("missing-key", "A choice list needs a key.", "A choice list needs a stable key that never changes.");
 
-        var taken = await Live(database)
-            .AnyAsync(set => set.Key == key, cancellationToken)
-            .ConfigureAwait(false);
+		var key = QuestionKey.Normalize(request.Key);
 
-        if (taken)
-        {
-            return Problem("duplicate-key", "That key is taken.", $"Another choice list already uses the key '{key}'.");
-        }
+		var taken = await Live(database)
+			.AnyAsync(set => set.Key == key, cancellationToken)
+			.ConfigureAwait(false);
 
-        try
-        {
-            var set = OptionSet.Create(key, request.NameEn, request.NameFr, clock.GetUtcNow());
+		if (taken) return Problem("duplicate-key", "That key is taken.", $"Another choice list already uses the key '{key}'.");
 
-            foreach (var item in request.Items)
-            {
-                set.Add(item.Code, item.LabelEn, item.LabelFr);
-            }
+		try
+		{
+			var set = OptionSet.Create(key, request.NameEn, request.NameFr, clock.GetUtcNow());
 
-            database.OptionSets.Add(set);
-            await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+			foreach (var item in request.Items) set.Add(item.Code, item.LabelEn, item.LabelFr);
 
-            return Results.Created($"/api/admin/option-sets/{set.Id.Value}", OptionSetView.Of(set));
-        }
-        catch (DomainRuleViolationException cause)
-        {
-            return Problem("option-set-rule", "That change is not allowed.", cause.Message);
-        }
-    }
+			database.OptionSets.Add(set);
+			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-    /// <summary>
-    /// Brings a list in line with what the administrator submitted: relabels
-    /// what stayed, adds what is new, removes what is gone, and arranges the
-    /// result. A removal is a soft delete, so every revision that snapshotted
-    /// the removed choice keeps its own copy.
-    /// </summary>
-    private static async Task<IResult> ReplaceAsync(
-        string id,
-        SaveOptionSetRequest request,
-        HpacSafetyDbContext database,
-        TimeProvider clock,
-        CancellationToken cancellationToken)
-    {
-        ArgumentNullException.ThrowIfNull(request);
+			return Results.Created($"/api/admin/option-sets/{set.Id.Value}", OptionSetView.Of(set));
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Problem("option-set-rule", "That change is not allowed.", cause.Message);
+		}
+	}
 
-        if (!TinyId.TryParse(id, out var setId))
-        {
-            return Results.NotFound();
-        }
+	/// <summary>
+	///     Brings a list in line with what the administrator submitted: relabels
+	///     what stayed, adds what is new, removes what is gone, and arranges the
+	///     result. A removal is a soft delete, so every revision that snapshotted
+	///     the removed choice keeps its own copy.
+	/// </summary>
+	private static async Task<IResult> ReplaceAsync(
+		string id,
+		SaveOptionSetRequest request,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
 
-        var set = await Live(database)
-            .FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
-            .ConfigureAwait(false);
+		if (!TinyId.TryParse(id, out var setId)) return Results.NotFound();
 
-        if (set is null)
-        {
-            return Results.NotFound();
-        }
+		var set = await Live(database)
+			.FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
+			.ConfigureAwait(false);
 
-        try
-        {
-            var at = clock.GetUtcNow();
-            var wanted = request.Items.Select(item => QuestionKey.Normalize(item.Code)).ToList();
+		if (set is null) return Results.NotFound();
 
-            set.Rename(request.NameEn, request.NameFr);
+		try
+		{
+			var at = clock.GetUtcNow();
+			var wanted = request.Items.Select(item => QuestionKey.Normalize(item.Code)).ToList();
 
-            foreach (var gone in set.Items.Select(item => item.Code).Where(code => !wanted.Contains(code, StringComparer.Ordinal)).ToList())
-            {
-                set.Remove(gone, at);
-            }
+			set.Rename(request.NameEn, request.NameFr);
 
-            var live = set.Items.Select(item => item.Code).ToList();
+			foreach (var gone in set.Items.Select(item => item.Code).Where(code => !wanted.Contains(code, StringComparer.Ordinal)).ToList()) set.Remove(gone, at);
 
-            foreach (var item in request.Items)
-            {
-                var code = QuestionKey.Normalize(item.Code);
+			var live = set.Items.Select(item => item.Code).ToList();
 
-                if (live.Contains(code, StringComparer.Ordinal))
-                {
-                    set.Relabel(code, item.LabelEn, item.LabelFr);
-                }
-                else
-                {
-                    set.Add(code, item.LabelEn, item.LabelFr);
-                }
-            }
+			foreach (var item in request.Items)
+			{
+				var code = QuestionKey.Normalize(item.Code);
 
-            set.Arrange(wanted);
+				if (live.Contains(code, StringComparer.Ordinal))
+					set.Relabel(code, item.LabelEn, item.LabelFr);
+				else
+					set.Add(code, item.LabelEn, item.LabelFr);
+			}
 
-            await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+			set.Arrange(wanted);
 
-            return Results.Ok(OptionSetView.Of(set));
-        }
-        catch (DomainRuleViolationException cause)
-        {
-            return Problem("option-set-rule", "That change is not allowed.", cause.Message);
-        }
-    }
+			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-    private static async Task<IResult> DeleteAsync(
-        string id,
-        HpacSafetyDbContext database,
-        TimeProvider clock,
-        CancellationToken cancellationToken)
-    {
-        if (!TinyId.TryParse(id, out var setId))
-        {
-            return Results.NotFound();
-        }
+			return Results.Ok(OptionSetView.Of(set));
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Problem("option-set-rule", "That change is not allowed.", cause.Message);
+		}
+	}
 
-        var set = await Live(database)
-            .FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
-            .ConfigureAwait(false);
+	private static async Task<IResult> DeleteAsync(
+		string id,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		if (!TinyId.TryParse(id, out var setId)) return Results.NotFound();
 
-        if (set is null)
-        {
-            return Results.NotFound();
-        }
+		var set = await Live(database)
+			.FirstOrDefaultAsync(candidate => candidate.Id == setId, cancellationToken)
+			.ConfigureAwait(false);
 
-        set.Delete(clock.GetUtcNow());
-        await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+		if (set is null) return Results.NotFound();
 
-        return Results.NoContent();
-    }
+		set.Delete(clock.GetUtcNow());
+		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-    /// <summary>
-    /// Loads a set with its items. The navigation is the backing field, not
-    /// <see cref="OptionSet.Items"/> — that property filters out removed items
-    /// and orders what is left, so it is a projection EF cannot include.
-    /// </summary>
-    private static IQueryable<OptionSet> Live(HpacSafetyDbContext database) =>
-        database.OptionSets.Include(ItemsNavigation);
+		return Results.NoContent();
+	}
 
-    private const string ItemsNavigation = "_items";
+	/// <summary>
+	///     Loads a set with its items. The navigation is the backing field, not
+	///     <see cref="OptionSet.Items" /> — that property filters out removed items
+	///     and orders what is left, so it is a projection EF cannot include.
+	/// </summary>
+	private static IQueryable<OptionSet> Live(HpacSafetyDbContext database)
+	{
+		return database.OptionSets.Include(ItemsNavigation);
+	}
 
-    private static IResult Problem(string code, string title, string detail) =>
-        Results.Problem(
-            title: title,
-            detail: detail,
-            statusCode: StatusCodes.Status400BadRequest,
-            type: $"https://hpac.ca/problems/{code}");
+	private static IResult Problem(string code, string title, string detail)
+	{
+		return Results.Problem(
+			title: title,
+			detail: detail,
+			statusCode: StatusCodes.Status400BadRequest,
+			type: $"https://hpac.ca/problems/{code}");
+	}
 }

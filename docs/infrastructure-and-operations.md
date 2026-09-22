@@ -68,10 +68,9 @@ application code.
 ## Configuration and secrets
 
 Configuration includes database/storage endpoints, attachment count and 50 MB size
-limit, accepted attachment types, document malware scanner, trusted proxy
-networks, the site origin, rate limits, the authentication issuer, audience,
-and role-claim name, model/prompt version, retry bounds, and stuck-work
-thresholds.
+limit, accepted attachment types, trusted proxy networks, the site origin,
+rate limits, the authentication issuer, audience, and role-claim name,
+model/prompt version, retry bounds, and stuck-work thresholds.
 
 **CON-INF-004** There are no cookie settings, no Turnstile configuration, and no HPAC auth kill
 switch or hardcoded endpoint. Sessions are bearer tokens, Turnstile is gone

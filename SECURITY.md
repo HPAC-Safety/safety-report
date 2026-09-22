@@ -44,7 +44,7 @@ know what was exposed, and you will not be penalised for reporting it.
 - **Attachment access or processing.** Unauthorized access to an original or
   derivative; an image/video derivative retaining identifying metadata; a
   document rendered inline, sent to AI, exposed publicly, or made available
-  before format and malware checks pass.
+  before format validation passes.
 - **Consent bypass** — any route by which a report marked "do not publish"
   becomes publishable.
 - Standard web issues: authentication bypass, injection, SSRF, XSS.

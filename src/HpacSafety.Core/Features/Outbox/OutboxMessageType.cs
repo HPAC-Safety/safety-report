@@ -10,9 +10,10 @@ public enum OutboxMessageType
 	SummarizeReport = 0,
 
 	/// <summary>
-	///     Complete one uploaded file's attachment path — malware controls, and
-	///     making a verified derivative available for reviewer preview. One message
-	///     per file. See issue #81.
+	///     Complete one uploaded file's attachment path — a safe derivative for an
+	///     image/video or a preserved original for a document, made available for
+	///     reviewer preview or forced download. One message per file. There is no
+	///     malware scan (ADR-0089). See issue #81.
 	/// </summary>
 	ProcessAttachment = 1,
 

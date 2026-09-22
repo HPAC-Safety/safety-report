@@ -57,7 +57,7 @@ type: guide
 | `REQ-MED-005` | media | Unreferenced quarantine blobs expire automatically | Reqnroll | Planned |
 | `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Planned |
 | `REQ-MED-007` | media | Every video is remuxed or transcoded to strip metadata | Reqnroll | Planned |
-| `REQ-MED-008` | media | A document is validated and scanned but never transformed | Reqnroll | Planned |
+| `REQ-MED-008` | media | A document is validated but never transformed | Reqnroll | Planned |
 | `REQ-MED-009` | media | Each attachment fails and processes independently of the report | Reqnroll | Planned |
 | `REQ-MED-010` | media | A reviewer gets a short-lived URL only for successfully processed media | Reqnroll | Planned |
 | `REQ-MED-011` | media | A reviewer downloads a validated document as an unredacted original | Reqnroll | Planned |

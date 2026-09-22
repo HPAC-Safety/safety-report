@@ -154,9 +154,10 @@ requirements does not touch a skill; its remedy is a claim.
    repeated in eligible narrative becomes exactly “the pilot” / “le pilote,”
    with no name fragment remaining. Private-only facts never become summary
    facts.
-5. Documents such as PDF, DOC, DOCX, RTF, Markdown, text, and ODT are validated,
-   malware-checked, and kept private. They are not anonymized, transformed,
-   parsed, sent to the model, inline-rendered, or published.
+5. Documents such as PDF, DOC, DOCX, RTF, Markdown, text, and ODT are validated
+   and kept private; there is no malware scan (ADR-0089). They are not
+   anonymized, transformed, parsed, sent to the model, inline-rendered, or
+   published.
 6. Publication requires positive consent, a non-deleted report, and human
    approval of the current bilingual pair. Editing either language clears the
    pair approval.

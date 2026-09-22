@@ -1,6 +1,6 @@
 ---
 name: handle-hpac-media
-description: Handle HPAC Safety multipart attachments, private storage, safe image/video derivatives, and private documents. Use for upload, storage, validation, metadata, malware, or reviewer-access changes.
+description: Handle HPAC Safety multipart attachments, private storage, safe image/video derivatives, and private documents. Use for upload, storage, validation, metadata, or reviewer-access changes.
 ---
 
 # Handle HPAC Safety attachments
@@ -16,8 +16,9 @@ Accepted formats:
 - video: MP4, QuickTime;
 - documents: PDF, DOC, DOCX, RTF, MD, TXT, ODT.
 
-Sniff format and require declared/actual agreement. Run malware controls before
-review access. Decode/re-encode images and safely remux/transcode videos to
+Sniff format and require declared/actual agreement. There is no malware
+scanner (ADR-0089) — content-type sniffing and the format allowlist are the
+only gate. Decode/re-encode images and safely remux/transcode videos to
 remove metadata; reviewers may see only verified derivatives. Fail closed when
 a derivative cannot be produced.
 

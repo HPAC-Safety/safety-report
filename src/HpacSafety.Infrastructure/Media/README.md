@@ -11,8 +11,8 @@ report submission. The normative matrix is in [`features/media/media.feature`](.
 
 Accepted images are JPEG, PNG, WebP, and HEIC; videos are MP4 and QuickTime;
 documents are PDF, DOC, DOCX, RTF, MD, TXT, and ODT. Sniff actual format,
-require declared/actual agreement, enforce 50 MB while streaming, and run
-malware controls before reviewer access.
+require declared/actual agreement, and enforce 50 MB while streaming. There is
+no malware scan (ADR-0089) — the format allowlist and sniffing are the gate.
 
 - Decode/re-encode images to remove metadata; HEIC may produce a safe JPEG.
 - Safely remux/transcode video and expose only a verified derivative.

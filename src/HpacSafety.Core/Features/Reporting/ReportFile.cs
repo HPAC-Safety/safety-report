@@ -4,7 +4,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     An uploaded attachment. The original bytes stay private; for an image or
 ///     video, the EXIF-stripped derivative is what a reviewer sees, and media is
 ///     never attached to a published summary. A document has no derivative at all —
-///     it is validated, malware-checked, and kept private. See
+///     it is validated and kept private; there is no malware scan (ADR-0089). See
 ///     docs/data-handling.md.
 /// </summary>
 public class ReportFile

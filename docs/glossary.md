@@ -18,7 +18,7 @@ type: guide
 | Consent projection | The nullable `ConsentPublish` value copied from the system consent answer because publication logic must query it directly. It is the only answer projection. |
 | Deleted | Nullable soft-deletion timestamp on every persisted record except `audit_log`; a value means hidden and terminal in normal application flows. |
 | Derivative | A decoded/re-encoded image or remuxed/transcoded video with unsafe metadata removed. Documents do not have anonymized derivatives. |
-| Document | Private unredacted evidence such as PDF, Word, RTF, Markdown, text, or ODT. It is format/malware checked and offered only as an authorized forced download; it is not model input or public content. |
+| Document | Private unredacted evidence such as PDF, Word, RTF, Markdown, text, or ODT. It is format-checked (no malware scan — ADR-0089) and offered only as an authorized forced download; it is not model input or public content. |
 | Immutable | Never updated in place after creation. A change creates a new complete revision. Soft deletion remains a separately audited lifecycle operation. |
 | Managed encryption | Encryption at rest provided by AWS for RDS, backups, S3, logs, and secrets, combined with TLS in transit; no application ciphertext fields. |
 | Outbox | Database rows committed atomically with state changes so asynchronous work cannot be lost between saving a report and notifying the Worker. |

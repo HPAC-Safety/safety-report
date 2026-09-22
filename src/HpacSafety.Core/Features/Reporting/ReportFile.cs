@@ -133,4 +133,10 @@ public class ReportFile
 	{
 		ProcessingErrorCode = errorCode;
 	}
+
+	/// <summary>Stamps this file deleted, as part of its report's soft deletion (REQ-DOM-007).</summary>
+	internal void Delete(DateTimeOffset at)
+	{
+		Deleted ??= at;
+	}
 }

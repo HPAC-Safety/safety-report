@@ -113,6 +113,12 @@ public class Summary
 		ApprovedAt = null;
 	}
 
+	/// <summary>Stamps this summary deleted, as part of its report's soft deletion (REQ-DOM-007).</summary>
+	internal void Delete(DateTimeOffset at)
+	{
+		Deleted ??= at;
+	}
+
 	private static string NotBlank(string text)
 	{
 		return string.IsNullOrWhiteSpace(text)

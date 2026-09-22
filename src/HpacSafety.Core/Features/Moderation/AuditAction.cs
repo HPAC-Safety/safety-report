@@ -12,6 +12,7 @@ public enum AuditAction
 	ApprovedReport = 3,
 	RejectedReport = 4,
 	PublishedReport = 5,
+	DeletedReport = 6,
 	CreatedQuestion = 10,
 	RevisedQuestion = 11,
 	ReorderedQuestions = 12,

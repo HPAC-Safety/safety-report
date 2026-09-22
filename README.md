@@ -97,6 +97,18 @@ npm --prefix src/web ci && npm --prefix src/web run build
 Integration tests require Docker. See [`tests/README.md`](tests/README.md) and
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
+Before pushing, run the same coverage gate CI runs, so a regression is caught
+locally rather than in the PR:
+
+```bash
+./check-coverage.sh
+```
+
+It collects coverage, fetches main's last successful run as the ratchet
+baseline (via `gh`), and runs `tools/coverage-gate.mjs` — the same floor
+(80%/70%) and ratchet CI enforces. `./check-coverage.sh --no-baseline` skips
+the `gh` fetch and enforces only the floor.
+
 ## Repository map
 
 | Path | Purpose |

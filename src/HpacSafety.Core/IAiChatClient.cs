@@ -40,7 +40,7 @@ public interface IAiChatClient
 	/// <exception cref="AiChatClientUnavailableException">
 	///     No provider is configured/approved, or the provider could not be reached.
 	/// </exception>
-	Task<string> CompleteAsync(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken);
+	Task<string> Complete(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken);
 }
 
 /// <summary>

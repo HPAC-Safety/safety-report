@@ -23,7 +23,7 @@ public static class OutboxClaimer
 	///     True if a message was claimed and handled (whether it succeeded or
 	///     failed), false if none was due — the caller can stop draining.
 	/// </returns>
-	public static async Task<bool> ClaimNextAsync(
+	public static async Task<bool> ClaimNext(
 		HpacSafetyDbContext database,
 		OutboxMessageType type,
 		DateTimeOffset now,

@@ -19,7 +19,7 @@ public class MediaSnifferChainTests
 		using var content = new MemoryStream(ExifFixtures.HeicWithGpsExif());
 
 		// When
-		var sniffed = await _chain.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _chain.Sniff(content, CancellationToken.None);
 
 		// Then
 		// HEIC and MP4 share a container. Order is the only thing keeping a photo
@@ -36,7 +36,7 @@ public class MediaSnifferChainTests
 		using var content = new MemoryStream(ExifFixtures.Mp4());
 
 		// When
-		var sniffed = await _chain.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _chain.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Mp4);
@@ -49,7 +49,7 @@ public class MediaSnifferChainTests
 		using var content = new MemoryStream(ExifFixtures.JpegWithGpsExif());
 
 		// When
-		var sniffed = await _chain.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _chain.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Jpeg);
@@ -62,7 +62,7 @@ public class MediaSnifferChainTests
 		using var content = new MemoryStream(ExifFixtures.UnrecognisedByAnySniffer());
 
 		// When
-		var sniffed = await _chain.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _chain.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();

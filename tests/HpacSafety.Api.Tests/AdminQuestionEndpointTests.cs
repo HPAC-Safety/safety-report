@@ -41,7 +41,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenMemberSession_WhenQuestionIsCreated_ThenListedWithFirstRevision()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("wind_direction");
 
 		// When
@@ -60,9 +60,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenExistingQuestion_WhenEdited_ThenNewRevisionIsWrittenRatherThanPatch()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("surface_wind");
-		var created = await CreateAsync(client, Draft(key, "short_text"));
+		var created = await Create(client, Draft(key, "short_text"));
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
@@ -83,8 +83,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNonBooleanQuestion_WhenAnotherDependsOn_ThenApiRejectsDependency()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var parent = await CreateAsync(client, Draft(UniqueKey("glider_make"), "short_text"));
+		using var client = await SignedIn();
+		var parent = await Create(client, Draft(UniqueKey("glider_make"), "short_text"));
 
 		// When
 		var child = Draft(UniqueKey("glider_detail"), "long_text") with
@@ -105,21 +105,21 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenBooleanQuestion_WhenAnotherDependsOn_ThenDependencyIsStored()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var parent = await CreateAsync(client, Draft(UniqueKey("were_you_injured"), "yes_no"));
+		using var client = await SignedIn();
+		var parent = await Create(client, Draft(UniqueKey("were_you_injured"), "yes_no"));
 		var parentId = parent.GetProperty("id").GetString();
 
 		// When
 		var child = Draft(UniqueKey("injury_detail"), "long_text") with { DependsOnQuestionId = parentId };
-		var created = await CreateAsync(client, child);
+		var created = await Create(client, child);
 
 		// Then
 		created.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
 	}
 
-	private static async Task<JsonElement> CreatePilotTypeAsync(HttpClient client)
+	private static async Task<JsonElement> CreatePilotType(HttpClient client)
 	{
-		return await CreateAsync(
+		return await Create(
 			client,
 			Draft(UniqueKey("pilot_type"), "single_select") with
 			{
@@ -135,8 +135,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSingleSelectQuestion_WhenAnotherDependsOnItsOption_ThenDependencyIsStored()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var parent = await CreatePilotTypeAsync(client);
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
 		var parentId = parent.GetProperty("id").GetString();
 
 		// When
@@ -145,7 +145,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			DependsOnQuestionId = parentId,
 			DependsOnOptionCode = "hang_glider"
 		};
-		var created = await CreateAsync(client, child);
+		var created = await Create(client, child);
 
 		// Then
 		created.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
@@ -156,8 +156,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSingleSelectQuestion_WhenAnotherDependsOnAnUnofferedOption_ThenApiRejectsDependency()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var parent = await CreatePilotTypeAsync(client);
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
 
 		// When
 		var child = Draft(UniqueKey("rating"), "short_text") with
@@ -178,8 +178,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSingleSelectQuestion_WhenAnotherDependsWithNoOption_ThenApiRejectsDependency()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var parent = await CreatePilotTypeAsync(client);
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
 
 		// When
 		var child = Draft(UniqueKey("rating"), "short_text") with
@@ -203,10 +203,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenStatementType_WhenCreatedWithoutRequiredOrPrivate_ThenCreated()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
-		var created = await CreateAsync(client, NoAnswerDraft(UniqueKey("intro"), "statement"));
+		var created = await Create(client, NoAnswerDraft(UniqueKey("intro"), "statement"));
 
 		// Then
 		created.GetProperty("type").GetString().ShouldBe("statement");
@@ -218,7 +218,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenStatementType_WhenCreatedRequired_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -235,7 +235,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGroupType_WhenCreatedPrivate_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -252,8 +252,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoAnswerType_WhenMadeConditionalOnAnother_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var parent = await CreateAsync(client, Draft(UniqueKey("were_you_injured"), "yes_no"));
+		using var client = await SignedIn();
+		var parent = await Create(client, Draft(UniqueKey("were_you_injured"), "yes_no"));
 
 		// When
 		var child = NoAnswerDraft(UniqueKey("heading"), "statement") with
@@ -273,13 +273,13 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGroupQuestion_WhenAnotherIsGroupedUnderIt_ThenGroupingIsStored()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var group = await CreateAsync(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+		using var client = await SignedIn();
+		var group = await Create(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
 		var groupId = group.GetProperty("id").GetString();
 
 		// When
 		var child = Draft(UniqueKey("manufacturer"), "short_text") with { GroupedUnderQuestionId = groupId };
-		var created = await CreateAsync(client, child);
+		var created = await Create(client, child);
 
 		// Then
 		created.GetProperty("groupedUnderQuestionId").GetString().ShouldBe(groupId);
@@ -289,8 +289,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNonGroupQuestion_WhenAnotherIsGroupedUnderIt_ThenApiRejectsGrouping()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var notAGroup = await CreateAsync(client, Draft(UniqueKey("manufacturer"), "short_text"));
+		using var client = await SignedIn();
+		var notAGroup = await Create(client, Draft(UniqueKey("manufacturer"), "short_text"));
 
 		// When
 		var child = Draft(UniqueKey("model"), "short_text") with
@@ -310,9 +310,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenTwoGroupQuestions_WhenOneIsGroupedUnderTheOther_ThenApiRejectsNesting()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var outer = await CreateAsync(client, NoAnswerDraft(UniqueKey("form"), "group"));
-		var inner = await CreateAsync(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+		using var client = await SignedIn();
+		var outer = await Create(client, NoAnswerDraft(UniqueKey("form"), "group"));
+		var inner = await Create(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
 
 		// When
 		var edit = NoAnswerDraft(UniqueKey("aircraft"), "group") with
@@ -333,8 +333,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenQuestion_WhenGroupedUnderItself_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var group = await CreateAsync(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
+		using var client = await SignedIn();
+		var group = await Create(client, NoAnswerDraft(UniqueKey("aircraft"), "group"));
 		var groupId = group.GetProperty("id").GetString();
 
 		// When
@@ -352,11 +352,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenMultiSelectWithSharedList_WhenAuthoredWithReporterAdditions_ThenFlagIsStored()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("ratings"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("ratings"));
 
 		// When
-		var created = await CreateAsync(
+		var created = await Create(
 			client,
 			Draft(UniqueKey("ratings"), "multi_select") with
 			{
@@ -373,11 +373,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenMultiSelect_WhenAuthoredWithoutReporterAdditions_ThenDefaultsToClosed()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("ratings"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("ratings"));
 
 		// When
-		var created = await CreateAsync(
+		var created = await Create(
 			client, Draft(UniqueKey("ratings"), "multi_select") with { OptionSetId = set.GetProperty("id").GetString() });
 
 		// Then
@@ -389,7 +389,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSingleSelect_WhenAuthoredWithReporterAdditions_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -411,10 +411,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAutocomplete_WhenAuthoredWithoutReporterAdditions_ThenAlwaysStoredOn()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When — the flag is redundant for autocomplete; the type alone decides
-		var created = await CreateAsync(client, Draft(UniqueKey("launch_site"), "autocomplete"));
+		var created = await Create(client, Draft(UniqueKey("launch_site"), "autocomplete"));
 
 		// Then
 		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeTrue();
@@ -424,8 +424,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSharedChoiceList_WhenQuestionUses_ThenRevisionSnapshotsOptions()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("aerodromes"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("aerodromes"));
 
 		// When
 		var question = Draft(UniqueKey("launch_site"), "autocomplete") with
@@ -433,7 +433,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			OptionSetId = set.GetProperty("id").GetString()
 		};
 
-		var created = await CreateAsync(client, question);
+		var created = await Create(client, question);
 
 		// Then
 		var options = created.GetProperty("options").EnumerateArray().ToList();
@@ -445,12 +445,12 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenQuestionBuiltFromChoiceList_WhenListChanges_ThenSavedRevisionIsUntouched()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("provinces"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("provinces"));
 		var setId = set.GetProperty("id").GetString();
 
 		var question = Draft(UniqueKey("occurrence_province"), "single_select") with { OptionSetId = setId };
-		var created = await CreateAsync(client, question);
+		var created = await Create(client, question);
 		var revisionId = created.GetProperty("revisionId").GetString();
 
 		// When the shared list is edited afterwards
@@ -466,7 +466,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then the revision that already snapshotted it is unchanged
-		var listed = await ListAsync(client);
+		var listed = await List(client);
 		var stored = listed.Single(candidate => candidate.GetProperty("revisionId").GetString() == revisionId);
 
 		var options = stored.GetProperty("options").EnumerateArray().ToList();
@@ -478,14 +478,14 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSeveralQuestions_WhenTheyAreRearranged_ThenEachMovedOneGainsRevision()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var first = await CreateAsync(client, Draft(UniqueKey("first_question"), "short_text"));
-		var second = await CreateAsync(client, Draft(UniqueKey("second_question"), "short_text"));
+		using var client = await SignedIn();
+		var first = await Create(client, Draft(UniqueKey("first_question"), "short_text"));
+		var second = await Create(client, Draft(UniqueKey("second_question"), "short_text"));
 
 		var firstId = first.GetProperty("id").GetString()!;
 		var secondId = second.GetProperty("id").GetString()!;
 
-		var before = await ListAsync(client);
+		var before = await List(client);
 		var others = before
 			.Select(question => question.GetProperty("id").GetString()!)
 			.Where(id => id != firstId && id != secondId)
@@ -517,8 +517,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenQuestion_WhenDeleted_ThenDisappearsFromListWithoutBeingErased()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, Draft(UniqueKey("retired_question"), "short_text"));
+		using var client = await SignedIn();
+		var created = await Create(client, Draft(UniqueKey("retired_question"), "short_text"));
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
@@ -527,7 +527,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-		var listed = await ListAsync(client);
+		var listed = await List(client);
 		listed.ShouldNotContain(question => question.GetProperty("id").GetString() == id);
 	}
 
@@ -535,7 +535,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUnknownType_WhenQuestionIsCreated_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("odd"), "telepathy"));
@@ -561,7 +561,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoKey_WhenQuestionIsCreated_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsJsonAsync(Questions, Draft(" ", "short_text"));
@@ -574,9 +574,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenKeyAlreadyInUse_WhenQuestionIsCreated_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("duplicate");
-		await CreateAsync(client, Draft(key, "short_text"));
+		await Create(client, Draft(key, "short_text"));
 
 		// When
 		using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"));
@@ -589,9 +589,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenQuestionNamesItself_WhenEdited_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("self_referential");
-		var created = await CreateAsync(client, Draft(key, "yes_no"));
+		var created = await Create(client, Draft(key, "yes_no"));
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
@@ -606,7 +606,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenChoiceListDoesNotExist_WhenQuestionNames_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		var request = Draft(UniqueKey("launch_site"), "autocomplete") with { OptionSetId = "AAAAAAAAAAA" };
@@ -622,7 +622,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenIdNamesNoQuestion_WhenEdited_ThenApiReturnsNotFound(string id)
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PutAsJsonAsync(
@@ -638,7 +638,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenIdNamesNoQuestion_WhenDeleted_ThenApiReturnsNotFound(string id)
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative));
@@ -651,9 +651,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUnknownType_WhenQuestionIsEdited_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("retyped");
-		var created = await CreateAsync(client, Draft(key, "short_text"));
+		var created = await Create(client, Draft(key, "short_text"));
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
@@ -668,8 +668,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenPublicationConsent_WhenDeleted_ThenApiRefuses()
 	{
 		// Given — the seeded system question, which nothing may remove
-		using var client = await SignedInAsync();
-		var listed = await ListAsync(client);
+		using var client = await SignedIn();
+		var listed = await List(client);
 		var consent = listed.FirstOrDefault(question => question.GetProperty("isSystem").GetBoolean());
 
 		if (consent.ValueKind == JsonValueKind.Undefined)
@@ -689,7 +689,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenArrangementNamingUnknownQuestion_WhenApplied_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -703,8 +703,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenArrangementOmitsQuestion_WhenApplied_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, Draft(UniqueKey("only_one"), "short_text"));
+		using var client = await SignedIn();
+		var created = await Create(client, Draft(UniqueKey("only_one"), "short_text"));
 
 		// When — a partial arrangement would leave every omitted question adrift
 		using var response = await client.PostAsJsonAsync(
@@ -719,8 +719,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenChoiceList_WhenDeleted_ThenDisappearsFromList()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("retired_list"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("retired_list"));
 		var id = set.GetProperty("id").GetString();
 
 		// When
@@ -737,9 +737,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenChoiceListKeyAlreadyInUse_WhenAnotherIsCreated_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("duplicate_list");
-		await CreateOptionSetAsync(client, key);
+		await CreateOptionSet(client, key);
 
 		// When
 		var request = new SaveOptionSet(key, "Duplicate", "Duplicate", [new Option("one", "One", "Un")]);
@@ -753,7 +753,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoKey_WhenChoiceListIsCreated_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		var request = new SaveOptionSet(" ", "Nameless", "Sans nom", []);
@@ -767,7 +767,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenRepeatedCode_WhenChoiceListIsCreated_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		var request = new SaveOptionSet(
@@ -788,7 +788,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenIdNamesNoChoiceList_WhenReplaced_ThenApiReturnsNotFound(string id)
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		var request = new SaveOptionSet(null, "Absent", "Absent", []);
@@ -805,7 +805,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenIdNamesNoChoiceList_WhenDeleted_ThenApiReturnsNotFound(string id)
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"/api/admin/option-sets/{id}", UriKind.Relative));
@@ -818,8 +818,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenChoiceList_WhenItemIsAddedAndAnotherRemoved_ThenListMatchesWhatWasSent()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("edited_list"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("edited_list"));
 		var id = set.GetProperty("id").GetString();
 
 		// When — 'alberta' relabelled, 'yukon' dropped, 'nunavut' added, order reversed
@@ -847,11 +847,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — a type-ahead renders the live list, so a site a reporter
 		// added shows up without anyone republishing the question (ADR-0063)
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("sites"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("sites"));
 		var setId = set.GetProperty("id").GetString();
 
-		var created = await CreateAsync(
+		var created = await Create(
 			client, Draft(UniqueKey("where_did_this_happen"), "autocomplete") with { OptionSetId = setId });
 
 		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeTrue();
@@ -874,7 +874,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		// Then the question offers it, while its revision still records what
 		// it was saved with
-		var listed = await ListAsync(client);
+		var listed = await List(client);
 		var question = listed.Single(candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
 
 		question.GetProperty("options").EnumerateArray()
@@ -888,11 +888,11 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenPickOneBackedByList_WhenListGrows_ThenQuestionKeepsSnapshot()
 	{
 		// Given — a closed, curated set still renders exactly what it recorded
-		using var client = await SignedInAsync();
-		var set = await CreateOptionSetAsync(client, UniqueKey("provinces"));
+		using var client = await SignedIn();
+		var set = await CreateOptionSet(client, UniqueKey("provinces"));
 		var setId = set.GetProperty("id").GetString();
 
-		var created = await CreateAsync(
+		var created = await Create(
 			client, Draft(UniqueKey("occurrence_province"), "single_select") with { OptionSetId = setId });
 
 		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeFalse();
@@ -914,7 +914,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
 
 		// Then
-		var listed = await ListAsync(client);
+		var listed = await List(client);
 		var question = listed.Single(candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
 
 		question.GetProperty("options").EnumerateArray()
@@ -926,8 +926,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenChoiceList_WhenListed_ThenEachChoiceSaysWhetherReporterAdded()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		await CreateOptionSetAsync(client, UniqueKey("authored"));
+		using var client = await SignedIn();
+		await CreateOptionSet(client, UniqueKey("authored"));
 
 		// When
 		var listed = await client.GetFromJsonAsync<JsonElement>(OptionSets);
@@ -938,9 +938,9 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			.ShouldAllBe(item => !item.GetProperty("addedByReporter").GetBoolean());
 	}
 
-	private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)
 	{
-		return SignedInClient.AsAsync(_factory, role);
+		return SignedInClient.As(_factory, role);
 	}
 
 	private static string UniqueKey(string prefix)
@@ -955,7 +955,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			false, true, true, null, null, null, null, false, []);
 	}
 
-	private static async Task<JsonElement> CreateAsync(HttpClient client, SaveQuestion request)
+	private static async Task<JsonElement> Create(HttpClient client, SaveQuestion request)
 	{
 		using var response = await client.PostAsJsonAsync(Questions, request);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -963,7 +963,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private static async Task<JsonElement> CreateOptionSetAsync(HttpClient client, string key)
+	private static async Task<JsonElement> CreateOptionSet(HttpClient client, string key)
 	{
 		var request = new SaveOptionSet(
 			key,
@@ -977,7 +977,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private static async Task<List<JsonElement>> ListAsync(HttpClient client)
+	private static async Task<List<JsonElement>> List(HttpClient client)
 	{
 		var body = await client.GetFromJsonAsync<JsonElement>(Questions);
 		return [.. body.EnumerateArray()];

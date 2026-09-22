@@ -49,7 +49,7 @@ public static class BootedApi
 	private static WebApplicationFactory<Program>? factory;
 
 	/// <summary>The booted host, starting it if this is the first scenario to ask.</summary>
-	public static async Task<WebApplicationFactory<Program>> FactoryAsync()
+	public static async Task<WebApplicationFactory<Program>> Factory()
 	{
 		if (factory is not null)
 		{
@@ -77,7 +77,7 @@ public static class BootedApi
 					// or submit repeatedly. Effectively unlimited here so ordinary
 					// scenario traffic never trips a policy meant for a real client;
 					// the two scenarios that actually prove 429 behavior derive their
-					// own tightly-limited host instead. See RateLimitedAsync below,
+					// own tightly-limited host instead. See RateLimited below,
 					// ADR-0081, and issue #15.
 					builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:PermitLimit", "100000");
 					builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:WindowSeconds", "60");
@@ -99,9 +99,9 @@ public static class BootedApi
 	///     never reach — which is all these scenarios need, because the routes they
 	///     ask about either do not exist there or refuse before any handler runs.
 	/// </summary>
-	public static async Task<WebApplicationFactory<Program>> ProductionShapedAsync()
+	public static async Task<WebApplicationFactory<Program>> ProductionShaped()
 	{
-		return (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
 		{
 			builder.UseEnvironment("Production");
 			builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
@@ -110,12 +110,12 @@ public static class BootedApi
 
 	/// <summary>
 	///     A host with a one-permit rate-limit window for the given policy,
-	///     otherwise identical to <see cref="FactoryAsync" />. See ADR-0081 and
+	///     otherwise identical to <see cref="Factory" />. See ADR-0081 and
 	///     issue #15.
 	/// </summary>
-	public static async Task<WebApplicationFactory<Program>> RateLimitedAsync(string policy)
+	public static async Task<WebApplicationFactory<Program>> RateLimited(string policy)
 	{
-		return (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
 		{
 			builder.UseSetting($"HpacSafety:RateLimiting:{policy}:PermitLimit", "1");
 			builder.UseSetting($"HpacSafety:RateLimiting:{policy}:WindowSeconds", "60");
@@ -126,13 +126,13 @@ public static class BootedApi
 	///     A client carrying a real token for that role, minted by the booted host
 	///     and validated by the same middleware production runs (ADR-0066).
 	/// </summary>
-	public static async Task<HttpClient> SignedInAsAsync(MemberRole role)
+	public static async Task<HttpClient> SignedInAs(MemberRole role)
 	{
-		return await SignedInAsAsync(role, await FactoryAsync().ConfigureAwait(false)).ConfigureAwait(false);
+		return await SignedInAs(role, await Factory().ConfigureAwait(false)).ConfigureAwait(false);
 	}
 
-	/// <summary>The same, against a specific already-booted host — see <see cref="RateLimitedAsync" />.</summary>
-	public static async Task<HttpClient> SignedInAsAsync(MemberRole role, WebApplicationFactory<Program> host)
+	/// <summary>The same, against a specific already-booted host — see <see cref="RateLimited" />.</summary>
+	public static async Task<HttpClient> SignedInAs(MemberRole role, WebApplicationFactory<Program> host)
 	{
 		ArgumentNullException.ThrowIfNull(host);
 
@@ -164,11 +164,11 @@ public static class BootedApi
 	///     transport rather than the real network, with the given
 	///     Development-only role allowlists — see ADR-0079.
 	/// </summary>
-	public static async Task<HttpClient> MembersSiteStubbedAsync(
+	public static async Task<HttpClient> MembersSiteStubbed(
 		HttpMessageHandler handler, IReadOnlyList<string>? administratorEmails = null,
 		IReadOnlyList<string>? safetyOfficerEmails = null)
 	{
-		var host = (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		var host = (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
 		{
 			builder.ConfigureTestServices(services =>
 			{
@@ -200,7 +200,7 @@ public static class BootedApi
 
 	/// <summary>Stops the host and the container once, after the whole run.</summary>
 	[AfterTestRun]
-	public static async Task StopAsync()
+	public static async Task Stop()
 	{
 		if (factory is not null)
 		{

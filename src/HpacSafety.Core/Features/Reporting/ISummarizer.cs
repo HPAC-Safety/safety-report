@@ -27,7 +27,7 @@ public interface ISummarizer
 	///     validation (not exactly two nonblank strings, extra key, or a Markdown
 	///     fence).
 	/// </exception>
-	Task<SummaryDraft> SummarizeAsync(SummarizationInput input, CancellationToken cancellationToken);
+	Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken);
 }
 
 /// <summary>

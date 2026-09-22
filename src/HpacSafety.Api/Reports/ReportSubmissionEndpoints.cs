@@ -38,12 +38,12 @@ public static class ReportSubmissionEndpoints
 
 		var group = app.MapGroup("/api/v1/reports").RequireAuthorization(HpacPolicies.Member);
 
-		group.MapPost("/", SubmitAsync).RequireRateLimiting(RateLimitPolicies.PublicSubmission);
+		group.MapPost("/", Submit).RequireRateLimiting(RateLimitPolicies.PublicSubmission);
 
 		return group;
 	}
 
-	private static async Task<IResult> SubmitAsync(
+	private static async Task<IResult> Submit(
 		HttpRequest request,
 		HpacSafetyDbContext database,
 		MediaIngestor ingestor,
@@ -127,7 +127,7 @@ public static class ReportSubmissionEndpoints
 			return Problem(cause.Message);
 		}
 
-		var attachmentProblem = await IngestFilesAsync(
+		var attachmentProblem = await IngestFiles(
 				report, fileAnswers, form.Files, blobStore, ingestor, clock, cancellationToken)
 			.ConfigureAwait(false);
 
@@ -271,7 +271,7 @@ public static class ReportSubmissionEndpoints
 	///     once every answer entry has validated structurally, so a malformed
 	///     submission never quarantines a single byte.
 	/// </summary>
-	private static async Task<IResult?> IngestFilesAsync(
+	private static async Task<IResult?> IngestFiles(
 		Report report,
 		IReadOnlyList<(ReportAnswer Answer, IReadOnlyList<int> Indexes)> fileAnswers,
 		IFormFileCollection files,
@@ -293,7 +293,7 @@ public static class ReportSubmissionEndpoints
 						.ConfigureAwait(false);
 				}
 
-				var outcome = await ingestor.IngestAsync(quarantineKey, upload.ContentType, cancellationToken)
+				var outcome = await ingestor.Ingest(quarantineKey, upload.ContentType, cancellationToken)
 					.ConfigureAwait(false);
 
 				if (!outcome.IsAccepted)

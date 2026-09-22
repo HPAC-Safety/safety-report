@@ -28,7 +28,7 @@ public sealed class FakeSummarizer : ISummarizer
 
 	public SummarizationInput? LastInput { get; private set; }
 
-	public Task<SummaryDraft> SummarizeAsync(SummarizationInput input, CancellationToken cancellationToken)
+	public Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken)
 	{
 		CallCount++;
 		LastInput = input;

@@ -34,14 +34,14 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenADueMessage_WhenClaimedAndProcessed_ThenTheReportMovesToPendingReviewWithOnePairRow()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 		var summarizer = new FakeSummarizer(("The pilot reported a hard landing.", "Le pilote a signalé un atterrissage brutal."));
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then
 		claimed.ShouldBeTrue();
@@ -65,13 +65,13 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenNoDueMessage_WhenClaimed_ThenNothingIsClaimedAndTheSummarizerIsNeverCalled()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var summarizer = new FakeSummarizer(("en", "fr"));
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then
 		claimed.ShouldBeFalse();
@@ -82,7 +82,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenConsentSkippedAndFileUploadAnswers_WhenProcessed_ThenOnlyEligibleFieldsReachTheModel()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
@@ -106,7 +106,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then
 		var input = summarizer.LastInput.ShouldNotBeNull();
@@ -118,15 +118,15 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenAPrivateAnswer_WhenProcessed_ThenItReachesOnlyPrivateContext()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 
 		var summarizer = new FakeSummarizer(("en", "fr"));
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then
 		var input = summarizer.LastInput.ShouldNotBeNull();
@@ -139,14 +139,14 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenTheSummarizerFails_WhenProcessed_ThenTheFailureIsRecordedAndTheReportStaysInReview()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 		var summarizer = new FakeSummarizer(failing: true);
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
@@ -163,9 +163,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenRetriesAreExhausted_WhenTheFinalAttemptFails_ThenTheReportBecomesSummaryFailed()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 		var summarizer = new FakeSummarizer(failing: true);
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 		var now = At;
@@ -173,7 +173,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		// When — the outbox's own poison threshold
 		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
 		{
-			await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, now, processor.ProcessAsync, CancellationToken.None);
+			await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, now, processor.Process, CancellationToken.None);
 			now = now.AddMinutes(10);
 		}
 
@@ -192,9 +192,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenAReportAlreadyPastSummarization_WhenProcessed_ThenNothingChangesAndTheSummarizerIsNeverCalled()
 	{
 		// Given — some other path already produced a pair before this attempt ran
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await SeedAsync(context);
+		var report = await Seed(context);
 		report.BeginSummarizing();
 		var summary = Summary.Generate(report.Id, "en", "fr", "m", "v", At);
 		report.AttachSummary(summary);
@@ -206,7 +206,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(context, OutboxMessageType.SummarizeReport, At, processor.ProcessAsync, CancellationToken.None);
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
 
 		// Then
 		claimed.ShouldBeTrue();
@@ -221,9 +221,9 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	public async Task GivenTwoConcurrentClaims_WhenBothClaimTheSameDueMessage_ThenOnlyOneSucceeds()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var seedContext = WorkerPostgresFixture.ContextFor(connectionString);
-		await SeedAsync(seedContext);
+		await Seed(seedContext);
 
 		await using var contextA = WorkerPostgresFixture.ContextFor(connectionString);
 		await using var contextB = WorkerPostgresFixture.ContextFor(connectionString);
@@ -234,8 +234,8 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 
 		// When
 		var results = await Task.WhenAll(
-			OutboxClaimer.ClaimNextAsync(contextA, OutboxMessageType.SummarizeReport, At, processorA.ProcessAsync, CancellationToken.None),
-			OutboxClaimer.ClaimNextAsync(contextB, OutboxMessageType.SummarizeReport, At, processorB.ProcessAsync, CancellationToken.None));
+			OutboxClaimer.ClaimNext(contextA, OutboxMessageType.SummarizeReport, At, processorA.Process, CancellationToken.None),
+			OutboxClaimer.ClaimNext(contextB, OutboxMessageType.SummarizeReport, At, processorB.Process, CancellationToken.None));
 
 		// Then — exactly one claim found work; the other found none
 		results.ShouldContain(true);
@@ -243,7 +243,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		(summarizerA.CallCount + summarizerB.CallCount).ShouldBe(1);
 	}
 
-	private static async Task<Report> SeedAsync(HpacSafetyDbContext context)
+	private static async Task<Report> Seed(HpacSafetyDbContext context)
 	{
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
 		var pilotName = Question.Create("pilot_name", QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);

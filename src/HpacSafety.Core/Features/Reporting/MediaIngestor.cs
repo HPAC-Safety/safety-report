@@ -64,7 +64,7 @@ public sealed class MediaIngestor
 	///     the private source record — writing a stripped derivative alongside when the
 	///     format allows one.
 	/// </summary>
-	public async Task<MediaIngestOutcome> IngestAsync(
+	public async Task<MediaIngestOutcome> Ingest(
 		BlobKey quarantineKey,
 		string? declaredContentType,
 		CancellationToken cancellationToken)
@@ -82,16 +82,16 @@ public sealed class MediaIngestor
 		// the one a public upload endpoint cannot afford to get wrong: a
 		// "download everything, then check Length" copy pulls an arbitrarily
 		// large object fully into memory before an oversized upload is refused,
-		// which is itself a denial-of-service surface. CopyBoundedAsync checks
+		// which is itself a denial-of-service surface. CopyBounded checks
 		// the running total as bytes arrive and stops reading the source the
 		// moment the limit is exceeded - the rest of an oversized object is
 		// never requested at all.
 		using var original = new MemoryStream();
 		bool exceedsLimit;
 
-		await using (var source = await _blobStore.OpenReadAsync(quarantineKey, cancellationToken).ConfigureAwait(false))
+		await using (var source = await _blobStore.OpenRead(quarantineKey, cancellationToken).ConfigureAwait(false))
 		{
-			exceedsLimit = await CopyBoundedAsync(source, original, _policy.MaxByteSize, cancellationToken).ConfigureAwait(false);
+			exceedsLimit = await CopyBounded(source, original, _policy.MaxByteSize, cancellationToken).ConfigureAwait(false);
 		}
 
 		if (exceedsLimit)
@@ -107,7 +107,7 @@ public sealed class MediaIngestor
 		}
 
 		original.Position = 0;
-		var sniffed = await _sniffer.SniffAsync(original, cancellationToken).ConfigureAwait(false);
+		var sniffed = await _sniffer.Sniff(original, cancellationToken).ConfigureAwait(false);
 
 		var verdict = _policy.Validate(declaredContentType, sniffed, byteSize);
 		if (!verdict.IsAccepted)
@@ -129,7 +129,7 @@ public sealed class MediaIngestor
 
 		original.Position = 0;
 		using var stripped = new MemoryStream();
-		await _stripper.StripAsync(original, stripped, verdict.Type, cancellationToken).ConfigureAwait(false);
+		await _stripper.Strip(original, stripped, verdict.Type, cancellationToken).ConfigureAwait(false);
 
 		var derivativeKey = quarantineKey.In(MediaCompartment.Stripped);
 		stripped.Position = 0;
@@ -144,7 +144,7 @@ public sealed class MediaIngestor
 	///     been read rather than after the whole stream has been consumed.
 	/// </summary>
 	/// <returns><see langword="true" /> when the source exceeded the limit.</returns>
-	private static async Task<bool> CopyBoundedAsync(
+	private static async Task<bool> CopyBounded(
 		Stream source,
 		MemoryStream destination,
 		long maxByteSize,

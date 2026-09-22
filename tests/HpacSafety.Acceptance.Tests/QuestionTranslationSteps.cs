@@ -54,7 +54,7 @@ public sealed class QuestionTranslationSteps
 	[When(@"an Administrator asks for the other language to be translated")]
 	public async Task WhenTheStandInIsAsked()
 	{
-		_translated = await _standIn!.TranslateAsync(
+		_translated = await _standIn!.Translate(
 			["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 	}
 
@@ -95,7 +95,7 @@ public sealed class QuestionTranslationSteps
 	[When(@"they ask for the other language to be translated")]
 	public async Task WhenTheOtherLanguageIsAskedFor()
 	{
-		_translated = await _translator.TranslateAsync(
+		_translated = await _translator.Translate(
 			["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
 	}
 
@@ -194,7 +194,7 @@ public sealed class QuestionTranslationSteps
 	public async Task ThenTheAnswerCarriesNothingSensitive()
 	{
 		var cause = await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			_translator.TranslateAsync(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
+			_translator.Translate(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 
 		cause.Message.ShouldNotContain("key");
 		cause.Message.ShouldNotContain("Were you injured?");
@@ -222,7 +222,7 @@ public sealed class QuestionTranslationSteps
 
 		public bool IsConfigured => Configured;
 
-		public Task<IReadOnlyList<string>> TranslateAsync(
+		public Task<IReadOnlyList<string>> Translate(
 			IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
 		{
 			return Configured

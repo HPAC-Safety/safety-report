@@ -5,7 +5,7 @@ namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
 ///     <c>ReviewerMediaLink</c> is documented as the only sanctioned way to mint a
-///     link to uploaded media — but <c>IBlobStore.CreateReadUrlAsync</c> is a public
+///     link to uploaded media — but <c>IBlobStore.CreateReadUrl</c> is a public
 ///     port with no guard of its own, and it will sign a GET for a report's
 ///     unstripped original as readily as for its derivative.
 ///     <para>
@@ -22,7 +22,7 @@ namespace HpacSafety.Core.Tests.Media;
 public class ReviewerLinkIsTheOnlyChokepointTests
 {
 	[Theory]
-	[InlineData("CreateReadUrlAsync", "ReviewerMediaLink.cs")]
+	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs")]
 	public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
 		string method,
 		string chokepointFile)
@@ -63,7 +63,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 		// Guards the tests above: if the scan could not see a call it does not
 		// matter that it saw none elsewhere. A guard that cannot fail is not a
 		// guard.
-		source.ShouldContain("CreateReadUrlAsync(");
+		source.ShouldContain("CreateReadUrl(");
 	}
 
 	internal static string RepositoryRoot()

@@ -24,18 +24,18 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
 		}
 	}
 
-	protected override Task<IBlobStore> CreateStoreAsync()
+	protected override Task<IBlobStore> CreateStore()
 	{
 		_store = new FileSystemBlobStore(new FileSystemBlobStoreOptions { RootPath = _root }, TimeProvider.System);
 		return Task.FromResult<IBlobStore>(_store);
 	}
 
-	protected override async Task<bool> TryUploadAsync(Uri uploadUrl, byte[] content, string contentType)
+	protected override async Task<bool> TryUpload(Uri uploadUrl, byte[] content, string contentType)
 	{
 		try
 		{
 			using var source = new MemoryStream(content);
-			await _store.ExecuteUploadAsync(uploadUrl, source, CancellationToken.None);
+			await _store.ExecuteUpload(uploadUrl, source, CancellationToken.None);
 			return true;
 		}
 		catch (PresignedUrlRejectedException)
@@ -44,11 +44,11 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
 		}
 	}
 
-	protected override async Task<bool> TryReadAsync(Uri readUrl)
+	protected override async Task<bool> TryRead(Uri readUrl)
 	{
 		try
 		{
-			await using var stream = await _store.ExecuteReadAsync(readUrl, CancellationToken.None);
+			await using var stream = await _store.ExecuteRead(readUrl, CancellationToken.None);
 			return true;
 		}
 		catch (PresignedUrlRejectedException)

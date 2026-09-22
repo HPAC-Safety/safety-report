@@ -33,7 +33,7 @@ public static class TranslationEndpoints
 		var group = app.MapGroup("/api/admin/translate").RequireAuthorization(HpacPolicies.Administrator);
 
 		group.MapGet("/", Availability);
-		group.MapPost("/", TranslateAsync);
+		group.MapPost("/", Translate);
 
 		return group;
 	}
@@ -54,7 +54,7 @@ public static class TranslationEndpoints
 			new TranslationAvailability(translator.IsConfigured, translator is EchoTranslator));
 	}
 
-	private static async Task<IResult> TranslateAsync(
+	private static async Task<IResult> Translate(
 		TranslateRequest request,
 		ITranslator translator,
 		CancellationToken cancellationToken)
@@ -96,7 +96,7 @@ public static class TranslationEndpoints
 		try
 		{
 			var translated = await translator
-				.TranslateAsync([.. translatable.Select(entry => entry.text)], source, target, cancellationToken)
+				.Translate([.. translatable.Select(entry => entry.text)], source, target, cancellationToken)
 				.ConfigureAwait(false);
 
 			var results = new string[texts.Count];

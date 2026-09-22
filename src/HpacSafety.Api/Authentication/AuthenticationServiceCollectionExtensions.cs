@@ -182,14 +182,14 @@ public static class AuthenticationServiceCollectionExtensions
 			OnChallenge = async context =>
 			{
 				context.HandleResponse();
-				await WriteProblemAsync(
+				await WriteProblem(
 					context.HttpContext,
 					StatusCodes.Status401Unauthorized,
 					"Not signed in.",
 					"These endpoints are available to signed-in HPAC members.",
 					"https://hpac.ca/problems/not-signed-in").ConfigureAwait(false);
 			},
-			OnForbidden = context => WriteProblemAsync(
+			OnForbidden = context => WriteProblem(
 				context.HttpContext,
 				StatusCodes.Status403Forbidden,
 				"Not permitted.",
@@ -200,7 +200,7 @@ public static class AuthenticationServiceCollectionExtensions
 
 	// Deliberately says nothing about which claim was missing or what role
 	// would have been enough.
-	private static async Task WriteProblemAsync(
+	private static async Task WriteProblem(
 		HttpContext context, int status, string title, string detail, string type)
 	{
 		context.Response.StatusCode = status;

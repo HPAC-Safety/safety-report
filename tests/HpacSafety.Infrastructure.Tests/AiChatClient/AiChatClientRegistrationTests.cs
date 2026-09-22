@@ -111,7 +111,7 @@ public class UnconfiguredAiChatClientTests
 
 		// When / Then
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.CompleteAsync("any-model", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete("any-model", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
 	}
 }
 

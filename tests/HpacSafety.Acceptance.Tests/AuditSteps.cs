@@ -24,7 +24,7 @@ public sealed class AuditSteps
 	[Given(@"a member signs in with valid credentials")]
 	public async Task GivenValidCredentials()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var client = host.CreateClient();
 		_response = await client.PostAsJsonAsync("/api/auth/token", new { username = "admin", password = "admin" });
 	}
@@ -38,7 +38,7 @@ public sealed class AuditSteps
 	[Then(@"an audit entry records the token subject, a sign-in-succeeded action, and the time")]
 	public async Task ThenAuditRecordsSuccess()
 	{
-		var entry = await LatestAsync(AuditAction.SignedInSucceeded);
+		var entry = await Latest(AuditAction.SignedInSucceeded);
 		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
 		entry.OccurredAt.ShouldNotBe(default);
 	}
@@ -46,14 +46,14 @@ public sealed class AuditSteps
 	[Then(@"it never records the credentials")]
 	public async Task ThenNoCredentialsRecorded()
 	{
-		var entry = await LatestAsync(AuditAction.SignedInSucceeded);
+		var entry = await Latest(AuditAction.SignedInSucceeded);
 		entry.Detail.ShouldBeNull();
 	}
 
 	[Given(@"a sign-in attempt uses credentials that are not valid")]
 	public async Task GivenInvalidCredentials()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var client = host.CreateClient();
 		_attemptedUsername = $"nobody_{Guid.NewGuid():n}"[..24];
 		_response = await client.PostAsJsonAsync(
@@ -69,27 +69,27 @@ public sealed class AuditSteps
 	[Then(@"an audit entry records a sign-in-failed action and the time")]
 	public async Task ThenAuditRecordsFailure()
 	{
-		var entry = await LatestAsync(AuditAction.SignedInFailed);
+		var entry = await Latest(AuditAction.SignedInFailed);
 		entry.OccurredAt.ShouldNotBe(default);
 	}
 
 	[Then(@"it never records the attempted credentials")]
 	public async Task ThenNoAttemptedCredentialsRecorded()
 	{
-		var entry = await LatestAsync(AuditAction.SignedInFailed);
+		var entry = await Latest(AuditAction.SignedInFailed);
 		entry.Detail.ShouldBeNull();
 	}
 
 	[Then(@"the actor is recorded as the attempted identity rather than left blank")]
 	public async Task ThenActorIsAttemptedIdentity()
 	{
-		var entry = await LatestAsync(AuditAction.SignedInFailed);
+		var entry = await Latest(AuditAction.SignedInFailed);
 		entry.ActorSubject.ShouldBe(_attemptedUsername);
 	}
 
-	private static async Task<AuditLogEntry> LatestAsync(AuditAction action)
+	private static async Task<AuditLogEntry> Latest(AuditAction action)
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 

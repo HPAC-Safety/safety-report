@@ -28,7 +28,7 @@ public sealed class WorkerPostgresFixture : IAsyncLifetime
 	}
 
 	/// <summary>Creates an empty database, migrates it, and returns a connection string.</summary>
-	public async Task<string> CreateMigratedDatabaseAsync()
+	public async Task<string> CreateMigratedDatabase()
 	{
 		var name = "db_" + Guid.NewGuid().ToString("n");
 

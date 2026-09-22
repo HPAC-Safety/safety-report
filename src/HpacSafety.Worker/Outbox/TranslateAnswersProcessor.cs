@@ -18,7 +18,7 @@ public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITra
 	public OutboxMessageType HandlesType => OutboxMessageType.TranslateAnswers;
 
 	/// <inheritdoc />
-	public async Task ProcessAsync(OutboxMessage message, CancellationToken cancellationToken)
+	public async Task Process(OutboxMessage message, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(message);
 
@@ -45,7 +45,7 @@ public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITra
 			var answers = group.ToList();
 
 			var translated = await translator
-				.TranslateAsync(answers.ConvertAll(answer => answer.Value!), source, target, cancellationToken)
+				.Translate(answers.ConvertAll(answer => answer.Value!), source, target, cancellationToken)
 				.ConfigureAwait(false);
 
 			for (var i = 0; i < answers.Count; i++)

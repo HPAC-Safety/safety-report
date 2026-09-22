@@ -46,7 +46,7 @@ await using (var scope = host.Services.CreateAsyncScope())
 {
 	var context = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 	var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-	await context.EnsureMigratedAsync(logger).ConfigureAwait(false);
+	await context.EnsureMigrated(logger).ConfigureAwait(false);
 }
 
 await host.RunAsync().ConfigureAwait(false);

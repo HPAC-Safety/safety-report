@@ -31,7 +31,7 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		// A malformed body still consumes a permit: the limiter runs before the
 		// endpoint's own validation, so this needs no question-bank setup.
 		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
-		using var reporter = await SignedInClient.AsAsync(limited, MemberRole.User);
+		using var reporter = await SignedInClient.As(limited, MemberRole.User);
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
 
@@ -51,7 +51,7 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		await using var limited = RateLimitedFactory(publicSubmissionPermitLimit: 1);
-		using var reporter = await SignedInClient.AsAsync(limited, MemberRole.User);
+		using var reporter = await SignedInClient.As(limited, MemberRole.User);
 		using var firstBody = new MultipartFormDataContent();
 		using var secondBody = new MultipartFormDataContent();
 		await reporter.PostAsync(Submit, firstBody);

@@ -17,7 +17,7 @@ public sealed class StubTranslator : ITranslator
 	public bool IsConfigured => true;
 
 	/// <inheritdoc />
-	public Task<IReadOnlyList<string>> TranslateAsync(
+	public Task<IReadOnlyList<string>> Translate(
 		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
 	{
 		Calls.Add((texts, source, target));

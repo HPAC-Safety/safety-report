@@ -31,7 +31,7 @@ public sealed class MediaSnifferChain : IMediaSniffer
 	}
 
 	/// <inheritdoc />
-	public async Task<MediaType?> SniffAsync(Stream content, CancellationToken cancellationToken)
+	public async Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
@@ -45,7 +45,7 @@ public sealed class MediaSnifferChain : IMediaSniffer
 			// shows up as "video uploads stopped working" months later.
 			buffered.Position = 0;
 
-			if (await sniffer.SniffAsync(buffered, cancellationToken).ConfigureAwait(false) is { } recognised)
+			if (await sniffer.Sniff(buffered, cancellationToken).ConfigureAwait(false) is { } recognised)
 			{
 				return recognised;
 			}

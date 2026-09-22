@@ -68,7 +68,7 @@ public sealed partial class DeepLTranslator : ITranslator
 	public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
 
 	/// <inheritdoc />
-	public async Task<IReadOnlyList<string>> TranslateAsync(
+	public async Task<IReadOnlyList<string>> Translate(
 		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(texts);

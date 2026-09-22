@@ -32,10 +32,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenEveryTableExists()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var tables = await QueryStringsAsync(
+		var tables = await QueryStrings(
 			connectionString,
 			"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name <> '__EFMigrationsHistory' ORDER BY table_name");
 
@@ -51,7 +51,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// __EFMigrationsHistory and never re-invokes a migration already
 		// recorded there, so this alone cannot catch a non-idempotent
 		// statement inside one. See the seed-reapplication tests below.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
 		await using var context = PostgresFixture.ContextFor(connectionString);
@@ -65,10 +65,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenOutboxIndexIsRead_ThenCoversOnlyRowsWorkerMayClaim()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var definitions = await QueryStringsAsync(
+		var definitions = await QueryStrings(
 			connectionString,
 			"SELECT indexdef FROM pg_indexes WHERE tablename = 'outbox_messages' AND indexname = 'ix_outbox_messages_claimable'");
 
@@ -84,10 +84,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenSummariesTableIsRead_ThenExactlyOneRowMayExistPerReport()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var definitions = await QueryStringsAsync(
+		var definitions = await QueryStrings(
 			connectionString,
 			"SELECT indexdef FROM pg_indexes WHERE tablename = 'summaries' AND indexdef LIKE '%UNIQUE%'");
 
@@ -100,10 +100,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenAnswerColumnsAreRead_ThenValueIsOneStringAndCodesAreGone()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var columns = await QueryStringsAsync(
+		var columns = await QueryStrings(
 			connectionString,
 			"SELECT column_name FROM information_schema.columns WHERE table_name = 'report_answers'");
 
@@ -122,10 +122,10 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenQuestionKeyIndexIsRead_ThenUniqueAmongLiveRowsOnly()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When
-		var definitions = await QueryStringsAsync(
+		var definitions = await QueryStrings(
 			connectionString,
 			"SELECT indexdef FROM pg_indexes WHERE tablename = 'questions' AND indexname = 'ix_questions_key'");
 
@@ -136,7 +136,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		definitions[0].ShouldContain("deleted IS NULL");
 	}
 
-	private static async Task<string[]> QueryStringsAsync(string connectionString, string sql)
+	private static async Task<string[]> QueryStrings(string connectionString, string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();

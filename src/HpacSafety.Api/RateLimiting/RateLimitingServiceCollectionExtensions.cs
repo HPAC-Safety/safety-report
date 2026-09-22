@@ -32,7 +32,7 @@ public static class RateLimitingServiceCollectionExtensions
 
 		services.AddRateLimiter(limiterOptions =>
 		{
-			limiterOptions.OnRejected = OnRejectedAsync;
+			limiterOptions.OnRejected = OnRejected;
 
 			limiterOptions.AddPolicy(RateLimitPolicies.PublicSubmission, httpContext =>
 			{
@@ -128,7 +128,7 @@ public static class RateLimitingServiceCollectionExtensions
 		});
 	}
 
-	private static ValueTask OnRejectedAsync(OnRejectedContext context, CancellationToken cancellationToken)
+	private static ValueTask OnRejected(OnRejectedContext context, CancellationToken cancellationToken)
 	{
 		context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 

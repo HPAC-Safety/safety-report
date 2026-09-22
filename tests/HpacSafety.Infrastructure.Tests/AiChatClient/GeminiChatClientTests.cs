@@ -26,7 +26,7 @@ public class GeminiChatClientTests
 		client.IsConfigured.ShouldBeFalse();
 
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
 	}
 
 	[Fact]
@@ -36,7 +36,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("hello back"));
 
 		// When
-		await client.CompleteAsync(
+		await client.Complete(
 			"gemini-2.0-flash",
 			[new ChatMessage(ChatRole.System, "You are terse."), new ChatMessage(ChatRole.User, "Summarize this.")],
 			CancellationToken.None);
@@ -59,7 +59,7 @@ public class GeminiChatClientTests
 		var (client, _) = Client(Responds("the completion text"));
 
 		// When
-		var completion = await client.CompleteAsync(
+		var completion = await client.Complete(
 			"gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
 
 		// Then
@@ -73,7 +73,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("ok"));
 
 		// When
-		await client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		await client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
 
 		// Then
 		var authorization = transport.Requests[0].Headers.Authorization;
@@ -88,7 +88,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("ok"));
 
 		// When
-		await client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		await client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("generativelanguage.googleapis.com");
@@ -101,7 +101,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("ok"), endpoint: "https://gemini.example.invalid/openai/chat/completions");
 
 		// When
-		await client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		await client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("gemini.example.invalid");
@@ -119,7 +119,7 @@ public class GeminiChatClientTests
 
 		// When
 		var cause = await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
 
 		// Then
 		cause.Message.ShouldContain("403");
@@ -135,7 +135,7 @@ public class GeminiChatClientTests
 
 		// When
 		var cause = await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
 
 		// Then
 		cause.Message.ShouldBe("The AI chat provider could not be reached.");
@@ -154,7 +154,7 @@ public class GeminiChatClientTests
 
 		// When / Then
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
 	}
 
 	[Fact]
@@ -166,7 +166,7 @@ public class GeminiChatClientTests
 
 		// When / Then
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.CompleteAsync("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
 	}
 
 	private static StubTransport Responds(string completion)

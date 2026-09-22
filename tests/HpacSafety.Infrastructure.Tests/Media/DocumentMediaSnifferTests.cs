@@ -15,7 +15,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Pdf());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Pdf);
@@ -28,7 +28,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Doc());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Doc);
@@ -41,7 +41,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Rtf());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		// A sniffer only ever sees bytes — the text/rtf alias only exists at
@@ -56,7 +56,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Docx());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Docx);
@@ -69,7 +69,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.Odt());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBe(MediaType.Odt);
@@ -82,7 +82,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.PlainZip());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -95,7 +95,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.MalformedZip());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -108,7 +108,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.PlainText());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		// Markdown and plain text are the same byte-level answer — this system
@@ -123,7 +123,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.BinaryGarbage());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -136,7 +136,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.TextWithDisallowedControlCharacter());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -149,7 +149,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream([]);
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();
@@ -162,7 +162,7 @@ public class DocumentMediaSnifferTests
 		using var content = new MemoryStream(ExifFixtures.JpegWithGpsExif());
 
 		// When
-		var sniffed = await _sniffer.SniffAsync(content, CancellationToken.None);
+		var sniffed = await _sniffer.Sniff(content, CancellationToken.None);
 
 		// Then
 		sniffed.ShouldBeNull();

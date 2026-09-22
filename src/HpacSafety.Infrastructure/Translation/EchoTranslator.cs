@@ -30,7 +30,7 @@ public sealed class EchoTranslator : ITranslator
 	public bool IsConfigured => true;
 
 	/// <inheritdoc />
-	public Task<IReadOnlyList<string>> TranslateAsync(
+	public Task<IReadOnlyList<string>> Translate(
 		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(texts);

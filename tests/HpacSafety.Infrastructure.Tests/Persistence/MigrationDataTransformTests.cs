@@ -31,10 +31,10 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// translation, before a machine translation is attached. The target
 		// model has nowhere to put "missing"; a revision is complete or it
 		// does not exist.
-		var connectionString = await postgres.CreateDatabaseAsync();
+		var connectionString = await postgres.CreateDatabase();
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, PriorMigration);
+			await MigrateTo(context, PriorMigration);
 		}
 
 		await using (var connection = new NpgsqlConnection(connectionString))
@@ -55,7 +55,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// When
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, null);
+			await MigrateTo(context, null);
 		}
 
 		// Then
@@ -70,10 +70,10 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 	public async Task GivenTwoApprovedPerLanguageSummaries_WhenMigrationRuns_ThenTheyBecomeOneApprovedBilingualRow()
 	{
 		// Given
-		var connectionString = await postgres.CreateDatabaseAsync();
+		var connectionString = await postgres.CreateDatabase();
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, PriorMigration);
+			await MigrateTo(context, PriorMigration);
 		}
 
 		await using (var connection = new NpgsqlConnection(connectionString))
@@ -96,7 +96,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// When
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, null);
+			await MigrateTo(context, null);
 		}
 
 		// Then
@@ -115,10 +115,10 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// was individually approved; a half-approved pair is not a defined
 		// state in the target model, so the merged row starts unapproved
 		// rather than guessing.
-		var connectionString = await postgres.CreateDatabaseAsync();
+		var connectionString = await postgres.CreateDatabase();
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, PriorMigration);
+			await MigrateTo(context, PriorMigration);
 		}
 
 		await using (var connection = new NpgsqlConnection(connectionString))
@@ -141,7 +141,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// When
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, null);
+			await MigrateTo(context, null);
 		}
 
 		// Then
@@ -163,10 +163,10 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		const string keyBase64 = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
 		var ciphertext = EncryptLegacyV1(plaintext, keyBase64);
 
-		var connectionString = await postgres.CreateDatabaseAsync();
+		var connectionString = await postgres.CreateDatabase();
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, PriorMigration);
+			await MigrateTo(context, PriorMigration);
 		}
 
 		await using (var connection = new NpgsqlConnection(connectionString))
@@ -195,7 +195,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		try
 		{
 			await using var context = PostgresFixture.ContextFor(connectionString);
-			await MigrateToAsync(context, null);
+			await MigrateTo(context, null);
 		}
 		finally
 		{
@@ -218,10 +218,10 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// that one text into the missing language column, but nobody
 		// produced or reviewed that second language, so the merged pair must
 		// not inherit the single row's approval.
-		var connectionString = await postgres.CreateDatabaseAsync();
+		var connectionString = await postgres.CreateDatabase();
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, PriorMigration);
+			await MigrateTo(context, PriorMigration);
 		}
 
 		await using (var connection = new NpgsqlConnection(connectionString))
@@ -242,7 +242,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		// When
 		await using (var context = PostgresFixture.ContextFor(connectionString))
 		{
-			await MigrateToAsync(context, null);
+			await MigrateTo(context, null);
 		}
 
 		// Then
@@ -280,7 +280,7 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		return "v1." + Convert.ToBase64String(envelope);
 	}
 
-	private static async Task MigrateToAsync(HpacSafetyDbContext context, string? targetMigration)
+	private static async Task MigrateTo(HpacSafetyDbContext context, string? targetMigration)
 	{
 		var migrator = context.GetInfrastructure().GetRequiredService<IMigrator>();
 		await migrator.MigrateAsync(targetMigration);

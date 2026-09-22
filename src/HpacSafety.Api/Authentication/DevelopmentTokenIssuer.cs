@@ -78,7 +78,7 @@ public sealed class DevelopmentTokenIssuer
 	///     propagates rather than being treated as a non-match — a down members
 	///     site is not the same failure as a wrong password.
 	/// </remarks>
-	public async Task<DevelopmentToken?> IssueAsync(
+	public async Task<DevelopmentToken?> Issue(
 		string? username, string? password, CancellationToken cancellationToken)
 	{
 		if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
@@ -86,7 +86,7 @@ public sealed class DevelopmentTokenIssuer
 			return null;
 		}
 
-		var role = await ResolveRoleAsync(username, password, cancellationToken).ConfigureAwait(false);
+		var role = await ResolveRole(username, password, cancellationToken).ConfigureAwait(false);
 
 		if (role is null)
 		{
@@ -116,12 +116,12 @@ public sealed class DevelopmentTokenIssuer
 			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, role.Value);
 	}
 
-	private async Task<MemberRole?> ResolveRoleAsync(
+	private async Task<MemberRole?> ResolveRole(
 		string username, string password, CancellationToken cancellationToken)
 	{
 		foreach (var source in _sources)
 		{
-			var role = await source.VerifyAsync(username, password, cancellationToken).ConfigureAwait(false);
+			var role = await source.Verify(username, password, cancellationToken).ConfigureAwait(false);
 
 			if (role is not null)
 			{

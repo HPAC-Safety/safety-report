@@ -43,7 +43,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAMemberSession_WhenImportIsAttempted_ThenApiRefuses()
 	{
 		// Given
-		using var client = await SignedInAsync(MemberRole.User);
+		using var client = await SignedIn(MemberRole.User);
 
 		// When
 		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
@@ -56,7 +56,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAMatchedPair_WhenImported_ThenPreviewListsDrafts()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
@@ -73,7 +73,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenOnlyOneFile_WhenImportIsAttempted_ThenApiRejects()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		using var content = new MultipartFormDataContent
 		{
 			{ FileContent("synthetic-en.json"), "english", "synthetic-en.json" }
@@ -90,7 +90,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnUnsupportedField_WhenImported_ThenPreviewListsItAsRejected()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
@@ -105,7 +105,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAFieldWithARealCondition_WhenImported_ThenAPendingLogicNoteIsPersisted()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
@@ -123,7 +123,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAPendingLogicNote_WhenDeleted_ThenNoLongerListed()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		using var imported = await client.PostAsync(Import, Multipart("synthetic-en.json", "synthetic-fr.json"));
 		var preview = await imported.Content.ReadFromJsonAsync<JsonElement>();
 		var noteId = preview.GetProperty("pendingLogicNoteIds").EnumerateArray().First().GetString();
@@ -142,7 +142,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAMalformedPendingLogicId_WhenDeleted_ThenApiReturnsNotFound()
 	{
 		// Given — not even a well-formed TinyId (12 characters, not 11)
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/unknown00000", UriKind.Relative));
@@ -155,7 +155,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAWellFormedButUnknownPendingLogicId_WhenDeleted_ThenApiReturnsNotFound()
 	{
 		// Given — a syntactically valid TinyId that simply names no row
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.DeleteAsync(new Uri($"{PendingLogic}/AAAAAAAAAAA", UriKind.Relative));
@@ -168,7 +168,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenTheOrganizationsRealExportPair_WhenImported_ThenPreviewSucceeds()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PostAsync(Import, Multipart("form-en.json", "form-fr.json"));
@@ -184,7 +184,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAWellFormedJsonFileMissingFields_WhenImported_ThenApiRejects()
 	{
 		// Given — valid JSON, but not shaped like a Typeform export
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent("{\"not\":\"a typeform export\"}"), "english", "bad.json" },
@@ -202,7 +202,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAFileThatIsNotValidJson_WhenImported_ThenApiRejects()
 	{
 		// Given — malformed JSON, not merely the wrong shape
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent("{this is not json"), "english", "bad.json" },
@@ -216,9 +216,9 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
-	private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)
 	{
-		return SignedInClient.AsAsync(_factory, role);
+		return SignedInClient.As(_factory, role);
 	}
 
 	private static MultipartFormDataContent Multipart(string englishFileName, string frenchFileName)

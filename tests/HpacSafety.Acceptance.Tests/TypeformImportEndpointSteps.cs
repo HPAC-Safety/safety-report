@@ -46,7 +46,7 @@ public sealed class TypeformImportEndpointSteps
 	[When(@"an Administrator submits only one of the two files")]
 	public async Task WhenOnlyOneFileIsSubmitted()
 	{
-		_client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
 
 		using var content = new MultipartFormDataContent { { EnglishOnlyContent(), "english", "form.json" } };
 		_response = await _client.PostAsync(Import, content);
@@ -67,7 +67,7 @@ public sealed class TypeformImportEndpointSteps
 	[Given(@"a pending logic note exists from a prior import")]
 	public async Task GivenAPendingLogicNoteExists()
 	{
-		_client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
 
 		using var imported = await _client.PostAsync(Import, MatchedPairContent());
 		var preview = await imported.Content.ReadFromJsonAsync<JsonElement>();
@@ -95,7 +95,7 @@ public sealed class TypeformImportEndpointSteps
 	[Given(@"a pair of Typeform files is imported")]
 	public async Task GivenAPairOfTypeformFilesIsImported()
 	{
-		_client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
 		_response = await _client.PostAsync(Import, MatchedPairContent());
 	}
 
@@ -111,28 +111,28 @@ public sealed class TypeformImportEndpointSteps
 	[Given(@"the question bank has several live questions")]
 	public async Task GivenTheQuestionBankHasSeveralLiveQuestions()
 	{
-		_client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
 
 		var keyA = UniqueKey("acceptance_export_a");
 		var keyB = UniqueKey("acceptance_export_b");
-		await CreateQuestionAsync(_client, keyA);
-		await CreateQuestionAsync(_client, keyB, type: "yes_no");
+		await CreateQuestion(_client, keyA);
+		await CreateQuestion(_client, keyB, type: "yes_no");
 		_originalKeys = [keyA, keyB];
 	}
 
 	[Given(@"a live question has a stable key, a dependency, and a group membership")]
 	public async Task GivenALiveQuestionHasADependencyAndAGroupMembership()
 	{
-		_client = await BootedApi.SignedInAsAsync(MemberRole.Administrator);
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
 
-		var group = await CreateQuestionAsync(_client, UniqueKey("acceptance_export_group"), type: "group", isPrivate: false);
+		var group = await CreateQuestion(_client, UniqueKey("acceptance_export_group"), type: "group", isPrivate: false);
 		var groupId = group.GetProperty("id").GetString()!;
 
-		var parent = await CreateQuestionAsync(_client, UniqueKey("acceptance_export_parent"), type: "yes_no", isPrivate: false);
+		var parent = await CreateQuestion(_client, UniqueKey("acceptance_export_parent"), type: "yes_no", isPrivate: false);
 		var parentId = parent.GetProperty("id").GetString()!;
 
 		_exportedKey = UniqueKey("acceptance_export_child");
-		await CreateQuestionAsync(
+		await CreateQuestion(
 			_client, _exportedKey, dependsOnQuestionId: parentId, groupedUnderQuestionId: groupId, isPrivate: true);
 	}
 
@@ -153,9 +153,9 @@ public sealed class TypeformImportEndpointSteps
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-		using var archive = await OpenExportedZipAsync();
-		var englishJson = await ReadEntryAsync(archive, "form-en.json");
-		var frenchJson = await ReadEntryAsync(archive, "form-fr.json");
+		using var archive = await OpenExportedZip();
+		var englishJson = await ReadEntry(archive, "form-en.json");
+		var frenchJson = await ReadEntry(archive, "form-fr.json");
 
 		TypeformDocument.Parse(englishJson).Fields.ShouldNotBeEmpty();
 		TypeformDocument.Parse(frenchJson).Fields.ShouldNotBeEmpty();
@@ -166,8 +166,8 @@ public sealed class TypeformImportEndpointSteps
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-		using var archive = await OpenExportedZipAsync();
-		var document = TypeformDocument.Parse(await ReadEntryAsync(archive, "form-en.json"));
+		using var archive = await OpenExportedZip();
+		var document = TypeformDocument.Parse(await ReadEntry(archive, "form-en.json"));
 		var field = document.Fields.Single(candidate => candidate.Ref == _exportedKey);
 
 		field.Properties.Hpac.ShouldNotBeNull();
@@ -179,8 +179,8 @@ public sealed class TypeformImportEndpointSteps
 	[Then(@"a plain Typeform file otherwise validates without it")]
 	public async Task ThenAPlainTypeformFileOtherwiseValidates()
 	{
-		using var archive = await OpenExportedZipAsync();
-		var json = await ReadEntryAsync(archive, "form-en.json");
+		using var archive = await OpenExportedZip();
+		var json = await ReadEntry(archive, "form-en.json");
 
 		// A plain Typeform importer, unaware of "hpac", still sees an
 		// ordinary field: ref, title, and type parse from raw JSON regardless.
@@ -199,9 +199,9 @@ public sealed class TypeformImportEndpointSteps
 		_response = await _client!.GetAsync(Export);
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-		using var archive = await OpenExportedZipAsync();
-		var englishJson = await ReadEntryAsync(archive, "form-en.json");
-		var frenchJson = await ReadEntryAsync(archive, "form-fr.json");
+		using var archive = await OpenExportedZip();
+		var englishJson = await ReadEntry(archive, "form-en.json");
+		var frenchJson = await ReadEntry(archive, "form-fr.json");
 
 		using var content = new MultipartFormDataContent
 		{
@@ -227,7 +227,7 @@ public sealed class TypeformImportEndpointSteps
 	[Given(@"a member does not have the Administrator role")]
 	public async Task GivenAMemberDoesNotHaveTheAdministratorRole()
 	{
-		_client = await BootedApi.SignedInAsAsync(MemberRole.User);
+		_client = await BootedApi.SignedInAs(MemberRole.User);
 	}
 
 	[When(@"that member attempts to import or export")]
@@ -244,7 +244,7 @@ public sealed class TypeformImportEndpointSteps
 		_secondResponse!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 	}
 
-	private static async Task<JsonElement> CreateQuestionAsync(
+	private static async Task<JsonElement> CreateQuestion(
 		HttpClient client,
 		string key,
 		string type = "short_text",
@@ -291,13 +291,13 @@ public sealed class TypeformImportEndpointSteps
 	///     this caches the bytes the first time and reopens a fresh archive
 	///     over them every time.
 	/// </summary>
-	private async Task<ZipArchive> OpenExportedZipAsync()
+	private async Task<ZipArchive> OpenExportedZip()
 	{
 		_exportedZipBytes ??= await _response!.Content.ReadAsByteArrayAsync();
 		return new ZipArchive(new MemoryStream(_exportedZipBytes), ZipArchiveMode.Read);
 	}
 
-	private static async Task<string> ReadEntryAsync(ZipArchive archive, string entryName)
+	private static async Task<string> ReadEntry(ZipArchive archive, string entryName)
 	{
 		using var stream = archive.GetEntry(entryName)!.Open();
 		using var reader = new StreamReader(stream);

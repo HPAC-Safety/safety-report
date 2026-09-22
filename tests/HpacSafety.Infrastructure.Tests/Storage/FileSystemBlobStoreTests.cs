@@ -42,7 +42,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 	public async Task GivenUploadUrl_WhenIssued_ThenNotHttpUrlAnythingCouldServe()
 	{
 		// Given / When
-		var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await _store.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// Then
 		url.Scheme.ShouldBe(FileSystemBlobStore.UrlScheme);
@@ -54,17 +54,17 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 	public async Task GivenUploadUrl_WhenPresentedAsReadUrl_ThenRefused()
 	{
 		// Given
-		var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await _store.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// When / Then
-		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteReadAsync(url, CancellationToken.None));
+		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteRead(url, CancellationToken.None));
 	}
 
 	[Fact]
 	public async Task GivenUploadUrl_WhenExpiryIsPushedOutByHand_ThenRefused()
 	{
 		// Given
-		var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await _store.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 		var tampered = new Uri(url.ToString().Replace(
 			$"expires={_clock.GetUtcNow().AddMinutes(5).ToUnixTimeSeconds()}",
 			$"expires={_clock.GetUtcNow().AddYears(1).ToUnixTimeSeconds()}",
@@ -72,21 +72,21 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 
 		// When / Then
 		using var content = new MemoryStream([1, 2, 3]);
-		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUploadAsync(tampered, content, CancellationToken.None));
+		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUpload(tampered, content, CancellationToken.None));
 	}
 
 	[Fact]
 	public async Task GivenUploadUrl_WhenUsedAfterExpires_ThenRefused()
 	{
 		// Given
-		var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await _store.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// When
 		_clock.Advance(TimeSpan.FromMinutes(6));
 
 		// Then
 		using var content = new MemoryStream([1, 2, 3]);
-		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
+		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUpload(url, content, CancellationToken.None));
 	}
 
 	[Fact]
@@ -100,25 +100,25 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 				SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
 			},
 			_clock);
-		var url = await other.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await other.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// When / Then
 		using var content = new MemoryStream([1, 2, 3]);
-		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUploadAsync(url, content, CancellationToken.None));
+		await Should.ThrowAsync<PresignedUrlRejectedException>(() => _store.ExecuteUpload(url, content, CancellationToken.None));
 	}
 
 	[Fact]
 	public async Task GivenUploadThroughSignedUrl_WhenBlobIsRead_ThenSignedContentTypeWasRecorded()
 	{
 		// Given
-		var url = await _store.CreateUploadUrlAsync(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
+		var url = await _store.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);
 
 		// When
 		using var content = new MemoryStream([1, 2, 3]);
-		await _store.ExecuteUploadAsync(url, content, CancellationToken.None);
+		await _store.ExecuteUpload(url, content, CancellationToken.None);
 
 		// Then
-		var recorded = await _store.ReadContentTypeAsync(Photo, CancellationToken.None);
+		var recorded = await _store.ReadContentType(Photo, CancellationToken.None);
 		recorded.ShouldBe(MediaType.Jpeg.ContentType);
 	}
 }

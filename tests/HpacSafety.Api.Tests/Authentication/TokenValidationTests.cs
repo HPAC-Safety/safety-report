@@ -31,7 +31,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 	public async Task GivenDevelopmentToken_WhenAuthenticatedEndpointIsCalled_ThenSubjectAndRoleComeFromValidatedPrincipal()
 	{
 		// Given
-		using var client = await SignedInClient.AsAsync(_factory, MemberRole.Administrator);
+		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
 		using var response = await client.GetAsync(Me);
@@ -75,7 +75,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 	public async Task GivenTokenWhoseSignatureWasAltered_WhenPresented_ThenApiRefuses()
 	{
 		// Given — a real token with one character of its signature changed
-		var real = await SignedInClient.TokenForAsync(_factory, MemberRole.Administrator);
+		var real = await SignedInClient.TokenFor(_factory, MemberRole.Administrator);
 		var segments = real.Split('.');
 		segments[2] = (segments[2][0] == 'A' ? 'B' : 'A') + segments[2][1..];
 		var tampered = string.Join('.', segments);

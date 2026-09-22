@@ -24,9 +24,9 @@ public static class WorkerDatabase
 	private static PostgreSqlContainer? container;
 
 	/// <summary>Creates an empty, migrated database and returns a context open on it.</summary>
-	public static async Task<HpacSafetyDbContext> NewMigratedContextAsync()
+	public static async Task<HpacSafetyDbContext> NewMigratedContext()
 	{
-		var running = await ContainerAsync().ConfigureAwait(false);
+		var running = await Container().ConfigureAwait(false);
 		var name = "db_" + Guid.NewGuid().ToString("n");
 
 		await using (var maintenance = new NpgsqlConnection(running.GetConnectionString()))
@@ -56,7 +56,7 @@ public static class WorkerDatabase
 		return new HpacSafetyDbContext(options);
 	}
 
-	private static async Task<PostgreSqlContainer> ContainerAsync()
+	private static async Task<PostgreSqlContainer> Container()
 	{
 		if (container is not null)
 		{
@@ -83,7 +83,7 @@ public static class WorkerDatabase
 
 	/// <summary>Stops the container once, after the whole run.</summary>
 	[AfterTestRun]
-	public static async Task StopAsync()
+	public static async Task Stop()
 	{
 		if (container is not null)
 		{

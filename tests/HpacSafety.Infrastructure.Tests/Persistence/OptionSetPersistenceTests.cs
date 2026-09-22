@@ -20,7 +20,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 	public async Task GivenSharedList_WhenSaved_ThenRoundTripsWithTinyIdKeys()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var key = UniqueKey("aerodromes");
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))
@@ -47,7 +47,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 	public async Task GivenRemovedItem_WhenListIsReadBack_ThenRowIsRetainedAndFilteredOut()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var key = UniqueKey("provinces");
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))
@@ -81,7 +81,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 	public async Task GivenRevisionBuiltFromList_WhenListIsDeleted_ThenSnapshotSurvivesIntact()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var questionKey = UniqueKey("launch_site");
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))
@@ -129,7 +129,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 	public async Task GivenConditionalQuestion_WhenReadBack_ThenNamesParentQuestion()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var childKey = UniqueKey("injury_detail");
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))
@@ -166,7 +166,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 	public async Task GivenReporterAddedChoice_WhenListIsReadBack_ThenMarkerSurvives()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var key = UniqueKey("sites");
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))
@@ -193,7 +193,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 	{
 		// Given — every row that existed before this column did was authored
 		// by an administrator, which is what the default records
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		var key = UniqueKey("provinces");
 
 		await using (var context = PostgresFixture.ContextFor(connectionString))

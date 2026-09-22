@@ -34,12 +34,12 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUnansweredQuestion_WhenEdited_ThenKeepsItsIdentifier()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("unanswered"));
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("unanswered"));
 		var id = created.GetProperty("id").GetString()!;
 
 		// When
-		var edited = await ReviseAsync(client, id, "Reworded once");
+		var edited = await Revise(client, id, "Reworded once");
 
 		// Then
 		edited.GetProperty("id").GetString().ShouldBe(id);
@@ -50,14 +50,14 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnsweredQuestion_WhenEdited_ThenRetiredAndReplaced()
 	{
 		// Given
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 		var key = UniqueKey("answered");
-		var created = await CreateAsync(client, key);
+		var created = await Create(client, key);
 		var id = created.GetProperty("id").GetString()!;
-		await AnswerAsync(id, "Wind picked up on final.");
+		await Answer(id, "Wind picked up on final.");
 
 		// When
-		var edited = await ReviseAsync(client, id, "Reworded after an answer");
+		var edited = await Revise(client, id, "Reworded after an answer");
 
 		// Then — a new question, carrying the same stable key
 		edited.GetProperty("id").GetString().ShouldNotBe(id);
@@ -65,7 +65,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		edited.GetProperty("labelEn").GetString().ShouldBe("Reworded after an answer");
 
 		// And exactly one live question answers to that key
-		var live = await ListAsync(client);
+		var live = await List(client);
 		live.Count(question => question.GetProperty("key").GetString() == key).ShouldBe(1);
 	}
 
@@ -130,13 +130,13 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnswerOnDeletedReport_WhenQuestionIsEdited_ThenStillForks()
 	{
 		// Given — a deleted report is still a record of what somebody was asked
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("deleted_report"));
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("deleted_report"));
 		var id = created.GetProperty("id").GetString()!;
-		await AnswerAsync(id, "Gusting crosswind.", true);
+		await Answer(id, "Gusting crosswind.", true);
 
 		// When
-		var edited = await ReviseAsync(client, id, "Reworded anyway");
+		var edited = await Revise(client, id, "Reworded anyway");
 
 		// Then
 		edited.GetProperty("id").GetString().ShouldNotBe(id);
@@ -146,11 +146,11 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenRetiredQuestion_WhenEditedAgain_ThenApiRefuses()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("retired_by_fork"));
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("retired_by_fork"));
 		var id = created.GetProperty("id").GetString()!;
-		await AnswerAsync(id, "Thermal collapse.");
-		await ReviseAsync(client, id, "Reworded once");
+		await Answer(id, "Thermal collapse.");
+		await Revise(client, id, "Reworded once");
 
 		// When — the original is retired, and there is no undelete
 		using var response = await client.PutAsJsonAsync(
@@ -177,7 +177,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSafetyOfficerSession_WhenQueueIsRead_ThenApiRefuses()
 	{
 		// Given — the queue spans reports, so it is an Administrator's screen
-		using var client = await SignedInAsync(MemberRole.SafetyOfficer);
+		using var client = await SignedIn(MemberRole.SafetyOfficer);
 
 		// When
 		using var response = await client.GetAsync(Awaiting);
@@ -190,10 +190,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenFlaggedAnswer_WhenAdministratorSuppliesTranslation_ThenItLeavesTheQueue()
 	{
 		// Given
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("site"), "single_select");
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("site"), "single_select");
 		var id = created.GetProperty("id").GetString()!;
-		var answerId = await AnswerAsync(id, "Cooper's Hill");
+		var answerId = await Answer(id, "Cooper's Hill");
 
 		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
 		queued.GetProperty("answers").EnumerateArray()
@@ -224,9 +224,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — ADR-0080 widens the queue to every answer with a value, a
 		// free-text one included, not just select-shaped ones
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("narrative"));
-		var answerId = await AnswerAsync(created.GetProperty("id").GetString()!, "It all happened quickly.");
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("narrative"));
+		var answerId = await Answer(created.GetProperty("id").GetString()!, "It all happened quickly.");
 
 		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
 		queued.GetProperty("answers").EnumerateArray()
@@ -252,9 +252,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnswerWithNoValue_WhenTranslationIsSupplied_ThenApiRefuses()
 	{
 		// Given — a skipped answer has nothing to translate
-		using var client = await SignedInAsync();
-		var created = await CreateAsync(client, UniqueKey("skipped"));
-		var answerId = await AnswerAsync(created.GetProperty("id").GetString()!, value: null);
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("skipped"));
+		var answerId = await Answer(created.GetProperty("id").GetString()!, value: null);
 
 		// When
 		using var response = await client.PutAsJsonAsync(
@@ -271,7 +271,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUnknownAnswerId_WhenTranslationIsSupplied_ThenApiReturnsNotFound(string id)
 	{
 		// Given — a malformed id and a well-formed one that matches no answer
-		using var client = await SignedInAsync();
+		using var client = await SignedIn();
 
 		// When
 		using var response = await client.PutAsJsonAsync(
@@ -286,7 +286,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	///     Writes one report answer straight to the database, because there is no
 	///     submission endpoint to post one through yet.
 	/// </summary>
-	private async Task<string> AnswerAsync(string questionId, string? value, bool deleteReport = false)
+	private async Task<string> Answer(string questionId, string? value, bool deleteReport = false)
 	{
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
@@ -321,9 +321,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		return answer.Id.ToString();
 	}
 
-	private Task<HttpClient> SignedInAsync(MemberRole role = MemberRole.Administrator)
+	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)
 	{
-		return SignedInClient.AsAsync(_factory, role);
+		return SignedInClient.As(_factory, role);
 	}
 
 	private static string UniqueKey(string prefix)
@@ -332,7 +332,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static async Task<JsonElement> CreateAsync(HttpClient client, string key, string type = "long_text")
+	private static async Task<JsonElement> Create(HttpClient client, string key, string type = "long_text")
 	{
 		var options = type is "single_select"
 			? new[] { new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" } }
@@ -357,7 +357,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private static async Task<JsonElement> ReviseAsync(HttpClient client, string id, string labelEn)
+	private static async Task<JsonElement> Revise(HttpClient client, string id, string labelEn)
 	{
 		using var response = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(labelEn));
@@ -381,7 +381,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		};
 	}
 
-	private static async Task<List<JsonElement>> ListAsync(HttpClient client)
+	private static async Task<List<JsonElement>> List(HttpClient client)
 	{
 		var body = await client.GetFromJsonAsync<JsonElement>(Questions);
 		return [.. body.EnumerateArray()];

@@ -31,7 +31,7 @@ public static partial class MigrationRunner
 	/// <param name="context">The context whose schema is migrated.</param>
 	/// <param name="logger">Where the outcome is logged.</param>
 	/// <param name="cancellationToken">Cancels the operation.</param>
-	public static async Task EnsureMigratedAsync(
+	public static async Task EnsureMigrated(
 		this HpacSafetyDbContext context,
 		ILogger logger,
 		CancellationToken cancellationToken = default)

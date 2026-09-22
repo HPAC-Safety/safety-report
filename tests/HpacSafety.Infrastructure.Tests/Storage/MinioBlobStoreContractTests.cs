@@ -63,12 +63,12 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 		await _minio.DisposeAsync();
 	}
 
-	protected override Task<IBlobStore> CreateStoreAsync()
+	protected override Task<IBlobStore> CreateStore()
 	{
 		return Task.FromResult<IBlobStore>(new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = BucketName }, TimeProvider.System));
 	}
 
-	protected override async Task<bool> TryUploadAsync(Uri uploadUrl, byte[] content, string contentType)
+	protected override async Task<bool> TryUpload(Uri uploadUrl, byte[] content, string contentType)
 	{
 		using var body = new ByteArrayContent(content);
 		body.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
@@ -77,7 +77,7 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 		return response.IsSuccessStatusCode;
 	}
 
-	protected override async Task<bool> TryReadAsync(Uri readUrl)
+	protected override async Task<bool> TryRead(Uri readUrl)
 	{
 		using var response = await _http.GetAsync(readUrl, CancellationToken.None);
 		return response.IsSuccessStatusCode;

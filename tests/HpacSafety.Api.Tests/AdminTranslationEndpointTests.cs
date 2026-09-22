@@ -42,7 +42,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		await using var factory = WithTranslator(new FakeTranslator());
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		var body = await client.GetFromJsonAsync<JsonElement>(Translate);
@@ -57,7 +57,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — a developer's server with no credential
 		await using var factory = WithTranslator(new EchoTranslator());
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		var body = await client.GetFromJsonAsync<JsonElement>(Translate);
@@ -73,7 +73,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		await using var factory = WithTranslator(new EchoTranslator());
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When — the browser posts and the endpoint answers exactly as in
 		// production; only the adapter differs
@@ -91,7 +91,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given — the ordinary state of a checkout with no credential
 		await using var factory = WithTranslator(new FakeTranslator { Configured = false });
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		var body = await client.GetFromJsonAsync<JsonElement>(Translate);
@@ -105,7 +105,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		await using var factory = WithTranslator(new FakeTranslator());
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(Translate, Request(["One", "Two"]));
@@ -125,7 +125,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		// Given — an administrator may leave the help text empty
 		var translator = new FakeTranslator();
 		await using var factory = WithTranslator(translator);
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(Translate, Request(["Label", "", "   ", "Option"]));
@@ -146,7 +146,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var translator = new FakeTranslator();
 		await using var factory = WithTranslator(translator);
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(Translate, Request(["", "  "]));
@@ -162,7 +162,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var translator = new FakeTranslator();
 		await using var factory = WithTranslator(translator);
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -183,7 +183,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		await using var factory = WithTranslator(new FakeTranslator());
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -202,7 +202,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 			Failure = new TranslationUnavailableException("The translation service answered 403.")
 		});
 
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]));
@@ -223,7 +223,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		var translator = new FakeTranslator();
 		await using var factory = WithTranslator(translator);
-		using var client = await SignedInAsync(factory);
+		using var client = await SignedIn(factory);
 
 		// When
 		using var response = await client.PostAsJsonAsync(
@@ -249,9 +249,9 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 			}));
 	}
 
-	private static Task<HttpClient> SignedInAsync(WebApplicationFactory<Program> factory)
+	private static Task<HttpClient> SignedIn(WebApplicationFactory<Program> factory)
 	{
-		return SignedInClient.AsAsync(factory, MemberRole.Administrator);
+		return SignedInClient.As(factory, MemberRole.Administrator);
 	}
 
 	/// <summary>
@@ -274,7 +274,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 
 		public bool IsConfigured => Configured;
 
-		public Task<IReadOnlyList<string>> TranslateAsync(
+		public Task<IReadOnlyList<string>> Translate(
 			IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
 		{
 			Calls++;

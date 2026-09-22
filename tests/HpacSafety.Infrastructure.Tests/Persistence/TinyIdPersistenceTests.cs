@@ -21,7 +21,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 	public async Task GivenMigratedDatabase_WhenEveryIdentifierColumnIsRead_ThenAllOfThemAreSameElevenCharacterType()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 
 		// When — every primary key and every column that references one.
 		await using var connection = new NpgsqlConnection(connectionString);
@@ -52,7 +52,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 	public async Task GivenSavedReport_WhenIdentifierIsReadOutOfPostgres_ThenElevenCharactersOfAlphabet()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var report = new Report(Locale.EnCa, At);
 		context.Reports.Add(report);
@@ -77,7 +77,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		// Given — a collision at sixty-six bits is vanishingly unlikely, which
 		// is not the same as handled. Forced here, because waiting for one is
 		// not a test.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var first = new Report(Locale.EnCa, At);
 		context.Reports.Add(first);
@@ -105,7 +105,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 	{
 		// Given — the report endpoint writes a report and its outbox row in one
 		// transaction. A retry must not cost ADR-0002's guarantee.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var first = new Report(Locale.EnCa, At);
 		context.Reports.Add(first);
@@ -137,7 +137,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		// EF cannot fix it up. A retry that left it pointing at the identifier
 		// the report lost would commit a message about a report that is not
 		// there.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var first = new Report(Locale.EnCa, At);
 		context.Reports.Add(first);
@@ -168,7 +168,7 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		// fixup — which would otherwise treat two tracked Summary instances
 		// sharing one ReportId as replacing each other — cannot mask the real
 		// constraint the database enforces.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var report = new Report(Locale.EnCa, At);
 		context.Reports.Add(report);

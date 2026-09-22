@@ -39,12 +39,12 @@ public class WorkerTests
 	///     and returns the log it produced.
 	/// </summary>
 	/// <remarks>
-	///     The claim loop runs until <c>StopAsync</c> cancels it, so
+	///     The claim loop runs until <c>Stop</c> cancels it, so
 	///     <c>ExecuteTask</c> no longer completes on its own the way the pre-loop
 	///     scaffolding did — this waits for the one observable side effect
 	///     (the started log) instead of for the task to finish.
 	/// </remarks>
-	private static async Task<FakeLogger<Worker>> RunAndStopAsync()
+	private static async Task<FakeLogger<Worker>> RunAndStop()
 	{
 		var logger = new FakeLogger<Worker>();
 		var worker = new Worker(BuildScopeFactory(), TimeProvider.System, logger);
@@ -66,7 +66,7 @@ public class WorkerTests
 	public async Task GivenWorker_WhenRuns_ThenLogsStarted()
 	{
 		// Given / When
-		var logger = await RunAndStopAsync();
+		var logger = await RunAndStop();
 
 		// Then
 		logger.Collector.Count.ShouldBeGreaterThanOrEqualTo(1);
@@ -77,7 +77,7 @@ public class WorkerTests
 	public async Task GivenWorker_WhenRuns_ThenStartRecordIsInformational()
 	{
 		// Given / When
-		var logger = await RunAndStopAsync();
+		var logger = await RunAndStop();
 
 		// Then
 		logger.LatestRecord.Level.ShouldBe(LogLevel.Information);

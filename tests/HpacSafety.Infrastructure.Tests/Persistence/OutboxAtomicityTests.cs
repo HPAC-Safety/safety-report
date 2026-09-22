@@ -24,9 +24,9 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 	public async Task GivenReportAndOutboxMessage_WhenTheyAreSavedInOneCall_ThenBothRowsArePresent()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
-		var report = await SubmittedReportAsync(context);
+		var report = await SubmittedReport(context);
 		context.Reports.Add(report);
 		context.OutboxMessages.Add(SummarizationRequestFor(report));
 
@@ -44,9 +44,9 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 	public async Task GivenReportAndOutboxMessage_WhenTransactionIsRolledBack_ThenNeitherRowIsPresent()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
-		var report = await SubmittedReportAsync(context);
+		var report = await SubmittedReport(context);
 
 		// When
 		await using (var transaction = await context.Database.BeginTransactionAsync())
@@ -70,9 +70,9 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		// Given — an answer pointing at a question version that is not there.
 		// The database refuses it, and the report and the outbox row have to go
 		// with it rather than being left behind without their trigger.
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
-		var report = await SubmittedReportAsync(context);
+		var report = await SubmittedReport(context);
 		var orphan = OrphanedQuestion();
 		report.Answer(orphan, "A gust on final; the pilot walked away.", At);
 
@@ -92,9 +92,9 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 	public async Task GivenOutboxMessage_WhenReadBack_ThenDueAndHasNeverBeenAttempted()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
-		var report = await SubmittedReportAsync(context);
+		var report = await SubmittedReport(context);
 		context.Reports.Add(report);
 		context.OutboxMessages.Add(SummarizationRequestFor(report));
 		await context.SaveChangesAsync();
@@ -116,7 +116,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		return new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, $$"""{"reportId":"{{report.Id}}"}""", At);
 	}
 
-	private static async Task<Report> SubmittedReportAsync(HpacSafetyDbContext context)
+	private static async Task<Report> SubmittedReport(HpacSafetyDbContext context)
 	{
 		var report = new Report(Locale.EnCa, At);
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);

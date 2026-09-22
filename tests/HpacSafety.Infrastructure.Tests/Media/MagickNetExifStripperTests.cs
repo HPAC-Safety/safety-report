@@ -49,7 +49,7 @@ public class MagickNetExifStripperTests
 		// When
 		using var source = new MemoryStream(original);
 		using var destination = new MemoryStream();
-		await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+		await _stripper.Strip(source, destination, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		using var stripped = new MagickImage(destination.ToArray());
@@ -74,7 +74,7 @@ public class MagickNetExifStripperTests
 		// When
 		using var source = new MemoryStream(original);
 		using var destination = new MemoryStream();
-		await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+		await _stripper.Strip(source, destination, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		var derivative = destination.ToArray();
@@ -97,7 +97,7 @@ public class MagickNetExifStripperTests
 		// When
 		using var source = new MemoryStream(original);
 		using var destination = new MemoryStream();
-		await _stripper.StripAsync(source, destination, MediaType.Heic, CancellationToken.None);
+		await _stripper.Strip(source, destination, MediaType.Heic, CancellationToken.None);
 
 		// Then
 		// HEIC cannot be encoded here, and a reviewer needs something every
@@ -118,7 +118,7 @@ public class MagickNetExifStripperTests
 		using var destination = new MemoryStream();
 
 		// When
-		await _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None);
+		await _stripper.Strip(source, destination, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		using var stripped = new MagickImage(destination.ToArray());
@@ -137,7 +137,7 @@ public class MagickNetExifStripperTests
 		// When / Then
 		// Nothing can strip a video yet - see #65 - and producing a derivative
 		// that had not been stripped would be the leak.
-		await Should.ThrowAsync<NotSupportedException>(() => _stripper.StripAsync(source, destination, MediaType.Mp4, CancellationToken.None));
+		await Should.ThrowAsync<NotSupportedException>(() => _stripper.Strip(source, destination, MediaType.Mp4, CancellationToken.None));
 		destination.Length.ShouldBe(0);
 	}
 
@@ -149,6 +149,6 @@ public class MagickNetExifStripperTests
 		using var destination = new MemoryStream();
 
 		// When / Then
-		await Should.ThrowAsync<MagickException>(() => _stripper.StripAsync(source, destination, MediaType.Jpeg, CancellationToken.None));
+		await Should.ThrowAsync<MagickException>(() => _stripper.Strip(source, destination, MediaType.Jpeg, CancellationToken.None));
 	}
 }

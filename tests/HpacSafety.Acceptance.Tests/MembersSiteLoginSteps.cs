@@ -73,7 +73,7 @@ public sealed class MembersSiteLoginSteps
 		var email = _administratorEmail ?? _safetyOfficerEmail ?? _loginEmail
 			?? throw new InvalidOperationException("No email was set up by a preceding Given step.");
 
-		var client = await BootedApi.MembersSiteStubbedAsync(
+		var client = await BootedApi.MembersSiteStubbed(
 			new StubTransport(LoginPage(), Redirect()),
 			administratorEmails: _administratorEmail is null ? null : [_administratorEmail],
 			safetyOfficerEmails: _safetyOfficerEmail is null ? null : [_safetyOfficerEmail]);
@@ -85,7 +85,7 @@ public sealed class MembersSiteLoginSteps
 	[When(@"a login is attempted with credentials the members site does not accept")]
 	public async Task WhenLoginAttemptedWithBadCredentials()
 	{
-		var client = await BootedApi.MembersSiteStubbedAsync(new StubTransport(LoginPage(), LoginPage()));
+		var client = await BootedApi.MembersSiteStubbed(new StubTransport(LoginPage(), LoginPage()));
 
 		_response = await client.PostAsJsonAsync(
 			"/api/auth/token", new { username = "nobody-special@example.test", password = "wrong-password" });
@@ -94,7 +94,7 @@ public sealed class MembersSiteLoginSteps
 	[When(@"the members site cannot be reached during a login attempt")]
 	public async Task WhenMembersSiteCannotBeReached()
 	{
-		var client = await BootedApi.MembersSiteStubbedAsync(
+		var client = await BootedApi.MembersSiteStubbed(
 			new StubTransport(new HttpRequestException("no route to host")));
 
 		_response = await client.PostAsJsonAsync(
@@ -143,7 +143,7 @@ public sealed class MembersSiteLoginSteps
 	[Given(@"repeated sign-in attempts arrive for the same username")]
 	public async Task GivenRepeatedSignInAttemptsForTheSameUsername()
 	{
-		var limited = (await BootedApi.RateLimitedAsync("SignIn")).CreateClient();
+		var limited = (await BootedApi.RateLimited("SignIn")).CreateClient();
 
 		// The one permit this policy allows — consumed here so the next attempt
 		// is the one that exceeds it. A wrong password still consumes it: the

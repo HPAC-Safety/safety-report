@@ -22,7 +22,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 	public async Task GivenDueUnclaimedMessage_WhenClaimed_ThenHandlerRunsAndMessageIsMarkedProcessed()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, "payload", At);
 		context.OutboxMessages.Add(message);
@@ -31,7 +31,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		var handled = false;
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(
+		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
 			(_, _) =>
 			{
@@ -53,13 +53,13 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 	public async Task GivenMessageOfAnotherType_WhenClaimingADifferentType_ThenNothingIsClaimed()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		context.OutboxMessages.Add(new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, "payload", At));
 		await context.SaveChangesAsync();
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(
+		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
 			(_, _) => throw new InvalidOperationException("Nothing of this type should have been claimed."),
 			CancellationToken.None);
@@ -72,11 +72,11 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 	public async Task GivenNoMessagesDue_WhenClaiming_ThenReturnsFalse()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(
+		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
 			(_, _) => Task.CompletedTask,
 			CancellationToken.None);
@@ -89,7 +89,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 	public async Task GivenMessageNotYetDue_WhenClaiming_ThenNothingIsClaimed()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var future = At.AddMinutes(5);
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, "payload", future);
@@ -97,7 +97,7 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		await context.SaveChangesAsync();
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(
+		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
 			(_, _) => throw new InvalidOperationException("A not-yet-due message should not have been claimed."),
 			CancellationToken.None);
@@ -110,14 +110,14 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 	public async Task GivenHandlerThrows_WhenClaimed_ThenFailureIsRecordedAndMessageStaysUnprocessed()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, "payload", At);
 		context.OutboxMessages.Add(message);
 		await context.SaveChangesAsync();
 
 		// When
-		var claimed = await OutboxClaimer.ClaimNextAsync(
+		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
 			(_, _) => throw new InvalidOperationException("The translation provider is unreachable."),
 			CancellationToken.None);

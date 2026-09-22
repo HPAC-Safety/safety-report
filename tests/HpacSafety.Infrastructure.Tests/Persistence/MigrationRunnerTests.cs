@@ -18,14 +18,14 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
 	public async Task GivenFreshDatabase_WhenTwoProcessesCallEnsureMigratedAsyncConcurrently_ThenBothSucceedAndSchemaIsMigratedOnce()
 	{
 		// Given
-		var connectionString = await postgres.CreateDatabaseAsync();
+		var connectionString = await postgres.CreateDatabase();
 		await using var first = PostgresFixture.ContextFor(connectionString);
 		await using var second = PostgresFixture.ContextFor(connectionString);
 
 		// When
 		await Task.WhenAll(
-			first.EnsureMigratedAsync(NullLogger.Instance),
-			second.EnsureMigratedAsync(NullLogger.Instance));
+			first.EnsureMigrated(NullLogger.Instance),
+			second.EnsureMigrated(NullLogger.Instance));
 
 		// Then
 		await using var verify = PostgresFixture.ContextFor(connectionString);
@@ -37,12 +37,12 @@ public sealed class MigrationRunnerTests(PostgresFixture postgres)
 	public async Task GivenAlreadyMigratedDatabase_WhenEnsureMigratedAsyncRunsAgain_ThenNoOp()
 	{
 		// Given
-		var connectionString = await postgres.CreateMigratedDatabaseAsync();
+		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = PostgresFixture.ContextFor(connectionString);
 
 		// When / Then — a second application on top of a fully migrated schema
 		// must not throw, which is the case a Worker restart after the API has
 		// already migrated exercises.
-		await Should.NotThrowAsync(() => context.EnsureMigratedAsync(NullLogger.Instance));
+		await Should.NotThrowAsync(() => context.EnsureMigrated(NullLogger.Instance));
 	}
 }

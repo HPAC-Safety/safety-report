@@ -37,11 +37,11 @@ public sealed partial class Worker(IServiceScopeFactory scopeFactory, TimeProvid
 				foreach (var processor in processors)
 				{
 					var claimed = await OutboxClaimer
-						.ClaimNextAsync(
+						.ClaimNext(
 							database,
 							processor.HandlesType,
 							clock.GetUtcNow(),
-							processor.ProcessAsync,
+							processor.Process,
 							stoppingToken)
 						.ConfigureAwait(false);
 

@@ -33,7 +33,7 @@ public sealed class AuthorizationSteps
 	[Given(@"the API is not running in development")]
 	public async Task GivenProductionShapedHost()
 	{
-		var host = await BootedApi.ProductionShapedAsync();
+		var host = await BootedApi.ProductionShaped();
 		_client = host.CreateClient();
 		_productionShaped = true;
 	}
@@ -41,7 +41,7 @@ public sealed class AuthorizationSteps
 	[Given(@"a request carries no bearer token")]
 	public async Task GivenNoBearerToken()
 	{
-		var host = await BootedApi.FactoryAsync();
+		var host = await BootedApi.Factory();
 		_client = host.CreateClient();
 	}
 
@@ -52,7 +52,7 @@ public sealed class AuthorizationSteps
 		// case the UI would hide the Admin menu for — and hiding it is not the
 		// boundary (ADR-0048).
 		_role = MemberRole.User;
-		_client = await BootedApi.SignedInAsAsync(_role);
+		_client = await BootedApi.SignedInAs(_role);
 		_response = await _client.GetAsync(Questions);
 	}
 
@@ -63,7 +63,7 @@ public sealed class AuthorizationSteps
 	public async Task GivenMemberHasRole(string role)
 	{
 		_role = Enum.Parse<MemberRole>(role);
-		_client = await BootedApi.SignedInAsAsync(_role);
+		_client = await BootedApi.SignedInAs(_role);
 	}
 
 	[When(@"the development token endpoint is called")]

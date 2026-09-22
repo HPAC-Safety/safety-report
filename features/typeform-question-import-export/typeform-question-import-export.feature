@@ -14,17 +14,23 @@ Scenario: Import requires both languages
   Then the import is rejected
   And no draft is produced
 
-@ignore
-Scenario: Every field must be matched across both files
+Scenario: A field's ref appears in the English file but not the French one
   Given a field's ref appears in the English file but not the French one
-  When an Administrator submits the pair
-  Then the import is rejected before any draft is produced
-  And the rejection names the unmatched ref
+  When the pair is mapped
+  Then a draft is still produced for that field
+  And its French text defaults to the English text
+  And the draft is flagged that French still needs review
 
-@ignore
+Scenario: A choice's ref appears in the English file but not the French one
+  Given a multiple_choice field's choice ref appears in the English file but not the French one
+  When the pair is mapped
+  Then a draft is still produced with that choice
+  And the choice's French label defaults to its English label
+  And the choice is flagged that French still needs review
+
 Scenario Outline: A Typeform field type maps to a question type
   Given a Typeform field of type <typeform_type>
-  When the pair is imported
+  When the pair is mapped
   Then it produces a draft of type <question_type>
 
 Examples:
@@ -39,61 +45,53 @@ Examples:
   | dropdown        | single_select |
   | statement       | statement     |
 
-@ignore
 Scenario: A single-select multiple-choice field imports as single-select
   Given a Typeform multiple_choice field that does not allow multiple selection
-  When the pair is imported
-  Then it produces a single-select draft with a new shared choice list seeded from its choices
+  When the pair is mapped
+  Then it produces a single-select draft seeded from its choices
 
-@ignore
 Scenario: A multi-select multiple-choice field imports as multi-select
   Given a Typeform multiple_choice field that allows multiple selection
-  When the pair is imported
-  Then it produces a multi-select draft with a new shared choice list seeded from its choices
+  When the pair is mapped
+  Then it produces a multi-select draft seeded from its choices
+  And reporter additions are not enabled
 
-@ignore
 Scenario: A multi-select field with a free-text choice enables reporter additions
   Given a Typeform multiple_choice field that allows multiple selection and an other choice
-  When the pair is imported
+  When the pair is mapped
   Then it produces a multi-select draft with reporter additions enabled
 
-@ignore
 Scenario: A group field flattens into a heading and its children
   Given a Typeform group field containing several nested fields
-  When the pair is imported
+  When the pair is mapped
   Then it produces one group draft from the field's title
   And one draft per nested field, each grouped under it
 
-@ignore
 Scenario: A contact-info field flattens the same way a group does
   Given a Typeform contact_info field containing name, phone, and email subfields
-  When the pair is imported
+  When the pair is mapped
   Then it produces one group draft from the field's title
   And one draft per subfield, each grouped under it
 
-@ignore
 Scenario: The generated answer-recap screen is not imported
   Given a Typeform statement field whose description only interpolates other fields
-  When the pair is imported
+  When the pair is mapped
   Then no draft is produced for it
 
-@ignore
 Scenario: A field type with no equivalent is rejected, not silently dropped
   Given a Typeform field of a type this system does not support
-  When the pair is imported
+  When the pair is mapped
   Then the import report lists it as not imported
   And no draft is produced for it
 
-@ignore
-Scenario: Branching logic reducible to one yes/no gate imports as a dependency
-  Given a Typeform field whose jump logic depends only on one yes/no field's answer
-  When the pair is imported
-  Then the produced draft is conditional on that field
+Scenario: A field with only linear flow is not flagged as branching logic
+  Given a Typeform field whose jump logic has only its unconditional fallback action
+  When the pair is mapped
+  Then no pending logic note is recorded for that field
 
-@ignore
-Scenario: Branching logic beyond one yes/no gate is flagged, not silently dropped
-  Given a Typeform field whose jump logic combines more than one condition
-  When the pair is imported
+Scenario: Any real branching condition is flagged, not silently dropped or auto-mapped
+  Given a Typeform field whose jump logic includes a real condition
+  When the pair is mapped
   Then the produced draft is unconditional
   And a pending logic note is recorded naming that field and its original logic
 
@@ -108,11 +106,10 @@ Scenario: Import never saves a question by itself
   Given a pair of Typeform files is imported
   Then no question exists in the bank until an Administrator reviews and saves its draft
 
-@ignore
-Scenario: The imported stable key comes from the Typeform ref
+Scenario: The imported draft's key comes from the Typeform ref
   Given a Typeform field with a given ref
-  When its draft is saved for the first time
-  Then the question's stable key equals that ref
+  When the pair is mapped
+  Then the produced draft's key is that ref, normalized
 
 @ignore
 Scenario: Re-importing the same form updates in place

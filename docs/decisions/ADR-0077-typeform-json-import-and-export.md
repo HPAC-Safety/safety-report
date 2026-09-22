@@ -7,6 +7,10 @@ keywords: typeform, import, export, question bank, bilingual, seeding, ref, exte
 
 # ADR-0077 — Question bank import/export uses Typeform's own JSON, not QSF
 
+**Status:** Amended by [ADR-0078](ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md):
+the EN/FR pairing rule and the branching-logic mapping, both below, changed
+once the mapper was built against real data. Everything else here stands.
+
 ## Context
 
 The question bank is authored one question at a time through `QuestionEditor`.
@@ -40,6 +44,11 @@ choice-level `ref` GUID is exactly that (`id` differs per language export;
 `ref` present in one file must be present in the other; a `ref` missing from
 either side is a **hard import error**, reported before anything is parsed
 into a draft — this is a paired authoring source, not a best-effort merge.
+
+**Amended by ADR-0078**: the organization's real export pair fails this
+exact rule on one field. Import is English-led instead — French fills in by
+`ref`, and a missing side defaults to English, flagged, rather than
+rejecting the pair.
 
 ### Import produces review drafts, never persisted rows
 
@@ -76,8 +85,7 @@ existing question rather than creating a duplicate.
 | `multiple_choice`, multi-select, no `allow_other_choice` | `MultiSelect`, new `OptionSet` seeded from `Choices` |
 | `multiple_choice`, multi-select, `allow_other_choice: true` | `MultiSelect`, new `OptionSet`, reporter-addition enabled ([ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md) amendment, below) |
 | `dropdown` | `SingleSelect` — dropdown-versus-radio is presentation, per the existing `QuestionType` doc comment, so this is a disclosed, deliberate lossy point: export always re-emits `multiple_choice`, never `dropdown` |
-| `logic[]` reducible to one yes/no-parent "answered yes" gate | `DependsOnQuestionId` |
-| Any other `logic[]` shape (multi-field AND/OR, a multi-select parent, an OR across option values) | not imported as a condition — see below |
+| Any `logic[]` field with a real condition (single or multi-condition alike — see [ADR-0078](ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md)) | not imported as a condition — see below |
 | Matrix, slider, rank-order, constant-sum, or any other field type Typeform can emit but the sample does not use | rejected, listed in the import report as unsupported |
 
 `OptionSet`s are always created fresh per imported question, never merged into
@@ -140,6 +148,10 @@ never regenerates a `dropdown` Typeform field (see the type-mapping table
 above); that distinction is not preserved.
 
 ### Unsupported branching logic is never silently dropped
+
+**Amended by ADR-0078**: no branching logic is auto-mapped, not even the
+"single yes/no gate" case this ADR originally called supported — every
+field with a real (non-`"always"`) condition goes through the path below.
 
 A `logic[]` shape this ADR's mapping table does not cover still imports its
 question — unconditionally, so the rest of its content is not lost — but its
@@ -216,6 +228,7 @@ safety. The pending-logic note keeps it recoverable.
 
 ## Related
 
+- [ADR-0078](ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md) — amends the EN/FR pairing rule and the branching-logic mapping
 - [ADR-0076](ADR-0076-statement-and-group-question-types.md) — `Statement`/`Group`, `GroupedUnderQuestionId`
 - [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md) — amended here to cover `MultiSelect`
 - [ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md) — precedent for naming scope boundaries explicitly

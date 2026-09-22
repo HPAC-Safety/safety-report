@@ -20,6 +20,27 @@ architectural decision still gets an ADR, and the lesson cites it. A fix that
 changes user-facing behavior still gets a scenario, and the lesson cites its
 claim ID.
 
+## Two kinds, and what each one owes
+
+**A product lesson** is about what the system does. Its remedy is a claim: a
+scenario is added or corrected, and the lesson cites the claim ID that now
+proves it. It does not change a skill — restating product behavior in a skill
+creates a second place for it to drift from `/features`.
+
+**A process lesson** is about how we work: tooling, CI, hooks, conventions, the
+delivery workflow, what an agent is expected to do. No scenario can prove it,
+so it has no claim to add. Its remedy is a **skill** — the one that would have
+prevented it — updated in the same pull request as the lesson. The skill states
+the general rule; the lesson keeps the incident.
+
+An agent reads the skills before it starts. It does not read this index looking
+for a mistake it has not made yet, which is why a process lesson that stops
+here is a story rather than a rule
+([ADR-0085](../decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+
+Some lessons are genuinely one-off and produce neither. Say so in the lesson
+rather than inventing a rule to hang on a skill.
+
 ## The shape
 
 One file per lesson, `NNNN-kebab-slug.md`, numbered in the order they are
@@ -32,13 +53,16 @@ four things and stops:
   written, the guard moved.
 - **Scenario** — the claim ID that now proves it, or an explicit statement that
   no scenario can.
+- **Skill** — for a process lesson, the skill that now carries the general rule
+  and what it says. A product lesson writes "none — the claim is the remedy."
+
 
 A lesson that turns out to be wrong is corrected in place, or marked superseded
 in its frontmatter status, like an ADR.
 
 ## Index
 
-| Lesson | What it cost us |
-|---|---|
-| [0001 — A guard that lives only in CI is not a guard](0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md) | 38 failing tests on every fresh clone, invisible to CI |
-| [0002 — Provenance that hashes only one side of a pair](0002-provenance-that-hashes-only-one-side-of-a-pair.md) | Hand-written French silently overwritten by the translator |
+| Lesson | What it cost us | Remedy |
+|---|---|---|
+| [0001 — A guard that lives only in CI is not a guard](0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md) | 38 failing tests on every fresh clone, invisible to CI | `hpac-safety-conventions` |
+| [0002 — Provenance that hashes only one side of a pair](0002-provenance-that-hashes-only-one-side-of-a-pair.md) | Hand-written French silently overwritten by the translator | `localize-hpac-app` |

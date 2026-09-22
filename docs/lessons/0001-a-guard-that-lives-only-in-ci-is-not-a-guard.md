@@ -51,3 +51,9 @@ No scenario. This is a property of the test suite rather than of the system, so
 nothing in `features/` can assert it. `UiScenarioHooksTests` guards the hook
 directly, precisely because CI's filter would hide its removal — which is the
 same failure mode one level up.
+
+## Skill
+
+[`hpac-safety-conventions`](../../skills/hpac-safety-conventions/SKILL.md)
+carries the general rule: put a rule where it runs, not only where it is
+checked — the CI step is the backstop, never the mechanism.

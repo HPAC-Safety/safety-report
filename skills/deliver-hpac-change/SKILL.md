@@ -100,6 +100,16 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   symptom, root cause, spec delta, and the claim that now proves it
   ([ADR-0085](../../docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
   A fix that reveals nothing does not.
+- When that lesson is about the **development process** — tooling, CI, hooks,
+  conventions, the delivery workflow, how agents are expected to work — it also
+  updates the skill that would have prevented it, in the same pull request, and
+  names that skill in its `## Skill` section. The skill states the general
+  rule; the lesson keeps the incident. An agent reads the skills before it
+  starts and does not read the lessons index looking for a mistake it has not
+  made yet.
+- A lesson about **product requirements** does not change a skill. Its remedy
+  is a claim and a scenario, and restating product behavior in a skill creates
+  a second place for it to drift from `/features`.
 - ADRs are historical rationale, one per durable architectural decision
   (technology choice, rejected alternative, durable trade-off). This is
   mandatory, not discretionary — if a change makes such a decision, add the ADR

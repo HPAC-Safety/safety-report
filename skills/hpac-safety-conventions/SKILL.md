@@ -46,5 +46,13 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
 10. Never log DTO bodies, answers, private context, prompts/responses,
    credentials/tokens, client filenames, or attachment URLs.
 
+11. Put a rule where it runs, not only where it is checked. A convention
+   enforced by a flag on a CI command line holds in CI and nowhere else — a
+   developer's first `dotnet test`, an IDE run, and another agent's session all
+   escape it. Enforce it in the code, a hook, or the tool that owns the
+   artifact, and keep the CI step as a backstop rather than as the mechanism
+   ([lesson 0001](../../docs/lessons/0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md),
+   [ADR-0073](../../docs/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
+
 Before finishing, run the narrowest relevant checks, inspect the diff for
 unrelated changes, and update `/features` whenever the target design changes.

@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-270 claims across 8 areas: 181 covered by a step definition today, 89 still `@ignore`. 50 constraints.
+271 claims across 8 areas: 182 covered by a step definition today, 89 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -207,6 +207,7 @@ type: guide
 | `REQ-QB-092` | question-bank-and-form | A choice an Administrator writes is recorded under a code derived from its English wording | playwright-bdd | Covered |
 | `REQ-QB-094` | question-bank-and-form | A reporter answering in French adds a choice recorded in French | Reqnroll | Covered |
 | `REQ-QB-095` | question-bank-and-form | Submitting a report records a type-ahead value the list did not offer | Reqnroll | Covered |
+| `REQ-QB-093` | question-bank-and-form | Editing a question opens the editor in that question's place | playwright-bdd | Covered |
 | `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Covered |
 | `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Covered |
 | `REQ-SUB-003` | report-submission | Expired local state is not restored | playwright-bdd | Covered |

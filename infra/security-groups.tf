@@ -74,7 +74,7 @@ resource "aws_security_group" "worker" {
 
 resource "aws_vpc_security_group_egress_rule" "worker_all" {
   security_group_id = aws_security_group.worker.id
-  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, SES, and the Anthropic API."
+  description       = "Outbound to RDS, Secrets Manager, ECR, CloudWatch, SES, and the Gemini API."
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }

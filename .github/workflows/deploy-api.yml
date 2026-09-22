@@ -54,10 +54,10 @@ jobs:
   #   ECS_CLUSTER                 Deploy target cluster
   #   ECS_SERVICE_API             Deploy target service
   #
-  # Runtime secrets — ANTHROPIC_API_KEY, ConnectionStrings__Default,
-  # Notifications__To — are NOT here. They live in
-  # AWS Secrets Manager and are injected into the task definition. Putting them
-  # in GitHub would spread them for no reason. See docs/deployment.md.
+  # Runtime secrets — ConnectionStrings__Default, Notifications__To — are NOT
+  # here. They live in AWS Secrets Manager and are injected into the task
+  # definition. Putting them in GitHub would spread them for no reason. See
+  # docs/deployment.md.
   #
   # Translation__ApiKey is the exception, by an explicit decision (ADR-0062):
   # the DeepL credential already exists as the DEEPL_API_KEY repository secret

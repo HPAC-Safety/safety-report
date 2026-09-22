@@ -44,9 +44,19 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   Multiple agents may be working in this repository at once; a worktree per
   issue means no agent ever switches a branch out from under another one's
   in-progress checkout.
-- Do all work for the issue inside that worktree. Never leave it in place
-  after a push — see "Verify and publish" for exactly when it comes down and
-  how it comes back if a check fails.
+- Push the branch to `origin` the moment it exists, before any work begins:
+  `git push -u origin issue-<number>/<short-description>` from inside the
+  worktree. This also replaces the `origin/main` upstream that
+  `git worktree add` sets, so a later bare `git push` targets the issue branch.
+- Commit and push each unit of work as soon as it is complete — a scenario
+  written, a test passing, a step definition wired up, a document updated —
+  rather than holding everything until the change is ready for a pull request.
+  The first commit never waits for the whole change to be finished. Work that
+  exists only in a local worktree is invisible to other agents and
+  contributors and is lost if the worktree or session goes away.
+- Do all work for the issue inside that worktree. Remove it once the pull
+  request is open — see "Verify and publish" for exactly when it comes down
+  and how it comes back if a check fails.
 - Read the affected `/features` pages before editing. Update them first if the
   target behavior is changing.
 - Preserve unrelated work in a dirty tree.
@@ -95,8 +105,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 
 1. Run focused tests, then the repository checks proportional to risk.
 2. Inspect `git diff --check`, links, generated artifacts, and `git status`.
-3. Commit with a concise imperative message and no co-author trailer.
-4. Push and open a pull request with a squash-ready title.
+3. Commit any remaining work with a concise imperative message and no
+   co-author trailer, and push. Earlier units of work are already committed
+   and pushed (see "Start"); this is the last of them, not the first.
+4. Open a pull request with a squash-ready title.
 5. Put `Closes #<number>` on its own line in the PR body, and name the
    scenarios the change satisfies. If it built anything the specification does
    not describe, either the specification was incomplete — fix it — or the
@@ -126,7 +138,8 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 9. Watch required checks from the primary checkout. If one fails, recreate the
    worktree on the *same* branch (no `-b`, it already exists —
    `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`),
-   fix, push, repeat step 7, then remove the worktree again. Finish only when
+   fix, committing and pushing each fix as it lands, repeat step 7, then
+   remove the worktree again. Finish only when
    checks are green and no worktree remains.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,

@@ -196,11 +196,24 @@ public sealed class ReportSubmissionEndpointSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
-	[Then(@"a type-ahead, or a multi-select with reporter additions allowed, backed by a live shared list also accepts a value the list does not yet offer")]
-	public void ThenATypeAheadAlsoAcceptsAnUnlistedValue()
+	// A multi-select with reporter additions allowed is REQ-QB-042, not built yet.
+	[Then(@"a type-ahead backed by a live shared list also accepts a value the list does not yet offer")]
+	public async Task ThenATypeAheadAlsoAcceptsAnUnlistedValue()
 	{
-		// Covered in detail by HpacSafety.Api.Tests against the reporter-added
-		// choice path (ADR-0063); not re-verified at the acceptance layer here.
+		var revisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(
+			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
+
+		using var response = await Post(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = revisionId, value = (string?)"A site nobody listed" }
+			}
+		});
+
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
 	}
 
 	// --- The submission path never calls a translation provider ---
@@ -1067,6 +1080,12 @@ public sealed class ReportSubmissionEndpointSteps
 
 	private async Task EnsureConsentQuestion()
 	{
+		_consentRevisionId = await ConsentRevisionId();
+	}
+
+	/// <summary>The publication-consent revision, created once for the booted host.</summary>
+	internal static async Task<string> ConsentRevisionId()
+	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
@@ -1084,7 +1103,7 @@ public sealed class ReportSubmissionEndpointSteps
 			await database.SaveChangesAsync();
 		}
 
-		_consentRevisionId = consent.CurrentRevision.Id.Value;
+		return consent.CurrentRevision.Id.Value;
 	}
 
 	private async Task<int> ReportCount()

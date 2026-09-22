@@ -738,3 +738,20 @@ Scenario: A choice an Administrator writes is recorded under a code derived from
   Then that choice is still recorded under the code "king_eddy"
   When they save choices whose English wording reads "Site A-1" and "Site A 1"
   Then the save is refused naming both wordings
+
+@REQ-QB-094
+Scenario: A reporter answering in French adds a choice recorded in French
+  Given a type-ahead question is backed by a shared choice list
+  When a reporter answering in French submits "Élévation Sainte-Anne", which the list does not offer
+  Then the list gains a reporter-added choice whose French wording is "Élévation Sainte-Anne"
+  And the choice records that it was typed in French
+  And its code is "elevation_sainte_anne", derived from the French wording
+
+@REQ-QB-095
+Scenario: Submitting a report records a type-ahead value the list did not offer
+  Given a published form has a type-ahead question backed by a shared choice list
+  When a reporter answering in French submits a report naming "Élévation Sainte-Anne" in it
+  Then the report is accepted
+  And the answer is stored as "Élévation Sainte-Anne", in French
+  And the shared list now offers "Élévation Sainte-Anne" as a reporter-added choice coded "elevation_sainte_anne"
+  And the next reporter is offered "Élévation Sainte-Anne"

@@ -143,20 +143,37 @@ public class OptionSet
 	///     </list>
 	///     <para>
 	///         A reporter types one language and nothing here translates it — the
-	///         submission path calls no translator at all (ADR-0072). The typed words
-	///         stand in for both languages and the item is marked
-	///         <see cref="OptionSetItem.NeedsTranslation" />, so the next reporter is
-	///         offered the choice immediately and an administrator supplies the real
-	///         second wording from the curation screen.
+	///         submission path calls no translator at all (ADR-0072). The item
+	///         records <see cref="OptionSetItem.ReporterLocale" />, its code is
+	///         derived from the words as typed in that language, French included,
+	///         and the same words stand in for the other language until an
+	///         administrator supplies them from the curation screen, which
+	///         <see cref="OptionSetItem.NeedsTranslation" /> marks.
+	///     </para>
+	///     <para>
+	///         A live choice already worded that way in the reporter's language is
+	///         the same choice, whatever its code — a French reporter typing
+	///         "Mont 7" means the item whose French label is "Mont 7".
 	///     </para>
 	/// </remarks>
 	/// <param name="label">The wording the reporter typed.</param>
+	/// <param name="locale">The language the reporter answered in.</param>
 	/// <returns>The item this choice is now recorded as.</returns>
-	public OptionSetItem AddFromReporter(string label)
+	public OptionSetItem AddFromReporter(string label, Locale locale)
 	{
+		ArgumentNullException.ThrowIfNull(label);
+
 		EnsureNotDeleted();
 
-		var normalized = QuestionKey.Normalize(label);
+		var typed = label.Trim();
+
+		if (_items.Find(item => item.Deleted is null
+								&& string.Equals(item.Label(locale), typed, StringComparison.OrdinalIgnoreCase)) is { } worded)
+		{
+			return worded;
+		}
+
+		var normalized = QuestionKey.Normalize(typed);
 
 		if (_items.Find(item => item.Code == normalized) is { } existing)
 		{
@@ -165,8 +182,8 @@ public class OptionSet
 
 		var item = OptionSetItem.Create(
 			Id, normalized, NextDisplayOrder(),
-			label, label,
-			true, true);
+			typed, typed,
+			true, true, locale);
 
 		_items.Add(item);
 		return item;

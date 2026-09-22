@@ -162,7 +162,11 @@ public class ReportAnswer
 			throw new DomainRuleViolationException($"'{question.Key}' is required.");
 		}
 
-		if (value is not null && revision.ExpectsOptions && !revision.Offers(value, locale))
+		// A type-ahead is the one option type a reporter may answer with words the
+		// list does not offer: the submission records them as a new choice
+		// (ADR-0063), so they are validated as present, not as offered.
+		if (value is not null && revision.ExpectsOptions && revision.Type != QuestionType.Autocomplete
+			&& !revision.Offers(value, locale))
 		{
 			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
 		}

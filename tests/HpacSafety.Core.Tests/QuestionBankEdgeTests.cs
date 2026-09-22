@@ -229,4 +229,13 @@ public class QuestionBankEdgeTests
 		locale.ShouldBe(Locale.FrCa);
 		Locale.Parse("en-CA").ToString().ShouldBe("en-CA");
 	}
+
+	[Theory]
+	[InlineData("Élévation Sainte-Anne", "elevation_sainte_anne")]
+	[InlineData("Cœur d'Alène", "coeur_d_alene")]
+	[InlineData("king_eddy", "king_eddy")]
+	public void GivenAccentedWording_WhenNormalized_ThenAccentsAreFoldedNotDropped(string candidate, string expected)
+	{
+		QuestionKey.Normalize(candidate).ShouldBe(expected);
+	}
 }

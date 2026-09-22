@@ -63,7 +63,7 @@ public sealed class ReporterAddedChoiceSteps
 	public void GivenAReporterAlreadyAddedASite()
 	{
 		GivenATypeAheadBackedByAList();
-		_added = _set.AddFromReporter("Mount 7");
+		_added = _set.AddFromReporter("Mount 7", Locale.EnCa);
 	}
 
 	[Given(@"an Administrator removed a choice from a shared list")]
@@ -76,19 +76,46 @@ public sealed class ReporterAddedChoiceSteps
 	[When(@"a reporter submits an answer naming a site the list does not offer")]
 	public void WhenAReporterNamesANewSite()
 	{
-		_added = _set.AddFromReporter("Mount 7");
+		_added = _set.AddFromReporter("Mount 7", Locale.EnCa);
+	}
+
+	[When(@"a reporter answering in French submits ""(.*)"", which the list does not offer")]
+	public void WhenAFrenchReporterNamesANewSite(string typed)
+	{
+		_added = _set.AddFromReporter(typed, Locale.FrCa);
+	}
+
+	[Then(@"the list gains a reporter-added choice whose French wording is ""(.*)""")]
+	public void ThenTheListGainsAFrenchChoice(string typed)
+	{
+		_added!.AddedByReporter.ShouldBeTrue();
+		_added.LabelFr.ShouldBe(typed);
+		_set.Items.ShouldContain(_added);
+	}
+
+	[Then(@"the choice records that it was typed in French")]
+	public void ThenItRecordsFrench()
+	{
+		_added!.ReporterLocale.ShouldBe(Locale.FrCa);
+		_added.NeedsTranslation.ShouldBeTrue();
+	}
+
+	[Then(@"its code is ""(.*)"", derived from the French wording")]
+	public void ThenItsCodeIsDerivedFromTheFrench(string code)
+	{
+		_added!.Code.ShouldBe(code);
 	}
 
 	[When(@"another reporter submits the same site name")]
 	public void WhenAnotherReporterNamesTheSameSite()
 	{
-		_added = _set.AddFromReporter("mount 7");
+		_added = _set.AddFromReporter("mount 7", Locale.EnCa);
 	}
 
 	[When(@"a reporter submits that same value again")]
 	public void WhenAReporterRetypesARemovedValue()
 	{
-		_added = _set.AddFromReporter("Woodside");
+		_added = _set.AddFromReporter("Woodside", Locale.EnCa);
 	}
 
 	[When(@"a choice is added to that list afterwards")]
@@ -114,6 +141,7 @@ public sealed class ReporterAddedChoiceSteps
 	public void ThenItCarriesTheTypedLanguage()
 	{
 		_added!.LabelEn.ShouldBe("Mount 7");
+		_added.ReporterLocale.ShouldBe(Locale.EnCa);
 	}
 
 	[Then(@"it is marked for an Administrator to supply the other language")]

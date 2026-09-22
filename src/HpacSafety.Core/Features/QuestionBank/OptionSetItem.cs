@@ -22,7 +22,7 @@ public class OptionSetItem
 
 	private OptionSetItem(
 		TinyId optionSetId, string code, int displayOrder, string labelEn, string labelFr,
-		bool addedByReporter, bool needsTranslation)
+		bool addedByReporter, bool needsTranslation, Locale? reporterLocale)
 	{
 		Id = TinyId.New();
 		OptionSetId = optionSetId;
@@ -32,6 +32,7 @@ public class OptionSetItem
 		LabelFr = NotBlank(labelFr);
 		AddedByReporter = addedByReporter;
 		NeedsTranslation = needsTranslation;
+		ReporterLocale = reporterLocale;
 	}
 
 	/// <summary>Surrogate key. A revision's snapshot records this as its source.</summary>
@@ -81,6 +82,14 @@ public class OptionSetItem
 	/// </remarks>
 	public bool NeedsTranslation { get; private set; }
 
+	/// <summary>
+	///     The language a reporter typed this choice in. Its label in that
+	///     language is their own words; the other label is a copy of them standing
+	///     in until an administrator supplies the real wording. Null for a choice
+	///     an administrator authored.
+	/// </summary>
+	public Locale? ReporterLocale { get; private init; }
+
 	/// <summary>When this choice was removed from the set, if it was.</summary>
 	public DateTimeOffset? Deleted { get; private set; }
 
@@ -92,9 +101,10 @@ public class OptionSetItem
 
 	internal static OptionSetItem Create(
 		TinyId optionSetId, string code, int displayOrder, string labelEn, string labelFr,
-		bool addedByReporter = false, bool needsTranslation = false)
+		bool addedByReporter = false, bool needsTranslation = false, Locale? reporterLocale = null)
 	{
-		return new OptionSetItem(optionSetId, code, displayOrder, labelEn, labelFr, addedByReporter, needsTranslation);
+		return new OptionSetItem(
+			optionSetId, code, displayOrder, labelEn, labelFr, addedByReporter, needsTranslation, reporterLocale);
 	}
 
 	/// <summary>

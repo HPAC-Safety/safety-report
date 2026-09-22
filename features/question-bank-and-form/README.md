@@ -87,3 +87,6 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - An administrator authoring, seeing, or recoding an option code. A new
   choice's code is derived from its English wording, and a reworded choice
   keeps the code it has (`REQ-QB-092`).
+- A type-ahead with no live shared list growing from reporters' answers. The
+  reporter's words are still accepted as the answer; there is no list to add
+  them to. A multi-select taking reporter additions is `REQ-QB-042`, not built.

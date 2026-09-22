@@ -1,3 +1,4 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
@@ -173,7 +174,7 @@ public sealed class OptionSetPersistenceTests(PostgresFixture postgres)
 		{
 			var set = OptionSet.Create(key, "Flying sites", "Sites de vol", At);
 			set.Add("coopers", "Cooper's", "Cooper's");
-			set.AddFromReporter("Mount 7");
+			set.AddFromReporter("Mount 7", Locale.EnCa);
 
 			context.OptionSets.Add(set);
 			await context.SaveChangesAsync();

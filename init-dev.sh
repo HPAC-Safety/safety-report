@@ -435,6 +435,19 @@ else
 	fi
 fi
 
+heading "ffmpeg (optional)"
+if have ffmpeg && have ffprobe; then
+	ok "$(ffmpeg -version 2>&1 | head -1)"
+elif [ "$CHECK_ONLY" -eq 1 ]; then
+	note "ffmpeg is not installed — video uploads are kept unstripped, and FfmpegVideoRemuxerTests will fail"
+else
+	if install_pkg "ffmpeg" "ffmpeg" "ffmpeg" "ffmpeg" "Gyan.FFmpeg" "ffmpeg" && have ffmpeg; then
+		added "$(ffmpeg -version 2>&1 | head -1)"
+	else
+		note "ffmpeg could not be installed; without it a video upload is retained unstripped (ADR-0094)"
+	fi
+fi
+
 # ----------------------------------------------------------------- skillfile --
 #
 # Optional, and only for agent tooling: it materialises skills/ and agents/ into

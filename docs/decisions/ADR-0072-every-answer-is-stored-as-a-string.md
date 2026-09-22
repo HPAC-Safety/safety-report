@@ -62,6 +62,10 @@ around as text. This ADR says what the column holds, not what the code holds.
 
 ### A select answer is stored in the reporter's language only
 
+**~~Scoped to select/picker/type-ahead answers.~~ Widened to every answer
+shape, and `needs_translation` replaced by `translation_source`, by
+[ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md).**
+
 `report_answers` gains `locale` — the official language the reporter was using
 when they answered — and `needs_translation`.
 
@@ -117,6 +121,15 @@ scope line in ADR-0062 returns to what it said before — translation is an
 administrator's drafting aid — with the single addition that what an
 administrator may draft now includes an answer's second language.
 
+**Superseded by [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md):**
+an administrator is no longer the only source of a second language. The
+Worker fills `value_translated` mechanically via the same `ITranslator` port,
+off the request path, for every answer including narrative ones;
+`translation_source` (`auto`/`human`) replaces the implicit "an administrator
+filled it" assumption this section made. An administrator may still edit
+`value_translated` afterward, which is how `translation_source` becomes
+`human`.
+
 ### What the revision snapshot is still for
 
 `question_revision_options` keeps every row. It is no longer consulted to
@@ -171,6 +184,7 @@ vocabularies, to record nothing the locale column does not already say.
 
 ## Related
 
+- [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md) — widens the bilingual mechanism to every answer shape, Worker-driven
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — the snapshot's remaining purpose
 - [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md) — submission-time translation removed
 - [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md) — scope narrowed back to administrator-initiated

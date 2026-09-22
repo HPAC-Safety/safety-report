@@ -52,9 +52,14 @@ else changes about how a question is stored.**
 - **Save is disabled until both languages are present.** The control cannot be
   used to store a half-written question, and a machine translation that nobody
   looked at is still a save somebody performed.
-- **No reporter narrative is ever translated.** A translated account of a crash
-  is a paraphrased account of a crash, and that remains forbidden: never a
-  narrative, never an answer, never a summary.
+- **~~No reporter narrative is ever translated.~~ Widened by
+  [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md):
+  a narrative answer is now mechanically translated by the Worker via this
+  same `ITranslator` port, never by the summarization model, and the
+  submitted value stays immutable.** The reasoning underneath this bullet is
+  unchanged — a translated account of a crash must not become a paraphrased
+  one — it is DeepL's literal translation, not an LLM rewrite, that ADR-0080
+  argues does not cross that line.
 
   **~~Scope widened by [ADR-0063](ADR-0063-a-reporter-may-add-a-type-ahead-choice.md).~~
   Narrowed back by [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md).**
@@ -193,6 +198,7 @@ deploy workflow; moving it is a self-contained later change.
 
 ## Related
 
+- [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md) — widens narrative translation to a Worker-driven mechanical job
 - [ADR-0021](ADR-0021-ci-translation-opens-a-pull-request.md) — CI translation of the UI catalogue
 - [ADR-0022](ADR-0022-translation-provider-is-configuration.md) — the provider choice this reuses
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — updated by this ADR

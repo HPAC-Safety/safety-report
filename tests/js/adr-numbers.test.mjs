@@ -1,7 +1,7 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -164,6 +164,35 @@ describe('renumber', () => {
 		assert.ok(result.touched.includes('NOTES.md'))
 		assert.ok(!result.touched.includes('ALIAS.md'), 'a symlink is not reported as a second edit')
 		assert.match(readFileSync(join(root, 'NOTES.md'), 'utf8'), /ADR-0091/)
+	})
+
+	it('ignores a file git still tracks but the worktree no longer has', () => {
+		const root = repository({ 'ADR-0089-taken.md': adr('0089', 'Taken') })
+		writeFileSync(join(root, 'GONE.md'), 'Mentions ADR-0089.\n')
+		execFileSync('git', ['-C', root, 'add', '-A'])
+		execFileSync('git', ['-C', root, 'commit', '--quiet', '-m', 'a file about to vanish'])
+		rmSync(join(root, 'GONE.md'))
+
+		const result = renumber(root, '0089', '0091')
+
+		assert.ok(!result.touched.includes('GONE.md'))
+		assert.equal(result.to, 'ADR-0091-taken.md')
+	})
+
+	it('ignores a file it cannot read', { skip: process.getuid?.() === 0 ? 'runs as root' : false }, () => {
+		const root = repository({ 'ADR-0089-taken.md': adr('0089', 'Taken') })
+		writeFileSync(join(root, 'LOCKED.md'), 'Mentions ADR-0089.\n')
+		execFileSync('git', ['-C', root, 'add', '-A'])
+		execFileSync('git', ['-C', root, 'commit', '--quiet', '-m', 'a file about to be unreadable'])
+		chmodSync(join(root, 'LOCKED.md'), 0o000)
+
+		try {
+			const result = renumber(root, '0089', '0091')
+
+			assert.ok(!result.touched.includes('LOCKED.md'))
+		} finally {
+			chmodSync(join(root, 'LOCKED.md'), 0o644)
+		}
 	})
 
 	it('refuses a number that is already taken', () => {

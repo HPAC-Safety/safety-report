@@ -75,7 +75,11 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   skipped. If you lose the race anyway,
   `node tools/adr-numbers.mjs --renumber <old> <new>` moves the file and
   rewrites every reference in one pass — renaming is cheap, so take the new
-  number rather than arguing for the old one.
+  number rather than arguing for the old one. When two records already share
+  the number, add `--file <name>` to say which one moves, and expect a list of
+  bare `ADR-NNNN` mentions it deliberately left alone: while the number names
+  two records, only a reference by filename says which is meant, and those are
+  resolved by hand.
 - Do all work for the issue inside that worktree. Remove it once the pull
   request is open — see "Verify and publish" for exactly when it comes down
   and how it comes back if a check fails.

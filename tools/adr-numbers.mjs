@@ -136,19 +136,49 @@ function referencingFiles(root) {
  * references, so it prints every file it touched — read the diff before
  * committing, the same as any other mechanical edit.
  */
-export function renumber(root, oldNumber, newNumber) {
-	const adr = localAdrs(root).find((entry) => entry.number === oldNumber)
-	if (!adr) throw new Error(`No ADR-${oldNumber} in ${DECISIONS}`)
-	if (localAdrs(root).some((entry) => entry.number === newNumber)) throw new Error(`ADR-${newNumber} already exists`)
+export function renumber(root, oldNumber, newNumber, { file } = {}) {
+	const adrs = localAdrs(root)
+	const matching = adrs.filter((entry) => (file ? entry.name === file : entry.number === oldNumber))
+
+	if (matching.length === 0) throw new Error(file ? `No ${file} in ${DECISIONS}` : `No ADR-${oldNumber} in ${DECISIONS}`)
+
+	// The case this tool exists for is two records sharing a number, so
+	// picking one of them by sort order would be the wrong kind of helpful.
+	if (matching.length > 1) {
+		throw new Error(
+			`ADR-${oldNumber} names ${matching.length} files (${matching.map((entry) => entry.name).join(', ')}). ` +
+				'Say which one: --renumber <old> <new> --file <name>',
+		)
+	}
+
+	const [adr] = matching
+	if (adrs.some((entry) => entry.number === newNumber)) throw new Error(`ADR-${newNumber} already exists`)
 
 	const renamed = adr.name.replace(`ADR-${oldNumber}-`, `ADR-${newNumber}-`)
 	execFileSync('git', ['-C', root, 'mv', join(DECISIONS, adr.name), join(DECISIONS, renamed)])
 
 	const slug = adr.name.replace(/\.md$/, '')
 	const renamedSlug = renamed.replace(/\.md$/, '')
+	const movedFile = `${DECISIONS}/${renamed}`
+
+	// A reference by slug names one record and is always safe to rewrite. A
+	// bare "ADR-0090" is only safe while that number names one record — which
+	// is exactly what is not true when the reason you are renumbering is a
+	// collision. So the bare form is rewritten only when the old number was
+	// unique, and reported for a person to resolve when it was not. Rewriting
+	// it regardless is how a citation of somebody else's decision gets
+	// silently repointed at yours.
+	const ambiguous = adrs.filter((entry) => entry.number === oldNumber).length > 1
+	const bare = () => new RegExp(`ADR-${oldNumber}(?!-)`, 'g')
+
 	const touched = []
+	const unresolved = []
 
 	for (const file of referencingFiles(root)) {
+		// The moved record names itself; its own heading is handled below
+		// rather than reported as something a person has to disambiguate.
+		if (file === movedFile) continue
+
 		const path = join(root, file)
 		let text
 		try {
@@ -157,11 +187,17 @@ export function renumber(root, oldNumber, newNumber) {
 			continue
 		}
 
-		// Longest form first: the filename carries the number twice over once
-		// the slug is included, and a bare replace would corrupt it.
-		const rewritten = text
-			.replaceAll(slug, renamedSlug)
-			.replaceAll(`ADR-${oldNumber}`, `ADR-${newNumber}`)
+		// The slug contains the number, so it is rewritten first; doing the
+		// bare form first would corrupt the filename it is part of.
+		let rewritten = text.replaceAll(slug, renamedSlug)
+
+		if (ambiguous) {
+			for (const [index, line] of rewritten.split('\n').entries()) {
+				if (bare().test(line)) unresolved.push(`${file}:${index + 1}: ${line.trim()}`)
+			}
+		} else {
+			rewritten = rewritten.replace(bare(), `ADR-${newNumber}`)
+		}
 
 		if (rewritten !== text) {
 			writeFileSync(path, rewritten)
@@ -169,7 +205,15 @@ export function renumber(root, oldNumber, newNumber) {
 		}
 	}
 
-	return { from: adr.name, to: renamed, touched }
+	const movedPath = join(root, movedFile)
+	const before = readFileSync(movedPath, 'utf8')
+	const after = before.replaceAll(slug, renamedSlug).replace(bare(), `ADR-${newNumber}`)
+	if (after !== before) {
+		writeFileSync(movedPath, after)
+		touched.push(movedFile)
+	}
+
+	return { from: adr.name, to: renamed, touched, unresolved }
 }
 
 /**
@@ -187,13 +231,29 @@ export function main(argv = [], root = ROOT) {
 	if (argv[0] === '--renumber') {
 		const [, oldNumber, newNumber] = argv
 		if (!/^\d{4}$/.test(oldNumber ?? '') || !/^\d{4}$/.test(newNumber ?? '')) {
-			console.error('Usage: node tools/adr-numbers.mjs --renumber <old> <new>, each four digits')
+			console.error('Usage: node tools/adr-numbers.mjs --renumber <old> <new> [--file <name>], each number four digits')
 			return 1
 		}
 
-		const { from, to, touched } = renumber(root, oldNumber, newNumber)
-		console.log(`${from} -> ${to}`)
-		for (const file of touched) console.log(`  rewrote ${file}`)
+		const flag = argv.indexOf('--file')
+		let result
+		try {
+			result = renumber(root, oldNumber, newNumber, { file: flag === -1 ? undefined : argv[flag + 1] })
+		} catch (error) {
+			console.error(`::error::${error.message}`)
+			return 1
+		}
+
+		console.log(`${result.from} -> ${result.to}`)
+		for (const file of result.touched) console.log(`  rewrote ${file}`)
+
+		if (result.unresolved.length > 0) {
+			console.log('')
+			console.log(`${result.unresolved.length} bare reference(s) left alone. While two records shared`)
+			console.log(`ADR-${oldNumber}, a bare number does not say which one is meant — resolve these by hand:`)
+			for (const line of result.unresolved) console.log(`  ${line}`)
+		}
+
 		return 0
 	}
 

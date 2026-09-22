@@ -77,8 +77,19 @@ The delivery contract says so.
   would be the kind of make-work this repository avoids.
 - `--next` is only as current as the last `git fetch`. It says what it
   consulted, and the delivery contract pairs it with the rebase.
-- `--renumber` rewrites every *textual* occurrence, which includes a test
-  fixture naming the number on purpose. That is the honest trade for catching
+- `--renumber` refuses a number that names two files. Picking one by sort order
+  would be the wrong kind of helpful in exactly the situation the tool exists
+  for, so it asks which, with `--file <name>`.
+- **While a number is ambiguous, a bare `ADR-0090` in prose is not rewritten.**
+  A reference by filename slug names one record and is always safe; a bare
+  number is safe only while that number names one record, which is precisely
+  what is untrue during a collision. Rewriting it anyway silently repoints a
+  citation of somebody else's decision at yours. Those references are listed
+  with file and line for a person to resolve. This is not theoretical: the
+  first real use of this tool hit it, and the first implementation got it
+  wrong.
+- Otherwise `--renumber` rewrites every *textual* occurrence, which includes a
+  test fixture naming the number on purpose. That is the honest trade for catching
   prose references like "(ADR-0089)", so it prints every file it touched and
   the diff is read before committing, like any other mechanical edit. Symlinked
   instruction files are skipped, because they resolve to `AGENTS.md` and would

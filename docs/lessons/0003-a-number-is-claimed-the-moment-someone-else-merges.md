@@ -55,6 +55,27 @@ pass, so losing the race costs a command.
 The delivery contract now says to rebase onto fresh `origin/main` **before
 committing**, not only before pushing, and to take the number after that rebase.
 
+## What the fix taught, the first time it ran
+
+The gate's own pull request found a fourth collision: ADR-0090 was claimed by
+"an exemption cites the claims it preserves" (#317) and again by "admin route
+status codes and atomic audit writes" (#320), which merged minutes later. The
+tool caught it on its first CI run.
+
+Fixing it exposed a flaw in the fix. The first `--renumber` rewrote every
+textual `ADR-0090` in the repository — including thirteen references that meant
+the *other* record, the one not moving. A reference by filename slug names one
+record and is always safe to rewrite; a bare number is safe only while that
+number names one record, which is exactly what is untrue when you are
+renumbering a collision. Rewriting it regardless silently repoints somebody
+else's citation at your decision, which reads as correct.
+
+So `--renumber` now refuses an ambiguous number unless told which file, rewrites
+only slug references while a duplicate exists, and prints the bare ones with
+file and line for a person to resolve. The general shape is worth keeping:
+**a mechanical rewrite is only safe over an unambiguous identifier**, and a
+collision is the one moment the identifier is ambiguous.
+
 ## Scenario
 
 No scenario. This is a property of the repository's own records and tooling,

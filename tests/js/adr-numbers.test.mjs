@@ -210,10 +210,36 @@ describe('main', () => {
 		assert.match(output.log.join('\n'), /ADR-0089-one\.md -> ADR-0090-one\.md/)
 	})
 
+	it('refuses to guess which record a duplicated number means', () => {
+		const root = repository({ 'ADR-0090-one.md': adr('0090', 'One'), 'ADR-0090-two.md': adr('0090', 'Two') })
+		const { code, output } = runMain(['--renumber', '0090', '0092'], root)
+
+		assert.equal(code, 1)
+		assert.match(output.error.join('\n'), /names 2 files/)
+		assert.match(output.error.join('\n'), /--file <name>/)
+	})
+
+	it('leaves a bare reference alone while the number is ambiguous, and says so', () => {
+		// Rewriting "ADR-0090" here would repoint a citation of the record that
+		// is NOT moving at the one that is.
+		const root = repository({ 'ADR-0090-one.md': adr('0090', 'One'), 'ADR-0090-two.md': adr('0090', 'Two') })
+		writeFileSync(join(root, 'NOTES.md'), 'Mentions bare ADR-0090, meaning the other one.\n')
+		execFileSync('git', ['-C', root, 'add', '-A'])
+		execFileSync('git', ['-C', root, 'commit', '--quiet', '-m', 'notes'])
+
+		const { code, output } = runMain(['--renumber', '0090', '0092', '--file', 'ADR-0090-two.md'], root)
+
+		assert.equal(code, 0)
+		assert.match(readFileSync(join(root, 'NOTES.md'), 'utf8'), /bare ADR-0090/, 'the ambiguous reference is untouched')
+		assert.match(output.log.join('\n'), /bare reference\(s\) left alone/)
+		assert.match(output.log.join('\n'), /NOTES\.md:1/)
+		assert.match(readFileSync(join(root, 'docs/decisions/ADR-0092-two.md'), 'utf8'), /# ADR-0092 — Two/)
+	})
+
 	it('refuses a renumber that is not two four-digit numbers', () => {
 		const { code, output } = runMain(['--renumber', '89', '90'], repository({ 'ADR-0089-one.md': adr('0089') }))
 
 		assert.equal(code, 1)
-		assert.match(output.error.join('\n'), /each four digits/)
+		assert.match(output.error.join('\n'), /each number four digits/)
 	})
 })

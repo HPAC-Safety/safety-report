@@ -58,14 +58,19 @@ public static class QuestionBankSeedWriter
 	}
 
 	/// <summary>
-	///     Writes the seed against the sensitivity columns used by the original
-	///     schema. Only the original migration calls this; the following migration
-	///     replaces those columns with immutable privacy flags.
+	///     Writes the seed against the schema shape used by the original,
+	///     already-shipped <c>InitialSchema</c> migration — <c>questions</c>,
+	///     <c>question_versions</c>, <c>question_translations</c>, and
+	///     <c>question_options</c>, before the fork-on-answer redesign replaced them
+	///     with <c>questions</c> and <c>question_revisions</c> (ADR-0071). Only that
+	///     migration calls this; a migration that already shipped is never edited, so
+	///     this stays exactly as it was regardless of how <see cref="SeededQuestion" />
+	///     or the current schema evolve.
 	/// </summary>
 	public static void WriteLegacySensitivitySchema(MigrationBuilder migrationBuilder)
 	{
 		ArgumentNullException.ThrowIfNull(migrationBuilder);
-		AppendIfAny(migrationBuilder, Sql(true));
+		AppendIfAny(migrationBuilder, LegacySql(QuestionBankSeed.Questions));
 	}
 
 	/// <summary>
@@ -80,18 +85,83 @@ public static class QuestionBankSeedWriter
 		}
 	}
 
-	private static string Sql(bool legacySensitivitySchema)
+	/// <summary>
+	///     The guarded SQL for an arbitrary question list, against the current
+	///     <c>questions</c>/<c>question_revisions</c>/<c>question_revision_options</c>
+	///     schema. Exposed so a test can exercise every row this writer produces —
+	///     the question, its first revision, both languages, dependency and
+	///     grouping, and any options — without depending on what
+	///     <see cref="QuestionBankSeed" /> currently seeds.
+	/// </summary>
+	public static string Sql(IReadOnlyList<SeededQuestion> questions)
 	{
-		return Sql(QuestionBankSeed.Questions, legacySensitivitySchema);
+		ArgumentNullException.ThrowIfNull(questions);
+
+		var sql = new StringBuilder();
+		var at = QuestionBankSeed.SeededAt;
+
+		for (var displayOrder = 0; displayOrder < questions.Count; displayOrder++)
+		{
+			var question = questions[displayOrder];
+			var questionId = SeedIds.For($"question:{question.Key}");
+			var revisionId = SeedIds.For($"question_revision:{question.Key}:1");
+
+			AppendGuardedInsert(
+				sql,
+				"questions",
+				["id", "key", "is_system", "role", "created_at", "deleted"],
+				[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Timestamp(at), "NULL"],
+				"id",
+				Id(questionId));
+
+			AppendGuardedInsert(
+				sql,
+				"question_revisions",
+				[
+					"id", "question_id", "revision_number", "type", "label_en", "label_fr", "help_text_en", "help_text_fr",
+					"placeholder_en", "placeholder_fr", "is_system", "is_required", "is_private", "is_active",
+					"display_order", "depends_on_question_id", "depends_on_option_code", "option_set_id",
+					"grouped_under_question_id", "allows_reporter_additions", "created_at", "deleted",
+				],
+				[
+					Id(revisionId), Id(questionId), Int(1), Str(EnumCode.Of(question.Type)), Str(question.LabelEn),
+					Str(question.LabelFr), StrOrNull(question.HelpEn), StrOrNull(question.HelpFr),
+					StrOrNull(question.PlaceholderEn), StrOrNull(question.PlaceholderFr), Bool(question.IsSystem),
+					Bool(question.IsRequired), Bool(question.IsPrivate), Bool(true), Int(displayOrder),
+					IdOrNull(question.DependsOnKey, key => SeedIds.For($"question:{key}")),
+					StrOrNull(question.DependsOnOptionCode), "NULL",
+					IdOrNull(question.GroupedUnderKey, key => SeedIds.For($"question:{key}")),
+					Bool(question.AllowsReporterAdditions), Timestamp(at), "NULL",
+				],
+				"id",
+				Id(revisionId));
+
+			for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
+			{
+				var option = question.Options[optionOrder];
+				var optionId = SeedIds.For($"question_revision_option:{question.Key}:{option.Code}");
+
+				AppendGuardedInsert(
+					sql,
+					"question_revision_options",
+					["id", "question_revision_id", "code", "label_en", "label_fr", "display_order", "source_item_id", "deleted"],
+					[Id(optionId), Id(revisionId), Str(option.Code), Str(option.LabelEn), Str(option.LabelFr), Int(optionOrder), "NULL", "NULL"],
+					"id",
+					Id(optionId));
+			}
+		}
+
+		return sql.ToString();
 	}
 
 	/// <summary>
-	///     The guarded SQL for an arbitrary question list. Exposed so a test can
-	///     exercise every row this writer produces — the question, its version,
-	///     both languages, and any options, in either schema shape — without
-	///     depending on what <see cref="QuestionBankSeed" /> currently seeds.
+	///     The frozen SQL <see cref="WriteLegacySensitivitySchema" /> writes, against
+	///     the <c>sensitivity</c>-column shape the original <c>InitialSchema</c>
+	///     migration created. Exposed so a test can exercise it directly with a
+	///     synthetic question list, the same way <see cref="Sql" /> is, without
+	///     depending on <see cref="QuestionBankSeed" />.
 	/// </summary>
-	public static string Sql(IReadOnlyList<SeededQuestion> questions, bool legacySensitivitySchema = false)
+	public static string LegacySql(IReadOnlyList<SeededQuestion> questions)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
@@ -104,26 +174,13 @@ public static class QuestionBankSeedWriter
 			var questionId = SeedIds.For($"question:{question.Key}");
 			var versionId = SeedIds.For($"question_version:{question.Key}:1");
 
-			if (legacySensitivitySchema)
-			{
-				AppendGuardedInsert(
-					sql,
-					"questions",
-					["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
-					[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
-					"id",
-					Id(questionId));
-			}
-			else
-			{
-				AppendGuardedInsert(
-					sql,
-					"questions",
-					["id", "key", "is_system", "role", "is_private", "display_order", "is_active", "created_at", "deleted_at"],
-					[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Bool(question.IsPrivate), Int(order), Bool(true), Timestamp(at), "NULL"],
-					"id",
-					Id(questionId));
-			}
+			AppendGuardedInsert(
+				sql,
+				"questions",
+				["id", "key", "is_system", "role", "sensitivity", "display_order", "is_active", "created_at", "deleted_at"],
+				[Id(questionId), Str(question.Key), Bool(question.IsSystem), Str(EnumCode.Of(question.Role)), Str(question.IsPrivate ? "restricted" : "publishable"), Int(order), Bool(true), Timestamp(at), "NULL"],
+				"id",
+				Id(questionId));
 
 			AppendGuardedInsert(
 				sql,
@@ -133,8 +190,8 @@ public static class QuestionBankSeedWriter
 				"id",
 				Id(versionId));
 
-			AppendQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, true);
-			AppendQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, false);
+			AppendLegacyQuestionTranslation(sql, question, versionId, Locale.EnCa, question.LabelEn, question.HelpEn, true);
+			AppendLegacyQuestionTranslation(sql, question, versionId, Locale.FrCa, question.LabelFr, question.HelpFr, false);
 
 			for (var optionOrder = 0; optionOrder < question.Options.Count; optionOrder++)
 			{
@@ -149,15 +206,15 @@ public static class QuestionBankSeedWriter
 					"id",
 					Id(optionId));
 
-				AppendOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, true);
-				AppendOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, false);
+				AppendLegacyOptionTranslation(sql, question, option, optionId, Locale.EnCa, option.LabelEn, true);
+				AppendLegacyOptionTranslation(sql, question, option, optionId, Locale.FrCa, option.LabelFr, false);
 			}
 		}
 
 		return sql.ToString();
 	}
 
-	private static void AppendQuestionTranslation(
+	private static void AppendLegacyQuestionTranslation(
 		StringBuilder sql,
 		SeededQuestion question,
 		TinyId versionId,
@@ -178,7 +235,7 @@ public static class QuestionBankSeedWriter
 			Id(id));
 	}
 
-	private static void AppendOptionTranslation(
+	private static void AppendLegacyOptionTranslation(
 		StringBuilder sql,
 		SeededQuestion question,
 		SeededOption option,
@@ -221,6 +278,11 @@ public static class QuestionBankSeedWriter
 	private static string Id(TinyId id)
 	{
 		return Str(id.Value);
+	}
+
+	private static string IdOrNull(string? key, Func<string, TinyId> resolve)
+	{
+		return key is null ? "NULL" : Id(resolve(key));
 	}
 
 	private static string Str(string value)

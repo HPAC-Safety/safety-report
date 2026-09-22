@@ -95,6 +95,62 @@ public sealed class FfmpegVideoRemuxerTests
 		destination.Length.ShouldBe(0);
 	}
 
+	[Fact]
+	public async Task GivenNoToolchain_WhenRemuxed_ThenNothingIsProducedRatherThanThrowing()
+	{
+		// Given — REQ-MED-015: a deployment without ffmpeg still accepts video,
+		// and retains it unstripped
+		using var workspace = new Workspace();
+		var source = await workspace.SyntheticClip();
+		await using var reading = File.OpenRead(source);
+		using var destination = new MemoryStream();
+
+		// When
+		var produced = await new FfmpegVideoRemuxer(
+				NullLogger<FfmpegVideoRemuxer>.Instance, toolPrefix: "hpac-absent-")
+			.TryRemux(reading, destination, MediaType.Mp4, CancellationToken.None);
+
+		// Then
+		produced.ShouldBeFalse();
+		destination.Length.ShouldBe(0);
+	}
+
+	[Fact]
+	public async Task GivenATimeoutItCannotMeet_WhenRemuxed_ThenNothingIsProduced()
+	{
+		// Given — a budget no real remux can meet
+		using var workspace = new Workspace();
+		var source = await workspace.SyntheticClip();
+		await using var reading = File.OpenRead(source);
+		using var destination = new MemoryStream();
+
+		// When
+		var produced = await new FfmpegVideoRemuxer(
+				NullLogger<FfmpegVideoRemuxer>.Instance, TimeSpan.FromMilliseconds(1))
+			.TryRemux(reading, destination, MediaType.Mp4, CancellationToken.None);
+
+		// Then
+		produced.ShouldBeFalse();
+		destination.Length.ShouldBe(0);
+	}
+
+	[Fact]
+	public async Task GivenCallerCancels_WhenRemuxed_ThenCancellationIsNotSwallowed()
+	{
+		// Given — a caller's cancellation is not the toolchain failing
+		using var workspace = new Workspace();
+		var source = await workspace.SyntheticClip();
+		await using var reading = File.OpenRead(source);
+		using var destination = new MemoryStream();
+		using var cancelled = new CancellationTokenSource();
+		await cancelled.CancelAsync();
+
+		// When / Then
+		await Should.ThrowAsync<OperationCanceledException>(() =>
+			new FfmpegVideoRemuxer(NullLogger<FfmpegVideoRemuxer>.Instance)
+				.TryRemux(reading, destination, MediaType.Mp4, cancelled.Token));
+	}
+
 	private static async Task<byte[]?> Remux(string path)
 	{
 		await using var source = File.OpenRead(path);

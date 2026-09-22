@@ -45,25 +45,26 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		"{output}",
 	];
 
-	// An allowlist, not a denylist. A denylist of known-bad names — location,
-	// make, model — passes anything it has not heard of, and the whole point of
-	// this check is the field somebody's next phone invents. These are the tags
-	// a remux legitimately writes: container structure, and the language and
-	// handler name a track carries.
-	private static readonly string[] StructuralTags =
-	[
-		"major_brand", "minor_version", "compatible_brands", "language", "handler_name", "vendor_id",
-	];
-
 	private readonly ILogger<FfmpegVideoRemuxer> _logger;
 	private readonly TimeSpan _timeout;
+	private readonly string _toolPrefix;
 
-	public FfmpegVideoRemuxer(ILogger<FfmpegVideoRemuxer> logger, TimeSpan? timeout = null)
+	/// <summary>Creates the remuxer.</summary>
+	/// <param name="logger">Records why a derivative was refused, never what it held.</param>
+	/// <param name="timeout">How long either tool may run before the original is retained instead.</param>
+	/// <param name="toolPrefix">
+	///     Prepended to the tool names, so a test can point this at something that
+	///     is not installed and watch a video be retained rather than refused. A
+	///     deployment leaves it empty and gets `ffmpeg` and `ffprobe` from PATH.
+	/// </param>
+	public FfmpegVideoRemuxer(
+		ILogger<FfmpegVideoRemuxer> logger, TimeSpan? timeout = null, string toolPrefix = "")
 	{
 		ArgumentNullException.ThrowIfNull(logger);
 
 		_logger = logger;
 		_timeout = timeout ?? TimeSpan.FromMinutes(2);
+		_toolPrefix = toolPrefix;
 	}
 
 	/// <inheritdoc />
@@ -123,8 +124,9 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 
 	/// <summary>
 	///     Whether the produced file holds only the streams it should and no tag
-	///     naming a person, device, or place. A derivative that fails this is not a
-	///     derivative — the original is retained instead.
+	///     naming a person, device, or place. The reading itself is
+	///     <see cref="RemuxVerification" />, which needs no process and so can be
+	///     exercised directly.
 	/// </summary>
 	private async Task<bool> IsClean(string path, CancellationToken cancellationToken)
 	{
@@ -139,50 +141,13 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		}
 
 		using var document = JsonDocument.Parse(probe);
-		var root = document.RootElement;
 
-		if (root.TryGetProperty("streams", out var streams))
+		if (RemuxVerification.Reject(document.RootElement) is not { } refusal)
 		{
-			foreach (var stream in streams.EnumerateArray())
-			{
-				var codecType = stream.TryGetProperty("codec_type", out var kind) ? kind.GetString() : null;
-
-				if (codecType is not ("video" or "audio"))
-				{
-					LogExtraStream(_logger, codecType);
-					return false;
-				}
-
-				if (HoldsForbiddenTag(stream))
-				{
-					return false;
-				}
-			}
-		}
-
-		return !root.TryGetProperty("format", out var format) || !HoldsForbiddenTag(format);
-	}
-
-	private bool HoldsForbiddenTag(JsonElement element)
-	{
-		if (!element.TryGetProperty("tags", out var tags) || tags.ValueKind is not JsonValueKind.Object)
-		{
-			return false;
-		}
-
-		foreach (var tag in tags.EnumerateObject())
-		{
-			if (StructuralTags.Contains(tag.Name, StringComparer.OrdinalIgnoreCase))
-			{
-				continue;
-			}
-
-			// The tag's name, never its value: the value is the thing we are
-			// trying not to disclose.
-			LogRemainingTag(_logger, tag.Name);
 			return true;
 		}
 
+		LogRefused(_logger, refusal);
 		return false;
 	}
 
@@ -199,7 +164,7 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	private async Task<string?> Capture(
 		string executable, IEnumerable<string> arguments, CancellationToken cancellationToken)
 	{
-		var start = new ProcessStartInfo(executable)
+		var start = new ProcessStartInfo(_toolPrefix + executable)
 		{
 			RedirectStandardOutput = true,
 			RedirectStandardError = true,
@@ -239,7 +204,7 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 			// than its contents.
 			LogToolFailed(
 				_logger,
-				executable,
+				_toolPrefix + executable,
 				process.ExitCode.ToString(CultureInfo.InvariantCulture),
 				(await standardError.ConfigureAwait(false)).Trim());
 
@@ -247,14 +212,14 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		}
 		catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
 		{
-			LogTimedOut(_logger, executable, _timeout);
+			LogTimedOut(_logger, _toolPrefix + executable, _timeout);
 			return null;
 		}
 		catch (Exception cause) when (cause is System.ComponentModel.Win32Exception or FileNotFoundException)
 		{
 			// Not installed. The original is retained and the upload still
 			// succeeds, which is the whole point of REQ-MED-015.
-			LogToolMissing(_logger, executable);
+			LogToolMissing(_logger, _toolPrefix + executable);
 			return null;
 		}
 	}
@@ -274,15 +239,8 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	[LoggerMessage(Level = LogLevel.Warning, Message = "Remux produced no output; the original is retained instead.")]
 	private static partial void LogNoOutput(ILogger logger);
 
-	[LoggerMessage(
-		Level = LogLevel.Warning,
-		Message = "Remux left a {CodecType} stream in place; the original is retained instead.")]
-	private static partial void LogExtraStream(ILogger logger, string? codecType);
-
-	[LoggerMessage(
-		Level = LogLevel.Warning,
-		Message = "Remux left the tag {Tag} in place; the original is retained instead.")]
-	private static partial void LogRemainingTag(ILogger logger, string tag);
+	[LoggerMessage(Level = LogLevel.Warning, Message = "{Refusal}; the original is retained instead.")]
+	private static partial void LogRefused(ILogger logger, string refusal);
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "{Executable} exited {ExitCode}: {Error}")]
 	private static partial void LogToolFailed(ILogger logger, string executable, string exitCode, string error);

@@ -88,3 +88,35 @@ cites the claim ID.
 - [ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)
 - [ADR-0083](ADR-0083-specification-driven-development.md)
 - [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
+
+## Amendment, 2026-09-22 — a process lesson also updates a skill
+
+This record sent a bug's cause upstream and stopped at `docs/lessons/`. That
+closes the loop for a lesson about the **product**: the specification gains a
+claim, a scenario proves it, and the next run starts from the corrected
+specification.
+
+It does not close the loop for a lesson about **how we work**. A process lesson
+has no claim to add — no scenario can assert that a rule enforced by a CI flag
+holds only in CI — so it landed in `docs/lessons/` and went no further. An
+agent reads the skills before it starts; it does not read the lessons index
+looking for a mistake it has not made yet. Both lessons written so far proved
+this: neither general rule reached a skill, and each stayed a story about one
+incident rather than a rule about a class of them.
+
+**A lesson about the development process — tooling, CI, hooks, conventions,
+the delivery workflow, how agents are expected to work — updates the skill that
+would have prevented it, in the same pull request as the lesson.** The lesson
+names the skill it changed; the skill states the general rule, not the
+incident.
+
+**A lesson about product requirements does not.** Its home is a claim and a
+scenario. Restating product behavior in a skill creates a second place for it
+to drift from `/features`, which is the duplication the authority rules already
+forbid. When neither kind fits — a lesson whose cause is genuinely one-off —
+the lesson says so instead of inventing a rule to hang on a skill.
+
+The boundary is the same one that decides where a lesson's `Scenario` line
+points. If a scenario can prove it, it is a product lesson and the claim is the
+remedy. If no scenario can, and the cause was something about how the work is
+done, the skill is the remedy.

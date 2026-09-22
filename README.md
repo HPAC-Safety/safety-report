@@ -85,6 +85,13 @@ On Windows, run it from Git Bash. To inspect without installing anything:
 ./init-dev.sh --check
 ```
 
+To also render the graphify knowledge graph into a local Obsidian vault at
+`obsidian-vault/` (opt-in, gitignored, rebuilt on each run with the flag):
+
+```bash
+./init-dev.sh --obsidian
+```
+
 Common verification commands:
 
 ```bash

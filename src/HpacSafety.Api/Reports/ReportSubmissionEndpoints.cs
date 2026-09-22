@@ -354,3 +354,5 @@ public static class ReportSubmissionEndpoints
 			type: "https://hpac.ca/problems/report-submission");
 	}
 }
+
+// gate negative check — this branch is deleted after CI reports.

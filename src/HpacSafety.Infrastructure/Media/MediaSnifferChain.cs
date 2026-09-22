@@ -54,9 +54,12 @@ public sealed class MediaSnifferChain : IMediaSniffer
 		return null;
 	}
 
-	/// <summary>The chain this system runs: images through Magick.NET, then video by magic number.</summary>
+	/// <summary>
+	///     The chain this system runs: images through Magick.NET, then video by magic
+	///     number, then documents by magic number and internal package shape.
+	/// </summary>
 	public static MediaSnifferChain Default()
 	{
-		return new MediaSnifferChain(new MagickNetMediaSniffer(), new VideoContainerSniffer());
+		return new MediaSnifferChain(new MagickNetMediaSniffer(), new VideoContainerSniffer(), new DocumentMediaSniffer());
 	}
 }

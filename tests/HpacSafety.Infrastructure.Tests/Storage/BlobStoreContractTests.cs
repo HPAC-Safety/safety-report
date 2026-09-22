@@ -250,7 +250,7 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 	public async Task GivenFileClaimingImageJpegButContainingSomethingElse_WhenIngested_ThenRejected()
 	{
 		// Given
-		await SeedQuarantineAsync(Quarantined, ExifFixtures.NotMedia(), MediaType.Jpeg);
+		await SeedQuarantineAsync(Quarantined, ExifFixtures.UnrecognisedByAnySniffer(), MediaType.Jpeg);
 
 		// When
 		var outcome = await Ingestor().IngestAsync(Quarantined, MediaType.Jpeg.ContentType, CancellationToken.None);

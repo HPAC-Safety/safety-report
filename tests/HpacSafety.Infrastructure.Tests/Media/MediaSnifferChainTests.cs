@@ -59,7 +59,7 @@ public class MediaSnifferChainTests
 	public async Task GivenSomethingNoLinkRecognises_WhenChainSniffs_ThenUnrecognised()
 	{
 		// Given
-		using var content = new MemoryStream(ExifFixtures.NotMedia());
+		using var content = new MemoryStream(ExifFixtures.UnrecognisedByAnySniffer());
 
 		// When
 		var sniffed = await _chain.SniffAsync(content, CancellationToken.None);

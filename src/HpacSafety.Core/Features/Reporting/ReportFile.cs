@@ -31,6 +31,7 @@ public class ReportFile
 			? mediaType.Kind switch
 			{
 				MediaKind.Video => AttachmentKind.Video,
+				MediaKind.Document => AttachmentKind.Document,
 				_ => AttachmentKind.Image
 			}
 			: AttachmentKind.Document;

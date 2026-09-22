@@ -35,7 +35,10 @@ public sealed class DomainAndLifecycleSteps
 	private TinyId _outboxId;
 	private TinyId _questionId;
 	private TinyId _revisionId;
+	private TinyId _referencedQuestionId;
+	private TinyId _referencedRevisionId;
 	private HttpResponseMessage? _response;
+	private HttpResponseMessage? _secondResponse;
 
 	[Given(@"a report exists in any lifecycle state")]
 	public async Task GivenAReportExists()
@@ -194,6 +197,142 @@ public sealed class DomainAndLifecycleSteps
 
 		var revision = await database.QuestionRevisions.IgnoreQueryFilters().SingleAsync(r => r.Id == _revisionId);
 		revision.Deleted.ShouldBeNull();
+	}
+
+	[Given(@"a question revision is referenced by no answer, including answers on deleted reports")]
+	public async Task GivenAQuestionRevisionIsReferencedByNoAnswer()
+	{
+		var client = await BootedApi.SignedInAs(MemberRole.Administrator);
+
+		// Question A: revision 1 is superseded by an edit nobody answered, so it
+		// is history with nothing pointing at it — the one the scenario deletes.
+		var (questionAId, revision1Id) = await CreateSingleSelectQuestion(client, "unreferenced");
+		await ReviseSingleSelectQuestion(client, questionAId);
+		_questionId = questionAId;
+		_revisionId = revision1Id;
+
+		// Question B: revision 1 is answered, and that answer's report is then
+		// soft-deleted — proving the reference check is not fooled by the
+		// report's own deletion.
+		var (questionBId, revision1BId) = await CreateSingleSelectQuestion(client, "referenced");
+		await ReviseSingleSelectQuestion(client, questionBId);
+		_referencedQuestionId = questionBId;
+		_referencedRevisionId = revision1BId;
+
+		var host = await BootedApi.Factory();
+		using (var scope = host.Services.CreateScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var questionB = await database.Questions
+				.Include(q => q.Revisions)
+				.ThenInclude(r => r.Options)
+				.SingleAsync(q => q.Id == questionBId);
+			var oldRevision = questionB.Revisions.Single(r => r.Id == revision1BId);
+
+			var report = new Report(Locale.EnCa, At);
+			report.Answer(questionB, oldRevision, "North", At);
+			database.Reports.Add(report);
+			await database.SaveChangesAsync();
+
+			_reportId = report.Id;
+		}
+
+		var deletingClient = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		using var deleted = await deletingClient.DeleteAsync(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+		deleted.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+	}
+
+	[When(@"an Administrator deletes that revision")]
+	public async Task WhenAnAdministratorDeletesThatRevision()
+	{
+		var client = await BootedApi.SignedInAs(MemberRole.Administrator);
+		_response = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{_questionId}/revisions/{_revisionId}", UriKind.Relative));
+		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+	}
+
+	[Then(@"the revision and its option children are stamped with one deleted timestamp")]
+	public async Task ThenTheRevisionAndItsOptionsAreStamped()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var revision = await database.QuestionRevisions
+			.Include(r => r.Options)
+			.IgnoreQueryFilters()
+			.SingleAsync(r => r.Id == _revisionId);
+
+		revision.Deleted.ShouldNotBeNull();
+		revision.Options.ShouldNotBeEmpty();
+		revision.Options.ShouldAllBe(option => option.Deleted == revision.Deleted);
+	}
+
+	[Then(@"once any answer references a revision, that revision is never deletable again")]
+	public async Task ThenAReferencedRevisionIsNeverDeletableAgain()
+	{
+		var client = await BootedApi.SignedInAs(MemberRole.Administrator);
+		_secondResponse = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{_referencedQuestionId}/revisions/{_referencedRevisionId}", UriKind.Relative));
+		_secondResponse.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var revision = await database.QuestionRevisions.IgnoreQueryFilters().SingleAsync(r => r.Id == _referencedRevisionId);
+		revision.Deleted.ShouldBeNull();
+	}
+
+	private static async Task<(TinyId QuestionId, TinyId RevisionId)> CreateSingleSelectQuestion(
+		HttpClient client, string label)
+	{
+		var key = $"{label}_{Guid.NewGuid():n}"[..24];
+
+		using var created = await client.PostAsJsonAsync(
+			new Uri("/api/admin/questions", UriKind.Relative),
+			new
+			{
+				key,
+				type = "single_select",
+				labelEn = $"Which direction, {label}?",
+				labelFr = $"Quelle direction, {label} ?",
+				isRequired = false,
+				isPrivate = false,
+				isActive = true,
+				options = new[]
+				{
+					new { code = "north", labelEn = "North", labelFr = "Nord" },
+					new { code = "south", labelEn = "South", labelFr = "Sud" },
+				}
+			});
+		created.StatusCode.ShouldBe(HttpStatusCode.Created);
+		var body = await created.Content.ReadFromJsonAsync<JsonElement>();
+
+		return (
+			TinyId.Parse(body.GetProperty("id").GetString()!),
+			TinyId.Parse(body.GetProperty("revisionId").GetString()!));
+	}
+
+	/// <summary>Edits the question while nothing has answered it, which revises it in place (ADR-0071).</summary>
+	private static async Task ReviseSingleSelectQuestion(HttpClient client, TinyId questionId)
+	{
+		using var revised = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
+			new
+			{
+				type = "single_select",
+				labelEn = "Which direction, revised?",
+				labelFr = "Quelle direction, révisée ?",
+				isRequired = false,
+				isPrivate = false,
+				isActive = true,
+				options = new[]
+				{
+					new { code = "north", labelEn = "North", labelFr = "Nord" },
+					new { code = "south", labelEn = "South", labelFr = "Sud" },
+				}
+			});
+		revised.StatusCode.ShouldBe(HttpStatusCode.OK);
 	}
 
 	[Given(@"a synthetic report has been submitted")]

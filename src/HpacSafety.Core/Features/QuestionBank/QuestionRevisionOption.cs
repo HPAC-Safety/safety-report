@@ -72,6 +72,12 @@ public class QuestionRevisionOption
 		return locale == Locale.FrCa ? LabelFr : LabelEn;
 	}
 
+	/// <summary>Stamped when the revision it belongs to is deleted. Idempotent.</summary>
+	internal void Delete(DateTimeOffset at)
+	{
+		Deleted ??= at;
+	}
+
 	internal static QuestionRevisionOption Create(
 		TinyId questionRevisionId, string code, int displayOrder, string labelEn, string labelFr,
 		TinyId? sourceItemId = null)

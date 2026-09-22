@@ -1,8 +1,12 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 
 namespace HpacSafety.Api.Tests;
@@ -529,6 +533,134 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		var listed = await List(client);
 		listed.ShouldNotContain(question => question.GetProperty("id").GetString() == id);
+	}
+
+	[Fact]
+	public async Task GivenAnUnreferencedSupersededRevision_WhenDeleted_ThenStampedRatherThanRemoved()
+	{
+		// Given — an edit nobody answered leaves revision 1 as unreferenced history
+		using var client = await SignedIn();
+		var key = UniqueKey("wind_direction");
+		var created = await Create(client, Draft(key, "short_text"));
+		var questionId = created.GetProperty("id").GetString()!;
+		var oldRevisionId = created.GetProperty("revisionId").GetString()!;
+
+		await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
+			Draft(key, "short_text") with { LabelEn = "Reworded" });
+
+		// When
+		using var response = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{questionId}/revisions/{oldRevisionId}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		// And the question and its current (new) revision are untouched
+		var listed = await List(client);
+		var stillListed = listed.Single(question => question.GetProperty("id").GetString() == questionId);
+		stillListed.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
+	}
+
+	[Fact]
+	public async Task GivenTheCurrentRevision_WhenDeleted_ThenApiRefuses()
+	{
+		// Given — a question with only one revision, which is also the current one
+		using var client = await SignedIn();
+		var created = await Create(client, Draft(UniqueKey("single_revision"), "short_text"));
+		var questionId = created.GetProperty("id").GetString()!;
+		var revisionId = created.GetProperty("revisionId").GetString()!;
+
+		// When
+		using var response = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenARevisionDeletion_WhenSucceeds_ThenAContentFreeAuditRowIsWritten()
+	{
+		// Given
+		using var client = await SignedIn();
+		var key = UniqueKey("audited_revision");
+		var created = await Create(client, Draft(key, "short_text"));
+		var questionId = created.GetProperty("id").GetString()!;
+		var oldRevisionId = created.GetProperty("revisionId").GetString()!;
+
+		await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
+			Draft(key, "short_text") with { LabelEn = "Reworded" });
+
+		// When
+		using var response = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{questionId}/revisions/{oldRevisionId}", UriKind.Relative));
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		// Then
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var entry = await database.AuditLog.SingleAsync(e =>
+			e.Action == AuditAction.DeletedQuestionRevision && e.TargetId == TinyId.Parse(oldRevisionId));
+
+		entry.ActorSubject.ShouldNotBeNullOrWhiteSpace();
+		entry.Detail.ShouldBeNull();
+	}
+
+	[Fact]
+	public async Task GivenANonAdministrator_WhenARevisionIsDeleted_ThenApiRefuses()
+	{
+		// Given
+		using var admin = await SignedIn();
+		var created = await Create(admin, Draft(UniqueKey("member_only"), "short_text"));
+		var questionId = created.GetProperty("id").GetString()!;
+		var revisionId = created.GetProperty("revisionId").GetString()!;
+
+		using var member = await SignedIn(MemberRole.User);
+
+		// When
+		using var response = await member.DeleteAsync(
+			new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	[Theory]
+	[InlineData("not-an-id")]
+	[InlineData("AAAAAAAAAAA")]
+	public async Task GivenIdNamesNoRevision_WhenDeleted_ThenApiReturnsNotFound(string revisionId)
+	{
+		// Given
+		using var client = await SignedIn();
+		var created = await Create(client, Draft(UniqueKey("no_such_revision"), "short_text"));
+		var questionId = created.GetProperty("id").GetString()!;
+
+		// When
+		using var response = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{questionId}/revisions/{revisionId}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenARevisionOfAnotherQuestion_WhenDeleted_ThenApiReturnsNotFound()
+	{
+		// Given
+		using var client = await SignedIn();
+		var questionA = await Create(client, Draft(UniqueKey("question_a"), "short_text"));
+		var questionB = await Create(client, Draft(UniqueKey("question_b"), "short_text"));
+		var revisionOfB = questionB.GetProperty("revisionId").GetString()!;
+
+		// When — B's revision named under A's question id
+		using var response = await client.DeleteAsync(new Uri(
+			$"/api/admin/questions/{questionA.GetProperty("id").GetString()}/revisions/{revisionOfB}",
+			UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
 	}
 
 	[Fact]

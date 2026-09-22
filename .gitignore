@@ -9,6 +9,9 @@ coverage/
 *.coverage
 *.cobertura.xml
 
+# Local FileSystemBlobStore root (Development media storage stand-in)
+.local/
+
 # Editor/IDE
 .idea/
 

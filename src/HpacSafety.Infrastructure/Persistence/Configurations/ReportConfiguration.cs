@@ -73,7 +73,6 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 		builder.Property(answer => answer.IsPrivate).IsRequired();
 
 		builder.Property(answer => answer.Locale).IsRequired();
-		builder.Property(answer => answer.NeedsTranslation).IsRequired();
 
 		// Not unique on (report, question): a multi-select records one row per
 		// chosen value, so a report legitimately holds several answers to one
@@ -81,9 +80,11 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 		builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId });
 		builder.HasIndex(answer => answer.QuestionRevisionId);
 
-		// The administrator's translation queue.
-		builder.HasIndex(answer => answer.NeedsTranslation)
-			.HasFilter("needs_translation");
+		// The translation queue: every answer with a value and no translation yet,
+		// whichever question type it belongs to (ADR-0080). Ordered by when it was
+		// answered, so the queue reads oldest first without a sort at query time.
+		builder.HasIndex(answer => answer.AnsweredAt)
+			.HasFilter("value IS NOT NULL AND translated_value IS NULL");
 
 		// Lets a report_files row enforce, at the database level, that the
 		// answer it links to belongs to the same report — see

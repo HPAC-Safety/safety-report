@@ -18,8 +18,20 @@ public sealed class MediaPolicyOptions
 	/// </summary>
 	public const long DefaultMaxByteSize = 50L * 1024 * 1024;
 
+	/// <summary>
+	///     The configurable default count of attachments a single report may carry.
+	/// </summary>
+	public const int DefaultMaxAttachmentCount = 5;
+
 	/// <summary>The largest upload this deployment accepts, in bytes.</summary>
 	public long MaxByteSize { get; set; } = DefaultMaxByteSize;
+
+	/// <summary>
+	///     The most attachments one submission may carry. A request-level bound —
+	///     <see cref="MediaPolicy" /> judges one file at a time and knows nothing
+	///     about how many its report has.
+	/// </summary>
+	public int MaxAttachmentCount { get; set; } = DefaultMaxAttachmentCount;
 
 	/// <summary>Builds the domain policy this deployment runs with.</summary>
 	public MediaPolicy ToPolicy()

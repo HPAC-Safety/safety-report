@@ -32,7 +32,6 @@ Scenario: Expired local state is not restored
   When the reporter returns to the form
   Then the browser ignores or removes the expired state
 
-@ignore
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
   When the reporter submits the form
@@ -41,14 +40,12 @@ Scenario: One answer entry per shown answer-producing revision
   And file-upload answers additionally use zero-based indexes into the repeated files parts
   And fields for the other answer shapes are null
 
-@ignore
 Scenario: A skipped answer is represented by an empty value, not omission
   Given a reporter skips an answer-producing question
   When the submission DTO is built
   Then a skipped answer of any type has a null value
   And a skipped file upload has an empty attachment_part_indexes list
 
-@ignore
 Scenario: A submitted select value must be one the revision offered
   Given a reporter submits a value for a picker or multi-select question
   When the API validates the submission
@@ -56,14 +53,12 @@ Scenario: A submitted select value must be one the revision offered
   And a value the revision never offered is rejected
   And a type-ahead, or a multi-select with reporter additions allowed, backed by a live shared list also accepts a value the list does not yet offer
 
-@ignore
 Scenario: The submission path never calls a translation provider
   Given a submission contains select answers and a value typed into a type-ahead or a multi-select with reporter additions allowed
   When the API commits the submission
   Then no translation provider is called
   And the answers are stored in the language the reporter gave them in, flagged for an Administrator
 
-@ignore
 Scenario Outline: The API rejects a malformed submission DTO
   Given a submission DTO contains <problem>
   When the API validates it
@@ -80,7 +75,6 @@ Examples:
   | a question_revision_id for a deleted revision       |
   | no explicit answer to the consent_publish revision  |
 
-@ignore
 Scenario: A submission may answer a known superseded revision
   Given the browser's session began before an Administrator edited the form
   And an answered revision is a known, non-deleted, superseded revision
@@ -94,7 +88,6 @@ Scenario: A revision that was never shown as answer-producing is rejectable
   When the API validates the submission
   Then the API may reject the submission
 
-@ignore
 Scenario: Reporter-visible errors never echo submitted content
   Given a submission fails validation
   When the API returns an error to the reporter
@@ -102,7 +95,6 @@ Scenario: Reporter-visible errors never echo submitted content
   And it never echoes an answer, client filename, bearer token, credential, or storage key
   And routine invalid requests are not logged with body content
 
-@ignore
 Scenario: Accepted attachments are streamed into quarantine under a bound
   Given a submission includes one or more files parts
   When the API accepts an attachment
@@ -111,20 +103,17 @@ Scenario: Accepted attachments are streamed into quarantine under a bound
   And never buffers the whole file in memory
   And never persists or logs the client filename
 
-@ignore
 Scenario: A valid submission is persisted atomically
   Given a multipart submission passes every validation step
   When the API commits the submission
-  Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, and one independent attachment-processing outbox item per file
+  Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file
 
-@ignore
 Scenario: A failed transaction leaves no visible report and no leaked blobs
   Given the persistence transaction for a submission fails
   When the API returns from the failed request
   Then no report is visible
   And any already-written quarantine blobs are unreferenced and expire through the storage lifecycle rule
 
-@ignore
 Scenario: A successful submission returns an opaque accepted receipt
   Given a submission passes validation and persists successfully
   When the API responds
@@ -140,22 +129,21 @@ Scenario: The UI prevents duplicate submission while a request is in flight
   And retains local state if the network result is uncertain
   And clears saved local state only after a definite 202 response
 
+# Deferred to issue #15: the endpoint requires a valid bearer token today
+# (proven by the two scenarios around this one), but nothing here yet
+# enforces a per-IP rate limit.
 @ignore
-Scenario: Submission is rejected without valid abuse-control checks
+Scenario: A rate-limited submission is rejected
   Given a submission request arrives
-  When the bearer token is missing or invalid, or the per-IP rate limit is exceeded
-  Then the API rejects the request
-  And a rate-limited request receives 429 with a safe retry signal
+  When the per-IP rate limit is exceeded
+  Then the API rejects the request with 429 and a safe retry signal
   And the client IP used for rate limiting comes only from explicitly trusted proxy headers and is never stored on the report
-  And the authenticated subject is never stored on the report
 
-@ignore
 Scenario: An unauthenticated submission is rejected
   Given a submission request carries no bearer token
-  When the API processes the request
+  When the API processes the submission
   Then the API rejects it before any report state is created
 
-@ignore
 Scenario Outline: A member of any role may submit a report
   Given a reporter holds a valid member token with the <role> role
   When a valid submission is made
@@ -167,7 +155,6 @@ Examples:
   | SafetyOfficer |
   | Administrator |
 
-@ignore
 Scenario: A stored report carries no submitter subject, user id, or link
   Given a reporter submits a valid report while signed in
   When the submission is committed

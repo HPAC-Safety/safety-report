@@ -180,6 +180,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		configurationBuilder.Properties<AttachmentKind>().HaveConversion<EnumCodeConverter<AttachmentKind>>().HaveMaxLength(64);
 		configurationBuilder.Properties<AuditAction>().HaveConversion<EnumCodeConverter<AuditAction>>().HaveMaxLength(64);
 		configurationBuilder.Properties<OutboxMessageType>().HaveConversion<EnumCodeConverter<OutboxMessageType>>().HaveMaxLength(64);
+		configurationBuilder.Properties<TranslationSource>().HaveConversion<EnumCodeConverter<TranslationSource>>().HaveMaxLength(64);
 	}
 
 	/// <summary>

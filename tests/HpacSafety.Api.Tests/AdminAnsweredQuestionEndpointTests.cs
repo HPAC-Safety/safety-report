@@ -163,17 +163,46 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAnswerNotAwaitingTranslation_WhenOneIsSupplied_ThenApiRefuses()
+	public async Task GivenNarrativeAnswer_WhenAdministratorSuppliesTranslation_ThenAcceptedWithHumanProvenance()
 	{
-		// Given — a free-text answer is never translated
+		// Given — ADR-0080 widens the queue to every answer with a value, a
+		// free-text one included, not just select-shaped ones
 		using var client = await SignedInAsync();
 		var created = await CreateAsync(client, UniqueKey("narrative"));
 		var answerId = await AnswerAsync(created.GetProperty("id").GetString()!, "It all happened quickly.");
+
+		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		queued.GetProperty("answers").EnumerateArray()
+			.ShouldContain(answer => answer.GetProperty("id").GetString() == answerId);
 
 		// When
 		using var response = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
 			new { value = "Tout s'est passé très vite." });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.SingleAsync(a => a.Id == TinyId.Parse(answerId));
+		stored.Value.ShouldBe("It all happened quickly.");
+		stored.TranslatedValue.ShouldBe("Tout s'est passé très vite.");
+		stored.TranslationSource.ShouldBe(TranslationSource.Human);
+	}
+
+	[Fact]
+	public async Task GivenAnswerWithNoValue_WhenTranslationIsSupplied_ThenApiRefuses()
+	{
+		// Given — a skipped answer has nothing to translate
+		using var client = await SignedInAsync();
+		var created = await CreateAsync(client, UniqueKey("skipped"));
+		var answerId = await AnswerAsync(created.GetProperty("id").GetString()!, value: null);
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
+			new { value = "anything" });
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -200,7 +229,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	///     Writes one report answer straight to the database, because there is no
 	///     submission endpoint to post one through yet.
 	/// </summary>
-	private async Task<string> AnswerAsync(string questionId, string value, bool deleteReport = false)
+	private async Task<string> AnswerAsync(string questionId, string? value, bool deleteReport = false)
 	{
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

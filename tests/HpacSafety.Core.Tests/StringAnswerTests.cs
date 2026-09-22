@@ -6,9 +6,10 @@ namespace HpacSafety.Core.Tests;
 
 /// <summary>
 ///     Every answer is one string — the words the reporter saw, in the language
-///     they saw them. A select value is flagged for an administrator to supply the
-///     other language; a boolean and a date have one invariant written form in both.
-///     See ADR-0072.
+///     they saw them, and immutable once written. Every answer with a value is
+///     eventually translated into the other official language, mechanically by the
+///     Worker or by an administrator; nothing on the submission path translates
+///     anything. See ADR-0072 and ADR-0080.
 /// </summary>
 public class StringAnswerTests
 {
@@ -55,29 +56,80 @@ public class StringAnswerTests
 		// When
 		var answer = report.Answer(Province(), "Alberta", Now);
 
-		// Then — the other language is an administrator's to supply, even
-		// though the curated list already holds one
+		// Then — the other language is not yet supplied, even though the
+		// curated list already holds one
 		answer.Locale.ShouldBe(Locale.FrCa);
 		answer.NeedsTranslation.ShouldBeTrue();
 		answer.TranslatedValue.ShouldBeNull();
+		answer.TranslationSource.ShouldBeNull();
 	}
 
 	[Fact]
-	public void GivenFlaggedAnswer_WhenAdministratorSuppliesTranslation_ThenBothLanguagesAreHeld()
+	public void GivenFlaggedAnswer_WhenWorkerSuppliesTranslation_ThenBothLanguagesAreHeldAndSourceIsAuto()
 	{
 		// Given
 		var report = new Report(Locale.FrCa, Now);
 		var answer = report.Answer(Province(), "Alberta", Now);
 
 		// When
-		answer.SupplyTranslation("Alberta, as written in English");
+		answer.SupplyAutoTranslation("Alberta, as written in English");
 
 		// Then — the reporter's own value is never touched
 		answer.Value.ShouldBe("Alberta");
 		answer.TranslatedValue.ShouldBe("Alberta, as written in English");
+		answer.TranslationSource.ShouldBe(TranslationSource.Auto);
 		answer.NeedsTranslation.ShouldBeFalse();
 		answer.ValueIn(Locale.FrCa).ShouldBe("Alberta");
 		answer.ValueIn(Locale.EnCa).ShouldBe("Alberta, as written in English");
+	}
+
+	[Fact]
+	public void GivenFlaggedAnswer_WhenAdministratorSuppliesTranslation_ThenSourceIsHuman()
+	{
+		// Given
+		var report = new Report(Locale.FrCa, Now);
+		var answer = report.Answer(Province(), "Alberta", Now);
+
+		// When
+		answer.SupplyHumanTranslation("Alberta, as written in English");
+
+		// Then
+		answer.TranslatedValue.ShouldBe("Alberta, as written in English");
+		answer.TranslationSource.ShouldBe(TranslationSource.Human);
+	}
+
+	[Fact]
+	public void GivenAutoTranslatedAnswer_WhenAdministratorCorrectsIt_ThenSourceBecomesHuman()
+	{
+		// Given — the Worker already produced a draft
+		var report = new Report(Locale.FrCa, Now);
+		var answer = report.Answer(Province(), "Alberta", Now);
+		answer.SupplyAutoTranslation("Alberta");
+
+		// When — an administrator overwrites it
+		answer.SupplyHumanTranslation("Alberta (corrected)");
+
+		// Then — unlike the automatic path, a human correction may overwrite
+		// an existing translation
+		answer.TranslatedValue.ShouldBe("Alberta (corrected)");
+		answer.TranslationSource.ShouldBe(TranslationSource.Human);
+	}
+
+	[Fact]
+	public void GivenAlreadyAutoTranslatedAnswer_WhenWorkerSuppliesAnotherOne_ThenRefused()
+	{
+		// Given — idempotency: the Worker must not silently overwrite a
+		// translation, its own or an administrator's
+		var report = new Report(Locale.FrCa, Now);
+		var answer = report.Answer(Province(), "Alberta", Now);
+		answer.SupplyAutoTranslation("Alberta");
+
+		// When
+		var supplyingAgain = () => answer.SupplyAutoTranslation("Alberta (again)");
+
+		// Then
+		supplyingAgain.ShouldThrow<DomainRuleViolationException>();
+		answer.TranslatedValue.ShouldBe("Alberta");
 	}
 
 	[Theory]
@@ -91,7 +143,7 @@ public class StringAnswerTests
 		var answer = report.Answer(Province(), "Alberta", Now);
 
 		// When
-		var supplying = () => answer.SupplyTranslation(blank);
+		var supplying = () => answer.SupplyHumanTranslation(blank);
 
 		// Then
 		supplying.ShouldThrow<DomainRuleViolationException>();
@@ -99,16 +151,48 @@ public class StringAnswerTests
 	}
 
 	[Fact]
-	public void GivenAnswerNotAwaitingTranslation_WhenOneIsSupplied_ThenRefused()
+	public void GivenNarrativeAnswer_WhenRecorded_ThenAlsoFlaggedForTranslation()
+	{
+		// Given — ADR-0080 widens translation to every answer with a value,
+		// narrative included; nothing on the submission path translates it
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		var answer = report.Answer(Narrative(), "Wind picked up on final.", Now);
+
+		// Then
+		answer.NeedsTranslation.ShouldBeTrue();
+		answer.Value.ShouldBe("Wind picked up on final.");
+	}
+
+	[Fact]
+	public void GivenNarrativeAnswer_WhenWorkerTranslatesIt_ThenTheOriginalIsNeverTouched()
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
 		var answer = report.Answer(Narrative(), "Wind picked up on final.", Now);
 
-		// When
-		var supplying = () => answer.SupplyTranslation("Le vent s'est levé en finale.");
+		// When — the Worker's mechanical translation, never an LLM rewrite
+		answer.SupplyAutoTranslation("Le vent s'est levé en finale.");
 
-		// Then — a narrative is never translated
+		// Then — the answer of record is untouched; only the second language
+		// gained a value
+		answer.Value.ShouldBe("Wind picked up on final.");
+		answer.TranslatedValue.ShouldBe("Le vent s'est levé en finale.");
+		answer.TranslationSource.ShouldBe(TranslationSource.Auto);
+	}
+
+	[Fact]
+	public void GivenSkippedAnswer_WhenTranslationIsAttempted_ThenRefused()
+	{
+		// Given — nothing was said, so there is nothing to translate
+		var report = new Report(Locale.EnCa, Now);
+		var answer = report.Answer(Province(), value: null, Now);
+
+		// When
+		var supplying = () => answer.SupplyAutoTranslation("anything");
+
+		// Then
 		supplying.ShouldThrow<DomainRuleViolationException>();
 	}
 
@@ -125,7 +209,6 @@ public class StringAnswerTests
 
 		// Then
 		answer.Value.ShouldBe(given);
-		answer.NeedsTranslation.ShouldBeFalse();
 		answer.ValueIn(Locale.EnCa).ShouldBe(given);
 	}
 
@@ -175,7 +258,7 @@ public class StringAnswerTests
 	[Fact]
 	public void GivenAnswerWithNoTranslationYet_WhenReadInEitherLanguage_ThenGivesWhatTheReporterWrote()
 	{
-		// Given — an administrator has not reached this one yet
+		// Given — nobody has reached this one yet
 		var report = new Report(Locale.FrCa, Now);
 		var answer = report.Answer(Province(), "Alberta", Now);
 
@@ -234,7 +317,6 @@ public class StringAnswerTests
 
 		// Then — machine-readable storage, localized only at render
 		answer.Value.ShouldBe(given);
-		answer.NeedsTranslation.ShouldBeFalse();
 	}
 
 	private static Question Province()

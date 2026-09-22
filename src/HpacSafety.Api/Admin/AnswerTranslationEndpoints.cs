@@ -6,15 +6,16 @@ using Microsoft.EntityFrameworkCore;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-///     The queue of select answers waiting for their second official language.
+///     The queue of answers waiting for their second official language.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         A reporter answers a picker or a type-ahead in one language, and nothing on
-///         the submission path translates it (ADR-0072). The answer is stored as they
-///         gave it and flagged; this is where an administrator clears that flag, by
-///         typing the other language or by pressing Translate and saving what comes
-///         back.
+///         A reporter answers in one language, and nothing on the submission path
+///         translates it (ADR-0062). The Worker fills most answers mechanically, off
+///         the request path, via <c>ITranslator</c> (ADR-0080); this is where an
+///         administrator supplies one by hand, or corrects one the Worker already
+///         produced, by typing the other language or by pressing Translate and saving
+///         what comes back.
 ///     </para>
 ///     <para>
 ///         Everything here requires the <c>Administrator</c> policy. The queue spans
@@ -45,7 +46,7 @@ public static class AnswerTranslationEndpoints
 		ArgumentNullException.ThrowIfNull(database);
 
 		var waiting = await database.ReportAnswers
-			.Where(answer => answer.NeedsTranslation)
+			.Where(answer => answer.Value != null && answer.TranslatedValue == null)
 			.OrderBy(answer => answer.AnsweredAt)
 			.Select(answer => new AwaitingTranslationView(
 				answer.Id.ToString(),
@@ -84,7 +85,10 @@ public static class AnswerTranslationEndpoints
 
 		try
 		{
-			answer.SupplyTranslation(request.Value);
+			// An administrator may overwrite an existing translation, including one
+			// the Worker already produced automatically — this is the human review
+			// path, so it always wins.
+			answer.SupplyHumanTranslation(request.Value);
 		}
 		catch (DomainRuleViolationException cause)
 		{

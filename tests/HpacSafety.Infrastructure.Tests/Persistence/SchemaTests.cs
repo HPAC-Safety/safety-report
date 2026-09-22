@@ -107,12 +107,14 @@ public sealed class SchemaTests(PostgresFixture postgres)
 			connectionString,
 			"SELECT column_name FROM information_schema.columns WHERE table_name = 'report_answers'");
 
-		// Then — every answer is one string, in the reporter's language, with
-		// a flag for an administrator to supply the other (ADR-0072)
+		// Then — every answer is one string, in the reporter's language,
+		// immutable, with a place for its second language and how it was
+		// produced (ADR-0072, ADR-0080)
 		columns.ShouldContain("value");
 		columns.ShouldContain("locale");
 		columns.ShouldContain("translated_value");
-		columns.ShouldContain("needs_translation");
+		columns.ShouldContain("translation_source");
+		columns.ShouldNotContain("needs_translation");
 		columns.ShouldNotContain("selected_option_codes");
 	}
 

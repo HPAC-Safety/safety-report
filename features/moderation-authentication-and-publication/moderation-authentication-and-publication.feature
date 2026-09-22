@@ -321,3 +321,71 @@ Scenario: Revoking a member's access is the identity provider's decision
   Then they can no longer authenticate
   And this system holds no record of them to revoke
   And historic audit rows keep the opaque subject they were written with
+
+@REQ-MOD-042
+@ui
+@ignore
+Scenario: A signed-out visitor who navigates to an admin route is sent to sign in
+  Given a visitor is signed out
+  When the visitor navigates directly to an admin route
+  Then the browser is redirected to the member-login page
+  And no admin page content is shown first
+
+@REQ-MOD-043
+@ui
+@ignore
+Scenario Outline: A signed-in member without the required role sees a real 403, not a 404 or the page content
+  Given a visitor signs in as a <role>
+  When the visitor navigates directly to <route>, which their role cannot use
+  Then the page shows a forbidden (403) view in place of the route's content
+  And it is not the not-found page
+  And no request for that route's data is made
+
+Examples:
+  | role          | route                       |
+  | User          | /admin/reports               |
+  | User          | /admin/questions              |
+  | SafetyOfficer | /admin/questions              |
+  | SafetyOfficer | /admin/choice-lists           |
+  | SafetyOfficer | /admin/answer-translations    |
+
+@REQ-MOD-044
+@ignore
+Scenario: A successful sign-in writes an audit row
+  Given a member signs in with valid credentials
+  When the sign-in succeeds
+  Then an audit entry records the token subject, a sign-in-succeeded action, and the time
+  And it never records the credentials
+
+@REQ-MOD-045
+@ignore
+Scenario: A failed sign-in attempt writes an audit row
+  Given a sign-in attempt uses credentials that are not valid
+  When the attempt is rejected
+  Then an audit entry records a sign-in-failed action and the time
+  And it never records the attempted credentials
+  And the actor is recorded as the attempted identity rather than left blank
+
+@REQ-MOD-046
+@ignore
+Scenario: A reviewer's attachment view writes its own audit row, distinct from a raw-report view
+  Given a reviewer opens a private attachment
+  When the view completes
+  Then an audit entry records an attachment-viewed action naming that attachment as the target
+  And it is distinguishable from a raw-report-viewed audit entry for the same report
+
+@REQ-MOD-047
+@ignore
+Scenario: A failed audit write blocks the action it would have recorded
+  Given a reviewer performs a moderation or question-authoring action that must be audited
+  When the audit row fails to write
+  Then the action itself does not commit
+  And the caller sees the action as failed, not succeeded
+
+@REQ-MOD-048
+@ignore
+Scenario: Sign-out is not an audited event
+  Given a signed-in member activates the logout action
+  When the client discards its token
+  Then no request reaches the API for that logout
+  And no audit entry is written for it

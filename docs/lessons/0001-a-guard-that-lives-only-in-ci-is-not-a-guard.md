@@ -1,4 +1,7 @@
 ---
+title: A guard that lives only in CI is not a guard
+description: "Thirty-eight @ui scenarios failed on every fresh clone while CI stayed green, because the rule was a --filter argument rather than code."
+type: lesson
 date: 2026-09-21
 issue: 219
 status: accepted

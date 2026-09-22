@@ -96,40 +96,40 @@
     }
   },
   "report": {
-    "loading": "#Loading the report form…",
-    "loadError": "#The report form could not be loaded. Please reload the page.",
-    "progress": "#Step {current} of {total}",
+    "loading": "Chargement du formulaire de rapport…",
+    "loadError": "Le formulaire de rapport n'a pas pu être chargé. Veuillez actualiser la page.",
+    "progress": "Étape n°{current}, tirée de {total}",
     "privacy": {
-      "localStorage": "#Your answers are saved in this browser only, for up to 15 days, until you submit. Photos, videos, and documents are never saved in the browser."
+      "localStorage": "Vos réponses ne sont enregistrées que dans ce navigateur, pendant une durée maximale de 15 jours, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents ne sont jamais enregistrés dans le navigateur."
     },
     "nav": {
-      "next": "#Next",
-      "back": "#Back",
-      "submit": "#Submit report",
-      "submitting": "#Submitting…"
+      "next": "Suivant",
+      "back": "Retour",
+      "submit": "Soumettre un rapport",
+      "submitting": "Envoi en cours…"
     },
     "required": {
-      "badge": "#Required",
-      "error": "#This question is required.",
-      "summary": "#Please answer the following before continuing:"
+      "badge": "Obligatoire",
+      "error": "Cette question est obligatoire.",
+      "summary": "Veuillez répondre aux questions suivantes avant de poursuivre :"
     },
-    "booleanYes": "#Yes",
-    "booleanNo": "#No",
+    "booleanYes": "Oui",
+    "booleanNo": "Non",
     "select": {
-      "placeholder": "#Choose one"
+      "placeholder": "Choisissez-en une"
     },
     "attachments": {
-      "selectedCount": "#{count} file(s) selected",
-      "guidance": "#Attach photos, videos, or documents related to this occurrence, if you have them.",
-      "notRestored": "#Attached files are not saved between visits — if you reload this page, you will need to choose them again."
+      "selectedCount": "{count} fichier(s) sélectionné(s)",
+      "guidance": "Veuillez joindre des photos, des vidéos ou des documents liés à cet incident, si vous en avez.",
+      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous actualisez cette page, vous devrez les sélectionner à nouveau."
     },
     "error": {
-      "network": "#Your report could not be sent. Your answers are still saved in this browser — please check your connection and try again.",
-      "submitFailed": "#We could not submit your report. Please try again."
+      "network": "Votre rapport n'a pas pu être envoyé. Vos réponses sont toujours enregistrées dans ce navigateur — veuillez vérifier votre connexion et réessayer.",
+      "submitFailed": "Nous n'avons pas pu transmettre votre rapport. Veuillez réessayer."
     },
     "submitted": {
-      "title": "#Report submitted",
-      "body": "#Thank you. Your report has been received."
+      "title": "Rapport présenté",
+      "body": "Merci. Nous avons bien reçu votre rapport."
     }
   },
   "notFound": {

@@ -595,3 +595,11 @@ Scenario: The editor carries an existing question's settings into the form
   When they open the first question for editing
   Then the form is filled with its current wording, type, and behaviour
   And its key cannot be changed
+
+@ui
+Scenario: Reviewing an imported Typeform draft prefills the editor
+  Given a signed-in Administrator opens the manage-questions page
+  When they import a Typeform English and French export pair
+  Then the imported drafts are listed
+  When they choose to review the first imported draft
+  Then the editor is filled with that draft's key, type, and both languages

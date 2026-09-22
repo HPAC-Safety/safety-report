@@ -11,6 +11,7 @@ import {
 	type QuestionView,
 	type SaveQuestionRequest,
 } from "../api/adminQuestions"
+import type { ImportedQuestionDraftView } from "../api/adminTypeformImport"
 
 /*
  * The authoring form for one question.
@@ -78,6 +79,45 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			groupedUnderQuestionId: question.groupedUnderQuestionId,
 			allowsReporterAdditions: question.allowsReporterAdditions,
 			options: question.options.map((option) => ({
+				code: option.code,
+				labelEn: option.labelEn,
+				labelFr: option.labelFr,
+			})),
+		},
+	}
+}
+
+/**
+ * An imported field references its group parent by Typeform key, not a
+ * database id — the parent may not exist yet if it hasn't been reviewed and
+ * saved. Resolved against the live question list at the moment the draft is
+ * opened for review.
+ */
+export function draftFromImported(imported: ImportedQuestionDraftView, questions: QuestionView[]): QuestionDraft {
+	const group = imported.groupedUnderKey
+		? questions.find((question) => question.key === imported.groupedUnderKey)
+		: undefined
+	const collectsNoAnswer = NO_ANSWER_TYPES.includes(imported.type)
+
+	return {
+		request: {
+			key: imported.key,
+			type: imported.type,
+			labelEn: imported.labelEn,
+			labelFr: imported.labelFr,
+			helpTextEn: imported.helpTextEn,
+			helpTextFr: imported.helpTextFr,
+			placeholderEn: null,
+			placeholderFr: null,
+			isRequired: false,
+			isPrivate: !collectsNoAnswer,
+			isActive: true,
+			dependsOnQuestionId: null,
+			dependsOnOptionCode: null,
+			optionSetId: null,
+			groupedUnderQuestionId: group?.id ?? null,
+			allowsReporterAdditions: imported.allowsReporterAdditions,
+			options: imported.options.map((option) => ({
 				code: option.code,
 				labelEn: option.labelEn,
 				labelFr: option.labelFr,
@@ -470,7 +510,7 @@ export function QuestionEditor({
 					</select>
 					<p className="font-sans text-xs text-ink-muted">{t("questions.field.optionSetHelp")}</p>
 
-					{request.type === "multi_select" && request.optionSetId && (
+					{request.type === "multi_select" && (
 						<div>
 							<label className="flex items-center gap-2 font-sans text-sm text-ink">
 								<input

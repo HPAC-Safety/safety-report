@@ -186,7 +186,28 @@
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     },
-    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données."
+    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données.",
+    "import": {
+      "openDialog": "#Import from Typeform",
+      "title": "#Import from Typeform",
+      "intro": "#Upload an English export and its French export as one pair. Nothing is saved until you review and save each question yourself.",
+      "englishFile": "#English export (.json)",
+      "frenchFile": "#French export (.json)",
+      "action": "#Import",
+      "working": "#Importing…",
+      "draftsTitle": "#Imported questions",
+      "review": "#Review",
+      "reviewed": "#Reviewed",
+      "frenchDefaultedToEnglish": "#No French text was found for this field, so the English text was used for both languages. Correct the French before saving.",
+      "rejectedTitle": "#Fields not imported",
+      "rejectedIntro": "#These fields have no equivalent in the question bank and were skipped.",
+      "pendingLogicTitle": "#Branching logic to wire up manually",
+      "pendingLogicIntro": "#These fields had conditional logic the importer could not translate automatically. Wire up the equivalent \"Depends on\" setting by hand, then resolve the note.",
+      "pendingLogicResolve": "#Resolved",
+      "error": {
+        "unexpected": "#Something went wrong. Please try again."
+      }
+    }
   },
   "choiceLists": {
     "title": "Gérer les listes de choix",

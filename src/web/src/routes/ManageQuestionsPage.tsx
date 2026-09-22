@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { SortableList } from "../components/SortableList"
-import { QuestionEditor, type QuestionDraft, blankDraft, draftOf } from "../components/QuestionEditor"
+import { QuestionEditor, type QuestionDraft, blankDraft, draftFromImported, draftOf } from "../components/QuestionEditor"
+import { TypeformImportDialog } from "../components/TypeformImportDialog"
 import {
 	ApiError,
 	createQuestion,
@@ -39,6 +40,7 @@ export function ManageQuestionsPage() {
 	const [editing, setEditing] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [importing, setImporting] = useState(false)
 
 	const report = useCallback(
 		(cause: unknown) => setError(cause instanceof ApiError ? cause.detail : t("questions.error.unexpected")),
@@ -134,11 +136,34 @@ export function ManageQuestionsPage() {
 					onClick={() => {
 						setEditing(null)
 						setDraft(blankDraft())
+						setImporting(false)
 					}}
 				>
 					{t("questions.addQuestion")}
 				</button>
+				<button
+					type="button"
+					className="touch-target inline-flex items-center rounded border border-rule px-5 font-sans text-ink hover:bg-surface-2"
+					onClick={() => {
+						setDraft(null)
+						setEditing(null)
+						setImporting(true)
+					}}
+				>
+					{t("questions.import.openDialog")}
+				</button>
 			</div>
+
+			{importing && (
+				<TypeformImportDialog
+					onReview={(imported) => {
+						setEditing(null)
+						setDraft(draftFromImported(imported, questions))
+						setImporting(false)
+					}}
+					onClose={() => setImporting(false)}
+				/>
+			)}
 
 			{draft && (
 				<QuestionEditor

@@ -62,6 +62,7 @@ app.MapAdminQuestions();
 app.MapAdminOptionSets();
 app.MapAdminTranslation();
 app.MapAdminAnswerTranslation();
+app.MapAdminTypeformImport();
 
 await app.RunAsync().ConfigureAwait(false);
 

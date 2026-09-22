@@ -2,6 +2,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.QuestionBank.Typeform;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Persistence.Conventions;
@@ -39,6 +40,7 @@ public sealed class ModelTests
 	[InlineData(typeof(QuestionRevisionOption), "question_revision_options")]
 	[InlineData(typeof(AuditLogEntry), "audit_log")]
 	[InlineData(typeof(OutboxMessage), "outbox_messages")]
+	[InlineData(typeof(PendingImportLogic), "pending_import_logic")]
 	public void GivenModel_WhenEntityIsMapped_ThenLandsInTableIssueNamed(Type entity, string table)
 	{
 		// Given / When
@@ -138,6 +140,19 @@ public sealed class ModelTests
 	{
 		// Given / When
 		var mapped = Model().FindEntityType(typeof(AuditLogEntry))!;
+
+		// Then
+		mapped.FindProperty("Deleted").ShouldBeNull();
+		mapped.GetDeclaredQueryFilters().ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenPendingImportLogic_WhenModelIsRead_ThenHasNoDeletedColumn()
+	{
+		// Given / When — a second, narrow exception to the soft-delete
+		// convention, argued on its own facts in ADR-0077/0078: transient
+		// import scratch notes, never report or answer data.
+		var mapped = Model().FindEntityType(typeof(PendingImportLogic))!;
 
 		// Then
 		mapped.FindProperty("Deleted").ShouldBeNull();

@@ -22,8 +22,20 @@ public sealed record TypeformDocument(
 	{
 		ArgumentNullException.ThrowIfNull(json);
 
-		return JsonSerializer.Deserialize<TypeformDocument>(json, Options)
-			   ?? throw new DomainRuleViolationException("That file is not a Typeform export.");
+		TypeformDocument? document;
+
+		try
+		{
+			document = JsonSerializer.Deserialize<TypeformDocument>(json, Options);
+		}
+		catch (JsonException cause)
+		{
+			throw new DomainRuleViolationException("That file is not a Typeform export.", cause);
+		}
+
+		return document is { Fields: not null }
+			? document
+			: throw new DomainRuleViolationException("That file is not a Typeform export.");
 	}
 }
 

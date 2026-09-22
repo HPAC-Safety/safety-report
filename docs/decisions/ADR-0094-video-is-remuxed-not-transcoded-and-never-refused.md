@@ -49,6 +49,7 @@ ffmpeg -nostdin -hide_banner -loglevel error
        -map 0:v:0 -map 0:a? -map -0:d -map -0:s -map -0:t
        -c copy
        -map_metadata -1 -map_metadata:s:v -1 -map_metadata:s:a -1
+       -bitexact
        -movflags +faststart
        <output>
 ```
@@ -68,9 +69,16 @@ Three properties earn this shape:
    leaves stream-level tags in place.
 
 The output is verified before it is accepted: it must contain exactly the
-expected video and optional audio stream, no data streams, and no location,
-make, model or creation tags. A derivative that fails verification is not a
-derivative.
+expected video and optional audio stream, no data streams, and **no tag outside
+a short allowlist** of container structure — `major_brand`, `minor_version`,
+`compatible_brands`, `language`, `handler_name`, `vendor_id`.
+
+The allowlist is the point. A denylist of known-bad names — location, make,
+model — passes anything it has not heard of, and the field that matters is the
+one somebody's next phone invents. `-bitexact` is passed for the same reason:
+without it ffmpeg stamps its own build into an `encoder` tag, which is harmless
+but is still a tag nobody asked for, and the check allows only what it
+recognises. A derivative that fails verification is not a derivative.
 
 **Subprocess, not a library binding.** ffmpeg is invoked as a child process
 with a fixed argument list, no shell, no network, a wall-clock timeout, and

@@ -37,17 +37,22 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		"-map", "0:v:0", "-map", "0:a?", "-map", "-0:d", "-map", "-0:s", "-map", "-0:t",
 		"-c", "copy",
 		"-map_metadata", "-1", "-map_metadata:s:v", "-1", "-map_metadata:s:a", "-1",
+		// Without this ffmpeg stamps its own build into an `encoder` tag, which
+		// is harmless but is still a tag we did not put there — and the
+		// verification below allows only what it recognises.
+		"-bitexact",
 		"-movflags", "+faststart",
 		"{output}",
 	];
 
-	// Anything naming a person, a device, or a place. Compared case-insensitively
-	// against every tag ffprobe reports, at container and stream level.
-	private static readonly string[] ForbiddenTagFragments =
+	// An allowlist, not a denylist. A denylist of known-bad names — location,
+	// make, model — passes anything it has not heard of, and the whole point of
+	// this check is the field somebody's next phone invents. These are the tags
+	// a remux legitimately writes: container structure, and the language and
+	// handler name a track carries.
+	private static readonly string[] StructuralTags =
 	[
-		"location", "gps", "coordinate", "make", "model", "device", "software",
-		"creation", "date", "encoder", "artist", "author", "comment", "title",
-		"copyright", "album", "description", "serial", "uid", "owner",
+		"major_brand", "minor_version", "compatible_brands", "language", "handler_name", "vendor_id",
 	];
 
 	private readonly ILogger<FfmpegVideoRemuxer> _logger;
@@ -167,8 +172,7 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 
 		foreach (var tag in tags.EnumerateObject())
 		{
-			if (!ForbiddenTagFragments.Any(fragment =>
-					tag.Name.Contains(fragment, StringComparison.OrdinalIgnoreCase)))
+			if (StructuralTags.Contains(tag.Name, StringComparer.OrdinalIgnoreCase))
 			{
 				continue;
 			}

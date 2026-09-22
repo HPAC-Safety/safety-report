@@ -293,12 +293,7 @@ public class QuestionRevision
 	/// </summary>
 	internal void Delete(DateTimeOffset at)
 	{
-		if (Deleted is not null)
-		{
-			return;
-		}
-
-		Deleted = at;
+		Deleted ??= at;
 
 		foreach (var option in _options)
 		{

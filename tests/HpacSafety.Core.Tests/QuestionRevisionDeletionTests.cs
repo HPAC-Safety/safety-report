@@ -67,10 +67,15 @@ public class QuestionRevisionDeletionTests
 	[Fact]
 	public void GivenARevisionAlreadyDeleted_WhenDeletedAgain_ThenTimestampDoesNotMove()
 	{
-		// Given
-		var question = Question.Create("heading", QuestionType.ShortText, "Heading", "Cap", Now);
+		// Given — with an option, so the cascade's own idempotency is proven too
+		var question = Question.Create(
+			"heading", QuestionType.SingleSelect, "Heading", "Cap", Now,
+			options: [new QuestionOptionInput("north", "North", "Nord")]);
 		var oldRevision = question.CurrentRevision;
-		question.Revise(QuestionType.ShortText, "Heading (revised)", "Cap (révisé)", true, true, 0, Now.AddHours(1));
+		var oldOption = oldRevision.Options.Single();
+		question.Revise(
+			QuestionType.SingleSelect, "Heading (revised)", "Cap (révisé)", true, true, 0, Now.AddHours(1),
+			options: [new QuestionOptionInput("north", "North", "Nord")]);
 		var firstDeletion = Now.AddHours(2);
 		question.DeleteRevision(oldRevision.Id, hasBeenAnswered: false, firstDeletion);
 
@@ -79,6 +84,7 @@ public class QuestionRevisionDeletionTests
 
 		// Then
 		oldRevision.Deleted.ShouldBe(firstDeletion);
+		oldOption.Deleted.ShouldBe(firstDeletion);
 	}
 
 	[Fact]

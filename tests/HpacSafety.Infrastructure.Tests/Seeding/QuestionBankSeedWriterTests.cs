@@ -7,12 +7,31 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Seeding;
 
 /// <summary>
-///     The guarded-insert SQL this writer builds, exercised against a synthetic
-///     question rather than <see cref="QuestionBankSeed" /> — which seeds nothing
+///     The guarded-insert SQL this writer builds, exercised against synthetic
+///     questions rather than <see cref="QuestionBankSeed" /> — which seeds nothing
 ///     right now (see its remarks) and so cannot exercise this on its own.
 /// </summary>
 public sealed class QuestionBankSeedWriterTests
 {
+	private static readonly SeededQuestion GroupParent = new(
+		"aircraft",
+		QuestionType.Group,
+		QuestionRole.None,
+		false,
+		false,
+		false,
+		"Aircraft",
+		"Aéronef",
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		false,
+		[]);
+
 	private static readonly SeededQuestion Question = new(
 		"sample_question",
 		QuestionType.SingleSelect,
@@ -24,11 +43,17 @@ public sealed class QuestionBankSeedWriterTests
 		"Question exemple",
 		"Some help",
 		"Une certaine aide",
+		"e.g. Alberta",
+		"p. ex. Alberta",
+		"aircraft",
+		null,
+		"aircraft",
+		false,
 		[new SeededOption("a", "Option A", "Option A (fr)")]);
 
 	/// <summary>
-	///     Not private, and with no help text — the other side of both
-	///     ternaries <see cref="Question" /> alone leaves untouched.
+	///     Not private, and with no help text or dependency — the other side of
+	///     every ternary <see cref="Question" /> alone leaves untouched.
 	/// </summary>
 	private static readonly SeededQuestion NonPrivateQuestionWithNoHelp = new(
 		"another_question",
@@ -41,20 +66,29 @@ public sealed class QuestionBankSeedWriterTests
 		"Une autre question",
 		null,
 		null,
+		null,
+		null,
+		null,
+		null,
+		null,
+		false,
 		[]);
 
 	[Fact]
-	public void GivenSeededQuestionWithAnOption_WhenSqlIsBuilt_ThenEveryRowGetsAGuardedInsert()
+	public void GivenSeededQuestionsWithADependencyGroupingAndAnOption_WhenSqlIsBuilt_ThenEveryRowGetsAGuardedInsert()
 	{
-		var sql = QuestionBankSeedWriter.Sql([Question]);
+		var sql = QuestionBankSeedWriter.Sql([GroupParent, Question]);
 
 		sql.ShouldContain("INSERT INTO questions");
+		sql.ShouldContain("INSERT INTO question_revisions");
+		sql.ShouldContain("INSERT INTO question_revision_options");
 		sql.ShouldContain("is_private");
-		sql.ShouldContain("INSERT INTO question_versions");
-		sql.ShouldContain("INSERT INTO question_translations");
-		sql.ShouldContain("INSERT INTO question_options");
-		sql.ShouldContain("INSERT INTO question_option_translations");
+		sql.ShouldContain("grouped_under_question_id");
+		sql.ShouldContain("depends_on_question_id");
 		sql.ShouldContain("WHERE NOT EXISTS");
+		sql.ShouldNotContain("question_versions");
+		sql.ShouldNotContain("question_translations");
+		sql.ShouldNotContain("question_option_translations");
 	}
 
 	[Fact]
@@ -98,20 +132,41 @@ public sealed class QuestionBankSeedWriterTests
 	}
 
 	[Fact]
-	public void GivenSeededQuestions_WhenWrittenAgainstLegacySensitivitySchema_ThenUsesSensitivityNotPrivacyFlag()
-	{
-		var sql = QuestionBankSeedWriter.Sql([Question, NonPrivateQuestionWithNoHelp], true);
-
-		sql.ShouldContain("'restricted'");
-		sql.ShouldContain("'publishable'");
-		sql.ShouldNotContain("is_private");
-	}
-
-	[Fact]
-	public void GivenQuestionWithNoHelpText_WhenSqlIsBuilt_ThenHelpColumnIsNull()
+	public void GivenQuestionWithNoHelpTextOrDependency_WhenSqlIsBuilt_ThenThoseColumnsAreNull()
 	{
 		var sql = QuestionBankSeedWriter.Sql([NonPrivateQuestionWithNoHelp]);
 
 		sql.ShouldContain("NULL");
+	}
+
+	[Fact]
+	public void GivenADependency_WhenSqlIsBuilt_ThenTheParentsSeedIdIsUsed()
+	{
+		var sql = QuestionBankSeedWriter.Sql([GroupParent, Question]);
+		var parentId = SeedIds.For("question:aircraft");
+
+		sql.ShouldContain($"'{parentId.Value}'");
+	}
+
+	[Fact]
+	public void GivenSeededQuestionWithAnOption_WhenLegacySqlIsBuilt_ThenTheOriginalSchemaShapeIsUsed()
+	{
+		var sql = QuestionBankSeedWriter.LegacySql([Question, NonPrivateQuestionWithNoHelp]);
+
+		sql.ShouldContain("INSERT INTO questions");
+		sql.ShouldContain("'restricted'");
+		sql.ShouldContain("'publishable'");
+		sql.ShouldContain("INSERT INTO question_versions");
+		sql.ShouldContain("INSERT INTO question_translations");
+		sql.ShouldContain("INSERT INTO question_options");
+		sql.ShouldContain("INSERT INTO question_option_translations");
+		sql.ShouldNotContain("is_private");
+		sql.ShouldNotContain("question_revisions");
+	}
+
+	[Fact]
+	public void GivenNoQuestions_WhenLegacySqlIsBuilt_ThenEmpty()
+	{
+		QuestionBankSeedWriter.LegacySql([]).ShouldBeEmpty();
 	}
 }

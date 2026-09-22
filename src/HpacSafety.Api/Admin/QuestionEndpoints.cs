@@ -293,10 +293,15 @@ public static class QuestionEndpoints
 			return Results.NotFound();
 		}
 
+		// Counts answers on deleted reports too: a deleted report is still a
+		// record of what somebody was asked (REQ-QB-030, REQ-QB-031).
+		var hasBeenAnswered = await HasBeenAnsweredAsync(database, question.Id, cancellationToken)
+			.ConfigureAwait(false);
+
 		return await Save(async () =>
 		{
 			var at = clock.GetUtcNow();
-			question.Delete(at);
+			question.Delete(hasBeenAnswered, at);
 			Audit(database, context, AuditAction.DeletedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 

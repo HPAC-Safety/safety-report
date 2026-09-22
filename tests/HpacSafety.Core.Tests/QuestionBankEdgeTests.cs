@@ -18,7 +18,7 @@ public class QuestionBankEdgeTests
 	{
 		// Given
 		var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
-		question.Delete(Now);
+		question.Delete(false, Now);
 
 		// When
 		var reordering = () => question.Reorder(2, Now);
@@ -32,10 +32,10 @@ public class QuestionBankEdgeTests
 	{
 		// Given
 		var question = Question.Create("damage", QuestionType.ShortText, "Damage", "Dommages", Now);
-		question.Delete(Now);
+		question.Delete(false, Now);
 
 		// When
-		question.Delete(Now.AddDays(1));
+		question.Delete(false, Now.AddDays(1));
 
 		// Then
 		question.Deleted.ShouldBe(Now);

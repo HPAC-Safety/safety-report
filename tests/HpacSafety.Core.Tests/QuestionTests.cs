@@ -13,13 +13,107 @@ public class QuestionTests
 	private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
 	[Fact]
+	public void GivenConsentQuestion_WhenOrdinaryEditClearsActiveFlag_ThenRefused()
+	{
+		// Given — Deactivate() refused this all along; the ordinary edit path did not
+		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+
+		// When
+		var deactivating = () => consent.Revise(
+			consent.CurrentRevision.Type,
+			consent.CurrentRevision.LabelEn,
+			consent.CurrentRevision.LabelFr,
+			consent.CurrentRevision.IsPrivate,
+			false,
+			consent.CurrentRevision.DisplayOrder,
+			Now.AddHours(1));
+
+		// Then
+		deactivating.ShouldThrow<DomainRuleViolationException>();
+		consent.IsActive.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenConsentQuestion_WhenOrdinaryEditKeepsItActive_ThenWordingStillChanges()
+	{
+		// Given — the guard refuses deactivation, not an edit
+		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+
+		// When
+		consent.Revise(
+			consent.CurrentRevision.Type,
+			"May we publish a de-identified version?",
+			"Pouvons-nous publier une version anonymisée ?",
+			consent.CurrentRevision.IsPrivate,
+			true,
+			consent.CurrentRevision.DisplayOrder,
+			Now.AddHours(1));
+
+		// Then
+		consent.CurrentRevision.LabelEn.ShouldBe("May we publish a de-identified version?");
+		consent.IsActive.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenAnsweredQuestion_WhenDeletionIsAttempted_ThenRefusedAndKept()
+	{
+		// Given — an answer records what somebody was asked, so the question stays
+		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+
+		// When
+		var deleting = () => question.Delete(true, Now.AddHours(1));
+
+		// Then
+		deleting.ShouldThrow<DomainRuleViolationException>();
+		question.Deleted.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenAnsweredQuestion_WhenDeactivated_ThenLeavesFormAndKeepsHistory()
+	{
+		// Given — deactivating is how an answered question stops being asked
+		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+
+		// When
+		question.Deactivate(Now.AddHours(1));
+
+		// Then
+		question.IsActive.ShouldBeFalse();
+		question.Deleted.ShouldBeNull();
+		question.Revisions.Count.ShouldBe(2);
+	}
+
+	[Fact]
+	public void GivenAnsweredQuestion_WhenEditedIntoAFork_ThenRetiresWithoutTheDeleteGuard()
+	{
+		// Given — forking retires the original, which the delete guard must not block
+		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+
+		// When
+		var live = question.ApplyEdit(
+			true,
+			QuestionType.SingleSelect,
+			"Pilot injury, as reported",
+			"Blessure du pilote, telle que déclarée",
+			false,
+			true,
+			0,
+			Now.AddHours(1));
+
+		// Then
+		live.ShouldNotBeSameAs(question);
+		question.Deleted.ShouldBe(Now.AddHours(1));
+		live.Key.ShouldBe(question.Key);
+	}
+
+	[Fact]
 	public void GivenConsentQuestion_WhenDeletionIsAttempted_ThenRefused()
 	{
 		// Given
 		var consent = Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now);
 
 		// When
-		var deleting = () => consent.Delete(Now);
+		var deleting = () => consent.Delete(false, Now);
 
 		// Then
 		deleting.ShouldThrow<DomainRuleViolationException>()
@@ -46,7 +140,7 @@ public class QuestionTests
 		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
 
 		// When
-		question.Delete(Now);
+		question.Delete(false, Now);
 
 		// Then
 		question.Deleted.ShouldBe(Now);

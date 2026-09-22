@@ -948,7 +948,10 @@ public sealed class ReportSubmissionEndpointSteps
 		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var question = await database.Questions.FirstAsync(q => q.Key == key);
-		question.Delete(DateTimeOffset.UtcNow);
+		// Nothing has answered it yet: this fixture deletes the question in
+		// order to produce a deleted revision id for the submission to be
+		// rejected against.
+		question.Delete(false, DateTimeOffset.UtcNow);
 		await database.SaveChangesAsync();
 
 		return revisionId;

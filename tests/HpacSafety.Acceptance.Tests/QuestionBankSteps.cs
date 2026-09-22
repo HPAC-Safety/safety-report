@@ -32,6 +32,7 @@ public sealed class QuestionBankSteps
 	private IReadOnlyList<QuestionRevisionOption> _optionsAtSnapshot = [];
 	private Dictionary<TinyId, int> _revisionNumbersBefore = [];
 	private DomainRuleViolationException? _rejection;
+	private bool _hasBeenAnswered;
 
 	[Given(@"the question bank stores each question as a stable, non-localized key")]
 	public void GivenQuestionsHaveStableKeys()
@@ -660,16 +661,68 @@ public sealed class QuestionBankSteps
 			Question.Create("!!!", QuestionType.Date, "When?", "Quand ?", Noon));
 	}
 
-	[Given(@"an active question has been asked")]
+	[Given(@"an active question nobody has answered")]
 	public void GivenAnActiveQuestion()
 	{
 		_question = Ordinary("occurrence_notes", QuestionType.LongText);
+		_hasBeenAnswered = false;
+	}
+
+	[Given(@"a question revision has never been referenced by any answer, including answers on deleted reports")]
+	public void GivenAnUnreferencedRevision()
+	{
+		_question = Ordinary("occurrence_notes", QuestionType.LongText);
+		_hasBeenAnswered = false;
+	}
+
+	[Given(@"a question revision is referenced by at least one answer, including an answer on a deleted report")]
+	public void GivenAReferencedRevision()
+	{
+		_question = Ordinary("occurrence_notes", QuestionType.LongText);
+		_hasBeenAnswered = true;
 	}
 
 	[When(@"an Administrator deletes it")]
 	public void WhenItIsDeleted()
 	{
-		_question!.Delete(Noon.AddHours(1));
+		_question!.Delete(_hasBeenAnswered, Noon.AddHours(1));
+	}
+
+	[When(@"an Administrator attempts to delete it")]
+	public void WhenDeletionIsAttempted()
+	{
+		_rejection = Record(() => _question!.Delete(_hasBeenAnswered, Noon.AddHours(1)));
+	}
+
+	[Then(@"the deletion succeeds")]
+	public void ThenDeletionSucceeds()
+	{
+		_question!.Deleted.ShouldBe(Noon.AddHours(1));
+	}
+
+	[Then(@"the deletion is rejected")]
+	public void ThenDeletionIsRejected()
+	{
+		_rejection.ShouldNotBeNull();
+	}
+
+	[Then(@"the revision remains available as history indefinitely")]
+	public void ThenTheRevisionRemains()
+	{
+		_question!.Deleted.ShouldBeNull();
+		_question.Revisions.ShouldNotBeEmpty();
+	}
+
+	[Then(@"deactivating it through a new revision is the normal way to remove it from future forms")]
+	public void ThenDeactivationIsTheWayOut()
+	{
+		var revisions = _question!.Revisions.Count;
+
+		_question.Deactivate(Noon.AddHours(2));
+
+		_question.IsActive.ShouldBeFalse();
+		_question.Revisions.Count.ShouldBe(revisions + 1);
+		_question.Deleted.ShouldBeNull();
 	}
 
 	[Then(@"the question is stamped as deleted rather than removed")]
@@ -689,13 +742,29 @@ public sealed class QuestionBankSteps
 	[When(@"an Administrator tries to delete it")]
 	public void WhenConsentIsDeleted()
 	{
-		_rejection = Record(() => _question!.Delete(Noon.AddHours(1)));
+		_rejection = Record(() => _question!.Delete(false, Noon.AddHours(1)));
 	}
 
 	[Then(@"trying to stop asking it is rejected the same way")]
 	public void ThenDeactivatingConsentIsRejected()
 	{
 		Should.Throw<DomainRuleViolationException>(() => _question!.Deactivate(Noon.AddHours(1)));
+	}
+
+	[Then(@"an ordinary edit that clears its active flag is rejected the same way")]
+	public void ThenAnOrdinaryEditCannotDeactivateConsent()
+	{
+		// The dedicated method refused this all along; the administrator's
+		// ordinary edit reached the same state and did not.
+		Should.Throw<DomainRuleViolationException>(
+			() => _question!.Revise(
+				_question.CurrentRevision.Type,
+				_question.CurrentRevision.LabelEn,
+				_question.CurrentRevision.LabelFr,
+				_question.CurrentRevision.IsPrivate,
+				false,
+				_question.CurrentRevision.DisplayOrder,
+				Noon.AddHours(1)));
 	}
 
 	// ------------------------------------------------- choice-list lifecycle --

@@ -13,14 +13,17 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         the revision never mentioned would make the record a lie.
 ///     </para>
 ///     <para>
-///         <see cref="QuestionType.Autocomplete" /> is the exception, because it is the
-///         one type a reporter can add to. A pilot who flies at a site nobody has
-///         written down types it, and the next pilot has to see it — a list that only
-///         grows when an administrator publishes a new revision does not solve the
-///         problem the type exists for. So an autocomplete backed by a shared set
+///         A revision with <see cref="QuestionRevision.AllowsReporterAdditions" /> set
+///         is the exception, because it is the one kind a reporter can add to. A
+///         pilot who flies at a site nobody has written down types it, and the next
+///         pilot has to see it — a list that only grows when an administrator
+///         publishes a new revision does not solve the problem the type exists for.
+///         So a revision that allows reporter additions, backed by a shared set,
 ///         renders the <b>live</b> set, while its snapshot still records what that
 ///         reporter was shown. The two answer different questions: "what do we offer
-///         now" and "what were you offered". See ADR-0063.
+///         now" and "what were you offered". Always true for
+///         <see cref="QuestionType.Autocomplete" />; author-controlled for
+///         <see cref="QuestionType.MultiSelect" />. See ADR-0063, amended by ADR-0077.
 ///     </para>
 ///     <para>
 ///         This is a pure function over rows the caller has already loaded. It does no
@@ -39,8 +42,8 @@ public static class QuestionChoices
 	///     has since been retired.
 	/// </param>
 	/// <returns>
-	///     The live set's items for an autocomplete backed by a set; the
-	///     revision's own frozen snapshot otherwise.
+	///     The live set's items for a revision that allows reporter additions
+	///     and is backed by a set; the revision's own frozen snapshot otherwise.
 	/// </returns>
 	public static IReadOnlyList<QuestionOptionInput> For(QuestionRevision revision, OptionSet? optionSet)
 	{
@@ -60,7 +63,7 @@ public static class QuestionChoices
 	{
 		ArgumentNullException.ThrowIfNull(revision);
 
-		return revision.Type == QuestionType.Autocomplete
+		return revision.AllowsReporterAdditions
 			   && optionSet is { Deleted: null }
 			   && revision.OptionSetId == optionSet.Id;
 	}

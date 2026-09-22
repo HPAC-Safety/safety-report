@@ -91,6 +91,9 @@ public class Question
 	/// <summary>The group question this one renders together with today, if any. See ADR-0076.</summary>
 	public TinyId? GroupedUnderQuestionId => CurrentRevision.GroupedUnderQuestionId;
 
+	/// <summary>Whether this question allows a reporter's value to be added as a new choice today. See ADR-0063, ADR-0077.</summary>
+	public bool AllowsReporterAdditions => CurrentRevision.AllowsReporterAdditions;
+
 	/// <summary>
 	///     Where this question sits on the form today. Not versioned
 	///     independently — see the class remarks.
@@ -148,12 +151,13 @@ public class Question
 		string? dependsOnOptionCode = null,
 		TinyId? optionSetId = null,
 		TinyId? groupedUnderQuestionId = null,
+		bool allowsReporterAdditions = false,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-			groupedUnderQuestionId, options);
+			groupedUnderQuestionId, allowsReporterAdditions, options);
 	}
 
 	/// <summary>
@@ -188,6 +192,7 @@ public class Question
 			null,
 			null,
 			null,
+			false,
 			null);
 	}
 
@@ -211,6 +216,7 @@ public class Question
 		string? dependsOnOptionCode,
 		TinyId? optionSetId,
 		TinyId? groupedUnderQuestionId,
+		bool allowsReporterAdditions,
 		IReadOnlyList<QuestionOptionInput>? options)
 	{
 		var question = new Question(key, isSystem, role, at);
@@ -218,7 +224,7 @@ public class Question
 			QuestionRevision.Create(
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-				optionSetId, groupedUnderQuestionId, options ?? [], at));
+				optionSetId, groupedUnderQuestionId, allowsReporterAdditions, options ?? [], at));
 		return question;
 	}
 
@@ -247,6 +253,7 @@ public class Question
 		string? dependsOnOptionCode = null,
 		TinyId? optionSetId = null,
 		TinyId? groupedUnderQuestionId = null,
+		bool allowsReporterAdditions = false,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		if (IsSystem && type != Type)
@@ -259,7 +266,7 @@ public class Question
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-				groupedUnderQuestionId, options ?? []),
+				groupedUnderQuestionId, allowsReporterAdditions, options ?? []),
 			at);
 	}
 
@@ -304,19 +311,20 @@ public class Question
 		string? dependsOnOptionCode = null,
 		TinyId? optionSetId = null,
 		TinyId? groupedUnderQuestionId = null,
+		bool allowsReporterAdditions = false,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		var draft = new RevisionDraft(
 			type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-			groupedUnderQuestionId, options ?? []);
+			groupedUnderQuestionId, allowsReporterAdditions, options ?? []);
 
 		if (!ForksWhenEdited(hasBeenAnswered))
 		{
 			Revise(
 				type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
 				helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-				dependsOnOptionCode, optionSetId, groupedUnderQuestionId, options);
+				dependsOnOptionCode, optionSetId, groupedUnderQuestionId, allowsReporterAdditions, options);
 			return this;
 		}
 
@@ -370,6 +378,18 @@ public class Question
 	public QuestionRevision GroupUnder(TinyId? groupedUnderQuestionId, DateTimeOffset at)
 	{
 		return ReviseInternal(CurrentDraft() with { GroupedUnderQuestionId = groupedUnderQuestionId }, at);
+	}
+
+	/// <summary>
+	///     Turns reporter additions on or off, as a new revision. Rejected by
+	///     <see cref="QuestionRevision" /> for any type but
+	///     <see cref="QuestionType.MultiSelect" /> — <see cref="QuestionType.Autocomplete" />
+	///     is always on and never needs this call. See ADR-0063, amended by
+	///     ADR-0077.
+	/// </summary>
+	public QuestionRevision AllowReporterAdditions(bool allowsReporterAdditions, DateTimeOffset at)
+	{
+		return ReviseInternal(CurrentDraft() with { AllowsReporterAdditions = allowsReporterAdditions }, at);
 	}
 
 	/// <summary>
@@ -457,7 +477,7 @@ public class Question
 				draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 				false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
 				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
-				draft.Options, at));
+				draft.AllowsReporterAdditions, draft.Options, at));
 
 		Delete(at);
 		return replacement;
@@ -472,7 +492,7 @@ public class Question
 			draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 			IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
 			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
-			draft.Options, at);
+			draft.AllowsReporterAdditions, draft.Options, at);
 		_revisions.Add(revision);
 		return revision;
 	}
@@ -491,7 +511,7 @@ public class Question
 			current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
 			current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
 			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode, current.OptionSetId,
-			current.GroupedUnderQuestionId, CurrentOptions());
+			current.GroupedUnderQuestionId, current.AllowsReporterAdditions, CurrentOptions());
 	}
 
 	/// <summary>The current revision's option set, in order, as input for a new revision.</summary>
@@ -534,5 +554,6 @@ public class Question
 		string? DependsOnOptionCode,
 		TinyId? OptionSetId,
 		TinyId? GroupedUnderQuestionId,
+		bool AllowsReporterAdditions,
 		IReadOnlyList<QuestionOptionInput> Options);
 }

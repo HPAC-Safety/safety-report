@@ -108,6 +108,7 @@ public static class QuestionEndpoints
 				dependsOn.OptionCode,
 				ParsedOptionSet(request),
 				groupedUnderQuestionId,
+				request.AllowsReporterAdditions,
 				options);
 
 			database.Questions.Add(question);
@@ -176,6 +177,7 @@ public static class QuestionEndpoints
 				dependsOn.OptionCode,
 				ParsedOptionSet(request),
 				groupedUnderQuestionId,
+				request.AllowsReporterAdditions,
 				options);
 
 			var forked = !ReferenceEquals(live, question);

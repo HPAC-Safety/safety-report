@@ -97,6 +97,8 @@
   "questions.field.optionSet": "Shared choice list",
   "questions.field.optionSetNone": "Write the choices here instead",
   "questions.field.optionSetHelp": "The choices are copied into this version when it is saved. Editing the shared list later will not change what a reporter was already shown.",
+  "questions.field.allowsReporterAdditions": "Let a reporter add a choice that is not on the list",
+  "questions.field.allowsReporterAdditionsHelp": "A value the list does not offer is added to the shared list and flagged for review, the same way a type-ahead already works.",
   "questions.field.options": "Choices",
   "questions.field.optionCode": "Code",
   "questions.field.optionLabelEn": "Choice (English)",

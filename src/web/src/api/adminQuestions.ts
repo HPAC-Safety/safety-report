@@ -65,6 +65,12 @@ export interface QuestionView {
 	optionSetId: string | null
 	/** The group question this one renders together with, if any. Distinct from a conditional dependency (ADR-0076). */
 	groupedUnderQuestionId: string | null
+	/**
+	 * Whether a reporter's value not on the shared list is recorded as a new
+	 * choice rather than rejected. Always true for autocomplete;
+	 * author-controlled for multi-select (ADR-0063, amended by ADR-0077).
+	 */
+	allowsReporterAdditions: boolean
 	labelEn: string
 	labelFr: string
 	helpTextEn: string | null
@@ -102,6 +108,7 @@ export interface SaveQuestionRequest {
 	dependsOnOptionCode: string | null
 	optionSetId: string | null
 	groupedUnderQuestionId: string | null
+	allowsReporterAdditions: boolean
 	options: { code: string; labelEn: string; labelFr: string }[]
 }
 

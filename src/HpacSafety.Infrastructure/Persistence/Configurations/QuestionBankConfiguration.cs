@@ -73,6 +73,7 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		builder.Property(revision => revision.IsPrivate).IsRequired();
 		builder.Property(revision => revision.IsActive).IsRequired();
 		builder.Property(revision => revision.DisplayOrder).IsRequired();
+		builder.Property(revision => revision.AllowsReporterAdditions).IsRequired();
 
 		// A conditional question names the stable question, not a revision of
 		// it, so rewording the parent cannot break the child. Restrict, not

@@ -52,6 +52,7 @@ export function blankDraft(): QuestionDraft {
 			dependsOnOptionCode: null,
 			optionSetId: null,
 			groupedUnderQuestionId: null,
+			allowsReporterAdditions: false,
 			options: [],
 		},
 	}
@@ -75,6 +76,7 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			dependsOnOptionCode: question.dependsOnOptionCode,
 			optionSetId: question.optionSetId,
 			groupedUnderQuestionId: question.groupedUnderQuestionId,
+			allowsReporterAdditions: question.allowsReporterAdditions,
 			options: question.options.map((option) => ({
 				code: option.code,
 				labelEn: option.labelEn,
@@ -248,7 +250,12 @@ export function QuestionEditor({
 							const clearedForNoAnswer = NO_ANSWER_TYPES.includes(type)
 								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnOptionCode: null }
 								: {}
-							update({ type, ...clearedOptions, ...clearedForNoAnswer })
+							// Only multi-select is author-controlled; autocomplete is
+							// always on regardless of what is sent, and every other
+							// type rejects the flag outright (ADR-0063, ADR-0077).
+							const clearedReporterAdditions =
+								type === "multi_select" ? {} : { allowsReporterAdditions: false }
+							update({ type, ...clearedOptions, ...clearedForNoAnswer, ...clearedReporterAdditions })
 						}}
 					>
 						{QUESTION_TYPES.map((type) => (
@@ -462,6 +469,22 @@ export function QuestionEditor({
 						))}
 					</select>
 					<p className="font-sans text-xs text-ink-muted">{t("questions.field.optionSetHelp")}</p>
+
+					{request.type === "multi_select" && request.optionSetId && (
+						<div>
+							<label className="flex items-center gap-2 font-sans text-sm text-ink">
+								<input
+									type="checkbox"
+									checked={request.allowsReporterAdditions}
+									onChange={(event) => update({ allowsReporterAdditions: event.target.checked })}
+								/>
+								{t("questions.field.allowsReporterAdditions")}
+							</label>
+							<p className="mt-1 font-sans text-xs text-ink-muted">
+								{t("questions.field.allowsReporterAdditionsHelp")}
+							</p>
+						</div>
+					)}
 
 					{!request.optionSetId && (
 						<>

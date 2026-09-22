@@ -57,6 +57,7 @@ public class QuestionRevision
 		string? dependsOnOptionCode,
 		TinyId? optionSetId,
 		TinyId? groupedUnderQuestionId,
+		bool allowsReporterAdditions,
 		IReadOnlyList<QuestionOptionInput> options,
 		DateTimeOffset at)
 	{
@@ -69,6 +70,11 @@ public class QuestionRevision
 		{
 			throw new DomainRuleViolationException(
 				$"A {type} question collects no answer and cannot be marked required or private.");
+		}
+
+		if (allowsReporterAdditions && type is not (QuestionType.Autocomplete or QuestionType.MultiSelect))
+		{
+			throw new DomainRuleViolationException($"A {type} question cannot allow reporter additions.");
 		}
 
 		// Only the publication-consent question is a system question, and it is
@@ -84,6 +90,10 @@ public class QuestionRevision
 		DependsOnOptionCode = ValidatedOptionCode(dependsOnOptionCode, DependsOnQuestionId);
 		OptionSetId = optionSetId;
 		GroupedUnderQuestionId = ValidatedGrouping(groupedUnderQuestionId, questionId);
+		// Fixed on for every autocomplete — this ADR-0063 behavior predates
+		// the flag and needed no migration data change. Author-controlled for
+		// multi-select. See ADR-0077's amendment to ADR-0063.
+		AllowsReporterAdditions = type == QuestionType.Autocomplete || allowsReporterAdditions;
 		LabelEn = NotBlank(labelEn);
 		LabelFr = NotBlank(labelFr);
 		HelpTextEn = helpTextEn;
@@ -177,6 +187,16 @@ public class QuestionRevision
 	///     dependency does. See ADR-0076.
 	/// </summary>
 	public TinyId? GroupedUnderQuestionId { get; private init; }
+
+	/// <summary>
+	///     Whether a reporter's value not on this revision's shared
+	///     <see cref="OptionSet" /> is recorded as a new choice at submission,
+	///     rather than rejected. Always true for
+	///     <see cref="QuestionType.Autocomplete" />; author-controlled for
+	///     <see cref="QuestionType.MultiSelect" />. See ADR-0063, amended by
+	///     ADR-0077.
+	/// </summary>
+	public bool AllowsReporterAdditions { get; private init; }
 
 	/// <summary>The English wording.</summary>
 	public string LabelEn { get; private init; }
@@ -283,13 +303,14 @@ public class QuestionRevision
 		string? dependsOnOptionCode,
 		TinyId? optionSetId,
 		TinyId? groupedUnderQuestionId,
+		bool allowsReporterAdditions,
 		IReadOnlyList<QuestionOptionInput> options,
 		DateTimeOffset at)
 	{
 		return new QuestionRevision(
 			questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-			optionSetId, groupedUnderQuestionId, options, at);
+			optionSetId, groupedUnderQuestionId, allowsReporterAdditions, options, at);
 	}
 
 	/// <summary>

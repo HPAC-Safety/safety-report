@@ -5,7 +5,7 @@ decision-makers: Chase Florell
 keywords: typeform, import, ref, bilingual, branching logic, pending
 ---
 
-# ADR-0078 — Typeform import is English-led, and every real branching rule is pending, not auto-mapped
+# ADR-0079 — Typeform import is English-led, and every real branching rule is pending, not auto-mapped
 
 **Status:** Amends two decisions in
 [ADR-0077](ADR-0077-typeform-json-import-and-export.md), made before the

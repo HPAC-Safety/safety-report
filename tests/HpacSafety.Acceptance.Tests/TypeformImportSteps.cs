@@ -12,7 +12,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     <c>features/typeform-question-import-export/typeform-question-import-export.feature</c>
 ///     that describe mapping behavior — everything <see cref="TypeformQuestionMapper" />
 ///     decides on its own, without a database or an HTTP endpoint. See
-///     ADR-0077, ADR-0078.
+///     ADR-0077, ADR-0079.
 /// </summary>
 [Binding]
 public sealed class TypeformImportSteps
@@ -276,7 +276,7 @@ public sealed class TypeformImportSteps
 	[Then(@"the produced draft is unconditional")]
 	public void ThenTheProducedDraftIsUnconditional()
 	{
-		// Contextual — this mapper never sets a dependency at all (ADR-0078);
+		// Contextual — this mapper never sets a dependency at all (ADR-0079);
 		// asserted structurally by ImportedQuestionDraft having no such field.
 	}
 

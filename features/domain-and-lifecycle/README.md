@@ -51,3 +51,19 @@ Question answers that represent a date use `DateOnly`; local wall-clock
 answers use `TimeOnly`; unspecified `DateTime` is prohibited. Enum values
 persist as stable lowercase codes and are localized only at UI/API-message
 edges.
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- Undelete, restore, or any path back from a soft deletion.
+- Physical deletion of an application record, or a cascade that removes rows
+  rather than stamping them.
+- An automated purge or retention job over raw reports. Retention ends at an
+  explicit deletion.
+- Lifecycle states beyond the ones the scenarios name, or a workflow engine to
+  move between them.
+- Ownership of a report by a member. A report belongs to no one
+  ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).

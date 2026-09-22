@@ -111,3 +111,21 @@ safe, content-free problem response.
 
 Administrative operations are authorized by role on the same token; see
 [moderation, authentication, and publication](../moderation-authentication-and-publication/moderation-authentication-and-publication.feature).
+
+## Out of scope
+
+What not to build here. The global list in
+[system overview](../../docs/system-overview.md) still holds; this narrows it
+to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+
+- A server-side draft, an autosave, a reserved report ID, an upload token, or a
+  resumable upload session. Nothing reaches the server before the one final
+  multipart request.
+- Restoring attachments from browser storage. Answers and shown revision IDs
+  persist locally; files never do.
+- Recording who submitted a report — no subject, no user id, no audit line, no
+  log line
+  ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+- Calling a translation provider on the submission path.
+- Echoing submitted content back in a validation error.
+- A per-reporter throttle. Rate limiting is by trusted IP.

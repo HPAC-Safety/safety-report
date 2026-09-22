@@ -35,6 +35,7 @@ builder.Services.AddHpacSafetyTranslation(
 	builder.Environment.IsDevelopment());
 
 builder.Services.AddScoped<IOutboxMessageProcessor, TranslateAnswersProcessor>();
+builder.Services.AddScoped<IOutboxMessageProcessor, SummarizeReportProcessor>();
 builder.Services.AddHostedService<Worker>();
 
 var host = builder.Build();

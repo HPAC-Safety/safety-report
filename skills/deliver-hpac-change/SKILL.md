@@ -71,7 +71,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    the image files under `docs/screenshots/<short-description>/`, named
    `before-*`/`after-*`, and reference them from the PR body or a comment
    (`gh pr create`/`gh pr comment --attach`) rather than only pasting them
-   inline.
+   inline. Set the locale to English before capturing — the default locale
+   the running app starts in is whatever the browser or a prior session left
+   it at, and a screenshot in French reads to a reviewer as broken or
+   untranslated rather than as the other official language working correctly.
 7. After pushing, bring the local Docker environment up on the pushed code:
    `./dev-up.sh` from the worktree (`./dev-up.sh --down` first if containers
    from another branch are running). It starts the containers detached, waits

@@ -185,7 +185,14 @@ export function ManageQuestionsPage() {
 			{importing && (
 				<TypeformImportDialog
 					onReview={(imported) => {
-						setEditing(null)
+						// A draft whose key matches a live question is the same
+						// question re-imported — reviewing it opens the ordinary
+						// edit flow (a new revision, or a fork if it has been
+						// answered, per ADR-0071) rather than trying to create a
+						// second question under the same key.
+						const existing = questions.find((question) => question.key === imported.key)
+
+						setEditing(existing?.id ?? null)
 						setDraft(draftFromImported(imported, questions))
 						setImporting(false)
 					}}

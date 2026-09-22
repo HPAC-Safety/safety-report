@@ -323,7 +323,8 @@ public static class QuestionEndpoints
 			.AnyAsync(answer => answer.QuestionId == questionId, cancellationToken);
 	}
 
-	private static async Task<Dictionary<TinyId, OptionSet>> LiveSetsAsync(
+	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>
+	internal static async Task<Dictionary<TinyId, OptionSet>> LiveSetsAsync(
 		HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var sets = await database.OptionSets
@@ -340,7 +341,8 @@ public static class QuestionEndpoints
 		return question.CurrentRevision.OptionSetId is { } id && sets.TryGetValue(id, out var set) ? set : null;
 	}
 
-	private static IQueryable<Question> LiveQuestions(HpacSafetyDbContext database)
+	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>
+	internal static IQueryable<Question> LiveQuestions(HpacSafetyDbContext database)
 	{
 		return database.Questions
 			.Include(question => question.Revisions)

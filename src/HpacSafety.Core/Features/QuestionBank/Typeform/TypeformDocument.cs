@@ -12,9 +12,14 @@ public sealed record TypeformDocument(
 	IReadOnlyList<TypeformField> Fields,
 	IReadOnlyList<TypeformLogicRule> Logic)
 {
-	private static readonly JsonSerializerOptions Options = new()
+	/// <summary>Shared with <see cref="TypeformExportBuilder" />, so a written export uses the exact casing this reads back.</summary>
+	public static readonly JsonSerializerOptions Options = new()
 	{
-		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+		// The organization's real exports hold accented French text as plain
+		// UTF-8, not \uXXXX escapes. An export matches that rather than
+		// System.Text.Json's stricter default encoder.
+		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
 	};
 
 	/// <summary>Parses a Typeform export from its raw JSON text.</summary>
@@ -36,6 +41,12 @@ public sealed record TypeformDocument(
 		return document is { Fields: not null }
 			? document
 			: throw new DomainRuleViolationException("That file is not a Typeform export.");
+	}
+
+	/// <summary>Serializes this document back to the same JSON shape <see cref="Parse" /> reads.</summary>
+	public string ToJson()
+	{
+		return JsonSerializer.Serialize(this, Options);
 	}
 }
 
@@ -62,7 +73,24 @@ public sealed record TypeformFieldProperties(
 	bool? AllowMultipleSelection,
 	bool? AllowOtherChoice,
 	IReadOnlyList<TypeformChoice>? Choices,
-	IReadOnlyList<TypeformField>? Fields);
+	IReadOnlyList<TypeformField>? Fields,
+	TypeformHpacExtension? Hpac = null);
+
+/// <summary>
+///     Everything HPAC's own schema has that plain Typeform JSON has no field
+///     for, namespaced so an export otherwise validates as a plain Typeform
+///     file without it. References another field by its own <see cref="TypeformField.Ref" />
+///     — the only identifier stable across a round trip — never by an internal
+///     database id. See ADR-0077.
+/// </summary>
+public sealed record TypeformHpacExtension(
+	string Type,
+	bool IsPrivate,
+	bool IsRequired,
+	bool AllowsReporterAdditions,
+	string? DependsOnKey,
+	string? DependsOnOptionCode,
+	string? GroupedUnderKey);
 
 /// <summary>
 ///     One choice on a <c>multiple_choice</c> or <c>dropdown</c> field.

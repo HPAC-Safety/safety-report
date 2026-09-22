@@ -1,5 +1,5 @@
 import { createBdd } from "playwright-bdd"
-import { expect, type Page } from "@playwright/test"
+import { expect, type Download, type Page } from "@playwright/test"
 
 const { When, Then } = createBdd()
 
@@ -83,4 +83,28 @@ Then("the editor is filled with that draft's key, type, and both languages", asy
 	await expect(page.getByLabel("Type")).toHaveValue(IMPORTED_DRAFT.type)
 	await expect(page.getByLabel("Question (English)")).toHaveValue(IMPORTED_DRAFT.labelEn)
 	await expect(page.getByLabel("Question (French)")).toHaveValue(IMPORTED_DRAFT.labelFr)
+})
+
+let exportedDownload: Download | null = null
+
+When("they choose to export the question bank", async ({ page }) => {
+	await page.route("**/api/admin/typeform/export", async (route) => {
+		await route.fulfill({
+			status: 200,
+			contentType: "application/zip",
+			headers: { "content-disposition": 'attachment; filename="question-bank.zip"' },
+			body: Buffer.from("PK\x05\x06" + "\x00".repeat(18)),
+		})
+	})
+
+	const [download] = await Promise.all([
+		page.waitForEvent("download"),
+		page.getByRole("button", { name: "Export to Typeform JSON" }).click(),
+	])
+
+	exportedDownload = download
+})
+
+Then("a zip file download begins", async () => {
+	expect(exportedDownload?.suggestedFilename()).toBe("question-bank.zip")
 })

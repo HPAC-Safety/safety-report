@@ -119,6 +119,30 @@ Scenario: The development token endpoint does not exist outside development
   When the development token endpoint is called
   Then the route does not exist
 
+Scenario Outline: A development login verified against the members site resolves role from the email lists
+  Given the development token endpoint is available
+  And "<email>" is <listed>
+  When that email logs in with credentials the members site accepts
+  Then the API returns a signed development token with the <role> role
+
+Examples:
+  | email                       | listed                                | role          |
+  | admin@example.test          | on the development administrator list | Administrator |
+  | officer@example.test        | on the development safety-officer list | SafetyOfficer |
+  | nobody-special@example.test | on neither development list           | User          |
+
+Scenario: Bad members-site credentials show the same generic failure as bad fixed-account credentials
+  Given the development token endpoint is available
+  When a login is attempted with credentials the members site does not accept
+  Then the API returns one generic invalid-credentials failure
+  And nothing distinguishes it from an unknown fixed development account
+
+Scenario: A members-site outage during a development login is reported distinctly from bad credentials
+  Given the development token endpoint is available
+  When the members site cannot be reached during a login attempt
+  Then the API reports the members site as unavailable
+  And it does not report invalid credentials
+
 Scenario: An unauthenticated request to an admin endpoint is refused before the handler
   Given a request carries no bearer token
   When it reaches an admin endpoint

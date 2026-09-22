@@ -1,8 +1,11 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using HpacSafety.Api.Authentication;
 using HpacSafety.Core.Features.Moderation;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
 using Testcontainers.PostgreSql;
 
@@ -123,6 +126,45 @@ public static class BootedApi
 		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token!.AccessToken);
 
 		return client;
+	}
+
+	/// <summary>
+	///     A Development host whose members-site login goes through a stubbed
+	///     transport rather than the real network, with the given
+	///     Development-only role allowlists — see ADR-0078.
+	/// </summary>
+	public static async Task<HttpClient> MembersSiteStubbedAsync(
+		HttpMessageHandler handler, IReadOnlyList<string>? administratorEmails = null,
+		IReadOnlyList<string>? safetyOfficerEmails = null)
+	{
+		var host = (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		{
+			builder.ConfigureTestServices(services =>
+			{
+				services
+					.AddHttpClient(MembersSiteCredentialSource.HttpClientName)
+					.ConfigurePrimaryHttpMessageHandler(() => handler);
+			});
+
+			var emailSettings = new Dictionary<string, string?>();
+
+			for (var index = 0; index < (administratorEmails?.Count ?? 0); index++)
+			{
+				emailSettings[$"MembersSiteLogin:AdministratorEmails:{index}"] = administratorEmails![index];
+			}
+
+			for (var index = 0; index < (safetyOfficerEmails?.Count ?? 0); index++)
+			{
+				emailSettings[$"MembersSiteLogin:SafetyOfficerEmails:{index}"] = safetyOfficerEmails![index];
+			}
+
+			foreach (var (key, value) in emailSettings)
+			{
+				builder.UseSetting(key, value);
+			}
+		});
+
+		return host.CreateClient();
 	}
 
 	/// <summary>Stops the host and the container once, after the whole run.</summary>

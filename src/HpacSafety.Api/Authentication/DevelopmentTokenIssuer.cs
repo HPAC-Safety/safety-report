@@ -23,6 +23,12 @@ namespace HpacSafety.Api.Authentication;
 ///         only in Development, so outside it there is no code path to reach — the
 ///         route is a 404 rather than a 401.
 ///     </para>
+///     <para>
+///         Verification itself is delegated to each registered
+///         <see cref="IDevelopmentCredentialSource" />, tried in order — the
+///         fixed accounts first, then the live members site (ADR-0078). This
+///         type's only job is minting the token once a source resolves a role.
+///     </para>
 /// </remarks>
 public sealed class DevelopmentTokenIssuer
 {
@@ -36,24 +42,21 @@ public sealed class DevelopmentTokenIssuer
 	/// </summary>
 	public const int MinimumKeyBytes = 32;
 
-	// Username, password, role. The password matching the username is the point:
-	// it is memorable, obviously synthetic, and nothing here is a credential.
-	private static readonly (string User, string Password, MemberRole Role)[] Accounts =
-	[
-		("admin", "admin", MemberRole.Administrator),
-		("officer", "officer", MemberRole.SafetyOfficer),
-		("user", "user", MemberRole.User)
-	];
-
 	private readonly HpacAuthenticationOptions _options;
+	private readonly IReadOnlyList<IDevelopmentCredentialSource> _sources;
 	private readonly TimeProvider _time;
 
 	/// <summary>Creates the issuer.</summary>
-	public DevelopmentTokenIssuer(IOptions<HpacAuthenticationOptions> options, TimeProvider time)
+	public DevelopmentTokenIssuer(
+		IOptions<HpacAuthenticationOptions> options,
+		IEnumerable<IDevelopmentCredentialSource> sources,
+		TimeProvider time)
 	{
 		ArgumentNullException.ThrowIfNull(options);
+		ArgumentNullException.ThrowIfNull(sources);
 
 		_options = options.Value;
+		_sources = [.. sources];
 		_time = time;
 	}
 
@@ -64,21 +67,28 @@ public sealed class DevelopmentTokenIssuer
 	}
 
 	/// <summary>
-	///     Issues a token for a known development credential pair, or <c>null</c>
-	///     when the pair is not one.
+	///     Issues a token for a credential pair any registered source recognizes,
+	///     or <c>null</c> when none does.
 	/// </summary>
 	/// <remarks>
 	///     The caller turns <c>null</c> into one generic failure. Nothing
-	///     distinguishes an unknown username from a wrong password, here or in the
-	///     response.
+	///     distinguishes an unknown username from a wrong password, or which
+	///     source was tried, here or in the response. An
+	///     <see cref="MembersSiteUnavailableException" /> from a source
+	///     propagates rather than being treated as a non-match — a down members
+	///     site is not the same failure as a wrong password.
 	/// </remarks>
-	public DevelopmentToken? Issue(string? username, string? password)
+	public async Task<DevelopmentToken?> IssueAsync(
+		string? username, string? password, CancellationToken cancellationToken)
 	{
-		var match = Accounts.FirstOrDefault(account =>
-			string.Equals(account.User, username, StringComparison.Ordinal)
-			&& string.Equals(account.Password, password, StringComparison.Ordinal));
+		if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+		{
+			return null;
+		}
 
-		if (match.User is null)
+		var role = await ResolveRoleAsync(username, password, cancellationToken).ConfigureAwait(false);
+
+		if (role is null)
 		{
 			return null;
 		}
@@ -88,7 +98,7 @@ public sealed class DevelopmentTokenIssuer
 
 		var issuedAt = _time.GetUtcNow();
 		var expiresAt = issuedAt + _options.TokenLifetime;
-		var subject = $"dev:{match.User}";
+		var subject = $"dev:{username}";
 
 		var token = new JwtSecurityToken(
 			IssuerName,
@@ -96,14 +106,30 @@ public sealed class DevelopmentTokenIssuer
 			[
 				new Claim(JwtRegisteredClaimNames.Sub, subject),
 				new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("n")),
-				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(match.Role))
+				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role.Value))
 			],
 			issuedAt.UtcDateTime,
 			expiresAt.UtcDateTime,
 			new SigningCredentials(KeyFrom(signingKey), SecurityAlgorithms.HmacSha256));
 
 		return new DevelopmentToken(
-			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, match.Role);
+			new JwtSecurityTokenHandler().WriteToken(token), expiresAt, subject, role.Value);
+	}
+
+	private async Task<MemberRole?> ResolveRoleAsync(
+		string username, string password, CancellationToken cancellationToken)
+	{
+		foreach (var source in _sources)
+		{
+			var role = await source.VerifyAsync(username, password, cancellationToken).ConfigureAwait(false);
+
+			if (role is not null)
+			{
+				return role;
+			}
+		}
+
+		return null;
 	}
 }
 

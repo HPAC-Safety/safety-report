@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using HpacSafety.Core.Features.Moderation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace HpacSafety.Api.Authentication;
@@ -70,6 +71,24 @@ public static class AuthenticationServiceCollectionExtensions
 		if (useDevelopmentIssuer)
 		{
 			services.AddSingleton<DevelopmentTokenIssuer>();
+			services.AddSingleton<IDevelopmentCredentialSource, FixedAccountCredentialSource>();
+			services.AddSingleton<IDevelopmentCredentialSource, MembersSiteCredentialSource>();
+
+			services.Configure<MembersSiteLoginOptions>(
+				configuration.GetSection(MembersSiteLoginOptions.SectionName));
+
+			services
+				.AddHttpClient(MembersSiteCredentialSource.HttpClientName, (provider, client) =>
+				{
+					var membersOptions = provider.GetRequiredService<IOptions<MembersSiteLoginOptions>>().Value;
+					client.BaseAddress = new Uri(membersOptions.BaseUrl);
+					client.Timeout = membersOptions.Timeout;
+				})
+				.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+				{
+					UseCookies = false,
+					AllowAutoRedirect = false
+				});
 		}
 
 		return services;

@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by ADR-0078
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: development, mock authentication, JWT, signing key, environment configuration
@@ -7,7 +7,10 @@ keywords: development, mock authentication, JWT, signing key, environment config
 
 # ADR-0066 — A development identity provider, signed with a dev key
 
-**Status:** Accepted.
+**Status:** Superseded by [ADR-0078](ADR-0078-a-development-login-may-verify-against-the-live-members-site.md)
+for the "no external dependency" alternative below — a fourth,
+members-site-verified development login now exists alongside the three
+fixed accounts described here, which remain unchanged.
 
 ## Context
 
@@ -102,3 +105,4 @@ cannot be reached.
 - [ADR-0015](ADR-0015-one-shell-script-for-development-setup.md) — development setup
 - [ADR-0020](ADR-0020-seeding-by-migration.md) — the development administrator this replaces
 - [ADR-0043](ADR-0043-react-typescript-vite-web-front-end.md) — the front end that reads the config endpoint
+- [ADR-0078](ADR-0078-a-development-login-may-verify-against-the-live-members-site.md) — supersedes the "hand-pasted token from a real provider" rejection below for a members-site-verified login

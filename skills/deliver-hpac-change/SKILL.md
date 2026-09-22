@@ -54,9 +54,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   The first commit never waits for the whole change to be finished. Work that
   exists only in a local worktree is invisible to other agents and
   contributors and is lost if the worktree or session goes away.
-- Rebase onto fresh `origin/main` before every push — each unit of work, the
-  final push before opening a pull request, and each fix while watching
-  checks, whether or not a pull request exists yet:
+- Rebase onto fresh `origin/main` before every **commit**, not only before
+  every push — each unit of work, the final commit before opening a pull
+  request, and each fix while watching checks, whether or not a pull request
+  exists yet:
   `git fetch origin main && git rebase origin/main`. Other agents merge to
   `main` continuously; a branch that is not rebased before it is pushed is
   out of date, and often conflicted, the moment it lands. Resolve any
@@ -64,6 +65,21 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   checks the change affects before pushing. When the rebase rewrote commits
   already on `origin`, push with `git push --force-with-lease`, never plain
   `--force`, so a push someone else made to the branch is never discarded.
+- **Claim a shared identifier from the tree as it is after that rebase, never
+  from the tree as it was when you started.** A number, a name, a slug or a
+  migration timestamp is claimed the moment you write it down, and somebody
+  else may have claimed it while you were working
+  ([lesson 0003](../../docs/lessons/0003-a-number-is-claimed-the-moment-someone-else-merges.md)).
+  For a decision record, `node tools/adr-numbers.mjs --next` reads every
+  fetched remote branch, so a number an open pull request has already taken is
+  skipped. If you lose the race anyway,
+  `node tools/adr-numbers.mjs --renumber <old> <new>` moves the file and
+  rewrites every reference in one pass — renaming is cheap, so take the new
+  number rather than arguing for the old one. When two records already share
+  the number, add `--file <name>` to say which one moves, and expect a list of
+  bare `ADR-NNNN` mentions it deliberately left alone: while the number names
+  two records, only a reference by filename says which is meant, and those are
+  resolved by hand.
 - Do all work for the issue inside that worktree. Remove it once the pull
   request is open — see "Verify and publish" for exactly when it comes down
   and how it comes back if a check fails.
@@ -127,7 +143,10 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   (technology choice, rejected alternative, durable trade-off). This is
   mandatory, not discretionary — if a change makes such a decision, add the ADR
   in the same PR. A routine implementation detail with no rejected alternative
-  does not need one.
+  does not need one. Number it with `node tools/adr-numbers.mjs --next` after
+  rebasing, and keep the filename and the document's own `# ADR-NNNN` heading
+  in step — `node tools/adr-numbers.mjs` fails a duplicate or a disagreement,
+  in the pre-commit hook and in CI (ADR-0091).
 - Never restate a `.feature` scenario's acceptance criteria inside an ADR, and
   never justify a technology/pattern choice inside a `.feature` file or its
   README — keep decision rationale and behavior requirements in their own

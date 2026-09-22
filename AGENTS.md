@@ -259,6 +259,13 @@ Put `Closes #<number>` on its own line in the PR body, use a squash-ready title,
 do not add `Co-Authored-By` trailers, and keep working until required checks are
 green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
 
+Rebase onto fresh `origin/main` before committing, not only before pushing, and
+claim a shared identifier — an ADR number, a name, a slug — from the tree as it
+is after that rebase. `node tools/adr-numbers.mjs --next` gives the next free
+decision-record number, counting every fetched remote branch;
+`--renumber <old> <new>` moves the file and rewrites every reference if somebody
+took it first ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
+
 Use Shouldly for .NET assertions, `GivenX_WhenY_ThenZ` test names
 ([ADR-0069](docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)),
 Mermaid for diagrams

@@ -72,3 +72,4 @@ in its frontmatter status, like an ADR.
 |---|---|---|
 | [0001 — A guard that lives only in CI is not a guard](0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md) | 38 failing tests on every fresh clone, invisible to CI | `hpac-safety-conventions` |
 | [0002 — Provenance that hashes only one side of a pair](0002-provenance-that-hashes-only-one-side-of-a-pair.md) | Hand-written French silently overwritten by the translator | `localize-hpac-app` |
+| [0003 — A number is claimed the moment someone else merges](0003-a-number-is-claimed-the-moment-someone-else-merges.md) | Three ADR numbers taken out from under a branch in one afternoon | `deliver-hpac-change` |

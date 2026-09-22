@@ -5,7 +5,9 @@
   "nav.openMenuLabel": "Ouvrir le menu",
   "nav.closeMenuLabel": "Fermer le menu",
   "language.switchTo": "Passer à {language}",
-  "footer.copyright": "© {year} l’Association canadienne de deltaplane et de parapente",
+  "footer.copyright": "© {year} ACVL",
   "home.sectionAbout.title": "À propos de ACVL",
-  "home.heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol."
+  "home.heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol.",
+  "page.contact.orgName": "Association Canadienne de Vol Libre (ACVL) - Comité de sécurité",
+  "page.contact.email": "securite@acvl.ca"
 }

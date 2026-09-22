@@ -4,8 +4,8 @@ import { expect } from "@playwright/test"
 const { Given, Then } = createBdd()
 
 Given("a visitor loads a page whose content is shorter than the viewport", async ({ page }) => {
-	// The Contact placeholder page renders far less content than a typical viewport.
-	await page.goto("/contact")
+	// The not-found page renders far less content than a typical viewport.
+	await page.goto("/this-page-does-not-exist")
 })
 
 Then("the footer sits flush with the bottom of the viewport", async ({ page }) => {

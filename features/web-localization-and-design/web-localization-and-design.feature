@@ -18,6 +18,13 @@ Feature: Web, localization, and design
     Then the browser navigates to that destination's page
 
   @ui
+  Scenario: The contact page shows HPAC's organization details, mailing address, email, and social links
+    Given a visitor loads the contact page
+    Then the page shows the organization name and mailing address
+    And the page shows an email link addressed to the current locale's contact address
+    And the page shows Facebook, YouTube, and WhatsApp links that open in a new tab
+
+  @ui
   Scenario: On a mobile-width viewport, header navigation is reached through a hamburger toggle
     Given a visitor loads the homepage on a mobile-width viewport
     Then the header nav is hidden and a menu toggle is shown instead

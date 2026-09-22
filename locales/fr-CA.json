@@ -59,7 +59,7 @@
     "placeholderName": "Admin"
   },
   "footer": {
-    "copyright": "© {year} l’Association canadienne de deltaplane et de parapente"
+    "copyright": "© {year} ACVL"
   },
   "page": {
     "placeholder": {
@@ -81,6 +81,18 @@
       "errorGeneric": "Nous n'avons pas pu vous connecter. Vérifiez votre nom d'utilisateur et votre mot de passe, puis réessayez.",
       "submitting": "Connexion en cours…",
       "submitButton": "Ouvrir une session"
+    },
+    "contact": {
+      "title": "#Contact",
+      "orgName": "#Hang Gliding and Paragliding Association of Canada (HPAC) Safety Committee",
+      "addressLabel": "#Mailing address",
+      "address": "#612 – 5307 Victoria Drive\nVancouver BC V5P 3V6\nCanada",
+      "emailLabel": "#Email",
+      "email": "#safety@hpac.ca",
+      "socialLabel": "#Follow us",
+      "facebookLabel": "#Facebook",
+      "youtubeLabel": "#YouTube",
+      "whatsappLabel": "#WhatsApp"
     }
   },
   "notFound": {

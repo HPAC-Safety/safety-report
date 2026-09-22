@@ -95,6 +95,43 @@
       "whatsappLabel": "WhatsApp"
     }
   },
+  "report": {
+    "loading": "Chargement du formulaire de rapport…",
+    "loadError": "Le formulaire de rapport n'a pas pu être chargé. Veuillez actualiser la page.",
+    "progress": "Étape n°{current}, tirée de {total}",
+    "privacy": {
+      "localStorage": "Vos réponses ne sont enregistrées que dans ce navigateur, pendant une durée maximale de 15 jours, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents ne sont jamais enregistrés dans le navigateur."
+    },
+    "nav": {
+      "next": "Suivant",
+      "back": "Retour",
+      "submit": "Soumettre un rapport",
+      "submitting": "Envoi en cours…"
+    },
+    "required": {
+      "badge": "Obligatoire",
+      "error": "Cette question est obligatoire.",
+      "summary": "Veuillez répondre aux questions suivantes avant de poursuivre :"
+    },
+    "booleanYes": "Oui",
+    "booleanNo": "Non",
+    "select": {
+      "placeholder": "Choisissez-en une"
+    },
+    "attachments": {
+      "selectedCount": "{count} fichier(s) sélectionné(s)",
+      "guidance": "Veuillez joindre des photos, des vidéos ou des documents liés à cet incident, si vous en avez.",
+      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous actualisez cette page, vous devrez les sélectionner à nouveau."
+    },
+    "error": {
+      "network": "Votre rapport n'a pas pu être envoyé. Vos réponses sont toujours enregistrées dans ce navigateur — veuillez vérifier votre connexion et réessayer.",
+      "submitFailed": "Nous n'avons pas pu transmettre votre rapport. Veuillez réessayer."
+    },
+    "submitted": {
+      "title": "Rapport présenté",
+      "body": "Merci. Nous avons bien reçu votre rapport."
+    }
+  },
   "notFound": {
     "title": "Page introuvable",
     "body": "Il n'y a rien à cette adresse."

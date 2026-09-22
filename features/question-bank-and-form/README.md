@@ -46,6 +46,16 @@ single-select domain type.
 The Typeform-derived question set is seed/import input, not hardcoded form
 logic. The database remains authoritative after initial seeding.
 
+## The group page contract
+
+A `group`-typed question and its `grouped_under_question_id` children render
+together as one page/step, not as separate steps: `fieldset`/`legend` around
+the group's own label and the input controls for each visible child, in
+revision order. A child renders inside its group's page even if it also
+carries its own conditional dependency — grouping and conditional dependency
+are independent (ADR-0076) — and the group page itself is skipped only if
+every one of its children is currently hidden by an unmet condition.
+
 ## Current implementation divergence
 
 Main currently has a stable `Question` whose order, active flag, privacy, and

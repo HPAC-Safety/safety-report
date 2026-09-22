@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-251 claims across 8 areas: 142 covered by a step definition today, 109 still `@ignore`. 50 constraints.
+257 claims across 8 areas: 162 covered by a step definition today, 95 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -151,8 +151,8 @@ type: guide
 | `REQ-QB-044` | question-bank-and-form | A statement or a group collects no answer | Reqnroll | Planned |
 | `REQ-QB-045` | question-bank-and-form | A statement or a group is excluded from a submission's answer-producing revisions | Reqnroll | Planned |
 | `REQ-QB-046` | question-bank-and-form | A question may be grouped under a group question | Reqnroll | Covered |
-| `REQ-QB-047` | question-bank-and-form | A form renders a question together with its group heading and siblings | Reqnroll | Planned |
-| `REQ-QB-048` | question-bank-and-form | Only a group question may be a grouping parent | Reqnroll | Planned |
+| `REQ-QB-047` | question-bank-and-form | A form renders a question together with its group heading and siblings | playwright-bdd | Covered |
+| `REQ-QB-048` | question-bank-and-form | Only a group question may be a grouping parent | playwright-bdd | Covered |
 | `REQ-QB-049` | question-bank-and-form | A group cannot itself be grouped under another group | Reqnroll | Covered |
 | `REQ-QB-050` | question-bank-and-form | A question cannot be grouped under itself | Reqnroll | Covered |
 | `REQ-QB-051` | question-bank-and-form | Grouping is unaffected by conditional dependency and vice versa | Reqnroll | Covered |
@@ -194,10 +194,16 @@ type: guide
 | `REQ-QB-087` | question-bank-and-form | The editor carries an existing question's settings into the form | playwright-bdd | Covered |
 | `REQ-QB-088` | question-bank-and-form | Reviewing an imported Typeform draft prefills the editor | playwright-bdd | Covered |
 | `REQ-QB-089` | question-bank-and-form | An Administrator downloads the question bank as Typeform JSON | playwright-bdd | Covered |
-| `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Planned |
-| `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Planned |
-| `REQ-SUB-003` | report-submission | Expired local state is not restored | playwright-bdd | Planned |
-| `REQ-SUB-004` | report-submission | One answer entry per shown answer-producing revision | playwright-bdd | Planned |
+| `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Covered |
+| `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Covered |
+| `REQ-SUB-003` | report-submission | Expired local state is not restored | playwright-bdd | Covered |
+| `REQ-SUB-028` | report-submission | The leading statement question renders as an introduction | playwright-bdd | Covered |
+| `REQ-SUB-029` | report-submission | A reporter pages through questions one at a time | playwright-bdd | Covered |
+| `REQ-SUB-030` | report-submission | A group question and its children page together | playwright-bdd | Covered |
+| `REQ-SUB-031` | report-submission | A required question blocks Next until answered | playwright-bdd | Covered |
+| `REQ-SUB-032` | report-submission | A conditional question is absent from paging until its parent condition is met | playwright-bdd | Covered |
+| `REQ-SUB-033` | report-submission | The Next button becomes Submit on the final page | playwright-bdd | Covered |
+| `REQ-SUB-004` | report-submission | One answer entry per shown answer-producing revision | playwright-bdd | Covered |
 | `REQ-SUB-005` | report-submission | A skipped answer is represented by an empty value, not omission | Reqnroll | Covered |
 | `REQ-SUB-006` | report-submission | A submitted select value must be one the revision offered | Reqnroll | Covered |
 | `REQ-SUB-007` | report-submission | The submission path never calls a translation provider | Reqnroll | Covered |
@@ -212,7 +218,7 @@ type: guide
 | `REQ-SUB-013` | report-submission | A valid submission is persisted atomically | Reqnroll | Covered |
 | `REQ-SUB-014` | report-submission | A failed transaction leaves no visible report and no leaked blobs | Reqnroll | Covered |
 | `REQ-SUB-015` | report-submission | A successful submission returns an opaque accepted receipt | Reqnroll | Covered |
-| `REQ-SUB-016` | report-submission | The UI prevents duplicate submission while a request is in flight | playwright-bdd | Planned |
+| `REQ-SUB-016` | report-submission | The UI prevents duplicate submission while a request is in flight | playwright-bdd | Covered |
 | `REQ-SUB-017` | report-submission | A rate-limited submission is rejected | Reqnroll | Covered |
 | `REQ-SUB-018` | report-submission | An unauthenticated submission is rejected | Reqnroll | Covered |
 | `REQ-SUB-019` | report-submission | A member of any role may submit a report | Reqnroll | Covered |
@@ -248,7 +254,7 @@ type: guide
 | `REQ-WLD-004` | web-localization-and-design | On a mobile-width viewport, header navigation is reached through a hamburger toggle | playwright-bdd | Covered |
 | `REQ-WLD-005` | web-localization-and-design | The initial locale is selected in priority order | playwright-bdd | Covered |
 | `REQ-WLD-006` | web-localization-and-design | Switching the language toggle updates the document language and persists the choice | playwright-bdd | Covered |
-| `REQ-WLD-007` | web-localization-and-design | Switching the language toggle rerenders without losing answers | playwright-bdd | Planned |
+| `REQ-WLD-007` | web-localization-and-design | Switching the language toggle rerenders without losing answers | playwright-bdd | Covered |
 | `REQ-WLD-008` | web-localization-and-design | A visitor can toggle and persist a light/dark theme choice | playwright-bdd | Covered |
 | `REQ-WLD-009` | web-localization-and-design | The footer sits at the bottom of the viewport on a short page but below the fold on a long one | playwright-bdd | Covered |
 | `REQ-WLD-010` | web-localization-and-design | Application chrome strings come from committed locale catalogues | playwright-bdd | Covered |
@@ -256,17 +262,17 @@ type: guide
 | `REQ-WLD-012` | web-localization-and-design | A French value edited by hand is recorded rather than overwritten | Reqnroll | Covered |
 | `REQ-WLD-013` | web-localization-and-design | Editing both languages at once is one correction, not a conflict | Reqnroll | Covered |
 | `REQ-WLD-014` | web-localization-and-design | Question content comes from the bilingual database revision | Reqnroll | Planned |
-| `REQ-WLD-015` | web-localization-and-design | Only publication consent is marked required on the form | playwright-bdd | Planned |
-| `REQ-WLD-016` | web-localization-and-design | The form explains local storage and warns about attachments | playwright-bdd | Planned |
-| `REQ-WLD-017` | web-localization-and-design | The client shows inline validation before submission | playwright-bdd | Planned |
+| `REQ-WLD-015` | web-localization-and-design | Only publication consent is marked required on the form | playwright-bdd | Covered |
+| `REQ-WLD-016` | web-localization-and-design | The form explains local storage and warns about attachments | playwright-bdd | Covered |
+| `REQ-WLD-017` | web-localization-and-design | The client shows inline validation before submission | playwright-bdd | Covered |
 | `REQ-WLD-018` | web-localization-and-design | Client validation never replaces server validation | playwright-bdd | Planned |
 | `REQ-WLD-019` | web-localization-and-design | The active locale controls which summary text is primary | playwright-bdd | Planned |
 | `REQ-WLD-020` | web-localization-and-design | Admin pages distinguish private, ordinary, and output content | playwright-bdd | Planned |
 | `REQ-WLD-021` | web-localization-and-design | Assets are self-hosted, never loaded from third-party CDNs | Reqnroll | Planned |
 | `REQ-WLD-022` | web-localization-and-design | Dark mode renders correctly in every state | playwright-bdd | Planned |
-| `REQ-WLD-023` | web-localization-and-design | The form meets baseline accessibility requirements | playwright-bdd | Planned |
-| `REQ-WLD-024` | web-localization-and-design | A JavaScript failure never exposes or erases report data | playwright-bdd | Planned |
-| `REQ-WLD-025` | web-localization-and-design | A network failure preserves local state and explains retry | playwright-bdd | Planned |
+| `REQ-WLD-023` | web-localization-and-design | The form meets baseline accessibility requirements | playwright-bdd | Covered |
+| `REQ-WLD-024` | web-localization-and-design | A JavaScript failure never exposes or erases report data | playwright-bdd | Covered |
+| `REQ-WLD-025` | web-localization-and-design | A network failure preserves local state and explains retry | playwright-bdd | Covered |
 
 ## Constraints
 

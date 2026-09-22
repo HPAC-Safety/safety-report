@@ -1,0 +1,231 @@
+import type { Locale } from "../i18n/locales"
+import type { PublicQuestionView } from "../api/publicQuestions"
+import type { DraftAnswer } from "./draft"
+import { optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
+
+const fieldClassName =
+	"mt-1 w-full rounded border border-rule bg-surface px-3 py-2 font-sans text-ink placeholder:text-ink-muted"
+
+const labelClassName = "block font-sans text-sm font-medium text-ink"
+
+const INPUT_TYPE_BY_QUESTION_TYPE: Record<string, string> = {
+	email: "email",
+	phone: "tel",
+	number: "number",
+	date: "date",
+	time: "time",
+}
+
+export interface QuestionFieldProps {
+	question: PublicQuestionView
+	locale: Locale
+	answer: DraftAnswer | undefined
+	onChange: (answer: DraftAnswer | undefined) => void
+	files: File[]
+	onFilesChange: (files: File[]) => void
+	errorText: string | null
+	t: (key: string, params?: Record<string, string | number>) => string
+}
+
+/** One answerable question, in whichever shape its type needs. Not used for `statement`/`group`, which collect no answer. */
+export function QuestionField({
+	question,
+	locale,
+	answer,
+	onChange,
+	files,
+	onFilesChange,
+	errorText,
+	t,
+}: QuestionFieldProps) {
+	const fieldId = `question-${question.revisionId}`
+	const errorId = `${fieldId}-error`
+	const helpId = `${fieldId}-help`
+	const help = questionHelp(question, locale)
+	const describedBy = [help ? helpId : null, errorText ? errorId : null].filter(Boolean).join(" ") || undefined
+
+	const label = (
+		<label className={labelClassName} htmlFor={question.type === "yes_no" || question.type === "multi_select" ? undefined : fieldId}>
+			{questionLabel(question, locale)}
+			{question.isRequired && (
+				<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
+			)}
+		</label>
+	)
+
+	const errorNode = errorText ? (
+		<p id={errorId} role="alert" className="mt-1 font-sans text-sm text-brand-700">
+			{errorText}
+		</p>
+	) : null
+
+	const helpNode = help ? (
+		<p id={helpId} className="mt-1 font-sans text-xs text-ink-muted">
+			{help}
+		</p>
+	) : null
+
+	if (question.type === "yes_no" || question.type === "checkbox") {
+		const value = answer?.kind === "value" ? answer.value : ""
+		return (
+			<fieldset className="mb-6" aria-describedby={describedBy}>
+				<legend className={labelClassName}>
+					{questionLabel(question, locale)}
+					{question.isRequired && (
+						<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
+					)}
+				</legend>
+				<div className="mt-2 flex gap-4">
+					{(["yes", "no"] as const).map((token) => (
+						<label key={token} className="touch-target inline-flex items-center gap-2 font-sans text-ink">
+							<input
+								type="radio"
+								name={fieldId}
+								checked={value === token}
+								onChange={() => onChange({ kind: "value", value: token })}
+							/>
+							{token === "yes" ? t("report.booleanYes") : t("report.booleanNo")}
+						</label>
+					))}
+				</div>
+				{helpNode}
+				{errorNode}
+			</fieldset>
+		)
+	}
+
+	if (question.type === "single_select" || question.type === "autocomplete") {
+		const value = answer?.kind === "value" ? answer.value : ""
+		const listId = `${fieldId}-list`
+		return (
+			<div className="mb-6">
+				{label}
+				{question.type === "autocomplete" ? (
+					<>
+						<input
+							id={fieldId}
+							list={listId}
+							className={fieldClassName}
+							value={value}
+							aria-describedby={describedBy}
+							placeholder={questionPlaceholder(question, locale) ?? undefined}
+							onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
+						/>
+						<datalist id={listId}>
+							{question.options.map((option) => (
+								<option key={option.code} value={optionLabel(option, locale)} />
+							))}
+						</datalist>
+					</>
+				) : (
+					<select
+						id={fieldId}
+						className={fieldClassName}
+						value={value}
+						aria-describedby={describedBy}
+						onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
+					>
+						<option value="">{t("report.select.placeholder")}</option>
+						{question.options.map((option) => (
+							<option key={option.code} value={optionLabel(option, locale)}>
+								{optionLabel(option, locale)}
+							</option>
+						))}
+					</select>
+				)}
+				{helpNode}
+				{errorNode}
+			</div>
+		)
+	}
+
+	if (question.type === "multi_select") {
+		const values = answer?.kind === "options" ? answer.values : []
+		const toggle = (label: string) => {
+			const next = values.includes(label) ? values.filter((entry) => entry !== label) : [...values, label]
+			onChange(next.length > 0 ? { kind: "options", values: next } : undefined)
+		}
+		return (
+			<fieldset className="mb-6" aria-describedby={describedBy}>
+				<legend className={labelClassName}>
+					{questionLabel(question, locale)}
+					{question.isRequired && (
+						<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
+					)}
+				</legend>
+				<div className="mt-2 flex flex-col gap-2">
+					{question.options.map((option) => {
+						const label = optionLabel(option, locale)
+						return (
+							<label key={option.code} className="touch-target inline-flex items-center gap-2 font-sans text-ink">
+								<input type="checkbox" checked={values.includes(label)} onChange={() => toggle(label)} />
+								{label}
+							</label>
+						)
+					})}
+				</div>
+				{helpNode}
+				{errorNode}
+			</fieldset>
+		)
+	}
+
+	if (question.type === "file_upload") {
+		return (
+			<div className="mb-6">
+				{label}
+				<input
+					id={fieldId}
+					type="file"
+					multiple
+					className="mt-1 block font-sans text-ink"
+					aria-describedby={describedBy}
+					onChange={(event) => onFilesChange(Array.from(event.target.files ?? []))}
+				/>
+				{files.length > 0 && (
+					<p className="mt-1 font-sans text-xs text-ink-muted">
+						{t("report.attachments.selectedCount", { count: files.length })}
+					</p>
+				)}
+				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.guidance")}</p>
+				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.notRestored")}</p>
+				{helpNode}
+				{errorNode}
+			</div>
+		)
+	}
+
+	// Every remaining type stores one plain string: short/long text, email,
+	// phone, number, date, time (ADR-0072).
+	const value = answer?.kind === "value" ? answer.value : ""
+	const inputType = INPUT_TYPE_BY_QUESTION_TYPE[question.type] ?? "text"
+
+	return (
+		<div className="mb-6">
+			{label}
+			{question.type === "long_text" ? (
+				<textarea
+					id={fieldId}
+					className={fieldClassName}
+					rows={5}
+					value={value}
+					aria-describedby={describedBy}
+					placeholder={questionPlaceholder(question, locale) ?? undefined}
+					onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
+				/>
+			) : (
+				<input
+					id={fieldId}
+					type={inputType}
+					className={fieldClassName}
+					value={value}
+					aria-describedby={describedBy}
+					placeholder={questionPlaceholder(question, locale) ?? undefined}
+					onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
+				/>
+			)}
+			{helpNode}
+			{errorNode}
+		</div>
+	)
+}

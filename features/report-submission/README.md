@@ -17,26 +17,30 @@ that doesn't fit Gherkin.
   "language": "en-CA",
   "answers": [
     {
-      "question_revision_id": "text-revision-id",
+      "questionRevisionId": "text-revision-id",
       "value": "A short answer",
-      "option_codes": null,
-      "attachment_part_indexes": null
+      "optionCodes": null,
+      "attachmentPartIndexes": null
     },
     {
-      "question_revision_id": "select-revision-id",
+      "questionRevisionId": "select-revision-id",
       "value": null,
-      "option_codes": [],
-      "attachment_part_indexes": null
+      "optionCodes": [],
+      "attachmentPartIndexes": null
     },
     {
-      "question_revision_id": "file-revision-id",
+      "questionRevisionId": "file-revision-id",
       "value": null,
-      "option_codes": null,
-      "attachment_part_indexes": [0]
+      "optionCodes": null,
+      "attachmentPartIndexes": [0]
     }
   ]
 }
 ```
+
+Field names are camelCase on the wire (ASP.NET's default JSON casing), not
+the snake_case the Gherkin prose uses when it names them — the scenarios are
+talking about the concept, not literal JSON.
 
 Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
 clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
@@ -50,6 +54,25 @@ and `translation_source` stay null on insert; this endpoint enqueues one
 answer-translation outbox message so the Worker can fill them later,
 mechanically, via the same `ITranslator` port ADR-0062 built for admin-drafted
 translation. This endpoint never calls a translation provider itself.
+
+## Presentation order (#80)
+
+The reporter-facing form pages the ordered question set one page at a time,
+built purely client-side from `GET /api/v1/questions/`'s response — nothing
+here is a separate server concept:
+
+1. The leading live `statement` revision, if the form has one, renders as an
+   introduction: Next only, no Back, no answer collected.
+2. Every other top-level entry is one page — a plain question, or a `group`
+   and its children together (see
+   [question-bank-and-form](../question-bank-and-form/README.md#the-group-page-contract)).
+3. A question or group whose conditional parent's current answer does not
+   satisfy the condition is skipped from paging entirely, and re-evaluated
+   live as the reporter answers earlier pages.
+4. A required, unanswered question on the current page blocks Next with
+   inline validation; `consent_publish` is required by default and has no
+   default selection.
+5. Next becomes Submit on the last page.
 
 ## Validation order
 

@@ -2,7 +2,7 @@
 status: partially-superseded
 date: 2026-09-21
 decision-makers: Chase Florell
-keywords: autocomplete, option sets, reporter-added, curation, snapshot, question bank
+keywords: autocomplete, option sets, reporter-added, curation, snapshot, question bank, multi-select
 ---
 
 # ADR-0063 — A reporter may add a missing type-ahead choice, and an autocomplete renders the live list
@@ -10,7 +10,9 @@ keywords: autocomplete, option sets, reporter-added, curation, snapshot, questio
 **Status:** The curation half stands. Two parts are superseded by
 [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): the submission path
 no longer translates anything, and a reporter's answer no longer refers to an
-option row. See "Superseded by ADR-0072" below.
+option row. See "Superseded by ADR-0072" below. Its scope is widened by
+[ADR-0077](ADR-0077-typeform-json-import-and-export.md); see "Amended by
+ADR-0077" below.
 
 ## Context
 
@@ -173,10 +175,32 @@ answered by moving the translation rather than dropping it — an administrator
 fills the second language from a queue, so the choice is complete before the
 next reporter meets it.*
 
+### Amended by ADR-0077: reporter-addition is not `Autocomplete`-only
+
+[ADR-0077](ADR-0077-typeform-json-import-and-export.md) widens this ADR's
+mechanism from "the one type whose whole purpose is a list too long to
+curate" to "any `OptionSet`-backed question an administrator has opted in,"
+in practice `MultiSelect` alongside `Autocomplete` — motivated by importing
+Typeform's `allow_other_choice` multi-select fields (pilot ratings, aircraft
+type), which have exactly this shape but were never a type-ahead.
+
+`QuestionRevision.AllowsReporterAdditions` (bool) replaces "is this an
+`Autocomplete`" as the condition `QuestionChoices.For` and the submission
+path's `OptionSet.AddFromReporter` call check. It is fixed `true` for every
+`Autocomplete` revision — this ADR's original behavior is unchanged and
+required no data migration — and author-controlled, defaulting `false`, for
+`MultiSelect`. `SingleSelect` stays out of scope; nothing has asked for it.
+
+Every rule this ADR established for the mechanism itself — reuse an
+already-offered code, do not revive a removed one, flag a new one
+`added_by_reporter`, curate it from `/admin/choice-lists` — is unchanged and
+now applies identically whichever of the two types triggered it.
+
 ## Related
 
 - [ADR-0058](ADR-0058-shared-option-sets-with-a-revision-snapshot.md) — amended by the carve-out above
 - [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md) — supersedes the translation and answer-reference parts of this ADR
 - [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md) — ~~scope widened by this ADR~~, narrowed back by ADR-0072
+- [ADR-0077](ADR-0077-typeform-json-import-and-export.md) — widens this ADR's mechanism to `MultiSelect`
 - [ADR-0016](ADR-0016-data-driven-question-bank.md) — the question set is data
 - [`/features/question-bank-and-form/question-bank-and-form.feature`](../../features/question-bank-and-form/question-bank-and-form.feature)

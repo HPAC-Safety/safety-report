@@ -5,6 +5,10 @@
 | Answer | The report's nullable scalar or option selection for one exact answer-producing question revision. A stored null/empty selection records a skip. |
 | Attachment | An optional image, video, or document submitted with a report. Attachments are always private. |
 | Complete revision | One immutable question record/aggregate containing every value needed to render, validate, order, classify, and localize that revision. |
+| Group | A question type that collects no answer and acts as a section heading; other questions may be grouped under it so the form renders them together. |
+| Grouped under | A question revision's reference to a live `Group` question it renders alongside, distinct from a conditional dependency. |
+| Statement | A question type that collects no answer and displays instructional text with no input control. |
+| Reporter-added choice | An option a reporter typed that a shared choice list did not offer, added at submission and flagged for an Administrator to curate. |
 | Consent projection | The nullable `ConsentPublish` value copied from the system consent answer because publication logic must query it directly. It is the only answer projection. |
 | Deleted | Nullable soft-deletion timestamp on every persisted record except `audit_log`; a value means hidden and terminal in normal application flows. |
 | Derivative | A decoded/re-encoded image or remuxed/transcoded video with unsafe metadata removed. Documents do not have anonymized derivatives. |

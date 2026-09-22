@@ -142,7 +142,14 @@ and the CI gates rather than by a scenario.*
 **CON-TQ-009** Required checks retain the repository's build, test, coverage floor plus added-
 code ratchet, web asset/CSS checks, localization parity and hardcoded-string
 lint, end-to-end tests, agent/skill validation, Terraform validation, and linked
-issue enforcement. `DateTime` and assertion libraries other than Shouldly stay
+issue enforcement. Two of them guard the specification itself: a behavior change
+anywhere under `src/` or in an e2e spec fails unless it touches a
+`features/**/*.feature` file or states its exemption in the pull-request body,
+and a committed [traceability matrix](traceability.md) that no longer matches
+the claims and constraints it summarizes fails the same way a stale generated
+file does
+([ADR-0083](decisions/ADR-0083-specification-driven-development.md),
+[ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)). `DateTime` and assertion libraries other than Shouldly stay
 banned through syntax-aware tests rather than fragile source grep.
 
 Documentation changes run a local-link check, verify every tracked `src` path

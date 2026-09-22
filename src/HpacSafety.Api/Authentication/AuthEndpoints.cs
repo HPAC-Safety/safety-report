@@ -1,3 +1,4 @@
+using HpacSafety.Api.RateLimiting;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -32,7 +33,7 @@ public static class AuthEndpoints
 
 		if (isDevelopment)
 		{
-			group.MapPost("/token", TokenAsync).AllowAnonymous();
+			group.MapPost("/token", TokenAsync).AllowAnonymous().RequireRateLimiting(RateLimitPolicies.SignIn);
 		}
 
 		return group;

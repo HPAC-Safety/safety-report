@@ -72,6 +72,17 @@ public static class BootedApi
 					builder.UseEnvironment("Development");
 					builder.UseSetting("ConnectionStrings:HpacSafety", container.GetConnectionString());
 					builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
+
+					// Shared across every scenario in the run, many of which sign in
+					// or submit repeatedly. Effectively unlimited here so ordinary
+					// scenario traffic never trips a policy meant for a real client;
+					// the two scenarios that actually prove 429 behavior derive their
+					// own tightly-limited host instead. See RateLimitedAsync below,
+					// ADR-0081, and issue #15.
+					builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:PermitLimit", "100000");
+					builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:WindowSeconds", "60");
+					builder.UseSetting("HpacSafety:RateLimiting:SignIn:PermitLimit", "100000");
+					builder.UseSetting("HpacSafety:RateLimiting:SignIn:WindowSeconds", "60");
 				});
 			}
 		}
@@ -98,11 +109,33 @@ public static class BootedApi
 	}
 
 	/// <summary>
+	///     A host with a one-permit rate-limit window for the given policy,
+	///     otherwise identical to <see cref="FactoryAsync" />. See ADR-0081 and
+	///     issue #15.
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> RateLimitedAsync(string policy)
+	{
+		return (await FactoryAsync().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+		{
+			builder.UseSetting($"HpacSafety:RateLimiting:{policy}:PermitLimit", "1");
+			builder.UseSetting($"HpacSafety:RateLimiting:{policy}:WindowSeconds", "60");
+		});
+	}
+
+	/// <summary>
 	///     A client carrying a real token for that role, minted by the booted host
 	///     and validated by the same middleware production runs (ADR-0066).
 	/// </summary>
 	public static async Task<HttpClient> SignedInAsAsync(MemberRole role)
 	{
+		return await SignedInAsAsync(role, await FactoryAsync().ConfigureAwait(false)).ConfigureAwait(false);
+	}
+
+	/// <summary>The same, against a specific already-booted host — see <see cref="RateLimitedAsync" />.</summary>
+	public static async Task<HttpClient> SignedInAsAsync(MemberRole role, WebApplicationFactory<Program> host)
+	{
+		ArgumentNullException.ThrowIfNull(host);
+
 		var (username, password) = role switch
 		{
 			MemberRole.Administrator => ("admin", "admin"),
@@ -110,8 +143,6 @@ public static class BootedApi
 			MemberRole.User => ("user", "user"),
 			_ => throw new ArgumentOutOfRangeException(nameof(role))
 		};
-
-		var host = await FactoryAsync().ConfigureAwait(false);
 
 		using var anonymous = host.CreateClient();
 		using var response = await anonymous

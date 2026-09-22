@@ -38,6 +38,7 @@ public sealed class MembersSiteLoginSteps
 	private string? _safetyOfficerEmail;
 	private string? _loginEmail;
 	private HttpResponseMessage? _response;
+	private HttpClient? _client;
 
 	[Given(@"the development token endpoint is available")]
 	public void GivenDevelopmentTokenEndpointAvailable()
@@ -135,6 +136,43 @@ public sealed class MembersSiteLoginSteps
 	public void ThenNotReportedAsInvalidCredentials()
 	{
 		_response!.StatusCode.ShouldNotBe(HttpStatusCode.Unauthorized);
+	}
+
+	// --- Repeated sign-in attempts for one identity are rate limited ---
+
+	[Given(@"repeated sign-in attempts arrive for the same username")]
+	public async Task GivenRepeatedSignInAttemptsForTheSameUsername()
+	{
+		var limited = (await BootedApi.RateLimitedAsync("SignIn")).CreateClient();
+
+		// The one permit this policy allows — consumed here so the next attempt
+		// is the one that exceeds it. A wrong password still consumes it: the
+		// identity partition is keyed before credentials are checked.
+		_response = await limited.PostAsJsonAsync(
+			"/api/auth/token", new { username = "user", password = "wrong-password" });
+		_client = limited;
+	}
+
+	[When(@"the sign-in rate limit for that identity is exceeded")]
+	public async Task WhenTheSignInRateLimitForThatIdentityIsExceeded()
+	{
+		_response = await _client!.PostAsJsonAsync(
+			"/api/auth/token", new { username = "user", password = "still-wrong" });
+	}
+
+	[Then(@"the API rejects further attempts with 429 and a safe retry signal")]
+	public void ThenTheApiRejectsFurtherAttemptsWith429AndASafeRetrySignal()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
+	}
+
+	[Then(@"the rejection does not reveal whether any attempted username or password was valid")]
+	public async Task ThenTheRejectionDoesNotRevealCredentialValidity()
+	{
+		var body = await _response!.Content.ReadAsStringAsync();
+		body.ShouldNotContain("user", Case.Insensitive);
+		body.ShouldNotContain("password", Case.Insensitive);
 	}
 
 	private static HttpResponseMessage LoginPage()

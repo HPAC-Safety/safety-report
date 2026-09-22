@@ -1,5 +1,6 @@
 using System.Text.Json;
 using HpacSafety.Api.Authentication;
+using HpacSafety.Api.RateLimiting;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
@@ -37,7 +38,7 @@ public static class ReportSubmissionEndpoints
 
 		var group = app.MapGroup("/api/v1/reports").RequireAuthorization(HpacPolicies.Member);
 
-		group.MapPost("/", SubmitAsync);
+		group.MapPost("/", SubmitAsync).RequireRateLimiting(RateLimitPolicies.PublicSubmission);
 
 		return group;
 	}

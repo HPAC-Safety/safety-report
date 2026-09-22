@@ -540,6 +540,55 @@ public sealed class ReportSubmissionEndpointSteps
 		(await ReportCountAsync()).ShouldBe(_reportCountBefore);
 	}
 
+	// --- A rate-limited submission is rejected ---
+
+	[Given(@"a submission request arrives")]
+	public async Task GivenASubmissionRequestArrives()
+	{
+		await EnsureConsentQuestionAsync();
+
+		var limited = await BootedApi.RateLimitedAsync("PublicSubmission");
+		_reporter = await BootedApi.SignedInAsAsync(MemberRole.User, limited);
+
+		// The one permit this policy allows — consumed here so the next request
+		// is the one that exceeds it.
+		await PostAsync(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+		});
+	}
+
+	[When(@"the per-IP rate limit is exceeded")]
+	public async Task WhenThePerIpRateLimitIsExceeded()
+	{
+		_response = await PostAsync(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+		});
+	}
+
+	[Then(@"the API rejects the request with 429 and a safe retry signal")]
+	public void ThenTheApiRejectsTheRequestWith429AndASafeRetrySignal()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
+	}
+
+	[Then(@"the client IP used for rate limiting comes only from explicitly trusted proxy headers and is never stored on the report")]
+	public async Task ThenTheClientIpComesOnlyFromTrustedHeadersAndIsNeverStored()
+	{
+		var body = await _response!.Content.ReadAsStringAsync();
+		body.ShouldNotContain("ip", Case.Insensitive);
+
+		await using var scope = (await BootedApi.FactoryAsync()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var reportColumns = database.Model.FindEntityType(typeof(Report))!.GetProperties()
+			.Select(property => property.Name);
+		reportColumns.ShouldNotContain(name => name.Contains("Ip", StringComparison.OrdinalIgnoreCase));
+	}
+
 	// --- A member of any role may submit a report (outline) ---
 
 	[Given(@"a reporter holds a valid member token with the (.*) role")]

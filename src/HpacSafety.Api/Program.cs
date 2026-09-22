@@ -1,11 +1,13 @@
 using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Api.PublicQuestions;
+using HpacSafety.Api.RateLimiting;
 using HpacSafety.Api.Reports;
 using HpacSafety.Infrastructure.Media;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -52,6 +54,23 @@ builder.Services.Configure<FormOptions>(options =>
 	options.ValueCountLimit = 8;
 });
 
+// The API sits directly behind exactly one AWS ALB hop (infra/alb.tf); the
+// container's security group (api_from_alb, infra/security-groups.tf) admits
+// traffic from nowhere else. So the connection this process ever sees
+// directly IS the ALB, unconditionally, and X-Forwarded-For/-Proto from it
+// are trusted without a static KnownProxies allowlist, which an ALB's
+// dynamic IPs make impractical anyway. See ADR-0081 and issue #15.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+	options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+	options.KnownIPNetworks.Clear();
+	options.KnownProxies.Clear();
+});
+
+// Two RateLimiter policies: public submission by trusted client IP, sign-in
+// by attempted identity. See ADR-0081 and issue #15.
+builder.Services.AddHpacSafetyRateLimiting(builder.Configuration);
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -59,9 +78,12 @@ if (app.Environment.IsDevelopment())
 	app.MapOpenApi();
 }
 
+app.UseForwardedHeaders();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSignInIdentityCapture("/api/auth/token");
+app.UseRateLimiter();
 
 // Whichever of the API or the Worker starts first after a deploy applies any
 // pending migration; the other is a no-op. See ADR-0055.

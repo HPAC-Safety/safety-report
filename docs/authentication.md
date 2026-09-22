@@ -56,11 +56,14 @@ validates it through the same middleware, the same validation parameters, and
 the same policies. Only the issuer and the key differ
 ([ADR-0066](decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
 
-| Username | Password | Role |
-|---|---|---|
-| `admin` | `admin` | Administrator |
-| `officer` | `officer` | SafetyOfficer |
-| `user` | `user` | User |
+Sign in with a real HPAC membership: `POST /api/auth/token` verifies the
+username and password against the live members site
+(`https://members.hpac.ca`) for that one call, never logging or storing the
+password. Role comes from two Development-only email allowlists in
+configuration — `MembersSiteLogin:AdministratorEmails` and
+`MembersSiteLogin:SafetyOfficerEmails` — falling back to `User` for any other
+verified member
+([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
 
 The development token endpoint is **not mapped outside Development** — the
 route returns 404 rather than 401, because there is no code path that maps it

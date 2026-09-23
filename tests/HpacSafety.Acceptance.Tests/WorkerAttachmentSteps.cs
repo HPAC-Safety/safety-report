@@ -30,6 +30,11 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 	private Report? _report;
 	private int _writesBefore;
 	private string? _strippedBefore;
+	private MeteredStream? _source;
+	private long _allocated;
+	private MediaIngestOutcome? _outcome;
+
+	private const long LargeOriginal = 50L * 1024 * 1024;
 
 	public async ValueTask DisposeAsync()
 	{
@@ -173,6 +178,50 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 		message.IsProcessed.ShouldBeTrue();
 	}
 
+	// --- REQ-MED-024: processing streams ---
+
+	[Given(@"a stored 50 MB document original")]
+	public void GivenAStored50MbDocumentOriginal()
+	{
+		// Generated as it is read: a PDF header, then filler. The test itself
+		// never holds 50 MB either.
+		_source = new MeteredStream(LargeOriginal);
+	}
+
+	[When(@"the Worker processes that original")]
+	public async Task WhenTheWorkerProcessesThatOriginal()
+	{
+		var key = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Original, TinyId.New().Value);
+
+		// Warm up once on a tiny file so first-call JIT and type loading are not
+		// counted as the file's cost.
+		_store.Seed(key, "%PDF-1.7\n%%EOF\n"u8.ToArray());
+		await Ingestor().Process(key, MediaType.Pdf, CancellationToken.None);
+		_store.Serve(_source!);
+
+		var before = GC.GetTotalAllocatedBytes(precise: true);
+		_outcome = await Ingestor().Process(key, MediaType.Pdf, CancellationToken.None);
+		_allocated = GC.GetTotalAllocatedBytes(precise: true) - before;
+	}
+
+	[Then(@"the original is read in bounded chunks into temporary storage while it is hashed")]
+	public void ThenTheOriginalIsReadInBoundedChunks()
+	{
+		_outcome!.IsAccepted.ShouldBeTrue();
+		_outcome.ByteSize.ShouldBe(LargeOriginal);
+		_outcome.Sha256.Length.ShouldBe(64);
+		_source!.Served.ShouldBe(LargeOriginal);
+		_source.LargestRead.ShouldBeLessThanOrEqualTo(128 * 1024);
+	}
+
+	[Then(@"no buffer the size of the file is ever allocated")]
+	public void ThenNoFileSizedBufferIsAllocated()
+	{
+		// Process-wide, so other scenarios running alongside count too; the
+		// bound is still a small fraction of the file.
+		_allocated.ShouldBeLessThan(LargeOriginal / 4);
+	}
+
 	/// <summary>
 	///     A report as the submission leaves it: each original copied into the
 	///     report's compartment under its file's id, a summary message, and one
@@ -260,6 +309,13 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 	{
 		private readonly ConcurrentDictionary<string, byte[]> _blobs = new(StringComparer.Ordinal);
 		private int _writes;
+		private Stream? _served;
+
+		/// <summary>Every read returns this stream, once, instead of stored bytes.</summary>
+		public void Serve(Stream stream)
+		{
+			_served = stream;
+		}
 
 		public int Writes => _writes;
 
@@ -285,6 +341,12 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 		public Task<Stream> OpenRead(BlobKey key,
 									 CancellationToken cancellationToken)
 		{
+			if (_served is { } served)
+			{
+				_served = null;
+				return Task.FromResult(served);
+			}
+
 			return Task.FromResult<Stream>(new MemoryStream(_blobs[key.Value], false));
 		}
 
@@ -314,6 +376,83 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 
 		public Task Delete(BlobKey key,
 						   CancellationToken cancellationToken)
+		{
+			throw new NotSupportedException();
+		}
+	}
+
+	/// <summary>
+	///     A forward-only stream of a PDF of the given length that holds none of it,
+	///     recording how much was read and the largest single read.
+	/// </summary>
+	private sealed class MeteredStream(long length) : Stream
+	{
+		private static readonly byte[] Header = "%PDF-1.7\n"u8.ToArray();
+
+		public long Served { get; private set; }
+
+		public int LargestRead { get; private set; }
+
+		public override bool CanRead => true;
+
+		public override bool CanSeek => false;
+
+		public override bool CanWrite => false;
+
+		public override long Length => length;
+
+		public override long Position
+		{
+			get => Served;
+			set => throw new NotSupportedException();
+		}
+
+		public override int Read(byte[] buffer,
+								 int offset,
+								 int count)
+		{
+			return Read(buffer.AsSpan(offset, count));
+		}
+
+		public override int Read(Span<byte> buffer)
+		{
+			LargestRead = Math.Max(LargestRead, buffer.Length);
+			var served = (int)Math.Min(buffer.Length, length - Served);
+
+			for (var i = 0; i < served; i++)
+			{
+				var at = Served + i;
+				buffer[i] = at < Header.Length ? Header[at] : (byte)'x';
+			}
+
+			Served += served;
+			return served;
+		}
+
+		public override ValueTask<int> ReadAsync(Memory<byte> buffer,
+												 CancellationToken cancellationToken = default)
+		{
+			return ValueTask.FromResult(Read(buffer.Span));
+		}
+
+		public override void Flush()
+		{
+		}
+
+		public override long Seek(long offset,
+								  SeekOrigin origin)
+		{
+			throw new NotSupportedException();
+		}
+
+		public override void SetLength(long value)
+		{
+			throw new NotSupportedException();
+		}
+
+		public override void Write(byte[] buffer,
+								   int offset,
+								   int count)
 		{
 			throw new NotSupportedException();
 		}

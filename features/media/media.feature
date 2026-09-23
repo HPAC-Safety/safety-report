@@ -1,3 +1,4 @@
+@xunit:collection(MeasuresAllocation)
 Feature: Attachments
 A reporter may attach images, videos, and documents to the finalized
 report. Every attachment stays private, is validated by content rather than
@@ -207,6 +208,6 @@ Scenario: The Worker skips an attachment whose report was deleted
 @REQ-MED-024
 Scenario: Processing never holds a whole attachment in memory
   Given a stored 50 MB document original
-  When the Worker processes it
+  When the Worker processes that original
   Then the original is read in bounded chunks into temporary storage while it is hashed
   And no buffer the size of the file is ever allocated

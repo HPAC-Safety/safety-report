@@ -70,17 +70,9 @@ public static class UploadEndpoints
 			bodySize.MaxRequestBodySize = policy.MaxByteSize + 1;
 		}
 
-		var temporaryPath = Path.Combine(Path.GetTempPath(), $"hpac-upload-{UploadId.New().Value}");
-
-		// DeleteOnClose: the temporary copy disappears when this request ends,
-		// whether it was accepted, refused, or aborted by the browser.
-		await using var copy = new FileStream(
-			temporaryPath,
-			FileMode.CreateNew,
-			FileAccess.ReadWrite,
-			FileShare.None,
-			ReadBufferSize,
-			FileOptions.DeleteOnClose | FileOptions.Asynchronous);
+		// The temporary copy disappears when this request ends, whether it was
+		// accepted, refused, or aborted by the browser.
+		await using var copy = TemporaryFile.Create();
 
 		if (await CopyBounded(request.Body, copy, policy.MaxByteSize, cancellationToken).ConfigureAwait(false))
 		{

@@ -38,9 +38,12 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
-		using var buffered = new MemoryStream();
-		await content.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
-		var bytes = buffered.ToArray();
+		// A bounded prefix decides everything but a zip's inner shape, which is
+		// read from the seekable stream itself — nothing is copied whole (#362).
+		var start = content.Position;
+		var prefix = new byte[BoundedTextScanLength];
+		var read = await content.ReadAtLeastAsync(prefix, BoundedTextScanLength, false, cancellationToken).ConfigureAwait(false);
+		var bytes = prefix.AsSpan(0, read).ToArray();
 
 		if (StartsWith(bytes, PdfSignature))
 		{
@@ -59,7 +62,7 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 
 		if (StartsWith(bytes, ZipSignature))
 		{
-			return SniffZipPackage(buffered);
+			return SniffZipPackage(content, start);
 		}
 
 		return SniffPlainText(bytes);
@@ -78,13 +81,21 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 	///     OpenDocument specification; DOCX is an OOXML package, which always carries
 	///     a root <c>[Content_Types].xml</c> entry.
 	/// </summary>
-	private static MediaType? SniffZipPackage(MemoryStream buffered)
+	private static MediaType? SniffZipPackage(Stream content,
+											  long start)
 	{
-		buffered.Position = 0;
+		if (!content.CanSeek)
+		{
+			// A zip's directory sits at its end; without seeking there is no way
+			// to read it short of holding the whole file.
+			return null;
+		}
+
+		content.Position = start;
 
 		try
 		{
-			using var archive = new ZipArchive(buffered, ZipArchiveMode.Read, leaveOpen: true);
+			using var archive = new ZipArchive(content, ZipArchiveMode.Read, leaveOpen: true);
 
 			if (IsOpenDocumentText(archive))
 			{
@@ -126,9 +137,7 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 			return null;
 		}
 
-		var scanned = bytes.AsSpan(0, Math.Min(bytes.Length, BoundedTextScanLength));
-
-		return IsPlausibleText(scanned) ? MediaType.PlainText : null;
+		return IsPlausibleText(bytes) ? MediaType.PlainText : null;
 	}
 
 	private static bool IsPlausibleText(ReadOnlySpan<byte> bytes)

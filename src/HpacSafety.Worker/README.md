@@ -34,7 +34,9 @@ sniffs it against the recorded type, and writes the stripped derivative to
 match, or that the image library cannot clean, is marked failed with a safe
 code. A deleted report, an already-processed file, or an already-failed one is
 left alone, so a redelivered message changes nothing. Storage and database
-errors are left to the outbox's retry.
+errors are left to the outbox's retry. The original is streamed into a
+temporary file and hashed on the way; nothing holds a whole attachment in
+memory except an image's decoded pixels (#362, REQ-MED-024).
 
 ## Summarization (implemented — #17, #20)
 
@@ -57,8 +59,7 @@ reviewed/approved yet.
 
 ## Target work
 
-- Stream attachment processing through temporary files instead of memory
-  (#362), and ship ffmpeg in the deployed image (#30).
+- Ship ffmpeg in the deployed image (#30).
 - Review and wire a real `IAiChatClient` concretion (a follow-on issue; first
   candidate is Google Gemini).
 - Alert on failed/stuck work.

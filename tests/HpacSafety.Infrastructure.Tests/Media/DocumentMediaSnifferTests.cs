@@ -63,6 +63,20 @@ public class DocumentMediaSnifferTests
 	}
 
 	[Fact]
+	public async Task GivenZipThatCannotBeSeeked_WhenSniffed_ThenUnrecognisedRatherThanBuffered()
+	{
+		// Given — a zip's directory is at its end; reaching it forward-only would
+		// mean holding the whole file, which this sniffer never does (#362)
+		await using var content = new ForwardOnlyStream(ExifFixtures.Docx());
+
+		// When
+		var sniffed = await new DocumentMediaSniffer().Sniff(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldBeNull();
+	}
+
+	[Fact]
 	public async Task GivenOdtPackage_WhenSniffed_ThenReportedAsOdt()
 	{
 		// Given
@@ -166,5 +180,10 @@ public class DocumentMediaSnifferTests
 
 		// Then
 		sniffed.ShouldBeNull();
+	}
+
+	private sealed class ForwardOnlyStream(byte[] content) : MemoryStream(content)
+	{
+		public override bool CanSeek => false;
 	}
 }

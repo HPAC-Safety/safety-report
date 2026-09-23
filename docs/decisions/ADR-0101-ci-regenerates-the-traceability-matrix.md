@@ -74,10 +74,10 @@ A person should never open a pull request to regenerate a generated file.
    already requires branches to be up to date. With `docs` required too, a PR
    that falls behind is updated, this workflow regenerates the matrix against
    the combined tree, and the PR can't merge until `docs` is green on that
-   tree. Whether the Admin role keeps its `always` bypass, the one that let
-   #369 merge while behind, is the owner's decision and is still pending. While
-   it stays, an administrator's override can still land a stale matrix, and
-   the next PR's run of this workflow repairs it.
+   tree. The Admin role keeps its `always` bypass, so the owner can still
+   merge in an emergency. A merge that uses the bypass can still leave `main`
+   stale; `docs` runs on the push to `main` and flags it, and the next
+   same-repo PR that touches the specification commits the repaired matrix.
 5. `ci.yml`'s check stays, as the backstop rather than the fixer. So do the
    local hooks, which keep a developer's own tree right between pushes.
 
@@ -112,5 +112,8 @@ A person should never open a pull request to regenerate a generated file.
   merge. Now its `docs` check must also pass on the updated tree.
 - A PR that changes `tools/traceability.mjs`, and every fork PR, still
   regenerates locally. `ci.yml` says so when it fails.
+- A merge that uses the Admin bypass can still leave `main` stale. The `docs`
+  check on `main` flags it, and the next same-repo PR that touches the
+  specification repairs it.
 - Without `TRANSLATION_PR_TOKEN` the commit still lands, but checks need a
   manual nudge. The job warns when that happens.

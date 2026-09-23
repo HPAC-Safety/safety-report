@@ -121,9 +121,27 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
-      "selectedCount": "{count} fichier(s) sélectionné(s)",
       "guidance": "Veuillez joindre des photos, des vidéos ou des documents liés à cet incident, si vous en avez.",
-      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous actualisez cette page, vous devrez les sélectionner à nouveau."
+      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous actualisez cette page, vous devrez les sélectionner à nouveau.",
+      "listLabel": "#Attached files",
+      "uploading": "#Uploading…",
+      "uploadingNamed": "#Uploading {name}",
+      "cancel": "#Cancel",
+      "cancelNamed": "#Cancel uploading {name}",
+      "remove": "#Remove",
+      "removeNamed": "#Remove {name}",
+      "expired": "#This file is no longer available. Remove it and attach it again.",
+      "expiredSummary": "#Some attached files are no longer available. Attach the marked files again, then submit — your other answers are kept.",
+      "rejected": {
+        "empty": "#This file is empty.",
+        "too_large": "#This file is larger than 50 MB.",
+        "unrecognised_content": "#This file's contents are not a format we accept.",
+        "unaccepted_media_type": "#This type of file is not accepted.",
+        "declared_type_mismatch": "#This file's contents do not match its type.",
+        "limit": "#No more files can be attached to this report.",
+        "network": "#This file could not be uploaded. Check your connection, remove it, and try again.",
+        "unknown": "#This file could not be uploaded."
+      }
     },
     "error": {
       "network": "Votre rapport n'a pas pu être envoyé. Vos réponses sont toujours enregistrées dans ce navigateur — veuillez vérifier votre connexion et réessayer.",

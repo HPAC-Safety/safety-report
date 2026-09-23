@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { useLocale } from "../i18n/useLocale"
 import { fetchCurrentQuestions, type PublicQuestionView } from "../api/publicQuestions"
@@ -8,6 +8,8 @@ import {
 	submitReport,
 	type SubmitAnswer,
 } from "../api/reportSubmission"
+import { MAX_ATTACHMENTS } from "../api/uploads"
+import type { Attachment } from "./AttachmentField"
 import { clearDraft, readDraft, writeDraft, type DraftAnswer, type ReportDraft } from "./draft"
 import { QuestionField } from "./QuestionField"
 import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
@@ -38,7 +40,12 @@ export function ReportForm() {
 	const { locale, t } = useLocale()
 	const [load, setLoad] = useState<LoadState>({ status: "loading" })
 	const [answers, setAnswers] = useState<AnswerMap>({})
-	const [fileAnswers, setFileAnswers] = useState<Record<string, File[]>>({})
+	// Finished uploads per file-upload question, in memory only: never in the
+	// saved draft, so never restored after a reload (ADR-0096). A file still
+	// uploading is not here — AttachmentField keeps that, and only reports
+	// whether anything is in flight.
+	const [attachments, setAttachments] = useState<Record<string, Attachment[]>>({})
+	const [uploading, setUploading] = useState<Record<string, boolean>>({})
 	const [currentStepId, setCurrentStepId] = useState<string | null>(null)
 	// Purely cosmetic: true for one paint after the step changes, so the new
 	// content fades in. Never gates navigation logic — a step change is always
@@ -105,6 +112,20 @@ export function ReportForm() {
 		writeDraft({ locale, answers, stepRevisionId })
 	}, [answers, locale, submit.status, visible, currentStepId])
 
+	const anyUploading = Object.values(uploading).some(Boolean)
+	const attachedCount = Object.values(attachments)
+		.flat()
+		.filter((row) => row.status === "uploaded").length
+	const attachmentRoom = Math.max(0, MAX_ATTACHMENTS - attachedCount)
+
+	const updateAttachments = useCallback((revisionId: string, update: (current: Attachment[]) => Attachment[]) => {
+		setAttachments((prev) => ({ ...prev, [revisionId]: update(prev[revisionId] ?? []) }))
+	}, [])
+
+	const setQuestionUploading = useCallback((revisionId: string, busy: boolean) => {
+		setUploading((prev) => (prev[revisionId] === busy ? prev : { ...prev, [revisionId]: busy }))
+	}, [])
+
 	const currentIndex = currentStepId ? visible.findIndex((step) => stepQuestionId(step) === currentStepId) : -1
 	const currentStep = currentIndex >= 0 ? visible[currentIndex] : null
 	const isFirst = currentIndex === 0
@@ -158,6 +179,7 @@ export function ReportForm() {
 	}
 
 	function handleNext() {
+		if (anyUploading) return
 		const blocking = blockingRequirements()
 		if (blocking.length > 0) {
 			setAttemptedAdvance(true)
@@ -179,11 +201,11 @@ export function ReportForm() {
 			return
 		}
 		if (submit.status === "submitting") return // Duplicate submission is prevented at the state level, not just a disabled button.
+		if (anyUploading) return
 
 		setSubmit({ status: "submitting" })
 
 		const submitAnswers: SubmitAnswer[] = []
-		const files: File[] = []
 
 		for (const step of visible) {
 			const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, locale) : [step.question]
@@ -198,20 +220,19 @@ export function ReportForm() {
 						questionRevisionId: question.revisionId,
 						value: null,
 						optionCodes: answer?.kind === "options" ? answer.values : [],
-						attachmentPartIndexes: null,
+						attachments: null,
 					})
 					continue
 				}
 
 				if (question.type === "file_upload") {
-					const questionFiles = fileAnswers[question.revisionId] ?? []
-					const indexes = questionFiles.map((_, offset) => files.length + offset)
-					files.push(...questionFiles)
 					submitAnswers.push({
 						questionRevisionId: question.revisionId,
 						value: null,
 						optionCodes: null,
-						attachmentPartIndexes: indexes,
+						attachments: (attachments[question.revisionId] ?? [])
+							.filter((row) => row.status === "uploaded" && row.uploadId)
+							.map((row) => ({ uploadId: row.uploadId!, fileName: row.name })),
 					})
 					continue
 				}
@@ -220,18 +241,31 @@ export function ReportForm() {
 					questionRevisionId: question.revisionId,
 					value: answer?.kind === "value" ? answer.value : null,
 					optionCodes: null,
-					attachmentPartIndexes: null,
+					attachments: null,
 				})
 			}
 		}
 
 		try {
-			const result = await submitReport(locale, submitAnswers, files)
+			const result = await submitReport(locale, submitAnswers)
 			clearDraft()
 			setSubmit({ status: "submitted", id: result.id })
 		} catch (error) {
 			if (error instanceof SubmissionNetworkError) {
 				setSubmit({ status: "failed", message: t("report.error.network"), keepsLocalState: true })
+			} else if (error instanceof SubmissionRejectedError && error.expiredUploadIds.length > 0) {
+				// Only those files need attaching again; every other answer and
+				// upload stays exactly as it was (REQ-SUB-051).
+				const expired = new Set(error.expiredUploadIds)
+				setAttachments((prev) =>
+					Object.fromEntries(
+						Object.entries(prev).map(([revisionId, rows]) => [
+							revisionId,
+							rows.map((row) => (row.uploadId && expired.has(row.uploadId) ? { ...row, status: "expired" as const } : row)),
+						]),
+					),
+				)
+				setSubmit({ status: "failed", message: t("report.attachments.expiredSummary"), keepsLocalState: true })
 			} else if (error instanceof SubmissionRejectedError) {
 				setSubmit({ status: "failed", message: error.detail, keepsLocalState: true })
 			} else {
@@ -304,9 +338,11 @@ export function ReportForm() {
 					step={currentStep}
 					locale={locale}
 					answers={answers}
-					fileAnswers={fileAnswers}
+					attachments={attachments}
+					onAttachments={updateAttachments}
+					onUploading={setQuestionUploading}
+					attachmentRoom={attachmentRoom}
 					onAnswer={setAnswer}
-					onFiles={(revisionId, files) => setFileAnswers((prev) => ({ ...prev, [revisionId]: files }))}
 					blockingIds={blockingIds}
 					questionsById={questionsById}
 					t={t}
@@ -330,7 +366,7 @@ export function ReportForm() {
 					<button
 						type="button"
 						className="touch-target rounded bg-brand-700 px-5 font-sans text-sm font-semibold text-ink-inverse disabled:opacity-60"
-						disabled={submit.status === "submitting"}
+						disabled={submit.status === "submitting" || anyUploading}
 						onClick={handleSubmit}
 					>
 						{submit.status === "submitting" ? t("report.nav.submitting") : t("report.nav.submit")}
@@ -338,7 +374,8 @@ export function ReportForm() {
 				) : (
 					<button
 						type="button"
-						className="touch-target rounded bg-brand-700 px-5 font-sans text-sm font-semibold text-ink-inverse"
+						className="touch-target rounded bg-brand-700 px-5 font-sans text-sm font-semibold text-ink-inverse disabled:opacity-60"
+						disabled={anyUploading}
 						onClick={handleNext}
 					>
 						{t("report.nav.next")}
@@ -353,15 +390,29 @@ interface StepContentProps {
 	step: FormStep
 	locale: ReturnType<typeof useLocale>["locale"]
 	answers: AnswerMap
-	fileAnswers: Record<string, File[]>
+	attachments: Record<string, Attachment[]>
+	onAttachments: (revisionId: string, update: (current: Attachment[]) => Attachment[]) => void
+	onUploading: (revisionId: string, uploading: boolean) => void
+	attachmentRoom: number
 	onAnswer: (revisionId: string, answer: DraftAnswer | undefined) => void
-	onFiles: (revisionId: string, files: File[]) => void
 	blockingIds: Set<string>
 	questionsById: Map<string, PublicQuestionView>
 	t: (key: string, params?: Record<string, string | number>) => string
 }
 
-function StepContent({ step, locale, answers, fileAnswers, onAnswer, onFiles, blockingIds, questionsById, t }: StepContentProps) {
+function StepContent({
+	step,
+	locale,
+	answers,
+	attachments,
+	onAttachments,
+	onUploading,
+	attachmentRoom,
+	onAnswer,
+	blockingIds,
+	questionsById,
+	t,
+}: StepContentProps) {
 	if (step.kind === "intro") {
 		return (
 			<div>
@@ -388,8 +439,10 @@ function StepContent({ step, locale, answers, fileAnswers, onAnswer, onFiles, bl
 							locale={locale}
 							answer={answers[child.revisionId]}
 							onChange={(answer) => onAnswer(child.revisionId, answer)}
-							files={fileAnswers[child.revisionId] ?? []}
-							onFilesChange={(files) => onFiles(child.revisionId, files)}
+							attachments={attachments[child.revisionId] ?? []}
+							onAttachmentsChange={(update) => onAttachments(child.revisionId, update)}
+							onUploadingChange={(busy) => onUploading(child.revisionId, busy)}
+							attachmentRoom={attachmentRoom}
 							errorText={blockingIds.has(child.revisionId) ? t("report.required.error") : null}
 							t={t}
 						/>
@@ -413,8 +466,10 @@ function StepContent({ step, locale, answers, fileAnswers, onAnswer, onFiles, bl
 			locale={locale}
 			answer={answers[step.question.revisionId]}
 			onChange={(answer) => onAnswer(step.question.revisionId, answer)}
-			files={fileAnswers[step.question.revisionId] ?? []}
-			onFilesChange={(files) => onFiles(step.question.revisionId, files)}
+			attachments={attachments[step.question.revisionId] ?? []}
+			onAttachmentsChange={(update) => onAttachments(step.question.revisionId, update)}
+			onUploadingChange={(busy) => onUploading(step.question.revisionId, busy)}
+			attachmentRoom={attachmentRoom}
 			errorText={blockingIds.has(step.question.revisionId) ? t("report.required.error") : null}
 			t={t}
 		/>

@@ -13,11 +13,14 @@ const { Given, Then } = createBdd()
 //
 // The slashes are escaped because a Cucumber Expression reads `/` as
 // alternation, and an empty alternative is an error.
-Given("the only write endpoint for a reporter is POST \\/api\\/v1\\/reports", async () => {})
+Given(
+	"a reporter writes a report through POST \\/api\\/v1\\/reports and an attachment through POST \\/api\\/v1\\/uploads",
+	async () => {},
+)
 
-Given("it requires a valid member bearer token", async () => {})
+Given("both require a valid member bearer token", async () => {})
 
-Given("it accepts multipart\\/form-data with one report JSON part and zero or more files parts", async () => {})
+Given("the report request is JSON that names each attachment by the upload ID the upload returned", async () => {})
 
 Given("the bearer token is transport\\/security metadata, not persisted report content", async () => {})
 

@@ -61,10 +61,14 @@ export function ResumeDraftDialog({
 	t: (key: string) => string
 }) {
 	const dialog = useRef<HTMLDialogElement>(null)
+	const continueButton = useRef<HTMLButtonElement>(null)
 
+	// showModal() focuses the first control, which is the destructive one;
+	// start on the choice that keeps the reporter's answers instead.
 	useEffect(() => {
 		const element = dialog.current
 		if (element && !element.open) element.showModal()
+		continueButton.current?.focus()
 	}, [])
 
 	return (
@@ -75,7 +79,7 @@ export function ResumeDraftDialog({
 			// A decision is required: Escape would otherwise close the dialog
 			// with neither the saved report restored nor removed.
 			onCancel={(event) => event.preventDefault()}
-			className="w-full max-w-measure rounded border border-rule bg-surface p-6 text-ink backdrop:bg-black/40"
+			className="m-auto w-[calc(100%-2rem)] max-w-measure rounded border border-rule bg-surface p-6 text-ink backdrop:bg-black/40"
 		>
 			<h2 id="resume-draft-title" className="font-display text-xl font-bold text-ink">
 				{t("report.resume.title")}
@@ -93,8 +97,8 @@ export function ResumeDraftDialog({
 					{t("report.resume.no")}
 				</button>
 				<button
+					ref={continueButton}
 					type="button"
-					autoFocus
 					className="touch-target rounded bg-brand-700 px-5 font-sans text-sm font-semibold text-ink-inverse"
 					onClick={onContinue}
 				>

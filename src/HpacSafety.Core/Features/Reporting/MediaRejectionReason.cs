@@ -24,4 +24,11 @@ public enum MediaRejectionReason
 
 	/// <summary>The client claimed one format and uploaded another.</summary>
 	DeclaredTypeMismatch = 5,
+
+	/// <summary>
+	///     The file was accepted, but the image library could not produce a clean
+	///     derivative from it. Recorded by the Worker; the file stays inaccessible to
+	///     reviewers (REQ-MED-013).
+	/// </summary>
+	CouldNotStrip = 6,
 }

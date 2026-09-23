@@ -10,6 +10,7 @@ namespace HpacSafety.Core.Tests.Media;
 internal sealed class InMemoryBlobStore : IBlobStore
 {
 	private readonly ConcurrentDictionary<string, byte[]> _blobs = new(StringComparer.Ordinal);
+	private readonly ConcurrentDictionary<string, string> _types = new(StringComparer.Ordinal);
 
 	public IReadOnlyCollection<string> Keys => _blobs.Keys.ToArray();
 
@@ -37,12 +38,28 @@ internal sealed class InMemoryBlobStore : IBlobStore
 		using var buffer = new MemoryStream();
 		await content.CopyToAsync(buffer, cancellationToken);
 		_blobs[key.Value] = buffer.ToArray();
+		_types[key.Value] = contentType;
 	}
 
-	public Task<bool> Exists(BlobKey key,
-							 CancellationToken cancellationToken)
+	public Task<StoredBlob?> Describe(BlobKey key,
+									  CancellationToken cancellationToken)
 	{
-		return Task.FromResult(_blobs.ContainsKey(key.Value));
+		return Task.FromResult(_blobs.TryGetValue(key.Value, out var bytes)
+			? new StoredBlob(_types.GetValueOrDefault(key.Value, "application/octet-stream"), bytes.Length)
+			: null);
+	}
+
+	public Task Copy(BlobKey source,
+					 BlobKey destination,
+					 CancellationToken cancellationToken)
+	{
+		_blobs[destination.Value] = _blobs[source.Value];
+		if (_types.TryGetValue(source.Value, out var type))
+		{
+			_types[destination.Value] = type;
+		}
+
+		return Task.CompletedTask;
 	}
 
 	public Task Delete(BlobKey key,

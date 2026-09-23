@@ -277,17 +277,22 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var file = await database.ReportFiles.SingleAsync(f => f.ReportId == TinyId.Parse(body!.Id));
 
-		// A successfully stripped image must be viewable by a reviewer as soon
-		// as submission completes — ingestion runs synchronously, so nothing
-		// else will ever record the derivative if this endpoint does not.
-		file.AwaitsStripping.ShouldBeFalse();
-		Should.NotThrow(() => file.ViewableKey);
+		// Submission copies the original and decodes nothing; the Worker writes
+		// the derivative from the file's outbox message (ADR-0098).
+		file.AwaitsStripping.ShouldBeTrue();
+		file.ContentType.ShouldBe("image/png");
+		var outbox = await database.OutboxMessages
+			.Where(message => message.Payload == file.Id.Value)
+			.Select(message => message.Type)
+			.ToListAsync();
+		outbox.ShouldBe([Core.Features.Outbox.OutboxMessageType.ProcessAttachment]);
 
-		// The reporter's name is kept, sanitized; the blobs are named by the
+		// The reporter's name is kept, sanitized; the original is named by the
 		// file's own id and never by the name or the upload id (ADR-0097).
 		file.OriginalFileName.ShouldBe("Launch site.png");
 		file.BlobKey.ShouldBe($"{body!.Id}/original/{file.Id}");
-		file.StrippedBlobKey.ShouldBe($"{body.Id}/stripped/{file.Id}");
+		(await ObjectExists(file.BlobKey)).ShouldBeTrue();
+		(await ObjectExists($"{body.Id}/stripped/{file.Id}")).ShouldBeFalse();
 
 		// The claimed upload has left quarantine (REQ-SUB-042).
 		(await ObjectExists($"quarantine/{uploadId}")).ShouldBeFalse();

@@ -23,6 +23,19 @@ never the summarization model. Mechanical and literal, not anonymized
 summarization — it never runs on the submission path and never produces the
 bilingual summary.
 
+## Attachment processing (implemented — #361, ADR-0098)
+
+[`Outbox/ProcessAttachmentProcessor.cs`](Outbox/ProcessAttachmentProcessor.cs)
+handles one `ProcessAttachment` message per file. The submission has already
+copied the original into `<report id>/original/<file id>`; this reads it,
+sniffs it against the recorded type, and writes the stripped derivative to
+`<report id>/stripped/<file id>` — re-encoding an image, remuxing a video
+(ADR-0094), and leaving a document as it is. A file whose bytes no longer
+match, or that the image library cannot clean, is marked failed with a safe
+code. A deleted report, an already-processed file, or an already-failed one is
+left alone, so a redelivered message changes nothing. Storage and database
+errors are left to the outbox's retry.
+
 ## Summarization (implemented — #17, #20)
 
 [`Outbox/SummarizeReportProcessor.cs`](Outbox/SummarizeReportProcessor.cs)
@@ -44,8 +57,8 @@ reviewed/approved yet.
 
 ## Target work
 
-- Process each attachment independently: safe image/video derivative or
-  validated private document original (#81).
+- Stream attachment processing through temporary files instead of memory
+  (#362), and ship ffmpeg in the deployed image (#30).
 - Review and wire a real `IAiChatClient` concretion (a follow-on issue; first
   candidate is Google Gemini).
 - Alert on failed/stuck work.

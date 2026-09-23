@@ -42,6 +42,28 @@ public sealed class AttachmentAccessSteps
 		await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: false, originalFileName: "Déclaration du témoin.pdf");
 	}
 
+	[Given(@"a submitted image the Worker has not yet processed")]
+	public async Task GivenASubmittedImageTheWorkerHasNotYetProcessed()
+	{
+		await SeedAsync(MediaType.Jpeg.ContentType, stripped: false, failed: false, originalFileName: "launch-site.jpg");
+	}
+
+	[Then(@"no link is issued")]
+	public void ThenNoLinkIsIssued()
+	{
+		_response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+		_body.ShouldBeNull();
+	}
+
+	[Then(@"the attachment reads as awaiting processing rather than failed")]
+	public async Task ThenTheAttachmentReadsAsAwaitingProcessing()
+	{
+		var database = await DatabaseAsync();
+		var file = await database.ReportFiles.SingleAsync(f => f.Id == TinyId.Parse(_attachmentId));
+		file.AwaitsStripping.ShouldBeTrue();
+		file.ProcessingErrorCode.ShouldBeNull();
+	}
+
 	[Given(@"a reporter attached ""(.*)"" and its derivative is a JPEG")]
 	public async Task GivenAReporterAttachedAHeicWithAJpegDerivative(string fileName)
 	{

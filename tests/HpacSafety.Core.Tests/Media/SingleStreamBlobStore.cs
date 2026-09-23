@@ -30,10 +30,17 @@ internal sealed class SingleStreamBlobStore(Stream source) : IBlobStore
 		throw new InvalidOperationException("An oversized, rejected upload must never reach a write.");
 	}
 
-	public Task<bool> Exists(BlobKey key,
-							 CancellationToken cancellationToken)
+	public Task<StoredBlob?> Describe(BlobKey key,
+									  CancellationToken cancellationToken)
 	{
-		return Task.FromResult(true);
+		throw new NotSupportedException();
+	}
+
+	public Task Copy(BlobKey source,
+					 BlobKey destination,
+					 CancellationToken cancellationToken)
+	{
+		throw new NotSupportedException();
 	}
 
 	public Task Delete(BlobKey key,

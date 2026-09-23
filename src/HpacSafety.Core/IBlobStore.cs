@@ -34,9 +34,20 @@ public interface IBlobStore
 			   string contentType,
 			   CancellationToken cancellationToken);
 
-	/// <summary>Whether an object is stored under <paramref name="key" />.</summary>
-	Task<bool> Exists(BlobKey key,
-					  CancellationToken cancellationToken);
+	/// <summary>
+	///     The stored type and size of the object under <paramref name="key" />, or
+	///     <see langword="null" /> when nothing is stored there.
+	/// </summary>
+	Task<StoredBlob?> Describe(BlobKey key,
+							   CancellationToken cancellationToken);
+
+	/// <summary>
+	///     Copies an object, unchanged and inside storage, to another key. No bytes
+	///     pass through this process (ADR-0098).
+	/// </summary>
+	Task Copy(BlobKey source,
+			  BlobKey destination,
+			  CancellationToken cancellationToken);
 
 	/// <summary>
 	///     Erases every stored version of <paramref name="key" />, so that on a

@@ -1,5 +1,6 @@
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.AiChatClient;
+using HpacSafety.Infrastructure.Media;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
 using HpacSafety.Worker;
@@ -33,6 +34,12 @@ builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
 builder.Services.AddHpacSafetyTranslation(
 	builder.Configuration,
 	builder.Environment.IsDevelopment());
+
+// Attachment derivatives are produced here, one outbox message per file, never
+// on the submission path (ADR-0098). The same storage adapter and ingest
+// pipeline the API uses: S3 in AWS, MinIO in development.
+builder.Services.AddHpacSafetyMedia(builder.Configuration);
+builder.Services.AddScoped<IOutboxMessageProcessor, ProcessAttachmentProcessor>();
 
 builder.Services.AddScoped<IOutboxMessageProcessor, TranslateAnswersProcessor>();
 builder.Services.AddScoped<IOutboxMessageProcessor, SummarizeReportProcessor>();

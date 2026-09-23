@@ -12,15 +12,19 @@ type: readme
 | `linked-issue.yml` | Require a closing issue reference in each PR |
 | `feature-coverage.yml` | Require a scenario for a behavior change, or a citation of the claims it preserves |
 | `i18n-translate.yml` | Prepare French application-catalogue changes only |
+| `traceability.yml` | Commit the regenerated `docs/traceability.md` onto a same-repo PR's branch |
 | `terraform.yml` | Validate/plan/apply infrastructure |
 | `deploy-api.yml` | Publish API image and run explicit migrations |
 | `deploy-worker.yml` | Publish Worker image |
 | `deploy-web.yml` | Publish static sites |
 
-Pull-request workflows must be safe for forks: use `pull_request`, never
-`pull_request_target`, do not expose secrets, and never make live AI or
-translation calls. UI catalogue generation runs after merge and opens a human-
-reviewed PR; it does not translate database questions or summaries.
+Pull-request workflows must be safe for forks: use `pull_request`, do not
+expose secrets, and never make live AI or translation calls. Two workflows use
+`pull_request_target` to commit onto a PR's own branch, and both are gated to
+same-repo pull requests: `i18n-translate.yml` (ADR-0057) and
+`traceability.yml`, which runs only the base branch's generator over the head's
+files (ADR-0101). Neither ever pushes to `main`. Catalogue generation does not
+translate database questions or summaries.
 
 Deployments run only from successful tested `main` commits or explicit manual
 dispatch, use GitHub OIDC rather than AWS access keys, and are protected by the

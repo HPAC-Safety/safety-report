@@ -1,0 +1,127 @@
+name: Traceability matrix
+
+# Regenerates docs/traceability.md onto a same-repo pull request's own branch,
+# so nobody ever opens a pull request just to regenerate a generated file
+# (ADR-0101). It NEVER pushes to main, and it writes nothing for a fork.
+#
+# Why pull_request_target, and why that is safe here (ADR-0057 is the
+# precedent, ADR-0101 the argument for this job):
+#
+#   * The commit has to land on the PR branch, and it has to re-trigger CI
+#     on that branch, which needs a write token: `pull_request` never has one.
+#   * No code the pull request wrote runs with that token. The generator is
+#     taken from the BASE branch (the default checkout for this trigger) and
+#     pointed at the head commit's files as plain data: it reads the feature
+#     files and five docs pages, and writes one markdown file. The head is
+#     checked out without persisted credentials, and nothing is installed.
+#   * A pull request that changes the generator itself is skipped: the base
+#     generator would render the old format. Its author regenerates locally
+#     (the post-merge/post-rewrite hooks do it after every merge or rebase),
+#     and ci.yml's "docs" job still checks the result with the head's code.
+#
+# The main ruleset already requires branches to be up to date; with ci.yml's
+# "docs" job required too, a PR that falls behind is updated, this job re-runs
+# on the combined tree, and it can't merge with a stale matrix (ADR-0101).
+
+on:
+  pull_request_target:
+    paths:
+      - features/**
+      - docs/system-overview.md
+      - docs/data-and-persistence.md
+      - docs/interfaces-and-data-flow.md
+      - docs/infrastructure-and-operations.md
+      - docs/testing-and-quality.md
+      - docs/traceability.md
+      - tools/traceability.mjs
+      - .github/workflows/traceability.yml
+
+permissions:
+  contents: read
+
+# One run per pull request; a newer push supersedes an older run.
+concurrency:
+  group: traceability-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  regenerate:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      # The base branch: the trusted generator, and the pinned Node major.
+      - uses: actions/checkout@v7
+        with:
+          path: base
+          persist-credentials: false
+
+      # The head commit by SHA, so a push landing between the event and this
+      # checkout can't change what gets regenerated. Data only.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: head
+          persist-credentials: false
+
+      # The Node major is pinned in ci.yml and nowhere else (ADR-0015).
+      - name: Read the pinned Node major
+        id: node
+        run: |
+          set -euo pipefail
+          major=$(grep -m1 -oE 'node-version: [0-9]+' base/.github/workflows/ci.yml | grep -oE '[0-9]+$')
+          if [ -z "$major" ]; then
+            echo "::error::Could not read the pinned Node major out of .github/workflows/ci.yml."
+            exit 1
+          fi
+          echo "major=$major" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ steps.node.outputs.major }}
+
+      - name: Regenerate the matrix with the base branch's generator
+        id: regenerate
+        run: |
+          set -euo pipefail
+          if ! cmp -s base/tools/traceability.mjs head/tools/traceability.mjs; then
+            echo "::notice::This pull request changes tools/traceability.mjs, so the base generator can't render its matrix. Regenerate locally with 'node tools/traceability.mjs'; ci.yml checks the result."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          cd head
+          node ../base/tools/traceability.mjs
+          if git diff --quiet -- docs/traceability.md; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # A push made with the built-in GITHUB_TOKEN does not trigger workflows
+      # (GitHub's loop protection), so ci.yml would never re-run on this
+      # commit. TRANSLATION_PR_TOKEN, the fine-grained PAT scoped to this
+      # repository that i18n-translate.yml already uses for the same reason
+      # (ADR-0021, ADR-0057), is what makes the required checks re-run. The
+      # re-run of this job on that push finds nothing to change, so it can't
+      # loop.
+      - name: Commit the matrix onto the pull request's own branch
+        if: steps.regenerate.outputs.changed == 'true'
+        working-directory: head
+        env:
+          GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
+          USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+
+          if [ "$USING_DEFAULT_TOKEN" = 'true' ]; then
+            echo "::warning::No TRANSLATION_PR_TOKEN is set, so this commit is pushed with the built-in GITHUB_TOKEN and CI will not re-run on it. Push an empty commit, or close and reopen the PR, before merging. See ADR-0101."
+          fi
+
+          git config user.name  'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git remote set-url origin \
+            "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          git add docs/traceability.md
+          git commit -m 'Regenerate the traceability matrix'
+          git push origin "HEAD:${HEAD_REF}"

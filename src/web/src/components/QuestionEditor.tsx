@@ -257,7 +257,8 @@ export function QuestionEditor({
 			)}
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<div>
+				{/* Its own row, one column wide, so each English field sits beside its French one. */}
+				<div className="sm:col-span-2 sm:w-[calc(50%-0.5rem)]">
 					<label className={labelClassName} htmlFor="question-type">
 						{t("questions.field.type")}
 					</label>

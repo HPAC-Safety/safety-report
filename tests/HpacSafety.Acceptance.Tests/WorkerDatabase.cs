@@ -26,6 +26,17 @@ public static class WorkerDatabase
 	/// <summary>Creates an empty, migrated database and returns a context open on it.</summary>
 	public static async Task<HpacSafetyDbContext> NewMigratedContext()
 	{
+		var context = ContextFor(await NewEmptyDatabase().ConfigureAwait(false));
+		await context.Database.MigrateAsync().ConfigureAwait(false);
+		return context;
+	}
+
+	/// <summary>
+	///     Creates an empty database with no migration applied and returns its
+	///     connection string, for scenarios about what a migration does.
+	/// </summary>
+	public static async Task<string> NewEmptyDatabase()
+	{
 		var running = await Container().ConfigureAwait(false);
 		var name = "db_" + Guid.NewGuid().ToString("n");
 
@@ -36,10 +47,7 @@ public static class WorkerDatabase
 			await create.ExecuteNonQueryAsync().ConfigureAwait(false);
 		}
 
-		var connectionString = new NpgsqlConnectionStringBuilder(running.GetConnectionString()) { Database = name }.ConnectionString;
-		var context = ContextFor(connectionString);
-		await context.Database.MigrateAsync().ConfigureAwait(false);
-		return context;
+		return new NpgsqlConnectionStringBuilder(running.GetConnectionString()) { Database = name }.ConnectionString;
 	}
 
 	/// <summary>Opens another context against the database a scenario is already using.</summary>
@@ -50,7 +58,8 @@ public static class WorkerDatabase
 		return ContextFor(existing.Database.GetConnectionString()!);
 	}
 
-	private static HpacSafetyDbContext ContextFor(string connectionString)
+	/// <summary>Opens a context against a database by its connection string.</summary>
+	public static HpacSafetyDbContext ContextFor(string connectionString)
 	{
 		var options = new DbContextOptionsBuilder<HpacSafetyDbContext>().UseNpgsql(connectionString).Options;
 		return new HpacSafetyDbContext(options);

@@ -23,6 +23,13 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 ///         asks unconditionally; an Administrator wires the equivalent
 ///         "Depends on" relationship by hand once the bank is live.
 ///     </para>
+///     <para>
+///         The attachment question departs from the Typeform wording on purpose.
+///         Typeform took one file and asked for the rest by email; this form takes
+///         several, so it asks for photos, videos, or documents. The
+///         <c>WordAttachmentQuestionForSeveralFiles</c> migration carries the same
+///         correction to a database seeded with the old wording.
+///     </para>
 /// </remarks>
 public static class QuestionBankSeed
 {
@@ -563,10 +570,10 @@ public static class QuestionBankSeed
 			true,
 			false,
 			false,
-			"Photo or video:",
-			"Photo ou vidéo:",
-			"Upload one photo or video of the occurrence. Please contact us directly for multiple files (safety@hpac.ca).",
-			"Téléchargez une photo ou vidéo de l'événement. Contactez-nous directement pour plusieurs fichiers (safety@hpac.ca).",
+			"Photos or videos:",
+			"Photos ou vidéos:",
+			"Upload photos, videos, or documents of the occurrence, if you have any.",
+			"Téléversez des photos, vidéos ou documents de l'événement, si vous en avez.",
 			null,
 			null,
 			null,

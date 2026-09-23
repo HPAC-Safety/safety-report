@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-304 claims across 8 areas: 232 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+308 claims across 8 areas: 236 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -213,6 +213,10 @@ type: guide
 | `REQ-QB-101` | question-bank-and-form | A choice a live question depends on cannot be removed | Reqnroll | Covered |
 | `REQ-QB-102` | question-bank-and-form | A choice in only one language is offered in the language it has | Reqnroll | Covered |
 | `REQ-QB-103` | question-bank-and-form | The report form shows a one-language choice in the language it has | playwright-bdd | Covered |
+| `REQ-QB-104` | question-bank-and-form | A new installation asks for several attachments | Reqnroll | Covered |
+| `REQ-QB-105` | question-bank-and-form | The seeded single-file wording on an unanswered attachment question is revised | Reqnroll | Covered |
+| `REQ-QB-106` | question-bank-and-form | The seeded single-file wording on an answered attachment question forks it | Reqnroll | Covered |
+| `REQ-QB-107` | question-bank-and-form | An attachment question an Administrator already reworded is left alone | Reqnroll | Covered |
 | `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Covered |
 | `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Covered |
 | `REQ-SUB-003` | report-submission | Expired local state is not restored | playwright-bdd | Covered |

@@ -685,7 +685,7 @@ Scenario: Deleting a question removes it from the list
 @ui
 Scenario: A rejected save tells the Administrator why
   Given a signed-in Administrator is authoring a new question
-  When they save a question whose key is already in use
+  When they save a question whose two choices read alike
   Then the page shows the reason the save was refused
   And the question is not added to the list
 
@@ -695,7 +695,7 @@ Scenario: The editor carries an existing question's settings into the form
   Given a signed-in Administrator opens the manage-questions page
   When they open the first question for editing
   Then the form is filled with its current wording, type, and behaviour
-  And its key cannot be changed
+  And no question key is shown
 
 @REQ-QB-088
 @ui
@@ -704,7 +704,7 @@ Scenario: Reviewing an imported Typeform draft prefills the editor
   When they import a Typeform English and French export pair
   Then the imported drafts are listed
   When they choose to review the first imported draft
-  Then the editor is filled with that draft's key, type, and both languages
+  Then the editor is filled with that draft's type and both languages
 
 @REQ-QB-089
 @ui
@@ -756,6 +756,14 @@ Scenario: Submitting a report records a type-ahead value the list did not offer
   And the shared list now offers "Élévation Sainte-Anne" as a reporter-added choice coded "elevation_sainte_anne"
   And the next reporter is offered "Élévation Sainte-Anne"
 
+@REQ-QB-096
+Scenario: A new question's key is derived from its English wording and never reused
+  Given an Administrator saves a new question without a key
+  Then its key is derived from its English wording
+  When they save another question with the same English wording
+  Then it receives a different key
+  When they delete the first question and save a third with the same wording
+  Then the third question does not take the retired question's key
 
 @REQ-QB-093
 @ui

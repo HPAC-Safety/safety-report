@@ -719,18 +719,6 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "questions.field.key": {
-    "source_hash": "99a52df3ff3d499488e2fa28150c4106a2cb5e928891a830a9aa3922b2d32160",
-    "target_hash": "51dcb443ce8062e536d22d775344e02a0ad3810502a71b432ad812b721fe0e81",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
-  "questions.field.keyHelp": {
-    "source_hash": "2b0325e2ac25c509b3eadacda01eeaa66c11826f2bce2859a173e545ef2ec444",
-    "target_hash": "b50896399ab4c2820a52a5c5023aedba69d4948a0df2bbc498e06d2e4823d2e2",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
   "questions.field.labelEn": {
     "source_hash": "3b469427a109675d4be61bb4147315840a90307619efeb3c3578f8d221d612c9",
     "target_hash": "8bf2b6269aa5f07ae98cecd6d9b86d305e61ae41dbd7401c0b74d051153e9a11",

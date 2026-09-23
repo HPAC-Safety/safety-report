@@ -690,13 +690,65 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenNoKey_WhenQuestionIsCreated_ThenApiRejects()
+	public async Task GivenNoKey_WhenQuestionIsCreated_ThenKeyIsDerivedFromEnglishWording()
 	{
 		// Given
 		using var client = await SignedIn();
+		var marker = Guid.NewGuid().ToString("N")[..8];
 
 		// When
-		using var response = await client.PostAsJsonAsync(Questions, Draft(" ", "short_text"));
+		var created = await Create(client, Draft(" ", "short_text") with { LabelEn = $"Wind at launch {marker}?" });
+
+		// Then
+		created.GetProperty("key").GetString().ShouldBe($"wind_at_launch_{marker}");
+	}
+
+	[Fact]
+	public async Task GivenWordingAlreadyUsed_WhenQuestionIsCreatedWithoutKey_ThenKeyIsSuffixed()
+	{
+		// Given
+		using var client = await SignedIn();
+		var wording = $"Launch site {Guid.NewGuid():N}";
+		var first = await Create(client, Draft(null, "short_text") with { LabelEn = wording });
+
+		// When
+		var second = await Create(client, Draft(null, "short_text") with { LabelEn = wording });
+
+		// Then
+		second.GetProperty("key").GetString().ShouldBe($"{first.GetProperty("key").GetString()}_2");
+	}
+
+	[Fact]
+	public async Task GivenRetiredQuestionHoldsWording_WhenQuestionIsCreatedWithoutKey_ThenRetiredKeyIsNotReused()
+	{
+		// Given
+		using var client = await SignedIn();
+		var wording = $"Landing field {Guid.NewGuid():N}";
+		var retired = await Create(client, Draft(null, "short_text") with { LabelEn = wording });
+		using var deleted = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{retired.GetProperty("id").GetString()}", UriKind.Relative));
+		deleted.EnsureSuccessStatusCode();
+
+		// When
+		var created = await Create(client, Draft(null, "short_text") with { LabelEn = wording });
+
+		// Then
+		created.GetProperty("key").GetString().ShouldBe($"{retired.GetProperty("key").GetString()}_2");
+	}
+
+	[Fact]
+	public async Task GivenRetiredQuestionHoldsKey_WhenQuestionIsCreatedWithThatKey_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedIn();
+		var key = UniqueKey("retired");
+		var retired = await Create(client, Draft(key, "short_text"));
+		using var deleted = await client.DeleteAsync(
+			new Uri($"/api/admin/questions/{retired.GetProperty("id").GetString()}", UriKind.Relative));
+		deleted.EnsureSuccessStatusCode();
+
+		// When
+		using var response = await client.PostAsJsonAsync(Questions, Draft(key, "short_text"));
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

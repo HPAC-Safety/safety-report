@@ -207,6 +207,7 @@ type: guide
 | `REQ-QB-092` | question-bank-and-form | A choice an Administrator writes is recorded under a code derived from its English wording | playwright-bdd | Covered |
 | `REQ-QB-094` | question-bank-and-form | A reporter answering in French adds a choice recorded in French | Reqnroll | Covered |
 | `REQ-QB-095` | question-bank-and-form | Submitting a report records a type-ahead value the list did not offer | Reqnroll | Covered |
+| `REQ-QB-096` | question-bank-and-form | A new question's key is derived from its English wording and never reused | Reqnroll | Covered |
 | `REQ-QB-093` | question-bank-and-form | Editing a question opens the editor in that question's place | playwright-bdd | Covered |
 | `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Covered |
 | `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Covered |

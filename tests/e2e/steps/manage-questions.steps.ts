@@ -80,6 +80,15 @@ function question(
 	}
 }
 
+function codeOf(wording: string) {
+	return wording
+		.toLowerCase()
+		.normalize("NFD")
+		.replace(/[\u0300-\u036f]/g, "")
+		.replace(/[^a-z0-9]+/g, "_")
+		.replace(/^_+|_+$/g, "")
+}
+
 /**
  * A fake admin API held in the test process. It behaves the way the real one
  * does in the ways these scenarios depend on: an edit or a reorder writes a
@@ -127,20 +136,28 @@ async function stubAdminApi(page: Page) {
 		if (route.request().method() === "POST") {
 			const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion>
 
-			if (questions.some((candidate) => candidate.key === saved.key)) {
+			// The real API derives each choice's code from its English wording and
+			// refuses two that reduce to the same code, naming both wordings.
+			const wordings = (saved.options ?? []).map((option) => option.labelEn)
+			const alike = wordings.filter(
+				(wording, index) => wordings.findIndex((other) => codeOf(other) === codeOf(wording)) !== index,
+			)
+			if (alike.length > 0) {
+				const first = wordings.find((wording) => codeOf(wording) === codeOf(alike[0]))
 				await route.fulfill({
 					status: 400,
 					contentType: "application/problem+json",
 					body: JSON.stringify({
-						title: "That key is taken.",
-						detail: `Another question already uses the key '${saved.key}'.`,
+						title: "Two choices read alike.",
+						detail: `The choices '${first}' and '${alike[0]}' reduce to the same code.`,
 					}),
 				})
 				return
 			}
 
+			// The real API derives the key from the English wording; the page never sends one.
 			const created = {
-				...question(`q${questions.length}`.padEnd(11, "0"), saved.key ?? "new_question", saved.labelEn ?? "", saved.type ?? "short_text", questions.length),
+				...question(`q${questions.length}`.padEnd(11, "0"), saved.key ?? codeOf(saved.labelEn ?? "question"), saved.labelEn ?? "", saved.type ?? "short_text", questions.length),
 				labelFr: saved.labelFr ?? "",
 			}
 
@@ -253,7 +270,6 @@ Given("a signed-in Administrator is authoring a new question", async ({ page }) 
 
 When("they add a paragraph-text question in both official languages", async ({ page }) => {
 	await page.getByRole("button", { name: "Add a question" }).click()
-	await page.getByLabel("Key").fill("weather_notes")
 	await page.getByLabel("Type").selectOption("long_text")
 	await page.getByLabel("Question (English)").fill("Describe the weather")
 	await page.getByLabel("Question (French)").fill("Décrivez la météo")
@@ -378,15 +394,20 @@ Then("it is gone from the list", async ({ page }) => {
 	await expect(list).not.toContainText("What happened?")
 })
 
-When("they save a question whose key is already in use", async ({ page }) => {
-	await page.getByLabel("Key").fill("were_you_injured")
+When("they save a question whose two choices read alike", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("single_select")
 	await page.getByLabel("Question (English)").fill("A duplicate")
 	await page.getByLabel("Question (French)").fill("Un doublon")
+	for (const wording of ["Site A-1", "Site A 1"]) {
+		await page.getByRole("button", { name: "Add a choice" }).click()
+		await page.getByLabel("Choice (English)").last().fill(wording)
+		await page.getByLabel("Choice (French)").last().fill(wording)
+	}
 	await page.getByRole("button", { name: "Save" }).click()
 })
 
 Then("the page shows the reason the save was refused", async ({ page }) => {
-	await expect(page.getByRole("alert")).toContainText("were_you_injured")
+	await expect(page.getByRole("alert")).toContainText("Site A-1")
 })
 
 Then("the question is not added to the list", async ({ page }) => {
@@ -450,7 +471,6 @@ Then("the French field remains editable", async ({ page }) => {
 })
 
 When("only one official language has been written", async ({ page }) => {
-	await page.getByLabel("Key").fill("were_you_hurt")
 	await page.getByLabel("Question (English)").fill("Were you injured?")
 })
 
@@ -485,10 +505,11 @@ Then("the Translate action is unavailable and says so", async ({ page }) => {
 	await expect(page.getByText("Translation is not available on this server.")).toBeVisible()
 })
 
-Then("its key cannot be changed", async ({ page }) => {
-	// A key is what every stored answer refers to, so an edit may never change it.
-	await expect(page.getByLabel("Key")).toHaveAttribute("readonly", "")
-	await expect(page.getByLabel("Key")).toHaveValue("were_you_injured")
+Then("no question key is shown", async ({ page }) => {
+	// A key is the system's handle for a question, derived and never edited,
+	// so the editor has nothing to show an administrator about it.
+	await expect(page.getByLabel("Key", { exact: true })).toHaveCount(0)
+	await expect(page.getByText("were_you_injured")).toHaveCount(0)
 })
 
 /*
@@ -570,7 +591,6 @@ Then("the choice asks only for its English and French wording", async ({ page })
 })
 
 When("they save the question with that choice", async ({ page }) => {
-	await page.getByLabel("Key").fill("launch_site")
 	await page.getByLabel("Question (English)").fill("Where did you launch?")
 	await page.getByLabel("Question (French)").fill("D'où avez-vous décollé?")
 	await page.getByLabel("Choice (English)").last().fill("King Eddy")

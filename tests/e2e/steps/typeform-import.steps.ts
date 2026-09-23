@@ -83,8 +83,7 @@ When("they choose to review the first imported draft", async ({ page }) => {
 	await page.getByRole("button", { name: "Review", exact: true }).first().click()
 })
 
-Then("the editor is filled with that draft's key, type, and both languages", async ({ page }) => {
-	await expect(page.getByLabel("Key")).toHaveValue(IMPORTED_DRAFT.key)
+Then("the editor is filled with that draft's type and both languages", async ({ page }) => {
 	await expect(page.getByLabel("Type")).toHaveValue(IMPORTED_DRAFT.type)
 	await expect(page.getByLabel("Question (English)")).toHaveValue(IMPORTED_DRAFT.labelEn)
 	await expect(page.getByLabel("Question (French)")).toHaveValue(IMPORTED_DRAFT.labelFr)
@@ -147,9 +146,6 @@ Then(
 	async ({ page }) => {
 		await page.getByRole("button", { name: "Review", exact: true }).first().click()
 
-		// Read-only key is exactly what the ordinary edit flow does — see
-		// "The editor carries an existing question's settings into the form".
-		await expect(page.getByLabel("Key")).toHaveAttribute("readonly", "")
-		await expect(page.getByLabel("Key")).toHaveValue("occurrence_notes")
+		await expect(page.getByRole("heading", { name: "Edit question" })).toBeVisible()
 	},
 )

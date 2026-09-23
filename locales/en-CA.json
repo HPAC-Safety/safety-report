@@ -96,8 +96,6 @@
   "questions.editorTitleNew": "New question",
   "questions.editorTitleEdit": "Edit question",
   "questions.error.unexpected": "Something went wrong. Please try again.",
-  "questions.field.key": "Key",
-  "questions.field.keyHelp": "A short, permanent name used by exports. It never changes once the question is created.",
   "questions.field.type": "Type",
   "questions.field.labelEn": "Question (English)",
   "questions.field.labelFr": "Question (French)",

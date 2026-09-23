@@ -13,7 +13,11 @@ no database row and never names the member who made it. `DELETE` erases every
 version of it. The final `POST /api/v1/reports` names uploads per file-upload
 answer, enforces the configurable total count (default 5), refuses missing
 uploads by ID before writing anything, and claims the rest into the report's
-own compartments under new minted names.
+own compartments, named by the report file's own id. The final submission also
+carries each file's name: sanitize it (last path segment, no control, quote, or
+reserved characters, at most 255), store it on the report file, and use it only
+as a reviewer's forced-download name with the served type's extension
+([ADR-0097](../../docs/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
 
 `S3BlobStore` is the only storage adapter: S3 through the task role in AWS,
 MinIO in docker-compose for development. Do not add a filesystem adapter or a
@@ -40,4 +44,5 @@ Documents are never inline-rendered or public.
 
 Database failure leaves only unclaimed quarantine uploads for lifecycle expiry.
 Report-linked originals/derivatives remain private after soft deletion. Never
-log client filenames, storage keys/URLs, or file contents.
+log client filenames, storage keys/URLs, or file contents, and never put a
+filename in a key, an error, model input, or a public DTO.

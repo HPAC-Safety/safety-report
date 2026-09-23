@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-288 claims across 8 areas: 213 covered by a step definition today, 75 still `@ignore`. 50 constraints.
+290 claims across 8 areas: 216 covered by a step definition today, 74 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -52,7 +52,7 @@ type: guide
 | `REQ-DOM-013` | domain-and-lifecycle | An audited action is recorded in the immutable audit log | Reqnroll | Planned |
 | `REQ-MED-001` | media | Only allowlisted content types are accepted | Reqnroll | Covered |
 | `REQ-MED-002` | media | Declared content type must agree with detected content type | Reqnroll | Planned |
-| `REQ-MED-003` | media | The client filename never leaves the HTTP boundary | Reqnroll | Planned |
+| `REQ-MED-003` | media | The client filename is kept only as a reviewer's download name | Reqnroll | Covered |
 | `REQ-MED-004` | media | An accepted upload waits in a private quarantine compartment | Reqnroll | Covered |
 | `REQ-MED-005` | media | Unclaimed uploads expire automatically | Reqnroll | Planned |
 | `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Planned |
@@ -68,6 +68,8 @@ type: guide
 | `REQ-MED-016` | media | Removing an upload erases every version of it | Reqnroll | Covered |
 | `REQ-MED-017` | media | A cancelled upload leaves nothing in storage | Reqnroll | Covered |
 | `REQ-MED-018` | media | A claimed upload is promoted into the report's compartments | Reqnroll | Covered |
+| `REQ-MED-019` | media | A reporter's filename is sanitized before it is stored | Reqnroll | Covered |
+| `REQ-MED-020` | media | A download's extension always matches the bytes served | Reqnroll | Covered |
 | `REQ-MOD-001` | moderation-authentication-and-publication | In development the login page offers no third-party sign-in option | playwright-bdd | Covered |
 | `REQ-MOD-002` | moderation-authentication-and-publication | Where a third-party provider is configured, the login page offers it | playwright-bdd | Covered |
 | `REQ-MOD-003` | moderation-authentication-and-publication | Signing in with member credentials returns a session that survives a reload | playwright-bdd | Covered |

@@ -87,7 +87,9 @@ REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-014.*
 - all allowed image, video, and document formats and declared-type agreement are exercised;
 - configured default count and exact 50 MB boundary are covered with streaming
   tests that detect accidental whole-file buffering;
-- client filenames cannot reach keys, rows, URLs, errors, or captured logs;
+- client filenames are sanitized, stored only on the report file, and reach only a
+  reviewer's download link — never keys, errors, captured logs, model input, or
+  public DTOs;
 - image fixtures prove GPS/EXIF/profile removal after decode/re-encode;
 - synthetic video fixtures prove container/device/location/timestamp metadata
   removal after remux/transcode;

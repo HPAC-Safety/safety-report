@@ -28,7 +28,11 @@ Each file uploads the moment the reporter attaches it
   and returns `204`, whether or not it existed.
 - The browser keeps each upload ID in memory only, never in the saved draft.
 
-At submission a file-upload answer names its uploads in `attachmentUploadIds`.
+At submission a file-upload answer names its uploads in `attachments`, each an
+`uploadId` and the `fileName` the reporter's browser knew it by. The API
+sanitizes that name and keeps it on the report file only as a reviewer's
+download name
+([ADR-0097](../../docs/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
 If any named upload no longer exists, the API refuses the whole submission
 before writing anything, with a `400` whose `expiredUploadIds` lists exactly
 those IDs.
@@ -43,19 +47,21 @@ those IDs.
       "questionRevisionId": "text-revision-id",
       "value": "A short answer",
       "optionCodes": null,
-      "attachmentUploadIds": null
+      "attachments": null
     },
     {
       "questionRevisionId": "select-revision-id",
       "value": null,
       "optionCodes": [],
-      "attachmentUploadIds": null
+      "attachments": null
     },
     {
       "questionRevisionId": "file-revision-id",
       "value": null,
       "optionCodes": null,
-      "attachmentUploadIds": ["kP3x9QmR2vT8wLb6nYc4Dg"]
+      "attachments": [
+        { "uploadId": "kP3x9QmR2vT8wLb6nYc4Dg", "fileName": "launch-site.jpg" }
+      ]
     }
   ]
 }

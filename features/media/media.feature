@@ -39,11 +39,11 @@ Scenario: Declared content type must agree with detected content type
   And the file extension and client filename are never trusted as the basis for acceptance
 
 @REQ-MED-003
-@ignore
-Scenario: The client filename never leaves the HTTP boundary
-  Given a reporter uploads a file with a client-supplied filename
-  When the API accepts the attachment
-  Then the client filename is not persisted, logged, placed in an exception, used in a key, sent to the model, or returned to an admin
+Scenario: The client filename is kept only as a reviewer's download name
+  Given a submission names an attachment with a client-supplied filename
+  When the API claims the attachment
+  Then the sanitized filename is stored on the report file
+  And it is not logged, placed in an exception, used in a key, sent to the model, or included in any public DTO
   And the object key encodes only an opaque upload, report, or file identity and a managed compartment
 
 @REQ-MED-004
@@ -108,7 +108,7 @@ Scenario: A reviewer gets a short-lived URL only for successfully processed medi
   Given an image or video attachment has finished processing successfully
   When an authorized reviewer requests to view it
   Then the reviewer receives a short-lived read URL to the derivative
-  And the response forces download with a server-minted display name and the header X-Content-Type-Options: nosniff
+  And the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff
   And there is no API blob proxy or public URL
 
 @REQ-MED-011
@@ -116,6 +116,7 @@ Scenario: A reviewer downloads a validated document as an unredacted original
   Given a document attachment has passed validation
   When an authorized reviewer requests it
   Then the reviewer receives a short-lived URL to the private original
+  And the download is named with the reporter's sanitized filename, or a server-minted name when there is none
   And there is no API blob proxy or public URL
 
 @REQ-MED-012
@@ -160,4 +161,25 @@ Scenario: A claimed upload is promoted into the report's compartments
   Given a submission claims an accepted upload
   When the API ingests it
   Then the original is written under the report's original compartment and any derivative under its stripped compartment
-  And both are named by a new server-minted file name, not by the upload ID
+  And both are named by the report file's own id, never by the upload ID or the reporter's filename
+
+@REQ-MED-019
+Scenario Outline: A reporter's filename is sanitized before it is stored
+  Given a submission names an attachment with the filename <given>
+  When the API claims the attachment
+  Then the stored filename is <stored>
+
+Examples:
+  | given                    | stored          |
+  | launch-site.jpg          | launch-site.jpg |
+  | reports/pilot/photo.jpg  | photo.jpg       |
+  | ../../etc/passwd.pdf     | passwd.pdf      |
+  | say "cheese";.png        | say cheese.png  |
+  | a<b>c:d*e?f.txt          | abcdef.txt      |
+  | (blank)                  | (none)          |
+
+@REQ-MED-020
+Scenario: A download's extension always matches the bytes served
+  Given a reporter attached "IMG_0412.HEIC" and its derivative is a JPEG
+  When an authorized reviewer requests to view it
+  Then the download is named "IMG_0412.jpg"

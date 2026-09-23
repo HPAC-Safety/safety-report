@@ -132,7 +132,7 @@ Scenario: One answer entry per shown answer-producing revision
   When the reporter submits the form
   Then the submission DTO contains exactly one answer entry for each of those revisions
   And every answer of every type uses "value", a single string, alongside the locale it was given in
-  And file-upload answers additionally carry the upload IDs of the files attached to that question
+  And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
   And fields for the other answer shapes are null
 
 @REQ-SUB-005
@@ -140,7 +140,7 @@ Scenario: A skipped answer is represented by an empty value, not omission
   Given a reporter skips an answer-producing question
   When the submission DTO is built
   Then a skipped answer of any type has a null value
-  And a skipped file upload has an empty attachment_upload_ids list
+  And a skipped file upload has an empty attachments list
 
 @REQ-SUB-006
 Scenario: A submitted select value must be one the revision offered
@@ -225,7 +225,7 @@ Scenario: An attachment is validated under a bound before it is stored
   Then the API reads at most one byte past 50 MB while counting, then inspects the file's signature and validates it
   And never buffers the whole file in memory
   And writes only an accepted file to the quarantine compartment, under an upload ID the API mints
-  And never receives, persists, or logs the client filename
+  And the upload request carries no filename, and none is persisted or logged for it
 
 @REQ-SUB-013
 Scenario: A valid submission is persisted atomically

@@ -105,8 +105,10 @@ sequenceDiagram
   that no longer exists is refused before anything is written, with a 400
   listing those upload IDs. The form marks those files "expired — attach again"
   and keeps every other answer.
-- **The submission is JSON.** Each file-upload answer carries
-  `attachmentUploadIds`. The count limit (default five) and duplicate checks
+- **The submission is JSON.** Each file-upload answer carries `attachments`,
+  each an upload id and the file's name
+  ([ADR-0097](ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
+  The count limit (default five) and duplicate checks
   move from file parts to IDs.
 - **Uploads are not restored after a reload.** The browser draft still never
   holds a file or an upload ID, so the privacy window stays the lifecycle

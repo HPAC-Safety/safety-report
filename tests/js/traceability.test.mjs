@@ -52,6 +52,19 @@ describe('readClaims', () => {
 		assert.equal(claims[0].status, 'Planned')
 	})
 
+	it('reads engine and status from the scenario own tags, never a neighbour', () => {
+		const source = `Feature: Media\n\n${scenario('REQ-MED-006', 'A browser thing', ['@ignore', '@ui'])}${scenario('REQ-MED-007', 'A server thing')}`
+		const { claims } = readClaims('features/media/media.feature', source)
+
+		assert.deepEqual(
+			claims.map(({ id, engine, status }) => ({ id, engine, status })),
+			[
+				{ id: 'REQ-MED-006', engine: 'playwright-bdd', status: 'Planned' },
+				{ id: 'REQ-MED-007', engine: 'Reqnroll', status: 'Covered' },
+			],
+		)
+	})
+
 	it('keeps the claim attached to a Scenario Outline', () => {
 		const source = 'Feature: Media\n\n@REQ-MED-003\nScenario Outline: A table thing\n  Given <a>\n\nExamples:\n  | a |\n  | 1 |\n'
 		const { claims } = readClaims('features/media/media.feature', source)

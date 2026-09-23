@@ -79,6 +79,22 @@ same closed-control shape as a single-select: one trigger labelled by the
 question, naming what is chosen, that opens a list of checkable options and
 stays open while several are checked. Escape or leaving it closes it.
 
+## Returning to a saved report (#344)
+
+When the report page opens and this browser holds an unexpired saved report,
+the form asks before restoring anything. The dialog offers No and Yes, and
+below them a read-only table of the saved values — each question's label in
+the current locale beside the answer as it was saved. The table and the
+decision are built entirely from local storage; nothing is requested from or
+sent to the server.
+
+- **Yes** restores the saved answers and reopens the page the reporter was on.
+  If that page is no longer on the form, the form opens at its first page.
+- **No** removes the saved report from the browser and opens a fresh form.
+- A saved answer whose question revision is not on the current form is not
+  listed and not restored. If no saved answer is on the current form, there is
+  nothing to continue: the saved report is removed and no dialog is shown.
+
 ## Validation order
 
 The API performs, in order:
@@ -158,6 +174,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   multipart request.
 - Restoring attachments from browser storage. Answers and shown revision IDs
   persist locally; files never do.
+- Restoring a saved report without asking, keeping more than one saved report,
+  or editing saved values inside the continue dialog. The dialog is a yes/no
+  question with a read-only table.
 - Recording who submitted a report — no subject, no user id, no audit line, no
   log line
   ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).

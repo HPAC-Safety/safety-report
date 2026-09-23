@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-294 claims across 8 areas: 222 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+299 claims across 8 areas: 227 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -265,6 +265,11 @@ type: guide
 | `REQ-SUB-050` | report-submission | A refused upload is explained on that file's row | playwright-bdd | Covered |
 | `REQ-SUB-051` | report-submission | An expired upload is marked for re-attachment and nothing else is lost | playwright-bdd | Covered |
 | `REQ-SUB-052` | report-submission | Uploaded files are not restored after a reload | playwright-bdd | Covered |
+| `REQ-SUB-058` | report-submission | The attachment field is a drop zone with a large choose-files control | playwright-bdd | Covered |
+| `REQ-SUB-059` | report-submission | The drop zone's control opens the file chooser from a pointer or the keyboard | playwright-bdd | Covered |
+| `REQ-SUB-060` | report-submission | Files dropped on the drop zone upload exactly as chosen files do | playwright-bdd | Covered |
+| `REQ-SUB-061` | report-submission | Dropped files past the attachment limit are refused | playwright-bdd | Covered |
+| `REQ-SUB-062` | report-submission | A file dropped outside the drop zone does nothing | playwright-bdd | Covered |
 | `REQ-TF-001` | typeform-question-import-export | Import requires both languages | Reqnroll | Covered |
 | `REQ-TF-002` | typeform-question-import-export | A field's ref appears in the English file but not the French one | Reqnroll | Covered |
 | `REQ-TF-003` | typeform-question-import-export | A choice's ref appears in the English file but not the French one | Reqnroll | Covered |

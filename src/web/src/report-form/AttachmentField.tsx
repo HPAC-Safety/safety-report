@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 
 import {
 	ACCEPTED_FILE_TYPES,
+	MAX_ATTACHMENTS,
 	MAX_ATTACHMENT_BYTES,
 	UploadRejectedError,
 	deleteUpload,
@@ -47,8 +48,15 @@ export interface AttachmentFieldProps {
 
 let nextKey = 0
 
+/** True when a drag carries files, as opposed to selected text or a link. */
+export function carriesFiles(event: { dataTransfer: DataTransfer | null }): boolean {
+	return Array.from(event.dataTransfer?.types ?? []).includes("Files")
+}
+
 /**
- * A file-upload question's attachments: uploaded the moment they are chosen,
+ * A file-upload question's attachments: chosen from a drop zone — dropped on
+ * it, or picked through its one large button — and uploaded the moment they
+ * are chosen,
  * each with its own indeterminate activity indicator and Cancel control while it
  * uploads, and a Remove control once it has (ADR-0096). Everything about an
  * upload in progress is encapsulated here — the form only learns which files
@@ -64,6 +72,11 @@ export function AttachmentField({
 	t,
 }: AttachmentFieldProps) {
 	const [inFlight, setInFlight] = useState<InFlight[]>([])
+	const [dragging, setDragging] = useState(false)
+	const inputRef = useRef<HTMLInputElement>(null)
+	// dragenter/dragleave fire for every child the pointer crosses; counting
+	// them keeps the highlight steady until the drag really leaves the zone.
+	const dragDepth = useRef(0)
 	const inFlightRef = useRef<InFlight[]>([])
 	inFlightRef.current = inFlight
 	// A ref, so a parent passing a fresh callback each render never re-runs the
@@ -143,21 +156,82 @@ export function AttachmentField({
 
 	const hasRows = attachments.length > 0 || inFlight.length > 0
 
+	const guidanceId = `${fieldId}-guidance`
+	const buttonDescribedBy = [guidanceId, describedBy].filter(Boolean).join(" ")
+
+	function endDrag() {
+		dragDepth.current = 0
+		setDragging(false)
+	}
+
 	return (
 		<>
-			<input
-				id={fieldId}
-				type="file"
-				multiple
-				accept={ACCEPTED_FILE_TYPES}
-				className="mt-1 block font-sans text-ink"
-				aria-describedby={describedBy}
-				onChange={(event) => {
-					choose(Array.from(event.target.files ?? []))
-					// Cleared so the same file can be chosen again after a removal.
-					event.target.value = ""
+			<div
+				className={`mt-2 flex flex-col items-center gap-2 rounded border-2 border-dashed px-4 py-6 text-center transition-colors motion-reduce:transition-none ${
+					dragging ? "border-ink-muted bg-surface-3" : "border-rule bg-surface"
+				}`}
+				data-testid="attachment-drop-zone"
+				onDragEnter={(event) => {
+					if (!carriesFiles(event)) return
+					event.preventDefault()
+					dragDepth.current += 1
+					setDragging(true)
 				}}
-			/>
+				onDragOver={(event) => {
+					if (!carriesFiles(event)) return
+					event.preventDefault()
+					event.dataTransfer.dropEffect = "copy"
+				}}
+				onDragLeave={(event) => {
+					if (!carriesFiles(event)) return
+					dragDepth.current = Math.max(0, dragDepth.current - 1)
+					if (dragDepth.current === 0) setDragging(false)
+				}}
+				onDrop={(event) => {
+					if (!carriesFiles(event)) return
+					event.preventDefault()
+					endDrag()
+					choose(Array.from(event.dataTransfer.files))
+				}}
+			>
+				<button
+					type="button"
+					className="flex flex-col items-center gap-2 rounded px-4 py-2 font-sans text-ink hover:bg-surface-2"
+					aria-describedby={buttonDescribedBy}
+					onClick={() => inputRef.current?.click()}
+				>
+					<svg aria-hidden="true" viewBox="0 0 24 24" className="h-14 w-14 text-ink-muted" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+						<path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4 4 0 0 1 0 8H17" />
+						<path d="M12 12v8" />
+						<path d="m8.5 15.5 3.5-3.5 3.5 3.5" />
+					</svg>
+					<span className="text-sm font-medium">{t("report.attachments.dropPrompt")}</span>
+				</button>
+				<p id={guidanceId} className="font-sans text-xs text-ink-muted">
+					{t("report.attachments.guidance", {
+						count: MAX_ATTACHMENTS,
+						size: MAX_ATTACHMENT_BYTES / (1024 * 1024),
+					})}
+				</p>
+				{/* Kept in the page and labelled by the question, so assistive
+				    technology and tests still find it; the button above is the
+				    one control a reporter reaches. */}
+				<input
+					ref={inputRef}
+					id={fieldId}
+					type="file"
+					multiple
+					accept={ACCEPTED_FILE_TYPES}
+					className="sr-only"
+					tabIndex={-1}
+					aria-describedby={describedBy}
+					onChange={(event) => {
+						choose(Array.from(event.target.files ?? []))
+						// Cleared so the same file can be chosen again after a removal.
+						event.target.value = ""
+					}}
+				/>
+			</div>
 
 			{hasRows && (
 				<ul className="mt-3 divide-y divide-rule rounded border border-rule" aria-label={t("report.attachments.listLabel")}>

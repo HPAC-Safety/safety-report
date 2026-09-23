@@ -507,7 +507,10 @@ Then("attachment selection appears last with type\\/count\\/size guidance and a 
 	await answerYesNo(page, "Was anyone injured?", "No")
 	await goNext(page) // -> group
 	await goNext(page) // -> attachments
-	await expect(page.getByLabel("Photos or videos")).toBeVisible()
+	// The native input is visually hidden behind the drop zone; the zone's
+	// button is what the reporter sees, and the question still labels the input.
+	await expect(page.getByLabel("Photos or videos")).toBeAttached()
+	await expect(page.getByRole("button", { name: "Drag files here, or choose files" })).toBeVisible()
 	await expect(page.getByText(/JPEG, PNG, WebP, HEIC/)).toBeVisible()
 	await expect(page.getByText(/up to 5 files in all, 50 MB each/)).toBeVisible()
 	await expect(page.getByText(/not saved between visits/i)).toBeVisible()

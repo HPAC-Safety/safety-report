@@ -57,6 +57,7 @@
   "report.select.placeholder": "Choose one",
   "report.multiSelect.placeholder": "Choose any",
   "report.attachments.guidance": "Attach photos (JPEG, PNG, WebP, HEIC), videos (MP4, MOV), or documents (PDF, Word, RTF, Markdown, text, ODT) related to this occurrence, if you have them — up to {count} files in all, {size} MB each. Each file uploads as soon as you choose it.",
+  "report.attachments.dropPrompt": "Drag files here, or choose files",
   "report.attachments.notRestored": "Attached files are not saved between visits — if you reload this page, you will need to attach them again.",
   "report.attachments.listLabel": "Attached files",
   "report.attachments.uploading": "Uploading…",

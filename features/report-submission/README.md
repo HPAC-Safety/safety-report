@@ -37,6 +37,21 @@ If any named upload no longer exists, the API refuses the whole submission
 before writing anything, with a `400` whose `expiredUploadIds` lists exactly
 those IDs.
 
+### The drop zone (#367)
+
+The field is a bordered drop zone rather than the browser's bare file control.
+One button, holding a large upload icon and the prompt "Drag files here, or
+choose files", opens the file chooser; it is an ordinary button, so the
+keyboard reaches it and nothing depends on a pointer. The type, count, and
+size guidance sits in the zone below it. The native file input stays in the
+page, still labelled by the question, but is visually hidden.
+
+Dragging files over the zone highlights it. Dropping them attaches them
+through exactly the path choosing them takes, so the attachment limit, the
+size check, and each file's indicator, Cancel, and Remove behave the same. A
+file dropped anywhere else on the form is ignored: the browser neither opens
+it nor leaves the form.
+
 ## Submission DTO shape
 
 ```json
@@ -225,5 +240,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Calling a translation provider on the submission path.
 - Echoing submitted content back in a validation error.
 - A per-reporter throttle. Rate limiting is by trusted IP.
+- Previews or thumbnails of attached files, pasting files from the clipboard,
+  or a drop target covering the whole page. Only the drop zone accepts a
+  drop.
 - Searching or filtering inside the multi-select picker, or a third-party
   select widget to provide one.

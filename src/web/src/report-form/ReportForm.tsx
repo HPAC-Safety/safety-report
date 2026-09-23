@@ -24,6 +24,7 @@ import {
 	type AnswerMap,
 	type FormStep,
 } from "./steps"
+import { useStrayFileDropGuard } from "./useStrayFileDropGuard"
 
 type LoadState =
 	| { status: "loading" }
@@ -38,6 +39,7 @@ function stepQuestionId(step: FormStep): string {
 
 export function ReportForm() {
 	const { locale, t } = useLocale()
+	useStrayFileDropGuard()
 	const [load, setLoad] = useState<LoadState>({ status: "loading" })
 	const [answers, setAnswers] = useState<AnswerMap>({})
 	// Finished uploads per file-upload question, in memory only: never in the

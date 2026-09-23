@@ -122,7 +122,8 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
-      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à{count}s de fichiers au total, d’{size} Mo chacun. Chaque fichier est téléchargé dès que vous le sélectionnez.",
+      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléchargé dès que vous le sélectionnez.",
+      "dropPrompt": "#Drag files here, or choose files",
       "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous rafraîchissez cette page, vous devrez les joindre à nouveau.",
       "listLabel": "Fichiers joints",
       "uploading": "Téléversement en cours…",

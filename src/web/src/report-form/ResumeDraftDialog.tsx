@@ -7,7 +7,7 @@ import { collectsNoAnswer, questionLabel } from "./steps"
 
 /*
  * Asks a returning reporter whether to continue the report this browser saved
- * (issue #344, `features/report-submission/README.md`'s "Returning to a saved
+ * (issue no. 344, `features/report-submission/README.md`'s "Returning to a saved
  * report"). Everything it shows comes from local storage — the dialog makes no
  * request of its own.
  */

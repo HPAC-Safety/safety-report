@@ -973,9 +973,9 @@
   },
   "report.attachments.cancelNamed": {
     "source_hash": "bc3173095866612829430e9c2db7bf3025b8a7c36408268cc76f7fa962c80041",
-    "target_hash": "6e7bf403d8a45170d4c02eaa5fa6189dfe3b9baa1b9bc3b68aba52adea7bc5a0",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "ecf69ef7bf2117129cab767d03c7dca2634d2c5060fc7d2345b57aabd1331ca9",
+    "provider": "human",
+    "reviewed": true
   },
   "report.attachments.dropPrompt": {
     "source_hash": "cfaf148389ebc0a977627bec885a4226dd6543115c51df45d2a6b585770d1f50",
@@ -1033,9 +1033,9 @@
   },
   "report.attachments.rejected.network": {
     "source_hash": "4abe9c2d813def83023282105203c81a062cd0c1dad2fbda44d16d0c6e3f8c05",
-    "target_hash": "8725125af660341796462e5a0e844d9237460dbbf64d415f9fa2729259e9b224",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "891ba321efcad9fea2b355f700efd4f2713afdb1a0dc67cd2a87a372016b4326",
+    "provider": "human",
+    "reviewed": true
   },
   "report.attachments.rejected.too_large": {
     "source_hash": "dc7fd145749326ba444718a803deee784811b9556248aa386ddc5ae594161d69",
@@ -1051,9 +1051,9 @@
   },
   "report.attachments.rejected.unknown": {
     "source_hash": "8554296d641c1749950f789c1174cf4d1c31f6ee6e04f4a5373d21a03b757208",
-    "target_hash": "6134853ee5ce4b871effc2507e28b582f82d624fa19f81beba35a871adbd5b63",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "4718e27bc005bbefc3e0547e57143709083721170b6f7aae566bc10c6b52da41",
+    "provider": "human",
+    "reviewed": true
   },
   "report.attachments.rejected.unrecognised_content": {
     "source_hash": "e356e8c17787731bc8ea2521f58e876cf26a0ad043fdfda56804bd001f0486bd",
@@ -1183,9 +1183,9 @@
   },
   "report.privacy.localStorage": {
     "source_hash": "db2cad06c8b46ddea032ef98b5287892a3c96d8f9712127b8022e90e60f97fe9",
-    "target_hash": "68def150e5f7d5786eae02967537ca679b744fd3ffaf12ded4914b8f8a8f5bac",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "79b260e6b6242f25dbe80839111ae0ba1a8a6042d75ca263e80d21a3a1739783",
+    "provider": "human",
+    "reviewed": true
   },
   "report.progress": {
     "source_hash": "dc1249ded00f30f1b87fcf6f1dd6d62cdef491f6b0971e7571294a3db14722fc",
@@ -1291,9 +1291,9 @@
   },
   "upload.rejected.declaredTypeMismatch": {
     "source_hash": "d2325b23735f895e1e7cccbceee68b6c8b75246cbc063ba89ae77cb0bca30eed",
-    "target_hash": "d1b9da2a055d32e19879cdd0c2e6e925c94dee62ac757ac533303b19bfd0c680",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "9a41f7f4d5bdfd1ddff54095b903be4c9e8fc64d630d5d46d2702db64a755a56",
+    "provider": "human",
+    "reviewed": true
   },
   "upload.rejected.empty": {
     "source_hash": "3da9421c7ab6660b8e395418a564af8704a4f424b4418e6f935c5f49fd244293",
@@ -1303,20 +1303,20 @@
   },
   "upload.rejected.tooLarge": {
     "source_hash": "7202b50ba7922c95cb43fcf8e03d5425e15893735c8e7510e785072fcc69800a",
-    "target_hash": "418b3de79a72ca9dc4bfeaf61572a4d09918f6b0bd01e9061f82a719e6158b73",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "db399b448a589ba8880422bb75be79ac87c682d66481301355072551df50d6b7",
+    "provider": "human",
+    "reviewed": true
   },
   "upload.rejected.unacceptedMediaType": {
     "source_hash": "5e4ce2bd26a77ea5218a2346cfee4fd777df1317e4c6bb119c0eac709366c47b",
-    "target_hash": "b4b3627011ff37dec9d3a4d47a727338c255696fc9f62706bbe0e283f92e1d85",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "bc84d2986fd018e86eaccdf82d4a96606a0005e691ff306366ee3e36badb8758",
+    "provider": "human",
+    "reviewed": true
   },
   "upload.rejected.unrecognisedContent": {
     "source_hash": "238fb77cc95a39d4cbb71b6fcbbd9c36b2eceb3c9a23b12d1264bc0f629e2dfe",
-    "target_hash": "224d6e97cace3b4164908d1fa693dd8b671eb52afb8af915b4d3b6445ee002a7",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "77a022eb442da96cd4bf24e64f8e10d7ab067bac85040b44c0a0777863d25cdb",
+    "provider": "human",
+    "reviewed": true
   }
 }

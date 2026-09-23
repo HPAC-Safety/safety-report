@@ -23,6 +23,20 @@ const savedBodies = new WeakMap<Page, { options: { code: string | null }[] }>()
  * Every question below is synthetic.
  */
 
+interface StubOption {
+	code: string
+	labelEn: string | null
+	labelFr: string | null
+	addedByReporter: boolean
+	needsTranslation: boolean
+	reporterLocale: string | null
+}
+
+/** A choice an administrator wrote, complete in both languages. */
+function written(code: string, labelEn: string, labelFr: string): StubOption {
+	return { code, labelEn, labelFr, addedByReporter: false, needsTranslation: false, reporterLocale: null }
+}
+
 interface StubQuestion {
 	id: string
 	key: string
@@ -36,14 +50,14 @@ interface StubQuestion {
 	displayOrder: number
 	dependsOnQuestionId: string | null
 	dependsOnOptionCode: string | null
-	optionSetId: string | null
 	labelEn: string
 	labelFr: string
 	helpTextEn: string | null
 	helpTextFr: string | null
 	placeholderEn: string | null
 	placeholderFr: string | null
-	options: { code: string; labelEn: string; labelFr: string; sourceItemId: string | null }[]
+	options: StubOption[]
+	reporterChoicesAwaitingReview: number
 	hasBeenAnswered: boolean
 }
 
@@ -53,7 +67,7 @@ function question(
 	labelEn: string,
 	type: string,
 	displayOrder: number,
-	options: { code: string; labelEn: string; labelFr: string; sourceItemId: string | null }[] = [],
+	options: StubOption[] = [],
 ): StubQuestion {
 	return {
 		id,
@@ -68,7 +82,6 @@ function question(
 		displayOrder,
 		dependsOnQuestionId: null,
 		dependsOnOptionCode: null,
-		optionSetId: null,
 		labelEn,
 		labelFr: `${labelEn} (fr)`,
 		helpTextEn: null,
@@ -76,8 +89,13 @@ function question(
 		placeholderEn: null,
 		placeholderFr: null,
 		options,
+		reporterChoicesAwaitingReview: awaitingReview(options),
 		hasBeenAnswered: false,
 	}
+}
+
+function awaitingReview(options: StubOption[]) {
+	return options.filter((option) => option.addedByReporter && option.needsTranslation).length
 }
 
 function codeOf(wording: string) {
@@ -99,20 +117,22 @@ async function stubAdminApi(page: Page) {
 		question("aaaaaaaaaaa", "were_you_injured", "Were you injured?", "yes_no", 0),
 		question("bbbbbbbbbbb", "occurrence_notes", "What happened?", "long_text", 1),
 		question("ddddddddddd", "aircraft_type", "Hang glider or paraglider?", "single_select", 2, [
-			{ code: "hang_glider", labelEn: "Hang glider", labelFr: "Deltaplane", sourceItemId: null },
-			{ code: "paraglider", labelEn: "Paraglider", labelFr: "Parapente", sourceItemId: null },
+			written("hang_glider", "Hang glider", "Deltaplane"),
+			written("paraglider", "Paraglider", "Parapente"),
+		]),
+		// A type-ahead a reporter has added a site to, still missing its French.
+		question("eeeeeeeeeee", "launch_site", "Where did you launch?", "autocomplete", 3, [
+			written("coopers", "Cooper's", "Cooper's"),
+			{
+				code: "mount_7",
+				labelEn: "mount 7",
+				labelFr: null,
+				addedByReporter: true,
+				needsTranslation: true,
+				reporterLocale: "en-CA",
+			},
 		]),
 	]
-
-	await page.route("**/api/admin/option-sets", async (route) => {
-		await route.fulfill({
-			status: 200,
-			contentType: "application/json",
-			body: JSON.stringify([
-				{ id: "ccccccccccc", key: "aerodromes", nameEn: "Aerodromes", nameFr: "Aérodromes", items: [] },
-			]),
-		})
-	})
 
 	await page.route("**/api/admin/questions/order", async (route) => {
 		const { questionIdsInOrder } = JSON.parse(route.request().postData() ?? "{}") as {
@@ -192,13 +212,39 @@ async function stubAdminApi(page: Page) {
 			return
 		}
 
-		// An edit is a new revision, never a patch — the version number moves.
-		const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion>
+		// An edit to the question itself is a new revision, never a patch — the
+		// version number moves. Its choices are its own and are saved in place,
+		// so an edit that changes only them leaves the version where it was
+		// (ADR-0095).
+		const current = questions[index]
+		const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion> & {
+			options?: { code: string | null; labelEn: string; labelFr: string }[]
+		}
+		const options = (saved.options ?? []).map((option): StubOption => {
+			const existing = current.options.find((candidate) => candidate.code === option.code)
+			const labelEn = option.labelEn.trim() || null
+			const labelFr = option.labelFr.trim() || null
+			return {
+				code: option.code ?? codeOf(option.labelEn),
+				labelEn,
+				labelFr,
+				addedByReporter: existing?.addedByReporter ?? false,
+				needsTranslation: labelEn === null || labelFr === null,
+				reporterLocale: existing?.reporterLocale ?? null,
+			}
+		})
+		const fields: Partial<StubQuestion> = { ...saved, options: undefined }
+		delete fields.options
+		const revisionChanged = (Object.keys(fields) as (keyof StubQuestion)[]).some(
+			(field) => fields[field] !== current[field],
+		)
 		const revised = {
-			...questions[index],
-			...saved,
-			revisionNumber: questions[index].revisionNumber + 1,
-			revisionId: `rev${questions[index].revisionNumber + 1}${id}`,
+			...current,
+			...fields,
+			options,
+			reporterChoicesAwaitingReview: awaitingReview(options),
+			revisionNumber: revisionChanged ? current.revisionNumber + 1 : current.revisionNumber,
+			revisionId: revisionChanged ? `rev${current.revisionNumber + 1}${id}` : current.revisionId,
 		}
 
 		questions[index] = revised
@@ -293,13 +339,12 @@ When("they choose the single-line text type instead", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("short_text")
 })
 
-Then("the page offers a shared choice list and an option editor", async ({ page }) => {
-	await expect(page.getByLabel("Shared choice list")).toBeVisible()
+Then("the page offers an option editor", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Add a choice" })).toBeVisible()
+	await expect(page.getByLabel("Shared choice list")).toHaveCount(0)
 })
 
 Then("the page offers neither", async ({ page }) => {
-	await expect(page.getByLabel("Shared choice list")).toBeHidden()
 	await expect(page.getByRole("button", { name: "Add a choice" })).toBeHidden()
 })
 
@@ -581,8 +626,7 @@ When("they add a choice", async ({ page }) => {
 	await page.getByRole("button", { name: "Add a choice" }).click()
 })
 
-// Shared with the manage-choice-lists scenario: both editors write a choice
-// the same way, by its wording in the two official languages and nothing else.
+// A choice is written by its wording in the two official languages and nothing else.
 Then("the choice asks only for its English and French wording", async ({ page }) => {
 	await expect(page.getByLabel("Choice (English)").last()).toBeVisible()
 	await expect(page.getByLabel("Choice (French)").last()).toBeVisible()
@@ -635,7 +679,7 @@ Then("the editor's top edge lines up with that row's move-up control", async ({ 
 Then("every other question is still shown in its place", async ({ page }) => {
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
 
-	await expect(rows).toHaveCount(3)
+	await expect(rows).toHaveCount(4)
 	await expect(rows.nth(0)).toContainText("Were you injured?")
 	await expect(rows.nth(2)).toContainText("Hang glider or paraglider?")
 })
@@ -650,4 +694,57 @@ Then("the second question is shown in its place again", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Edit question" })).toHaveCount(0)
 	await expect(rows.nth(1)).toContainText("What happened?")
 	await expect(rows.nth(1).getByRole("button", { name: "Edit" })).toBeVisible()
+})
+
+// ------------------------------------------ reporter-added choices (ADR-0095) --
+
+const launchSite = "Where did you launch?"
+
+function launchSiteRow(page: Page) {
+	return page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem").filter({ hasText: launchSite })
+}
+
+Then("a type-ahead question with reporter-added choices says how many are waiting to be reviewed", async ({ page }) => {
+	await expect(launchSiteRow(page)).toContainText("Reporter-added choices waiting to be reviewed: 1")
+})
+
+When("they open that question", async ({ page }) => {
+	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+})
+
+Then("each reporter-added choice is marked as such", async ({ page }) => {
+	const choices = page.getByTestId("question-choice")
+
+	await expect(choices).toHaveCount(2)
+	await expect(choices.nth(0)).not.toContainText("Added by a reporter")
+	await expect(choices.nth(1)).toContainText("Added by a reporter")
+	await expect(choices.nth(1)).toContainText("Waiting for the French wording")
+})
+
+Given("a signed-in Administrator opens a type-ahead question with a reporter-added choice", async ({ page }) => {
+	await signInAndOpenQuestions(page)
+	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+})
+
+When("they correct the wording of that choice and save it", async ({ page }) => {
+	const choice = page.getByTestId("question-choice").nth(1)
+
+	await choice.getByLabel("Choice (English)").fill("Mount 7")
+	await choice.getByLabel("Choice (French)").fill("Mont 7")
+	await page.getByRole("button", { name: "Save" }).click()
+	await expect(page.getByRole("heading", { name: "Edit question" })).toHaveCount(0)
+})
+
+Then("the corrected wording is shown on the question", async ({ page }) => {
+	const row = launchSiteRow(page)
+
+	// Correcting a choice is not a new version of the question.
+	await expect(row).toContainText("Version 1")
+	await expect(row).not.toContainText("waiting to be reviewed")
+
+	await row.getByRole("button", { name: "Edit" }).click()
+	const choice = page.getByTestId("question-choice").nth(1)
+	await expect(choice.getByLabel("Choice (English)")).toHaveValue("Mount 7")
+	await expect(choice.getByLabel("Choice (French)")).toHaveValue("Mont 7")
+	await expect(choice).not.toContainText("Waiting for")
 })

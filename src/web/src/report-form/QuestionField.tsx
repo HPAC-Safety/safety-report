@@ -114,7 +114,9 @@ export function QuestionField({
 						/>
 						<datalist id={listId}>
 							{question.options.map((option) => (
-								<option key={option.code} value={optionLabel(option, locale)} />
+								// A reporter-added choice may exist in one language only; it is
+								// offered in that language, and says so to assistive technology.
+								<option key={option.code} value={optionLabel(option, locale)} lang={option.onlyIn ?? undefined} />
 							))}
 						</datalist>
 					</>

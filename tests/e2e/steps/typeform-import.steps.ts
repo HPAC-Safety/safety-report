@@ -27,7 +27,6 @@ const IMPORTED_DRAFT = {
 	helpTextEn: null,
 	helpTextFr: null,
 	groupedUnderKey: null,
-	allowsReporterAdditions: false,
 	options: [],
 }
 

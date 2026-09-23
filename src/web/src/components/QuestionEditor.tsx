@@ -6,7 +6,7 @@ import {
 	OPTION_TYPES,
 	QUESTION_TYPES,
 	translate,
-	type OptionSetView,
+	type OptionInput,
 	type QuestionType,
 	type QuestionView,
 	type SaveQuestionRequest,
@@ -26,6 +26,11 @@ import type { ImportedQuestionDraftView } from "../api/adminTypeformImport"
  * suggested it, because the person who pressed Save is accountable for the
  * wording either way (ADR-0062). The call goes to our own API — the credential
  * never reaches this page.
+ *
+ * The choices are the question's own and are saved in place: editing them never
+ * creates a new version, and a choice a reporter typed into a type-ahead is
+ * marked here, where an administrator curates it (ADR-0095). Such a choice may
+ * still be missing one language; it is the only one allowed to be.
  */
 
 export interface QuestionDraft {
@@ -52,9 +57,7 @@ export function blankDraft(): QuestionDraft {
 			isActive: true,
 			dependsOnQuestionId: null,
 			dependsOnOptionCode: null,
-			optionSetId: null,
 			groupedUnderQuestionId: null,
-			allowsReporterAdditions: false,
 			options: [],
 		},
 	}
@@ -75,13 +78,14 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			isActive: question.isActive,
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			dependsOnOptionCode: question.dependsOnOptionCode,
-			optionSetId: question.optionSetId,
 			groupedUnderQuestionId: question.groupedUnderQuestionId,
-			allowsReporterAdditions: question.allowsReporterAdditions,
 			options: question.options.map((option) => ({
 				code: option.code,
-				labelEn: option.labelEn,
-				labelFr: option.labelFr,
+				// A reporter-added choice may be missing one language; the field
+				// shows empty and the server keeps it missing until it is filled.
+				labelEn: option.labelEn ?? "",
+				labelFr: option.labelFr ?? "",
+				addedByReporter: option.addedByReporter,
 			})),
 		},
 	}
@@ -116,9 +120,7 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			isActive: true,
 			dependsOnQuestionId: dependsOn?.id ?? null,
 			dependsOnOptionCode: dependsOn ? imported.dependsOnOptionCode : null,
-			optionSetId: null,
 			groupedUnderQuestionId: group?.id ?? null,
-			allowsReporterAdditions: imported.allowsReporterAdditions,
 			options: imported.options.map((option) => ({
 				code: option.code,
 				labelEn: option.labelEn,
@@ -135,7 +137,6 @@ const labelClassName = "block font-sans text-sm font-medium text-ink"
 
 export function QuestionEditor({
 	draft,
-	optionSets,
 	conditionQuestions,
 	groupQuestions,
 	isEditing,
@@ -147,7 +148,6 @@ export function QuestionEditor({
 	onSave,
 }: {
 	draft: QuestionDraft
-	optionSets: OptionSetView[]
 	conditionQuestions: QuestionView[]
 	groupQuestions: QuestionView[]
 	isEditing: boolean
@@ -233,7 +233,7 @@ export function QuestionEditor({
 		}
 	}
 
-	function updateOption(index: number, changes: Partial<{ labelEn: string; labelFr: string }>) {
+	function updateOption(index: number, changes: Partial<Pick<OptionInput, "labelEn" | "labelFr">>) {
 		const options = request.options.map((option, current) => (current === index ? { ...option, ...changes } : option))
 		update({ options })
 	}
@@ -268,22 +268,17 @@ export function QuestionEditor({
 						value={request.type}
 						onChange={(event) => {
 							const type = event.target.value as QuestionType
-							// Options and a shared list only mean something for the
-							// types that take them; carrying them across a retype
-							// would save choices the question no longer offers.
-							const clearedOptions = OPTION_TYPES.includes(type) ? {} : { options: [], optionSetId: null }
+							// Choices only mean something for the types that take
+							// them; carrying them across a retype would save choices
+							// the question no longer offers.
+							const clearedOptions = OPTION_TYPES.includes(type) ? {} : { options: [] }
 							// A statement or a group collects no answer, so it cannot
 							// be required, private, or conditional on anything
 							// (ADR-0076).
 							const clearedForNoAnswer = NO_ANSWER_TYPES.includes(type)
 								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnOptionCode: null }
 								: {}
-							// Only multi-select is author-controlled; autocomplete is
-							// always on regardless of what is sent, and every other
-							// type rejects the flag outright (ADR-0063, ADR-0077).
-							const clearedReporterAdditions =
-								type === "multi_select" ? {} : { allowsReporterAdditions: false }
-							update({ type, ...clearedOptions, ...clearedForNoAnswer, ...clearedReporterAdditions })
+							update({ type, ...clearedOptions, ...clearedForNoAnswer })
 						}}
 					>
 						{QUESTION_TYPES.map((type) => (
@@ -480,50 +475,34 @@ export function QuestionEditor({
 
 			{takesOptions && (
 				<div className="flex flex-col gap-3 rounded border border-rule bg-surface p-4">
-					<label className={labelClassName} htmlFor="question-option-set">
-						{t("questions.field.optionSet")}
-					</label>
-					<select
-						id="question-option-set"
-						className={fieldClassName}
-						value={request.optionSetId ?? ""}
-						onChange={(event) => update({ optionSetId: event.target.value || null })}
-					>
-						<option value="">{t("questions.field.optionSetNone")}</option>
-						{optionSets.map((set) => (
-							<option key={set.id} value={set.id}>
-								{set.nameEn}
-							</option>
-						))}
-					</select>
-					<p className="font-sans text-xs text-ink-muted">{t("questions.field.optionSetHelp")}</p>
+					<h3 className="font-sans text-sm font-medium text-ink">{t("questions.field.options")}</h3>
+					<p className="font-sans text-xs text-ink-muted">{t("questions.field.optionsHelp")}</p>
 
-					{request.type === "multi_select" && (
-						<div>
-							<label className="flex items-center gap-2 font-sans text-sm text-ink">
-								<input
-									type="checkbox"
-									checked={request.allowsReporterAdditions}
-									onChange={(event) => update({ allowsReporterAdditions: event.target.checked })}
-								/>
-								{t("questions.field.allowsReporterAdditions")}
-							</label>
-							<p className="mt-1 font-sans text-xs text-ink-muted">
-								{t("questions.field.allowsReporterAdditionsHelp")}
-							</p>
-						</div>
-					)}
+					{request.options.map((option, index) => {
+						// Only a reporter-added choice may be saved missing a
+						// language; an administrator's own choice needs both.
+						const reporterAdded = option.addedByReporter === true
+						const awaiting = !option.labelEn.trim()
+							? t("questions.choice.awaitingEnglish")
+							: !option.labelFr.trim()
+								? t("questions.choice.awaitingFrench")
+								: null
 
-					{!request.optionSetId && (
-						<>
-							<h3 className="font-sans text-sm font-medium text-ink">{t("questions.field.options")}</h3>
-
-							{request.options.map((option, index) => (
-								<div key={index} className="grid gap-2 sm:grid-cols-2">
+						return (
+							<div key={index} className="flex flex-col gap-1" data-testid="question-choice">
+								{reporterAdded && (
+									<p className="font-sans text-xs text-ink-muted">
+										<span className="rounded border border-rule px-2 py-0.5 font-medium text-ink">
+											{t("questions.choice.reporterAdded")}
+										</span>
+										{awaiting && <span className="ml-2">{awaiting}</span>}
+									</p>
+								)}
+								<div className="grid gap-2 sm:grid-cols-2">
 									<input
 										className={fieldClassName}
 										value={option.labelEn}
-										required
+										required={!reporterAdded}
 										aria-label={t("questions.field.optionLabelEn")}
 										placeholder={t("questions.field.optionLabelEn")}
 										onChange={(event) => updateOption(index, { labelEn: event.target.value })}
@@ -532,7 +511,7 @@ export function QuestionEditor({
 										<input
 											className={fieldClassName}
 											value={option.labelFr}
-											required
+											required={!reporterAdded}
 											aria-label={t("questions.field.optionLabelFr")}
 											placeholder={t("questions.field.optionLabelFr")}
 											onChange={(event) => updateOption(index, { labelFr: event.target.value })}
@@ -549,19 +528,17 @@ export function QuestionEditor({
 										</button>
 									</div>
 								</div>
-							))}
+							</div>
+						)
+					})}
 
-							<button
-								type="button"
-								className="touch-target self-start rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
-								onClick={() =>
-									update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })
-								}
-							>
-								{t("questions.field.addOption")}
-							</button>
-						</>
-					)}
+					<button
+						type="button"
+						className="touch-target self-start rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
+						onClick={() => update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })}
+					>
+						{t("questions.field.addOption")}
+					</button>
 				</div>
 			)}
 

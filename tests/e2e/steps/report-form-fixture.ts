@@ -14,8 +14,8 @@ export interface StubOption {
 	code: string
 	labelEn: string
 	labelFr: string
-	sourceItemId: string | null
-	addedByReporter: boolean
+	/** The one locale a reporter-added choice is worded in, or null when it has both (ADR-0095). */
+	onlyIn: string | null
 }
 
 export interface StubQuestion {
@@ -36,7 +36,6 @@ export interface StubQuestion {
 	placeholderEn: string | null
 	placeholderFr: string | null
 	options: StubOption[]
-	choicesComeFromLiveList: boolean
 	children: StubQuestion[]
 }
 
@@ -54,7 +53,6 @@ function question(overrides: Partial<StubQuestion> & { id: string; key: string; 
 		placeholderEn: null,
 		placeholderFr: null,
 		options: [],
-		choicesComeFromLiveList: false,
 		children: [],
 		...overrides,
 	}
@@ -93,8 +91,8 @@ export function defaultFormQuestions(): StubQuestion[] {
 					type: "single_select",
 					displayOrder: 0,
 					options: [
-						{ code: "hang_glider", labelEn: "Hang glider", labelFr: "Deltaplane", sourceItemId: null, addedByReporter: false },
-						{ code: "paraglider", labelEn: "Paraglider", labelFr: "Parapente", sourceItemId: null, addedByReporter: false },
+						{ code: "hang_glider", labelEn: "Hang glider", labelFr: "Deltaplane", onlyIn: null },
+						{ code: "paraglider", labelEn: "Paraglider", labelFr: "Parapente", onlyIn: null },
 					],
 				}),
 				question({ id: "aircraft_model", key: "aircraft_model", labelEn: "Model", type: "short_text", displayOrder: 1 }),
@@ -125,9 +123,35 @@ export function multiSelectFormQuestions(): StubQuestion[] {
 			type: "multi_select",
 			displayOrder: 1,
 			options: [
-				{ code: "gusty", labelEn: "Gusty", labelFr: "Rafales", sourceItemId: null, addedByReporter: false },
-				{ code: "thermic", labelEn: "Thermic", labelFr: "Thermique", sourceItemId: null, addedByReporter: false },
-				{ code: "turbulent", labelEn: "Turbulent", labelFr: "Turbulent", sourceItemId: null, addedByReporter: false },
+				{ code: "gusty", labelEn: "Gusty", labelFr: "Rafales", onlyIn: null },
+				{ code: "thermic", labelEn: "Thermic", labelFr: "Thermique", onlyIn: null },
+				{ code: "turbulent", labelEn: "Turbulent", labelFr: "Turbulent", onlyIn: null },
+			],
+		}),
+	)
+	return questions
+}
+
+/**
+ * The default form with a type-ahead as its first answer-producing page. One of
+ * its choices was added by a reporter in English and has no French yet, so the
+ * server sends that English wording in both labels (REQ-QB-103).
+ */
+export function typeAheadFormQuestions(): StubQuestion[] {
+	const questions = defaultFormQuestions()
+	questions.splice(
+		1,
+		0,
+		question({
+			id: "launch_site",
+			key: "launch_site",
+			labelEn: "Where did you launch?",
+			type: "autocomplete",
+			displayOrder: 1,
+			allowsReporterAdditions: true,
+			options: [
+				{ code: "coopers", labelEn: "Cooper's Hill", labelFr: "Colline Cooper", onlyIn: null },
+				{ code: "mount_7", labelEn: "Mount 7", labelFr: "Mount 7", onlyIn: "en-CA" },
 			],
 		}),
 	)

@@ -7,12 +7,10 @@ import {
 	ApiError,
 	createQuestion,
 	deleteQuestion,
-	listOptionSets,
 	listQuestions,
 	reorderQuestions,
 	reviseQuestion,
 	translationAvailable,
-	type OptionSetView,
 	type QuestionView,
 } from "../api/adminQuestions"
 import { exportTypeform } from "../api/adminTypeformImport"
@@ -24,7 +22,8 @@ import { exportTypeform } from "../api/adminTypeformImport"
  *
  *   1. Saving an edit does not update a question. It creates a new revision,
  *      server-side, and every report that answered an older one keeps showing
- *      exactly what it was asked (ADR-0016).
+ *      exactly what it was asked (ADR-0016). A question's choices are the
+ *      exception: they are its own and are edited in place (ADR-0095).
  *   2. Reordering is a save too — each moved question gets a revision, written
  *      in one transaction. The list below is therefore re-read from the
  *      response rather than kept optimistically, so what is on screen is always
@@ -34,7 +33,6 @@ import { exportTypeform } from "../api/adminTypeformImport"
 export function ManageQuestionsPage() {
 	const { t } = useLocale()
 	const [questions, setQuestions] = useState<QuestionView[]>([])
-	const [optionSets, setOptionSets] = useState<OptionSetView[]>([])
 	const [canTranslate, setCanTranslate] = useState(false)
 	const [translationIsStandIn, setTranslationIsStandIn] = useState(false)
 	const [draft, setDraft] = useState<QuestionDraft | null>(null)
@@ -52,15 +50,13 @@ export function ManageQuestionsPage() {
 	const load = useCallback(async () => {
 		try {
 			setLoading(true)
-			const [loadedQuestions, loadedSets, translation] = await Promise.all([
+			const [loadedQuestions, translation] = await Promise.all([
 				listQuestions(),
-				listOptionSets(),
 				// Asked once, so the Translate control is disabled rather than
 				// offered and then failing on a server with no credential.
 				translationAvailable().catch(() => ({ available: false, standIn: false })),
 			])
 			setQuestions(loadedQuestions)
-			setOptionSets(loadedSets)
 			setCanTranslate(translation.available)
 			setTranslationIsStandIn(translation.standIn)
 			setError(null)
@@ -141,7 +137,6 @@ export function ManageQuestionsPage() {
 	const editor = draft && (
 		<QuestionEditor
 			draft={draft}
-			optionSets={optionSets}
 			conditionQuestions={conditionQuestions}
 			groupQuestions={groupQuestions}
 			isEditing={editing !== null}
@@ -304,6 +299,11 @@ function QuestionRow({
 				{groupParent && (
 					<p className="mt-1 font-sans text-xs text-ink-muted">
 						{t("questions.groupedUnderSummary", { question: groupParent.labelEn })}
+					</p>
+				)}
+				{question.reporterChoicesAwaitingReview > 0 && (
+					<p className="mt-2 font-sans text-xs font-medium text-ink">
+						{t("questions.reporterChoicesAwaiting", { count: String(question.reporterChoicesAwaitingReview) })}
 					</p>
 				)}
 			</div>

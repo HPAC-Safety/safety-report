@@ -5,6 +5,7 @@ import { signInAs, stubAuth } from "./auth"
 import {
 	defaultFormQuestions,
 	multiSelectFormQuestions,
+	typeAheadFormQuestions,
 	forgetDraftInBrowser,
 	readDraftFromBrowser,
 	stubCurrentQuestions,
@@ -602,4 +603,26 @@ Then("the form opens at its introduction with no answers", async ({ page }) => {
 Then("no dialog asks whether to continue", async ({ page }) => {
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
 	await expect(resumeDialog(page)).toHaveCount(0)
+})
+
+// ------------------------------ a one-language reporter-added choice (REQ-QB-103) --
+
+Given("a type-ahead question has a reporter-added choice typed only in English", async ({ page }) => {
+	await openForm(page, typeAheadFormQuestions())
+})
+
+When("a reporter using French opens that question", async ({ page }) => {
+	await goNext(page) // intro -> the type-ahead page
+	await page.getByRole("button", { name: "Français" }).click()
+})
+
+Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
+	const offered = page.locator("datalist option")
+
+	// The choice with both languages is offered in French; the one a reporter
+	// typed in English only is offered in English, and says so.
+	await expect(offered).toHaveCount(2)
+	await expect(offered.nth(0)).toHaveAttribute("value", "Colline Cooper")
+	await expect(offered.nth(1)).toHaveAttribute("value", "Mount 7")
+	await expect(offered.nth(1)).toHaveAttribute("lang", "en-CA")
 })

@@ -756,3 +756,32 @@ Scenario: The report form shows a one-language choice in the language it has
   Given a type-ahead question has a reporter-added choice typed only in English
   When a reporter using French opens that question
   Then the type-ahead offers the choice in its English wording
+
+@REQ-QB-104
+Scenario: A new installation asks for several attachments
+  Given a new, empty database
+  When the migrations run
+  Then the seeded attachment question is labelled "Photos or videos:" and "Photos ou vidéos:"
+  And its help text asks for photos, videos, or documents in both languages
+
+@REQ-QB-105
+Scenario: The seeded single-file wording on an unanswered attachment question is revised
+  Given a database whose attachment question still carries its original single-file wording
+  And no answer references the attachment question
+  When the attachment rewording migration runs
+  Then the attachment question has a new revision with the several-files wording
+  And the attachment question keeps its identifier
+
+@REQ-QB-106
+Scenario: The seeded single-file wording on an answered attachment question forks it
+  Given a database whose attachment question still carries its original single-file wording
+  And a report has answered the attachment question
+  When the attachment rewording migration runs
+  Then the original attachment question is stamped as deleted and keeps its single-file wording
+  And a new live question with the same key carries the several-files wording
+
+@REQ-QB-107
+Scenario: An attachment question an Administrator already reworded is left alone
+  Given a database whose attachment question an Administrator has already reworded
+  When the attachment rewording migration runs
+  Then the attachment question and its revisions are unchanged

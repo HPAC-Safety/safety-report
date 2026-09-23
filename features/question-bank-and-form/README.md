@@ -52,6 +52,19 @@ single-select domain type.
 The Typeform-derived question set is seed/import input, not hardcoded form
 logic. The database remains authoritative after initial seeding.
 
+## Correcting seeded wording
+
+The seeded attachment question departs from Typeform on purpose. Typeform took
+one file and asked for the rest by email. This form takes several, so the
+question reads "Photos or videos:" and asks for photos, videos, or documents
+(`REQ-QB-104`).
+
+A database seeded before that change is corrected by a migration that follows
+the same rule as an Administrator's edit. An unanswered question gets a new
+revision (`REQ-QB-105`), and an answered one forks (`REQ-QB-106`). The
+migration acts only while the question still carries the exact seeded wording,
+so it never overwrites an Administrator's own edit (`REQ-QB-107`).
+
 ## The group page contract
 
 A `group`-typed question and its `grouped_under_question_id` children render
@@ -104,3 +117,6 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   question holds, retired ones included (`REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.
   Renaming an existing key is not built.
+- Correcting any other seeded question's wording by migration. Once a database
+  is seeded, an Administrator owns its wording, and the attachment question's
+  correction (`REQ-QB-105`) is not a pattern for re-seeding.

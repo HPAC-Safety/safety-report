@@ -64,8 +64,8 @@ shared lists.
   retired question's list, including removed choices (still removed) and
   reporter-added marks.
 - **A removed choice is hidden, never erased.** It carries `Deleted` and
-  disappears from the form. A removed code is never revived, whether by an
-  Administrator reusing the wording or by a reporter typing it.
+  disappears from the form. A reporter typing its wording again never revives
+  it; an Administrator writing it again does, deliberately.
 - **A choice a live question depends on cannot be removed.** The parent's
   required option (ADR-0074) resolves against the parent's live choices, so
   removing it would silently disable the child.

@@ -219,13 +219,24 @@ public class ConditionalQuestionTests
 	[InlineData(QuestionType.Time, false)]
 	[InlineData(QuestionType.ShortText, false)]
 	public void GivenQuestionType_WhenOptionBehaviourIsRead_ThenMatchesContract(
-		QuestionType type, bool acceptsOptionSet)
+		QuestionType type, bool takesChoices)
 	{
 		// Given
 		var question = Ordinary("authored", type);
 
-		// When / Then
-		question.CurrentRevision.AcceptsOptionSet.ShouldBe(acceptsOptionSet);
+		// When
+		var saving = () => question.ReplaceChoices([new QuestionOptionInput("golden", "Golden", "Golden")], At);
+
+		// Then
+		if (takesChoices)
+		{
+			saving();
+			question.Choices.Count.ShouldBe(1);
+		}
+		else
+		{
+			saving.ShouldThrow<DomainRuleViolationException>();
+		}
 	}
 
 	[Fact]
@@ -237,9 +248,9 @@ public class ConditionalQuestionTests
 			options: [new QuestionOptionInput("golden", "Golden", "Golden")]);
 
 		// Then
-		question.CurrentRevision.Options.Count.ShouldBe(1);
-		question.CurrentRevision.Accepts("golden").ShouldBeTrue();
-		question.CurrentRevision.Accepts("lumby").ShouldBeFalse();
+		question.Choices.Count.ShouldBe(1);
+		question.Offers("Golden", Locale.EnCa).ShouldBeTrue();
+		question.Offers("Lumby", Locale.EnCa).ShouldBeFalse();
 		question.CurrentRevision.TakesOneAnswer.ShouldBeTrue();
 	}
 

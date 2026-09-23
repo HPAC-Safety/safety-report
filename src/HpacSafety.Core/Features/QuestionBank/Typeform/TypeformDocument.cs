@@ -87,7 +87,6 @@ public sealed record TypeformHpacExtension(
 	string Type,
 	bool IsPrivate,
 	bool IsRequired,
-	bool AllowsReporterAdditions,
 	string? DependsOnKey,
 	string? DependsOnOptionCode,
 	string? GroupedUnderKey);

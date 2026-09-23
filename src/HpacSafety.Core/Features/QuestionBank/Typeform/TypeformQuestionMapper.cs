@@ -140,16 +140,17 @@ public static class TypeformQuestionMapper
 				return;
 
 			case "dropdown":
-				drafts.Add(ChoiceDraft(field, frenchField, QuestionType.SingleSelect, groupedUnderKey, allowsReporterAdditions: false));
+				drafts.Add(ChoiceDraft(field, frenchField, QuestionType.SingleSelect, groupedUnderKey));
 				return;
 
 			case "multiple_choice":
+				// allow_other_choice is ignored: only a type-ahead takes a
+				// reporter's added choice (ADR-0095).
 				var multiSelect = field.Properties.AllowMultipleSelection == true;
-				var allowsAdditions = multiSelect && field.Properties.AllowOtherChoice == true;
 				drafts.Add(
 					ChoiceDraft(
 						field, frenchField, multiSelect ? QuestionType.MultiSelect : QuestionType.SingleSelect,
-						groupedUnderKey, allowsAdditions));
+						groupedUnderKey));
 				return;
 
 			default:
@@ -190,7 +191,7 @@ public static class TypeformQuestionMapper
 
 		var draft = new ImportedQuestionDraft(
 			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
-			AllowsReporterAdditions: false, Options: []);
+			Options: []);
 
 		return ApplyHpac(draft, field, groupedUnderKey);
 	}
@@ -203,7 +204,7 @@ public static class TypeformQuestionMapper
 
 		var draft = new ImportedQuestionDraft(
 			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
-			AllowsReporterAdditions: false, Options: []);
+			Options: []);
 
 		return ApplyHpac(draft, field, groupedUnderKey);
 	}
@@ -212,8 +213,7 @@ public static class TypeformQuestionMapper
 		TypeformField field,
 		TypeformField? frenchField,
 		QuestionType type,
-		string? groupedUnderKey,
-		bool allowsReporterAdditions)
+		string? groupedUnderKey)
 	{
 		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
@@ -233,7 +233,7 @@ public static class TypeformQuestionMapper
 
 		var draft = new ImportedQuestionDraft(
 			QuestionKey.Normalize(field.Ref), type, labelEn, labelFr, defaulted, helpEn, helpFr, groupedUnderKey,
-			allowsReporterAdditions, options);
+			options);
 
 		return ApplyHpac(draft, field, groupedUnderKey);
 	}
@@ -259,7 +259,6 @@ public static class TypeformQuestionMapper
 			Type = type,
 			IsPrivate = hpac.IsPrivate,
 			IsRequired = hpac.IsRequired,
-			AllowsReporterAdditions = hpac.AllowsReporterAdditions,
 			DependsOnKey = hpac.DependsOnKey,
 			DependsOnOptionCode = hpac.DependsOnOptionCode,
 			GroupedUnderKey = hpac.GroupedUnderKey ?? groupedUnderKey,

@@ -117,8 +117,8 @@ public class QuestionBankEdgeTests
 	[Fact]
 	public void GivenOptionsSuppliedInSpecificOrder_WhenRevisionIsCreated_ThenTheirDisplayOrderMatches()
 	{
-		// Given / When — the complete ordered option set is fixed at
-		// creation; there is no in-place reorder on an existing revision.
+		// Given / When — choices take the order they were saved in, and
+		// saving them creates no revision (ADR-0095).
 		var question = Question.Create(
 			"time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
 			options:
@@ -128,8 +128,8 @@ public class QuestionBankEdgeTests
 			]);
 
 		// Then
-		question.CurrentRevision.Option("evening")!.DisplayOrder.ShouldBe(0);
-		question.CurrentRevision.Option("morning")!.DisplayOrder.ShouldBe(1);
+		question.Choice("evening")!.DisplayOrder.ShouldBe(0);
+		question.Choice("morning")!.DisplayOrder.ShouldBe(1);
 		question.Revisions.Count.ShouldBe(1);
 	}
 

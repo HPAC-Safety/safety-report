@@ -108,36 +108,14 @@ public class TypeformQuestionMapperTests
 	}
 
 	[Fact]
-	public void GivenMultiSelectWithoutOtherChoice_WhenMapped_ThenReporterAdditionsAreClosed()
+	public void GivenMultiSelectWithOtherChoice_WhenMapped_ThenItIsAnOrdinaryMultiSelect()
 	{
-		// Given / When
+		// Given / When — allow_other_choice is ignored: only a type-ahead takes a
+		// reporter's added choice (ADR-0095).
 		var result = MapSynthetic();
 
 		// Then
-		DraftFor(result, "multi-ref").AllowsReporterAdditions.ShouldBeFalse();
-	}
-
-	[Fact]
-	public void GivenMultiSelectWithOtherChoice_WhenMapped_ThenReporterAdditionsAreEnabled()
-	{
-		// Given / When — Typeform's allow_other_choice maps to the ADR-0063
-		// amendment (ADR-0077), reusing the same reporter-addition mechanism
-		// a type-ahead already has.
-		var result = MapSynthetic();
-
-		// Then
-		DraftFor(result, "multiother-ref").AllowsReporterAdditions.ShouldBeTrue();
-	}
-
-	[Fact]
-	public void GivenSingleSelectMultipleChoice_WhenMapped_ThenReporterAdditionsAreNeverEnabled()
-	{
-		// Given / When — out of ADR-0077's scope; nothing currently needs it.
-		var result = MapSynthetic();
-
-		// Then
-		DraftFor(result, "dropdown-ref").AllowsReporterAdditions.ShouldBeFalse();
-		DraftFor(result, "single-ref").AllowsReporterAdditions.ShouldBeFalse();
+		DraftFor(result, "multiother-ref").Type.ShouldBe(QuestionType.MultiSelect);
 	}
 
 	[Fact]
@@ -274,7 +252,7 @@ public class TypeformQuestionMapperTests
 	public void GivenAnHpacType_WhenMapped_ThenItOverridesTheAmbiguousNativeType(string nativeType, string hpacType)
 	{
 		// Given
-		var hpac = new TypeformHpacExtension(hpacType, false, false, false, null, null, null);
+		var hpac = new TypeformHpacExtension(hpacType, false, false, null, null, null);
 		var english = Document(Field("field-ref", "Field", nativeType, hpac));
 		var french = Document(Field("field-ref", "Champ", nativeType, hpac));
 
@@ -286,10 +264,10 @@ public class TypeformQuestionMapperTests
 	}
 
 	[Fact]
-	public void GivenAnHpacExtension_WhenMapped_ThenPrivacyRequiredAndReporterAdditionsCarryOver()
+	public void GivenAnHpacExtension_WhenMapped_ThenPrivacyAndRequiredCarryOver()
 	{
 		// Given
-		var hpac = new TypeformHpacExtension("short_text", true, true, false, null, null, null);
+		var hpac = new TypeformHpacExtension("short_text", true, true, null, null, null);
 		var english = Document(Field("field-ref", "Field", "short_text", hpac));
 		var french = Document(Field("field-ref", "Champ", "short_text", hpac));
 
@@ -306,7 +284,7 @@ public class TypeformQuestionMapperTests
 	{
 		// Given — a flat export: no native Typeform group/contact_info nesting
 		// carries this relationship, only the hpac extension does.
-		var hpac = new TypeformHpacExtension("short_text", false, false, false, "parent-ref", "yes", "group-ref");
+		var hpac = new TypeformHpacExtension("short_text", false, false, "parent-ref", "yes", "group-ref");
 		var english = Document(Field("child-ref", "Child", "short_text", hpac));
 		var french = Document(Field("child-ref", "Enfant", "short_text", hpac));
 
@@ -357,7 +335,7 @@ public class TypeformQuestionMapperTests
 	{
 		// Given — defensive: an extension this system did not write, or from a
 		// future version, names a type this version does not recognize.
-		var hpac = new TypeformHpacExtension("some_future_type", false, false, false, null, null, null);
+		var hpac = new TypeformHpacExtension("some_future_type", false, false, null, null, null);
 		var english = Document(Field("field-ref", "Field", "short_text", hpac));
 		var french = Document(Field("field-ref", "Champ", "short_text", hpac));
 
@@ -380,12 +358,10 @@ public class TypeformQuestionMapperTests
 			dependsOnQuestionId: parent.Id, groupedUnderQuestionId: group.Id);
 		var multi = Question.Create(
 			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", at, isPrivate: false,
-			allowsReporterAdditions: true,
-			options: [new QuestionOptionInput("p1", "P1", "P1", null)]);
+			options: [new QuestionOptionInput("p1", "P1", "P1")]);
 
 		// When
-		var (english, french) = TypeformExportBuilder.Build(
-			[group, parent, child, multi], new Dictionary<TinyId, OptionSet>());
+		var (english, french) = TypeformExportBuilder.Build([group, parent, child, multi]);
 		var result = TypeformQuestionMapper.Map(english, french);
 
 		// Then
@@ -403,7 +379,6 @@ public class TypeformQuestionMapperTests
 
 		var multiDraft = DraftFor(result, "ratings");
 		multiDraft.Type.ShouldBe(QuestionType.MultiSelect);
-		multiDraft.AllowsReporterAdditions.ShouldBeTrue();
 		multiDraft.Options.Single().Code.ShouldBe("p1");
 	}
 }

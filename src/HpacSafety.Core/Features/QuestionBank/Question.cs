@@ -18,8 +18,8 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         questions and answers directly. See <c>docs/data-and-persistence.md</c>.
 ///     </para>
 ///     <para>
-///         Order, privacy, active state, system state, required state, and the
-///         complete ordered option set all live on <see cref="QuestionRevision" />, not
+///         Order, privacy, active state, system state, and required state all
+///         live on <see cref="QuestionRevision" />, not
 ///         here — a referenced revision has to preserve the complete question exactly
 ///         as it was shown, and none of those facts can be reconstructed from the
 ///         current state of a mutable question row. Every read here that looks
@@ -29,9 +29,16 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         creating a new revision. See
 ///         <c>features/question-bank-and-form/question-bank-and-form.feature</c>.
 ///     </para>
+///     <para>
+///         Choices are the exception, deliberately: they live here, on
+///         <see cref="QuestionChoice" /> rows the question owns, and are edited in
+///         place without a revision or a fork. An answer stores the reporter's own
+///         words, so no answer depends on a choice staying as it was (ADR-0095).
+///     </para>
 /// </remarks>
 public class Question
 {
+	private readonly List<QuestionChoice> _choices = [];
 	private readonly List<QuestionRevision> _revisions = [];
 
 	// EF Core materializes an entity by calling this constructor and then
@@ -91,8 +98,19 @@ public class Question
 	/// <summary>The group question this one renders together with today, if any. See ADR-0076.</summary>
 	public TinyId? GroupedUnderQuestionId => CurrentRevision.GroupedUnderQuestionId;
 
-	/// <summary>Whether this question allows a reporter's value to be added as a new choice today. See ADR-0063, ADR-0077.</summary>
-	public bool AllowsReporterAdditions => CurrentRevision.AllowsReporterAdditions;
+	/// <summary>Whether a reporter's value this question does not offer is added as a new choice. See ADR-0063, ADR-0095.</summary>
+	public bool TakesReporterAdditions => CurrentRevision.TakesReporterAdditions;
+
+	/// <summary>The choices the form offers today, in order. Removed ones are left out.</summary>
+	public IReadOnlyList<QuestionChoice> Choices =>
+		[.. _choices.Where(choice => choice.Deleted is null).OrderBy(choice => choice.DisplayOrder)];
+
+	/// <summary>Every choice this question has ever had, removed ones included. A fork copies all of them.</summary>
+	public IReadOnlyCollection<QuestionChoice> AllChoices => _choices;
+
+	/// <summary>How many reporter-added choices are still waiting for an Administrator to supply a language.</summary>
+	public int ReporterChoicesAwaitingReview =>
+		_choices.Count(choice => choice.Deleted is null && choice.AddedByReporter && choice.NeedsTranslation);
 
 	/// <summary>
 	///     Where this question sits on the form today. Not versioned
@@ -149,15 +167,13 @@ public class Question
 		int displayOrder = 0,
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
-		TinyId? optionSetId = null,
 		TinyId? groupedUnderQuestionId = null,
-		bool allowsReporterAdditions = false,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-			groupedUnderQuestionId, allowsReporterAdditions, options);
+			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+			groupedUnderQuestionId, options);
 	}
 
 	/// <summary>
@@ -191,8 +207,6 @@ public class Question
 			null,
 			null,
 			null,
-			null,
-			false,
 			null);
 	}
 
@@ -214,9 +228,7 @@ public class Question
 		int displayOrder,
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
-		TinyId? optionSetId,
 		TinyId? groupedUnderQuestionId,
-		bool allowsReporterAdditions,
 		IReadOnlyList<QuestionOptionInput>? options)
 	{
 		var question = new Question(key, isSystem, role, at);
@@ -224,14 +236,16 @@ public class Question
 			QuestionRevision.Create(
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-				optionSetId, groupedUnderQuestionId, allowsReporterAdditions, options ?? [], at));
+				groupedUnderQuestionId, at));
+		question.ReplaceChoices(options ?? [], at);
 		return question;
 	}
 
 	/// <summary>
-	///     Rewords, retypes, reorders, moves, reclassifies, activates, deactivates,
-	///     or changes the options of this question, producing one new complete
-	///     bilingual revision. Answers already given keep pointing at the revision
+	///     Rewords, retypes, reorders, moves, reclassifies, activates, or
+	///     deactivates this question, producing one new complete bilingual
+	///     revision. Choices are not part of a revision — see
+	///     <see cref="ReplaceChoices" />. Answers already given keep pointing at the revision
 	///     they were given under, so an old report still shows exactly what it was
 	///     actually asked, including the order, privacy, and active state
 	///     in force at the time.
@@ -251,10 +265,7 @@ public class Question
 		bool isRequired = false,
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
-		TinyId? optionSetId = null,
-		TinyId? groupedUnderQuestionId = null,
-		bool allowsReporterAdditions = false,
-		IReadOnlyList<QuestionOptionInput>? options = null)
+		TinyId? groupedUnderQuestionId = null)
 	{
 		if (IsSystem && type != Type)
 		{
@@ -274,8 +285,8 @@ public class Question
 		return ReviseInternal(
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-				groupedUnderQuestionId, allowsReporterAdditions, options ?? []),
+				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+				groupedUnderQuestionId),
 			at);
 	}
 
@@ -290,6 +301,14 @@ public class Question
 	///         exists, a reworded question is a different question: this one is retired
 	///         and a new one takes its place, carrying the same stable key, so every
 	///         answer already given keeps pointing at the wording it was given under.
+	///     </para>
+	///     <para>
+	///         Choices are not part of a revision (ADR-0095). When
+	///         <paramref name="options" /> is given it is the complete new list, applied
+	///         in place to whichever question is live afterwards — so an edit that only
+	///         changes choices creates no revision and never forks, and a fork carries
+	///         every choice across before the new list is applied. An edit that changes
+	///         no revision field creates no revision at all.
 	///     </para>
 	///     <para>
 	///         Publication consent never forks. It cannot be deleted, so it revises in
@@ -318,26 +337,40 @@ public class Question
 		bool isRequired = false,
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
-		TinyId? optionSetId = null,
 		TinyId? groupedUnderQuestionId = null,
-		bool allowsReporterAdditions = false,
 		IReadOnlyList<QuestionOptionInput>? options = null)
 	{
+		EnsureNotDeleted();
+
 		var draft = new RevisionDraft(
 			type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode, optionSetId,
-			groupedUnderQuestionId, allowsReporterAdditions, options ?? []);
+			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId,
+			dependsOnOptionCode is null ? null : QuestionKey.Normalize(dependsOnOptionCode), groupedUnderQuestionId);
 
-		if (!ForksWhenEdited(hasBeenAnswered))
+		var live = this;
+
+		if (draft != CurrentDraft())
 		{
-			Revise(
-				type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
-				helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-				dependsOnOptionCode, optionSetId, groupedUnderQuestionId, allowsReporterAdditions, options);
-			return this;
+			if (ForksWhenEdited(hasBeenAnswered))
+			{
+				live = Fork(draft, at);
+			}
+			else
+			{
+				Revise(
+					type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
+					helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
+					dependsOnOptionCode, groupedUnderQuestionId);
+			}
 		}
 
-		return Fork(draft, at);
+		if (options is not null)
+		{
+			live.ReplaceChoices(options, at);
+		}
+
+		live.EnsureChoicesFitType();
+		return live;
 	}
 
 	/// <summary>
@@ -389,16 +422,177 @@ public class Question
 		return ReviseInternal(CurrentDraft() with { GroupedUnderQuestionId = groupedUnderQuestionId }, at);
 	}
 
-	/// <summary>
-	///     Turns reporter additions on or off, as a new revision. Rejected by
-	///     <see cref="QuestionRevision" /> for any type but
-	///     <see cref="QuestionType.MultiSelect" /> — <see cref="QuestionType.Autocomplete" />
-	///     is always on and never needs this call. See ADR-0063, amended by
-	///     ADR-0077.
-	/// </summary>
-	public QuestionRevision AllowReporterAdditions(bool allowsReporterAdditions, DateTimeOffset at)
+	/// <summary>A live choice by its invariant code, or null when this question does not offer it.</summary>
+	public QuestionChoice? Choice(string code)
 	{
-		return ReviseInternal(CurrentDraft() with { AllowsReporterAdditions = allowsReporterAdditions }, at);
+		var normalized = QuestionKey.Normalize(code);
+		return _choices.Find(choice => choice.Code == normalized && choice.Deleted is null);
+	}
+
+	/// <summary>
+	///     Whether this question offers the given value, written as the reporter saw
+	///     it in their own language — which, for a one-language choice, may be the
+	///     other language (<see cref="QuestionChoice.Label" />). This is what a select
+	///     answer is validated against now that answers store their words (ADR-0072).
+	///     Yes/no is invariant: its stored forms are <c>yes</c> and <c>no</c>.
+	/// </summary>
+	public bool Offers(string value, Locale locale)
+	{
+		return Type == QuestionType.YesNo
+			? QuestionRevision.YesNoCodes.Contains(value, StringComparer.Ordinal)
+			: _choices.Exists(choice => choice.Deleted is null
+										&& string.Equals(choice.Label(locale), value, StringComparison.Ordinal));
+	}
+
+	/// <summary>
+	///     Replaces this question's choices with the complete ordered list an
+	///     Administrator saved, in place — no revision, no fork, however many answers
+	///     the question has (ADR-0095).
+	/// </summary>
+	/// <remarks>
+	///     <para>
+	///         A choice missing from the list is removed: stamped, never erased. A
+	///         choice already here is reworded and moved; its code never changes. A new
+	///         code is added — or, if the question once had it and it was removed,
+	///         that row is revived, because an Administrator writing it again means it.
+	///     </para>
+	///     <para>
+	///         Whether a removed choice is one a live question depends on is a fact
+	///         about other questions; <see cref="QuestionDependencies.EnsureChoicesRemovable" />
+	///         checks it before this runs.
+	///     </para>
+	/// </remarks>
+	public void ReplaceChoices(IReadOnlyList<QuestionOptionInput> options, DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(options);
+		EnsureNotDeleted();
+
+		var codes = options.Select(option => QuestionKey.Normalize(option.Code)).ToList();
+
+		if (codes.Distinct(StringComparer.Ordinal).Count() != codes.Count)
+		{
+			var repeated = codes.GroupBy(code => code, StringComparer.Ordinal).First(group => group.Count() > 1).Key;
+			throw new DomainRuleViolationException($"This question already has a choice coded '{repeated}'.");
+		}
+
+		if (options.Count > 0)
+		{
+			EnsureTakesChoices(Type);
+		}
+
+		foreach (var removed in Choices.Where(choice => !codes.Contains(choice.Code, StringComparer.Ordinal)))
+		{
+			removed.Delete(at);
+		}
+
+		for (var i = 0; i < options.Count; i++)
+		{
+			var option = options[i];
+
+			if (_choices.Find(choice => choice.Code == codes[i]) is not { } existing)
+			{
+				_choices.Add(QuestionChoice.Written(Id, codes[i], i, option.LabelEn!, option.LabelFr!));
+			}
+			else if (existing.Deleted is not null)
+			{
+				existing.Restore(i, option.LabelEn, option.LabelFr);
+			}
+			else
+			{
+				existing.Relabel(option.LabelEn, option.LabelFr);
+				existing.MoveTo(i);
+			}
+		}
+	}
+
+	/// <summary>
+	///     Records a value a reporter typed into this type-ahead that it did not
+	///     already offer — the pilot who flew at a site nobody had written down.
+	///     Runs at submission, in the report's transaction. See ADR-0063, ADR-0095.
+	/// </summary>
+	/// <remarks>
+	///     <para>Three cases, and the difference between them is the whole method:</para>
+	///     <list type="bullet">
+	///         <item>
+	///             A live choice already reads that way, in either language — the reporter
+	///             typed a site that exists, or a second pilot typed the same new one. It is
+	///             returned unchanged, so a busy weekend at a new site produces one choice,
+	///             and an Administrator's wording is never replaced by a reporter's.
+	///         </item>
+	///         <item>
+	///             The code exists but was removed. It is returned <b>without</b> being
+	///             revived: an Administrator removed it on purpose, and a reporter typing it
+	///             again must not undo that. The answer keeps the reporter's words either way.
+	///         </item>
+	///         <item>
+	///             The code is new. A choice is added holding only the language the reporter
+	///             typed, marked <see cref="QuestionChoice.AddedByReporter" />, and offered
+	///             from now on — in that language to every reporter until an Administrator
+	///             supplies the other. Nothing on the submission path translates it.
+	///         </item>
+	///     </list>
+	/// </remarks>
+	public QuestionChoice AddChoiceFromReporter(string value, Locale locale)
+	{
+		ArgumentNullException.ThrowIfNull(value);
+		EnsureNotDeleted();
+
+		if (!TakesReporterAdditions)
+		{
+			throw new DomainRuleViolationException(
+				$"'{Key}' is a {EnumCode.Of(Type)} question. Only a type-ahead takes a choice a reporter adds.");
+		}
+
+		var typed = value.Trim();
+
+		if (_choices.Find(choice => choice.Deleted is null
+									&& (string.Equals(choice.LabelEn, typed, StringComparison.OrdinalIgnoreCase)
+										|| string.Equals(choice.LabelFr, typed, StringComparison.OrdinalIgnoreCase))) is { } worded)
+		{
+			return worded;
+		}
+
+		var code = QuestionKey.Normalize(typed);
+
+		if (_choices.Find(choice => choice.Code == code) is { } existing)
+		{
+			return existing;
+		}
+
+		var added = QuestionChoice.FromReporter(Id, code, NextChoiceOrder(), typed, locale);
+		_choices.Add(added);
+		return added;
+	}
+
+	/// <summary>
+	///     Refuses a question whose type takes no choices while it still offers
+	///     some — the state a retype would otherwise leave behind.
+	/// </summary>
+	private void EnsureChoicesFitType()
+	{
+		if (Choices.Count > 0)
+		{
+			EnsureTakesChoices(Type);
+		}
+	}
+
+	private static void EnsureTakesChoices(QuestionType type)
+	{
+		if (type == QuestionType.YesNo)
+		{
+			throw new DomainRuleViolationException(
+				"A yes/no question has exactly two answers, yes and no. It cannot be given more, and it has no default.");
+		}
+
+		if (type is not (QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete))
+		{
+			throw new DomainRuleViolationException($"A {type} question does not have options.");
+		}
+	}
+
+	private int NextChoiceOrder()
+	{
+		return _choices.Count == 0 ? 0 : _choices.Max(choice => choice.DisplayOrder) + 1;
 	}
 
 	/// <summary>
@@ -550,8 +744,11 @@ public class Question
 				replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
 				draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 				false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
-				draft.AllowsReporterAdditions, draft.Options, at));
+				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId, at));
+
+		// Every choice crosses, removed ones and reporter-added marks included,
+		// so the replacement offers exactly what this one did (ADR-0095).
+		replacement._choices.AddRange(_choices.Select(choice => choice.CopyTo(replacement.Id)));
 
 		Retire(at);
 		return replacement;
@@ -565,8 +762,7 @@ public class Question
 			Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
 			draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 			IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.OptionSetId, draft.GroupedUnderQuestionId,
-			draft.AllowsReporterAdditions, draft.Options, at);
+			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId, at);
 		_revisions.Add(revision);
 		return revision;
 	}
@@ -584,19 +780,8 @@ public class Question
 		return new RevisionDraft(
 			current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
 			current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
-			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode, current.OptionSetId,
-			current.GroupedUnderQuestionId, current.AllowsReporterAdditions, CurrentOptions());
-	}
-
-	/// <summary>The current revision's option set, in order, as input for a new revision.</summary>
-	private List<QuestionOptionInput> CurrentOptions()
-	{
-		return
-		[
-			.. CurrentRevision.Options
-				.OrderBy(option => option.DisplayOrder)
-				.Select(option => new QuestionOptionInput(option.Code, option.LabelEn, option.LabelFr, option.SourceItemId))
-		];
+			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode,
+			current.GroupedUnderQuestionId);
 	}
 
 	private void EnsureNotDeleted()
@@ -626,8 +811,5 @@ public class Question
 		int DisplayOrder,
 		TinyId? DependsOnQuestionId,
 		string? DependsOnOptionCode,
-		TinyId? OptionSetId,
-		TinyId? GroupedUnderQuestionId,
-		bool AllowsReporterAdditions,
-		IReadOnlyList<QuestionOptionInput> Options);
+		TinyId? GroupedUnderQuestionId);
 }

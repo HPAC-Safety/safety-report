@@ -3,10 +3,12 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// <summary>
 ///     A question exactly as it was asked at a point in time: its type, its complete
 ///     bilingual wording, its order, privacy, active state, required
-///     state, system state, and option set. Immutable once created — rewording,
-///     retyping, reordering, changing privacy, activating,
-///     deactivating, or changing the options produces a new revision, so a report
-///     filed last year still renders the revision it was actually answering.
+///     state, and system state. Immutable once created — rewording,
+///     retyping, reordering, changing privacy, activating, or
+///     deactivating produces a new revision, so a report filed last year still
+///     renders the revision it was actually answering. Its choices are not part
+///     of it: they belong to the <see cref="Question" /> and are edited in place
+///     (ADR-0095).
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -16,8 +18,8 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         <c>docs/data-and-persistence.md</c>.
 ///     </para>
 ///     <para>
-///         Order, privacy, active state, system state, required state, and the
-///         complete ordered option set are all revision fields — see
+///         Order, privacy, active state, system state, and required state are all
+///         revision fields — see
 ///         <c>features/question-bank-and-form/question-bank-and-form.feature</c>. None
 ///         of them can be mutated on an existing revision; every change, including
 ///         these, is a new revision row created by <see cref="Question" />.
@@ -25,8 +27,6 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public class QuestionRevision
 {
-	private readonly List<QuestionRevisionOption> _options = [];
-
 	// EF Core materializes an entity by calling this constructor and then
 	// setting every mapped property and backing field directly. It exists for
 	// the ORM and for nothing else — domain code still has to go through the
@@ -55,10 +55,7 @@ public class QuestionRevision
 		int displayOrder,
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
-		TinyId? optionSetId,
 		TinyId? groupedUnderQuestionId,
-		bool allowsReporterAdditions,
-		IReadOnlyList<QuestionOptionInput> options,
 		DateTimeOffset at)
 	{
 		Id = TinyId.New();
@@ -72,11 +69,6 @@ public class QuestionRevision
 				$"A {type} question collects no answer and cannot be marked required or private.");
 		}
 
-		if (allowsReporterAdditions && type is not (QuestionType.Autocomplete or QuestionType.MultiSelect))
-		{
-			throw new DomainRuleViolationException($"A {type} question cannot allow reporter additions.");
-		}
-
 		// Only the publication-consent question is a system question, and it is
 		// always required — a form that lets a reporter skip consent cannot
 		// publish anything. Every other question's required state is authored
@@ -88,12 +80,7 @@ public class QuestionRevision
 		DisplayOrder = displayOrder;
 		DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
 		DependsOnOptionCode = ValidatedOptionCode(dependsOnOptionCode, DependsOnQuestionId);
-		OptionSetId = optionSetId;
 		GroupedUnderQuestionId = ValidatedGrouping(groupedUnderQuestionId, questionId);
-		// Fixed on for every autocomplete — this ADR-0063 behavior predates
-		// the flag and needed no migration data change. Author-controlled for
-		// multi-select. See ADR-0077's amendment to ADR-0063.
-		AllowsReporterAdditions = type == QuestionType.Autocomplete || allowsReporterAdditions;
 		LabelEn = NotBlank(labelEn);
 		LabelFr = NotBlank(labelFr);
 		HelpTextEn = helpTextEn;
@@ -101,8 +88,6 @@ public class QuestionRevision
 		PlaceholderEn = placeholderEn;
 		PlaceholderFr = placeholderFr;
 		CreatedAt = at;
-
-		PopulateOptions(options);
 	}
 
 	/// <summary>Surrogate key. Answers reference this, never the question row.</summary>
@@ -172,14 +157,6 @@ public class QuestionRevision
 	public string? DependsOnOptionCode { get; private init; }
 
 	/// <summary>
-	///     The shared <see cref="OptionSet" /> this revision's options were copied
-	///     from, if any. Provenance only — the copy in <see cref="Options" /> is
-	///     what this revision offers, whatever later happens to the set. See
-	///     ADR-0058.
-	/// </summary>
-	public TinyId? OptionSetId { get; private init; }
-
-	/// <summary>
 	///     The <see cref="QuestionType.Group" /> question this revision renders
 	///     together with, if any. Distinct from <see cref="DependsOnQuestionId" />:
 	///     this is "display together," never "conditional on." Names the stable
@@ -189,14 +166,11 @@ public class QuestionRevision
 	public TinyId? GroupedUnderQuestionId { get; private init; }
 
 	/// <summary>
-	///     Whether a reporter's value not on this revision's shared
-	///     <see cref="OptionSet" /> is recorded as a new choice at submission,
-	///     rather than rejected. Always true for
-	///     <see cref="QuestionType.Autocomplete" />; author-controlled for
-	///     <see cref="QuestionType.MultiSelect" />. See ADR-0063, amended by
-	///     ADR-0077.
+	///     Whether a reporter's value the question does not offer is added as a new
+	///     choice at submission rather than rejected. True only for
+	///     <see cref="QuestionType.Autocomplete" />. See ADR-0063, ADR-0095.
 	/// </summary>
-	public bool AllowsReporterAdditions { get; private init; }
+	public bool TakesReporterAdditions => Type == QuestionType.Autocomplete;
 
 	/// <summary>The English wording.</summary>
 	public string LabelEn { get; private init; }
@@ -223,12 +197,6 @@ public class QuestionRevision
 	public DateTimeOffset? Deleted { get; private set; }
 
 	/// <summary>
-	///     The choices, for select-style types. Empty otherwise. Fixed at
-	///     creation — see <see cref="QuestionOptionInput" />.
-	/// </summary>
-	public IReadOnlyCollection<QuestionRevisionOption> Options => _options;
-
-	/// <summary>
 	///     True when this type answers from a fixed set of choices rather
 	///     than free text.
 	/// </summary>
@@ -252,14 +220,6 @@ public class QuestionRevision
 	///     (ADR-0060).
 	/// </summary>
 	public bool StoresLocalizedValue => ExpectsOptions && Type != QuestionType.YesNo;
-
-	/// <summary>
-	///     True when this type's options may come from a shared
-	///     <see cref="OptionSet" />. Yes/no is excluded: its two answers are not
-	///     option rows at all.
-	/// </summary>
-	public bool AcceptsOptionSet =>
-		Type is QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete;
 
 	/// <summary>True when this type takes at most one answer.</summary>
 	public bool TakesOneAnswer =>
@@ -287,18 +247,13 @@ public class QuestionRevision
 	/// <summary>
 	///     Deletes this one revision out of its question's history — distinct from
 	///     <see cref="Question.Delete" />, which retires the whole question. Stamps
-	///     this row and its options with one timestamp rather than removing them.
+	///     this row rather than removing it.
 	///     Idempotent, and the caller (<see cref="Question" />) has already checked
 	///     that no answer references it and that it is not the current revision.
 	/// </summary>
 	internal void Delete(DateTimeOffset at)
 	{
 		Deleted ??= at;
-
-		foreach (var option in _options)
-		{
-			option.Delete(at);
-		}
 	}
 
 	internal static QuestionRevision Create(
@@ -318,92 +273,13 @@ public class QuestionRevision
 		int displayOrder,
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
-		TinyId? optionSetId,
 		TinyId? groupedUnderQuestionId,
-		bool allowsReporterAdditions,
-		IReadOnlyList<QuestionOptionInput> options,
 		DateTimeOffset at)
 	{
 		return new QuestionRevision(
 			questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-			optionSetId, groupedUnderQuestionId, allowsReporterAdditions, options, at);
-	}
-
-	/// <summary>
-	///     Finds a choice by its invariant code. Null for
-	///     <see cref="QuestionType.YesNo" />, whose two answers are not option rows —
-	///     their labels are ordinary UI chrome and live in <c>locales/</c>.
-	/// </summary>
-	public QuestionRevisionOption? Option(string code)
-	{
-		return _options.Find(o => o.Code == code);
-	}
-
-	/// <summary>Whether this revision accepts an answer code.</summary>
-	public bool Accepts(string code)
-	{
-		return Type == QuestionType.YesNo
-			? YesNoCodes.Contains(code, StringComparer.OrdinalIgnoreCase)
-			: Option(code) is not null;
-	}
-
-	/// <summary>
-	///     Whether this revision offered the given value, written as the reporter
-	///     saw it in their own language. This is the check an answer is validated
-	///     against now that answers store their words rather than a code
-	///     (ADR-0072), and it reads the same frozen snapshot <see cref="Accepts" />
-	///     always did.
-	/// </summary>
-	/// <remarks>
-	///     Yes/no is invariant: its two stored forms are <c>yes</c> and <c>no</c> in
-	///     both languages, and the words a reporter actually saw are UI chrome from
-	///     <c>locales/</c> rather than option rows.
-	/// </remarks>
-	public bool Offers(string value, Locale locale)
-	{
-		return Type == QuestionType.YesNo
-			? YesNoCodes.Contains(value, StringComparer.Ordinal)
-			: _options.Exists(option => string.Equals(option.Label(locale), value, StringComparison.Ordinal));
-	}
-
-	/// <summary>
-	///     Builds the complete, ordered option set this revision is born with.
-	///     There is no public equivalent that runs after construction — see the
-	///     class remarks.
-	/// </summary>
-	private void PopulateOptions(IReadOnlyList<QuestionOptionInput> options)
-	{
-		ArgumentNullException.ThrowIfNull(options);
-
-		if (options.Count == 0)
-		{
-			return;
-		}
-
-		if (Type == QuestionType.YesNo)
-		{
-			throw new DomainRuleViolationException(
-				"A yes/no question has exactly two answers, yes and no. It cannot be given more, and it has no default.");
-		}
-
-		if (!ExpectsOptions)
-		{
-			throw new DomainRuleViolationException($"A {Type} question does not have options.");
-		}
-
-		for (var i = 0; i < options.Count; i++)
-		{
-			var input = options[i];
-			var normalized = QuestionKey.Normalize(input.Code);
-
-			if (_options.Exists(o => o.Code == normalized))
-			{
-				throw new DomainRuleViolationException($"This question already has an option coded '{normalized}'.");
-			}
-
-			_options.Add(QuestionRevisionOption.Create(Id, normalized, i, input.LabelEn, input.LabelFr, input.SourceItemId));
-		}
+			groupedUnderQuestionId, at);
 	}
 
 	/// <summary>
@@ -522,7 +398,7 @@ public class QuestionRevision
 			? string.Equals(parentAnswerValue, "yes", StringComparison.Ordinal)
 			: DependsOnOptionCode is { } requiredOptionCode
 			  && string.Equals(
-				  parentRevision.Option(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);
+				  parent.Choice(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);
 	}
 
 	private static string NotBlank(string label)

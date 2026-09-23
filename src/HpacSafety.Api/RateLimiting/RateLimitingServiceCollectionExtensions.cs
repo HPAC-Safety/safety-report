@@ -10,8 +10,9 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Api.RateLimiting;
 
 /// <summary>
-///     Registers the two <c>RateLimiter</c> policies this API applies: public
-///     submission (by trusted client IP) and sign-in (by attempted identity).
+///     Registers the <c>RateLimiter</c> policies this API applies: public
+///     submission and attachment upload (by trusted client IP) and sign-in (by
+///     attempted identity).
 ///     ASP.NET Core's built-in middleware, not a third-party package — see
 ///     issue #15.
 /// </summary>
@@ -35,27 +36,13 @@ public static class RateLimitingServiceCollectionExtensions
 		{
 			limiterOptions.OnRejected = OnRejected;
 
-			limiterOptions.AddPolicy(RateLimitPolicies.PublicSubmission, httpContext =>
-			{
-				var options = httpContext.RequestServices
-					.GetRequiredService<IOptions<RateLimitingOptions>>().Value.PublicSubmission;
+			limiterOptions.AddPolicy(
+				RateLimitPolicies.PublicSubmission,
+				httpContext => ByClientIp(httpContext, options => options.PublicSubmission));
 
-				// The Forwarded Headers middleware (configured in Program.cs) has
-				// already rewritten this to the real client IP when the request
-				// came through the trusted ALB hop; otherwise it is the direct
-				// connection's own address. Either way this is never a spoofable
-				// header read a second time here.
-				var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-
-				return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
-				{
-					PermitLimit = options.PermitLimit,
-					Window = TimeSpan.FromSeconds(options.WindowSeconds),
-					SegmentsPerWindow = 4,
-					QueueLimit = options.QueueLimit,
-					QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-				});
-			});
+			limiterOptions.AddPolicy(
+				RateLimitPolicies.AttachmentUpload,
+				httpContext => ByClientIp(httpContext, options => options.AttachmentUpload));
 
 			limiterOptions.AddPolicy(RateLimitPolicies.SignIn, httpContext =>
 			{
@@ -129,6 +116,29 @@ public static class RateLimitingServiceCollectionExtensions
 			}
 
 			await next(context).ConfigureAwait(false);
+		});
+	}
+
+	private static RateLimitPartition<string> ByClientIp(
+		HttpContext httpContext,
+		Func<RateLimitingOptions, SlidingWindowPolicyOptions> select)
+	{
+		var options = select(httpContext.RequestServices.GetRequiredService<IOptions<RateLimitingOptions>>().Value);
+
+		// The Forwarded Headers middleware (configured in Program.cs) has
+		// already rewritten this to the real client IP when the request
+		// came through the trusted ALB hop; otherwise it is the direct
+		// connection's own address. Either way this is never a spoofable
+		// header read a second time here.
+		var partitionKey = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+		return RateLimitPartition.GetSlidingWindowLimiter(partitionKey, _ => new SlidingWindowRateLimiterOptions
+		{
+			PermitLimit = options.PermitLimit,
+			Window = TimeSpan.FromSeconds(options.WindowSeconds),
+			SegmentsPerWindow = 4,
+			QueueLimit = options.QueueLimit,
+			QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
 		});
 	}
 

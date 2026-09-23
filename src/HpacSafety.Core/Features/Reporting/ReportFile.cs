@@ -26,8 +26,30 @@ public class ReportFile
 					  string contentType,
 					  long byteSize,
 					  DateTimeOffset uploadedAt)
+		: this(TinyId.New(), reportId, blobKey, contentType, byteSize, originalFileName: null, uploadedAt)
 	{
-		Id = TinyId.New();
+	}
+
+	/// <summary>
+	///     Records a claimed upload under the id its blobs are already named by, with
+	///     the reporter's filename (ADR-0097). The name is sanitized here, so no
+	///     caller can store one that was not.
+	/// </summary>
+	public ReportFile(TinyId id,
+					  TinyId reportId,
+					  string blobKey,
+					  string contentType,
+					  long byteSize,
+					  string? originalFileName,
+					  DateTimeOffset uploadedAt)
+	{
+		if (id.IsEmpty)
+		{
+			throw new DomainRuleViolationException("A report file needs an id.");
+		}
+
+		Id = id;
+		OriginalFileName = AttachmentFileName.Sanitize(originalFileName);
 		ReportId = reportId;
 		BlobKey = blobKey;
 		ContentType = contentType;
@@ -64,6 +86,14 @@ public class ReportFile
 
 	/// <summary>Key of the EXIF-stripped derivative a reviewer is shown. Documents never have one.</summary>
 	public string? StrippedBlobKey { get; private set; }
+
+	/// <summary>
+	///     The reporter's own name for the file, sanitized, or <see langword="null" />
+	///     when none was given or it sanitized to nothing. Used only as a reviewer's
+	///     download name — never logged, never in a key, never sent to the model or a
+	///     public DTO (ADR-0097).
+	/// </summary>
+	public string? OriginalFileName { get; private init; }
 
 	/// <summary>Content type as sniffed on ingest, never as the client claimed.</summary>
 	public string ContentType { get; private init; }

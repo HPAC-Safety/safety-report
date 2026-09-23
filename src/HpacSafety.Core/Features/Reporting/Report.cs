@@ -185,6 +185,22 @@ public class Report
 		return file;
 	}
 
+	/// <summary>
+	///     Adds a claimed upload under the id its blobs were written with, keeping the
+	///     reporter's sanitized filename (ADR-0097).
+	/// </summary>
+	public ReportFile AddFile(TinyId fileId,
+							  string blobKey,
+							  string contentType,
+							  long byteSize,
+							  string? originalFileName,
+							  DateTimeOffset uploadedAt)
+	{
+		var file = new ReportFile(fileId, Id, blobKey, contentType, byteSize, originalFileName, uploadedAt);
+		_files.Add(file);
+		return file;
+	}
+
 	/// <summary>Attaches the report's bilingual summary, once the Worker has produced one.</summary>
 	public void AttachSummary(Summary summary)
 	{

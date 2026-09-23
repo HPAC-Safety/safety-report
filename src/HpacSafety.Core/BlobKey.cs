@@ -3,17 +3,17 @@ namespace HpacSafety.Core;
 /// <summary>
 ///     The name of one object in private storage, in one of exactly three shapes:
 ///     <code>
-/// quarantine/&lt;report id&gt;/&lt;file&gt;   unverified, expired by lifecycle rule
+/// quarantine/&lt;upload id&gt;              an unclaimed upload, expired by lifecycle rule
 /// &lt;report id&gt;/original/&lt;file&gt;     the private source record
 /// &lt;report id&gt;/stripped/&lt;file&gt;     what a reviewer is shown
 /// </code>
 ///     <para>
 ///         All of a report's media lives in a directory named with that report's id, so
 ///         everything belonging to one report is a single literal prefix. Quarantine is
-///         the deliberate exception and sits at the top level, because an S3 lifecycle
-///         filter matches a literal prefix and cannot express <c>*/quarantine/</c>. The
-///         report id is still the next segment, so per-report enumeration stays one
-///         prefix either way. See ADR-0026.
+///         the deliberate exception: an upload waits there before any report exists,
+///         named only by its <see cref="Core.UploadId" />, and it sits at the top level
+///         because an S3 lifecycle filter matches a literal prefix and cannot express
+///         <c>*/quarantine/</c>. See ADR-0026 and ADR-0096.
 ///     </para>
 ///     <para>
 ///         A value object rather than a <c>string</c> for two reasons. A key is
@@ -45,7 +45,7 @@ public readonly record struct BlobKey
 	/// <summary>The longest file-name segment a key may carry.</summary>
 	public const int MaxFileNameLength = 128;
 
-	private BlobKey(string reportId,
+	private BlobKey(string? reportId,
 					MediaCompartment compartment,
 					string fileName)
 	{
@@ -54,28 +54,47 @@ public readonly record struct BlobKey
 		FileName = fileName;
 	}
 
-	/// <summary>The report every byte under this key belongs to.</summary>
-	public string ReportId { get; }
+	/// <summary>
+	///     The report every byte under this key belongs to, or <see langword="null" />
+	///     for an unclaimed upload in quarantine, which belongs to no report yet.
+	/// </summary>
+	public string? ReportId { get; }
 
 	/// <summary>Which compartment the object lives in.</summary>
 	public MediaCompartment Compartment { get; }
 
-	/// <summary>The final path segment.</summary>
+	/// <summary>The final path segment. For a quarantined upload, its upload id.</summary>
 	public string FileName { get; }
 
 	/// <summary>The key as stored.</summary>
 	public string Value =>
 		Compartment == MediaCompartment.Quarantine
-			? $"{QuarantineSegment}/{ReportId}/{FileName}"
+			? $"{QuarantineSegment}/{FileName}"
 			: $"{ReportId}/{SegmentFor(Compartment)}/{FileName}";
 
-	/// <summary>Builds a key for one report's media in one compartment.</summary>
+	/// <summary>The quarantine key an unclaimed upload waits under.</summary>
+	public static BlobKey ForUpload(UploadId uploadId)
+	{
+		if (uploadId.Value.Length != UploadId.Length)
+		{
+			throw new DomainRuleViolationException("A quarantine key needs a minted upload id.");
+		}
+
+		return new BlobKey(null, MediaCompartment.Quarantine, uploadId.Value);
+	}
+
+	/// <summary>Builds a key for one report's media in its original or stripped compartment.</summary>
 	public static BlobKey For(string reportId,
 							  MediaCompartment compartment,
 							  string fileName)
 	{
 		ArgumentNullException.ThrowIfNull(reportId);
 		ArgumentNullException.ThrowIfNull(fileName);
+
+		if (compartment == MediaCompartment.Quarantine)
+		{
+			throw new DomainRuleViolationException("A quarantine key is named by an upload id, not a report.");
+		}
 
 		if (!IsReportId(reportId))
 		{
@@ -122,14 +141,22 @@ public readonly record struct BlobKey
 		}
 
 		var segments = candidate.Split('/');
+
+		if (segments.Length == 2
+			&& string.Equals(segments[0], QuarantineSegment, StringComparison.Ordinal))
+		{
+			if (!UploadId.TryParse(segments[1], out var uploadId))
+			{
+				return false;
+			}
+
+			key = ForUpload(uploadId);
+			return true;
+		}
+
 		if (segments.Length != 3)
 		{
 			return false;
-		}
-
-		if (string.Equals(segments[0], QuarantineSegment, StringComparison.Ordinal))
-		{
-			return TryBuild(segments[1], MediaCompartment.Quarantine, segments[2], out key);
 		}
 
 		var compartment = segments[1] switch
@@ -145,7 +172,12 @@ public readonly record struct BlobKey
 	/// <summary>The same report's same file, in another compartment.</summary>
 	public BlobKey In(MediaCompartment compartment)
 	{
-		return For(ReportId, compartment, FileName);
+		if (ReportId is not { } reportId)
+		{
+			throw new DomainRuleViolationException("An unclaimed upload belongs to no report and has no other compartment.");
+		}
+
+		return For(reportId, compartment, FileName);
 	}
 
 	/// <inheritdoc />
@@ -154,7 +186,7 @@ public readonly record struct BlobKey
 		return Value;
 	}
 
-	private static bool TryBuild(string reportId,
+	private static bool TryBuild(string? reportId,
 								 MediaCompartment compartment,
 								 string fileName,
 								 out BlobKey key)
@@ -208,8 +240,8 @@ public readonly record struct BlobKey
 
 	private static bool IsFileName(string? candidate)
 	{
-		// A leading dot would make a hidden file on disk, and "." and ".." are
-		// the traversal FileSystemBlobStore must never see.
+		// A leading dot would make a hidden object in a listing, and "." and ".."
+		// are path traversal to anything that ever maps a key onto a directory.
 		if (candidate is not { Length: > 0 }
 			|| candidate.Length > MaxFileNameLength
 			|| candidate[0] == '.')

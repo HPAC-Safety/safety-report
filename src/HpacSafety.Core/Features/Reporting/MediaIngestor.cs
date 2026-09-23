@@ -3,15 +3,16 @@ using System.Security.Cryptography;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-///     Turns bytes a browser dropped into quarantine into something this system is
-///     willing to keep — and, where it can, into something a reviewer may safely be
-///     shown.
+///     Judges a reporter's upload, then turns a claimed one into something this
+///     system is willing to keep — and, where it can, into something a reviewer may
+///     safely be shown.
 ///     <para>
-///         The order is the point. Sniff, validate, then <i>promote</i>: nothing leaves
-///         quarantine until this system has decided what it is. A refused upload is
-///         simply never promoted, so it needs no delete — it expires where it landed,
-///         through a bucket lifecycle rule. That is deliberate: no code path exists
-///         which could later be pointed at a real report's media.
+///         The order is the point. <see cref="Inspect" /> sniffs and validates an upload
+///         before it is ever stored, so a refused file never reaches quarantine at all.
+///         <see cref="Ingest" /> runs when a submission claims the upload: it judges the
+///         bytes again, then <i>promotes</i> them into the report's own compartments
+///         under a new name. An upload nobody claims is never promoted, and expires
+///         where it landed through a bucket lifecycle rule (ADR-0096).
 ///     </para>
 ///     <para>
 ///         A format this system cannot strip is still promoted, because the original is
@@ -64,18 +65,65 @@ public sealed class MediaIngestor
 	}
 
 	/// <summary>
-	///     Reads the quarantined upload, judges it, and on acceptance promotes it to
-	///     the private source record — writing a stripped derivative alongside when the
-	///     format allows one.
+	///     Judges an upload before it is stored: its size, its sniffed format, and
+	///     whether that format is what the browser declared.
+	/// </summary>
+	/// <param name="content">
+	///     The whole upload, already bounded by the caller and seekable, positioned
+	///     anywhere.
+	/// </param>
+	/// <param name="declaredContentType">The browser's <c>Content-Type</c> — evidence, never authority.</param>
+	/// <param name="cancellationToken">Cancels the sniff.</param>
+	public async Task<MediaValidation> Inspect(
+		Stream content,
+		string? declaredContentType,
+		CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(content);
+
+		if (!content.CanSeek)
+		{
+			throw new ArgumentException("An upload is inspected from a seekable copy.", nameof(content));
+		}
+
+		var byteSize = content.Length;
+		if (byteSize <= 0)
+		{
+			return MediaValidation.Rejected(MediaRejectionReason.Empty);
+		}
+
+		if (byteSize > _policy.MaxByteSize)
+		{
+			return MediaValidation.Rejected(MediaRejectionReason.TooLarge);
+		}
+
+		content.Position = 0;
+		var sniffed = await _sniffer.Sniff(content, cancellationToken).ConfigureAwait(false);
+
+		return _policy.Validate(declaredContentType, sniffed, byteSize);
+	}
+
+	/// <summary>
+	///     Reads a claimed upload from quarantine, judges it again, and on acceptance
+	///     promotes it to <paramref name="reportId" />'s private source record, named by
+	///     the report file's own <paramref name="fileId" /> — writing a stripped
+	///     derivative alongside when the format allows one.
 	/// </summary>
 	public async Task<MediaIngestOutcome> Ingest(
 		BlobKey quarantineKey,
-		string? declaredContentType,
+		TinyId reportId,
+		TinyId fileId,
 		CancellationToken cancellationToken)
 	{
 		if (quarantineKey.Compartment is not MediaCompartment.Quarantine)
 		{
 			throw new DomainRuleViolationException("Ingest reads from quarantine and nowhere else.");
+		}
+
+		if (reportId.IsEmpty
+			|| fileId.IsEmpty)
+		{
+			throw new DomainRuleViolationException("A claimed upload is promoted into a report file.");
 		}
 
 		// Buffered rather than streamed past this point: the bytes are read three
@@ -113,7 +161,11 @@ public sealed class MediaIngestor
 		original.Position = 0;
 		var sniffed = await _sniffer.Sniff(original, cancellationToken).ConfigureAwait(false);
 
-		var verdict = _policy.Validate(declaredContentType, sniffed, byteSize);
+		// The declared type was checked against the sniff when the file was
+		// uploaded (Inspect). Stored bytes carry no declaration of their own, so
+		// the sniff stands in for it here and only the format and size rules can
+		// still refuse.
+		var verdict = _policy.Validate(sniffed?.ContentType, sniffed, byteSize);
 		if (!verdict.IsAccepted)
 		{
 			return MediaIngestOutcome.Rejected(verdict.RejectionReason);
@@ -121,7 +173,10 @@ public sealed class MediaIngestor
 
 		var sha256 = Convert.ToHexStringLower(SHA256.HashData(original.GetBuffer().AsSpan(0, (int)byteSize)));
 
-		var originalKey = quarantineKey.In(MediaCompartment.Original);
+		// The report file's id rather than the upload id: the upload id was a
+		// capability the browser held, and a report's keys must not be derivable
+		// from it. The row and its bytes then share one identifier (ADR-0097).
+		var originalKey = BlobKey.For(reportId.Value, MediaCompartment.Original, fileId.Value);
 		original.Position = 0;
 		await _blobStore.Write(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
 
@@ -143,7 +198,7 @@ public sealed class MediaIngestor
 				return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
 			}
 
-			var remuxedKey = quarantineKey.In(MediaCompartment.Stripped);
+			var remuxedKey = originalKey.In(MediaCompartment.Stripped);
 			remuxed.Position = 0;
 			await _blobStore
 				.Write(remuxedKey, remuxed, verdict.Type.ContentType, cancellationToken)
@@ -164,7 +219,7 @@ public sealed class MediaIngestor
 		using var stripped = new MemoryStream();
 		await _stripper.Strip(original, stripped, verdict.Type, cancellationToken).ConfigureAwait(false);
 
-		var derivativeKey = quarantineKey.In(MediaCompartment.Stripped);
+		var derivativeKey = originalKey.In(MediaCompartment.Stripped);
 		stripped.Position = 0;
 		await _blobStore.Write(derivativeKey, stripped, derivativeType.ContentType, cancellationToken).ConfigureAwait(false);
 

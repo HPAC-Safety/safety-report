@@ -261,14 +261,6 @@ public sealed class MediaValidationSteps
 			return _blobs[key.Value];
 		}
 
-		public Task<Uri> CreateUploadUrl(BlobKey key,
-										 string contentType,
-										 TimeSpan lifetime,
-										 CancellationToken cancellationToken)
-		{
-			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=put&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
-		}
-
 		public Task<Uri> CreateReadUrl(BlobKey key,
 									   string downloadFileName,
 									   TimeSpan lifetime,
@@ -291,6 +283,19 @@ public sealed class MediaValidationSteps
 			using var buffer = new MemoryStream();
 			await content.CopyToAsync(buffer, cancellationToken);
 			_blobs[key.Value] = buffer.ToArray();
+		}
+
+		public Task<bool> Exists(BlobKey key,
+								 CancellationToken cancellationToken)
+		{
+			return Task.FromResult(_blobs.ContainsKey(key.Value));
+		}
+
+		public Task Delete(BlobKey key,
+						   CancellationToken cancellationToken)
+		{
+			_blobs.Remove(key.Value);
+			return Task.CompletedTask;
 		}
 	}
 }

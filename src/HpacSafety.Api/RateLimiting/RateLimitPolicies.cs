@@ -7,6 +7,13 @@ public static class RateLimitPolicies
 	public const string PublicSubmission = "public-submission";
 
 	/// <summary>
+	///     Applied to <c>POST</c> and <c>DELETE /api/v1/uploads</c>. Partitioned by
+	///     trusted client IP, and looser than submission: one report legitimately
+	///     uploads, cancels, and removes several files. See ADR-0096.
+	/// </summary>
+	public const string AttachmentUpload = "attachment-upload";
+
+	/// <summary>
 	///     Applied to <c>POST /api/auth/token</c>. Partitioned by the attempted
 	///     identity, not by IP — the same reporter's IP legitimately submits many
 	///     reports, but nobody legitimately attempts many different sign-ins from

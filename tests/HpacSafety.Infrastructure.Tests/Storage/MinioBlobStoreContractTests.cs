@@ -1,8 +1,10 @@
 using System.Net.Http.Headers;
 using Amazon.Runtime;
 using Amazon.S3;
+using Amazon.S3.Model;
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Storage;
+using Shouldly;
 using Testcontainers.Minio;
 
 namespace HpacSafety.Infrastructure.Tests.Storage;
@@ -54,6 +56,17 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 		// system ever adds one. See docs/data-handling.md.
 		await _s3.PutBucketAsync(BucketName, CancellationToken.None);
 
+		// Versioned, like the production bucket (infra/storage.tf), so that
+		// deleting an upload is proven against the case where a plain delete
+		// would only leave a marker over the bytes.
+		await _s3.PutBucketVersioningAsync(
+			new PutBucketVersioningRequest
+			{
+				BucketName = BucketName,
+				VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled },
+			},
+			CancellationToken.None);
+
 		await base.InitializeAsync();
 	}
 
@@ -68,17 +81,6 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 		return Task.FromResult<IBlobStore>(new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = BucketName }, TimeProvider.System));
 	}
 
-	protected override async Task<bool> TryUpload(Uri uploadUrl,
-												  byte[] content,
-												  string contentType)
-	{
-		using var body = new ByteArrayContent(content);
-		body.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-
-		using var response = await _http.PutAsync(uploadUrl, body, CancellationToken.None);
-		return response.IsSuccessStatusCode;
-	}
-
 	protected override async Task<bool> TryRead(Uri readUrl)
 	{
 		using var response = await _http.GetAsync(readUrl, CancellationToken.None);
@@ -89,5 +91,48 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 										 BlobKey key)
 	{
 		return new UriBuilder(url) { Path = $"/{BucketName}/{key.Value}" }.Uri;
+	}
+
+	[Fact]
+	public async Task GivenUploadWrittenTwice_WhenDeleted_ThenNoVersionOfItRemains()
+	{
+		// Given
+		var key = BlobKey.ForUpload(UploadId.New());
+		foreach (var bytes in new byte[][] { [1], [2] })
+		{
+			using var source = new MemoryStream(bytes);
+			await Store.Write(key, source, "image/jpeg", CancellationToken.None);
+		}
+
+		// When
+		await Store.Delete(key, CancellationToken.None);
+
+		// Then
+		// No delete marker hiding the bytes: every version is gone (ADR-0096).
+		var versions = await _s3.ListVersionsAsync(
+			new ListVersionsRequest { BucketName = BucketName, Prefix = key.Value },
+			CancellationToken.None);
+		(versions.Versions ?? []).ShouldBeEmpty();
+	}
+
+	[Fact]
+	public async Task GivenAccentedReporterFileName_WhenReadUrlIsUsed_ThenDownloadIsForcedUnderThatName()
+	{
+		// Given
+		var key = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Original, "Xk3jR9pQ2mZ");
+		using (var source = new MemoryStream([1, 2, 3]))
+		{
+			await Store.Write(key, source, "application/pdf", CancellationToken.None);
+		}
+
+		// When
+		var url = await Store.CreateReadUrl(key, "Rapport d'accident é.pdf", TimeSpan.FromMinutes(5), CancellationToken.None);
+		using var response = await _http.GetAsync(url, CancellationToken.None);
+
+		// Then
+		response.IsSuccessStatusCode.ShouldBeTrue();
+		var disposition = response.Content.Headers.ContentDisposition!;
+		disposition.DispositionType.ShouldBe("attachment");
+		disposition.FileNameStar.ShouldBe("Rapport d'accident é.pdf");
 	}
 }

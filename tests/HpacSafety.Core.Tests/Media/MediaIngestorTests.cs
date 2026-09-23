@@ -16,8 +16,11 @@ namespace HpacSafety.Core.Tests.Media;
 public class MediaIngestorTests
 {
 	private const string ReportId = "dQw4w9WgXcQ";
+	private const string FileIdValue = "kJQP7kiw5Fk";
 
-	private static readonly BlobKey Quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
+	private static readonly TinyId Report = TinyId.Parse(ReportId);
+	private static readonly TinyId FileId = TinyId.Parse(FileIdValue);
+	private static readonly BlobKey Quarantined = BlobKey.ForUpload(UploadId.New());
 	private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
 	private static MediaIngestor Ingestor(
@@ -45,12 +48,12 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, stripper).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, stripper).Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
-		outcome.OriginalKey.Value.ShouldBe("dQw4w9WgXcQ/original/photo.jpg");
-		outcome.DerivativeKey.Value.ShouldBe("dQw4w9WgXcQ/stripped/photo.jpg");
+		outcome.OriginalKey.Value.ShouldBe("dQw4w9WgXcQ/original/kJQP7kiw5Fk");
+		outcome.DerivativeKey.Value.ShouldBe("dQw4w9WgXcQ/stripped/kJQP7kiw5Fk");
 		store.Read(outcome.OriginalKey).ShouldBe(content);
 		store.Read(outcome.DerivativeKey).ShouldNotBe(content);
 		stripper.Invocations.ShouldBe(1);
@@ -67,7 +70,7 @@ public class MediaIngestorTests
 
 		// When
 		var outcome = await Ingestor(store, MediaType.Mp4, new RecordingExifStripper(), remuxer: remuxer)
-			.Ingest(Quarantined, "video/mp4", CancellationToken.None);
+			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
@@ -88,7 +91,7 @@ public class MediaIngestorTests
 		// When
 		var outcome = await Ingestor(
 				store, MediaType.QuickTime, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(Quarantined, "video/quicktime", CancellationToken.None);
+			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then — accepted and kept, with nothing a reviewer may be shown inline
 		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
@@ -107,7 +110,7 @@ public class MediaIngestorTests
 		// When
 		await Ingestor(
 				store, MediaType.QuickTime, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(Quarantined, "video/quicktime", CancellationToken.None);
+			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		store.Keys.ShouldNotContain(key => key.Contains("/stripped/", StringComparison.Ordinal));
@@ -122,7 +125,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		await Ingestor(store, MediaType.Mp4, stripper).Ingest(Quarantined, "video/mp4", CancellationToken.None);
+		await Ingestor(store, MediaType.Mp4, stripper).Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		stripper.Invocations.ShouldBe(0);
@@ -138,7 +141,7 @@ public class MediaIngestorTests
 		var expected = Convert.ToHexStringLower(SHA256.HashData(content));
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		outcome.ContentType.ShouldBe(MediaType.Jpeg);
@@ -154,13 +157,13 @@ public class MediaIngestorTests
 		// cannot be remuxed is retained this way (REQ-MED-015)
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-mp4-bytes");
-		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
+		var quarantined = BlobKey.ForUpload(UploadId.New());
 		store.Seed(quarantined, content);
 		var stripper = new RecordingExifStripper();
 
 		// When
 		var outcome = await Ingestor(store, MediaType.Mp4, stripper, remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(quarantined, "video/mp4", CancellationToken.None);
+			.Ingest(quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
@@ -177,17 +180,17 @@ public class MediaIngestorTests
 		// Given — a retained video keeps its metadata, so the one thing that must
 		// never happen is falling through to it as though it were a derivative
 		var store = new InMemoryBlobStore();
-		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "clip.mp4");
+		var quarantined = BlobKey.ForUpload(UploadId.New());
 		store.Seed(quarantined, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
 
 		// When
 		var outcome = await Ingestor(
 				store, MediaType.Mp4, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(quarantined, "video/mp4", CancellationToken.None);
+			.Ingest(quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
-		store.Keys.ShouldNotContain("dQw4w9WgXcQ/stripped/clip.mp4");
+		store.Keys.ShouldNotContain("dQw4w9WgXcQ/stripped/kJQP7kiw5Fk");
 	}
 
 	[Fact]
@@ -196,12 +199,12 @@ public class MediaIngestorTests
 		// Given
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-pdf-bytes");
-		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "report.pdf");
+		var quarantined = BlobKey.ForUpload(UploadId.New());
 		store.Seed(quarantined, content);
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Pdf, stripper).Ingest(quarantined, "application/pdf", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Pdf, stripper).Ingest(quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		// A document has no derivative at all — it is validated and kept
@@ -214,20 +217,105 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
-	public async Task GivenFileClaimingImageJpegButContainingPng_WhenIngested_ThenRejected()
+	public async Task GivenFileClaimingImageJpegButContainingPng_WhenInspected_ThenRejected()
 	{
 		// Given
-		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-png-bytes"));
+		using var upload = new MemoryStream(Encoding.ASCII.GetBytes("pretend-png-bytes"));
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Png, stripper).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
+		var verdict = await Ingestor(new InMemoryBlobStore(), MediaType.Png, stripper)
+			.Inspect(upload, "image/jpeg", CancellationToken.None);
 
 		// Then
-		outcome.Status.ShouldBe(MediaIngestStatus.Rejected);
-		outcome.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
+		verdict.IsAccepted.ShouldBeFalse();
+		verdict.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
 		stripper.Invocations.ShouldBe(0);
+	}
+
+	[Fact]
+	public async Task GivenAllowlistedFileDeclaredCorrectly_WhenInspected_ThenAcceptedAsItsSniffedType()
+	{
+		// Given
+		using var upload = new MemoryStream(Encoding.ASCII.GetBytes("pretend-pdf-bytes"));
+
+		// When
+		var verdict = await Ingestor(new InMemoryBlobStore(), MediaType.Pdf, new RecordingExifStripper())
+			.Inspect(upload, "application/pdf", CancellationToken.None);
+
+		// Then
+		verdict.IsAccepted.ShouldBeTrue();
+		verdict.Type.ShouldBe(MediaType.Pdf);
+	}
+
+	[Fact]
+	public async Task GivenEmptyUpload_WhenInspected_ThenRejectedAsEmpty()
+	{
+		// Given
+		using var upload = new MemoryStream();
+
+		// When
+		var verdict = await Ingestor(new InMemoryBlobStore(), MediaType.Jpeg, new RecordingExifStripper())
+			.Inspect(upload, "image/jpeg", CancellationToken.None);
+
+		// Then
+		verdict.RejectionReason.ShouldBe(MediaRejectionReason.Empty);
+	}
+
+	[Fact]
+	public async Task GivenUploadOverSizeLimit_WhenInspected_ThenRejectedAsTooLarge()
+	{
+		// Given
+		using var upload = new MemoryStream(new byte[64]);
+
+		// When
+		var verdict = await Ingestor(new InMemoryBlobStore(), MediaType.Jpeg, new RecordingExifStripper(), 32)
+			.Inspect(upload, "image/jpeg", CancellationToken.None);
+
+		// Then
+		verdict.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
+	}
+
+	[Fact]
+	public async Task GivenUnseekableStream_WhenInspected_ThenRefuses()
+	{
+		// Given
+		var ingestor = Ingestor(new InMemoryBlobStore(), MediaType.Jpeg, new RecordingExifStripper());
+
+		// When / Then
+		await Should.ThrowAsync<ArgumentException>(() =>
+			ingestor.Inspect(new SyntheticOversizedStream(10), "image/jpeg", CancellationToken.None));
+	}
+
+	[Fact]
+	public async Task GivenClaimedUpload_WhenIngested_ThenNamedByFileIdNeverByUploadId()
+	{
+		// Given
+		var store = new InMemoryBlobStore();
+		var upload = UploadId.New();
+		store.Seed(BlobKey.ForUpload(upload), Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
+
+		// When
+		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
+			.Ingest(BlobKey.ForUpload(upload), Report, FileId, CancellationToken.None);
+
+		// Then
+		outcome.OriginalKey.FileName.ShouldBe(FileIdValue);
+		outcome.DerivativeKey.FileName.ShouldBe(FileIdValue);
+		outcome.OriginalKey.Value.ShouldNotContain(upload.Value);
+	}
+
+	[Fact]
+	public async Task GivenNoFileId_WhenIngested_ThenRefuses()
+	{
+		// Given
+		var store = new InMemoryBlobStore();
+		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
+				.Ingest(Quarantined, Report, default, CancellationToken.None));
 	}
 
 	[Fact]
@@ -238,11 +326,11 @@ public class MediaIngestorTests
 		store.Seed(Quarantined, Encoding.ASCII.GetBytes("this is not an image at all"));
 
 		// When
-		var outcome = await Ingestor(store, null, new RecordingExifStripper()).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, null, new RecordingExifStripper()).Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
-		// The bytes stay where the browser put them and expire on their own. No
-		// delete exists, deliberately — see ADR-0026.
+		// The bytes stay in quarantine, where the lifecycle rule expires them
+		// (ADR-0096); ingest itself never deletes.
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.UnrecognisedContent);
 		store.Keys.ShouldBe([Quarantined.Value]);
 		Should.Throw<DomainRuleViolationException>(() => outcome.OriginalKey);
@@ -267,7 +355,7 @@ public class MediaIngestorTests
 			new FixedClock(Now));
 
 		// When
-		var outcome = await ingestor.Ingest(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await ingestor.Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
@@ -290,7 +378,7 @@ public class MediaIngestorTests
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).Ingest(Quarantined, "image/jpeg", CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).Ingest(Quarantined, Report, FileId, CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
@@ -310,7 +398,7 @@ public class MediaIngestorTests
 		// Ingest reads unverified bytes and nothing else. Pointing it at a
 		// report's private source record would re-run stripping over a file that has
 		// already been accepted, which is not what this is for.
-		await Should.ThrowAsync<DomainRuleViolationException>(() => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(original, "image/jpeg", CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(original, Report, FileId, CancellationToken.None));
 	}
 }
 

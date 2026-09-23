@@ -1,3 +1,4 @@
+using Amazon.Runtime;
 using Amazon.S3;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
@@ -18,15 +19,16 @@ public static class MediaServiceCollectionExtensions
 	/// </summary>
 	/// <param name="services">The container.</param>
 	/// <param name="configuration">Application configuration.</param>
-	/// <param name="isDevelopment">
-	///     True only in Development. A developer's machine writes quarantine,
-	///     original, and stripped bytes to local disk rather than a real bucket, so
-	///     the same code path runs everywhere and only the adapter differs.
-	/// </param>
+	/// <remarks>
+	///     There is one storage adapter, <see cref="S3BlobStore" />, in every
+	///     environment. Configuration decides where it points: with no
+	///     <see cref="S3BlobStoreOptions.ServiceUrl" /> it is AWS S3, authenticated by
+	///     the ECS task role; with one it is the MinIO container docker-compose runs
+	///     for development (ADR-0096).
+	/// </remarks>
 	public static IServiceCollection AddHpacSafetyMedia(
 		this IServiceCollection services,
-		IConfiguration configuration,
-		bool isDevelopment)
+		IConfiguration configuration)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);
@@ -46,29 +48,43 @@ public static class MediaServiceCollectionExtensions
 		services.AddSingleton<IVideoRemuxer>(provider =>
 			new FfmpegVideoRemuxer(provider.GetRequiredService<ILogger<FfmpegVideoRemuxer>>()));
 
-		if (isDevelopment)
+		services.Configure<S3BlobStoreOptions>(configuration.GetSection("HpacSafety:Media:Storage:S3"));
+		services.AddSingleton<IBlobStore>(provider =>
 		{
-			services.Configure<FileSystemBlobStoreOptions>(
-				configuration.GetSection("HpacSafety:Media:Storage:FileSystem"));
-			services.AddSingleton<IBlobStore>(provider =>
-				new FileSystemBlobStore(
-					provider.GetRequiredService<IOptions<FileSystemBlobStoreOptions>>().Value,
-					provider.GetRequiredService<TimeProvider>()));
-		}
-		else
-		{
-			services.Configure<S3BlobStoreOptions>(configuration.GetSection("HpacSafety:Media:Storage:S3"));
-			services.AddSingleton<IAmazonS3>(_ => new AmazonS3Client());
-			services.AddSingleton<IBlobStore>(provider =>
-				new S3BlobStore(
-					provider.GetRequiredService<IAmazonS3>(),
-					provider.GetRequiredService<IOptions<S3BlobStoreOptions>>().Value,
-					provider.GetRequiredService<TimeProvider>()));
-		}
+			var options = provider.GetRequiredService<IOptions<S3BlobStoreOptions>>().Value;
+			var s3 = CreateClient(options, options.ServiceUrl);
+			var signer = string.IsNullOrWhiteSpace(options.PublicServiceUrl)
+				? null
+				: CreateClient(options, options.PublicServiceUrl);
+
+			return new S3BlobStore(s3, options, provider.GetRequiredService<TimeProvider>(), signer);
+		});
 
 		services.AddScoped<MediaIngestor>();
 		services.AddScoped<ReviewerMediaLink>();
 
 		return services;
+	}
+
+	private static AmazonS3Client CreateClient(S3BlobStoreOptions options,
+											   string serviceUrl)
+	{
+		if (string.IsNullOrWhiteSpace(serviceUrl))
+		{
+			// AWS itself: region and credentials come from the environment the
+			// task runs in. No access key is ever configured for production.
+			return new AmazonS3Client();
+		}
+
+		var config = new AmazonS3Config
+		{
+			ServiceURL = serviceUrl,
+			ForcePathStyle = true,
+			AuthenticationRegion = "ca-central-1",
+		};
+
+		return string.IsNullOrWhiteSpace(options.AccessKey)
+			? new AmazonS3Client(config)
+			: new AmazonS3Client(new BasicAWSCredentials(options.AccessKey, options.SecretKey), config);
 	}
 }

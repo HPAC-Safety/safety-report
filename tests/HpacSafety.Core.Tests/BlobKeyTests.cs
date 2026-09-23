@@ -4,9 +4,10 @@ namespace HpacSafety.Core.Tests;
 
 /// <summary>
 ///     A blob key is the only thing standing between an attacker-supplied string and
-///     the filesystem in <c>FileSystemBlobStore</c>, and it is also where the storage
+///     the bucket, and it is also where the storage
 ///     layout stops being a convention and becomes a rule: a key that is not
-///     namespaced by a report id cannot be constructed. See ADR-0026.
+///     namespaced by a report id — or, in quarantine, by an upload id — cannot be
+///     constructed. See ADR-0026 and ADR-0096.
 /// </summary>
 public class BlobKeyTests
 {
@@ -25,23 +26,66 @@ public class BlobKeyTests
 	}
 
 	[Fact]
-	public void GivenUnverifiedUpload_WhenKeyIsBuilt_ThenQuarantineIsTopLevelDirectory()
+	public void GivenUnclaimedUpload_WhenKeyIsBuilt_ThenQuarantineIsTopLevelAndNamedOnlyByUploadId()
 	{
-		// Given / When
-		var key = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
+		// Given
+		var upload = UploadId.New();
+
+		// When
+		var key = BlobKey.ForUpload(upload);
 
 		// Then
-		// Quarantine sits above the report id so that one literal prefix expires
-		// every unverified upload. An S3 lifecycle filter cannot express
-		// "*/quarantine/". See ADR-0026.
-		key.Value.ShouldBe("quarantine/dQw4w9WgXcQ/photo.jpg");
-		key.Value.ShouldStartWith("quarantine/");
+		// Quarantine sits at the top so that one literal prefix expires every
+		// unclaimed upload. An S3 lifecycle filter cannot express
+		// "*/quarantine/". See ADR-0026 and ADR-0096.
+		key.Value.ShouldBe($"quarantine/{upload.Value}");
+		key.Compartment.ShouldBe(MediaCompartment.Quarantine);
+		key.ReportId.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenStoredUploadKey_WhenParsed_ThenRoundTrips()
+	{
+		// Given
+		var upload = UploadId.New();
+
+		// When
+		var key = BlobKey.Parse($"quarantine/{upload.Value}");
+
+		// Then
+		key.ShouldBe(BlobKey.ForUpload(upload));
+		key.FileName.ShouldBe(upload.Value);
+	}
+
+	[Fact]
+	public void GivenQuarantineCompartment_WhenKeyIsBuiltForReport_ThenRefused()
+	{
+		// Given / When / Then
+		// An upload waits in quarantine before any report exists; a report never
+		// owns a quarantine key.
+		Should.Throw<DomainRuleViolationException>(() => BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg"));
+	}
+
+	[Fact]
+	public void GivenUnclaimedUpload_WhenAskedForAnotherCompartment_ThenRefused()
+	{
+		// Given
+		var key = BlobKey.ForUpload(UploadId.New());
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => key.In(MediaCompartment.Original));
+	}
+
+	[Fact]
+	public void GivenDefaultUploadId_WhenKeyIsBuilt_ThenRefused()
+	{
+		// Given / When / Then
+		Should.Throw<DomainRuleViolationException>(() => BlobKey.ForUpload(default));
 	}
 
 	[Theory]
 	[InlineData("dQw4w9WgXcQ/original/photo.jpg", MediaCompartment.Original)]
 	[InlineData("dQw4w9WgXcQ/stripped/photo.jpg", MediaCompartment.Stripped)]
-	[InlineData("quarantine/dQw4w9WgXcQ/photo.jpg", MediaCompartment.Quarantine)]
 	public void GivenStoredKey_WhenParsed_ThenReportAndCompartmentRoundTrip(string candidate,
 																			MediaCompartment expected)
 	{
@@ -81,6 +125,11 @@ public class BlobKeyTests
 	[InlineData("dQw4w9WgXcQextra/original/photo.jpg")]
 	[InlineData("dQw4w9WgXc./original/photo.jpg")]
 	[InlineData("quarantine/short/photo.jpg")]
+	// Quarantine is named by an upload id alone: the old report-shaped key, a
+	// short id, and anything nested are all refused.
+	[InlineData("quarantine/dQw4w9WgXcQ/photo.jpg")]
+	[InlineData("quarantine/tooshort")]
+	[InlineData("quarantine/")]
 	[InlineData("")]
 	[InlineData(null)]
 	public void GivenKeyIsNotOneOfThreeShapes_WhenParsed_ThenRefused(string? candidate)
@@ -140,20 +189,18 @@ public class BlobKeyTests
 	}
 
 	[Fact]
-	public void GivenQuarantinedUpload_WhenMovesCompartment_ThenReportAndFileAreCarriedAcross()
+	public void GivenOriginal_WhenMovesCompartment_ThenReportAndFileAreCarriedAcross()
 	{
 		// Given
-		var quarantined = BlobKey.For(ReportId, MediaCompartment.Quarantine, "photo.jpg");
+		var original = BlobKey.For(ReportId, MediaCompartment.Original, "photo.jpg");
 
 		// When
-		var original = quarantined.In(MediaCompartment.Original);
-		var stripped = quarantined.In(MediaCompartment.Stripped);
+		var stripped = original.In(MediaCompartment.Stripped);
 
 		// Then
-		original.Value.ShouldBe("dQw4w9WgXcQ/original/photo.jpg");
 		stripped.Value.ShouldBe("dQw4w9WgXcQ/stripped/photo.jpg");
-		original.ReportId.ShouldBe(quarantined.ReportId);
-		stripped.FileName.ShouldBe(quarantined.FileName);
+		stripped.ReportId.ShouldBe(original.ReportId);
+		stripped.FileName.ShouldBe(original.FileName);
 		original.ShouldNotBe(stripped);
 	}
 

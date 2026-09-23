@@ -28,17 +28,24 @@ public sealed class AttachmentAccessSteps
 	private string _attachmentId = null!;
 	private HttpResponseMessage _response = null!;
 	private AttachmentLinkPayload? _body;
+	private string? _originalFileName;
 
 	[Given(@"an image or video attachment has finished processing successfully")]
 	public async Task GivenAnImageOrVideoAttachmentHasFinishedProcessingSuccessfully()
 	{
-		await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false);
+		await SeedAsync(MediaType.Jpeg.ContentType, stripped: true, failed: false, originalFileName: "launch-site.jpg");
 	}
 
 	[Given(@"a document attachment has passed validation")]
 	public async Task GivenADocumentAttachmentHasPassedValidation()
 	{
-		await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: false);
+		await SeedAsync(MediaType.Pdf.ContentType, stripped: false, failed: false, originalFileName: "Déclaration du témoin.pdf");
+	}
+
+	[Given(@"a reporter attached ""(.*)"" and its derivative is a JPEG")]
+	public async Task GivenAReporterAttachedAHeicWithAJpegDerivative(string fileName)
+	{
+		await SeedAsync(MediaType.Heic.ContentType, stripped: true, failed: false, originalFileName: fileName);
 	}
 
 	[Given(@"signature validation, decoding, metadata removal, writing, or verification fails for an image")]
@@ -78,12 +85,26 @@ public sealed class AttachmentAccessSteps
 		_body.ExpiresAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
 	}
 
-	[Then(@"the response forces download with a server-minted display name and the header X-Content-Type-Options: nosniff")]
-	public void ThenTheResponseForcesDownloadWithAServerMintedNameAndNosniff()
+	[Then(@"the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff")]
+	public void ThenTheResponseForcesDownloadUnderTheReportersNameAndNosniff()
 	{
-		_body!.FileName.ShouldStartWith(_attachmentId);
+		_body!.FileName.ShouldBe(_originalFileName ?? $"{_attachmentId}.jpg");
+		Uri.UnescapeDataString(_body.Url).ShouldContain("attachment;");
 		_response.Headers.TryGetValues("X-Content-Type-Options", out var values).ShouldBeTrue();
 		values!.ShouldContain("nosniff");
+	}
+
+	[Then(@"the download is named with the reporter's sanitized filename, or a server-minted name when there is none")]
+	public void ThenTheDownloadIsNamedWithTheReportersName()
+	{
+		_body!.FileName.ShouldBe(_originalFileName ?? $"{_attachmentId}.pdf");
+	}
+
+	[Then(@"the download is named ""(.*)""")]
+	public void ThenTheDownloadIsNamed(string expected)
+	{
+		_response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		_body!.FileName.ShouldBe(expected);
 	}
 
 	[Then(@"there is no API blob proxy or public URL")]
@@ -141,16 +162,20 @@ public sealed class AttachmentAccessSteps
 
 	private async Task SeedAsync(string contentType,
 								 bool stripped,
-								 bool failed)
+								 bool failed,
+								 string? originalFileName = null)
 	{
 		var database = await DatabaseAsync();
 
 		var report = new Report(Locale.EnCa, DateTimeOffset.UtcNow);
-		var file = report.AddFile($"{report.Id}/original/attachment.bin", contentType, byteSize: 1024, DateTimeOffset.UtcNow);
+		var fileId = TinyId.New();
+		var file = report.AddFile(
+			fileId, $"{report.Id}/original/{fileId}", contentType, byteSize: 1024, originalFileName, DateTimeOffset.UtcNow);
+		_originalFileName = originalFileName;
 
 		if (stripped)
 		{
-			file.RecordStripped($"{report.Id}/stripped/attachment.bin", DateTimeOffset.UtcNow);
+			file.RecordStripped($"{report.Id}/stripped/{fileId}", DateTimeOffset.UtcNow);
 		}
 
 		if (failed)

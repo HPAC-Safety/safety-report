@@ -49,10 +49,7 @@ public sealed class ReporterChoiceSubmissionSteps
 			},
 		};
 
-		using var content = new MultipartFormDataContent
-		{
-			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" },
-		};
+		using var content = new StringContent(JsonSerializer.Serialize(dto, JsonOptions), System.Text.Encoding.UTF8, "application/json");
 		_response = await reporter.PostAsync(Submit, content);
 	}
 

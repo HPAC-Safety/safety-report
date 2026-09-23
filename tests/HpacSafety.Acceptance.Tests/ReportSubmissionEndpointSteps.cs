@@ -39,6 +39,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private static readonly Uri PublicQuestions = new("/api/v1/questions", UriKind.Relative);
 	private static readonly Uri AwaitingTranslation = new("/api/admin/answers/awaiting-translation", UriKind.Relative);
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
+	private static readonly SemaphoreSlim ConsentGate = new(1, 1);
 	private const string Secret = "Wind picked up on final approach — synthetic narrative for a test only.";
 
 	private HttpClient? _reporter;
@@ -52,6 +53,8 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _answerId;
 	private string? _supersededRevisionId;
 	private string? _problem;
+	private string? _uploadId;
+	private string? _expiredUploadId;
 	private JsonElement? _responseBody;
 	// A value only this scenario submits. Other scenarios submit reports into the
 	// same database in parallel, so "nothing was created" is asserted as "no
@@ -60,9 +63,9 @@ public sealed class ReportSubmissionEndpointSteps
 
 	// --- Background: documented facts about the endpoint, not actions. ---
 
-	[Given(@"the only write endpoint for a reporter is POST \/api\/v1\/reports")]
-	[Given(@"it requires a valid member bearer token")]
-	[Given(@"it accepts multipart\/form-data with one report JSON part and zero or more files parts")]
+	[Given(@"a reporter writes a report through POST \/api\/v1\/reports and an attachment through POST \/api\/v1\/uploads")]
+	[Given(@"both require a valid member bearer token")]
+	[Given(@"the report request is JSON that names each attachment by the upload ID the upload returned")]
 	[Given(@"the bearer token is transport\/security metadata, not persisted report content")]
 	public void GivenBackgroundFact()
 	{
@@ -95,7 +98,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 	[Then(@"the submission DTO contains exactly one answer entry for each of those revisions")]
 	[Then(@"every answer of every type uses ""value"", a single string, alongside the locale it was given in")]
-	[Then(@"file-upload answers additionally use zero-based indexes into the repeated files parts")]
+	[Then(@"file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name")]
 	[Then(@"fields for the other answer shapes are null")]
 	public void ThenTheDtoShapeIsHonored()
 	{
@@ -123,13 +126,13 @@ public sealed class ReportSubmissionEndpointSteps
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
 				new { questionRevisionId = _extraRevisionId, value = (string?)null },
-				new { questionRevisionId = _fileRevisionId, attachmentPartIndexes = Array.Empty<int>() },
+				new { questionRevisionId = _fileRevisionId, attachments = Array.Empty<object>() },
 			},
 		});
 	}
 
 	[Then(@"a skipped answer of any type has a null value")]
-	[Then(@"a skipped file upload has an empty attachment_part_indexes list")]
+	[Then(@"a skipped file upload has an empty attachments list")]
 	public void ThenASkippedAnswerHasANullValue()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -149,6 +152,30 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the API validates the submission")]
 	public async Task WhenTheApiValidatesTheSubmission()
 	{
+		if (_expiredUploadId is not null)
+		{
+			_response = await Post(new
+			{
+				language = "en-CA",
+				answers = new object[]
+				{
+					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+					new { questionRevisionId = _extraRevisionId, value = (string?)_marker },
+					new
+					{
+						questionRevisionId = _fileRevisionId,
+						attachments = new[]
+						{
+							new { uploadId = _uploadId!, fileName = "still-here.pdf" },
+							new { uploadId = _expiredUploadId!, fileName = "gone.pdf" },
+						},
+					},
+				},
+			});
+
+			return;
+		}
+
 		if (_supersededRevisionId is not null)
 		{
 			_response = await Post(new
@@ -529,66 +556,144 @@ public sealed class ReportSubmissionEndpointSteps
 		// harness exists in this suite to assert the negative at runtime.
 	}
 
-	// --- Accepted attachments are streamed into quarantine under a bound ---
+	// --- An attachment is validated under a bound before it is stored ---
 
-	[Given(@"a submission includes one or more files parts")]
-	public async Task GivenASubmissionIncludesFilesParts()
+	[Given(@"a reporter attaches a file")]
+	public async Task GivenAReporterAttachesAFile()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+	}
+
+	[When(@"the API receives the upload")]
+	public async Task WhenTheApiReceivesTheUpload()
+	{
+		_uploadId = await UploadSyntheticPdf();
+	}
+
+	[Then(@"the API reads at most one byte past 50 MB while counting, then inspects the file's signature and validates it")]
+	[Then(@"never buffers the whole file in memory")]
+	public void ThenTheUploadIsBoundedAndInspected()
+	{
+		// The bound itself is proven in HpacSafety.Api.Tests at a 1 KB limit,
+		// where "one byte past" costs nothing to send; here the running host
+		// accepts a real file through that same path.
+		_uploadId.ShouldNotBeNull();
+	}
+
+	[Then(@"writes only an accepted file to the quarantine compartment, under an upload ID the API mints")]
+	public async Task ThenOnlyAnAcceptedFileIsWrittenToQuarantine()
+	{
+		(await QuarantineHolds(_uploadId!)).ShouldBeTrue();
+		UploadId.TryParse(_uploadId, out _).ShouldBeTrue();
+	}
+
+	[Then(@"the upload request carries no filename, and none is persisted or logged for it")]
+	public async Task ThenTheUploadCarriesNoFilename()
+	{
+		// The request body is the file alone — UploadSyntheticPdf sends no
+		// Content-Disposition — and the stored object carries only its type.
+		var metadata = await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, $"quarantine/{_uploadId}");
+		metadata.Metadata.Keys.ShouldBeEmpty();
+		metadata.Headers.ContentDisposition.ShouldBeNullOrEmpty();
+	}
+
+	// --- A submission naming an expired or unknown upload is refused by name ---
+
+	[Given(@"a submission names an upload ID that no longer exists in quarantine")]
+	public async Task GivenASubmissionNamesAnExpiredUpload()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		_extraRevisionId = await CreateSyntheticQuestion("short_text");
+		_fileRevisionId = await CreateSyntheticQuestion("file_upload");
+		_uploadId = await UploadSyntheticPdf();
+
+		// Expired is indistinguishable from never-existed once the lifecycle rule
+		// has run: the key does not resolve.
+		_expiredUploadId = UploadId.New().Value;
+	}
+
+	[Then(@"the API rejects the submission with 400")]
+	public void ThenTheApiRejectsTheSubmissionWith400()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Then(@"the response lists exactly the upload IDs it could not find")]
+	public async Task ThenTheResponseListsExactlyTheMissingUploads()
+	{
+		var problem = await ResponseBody();
+		problem.GetProperty("expiredUploadIds").EnumerateArray().Select(id => id.GetString()).ShouldBe([_expiredUploadId]);
+	}
+
+	[Then(@"no report, answer, file, or outbox row is created")]
+	public async Task ThenNothingIsCreated()
+	{
+		(await AnswerCarryingMarkerExists()).ShouldBeFalse();
+
+		// And the live upload was not consumed by the refused attempt.
+		(await QuarantineHolds(_uploadId!)).ShouldBeTrue();
+	}
+
+	// --- A claimed upload leaves quarantine once the report commits ---
+
+	[Given(@"a submission claims an upload")]
+	public async Task GivenASubmissionClaimsAnUpload()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
 		_fileRevisionId = await CreateSyntheticQuestion("file_upload");
+		_uploadId = await UploadSyntheticPdf();
 	}
 
-	[When(@"the API accepts an attachment")]
-	public async Task WhenTheApiAcceptsAnAttachment()
+	[When(@"the report's transaction commits")]
+	public async Task WhenTheReportsTransactionCommits()
 	{
-		var content = new MultipartFormDataContent
+		_response = await Post(new
 		{
+			language = "en-CA",
+			answers = new object[]
 			{
-				new StringContent(JsonSerializer.Serialize(new
+				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new
 				{
-					language = "en-CA",
-					answers = new object[]
-					{
-						new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-						new { questionRevisionId = _fileRevisionId, attachmentPartIndexes = new[] { 0 } },
-					},
-				}, JsonOptions)),
-				"report"
+					questionRevisionId = _fileRevisionId,
+					attachments = new[] { new { uploadId = _uploadId, fileName = "witness.pdf" } },
+				},
 			},
-		};
-
-		var part = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47, 1, 2, 3, 4]);
-		part.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-		content.Add(part, "files", "not-the-real-filename.png");
-
-		_response = await _reporter!.PostAsync(Submit, content);
+		});
+		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"the API mints an opaque server-side filename\/key")]
-	[Then(@"streams at most 50 MB into the quarantine compartment while computing the actual byte count and inspecting its signature")]
-	[Then(@"never buffers the whole file in memory")]
-	[Then(@"never persists or logs the client filename")]
-	public void ThenTheAttachmentIsAcceptedOpaquely()
+	[Then(@"the claimed bytes live in the report's own compartments")]
+	public async Task ThenTheClaimedBytesLiveInTheReportsCompartments()
 	{
-		// A synthetic, non-decodable PNG proves the streaming/inspection path
-		// runs at all — either accepted (opaque key minted) or rejected by
-		// signature inspection, never the client filename echoed back. A real
-		// image is exercised in HpacSafety.Api.Tests.
-		_response!.StatusCode.ShouldBeOneOf(HttpStatusCode.Accepted, HttpStatusCode.BadRequest);
+		var reportId = (await ResponseBody()).GetProperty("id").GetString()!;
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var file = await database.ReportFiles.SingleAsync(candidate => candidate.ReportId == TinyId.Parse(reportId));
+
+		file.BlobKey.ShouldBe($"{reportId}/original/{file.Id}");
+		await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, file.BlobKey);
+	}
+
+	[Then(@"the upload is removed from quarantine, with the lifecycle rule as the backstop if that removal fails")]
+	public async Task ThenTheUploadIsRemovedFromQuarantine()
+	{
+		(await QuarantineHolds(_uploadId!)).ShouldBeFalse();
 	}
 
 	// --- A valid submission is persisted atomically ---
 
-	[Given(@"a multipart submission passes every validation step")]
-	public async Task GivenAMultipartSubmissionPassesEveryValidationStep()
+	[Given(@"a submission passes every validation step")]
+	public async Task GivenASubmissionPassesEveryValidationStep()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
 		_extraRevisionId = await CreateSyntheticQuestion("long_text");
 	}
 
-	[Then(@"one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file")]
+	[Then(@"one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for each claimed upload, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file")]
 	public async Task ThenOneTransactionPersistsEverything()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
@@ -639,7 +744,7 @@ public sealed class ReportSubmissionEndpointSteps
 		(await AnswerCarryingMarkerExists()).ShouldBeFalse();
 	}
 
-	[Then(@"any already-written quarantine blobs are unreferenced and expire through the storage lifecycle rule")]
+	[Then(@"the uploads it named stay unclaimed in quarantine and expire through the storage lifecycle rule")]
 	public void ThenQuarantineBlobsExpireThroughTheLifecycleRule()
 	{
 		// Infrastructure configuration, not request-time behavior — covered by
@@ -743,6 +848,26 @@ public sealed class ReportSubmissionEndpointSteps
 		});
 	}
 
+	// --- A rate-limited upload is rejected ---
+
+	[Given(@"an upload request arrives")]
+	public async Task GivenAnUploadRequestArrives()
+	{
+		var limited = await BootedApi.RateLimited("AttachmentUpload");
+		_reporter = await BootedApi.SignedInAs(MemberRole.User, limited);
+
+		// The one permit this policy allows, consumed by a real upload.
+		await UploadSyntheticPdf();
+	}
+
+	[When(@"the per-IP upload rate limit is exceeded")]
+	public async Task WhenThePerIpUploadRateLimitIsExceeded()
+	{
+		using var body = new ByteArrayContent("%PDF-1.7\n%%EOF\n"u8.ToArray());
+		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+		_response = await _reporter!.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
+	}
+
 	[Then(@"the API rejects the request with 429 and a safe retry signal")]
 	public void ThenTheApiRejectsTheRequestWith429AndASafeRetrySignal()
 	{
@@ -808,7 +933,7 @@ public sealed class ReportSubmissionEndpointSteps
 		// Already committed by the Given step above.
 	}
 
-	[Then(@"no stored report, answer, file, consent projection, or outbox message records the submitter's subject")]
+	[Then(@"no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject")]
 	[Then(@"no column, join table, or hash anywhere links the report to the member who filed it")]
 	public void ThenNoStoredStateRecordsTheSubmittersSubject()
 	{
@@ -841,13 +966,9 @@ public sealed class ReportSubmissionEndpointSteps
 		return await _reporter!.PostAsync(Submit, ReportPart(dto));
 	}
 
-	private static MultipartFormDataContent ReportPart(object dto)
+	private static StringContent ReportPart(object dto)
 	{
-		var content = new MultipartFormDataContent
-		{
-			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" },
-		};
-		return content;
+		return new StringContent(JsonSerializer.Serialize(dto, JsonOptions), System.Text.Encoding.UTF8, "application/json");
 	}
 
 	private async Task<HttpResponseMessage> MalformedSubmissionFor(string problem)
@@ -904,7 +1025,7 @@ public sealed class ReportSubmissionEndpointSteps
 					},
 				},
 			}),
-			"a duplicate or out-of-range file index" => await Post(new
+			"a malformed upload ID" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
@@ -913,47 +1034,66 @@ public sealed class ReportSubmissionEndpointSteps
 					new
 					{
 						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
-						attachmentPartIndexes = new[] { 0 },
+						attachments = new[] { new { uploadId = "not-an-upload-id", fileName = "a.png" } },
 					},
 				},
 			}),
-			"a files part that is never referenced by any answer" => await PostWithGarbageFile(new
-			{
-				language = "en-CA",
-				answers = new object[] { new { questionRevisionId = consent, value = (string?)"yes" } },
-			}),
-			"a files part referenced by more than one answer" => await PostWithGarbageFile(new
-			{
-				language = "en-CA",
-				answers = new object[]
-				{
-					new { questionRevisionId = consent, value = (string?)"yes" },
-					new
-					{
-						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
-						attachmentPartIndexes = new[] { 0 },
-					},
-					new
-					{
-						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
-						attachmentPartIndexes = new[] { 0 },
-					},
-				},
-			}),
+			"the same upload ID named more than once" => await PostNaming(consent, [UploadId.New().Value, null]),
+			"more upload IDs than the attachment limit" => await PostNaming(
+				consent, [.. Enumerable.Range(0, 6).Select(_ => UploadId.New().Value)]),
 			_ => throw new NotSupportedException($"Unmapped malformed-DTO example: '{problem}'."),
 		};
 	}
 
-	private async Task<HttpResponseMessage> PostWithGarbageFile(object dto)
+	/// <summary>
+	///     Posts one file-upload answer naming these upload ids; a null repeats the
+	///     id before it.
+	/// </summary>
+	private async Task<HttpResponseMessage> PostNaming(string consent,
+													   IReadOnlyList<string?> uploadIds)
 	{
-		var content = new MultipartFormDataContent
+		var named = new List<string>();
+		foreach (var id in uploadIds)
 		{
-			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" },
-		};
-		var part = new ByteArrayContent([1, 2, 3]);
-		part.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
-		content.Add(part, "files", "garbage.bin");
-		return await _reporter!.PostAsync(Submit, content);
+			named.Add(id ?? named[^1]);
+		}
+
+		return await Post(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consent, value = (string?)"yes" },
+				new
+				{
+					questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
+					attachments = named.Select(id => new { uploadId = id, fileName = "a.png" }).ToArray(),
+				},
+			},
+		});
+	}
+
+	private async Task<string> UploadSyntheticPdf()
+	{
+		using var body = new ByteArrayContent("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray());
+		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+		using var response = await _reporter!.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		var upload = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return upload.GetProperty("uploadId").GetString()!;
+	}
+
+	private static async Task<bool> QuarantineHolds(string uploadId)
+	{
+		try
+		{
+			await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, $"quarantine/{uploadId}");
+			return true;
+		}
+		catch (Amazon.S3.AmazonS3Exception missing) when (missing.StatusCode == HttpStatusCode.NotFound)
+		{
+			return false;
+		}
 	}
 
 	private async Task<string> DeletedRevisionId()
@@ -1087,8 +1227,26 @@ public sealed class ReportSubmissionEndpointSteps
 		_consentRevisionId = await ConsentRevisionId();
 	}
 
-	/// <summary>The publication-consent revision, created once for the booted host.</summary>
+	/// <summary>
+	///     The publication-consent revision, created once for the booted host.
+	///     Serialized, because scenarios run in parallel and two that both find no
+	///     consent question would both try to create the one key.
+	/// </summary>
 	internal static async Task<string> ConsentRevisionId()
+	{
+		await ConsentGate.WaitAsync();
+
+		try
+		{
+			return await FindOrCreateConsentRevisionId();
+		}
+		finally
+		{
+			ConsentGate.Release();
+		}
+	}
+
+	private static async Task<string> FindOrCreateConsentRevisionId()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

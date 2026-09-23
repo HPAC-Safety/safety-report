@@ -25,6 +25,7 @@ public static class MediaRejection
 			MediaRejectionReason.UnrecognisedContent => KeyPrefix + "unrecognisedContent",
 			MediaRejectionReason.UnacceptedMediaType => KeyPrefix + "unacceptedMediaType",
 			MediaRejectionReason.DeclaredTypeMismatch => KeyPrefix + "declaredTypeMismatch",
+			MediaRejectionReason.CouldNotStrip => KeyPrefix + "couldNotStrip",
 			MediaRejectionReason.None => throw new ArgumentOutOfRangeException(
 				nameof(reason), "An accepted upload has no rejection to render."),
 			_ => throw new ArgumentOutOfRangeException(nameof(reason)),

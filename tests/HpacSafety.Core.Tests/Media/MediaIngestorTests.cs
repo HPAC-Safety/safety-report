@@ -20,7 +20,7 @@ public class MediaIngestorTests
 
 	private static readonly TinyId Report = TinyId.Parse(ReportId);
 	private static readonly TinyId FileId = TinyId.Parse(FileIdValue);
-	private static readonly BlobKey Quarantined = BlobKey.ForUpload(UploadId.New());
+	private static readonly BlobKey Stored = BlobKey.For(ReportId, MediaCompartment.Original, FileIdValue);
 	private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
 	private static MediaIngestor Ingestor(
@@ -44,11 +44,11 @@ public class MediaIngestorTests
 		// Given
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-jpeg-bytes");
-		store.Seed(Quarantined, content);
+		store.Seed(Stored, content);
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, stripper).Ingest(Quarantined, Report, FileId, CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, stripper).Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
@@ -65,12 +65,12 @@ public class MediaIngestorTests
 		// Given — REQ-MED-007: a video gets a derivative, and never a copy of itself
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-mp4-bytes");
-		store.Seed(Quarantined, content);
+		store.Seed(Stored, content);
 		var remuxer = new RecordingVideoRemuxer();
 
 		// When
 		var outcome = await Ingestor(store, MediaType.Mp4, new RecordingExifStripper(), remuxer: remuxer)
-			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
+			.Process(Stored, MediaType.Mp4, CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.Stripped);
@@ -86,12 +86,12 @@ public class MediaIngestorTests
 		// our toolchain could not clean the container
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-mov-bytes");
-		store.Seed(Quarantined, content);
+		store.Seed(Stored, content);
 
 		// When
 		var outcome = await Ingestor(
 				store, MediaType.QuickTime, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
+			.Process(Stored, MediaType.QuickTime, CancellationToken.None);
 
 		// Then — accepted and kept, with nothing a reviewer may be shown inline
 		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
@@ -105,12 +105,12 @@ public class MediaIngestorTests
 	{
 		// Given — a partial write must never be mistaken for a derivative
 		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-mov-bytes"));
+		store.Seed(Stored, Encoding.ASCII.GetBytes("pretend-mov-bytes"));
 
 		// When
 		await Ingestor(
 				store, MediaType.QuickTime, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
+			.Process(Stored, MediaType.QuickTime, CancellationToken.None);
 
 		// Then
 		store.Keys.ShouldNotContain(key => key.Contains("/stripped/", StringComparison.Ordinal));
@@ -121,11 +121,11 @@ public class MediaIngestorTests
 	{
 		// Given — ADR-0025 and ADR-0094: Magick.NET must not touch video
 		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
+		store.Seed(Stored, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
 		var stripper = new RecordingExifStripper();
 
 		// When
-		await Ingestor(store, MediaType.Mp4, stripper).Ingest(Quarantined, Report, FileId, CancellationToken.None);
+		await Ingestor(store, MediaType.Mp4, stripper).Process(Stored, MediaType.Mp4, CancellationToken.None);
 
 		// Then
 		stripper.Invocations.ShouldBe(0);
@@ -137,11 +137,11 @@ public class MediaIngestorTests
 		// Given
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-jpeg-bytes");
-		store.Seed(Quarantined, content);
+		store.Seed(Stored, content);
 		var expected = Convert.ToHexStringLower(SHA256.HashData(content));
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(Quarantined, Report, FileId, CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		outcome.ContentType.ShouldBe(MediaType.Jpeg);
@@ -157,13 +157,13 @@ public class MediaIngestorTests
 		// cannot be remuxed is retained this way (REQ-MED-015)
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-mp4-bytes");
-		var quarantined = BlobKey.ForUpload(UploadId.New());
+		var quarantined = Stored;
 		store.Seed(quarantined, content);
 		var stripper = new RecordingExifStripper();
 
 		// When
 		var outcome = await Ingestor(store, MediaType.Mp4, stripper, remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(quarantined, Report, FileId, CancellationToken.None);
+			.Process(quarantined, MediaType.Mp4, CancellationToken.None);
 
 		// Then
 		outcome.Status.ShouldBe(MediaIngestStatus.AwaitingStripping);
@@ -180,13 +180,13 @@ public class MediaIngestorTests
 		// Given — a retained video keeps its metadata, so the one thing that must
 		// never happen is falling through to it as though it were a derivative
 		var store = new InMemoryBlobStore();
-		var quarantined = BlobKey.ForUpload(UploadId.New());
+		var quarantined = Stored;
 		store.Seed(quarantined, Encoding.ASCII.GetBytes("pretend-mp4-bytes"));
 
 		// When
 		var outcome = await Ingestor(
 				store, MediaType.Mp4, new RecordingExifStripper(), remuxer: new RecordingVideoRemuxer(false))
-			.Ingest(quarantined, Report, FileId, CancellationToken.None);
+			.Process(quarantined, MediaType.Mp4, CancellationToken.None);
 
 		// Then
 		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
@@ -199,12 +199,12 @@ public class MediaIngestorTests
 		// Given
 		var store = new InMemoryBlobStore();
 		var content = Encoding.ASCII.GetBytes("pretend-pdf-bytes");
-		var quarantined = BlobKey.ForUpload(UploadId.New());
+		var quarantined = Stored;
 		store.Seed(quarantined, content);
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Pdf, stripper).Ingest(quarantined, Report, FileId, CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Pdf, stripper).Process(quarantined, MediaType.Pdf, CancellationToken.None);
 
 		// Then
 		// A document has no derivative at all — it is validated and kept
@@ -288,66 +288,81 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
-	public async Task GivenClaimedUpload_WhenIngested_ThenNamedByFileIdNeverByUploadId()
+	public async Task GivenStoredOriginal_WhenProcessed_ThenDerivativeSitsBesideItUnderTheSameFileId()
 	{
 		// Given
 		var store = new InMemoryBlobStore();
-		var upload = UploadId.New();
-		store.Seed(BlobKey.ForUpload(upload), Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
+		store.Seed(Stored, Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
 
 		// When
 		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
-			.Ingest(BlobKey.ForUpload(upload), Report, FileId, CancellationToken.None);
+			.Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
-		outcome.OriginalKey.FileName.ShouldBe(FileIdValue);
-		outcome.DerivativeKey.FileName.ShouldBe(FileIdValue);
-		outcome.OriginalKey.Value.ShouldNotContain(upload.Value);
+		outcome.OriginalKey.ShouldBe(Stored);
+		outcome.DerivativeKey.ShouldBe(Stored.In(MediaCompartment.Stripped));
 	}
 
 	[Fact]
-	public async Task GivenEmptyUpload_WhenClaimed_ThenRejectedAsEmpty()
+	public async Task GivenImageTheLibraryCannotClean_WhenProcessed_ThenRefusedAsCouldNotStripAndNothingWritten()
 	{
 		// Given
 		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, []);
+		store.Seed(Stored, Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
+
+		// When
+		var outcome = await Ingestor(store, MediaType.Jpeg, new ThrowingExifStripper())
+			.Process(Stored, MediaType.Jpeg, CancellationToken.None);
+
+		// Then
+		outcome.RejectionReason.ShouldBe(MediaRejectionReason.CouldNotStrip);
+		store.Keys.ShouldBe([Stored.Value]);
+	}
+
+	[Fact]
+	public async Task GivenEmptyOriginal_WhenProcessed_ThenRejectedAsEmpty()
+	{
+		// Given
+		var store = new InMemoryBlobStore();
+		store.Seed(Stored, []);
 
 		// When
 		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
-			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
+			.Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.Empty);
 	}
 
 	[Fact]
-	public async Task GivenNoFileId_WhenIngested_ThenRefuses()
+	public async Task GivenOriginalRecordedAsOneTypeButSniffingAsAnother_WhenProcessed_ThenRefusedAsMismatch()
 	{
 		// Given
 		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
+		store.Seed(Stored, Encoding.ASCII.GetBytes("pretend-png-bytes"));
 
-		// When / Then
-		await Should.ThrowAsync<DomainRuleViolationException>(() =>
-			Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
-				.Ingest(Quarantined, Report, default, CancellationToken.None));
+		// When
+		var outcome = await Ingestor(store, MediaType.Png, new RecordingExifStripper())
+			.Process(Stored, MediaType.Jpeg, CancellationToken.None);
+
+		// Then
+		outcome.RejectionReason.ShouldBe(MediaRejectionReason.DeclaredTypeMismatch);
 	}
 
 	[Fact]
-	public async Task GivenRejectedFile_WhenIngested_ThenNothingIsPromotedOutOfQuarantine()
+	public async Task GivenRejectedFile_WhenProcessed_ThenNothingIsWrittenBesideIt()
 	{
 		// Given
 		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, Encoding.ASCII.GetBytes("this is not an image at all"));
+		store.Seed(Stored, Encoding.ASCII.GetBytes("this is not an image at all"));
 
 		// When
-		var outcome = await Ingestor(store, null, new RecordingExifStripper()).Ingest(Quarantined, Report, FileId, CancellationToken.None);
+		var outcome = await Ingestor(store, null, new RecordingExifStripper()).Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
-		// The bytes stay in quarantine, where the lifecycle rule expires them
-		// (ADR-0096); ingest itself never deletes.
+		// The original stays exactly as it was; processing never deletes.
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.UnrecognisedContent);
-		store.Keys.ShouldBe([Quarantined.Value]);
+		store.Keys.ShouldBe([Stored.Value]);
 		Should.Throw<DomainRuleViolationException>(() => outcome.OriginalKey);
 		Should.Throw<DomainRuleViolationException>(() => outcome.DerivativeKey);
 	}
@@ -370,7 +385,7 @@ public class MediaIngestorTests
 			new FixedClock(Now));
 
 		// When
-		var outcome = await ingestor.Ingest(Quarantined, Report, FileId, CancellationToken.None);
+		var outcome = await ingestor.Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
@@ -389,31 +404,34 @@ public class MediaIngestorTests
 	{
 		// Given
 		var store = new InMemoryBlobStore();
-		store.Seed(Quarantined, new byte[64]);
+		store.Seed(Stored, new byte[64]);
 		var stripper = new RecordingExifStripper();
 
 		// When
-		var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).Ingest(Quarantined, Report, FileId, CancellationToken.None);
+		var outcome = await Ingestor(store, MediaType.Jpeg, stripper, 32).Process(Stored, MediaType.Jpeg, CancellationToken.None);
 
 		// Then
 		outcome.RejectionReason.ShouldBe(MediaRejectionReason.TooLarge);
 		stripper.Invocations.ShouldBe(0);
-		store.Keys.ShouldBe([Quarantined.Value]);
+		store.Keys.ShouldBe([Stored.Value]);
 	}
 
 	[Fact]
-	public async Task GivenKeyOutsideQuarantine_WhenIngestIsAskedToRead_ThenRefuses()
+	public async Task GivenKeyOutsideOriginalCompartment_WhenProcessIsAskedToRead_ThenRefuses()
 	{
 		// Given
 		var store = new InMemoryBlobStore();
-		var original = BlobKey.For(ReportId, MediaCompartment.Original, "photo.jpg");
-		store.Seed(original, Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
+		var upload = BlobKey.ForUpload(UploadId.New());
+		store.Seed(upload, Encoding.ASCII.GetBytes("pretend-jpeg-bytes"));
 
 		// When / Then
-		// Ingest reads unverified bytes and nothing else. Pointing it at a
-		// report's private source record would re-run stripping over a file that has
-		// already been accepted, which is not what this is for.
-		await Should.ThrowAsync<DomainRuleViolationException>(() => Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Ingest(original, Report, FileId, CancellationToken.None));
+		// Processing reads a report's original and nothing else: never an
+		// unclaimed upload, never a derivative.
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			Ingestor(store, MediaType.Jpeg, new RecordingExifStripper()).Process(upload, MediaType.Jpeg, CancellationToken.None));
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
+				.Process(Stored.In(MediaCompartment.Stripped), MediaType.Jpeg, CancellationToken.None));
 	}
 }
 

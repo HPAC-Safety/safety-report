@@ -121,18 +121,37 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task<bool> Exists(BlobKey key,
-								   CancellationToken cancellationToken)
+	public async Task<StoredBlob?> Describe(BlobKey key,
+										   CancellationToken cancellationToken)
 	{
 		try
 		{
-			await _s3.GetObjectMetadataAsync(_bucketName, key.Value, cancellationToken).ConfigureAwait(false);
-			return true;
+			var metadata = await _s3.GetObjectMetadataAsync(_bucketName, key.Value, cancellationToken).ConfigureAwait(false);
+			return new StoredBlob(metadata.Headers.ContentType, metadata.ContentLength);
 		}
 		catch (AmazonS3Exception missing) when (missing.StatusCode == System.Net.HttpStatusCode.NotFound)
 		{
-			return false;
+			return null;
 		}
+	}
+
+	/// <inheritdoc />
+	public async Task Copy(BlobKey source,
+						   BlobKey destination,
+						   CancellationToken cancellationToken)
+	{
+		// Server-side: S3 moves the bytes inside the bucket, and the copy keeps
+		// the source's content type (ADR-0098).
+		await _s3.CopyObjectAsync(
+			new CopyObjectRequest
+			{
+				SourceBucket = _bucketName,
+				SourceKey = source.Value,
+				DestinationBucket = _bucketName,
+				DestinationKey = destination.Value,
+				MetadataDirective = S3MetadataDirective.COPY,
+			},
+			cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <inheritdoc />

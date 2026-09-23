@@ -5,7 +5,8 @@
       "tooLarge": "Ce fichier est trop volumineux. Veuillez télécharger une photo ou une vidéo plus petite.",
       "unrecognisedContent": "Nous n'avons pas pu lire ce fichier. Veuillez télécharger une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
       "unacceptedMediaType": "Nous ne pouvons pas accepter ce type de fichier. Veuillez télécharger une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
-      "declaredTypeMismatch": "Ce fichier n'est pas du format indiqué; nous n'avons donc pas pu l'accepter. Veuillez télécharger à nouveau la photo ou la vidéo."
+      "declaredTypeMismatch": "Ce fichier n'est pas du format indiqué; nous n'avons donc pas pu l'accepter. Veuillez télécharger à nouveau la photo ou la vidéo.",
+      "couldNotStrip": "Nous n'avons pas pu supprimer les informations cachées relatives au lieu et à l'appareil photo de cette image; nous ne pouvons donc pas la montrer. L'original est conservé à titre privé."
     },
     "awaitingStripping": "Nous avons bien reçu votre vidéo. Elle est conservée en toute sécurité et n’est pas encore disponible pour examen."
   },

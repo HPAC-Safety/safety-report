@@ -9,13 +9,13 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     <para>
 ///         The order is the point. <see cref="Inspect" /> sniffs and validates an upload
 ///         before it is ever stored, so a refused file never reaches quarantine at all.
-///         <see cref="Ingest" /> runs when a submission claims the upload: it judges the
-///         bytes again, then <i>promotes</i> them into the report's own compartments
-///         under a new name. An upload nobody claims is never promoted, and expires
-///         where it landed through a bucket lifecycle rule (ADR-0096).
+///         A submission copies a claimed upload into the report's original compartment
+///         without decoding it, and <see cref="Process" /> runs later, in the Worker: it
+///         judges the original again and writes the stripped derivative beside it
+///         (ADR-0096, ADR-0098).
 ///     </para>
 ///     <para>
-///         A format this system cannot strip is still promoted, because the original is
+///         A format this system cannot strip is still kept, because the original is
 ///         the private source record regardless, but it produces no derivative and the
 ///         outcome says so. It fails closed: there is nothing for a reviewer to open,
 ///         rather than a fall-through to the unstripped original.
@@ -104,44 +104,36 @@ public sealed class MediaIngestor
 	}
 
 	/// <summary>
-	///     Reads a claimed upload from quarantine, judges it again, and on acceptance
-	///     promotes it to <paramref name="reportId" />'s private source record, named by
-	///     the report file's own <paramref name="fileId" /> — writing a stripped
-	///     derivative alongside when the format allows one.
+	///     Reads a report's stored original, judges it again, and — where its format
+	///     allows one — writes the stripped derivative beside it. Run by the Worker,
+	///     once per attachment, never on the submission path (ADR-0098).
 	/// </summary>
-	public async Task<MediaIngestOutcome> Ingest(
-		BlobKey quarantineKey,
-		TinyId reportId,
-		TinyId fileId,
+	/// <param name="originalKey">The original, in the report's original compartment.</param>
+	/// <param name="recorded">The type the file was recorded as when it was claimed.</param>
+	/// <param name="cancellationToken">Cancels the work.</param>
+	/// <remarks>
+	///     Idempotent: the derivative's key is derived from the original's, so a
+	///     second run overwrites rather than adds.
+	/// </remarks>
+	public async Task<MediaIngestOutcome> Process(
+		BlobKey originalKey,
+		MediaType recorded,
 		CancellationToken cancellationToken)
 	{
-		if (quarantineKey.Compartment is not MediaCompartment.Quarantine)
+		if (originalKey.Compartment is not MediaCompartment.Original)
 		{
-			throw new DomainRuleViolationException("Ingest reads from quarantine and nowhere else.");
-		}
-
-		if (reportId.IsEmpty
-			|| fileId.IsEmpty)
-		{
-			throw new DomainRuleViolationException("A claimed upload is promoted into a report file.");
+			throw new DomainRuleViolationException("Processing reads a report's original and nothing else.");
 		}
 
 		// Buffered rather than streamed past this point: the bytes are read three
 		// more times - for the digest, for the sniff and for the strip - and
-		// MediaPolicy.MaxByteSize is what bounds how much that costs.
-		//
-		// Getting the bytes into that buffer is a different question, and it is
-		// the one a public upload endpoint cannot afford to get wrong: a
-		// "download everything, then check Length" copy pulls an arbitrarily
-		// large object fully into memory before an oversized upload is refused,
-		// which is itself a denial-of-service surface. CopyBounded checks
-		// the running total as bytes arrive and stops reading the source the
-		// moment the limit is exceeded - the rest of an oversized object is
-		// never requested at all.
+		// MediaPolicy.MaxByteSize is what bounds how much that costs. CopyBounded
+		// stops reading the moment the limit is exceeded, so an oversized object
+		// is never pulled fully into memory. Streaming it instead is #362.
 		using var original = new MemoryStream();
 		bool exceedsLimit;
 
-		await using (var source = await _blobStore.OpenRead(quarantineKey, cancellationToken).ConfigureAwait(false))
+		await using (var source = await _blobStore.OpenRead(originalKey, cancellationToken).ConfigureAwait(false))
 		{
 			exceedsLimit = await CopyBounded(source, original, _policy.MaxByteSize, cancellationToken).ConfigureAwait(false);
 		}
@@ -161,24 +153,16 @@ public sealed class MediaIngestor
 		original.Position = 0;
 		var sniffed = await _sniffer.Sniff(original, cancellationToken).ConfigureAwait(false);
 
-		// The declared type was checked against the sniff when the file was
-		// uploaded (Inspect). Stored bytes carry no declaration of their own, so
-		// the sniff stands in for it here and only the format and size rules can
-		// still refuse.
-		var verdict = _policy.Validate(sniffed?.ContentType, sniffed, byteSize);
+		// The recorded type stands in for a declaration: it is what the upload
+		// was validated as, so bytes that no longer sniff as it are refused.
+		var verdict = _policy.Validate(recorded.ContentType, sniffed, byteSize);
 		if (!verdict.IsAccepted)
 		{
 			return MediaIngestOutcome.Rejected(verdict.RejectionReason);
 		}
 
 		var sha256 = Convert.ToHexStringLower(SHA256.HashData(original.GetBuffer().AsSpan(0, (int)byteSize)));
-
-		// The report file's id rather than the upload id: the upload id was a
-		// capability the browser held, and a report's keys must not be derivable
-		// from it. The row and its bytes then share one identifier (ADR-0097).
-		var originalKey = BlobKey.For(reportId.Value, MediaCompartment.Original, fileId.Value);
-		original.Position = 0;
-		await _blobStore.Write(originalKey, original, verdict.Type.ContentType, cancellationToken).ConfigureAwait(false);
+		var derivativeKey = originalKey.In(MediaCompartment.Stripped);
 
 		// Video is remuxed rather than decoded: the packets move into a fresh
 		// container and every tag and non-audiovisual track is left behind
@@ -198,14 +182,13 @@ public sealed class MediaIngestor
 				return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
 			}
 
-			var remuxedKey = originalKey.In(MediaCompartment.Stripped);
 			remuxed.Position = 0;
 			await _blobStore
-				.Write(remuxedKey, remuxed, verdict.Type.ContentType, cancellationToken)
+				.Write(derivativeKey, remuxed, verdict.Type.ContentType, cancellationToken)
 				.ConfigureAwait(false);
 
 			return MediaIngestOutcome.Ingested(
-				verdict.Type, byteSize, sha256, originalKey, remuxedKey, _clock.GetUtcNow());
+				verdict.Type, byteSize, sha256, originalKey, derivativeKey, _clock.GetUtcNow());
 		}
 
 		if (verdict.Type.StrippedForm is not { } derivativeType)
@@ -217,9 +200,20 @@ public sealed class MediaIngestor
 
 		original.Position = 0;
 		using var stripped = new MemoryStream();
-		await _stripper.Strip(original, stripped, verdict.Type, cancellationToken).ConfigureAwait(false);
 
-		var derivativeKey = originalKey.In(MediaCompartment.Stripped);
+		try
+		{
+			await _stripper.Strip(original, stripped, verdict.Type, cancellationToken).ConfigureAwait(false);
+		}
+#pragma warning disable CA1031 // Any imaging failure on these bytes is the same outcome: no clean derivative exists.
+		catch (Exception cause) when (cause is not OperationCanceledException)
+#pragma warning restore CA1031
+		{
+			// Retrying would decode the same bytes the same way. Failing closed
+			// here records it once, and the file stays unviewable (REQ-MED-013).
+			return MediaIngestOutcome.Rejected(MediaRejectionReason.CouldNotStrip);
+		}
+
 		stripped.Position = 0;
 		await _blobStore.Write(derivativeKey, stripped, derivativeType.ContentType, cancellationToken).ConfigureAwait(false);
 

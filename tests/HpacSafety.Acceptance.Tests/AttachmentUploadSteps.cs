@@ -325,21 +325,39 @@ public sealed class AttachmentUploadSteps
 		key.FileName.ShouldBe(file.Id.Value);
 	}
 
-	[Then(@"the original is written under the report's original compartment and any derivative under its stripped compartment")]
-	public async Task ThenTheOriginalIsWrittenUnderTheReportsCompartment()
+	[Then(@"the upload's bytes are copied unchanged, inside storage, to the report's original compartment")]
+	public async Task ThenTheUploadIsCopiedUnchanged()
 	{
 		var file = await ClaimedFile();
 		BlobKey.Parse(file.BlobKey).Compartment.ShouldBe(MediaCompartment.Original);
-		await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, file.BlobKey);
+
+		using var stored = await BootedApi.Storage.GetObjectAsync(BootedApi.BucketName, file.BlobKey);
+		using var bytes = new MemoryStream();
+		await stored.ResponseStream.CopyToAsync(bytes);
+		bytes.ToArray().ShouldBe(SyntheticPdf);
+		stored.Headers.ContentType.ShouldBe("application/pdf");
 	}
 
-	[Then(@"both are named by the report file's own id, never by the upload ID or the reporter's filename")]
-	public async Task ThenBothAreNamedByTheFileId()
+	[Then(@"the original is named by the report file's own id, never by the upload ID or the reporter's filename")]
+	public async Task ThenTheOriginalIsNamedByTheFileId()
 	{
 		var file = await ClaimedFile();
 		file.BlobKey.ShouldBe($"{_reportId}/original/{file.Id}");
 		file.BlobKey.ShouldNotContain(_uploadId!);
 		file.BlobKey.ShouldNotContain("launch");
+	}
+
+	[Then(@"no derivative is written before the Worker processes the file")]
+	public async Task ThenNoDerivativeIsWrittenBeforeTheWorker()
+	{
+		var file = await ClaimedFile();
+		file.AwaitsStripping.ShouldBeTrue();
+		var listing = await BootedApi.Storage.ListObjectsV2Async(new ListObjectsV2Request
+		{
+			BucketName = BootedApi.BucketName,
+			Prefix = $"{_reportId}/stripped/",
+		});
+		(listing.S3Objects ?? []).ShouldBeEmpty();
 	}
 
 	private async Task<string> Upload(byte[] bytes,

@@ -1,7 +1,7 @@
 #!/usr/bin/env sh
 #
 # dev-up.sh — build and run the dev environment: Postgres, MinIO (private
-# attachment storage), API, and web, each in its own Docker container
+# attachment storage), API, Worker, and web, each in its own Docker container
 # (docker-compose.yml).
 #
 # Run ./init-dev.sh first. This script assumes Docker and the .NET SDK are
@@ -104,6 +104,13 @@ dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj \
 	--configuration Release \
 	/t:PublishContainer \
 	-p:ContainerRepository=hpacsafety-api \
+	-p:ContainerImageTag=dev
+
+echo "Building the Worker container image"
+dotnet publish src/HpacSafety.Worker/HpacSafety.Worker.csproj \
+	--configuration Release \
+	/t:PublishContainer \
+	-p:ContainerRepository=hpacsafety-worker \
 	-p:ContainerImageTag=dev
 
 echo "Starting containers"

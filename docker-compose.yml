@@ -79,6 +79,26 @@ services:
     ports:
       - "8080:8080"
 
+  # Consumes the outbox: summaries, answer translations, and each
+  # attachment's reviewer-safe derivative (ADR-0098). Without it no uploaded
+  # image would ever become viewable in development.
+  worker:
+    image: hpacsafety-worker:dev
+    pull_policy: never
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres"
+      HpacSafety__Media__Storage__S3__ServiceUrl: "http://minio:9000"
+      # Optional, as for the API: without them a summary or translation waits
+      # and retries, and attachment processing is unaffected.
+      Translation__ApiKey: "${DEEPL_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+
   web:
     image: node:24-alpine
     working_dir: /repo/src/web

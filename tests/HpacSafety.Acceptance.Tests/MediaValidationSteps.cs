@@ -148,9 +148,9 @@ public sealed class MediaValidationSteps
 	private async Task IngestVideo(bool remuxProduces)
 	{
 		_store = new RecordingBlobStore();
-		var quarantined = BlobKey.ForUpload(UploadId.New());
+		var original = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Original, TinyId.New().Value);
 		_originalBytes = "pretend-mp4-bytes-with-a-gps-tag"u8.ToArray();
-		_store.Seed(quarantined, _originalBytes);
+		_store.Seed(original, _originalBytes);
 
 		_remuxer = new RecordingVideoRemuxer(remuxProduces);
 		_stripper = new RecordingImageStripper();
@@ -163,16 +163,16 @@ public sealed class MediaValidationSteps
 			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
 			new FixedTimeProvider(Now));
 
-		_outcome = await ingestor.Ingest(quarantined, TinyId.Parse("dQw4w9WgXcQ"), TinyId.New(), CancellationToken.None);
+		_outcome = await ingestor.Process(original, MediaType.Mp4, CancellationToken.None);
 	}
 
 	[Given(@"an accepted document attachment enters Worker processing")]
 	public async Task GivenAnAcceptedDocumentAttachmentEntersWorkerProcessing()
 	{
 		_store = new RecordingBlobStore();
-		var quarantined = BlobKey.ForUpload(UploadId.New());
+		var original = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Original, TinyId.New().Value);
 		_originalBytes = "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n"u8.ToArray();
-		_store.Seed(quarantined, _originalBytes);
+		_store.Seed(original, _originalBytes);
 
 		var ingestor = new MediaIngestor(
 			_store,
@@ -182,7 +182,7 @@ public sealed class MediaValidationSteps
 			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
 			new FixedTimeProvider(Now));
 
-		_outcome = await ingestor.Ingest(quarantined, TinyId.Parse("dQw4w9WgXcQ"), TinyId.New(), CancellationToken.None);
+		_outcome = await ingestor.Process(original, MediaType.Pdf, CancellationToken.None);
 	}
 
 	[When(@"the Worker processes it")]
@@ -285,10 +285,20 @@ public sealed class MediaValidationSteps
 			_blobs[key.Value] = buffer.ToArray();
 		}
 
-		public Task<bool> Exists(BlobKey key,
-								 CancellationToken cancellationToken)
+		public Task<StoredBlob?> Describe(BlobKey key,
+										  CancellationToken cancellationToken)
 		{
-			return Task.FromResult(_blobs.ContainsKey(key.Value));
+			return Task.FromResult(_blobs.TryGetValue(key.Value, out var bytes)
+				? new StoredBlob("application/octet-stream", bytes.Length)
+				: null);
+		}
+
+		public Task Copy(BlobKey source,
+						 BlobKey destination,
+						 CancellationToken cancellationToken)
+		{
+			_blobs[destination.Value] = _blobs[source.Value];
+			return Task.CompletedTask;
 		}
 
 		public Task Delete(BlobKey key,

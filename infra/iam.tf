@@ -139,6 +139,16 @@ data "aws_iam_policy_document" "worker_task" {
     resources = ["${aws_s3_bucket.uploads.arn}/*"]
   }
 
+  # The Worker writes each attachment's reviewer-safe derivative and nothing
+  # else: <report id>/stripped/<file id> (ADR-0098). It never writes an
+  # original, never touches quarantine/, and never deletes.
+  statement {
+    sid       = "WriteDerivatives"
+    effect    = "Allow"
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.uploads.arn}/*/stripped/*"]
+  }
+
   statement {
     sid    = "SendNotifications"
     effect = "Allow"

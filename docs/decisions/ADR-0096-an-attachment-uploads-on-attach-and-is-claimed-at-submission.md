@@ -133,9 +133,10 @@ needed for a contributor with no bucket, and MinIO is that bucket.
   limit on the upload endpoint and the lifecycle rule bound that; the count limit
   applies only at submission, because an upload belongs to no report yet.
 - The API role gains `s3:DeleteObjectVersion` on `quarantine/*`.
-- Attachment processing still runs inside the submission request.
-  Moving it to the Worker (#361) and streaming it without an in-memory buffer
-  (#362) are separate work.
+- Attachment processing still ran inside the submission request when this was
+  written. [ADR-0098](ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)
+  moves it to the Worker (#361); streaming it without an in-memory buffer is
+  #362.
 
 ## Alternatives rejected
 

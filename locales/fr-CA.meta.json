@@ -1247,6 +1247,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "upload.rejected.couldNotStrip": {
+    "source_hash": "266ce2ae0e3a5d73e2488b65d8b8bf3549bb2d3f1ab9e2c6066df20e748e064b",
+    "target_hash": "e31aa6a0e8a66e0856284482a9aef6ff4962cc97f2f831dcb928c25dc379a3d7",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "upload.rejected.declaredTypeMismatch": {
     "source_hash": "d2325b23735f895e1e7cccbceee68b6c8b75246cbc063ba89ae77cb0bca30eed",
     "target_hash": "d1b9da2a055d32e19879cdd0c2e6e925c94dee62ac757ac533303b19bfd0c680",

@@ -47,7 +47,6 @@ public static partial class ReportSubmissionEndpoints
 	private static async Task<IResult> Submit(
 		HttpRequest request,
 		HpacSafetyDbContext database,
-		MediaIngestor ingestor,
 		IBlobStore blobStore,
 		IOptions<MediaPolicyOptions> mediaOptions,
 		TimeProvider clock,
@@ -57,7 +56,6 @@ public static partial class ReportSubmissionEndpoints
 		ArgumentNullException.ThrowIfNull(request);
 		ArgumentNullException.ThrowIfNull(loggerFactory);
 		ArgumentNullException.ThrowIfNull(database);
-		ArgumentNullException.ThrowIfNull(ingestor);
 		ArgumentNullException.ThrowIfNull(blobStore);
 		ArgumentNullException.ThrowIfNull(mediaOptions);
 		ArgumentNullException.ThrowIfNull(clock);
@@ -125,9 +123,9 @@ public static partial class ReportSubmissionEndpoints
 		}
 
 		// Every named upload must still be waiting in quarantine before a single
-		// byte is promoted, so an expired one refuses the submission cleanly and
+		// byte is copied, so an expired one refuses the submission cleanly and
 		// the form can say exactly which files to attach again (ADR-0096).
-		var expired = await FindExpired(claimedUploads, blobStore, cancellationToken).ConfigureAwait(false);
+		var (stored, expired) = await DescribeUploads(claimedUploads, blobStore, cancellationToken).ConfigureAwait(false);
 		if (expired.Count > 0)
 		{
 			return Results.Problem(
@@ -138,13 +136,7 @@ public static partial class ReportSubmissionEndpoints
 				extensions: new Dictionary<string, object?> { ["expiredUploadIds"] = expired });
 		}
 
-		var attachmentProblem = await IngestFiles(report, fileAnswers, ingestor, clock, cancellationToken)
-			.ConfigureAwait(false);
-
-		if (attachmentProblem is not null)
-		{
-			return attachmentProblem;
-		}
+		await ClaimFiles(report, fileAnswers, stored, blobStore, clock, cancellationToken).ConfigureAwait(false);
 
 		var at = clock.GetUtcNow();
 		database.Reports.Add(report);
@@ -284,37 +276,45 @@ public static partial class ReportSubmissionEndpoints
 	}
 
 	/// <summary>
-	///     The named uploads that are no longer in quarantine, in the order they
-	///     were named, so the form can mark exactly those files.
+	///     What storage holds for each named upload, and the ids of those it no
+	///     longer holds, in the order they were named, so the form can mark exactly
+	///     those files.
 	/// </summary>
-	private static async Task<List<string>> FindExpired(
+	private static async Task<(Dictionary<UploadId, StoredBlob> Stored, List<string> Expired)> DescribeUploads(
 		IEnumerable<UploadId> uploads,
 		IBlobStore blobStore,
 		CancellationToken cancellationToken)
 	{
+		var stored = new Dictionary<UploadId, StoredBlob>();
 		var expired = new List<string>();
 
 		foreach (var upload in uploads)
 		{
-			if (!await blobStore.Exists(BlobKey.ForUpload(upload), cancellationToken).ConfigureAwait(false))
+			if (await blobStore.Describe(BlobKey.ForUpload(upload), cancellationToken).ConfigureAwait(false) is { } blob)
+			{
+				stored[upload] = blob;
+			}
+			else
 			{
 				expired.Add(upload.Value);
 			}
 		}
 
-		return expired;
+		return (stored, expired);
 	}
 
 	/// <summary>
-	///     Claims every file-upload answer's uploads: each is judged again and
-	///     promoted into the report's own compartments, then linked to its answer.
-	///     Runs only once every answer entry has validated structurally and every
-	///     upload has been found.
+	///     Claims every file-upload answer's uploads: each is copied, unchanged and
+	///     inside storage, to the report's original compartment under the report
+	///     file's own id, and recorded with the type and size it was validated as
+	///     when it was uploaded. Nothing is decoded here — the Worker processes each
+	///     file from its outbox message (ADR-0098).
 	/// </summary>
-	private static async Task<IResult?> IngestFiles(
+	private static async Task ClaimFiles(
 		Report report,
 		IReadOnlyList<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)> fileAnswers,
-		MediaIngestor ingestor,
+		Dictionary<UploadId, StoredBlob> stored,
+		IBlobStore blobStore,
 		TimeProvider clock,
 		CancellationToken cancellationToken)
 	{
@@ -323,31 +323,15 @@ public static partial class ReportSubmissionEndpoints
 			foreach (var (upload, fileName) in uploads)
 			{
 				var fileId = TinyId.New();
-				var outcome = await ingestor.Ingest(BlobKey.ForUpload(upload), report.Id, fileId, cancellationToken)
-					.ConfigureAwait(false);
+				var originalKey = BlobKey.For(report.Id.Value, MediaCompartment.Original, fileId.Value);
+				var blob = stored[upload];
 
-				if (!outcome.IsAccepted)
-				{
-					return Problem($"An attachment was refused: {outcome.RejectionReason}.");
-				}
+				await blobStore.Copy(BlobKey.ForUpload(upload), originalKey, cancellationToken).ConfigureAwait(false);
 
-				var file = report.AddFile(
-					fileId,
-					outcome.OriginalKey.Value,
-					outcome.ContentType.ContentType,
-					outcome.ByteSize,
-					fileName,
-					clock.GetUtcNow());
+				var file = report.AddFile(fileId, originalKey.Value, blob.ContentType, blob.ByteSize, fileName, clock.GetUtcNow());
 				file.LinkToAnswer(answer.Id);
-
-				if (outcome.IsViewable)
-				{
-					file.RecordStripped(outcome.DerivativeKey.Value, outcome.StrippedAt!.Value);
-				}
 			}
 		}
-
-		return null;
 	}
 
 	/// <summary>

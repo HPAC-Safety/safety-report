@@ -62,7 +62,6 @@ Scenario: Unclaimed uploads expire automatically
   Then the upload expires, its key stopping resolving after about a day and its bytes gone about a day after that
 
 @REQ-MED-006
-@ignore
 Scenario: Every image is re-encoded to strip metadata
   Given an accepted image attachment enters Worker processing
   When the Worker produces its derivative
@@ -96,7 +95,6 @@ Scenario: A document is validated but never transformed
   And the document remains the reporter-supplied original, available for private download, and the review UI labels it as unredacted private evidence
 
 @REQ-MED-009
-@ignore
 Scenario: Each attachment fails and processes independently of the report
   Given a report has multiple attachments, one of which is slow or corrupt
   When the Worker processes the report's outbox items
@@ -157,11 +155,12 @@ Scenario: A cancelled upload leaves nothing in storage
   Then nothing is written to object storage for it
 
 @REQ-MED-018
-Scenario: A claimed upload is promoted into the report's compartments
+Scenario: A claimed upload is copied into the report's original compartment
   Given a submission claims an accepted upload
   When the API ingests it
-  Then the original is written under the report's original compartment and any derivative under its stripped compartment
-  And both are named by the report file's own id, never by the upload ID or the reporter's filename
+  Then the upload's bytes are copied unchanged, inside storage, to the report's original compartment
+  And the original is named by the report file's own id, never by the upload ID or the reporter's filename
+  And no derivative is written before the Worker processes the file
 
 @REQ-MED-019
 Scenario Outline: A reporter's filename is sanitized before it is stored
@@ -183,3 +182,24 @@ Scenario: A download's extension always matches the bytes served
   Given a reporter attached "IMG_0412.HEIC" and its derivative is a JPEG
   When an authorized reviewer requests to view it
   Then the download is named "IMG_0412.jpg"
+
+@REQ-MED-021
+Scenario: An attachment awaits the Worker before a reviewer may view it
+  Given a submitted image the Worker has not yet processed
+  When an authorized reviewer requests to view it
+  Then no link is issued
+  And the attachment reads as awaiting processing rather than failed
+
+@REQ-MED-022
+Scenario: Processing an attachment twice changes nothing
+  Given the Worker has already processed an image attachment
+  When that attachment's processing message is delivered again
+  Then no second derivative is written
+  And the attachment's record is unchanged
+
+@REQ-MED-023
+Scenario: The Worker skips an attachment whose report was deleted
+  Given an attachment's report was deleted before the Worker processed it
+  When the Worker handles that attachment's processing message
+  Then no derivative is written
+  And the message is marked complete

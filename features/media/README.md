@@ -48,10 +48,20 @@ output and error messages are sanitized before logging.
 
 ## Current implementation divergence
 
-Claiming an upload still sniffs, strips, and remuxes inside the submission
-request rather than in the Worker (#361), and buffers each file in memory
-while it does (#362). See
+The Worker buffers each file in memory while it sniffs and strips it (#362).
+The deployed Worker image has no ffmpeg yet (#30), so a video is retained with
+no derivative there
+([ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)). See
 [implementation status](../../docs/implementation-status.md).
+
+## Where processing happens
+
+A submission copies each claimed upload, inside storage, to the report's
+original compartment and commits; it never decodes a file. The Worker's
+attachment handler then sniffs the original and writes the derivative, one
+outbox message per file
+([ADR-0098](../../docs/decisions/ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)).
+Until it has, a reviewer sees the file as awaiting processing.
 
 ## A video with no derivative
 

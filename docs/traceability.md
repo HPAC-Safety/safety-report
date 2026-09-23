@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-290 claims across 8 areas: 216 covered by a step definition today, 74 still `@ignore`. 50 constraints.
+293 claims across 8 areas: 221 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -55,11 +55,11 @@ type: guide
 | `REQ-MED-003` | media | The client filename is kept only as a reviewer's download name | Reqnroll | Covered |
 | `REQ-MED-004` | media | An accepted upload waits in a private quarantine compartment | Reqnroll | Covered |
 | `REQ-MED-005` | media | Unclaimed uploads expire automatically | Reqnroll | Planned |
-| `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Planned |
+| `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Covered |
 | `REQ-MED-007` | media | Every video is remuxed to strip metadata, never transcoded | Reqnroll | Covered |
 | `REQ-MED-015` | media | A video that cannot be stripped is kept rather than refused | Reqnroll | Covered |
 | `REQ-MED-008` | media | A document is validated but never transformed | Reqnroll | Covered |
-| `REQ-MED-009` | media | Each attachment fails and processes independently of the report | Reqnroll | Planned |
+| `REQ-MED-009` | media | Each attachment fails and processes independently of the report | Reqnroll | Covered |
 | `REQ-MED-010` | media | A reviewer gets a short-lived URL only for successfully processed media | Reqnroll | Covered |
 | `REQ-MED-011` | media | A reviewer downloads a validated document as an unredacted original | Reqnroll | Covered |
 | `REQ-MED-012` | media | The admin site never inline-renders a private document | playwright-bdd | Planned |
@@ -67,9 +67,12 @@ type: guide
 | `REQ-MED-014` | media | Attachments are never exposed publicly, even after publication | Reqnroll | Planned |
 | `REQ-MED-016` | media | Removing an upload erases every version of it | Reqnroll | Covered |
 | `REQ-MED-017` | media | A cancelled upload leaves nothing in storage | Reqnroll | Covered |
-| `REQ-MED-018` | media | A claimed upload is promoted into the report's compartments | Reqnroll | Covered |
+| `REQ-MED-018` | media | A claimed upload is copied into the report's original compartment | Reqnroll | Covered |
 | `REQ-MED-019` | media | A reporter's filename is sanitized before it is stored | Reqnroll | Covered |
 | `REQ-MED-020` | media | A download's extension always matches the bytes served | Reqnroll | Covered |
+| `REQ-MED-021` | media | An attachment awaits the Worker before a reviewer may view it | Reqnroll | Covered |
+| `REQ-MED-022` | media | Processing an attachment twice changes nothing | Reqnroll | Covered |
+| `REQ-MED-023` | media | The Worker skips an attachment whose report was deleted | Reqnroll | Covered |
 | `REQ-MOD-001` | moderation-authentication-and-publication | In development the login page offers no third-party sign-in option | playwright-bdd | Covered |
 | `REQ-MOD-002` | moderation-authentication-and-publication | Where a third-party provider is configured, the login page offers it | playwright-bdd | Covered |
 | `REQ-MOD-003` | moderation-authentication-and-publication | Signing in with member credentials returns a session that survives a reload | playwright-bdd | Covered |

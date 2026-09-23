@@ -90,8 +90,8 @@ review finding, or a commit already in history
 `node tools/traceability.mjs` and never hand-edited; a duplicate, malformed,
 missing, or dangling ID fails the build. Nobody opens a pull request to
 regenerate it: the local hooks regenerate it after a merge or rebase, and
-`traceability.yml` commits it onto a same-repo pull request's branch, which
-must be up to date with `main` to merge
+`traceability.yml` commits it onto a same-repo pull request's branch, and the
+`docs` check that verifies it is required to merge
 ([ADR-0101](docs/decisions/ADR-0101-ci-regenerates-the-traceability-matrix.md)).
 
 Four roles hold the steps of that chain, declared under `agents/` and installed

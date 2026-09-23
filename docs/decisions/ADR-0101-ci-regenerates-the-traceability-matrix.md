@@ -1,6 +1,6 @@
 ---
-title: CI regenerates the traceability matrix onto the pull request, and a branch must be up to date to merge
-description: A pull_request_target workflow runs the base branch's generator over a same-repo PR's files and commits docs/traceability.md onto that PR; the main ruleset requires branches to be up to date, so a stale matrix can't reach main.
+title: CI regenerates the traceability matrix onto the pull request, and the matrix check is required to merge
+description: A pull_request_target workflow runs the base branch's generator over a same-repo PR's files and commits docs/traceability.md onto that PR; and the docs job becomes a required check on main, so a stale matrix can't merge.
 type: adr
 status: accepted
 date: 2026-09-23
@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: traceability, generated documentation, pull_request_target, required status checks, up to date, ADR-0084, ADR-0057
 ---
 
-# ADR-0101 — CI regenerates the traceability matrix onto the pull request, and a branch must be up to date to merge
+# ADR-0101 — CI regenerates the traceability matrix onto the pull request, and the matrix check is required to merge
 
 **Status:** Accepted. Amends
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
@@ -26,9 +26,18 @@ and neither runs where it matters:
 - `ci.yml` only **checks** it.
 
 On 2026-09-23 #368 and #369 each added five claims, and each regenerated the
-matrix against the same `main`. Both were green, and the `main` ruleset
-doesn't require a branch to be up to date, so both squash-merged. Git merged
-the two sets of claim rows cleanly. Both PRs had rewritten the summary line to
+matrix against the same `main`. Both squash-merged, 22 seconds apart. The
+`main` ruleset already requires branches to be up to date
+(`strict_required_status_checks_policy: true`), so that rule was not the gap.
+Two other things were:
+
+- The ruleset gives the Admin role a bypass with `bypass_mode: always`, so
+  #369 could merge while it was behind `main`.
+- `docs`, the `ci.yml` job that checks the matrix, is not one of the required
+  checks. So even a branch that was up to date and had a red `docs` job could
+  merge.
+
+When #369 merged behind `main`, Git merged the two sets of claim rows cleanly. Both PRs had rewritten the summary line to
 the same `299 claims` text, though, so `main` kept that line when the
 generator now says 304. `main`'s `docs` job went red, and the only remedy
 available was a pull request whose whole content was a regenerated file.
@@ -61,10 +70,14 @@ A person should never open a pull request to regenerate a generated file.
    this repository with Contents and Pull requests only. Reusing it adds no
    new credential. When the job runs again on its own push, it finds nothing
    to change, so it can't loop.
-4. **The `main` ruleset requires branches to be up to date before merging.**
-   A PR that falls behind `main` is updated, the workflow regenerates the
-   matrix against the combined tree, and CI checks that tree. Only then can
-   the PR merge, so a stale matrix can no longer reach `main`.
+4. **`docs` becomes a required check on the `main` ruleset.** The ruleset
+   already requires branches to be up to date. With `docs` required too, a PR
+   that falls behind is updated, this workflow regenerates the matrix against
+   the combined tree, and the PR can't merge until `docs` is green on that
+   tree. Whether the Admin role keeps its `always` bypass, the one that let
+   #369 merge while behind, is the owner's decision and is still pending. While
+   it stays, an administrator's override can still land a stale matrix, and
+   the next PR's run of this workflow repairs it.
 5. `ci.yml`'s check stays, as the backstop rather than the fixer. So do the
    local hooks, which keep a developer's own tree right between pushes.
 
@@ -83,7 +96,8 @@ A person should never open a pull request to regenerate a generated file.
   needs it in the tree.
 - **A merge queue on its own.** It tests each merge result, so it would catch
   the drift, but it doesn't fix the file. It would still need this workflow,
-  and requiring branches to be up to date gets the same guarantee on a
+  and requiring branches to be up to date, which the ruleset already does,
+  with `docs` required gets the same guarantee on a
   repository of this size without the queue.
 - **Running the head branch's generator.** It would follow a PR that changes
   the matrix format. It would also run PR-authored code with a write token,
@@ -94,8 +108,8 @@ A person should never open a pull request to regenerate a generated file.
 - A contributor never commits the matrix by hand. The hooks and the workflow
   keep it right, and a PR can carry one extra bot commit that a local branch
   pulls before its next push.
-- A PR that falls behind `main` has to be updated before it can merge, and
-  that includes PRs that don't touch the matrix.
+- A PR that falls behind `main` already had to be updated before it could
+  merge. Now its `docs` check must also pass on the updated tree.
 - A PR that changes `tools/traceability.mjs`, and every fork PR, still
   regenerates locally. `ci.yml` says so when it fails.
 - Without `TRANSLATION_PR_TOKEN` the commit still lands, but checks need a

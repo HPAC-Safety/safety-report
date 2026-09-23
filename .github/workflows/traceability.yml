@@ -19,9 +19,9 @@ name: Traceability matrix
 #     (the post-merge/post-rewrite hooks do it after every merge or rebase),
 #     and ci.yml's "docs" job still checks the result with the head's code.
 #
-# With "require branches to be up to date" on the main ruleset, a PR that
-# falls behind is updated, this job re-runs on the combined tree, and a stale
-# matrix can no longer reach main.
+# The main ruleset already requires branches to be up to date; with ci.yml's
+# "docs" job required too, a PR that falls behind is updated, this job re-runs
+# on the combined tree, and it can't merge with a stale matrix (ADR-0101).
 
 on:
   pull_request_target:

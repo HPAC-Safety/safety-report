@@ -191,7 +191,7 @@ export function QuestionField({
 					remaining={attachmentRoom}
 					t={t}
 				/>
-				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.notRestored")}</p>
+				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.keptWithReport")}</p>
 				{helpNode}
 				{errorNode}
 			</div>

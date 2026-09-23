@@ -2,13 +2,22 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page, type Route } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
-import { defaultFormQuestions, forgetDraftInBrowser, stubCurrentQuestions } from "./report-form-fixture"
+import {
+	SAVED_UPLOAD,
+	defaultFormQuestions,
+	readDraftFromBrowser,
+	stubCurrentQuestions,
+	writeSavedDraftToBrowser,
+	writeStaleDraftToBrowser,
+} from "./report-form-fixture"
 
 const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for uploading attachments as they are attached (ADR-0096,
- * REQ-SUB-045..052), and for the drop zone that chooses them (REQ-SUB-058..062). The API is stubbed at the network boundary: an upload is
+ * REQ-SUB-045..051), for the drop zone that chooses them (REQ-SUB-058..062),
+ * and for keeping them as long as the saved report (ADR-0100,
+ * REQ-SUB-063..067). The API is stubbed at the network boundary: an upload is
  * held open until a step releases it, so "still uploading" is a state a step
  * can observe rather than a race. The server side of the same contract is
  * HpacSafety.Api.Tests' UploadEndpointTests and the acceptance steps. Every
@@ -34,6 +43,8 @@ interface UploadStub {
 	refuseNext: string | null
 	/** Upload ids the next submission reports as expired, once. */
 	expireNext: string[]
+	/** The uploads the saved report names, which abandoning it must delete. */
+	saved: string[]
 }
 
 const stubs = new WeakMap<Page, UploadStub>()
@@ -49,6 +60,7 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 		hold: false,
 		refuseNext: null,
 		expireNext: [],
+		saved: [],
 		release: () => {
 			for (const resume of waiting.splice(0)) resume()
 		},
@@ -335,13 +347,42 @@ Then("the reporter can submit again once the files are re-attached", async ({ pa
 	expect(namedAttachments(stub).map((attachment) => attachment.uploadId)).not.toContain(stub.issued[1])
 })
 
-// --- REQ-SUB-052: not restored after reload ---
+// --- REQ-SUB-063..067: kept as long as the saved report ---
+
+interface SavedDraft {
+	answers: Record<string, unknown>
+	attachments?: Record<string, { uploadId: string; name: string }[]>
+}
+
+function discardDialog(page: Page) {
+	return page.getByRole("dialog", { name: "Discard this report?" })
+}
 
 Given("the reporter has uploaded files and the browser holds a saved report", async ({ page }) => {
-	await stubUploads(page)
+	const stub = await stubUploads(page)
 	await reachAttachmentsPage(page)
 	await attach(page, "launch-site.png")
 	await expect(page.getByRole("button", { name: "Remove launch-site.png" })).toBeVisible()
+	stub.saved = [...stub.issued]
+	await expect
+		.poll(async () => ((await readDraftFromBrowser(page)) as SavedDraft | null)?.attachments?.["rev-attachments"]?.map((file) => file.uploadId))
+		.toEqual(stub.saved)
+})
+
+Given("this browser holds a saved report naming uploaded files", async ({ page }) => {
+	const stub = await stubUploads(page)
+	stub.saved = [SAVED_UPLOAD.uploadId]
+	await stubAuth(page)
+	await stubCurrentQuestions(page, defaultFormQuestions())
+	await writeSavedDraftToBrowser(page)
+})
+
+Given("this browser holds a saved report started more than 15 days ago that names uploaded files", async ({ page }) => {
+	const stub = await stubUploads(page)
+	stub.saved = [SAVED_UPLOAD.uploadId]
+	await stubAuth(page)
+	await stubCurrentQuestions(page, defaultFormQuestions())
+	await writeStaleDraftToBrowser(page)
 })
 
 When("the reporter reloads the form and continues the saved report", async ({ page }) => {
@@ -351,13 +392,47 @@ When("the reporter reloads the form and continues the saved report", async ({ pa
 	await expect(page.getByLabel("Photos or videos")).toBeAttached()
 })
 
-Then("no file is listed as attached", async ({ page }) => {
-	await expect(page.getByText("launch-site.png")).toHaveCount(0)
+When("the reporter discards the report and confirms", async ({ page }) => {
+	await page.getByRole("button", { name: "Discard report" }).click()
+	await discardDialog(page).getByRole("button", { name: "Yes, discard it" }).click()
+	await expect(discardDialog(page)).toHaveCount(0)
 })
 
-Then("the reporter is told to attach the files again", async ({ page }) => {
-	await expect(page.getByText(/you will need to attach them again/i)).toBeVisible()
-	await forgetDraftInBrowser(page)
+When("the reporter presses Discard report and then keeps the report", async ({ page }) => {
+	await page.getByRole("button", { name: "Discard report" }).click()
+	await expect(discardDialog(page).getByRole("button", { name: "No, keep it" })).toBeFocused()
+	await discardDialog(page).getByRole("button", { name: "No, keep it" }).click()
+	await expect(discardDialog(page)).toHaveCount(0)
+})
+
+Then("each uploaded file is listed as attached under its own name, with a Remove control", async ({ page }) => {
+	await expect(attachmentList(page).getByText("launch-site.png")).toBeVisible()
+	await expect(page.getByRole("button", { name: "Remove launch-site.png" })).toBeVisible()
+	await expect(attachmentList(page).getByRole("alert")).toHaveCount(0)
+})
+
+Then("the submission names each restored file by its upload ID", async ({ page }) => {
+	const stub = stubFor(page)
+	await submitFromAttachments(page)
+	await expect(page.getByRole("heading", { name: "Report submitted" })).toBeVisible()
+	expect(namedAttachments(stub)).toEqual([{ uploadId: stub.saved[0], fileName: "launch-site.png" }])
+})
+
+Then("the browser asks the API to delete each of those uploads", async ({ page }) => {
+	const stub = stubFor(page)
+	await expect.poll(() => [...stub.deleted].sort()).toEqual([...stub.saved].sort())
+})
+
+Then("no upload is deleted", async ({ page }) => {
+	expect(stubFor(page).deleted).toEqual([])
+})
+
+Then("the saved report and its answers are kept", async ({ page }) => {
+	const stub = stubFor(page)
+	const draft = (await readDraftFromBrowser(page)) as SavedDraft | null
+	expect(draft?.answers).toHaveProperty("rev-narrative")
+	expect(draft?.attachments?.["rev-attachments"]?.map((file) => file.uploadId)).toEqual(stub.saved)
+	await expect(page.getByRole("button", { name: "Remove launch-site.png" })).toBeVisible()
 })
 
 // --- REQ-SUB-058..062: the drop zone ---

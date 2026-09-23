@@ -12,7 +12,10 @@ keywords: attachments, uploads, quarantine, S3, MinIO, lifecycle, submission, pr
 
 ## Status
 
-Accepted. This ADR:
+Accepted; amended by
+[ADR-0100](ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md),
+which restores uploads with the saved report and keeps unclaimed uploads for
+fifteen days. This ADR:
 
 - **amends** AGENTS.md invariant 2 and the guardrail list in
   [`features/README.md`](../../features/README.md): a reporter's attachment is

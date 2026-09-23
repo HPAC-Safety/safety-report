@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react"
 
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
-import type { DraftAnswer } from "./draft"
+import type { DraftAnswer, DraftAttachment } from "./draft"
 import { collectsNoAnswer, questionLabel } from "./steps"
 
 /*
@@ -14,28 +14,37 @@ import { collectsNoAnswer, questionLabel } from "./steps"
 
 export interface SavedAnswerRow {
 	revisionId: string
+	/** An answer restores into `answers`; attachments restore as the question's attached files. */
+	kind: "answer" | "attachments"
 	label: string
 	value: string
 }
 
 /**
- * The saved answers that belong to a question on the current form, in form
- * order. An answer to a revision the form no longer shows has nothing to be
- * restored into, so it is not listed. Attachments are never saved, so never
- * appear.
+ * The saved answers and attached files that belong to a question on the
+ * current form, in form order. One saved for a revision the form no longer
+ * shows has nothing to be restored into, so it is not listed. A file-upload
+ * question lists its saved files by name (ADR-0100).
  */
 export function savedAnswerRows(
 	questions: PublicQuestionView[],
 	answers: Record<string, DraftAnswer>,
+	attachments: Record<string, DraftAttachment[]>,
 	locale: Locale,
 	t: (key: string) => string,
 ): SavedAnswerRow[] {
 	const rows: SavedAnswerRow[] = []
 	for (const question of questions.flatMap((entry) => [entry, ...entry.children])) {
-		if (collectsNoAnswer(question) || question.type === "file_upload") continue
+		if (collectsNoAnswer(question)) continue
+		const label = questionLabel(question, locale)
+		if (question.type === "file_upload") {
+			const files = attachments[question.revisionId] ?? []
+			if (files.length > 0) rows.push({ revisionId: question.revisionId, kind: "attachments", label, value: files.map((file) => file.name).join(", ") })
+			continue
+		}
 		const answer = answers[question.revisionId]
 		if (!answer) continue
-		rows.push({ revisionId: question.revisionId, label: questionLabel(question, locale), value: displayValue(question, answer, t) })
+		rows.push({ revisionId: question.revisionId, kind: "answer", label, value: displayValue(question, answer, t) })
 	}
 	return rows
 }

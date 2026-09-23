@@ -102,8 +102,12 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
       prefix = "quarantine/"
     }
 
+    # Fifteen days: the same window as the browser's saved report, which is the
+    # only thing that names an unclaimed upload (ADR-0100). S3 rounds expiry up
+    # to the next midnight UTC, so a key never stops resolving before the draft
+    # naming it has expired.
     expiration {
-      days = 1
+      days = 15
     }
 
     abort_incomplete_multipart_upload {
@@ -117,7 +121,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
     # delete marker and makes the object version noncurrent. Without this clause
     # the bytes would then fall to the bucket-wide 90-day noncurrent rule below
     # — so an unverified crash photograph would survive three months in a bucket
-    # whose lifecycle claims to clear it in a day.
+    # whose lifecycle claims to clear it.
     #
     # Overlapping rules: the shorter period governs this prefix.
     #

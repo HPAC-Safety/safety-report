@@ -116,7 +116,7 @@ Given("a reporter has entered answers in local browser storage", async ({ page }
 	await goBack(page) // Back to the intro, so a later step can walk the form from its start.
 })
 
-Given("local browser state is older than 15 days", async ({ page }) => {
+Given("local browser state was started more than 15 days ago and saved again since", async ({ page }) => {
 	await stubAuth(page)
 	await stubCurrentQuestions(page)
 	await writeStaleDraftToBrowser(page)
@@ -288,12 +288,17 @@ Then("the selected locale, shown question-revision IDs, and entered answers exis
 	expect(Date.now() - draft!.savedAtMs).toBeLessThan(60_000)
 })
 
-Then("image, video, and document attachments and their upload IDs are never placed in browser storage", async ({ page }) => {
-	const draft = (await readDraftFromBrowser(page)) as { answers: Record<string, unknown> } | null
+Then("no image, video, or document file is placed in browser storage, only each finished upload's ID, name, and size", async ({ page }) => {
+	const draft = (await readDraftFromBrowser(page)) as {
+		answers: Record<string, unknown>
+		attachments?: Record<string, Record<string, unknown>[]>
+	} | null
 	for (const answer of Object.values(draft?.answers ?? {})) {
 		expect(answer).not.toHaveProperty("file")
 	}
-	expect(JSON.stringify(draft)).not.toContain("uploadId")
+	for (const upload of Object.values(draft?.attachments ?? {}).flat()) {
+		expect(Object.keys(upload).sort()).toEqual(["name", "size", "uploadId"])
+	}
 })
 
 Then("no server draft, report ID reservation, or resumable upload protocol exists", async () => {
@@ -500,7 +505,7 @@ Then("a notice states that signing in only confirms HPAC membership and that the
 	await expect(page.getByText(/only confirms that you are an HPAC member/i)).toBeVisible()
 })
 
-Then("attachment selection appears last with type\\/count\\/size guidance and a warning that files are not restored after reload", async ({ page }) => {
+Then("attachment selection appears last with type\\/count\\/size guidance and a note that attached files are kept with the saved report for up to 15 days", async ({ page }) => {
 	await resetToIntro(page)
 	await goNext(page) // intro -> narrative
 	await goNext(page) // narrative -> injured
@@ -513,7 +518,7 @@ Then("attachment selection appears last with type\\/count\\/size guidance and a 
 	await expect(page.getByRole("button", { name: "Drag files here, or choose files" })).toBeVisible()
 	await expect(page.getByText(/JPEG, PNG, WebP, HEIC/)).toBeVisible()
 	await expect(page.getByText(/up to 5 files in all, 50 MB each/)).toBeVisible()
-	await expect(page.getByText(/not saved between visits/i)).toBeVisible()
+	await expect(page.getByText(/kept with your saved report for up to 15 days/i)).toBeVisible()
 	// "Appears last": only the required consent question follows it.
 	await goNext(page)
 	await expect(page.getByText("May we publish a summary of this report?")).toBeVisible()
@@ -576,12 +581,14 @@ Then("a table below the buttons lists each saved question with its saved answer"
 		/Was anyone injured\?\s*Yes/,
 		/Describe the injury\s*A synthetic sprain\./,
 		/Type of aircraft\s*Paraglider/,
+		/Photos or videos\s*saved-photo\.png/,
 	])
 	await expect(table).not.toContainText("retired")
 })
 
-Then("no attachment is listed", async ({ page }) => {
-	await expect(resumeDialog(page).getByRole("table")).not.toContainText("Photos or videos")
+Then("each saved attached file is listed by name under its question", async ({ page }) => {
+	const row = resumeDialog(page).getByRole("row").filter({ has: page.getByRole("rowheader", { name: "Photos or videos" }) })
+	await expect(row.getByRole("cell")).toHaveText("saved-photo.png")
 })
 
 Then("the saved answers are restored", async ({ page }) => {

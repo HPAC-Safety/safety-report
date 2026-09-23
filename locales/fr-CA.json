@@ -100,7 +100,7 @@
     "loadError": "Le formulaire de rapport n'a pas pu être chargé. Veuillez actualiser la page.",
     "progress": "Étape n°{current}, tirée de {total}",
     "privacy": {
-      "localStorage": "Vos réponses ne sont enregistrées que dans ce navigateur, pendant une durée maximale de 15 jours, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents ne sont jamais enregistrés dans le navigateur."
+      "localStorage": "Vos réponses sont conservées uniquement dans ce navigateur, pendant une période maximale de 15 jours à compter du moment où vous commencez, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents sont téléchargés au fur et à mesure que vous les joignez et sont conservés pendant ces mêmes 15 jours, puis supprimés si vous ne les avez pas soumis."
     },
     "nav": {
       "next": "Suivant",
@@ -124,7 +124,7 @@
     "attachments": {
       "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléchargé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",
-      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous rafraîchissez cette page, vous devrez les joindre à nouveau.",
+      "keptWithReport": "Les fichiers joints sont conservés avec votre rapport enregistré pendant un maximum de 15 jours; vous les retrouverez donc si vous quittez la page et y revenez.",
       "listLabel": "Fichiers joints",
       "uploading": "Téléversement en cours…",
       "uploadingNamed": "Téléversement de {name}",
@@ -155,12 +155,19 @@
     },
     "resume": {
       "title": "Souhaitez-vous reprendre là où vous vous êtes arrêté?",
-      "body": "Ce navigateur a enregistré les réponses d'un rapport que vous n'avez pas encore soumis. Souhaitez-vous poursuivre avec ces réponses ou commencer un nouveau rapport? Si vous recommencez, ces réponses seront supprimées de ce navigateur.",
+      "body": "Ce navigateur a enregistré les réponses d’un rapport que vous n’avez pas encore soumis. Souhaitez-vous poursuivre avec ces réponses ou commencer un nouveau rapport? Si vous recommencez, ces réponses seront supprimées de ce navigateur et tous les fichiers que vous y avez joints seront effacés.",
       "yes": "Oui, continuez",
       "no": "Non, recommencez",
       "tableCaption": "Vos réponses enregistrées",
       "questionHeader": "Question",
       "answerHeader": "Réponse enregistrée"
+    },
+    "discard": {
+      "open": "Rejeter le rapport",
+      "title": "Souhaitez-vous supprimer ce rapport?",
+      "body": "Cette opération supprimera vos réponses de ce navigateur et effacera les fichiers que vous avez joints. Elle ne peut pas être annulée.",
+      "confirm": "Oui, jetez-le",
+      "keep": "Non, gardez-le"
     }
   },
   "notFound": {

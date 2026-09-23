@@ -16,9 +16,12 @@ contrast, and self-hosted assets.
   answers when switching language.
 - Render the ordered current bilingual question-revision DTO. Only consent is
   required and it has no selected default.
-- Persist answer values and revision IDs only in the same browser for 15 days
-  or until successful submit. Never persist or restore file inputs or upload
-  IDs. The only write before the final submission is an attachment upload.
+- Persist answer values, revision IDs, and each finished upload's ID, name,
+  and size only in the same browser, for 15 days from the saved report's first
+  save or until successful submit. Never persist a file's bytes. Abandoning the
+  saved report deletes its uploads
+  ([ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+  The only write before the final submission is an attachment upload.
 - Upload each attached file at once through `POST /api/v1/uploads`, one
   request per file with its own `AbortController`: show an indeterminate
   indicator and Cancel while it uploads, Remove once it has, and hold Next and

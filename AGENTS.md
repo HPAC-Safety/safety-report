@@ -166,10 +166,13 @@ requirements does not touch a skill; its remedy is a claim.
    respondent data is written to a server or database. The one exception is an
    attachment: each file uploads through the API into private quarantine the
    moment it is attached, under an opaque upload ID that has no database row,
-   names no member, and expires by lifecycle rule unless a submission claims
-   it; removing the file erases it, and uploads are never restored after a
-   reload
-   ([ADR-0096](docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+   names no member, and expires by lifecycle rule fifteen days after upload
+   unless a submission claims it; removing the file erases it. The browser's
+   saved report keeps each upload's ID and name beside the answers, so the
+   files are restored with it, and both share one window fixed at fifteen days
+   from the report's first save; abandoning the report erases its uploads
+   ([ADR-0096](docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+   [ADR-0100](docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
    A reporter then submits one final request naming those uploads. The API
    stores the report, exact question revisions, answers, files, and outbox
    work atomically, then returns `202` without making a model call.

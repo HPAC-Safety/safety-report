@@ -128,8 +128,11 @@ with a human-approved pair can appear in the public feed.
 The target deliberately writes no respondent report data server-side before the
 one final submission, with one argued exception: an attachment uploads to
 private quarantine when it is attached, names no member, has no database row,
-and expires unless a submission claims it
-([ADR-0096](../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+and expires fifteen days after upload unless a submission claims it — the
+same window as the browser's saved report, which is the only thing that names
+it
+([ADR-0096](../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+[ADR-0100](../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 It has no server-side report drafts, resumable upload protocol,
 deterministic text scrubber, separate PII-audit call, translation
 call, specialized aircraft processing, outbound email, external publication

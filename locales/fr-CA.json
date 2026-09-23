@@ -135,13 +135,13 @@
       "body": "Merci. Nous avons bien reçu votre rapport."
     },
     "resume": {
-      "title": "#Continue where you left off?",
-      "body": "#This browser saved answers from a report you have not submitted yet. Continue with them, or start a new report? Starting over removes them from this browser.",
-      "yes": "#Yes, continue",
-      "no": "#No, start over",
-      "tableCaption": "#Your saved answers",
-      "questionHeader": "#Question",
-      "answerHeader": "#Saved answer"
+      "title": "Souhaitez-vous reprendre là où vous vous êtes arrêté?",
+      "body": "Ce navigateur a enregistré les réponses d'un rapport que vous n'avez pas encore soumis. Souhaitez-vous poursuivre avec ces réponses ou commencer un nouveau rapport? Si vous recommencez, ces réponses seront supprimées de ce navigateur.",
+      "yes": "Oui, continuez",
+      "no": "Non, recommencez",
+      "tableCaption": "Vos réponses enregistrées",
+      "questionHeader": "Question",
+      "answerHeader": "Réponse enregistrée"
     }
   },
   "notFound": {

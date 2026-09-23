@@ -7,6 +7,7 @@
         <PackageReference Include="Reqnroll.Tools.MsBuild.Generation" IncludeAssets="build" PrivateAssets="all" />
         <PackageReference Include="Reqnroll.xUnit" />
         <PackageReference Include="Shouldly" />
+        <PackageReference Include="Testcontainers.Minio" />
         <PackageReference Include="Testcontainers.PostgreSql" />
         <PackageReference Include="xunit" />
         <PackageReference Include="xunit.runner.visualstudio" />

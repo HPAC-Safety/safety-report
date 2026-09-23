@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-271 claims across 8 areas: 195 covered by a step definition today, 76 still `@ignore`. 50 constraints.
+290 claims across 8 areas: 216 covered by a step definition today, 74 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -52,9 +52,9 @@ type: guide
 | `REQ-DOM-013` | domain-and-lifecycle | An audited action is recorded in the immutable audit log | Reqnroll | Planned |
 | `REQ-MED-001` | media | Only allowlisted content types are accepted | Reqnroll | Covered |
 | `REQ-MED-002` | media | Declared content type must agree with detected content type | Reqnroll | Planned |
-| `REQ-MED-003` | media | The client filename never leaves the HTTP boundary | Reqnroll | Planned |
-| `REQ-MED-004` | media | An accepted attachment starts in a private quarantine compartment | Reqnroll | Planned |
-| `REQ-MED-005` | media | Unreferenced quarantine blobs expire automatically | Reqnroll | Planned |
+| `REQ-MED-003` | media | The client filename is kept only as a reviewer's download name | Reqnroll | Covered |
+| `REQ-MED-004` | media | An accepted upload waits in a private quarantine compartment | Reqnroll | Covered |
+| `REQ-MED-005` | media | Unclaimed uploads expire automatically | Reqnroll | Planned |
 | `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Planned |
 | `REQ-MED-007` | media | Every video is remuxed to strip metadata, never transcoded | Reqnroll | Covered |
 | `REQ-MED-015` | media | A video that cannot be stripped is kept rather than refused | Reqnroll | Covered |
@@ -65,6 +65,11 @@ type: guide
 | `REQ-MED-012` | media | The admin site never inline-renders a private document | playwright-bdd | Planned |
 | `REQ-MED-013` | media | A failed attachment is inaccessible to reviewers | Reqnroll | Covered |
 | `REQ-MED-014` | media | Attachments are never exposed publicly, even after publication | Reqnroll | Planned |
+| `REQ-MED-016` | media | Removing an upload erases every version of it | Reqnroll | Covered |
+| `REQ-MED-017` | media | A cancelled upload leaves nothing in storage | Reqnroll | Covered |
+| `REQ-MED-018` | media | A claimed upload is promoted into the report's compartments | Reqnroll | Covered |
+| `REQ-MED-019` | media | A reporter's filename is sanitized before it is stored | Reqnroll | Covered |
+| `REQ-MED-020` | media | A download's extension always matches the bytes served | Reqnroll | Covered |
 | `REQ-MOD-001` | moderation-authentication-and-publication | In development the login page offers no third-party sign-in option | playwright-bdd | Covered |
 | `REQ-MOD-002` | moderation-authentication-and-publication | Where a third-party provider is configured, the login page offers it | playwright-bdd | Covered |
 | `REQ-MOD-003` | moderation-authentication-and-publication | Signing in with member credentials returns a session that survives a reload | playwright-bdd | Covered |
@@ -229,7 +234,7 @@ type: guide
 | `REQ-SUB-009` | report-submission | A submission may answer a known superseded revision | Reqnroll | Covered |
 | `REQ-SUB-010` | report-submission | A revision that was never shown as answer-producing is rejectable | Reqnroll | Planned |
 | `REQ-SUB-011` | report-submission | Reporter-visible errors never echo submitted content | Reqnroll | Covered |
-| `REQ-SUB-012` | report-submission | Accepted attachments are streamed into quarantine under a bound | Reqnroll | Covered |
+| `REQ-SUB-012` | report-submission | An attachment is validated under a bound before it is stored | Reqnroll | Covered |
 | `REQ-SUB-013` | report-submission | A valid submission is persisted atomically | Reqnroll | Covered |
 | `REQ-SUB-014` | report-submission | A failed transaction leaves no visible report and no leaked blobs | Reqnroll | Covered |
 | `REQ-SUB-015` | report-submission | A successful submission returns an opaque accepted receipt | Reqnroll | Covered |
@@ -242,6 +247,20 @@ type: guide
 | `REQ-SUB-022` | report-submission | A signed-out visitor is asked to sign in before the report page is offered | playwright-bdd | Covered |
 | `REQ-SUB-023` | report-submission | The report page tells the reporter that signing in does not attach them to the report | playwright-bdd | Covered |
 | `REQ-SUB-024` | report-submission | The not-tracked notice is shown in the reporter's chosen language | playwright-bdd | Covered |
+| `REQ-SUB-039` | report-submission | An accepted upload returns an opaque upload ID and nothing else | Reqnroll | Covered |
+| `REQ-SUB-040` | report-submission | A refused upload is reported on its own and never stored | Reqnroll | Covered |
+| `REQ-SUB-041` | report-submission | A submission naming an expired or unknown upload is refused by name | Reqnroll | Covered |
+| `REQ-SUB-042` | report-submission | A claimed upload leaves quarantine once the report commits | Reqnroll | Covered |
+| `REQ-SUB-043` | report-submission | An unauthenticated upload is rejected | Reqnroll | Covered |
+| `REQ-SUB-044` | report-submission | A rate-limited upload is rejected | Reqnroll | Covered |
+| `REQ-SUB-045` | report-submission | Attaching a file uploads it at once with an activity indicator | playwright-bdd | Covered |
+| `REQ-SUB-046` | report-submission | Next and Submit wait for every upload to finish | playwright-bdd | Covered |
+| `REQ-SUB-047` | report-submission | A reporter may cancel an upload in progress | playwright-bdd | Covered |
+| `REQ-SUB-048` | report-submission | A reporter may remove an uploaded file | playwright-bdd | Covered |
+| `REQ-SUB-049` | report-submission | The form refuses a file past the attachment limit | playwright-bdd | Covered |
+| `REQ-SUB-050` | report-submission | A refused upload is explained on that file's row | playwright-bdd | Covered |
+| `REQ-SUB-051` | report-submission | An expired upload is marked for re-attachment and nothing else is lost | playwright-bdd | Covered |
+| `REQ-SUB-052` | report-submission | Uploaded files are not restored after a reload | playwright-bdd | Covered |
 | `REQ-TF-001` | typeform-question-import-export | Import requires both languages | Reqnroll | Covered |
 | `REQ-TF-002` | typeform-question-import-export | A field's ref appears in the English file but not the French one | Reqnroll | Covered |
 | `REQ-TF-003` | typeform-question-import-export | A choice's ref appears in the English file but not the French one | Reqnroll | Covered |

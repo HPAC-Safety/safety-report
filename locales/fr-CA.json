@@ -121,9 +121,27 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
-      "selectedCount": "{count} fichier(s) sélectionné(s)",
-      "guidance": "Veuillez joindre des photos, des vidéos ou des documents liés à cet incident, si vous en avez.",
-      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous actualisez cette page, vous devrez les sélectionner à nouveau."
+      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à{count}s de fichiers au total, d’{size} Mo chacun. Chaque fichier est téléchargé dès que vous le sélectionnez.",
+      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous rafraîchissez cette page, vous devrez les joindre à nouveau.",
+      "listLabel": "Fichiers joints",
+      "uploading": "Téléversement en cours…",
+      "uploadingNamed": "Téléversement de {name}",
+      "cancel": "Annuler",
+      "cancelNamed": "Annuler le téléchargement de {name}",
+      "remove": "Supprimer",
+      "removeNamed": "Supprimer {name}",
+      "expired": "Ce fichier n'est plus disponible. Supprimez-le et joignez-le à nouveau.",
+      "expiredSummary": "Certains fichiers joints ne sont plus disponibles. Veuillez joindre à nouveau les fichiers indiqués, puis soumettez votre réponse — vos autres réponses seront conservées.",
+      "rejected": {
+        "empty": "Ce fichier est vide.",
+        "too_large": "Ce fichier dépasse 50 Mo.",
+        "unrecognised_content": "Le contenu de ce fichier n'est pas dans un format que nous acceptons.",
+        "unaccepted_media_type": "Ce type de fichier n'est pas accepté.",
+        "declared_type_mismatch": "Le contenu de ce fichier ne correspond pas à son type.",
+        "limit": "Il n'est plus possible de joindre des fichiers à ce rapport.",
+        "network": "Le téléchargement de ce fichier a échoué. Vérifiez votre connexion, supprimez le fichier, puis réessayez.",
+        "unknown": "Ce fichier n'a pas pu être téléchargé."
+      }
     },
     "error": {
       "network": "Votre rapport n'a pas pu être envoyé. Vos réponses sont toujours enregistrées dans ce navigateur — veuillez vérifier votre connexion et réessayer.",

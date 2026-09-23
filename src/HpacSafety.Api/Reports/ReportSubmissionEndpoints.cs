@@ -13,8 +13,9 @@ using Microsoft.Extensions.Options;
 namespace HpacSafety.Api.Reports;
 
 /// <summary>
-///     The only reporter-facing write: one final multipart request, persisted
-///     atomically, with no report state created before it. See issue #14 and
+///     The reporter's one report write: a final JSON request naming the
+///     attachments already uploaded to quarantine, persisted atomically, with no
+///     report state created before it. See issue #14, ADR-0096, and
 ///     <c>features/report-submission/report-submission.feature</c>.
 /// </summary>
 /// <remarks>
@@ -25,7 +26,7 @@ namespace HpacSafety.Api.Reports;
 ///     ADR-0080. Nothing here calls a translation provider or the summarization
 ///     model.
 /// </remarks>
-public static class ReportSubmissionEndpoints
+public static partial class ReportSubmissionEndpoints
 {
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -50,39 +51,26 @@ public static class ReportSubmissionEndpoints
 		IBlobStore blobStore,
 		IOptions<MediaPolicyOptions> mediaOptions,
 		TimeProvider clock,
+		ILoggerFactory loggerFactory,
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
+		ArgumentNullException.ThrowIfNull(loggerFactory);
 		ArgumentNullException.ThrowIfNull(database);
 		ArgumentNullException.ThrowIfNull(ingestor);
 		ArgumentNullException.ThrowIfNull(blobStore);
 		ArgumentNullException.ThrowIfNull(mediaOptions);
 		ArgumentNullException.ThrowIfNull(clock);
 
-		if (!request.HasFormContentType)
+		if (!request.HasJsonContentType())
 		{
-			return Problem("A submission must be multipart/form-data.");
+			return Problem("A submission must be application/json.");
 		}
 
-		IFormCollection form;
-		try
-		{
-			form = await request.ReadFormAsync(cancellationToken).ConfigureAwait(false);
-		}
-		catch (InvalidDataException)
-		{
-			return Problem("The multipart request could not be read.");
-		}
-
-		if (form.Files.Count > mediaOptions.Value.MaxAttachmentCount)
-		{
-			return Problem("Too many attachments.");
-		}
-
-		var dto = ParseReportPart(form);
+		var dto = await ReadReport(request, cancellationToken).ConfigureAwait(false);
 		if (dto is null)
 		{
-			return Problem("The submission must contain exactly one valid report part.");
+			return Problem("The submission must be one valid report.");
 		}
 
 		if (!Locale.TryParse(dto.Language, out var locale))
@@ -99,13 +87,13 @@ public static class ReportSubmissionEndpoints
 
 		var report = new Report(locale, clock.GetUtcNow());
 		var seenRevisionIds = new HashSet<TinyId>();
-		var mappedFileIndexes = new HashSet<int>();
-		var fileAnswers = new List<(ReportAnswer Answer, IReadOnlyList<int> Indexes)>();
+		var claimedUploads = new HashSet<UploadId>();
+		var fileAnswers = new List<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)>();
 
 		foreach (var entry in dto.Answers)
 		{
 			var outcome = TryApplyAnswer(
-				report, entry, revisionLookup, seenRevisionIds, mappedFileIndexes, form.Files.Count, clock, fileAnswers);
+				report, entry, revisionLookup, seenRevisionIds, claimedUploads, clock, fileAnswers);
 
 			if (outcome is { } problem)
 			{
@@ -113,9 +101,9 @@ public static class ReportSubmissionEndpoints
 			}
 		}
 
-		if (mappedFileIndexes.Count != form.Files.Count)
+		if (claimedUploads.Count > mediaOptions.Value.MaxAttachmentCount)
 		{
-			return Problem("Every uploaded file must be referenced by exactly one answer.");
+			return Problem("Too many attachments.");
 		}
 
 		try
@@ -136,8 +124,21 @@ public static class ReportSubmissionEndpoints
 			return Problem(cause.Message);
 		}
 
-		var attachmentProblem = await IngestFiles(
-				report, fileAnswers, form.Files, blobStore, ingestor, clock, cancellationToken)
+		// Every named upload must still be waiting in quarantine before a single
+		// byte is promoted, so an expired one refuses the submission cleanly and
+		// the form can say exactly which files to attach again (ADR-0096).
+		var expired = await FindExpired(claimedUploads, blobStore, cancellationToken).ConfigureAwait(false);
+		if (expired.Count > 0)
+		{
+			return Results.Problem(
+				title: "That submission was not accepted.",
+				detail: "Some attachments are no longer available and must be attached again.",
+				statusCode: StatusCodes.Status400BadRequest,
+				type: "https://hpac.ca/problems/report-submission",
+				extensions: new Dictionary<string, object?> { ["expiredUploadIds"] = expired });
+		}
+
+		var attachmentProblem = await IngestFiles(report, fileAnswers, ingestor, clock, cancellationToken)
 			.ConfigureAwait(false);
 
 		if (attachmentProblem is not null)
@@ -157,6 +158,9 @@ public static class ReportSubmissionEndpoints
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
+		await ReleaseClaimedUploads(claimedUploads, blobStore, loggerFactory.CreateLogger(nameof(ReportSubmissionEndpoints)))
+			.ConfigureAwait(false);
+
 		return Results.Accepted(
 			$"/api/v1/reports/{report.Id.Value}",
 			new SubmitReportResponse(report.Id.Value, "submitted"));
@@ -165,18 +169,17 @@ public static class ReportSubmissionEndpoints
 	/// <summary>
 	///     Applies one answer entry to the report, or returns the problem response
 	///     to send instead. A file-upload answer's <see cref="ReportAnswer" /> row is
-	///     created here with a null value; the files themselves are ingested in a
-	///     second pass, once every entry has validated structurally.
+	///     created here with a null value; its uploads are claimed in a second pass,
+	///     once every entry has validated structurally.
 	/// </summary>
 	private static IResult? TryApplyAnswer(
 		Report report,
 		SubmitAnswerRequest entry,
 		Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup,
 		HashSet<TinyId> seenRevisionIds,
-		HashSet<int> mappedFileIndexes,
-		int fileCount,
+		HashSet<UploadId> claimedUploads,
 		TimeProvider clock,
-		List<(ReportAnswer Answer, IReadOnlyList<int> Indexes)> fileAnswers)
+		List<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)> fileAnswers)
 	{
 		if (!TinyId.TryParse(entry.QuestionRevisionId, out var revisionId))
 		{
@@ -205,9 +208,9 @@ public static class ReportSubmissionEndpoints
 		if (revision.Type == QuestionType.MultiSelect)
 		{
 			if (entry.Value is not null
-				|| entry.AttachmentPartIndexes is { Count: > 0 })
+				|| entry.Attachments is { Count: > 0 })
 			{
-				return Problem("A multi-select answer carries option codes, not a value or file indexes.");
+				return Problem("A multi-select answer carries option codes, not a value or upload ids.");
 			}
 
 			try
@@ -227,22 +230,24 @@ public static class ReportSubmissionEndpoints
 			if (entry.Value is not null
 				|| entry.OptionCodes is { Count: > 0 })
 			{
-				return Problem("A file-upload answer carries attachment indexes, not a value or option codes.");
+				return Problem("A file-upload answer carries upload ids, not a value or option codes.");
 			}
 
-			var indexes = entry.AttachmentPartIndexes ?? [];
-			foreach (var index in indexes)
+			var uploads = new List<(UploadId Upload, string? FileName)>();
+			foreach (var attachment in entry.Attachments ?? [])
 			{
-				if (index < 0
-					|| index >= fileCount)
+				if (attachment is null
+					|| !UploadId.TryParse(attachment.UploadId, out var uploadId))
 				{
-					return Problem("An answer referenced a file part that was not uploaded.");
+					return Problem("An answer named a malformed upload id.");
 				}
 
-				if (!mappedFileIndexes.Add(index))
+				if (!claimedUploads.Add(uploadId))
 				{
-					return Problem("An answer referenced the same file part more than once.");
+					return Problem("An answer named the same upload more than once.");
 				}
+
+				uploads.Add((uploadId, attachment.FileName));
 			}
 
 			try
@@ -250,7 +255,7 @@ public static class ReportSubmissionEndpoints
 				// The row is created now, with no value — files are linked to it
 				// once every entry has validated and ingestion can safely begin.
 				var answer = report.Answer(question, revision, value: null, at);
-				fileAnswers.Add((answer, indexes));
+				fileAnswers.Add((answer, uploads));
 			}
 			catch (DomainRuleViolationException cause)
 			{
@@ -261,9 +266,9 @@ public static class ReportSubmissionEndpoints
 		}
 
 		if (entry.OptionCodes is { Count: > 0 }
-			|| entry.AttachmentPartIndexes is { Count: > 0 })
+			|| entry.Attachments is { Count: > 0 })
 		{
-			return Problem("This answer's shape does not carry option codes or file indexes.");
+			return Problem("This answer's shape does not carry option codes or upload ids.");
 		}
 
 		try
@@ -279,34 +284,46 @@ public static class ReportSubmissionEndpoints
 	}
 
 	/// <summary>
-	///     Streams every file-upload answer's referenced parts into quarantine,
-	///     ingests each one, and links the accepted result to its answer. Runs only
-	///     once every answer entry has validated structurally, so a malformed
-	///     submission never quarantines a single byte.
+	///     The named uploads that are no longer in quarantine, in the order they
+	///     were named, so the form can mark exactly those files.
+	/// </summary>
+	private static async Task<List<string>> FindExpired(
+		IEnumerable<UploadId> uploads,
+		IBlobStore blobStore,
+		CancellationToken cancellationToken)
+	{
+		var expired = new List<string>();
+
+		foreach (var upload in uploads)
+		{
+			if (!await blobStore.Exists(BlobKey.ForUpload(upload), cancellationToken).ConfigureAwait(false))
+			{
+				expired.Add(upload.Value);
+			}
+		}
+
+		return expired;
+	}
+
+	/// <summary>
+	///     Claims every file-upload answer's uploads: each is judged again and
+	///     promoted into the report's own compartments, then linked to its answer.
+	///     Runs only once every answer entry has validated structurally and every
+	///     upload has been found.
 	/// </summary>
 	private static async Task<IResult?> IngestFiles(
 		Report report,
-		IReadOnlyList<(ReportAnswer Answer, IReadOnlyList<int> Indexes)> fileAnswers,
-		IFormFileCollection files,
-		IBlobStore blobStore,
+		IReadOnlyList<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)> fileAnswers,
 		MediaIngestor ingestor,
 		TimeProvider clock,
 		CancellationToken cancellationToken)
 	{
-		foreach (var (answer, indexes) in fileAnswers)
+		foreach (var (answer, uploads) in fileAnswers)
 		{
-			foreach (var index in indexes)
+			foreach (var (upload, fileName) in uploads)
 			{
-				var upload = files[index];
-				var quarantineKey = BlobKey.For(report.Id.Value, MediaCompartment.Quarantine, TinyId.New().Value);
-
-				await using (var content = upload.OpenReadStream())
-				{
-					await blobStore.Write(quarantineKey, content, upload.ContentType, cancellationToken)
-						.ConfigureAwait(false);
-				}
-
-				var outcome = await ingestor.Ingest(quarantineKey, upload.ContentType, cancellationToken)
+				var fileId = TinyId.New();
+				var outcome = await ingestor.Ingest(BlobKey.ForUpload(upload), report.Id, fileId, cancellationToken)
 					.ConfigureAwait(false);
 
 				if (!outcome.IsAccepted)
@@ -314,7 +331,13 @@ public static class ReportSubmissionEndpoints
 					return Problem($"An attachment was refused: {outcome.RejectionReason}.");
 				}
 
-				var file = report.AddFile(outcome.OriginalKey.Value, outcome.ContentType.ContentType, outcome.ByteSize, clock.GetUtcNow());
+				var file = report.AddFile(
+					fileId,
+					outcome.OriginalKey.Value,
+					outcome.ContentType.ContentType,
+					outcome.ByteSize,
+					fileName,
+					clock.GetUtcNow());
 				file.LinkToAnswer(answer.Id);
 
 				if (outcome.IsViewable)
@@ -325,6 +348,34 @@ public static class ReportSubmissionEndpoints
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///     Removes claimed uploads from quarantine once the report has committed.
+	///     Best effort, and deliberately not cancellable by the request: the report
+	///     already holds its own copies, and an upload this fails to remove is
+	///     expired by the lifecycle rule instead (REQ-SUB-042).
+	/// </summary>
+	private static async Task ReleaseClaimedUploads(
+		IEnumerable<UploadId> uploads,
+		IBlobStore blobStore,
+		ILogger logger)
+	{
+		foreach (var upload in uploads)
+		{
+			try
+			{
+				await blobStore.Delete(BlobKey.ForUpload(upload), CancellationToken.None).ConfigureAwait(false);
+			}
+#pragma warning disable CA1031 // The lifecycle rule is the backstop; a failed tidy-up must not fail a committed report.
+			catch (Exception cause)
+#pragma warning restore CA1031
+			{
+				// No upload id or key in the message: an id is a capability, and
+				// a key is private. The exception type is enough to notice a trend.
+				LogUploadNotReleased(logger, cause.GetType().Name);
+			}
+		}
 	}
 
 	/// <summary>
@@ -364,19 +415,15 @@ public static class ReportSubmissionEndpoints
 			.ToDictionary(pair => pair.Revision.Id, pair => pair);
 	}
 
-	private static SubmitReportRequest? ParseReportPart(IFormCollection form)
+	private static async Task<SubmitReportRequest?> ReadReport(
+		HttpRequest request,
+		CancellationToken cancellationToken)
 	{
-		var reportPart = form["report"];
-
-		if (reportPart.Count != 1
-			|| string.IsNullOrWhiteSpace(reportPart[0]))
-		{
-			return null;
-		}
-
 		try
 		{
-			return JsonSerializer.Deserialize<SubmitReportRequest>(reportPart[0]!, JsonOptions);
+			return await JsonSerializer
+				.DeserializeAsync<SubmitReportRequest>(request.Body, JsonOptions, cancellationToken)
+				.ConfigureAwait(false);
 		}
 		catch (JsonException)
 		{
@@ -397,4 +444,10 @@ public static class ReportSubmissionEndpoints
 			statusCode: StatusCodes.Status400BadRequest,
 			type: "https://hpac.ca/problems/report-submission");
 	}
+
+	[LoggerMessage(
+		Level = LogLevel.Warning,
+		Message = "A claimed upload could not be removed from quarantine ({ExceptionType}); the lifecycle rule will expire it.")]
+	private static partial void LogUploadNotReleased(ILogger logger,
+													 string exceptionType);
 }

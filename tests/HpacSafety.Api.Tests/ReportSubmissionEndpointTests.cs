@@ -15,7 +15,7 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-///     The only reporter-facing write, against a real PostgreSQL container. Every
+///     The reporter's report write, against real PostgreSQL and MinIO containers. Every
 ///     report here is synthetic. See issue #14 and
 ///     <c>features/report-submission/report-submission.feature</c>.
 /// </summary>
@@ -217,60 +217,57 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	[Fact]
 	public async Task GivenAttachmentCountOverLimit_WhenSubmitted_ThenRejected()
 	{
-		// Given — the default limit is 5; six garbage parts is over it
-		using var reporter = await SignedIn();
+		// Given — the default limit is 5; six named uploads is over it
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
 		var consentRevisionId = await ConsentRevisionId();
-		var content = ReportPart(new
+		using var reporter = await SignedIn();
+		var attachments = Enumerable.Range(0, 6)
+			.Select(i => new { uploadId = UploadId.New().Value, fileName = $"photo-{i}.png" })
+			.ToArray();
+		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = consentRevisionId, value = "yes" } },
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = revisionId, attachments },
+			},
 		});
-
-		for (var i = 0; i < 6; i++)
-		{
-			var part = new ByteArrayContent([1, 2, 3]);
-			part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/octet-stream");
-			content.Add(part, "files", $"garbage-{i}.bin");
-		}
 
 		// When
 		using var response = await reporter.PostAsync(Submit, content);
-		content.Dispose();
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
 	[Fact]
-	public async Task GivenAFileUploadAnswer_WhenSubmittedWithAValidImage_ThenAcceptedAndFileIsLinked()
+	public async Task GivenAFileUploadAnswer_WhenSubmittedWithAnUploadedImage_ThenAcceptedAndFileIsLinkedUnderItsName()
 	{
 		// Given
 		using var admin = await SignedIn(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestion(admin, type: "file_upload");
-		var revisionId = await RevisionIdFor(key);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
 		var consentRevisionId = await ConsentRevisionId();
 		using var reporter = await SignedIn();
+		var uploadId = await UploadPng(reporter);
 
-		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
-		var bytes = image.ToByteArray();
-
-		var content = ReportPart(new
+		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[]
+			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = (string?)"yes", attachmentPartIndexes = (int[]?)null },
-				new { questionRevisionId = revisionId, value = (string?)null, attachmentPartIndexes = (int[]?) [0] },
+				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new
+				{
+					questionRevisionId = revisionId,
+					attachments = new[] { new { uploadId, fileName = "C:\\photos\\Launch \"site\".png" } },
+				},
 			},
 		});
 
-		var part = new ByteArrayContent(bytes);
-		part.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-		content.Add(part, "files", "photo.png");
-
 		// When
 		using var response = await reporter.PostAsync(Submit, content);
-		content.Dispose();
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
@@ -285,32 +282,158 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		// else will ever record the derivative if this endpoint does not.
 		file.AwaitsStripping.ShouldBeFalse();
 		Should.NotThrow(() => file.ViewableKey);
+
+		// The reporter's name is kept, sanitized; the blobs are named by the
+		// file's own id and never by the name or the upload id (ADR-0097).
+		file.OriginalFileName.ShouldBe("Launch site.png");
+		file.BlobKey.ShouldBe($"{body!.Id}/original/{file.Id}");
+		file.StrippedBlobKey.ShouldBe($"{body.Id}/stripped/{file.Id}");
+
+		// The claimed upload has left quarantine (REQ-SUB-042).
+		(await ObjectExists($"quarantine/{uploadId}")).ShouldBeFalse();
 	}
 
 	[Fact]
-	public async Task GivenAFileIndexNeverUploaded_WhenSubmitted_ThenRejected()
+	public async Task GivenAnUploadThatNoLongerExists_WhenSubmitted_ThenRejectedNamingItAndNothingIsStored()
 	{
 		// Given
 		using var admin = await SignedIn(MemberRole.Administrator);
-		var key = await CreateSyntheticQuestion(admin, type: "file_upload");
-		var revisionId = await RevisionIdFor(key);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
+		var live = await UploadPng(reporter);
+		var expired = UploadId.New().Value;
+		var reportsBefore = await ReportCount();
+
+		using var content = ReportPart(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new
+				{
+					questionRevisionId = revisionId,
+					attachments = new[] { new { uploadId = live, fileName = "a.png" }, new { uploadId = expired, fileName = "b.png" } },
+				},
+			},
+		});
+
+		// When
+		using var response = await reporter.PostAsync(Submit, content);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("expiredUploadIds").EnumerateArray().Select(id => id.GetString()).ShouldBe([expired]);
+		(await ReportCount()).ShouldBe(reportsBefore);
+
+		// The live upload is untouched and can still be claimed.
+		(await ObjectExists($"quarantine/{live}")).ShouldBeTrue();
+	}
+
+	[Theory]
+	[InlineData("not-an-upload-id")]
+	[InlineData("")]
+	public async Task GivenAMalformedUploadId_WhenSubmitted_ThenRejected(string uploadId)
+	{
+		// Given
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
 		var consentRevisionId = await ConsentRevisionId();
 		using var reporter = await SignedIn();
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[]
+			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = (string?)"yes", attachmentPartIndexes = (int[]?)null },
-				new { questionRevisionId = revisionId, value = (string?)null, attachmentPartIndexes = (int[]?) [0] },
+				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = revisionId, attachments = new[] { new { uploadId, fileName = "a.png" } } },
 			},
 		});
 
-		// When — no files part was actually attached
+		// When
 		using var response = await reporter.PostAsync(Submit, content);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenTheSameUploadNamedTwice_WhenSubmitted_ThenRejected()
+	{
+		// Given
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
+		var uploadId = await UploadPng(reporter);
+		using var content = ReportPart(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new
+				{
+					questionRevisionId = revisionId,
+					attachments = new[] { new { uploadId, fileName = "a.png" }, new { uploadId, fileName = "b.png" } },
+				},
+			},
+		});
+
+		// When
+		using var response = await reporter.PostAsync(Submit, content);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenAMultipartBody_WhenSubmitted_ThenRejected()
+	{
+		// Given — the old multipart shape is gone (ADR-0096)
+		using var reporter = await SignedIn();
+		using var content = new MultipartFormDataContent { { new StringContent("{}"), "report" } };
+
+		// When
+		using var response = await reporter.PostAsync(Submit, content);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	private static async Task<string> UploadPng(HttpClient reporter)
+	{
+		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
+		using var body = new ByteArrayContent(image.ToByteArray());
+		body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
+
+		using var response = await reporter.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+
+		var upload = await response.Content.ReadFromJsonAsync<JsonElement>();
+		return upload.GetProperty("uploadId").GetString()!;
+	}
+
+	private async Task<bool> ObjectExists(string key)
+	{
+		try
+		{
+			await fixture.Storage.GetObjectMetadataAsync(ApiPostgresFixture.BucketName, key);
+			return true;
+		}
+		catch (Amazon.S3.AmazonS3Exception missing) when (missing.StatusCode == HttpStatusCode.NotFound)
+		{
+			return false;
+		}
+	}
+
+	private async Task<int> ReportCount()
+	{
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		return await database.Reports.IgnoreQueryFilters().CountAsync();
 	}
 
 	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.User)
@@ -320,12 +443,9 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
-	private static MultipartFormDataContent ReportPart(object dto)
+	private static StringContent ReportPart(object dto)
 	{
-		var content = new MultipartFormDataContent();
-		var json = JsonSerializer.Serialize(dto, JsonOptions);
-		content.Add(new StringContent(json), "report");
-		return content;
+		return new StringContent(JsonSerializer.Serialize(dto, JsonOptions), System.Text.Encoding.UTF8, "application/json");
 	}
 
 	private async Task<string> ConsentRevisionId()

@@ -30,7 +30,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 		// Given
 		// The port itself declares the method, and the adapters implement it.
 		// Everything else has to go through the chokepoint.
-		var allowed = new[] { chokepointFile, "IBlobStore.cs", "S3BlobStore.cs", "FileSystemBlobStore.cs" };
+		var allowed = new[] { chokepointFile, "IBlobStore.cs", "S3BlobStore.cs" };
 		var callSite = new Regex($@"\b{method}\s*\(", RegexOptions.None, TimeSpan.FromSeconds(5));
 
 		// When

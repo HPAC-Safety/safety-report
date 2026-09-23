@@ -1,12 +1,14 @@
 Feature: Report submission
 A reporter's answers, revision IDs, and locale live only in the browser
-until one final multipart request. Before that request, the API, database,
-and object storage receive no unfinished report state.
+until one final submission request. Before that request, the API and database
+receive no unfinished report state. The one thing that reaches the server
+earlier is an attachment, uploaded into private quarantine as soon as it is
+attached and claimed by that request (ADR-0096).
 
 Background:
-  Given the only write endpoint for a reporter is POST /api/v1/reports
-  And it requires a valid member bearer token
-  And it accepts multipart/form-data with one report JSON part and zero or more files parts
+  Given a reporter writes a report through POST /api/v1/reports and an attachment through POST /api/v1/uploads
+  And both require a valid member bearer token
+  And the report request is JSON that names each attachment by the upload ID the upload returned
   And the bearer token is transport/security metadata, not persisted report content
 
 @REQ-SUB-001
@@ -15,14 +17,14 @@ Scenario: The browser holds report state locally until submission
   Given a reporter is filling out the form
   When the reporter has not yet submitted
   Then the selected locale, shown question-revision IDs, and entered answers exist only in local browser storage with a 15-day expiry
-  And image, video, and document attachments are never placed in browser storage
-  And no server draft, report ID reservation, upload token, or resumable upload protocol exists
+  And image, video, and document attachments and their upload IDs are never placed in browser storage
+  And no server draft, report ID reservation, or resumable upload protocol exists
 
 @REQ-SUB-002
 @ui
 Scenario: A successful submission clears local browser state
   Given a reporter has entered answers in local browser storage
-  When the final multipart request succeeds
+  When the final submission request succeeds
   Then the browser clears that local state
 
 @REQ-SUB-003
@@ -112,7 +114,7 @@ Scenario: A conditional question is absent from paging until its parent conditio
 Scenario: The Next button becomes Submit on the final page
   Given a reporter has reached the last page of the form
   Then the control that was Next now reads Submit
-  And pressing it sends the one final multipart request
+  And pressing it sends the one final submission request
 
 @REQ-SUB-034
 @ui
@@ -130,7 +132,7 @@ Scenario: One answer entry per shown answer-producing revision
   When the reporter submits the form
   Then the submission DTO contains exactly one answer entry for each of those revisions
   And every answer of every type uses "value", a single string, alongside the locale it was given in
-  And file-upload answers additionally use zero-based indexes into the repeated files parts
+  And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
   And fields for the other answer shapes are null
 
 @REQ-SUB-005
@@ -138,7 +140,7 @@ Scenario: A skipped answer is represented by an empty value, not omission
   Given a reporter skips an answer-producing question
   When the submission DTO is built
   Then a skipped answer of any type has a null value
-  And a skipped file upload has an empty attachment_part_indexes list
+  And a skipped file upload has an empty attachments list
 
 @REQ-SUB-006
 Scenario: A submitted select value must be one the revision offered
@@ -186,9 +188,9 @@ Examples:
   | problem                                             |
   | a duplicate question_revision_id                    |
   | a non-null field from the wrong answer shape        |
-  | a duplicate or out-of-range file index              |
-  | a files part that is never referenced by any answer |
-  | a files part referenced by more than one answer     |
+  | a malformed upload ID                               |
+  | the same upload ID named more than once             |
+  | more upload IDs than the attachment limit           |
   | an unknown question_revision_id                     |
   | a question_revision_id for a deleted revision       |
   | no explicit answer to the consent_publish revision  |
@@ -217,26 +219,26 @@ Scenario: Reporter-visible errors never echo submitted content
   And routine invalid requests are not logged with body content
 
 @REQ-SUB-012
-Scenario: Accepted attachments are streamed into quarantine under a bound
-  Given a submission includes one or more files parts
-  When the API accepts an attachment
-  Then the API mints an opaque server-side filename/key
-  And streams at most 50 MB into the quarantine compartment while computing the actual byte count and inspecting its signature
+Scenario: An attachment is validated under a bound before it is stored
+  Given a reporter attaches a file
+  When the API receives the upload
+  Then the API reads at most one byte past 50 MB while counting, then inspects the file's signature and validates it
   And never buffers the whole file in memory
-  And never persists or logs the client filename
+  And writes only an accepted file to the quarantine compartment, under an upload ID the API mints
+  And the upload request carries no filename, and none is persisted or logged for it
 
 @REQ-SUB-013
 Scenario: A valid submission is persisted atomically
-  Given a multipart submission passes every validation step
+  Given a submission passes every validation step
   When the API commits the submission
-  Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for successfully quarantined blobs, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file
+  Then one database transaction creates the report and consent projection, one answer per shown answer-producing revision including skips, report-file metadata linked to its file-upload answer for each claimed upload, one summarization outbox item, one answer-translation outbox item, and one independent attachment-processing outbox item per file
 
 @REQ-SUB-014
 Scenario: A failed transaction leaves no visible report and no leaked blobs
   Given the persistence transaction for a submission fails
   When the API returns from the failed request
   Then no report is visible
-  And any already-written quarantine blobs are unreferenced and expire through the storage lifecycle rule
+  And the uploads it named stay unclaimed in quarantine and expire through the storage lifecycle rule
 
 @REQ-SUB-015
 Scenario: A successful submission returns an opaque accepted receipt
@@ -283,7 +285,7 @@ Examples:
 Scenario: A stored report carries no submitter subject, user id, or link
   Given a reporter submits a valid report while signed in
   When the submission is committed
-  Then no stored report, answer, file, consent projection, or outbox message records the submitter's subject
+  Then no stored report, answer, file, upload, consent projection, or outbox message records the submitter's subject
   And no column, join table, or hash anywhere links the report to the member who filed it
 
 @REQ-SUB-021
@@ -315,3 +317,115 @@ Scenario: The report page tells the reporter that signing in does not attach the
 Scenario: The not-tracked notice is shown in the reporter's chosen language
   Given a signed-in member opens the report page in French
   Then the notice is shown in French
+
+@REQ-SUB-039
+Scenario: An accepted upload returns an opaque upload ID and nothing else
+  Given a member uploads an allowlisted file within the size limit
+  When the API accepts the upload
+  Then the response is 201 Created with an opaque upload ID and the attachment's kind
+  And the response never echoes a client filename, storage key, or URL
+
+@REQ-SUB-040
+Scenario Outline: A refused upload is reported on its own and never stored
+  Given a member uploads <file>
+  When the API validates the upload
+  Then the API rejects it with a safe rejection reason of "<reason>"
+  And nothing is written to object storage
+
+Examples:
+  | file                                            | reason                   |
+  | an empty file                                   | empty                    |
+  | a file one byte larger than 50 MB               | too_large                |
+  | a file whose bytes match no known format        | unrecognised_content     |
+  | a file declared as one allowlisted type but containing another | declared_type_mismatch |
+
+@REQ-SUB-041
+Scenario: A submission naming an expired or unknown upload is refused by name
+  Given a submission names an upload ID that no longer exists in quarantine
+  When the API validates the submission
+  Then the API rejects the submission with 400
+  And the response lists exactly the upload IDs it could not find
+  And no report, answer, file, or outbox row is created
+
+@REQ-SUB-042
+Scenario: A claimed upload leaves quarantine once the report commits
+  Given a submission claims an upload
+  When the report's transaction commits
+  Then the claimed bytes live in the report's own compartments
+  And the upload is removed from quarantine, with the lifecycle rule as the backstop if that removal fails
+
+@REQ-SUB-043
+Scenario: An unauthenticated upload is rejected
+  Given an upload request carries no bearer token
+  When the API receives it
+  Then the API rejects it before anything is written to object storage
+
+@REQ-SUB-044
+Scenario: A rate-limited upload is rejected
+  Given an upload request arrives
+  When the per-IP upload rate limit is exceeded
+  Then the API rejects the request with 429 and a safe retry signal
+
+@REQ-SUB-045
+@ui
+Scenario: Attaching a file uploads it at once with an activity indicator
+  Given the current page shows a file-upload question
+  When the reporter attaches a file
+  Then the file appears in a list of attached files under its own name
+  And an indeterminate activity indicator shows on that file's row while it uploads
+  And once the upload finishes the indicator is replaced by a Remove control
+
+@REQ-SUB-046
+@ui
+Scenario: Next and Submit wait for every upload to finish
+  Given a file on the current page is still uploading
+  Then the Next or Submit control is disabled
+  When the upload finishes
+  Then the Next or Submit control is enabled again
+
+@REQ-SUB-047
+@ui
+Scenario: A reporter may cancel an upload in progress
+  Given a file on the current page is still uploading
+  When the reporter presses that file's Cancel control
+  Then the upload request is aborted
+  And the file is removed from the list
+
+@REQ-SUB-048
+@ui
+Scenario: A reporter may remove an uploaded file
+  Given a file on the current page has finished uploading
+  When the reporter presses that file's Remove control
+  Then the browser asks the API to delete that upload
+  And the file is removed from the list and is not named by the submission
+
+@REQ-SUB-049
+@ui
+Scenario: The form refuses a file past the attachment limit
+  Given the reporter has already attached as many files as the attachment limit allows
+  When the reporter attaches one more
+  Then that file is not uploaded
+  And an inline, localized message states the limit
+
+@REQ-SUB-050
+@ui
+Scenario: A refused upload is explained on that file's row
+  Given the API refuses an uploaded file
+  Then that file's row shows a localized reason matching the refusal
+  And the file is not named by the submission
+
+@REQ-SUB-051
+@ui
+Scenario: An expired upload is marked for re-attachment and nothing else is lost
+  Given the API refuses a submission because some of its uploads expired
+  Then each of those files is marked expired with a prompt to attach it again
+  And every other answer and upload is kept
+  And the reporter can submit again once the files are re-attached
+
+@REQ-SUB-052
+@ui
+Scenario: Uploaded files are not restored after a reload
+  Given the reporter has uploaded files and the browser holds a saved report
+  When the reporter reloads the form and continues the saved report
+  Then no file is listed as attached
+  And the reporter is told to attach the files again

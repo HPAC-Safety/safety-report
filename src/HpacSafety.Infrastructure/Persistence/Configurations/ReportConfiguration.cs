@@ -123,6 +123,7 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 		builder.Property(file => file.BlobKey).HasMaxLength(512).IsRequired();
 		builder.Property(file => file.StrippedBlobKey).HasMaxLength(512);
 		builder.Property(file => file.ContentType).HasMaxLength(128).IsRequired();
+		builder.Property(file => file.OriginalFileName).HasMaxLength(AttachmentFileName.MaxLength);
 		builder.Property(file => file.ProcessingErrorCode).HasMaxLength(128);
 
 		builder.HasIndex(file => file.ReportId);

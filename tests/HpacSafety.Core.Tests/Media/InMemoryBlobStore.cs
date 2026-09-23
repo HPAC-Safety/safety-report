@@ -13,14 +13,6 @@ internal sealed class InMemoryBlobStore : IBlobStore
 
 	public IReadOnlyCollection<string> Keys => _blobs.Keys.ToArray();
 
-	public Task<Uri> CreateUploadUrl(BlobKey key,
-									 string contentType,
-									 TimeSpan lifetime,
-									 CancellationToken cancellationToken)
-	{
-		return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=put&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
-	}
-
 	public Task<Uri> CreateReadUrl(BlobKey key,
 								   string downloadFileName,
 								   TimeSpan lifetime,
@@ -45,6 +37,19 @@ internal sealed class InMemoryBlobStore : IBlobStore
 		using var buffer = new MemoryStream();
 		await content.CopyToAsync(buffer, cancellationToken);
 		_blobs[key.Value] = buffer.ToArray();
+	}
+
+	public Task<bool> Exists(BlobKey key,
+							 CancellationToken cancellationToken)
+	{
+		return Task.FromResult(_blobs.ContainsKey(key.Value));
+	}
+
+	public Task Delete(BlobKey key,
+					   CancellationToken cancellationToken)
+	{
+		_blobs.TryRemove(key.Value, out _);
+		return Task.CompletedTask;
 	}
 
 	public void Seed(BlobKey key,

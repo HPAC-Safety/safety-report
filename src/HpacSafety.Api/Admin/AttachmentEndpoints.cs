@@ -71,14 +71,14 @@ public static class AttachmentEndpoints
 		try
 		{
 			url = await links.CreateViewUrl(
-				file.ViewableKey, DownloadFileName(file), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+				file.ViewableKey, DownloadFileName(file, derivative: true), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
 		}
 		catch (DomainRuleViolationException cause)
 		{
 			return Problem(cause.Message);
 		}
 
-		return await IssueAsync(file, url, context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
+		return await IssueAsync(file, url, DownloadFileName(file, derivative: true), context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
 	}
 
 	private static async Task<IResult> DownloadAsync(
@@ -113,14 +113,14 @@ public static class AttachmentEndpoints
 		try
 		{
 			url = await links.CreateDocumentDownloadUrl(
-				BlobKey.Parse(file.BlobKey), file.Kind, DownloadFileName(file), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+				BlobKey.Parse(file.BlobKey), file.Kind, DownloadFileName(file, derivative: false), BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
 		}
 		catch (DomainRuleViolationException cause)
 		{
 			return Problem(cause.Message);
 		}
 
-		return await IssueAsync(file, url, context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
+		return await IssueAsync(file, url, DownloadFileName(file, derivative: false), context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>
@@ -132,6 +132,7 @@ public static class AttachmentEndpoints
 	private static async Task<IResult> IssueAsync(
 		ReportFile file,
 		Uri url,
+		string fileName,
 		HttpContext context,
 		HpacSafetyDbContext database,
 		IOptions<HpacAuthenticationOptions> authOptions,
@@ -153,7 +154,7 @@ public static class AttachmentEndpoints
 		context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
 
 		return Results.Ok(new AttachmentLinkResponse(
-			url.ToString(), clock.GetUtcNow().Add(BlobUrlLifetime.Maximum), DownloadFileName(file)));
+			url.ToString(), clock.GetUtcNow().Add(BlobUrlLifetime.Maximum), fileName));
 	}
 
 	private static Task<ReportFile?> LoadAccessibleFileAsync(
@@ -176,10 +177,21 @@ public static class AttachmentEndpoints
 	///     A stable, server-minted name — never the client-supplied filename
 	///     (REQ-MED-003), and never the private original's blob key.
 	/// </summary>
-	private static string DownloadFileName(ReportFile file)
+	/// <summary>
+	///     The reporter's sanitized name with the extension of the bytes served —
+	///     the stripped derivative's type for a view, the original's for a download —
+	///     or the file id when the reporter's name is unknown (ADR-0097).
+	/// </summary>
+	private static string DownloadFileName(ReportFile file,
+										   bool derivative)
 	{
-		var extension = MediaType.TryParse(file.ContentType, out var type) ? type.Extension : "bin";
-		return $"{file.Id}.{extension}";
+		if (!MediaType.TryParse(file.ContentType, out var original))
+		{
+			return $"{file.Id}.bin";
+		}
+
+		var served = derivative && original.StrippedForm is { } stripped ? stripped : original;
+		return AttachmentFileName.ForDownload(file.OriginalFileName, file.Id, served);
 	}
 
 	private static IResult Problem(string detail)
@@ -195,5 +207,5 @@ public static class AttachmentEndpoints
 /// <summary>A short-lived link to a reviewer-facing attachment.</summary>
 /// <param name="Url">The pre-signed, forced-download URL.</param>
 /// <param name="ExpiresAt">When the URL stops working.</param>
-/// <param name="FileName">The server-minted name the download will save as.</param>
+/// <param name="FileName">The name the download will save as — the reporter's, sanitized, or a server-minted one.</param>
 public sealed record AttachmentLinkResponse(string Url, DateTimeOffset ExpiresAt, string FileName);

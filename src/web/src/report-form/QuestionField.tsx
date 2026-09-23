@@ -1,5 +1,7 @@
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
+import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES } from "../api/uploads"
+import { AttachmentField, type Attachment } from "./AttachmentField"
 import type { DraftAnswer } from "./draft"
 import { MultiSelectPicker } from "./MultiSelectPicker"
 import { optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
@@ -22,8 +24,11 @@ export interface QuestionFieldProps {
 	locale: Locale
 	answer: DraftAnswer | undefined
 	onChange: (answer: DraftAnswer | undefined) => void
-	files: File[]
-	onFilesChange: (files: File[]) => void
+	attachments: Attachment[]
+	onAttachmentsChange: (update: (current: Attachment[]) => Attachment[]) => void
+	onUploadingChange: (uploading: boolean) => void
+	/** How many more files the whole report may still take. */
+	attachmentRoom: number
 	errorText: string | null
 	t: (key: string, params?: Record<string, string | number>) => string
 }
@@ -34,8 +39,10 @@ export function QuestionField({
 	locale,
 	answer,
 	onChange,
-	files,
-	onFilesChange,
+	attachments,
+	onAttachmentsChange,
+	onUploadingChange,
+	attachmentRoom,
 	errorText,
 	t,
 }: QuestionFieldProps) {
@@ -176,20 +183,21 @@ export function QuestionField({
 		return (
 			<div className="mb-6">
 				{label}
-				<input
-					id={fieldId}
-					type="file"
-					multiple
-					className="mt-1 block font-sans text-ink"
-					aria-describedby={describedBy}
-					onChange={(event) => onFilesChange(Array.from(event.target.files ?? []))}
+				<p className="mt-1 font-sans text-xs text-ink-muted">
+					{t("report.attachments.guidance", {
+						count: MAX_ATTACHMENTS,
+						size: MAX_ATTACHMENT_BYTES / (1024 * 1024),
+					})}
+				</p>
+				<AttachmentField
+					fieldId={fieldId}
+					describedBy={describedBy}
+					attachments={attachments}
+					onAttachmentsChange={onAttachmentsChange}
+					onBusyChange={onUploadingChange}
+					remaining={attachmentRoom}
+					t={t}
 				/>
-				{files.length > 0 && (
-					<p className="mt-1 font-sans text-xs text-ink-muted">
-						{t("report.attachments.selectedCount", { count: files.length })}
-					</p>
-				)}
-				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.guidance")}</p>
 				<p className="mt-1 font-sans text-xs text-ink-muted">{t("report.attachments.notRestored")}</p>
 				{helpNode}
 				{errorNode}

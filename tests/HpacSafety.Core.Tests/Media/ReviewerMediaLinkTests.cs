@@ -33,7 +33,9 @@ public class ReviewerMediaLinkTests
 	public async Task GivenKeyOutsideStrippedCompartment_WhenViewUrlIsRequested_ThenRefused(MediaCompartment compartment)
 	{
 		// Given
-		var key = BlobKey.For(ReportId, compartment, "photo.jpg");
+		var key = compartment == MediaCompartment.Quarantine
+			? BlobKey.ForUpload(UploadId.New())
+			: BlobKey.For(ReportId, compartment, "photo.jpg");
 
 		// When / Then
 		await Should.ThrowAsync<DomainRuleViolationException>(() => new ReviewerMediaLink(new InMemoryBlobStore()).CreateViewUrl(key, "download.jpg", TimeSpan.FromMinutes(5), CancellationToken.None));
@@ -62,7 +64,7 @@ public class ReviewerMediaLinkTests
 		// silently pass.
 		var stripped = BlobKey.Parse("dQw4w9WgXcQ/stripped/photo.jpg");
 		var original = BlobKey.Parse("dQw4w9WgXcQ/original/photo.jpg");
-		var quarantined = BlobKey.Parse("quarantine/dQw4w9WgXcQ/photo.jpg");
+		var quarantined = BlobKey.Parse($"quarantine/{UploadId.New().Value}");
 
 		// When / Then
 		ReviewerMediaLink.IsViewable(stripped).ShouldBeTrue();
@@ -106,7 +108,9 @@ public class ReviewerMediaLinkTests
 	public async Task GivenDocumentKeyOutsideOriginalCompartment_WhenDocumentDownloadUrlIsRequested_ThenRefused(MediaCompartment compartment)
 	{
 		// Given
-		var key = BlobKey.For(ReportId, compartment, "report.pdf");
+		var key = compartment == MediaCompartment.Quarantine
+			? BlobKey.ForUpload(UploadId.New())
+			: BlobKey.For(ReportId, compartment, "report.pdf");
 
 		// When / Then
 		await Should.ThrowAsync<DomainRuleViolationException>(() =>

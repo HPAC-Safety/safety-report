@@ -18,15 +18,60 @@ services:
       timeout: 2s
       retries: 15
 
+  # Private attachment storage, S3-compatible, in its own container: the API
+  # reaches it through the same S3BlobStore production uses against S3, so
+  # only configuration differs (ADR-0096). Pinned, like the test containers.
+  # Console at http://localhost:9001 (hpac-dev / hpac-dev-secret).
+  minio:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: hpac-dev
+      MINIO_ROOT_PASSWORD: hpac-dev-secret
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  # One-shot: the bucket, versioned like production, with the same 1-day
+  # quarantine/ expiry infra/storage.tf gives S3. Idempotent, so it runs on
+  # every ./dev-up.sh and exits 0.
+  minio-init:
+    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        mc alias set local http://minio:9000 hpac-dev hpac-dev-secret
+        mc mb --ignore-existing local/hpac-safety-uploads
+        mc version enable local/hpac-safety-uploads
+        echo '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":1},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}' | mc ilm import local/hpac-safety-uploads
+    restart: "no"
+
   api:
     image: hpacsafety-api:dev
     pull_policy: never
     depends_on:
       postgres:
         condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres"
+      # Inside the compose network MinIO is minio:9000. Reviewer URLs stay
+      # signed for localhost:9000 (appsettings.Development.json), the host a
+      # browser can reach.
+      HpacSafety__Media__Storage__S3__ServiceUrl: "http://minio:9000"
       # Optional. Export DEEPL_API_KEY before ./dev-up.sh to get a working
       # Translate button on /admin/questions; without it the API reports
       # translation unavailable and the control is disabled. See ADR-0062.
@@ -53,4 +98,5 @@ services:
 
 volumes:
   postgres-data:
+  minio-data:
   web-node-modules:

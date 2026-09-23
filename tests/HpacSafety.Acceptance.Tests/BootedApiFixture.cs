@@ -1,5 +1,8 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core.Features.Moderation;
 using Microsoft.AspNetCore.Hosting;
@@ -7,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
+using Testcontainers.Minio;
 using Testcontainers.PostgreSql;
 
 namespace HpacSafety.Acceptance.Tests;
@@ -45,8 +49,16 @@ public static class BootedApi
 
 	private static readonly SemaphoreSlim Gate = new(1, 1);
 
+	/// <summary>The private bucket the booted API writes attachments to.</summary>
+	public const string BucketName = "hpac-safety-uploads";
+
 	private static PostgreSqlContainer? postgres;
+	private static MinioContainer? minio;
+	private static AmazonS3Client? storage;
 	private static WebApplicationFactory<Program>? factory;
+
+	/// <summary>A client straight to the booted host's bucket, once it is up.</summary>
+	public static IAmazonS3 Storage => storage ?? throw new InvalidOperationException("The API has not been booted yet.");
 
 	/// <summary>The booted host, starting it if this is the first scenario to ask.</summary>
 	public static async Task<WebApplicationFactory<Program>> Factory()
@@ -63,8 +75,22 @@ public static class BootedApi
 			if (factory is null)
 			{
 				var container = new PostgreSqlBuilder("postgres:17-alpine").Build();
-				await container.StartAsync().ConfigureAwait(false);
+				var objects = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
+				await Task.WhenAll(container.StartAsync(), objects.StartAsync()).ConfigureAwait(false);
 				postgres = container;
+				minio = objects;
+
+				// Versioned, like the production bucket (ADR-0096).
+				var client = new AmazonS3Client(
+					new BasicAWSCredentials(objects.GetAccessKey(), objects.GetSecretKey()),
+					new AmazonS3Config { ServiceURL = objects.GetConnectionString(), ForcePathStyle = true, AuthenticationRegion = "ca-central-1" });
+				await client.PutBucketAsync(BucketName).ConfigureAwait(false);
+				await client.PutBucketVersioningAsync(new PutBucketVersioningRequest
+				{
+					BucketName = BucketName,
+					VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled },
+				}).ConfigureAwait(false);
+				storage = client;
 
 				factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
 				{
@@ -72,6 +98,11 @@ public static class BootedApi
 					builder.UseEnvironment("Development");
 					builder.UseSetting("ConnectionStrings:HpacSafety", container.GetConnectionString());
 					builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
+					builder.UseSetting("HpacSafety:Media:Storage:S3:BucketName", BucketName);
+					builder.UseSetting("HpacSafety:Media:Storage:S3:ServiceUrl", objects.GetConnectionString());
+					builder.UseSetting("HpacSafety:Media:Storage:S3:PublicServiceUrl", objects.GetConnectionString());
+					builder.UseSetting("HpacSafety:Media:Storage:S3:AccessKey", objects.GetAccessKey());
+					builder.UseSetting("HpacSafety:Media:Storage:S3:SecretKey", objects.GetSecretKey());
 
 					// Shared across every scenario in the run, many of which sign in
 					// or submit repeatedly. Effectively unlimited here so ordinary
@@ -83,6 +114,8 @@ public static class BootedApi
 					builder.UseSetting("HpacSafety:RateLimiting:PublicSubmission:WindowSeconds", "60");
 					builder.UseSetting("HpacSafety:RateLimiting:SignIn:PermitLimit", "100000");
 					builder.UseSetting("HpacSafety:RateLimiting:SignIn:WindowSeconds", "60");
+					builder.UseSetting("HpacSafety:RateLimiting:AttachmentUpload:PermitLimit", "100000");
+					builder.UseSetting("HpacSafety:RateLimiting:AttachmentUpload:WindowSeconds", "60");
 				});
 			}
 		}
@@ -200,7 +233,7 @@ public static class BootedApi
 		return host.CreateClient();
 	}
 
-	/// <summary>Stops the host and the container once, after the whole run.</summary>
+	/// <summary>Stops the host and the containers once, after the whole run.</summary>
 	[AfterTestRun]
 	public static async Task Stop()
 	{
@@ -214,6 +247,15 @@ public static class BootedApi
 		{
 			await postgres.DisposeAsync().ConfigureAwait(false);
 			postgres = null;
+		}
+
+		storage?.Dispose();
+		storage = null;
+
+		if (minio is not null)
+		{
+			await minio.DisposeAsync().ConfigureAwait(false);
+			minio = null;
 		}
 	}
 

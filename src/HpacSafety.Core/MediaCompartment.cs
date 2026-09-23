@@ -9,11 +9,11 @@ namespace HpacSafety.Core;
 public enum MediaCompartment
 {
 	/// <summary>
-	///     Where every upload lands, before anything has looked at it:
-	///     <c>quarantine/&lt;report id&gt;/&lt;file&gt;</c>. Unverified bytes, expired
-	///     automatically by a bucket lifecycle rule — a delete marker after a day,
-	///     then the noncurrent version a day after that, because the bucket is
-	///     versioned. See docs/data-handling.md.
+	///     Where a reporter's validated upload waits until a submission claims it:
+	///     <c>quarantine/&lt;upload id&gt;</c>. It belongs to no report yet, and is
+	///     expired automatically by a bucket lifecycle rule — a delete marker after a
+	///     day, then the noncurrent version a day after that, because the bucket is
+	///     versioned. See docs/data-handling.md and ADR-0096.
 	/// </summary>
 	Quarantine = 0,
 

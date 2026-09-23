@@ -197,7 +197,7 @@ Given("a submission request fails due to a network error", async ({ page }) => {
 
 When("the reporter has not yet submitted", async () => {})
 
-When("the final multipart request succeeds", async ({ page }) => {
+When("the final submission request succeeds", async ({ page }) => {
 	await stubSubmission(page)
 	await reachLastPage(page)
 	await answerYesNo(page, "May we publish a summary of this report?", "Yes")
@@ -288,14 +288,15 @@ Then("the selected locale, shown question-revision IDs, and entered answers exis
 	expect(Date.now() - draft!.savedAtMs).toBeLessThan(60_000)
 })
 
-Then("image, video, and document attachments are never placed in browser storage", async ({ page }) => {
+Then("image, video, and document attachments and their upload IDs are never placed in browser storage", async ({ page }) => {
 	const draft = (await readDraftFromBrowser(page)) as { answers: Record<string, unknown> } | null
 	for (const answer of Object.values(draft?.answers ?? {})) {
 		expect(answer).not.toHaveProperty("file")
 	}
+	expect(JSON.stringify(draft)).not.toContain("uploadId")
 })
 
-Then("no server draft, report ID reservation, upload token, or resumable upload protocol exists", async () => {
+Then("no server draft, report ID reservation, or resumable upload protocol exists", async () => {
 	expect(submittedRequests).toHaveLength(0)
 })
 
@@ -363,7 +364,7 @@ Then("the control that was Next now reads Submit", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Next" })).toHaveCount(0)
 })
 
-Then("pressing it sends the one final multipart request", async ({ page }) => {
+Then("pressing it sends the one final submission request", async ({ page }) => {
 	await stubSubmission(page)
 	await answerYesNo(page, "May we publish a summary of this report?", "Yes")
 	await page.getByRole("button", { name: "Submit report" }).click()
@@ -507,6 +508,8 @@ Then("attachment selection appears last with type\\/count\\/size guidance and a 
 	await goNext(page) // -> group
 	await goNext(page) // -> attachments
 	await expect(page.getByLabel("Photos or videos")).toBeVisible()
+	await expect(page.getByText(/JPEG, PNG, WebP, HEIC/)).toBeVisible()
+	await expect(page.getByText(/up to 5 files in all, 50 MB each/)).toBeVisible()
 	await expect(page.getByText(/not saved between visits/i)).toBeVisible()
 	// "Appears last": only the required consent question follows it.
 	await goNext(page)

@@ -35,24 +35,10 @@ builder.Services.AddHpacSafetyAuthentication(
 	builder.Configuration,
 	builder.Environment.IsDevelopment());
 
-// Private object storage and the media-ingest pipeline behind report
-// submission. In Development this writes to local disk instead of a real
-// bucket, so the same code path runs everywhere. See issue #14.
-builder.Services.AddHpacSafetyMedia(
-	builder.Configuration,
-	builder.Environment.IsDevelopment());
-
-// The multipart body carries the JSON report part plus every attachment. The
-// per-file/count bound the submission endpoint enforces is the real limit;
-// this is generous headroom so a legitimate submission is never rejected by
-// the framework before that code runs.
-builder.Services.Configure<FormOptions>(options =>
-{
-	var media = builder.Configuration.GetSection("HpacSafety:Media:Policy").Get<MediaPolicyOptions>()
-				?? new MediaPolicyOptions();
-	options.MultipartBodyLengthLimit = (media.MaxByteSize * media.MaxAttachmentCount) + (1024 * 1024);
-	options.ValueCountLimit = 8;
-});
+// Private object storage and the media-ingest pipeline behind attachment
+// uploads and report submission. S3 in AWS, the MinIO container in
+// development; only configuration differs. See ADR-0096.
+builder.Services.AddHpacSafetyMedia(builder.Configuration);
 
 // The API sits directly behind exactly one AWS ALB hop (infra/alb.tf); the
 // container's security group (api_from_alb, infra/security-groups.tf) admits
@@ -105,8 +91,10 @@ app.MapAuth(app.Environment.IsDevelopment());
 // unlike everything below it.
 app.MapPublicQuestions();
 
-// The only reporter-facing write. Requires a member token; creates no state
-// before the one final multipart request succeeds. See issue #14.
+// The reporter-facing writes. Both require a member token. An attachment
+// uploads to quarantine when it is attached; the report is written once, by the
+// final submission that claims those uploads. See ADR-0096.
+app.MapAttachmentUploads();
 app.MapReportSubmission();
 
 // The question bank is data an administrator edits, not code that ships

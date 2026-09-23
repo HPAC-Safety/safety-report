@@ -33,6 +33,9 @@ public sealed class RateLimitingOptions
 	/// <summary>The public-submission policy.</summary>
 	public SlidingWindowPolicyOptions PublicSubmission { get; set; } = new();
 
+	/// <summary>The attachment-upload policy, by trusted client IP (ADR-0096).</summary>
+	public SlidingWindowPolicyOptions AttachmentUpload { get; set; } = new();
+
 	/// <summary>The sign-in policy — stricter, per issue #15's ruling.</summary>
 	public SlidingWindowPolicyOptions SignIn { get; set; } = new();
 }

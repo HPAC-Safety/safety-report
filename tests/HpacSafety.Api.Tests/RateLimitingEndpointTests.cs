@@ -9,7 +9,7 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-///     Proves the two <c>RateLimiter</c> policies actually reject once their
+///     Proves the <c>RateLimiter</c> policies actually reject once their
 ///     tiny, test-only limit is exceeded. Each test derives its own factory with
 ///     a one-permit window rather than touching <see cref="ApiPostgresFixture" />'s
 ///     shared, effectively-unlimited settings — every other test in the
@@ -21,6 +21,7 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 {
 	private static readonly Uri Submit = new("/api/v1/reports", UriKind.Relative);
 	private static readonly Uri Token = new("/api/auth/token", UriKind.Relative);
+	private static readonly Uri Uploads = new("/api/v1/uploads", UriKind.Relative);
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
@@ -40,7 +41,7 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		using var second = await reporter.PostAsync(Submit, secondBody);
 
 		// Then — the first consumes the one permit and fails validation as usual
-		// (no "report" part); the second never reaches the endpoint at all.
+		// (a submission is JSON); the second never reaches the endpoint at all.
 		first.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 		second.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
 		second.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
@@ -101,12 +102,36 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 	}
 
+	[Fact]
+	public async Task GivenTheUploadLimitIsExceeded_WhenUploaded_ThenRejectedWith429()
+	{
+		// Given — a one-permit window for attachment uploads (REQ-SUB-044). An
+		// empty body still consumes the permit before the endpoint refuses it.
+		await using var limited = RateLimitedFactory(attachmentUploadPermitLimit: 1);
+		using var reporter = await SignedInClient.As(limited, MemberRole.User);
+		using var firstBody = new ByteArrayContent([]);
+		using var secondBody = new ByteArrayContent([]);
+
+		// When
+		using var first = await reporter.PostAsync(Uploads, firstBody);
+		using var second = await reporter.PostAsync(Uploads, secondBody);
+
+		// Then
+		first.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		second.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
+	}
+
 	private WebApplicationFactory<Program> RateLimitedFactory(
 		int publicSubmissionPermitLimit = 100000,
-		int signInPermitLimit = 100000)
+		int signInPermitLimit = 100000,
+		int attachmentUploadPermitLimit = 100000)
 	{
 		return _factory.WithWebHostBuilder(builder =>
 		{
+			builder.UseSetting(
+				"HpacSafety:RateLimiting:AttachmentUpload:PermitLimit",
+				attachmentUploadPermitLimit.ToString(CultureInfo.InvariantCulture));
+			builder.UseSetting("HpacSafety:RateLimiting:AttachmentUpload:WindowSeconds", "60");
 			builder.UseSetting(
 				"HpacSafety:RateLimiting:PublicSubmission:PermitLimit",
 				publicSubmissionPermitLimit.ToString(CultureInfo.InvariantCulture));

@@ -6,20 +6,13 @@ namespace HpacSafety.Core;
 ///     docs/data-handling.md.
 ///     <para>
 ///         Two rules bind every implementation, and both are covered by the shared
-///         contract suite in <c>HpacSafety.Infrastructure.Tests</c> so that the
-///         development stand-in cannot be weaker than the production adapter:
-///         a URL is scoped to exactly one <see cref="BlobKey" /> and cannot be reused
+///         contract suite in <c>HpacSafety.Infrastructure.Tests</c>, run against
+///         MinIO: a URL is scoped to exactly one <see cref="BlobKey" /> and cannot be reused
 ///         for another, and every lifetime passes <see cref="BlobUrlLifetime.Validate" />.
 ///     </para>
 /// </summary>
 public interface IBlobStore
 {
-	/// <summary>A short-lived URL a browser may PUT one file to, and only that one key.</summary>
-	Task<Uri> CreateUploadUrl(BlobKey key,
-							  string contentType,
-							  TimeSpan lifetime,
-							  CancellationToken cancellationToken);
-
 	/// <summary>
 	///     A short-lived URL an administrator may GET one file from, and only that
 	///     one key. <paramref name="downloadFileName" /> is a server-minted display
@@ -40,4 +33,18 @@ public interface IBlobStore
 			   Stream content,
 			   string contentType,
 			   CancellationToken cancellationToken);
+
+	/// <summary>Whether an object is stored under <paramref name="key" />.</summary>
+	Task<bool> Exists(BlobKey key,
+					  CancellationToken cancellationToken);
+
+	/// <summary>
+	///     Erases every stored version of <paramref name="key" />, so that on a
+	///     versioned bucket the bytes are gone at once rather than left behind a
+	///     delete marker. Deleting a key that holds nothing succeeds. Only an
+	///     unclaimed upload in quarantine may be erased — a report's own media is
+	///     never physically deleted (AGENTS.md invariant 8, ADR-0096).
+	/// </summary>
+	Task Delete(BlobKey key,
+				CancellationToken cancellationToken);
 }

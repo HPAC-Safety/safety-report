@@ -65,7 +65,7 @@ The target flow is deliberately small:
 
 ```mermaid
 flowchart LR
-    form["Public bilingual form"] -->|"one multipart submission"| api["API"]
+    form["Public bilingual form"] -->|"attachment uploads, then one submission"| api["API"]
     api -->|"report + answers + files + outbox\none transaction"| db[("PostgreSQL")]
     db --> worker["Worker"]
     worker -->|"one prompt · one call"| pair["Anonymized EN/FR pair"]
@@ -76,8 +76,9 @@ flowchart LR
 - Questions are complete immutable English/French database revisions. Every
   question is optional except explicit publication consent.
 - An unfinished report exists only in the respondent's browser for 15 days.
-  Nothing is written to the API, database, or attachment storage until the one
-  final multipart submission.
+  Nothing is written to the API or database until the one final submission.
+  Each attachment uploads to private quarantine when it is attached, and
+  expires unless that submission claims it.
 - Private answers help the one model call recognize identifying text; they are
   never facts for publication. A repeated private name becomes a role such as
   “the pilot” / “le pilote,” with no name fragment left behind.
@@ -88,7 +89,7 @@ flowchart LR
 
 The system has no separate PII-audit or translation call, deterministic text
 scrubber, specialized aircraft processing, application-managed field
-encryption, email-notification pipeline, pre-submit upload session, or external
+encryption, email-notification pipeline, server-side draft, or external
 publication channels.
 
 ## Technology

@@ -600,6 +600,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("kind");
 
+                    b.Property<string>("OriginalFileName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("original_file_name");
+
                     b.Property<string>("ProcessingErrorCode")
                         .HasMaxLength(128)
                         .HasColumnType("character varying(128)")

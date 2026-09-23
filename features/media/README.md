@@ -27,8 +27,10 @@ the private download label, never security handling or rendering.
 
 ## Storage compartments
 
-- Quarantine contains the immutable private original first received by the
-  API.
+- Quarantine contains an accepted upload, under `quarantine/<upload id>`,
+  until a submission claims it or the lifecycle rule expires it. A reporter
+  removing the file erases every version of it
+  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
 - Private original is the retained canonical input after validation.
 - Derivative contains the safe reviewer copy.
 
@@ -46,13 +48,9 @@ output and error messages are sanitized before logging.
 
 ## Current implementation divergence
 
-Main already validates the six image/video types, enforces a 50 MB policy,
-sniffs content, mints keys, stores privately, and re-encodes images. It
-currently creates pre-signed upload slots before submission and intentionally
-retains videos without a viewable derivative. The target replaces the
-upload-slot flow with API streaming and requires a safe derivative for videos
-as well as images. It does not yet accept or privately expose the document
-types specified above. See
+Claiming an upload still sniffs, strips, and remuxes inside the submission
+request rather than in the Worker (#361), and buffers each file in memory
+while it does (#362). See
 [implementation status](../../docs/implementation-status.md).
 
 ## A video with no derivative
@@ -83,6 +81,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   exactly as it arrived.
 - Client-side processing, resizing, or stripping before upload. Validation and
   metadata removal happen server-side, where they can be trusted.
-- A pre-submit upload session, resumable protocol, or pre-signed PUT for a
-  reporter ([ADR-0026](../../docs/decisions/ADR-0026-presigned-urls-and-private-blob-storage.md)
-  governs how verified bytes are read back, not how they arrive).
+- A resumable or chunked upload protocol, or a pre-signed PUT for a reporter.
+  A file reaches quarantine only through `POST /api/v1/uploads`, after the API
+  has validated it
+  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+- An upload table, or any record linking an upload to the member who made it.
+- A filesystem storage adapter. Development runs MinIO behind the same
+  `S3BlobStore` production uses.

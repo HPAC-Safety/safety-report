@@ -39,26 +39,27 @@ Scenario: Declared content type must agree with detected content type
   And the file extension and client filename are never trusted as the basis for acceptance
 
 @REQ-MED-003
-@ignore
-Scenario: The client filename never leaves the HTTP boundary
-  Given a reporter uploads a file with a client-supplied filename
-  When the API accepts the attachment
-  Then the client filename is not persisted, logged, placed in an exception, used in a key, sent to the model, or returned to an admin
-  And the object key encodes only an opaque report/file identity and a managed compartment
+Scenario: The client filename is kept only as a reviewer's download name
+  Given a submission names an attachment with a client-supplied filename
+  When the API claims the attachment
+  Then the sanitized filename is stored on the report file
+  And it is not logged, placed in an exception, used in a key, sent to the model, or included in any public DTO
+  And the object key encodes only an opaque upload, report, or file identity and a managed compartment
 
 @REQ-MED-004
-@ignore
-Scenario: An accepted attachment starts in a private quarantine compartment
-  Given an attachment part passes request and count bounds
-  When the API ingests it
-  Then the API mints an opaque filename, streams the file through a bounded counter and signature sniffer, and writes accepted bytes to a private quarantine key
+Scenario: An accepted upload waits in a private quarantine compartment
+  Given a reporter's upload passes the size bound and validation
+  When the API stores it
+  Then its bytes are written to a private quarantine key named only by a minted upload ID
+  And no database row, report, or member is linked to it
+  And no reviewer link can be issued for it
 
 @REQ-MED-005
 @ignore
-Scenario: Unreferenced quarantine blobs expire automatically
-  Given a quarantine blob was written during a submission whose transaction never committed
+Scenario: Unclaimed uploads expire automatically
+  Given an upload that no committed submission claimed
   When the storage lifecycle rule runs
-  Then the unreferenced quarantine blob expires
+  Then the upload expires, its key stopping resolving after about a day and its bytes gone about a day after that
 
 @REQ-MED-006
 @ignore
@@ -107,7 +108,7 @@ Scenario: A reviewer gets a short-lived URL only for successfully processed medi
   Given an image or video attachment has finished processing successfully
   When an authorized reviewer requests to view it
   Then the reviewer receives a short-lived read URL to the derivative
-  And the response forces download with a server-minted display name and the header X-Content-Type-Options: nosniff
+  And the response forces download under the reporter's sanitized filename, or a server-minted name when there is none, with the header X-Content-Type-Options: nosniff
   And there is no API blob proxy or public URL
 
 @REQ-MED-011
@@ -115,6 +116,7 @@ Scenario: A reviewer downloads a validated document as an unredacted original
   Given a document attachment has passed validation
   When an authorized reviewer requests it
   Then the reviewer receives a short-lived URL to the private original
+  And the download is named with the reporter's sanitized filename, or a server-minted name when there is none
   And there is no API blob proxy or public URL
 
 @REQ-MED-012
@@ -140,3 +142,44 @@ Scenario: Attachments are never exposed publicly, even after publication
   Given a report has been published
   When the public API returns the report
   Then the public DTO contains no file counts, types, keys, or links
+
+@REQ-MED-016
+Scenario: Removing an upload erases every version of it
+  Given an unclaimed upload exists in quarantine
+  When the reporter's browser deletes it
+  Then every stored version of that quarantine object is deleted at once
+  And deleting it again succeeds without error
+
+@REQ-MED-017
+Scenario: A cancelled upload leaves nothing in storage
+  Given a reporter's upload is still being received
+  When the browser aborts the request
+  Then nothing is written to object storage for it
+
+@REQ-MED-018
+Scenario: A claimed upload is promoted into the report's compartments
+  Given a submission claims an accepted upload
+  When the API ingests it
+  Then the original is written under the report's original compartment and any derivative under its stripped compartment
+  And both are named by the report file's own id, never by the upload ID or the reporter's filename
+
+@REQ-MED-019
+Scenario Outline: A reporter's filename is sanitized before it is stored
+  Given a submission names an attachment with the filename <given>
+  When the API claims the attachment
+  Then the stored filename is <stored>
+
+Examples:
+  | given                    | stored          |
+  | launch-site.jpg          | launch-site.jpg |
+  | reports/pilot/photo.jpg  | photo.jpg       |
+  | ../../etc/passwd.pdf     | passwd.pdf      |
+  | say "cheese";.png        | say cheese.png  |
+  | a<b>c:d*e?f.txt          | abcdef.txt      |
+  | (blank)                  | (none)          |
+
+@REQ-MED-020
+Scenario: A download's extension always matches the bytes served
+  Given a reporter attached "IMG_0412.HEIC" and its derivative is a JPEG
+  When an authorized reviewer requests to view it
+  Then the download is named "IMG_0412.jpg"

@@ -19,6 +19,29 @@ public class ReportFileTests
 		return new ReportFile(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, fileName).Value, "image/jpeg", 1024, Now);
 	}
 
+	[Fact]
+	public void GivenClaimedUpload_WhenRecordedUnderItsId_ThenIdAndSanitizedNameAreKept()
+	{
+		// Given
+		var fileId = TinyId.New();
+
+		// When
+		var file = new ReportFile(
+			fileId, TinyId.Parse(ReportId), $"{ReportId}/original/{fileId}", "image/jpeg", 1024, "../trip/Launch \"site\".jpg", Now);
+
+		// Then
+		file.Id.ShouldBe(fileId);
+		file.OriginalFileName.ShouldBe("Launch site.jpg");
+	}
+
+	[Fact]
+	public void GivenNoId_WhenRecorded_ThenRefused()
+	{
+		// Given / When / Then
+		Should.Throw<DomainRuleViolationException>(() =>
+			new ReportFile(default, TinyId.Parse(ReportId), $"{ReportId}/original/x", "image/jpeg", 1024, null, Now));
+	}
+
 	[Theory]
 	[InlineData("image/jpeg", AttachmentKind.Image)]
 	[InlineData("video/mp4", AttachmentKind.Video)]

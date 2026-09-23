@@ -15,8 +15,11 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
 ## Storage and retention
 
 - Before final submission, unfinished answers/revision IDs exist only in that
-  browser. No report, attachment, draft, reserved ID, or database row exists on
-  the server.
+  browser. No report, draft, reserved ID, or database row exists on the server.
+  An attached file is the one exception: it sits in private quarantine under
+  an opaque upload ID, names no member, is erased when the reporter removes
+  it, and expires by lifecycle rule unless a submission claims it
+  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
 - Use AWS-managed encryption at rest and TLS. Do not maintain application AES
   keys or ciphertext converters.
 - Keep raw reports private until an authorized officer soft-deletes them.
@@ -44,9 +47,12 @@ boundary. Model prompts/responses and report values are never logged.
 
 ## Attachments
 
-The API streams final multipart attachments to private quarantine with a
-configurable count (default 5) and 50 MB per-file limit. It sniffs format and
-uses server-generated names. There is no malware scan (ADR-0089).
+The API validates each attachment as it is uploaded — bounded at 50 MB, sniffed,
+checked against the allowlist — and writes only accepted bytes to private
+quarantine under a server-generated upload ID. The final submission may claim
+a configurable count (default 5). The upload carries no filename; the final
+submission names each file, and that name is kept, sanitized, only as a
+reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)). There is no malware scan (ADR-0089).
 
 Safe image/video derivatives may be previewed by authorized reviewers through
 short-lived access. Validated documents remain unmodified private originals and

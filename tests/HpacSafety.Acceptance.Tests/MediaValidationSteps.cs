@@ -148,7 +148,7 @@ public sealed class MediaValidationSteps
 	private async Task IngestVideo(bool remuxProduces)
 	{
 		_store = new RecordingBlobStore();
-		var quarantined = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Quarantine, "clip.mp4");
+		var quarantined = BlobKey.ForUpload(UploadId.New());
 		_originalBytes = "pretend-mp4-bytes-with-a-gps-tag"u8.ToArray();
 		_store.Seed(quarantined, _originalBytes);
 
@@ -163,14 +163,14 @@ public sealed class MediaValidationSteps
 			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
 			new FixedTimeProvider(Now));
 
-		_outcome = await ingestor.Ingest(quarantined, "video/mp4", CancellationToken.None);
+		_outcome = await ingestor.Ingest(quarantined, TinyId.Parse("dQw4w9WgXcQ"), TinyId.New(), CancellationToken.None);
 	}
 
 	[Given(@"an accepted document attachment enters Worker processing")]
 	public async Task GivenAnAcceptedDocumentAttachmentEntersWorkerProcessing()
 	{
 		_store = new RecordingBlobStore();
-		var quarantined = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Quarantine, "report.pdf");
+		var quarantined = BlobKey.ForUpload(UploadId.New());
 		_originalBytes = "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n"u8.ToArray();
 		_store.Seed(quarantined, _originalBytes);
 
@@ -182,7 +182,7 @@ public sealed class MediaValidationSteps
 			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
 			new FixedTimeProvider(Now));
 
-		_outcome = await ingestor.Ingest(quarantined, "application/pdf", CancellationToken.None);
+		_outcome = await ingestor.Ingest(quarantined, TinyId.Parse("dQw4w9WgXcQ"), TinyId.New(), CancellationToken.None);
 	}
 
 	[When(@"the Worker processes it")]
@@ -261,14 +261,6 @@ public sealed class MediaValidationSteps
 			return _blobs[key.Value];
 		}
 
-		public Task<Uri> CreateUploadUrl(BlobKey key,
-										 string contentType,
-										 TimeSpan lifetime,
-										 CancellationToken cancellationToken)
-		{
-			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=put&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
-		}
-
 		public Task<Uri> CreateReadUrl(BlobKey key,
 									   string downloadFileName,
 									   TimeSpan lifetime,
@@ -291,6 +283,19 @@ public sealed class MediaValidationSteps
 			using var buffer = new MemoryStream();
 			await content.CopyToAsync(buffer, cancellationToken);
 			_blobs[key.Value] = buffer.ToArray();
+		}
+
+		public Task<bool> Exists(BlobKey key,
+								 CancellationToken cancellationToken)
+		{
+			return Task.FromResult(_blobs.ContainsKey(key.Value));
+		}
+
+		public Task Delete(BlobKey key,
+						   CancellationToken cancellationToken)
+		{
+			_blobs.Remove(key.Value);
+			return Task.CompletedTask;
 		}
 	}
 }

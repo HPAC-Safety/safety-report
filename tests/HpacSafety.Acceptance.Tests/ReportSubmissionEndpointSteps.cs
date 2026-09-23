@@ -53,7 +53,10 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _supersededRevisionId;
 	private string? _problem;
 	private JsonElement? _responseBody;
-	private int _reportCountBefore;
+	// A value only this scenario submits. Other scenarios submit reports into the
+	// same database in parallel, so "nothing was created" is asserted as "no
+	// stored answer carries this value", never as an unchanged report count.
+	private readonly string _marker = $"synthetic-{Guid.NewGuid():N}";
 
 	// --- Background: documented facts about the endpoint, not actions. ---
 
@@ -613,7 +616,6 @@ public sealed class ReportSubmissionEndpointSteps
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
-		_reportCountBefore = await ReportCount();
 	}
 
 	[When(@"the API returns from the failed request")]
@@ -626,7 +628,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = (string?)"unknown-revision", value = (string?)"x" } },
+			answers = new object[] { new { questionRevisionId = (string?)"unknown-revision", value = (string?)_marker } },
 		});
 	}
 
@@ -634,7 +636,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenNoReportIsVisible()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await ReportCount()).ShouldBe(_reportCountBefore);
+		(await AnswerCarryingMarkerExists()).ShouldBeFalse();
 	}
 
 	[Then(@"any already-written quarantine blobs are unreferenced and expire through the storage lifecycle rule")]
@@ -685,18 +687,22 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"a submission request carries no bearer token")]
 	public async Task GivenASubmissionRequestCarriesNoBearerToken()
 	{
-		_reportCountBefore = await ReportCount();
+		await EnsureConsentQuestion();
+		_extraRevisionId = await CreateSyntheticQuestion("short_text");
 	}
 
 	[When(@"the API processes the submission")]
 	public async Task WhenTheApiProcessesTheSubmission()
 	{
-		await EnsureConsentQuestion();
 		using var anonymous = (await BootedApi.Factory()).CreateClient();
 		var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
+			answers = new object[]
+			{
+				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _extraRevisionId, value = (string?)_marker },
+			},
 		});
 		_response = await anonymous.PostAsync(Submit, content);
 	}
@@ -705,7 +711,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenTheApiRejectsItBeforeAnyReportStateIsCreated()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-		(await ReportCount()).ShouldBe(_reportCountBefore);
+		(await AnswerCarryingMarkerExists()).ShouldBeFalse();
 	}
 
 	// --- A rate-limited submission is rejected ---
@@ -1104,10 +1110,10 @@ public sealed class ReportSubmissionEndpointSteps
 		return consent.CurrentRevision.Id.Value;
 	}
 
-	private async Task<int> ReportCount()
+	private async Task<bool> AnswerCarryingMarkerExists()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		return await database.Reports.CountAsync();
+		return await database.ReportAnswers.AnyAsync(answer => answer.Value == _marker);
 	}
 }

@@ -35,7 +35,8 @@ export interface QuestionDraft {
 export function blankDraft(): QuestionDraft {
 	return {
 		request: {
-			key: "",
+			// No key: the API derives one from the English wording, and an
+			// administrator never sees or chooses it.
 			type: "short_text",
 			labelEn: "",
 			labelFr: "",
@@ -62,7 +63,6 @@ export function blankDraft(): QuestionDraft {
 export function draftOf(question: QuestionView): QuestionDraft {
 	return {
 		request: {
-			key: question.key,
 			type: question.type,
 			labelEn: question.labelEn,
 			labelFr: question.labelFr,
@@ -257,21 +257,6 @@ export function QuestionEditor({
 			)}
 
 			<div className="grid gap-4 sm:grid-cols-2">
-				<div>
-					<label className={labelClassName} htmlFor="question-key">
-						{t("questions.field.key")}
-					</label>
-					<input
-						id="question-key"
-						className={fieldClassName}
-						value={request.key ?? ""}
-						readOnly={isEditing}
-						required
-						onChange={(event) => update({ key: event.target.value })}
-					/>
-					<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.keyHelp")}</p>
-				</div>
-
 				<div>
 					<label className={labelClassName} htmlFor="question-type">
 						{t("questions.field.type")}

@@ -168,8 +168,6 @@
       "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     },
     "field": {
-      "key": "Clé",
-      "keyHelp": "Un nom court et permanent utilisé pour les exportations. Il ne change jamais une fois que la question a été créée.",
       "type": "Type",
       "labelEn": "Question (anglais)",
       "labelFr": "Question (français)",

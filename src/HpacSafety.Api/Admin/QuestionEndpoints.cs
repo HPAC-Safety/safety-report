@@ -72,18 +72,32 @@ public static class QuestionEndpoints
 			return UnknownType(request.Type);
 		}
 
-		if (string.IsNullOrWhiteSpace(request.Key))
-		{
-			return Problem("missing-key", "A question needs a key.", "A question needs a stable key that never changes.");
-		}
-
 		var at = clock.GetUtcNow();
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
-		var key = QuestionKey.Normalize(request.Key);
+		string key;
 
-		if (questions.Exists(question => question.Key == key))
+		if (string.IsNullOrWhiteSpace(request.Key))
 		{
-			return Problem("duplicate-key", "That key is taken.", $"Another question already uses the key '{key}'.");
+			// An administrator never sees or chooses a key: it is derived from
+			// the English wording, and never reuses one a retired question
+			// still holds, so a new question cannot join another's history.
+			key = await DerivedKey(request.LabelEn, database, cancellationToken).ConfigureAwait(false);
+		}
+		else
+		{
+			// Only an imported Typeform draft still carries a key of its own. A
+			// retired question's key is refused too: a new question never joins
+			// another question's history.
+			key = QuestionKey.Normalize(request.Key);
+			var taken = await database.Questions
+				.IgnoreQueryFilters()
+				.AnyAsync(question => question.Key == key, cancellationToken)
+				.ConfigureAwait(false);
+
+			if (taken)
+			{
+				return Problem("duplicate-key", "That key is taken.", $"Another question already uses the key '{key}'.");
+			}
 		}
 
 		return await Save(async () =>
@@ -427,6 +441,50 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>
+	/// <summary>
+	///     A key from the English wording, suffixed <c>_2</c>, <c>_3</c>, … past any
+	///     key a question already holds, retired questions included. Wording that
+	///     reduces to nothing falls back to <c>question</c>.
+	/// </summary>
+	private static async Task<string> DerivedKey(
+		string labelEn,
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
+	{
+		var stem = Stem(labelEn);
+
+		var taken = await database.Questions
+			.IgnoreQueryFilters()
+			.Where(question => question.Key == stem || question.Key.StartsWith(stem + "_"))
+			.Select(question => question.Key)
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		var key = stem;
+		for (var suffix = 2; taken.Contains(key, StringComparer.Ordinal); suffix++)
+		{
+			key = $"{stem}_{suffix}";
+		}
+
+		return key;
+	}
+
+	/// <summary>The wording normalized and cut to a readable length, or <c>question</c>.</summary>
+	private static string Stem(string labelEn)
+	{
+		const int length = 60;
+
+		try
+		{
+			var normalized = QuestionKey.Normalize(labelEn ?? string.Empty);
+			return normalized.Length <= length ? normalized : normalized[..length].TrimEnd('_');
+		}
+		catch (DomainRuleViolationException)
+		{
+			return "question";
+		}
+	}
+
 	internal static IQueryable<Question> LiveQuestions(HpacSafetyDbContext database)
 	{
 		return database.Questions

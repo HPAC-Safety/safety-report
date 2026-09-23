@@ -124,7 +124,7 @@
     "attachments": {
       "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléchargé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",
-      "notRestored": "Les fichiers joints ne sont pas conservés d'une visite à l'autre — si vous rafraîchissez cette page, vous devrez les joindre à nouveau.",
+      "keptWithReport": "#Attached files are kept with your saved report for up to 15 days, so they are still here if you leave and come back.",
       "listLabel": "Fichiers joints",
       "uploading": "Téléversement en cours…",
       "uploadingNamed": "Téléversement de {name}",
@@ -161,6 +161,13 @@
       "tableCaption": "Vos réponses enregistrées",
       "questionHeader": "Question",
       "answerHeader": "Réponse enregistrée"
+    },
+    "discard": {
+      "open": "#Discard report",
+      "title": "#Discard this report?",
+      "body": "#This removes your answers from this browser and deletes the files you attached. It cannot be undone.",
+      "confirm": "#Yes, discard it",
+      "keep": "#No, keep it"
     }
   },
   "notFound": {

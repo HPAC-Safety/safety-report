@@ -9,9 +9,18 @@ import {
 	submitReport,
 	type SubmitAnswer,
 } from "../api/reportSubmission"
-import { MAX_ATTACHMENTS } from "../api/uploads"
+import { MAX_ATTACHMENTS, deleteUpload } from "../api/uploads"
 import type { Attachment } from "./AttachmentField"
-import { clearDraft, readDraft, writeDraft, type DraftAnswer, type ReportDraft } from "./draft"
+import { DiscardReportDialog } from "./DiscardReportDialog"
+import {
+	clearDraft,
+	draftUploadIds,
+	readDraft,
+	writeDraft,
+	type DraftAnswer,
+	type DraftAttachment,
+	type ReportDraft,
+} from "./draft"
 import { QuestionField } from "./QuestionField"
 import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
 import {
@@ -34,6 +43,26 @@ type LoadState =
 
 type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "submitted"; id: string } | { status: "failed"; message: string; keepsLocalState: boolean }
 
+/** Best effort, one request each: an upload this fails to erase is never claimed, and the lifecycle rule expires it. */
+function deleteUploads(uploadIds: string[]) {
+	for (const uploadId of uploadIds) void deleteUpload(uploadId)
+}
+
+type AttachmentMap = Record<string, Attachment[]>
+type DraftAttachmentMap = Record<string, DraftAttachment[]>
+
+/** The finished uploads the draft keeps, per question; a refused or expired row is not worth restoring. */
+function savedAttachments(attachments: AttachmentMap): DraftAttachmentMap {
+	const saved: DraftAttachmentMap = {}
+	for (const [revisionId, rows] of Object.entries(attachments)) {
+		const uploaded = rows
+			.filter((row) => row.status === "uploaded" && row.uploadId)
+			.map((row) => ({ uploadId: row.uploadId!, name: row.name, size: row.size }))
+		if (uploaded.length > 0) saved[revisionId] = uploaded
+	}
+	return saved
+}
+
 function stepQuestionId(step: FormStep): string {
 	return step.question.id
 }
@@ -48,10 +77,10 @@ export function ReportForm() {
 	useStrayFileDropGuard()
 	const [load, setLoad] = useState<LoadState>({ status: "loading" })
 	const [answers, setAnswers] = useState<AnswerMap>({})
-	// Finished uploads per file-upload question, in memory only: never in the
-	// saved draft, so never restored after a reload (ADR-0096). A file still
-	// uploading is not here — AttachmentField keeps that, and only reports
-	// whether anything is in flight.
+	// Finished uploads per file-upload question. Their IDs and names go into
+	// the saved draft beside the answers, so continuing it restores them
+	// (ADR-0100). A file still uploading is not here — AttachmentField keeps
+	// that, and only reports whether anything is in flight.
 	const [attachments, setAttachments] = useState<Record<string, Attachment[]>>({})
 	const [uploading, setUploading] = useState<Record<string, boolean>>({})
 	// The page shown is whichever the address names. `addressSettled` stays
@@ -70,6 +99,11 @@ export function ReportForm() {
 	const [submit, setSubmit] = useState<SubmitState>({ status: "idle" })
 	const offeredDraft = useRef(false)
 	const [pendingDraft, setPendingDraft] = useState<ReportDraft | null>(null)
+	const [confirmingDiscard, setConfirmingDiscard] = useState(false)
+	// True once the reporter has changed anything, so the draft is rewritten
+	// even when that change emptied it — a removed file must leave the draft
+	// too. Until then, an empty form never overwrites a draft still on offer.
+	const edited = useRef(false)
 
 	useEffect(() => {
 		let cancelled = false
@@ -92,9 +126,11 @@ export function ReportForm() {
 	useEffect(() => {
 		if (load.status !== "ready" || offeredDraft.current) return
 		offeredDraft.current = true
-		const draft = readDraft()
+		const { draft, expiredUploadIds } = readDraft()
+		deleteUploads(expiredUploadIds) // An expired report's files go with it (REQ-SUB-067).
 		if (!draft) return
-		if (savedAnswerRows(load.questions, draft.answers, locale, t).length === 0) {
+		if (savedAnswerRows(load.questions, draft.answers, draft.attachments ?? {}, locale, t).length === 0) {
+			deleteUploads(draftUploadIds(draft))
 			clearDraft() // Nothing on this form to continue.
 			return
 		}
@@ -104,7 +140,10 @@ export function ReportForm() {
 	// Worded at render, not when offered: the questions can arrive before the
 	// locale's catalogue does, and the table must not keep the untranslated keys.
 	const pendingRows = useMemo<SavedAnswerRow[]>(
-		() => (pendingDraft && load.status === "ready" ? savedAnswerRows(load.questions, pendingDraft.answers, locale, t) : []),
+		() =>
+			pendingDraft && load.status === "ready"
+				? savedAnswerRows(load.questions, pendingDraft.answers, pendingDraft.attachments ?? {}, locale, t)
+				: [],
 		[pendingDraft, load, locale, t],
 	)
 
@@ -146,9 +185,10 @@ export function ReportForm() {
 	// browser that never opened the form would just be noise.
 	useEffect(() => {
 		if (submit.status === "submitted") return
-		if (Object.keys(answers).length === 0) return
-		writeDraft({ locale, answers, stepKey: currentStep?.question.key })
-	}, [answers, locale, submit.status, currentStep])
+		const kept = savedAttachments(attachments)
+		if (!edited.current && Object.keys(answers).length === 0 && Object.keys(kept).length === 0) return
+		writeDraft({ locale, answers, attachments: kept, stepKey: currentStep?.question.key })
+	}, [answers, attachments, locale, submit.status, currentStep])
 
 	const anyUploading = Object.values(uploading).some(Boolean)
 	const attachedCount = Object.values(attachments)
@@ -157,6 +197,7 @@ export function ReportForm() {
 	const attachmentRoom = Math.max(0, MAX_ATTACHMENTS - attachedCount)
 
 	const updateAttachments = useCallback((revisionId: string, update: (current: Attachment[]) => Attachment[]) => {
+		edited.current = true
 		setAttachments((prev) => ({ ...prev, [revisionId]: update(prev[revisionId] ?? []) }))
 	}, [])
 
@@ -171,8 +212,25 @@ export function ReportForm() {
 		if (!pendingDraft) return
 		const draft = pendingDraft
 		const restored: AnswerMap = {}
-		for (const row of pendingRows) restored[row.revisionId] = draft.answers[row.revisionId]!
+		const restoredFiles: AttachmentMap = {}
+		for (const row of pendingRows) {
+			if (row.kind === "answer") {
+				restored[row.revisionId] = draft.answers[row.revisionId]!
+				continue
+			}
+			restoredFiles[row.revisionId] = (draft.attachments?.[row.revisionId] ?? []).map((file) => ({
+				key: `restored-${file.uploadId}`,
+				name: file.name,
+				size: file.size,
+				status: "uploaded",
+				uploadId: file.uploadId,
+			}))
+		}
+		// Uploads saved for a question this form no longer shows have nowhere to go.
+		const kept = new Set(Object.values(restoredFiles).flat().map((row) => row.uploadId))
+		deleteUploads(draftUploadIds(draft).filter((uploadId) => !kept.has(uploadId)))
 		setAnswers(restored)
+		setAttachments(restoredFiles)
 		const savedStep = steps.find((step) =>
 			draft.stepKey ? step.question.key === draft.stepKey : step.question.revisionId === draft.stepRevisionId,
 		)
@@ -181,11 +239,32 @@ export function ReportForm() {
 	}
 
 	function startOver() {
+		if (pendingDraft) deleteUploads(draftUploadIds(pendingDraft))
 		clearDraft()
 		setPendingDraft(null)
 	}
 
+	// Leaving the page the field is on abandons anything still uploading
+	// (AttachmentField aborts it on unmount); every finished upload is erased.
+	function discard() {
+		deleteUploads(
+			Object.values(savedAttachments(attachments))
+				.flat()
+				.map((file) => file.uploadId),
+		)
+		clearDraft()
+		edited.current = false
+		setAnswers({})
+		setAttachments({})
+		setUploading({})
+		setAttemptedAdvance(false)
+		setSubmit({ status: "idle" })
+		setConfirmingDiscard(false)
+		navigate("/report")
+	}
+
 	function setAnswer(revisionId: string, answer: DraftAnswer | undefined) {
+		edited.current = true
 		setAnswers((prev) => {
 			const next = { ...prev }
 			if (answer) next[revisionId] = answer
@@ -335,12 +414,18 @@ export function ReportForm() {
 	}
 
 	const blocking = attemptedAdvance ? blockingRequirements() : []
+	const hasSomethingToDiscard =
+		Object.keys(answers).length > 0 || Object.values(attachments).some((rows) => rows.length > 0) || anyUploading
 	const blockingIds = new Set(blocking.map((question) => question.revisionId))
 
 	return (
 		<div className="mx-auto max-w-measure px-6 py-10">
 			{pendingDraft && (
 				<ResumeDraftDialog rows={pendingRows} onContinue={continueDraft} onStartOver={startOver} t={t} />
+			)}
+
+			{confirmingDiscard && (
+				<DiscardReportDialog onConfirm={discard} onKeep={() => setConfirmingDiscard(false)} t={t} />
 			)}
 
 			<p role="status" className="sr-only">
@@ -421,6 +506,18 @@ export function ReportForm() {
 					</button>
 				)}
 			</div>
+
+			{hasSomethingToDiscard && (
+				<div className="mt-6 flex justify-center">
+					<button
+						type="button"
+						className="touch-target rounded px-3 font-sans text-sm text-ink-muted underline hover:text-ink"
+						onClick={() => setConfirmingDiscard(true)}
+					>
+						{t("report.discard.open")}
+					</button>
+				</div>
+			)}
 		</div>
 	)
 }

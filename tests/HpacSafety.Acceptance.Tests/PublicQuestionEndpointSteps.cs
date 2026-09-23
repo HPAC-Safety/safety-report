@@ -49,7 +49,7 @@ public sealed class PublicQuestionEndpointSteps
 		// twice before the "only one active" step below deactivates it.
 		await Revise(created.GetProperty("id").GetString()!, Draft(_keyUnderTest!, "short_text") with
 		{
-			LabelEn = "Reworded once"
+			LabelEn = "Reworded once",
 		});
 	}
 
@@ -61,7 +61,7 @@ public sealed class PublicQuestionEndpointSteps
 
 		await Revise(current.GetProperty("id").GetString()!, Draft(_keyUnderTest!, "short_text") with
 		{
-			LabelEn = "Currently active wording"
+			LabelEn = "Currently active wording",
 		});
 	}
 
@@ -188,7 +188,8 @@ public sealed class PublicQuestionEndpointSteps
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static SaveQuestion Draft(string key, string type)
+	private static SaveQuestion Draft(string key,
+									  string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
 			false, true, true, null, null, null, null, false, []);
@@ -202,7 +203,8 @@ public sealed class PublicQuestionEndpointSteps
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task Revise(string id, SaveQuestion request)
+	private async Task Revise(string id,
+							  SaveQuestion request)
 	{
 		using var response = await _adminClient!.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), request);
 		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());

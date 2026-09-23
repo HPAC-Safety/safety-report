@@ -11,7 +11,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), false),
 		]);
 
 		// When
@@ -27,7 +27,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Lovelace radioed the tower."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Lovelace radioed the tower."), false),
 		]);
 
 		// When
@@ -43,7 +43,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ida Ng"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Ida taxied without clearance."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ida taxied without clearance."), false),
 		]);
 
 		// When
@@ -60,7 +60,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("site", "Site", "North Bay Airport"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "The aircraft flew north before landing."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "The aircraft flew north before landing."), false),
 		]);
 
 		// When
@@ -76,7 +76,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false),
 		]);
 
 		// When
@@ -93,7 +93,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "ADA   LOVELACE was flying."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "ADA   LOVELACE was flying."), false),
 		]);
 
 		// When
@@ -109,7 +109,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false),
 		]);
 
 		// When
@@ -124,7 +124,7 @@ public sealed class PrivateValueMarkerTests
 	{
 		// Given
 		var input = SummarizationInput.Partition([
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Nothing private here."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Nothing private here."), false),
 		]);
 
 		// When
@@ -140,7 +140,7 @@ public sealed class PrivateValueMarkerTests
 		// Given
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "The gear failed to retract."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "The gear failed to retract."), false),
 		]);
 
 		// When
@@ -157,7 +157,7 @@ public sealed class PrivateValueMarkerTests
 		var input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
 			new ClassifiedReportField(new SummarizationField("witness_name", "Witness name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported the failure."), false),
 		]);
 
 		// When

@@ -17,5 +17,8 @@ public interface IExifStripper
 	///     <paramref name="type" /> — an image that cannot be stripped must not
 	///     produce a derivative.
 	/// </summary>
-	Task Strip(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken);
+	Task Strip(Stream source,
+			   Stream destination,
+			   MediaType type,
+			   CancellationToken cancellationToken);
 }

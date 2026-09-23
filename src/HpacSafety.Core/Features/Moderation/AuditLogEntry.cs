@@ -18,7 +18,12 @@ public class AuditLogEntry
 	}
 #pragma warning restore CS8618
 
-	public AuditLogEntry(string actorSubject, AuditAction action, string targetType, TinyId targetId, DateTimeOffset at, string? detail = null)
+	public AuditLogEntry(string actorSubject,
+						 AuditAction action,
+						 string targetType,
+						 TinyId targetId,
+						 DateTimeOffset at,
+						 string? detail = null)
 	{
 		Id = TinyId.New();
 		ActorSubject = actorSubject;

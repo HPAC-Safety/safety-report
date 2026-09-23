@@ -62,7 +62,8 @@ public static class TranslationEndpoints
 		ArgumentNullException.ThrowIfNull(request);
 		ArgumentNullException.ThrowIfNull(translator);
 
-		if (!Locale.TryParse(request.From, out var source) || !Locale.TryParse(request.To, out var target))
+		if (!Locale.TryParse(request.From, out var source)
+			|| !Locale.TryParse(request.To, out var target))
 		{
 			return Problem(
 				"unknown-locale",
@@ -84,7 +85,8 @@ public static class TranslationEndpoints
 		// still line results up with what it sent.
 		var texts = request.Texts ?? [];
 		var translatable = texts
-			.Select((text, index) => (text, index))
+			.Select((text,
+					 index) => (text, index))
 			.Where(entry => !string.IsNullOrWhiteSpace(entry.text))
 			.ToList();
 
@@ -118,7 +120,9 @@ public static class TranslationEndpoints
 		}
 	}
 
-	private static IResult Problem(string code, string detail, int statusCode)
+	private static IResult Problem(string code,
+								   string detail,
+								   int statusCode)
 	{
 		return Results.Problem(
 			title: "Translation failed.",

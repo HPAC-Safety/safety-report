@@ -39,7 +39,8 @@ public readonly record struct Locale
 	}
 
 	/// <summary>Parses an invariant code without throwing.</summary>
-	public static bool TryParse(string? code, out Locale locale)
+	public static bool TryParse(string? code,
+								out Locale locale)
 	{
 		foreach (var candidate in All)
 		{

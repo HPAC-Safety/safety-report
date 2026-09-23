@@ -114,7 +114,7 @@ public class GeminiChatClientTests
 		var (client, _) = Client(new StubTransport(
 			new HttpResponseMessage(HttpStatusCode.Forbidden)
 			{
-				Content = new StringContent("{\"error\":\"invalid key, prompt was: hello\"}")
+				Content = new StringContent("{\"error\":\"invalid key, prompt was: hello\"}"),
 			}));
 
 		// When
@@ -149,7 +149,7 @@ public class GeminiChatClientTests
 		var (client, _) = Client(new StubTransport(
 			new HttpResponseMessage(HttpStatusCode.OK)
 			{
-				Content = new StringContent("{}", Encoding.UTF8, "application/json")
+				Content = new StringContent("{}", Encoding.UTF8, "application/json"),
 			}));
 
 		// When / Then
@@ -176,19 +176,21 @@ public class GeminiChatClientTests
 			Content = new StringContent(
 				JsonSerializer.Serialize(new { choices = new[] { new { message = new { role = "assistant", content = completion } } } }),
 				Encoding.UTF8,
-				"application/json")
+				"application/json"),
 		});
 	}
 
 	private static (GeminiChatClient Client, StubTransport Transport) Client(
-		StubTransport? transport = null, string? apiKey = Key, string? endpoint = null)
+		StubTransport? transport = null,
+		string? apiKey = Key,
+		string? endpoint = null)
 	{
 		transport ??= Responds("ok");
 
 		var options = Options.Create(new GeminiOptions
 		{
 			ApiKey = apiKey,
-			Endpoint = endpoint
+			Endpoint = endpoint,
 		});
 
 		return (new GeminiChatClient(new StubClientFactory(transport), options), transport);
@@ -219,7 +221,8 @@ public class GeminiChatClientTests
 		}
 
 		protected override async Task<HttpResponseMessage> SendAsync(
-			HttpRequestMessage request, CancellationToken cancellationToken)
+			HttpRequestMessage request,
+			CancellationToken cancellationToken)
 		{
 			Requests.Add(request);
 

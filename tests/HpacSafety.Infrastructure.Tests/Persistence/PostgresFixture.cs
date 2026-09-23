@@ -53,7 +53,7 @@ public sealed class PostgresFixture : IAsyncLifetime
 		return new NpgsqlConnectionStringBuilder(_postgres.GetConnectionString())
 		{
 			Database = name,
-			Options = startupOptions
+			Options = startupOptions,
 		}.ConnectionString;
 	}
 

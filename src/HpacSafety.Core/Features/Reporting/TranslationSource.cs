@@ -12,5 +12,5 @@ public enum TranslationSource
 	Auto = 0,
 
 	/// <summary>Typed or accepted by an administrator.</summary>
-	Human = 1
+	Human = 1,
 }

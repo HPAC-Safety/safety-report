@@ -31,7 +31,10 @@ public sealed class EchoTranslator : ITranslator
 
 	/// <inheritdoc />
 	public Task<IReadOnlyList<string>> Translate(
-		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
+		IReadOnlyList<string> texts,
+		Locale source,
+		Locale target,
+		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(texts);
 

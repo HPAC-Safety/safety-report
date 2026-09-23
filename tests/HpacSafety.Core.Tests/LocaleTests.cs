@@ -35,14 +35,15 @@ public class LocaleTests
 	[InlineData(ReportStatus.SummaryFailed, "summary_failed")]
 	[InlineData(ReportStatus.PendingReview, "pending_review")]
 	[InlineData(QuestionRole.ConsentPublish, "consent_publish")]
-	public void GivenDomainValue_WhenWrittenAsCode_ThenRoundTrips(Enum value, string expected)
+	public void GivenDomainValue_WhenWrittenAsCode_ThenRoundTrips(Enum value,
+																  string expected)
 	{
 		// Given / When
 		var code = value switch
 		{
 			ReportStatus status => EnumCode.Of(status),
 			QuestionRole role => EnumCode.Of(role),
-			_ => throw new ArgumentOutOfRangeException(nameof(value))
+			_ => throw new ArgumentOutOfRangeException(nameof(value)),
 		};
 
 		// Then

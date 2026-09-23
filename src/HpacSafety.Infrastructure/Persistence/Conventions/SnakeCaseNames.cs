@@ -67,7 +67,10 @@ public static class SnakeCaseNames
 		{
 			var character = name[i];
 
-			if (char.IsUpper(character) && i > 0 && name[i - 1] != '_' && !char.IsUpper(name[i - 1]))
+			if (char.IsUpper(character)
+				&& i > 0
+				&& name[i - 1] != '_'
+				&& !char.IsUpper(name[i - 1]))
 			{
 				builder.Append('_');
 			}

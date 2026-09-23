@@ -136,11 +136,12 @@ public sealed class AiAnonymizationSteps
 		_marked.PrivateContext.Single().Value.ShouldBe("Ada Lovelace");
 	}
 
-	private void BuildInput(string privateValue, string reportContentValue)
+	private void BuildInput(string privateValue,
+							string reportContentValue)
 	{
 		_input = SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField(PrivateQuestionKey, "Pilot name", privateValue), true),
-			new ClassifiedReportField(new SummarizationField(ReportContentQuestionKey, "Description", reportContentValue), false)
+			new ClassifiedReportField(new SummarizationField(ReportContentQuestionKey, "Description", reportContentValue), false),
 		]);
 	}
 }

@@ -33,7 +33,8 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
-			(_, _) =>
+			(_,
+			 _) =>
 			{
 				handled = true;
 				return Task.CompletedTask;
@@ -61,7 +62,8 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
-			(_, _) => throw new InvalidOperationException("Nothing of this type should have been claimed."),
+			(_,
+			 _) => throw new InvalidOperationException("Nothing of this type should have been claimed."),
 			CancellationToken.None);
 
 		// Then
@@ -78,7 +80,8 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
-			(_, _) => Task.CompletedTask,
+			(_,
+			 _) => Task.CompletedTask,
 			CancellationToken.None);
 
 		// Then
@@ -99,7 +102,8 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
-			(_, _) => throw new InvalidOperationException("A not-yet-due message should not have been claimed."),
+			(_,
+			 _) => throw new InvalidOperationException("A not-yet-due message should not have been claimed."),
 			CancellationToken.None);
 
 		// Then
@@ -119,7 +123,8 @@ public sealed class OutboxClaimerTests(PostgresFixture postgres)
 		// When
 		var claimed = await OutboxClaimer.ClaimNext(
 			context, OutboxMessageType.TranslateAnswers, At,
-			(_, _) => throw new InvalidOperationException("The translation provider is unreachable."),
+			(_,
+			 _) => throw new InvalidOperationException("The translation provider is unreachable."),
 			CancellationToken.None);
 
 		// Then

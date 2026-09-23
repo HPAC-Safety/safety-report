@@ -106,7 +106,8 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static async Task Create(HttpClient client, string key)
+	private static async Task Create(HttpClient client,
+									 string key)
 	{
 		var request = new
 		{
@@ -133,7 +134,8 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 	}
 
-	private static async Task<string> ReadEntry(ZipArchive archive, string entryName)
+	private static async Task<string> ReadEntry(ZipArchive archive,
+												string entryName)
 	{
 		using var stream = archive.GetEntry(entryName)!.Open();
 		using var reader = new StreamReader(stream);

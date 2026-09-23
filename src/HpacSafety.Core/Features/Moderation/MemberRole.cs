@@ -18,5 +18,5 @@ public enum MemberRole
 	SafetyOfficer = 1,
 
 	/// <summary>Everything a safety officer may do, plus authoring the question bank.</summary>
-	Administrator = 2
+	Administrator = 2,
 }

@@ -85,8 +85,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _extraRevisionId, value = (string?)"a synthetic answer" }
-			}
+				new { questionRevisionId = _extraRevisionId, value = (string?)"a synthetic answer" },
+			},
 		});
 	}
 
@@ -120,8 +120,8 @@ public sealed class ReportSubmissionEndpointSteps
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
 				new { questionRevisionId = _extraRevisionId, value = (string?)null },
-				new { questionRevisionId = _fileRevisionId, attachmentPartIndexes = Array.Empty<int>() }
-			}
+				new { questionRevisionId = _fileRevisionId, attachmentPartIndexes = Array.Empty<int>() },
+			},
 		});
 	}
 
@@ -154,8 +154,8 @@ public sealed class ReportSubmissionEndpointSteps
 				answers = new object[]
 				{
 					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-					new { questionRevisionId = _supersededRevisionId, value = (string?)"an old answer" }
-				}
+					new { questionRevisionId = _supersededRevisionId, value = (string?)"an old answer" },
+				},
 			});
 
 			return;
@@ -167,8 +167,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _selectRevisionId, value = (string?)"Blue" }
-			}
+				new { questionRevisionId = _selectRevisionId, value = (string?)"Blue" },
+			},
 		});
 		accepted.StatusCode.ShouldBe(HttpStatusCode.Accepted, await accepted.Content.ReadAsStringAsync());
 		_selectedLabel = "Blue";
@@ -179,8 +179,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _selectRevisionId, value = (string?)"Not an offered option" }
-			}
+				new { questionRevisionId = _selectRevisionId, value = (string?)"Not an offered option" },
+			},
 		});
 	}
 
@@ -208,8 +208,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = revisionId, value = (string?)"A site nobody listed" }
-			}
+				new { questionRevisionId = revisionId, value = (string?)"A site nobody listed" },
+			},
 		});
 
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
@@ -237,8 +237,8 @@ public sealed class ReportSubmissionEndpointSteps
 				answers = new object[]
 				{
 					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-					new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel }
-				}
+					new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
+				},
 			}
 			: new
 			{
@@ -246,8 +246,8 @@ public sealed class ReportSubmissionEndpointSteps
 				answers = new object[]
 				{
 					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-					new { questionRevisionId = _extraRevisionId, value = (string?)Secret }
-				}
+					new { questionRevisionId = _extraRevisionId, value = (string?)Secret },
+				},
 			};
 
 		_response = await Post(dto);
@@ -285,8 +285,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel }
-			}
+				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
+			},
 		});
 		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 	}
@@ -377,8 +377,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel }
-			}
+				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
+			},
 		});
 		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
 		var reportId = body.GetProperty("id").GetString()!;
@@ -493,8 +493,8 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _consentRevisionId, value = (string?)Secret }
-			}
+				new { questionRevisionId = _consentRevisionId, value = (string?)Secret },
+			},
 		});
 	}
 
@@ -546,13 +546,13 @@ public sealed class ReportSubmissionEndpointSteps
 				{
 					language = "en-CA",
 					answers = new object[]
-			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _fileRevisionId, attachmentPartIndexes = new[] { 0 } }
-			}
+					{
+						new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+						new { questionRevisionId = _fileRevisionId, attachmentPartIndexes = new[] { 0 } },
+					},
 				}, JsonOptions)),
 				"report"
-			}
+			},
 		};
 
 		var part = new ByteArrayContent([0x89, 0x50, 0x4E, 0x47, 1, 2, 3, 4]);
@@ -626,7 +626,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = (string?)"unknown-revision", value = (string?)"x" } }
+			answers = new object[] { new { questionRevisionId = (string?)"unknown-revision", value = (string?)"x" } },
 		});
 	}
 
@@ -659,7 +659,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
 		});
 	}
 
@@ -696,7 +696,7 @@ public sealed class ReportSubmissionEndpointSteps
 		var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
 		});
 		_response = await anonymous.PostAsync(Submit, content);
 	}
@@ -723,7 +723,7 @@ public sealed class ReportSubmissionEndpointSteps
 		await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
 		});
 	}
 
@@ -733,7 +733,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
 		});
 	}
 
@@ -772,7 +772,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
 		});
 	}
 
@@ -792,7 +792,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } }
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
 		});
 	}
 
@@ -839,7 +839,7 @@ public sealed class ReportSubmissionEndpointSteps
 	{
 		var content = new MultipartFormDataContent
 		{
-			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" }
+			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" },
 		};
 		return content;
 	}
@@ -854,85 +854,85 @@ public sealed class ReportSubmissionEndpointSteps
 			{
 				language = "en-CA",
 				answers = new object[]
-								{
-						new { questionRevisionId = consent, value = (string?)"yes" },
-						new { questionRevisionId = consent, value = (string?)"no" }
-								}
+				{
+					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = consent, value = (string?)"no" },
+				},
 			}),
 			"an unknown question_revision_id" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = consent, value = (string?)"yes" },
-						new { questionRevisionId = (string?)"not-a-real-id", value = (string?)"x" }
-				}
+					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = (string?)"not-a-real-id", value = (string?)"x" },
+				},
 			}),
 			"a question_revision_id for a deleted revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = consent, value = (string?)"yes" },
-						new { questionRevisionId = (string?)await DeletedRevisionId(), value = (string?)"x" }
-				}
+					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = (string?)await DeletedRevisionId(), value = (string?)"x" },
+				},
 			}),
 			"no explicit answer to the consent_publish revision" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"), value = (string?)"x" }
-				}
+					new { questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"), value = (string?)"x" },
+				},
 			}),
 			"a non-null field from the wrong answer shape" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = consent, value = (string?)"yes" },
-						new
-						{
-							questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"),
-							optionCodes = new[] { "x" }
-						}
-				}
+					new { questionRevisionId = consent, value = (string?)"yes" },
+					new
+					{
+						questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"),
+						optionCodes = new[] { "x" },
+					},
+				},
 			}),
 			"a duplicate or out-of-range file index" => await Post(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = consent, value = (string?)"yes" },
-						new
-						{
-							questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
-							attachmentPartIndexes = new[] { 0 }
-						}
-				}
+					new { questionRevisionId = consent, value = (string?)"yes" },
+					new
+					{
+						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
+						attachmentPartIndexes = new[] { 0 },
+					},
+				},
 			}),
 			"a files part that is never referenced by any answer" => await PostWithGarbageFile(new
 			{
 				language = "en-CA",
-				answers = new object[] { new { questionRevisionId = consent, value = (string?)"yes" } }
+				answers = new object[] { new { questionRevisionId = consent, value = (string?)"yes" } },
 			}),
 			"a files part referenced by more than one answer" => await PostWithGarbageFile(new
 			{
 				language = "en-CA",
 				answers = new object[]
 				{
-						new { questionRevisionId = consent, value = (string?)"yes" },
-						new
-						{
-							questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
-							attachmentPartIndexes = new[] { 0 }
-						},
-						new
-						{
-							questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
-							attachmentPartIndexes = new[] { 0 }
-						}
-				}
+					new { questionRevisionId = consent, value = (string?)"yes" },
+					new
+					{
+						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
+						attachmentPartIndexes = new[] { 0 },
+					},
+					new
+					{
+						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
+						attachmentPartIndexes = new[] { 0 },
+					},
+				},
 			}),
 			_ => throw new NotSupportedException($"Unmapped malformed-DTO example: '{problem}'."),
 		};
@@ -942,7 +942,7 @@ public sealed class ReportSubmissionEndpointSteps
 	{
 		var content = new MultipartFormDataContent
 		{
-			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" }
+			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" },
 		};
 		var part = new ByteArrayContent([1, 2, 3]);
 		part.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
@@ -993,8 +993,8 @@ public sealed class ReportSubmissionEndpointSteps
 			options = new[]
 			{
 				new { code = "blue", labelEn = "Blue", labelFr = "Bleu" },
-				new { code = "red", labelEn = "Red", labelFr = "Rouge" }
-			}
+				new { code = "red", labelEn = "Red", labelFr = "Rouge" },
+			},
 		};
 
 		using var response = await _admin.PostAsJsonAsync(AdminQuestions, request);
@@ -1019,7 +1019,9 @@ public sealed class ReportSubmissionEndpointSteps
 		return created.GetProperty("revisionId").GetString()!;
 	}
 
-	private async Task<JsonElement> Create(string key, string type, string? labelEn = null)
+	private async Task<JsonElement> Create(string key,
+										   string type,
+										   string? labelEn = null)
 	{
 		var request = new
 		{
@@ -1037,7 +1039,7 @@ public sealed class ReportSubmissionEndpointSteps
 			dependsOnQuestionId = (string?)null,
 			dependsOnOptionCode = (string?)null,
 			groupedUnderQuestionId = (string?)null,
-			options = Array.Empty<object>()
+			options = Array.Empty<object>(),
 		};
 
 		using var response = await _admin!.PostAsJsonAsync(AdminQuestions, request);
@@ -1046,7 +1048,10 @@ public sealed class ReportSubmissionEndpointSteps
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private async Task Revise(string id, string key, string type, string labelEn)
+	private async Task Revise(string id,
+							  string key,
+							  string type,
+							  string labelEn)
 	{
 		var request = new
 		{
@@ -1064,7 +1069,7 @@ public sealed class ReportSubmissionEndpointSteps
 			dependsOnQuestionId = (string?)null,
 			dependsOnOptionCode = (string?)null,
 			groupedUnderQuestionId = (string?)null,
-			options = Array.Empty<object>()
+			options = Array.Empty<object>(),
 		};
 
 		using var response = await _admin!.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), request);

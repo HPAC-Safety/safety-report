@@ -24,8 +24,10 @@ public class QuestionChoicesTests
 			isActive: true, options: SiteOptions);
 	}
 
-	private static Question Edit(Question question, bool answered, string? labelEn = null,
-		IReadOnlyList<QuestionOptionInput>? options = null)
+	private static Question Edit(Question question,
+								 bool answered,
+								 string? labelEn = null,
+								 IReadOnlyList<QuestionOptionInput>? options = null)
 	{
 		var current = question.CurrentRevision;
 		return question.ApplyEdit(

@@ -24,7 +24,8 @@ public class TypeformQuestionMapperTests
 		return TypeformQuestionMapper.Map(Load("synthetic-en.json"), Load("synthetic-fr.json"));
 	}
 
-	private static ImportedQuestionDraft DraftFor(TypeformImportResult result, string ref_)
+	private static ImportedQuestionDraft DraftFor(TypeformImportResult result,
+												  string ref_)
 	{
 		return result.Drafts.Single(draft => draft.Key == QuestionKey.Normalize(ref_));
 	}
@@ -45,7 +46,8 @@ public class TypeformQuestionMapperTests
 	[InlineData("intro-ref", QuestionType.Statement)]
 	[InlineData("group-ref", QuestionType.Group)]
 	[InlineData("contact-ref", QuestionType.Group)]
-	public void GivenTypeformType_WhenMapped_ThenQuestionTypeMatches(string fieldRef, QuestionType expected)
+	public void GivenTypeformType_WhenMapped_ThenQuestionTypeMatches(string fieldRef,
+																	 QuestionType expected)
 	{
 		// Given / When
 		var result = MapSynthetic();
@@ -233,7 +235,10 @@ public class TypeformQuestionMapperTests
 
 	// -------------------------------------------------------- hpac extension --
 
-	private static TypeformField Field(string reference, string title, string typeformType, TypeformHpacExtension? hpac = null)
+	private static TypeformField Field(string reference,
+									   string title,
+									   string typeformType,
+									   TypeformHpacExtension? hpac = null)
 	{
 		return new TypeformField(reference, reference, title, typeformType, SubfieldKey: null, new TypeformFieldProperties(
 			Description: null, AllowMultipleSelection: null, AllowOtherChoice: null, Choices: null, Fields: null, hpac));
@@ -249,7 +254,8 @@ public class TypeformQuestionMapperTests
 	[InlineData("statement", "statement")]
 	[InlineData("multiple_choice", "autocomplete")]
 	[InlineData("multiple_choice", "single_select")]
-	public void GivenAnHpacType_WhenMapped_ThenItOverridesTheAmbiguousNativeType(string nativeType, string hpacType)
+	public void GivenAnHpacType_WhenMapped_ThenItOverridesTheAmbiguousNativeType(string nativeType,
+																				 string hpacType)
 	{
 		// Given
 		var hpac = new TypeformHpacExtension(hpacType, false, false, null, null, null);

@@ -39,7 +39,7 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
 		"files/content",
 		"download",
 		"/raw",
-		"attachment"
+		"attachment",
 	];
 
 	// A route that matches a pattern above but is verified, here, not to serve
@@ -52,7 +52,7 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
 	private static readonly string[] AllowedExceptions =
 	[
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/view",
-		"/api/admin/reports/{reportId}/attachments/{attachmentId}/download"
+		"/api/admin/reports/{reportId}/attachments/{attachmentId}/download",
 	];
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;

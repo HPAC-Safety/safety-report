@@ -139,7 +139,9 @@ public sealed class AttachmentAccessSteps
 		attachmentEntries.ShouldAllBe(e => e.Action != AuditAction.ViewedRawReport);
 	}
 
-	private async Task SeedAsync(string contentType, bool stripped, bool failed)
+	private async Task SeedAsync(string contentType,
+								 bool stripped,
+								 bool failed)
 	{
 		var database = await DatabaseAsync();
 

@@ -39,7 +39,10 @@ public static class QuestionDependencies
 	/// </param>
 	/// <exception cref="DomainRuleViolationException">When the dependency is not allowed.</exception>
 	public static void EnsureDependencyAllowed(
-		IReadOnlyCollection<Question> questions, TinyId? childId, TinyId parentId, string? requiredOptionCode = null)
+		IReadOnlyCollection<Question> questions,
+		TinyId? childId,
+		TinyId parentId,
+		string? requiredOptionCode = null)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
@@ -77,7 +80,8 @@ public static class QuestionDependencies
 					$"'{parent.Key}' is a {EnumCode.Of(parent.Type)} question. Only a yes/no or single-select question can enable another one.");
 		}
 
-		if (childId is { } child && LeadsTo(questions, parentId, child))
+		if (childId is { } child
+			&& LeadsTo(questions, parentId, child))
 		{
 			throw new DomainRuleViolationException(
 				$"'{parent.Key}' already depends on this question, directly or through another one. A cycle would leave both permanently disabled.");
@@ -95,7 +99,9 @@ public static class QuestionDependencies
 	/// <param name="remainingCodes">Every code the saved list keeps.</param>
 	/// <exception cref="DomainRuleViolationException">When a removed choice enables another question.</exception>
 	public static void EnsureChoicesRemovable(
-		IReadOnlyCollection<Question> questions, Question parent, IReadOnlyCollection<string> remainingCodes)
+		IReadOnlyCollection<Question> questions,
+		Question parent,
+		IReadOnlyCollection<string> remainingCodes)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 		ArgumentNullException.ThrowIfNull(parent);
@@ -104,9 +110,9 @@ public static class QuestionDependencies
 		var kept = remainingCodes.Select(QuestionKey.Normalize).ToHashSet(StringComparer.Ordinal);
 
 		var dependent = questions.FirstOrDefault(question => question.Deleted is null
-			&& question.DependsOnQuestionId == parent.Id
-			&& question.DependsOnOptionCode is { } code
-			&& !kept.Contains(code));
+															 && question.DependsOnQuestionId == parent.Id
+															 && question.DependsOnOptionCode is { } code
+															 && !kept.Contains(code));
 
 		if (dependent is not null)
 		{
@@ -121,7 +127,9 @@ public static class QuestionDependencies
 	///     <paramref name="from" /> reaches <paramref name="target" />. The visited
 	///     set is what stops a cycle already in the data from looping here.
 	/// </summary>
-	private static bool LeadsTo(IReadOnlyCollection<Question> questions, TinyId from, TinyId target)
+	private static bool LeadsTo(IReadOnlyCollection<Question> questions,
+								TinyId from,
+								TinyId target)
 	{
 		var visited = new HashSet<TinyId>();
 		var current = from;

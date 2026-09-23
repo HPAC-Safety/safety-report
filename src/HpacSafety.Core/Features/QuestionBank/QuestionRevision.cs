@@ -63,7 +63,8 @@ public class QuestionRevision
 		RevisionNumber = revisionNumber;
 		Type = type;
 
-		if (CollectsNoAnswerType(type) && (isRequired || isPrivate))
+		if (CollectsNoAnswerType(type)
+			&& (isRequired || isPrivate))
 		{
 			throw new DomainRuleViolationException(
 				$"A {type} question collects no answer and cannot be marked required or private.");
@@ -291,7 +292,10 @@ public class QuestionRevision
 	///     row, so <see cref="QuestionDependencies" /> checks that. See ADR-0060,
 	///     ADR-0076.
 	/// </summary>
-	private static TinyId? ValidatedDependency(TinyId? dependsOnQuestionId, TinyId questionId, QuestionType type, bool isSystem)
+	private static TinyId? ValidatedDependency(TinyId? dependsOnQuestionId,
+											   TinyId questionId,
+											   QuestionType type,
+											   bool isSystem)
 	{
 		if (dependsOnQuestionId is not { } parent)
 		{
@@ -323,7 +327,8 @@ public class QuestionRevision
 	///     <see cref="QuestionType.Group" /> is a fact about a different row, so
 	///     <see cref="QuestionGrouping" /> checks that. See ADR-0076.
 	/// </summary>
-	private static TinyId? ValidatedGrouping(TinyId? groupedUnderQuestionId, TinyId questionId)
+	private static TinyId? ValidatedGrouping(TinyId? groupedUnderQuestionId,
+											 TinyId questionId)
 	{
 		if (groupedUnderQuestionId is not { } parent)
 		{
@@ -351,7 +356,8 @@ public class QuestionRevision
 	///     type itself, a fact <see cref="QuestionDependencies" /> checks against
 	///     the live bank. See ADR-0074.
 	/// </summary>
-	private static string? ValidatedOptionCode(string? dependsOnOptionCode, TinyId? dependsOnQuestionId)
+	private static string? ValidatedOptionCode(string? dependsOnOptionCode,
+											   TinyId? dependsOnQuestionId)
 	{
 		if (dependsOnOptionCode is null)
 		{
@@ -380,14 +386,17 @@ public class QuestionRevision
 	///     <paramref name="locale" />, or null when they have not answered it yet.
 	/// </param>
 	/// <param name="locale">The locale <paramref name="parentAnswerValue" /> was given in.</param>
-	public bool IsEnabledGiven(Question? parent, string? parentAnswerValue, Locale locale)
+	public bool IsEnabledGiven(Question? parent,
+							   string? parentAnswerValue,
+							   Locale locale)
 	{
 		if (DependsOnQuestionId is null)
 		{
 			return true;
 		}
 
-		if (parent is null || parentAnswerValue is null)
+		if (parent is null
+			|| parentAnswerValue is null)
 		{
 			return false;
 		}

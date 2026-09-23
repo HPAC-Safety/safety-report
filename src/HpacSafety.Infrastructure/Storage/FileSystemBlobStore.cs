@@ -33,7 +33,8 @@ public sealed class FileSystemBlobStore : IBlobStore
 	private readonly byte[] _signingKey;
 
 	/// <summary>Creates the store, generating a per-process signing key when none is configured.</summary>
-	public FileSystemBlobStore(FileSystemBlobStoreOptions options, TimeProvider clock)
+	public FileSystemBlobStore(FileSystemBlobStoreOptions options,
+							   TimeProvider clock)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 		ArgumentNullException.ThrowIfNull(clock);
@@ -52,21 +53,28 @@ public sealed class FileSystemBlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public Task<Uri> CreateUploadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateUploadUrl(BlobKey key,
+									 string contentType,
+									 TimeSpan lifetime,
+									 CancellationToken cancellationToken)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
 		return Task.FromResult(Sign(UploadOperation, key, contentType, lifetime));
 	}
 
 	/// <inheritdoc />
-	public Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateReadUrl(BlobKey key,
+								   string downloadFileName,
+								   TimeSpan lifetime,
+								   CancellationToken cancellationToken)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(downloadFileName);
 		return Task.FromResult(Sign(ReadOperation, key, string.Empty, lifetime, downloadFileName));
 	}
 
 	/// <inheritdoc />
-	public Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)
+	public Task<Stream> OpenRead(BlobKey key,
+								 CancellationToken cancellationToken)
 	{
 		var path = PathFor(_blobRoot, key);
 
@@ -79,7 +87,10 @@ public sealed class FileSystemBlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key,
+							Stream content,
+							string contentType,
+							CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
@@ -102,21 +113,25 @@ public sealed class FileSystemBlobStore : IBlobStore
 	///     development endpoint calls in place of S3 accepting a PUT; a URL signed
 	///     for another key, another operation, or an expired moment is refused.
 	/// </summary>
-	public async Task ExecuteUpload(Uri signedUrl, Stream content, CancellationToken cancellationToken)
+	public async Task ExecuteUpload(Uri signedUrl,
+									Stream content,
+									CancellationToken cancellationToken)
 	{
 		var ticket = Verify(signedUrl, UploadOperation);
 		await Write(ticket.Key, content, ticket.ContentType, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>Serves the bytes a signed GET authorises, and only those bytes.</summary>
-	public async Task<Stream> ExecuteRead(Uri signedUrl, CancellationToken cancellationToken)
+	public async Task<Stream> ExecuteRead(Uri signedUrl,
+										  CancellationToken cancellationToken)
 	{
 		var ticket = Verify(signedUrl, ReadOperation);
 		return await OpenRead(ticket.Key, cancellationToken).ConfigureAwait(false);
 	}
 
 	/// <summary>The content type recorded when a blob was written.</summary>
-	public async Task<string?> ReadContentType(BlobKey key, CancellationToken cancellationToken)
+	public async Task<string?> ReadContentType(BlobKey key,
+											   CancellationToken cancellationToken)
 	{
 		var path = PathFor(_metaRoot, key);
 
@@ -125,7 +140,11 @@ public sealed class FileSystemBlobStore : IBlobStore
 			: null;
 	}
 
-	private Uri Sign(string operation, BlobKey key, string contentType, TimeSpan lifetime, string downloadFileName = "")
+	private Uri Sign(string operation,
+					 BlobKey key,
+					 string contentType,
+					 TimeSpan lifetime,
+					 string downloadFileName = "")
 	{
 		var expiresAt = _clock.GetUtcNow().Add(BlobUrlLifetime.Validate(lifetime)).ToUnixTimeSeconds();
 		var signature = Signature(operation, key.Value, contentType, downloadFileName, expiresAt);
@@ -137,7 +156,8 @@ public sealed class FileSystemBlobStore : IBlobStore
 		return new Uri($"{UrlScheme}://local/{key.Value}{query}");
 	}
 
-	private SignedTicket Verify(Uri signedUrl, string expectedOperation)
+	private SignedTicket Verify(Uri signedUrl,
+								string expectedOperation)
 	{
 		ArgumentNullException.ThrowIfNull(signedUrl);
 
@@ -191,7 +211,11 @@ public sealed class FileSystemBlobStore : IBlobStore
 		return new SignedTicket(key, contentType);
 	}
 
-	private string Signature(string operation, string key, string contentType, string downloadFileName, long expiresAt)
+	private string Signature(string operation,
+							 string key,
+							 string contentType,
+							 string downloadFileName,
+							 long expiresAt)
 	{
 		var payload = string.Create(CultureInfo.InvariantCulture, $"{operation}\n{key}\n{contentType}\n{downloadFileName}\n{expiresAt}");
 		var mac = HMACSHA256.HashData(_signingKey, Encoding.UTF8.GetBytes(payload));
@@ -214,7 +238,8 @@ public sealed class FileSystemBlobStore : IBlobStore
 		return parsed;
 	}
 
-	private static string PathFor(string root, BlobKey key)
+	private static string PathFor(string root,
+								  BlobKey key)
 	{
 		// BlobKey has already refused traversal, but the check is repeated here
 		// because this is the one place where getting it wrong writes outside the

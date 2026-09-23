@@ -43,7 +43,8 @@ public static class QuestionEndpoints
 	///     revision, because a question's history before its current revision
 	///     is not a thing the public form has ever asked.
 	/// </summary>
-	private static async Task<IResult> List(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> List(HpacSafetyDbContext database,
+											CancellationToken cancellationToken)
 	{
 		var questions = await HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
@@ -66,7 +67,8 @@ public static class QuestionEndpoints
 				.ToList());
 	}
 
-	private static PublicQuestionView ToView(Question question, ILookup<TinyId, Question> childrenByGroup)
+	private static PublicQuestionView ToView(Question question,
+											 ILookup<TinyId, Question> childrenByGroup)
 	{
 		var children = question.Type == QuestionType.Group
 			? childrenByGroup[question.Id]

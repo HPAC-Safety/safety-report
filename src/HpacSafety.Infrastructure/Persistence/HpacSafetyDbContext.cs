@@ -219,7 +219,8 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 				continue;
 			}
 
-			if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType } || clrType != typeof(TinyId))
+			if (entry.Metadata.FindProperty("Id") is not { ClrType: var clrType }
+				|| clrType != typeof(TinyId))
 			{
 				continue;
 			}
@@ -239,13 +240,15 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		{
 			foreach (var name in LooseReferences)
 			{
-				if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType } || clrType != typeof(TinyId))
+				if (entry.Metadata.FindProperty(name) is not { ClrType: var clrType }
+					|| clrType != typeof(TinyId))
 				{
 					continue;
 				}
 
 				var property = entry.Property(name);
-				if (property.CurrentValue is TinyId pointed && replacements.TryGetValue(pointed, out var replacement))
+				if (property.CurrentValue is TinyId pointed
+					&& replacements.TryGetValue(pointed, out var replacement))
 				{
 					property.CurrentValue = replacement;
 				}

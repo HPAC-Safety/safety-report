@@ -162,13 +162,15 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static SaveQuestion Draft(string key, string type)
+	private static SaveQuestion Draft(string key,
+									  string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
 			false, true, true, null, null, null, null, false, []);
 	}
 
-	private static async Task<JsonElement> Create(HttpClient client, SaveQuestion request)
+	private static async Task<JsonElement> Create(HttpClient client,
+												  SaveQuestion request)
 	{
 		using var response = await client.PostAsJsonAsync(AdminQuestions, request);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());

@@ -159,7 +159,7 @@ public sealed class DomainAndLifecycleSteps
 				labelFr = "Une question synthétique",
 				isRequired = false,
 				isPrivate = true,
-				isActive = true
+				isActive = true,
 			});
 		created.StatusCode.ShouldBe(HttpStatusCode.Created);
 		var body = await created.Content.ReadFromJsonAsync<JsonElement>();
@@ -281,7 +281,8 @@ public sealed class DomainAndLifecycleSteps
 	}
 
 	private static async Task<(TinyId QuestionId, TinyId RevisionId)> CreateSingleSelectQuestion(
-		HttpClient client, string label)
+		HttpClient client,
+		string label)
 	{
 		var key = $"{label}_{Guid.NewGuid():n}"[..24];
 
@@ -300,7 +301,7 @@ public sealed class DomainAndLifecycleSteps
 				{
 					new { code = "north", labelEn = "North", labelFr = "Nord" },
 					new { code = "south", labelEn = "South", labelFr = "Sud" },
-				}
+				},
 			});
 		created.StatusCode.ShouldBe(HttpStatusCode.Created);
 		var body = await created.Content.ReadFromJsonAsync<JsonElement>();
@@ -311,7 +312,8 @@ public sealed class DomainAndLifecycleSteps
 	}
 
 	/// <summary>Edits the question while nothing has answered it, which revises it in place (ADR-0071).</summary>
-	private static async Task ReviseSingleSelectQuestion(HttpClient client, TinyId questionId)
+	private static async Task ReviseSingleSelectQuestion(HttpClient client,
+														 TinyId questionId)
 	{
 		using var revised = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/questions/{questionId}", UriKind.Relative),
@@ -327,7 +329,7 @@ public sealed class DomainAndLifecycleSteps
 				{
 					new { code = "north", labelEn = "North", labelFr = "Nord" },
 					new { code = "south", labelEn = "South", labelFr = "Sud" },
-				}
+				},
 			});
 		revised.StatusCode.ShouldBe(HttpStatusCode.OK);
 	}

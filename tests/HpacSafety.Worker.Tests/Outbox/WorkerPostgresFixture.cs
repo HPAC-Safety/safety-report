@@ -41,7 +41,7 @@ public sealed class WorkerPostgresFixture : IAsyncLifetime
 
 		var connectionString = new Npgsql.NpgsqlConnectionStringBuilder(_postgres.GetConnectionString())
 		{
-			Database = name
+			Database = name,
 		}.ConnectionString;
 
 		await using var context = ContextFor(connectionString);

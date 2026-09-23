@@ -54,7 +54,8 @@ public static class RemuxVerification
 
 	private static string? UnexpectedTag(JsonElement element)
 	{
-		if (!element.TryGetProperty("tags", out var tags) || tags.ValueKind is not JsonValueKind.Object)
+		if (!element.TryGetProperty("tags", out var tags)
+			|| tags.ValueKind is not JsonValueKind.Object)
 		{
 			return null;
 		}

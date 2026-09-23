@@ -31,7 +31,8 @@ public class ProjectionTests
 	[Theory]
 	[InlineData("yes", true)]
 	[InlineData("no", false)]
-	public void GivenConsentRoleOnTextQuestion_WhenAnswered_ThenBooleanWordIsRead(string given, bool expected)
+	public void GivenConsentRoleOnTextQuestion_WhenAnswered_ThenBooleanWordIsRead(string given,
+																				  bool expected)
 	{
 		// Given — "yes" and "no" are the invariant stored forms of every
 		// boolean answer (ADR-0072); the role can be moved to a question that

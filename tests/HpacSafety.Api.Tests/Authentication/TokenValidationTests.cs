@@ -138,8 +138,8 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		// Given — the classic downgrade: claims intact, signature removed
 		var header = Base64Url("""{"alg":"none","typ":"JWT"}""");
 		var payload = Base64Url($$"""
-                                  {"sub":"dev:admin","aud":"hpac-safety-api","iss":"{{DevelopmentTokenIssuer.IssuerName}}","roles":"administrator","exp":{{DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds()}}}
-                                  """);
+								  {"sub":"dev:admin","aud":"hpac-safety-api","iss":"{{DevelopmentTokenIssuer.IssuerName}}","roles":"administrator","exp":{{DateTimeOffset.UtcNow.AddHours(1).ToUnixTimeSeconds()}}}
+								  """);
 		var unsigned = $"{header}.{payload}.";
 
 		// When
@@ -190,7 +190,7 @@ public sealed class TokenValidationTests(ApiPostgresFixture fixture)
 		[
 			new Claim("name", "A Synthetic Person"),
 			new Claim("email", "synthetic@example.test"),
-			new Claim("picture", "https://example.test/avatar.png")
+			new Claim("picture", "https://example.test/avatar.png"),
 		]);
 
 		// When

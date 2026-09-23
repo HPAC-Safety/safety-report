@@ -263,7 +263,6 @@ public class MediaIngestorTests
 			store,
 			new StubMediaSniffer(MediaType.Jpeg),
 			new RecordingExifStripper(), new RecordingVideoRemuxer(),
-
 			new MediaPolicy(maxByteSize, MediaType.All),
 			new FixedClock(Now));
 

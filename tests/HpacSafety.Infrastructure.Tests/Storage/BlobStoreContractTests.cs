@@ -53,13 +53,16 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 	///     store accepted it. S3 answers with a status code and the filesystem store
 	///     throws; both collapse to the same answer here so the test can be shared.
 	/// </summary>
-	protected abstract Task<bool> TryUpload(Uri uploadUrl, byte[] content, string contentType);
+	protected abstract Task<bool> TryUpload(Uri uploadUrl,
+											byte[] content,
+											string contentType);
 
 	/// <summary>Attempts the read a pre-signed URL authorises.</summary>
 	protected abstract Task<bool> TryRead(Uri readUrl);
 
 	/// <summary>Points a pre-signed URL at a different key, leaving the signature alone.</summary>
-	protected abstract Uri RetargetToKey(Uri url, BlobKey key);
+	protected abstract Uri RetargetToKey(Uri url,
+										 BlobKey key);
 
 	[Fact]
 	public async Task GivenBytesWrittenToKey_WhenTheyAreReadBack_ThenTheyAreUnchanged()
@@ -303,7 +306,9 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 			TimeProvider.System);
 	}
 
-	private async Task SeedQuarantine(BlobKey key, byte[] content, MediaType declaredType)
+	private async Task SeedQuarantine(BlobKey key,
+									  byte[] content,
+									  MediaType declaredType)
 	{
 		using var source = new MemoryStream(content);
 		await Store.Write(key, source, declaredType.ContentType, CancellationToken.None);

@@ -4,7 +4,7 @@ namespace HpacSafety.Core;
 public enum ChatRole
 {
 	System,
-	User
+	User,
 }
 
 /// <summary>One message in a chat-completion request.</summary>
@@ -40,7 +40,9 @@ public interface IAiChatClient
 	/// <exception cref="AiChatClientUnavailableException">
 	///     No provider is configured/approved, or the provider could not be reached.
 	/// </exception>
-	Task<string> Complete(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken);
+	Task<string> Complete(string model,
+						  IReadOnlyList<ChatMessage> messages,
+						  CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -63,7 +65,8 @@ public sealed class AiChatClientUnavailableException : Exception
 	/// <summary>Creates the exception.</summary>
 	/// <param name="message">A safe, operator-facing explanation.</param>
 	/// <param name="innerException">The underlying failure. Never surfaced beyond this message.</param>
-	public AiChatClientUnavailableException(string message, Exception innerException)
+	public AiChatClientUnavailableException(string message,
+											Exception innerException)
 		: base(message, innerException)
 	{
 	}

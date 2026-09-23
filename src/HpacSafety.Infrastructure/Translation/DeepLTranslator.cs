@@ -41,13 +41,13 @@ public sealed partial class DeepLTranslator : ITranslator
 	private static readonly Dictionary<string, string> TargetCodes = new(StringComparer.Ordinal)
 	{
 		["en-CA"] = "EN-CA",
-		["fr-CA"] = "FR-CA"
+		["fr-CA"] = "FR-CA",
 	};
 
 	private static readonly Dictionary<string, string> SourceCodes = new(StringComparer.Ordinal)
 	{
 		["en-CA"] = "EN",
-		["fr-CA"] = "FR"
+		["fr-CA"] = "FR",
 	};
 
 	private readonly IHttpClientFactory _clients;
@@ -56,7 +56,8 @@ public sealed partial class DeepLTranslator : ITranslator
 	/// <summary>Creates the translator.</summary>
 	/// <param name="clients">Supplies the named HTTP client.</param>
 	/// <param name="options">Provider configuration.</param>
-	public DeepLTranslator(IHttpClientFactory clients, IOptions<DeepLOptions> options)
+	public DeepLTranslator(IHttpClientFactory clients,
+						   IOptions<DeepLOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
@@ -69,7 +70,10 @@ public sealed partial class DeepLTranslator : ITranslator
 
 	/// <inheritdoc />
 	public async Task<IReadOnlyList<string>> Translate(
-		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
+		IReadOnlyList<string> texts,
+		Locale source,
+		Locale target,
+		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(texts);
 
@@ -138,7 +142,8 @@ public sealed partial class DeepLTranslator : ITranslator
 		// DeepL answers positionally, with no keys, so a length mismatch would
 		// silently shift every field by one — French help text landing in the
 		// label. Refusing is the only safe answer.
-		if (translations is null || translations.Count != texts.Count)
+		if (translations is null
+			|| translations.Count != texts.Count)
 		{
 			throw new TranslationUnavailableException(
 				"The translation service returned a different number of results than were sent.");

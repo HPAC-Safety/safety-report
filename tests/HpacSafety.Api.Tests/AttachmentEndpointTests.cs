@@ -242,17 +242,21 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 		return SignedInClient.As(_factory, role);
 	}
 
-	private static Uri ViewUrl(string reportId, string attachmentId)
+	private static Uri ViewUrl(string reportId,
+							   string attachmentId)
 	{
 		return new Uri($"/api/admin/reports/{reportId}/attachments/{attachmentId}/view", UriKind.Relative);
 	}
 
-	private static Uri DownloadUrl(string reportId, string attachmentId)
+	private static Uri DownloadUrl(string reportId,
+								   string attachmentId)
 	{
 		return new Uri($"/api/admin/reports/{reportId}/attachments/{attachmentId}/download", UriKind.Relative);
 	}
 
-	private async Task<(string ReportId, string AttachmentId)> SeedAsync(string contentType, bool stripped, bool failed)
+	private async Task<(string ReportId, string AttachmentId)> SeedAsync(string contentType,
+																		 bool stripped,
+																		 bool failed)
 	{
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

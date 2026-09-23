@@ -20,7 +20,8 @@ public static class AuthEndpoints
 	/// <param name="app">The route builder.</param>
 	/// <param name="isDevelopment">Whether this host issues its own tokens.</param>
 	/// <returns>The group, so the caller can see what was mapped.</returns>
-	public static RouteGroupBuilder MapAuth(this IEndpointRouteBuilder app, bool isDevelopment)
+	public static RouteGroupBuilder MapAuth(this IEndpointRouteBuilder app,
+											bool isDevelopment)
 	{
 		ArgumentNullException.ThrowIfNull(app);
 
@@ -54,7 +55,8 @@ public static class AuthEndpoints
 	}
 
 	private static Results<Ok<MeResponse>, ProblemHttpResult> Me(
-		HttpContext context, IOptions<HpacAuthenticationOptions> options)
+		HttpContext context,
+		IOptions<HpacAuthenticationOptions> options)
 	{
 		var identity = MemberRoles.IdentityOf(context.User, options.Value.RoleClaimType);
 

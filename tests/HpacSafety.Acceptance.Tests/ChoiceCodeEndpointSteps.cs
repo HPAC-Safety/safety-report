@@ -25,13 +25,14 @@ public sealed class ChoiceCodeEndpointSteps
 	private HttpResponseMessage? _refused;
 
 	[Given(@"an Administrator saves a single-select question with the choices ""(.*)"" and ""(.*)""")]
-	public async Task GivenASingleSelectQuestionIsSaved(string first, string second)
+	public async Task GivenASingleSelectQuestionIsSaved(string first,
+														string second)
 	{
 		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
 
 		using var response = await _client.PostAsJsonAsync(Questions, Request($"launch_site_{Guid.NewGuid():N}"[..30], [
 			new Choice(null, first),
-			new Choice(null, second)
+			new Choice(null, second),
 		]));
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 
@@ -40,13 +41,15 @@ public sealed class ChoiceCodeEndpointSteps
 	}
 
 	[Then(@"the choices are recorded under the codes ""(.*)"" and ""(.*)""")]
-	public void ThenTheChoicesAreRecordedUnder(string first, string second)
+	public void ThenTheChoicesAreRecordedUnder(string first,
+											   string second)
 	{
 		Codes().ShouldBe([first, second]);
 	}
 
 	[When(@"they reword ""(.*)"" to ""(.*)"" and save again")]
-	public async Task WhenTheyReword(string before, string after)
+	public async Task WhenTheyReword(string before,
+									 string after)
 	{
 		var choices = _saved.GetProperty("options").EnumerateArray()
 			.Select(option => option.GetProperty("labelEn").GetString() == before
@@ -68,7 +71,8 @@ public sealed class ChoiceCodeEndpointSteps
 	}
 
 	[When(@"they save choices whose English wording reads ""(.*)"" and ""(.*)""")]
-	public async Task WhenTheySaveAlikeChoices(string first, string second)
+	public async Task WhenTheySaveAlikeChoices(string first,
+											   string second)
 	{
 		_refused = await _client!.PutAsJsonAsync(
 			new Uri($"{Questions}/{_questionId}", UriKind.Relative),
@@ -91,7 +95,8 @@ public sealed class ChoiceCodeEndpointSteps
 		return [.. _saved.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())];
 	}
 
-	private static object Request(string? key, IReadOnlyList<Choice> choices)
+	private static object Request(string? key,
+								  IReadOnlyList<Choice> choices)
 	{
 		return new
 		{

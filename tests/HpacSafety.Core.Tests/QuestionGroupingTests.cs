@@ -11,7 +11,9 @@ public class QuestionGroupingTests
 {
 	private static readonly DateTimeOffset At = new(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
 
-	private static Question Ordinary(string key, QuestionType type, TinyId? groupedUnder = null)
+	private static Question Ordinary(string key,
+									 QuestionType type,
+									 TinyId? groupedUnder = null)
 	{
 		return Question.Create(
 			key, type, $"Question {key}", $"Question {key} (fr)", At, isActive: true, isPrivate: false,

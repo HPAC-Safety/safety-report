@@ -27,7 +27,7 @@ public static class MediaRejection
 			MediaRejectionReason.DeclaredTypeMismatch => KeyPrefix + "declaredTypeMismatch",
 			MediaRejectionReason.None => throw new ArgumentOutOfRangeException(
 				nameof(reason), "An accepted upload has no rejection to render."),
-			_ => throw new ArgumentOutOfRangeException(nameof(reason))
+			_ => throw new ArgumentOutOfRangeException(nameof(reason)),
 		};
 	}
 }

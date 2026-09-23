@@ -58,7 +58,8 @@ public static class TypeformExportBuilder
 		return (new TypeformDocument(englishFields, []), new TypeformDocument(frenchFields, []));
 	}
 
-	private static string? NameOf(TinyId? questionId, Dictionary<TinyId, string> keysByQuestionId)
+	private static string? NameOf(TinyId? questionId,
+								  Dictionary<TinyId, string> keysByQuestionId)
 	{
 		return questionId is { } id && keysByQuestionId.TryGetValue(id, out var key) ? key : null;
 	}

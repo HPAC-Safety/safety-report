@@ -10,7 +10,9 @@ public class ConditionalQuestionTests
 {
 	private static readonly DateTimeOffset At = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 
-	private static Question Ordinary(string key, QuestionType type, TinyId? dependsOn = null)
+	private static Question Ordinary(string key,
+									 QuestionType type,
+									 TinyId? dependsOn = null)
 	{
 		return Question.Create(
 			key, type, $"Question {key}", $"Question {key} (fr)", At, isActive: true, dependsOnQuestionId: dependsOn);
@@ -219,7 +221,8 @@ public class ConditionalQuestionTests
 	[InlineData(QuestionType.Time, false)]
 	[InlineData(QuestionType.ShortText, false)]
 	public void GivenQuestionType_WhenOptionBehaviourIsRead_ThenMatchesContract(
-		QuestionType type, bool takesChoices)
+		QuestionType type,
+		bool takesChoices)
 	{
 		// Given
 		var question = Ordinary("authored", type);
@@ -273,7 +276,7 @@ public class ConditionalQuestionTests
 			options:
 			[
 				new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
-				new QuestionOptionInput("paraglider", "Paraglider", "Parapente")
+				new QuestionOptionInput("paraglider", "Paraglider", "Parapente"),
 			]);
 	}
 
@@ -380,7 +383,8 @@ public class ConditionalQuestionTests
 	[InlineData("yes", true)]
 	[InlineData("no", false)]
 	[InlineData(null, false)]
-	public void GivenYesNoParent_WhenEnabledIsChecked_ThenMatchesTheAnswer(string? parentAnswer, bool expected)
+	public void GivenYesNoParent_WhenEnabledIsChecked_ThenMatchesTheAnswer(string? parentAnswer,
+																		   bool expected)
 	{
 		// Given
 		var parent = Ordinary("were_you_injured", QuestionType.YesNo);

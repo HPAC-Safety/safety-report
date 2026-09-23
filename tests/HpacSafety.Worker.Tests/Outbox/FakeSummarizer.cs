@@ -22,7 +22,8 @@ public sealed class FakeSummarizer : ISummarizer
 	///     as though something happened while the model call was in flight, such
 	///     as a concurrent soft deletion (REQ-DOM-007).
 	/// </param>
-	public FakeSummarizer((string TextEn, string TextFr) draft, Action? onCall = null)
+	public FakeSummarizer((string TextEn, string TextFr) draft,
+						  Action? onCall = null)
 	{
 		_draft = draft;
 		_onCall = onCall;
@@ -37,7 +38,8 @@ public sealed class FakeSummarizer : ISummarizer
 
 	public SummarizationInput? LastInput { get; private set; }
 
-	public Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken)
+	public Task<SummaryDraft> Summarize(SummarizationInput input,
+										CancellationToken cancellationToken)
 	{
 		CallCount++;
 		LastInput = input;

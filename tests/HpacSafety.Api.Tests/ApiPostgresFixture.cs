@@ -79,12 +79,13 @@ public static class SignedInClient
 			MemberRole.Administrator => ("admin", "admin"),
 			MemberRole.SafetyOfficer => ("officer", "officer"),
 			MemberRole.User => ("user", "user"),
-			_ => throw new ArgumentOutOfRangeException(nameof(role))
+			_ => throw new ArgumentOutOfRangeException(nameof(role)),
 		};
 	}
 
 	/// <summary>Asks the booted API for a signed token in that role.</summary>
-	public static async Task<string> TokenFor(WebApplicationFactory<Program> factory, MemberRole role)
+	public static async Task<string> TokenFor(WebApplicationFactory<Program> factory,
+											  MemberRole role)
 	{
 		ArgumentNullException.ThrowIfNull(factory);
 
@@ -100,7 +101,8 @@ public static class SignedInClient
 	}
 
 	/// <summary>A client carrying a real bearer token for that role.</summary>
-	public static async Task<HttpClient> As(WebApplicationFactory<Program> factory, MemberRole role)
+	public static async Task<HttpClient> As(WebApplicationFactory<Program> factory,
+											MemberRole role)
 	{
 		ArgumentNullException.ThrowIfNull(factory);
 
@@ -112,7 +114,8 @@ public static class SignedInClient
 	}
 
 	/// <summary>A client carrying an arbitrary bearer token.</summary>
-	public static HttpClient Bearing(WebApplicationFactory<Program> factory, string token)
+	public static HttpClient Bearing(WebApplicationFactory<Program> factory,
+									 string token)
 	{
 		ArgumentNullException.ThrowIfNull(factory);
 

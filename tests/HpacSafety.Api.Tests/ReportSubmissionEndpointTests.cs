@@ -53,7 +53,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = consentRevisionId, value = "yes" } }
+			answers = new[] { new { questionRevisionId = consentRevisionId, value = "yes" } },
 		});
 
 		// When
@@ -79,7 +79,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = consentRevisionId, value = "no" } }
+			answers = new[] { new { questionRevisionId = consentRevisionId, value = "no" } },
 		});
 
 		// When
@@ -100,7 +100,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = revisionId, value = "hello" } }
+			answers = new[] { new { questionRevisionId = revisionId, value = "hello" } },
 		});
 
 		// When
@@ -122,8 +122,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			answers = new object[]
 			{
 				new { questionRevisionId = consentRevisionId, value = "yes" },
-				new { questionRevisionId = "not-a-real-id", value = "hello" }
-			}
+				new { questionRevisionId = "not-a-real-id", value = "hello" },
+			},
 		});
 
 		// When
@@ -145,8 +145,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			answers = new[]
 			{
 				new { questionRevisionId = consentRevisionId, value = "yes" },
-				new { questionRevisionId = consentRevisionId, value = "no" }
-			}
+				new { questionRevisionId = consentRevisionId, value = "no" },
+			},
 		});
 
 		// When
@@ -171,8 +171,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			answers = new[]
 			{
 				new { questionRevisionId = consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = revisionId, value = (string?)null }
-			}
+				new { questionRevisionId = revisionId, value = (string?)null },
+			},
 		});
 
 		// When
@@ -199,8 +199,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			answers = new[]
 			{
 				new { questionRevisionId = consentRevisionId, value = "yes" },
-				new { questionRevisionId = revisionId, value = narrative }
-			}
+				new { questionRevisionId = revisionId, value = narrative },
+			},
 		});
 
 		// When
@@ -223,7 +223,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = consentRevisionId, value = "yes" } }
+			answers = new[] { new { questionRevisionId = consentRevisionId, value = "yes" } },
 		});
 
 		for (var i = 0; i < 6; i++)
@@ -260,8 +260,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			answers = new[]
 			{
 				new { questionRevisionId = consentRevisionId, value = (string?)"yes", attachmentPartIndexes = (int[]?)null },
-				new { questionRevisionId = revisionId, value = (string?)null, attachmentPartIndexes = (int[]?)[0] }
-			}
+				new { questionRevisionId = revisionId, value = (string?)null, attachmentPartIndexes = (int[]?) [0] },
+			},
 		});
 
 		var part = new ByteArrayContent(bytes);
@@ -302,8 +302,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			answers = new[]
 			{
 				new { questionRevisionId = consentRevisionId, value = (string?)"yes", attachmentPartIndexes = (int[]?)null },
-				new { questionRevisionId = revisionId, value = (string?)null, attachmentPartIndexes = (int[]?)[0] }
-			}
+				new { questionRevisionId = revisionId, value = (string?)null, attachmentPartIndexes = (int[]?) [0] },
+			},
 		});
 
 		// When — no files part was actually attached
@@ -392,7 +392,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		return flattened;
 	}
 
-	private static async Task<string> CreateSyntheticQuestion(HttpClient admin, string type = "short_text")
+	private static async Task<string> CreateSyntheticQuestion(HttpClient admin,
+															  string type = "short_text")
 	{
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
 		var request = new
@@ -413,7 +414,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			optionSetId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			allowsReporterAdditions = false,
-			options = Array.Empty<object>()
+			options = Array.Empty<object>(),
 		};
 
 		using var response = await admin.PostAsJsonAsync(AdminQuestions, request);

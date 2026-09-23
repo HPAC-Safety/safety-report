@@ -22,7 +22,10 @@ public class OutboxMessage
 	}
 #pragma warning restore CS8618
 
-	public OutboxMessage(TinyId aggregateId, OutboxMessageType type, string payload, DateTimeOffset occurredAt)
+	public OutboxMessage(TinyId aggregateId,
+						 OutboxMessageType type,
+						 string payload,
+						 DateTimeOffset occurredAt)
 	{
 		Id = TinyId.New();
 		AggregateId = aggregateId;
@@ -86,7 +89,8 @@ public class OutboxMessage
 	///     once it crosses <see cref="PoisonThreshold" /> rather than retrying it
 	///     forever.
 	/// </summary>
-	public void RecordFailure(string error, DateTimeOffset at)
+	public void RecordFailure(string error,
+							  DateTimeOffset at)
 	{
 		Attempts++;
 		LastError = error;

@@ -126,7 +126,8 @@ public class QuestionForkTests
 	[InlineData(false, false)]
 	[InlineData(true, true)]
 	public void GivenOrdinaryQuestion_WhenAskedWhetherAnEditForks_ThenAnswersByAnswers(
-		bool hasBeenAnswered, bool expected)
+		bool hasBeenAnswered,
+		bool expected)
 	{
 		// Given / When / Then
 		Injury().ForksWhenEdited(hasBeenAnswered).ShouldBe(expected);
@@ -149,7 +150,8 @@ public class QuestionForkTests
 			isActive: true, displayOrder: 3);
 	}
 
-	private static Question Reword(Question question, bool hasBeenAnswered)
+	private static Question Reword(Question question,
+								   bool hasBeenAnswered)
 	{
 		return question.ApplyEdit(
 			hasBeenAnswered, question.Type, $"Were you injured? ({Guid.NewGuid():N})",

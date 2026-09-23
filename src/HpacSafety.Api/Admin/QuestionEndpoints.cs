@@ -45,7 +45,8 @@ public static class QuestionEndpoints
 	///     sort order break by stable key, which is what makes the order
 	///     deterministic rather than whatever PostgreSQL returned.
 	/// </summary>
-	private static async Task<IResult> List(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> List(HpacSafetyDbContext database,
+											CancellationToken cancellationToken)
 	{
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
 		var answered = await AnsweredQuestionIds(database, cancellationToken).ConfigureAwait(false);
@@ -242,7 +243,8 @@ public static class QuestionEndpoints
 
 		foreach (var candidate in request.QuestionIdsInOrder)
 		{
-			if (!TinyId.TryParse(candidate, out var id) || questions.Find(question => question.Id == id) is not { } question)
+			if (!TinyId.TryParse(candidate, out var id)
+				|| questions.Find(question => question.Id == id) is not { } question)
 			{
 				return Problem(
 					"unknown-question",
@@ -336,7 +338,8 @@ public static class QuestionEndpoints
 		HttpContext context,
 		CancellationToken cancellationToken)
 	{
-		if (!TinyId.TryParse(id, out var questionId) || !TinyId.TryParse(revisionId, out var parsedRevisionId))
+		if (!TinyId.TryParse(id, out var questionId)
+			|| !TinyId.TryParse(revisionId, out var parsedRevisionId))
 		{
 			return Results.NotFound();
 		}
@@ -345,7 +348,8 @@ public static class QuestionEndpoints
 			.FirstOrDefaultAsync(candidate => candidate.Id == questionId, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (question is null || question.Revisions.All(revision => revision.Id != parsedRevisionId))
+		if (question is null
+			|| question.Revisions.All(revision => revision.Id != parsedRevisionId))
 		{
 			return Results.NotFound();
 		}
@@ -371,7 +375,8 @@ public static class QuestionEndpoints
 	///     ones an edit would replace rather than revise.
 	/// </summary>
 	private static async Task<HashSet<TinyId>> AnsweredQuestionIds(
-		HpacSafetyDbContext database, CancellationToken cancellationToken)
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
 	{
 		return
 		[
@@ -380,7 +385,7 @@ public static class QuestionEndpoints
 				.Select(answer => answer.QuestionId)
 				.Distinct()
 				.ToListAsync(cancellationToken)
-				.ConfigureAwait(false)
+				.ConfigureAwait(false),
 		];
 	}
 
@@ -394,7 +399,9 @@ public static class QuestionEndpoints
 	///     fork exactly as a live one does.
 	/// </remarks>
 	private static Task<bool> HasBeenAnswered(
-		HpacSafetyDbContext database, TinyId questionId, CancellationToken cancellationToken)
+		HpacSafetyDbContext database,
+		TinyId questionId,
+		CancellationToken cancellationToken)
 	{
 		return database.ReportAnswers
 			.IgnoreQueryFilters()
@@ -411,7 +418,9 @@ public static class QuestionEndpoints
 	///     still a record of what somebody was asked.
 	/// </remarks>
 	private static Task<bool> HasBeenAnsweredRevision(
-		HpacSafetyDbContext database, TinyId revisionId, CancellationToken cancellationToken)
+		HpacSafetyDbContext database,
+		TinyId revisionId,
+		CancellationToken cancellationToken)
 	{
 		return database.ReportAnswers
 			.IgnoreQueryFilters()
@@ -483,7 +492,9 @@ public static class QuestionEndpoints
 	///     ADR-0060, ADR-0074.
 	/// </summary>
 	private static (TinyId? ParentId, string? OptionCode) ResolvedDependency(
-		SaveQuestionRequest request, List<Question> questions, TinyId? childId)
+		SaveQuestionRequest request,
+		List<Question> questions,
+		TinyId? childId)
 	{
 		if (!TinyId.TryParse(request.DependsOnQuestionId, out var parentId))
 		{
@@ -503,7 +514,9 @@ public static class QuestionEndpoints
 	///     exists, is live, is currently a group question, and does not lead
 	///     back here. See ADR-0076.
 	/// </summary>
-	private static TinyId? ResolvedGrouping(SaveQuestionRequest request, List<Question> questions, TinyId? childId)
+	private static TinyId? ResolvedGrouping(SaveQuestionRequest request,
+											List<Question> questions,
+											TinyId? childId)
 	{
 		if (!TinyId.TryParse(request.GroupedUnderQuestionId, out var groupId))
 		{
@@ -521,7 +534,8 @@ public static class QuestionEndpoints
 	///     takes no choices, which clears any a retyped question still had; null
 	///     when the request sends none, which leaves the choices as they are.
 	/// </summary>
-	private static IReadOnlyList<QuestionOptionInput>? OptionsFor(SaveQuestionRequest request, QuestionType type)
+	private static IReadOnlyList<QuestionOptionInput>? OptionsFor(SaveQuestionRequest request,
+																  QuestionType type)
 	{
 		if (type is not (QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete))
 		{
@@ -561,14 +575,21 @@ public static class QuestionEndpoints
 	///     the change back too (ADR-0092).
 	/// </summary>
 	private static void Audit(
-		HpacSafetyDbContext database, HttpContext context, AuditAction action, TinyId targetId, DateTimeOffset at,
-		string? detail = null, string targetType = "Question")
+		HpacSafetyDbContext database,
+		HttpContext context,
+		AuditAction action,
+		TinyId targetId,
+		DateTimeOffset at,
+		string? detail = null,
+		string targetType = "Question")
 	{
 		var subject = MemberRoles.SubjectOf(context.User) ?? "(unknown)";
 		database.AuditLog.Add(new AuditLogEntry(subject, action, targetType, targetId, at, detail));
 	}
 
-	private static IResult Problem(string code, string title, string detail)
+	private static IResult Problem(string code,
+								   string title,
+								   string detail)
 	{
 		return Results.Problem(
 			title: title,

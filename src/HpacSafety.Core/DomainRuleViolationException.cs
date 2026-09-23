@@ -8,12 +8,14 @@ namespace HpacSafety.Core;
 public class DomainRuleViolationException : Exception
 {
 	/// <summary>Creates the exception with a message describing the rule.</summary>
-	public DomainRuleViolationException(string message) : base(message)
+	public DomainRuleViolationException(string message)
+		: base(message)
 	{
 	}
 
 	/// <summary>Creates the exception with a message and an inner cause.</summary>
-	public DomainRuleViolationException(string message, Exception innerException)
+	public DomainRuleViolationException(string message,
+										Exception innerException)
 		: base(message, innerException)
 	{
 	}

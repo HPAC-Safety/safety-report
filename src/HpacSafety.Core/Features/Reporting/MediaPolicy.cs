@@ -12,7 +12,8 @@ namespace HpacSafety.Core.Features.Reporting;
 public sealed class MediaPolicy
 {
 	/// <summary>Creates a policy. Both limits are explicit; there is no default size here to inherit by accident.</summary>
-	public MediaPolicy(long maxByteSize, IReadOnlyCollection<MediaType> acceptedTypes)
+	public MediaPolicy(long maxByteSize,
+					   IReadOnlyCollection<MediaType> acceptedTypes)
 	{
 		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxByteSize);
 		ArgumentNullException.ThrowIfNull(acceptedTypes);
@@ -28,7 +29,9 @@ public sealed class MediaPolicy
 	public IReadOnlyCollection<MediaType> AcceptedTypes { get; }
 
 	/// <summary>Judges one upload against the policy.</summary>
-	public MediaValidation Validate(string? declaredContentType, MediaType? sniffed, long byteSize)
+	public MediaValidation Validate(string? declaredContentType,
+									MediaType? sniffed,
+									long byteSize)
 	{
 		if (byteSize <= 0)
 		{
@@ -50,7 +53,8 @@ public sealed class MediaPolicy
 			return MediaValidation.Rejected(MediaRejectionReason.UnacceptedMediaType);
 		}
 
-		if (!MediaType.TryParse(declaredContentType, out var declared) || declared != actual)
+		if (!MediaType.TryParse(declaredContentType, out var declared)
+			|| declared != actual)
 		{
 			return MediaValidation.Rejected(MediaRejectionReason.DeclaredTypeMismatch);
 		}

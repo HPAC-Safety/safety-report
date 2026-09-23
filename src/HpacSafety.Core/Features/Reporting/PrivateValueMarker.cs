@@ -28,7 +28,7 @@ public static class PrivateValueMarker
 	private static readonly HashSet<string> Stopwords = new(StringComparer.OrdinalIgnoreCase)
 	{
 		"north", "south", "east", "west", "saint", "fort", "lake", "river", "city", "port",
-		"nord", "sud", "est", "ouest", "sainte", "grande", "petit", "petite"
+		"nord", "sud", "est", "ouest", "sainte", "grande", "petit", "petite",
 	};
 
 	/// <summary>Applies the marking pass, returning a new input with report content marked.</summary>
@@ -74,7 +74,8 @@ public static class PrivateValueMarker
 
 			foreach (var token in tokens)
 			{
-				if (token.Length < MinimumTokenLength || Stopwords.Contains(token))
+				if (token.Length < MinimumTokenLength
+					|| Stopwords.Contains(token))
 				{
 					continue;
 				}
@@ -88,7 +89,10 @@ public static class PrivateValueMarker
 		return [.. candidates.OrderByDescending(candidate => candidate.Value.Length)];
 	}
 
-	private static void AddCandidate(List<Candidate> candidates, HashSet<string> seen, string value, string questionKey)
+	private static void AddCandidate(List<Candidate> candidates,
+									 HashSet<string> seen,
+									 string value,
+									 string questionKey)
 	{
 		if (!seen.Add(value))
 		{
@@ -102,7 +106,8 @@ public static class PrivateValueMarker
 	{
 		var alternation = string.Join(
 			'|',
-			candidates.Select((candidate, index) => $"(?<c{index}>{EscapeWithFlexibleWhitespace(candidate.Value)})"));
+			candidates.Select((candidate,
+							   index) => $"(?<c{index}>{EscapeWithFlexibleWhitespace(candidate.Value)})"));
 
 		return new Regex($@"(?<![\p{{L}}\p{{N}}])(?:{alternation})(?![\p{{L}}\p{{N}}])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 	}
@@ -113,7 +118,8 @@ public static class PrivateValueMarker
 		return string.Join(@"\s+", parts);
 	}
 
-	private static string Marker(Match match, List<Candidate> candidates)
+	private static string Marker(Match match,
+								 List<Candidate> candidates)
 	{
 		// The pattern is built from exactly these named groups, so one is always
 		// the one that matched.

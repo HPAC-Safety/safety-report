@@ -94,7 +94,8 @@ public sealed class ChoiceMigrationTests(PostgresFixture postgres)
 			.ShouldBe(0);
 	}
 
-	private static async Task<string[]> Rows(NpgsqlConnection connection, string questionId)
+	private static async Task<string[]> Rows(NpgsqlConnection connection,
+											 string questionId)
 	{
 		await using var command = new NpgsqlCommand(
 			"""
@@ -115,19 +116,22 @@ public sealed class ChoiceMigrationTests(PostgresFixture postgres)
 		return [.. rows];
 	}
 
-	private static async Task MigrateTo(HpacSafetyDbContext context, string? targetMigration)
+	private static async Task MigrateTo(HpacSafetyDbContext context,
+										string? targetMigration)
 	{
 		var migrator = context.GetInfrastructure().GetRequiredService<IMigrator>();
 		await migrator.MigrateAsync(targetMigration);
 	}
 
-	private static async Task Execute(NpgsqlConnection connection, string sql)
+	private static async Task Execute(NpgsqlConnection connection,
+									  string sql)
 	{
 		await using var command = new NpgsqlCommand(sql, connection);
 		await command.ExecuteNonQueryAsync();
 	}
 
-	private static async Task<long> Scalar(NpgsqlConnection connection, string sql)
+	private static async Task<long> Scalar(NpgsqlConnection connection,
+										   string sql)
 	{
 		await using var command = new NpgsqlCommand(sql, connection);
 		return (long)(await command.ExecuteScalarAsync())!;

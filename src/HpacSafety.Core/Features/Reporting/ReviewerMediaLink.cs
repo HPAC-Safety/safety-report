@@ -34,7 +34,10 @@ public sealed class ReviewerMediaLink
 	///     Throws for anything else, including the original and the quarantined
 	///     upload. See REQ-MED-010.
 	/// </summary>
-	public Task<Uri> CreateViewUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateViewUrl(BlobKey key,
+								   string downloadFileName,
+								   TimeSpan lifetime,
+								   CancellationToken cancellationToken)
 	{
 		if (!IsViewable(key))
 		{
@@ -52,7 +55,11 @@ public sealed class ReviewerMediaLink
 	///     document has no stripped derivative to redirect a reviewer to instead. See
 	///     REQ-MED-011.
 	/// </summary>
-	public Task<Uri> CreateDocumentDownloadUrl(BlobKey originalKey, AttachmentKind kind, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+	public Task<Uri> CreateDocumentDownloadUrl(BlobKey originalKey,
+											   AttachmentKind kind,
+											   string downloadFileName,
+											   TimeSpan lifetime,
+											   CancellationToken cancellationToken)
 	{
 		if (kind is not AttachmentKind.Document)
 		{

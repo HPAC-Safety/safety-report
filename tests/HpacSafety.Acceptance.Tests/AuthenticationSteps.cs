@@ -33,7 +33,7 @@ public sealed class AuthenticationSteps
 	private static readonly HpacAuthenticationOptions Options = new()
 	{
 		Audience = Audience,
-		DevelopmentSigningKey = SigningKey
+		DevelopmentSigningKey = SigningKey,
 	};
 
 	private string? _token;
@@ -81,7 +81,7 @@ public sealed class AuthenticationSteps
 		[
 			new Claim("name", "A Synthetic Person"),
 			new Claim("email", "synthetic@example.test"),
-			new Claim("picture", "https://example.test/avatar.png")
+			new Claim("picture", "https://example.test/avatar.png"),
 		]);
 	}
 

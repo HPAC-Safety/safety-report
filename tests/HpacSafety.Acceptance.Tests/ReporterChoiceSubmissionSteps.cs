@@ -45,13 +45,13 @@ public sealed class ReporterChoiceSubmissionSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"yes" },
-				new { questionRevisionId = _typeAhead!.RevisionId, value = (string?)typed }
-			}
+				new { questionRevisionId = _typeAhead!.RevisionId, value = (string?)typed },
+			},
 		};
 
 		using var content = new MultipartFormDataContent
 		{
-			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" }
+			{ new StringContent(JsonSerializer.Serialize(dto, JsonOptions)), "report" },
 		};
 		_response = await reporter.PostAsync(Submit, content);
 	}
@@ -74,7 +74,8 @@ public sealed class ReporterChoiceSubmissionSteps
 	}
 
 	[Then(@"the question now offers ""(.*)"" as a reporter-added choice coded ""(.*)""")]
-	public async Task ThenTheQuestionOffersIt(string typed, string code)
+	public async Task ThenTheQuestionOffersIt(string typed,
+											  string code)
 	{
 		var questions = await _admin!.GetFromJsonAsync<JsonElement>(AdminQuestions);
 		var question = questions.EnumerateArray().Single(candidate => candidate.GetProperty("id").GetString() == _typeAhead!.Id);
@@ -116,7 +117,7 @@ public sealed class ReporterChoiceSubmissionSteps
 			isRequired = false,
 			isPrivate = false,
 			isActive = true,
-			options = new[] { new { code = (string?)null, labelEn = "Mount 7", labelFr = "Mont 7" } }
+			options = new[] { new { code = (string?)null, labelEn = "Mount 7", labelFr = "Mont 7" } },
 		});
 		createdQuestion.StatusCode.ShouldBe(HttpStatusCode.Created, await createdQuestion.Content.ReadAsStringAsync());
 		var created = await createdQuestion.Content.ReadFromJsonAsync<JsonElement>();

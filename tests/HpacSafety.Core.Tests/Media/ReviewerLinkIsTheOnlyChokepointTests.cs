@@ -70,7 +70,8 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 	{
 		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
+		while (directory is not null
+			   && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
 		{
 			directory = directory.Parent;
 		}

@@ -21,14 +21,14 @@ public sealed class RemuxVerificationTests
 	{
 		// Given — what a clean remux actually produces
 		var probe = Probe("""
-			{
-			  "streams": [
-			    { "codec_type": "video", "tags": { "language": "und", "handler_name": "VideoHandler" } },
-			    { "codec_type": "audio", "tags": { "language": "und", "handler_name": "SoundHandler" } }
-			  ],
-			  "format": { "tags": { "major_brand": "isom", "minor_version": "512", "compatible_brands": "isomiso2avc1mp41" } }
-			}
-			""");
+						  {
+						    "streams": [
+						      { "codec_type": "video", "tags": { "language": "und", "handler_name": "VideoHandler" } },
+						      { "codec_type": "audio", "tags": { "language": "und", "handler_name": "SoundHandler" } }
+						    ],
+						    "format": { "tags": { "major_brand": "isom", "minor_version": "512", "compatible_brands": "isomiso2avc1mp41" } }
+						  }
+						  """);
 
 		// When / Then
 		RemuxVerification.Reject(probe).ShouldBeNull();
@@ -39,8 +39,8 @@ public sealed class RemuxVerificationTests
 	{
 		// Given — an iPhone's `mebx` track, which a tag-based wipe leaves behind
 		var probe = Probe("""
-			{ "streams": [ { "codec_type": "video" }, { "codec_type": "data" } ] }
-			""");
+						  { "streams": [ { "codec_type": "video" }, { "codec_type": "data" } ] }
+						  """);
 
 		// When
 		var refusal = RemuxVerification.Reject(probe);
@@ -79,9 +79,9 @@ public sealed class RemuxVerificationTests
 	{
 		// Given
 		var probe = Probe("""
-			{ "streams": [ { "codec_type": "video" } ],
-			  "format": { "tags": { "major_brand": "isom", "location": "+49.2827-123.1207/" } } }
-			""");
+						  { "streams": [ { "codec_type": "video" } ],
+						    "format": { "tags": { "major_brand": "isom", "location": "+49.2827-123.1207/" } } }
+						  """);
 
 		// When
 		var refusal = RemuxVerification.Reject(probe);
@@ -97,8 +97,8 @@ public sealed class RemuxVerificationTests
 	{
 		// Given
 		var probe = Probe("""
-			{ "streams": [ { "codec_type": "video", "tags": { "language": "und", "model": "iPhone 15 Pro" } } ] }
-			""");
+						  { "streams": [ { "codec_type": "video", "tags": { "language": "und", "model": "iPhone 15 Pro" } } ] }
+						  """);
 
 		// When
 		var refusal = RemuxVerification.Reject(probe);
@@ -114,9 +114,9 @@ public sealed class RemuxVerificationTests
 		// Given — the reason this is an allowlist: a field a future phone invents
 		// must fail closed rather than pass because nobody denylisted it
 		var probe = Probe("""
-			{ "streams": [ { "codec_type": "video" } ],
-			  "format": { "tags": { "com.newphone.flight_path": "..." } } }
-			""");
+						  { "streams": [ { "codec_type": "video" } ],
+						    "format": { "tags": { "com.newphone.flight_path": "..." } } }
+						  """);
 
 		// When / Then
 		RemuxVerification.Reject(probe).ShouldNotBeNull();

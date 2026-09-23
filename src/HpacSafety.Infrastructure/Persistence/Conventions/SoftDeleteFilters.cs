@@ -26,7 +26,8 @@ public static class SoftDeleteFilters
 
 		foreach (var entity in modelBuilder.Model.GetEntityTypes())
 		{
-			if (entity.FindProperty("Deleted") is null || Unfiltered.Contains(entity.ClrType))
+			if (entity.FindProperty("Deleted") is null
+				|| Unfiltered.Contains(entity.ClrType))
 			{
 				continue;
 			}

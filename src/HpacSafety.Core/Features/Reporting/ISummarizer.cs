@@ -27,7 +27,8 @@ public interface ISummarizer
 	///     validation (not exactly two nonblank strings, extra key, or a Markdown
 	///     fence).
 	/// </exception>
-	Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken);
+	Task<SummaryDraft> Summarize(SummarizationInput input,
+								 CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -47,7 +48,8 @@ public sealed class SummarizationFailedException : Exception
 	/// <summary>Creates the exception.</summary>
 	/// <param name="message">A safe, operator-facing explanation.</param>
 	/// <param name="innerException">The underlying failure. Never surfaced beyond this message.</param>
-	public SummarizationFailedException(string message, Exception innerException)
+	public SummarizationFailedException(string message,
+										Exception innerException)
 		: base(message, innerException)
 	{
 	}

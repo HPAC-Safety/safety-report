@@ -28,7 +28,9 @@ public static class TranslationServiceCollectionExtensions
 	///     front of French-speaking pilots. See ADR-0062.
 	/// </param>
 	public static IServiceCollection AddHpacSafetyTranslation(
-		this IServiceCollection services, IConfiguration configuration, bool useStandInWhenUnconfigured = false)
+		this IServiceCollection services,
+		IConfiguration configuration,
+		bool useStandInWhenUnconfigured = false)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);

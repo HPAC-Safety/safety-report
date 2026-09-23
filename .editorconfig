@@ -40,6 +40,35 @@ csharp_style_expression_bodied_local_functions = false:suggestion
 csharp_prefer_braces = true:error
 dotnet_diagnostic.IDE0011.severity = error
 
+# Merge-friendly wrapping: a change to one element touches one line. These are
+# ReSharper/Rider keys; `dotnet format` has no wrapping rules and ignores them.
+#
+#   public Thing(string foo,
+#                string bar)
+#   	: base(foo)
+#   {
+#
+# A multiline list ends in a trailing comma; a single-line list never does.
+resharper_csharp_trailing_comma_in_multiline_lists = true
+resharper_csharp_trailing_comma_in_singleline_lists = false
+# More than one declared parameter: one per line, the first on the `(` line and
+# the rest aligned under it. A lone parameter stays on the signature line.
+# optimal_fill (tabs, then spaces for the remainder) is what `dotnet format`
+# rewrites alignment to under indent_style = tab, so the two tools agree.
+resharper_csharp_wrap_parameters_style = chop_always
+resharper_csharp_wrap_after_declaration_lpar = false
+resharper_csharp_align_multiline_parameter = true
+resharper_csharp_alignment_tab_fill_style = optimal_fill
+# `: base(...)` and `: this(...)` always start their own line.
+resharper_csharp_place_constructor_initializer_on_same_line = false
+# A compound condition in if/while/do is chopped, operator leading each line.
+resharper_csharp_wrap_before_binary_opsign = true
+resharper_csharp_force_chop_compound_if_expression = true
+resharper_csharp_force_chop_compound_while_expression = true
+resharper_csharp_force_chop_compound_do_expression = true
+# Only the rules above wrap; ReSharper does not break a line for being long.
+resharper_csharp_wrap_lines = false
+
 [*.md]
 trim_trailing_whitespace = false
 

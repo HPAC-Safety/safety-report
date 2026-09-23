@@ -169,7 +169,8 @@ public sealed class FfmpegVideoRemuxerTests
 
 		foreach (var section in Sections(probe))
 		{
-			if (section.TryGetProperty("tags", out var tags) && tags.ValueKind is JsonValueKind.Object)
+			if (section.TryGetProperty("tags", out var tags)
+				&& tags.ValueKind is JsonValueKind.Object)
 			{
 				names.AddRange(tags.EnumerateObject().Select(tag => tag.Name));
 			}
@@ -183,8 +184,11 @@ public sealed class FfmpegVideoRemuxerTests
 		var probe = await Probe(content);
 
 		return probe.RootElement.TryGetProperty("streams", out var streams)
-			? [.. streams.EnumerateArray().Select(stream =>
-				stream.TryGetProperty("codec_type", out var kind) ? kind.GetString() ?? string.Empty : string.Empty)]
+			?
+			[
+				.. streams.EnumerateArray().Select(stream =>
+					stream.TryGetProperty("codec_type", out var kind) ? kind.GetString() ?? string.Empty : string.Empty),
+			]
 			: [];
 	}
 
@@ -221,7 +225,8 @@ public sealed class FfmpegVideoRemuxerTests
 		}
 	}
 
-	private static async Task<string> Tool(string executable, IReadOnlyList<string> arguments)
+	private static async Task<string> Tool(string executable,
+										   IReadOnlyList<string> arguments)
 	{
 		var start = new ProcessStartInfo(executable)
 		{
@@ -236,7 +241,7 @@ public sealed class FfmpegVideoRemuxerTests
 		}
 
 		using var process = Process.Start(start)
-			?? throw new InvalidOperationException($"{executable} could not be started.");
+							?? throw new InvalidOperationException($"{executable} could not be started.");
 
 		var output = await process.StandardOutput.ReadToEndAsync();
 		var error = await process.StandardError.ReadToEndAsync();

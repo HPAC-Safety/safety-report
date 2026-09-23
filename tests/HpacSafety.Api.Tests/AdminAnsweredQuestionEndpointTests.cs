@@ -325,7 +325,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	///     Writes one report answer straight to the database, because there is no
 	///     submission endpoint to post one through yet.
 	/// </summary>
-	private async Task<string> Answer(string questionId, string? value, bool deleteReport = false)
+	private async Task<string> Answer(string questionId,
+									  string? value,
+									  bool deleteReport = false)
 	{
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
@@ -363,7 +365,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static async Task<JsonElement> Create(HttpClient client, string key, string type = "long_text")
+	private static async Task<JsonElement> Create(HttpClient client,
+												  string key,
+												  string type = "long_text")
 	{
 		var options = type is "single_select"
 			? new[] { new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" } }
@@ -380,7 +384,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 				isRequired = false,
 				isPrivate = true,
 				isActive = true,
-				options
+				options,
 			});
 
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
@@ -388,7 +392,9 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private static async Task<JsonElement> Revise(HttpClient client, string id, string labelEn)
+	private static async Task<JsonElement> Revise(HttpClient client,
+												  string id,
+												  string labelEn)
 	{
 		using var response = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(labelEn));
@@ -398,7 +404,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	private static async Task<JsonElement> SaveChoices(HttpClient client, string id, string labelEn, params object[] options)
+	private static async Task<JsonElement> SaveChoices(HttpClient client,
+													   string id,
+													   string labelEn,
+													   params object[] options)
 	{
 		using var response = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
@@ -410,7 +419,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 				isRequired = false,
 				isPrivate = true,
 				isActive = true,
-				options
+				options,
 			});
 
 		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
@@ -428,7 +437,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 			isRequired = false,
 			isPrivate = true,
 			isActive = true,
-			options = Array.Empty<object>()
+			options = Array.Empty<object>(),
 		};
 	}
 

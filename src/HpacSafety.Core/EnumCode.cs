@@ -17,7 +17,9 @@ public static class EnumCode
 
 		for (var i = 0; i < name.Length; i++)
 		{
-			if (i > 0 && char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+			if (i > 0
+				&& char.IsUpper(name[i])
+				&& !char.IsUpper(name[i - 1]))
 			{
 				code.Append('_');
 			}
@@ -33,7 +35,8 @@ public static class EnumCode
 	///     <c>lowenb</c>, and <c>LowEnB</c> all resolve. Returns false rather than
 	///     guessing when nothing matches.
 	/// </summary>
-	public static bool TryParse<TEnum>(string? code, out TEnum value) where TEnum : struct, Enum
+	public static bool TryParse<TEnum>(string? code,
+									   out TEnum value) where TEnum : struct, Enum
 	{
 		value = default;
 

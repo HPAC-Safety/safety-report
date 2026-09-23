@@ -25,7 +25,8 @@ public sealed class MagickNetMediaSniffer : IMediaSniffer
 	private static ReadOnlySpan<byte> PngSignature => [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
 	/// <inheritdoc />
-	public async Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
+	public async Task<MediaType?> Sniff(Stream content,
+										CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
@@ -60,7 +61,9 @@ public sealed class MagickNetMediaSniffer : IMediaSniffer
 			return null;
 		}
 
-		if (bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF)
+		if (bytes[0] == 0xFF
+			&& bytes[1] == 0xD8
+			&& bytes[2] == 0xFF)
 		{
 			return MediaType.Jpeg;
 		}
@@ -70,14 +73,16 @@ public sealed class MagickNetMediaSniffer : IMediaSniffer
 			return MediaType.Png;
 		}
 
-		if (bytes[..4].SequenceEqual("RIFF"u8) && bytes[8..12].SequenceEqual("WEBP"u8))
+		if (bytes[..4].SequenceEqual("RIFF"u8)
+			&& bytes[8..12].SequenceEqual("WEBP"u8))
 		{
 			return MediaType.WebP;
 		}
 
 		// HEIC is an ISO base media container, like MP4: a length, then "ftyp",
 		// then the brand that says which dialect it is.
-		if (bytes[4..8].SequenceEqual("ftyp"u8) && IsHeicBrand(bytes[8..12]))
+		if (bytes[4..8].SequenceEqual("ftyp"u8)
+			&& IsHeicBrand(bytes[8..12]))
 		{
 			return MediaType.Heic;
 		}

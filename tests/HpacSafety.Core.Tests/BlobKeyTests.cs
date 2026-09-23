@@ -42,7 +42,8 @@ public class BlobKeyTests
 	[InlineData("dQw4w9WgXcQ/original/photo.jpg", MediaCompartment.Original)]
 	[InlineData("dQw4w9WgXcQ/stripped/photo.jpg", MediaCompartment.Stripped)]
 	[InlineData("quarantine/dQw4w9WgXcQ/photo.jpg", MediaCompartment.Quarantine)]
-	public void GivenStoredKey_WhenParsed_ThenReportAndCompartmentRoundTrip(string candidate, MediaCompartment expected)
+	public void GivenStoredKey_WhenParsed_ThenReportAndCompartmentRoundTrip(string candidate,
+																			MediaCompartment expected)
 	{
 		// Given / When
 		var key = BlobKey.Parse(candidate);

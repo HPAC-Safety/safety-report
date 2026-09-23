@@ -24,7 +24,9 @@ public static class MediaServiceCollectionExtensions
 	///     the same code path runs everywhere and only the adapter differs.
 	/// </param>
 	public static IServiceCollection AddHpacSafetyMedia(
-		this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
+		this IServiceCollection services,
+		IConfiguration configuration,
+		bool isDevelopment)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);

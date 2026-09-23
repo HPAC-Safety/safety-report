@@ -23,5 +23,5 @@ public enum MediaRejectionReason
 	UnacceptedMediaType = 4,
 
 	/// <summary>The client claimed one format and uploaded another.</summary>
-	DeclaredTypeMismatch = 5
+	DeclaredTypeMismatch = 5,
 }

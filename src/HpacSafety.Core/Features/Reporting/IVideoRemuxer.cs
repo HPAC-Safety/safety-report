@@ -33,5 +33,8 @@ public interface IVideoRemuxer
 	///         false, so a caller cannot mistake a partial write for a derivative.
 	///     </para>
 	/// </summary>
-	Task<bool> TryRemux(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken);
+	Task<bool> TryRemux(Stream source,
+						Stream destination,
+						MediaType type,
+						CancellationToken cancellationToken);
 }

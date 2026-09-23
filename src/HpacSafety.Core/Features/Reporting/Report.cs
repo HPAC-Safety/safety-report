@@ -23,7 +23,8 @@ public class Report
 	{
 	}
 
-	public Report(Locale language, DateTimeOffset submittedAt)
+	public Report(Locale language,
+				  DateTimeOffset submittedAt)
 	{
 		Id = TinyId.New();
 		Language = language;
@@ -96,7 +97,9 @@ public class Report
 	///     Records one answer against the question's current revision, in the
 	///     report's own language, projecting it if the question carries a role.
 	/// </summary>
-	public ReportAnswer Answer(Question question, string? value, DateTimeOffset at)
+	public ReportAnswer Answer(Question question,
+							   string? value,
+							   DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 
@@ -110,7 +113,10 @@ public class Report
 	///     revision's historical type and privacy, and the question's live choices; a submission never has
 	///     to equal the latest form.
 	/// </summary>
-	public ReportAnswer Answer(Question question, QuestionRevision revision, string? value, DateTimeOffset at)
+	public ReportAnswer Answer(Question question,
+							   QuestionRevision revision,
+							   string? value,
+							   DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(revision);
@@ -128,7 +134,9 @@ public class Report
 	///     answer rather than nothing at all.
 	/// </summary>
 	public IReadOnlyList<ReportAnswer> Answer(
-		Question question, IReadOnlyList<string> values, DateTimeOffset at)
+		Question question,
+		IReadOnlyList<string> values,
+		DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 
@@ -140,7 +148,10 @@ public class Report
 	///     single-value overload above for why the revision is explicit.
 	/// </summary>
 	public IReadOnlyList<ReportAnswer> Answer(
-		Question question, QuestionRevision revision, IReadOnlyList<string> values, DateTimeOffset at)
+		Question question,
+		QuestionRevision revision,
+		IReadOnlyList<string> values,
+		DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(revision);
@@ -153,7 +164,8 @@ public class Report
 
 		// Multi-select is the only type that produces several rows. Everything
 		// else — a picker, a date, a line of prose — is one answer.
-		if (values.Count > 1 && revision.Type != QuestionType.MultiSelect)
+		if (values.Count > 1
+			&& revision.Type != QuestionType.MultiSelect)
 		{
 			throw new DomainRuleViolationException(
 				$"'{question.Key}' takes one answer, not {values.Count}.");
@@ -163,7 +175,10 @@ public class Report
 	}
 
 	/// <summary>Adds an uploaded file.</summary>
-	public ReportFile AddFile(string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
+	public ReportFile AddFile(string blobKey,
+							  string contentType,
+							  long byteSize,
+							  DateTimeOffset uploadedAt)
 	{
 		var file = new ReportFile(Id, blobKey, contentType, byteSize, uploadedAt);
 		_files.Add(file);
@@ -285,7 +300,8 @@ public class Report
 		Summary?.Delete(at);
 	}
 
-	private void Project(Question question, ReportAnswer answer)
+	private void Project(Question question,
+						 ReportAnswer answer)
 	{
 		if (question.Role == QuestionRole.ConsentPublish)
 		{

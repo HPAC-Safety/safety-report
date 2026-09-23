@@ -45,7 +45,9 @@ public readonly record struct BlobKey
 	/// <summary>The longest file-name segment a key may carry.</summary>
 	public const int MaxFileNameLength = 128;
 
-	private BlobKey(string reportId, MediaCompartment compartment, string fileName)
+	private BlobKey(string reportId,
+					MediaCompartment compartment,
+					string fileName)
 	{
 		ReportId = reportId;
 		Compartment = compartment;
@@ -68,7 +70,9 @@ public readonly record struct BlobKey
 			: $"{ReportId}/{SegmentFor(Compartment)}/{FileName}";
 
 	/// <summary>Builds a key for one report's media in one compartment.</summary>
-	public static BlobKey For(string reportId, MediaCompartment compartment, string fileName)
+	public static BlobKey For(string reportId,
+							  MediaCompartment compartment,
+							  string fileName)
 	{
 		ArgumentNullException.ThrowIfNull(reportId);
 		ArgumentNullException.ThrowIfNull(fileName);
@@ -107,7 +111,8 @@ public readonly record struct BlobKey
 	}
 
 	/// <summary>Parses a stored key without throwing.</summary>
-	public static bool TryParse(string? candidate, out BlobKey key)
+	public static bool TryParse(string? candidate,
+								out BlobKey key)
 	{
 		key = default;
 
@@ -131,7 +136,7 @@ public readonly record struct BlobKey
 		{
 			OriginalSegment => (MediaCompartment?)MediaCompartment.Original,
 			StrippedSegment => MediaCompartment.Stripped,
-			_ => null
+			_ => null,
 		};
 
 		return compartment is { } known && TryBuild(segments[0], known, segments[2], out key);
@@ -149,11 +154,15 @@ public readonly record struct BlobKey
 		return Value;
 	}
 
-	private static bool TryBuild(string reportId, MediaCompartment compartment, string fileName, out BlobKey key)
+	private static bool TryBuild(string reportId,
+								 MediaCompartment compartment,
+								 string fileName,
+								 out BlobKey key)
 	{
 		key = default;
 
-		if (!IsReportId(reportId) || !IsFileName(fileName))
+		if (!IsReportId(reportId)
+			|| !IsFileName(fileName))
 		{
 			return false;
 		}
@@ -169,7 +178,7 @@ public readonly record struct BlobKey
 			MediaCompartment.Quarantine => QuarantineSegment,
 			MediaCompartment.Original => OriginalSegment,
 			MediaCompartment.Stripped => StrippedSegment,
-			_ => throw new DomainRuleViolationException("The value is not a known media compartment.")
+			_ => throw new DomainRuleViolationException("The value is not a known media compartment."),
 		};
 	}
 
@@ -201,7 +210,9 @@ public readonly record struct BlobKey
 	{
 		// A leading dot would make a hidden file on disk, and "." and ".." are
 		// the traversal FileSystemBlobStore must never see.
-		if (candidate is not { Length: > 0 } || candidate.Length > MaxFileNameLength || candidate[0] == '.')
+		if (candidate is not { Length: > 0 }
+			|| candidate.Length > MaxFileNameLength
+			|| candidate[0] == '.')
 		{
 			return false;
 		}

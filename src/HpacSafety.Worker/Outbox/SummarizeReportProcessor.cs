@@ -28,7 +28,8 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 	public OutboxMessageType HandlesType => OutboxMessageType.SummarizeReport;
 
 	/// <inheritdoc />
-	public async Task Process(OutboxMessage message, CancellationToken cancellationToken)
+	public async Task Process(OutboxMessage message,
+							  CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(message);
 
@@ -40,7 +41,8 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		// The report is gone (deleted — excluded by the default query filter) or
 		// already past this stage (a previous attempt finished after all, or some
 		// other path moved it on). Either way there is nothing left to do.
-		if (report is null || report.Status is not (ReportStatus.Submitted or ReportStatus.Summarizing))
+		if (report is null
+			|| report.Status is not (ReportStatus.Submitted or ReportStatus.Summarizing))
 		{
 			return;
 		}
@@ -87,7 +89,8 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 	}
 
 	/// <summary>Whether the report has been soft-deleted since it was loaded, read past the default live-row filter.</summary>
-	private async Task<bool> IsDeleted(TinyId reportId, CancellationToken cancellationToken)
+	private async Task<bool> IsDeleted(TinyId reportId,
+									   CancellationToken cancellationToken)
 	{
 		return await database.Reports.IgnoreQueryFilters()
 			.Where(candidate => candidate.Id == reportId)
@@ -96,25 +99,28 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			.ConfigureAwait(false);
 	}
 
-	private async Task<ReportForSummaryDto> LoadForSummary(TinyId reportId, Locale language, CancellationToken cancellationToken)
+	private async Task<ReportForSummaryDto> LoadForSummary(TinyId reportId,
+														   Locale language,
+														   CancellationToken cancellationToken)
 	{
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
-				&& answer.Value != null
-				&& answer.QuestionKey != QuestionKey.ConsentPublish)
+							 && answer.Value != null
+							 && answer.QuestionKey != QuestionKey.ConsentPublish)
 			.Join(
 				database.QuestionRevisions,
 				answer => answer.QuestionRevisionId,
 				revision => revision.Id,
-				(answer, revision) => new
-				{
-					answer.QuestionKey,
-					answer.Value,
-					answer.IsPrivate,
-					revision.Type,
-					revision.LabelEn,
-					revision.LabelFr
-				})
+				(answer,
+				 revision) => new
+				 {
+					 answer.QuestionKey,
+					 answer.Value,
+					 answer.IsPrivate,
+					 revision.Type,
+					 revision.LabelEn,
+					 revision.LabelFr,
+				 })
 			.Where(row => row.Type != QuestionType.FileUpload)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);

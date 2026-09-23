@@ -32,7 +32,9 @@ public static class QuestionGrouping
 	/// <param name="childId">The question being grouped, or null when it is being created.</param>
 	/// <param name="groupId">The group question it is to be displayed under.</param>
 	/// <exception cref="DomainRuleViolationException">When the grouping is not allowed.</exception>
-	public static void EnsureGroupingAllowed(IReadOnlyCollection<Question> questions, TinyId? childId, TinyId groupId)
+	public static void EnsureGroupingAllowed(IReadOnlyCollection<Question> questions,
+											 TinyId? childId,
+											 TinyId groupId)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
@@ -59,7 +61,8 @@ public static class QuestionGrouping
 				$"'{child.Key}' is a group question and cannot itself be grouped under another one.");
 		}
 
-		if (childId is { } childValue && LeadsTo(questions, groupId, childValue))
+		if (childId is { } childValue
+			&& LeadsTo(questions, groupId, childValue))
 		{
 			throw new DomainRuleViolationException(
 				$"'{group.Key}' is already grouped under this question, directly or through another one. A cycle would leave both unable to render.");
@@ -74,7 +77,9 @@ public static class QuestionGrouping
 	///     <see cref="QuestionType.Group" /> cannot itself be grouped under
 	///     another group — but the walk costs nothing extra to make general.
 	/// </summary>
-	private static bool LeadsTo(IReadOnlyCollection<Question> questions, TinyId from, TinyId target)
+	private static bool LeadsTo(IReadOnlyCollection<Question> questions,
+								TinyId from,
+								TinyId target)
 	{
 		var visited = new HashSet<TinyId>();
 		var current = from;

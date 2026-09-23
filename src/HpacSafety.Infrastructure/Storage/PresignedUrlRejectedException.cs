@@ -20,7 +20,8 @@ public sealed class PresignedUrlRejectedException : Exception
 	}
 
 	/// <summary>Creates the exception with an inner cause.</summary>
-	public PresignedUrlRejectedException(string message, Exception innerException)
+	public PresignedUrlRejectedException(string message,
+										 Exception innerException)
 		: base(message, innerException)
 	{
 	}

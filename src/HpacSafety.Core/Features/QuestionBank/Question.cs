@@ -52,7 +52,10 @@ public class Question
 	}
 #pragma warning restore CS8618
 
-	private Question(string key, bool isSystem, QuestionRole role, DateTimeOffset at)
+	private Question(string key,
+					 bool isSystem,
+					 QuestionRole role,
+					 DateTimeOffset at)
 	{
 		Id = TinyId.New();
 		Key = QuestionKey.Normalize(key);
@@ -387,7 +390,8 @@ public class Question
 	///     Moves the question on the form, as a new revision. Every other
 	///     field is carried forward unchanged from <see cref="CurrentRevision" />.
 	/// </summary>
-	public QuestionRevision Reorder(int displayOrder, DateTimeOffset at)
+	public QuestionRevision Reorder(int displayOrder,
+									DateTimeOffset at)
 	{
 		return ReviseInternal(CurrentDraft() with { DisplayOrder = displayOrder }, at);
 	}
@@ -402,7 +406,9 @@ public class Question
 	///     checked by <see cref="QuestionDependencies" />, which can see the rest
 	///     of the bank. See ADR-0060, ADR-0074.
 	/// </summary>
-	public QuestionRevision DependOn(TinyId? dependsOnQuestionId, string? dependsOnOptionCode, DateTimeOffset at)
+	public QuestionRevision DependOn(TinyId? dependsOnQuestionId,
+									 string? dependsOnOptionCode,
+									 DateTimeOffset at)
 	{
 		return ReviseInternal(
 			CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId, DependsOnOptionCode = dependsOnOptionCode },
@@ -417,7 +423,8 @@ public class Question
 	///     bank. Distinct from <see cref="DependOn" />: this never hides the
 	///     question, it only says which heading it renders under. See ADR-0076.
 	/// </summary>
-	public QuestionRevision GroupUnder(TinyId? groupedUnderQuestionId, DateTimeOffset at)
+	public QuestionRevision GroupUnder(TinyId? groupedUnderQuestionId,
+									   DateTimeOffset at)
 	{
 		return ReviseInternal(CurrentDraft() with { GroupedUnderQuestionId = groupedUnderQuestionId }, at);
 	}
@@ -436,7 +443,8 @@ public class Question
 	///     answer is validated against now that answers store their words (ADR-0072).
 	///     Yes/no is invariant: its stored forms are <c>yes</c> and <c>no</c>.
 	/// </summary>
-	public bool Offers(string value, Locale locale)
+	public bool Offers(string value,
+					   Locale locale)
 	{
 		return Type == QuestionType.YesNo
 			? QuestionRevision.YesNoCodes.Contains(value, StringComparer.Ordinal)
@@ -462,7 +470,8 @@ public class Question
 	///         checks it before this runs.
 	///     </para>
 	/// </remarks>
-	public void ReplaceChoices(IReadOnlyList<QuestionOptionInput> options, DateTimeOffset at)
+	public void ReplaceChoices(IReadOnlyList<QuestionOptionInput> options,
+							   DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 		EnsureNotDeleted();
@@ -532,7 +541,8 @@ public class Question
 	///         </item>
 	///     </list>
 	/// </remarks>
-	public QuestionChoice AddChoiceFromReporter(string value, Locale locale)
+	public QuestionChoice AddChoiceFromReporter(string value,
+												Locale locale)
 	{
 		ArgumentNullException.ThrowIfNull(value);
 		EnsureNotDeleted();
@@ -662,7 +672,8 @@ public class Question
 	///         of what somebody was asked.
 	///     </para>
 	/// </remarks>
-	public void Delete(bool hasBeenAnswered, DateTimeOffset at)
+	public void Delete(bool hasBeenAnswered,
+					   DateTimeOffset at)
 	{
 		if (IsSystem)
 		{
@@ -693,10 +704,12 @@ public class Question
 	///     reads it and passes it in, the same arrangement <see cref="Delete" />
 	///     and <see cref="ApplyEdit" /> use.
 	/// </remarks>
-	public void DeleteRevision(TinyId revisionId, bool hasBeenAnswered, DateTimeOffset at)
+	public void DeleteRevision(TinyId revisionId,
+							   bool hasBeenAnswered,
+							   DateTimeOffset at)
 	{
 		var revision = _revisions.Find(candidate => candidate.Id == revisionId)
-			?? throw new DomainRuleViolationException("That revision does not belong to this question.");
+					   ?? throw new DomainRuleViolationException("That revision does not belong to this question.");
 
 		if (revision.Id == CurrentRevision.Id)
 		{
@@ -734,7 +747,8 @@ public class Question
 	///     every retired question in the chain and is unique only among live ones,
 	///     which is what the partial unique index enforces (ADR-0071).
 	/// </summary>
-	private Question Fork(RevisionDraft draft, DateTimeOffset at)
+	private Question Fork(RevisionDraft draft,
+						  DateTimeOffset at)
 	{
 		EnsureNotDeleted();
 
@@ -754,7 +768,8 @@ public class Question
 		return replacement;
 	}
 
-	private QuestionRevision ReviseInternal(RevisionDraft draft, DateTimeOffset at)
+	private QuestionRevision ReviseInternal(RevisionDraft draft,
+											DateTimeOffset at)
 	{
 		EnsureNotDeleted();
 

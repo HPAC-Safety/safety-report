@@ -13,11 +13,13 @@ public sealed class FixedAccountCredentialSource : IDevelopmentCredentialSource
 	[
 		("admin", "admin", MemberRole.Administrator),
 		("officer", "officer", MemberRole.SafetyOfficer),
-		("user", "user", MemberRole.User)
+		("user", "user", MemberRole.User),
 	];
 
 	/// <inheritdoc />
-	public Task<MemberRole?> Verify(string username, string password, CancellationToken cancellationToken)
+	public Task<MemberRole?> Verify(string username,
+									string password,
+									CancellationToken cancellationToken)
 	{
 		var match = Accounts.FirstOrDefault(account =>
 			string.Equals(account.User, username, StringComparison.Ordinal)

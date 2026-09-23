@@ -22,7 +22,10 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 	[InlineData("officer", "officer", "safety_officer", "dev:officer")]
 	[InlineData("user", "user", "user", "dev:user")]
 	public async Task GivenDevelopmentCredentials_WhenTokenIsRequested_ThenItCarriesThatRole(
-		string username, string password, string role, string subject)
+		string username,
+		string password,
+		string role,
+		string subject)
 	{
 		// Given
 		using var client = _factory.CreateClient();
@@ -53,7 +56,7 @@ public sealed class AuthEndpointTests(ApiPostgresFixture fixture)
 				 {
 					 ("admin", "wrong"),
 					 ("nobody", "nobody"),
-					 ("", "")
+					 ("", ""),
 				 })
 		{
 			using var response = await client.PostAsJsonAsync(Token, new { username, password });

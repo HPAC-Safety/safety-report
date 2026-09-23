@@ -467,7 +467,7 @@ public sealed class QuestionBankSteps
 				options:
 				[
 					new QuestionOptionInput("first", "First", "Premier"),
-					new QuestionOptionInput("second", "Second", "Deuxième")
+					new QuestionOptionInput("second", "Second", "Deuxième"),
 				]));
 	}
 
@@ -616,7 +616,9 @@ public sealed class QuestionBankSteps
 
 	private QuestionType _pendingType = QuestionType.ShortText;
 
-	private static Question Ordinary(string key, QuestionType type, int displayOrder = 0)
+	private static Question Ordinary(string key,
+									 QuestionType type,
+									 int displayOrder = 0)
 	{
 		return Question.Create(key, type, $"Question {key}", $"Question {key} (fr)", Noon, isActive: true, displayOrder: displayOrder);
 	}
@@ -635,7 +637,7 @@ public sealed class QuestionBankSteps
 			options:
 			[
 				new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
-				new QuestionOptionInput("paraglider", "Paraglider", "Parapente")
+				new QuestionOptionInput("paraglider", "Paraglider", "Parapente"),
 			]);
 	}
 

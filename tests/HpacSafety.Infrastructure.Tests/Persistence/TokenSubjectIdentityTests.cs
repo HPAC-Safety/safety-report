@@ -43,14 +43,14 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		var foreignKeys = await Scalar(
 			connectionString,
 			"""
-            SELECT COUNT(*)
-            FROM information_schema.key_column_usage k
-            JOIN information_schema.table_constraints c
-              ON c.constraint_name = k.constraint_name
-            WHERE c.constraint_type = 'FOREIGN KEY'
-              AND ((k.table_name = 'audit_log' AND k.column_name = 'actor_subject')
-                OR (k.table_name = 'summaries' AND k.column_name = 'approved_by_subject'))
-            """);
+			SELECT COUNT(*)
+			FROM information_schema.key_column_usage k
+			JOIN information_schema.table_constraints c
+			  ON c.constraint_name = k.constraint_name
+			WHERE c.constraint_type = 'FOREIGN KEY'
+			  AND ((k.table_name = 'audit_log' AND k.column_name = 'actor_subject')
+			    OR (k.table_name = 'summaries' AND k.column_name = 'approved_by_subject'))
+			""");
 
 		// Then — there is nothing to reference.
 		foreignKeys.ShouldBe(0);
@@ -141,9 +141,9 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		var writing = async () => await Execute(
 			connectionString,
 			$"""
-             INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by_subject, approved_at, generated_at, updated_at)
-             VALUES ('{TinyId.New()}', '{TinyId.New()}', 'en', 'fr', 'model', 'v1', 'auth0|someone', NULL, now(), now())
-             """);
+			 INSERT INTO summaries (id, report_id, ai_summary_en, ai_summary_fr, model, prompt_version, approved_by_subject, approved_at, generated_at, updated_at)
+			 VALUES ('{TinyId.New()}', '{TinyId.New()}', 'en', 'fr', 'model', 'v1', 'auth0|someone', NULL, now(), now())
+			 """);
 
 		// Then — 23514 is a check-constraint violation. Asserting the state
 		// rather than just the exception type matters here: if the rename had
@@ -153,7 +153,8 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		exception.SqlState.ShouldBe("23514");
 	}
 
-	private static async Task<int> Scalar(string connectionString, string sql)
+	private static async Task<int> Scalar(string connectionString,
+										  string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();
@@ -161,7 +162,8 @@ public sealed class TokenSubjectIdentityTests(PostgresFixture postgres)
 		return Convert.ToInt32(await command.ExecuteScalarAsync(), CultureInfo.InvariantCulture);
 	}
 
-	private static async Task Execute(string connectionString, string sql)
+	private static async Task Execute(string connectionString,
+									  string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();

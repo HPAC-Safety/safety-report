@@ -32,8 +32,14 @@ public class QuestionChoice
 #pragma warning restore CS8618
 
 	private QuestionChoice(
-		TinyId questionId, string code, int displayOrder, string? labelEn, string? labelFr,
-		bool addedByReporter, Locale? reporterLocale, DateTimeOffset? deleted)
+		TinyId questionId,
+		string code,
+		int displayOrder,
+		string? labelEn,
+		string? labelFr,
+		bool addedByReporter,
+		Locale? reporterLocale,
+		DateTimeOffset? deleted)
 	{
 		Id = TinyId.New();
 		QuestionId = questionId;
@@ -96,13 +102,21 @@ public class QuestionChoice
 		return (locale == Locale.FrCa ? LabelFr ?? LabelEn : LabelEn ?? LabelFr)!;
 	}
 
-	internal static QuestionChoice Written(TinyId questionId, string code, int displayOrder, string labelEn, string labelFr)
+	internal static QuestionChoice Written(TinyId questionId,
+										   string code,
+										   int displayOrder,
+										   string labelEn,
+										   string labelFr)
 	{
 		return new QuestionChoice(
 			questionId, code, displayOrder, NotBlank(labelEn), NotBlank(labelFr), false, null, null);
 	}
 
-	internal static QuestionChoice FromReporter(TinyId questionId, string code, int displayOrder, string typed, Locale locale)
+	internal static QuestionChoice FromReporter(TinyId questionId,
+												string code,
+												int displayOrder,
+												string typed,
+												Locale locale)
 	{
 		var label = NotBlank(typed);
 
@@ -124,7 +138,8 @@ public class QuestionChoice
 	///     languages; a reporter-added one may keep one missing until someone
 	///     supplies it, but never both.
 	/// </summary>
-	internal void Relabel(string? labelEn, string? labelFr)
+	internal void Relabel(string? labelEn,
+						  string? labelFr)
 	{
 		var en = Blank(labelEn) ? null : labelEn;
 		var fr = Blank(labelFr) ? null : labelFr;
@@ -134,7 +149,8 @@ public class QuestionChoice
 			en = NotBlank(en);
 			fr = NotBlank(fr);
 		}
-		else if (en is null && fr is null)
+		else if (en is null
+				 && fr is null)
 		{
 			throw new DomainRuleViolationException("A choice needs wording in at least one official language.");
 		}
@@ -159,7 +175,9 @@ public class QuestionChoice
 	///     code is unique on its question, removed rows included, so this row is
 	///     the one to revive rather than a rival. A reporter never reaches this.
 	/// </summary>
-	internal void Restore(int displayOrder, string? labelEn, string? labelFr)
+	internal void Restore(int displayOrder,
+						  string? labelEn,
+						  string? labelFr)
 	{
 		Relabel(labelEn, labelFr);
 		Deleted = null;

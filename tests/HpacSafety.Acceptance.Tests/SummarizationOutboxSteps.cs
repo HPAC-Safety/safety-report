@@ -329,7 +329,9 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		}
 	}
 
-	private static async Task<bool> ClaimAndProcess(HpacSafetyDbContext db, ISummarizer summarizer, DateTimeOffset? now = null)
+	private static async Task<bool> ClaimAndProcess(HpacSafetyDbContext db,
+													ISummarizer summarizer,
+													DateTimeOffset? now = null)
 	{
 		var processor = new SummarizeReportProcessor(db, summarizer, TimeProvider.System);
 		return await OutboxClaimer.ClaimNext(db, OutboxMessageType.SummarizeReport, now ?? At, processor.Process, CancellationToken.None)
@@ -337,7 +339,10 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	}
 
 	private static async Task<Report> Seed(
-		HpacSafetyDbContext db, string questionKeySuffix = "", string pilotName = "Ada Lovelace", string narrative = "Ada Lovelace reported a hard landing.")
+		HpacSafetyDbContext db,
+		string questionKeySuffix = "",
+		string pilotName = "Ada Lovelace",
+		string narrative = "Ada Lovelace reported a hard landing.")
 	{
 		// A second report seeded into the same database (e.g. the logging scenario,
 		// which needs both a success and a failure) reuses the one consent question
@@ -414,7 +419,8 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 
 		public SummarizationInput? LastInput { get; private set; }
 
-		public Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken)
+		public Task<SummaryDraft> Summarize(SummarizationInput input,
+											CancellationToken cancellationToken)
 		{
 			CallCount++;
 			LastInput = input;

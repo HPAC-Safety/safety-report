@@ -11,7 +11,8 @@ internal sealed class FixtureAiChatClient : IAiChatClient
 {
 	private readonly string _response;
 
-	public FixtureAiChatClient(string response, bool isConfigured = true)
+	public FixtureAiChatClient(string response,
+							   bool isConfigured = true)
 	{
 		_response = response;
 		IsConfigured = isConfigured;
@@ -25,7 +26,9 @@ internal sealed class FixtureAiChatClient : IAiChatClient
 
 	public string? LastModel { get; private set; }
 
-	public Task<string> Complete(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken)
+	public Task<string> Complete(string model,
+								 IReadOnlyList<ChatMessage> messages,
+								 CancellationToken cancellationToken)
 	{
 		CallCount++;
 		LastModel = model;

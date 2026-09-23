@@ -205,7 +205,7 @@ public sealed class TypeformImportEndpointSteps
 
 		using var content = new MultipartFormDataContent
 		{
-			{ JsonContent(englishJson), "english", "form-en.json" }, { JsonContent(frenchJson), "french", "form-fr.json" }
+			{ JsonContent(englishJson), "english", "form-en.json" }, { JsonContent(frenchJson), "french", "form-fr.json" },
 		};
 		var reimported = await _client.PostAsync(Import, content);
 		reimported.StatusCode.ShouldBe(HttpStatusCode.OK, await reimported.Content.ReadAsStringAsync());
@@ -297,7 +297,8 @@ public sealed class TypeformImportEndpointSteps
 		return new ZipArchive(new MemoryStream(_exportedZipBytes), ZipArchiveMode.Read);
 	}
 
-	private static async Task<string> ReadEntry(ZipArchive archive, string entryName)
+	private static async Task<string> ReadEntry(ZipArchive archive,
+												string entryName)
 	{
 		using var stream = archive.GetEntry(entryName)!.Open();
 		using var reader = new StreamReader(stream);
@@ -338,7 +339,7 @@ public sealed class TypeformImportEndpointSteps
 
 		return new MultipartFormDataContent
 		{
-			{ english, "english", "form-en.json" }, { french, "french", "form-fr.json" }
+			{ english, "english", "form-en.json" }, { french, "french", "form-fr.json" },
 		};
 	}
 

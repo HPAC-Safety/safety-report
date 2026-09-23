@@ -43,13 +43,13 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 			await Execute(
 				connection,
 				"""
-                INSERT INTO questions (id, key, is_system, role, is_private, display_order, section_key, is_active, created_at, deleted_at)
-                VALUES ('qqqqqqqqqqq', 'untranslated_field', FALSE, 'none', TRUE, 0, NULL, TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z', NULL);
-                INSERT INTO question_versions (id, question_id, version_number, type, is_required, created_at)
-                VALUES ('vvvvvvvvvvv', 'qqqqqqqqqqq', 1, 'short_text', FALSE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO question_translations (id, question_version_id, locale, label, help_text, placeholder, is_source, is_machine_translated, translated_at, updated_at)
-                VALUES ('ttttttttttt', 'vvvvvvvvvvv', 'en-CA', 'Untranslated field', NULL, NULL, TRUE, FALSE, NULL, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                """);
+				INSERT INTO questions (id, key, is_system, role, is_private, display_order, section_key, is_active, created_at, deleted_at)
+				VALUES ('qqqqqqqqqqq', 'untranslated_field', FALSE, 'none', TRUE, 0, NULL, TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z', NULL);
+				INSERT INTO question_versions (id, question_id, version_number, type, is_required, created_at)
+				VALUES ('vvvvvvvvvvv', 'qqqqqqqqqqq', 1, 'short_text', FALSE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO question_translations (id, question_version_id, locale, label, help_text, placeholder, is_source, is_machine_translated, translated_at, updated_at)
+				VALUES ('ttttttttttt', 'vvvvvvvvvvv', 'en-CA', 'Untranslated field', NULL, NULL, TRUE, FALSE, NULL, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				""");
 		}
 
 		// When
@@ -82,15 +82,15 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 			await Execute(
 				connection,
 				"""
-                INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
-                VALUES ('rrrrrrrrrrr', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
-                INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
-                VALUES ('aaaaaaaaaaa', 'officer@example.test', 'safety_officer', TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
-                VALUES ('s1s1s1s1s1s', 'rrrrrrrrrrr', 'en-CA', 'A pilot landed hard.', 'model', 'v1', TRUE, NULL, 'aaaaaaaaaaa', TIMESTAMPTZ '2026-08-23T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
-                VALUES ('s2s2s2s2s2s', 'rrrrrrrrrrr', 'fr-CA', 'Un pilote a atterri durement.', 'model', 'v1', FALSE, 's1s1s1s1s1s', 'aaaaaaaaaaa', TIMESTAMPTZ '2026-08-24T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                """);
+				INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
+				VALUES ('rrrrrrrrrrr', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
+				INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
+				VALUES ('aaaaaaaaaaa', 'officer@example.test', 'safety_officer', TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
+				VALUES ('s1s1s1s1s1s', 'rrrrrrrrrrr', 'en-CA', 'A pilot landed hard.', 'model', 'v1', TRUE, NULL, 'aaaaaaaaaaa', TIMESTAMPTZ '2026-08-23T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
+				VALUES ('s2s2s2s2s2s', 'rrrrrrrrrrr', 'fr-CA', 'Un pilote a atterri durement.', 'model', 'v1', FALSE, 's1s1s1s1s1s', 'aaaaaaaaaaa', TIMESTAMPTZ '2026-08-24T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				""");
 		}
 
 		// When
@@ -127,15 +127,15 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 			await Execute(
 				connection,
 				"""
-                INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
-                VALUES ('rrrrrrrrrr2', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
-                INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
-                VALUES ('aaaaaaaaaa2', 'officer2@example.test', 'safety_officer', TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
-                VALUES ('s1s1s1s1s12', 'rrrrrrrrrr2', 'en-CA', 'A pilot landed hard.', 'model', 'v1', TRUE, NULL, 'aaaaaaaaaa2', TIMESTAMPTZ '2026-08-23T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
-                VALUES ('s2s2s2s2s22', 'rrrrrrrrrr2', 'fr-CA', 'Un pilote a atterri durement.', 'model', 'v1', FALSE, 's1s1s1s1s12', NULL, NULL, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                """);
+				INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
+				VALUES ('rrrrrrrrrr2', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
+				INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
+				VALUES ('aaaaaaaaaa2', 'officer2@example.test', 'safety_officer', TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
+				VALUES ('s1s1s1s1s12', 'rrrrrrrrrr2', 'en-CA', 'A pilot landed hard.', 'model', 'v1', TRUE, NULL, 'aaaaaaaaaa2', TIMESTAMPTZ '2026-08-23T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
+				VALUES ('s2s2s2s2s22', 'rrrrrrrrrr2', 'fr-CA', 'Un pilote a atterri durement.', 'model', 'v1', FALSE, 's1s1s1s1s12', NULL, NULL, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				""");
 		}
 
 		// When
@@ -174,17 +174,17 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 			await connection.OpenAsync();
 			await using var command = new NpgsqlCommand(
 				"""
-                INSERT INTO questions (id, key, is_system, role, is_private, display_order, section_key, is_active, created_at, deleted_at)
-                VALUES ('qqqqqqqqqq3', 'narrative', FALSE, 'none', TRUE, 0, NULL, TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z', NULL);
-                INSERT INTO question_versions (id, question_id, version_number, type, is_required, created_at)
-                VALUES ('vvvvvvvvvv3', 'qqqqqqqqqq3', 1, 'long_text', FALSE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO question_translations (id, question_version_id, locale, label, help_text, placeholder, is_source, is_machine_translated, translated_at, updated_at)
-                VALUES ('tttttttttt3', 'vvvvvvvvvv3', 'en-CA', 'Narrative', NULL, NULL, TRUE, FALSE, NULL, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
-                VALUES ('rrrrrrrrrr3', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
-                INSERT INTO report_answers (id, report_id, question_id, question_version_id, question_key, is_private, value, selected_option_codes, answered_at)
-                VALUES ('answer_enc1', 'rrrrrrrrrr3', 'qqqqqqqqqq3', 'vvvvvvvvvv3', 'narrative', TRUE, @value, '{}', TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                """,
+				INSERT INTO questions (id, key, is_system, role, is_private, display_order, section_key, is_active, created_at, deleted_at)
+				VALUES ('qqqqqqqqqq3', 'narrative', FALSE, 'none', TRUE, 0, NULL, TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z', NULL);
+				INSERT INTO question_versions (id, question_id, version_number, type, is_required, created_at)
+				VALUES ('vvvvvvvvvv3', 'qqqqqqqqqq3', 1, 'long_text', FALSE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO question_translations (id, question_version_id, locale, label, help_text, placeholder, is_source, is_machine_translated, translated_at, updated_at)
+				VALUES ('tttttttttt3', 'vvvvvvvvvv3', 'en-CA', 'Narrative', NULL, NULL, TRUE, FALSE, NULL, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
+				VALUES ('rrrrrrrrrr3', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
+				INSERT INTO report_answers (id, report_id, question_id, question_version_id, question_key, is_private, value, selected_option_codes, answered_at)
+				VALUES ('answer_enc1', 'rrrrrrrrrr3', 'qqqqqqqqqq3', 'vvvvvvvvvv3', 'narrative', TRUE, @value, '{}', TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				""",
 				connection);
 			command.Parameters.AddWithValue("value", ciphertext);
 			await command.ExecuteNonQueryAsync();
@@ -230,13 +230,13 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 			await Execute(
 				connection,
 				"""
-                INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
-                VALUES ('rrrrrrrrrr4', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
-                INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
-                VALUES ('aaaaaaaaaa4', 'officer4@example.test', 'safety_officer', TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
-                VALUES ('s1s1s1s1s14', 'rrrrrrrrrr4', 'en-CA', 'A pilot landed hard.', 'model', 'v1', TRUE, NULL, 'aaaaaaaaaa4', TIMESTAMPTZ '2026-08-23T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
-                """);
+				INSERT INTO reports (id, language, status, submitted_at, consent_publish, occurred_on, occurred_at_local, province, time_of_day, pilot_injury, passenger_injury, summary_error)
+				VALUES ('rrrrrrrrrr4', 'en-CA', 'pending_review', TIMESTAMPTZ '2026-08-22T00:00:00Z', TRUE, NULL, NULL, 'not_answered', 'not_answered', 'not_answered', 'not_answered', NULL);
+				INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
+				VALUES ('aaaaaaaaaa4', 'officer4@example.test', 'safety_officer', TRUE, TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				INSERT INTO summaries (id, report_id, language, text, model, prompt_version, is_source, translated_from_summary_id, approved_by, approved_at, created_at)
+				VALUES ('s1s1s1s1s14', 'rrrrrrrrrr4', 'en-CA', 'A pilot landed hard.', 'model', 'v1', TRUE, NULL, 'aaaaaaaaaa4', TIMESTAMPTZ '2026-08-23T00:00:00Z', TIMESTAMPTZ '2026-08-22T00:00:00Z');
+				""");
 		}
 
 		// When
@@ -258,7 +258,8 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 	///     "v1." + base64(nonce[12] || tag[16] || ciphertext) — purely to build a
 	///     legacy fixture. Does not reintroduce the deleted cipher.
 	/// </summary>
-	private static string EncryptLegacyV1(string plaintext, string keyBase64)
+	private static string EncryptLegacyV1(string plaintext,
+										  string keyBase64)
 	{
 		var key = Convert.FromBase64String(keyBase64);
 		var bytes = Encoding.UTF8.GetBytes(plaintext);
@@ -280,19 +281,22 @@ public sealed class MigrationDataTransformTests(PostgresFixture postgres)
 		return "v1." + Convert.ToBase64String(envelope);
 	}
 
-	private static async Task MigrateTo(HpacSafetyDbContext context, string? targetMigration)
+	private static async Task MigrateTo(HpacSafetyDbContext context,
+										string? targetMigration)
 	{
 		var migrator = context.GetInfrastructure().GetRequiredService<IMigrator>();
 		await migrator.MigrateAsync(targetMigration);
 	}
 
-	private static async Task Execute(NpgsqlConnection connection, string sql)
+	private static async Task Execute(NpgsqlConnection connection,
+									  string sql)
 	{
 		await using var command = new NpgsqlCommand(sql, connection);
 		await command.ExecuteNonQueryAsync();
 	}
 
-	private static async Task<(string LabelEn, string LabelFr)> ReadRevisionLabelsAsync(NpgsqlConnection connection, string revisionId)
+	private static async Task<(string LabelEn, string LabelFr)> ReadRevisionLabelsAsync(NpgsqlConnection connection,
+																						string revisionId)
 	{
 		await using var command = new NpgsqlCommand(
 			"SELECT label_en, label_fr FROM question_revisions WHERE id = @id", connection);

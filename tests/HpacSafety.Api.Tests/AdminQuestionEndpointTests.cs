@@ -92,7 +92,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var child = Draft(UniqueKey("glider_detail"), "long_text") with
 		{
-			DependsOnQuestionId = parent.GetProperty("id").GetString()
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 		};
 
 		using var response = await client.PostAsJsonAsync(Questions, child);
@@ -129,8 +129,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 				Options =
 				[
 					new Option("hang_glider", "Hang glider", "Deltaplane"),
-					new Option("paraglider", "Paraglider", "Parapente")
-				]
+					new Option("paraglider", "Paraglider", "Parapente"),
+				],
 			});
 	}
 
@@ -146,7 +146,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var child = Draft(UniqueKey("rating"), "short_text") with
 		{
 			DependsOnQuestionId = parentId,
-			DependsOnOptionCode = "hang_glider"
+			DependsOnOptionCode = "hang_glider",
 		};
 		var created = await Create(client, child);
 
@@ -166,7 +166,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var child = Draft(UniqueKey("rating"), "short_text") with
 		{
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
-			DependsOnOptionCode = "trike"
+			DependsOnOptionCode = "trike",
 		};
 		using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -187,7 +187,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var child = Draft(UniqueKey("rating"), "short_text") with
 		{
-			DependsOnQuestionId = parent.GetProperty("id").GetString()
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 		};
 		using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -215,7 +215,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var parentDraft = Draft(UniqueKey("aircraft"), "single_select") with
 		{
-			Options = [new Option(null, "Hang glider", "Deltaplane"), new Option(null, "Paraglider", "Parapente")]
+			Options = [new Option(null, "Hang glider", "Deltaplane"), new Option(null, "Paraglider", "Parapente")],
 		};
 		var parent = await Create(client, parentDraft);
 		var parentId = parent.GetProperty("id").GetString()!;
@@ -223,7 +223,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			LabelEn = "Wing rating",
 			DependsOnQuestionId = parentId,
-			DependsOnOptionCode = "paraglider"
+			DependsOnOptionCode = "paraglider",
 		});
 
 		// When
@@ -243,7 +243,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var draft = Draft(UniqueKey("launch"), "single_select") with
 		{
-			Options = [new Option(null, "Coopers", "Coopers"), new Option(null, "Woodside", "Woodside")]
+			Options = [new Option(null, "Coopers", "Coopers"), new Option(null, "Woodside", "Woodside")],
 		};
 		var created = await Create(client, draft);
 		var id = created.GetProperty("id").GetString()!;
@@ -269,7 +269,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var draft = Draft(UniqueKey("launch_unchanged"), "single_select") with
 		{
-			Options = [new Option(null, "Coopers", "Coopers")]
+			Options = [new Option(null, "Coopers", "Coopers")],
 		};
 		var created = await Create(client, draft);
 		var id = created.GetProperty("id").GetString()!;
@@ -287,7 +287,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 	// -------------------------------------------- statement/group (ADR-0076) --
 
-	private static SaveQuestion NoAnswerDraft(string key, string type)
+	private static SaveQuestion NoAnswerDraft(string key,
+											  string type)
 	{
 		return Draft(key, type) with { IsRequired = false, IsPrivate = false };
 	}
@@ -351,7 +352,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var child = NoAnswerDraft(UniqueKey("heading"), "statement") with
 		{
-			DependsOnQuestionId = parent.GetProperty("id").GetString()
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
 		};
 		using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -388,7 +389,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var child = Draft(UniqueKey("model"), "short_text") with
 		{
-			GroupedUnderQuestionId = notAGroup.GetProperty("id").GetString()
+			GroupedUnderQuestionId = notAGroup.GetProperty("id").GetString(),
 		};
 		using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -410,7 +411,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var edit = NoAnswerDraft(UniqueKey("aircraft"), "group") with
 		{
-			GroupedUnderQuestionId = outer.GetProperty("id").GetString()
+			GroupedUnderQuestionId = outer.GetProperty("id").GetString(),
 		};
 		using var response = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/questions/{inner.GetProperty("id").GetString()}", UriKind.Relative), edit);
@@ -836,7 +837,6 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 
-
 	[Fact]
 	public async Task GivenOptionsWithoutCodes_WhenQuestionIsCreated_ThenCodesAreDerivedFromEnglishWording()
 	{
@@ -846,7 +846,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var question = await Create(client, Draft(UniqueKey("launch_site"), "single_select") with
 		{
-			Options = [new Option(null, "King Eddy", "King Eddy"), new Option(null, "Mara", "Mara")]
+			Options = [new Option(null, "King Eddy", "King Eddy"), new Option(null, "Mara", "Mara")],
 		});
 
 		// Then
@@ -860,7 +860,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		var question = await Create(client, Draft(UniqueKey("launch_site"), "single_select") with
 		{
-			Options = [new Option(null, "King Eddy", "King Eddy")]
+			Options = [new Option(null, "King Eddy", "King Eddy")],
 		});
 
 		// When
@@ -868,7 +868,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			new Uri($"{Questions}/{question.GetProperty("id").GetString()}", UriKind.Relative),
 			Draft(null, "single_select") with
 			{
-				Options = [new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")]
+				Options = [new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")],
 			});
 
 		// Then
@@ -885,7 +885,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("launch_site"), "single_select") with
 		{
-			Options = [new Option(null, "Site A-1", "Site A-1"), new Option(null, "Site A 1", "Site A 1")]
+			Options = [new Option(null, "Site A-1", "Site A-1"), new Option(null, "Site A 1", "Site A 1")],
 		});
 
 		// Then
@@ -911,13 +911,15 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		return key[..Math.Min(key.Length, 40)];
 	}
 
-	private static SaveQuestion Draft(string? key, string type)
+	private static SaveQuestion Draft(string? key,
+									  string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
 			false, true, true, null, null, null, []);
 	}
 
-	private static async Task<JsonElement> Create(HttpClient client, SaveQuestion request)
+	private static async Task<JsonElement> Create(HttpClient client,
+												  SaveQuestion request)
 	{
 		using var response = await client.PostAsJsonAsync(Questions, request);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created);

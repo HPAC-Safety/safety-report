@@ -52,7 +52,8 @@ public class WorkerTests
 		await worker.StartAsync(CancellationToken.None);
 
 		var deadline = DateTimeOffset.UtcNow.AddSeconds(5);
-		while (logger.Collector.Count == 0 && DateTimeOffset.UtcNow < deadline)
+		while (logger.Collector.Count == 0
+			   && DateTimeOffset.UtcNow < deadline)
 		{
 			await Task.Delay(TimeSpan.FromMilliseconds(10));
 		}

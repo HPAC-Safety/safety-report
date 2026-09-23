@@ -127,7 +127,8 @@ public class TypeformExportBuilderTests
 	[InlineData(QuestionType.Checkbox, "short_text")]
 	[InlineData(QuestionType.Time, "short_text")]
 	public void GivenEveryQuestionType_WhenBuilt_ThenItExportsAsTheClosestNativeTypeWithHpacCarryingTheReal(
-		QuestionType type, string nativeType)
+		QuestionType type,
+		string nativeType)
 	{
 		// Given
 		var question = Question.Create("field", type, "Field", "Champ", At, isPrivate: false);

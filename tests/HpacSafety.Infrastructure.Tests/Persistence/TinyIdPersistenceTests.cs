@@ -28,12 +28,12 @@ public sealed class TinyIdPersistenceTests(PostgresFixture postgres)
 		await connection.OpenAsync();
 		await using var command = new NpgsqlCommand(
 			"""
-            SELECT table_name || '.' || column_name || ' ' || data_type || '(' || COALESCE(character_maximum_length, 0) || ')'
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND (column_name = 'id' OR column_name LIKE '%\_id')
-            ORDER BY 1
-            """,
+			SELECT table_name || '.' || column_name || ' ' || data_type || '(' || COALESCE(character_maximum_length, 0) || ')'
+			FROM information_schema.columns
+			WHERE table_schema = 'public'
+			  AND (column_name = 'id' OR column_name LIKE '%\_id')
+			ORDER BY 1
+			""",
 			connection);
 		await using var reader = await command.ExecuteReaderAsync();
 

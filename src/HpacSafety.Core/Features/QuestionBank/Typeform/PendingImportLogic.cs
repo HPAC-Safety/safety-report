@@ -29,7 +29,11 @@ public class PendingImportLogic
 #pragma warning restore CS8618
 
 	private PendingImportLogic(
-		TinyId importBatchId, string fieldRef, string fieldTitle, string rawLogicJson, DateTimeOffset at)
+		TinyId importBatchId,
+		string fieldRef,
+		string fieldTitle,
+		string rawLogicJson,
+		DateTimeOffset at)
 	{
 		Id = TinyId.New();
 		ImportBatchId = importBatchId;
@@ -67,7 +71,11 @@ public class PendingImportLogic
 
 	/// <summary>Records one field's unmapped branching logic from an import batch.</summary>
 	public static PendingImportLogic Create(
-		TinyId importBatchId, string fieldRef, string fieldTitle, string rawLogicJson, DateTimeOffset at)
+		TinyId importBatchId,
+		string fieldRef,
+		string fieldTitle,
+		string rawLogicJson,
+		DateTimeOffset at)
 	{
 		return new PendingImportLogic(importBatchId, fieldRef, fieldTitle, rawLogicJson, at);
 	}

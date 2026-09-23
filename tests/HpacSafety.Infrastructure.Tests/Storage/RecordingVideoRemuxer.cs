@@ -13,7 +13,10 @@ internal sealed class RecordingVideoRemuxer(bool produces = true) : IVideoRemuxe
 	public int Invocations { get; private set; }
 
 	public async Task<bool> TryRemux(
-		Stream source, Stream destination, MediaType type, CancellationToken cancellationToken)
+		Stream source,
+		Stream destination,
+		MediaType type,
+		CancellationToken cancellationToken)
 	{
 		Invocations++;
 

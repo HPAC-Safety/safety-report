@@ -23,5 +23,5 @@ public enum OutboxMessageType
 	///     that report's own untranslated answers rather than the message carrying
 	///     them. See ADR-0080.
 	/// </summary>
-	TranslateAnswers = 2
+	TranslateAnswers = 2,
 }

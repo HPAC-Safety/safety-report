@@ -33,7 +33,8 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 	private static ReadOnlySpan<byte> RtfSignature => "{\\rtf1"u8;
 
 	/// <inheritdoc />
-	public async Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
+	public async Task<MediaType?> Sniff(Stream content,
+										CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
@@ -64,7 +65,8 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 		return SniffPlainText(bytes);
 	}
 
-	private static bool StartsWith(ReadOnlySpan<byte> bytes, ReadOnlySpan<byte> signature)
+	private static bool StartsWith(ReadOnlySpan<byte> bytes,
+								   ReadOnlySpan<byte> signature)
 	{
 		return bytes.Length >= signature.Length && bytes[..signature.Length].SequenceEqual(signature);
 	}
@@ -148,7 +150,8 @@ public sealed class DocumentMediaSniffer : IMediaSniffer
 
 			foreach (var character in chars.AsSpan(0, charsUsed))
 			{
-				if (char.IsControl(character) && character is not ('\t' or '\n' or '\r'))
+				if (char.IsControl(character)
+					&& character is not ('\t' or '\n' or '\r'))
 				{
 					return false;
 				}

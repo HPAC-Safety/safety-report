@@ -30,7 +30,8 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 		"outbox_messages",
 		"INSERT INTO outbox_messages (id, aggregate_id, type, payload, occurred_at, next_attempt_at, attempts) " +
 		"VALUES ('oooooooooo1', 'rrrrrrrrrr1', 'not_a_type', '{}', @at, @at, 0)")]
-	public async Task GivenBadEnumCode_WhenInserted_ThenCheckConstraintRejects(string table, string sql)
+	public async Task GivenBadEnumCode_WhenInserted_ThenCheckConstraintRejects(string table,
+																			   string sql)
 	{
 		// Given
 		var connectionString = await postgres.CreateMigratedDatabase();
@@ -139,7 +140,8 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 		exception.SqlState.ShouldBe("23514");
 	}
 
-	private static async Task Execute(string connectionString, string sql)
+	private static async Task Execute(string connectionString,
+									  string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();

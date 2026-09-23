@@ -48,6 +48,7 @@ public sealed class AttachmentUploadSteps
 	private string? _fileName;
 	private string? _reportId;
 	private int _abortedAfterBytes;
+	private bool _oversized;
 
 	// --- An accepted upload returns an opaque upload ID; a refused one is never stored ---
 
@@ -55,6 +56,7 @@ public sealed class AttachmentUploadSteps
 	public async Task GivenAMemberUploads(string file)
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_oversized = file == "a file one byte larger than 50 MB";
 		(_bytes, _declaredType) = file switch
 		{
 			"an allowlisted file within the size limit" => (SyntheticPdf, "application/pdf"),
@@ -62,7 +64,9 @@ public sealed class AttachmentUploadSteps
 			// Unique bytes, so "nothing was stored" can look for exactly them.
 			"a file whose bytes match no known format" => (Unrecognisable(), "application/pdf"),
 			"a file declared as one allowlisted type but containing another" => (UniquePdf(), "image/png"),
-			"a file one byte larger than 50 MB" => (new byte[(50 * 1024 * 1024) + 1], "application/pdf"),
+			// Sent as a generated stream, not an array: this suite also measures
+			// allocation (REQ-MED-024), and a 50 MB array here would skew it.
+			"a file one byte larger than 50 MB" => ([], "application/pdf"),
 			_ => throw new NotSupportedException($"Unmapped upload example: '{file}'."),
 		};
 	}
@@ -71,7 +75,9 @@ public sealed class AttachmentUploadSteps
 	[When(@"the API validates the upload")]
 	public async Task WhenTheApiReceivesIt()
 	{
-		var body = new ByteArrayContent(_bytes);
+		HttpContent body = _bytes.Length == 0 && _declaredType == "application/pdf" && _oversized
+			? new StreamContent(new GeneratedStream((50L * 1024 * 1024) + 1))
+			: new ByteArrayContent(_bytes);
 		body.Headers.ContentType = new MediaTypeHeaderValue(_declaredType);
 		_response = await _reporter!.PostAsync(Uploads, body);
 		await _response.Content.LoadIntoBufferAsync();
@@ -109,7 +115,7 @@ public sealed class AttachmentUploadSteps
 		// The endpoint writes only after it has accepted a file, so a refusal
 		// carries no id to look up. What can be checked is that no object of
 		// exactly these bytes' length reached quarantine.
-		(await QuarantineHoldsObjectOfSize(_bytes.Length)).ShouldBeFalse();
+		(await QuarantineHoldsObjectOfSize(_oversized ? (50L * 1024 * 1024) + 1 : _bytes.Length)).ShouldBeFalse();
 	}
 
 	// --- An unauthenticated upload is rejected ---
@@ -455,6 +461,58 @@ public sealed class AttachmentUploadSteps
 		{
 			length = -1;
 			return false;
+		}
+	}
+
+	/// <summary>A readable stream of a given length that holds none of its bytes.</summary>
+	private sealed class GeneratedStream(long length) : Stream
+	{
+		private long _position;
+
+		public override bool CanRead => true;
+
+		public override bool CanSeek => false;
+
+		public override bool CanWrite => false;
+
+		public override long Length => length;
+
+		public override long Position
+		{
+			get => _position;
+			set => throw new NotSupportedException();
+		}
+
+		public override int Read(byte[] buffer,
+								 int offset,
+								 int count)
+		{
+			var served = (int)Math.Min(count, length - _position);
+			Array.Clear(buffer, offset, served);
+			_position += served;
+			return served;
+		}
+
+		public override void Flush()
+		{
+		}
+
+		public override long Seek(long offset,
+								  SeekOrigin origin)
+		{
+			throw new NotSupportedException();
+		}
+
+		public override void SetLength(long value)
+		{
+			throw new NotSupportedException();
+		}
+
+		public override void Write(byte[] buffer,
+								   int offset,
+								   int count)
+		{
+			throw new NotSupportedException();
 		}
 	}
 }

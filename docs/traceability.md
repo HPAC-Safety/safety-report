@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-293 claims across 8 areas: 221 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+294 claims across 8 areas: 222 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -73,6 +73,7 @@ type: guide
 | `REQ-MED-021` | media | An attachment awaits the Worker before a reviewer may view it | Reqnroll | Covered |
 | `REQ-MED-022` | media | Processing an attachment twice changes nothing | Reqnroll | Covered |
 | `REQ-MED-023` | media | The Worker skips an attachment whose report was deleted | Reqnroll | Covered |
+| `REQ-MED-024` | media | Processing never holds a whole attachment in memory | Reqnroll | Covered |
 | `REQ-MOD-001` | moderation-authentication-and-publication | In development the login page offers no third-party sign-in option | playwright-bdd | Covered |
 | `REQ-MOD-002` | moderation-authentication-and-publication | Where a third-party provider is configured, the login page offers it | playwright-bdd | Covered |
 | `REQ-MOD-003` | moderation-authentication-and-publication | Signing in with member credentials returns a session that survives a reload | playwright-bdd | Covered |

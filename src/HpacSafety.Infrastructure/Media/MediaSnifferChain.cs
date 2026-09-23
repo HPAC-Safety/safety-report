@@ -1,3 +1,4 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
 
 namespace HpacSafety.Infrastructure.Media;
@@ -36,17 +37,30 @@ public sealed class MediaSnifferChain : IMediaSniffer
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
-		using var buffered = new MemoryStream();
-		await content.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
+		// Every caller in this system hands over a seekable file already. A
+		// stream that cannot seek is spooled to one, never to memory (#362).
+		if (!content.CanSeek)
+		{
+			await using var spooled = TemporaryFile.Create();
+			await content.CopyToAsync(spooled, cancellationToken).ConfigureAwait(false);
+			return await SniffFrom(spooled, 0, cancellationToken).ConfigureAwait(false);
+		}
 
+		return await SniffFrom(content, content.Position, cancellationToken).ConfigureAwait(false);
+	}
+
+	private async Task<MediaType?> SniffFrom(Stream content,
+											 long start,
+											 CancellationToken cancellationToken)
+	{
 		foreach (var sniffer in _sniffers)
 		{
 			// Each link gets the stream from the start. A link that consumed it
 			// would silently starve the next one, which is the kind of bug that
 			// shows up as "video uploads stopped working" months later.
-			buffered.Position = 0;
+			content.Position = start;
 
-			if (await sniffer.Sniff(buffered, cancellationToken).ConfigureAwait(false) is { } recognised)
+			if (await sniffer.Sniff(content, cancellationToken).ConfigureAwait(false) is { } recognised)
 			{
 				return recognised;
 			}

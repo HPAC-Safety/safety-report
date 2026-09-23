@@ -30,19 +30,22 @@ public sealed class MagickNetMediaSniffer : IMediaSniffer
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
-		using var buffered = new MemoryStream();
-		await content.CopyToAsync(buffered, cancellationToken).ConfigureAwait(false);
-		var bytes = buffered.ToArray();
+		// Only the header is read to decide whether this could be an image at
+		// all. The chain hands over a seekable stream, so the image library can
+		// then parse from the start without anything being copied (#362).
+		var start = content.Position;
+		var header = new byte[HeaderLength];
+		var read = await content.ReadAtLeastAsync(header, HeaderLength, false, cancellationToken).ConfigureAwait(false);
 
-		if (FromMagicNumber(bytes) is not { } expected)
+		if (FromMagicNumber(header.AsSpan(0, read)) is not { } expected)
 		{
 			return null;
 		}
 
 		try
 		{
-			buffered.Position = 0;
-			var info = new MagickImageInfo(buffered);
+			content.Position = start;
+			var info = new MagickImageInfo(content);
 
 			return MagickFormats.From(info.Format) == expected ? expected : null;
 		}

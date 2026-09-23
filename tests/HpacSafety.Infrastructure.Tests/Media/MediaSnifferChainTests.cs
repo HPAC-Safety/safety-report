@@ -43,6 +43,35 @@ public class MediaSnifferChainTests
 	}
 
 	[Fact]
+	public async Task GivenStreamThatCannotSeek_WhenChainSniffs_ThenSpooledAndStillRecognised()
+	{
+		// Given — a network stream, say; the chain spools it to a temporary file,
+		// never to memory, and every link still reads from the start (#362)
+		await using var content = new ForwardOnlyStream(ExifFixtures.Docx());
+
+		// When
+		var sniffed = await _chain.Sniff(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldBe(MediaType.Docx);
+	}
+
+	[Fact]
+	public async Task GivenStreamAlreadyPartWayThrough_WhenChainSniffs_ThenEveryLinkStartsFromThere()
+	{
+		// Given
+		var pdf = "%PDF-1.7\n%%EOF\n"u8.ToArray();
+		using var content = new MemoryStream([.. "junk"u8.ToArray(), .. pdf]);
+		content.Position = 4;
+
+		// When
+		var sniffed = await _chain.Sniff(content, CancellationToken.None);
+
+		// Then
+		sniffed.ShouldBe(MediaType.Pdf);
+	}
+
+	[Fact]
 	public async Task GivenJpeg_WhenChainSniffs_ThenRecognised()
 	{
 		// Given
@@ -74,5 +103,11 @@ public class MediaSnifferChainTests
 		// Given / When / Then
 		// A chain that recognises nothing would reject every upload.
 		Should.Throw<ArgumentException>(() => new MediaSnifferChain());
+	}
+
+	/// <summary>Reads like a network stream: forward only, no length, no seeking.</summary>
+	private sealed class ForwardOnlyStream(byte[] content) : MemoryStream(content)
+	{
+		public override bool CanSeek => false;
 	}
 }

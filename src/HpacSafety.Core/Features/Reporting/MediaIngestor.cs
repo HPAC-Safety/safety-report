@@ -125,17 +125,19 @@ public sealed class MediaIngestor
 			throw new DomainRuleViolationException("Processing reads a report's original and nothing else.");
 		}
 
-		// Buffered rather than streamed past this point: the bytes are read three
-		// more times - for the digest, for the sniff and for the strip - and
-		// MediaPolicy.MaxByteSize is what bounds how much that costs. CopyBounded
-		// stops reading the moment the limit is exceeded, so an oversized object
-		// is never pulled fully into memory. Streaming it instead is #362.
-		using var original = new MemoryStream();
+		// Spooled to a temporary file, not memory: the bytes are read several
+		// times - to sniff, to strip or remux - and a 50 MB video must not become a
+		// 50 MB buffer (#362, REQ-MED-024). They are hashed on the way in, in the
+		// same bounded chunks, and CopyBounded stops the moment the limit is
+		// exceeded, so an oversized object is never read in full.
+		await using var original = TemporaryFile.Create();
+		using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
 		bool exceedsLimit;
 
 		await using (var source = await _blobStore.OpenRead(originalKey, cancellationToken).ConfigureAwait(false))
 		{
-			exceedsLimit = await CopyBounded(source, original, _policy.MaxByteSize, cancellationToken).ConfigureAwait(false);
+			exceedsLimit = await CopyBounded(source, original, _policy.MaxByteSize, cancellationToken, digest)
+				.ConfigureAwait(false);
 		}
 
 		if (exceedsLimit)
@@ -161,7 +163,7 @@ public sealed class MediaIngestor
 			return MediaIngestOutcome.Rejected(verdict.RejectionReason);
 		}
 
-		var sha256 = Convert.ToHexStringLower(SHA256.HashData(original.GetBuffer().AsSpan(0, (int)byteSize)));
+		var sha256 = Convert.ToHexStringLower(digest.GetHashAndReset());
 		var derivativeKey = originalKey.In(MediaCompartment.Stripped);
 
 		// Video is remuxed rather than decoded: the packets move into a fresh
@@ -172,7 +174,7 @@ public sealed class MediaIngestor
 		if (verdict.Type.Kind is MediaKind.Video)
 		{
 			original.Position = 0;
-			using var remuxed = new MemoryStream();
+			await using var remuxed = TemporaryFile.Create();
 			var produced = await _remuxer
 				.TryRemux(original, remuxed, verdict.Type, cancellationToken)
 				.ConfigureAwait(false);
@@ -199,7 +201,7 @@ public sealed class MediaIngestor
 		}
 
 		original.Position = 0;
-		using var stripped = new MemoryStream();
+		await using var stripped = TemporaryFile.Create();
 
 		try
 		{
@@ -228,9 +230,10 @@ public sealed class MediaIngestor
 	/// <returns><see langword="true" /> when the source exceeded the limit.</returns>
 	private static async Task<bool> CopyBounded(
 		Stream source,
-		MemoryStream destination,
+		Stream destination,
 		long maxByteSize,
-		CancellationToken cancellationToken)
+		CancellationToken cancellationToken,
+		IncrementalHash? digest = null)
 	{
 		var buffer = new byte[ReadBufferSize];
 		long total = 0;
@@ -255,6 +258,7 @@ public sealed class MediaIngestor
 			}
 
 			total += read;
+			digest?.AppendData(buffer, 0, read);
 			await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
 		}
 	}

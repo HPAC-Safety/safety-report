@@ -4,6 +4,7 @@ import { expect, type Page } from "@playwright/test"
 import { signInAs, stubAuth } from "./auth"
 import {
 	defaultFormQuestions,
+	multiSelectFormQuestions,
 	readDraftFromBrowser,
 	stubCurrentQuestions,
 	stubSubmission,
@@ -479,4 +480,41 @@ Then("attachment selection appears last with type\\/count\\/size guidance and a 
 	// "Appears last": only the required consent question follows it.
 	await goNext(page)
 	await expect(page.getByText("May we publish a summary of this report?")).toBeVisible()
+})
+
+Given("the current page shows a multi-select question", async ({ page }) => {
+	await openForm(page, multiSelectFormQuestions())
+	await goNext(page) // intro -> the multi-select page
+})
+
+Then("its options are hidden behind one closed picker labelled by the question", async ({ page }) => {
+	const picker = page.getByRole("button", { name: /Which conditions applied\?/ })
+	await expect(picker).toHaveAttribute("aria-expanded", "false")
+	await expect(picker).toContainText("Choose any")
+	await expect(page.getByRole("checkbox")).toHaveCount(0)
+})
+
+When("the reporter opens the picker and checks two options", async ({ page }) => {
+	await page.getByRole("button", { name: /Which conditions applied\?/ }).click()
+	await page.getByRole("checkbox", { name: "Gusty" }).check()
+	await page.getByRole("checkbox", { name: "Turbulent" }).check()
+})
+
+Then("the picker stays open with both options checked", async ({ page }) => {
+	await expect(page.getByRole("button", { name: /Which conditions applied\?/ })).toHaveAttribute("aria-expanded", "true")
+	await expect(page.getByRole("checkbox", { name: "Gusty" })).toBeChecked()
+	await expect(page.getByRole("checkbox", { name: "Turbulent" })).toBeChecked()
+	await expect(page.getByRole("checkbox", { name: "Thermic" })).not.toBeChecked()
+})
+
+When("the reporter presses Escape", async ({ page }) => {
+	await page.keyboard.press("Escape")
+})
+
+Then("the picker closes, returns focus to itself, and names both chosen options", async ({ page }) => {
+	const picker = page.getByRole("button", { name: /Which conditions applied\?/ })
+	await expect(picker).toHaveAttribute("aria-expanded", "false")
+	await expect(picker).toBeFocused()
+	await expect(picker).toHaveAccessibleName("Which conditions applied? Gusty, Turbulent")
+	await expect(page.getByRole("checkbox")).toHaveCount(0)
 })

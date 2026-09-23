@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-271 claims across 8 areas: 182 covered by a step definition today, 89 still `@ignore`. 50 constraints.
+272 claims across 8 areas: 183 covered by a step definition today, 89 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -217,7 +217,8 @@ type: guide
 | `REQ-SUB-031` | report-submission | A required question blocks Next until answered | playwright-bdd | Covered |
 | `REQ-SUB-032` | report-submission | A conditional question is absent from paging until its parent condition is met | playwright-bdd | Covered |
 | `REQ-SUB-033` | report-submission | The Next button becomes Submit on the final page | playwright-bdd | Covered |
-| `REQ-SUB-004` | report-submission | One answer entry per shown answer-producing revision | playwright-bdd | Covered |
+| `REQ-SUB-034` | report-submission | A multi-select question is a picker dropdown, not a flat list | playwright-bdd | Covered |
+| `REQ-SUB-004` | report-submission | One answer entry per shown answer-producing revision | Reqnroll | Covered |
 | `REQ-SUB-005` | report-submission | A skipped answer is represented by an empty value, not omission | Reqnroll | Covered |
 | `REQ-SUB-006` | report-submission | A submitted select value must be one the revision offered | Reqnroll | Covered |
 | `REQ-SUB-007` | report-submission | The submission path never calls a translation provider | Reqnroll | Covered |

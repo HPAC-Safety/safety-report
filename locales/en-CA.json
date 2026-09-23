@@ -54,6 +54,7 @@
   "report.booleanYes": "Yes",
   "report.booleanNo": "No",
   "report.select.placeholder": "Choose one",
+  "report.multiSelect.placeholder": "Choose any",
   "report.attachments.selectedCount": "{count} file(s) selected",
   "report.attachments.guidance": "Attach photos, videos, or documents related to this occurrence, if you have them.",
   "report.attachments.notRestored": "Attached files are not saved between visits — if you reload this page, you will need to choose them again.",

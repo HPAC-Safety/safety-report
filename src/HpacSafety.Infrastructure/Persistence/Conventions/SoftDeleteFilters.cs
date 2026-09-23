@@ -10,6 +10,14 @@ namespace HpacSafety.Infrastructure.Persistence.Conventions;
 /// </summary>
 public static class SoftDeleteFilters
 {
+	/// <summary>
+	///     Entities whose removed rows their aggregate reads itself, so a filter
+	///     would hide rows the domain depends on. A question's removed choice is
+	///     still what a fork copies and what stops a reporter reviving it; the
+	///     question filters to live choices in <c>Question.Choices</c> (ADR-0095).
+	/// </summary>
+	private static readonly HashSet<Type> Unfiltered = [typeof(Core.Features.QuestionBank.QuestionChoice)];
+
 	/// <summary>Applies the default live-row filter to every entity with a <c>Deleted</c> property.</summary>
 	/// <param name="modelBuilder">The model being built.</param>
 	public static void Apply(ModelBuilder modelBuilder)
@@ -18,7 +26,7 @@ public static class SoftDeleteFilters
 
 		foreach (var entity in modelBuilder.Model.GetEntityTypes())
 		{
-			if (entity.FindProperty("Deleted") is null)
+			if (entity.FindProperty("Deleted") is null || Unfiltered.Contains(entity.ClrType))
 			{
 				continue;
 			}

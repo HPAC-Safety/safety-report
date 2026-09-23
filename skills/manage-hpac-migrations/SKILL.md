@@ -25,12 +25,17 @@ persistence contract.
 3. **Nothing is physically deleted.** No `DELETE`, no `DROP TABLE` on a table
    holding application data, no destructive `ALTER` that loses a value.
    Retirement is a `deleted timestamptz` stamp, and every new table gets that
-   column plus the default live-row filter
+   column plus the default live-row filter (`question_choices` alone skips the
+   filter, because its aggregate reads its removed rows — ADR-0095)
    ([ADR-0040](../../docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
-   **One carved exception exists**: `admin_users` is dropped by
+   **Two carved exceptions exist**: `admin_users` is dropped by
    [ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md),
    on the specific ground that it never held application data in any deployed
-   environment. It does not generalize. A widening cast that loses no value —
+   environment; and the shared-choice-list and per-revision option tables are
+   dropped by
+   [ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)
+   only after the same migration copies every choice onto its question.
+   Neither generalizes. A widening cast that loses no value —
    `char(11)` to `varchar(256)` — is not destructive and needs no exception.
    Any other physical delete needs its own ADR arguing its own facts.
 4. **Both paths have to work**: a fresh, empty database and a database sitting

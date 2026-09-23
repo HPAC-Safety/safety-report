@@ -37,7 +37,7 @@ public sealed class ModelTests
 	[InlineData(typeof(Summary), "summaries")]
 	[InlineData(typeof(Question), "questions")]
 	[InlineData(typeof(QuestionRevision), "question_revisions")]
-	[InlineData(typeof(QuestionRevisionOption), "question_revision_options")]
+	[InlineData(typeof(QuestionChoice), "question_choices")]
 	[InlineData(typeof(AuditLogEntry), "audit_log")]
 	[InlineData(typeof(OutboxMessage), "outbox_messages")]
 	[InlineData(typeof(PendingImportLogic), "pending_import_logic")]
@@ -137,7 +137,6 @@ public sealed class ModelTests
 	[InlineData(typeof(Summary))]
 	[InlineData(typeof(Question))]
 	[InlineData(typeof(QuestionRevision))]
-	[InlineData(typeof(QuestionRevisionOption))]
 	[InlineData(typeof(OutboxMessage))]
 	public void GivenEveryTableExceptAuditLog_WhenModelIsRead_ThenHasDeletedColumnAndLiveRowFilter(Type entity)
 	{
@@ -147,6 +146,18 @@ public sealed class ModelTests
 		// Then
 		mapped.FindProperty("Deleted").ShouldNotBeNull();
 		mapped.GetDeclaredQueryFilters().ShouldNotBeEmpty();
+	}
+
+	[Fact]
+	public void GivenQuestionChoice_WhenModelIsRead_ThenHasDeletedColumnButNoLiveRowFilter()
+	{
+		// Given / When — the question reads its removed choices itself: a fork
+		// copies them and a reporter must not revive one (ADR-0095).
+		var mapped = Model().FindEntityType(typeof(QuestionChoice))!;
+
+		// Then
+		mapped.FindProperty("Deleted").ShouldNotBeNull();
+		mapped.GetDeclaredQueryFilters().ShouldBeEmpty();
 	}
 
 	[Fact]

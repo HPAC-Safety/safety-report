@@ -15,11 +15,9 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	private static readonly string[] ExpectedTables =
 	[
 		"audit_log",
-		"option_set_items",
-		"option_sets",
 		"outbox_messages",
 		"pending_import_logic",
-		"question_revision_options",
+		"question_choices",
 		"question_revisions",
 		"questions",
 		"report_answers",

@@ -29,6 +29,9 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 		builder.Ignore(question => question.DependsOnQuestionId);
 		builder.Ignore(question => question.DisplayOrder);
 		builder.Ignore(question => question.IsActive);
+		builder.Ignore(question => question.Choices);
+		builder.Ignore(question => question.TakesReporterAdditions);
+		builder.Ignore(question => question.ReporterChoicesAwaitingReview);
 
 		// Unique among live questions only. A fork chain shares one key — the
 		// retired questions and the one being asked today — and exactly one of
@@ -48,6 +51,18 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 
 		builder.Metadata.FindNavigation(nameof(Question.Revisions))!
 			.SetPropertyAccessMode(PropertyAccessMode.Field);
+
+		// A question owns its choices (ADR-0095). Cascade matches Revisions: a
+		// choice is part of its question and is never physically deleted apart
+		// from it.
+		builder.HasMany(question => question.AllChoices)
+			.WithOne()
+			.HasForeignKey(choice => choice.QuestionId)
+			.OnDelete(DeleteBehavior.Cascade);
+
+		builder.Navigation(question => question.AllChoices)
+			.HasField("_choices")
+			.UsePropertyAccessMode(PropertyAccessMode.Field);
 	}
 }
 
@@ -73,7 +88,7 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		builder.Property(revision => revision.IsPrivate).IsRequired();
 		builder.Property(revision => revision.IsActive).IsRequired();
 		builder.Property(revision => revision.DisplayOrder).IsRequired();
-		builder.Property(revision => revision.AllowsReporterAdditions).IsRequired();
+		builder.Ignore(revision => revision.TakesReporterAdditions);
 
 		// A conditional question names the stable question, not a revision of
 		// it, so rewording the parent cannot break the child. Restrict, not
@@ -102,14 +117,6 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		// this schema. See ADR-0074.
 		builder.Property(revision => revision.DependsOnOptionCode).HasMaxLength(128);
 
-		// Provenance of the option snapshot, never consulted to render one.
-		// SetNull so retiring a set leaves every revision built from it intact
-		// and merely unattributed. See ADR-0058.
-		builder.HasOne<OptionSet>()
-			.WithMany()
-			.HasForeignKey(revision => revision.OptionSetId)
-			.OnDelete(DeleteBehavior.SetNull);
-
 		// Unique stable key + revision number.
 		builder.HasIndex(revision => new { revision.QuestionId, revision.RevisionNumber }).IsUnique();
 
@@ -122,47 +129,37 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 			"type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', " +
 			"'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group', 'time', " +
 			"'autocomplete')"));
-
-		builder.HasMany(revision => revision.Options)
-			.WithOne()
-			.HasForeignKey(option => option.QuestionRevisionId)
-			.OnDelete(DeleteBehavior.Cascade);
-
-		builder.Metadata.FindNavigation(nameof(QuestionRevision.Options))!
-			.SetPropertyAccessMode(PropertyAccessMode.Field);
 	}
 }
 
 /// <summary>
-///     The <c>question_revision_options</c> table, complete in both official
-///     languages.
+///     The <c>question_choices</c> table: a question's own choices, outside its
+///     revisions and edited in place. See ADR-0095.
 /// </summary>
-public sealed class QuestionRevisionOptionConfiguration : IEntityTypeConfiguration<QuestionRevisionOption>
+public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<QuestionChoice>
 {
 	/// <inheritdoc />
-	public void Configure(EntityTypeBuilder<QuestionRevisionOption> builder)
+	public void Configure(EntityTypeBuilder<QuestionChoice> builder)
 	{
 		ArgumentNullException.ThrowIfNull(builder);
 
-		builder.ToTable("question_revision_options");
-		builder.HasKey(option => option.Id);
+		builder.ToTable("question_choices");
+		builder.HasKey(choice => choice.Id);
 
-		builder.Property(option => option.Code).HasMaxLength(128).IsRequired();
-		builder.Property(option => option.LabelEn).IsRequired();
-		builder.Property(option => option.LabelFr).IsRequired();
+		builder.Property(choice => choice.Code).HasMaxLength(128).IsRequired();
+		builder.Property(choice => choice.DisplayOrder).IsRequired();
+		builder.Property(choice => choice.AddedByReporter).IsRequired().HasDefaultValue(false);
+		builder.Property(choice => choice.ReporterLocale);
+		builder.Ignore(choice => choice.NeedsTranslation);
 
-		// A code never changes, and never repeats within a revision — that is
-		// what lets a rename be a translation change rather than a data
-		// migration.
-		builder.HasIndex(option => new { option.QuestionRevisionId, option.Code }).IsUnique();
+		// Unique across removed rows too: an Administrator writing a removed
+		// choice again revives that row, and a reporter never does, so a code
+		// has exactly one row on its question for life.
+		builder.HasIndex(choice => new { choice.QuestionId, choice.Code }).IsUnique();
 
-		// Which shared item this was copied from, when it was copied from one.
-		// Restrict rather than Cascade: the snapshot outlives the item on
-		// purpose, and losing it would rewrite what a reporter was shown. See
-		// ADR-0058.
-		builder.HasOne<OptionSetItem>()
-			.WithMany()
-			.HasForeignKey(option => option.SourceItemId)
-			.OnDelete(DeleteBehavior.Restrict);
+		// Only a reporter-added choice may lack a language, and never both.
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_choices_label",
+			"label_en IS NOT NULL AND label_fr IS NOT NULL OR added_by_reporter AND (label_en IS NOT NULL OR label_fr IS NOT NULL)"));
 	}
 }

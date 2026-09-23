@@ -13,7 +13,7 @@ export interface MultiSelectPickerProps {
 }
 
 /**
- * A "Pick several" question as a picker dropdown (issue #343, REQ-SUB-034):
+ * A "Pick several" question as a picker dropdown (issue no. 343, REQ-SUB-034):
  * one closed trigger naming what is chosen, opening a list of checkboxes that
  * stays open while several are checked. Escape closes it and returns focus to
  * the trigger; pressing outside or tabbing away closes it too.

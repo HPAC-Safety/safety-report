@@ -37,7 +37,7 @@ function stepQuestionId(step: FormStep): string {
 	return step.question.id
 }
 
-/** The introduction is the bare form address; every other page is named by its heading question's key (#366). */
+/** The introduction is the bare form address; every other page is named by its heading question's key (ADR-0099). */
 function stepPath(step: FormStep): string {
 	return step.kind === "intro" ? "/report" : `/report/${encodeURIComponent(step.question.key)}`
 }

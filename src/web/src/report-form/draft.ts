@@ -22,7 +22,7 @@ export interface ReportDraft {
 	answers: Record<string, DraftAnswer>
 	/** The key of the question heading the page the reporter was last on — the same key the page's address names. */
 	stepKey?: string
-	/** What a draft saved before #366 names that page by; still honoured when reading, never written. */
+	/** What a draft saved before pages were saved by key names that page by; still honoured when reading, never written. */
 	stepRevisionId?: string
 	savedAtMs: number
 }

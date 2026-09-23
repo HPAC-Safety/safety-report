@@ -12,7 +12,6 @@ namespace HpacSafety.Core.Tests;
 public class TypeformExportBuilderTests
 {
 	private static readonly DateTimeOffset At = new(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
-	private static readonly Dictionary<TinyId, OptionSet> NoSets = [];
 
 	[Fact]
 	public void GivenLiveQuestions_WhenBuilt_ThenEachProducesAnEnglishAndFrenchField()
@@ -24,7 +23,7 @@ public class TypeformExportBuilderTests
 			groupedUnderQuestionId: group.Id, isPrivate: false);
 
 		// When
-		var (english, french) = TypeformExportBuilder.Build([group, child], NoSets);
+		var (english, french) = TypeformExportBuilder.Build([group, child]);
 
 		// Then
 		english.Fields.Select(field => field.Ref).ShouldBe(["aircraft", "model"]);
@@ -43,7 +42,7 @@ public class TypeformExportBuilderTests
 			groupedUnderQuestionId: group.Id, isPrivate: false);
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([group, child], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([group, child]);
 
 		// Then
 		var childField = english.Fields.Single(field => field.Ref == "model");
@@ -58,13 +57,13 @@ public class TypeformExportBuilderTests
 		var parent = Question.Create(
 			"aircraft_type", QuestionType.SingleSelect, "Aircraft type", "Type d'aéronef", At, isPrivate: false,
 			isActive: true,
-			options: [new QuestionOptionInput("glider", "Hang glider", "Deltaplane", null)]);
+			options: [new QuestionOptionInput("glider", "Hang glider", "Deltaplane")]);
 		var child = Question.Create(
 			"glider_model", QuestionType.ShortText, "Model", "Modèle", At, isPrivate: false,
 			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "glider");
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([parent, child], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([parent, child]);
 
 		// Then
 		var childField = english.Fields.Single(field => field.Ref == "glider_model");
@@ -80,7 +79,7 @@ public class TypeformExportBuilderTests
 			"injury", QuestionType.ShortText, "Injury", "Blessure", At, isPrivate: true, isRequired: true);
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([question], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([question]);
 
 		// Then
 		var hpac = english.Fields.Single().Properties.Hpac!;
@@ -94,21 +93,20 @@ public class TypeformExportBuilderTests
 		// Given
 		var question = Question.Create(
 			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isPrivate: false,
-			allowsReporterAdditions: true,
 			options:
 			[
-				new QuestionOptionInput("p1", "P1", "P1", null),
-				new QuestionOptionInput("p2", "P2", "P2", null),
+				new QuestionOptionInput("p1", "P1", "P1"),
+				new QuestionOptionInput("p2", "P2", "P2"),
 			]);
 
 		// When
-		var (english, french) = TypeformExportBuilder.Build([question], NoSets);
+		var (english, french) = TypeformExportBuilder.Build([question]);
 
 		// Then
 		var englishField = english.Fields.Single();
 		englishField.Type.ShouldBe("multiple_choice");
 		englishField.Properties.AllowMultipleSelection.ShouldBe(true);
-		englishField.Properties.AllowOtherChoice.ShouldBe(true);
+		englishField.Properties.AllowOtherChoice.ShouldBeNull();
 		englishField.Properties.Choices!.Select(choice => choice.Ref).ShouldBe(["p1", "p2"]);
 		french.Fields.Single().Properties.Choices!.Select(choice => choice.Label).ShouldBe(["P1", "P2"]);
 	}
@@ -135,7 +133,7 @@ public class TypeformExportBuilderTests
 		var question = Question.Create("field", type, "Field", "Champ", At, isPrivate: false);
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([question], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([question]);
 
 		// Then
 		var field = english.Fields.Single();
@@ -144,52 +142,33 @@ public class TypeformExportBuilderTests
 	}
 
 	[Fact]
-	public void GivenAMultiSelectThatDoesNotAllowReporterAdditions_WhenBuilt_ThenAllowOtherChoiceIsAbsent()
+	public void GivenAQuestionWithARemovedChoice_WhenBuilt_ThenOnlyItsLiveChoicesAreExported()
 	{
 		// Given
 		var question = Question.Create(
-			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isPrivate: false,
-			allowsReporterAdditions: false,
-			options: [new QuestionOptionInput("p1", "P1", "P1", null)]);
+			"aerodrome", QuestionType.SingleSelect, "Aerodrome", "Aérodrome", At, isPrivate: false,
+			options: [new QuestionOptionInput("alberta", "Alberta", "Alberta"), new QuestionOptionInput("bc", "BC", "C.-B.")]);
+		question.ReplaceChoices([new QuestionOptionInput("alberta", "Alberta", "Alberta")], At);
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([question], NoSets);
-
-		// Then
-		english.Fields.Single().Properties.AllowOtherChoice.ShouldBeNull();
-	}
-
-	[Fact]
-	public void GivenAQuestionBackedByALiveOptionSet_WhenBuilt_ThenTheLiveChoicesAreExported()
-	{
-		// Given
-		var set = OptionSet.Create("aerodromes", "Aerodromes", "Aérodromes", At);
-		set.Add("alberta", "Alberta", "Alberta");
-		var question = Question.Create(
-			"aerodrome", QuestionType.Autocomplete, "Aerodrome", "Aérodrome", At, isPrivate: false,
-			optionSetId: set.Id);
-
-		// When
-		var (english, _) = TypeformExportBuilder.Build([question], new Dictionary<TinyId, OptionSet> { [set.Id] = set });
+		var (english, _) = TypeformExportBuilder.Build([question]);
 
 		// Then
 		english.Fields.Single().Properties.Choices!.Select(choice => choice.Ref).ShouldBe(["alberta"]);
 	}
 
 	[Fact]
-	public void GivenAQuestionNamingAnOptionSetThatIsNoLongerLive_WhenBuilt_ThenItsOwnSnapshotIsExported()
+	public void GivenAOneLanguageReporterChoice_WhenBuilt_ThenBothDocumentsCarryTheWordingItHas()
 	{
 		// Given
-		var question = Question.Create(
-			"aerodrome", QuestionType.Autocomplete, "Aerodrome", "Aérodrome", At, isPrivate: false,
-			optionSetId: TinyId.New(),
-			options: [new QuestionOptionInput("alberta", "Alberta", "Alberta", null)]);
+		var question = Question.Create("site", QuestionType.Autocomplete, "Site", "Site", At, isPrivate: false);
+		question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([question], NoSets);
+		var (_, french) = TypeformExportBuilder.Build([question]);
 
 		// Then
-		english.Fields.Single().Properties.Choices!.Select(choice => choice.Ref).ShouldBe(["alberta"]);
+		french.Fields.Single().Properties.Choices!.Single().Label.ShouldBe("Mount 7");
 	}
 
 	[Fact]
@@ -203,7 +182,7 @@ public class TypeformExportBuilderTests
 			dependsOnQuestionId: TinyId.New());
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([child], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([child]);
 
 		// Then
 		english.Fields.Single().Properties.Hpac!.DependsOnKey.ShouldBeNull();
@@ -216,7 +195,7 @@ public class TypeformExportBuilderTests
 		var question = Question.Create("field", (QuestionType)999, "Field", "Champ", At, isPrivate: false);
 
 		// When / Then
-		Should.Throw<ArgumentOutOfRangeException>(() => TypeformExportBuilder.Build([question], NoSets));
+		Should.Throw<ArgumentOutOfRangeException>(() => TypeformExportBuilder.Build([question]));
 	}
 
 	[Fact]
@@ -227,7 +206,7 @@ public class TypeformExportBuilderTests
 		var group = Question.Create("aircraft", QuestionType.Group, "Aircraft:", "Aéronef:", At, isPrivate: false);
 
 		// When
-		var (english, _) = TypeformExportBuilder.Build([statement, group], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([statement, group]);
 
 		// Then
 		english.Fields.ShouldAllBe(field => field.Type == "statement");
@@ -241,7 +220,7 @@ public class TypeformExportBuilderTests
 		// Given
 		var question = Question.Create(
 			"model", QuestionType.ShortText, "Model", "Modèle", At, isPrivate: true, isRequired: true);
-		var (english, _) = TypeformExportBuilder.Build([question], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([question]);
 
 		// When
 		var json = english.ToJson();
@@ -259,7 +238,7 @@ public class TypeformExportBuilderTests
 		var question = Question.Create(
 			"model", QuestionType.ShortText, "Model", "Modèle", At, isPrivate: true,
 			groupedUnderQuestionId: null);
-		var (english, _) = TypeformExportBuilder.Build([question], NoSets);
+		var (english, _) = TypeformExportBuilder.Build([question]);
 
 		// When
 		var json = english.ToJson();

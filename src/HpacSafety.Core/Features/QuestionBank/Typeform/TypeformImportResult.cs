@@ -27,7 +27,6 @@ public sealed record ImportedQuestionDraft(
 	string? HelpTextEn,
 	string? HelpTextFr,
 	string? GroupedUnderKey,
-	bool AllowsReporterAdditions,
 	IReadOnlyList<ImportedOption> Options,
 	bool IsPrivate = true,
 	bool IsRequired = false,

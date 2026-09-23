@@ -26,7 +26,6 @@ export interface ImportedQuestionDraftView {
 	helpTextEn: string | null
 	helpTextFr: string | null
 	groupedUnderKey: string | null
-	allowsReporterAdditions: boolean
 	options: ImportedOptionView[]
 	isPrivate: boolean
 	isRequired: boolean

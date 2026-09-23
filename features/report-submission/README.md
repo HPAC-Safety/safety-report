@@ -104,7 +104,7 @@ The API performs, in order:
 2. DTO syntax, locale, duplicate, and count checks;
 3. revision lookup including soft-deleted rows;
 4. rejection of unknown or deleted revisions and validation against each exact
-   historical type and option set;
+   historical type and the question's live choices;
 5. enforcement of an explicit answer to the `consent_publish` revision;
 6. attachment mapping/count, per-file size, declared content type, and
    detected-type checks.

@@ -10,6 +10,10 @@ keywords: typeform, import, export, question bank, bilingual, seeding, ref, exte
 
 # ADR-0077 — Question bank import/export uses Typeform's own JSON, not QSF
 
+**Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):** a multi-select no longer takes reporter additions,
+so `allow_other_choice` on a Typeform multi-select is ignored on import. The
+import creates no option set; each imported question owns its choices.
+
 **Status:** Amended by [ADR-0078](ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md):
 the EN/FR pairing rule and the branching-logic mapping, both below, changed
 once the mapper was built against real data. Everything else here stands.

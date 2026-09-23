@@ -27,7 +27,6 @@
     "admin": "Admin",
     "manageReports": "Gérer les rapports",
     "manageQuestions": "Gérer les questions",
-    "manageChoiceLists": "Gérer les listes de choix",
     "manageAnswerTranslations": "Réponses en attente de traduction"
   },
   "language": {
@@ -174,6 +173,7 @@
     "dependsOnSummary": "Cette question n’est posée que si la réponse à «{question} » est « oui »",
     "dependsOnOptionSummary": "Cette question n’est posée que lorsque la réponse à «{question} » est «{option} ».",
     "groupedUnderSummary": "Affiché sous la rubrique «{question} »",
+    "reporterChoicesAwaiting": "Choix ajoutés par les journalistes en attente de révision : {count}",
     "editorTitleNew": "Nouvelle question",
     "editorTitleEdit": "Modifier la question",
     "error": {
@@ -199,16 +199,17 @@
       "groupedUnder": "Afficher ensemble sous un titre de section",
       "groupedUnderNone": "Non regroupés",
       "groupedUnderHelp": "Seule une question de groupe peut comporter d'autres questions affichées en dessous.",
-      "optionSet": "Liste de choix partagée",
-      "optionSetNone": "Veuillez inscrire les choix ici à la place",
-      "optionSetHelp": "Les choix sont copiés dans cette version lorsqu’elle est sauvegardée. Toute modification ultérieure de la liste partagée n’aura aucune incidence sur ce qui a déjà été affiché à un journaliste.",
-      "allowsReporterAdditions": "Permettez à un journaliste d'ajouter une option qui ne figure pas dans la liste",
-      "allowsReporterAdditionsHelp": "Une valeur qui ne figure pas dans la liste est ajoutée à la liste partagée et marquée pour révision, de la même manière que cela se fait déjà avec la saisie semi-automatique.",
       "options": "Choix",
+      "optionsHelp": "L'ajout, la reformulation, le réordonnancement ou la suppression d'un choix modifie cette question sur place et ne crée jamais de nouvelle version. Un choix supprimé disparaît du formulaire; les réponses déjà fournies conservent leur libellé.",
       "optionLabelEn": "Choix (anglais)",
       "optionLabelFr": "Choix (français)",
       "addOption": "Ajouter une option",
       "removeOption": "Supprimer ce choix"
+    },
+    "choice": {
+      "reporterAdded": "Ajouté par un journaliste",
+      "awaitingEnglish": "En attente de la version anglaise",
+      "awaitingFrench": "En attente de la version française"
     },
     "type": {
       "short_text": "Texte sur une seule ligne",
@@ -236,7 +237,7 @@
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     },
-    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données.",
+    "forkWarning": "Cette question a déjà reçu une réponse. Si vous modifiez son libellé, son type ou ses paramètres, elle est retirée et une nouvelle question est créée à sa place; les réponses déjà fournies conservent donc le libellé sous lequel elles ont été données. Ce n’est pas le cas si vous ne modifiez que ses choix.",
     "import": {
       "openDialog": "Importer depuis Typeform",
       "title": "Importer depuis Typeform",
@@ -261,36 +262,6 @@
     "export": {
       "action": "Exporter vers Typeform au format JSON",
       "working": "Exportation en cours…"
-    }
-  },
-  "choiceLists": {
-    "title": "Gérer les listes de choix",
-    "intro": "Listes communes des choix proposés par les questions à saisie semi-automatique et à sélection. L’enregistrement d’une liste la remplace par exactement ce qui est affiché ici.",
-    "loading": "Chargement des listes de choix…",
-    "empty": "Il n'y a pas encore de listes de choix. Ajoutez la première.",
-    "addList": "Ajouter une liste de choix",
-    "edit": "Modifier",
-    "delete": "Supprimer",
-    "save": "Enregistrer",
-    "cancel": "Annuler",
-    "itemCount": "Choix : {count}",
-    "reporterAdded": "Ajouté par un journaliste",
-    "reporterAddedCount": "Ajouté par les journalistes et non encore vérifié : {count}. Vérifiez l’orthographe et le français, et supprimez tout ce qui ne devrait pas figurer dans l’offre.",
-    "editorTitleNew": "Nouvelle liste de choix",
-    "editorTitleEdit": "Modifier la liste de choix",
-    "error": {
-      "unexpected": "Une erreur s'est produite. Veuillez réessayer."
-    },
-    "field": {
-      "key": "Clé",
-      "nameEn": "Nom (en anglais)",
-      "nameFr": "Nom (en français)",
-      "items": "Choix",
-      "itemsHelp": "Une option qui ne figure pas dans cette liste est retirée. Les questions qui proposaient déjà cette option conservent leur propre version; il n’y a donc aucun changement dans les rapports déposés.",
-      "itemLabelEn": "Choix (anglais)",
-      "itemLabelFr": "Choix (français)",
-      "addItem": "Ajouter une option",
-      "removeItem": "Supprimez ce choix"
     }
   },
   "answerTranslations": {

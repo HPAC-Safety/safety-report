@@ -37,11 +37,8 @@ public class StringAnswerTests
 		var report = new Report(Locale.EnCa, Now);
 		var answer = report.Answer(question, "Alberta", Now);
 
-		// When — a later revision renames the choice entirely
-		question.Revise(
-			QuestionType.SingleSelect, "Province", "Province", true, true,
-			1, Now,
-			options: [new QuestionOptionInput("alberta", "Province of Alberta", "Province de l'Alberta")]);
+		// When — the choice is later reworded entirely
+		question.ReplaceChoices([new QuestionOptionInput("alberta", "Province of Alberta", "Province de l'Alberta")], Now);
 
 		// Then — the answer carries its own words and resolves through nothing
 		answer.Value.ShouldBe("Alberta");

@@ -96,7 +96,7 @@ public class ProjectionTests
 	}
 
 	[Fact]
-	public void GivenRevision_WhenContentsAreRead_ThenOptionsAreExposedInBothLanguages()
+	public void GivenQuestion_WhenChoicesAreRead_ThenExposedInBothLanguages()
 	{
 		// Given
 		var question = Question.Create(
@@ -104,11 +104,10 @@ public class ProjectionTests
 			options: [new QuestionOptionInput("morning", "Morning", "Matin")]);
 
 		// When
-		var revision = question.CurrentRevision;
-		var option = revision.Option("morning")!;
+		var option = question.Choice("morning")!;
 
 		// Then
-		revision.Options.Count.ShouldBe(1);
+		question.Choices.Count.ShouldBe(1);
 		option.LabelEn.ShouldBe("Morning");
 		option.LabelFr.ShouldBe("Matin");
 	}

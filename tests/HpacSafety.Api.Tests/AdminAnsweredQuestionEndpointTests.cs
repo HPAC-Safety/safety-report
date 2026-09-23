@@ -70,6 +70,45 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAnsweredQuestion_WhenOnlyItsChoicesAreEdited_ThenKeepsItsIdentifierAndRevision()
+	{
+		// Given — REQ-QB-099: choices live outside revisions (ADR-0095)
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("answered_choices"), "single_select");
+		var id = created.GetProperty("id").GetString()!;
+		await Answer(id, "Cooper's Hill");
+
+		// When
+		var edited = await SaveChoices(client, id, created.GetProperty("labelEn").GetString()!,
+			new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" },
+			new { code = (string?)null, labelEn = "Mara", labelFr = "Mara" });
+
+		// Then
+		edited.GetProperty("id").GetString().ShouldBe(id);
+		edited.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
+		edited.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())
+			.ShouldBe(["coopers", "mara"]);
+	}
+
+	[Fact]
+	public async Task GivenAnsweredQuestion_WhenReworded_ThenReplacementCarriesItsChoices()
+	{
+		// Given — REQ-QB-098
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("answered_fork_choices"), "single_select");
+		var id = created.GetProperty("id").GetString()!;
+		await Answer(id, "Cooper's Hill");
+
+		// When
+		var edited = await SaveChoices(client, id, "Reworded after an answer",
+			new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" });
+
+		// Then
+		edited.GetProperty("id").GetString().ShouldNotBe(id);
+		edited.GetProperty("options").EnumerateArray().Single().GetProperty("code").GetString().ShouldBe("coopers");
+	}
+
+	[Fact]
 	public async Task GivenAnsweredQuestion_WhenDeleted_ThenRefusedAndKept()
 	{
 		// Given — REQ-QB-031: an answer records what somebody was asked
@@ -293,7 +332,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		var question = await database.Questions
 			.Include(candidate => candidate.Revisions)
-			.ThenInclude(revision => revision.Options)
+			.Include(candidate => candidate.AllChoices)
 			.SingleAsync(candidate => candidate.Id == TinyId.Parse(questionId));
 
 		var report = new Report(Locale.EnCa, At);
@@ -353,6 +392,26 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	{
 		using var response = await client.PutAsJsonAsync(
 			new Uri($"/api/admin/questions/{id}", UriKind.Relative), Draft(labelEn));
+
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+
+		return await response.Content.ReadFromJsonAsync<JsonElement>();
+	}
+
+	private static async Task<JsonElement> SaveChoices(HttpClient client, string id, string labelEn, params object[] options)
+	{
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
+			new
+			{
+				type = "single_select",
+				labelEn,
+				labelFr = "Une question synthétique",
+				isRequired = false,
+				isPrivate = true,
+				isActive = true,
+				options
+			});
 
 		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
 

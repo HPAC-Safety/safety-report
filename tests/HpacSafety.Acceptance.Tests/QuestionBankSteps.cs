@@ -8,13 +8,13 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     The non-<c>@ui</c> scenarios in
 ///     <c>features/question-bank-and-form/question-bank-and-form.feature</c> that
-///     describe authoring behaviour — required state, shared choice lists,
-///     conditional questions, and reordering.
+///     describe authoring behaviour — required state, conditional questions,
+///     and reordering.
 /// </summary>
 /// <remarks>
 ///     These run against the domain directly rather than through the API, because
-///     the rules they describe live in <see cref="Question" />,
-///     <see cref="OptionSet" />, and <see cref="QuestionDependencies" />. The API's
+///     the rules they describe live in <see cref="Question" /> and
+///     <see cref="QuestionDependencies" />. The API's
 ///     own handling of them is covered by <c>HpacSafety.Api.Tests</c>. Every
 ///     question here is synthetic.
 /// </remarks>
@@ -26,10 +26,7 @@ public sealed class QuestionBankSteps
 	private static readonly DateTimeOffset Noon = new(2026, 9, 20, 12, 0, 0, TimeSpan.Zero);
 
 	private readonly List<Question> _questions = [];
-	private OptionSet? _optionSet;
 	private Question? _question;
-	private QuestionRevision? _snapshotted;
-	private IReadOnlyList<QuestionRevisionOption> _optionsAtSnapshot = [];
 	private Dictionary<TinyId, int> _revisionNumbersBefore = [];
 	private DomainRuleViolationException? _rejection;
 	private bool _hasBeenAnswered;
@@ -81,158 +78,6 @@ public sealed class QuestionBankSteps
 
 		_question!.CurrentRevision.IsRequired.ShouldBeFalse();
 		_question.CurrentRevision.RevisionNumber.ShouldBe(3);
-	}
-
-	// -------------------------------------------------------- choice lists --
-
-	[Given(@"a shared choice list offers several bilingual options")]
-	public void GivenASharedChoiceList()
-	{
-		_optionSet = OptionSet.Create("aerodromes", "Aerodromes", "Aérodromes", Noon);
-		_optionSet.Add("golden", "Golden", "Golden");
-		_optionSet.Add("lumby", "Lumby", "Lumby");
-		_optionSet.Add("pemberton", "Pemberton", "Pemberton");
-	}
-
-	[Given(@"a question revision was built from a shared choice list")]
-	public void GivenARevisionBuiltFromAList()
-	{
-		GivenASharedChoiceList();
-		WhenARevisionUsesThatList();
-	}
-
-	[Given(@"a question revision copied an option from a shared choice list")]
-	public void GivenARevisionCopiedAnOption()
-	{
-		GivenARevisionBuiltFromAList();
-	}
-
-	[When(@"an Administrator saves a question revision that uses that list")]
-	public void WhenARevisionUsesThatList()
-	{
-		_question = Question.Create(
-			"launch_site",
-			QuestionType.Autocomplete,
-			"Where did you launch from?",
-			"D'où avez-vous décollé ?",
-			Noon,
-			isActive: true,
-			optionSetId: _optionSet!.Id,
-			options: _optionSet.AsRevisionOptions());
-
-		_snapshotted = _question.CurrentRevision;
-		_optionsAtSnapshot = [.. _snapshotted.Options.OrderBy(option => option.DisplayOrder)];
-	}
-
-	[Then(@"the revision holds its own complete copy of those options")]
-	public void ThenTheRevisionHoldsItsOwnCopy()
-	{
-		_snapshotted!.Options.Count.ShouldBe(3);
-		_snapshotted.Options.Select(option => option.Code)
-			.ShouldBe(["golden", "lumby", "pemberton"], true);
-	}
-
-	[Then(@"each copy records the shared item it came from")]
-	public void ThenEachCopyRecordsItsSource()
-	{
-		var itemIds = _optionSet!.Items.Select(item => item.Id).ToList();
-
-		_snapshotted!.Options.ShouldAllBe(option => option.SourceItemId != null);
-		_snapshotted.Options.Select(option => option.SourceItemId!.Value).ShouldBeSubsetOf(itemIds);
-	}
-
-	[When(@"an Administrator relabels an option, adds one, and removes another from that list")]
-	public void WhenTheListIsEdited()
-	{
-		_optionSet!.Relabel("golden", "Golden (BC)", "Golden (C.-B.)");
-		_optionSet.Add("cochrane", "Cochrane", "Cochrane");
-		_optionSet.Remove("lumby", Noon.AddHours(1));
-	}
-
-	[When(@"an Administrator removes that option from the list")]
-	public void WhenAnOptionIsRemoved()
-	{
-		_optionSet!.Remove("lumby", Noon.AddHours(1));
-	}
-
-	[Then(@"the existing revision still offers exactly the options it was saved with")]
-	public void ThenTheExistingRevisionIsUnchanged()
-	{
-		_snapshotted!.Options.Count.ShouldBe(_optionsAtSnapshot.Count);
-		_snapshotted.Option("golden")!.LabelEn.ShouldBe("Golden");
-		_snapshotted.Option("lumby").ShouldNotBeNull();
-		_snapshotted.Option("cochrane").ShouldBeNull();
-	}
-
-	[Then(@"a revision saved afterwards offers the edited list instead")]
-	public void ThenALaterRevisionOffersTheEditedList()
-	{
-		var revision = _question!.Revise(
-			QuestionType.Autocomplete,
-			_snapshotted!.LabelEn,
-			_snapshotted.LabelFr,
-			_snapshotted.IsPrivate,
-			true,
-			_snapshotted.DisplayOrder,
-			Noon.AddHours(2),
-			optionSetId: _optionSet!.Id,
-			options: _optionSet.AsRevisionOptions());
-
-		revision.Option("golden")!.LabelEn.ShouldBe("Golden (BC)");
-		revision.Option("cochrane").ShouldNotBeNull();
-		revision.Option("lumby").ShouldBeNull();
-	}
-
-	[Then(@"the option is retired from the list rather than erased")]
-	public void ThenTheOptionIsRetired()
-	{
-		_optionSet!.Items.ShouldNotContain(item => item.Code == "lumby");
-		Should.Throw<DomainRuleViolationException>(() => _optionSet.Relabel("lumby", "Lumby", "Lumby"));
-	}
-
-	[Then(@"the revision's copy of it is unchanged")]
-	public void ThenTheCopyIsUnchanged()
-	{
-		_snapshotted!.Option("lumby")!.LabelEn.ShouldBe("Lumby");
-	}
-
-	// ---------------------------------------- multi-select reporter additions (ADR-0077) --
-
-	[Given(@"an Administrator authors a multi-select question backed by a shared choice list")]
-	public void GivenAMultiSelectQuestionBackedByASharedList()
-	{
-		_optionSet = OptionSet.Create("ratings", "Pilot ratings", "Qualifications du pilote", Noon);
-		_optionSet.Add("p3", "P3", "P3");
-
-		_question = Question.Create(
-			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", Noon,
-			isActive: true, optionSetId: _optionSet.Id, options: _optionSet.AsRevisionOptions());
-	}
-
-	[When(@"they enable reporter additions on it")]
-	public void WhenReporterAdditionsAreEnabled()
-	{
-		_question!.AllowReporterAdditions(true, Noon.AddHours(1));
-	}
-
-	[Then(@"the question offers the live list the same way a type-ahead does")]
-	public void ThenTheQuestionOffersTheLiveList()
-	{
-		_optionSet!.Add("p4", "P4", "P4");
-
-		QuestionChoices.RendersLiveSet(_question!.CurrentRevision, _optionSet).ShouldBeTrue();
-		QuestionChoices.For(_question.CurrentRevision, _optionSet)
-			.Select(option => option.Code)
-			.ShouldContain("p4");
-	}
-
-	[Then(@"a single-select question offers no such control")]
-	public void ThenASingleSelectQuestionOffersNoSuchControl()
-	{
-		Should.Throw<DomainRuleViolationException>(() => Question.Create(
-			"pilot_type", QuestionType.SingleSelect, "Pilot type", "Type de pilote", Noon,
-			allowsReporterAdditions: true,
-			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")]));
 	}
 
 	// ------------------------------------------------- conditional questions --
@@ -361,7 +206,7 @@ public sealed class QuestionBankSteps
 			.DependsOnOptionCode.ShouldBe("paraglider");
 	}
 
-	[When(@"an Administrator tries to make another question depend on an option the parent does not offer")]
+	[When(@"an Administrator tries to make another question depend on a choice the parent does not offer")]
 	public void WhenDependingOnAnUnofferedOption()
 	{
 		var parent = _questions.Single(question => question.Key == "pilot_type");
@@ -608,7 +453,7 @@ public sealed class QuestionBankSteps
 		_pendingType = parsed;
 	}
 
-	[When(@"they supply bilingual options with it")]
+	[When(@"they supply bilingual choices with it")]
 	public void WhenTheySupplyOptions()
 	{
 		_rejection = Record(() =>
@@ -626,14 +471,14 @@ public sealed class QuestionBankSteps
 				]));
 	}
 
-	[Then(@"the revision stores those options")]
-	public void ThenTheRevisionStoresThoseOptions()
+	[Then(@"the question stores those choices")]
+	public void ThenTheQuestionStoresThoseChoices()
 	{
 		_rejection.ShouldBeNull();
-		_question!.CurrentRevision.Options.Count.ShouldBe(2);
+		_question!.Choices.Count.ShouldBe(2);
 	}
 
-	[Then(@"the revision is rejected")]
+	[Then(@"the question is rejected")]
 	public void ThenTheRevisionIsRejected()
 	{
 		_rejection.ShouldBeOfType<DomainRuleViolationException>();
@@ -765,48 +610,6 @@ public sealed class QuestionBankSteps
 				false,
 				_question.CurrentRevision.DisplayOrder,
 				Noon.AddHours(1)));
-	}
-
-	// ------------------------------------------------- choice-list lifecycle --
-
-	[When(@"an Administrator retires the whole list")]
-	public void WhenTheListIsRetired()
-	{
-		_optionSet!.Delete(Noon.AddHours(1));
-	}
-
-	[Then(@"its options are retired with it")]
-	public void ThenItsOptionsAreRetired()
-	{
-		_optionSet!.Deleted.ShouldBe(Noon.AddHours(1));
-		_optionSet.Items.ShouldBeEmpty();
-	}
-
-	[Then(@"adding, renaming, or rearranging it is rejected")]
-	public void ThenARetiredListRefusesEdits()
-	{
-		Should.Throw<DomainRuleViolationException>(() => _optionSet!.Add("cochrane", "Cochrane", "Cochrane"));
-		Should.Throw<DomainRuleViolationException>(() => _optionSet!.Rename("Sites", "Sites"));
-		Should.Throw<DomainRuleViolationException>(() => _optionSet!.Arrange(["golden"]));
-	}
-
-	[When(@"an Administrator arranges every option into a new order")]
-	public void WhenTheListIsArranged()
-	{
-		_optionSet!.Arrange(["pemberton", "golden", "lumby"]);
-	}
-
-	[Then(@"the list takes that order")]
-	public void ThenTheListTakesThatOrder()
-	{
-		_optionSet!.Items.Select(item => item.Code).ShouldBe(["pemberton", "golden", "lumby"]);
-	}
-
-	[Then(@"an arrangement that omits or repeats an option is rejected")]
-	public void ThenAPartialArrangementIsRejected()
-	{
-		Should.Throw<DomainRuleViolationException>(() => _optionSet!.Arrange(["golden"]));
-		Should.Throw<DomainRuleViolationException>(() => _optionSet!.Arrange(["golden", "golden", "lumby"]));
 	}
 
 	// ------------------------------------------------------------- helpers --

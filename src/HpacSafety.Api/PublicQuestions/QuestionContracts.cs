@@ -1,4 +1,3 @@
-using HpacSafety.Api.Admin;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
 
@@ -37,29 +36,23 @@ public sealed record PublicQuestionView(
 	string? HelpTextFr,
 	string? PlaceholderEn,
 	string? PlaceholderFr,
-	IReadOnlyList<OptionView> Options,
-	bool ChoicesComeFromLiveList,
+	IReadOnlyList<PublicOptionView> Options,
 	IReadOnlyList<PublicQuestionView> Children)
 {
 	/// <summary>Flattens a question and its current revision for the public form.</summary>
-	/// <param name="question">The question to show.</param>
-	/// <param name="optionSet">
-	///     The shared set the current revision names, when it names one. Same
-	///     live-vs-snapshot rule as the admin screen — see ADR-0063.
-	/// </param>
+	/// <param name="question">The question to show, with its choices loaded.</param>
 	/// <param name="children">
 	///     This question's grouped children, already resolved and ordered.
 	///     Empty for anything but a live <see cref="QuestionType.Group" />
 	///     question.
 	/// </param>
 	public static PublicQuestionView Of(
-		Question question, OptionSet? optionSet, IReadOnlyList<PublicQuestionView> children)
+		Question question, IReadOnlyList<PublicQuestionView> children)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(children);
 
 		var revision = question.CurrentRevision;
-		var choices = QuestionChoices.For(revision, optionSet);
 
 		return new PublicQuestionView(
 			question.Id.Value,
@@ -71,18 +64,39 @@ public sealed record PublicQuestionView(
 			revision.DisplayOrder,
 			revision.DependsOnQuestionId?.Value,
 			revision.DependsOnOptionCode,
-			revision.AllowsReporterAdditions,
+			revision.TakesReporterAdditions,
 			revision.LabelEn,
 			revision.LabelFr,
 			revision.HelpTextEn,
 			revision.HelpTextFr,
 			revision.PlaceholderEn,
 			revision.PlaceholderFr,
-			[
-				.. choices.Select(option => new OptionView(
-					option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value, false))
-			],
-			QuestionChoices.RendersLiveSet(revision, optionSet),
+			[.. question.Choices.Select(PublicOptionView.Of)],
 			children);
+	}
+}
+
+/// <summary>
+///     One choice as the public form offers it. A reporter-added choice may have
+///     only one language yet; both labels then carry that wording, and
+///     <see cref="OnlyIn" /> names its language so the form can mark it
+///     (ADR-0095).
+/// </summary>
+/// <param name="Code">The invariant code.</param>
+/// <param name="LabelEn">The English wording, or the French when there is no English yet.</param>
+/// <param name="LabelFr">The French wording, or the English when there is no French yet.</param>
+/// <param name="OnlyIn">The one locale this choice is worded in, or null when it has both.</param>
+public sealed record PublicOptionView(string Code, string LabelEn, string LabelFr, string? OnlyIn)
+{
+	/// <summary>Flattens one choice for the public form.</summary>
+	public static PublicOptionView Of(QuestionChoice choice)
+	{
+		ArgumentNullException.ThrowIfNull(choice);
+
+		return new PublicOptionView(
+			choice.Code,
+			choice.Label(Locale.EnCa),
+			choice.Label(Locale.FrCa),
+			choice.NeedsTranslation ? (choice.LabelEn is null ? Locale.FrCa : Locale.EnCa).Code : null);
 	}
 }

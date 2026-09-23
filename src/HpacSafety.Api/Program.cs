@@ -112,7 +112,6 @@ app.MapReportSubmission();
 // The question bank is data an administrator edits, not code that ships
 // (ADR-0016). These are the endpoints that edit it.
 app.MapAdminQuestions();
-app.MapAdminOptionSets();
 app.MapAdminTranslation();
 app.MapAdminAnswerTranslation();
 app.MapAdminTypeformImport();

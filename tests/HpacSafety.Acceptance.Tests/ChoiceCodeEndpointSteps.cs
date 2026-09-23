@@ -11,7 +11,7 @@ namespace HpacSafety.Acceptance.Tests;
 ///     The question-bank scenario that says an Administrator never invents an
 ///     option code — over HTTP, against the booted host, because the code is
 ///     derived where the authoring request meets the domain. Detailed request
-///     shapes, including shared choice lists, live in
+///     shapes live in
 ///     <c>HpacSafety.Api.Tests</c>.
 /// </summary>
 [Binding]
@@ -102,7 +102,6 @@ public sealed class ChoiceCodeEndpointSteps
 			isRequired = false,
 			isPrivate = false,
 			isActive = true,
-			allowsReporterAdditions = false,
 			options = choices.Select(choice => new { code = choice.Code, labelEn = choice.Wording, labelFr = choice.Wording }),
 		};
 	}

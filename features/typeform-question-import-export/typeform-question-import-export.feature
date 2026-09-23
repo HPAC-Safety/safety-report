@@ -59,13 +59,6 @@ Scenario: A multi-select multiple-choice field imports as multi-select
   Given a Typeform multiple_choice field that allows multiple selection
   When the pair is mapped
   Then it produces a multi-select draft seeded from its choices
-  And reporter additions are not enabled
-
-@REQ-TF-007
-Scenario: A multi-select field with a free-text choice enables reporter additions
-  Given a Typeform multiple_choice field that allows multiple selection and an other choice
-  When the pair is mapped
-  Then it produces a multi-select draft with reporter additions enabled
 
 @REQ-TF-008
 Scenario: A group field flattens into a heading and its children

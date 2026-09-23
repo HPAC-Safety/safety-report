@@ -24,7 +24,6 @@ namespace HpacSafety.Api.Tests;
 public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 {
 	private static readonly Uri Questions = new("/api/admin/questions", UriKind.Relative);
-	private static readonly Uri OptionSets = new("/api/admin/option-sets", UriKind.Relative);
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
@@ -196,6 +195,96 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
+	[Fact]
+	public async Task GivenSharedChoiceListsAreGone_WhenTheirEndpointIsCalled_ThenApiReturnsNotFound()
+	{
+		// Given — each question owns its choices; there are no shared lists (ADR-0095)
+		using var client = await SignedIn();
+
+		// When
+		using var response = await client.GetAsync(new Uri("/api/admin/option-sets", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
+	public async Task GivenQuestionDependsOnAChoice_WhenParentIsSavedWithoutIt_ThenApiRejectsNamingTheDependent()
+	{
+		// Given
+		using var client = await SignedIn();
+		var parentDraft = Draft(UniqueKey("aircraft"), "single_select") with
+		{
+			Options = [new Option(null, "Hang glider", "Deltaplane"), new Option(null, "Paraglider", "Parapente")]
+		};
+		var parent = await Create(client, parentDraft);
+		var parentId = parent.GetProperty("id").GetString()!;
+		await Create(client, Draft(UniqueKey("wing_rating"), "short_text") with
+		{
+			LabelEn = "Wing rating",
+			DependsOnQuestionId = parentId,
+			DependsOnOptionCode = "paraglider"
+		});
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{parentId}", UriKind.Relative),
+			parentDraft with { Options = [new Option("hang_glider", "Hang glider", "Deltaplane")] });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		(await response.Content.ReadAsStringAsync()).ShouldContain("Wing rating");
+	}
+
+	[Fact]
+	public async Task GivenQuestionWithChoices_WhenOnlyItsChoicesAreEdited_ThenNoRevisionIsCreated()
+	{
+		// Given
+		using var client = await SignedIn();
+		var draft = Draft(UniqueKey("launch"), "single_select") with
+		{
+			Options = [new Option(null, "Coopers", "Coopers"), new Option(null, "Woodside", "Woodside")]
+		};
+		var created = await Create(client, draft);
+		var id = created.GetProperty("id").GetString()!;
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
+			draft with { Options = [new Option("woodside", "Woodside Hill", "Colline Woodside"), new Option(null, "Mara", "Mara")] });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		saved.GetProperty("id").GetString().ShouldBe(id);
+		saved.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
+		saved.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())
+			.ShouldBe(["woodside", "mara"]);
+	}
+
+	[Fact]
+	public async Task GivenQuestionWithChoices_WhenEditSendsNoChoiceList_ThenItsChoicesAreLeftAsTheyAre()
+	{
+		// Given
+		using var client = await SignedIn();
+		var draft = Draft(UniqueKey("launch_unchanged"), "single_select") with
+		{
+			Options = [new Option(null, "Coopers", "Coopers")]
+		};
+		var created = await Create(client, draft);
+		var id = created.GetProperty("id").GetString()!;
+
+		// When — a client that sends no list at all says nothing about the choices
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
+			new { type = "single_select", labelEn = "Reworded", labelFr = "Reformulé", isRequired = false, isPrivate = true, isActive = true });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		saved.GetProperty("options").EnumerateArray().Single().GetProperty("code").GetString().ShouldBe("coopers");
+	}
+
 	// -------------------------------------------- statement/group (ADR-0076) --
 
 	private static SaveQuestion NoAnswerDraft(string key, string type)
@@ -351,132 +440,6 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	// ------------------------------------- multi-select reporter additions (ADR-0077) --
-
-	[Fact]
-	public async Task GivenMultiSelectWithSharedList_WhenAuthoredWithReporterAdditions_ThenFlagIsStored()
-	{
-		// Given
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("ratings"));
-
-		// When
-		var created = await Create(
-			client,
-			Draft(UniqueKey("ratings"), "multi_select") with
-			{
-				OptionSetId = set.GetProperty("id").GetString(),
-				AllowsReporterAdditions = true
-			});
-
-		// Then
-		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeTrue();
-		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeTrue();
-	}
-
-	[Fact]
-	public async Task GivenMultiSelect_WhenAuthoredWithoutReporterAdditions_ThenDefaultsToClosed()
-	{
-		// Given
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("ratings"));
-
-		// When
-		var created = await Create(
-			client, Draft(UniqueKey("ratings"), "multi_select") with { OptionSetId = set.GetProperty("id").GetString() });
-
-		// Then
-		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeFalse();
-		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeFalse();
-	}
-
-	[Fact]
-	public async Task GivenSingleSelect_WhenAuthoredWithReporterAdditions_ThenApiRejects()
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When
-		using var response = await client.PostAsJsonAsync(
-			Questions,
-			Draft(UniqueKey("pilot_type"), "single_select") with
-			{
-				AllowsReporterAdditions = true,
-				Options = [new Option("hang_glider", "Hang glider", "Deltaplane")]
-			});
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-		problem.GetProperty("detail").GetString()!.ShouldContain("cannot allow reporter additions");
-	}
-
-	[Fact]
-	public async Task GivenAutocomplete_WhenAuthoredWithoutReporterAdditions_ThenAlwaysStoredOn()
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When — the flag is redundant for autocomplete; the type alone decides
-		var created = await Create(client, Draft(UniqueKey("launch_site"), "autocomplete"));
-
-		// Then
-		created.GetProperty("allowsReporterAdditions").GetBoolean().ShouldBeTrue();
-	}
-
-	[Fact]
-	public async Task GivenSharedChoiceList_WhenQuestionUses_ThenRevisionSnapshotsOptions()
-	{
-		// Given
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("aerodromes"));
-
-		// When
-		var question = Draft(UniqueKey("launch_site"), "autocomplete") with
-		{
-			OptionSetId = set.GetProperty("id").GetString()
-		};
-
-		var created = await Create(client, question);
-
-		// Then
-		var options = created.GetProperty("options").EnumerateArray().ToList();
-		options.Count.ShouldBe(2);
-		options.ShouldAllBe(option => option.GetProperty("sourceItemId").GetString() != null);
-	}
-
-	[Fact]
-	public async Task GivenQuestionBuiltFromChoiceList_WhenListChanges_ThenSavedRevisionIsUntouched()
-	{
-		// Given
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("provinces"));
-		var setId = set.GetProperty("id").GetString();
-
-		var question = Draft(UniqueKey("occurrence_province"), "single_select") with { OptionSetId = setId };
-		var created = await Create(client, question);
-		var revisionId = created.GetProperty("revisionId").GetString();
-
-		// When the shared list is edited afterwards
-		var edited = new SaveOptionSet(
-			null,
-			"Provinces",
-			"Provinces",
-			[new Option("alberta", "Alberta (edited)", "Alberta (modifié)")]);
-
-		using var replaced = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/option-sets/{setId}", UriKind.Relative), edited);
-
-		replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-		// Then the revision that already snapshotted it is unchanged
-		var listed = await List(client);
-		var stored = listed.Single(candidate => candidate.GetProperty("revisionId").GetString() == revisionId);
-
-		var options = stored.GetProperty("options").EnumerateArray().ToList();
-		options.Count.ShouldBe(2);
-		options.Select(option => option.GetProperty("labelEn").GetString()).ShouldContain("Alberta");
-	}
 
 	[Fact]
 	public async Task GivenSeveralQuestions_WhenTheyAreRearranged_ThenEachMovedOneGainsRevision()
@@ -677,19 +640,6 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenNoMemberSession_WhenChoiceListsAreListed_ThenApiRefuses()
-	{
-		// Given
-		using var client = _factory.CreateClient();
-
-		// When
-		using var response = await client.GetAsync(OptionSets);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-	}
-
-	[Fact]
 	public async Task GivenNoKey_WhenQuestionIsCreated_ThenKeyIsDerivedFromEnglishWording()
 	{
 		// Given
@@ -781,20 +731,6 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// When
 		var edit = Draft(key, "yes_no") with { DependsOnQuestionId = id };
 		using var response = await client.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), edit);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Fact]
-	public async Task GivenChoiceListDoesNotExist_WhenQuestionNames_ThenApiRejects()
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When
-		var request = Draft(UniqueKey("launch_site"), "autocomplete") with { OptionSetId = "AAAAAAAAAAA" };
-		using var response = await client.PostAsJsonAsync(Questions, request);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -899,228 +835,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
-	[Fact]
-	public async Task GivenChoiceList_WhenDeleted_ThenDisappearsFromList()
-	{
-		// Given
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("retired_list"));
-		var id = set.GetProperty("id").GetString();
 
-		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/option-sets/{id}", UriKind.Relative));
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-
-		var listed = await client.GetFromJsonAsync<JsonElement>(OptionSets);
-		listed.EnumerateArray().ShouldNotContain(candidate => candidate.GetProperty("id").GetString() == id);
-	}
-
-	[Fact]
-	public async Task GivenChoiceListKeyAlreadyInUse_WhenAnotherIsCreated_ThenApiRejects()
-	{
-		// Given
-		using var client = await SignedIn();
-		var key = UniqueKey("duplicate_list");
-		await CreateOptionSet(client, key);
-
-		// When
-		var request = new SaveOptionSet(key, "Duplicate", "Duplicate", [new Option("one", "One", "Un")]);
-		using var response = await client.PostAsJsonAsync(OptionSets, request);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Fact]
-	public async Task GivenNoKey_WhenChoiceListIsCreated_ThenApiRejects()
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When
-		var request = new SaveOptionSet(" ", "Nameless", "Sans nom", []);
-		using var response = await client.PostAsJsonAsync(OptionSets, request);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Fact]
-	public async Task GivenRepeatedCode_WhenChoiceListIsCreated_ThenApiRejects()
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When
-		var request = new SaveOptionSet(
-			UniqueKey("repeated"),
-			"Repeated",
-			"Répété",
-			[new Option("one", "One", "Un"), new Option("one", "One again", "Encore un")]);
-
-		using var response = await client.PostAsJsonAsync(OptionSets, request);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Theory]
-	[InlineData("not-an-id")]
-	[InlineData("AAAAAAAAAAA")]
-	public async Task GivenIdNamesNoChoiceList_WhenReplaced_ThenApiReturnsNotFound(string id)
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When
-		var request = new SaveOptionSet(null, "Absent", "Absent", []);
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/option-sets/{id}", UriKind.Relative), request);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
-	}
-
-	[Theory]
-	[InlineData("not-an-id")]
-	[InlineData("AAAAAAAAAAA")]
-	public async Task GivenIdNamesNoChoiceList_WhenDeleted_ThenApiReturnsNotFound(string id)
-	{
-		// Given
-		using var client = await SignedIn();
-
-		// When
-		using var response = await client.DeleteAsync(new Uri($"/api/admin/option-sets/{id}", UriKind.Relative));
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
-	}
-
-	[Fact]
-	public async Task GivenChoiceList_WhenItemIsAddedAndAnotherRemoved_ThenListMatchesWhatWasSent()
-	{
-		// Given
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("edited_list"));
-		var id = set.GetProperty("id").GetString();
-
-		// When — 'alberta' relabelled, 'yukon' dropped, 'nunavut' added, order reversed
-		var request = new SaveOptionSet(
-			null,
-			"Edited",
-			"Modifié",
-			[new Option("nunavut", "Nunavut", "Nunavut"), new Option("alberta", "Alberta (edited)", "Alberta (modifié)")]);
-
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/option-sets/{id}", UriKind.Relative), request);
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-		var replaced = await response.Content.ReadFromJsonAsync<JsonElement>();
-		var items = replaced.GetProperty("items").EnumerateArray().ToList();
-
-		items.Select(item => item.GetProperty("code").GetString()).ShouldBe(["nunavut", "alberta"]);
-		items[1].GetProperty("labelEn").GetString().ShouldBe("Alberta (edited)");
-	}
-
-	[Fact]
-	public async Task GivenTypeAheadBackedByList_WhenListGrows_ThenQuestionOffersNewChoice()
-	{
-		// Given — a type-ahead renders the live list, so a site a reporter
-		// added shows up without anyone republishing the question (ADR-0063)
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("sites"));
-		var setId = set.GetProperty("id").GetString();
-
-		var created = await Create(
-			client, Draft(UniqueKey("where_did_this_happen"), "autocomplete") with { OptionSetId = setId });
-
-		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeTrue();
-
-		// When a choice is added to the shared list afterwards
-		var grown = new SaveOptionSet(
-			null,
-			"Sites",
-			"Sites",
-			[
-				new Option("alberta", "Alberta", "Alberta"),
-				new Option("yukon", "Yukon", "Yukon"),
-				new Option("mount_7", "Mount 7", "Mont 7")
-			]);
-
-		using var replaced = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/option-sets/{setId}", UriKind.Relative), grown);
-
-		replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-		// Then the question offers it, while its revision still records what
-		// it was saved with
-		var listed = await List(client);
-		var question = listed.Single(candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
-
-		question.GetProperty("options").EnumerateArray()
-			.Select(option => option.GetProperty("code").GetString())
-			.ShouldContain("mount_7");
-
-		question.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
-	}
-
-	[Fact]
-	public async Task GivenPickOneBackedByList_WhenListGrows_ThenQuestionKeepsSnapshot()
-	{
-		// Given — a closed, curated set still renders exactly what it recorded
-		using var client = await SignedIn();
-		var set = await CreateOptionSet(client, UniqueKey("provinces"));
-		var setId = set.GetProperty("id").GetString();
-
-		var created = await Create(
-			client, Draft(UniqueKey("occurrence_province"), "single_select") with { OptionSetId = setId });
-
-		created.GetProperty("choicesComeFromLiveList").GetBoolean().ShouldBeFalse();
-
-		// When
-		var grown = new SaveOptionSet(
-			null,
-			"Provinces",
-			"Provinces",
-			[
-				new Option("alberta", "Alberta", "Alberta"),
-				new Option("yukon", "Yukon", "Yukon"),
-				new Option("nunavut", "Nunavut", "Nunavut")
-			]);
-
-		using var replaced = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/option-sets/{setId}", UriKind.Relative), grown);
-
-		replaced.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-		// Then
-		var listed = await List(client);
-		var question = listed.Single(candidate => candidate.GetProperty("id").GetString() == created.GetProperty("id").GetString());
-
-		question.GetProperty("options").EnumerateArray()
-			.Select(option => option.GetProperty("code").GetString())
-			.ShouldNotContain("nunavut");
-	}
-
-	[Fact]
-	public async Task GivenChoiceList_WhenListed_ThenEachChoiceSaysWhetherReporterAdded()
-	{
-		// Given
-		using var client = await SignedIn();
-		await CreateOptionSet(client, UniqueKey("authored"));
-
-		// When
-		var listed = await client.GetFromJsonAsync<JsonElement>(OptionSets);
-
-		// Then — nothing an administrator authored is marked
-		listed.EnumerateArray()
-			.SelectMany(set => set.GetProperty("items").EnumerateArray())
-			.ShouldAllBe(item => !item.GetProperty("addedByReporter").GetBoolean());
-	}
 
 	[Fact]
 	public async Task GivenOptionsWithoutCodes_WhenQuestionIsCreated_ThenCodesAreDerivedFromEnglishWording()
@@ -1180,30 +895,6 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		detail.ShouldContain("'Site A 1'");
 	}
 
-	[Fact]
-	public async Task GivenItemsWithoutCodes_WhenChoiceListIsCreatedAndExtended_ThenCodesAreDerivedFromEnglishWording()
-	{
-		// Given
-		using var client = await SignedIn();
-		using var created = await client.PostAsJsonAsync(OptionSets, new SaveOptionSet(
-			UniqueKey("sites"), "Sites", "Sites", [new Option(null, "King Eddy", "King Eddy")]));
-		created.StatusCode.ShouldBe(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
-		var set = await created.Content.ReadFromJsonAsync<JsonElement>();
-
-		// When
-		using var replaced = await client.PutAsJsonAsync(
-			new Uri($"{OptionSets}/{set.GetProperty("id").GetString()}", UriKind.Relative),
-			new SaveOptionSet(null, "Sites", "Sites",
-				[new Option("king_eddy", "King Edward", "King Edward"), new Option(null, "Mara", "Mara")]));
-
-		// Then
-		replaced.StatusCode.ShouldBe(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
-		var items = (await replaced.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("items").EnumerateArray()
-			.Select(item => item.GetProperty("code").GetString())
-			.ToList();
-		items.ShouldBe(["king_eddy", "mara"]);
-	}
-
 	private static List<string?> Codes(JsonElement question)
 	{
 		return [.. question.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())];
@@ -1223,27 +914,13 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 	private static SaveQuestion Draft(string? key, string type)
 	{
 		return new SaveQuestion(key, type, "A synthetic question", "Une question synthétique", null, null, null, null,
-			false, true, true, null, null, null, null, false, []);
+			false, true, true, null, null, null, []);
 	}
 
 	private static async Task<JsonElement> Create(HttpClient client, SaveQuestion request)
 	{
 		using var response = await client.PostAsJsonAsync(Questions, request);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created);
-
-		return await response.Content.ReadFromJsonAsync<JsonElement>();
-	}
-
-	private static async Task<JsonElement> CreateOptionSet(HttpClient client, string key)
-	{
-		var request = new SaveOptionSet(
-			key,
-			"Aerodromes",
-			"Aérodromes",
-			[new Option("alberta", "Alberta", "Alberta"), new Option("yukon", "Yukon", "Yukon")]);
-
-		using var response = await client.PostAsJsonAsync(OptionSets, request);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 
 		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
@@ -1268,14 +945,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		bool IsActive,
 		string? DependsOnQuestionId,
 		string? DependsOnOptionCode,
-		string? OptionSetId,
 		string? GroupedUnderQuestionId,
-		bool AllowsReporterAdditions,
 		IReadOnlyList<Option> Options);
 
 	private sealed record Reorder(IReadOnlyList<string> QuestionIdsInOrder);
 
-	private sealed record SaveOptionSet(string? Key, string NameEn, string NameFr, IReadOnlyList<Option> Items);
-
-	private sealed record Option(string? Code, string LabelEn, string LabelFr);
+	private sealed record Option(string? Code, string? LabelEn, string? LabelFr);
 }

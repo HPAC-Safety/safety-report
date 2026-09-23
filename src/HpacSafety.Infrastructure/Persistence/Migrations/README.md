@@ -53,11 +53,8 @@ Dates and times follow
 ```mermaid
 erDiagram
     questions ||--o{ question_revisions : "versions"
-    question_revisions ||--o{ question_revision_options : "frozen choices"
+    questions ||--o{ question_choices : "its own choices"
     question_revisions }o--o| questions : "conditional on"
-    question_revisions }o--o| option_sets : "copied from"
-    option_sets ||--o{ option_set_items : "live choices"
-    option_set_items |o--o{ question_revision_options : "was copied to"
 
     reports ||--o{ report_answers : "answers"
     reports ||--o{ report_files : "attachments"
@@ -86,7 +83,6 @@ erDiagram
         int display_order
         char(11) depends_on_question_id FK "nullable; a yes_no or single_select question"
         varchar(128) depends_on_option_code "nullable; required option on a single_select parent"
-        char(11) option_set_id FK "nullable; provenance only"
         text label_en
         text label_fr
         text help_text_en
@@ -95,36 +91,16 @@ erDiagram
         timestamptz deleted
     }
 
-    question_revision_options {
+    question_choices {
         char(11) id PK
-        char(11) question_revision_id FK
-        varchar(128) code "invariant; what an answer stores"
+        char(11) question_id FK
+        varchar(128) code UK "unique per question, removed rows included"
         int display_order
-        text label_en
-        text label_fr
-        char(11) source_item_id FK "nullable; provenance only"
-        timestamptz deleted
-    }
-
-    option_sets {
-        char(11) id PK
-        varchar(128) key UK
-        text name_en "administrator-facing; no reporter sees it"
-        text name_fr
-        timestamptz created_at
-        timestamptz deleted
-    }
-
-    option_set_items {
-        char(11) id PK
-        char(11) option_set_id FK
-        varchar(128) code
-        int display_order
-        text label_en
-        text label_fr
+        text label_en "null only on a reporter choice typed in French"
+        text label_fr "null only on a reporter choice typed in English"
         boolean added_by_reporter "typed into a type-ahead, awaiting curation"
         varchar(8) reporter_locale "the language a reporter typed it in"
-        timestamptz deleted
+        timestamptz deleted "removed; hidden from the form, never erased"
     }
 
     reports {
@@ -191,24 +167,19 @@ column in it. The generated migrations are exhaustive; this is a map.
 **A question is not a row — it is a chain of complete revisions.**
 `questions` holds only what never changes: the stable key, whether it is the
 system question, and its role. Everything a reporter could see — wording, type,
-order, section, privacy, required state, conditionality, and the whole option
-list — lives on `question_revisions`, and an edit inserts a new one rather than
-updating the old. `report_answers` points at a revision, never at a question, so
+order, section, privacy, required state, and conditionality — lives on
+`question_revisions`, and an edit inserts a new one rather than updating the
+old. `report_answers` points at a revision, never at a question, so
 a report filed two years ago still renders exactly what it asked ([ADR-0016](../../../../docs/decisions/ADR-0016-data-driven-question-bank.md)).
 
-**A type-ahead reads the live list; everything else reads its snapshot.**
-`QuestionType.Autocomplete` backed by a live `option_set` renders that set's
-current items, because it is the one type a reporter can add to and a choice
-nobody can see until an administrator republishes the question is no use to the
-next reporter. Its snapshot is still written and still records what that
-reporter was offered. Every other option type renders the snapshot, and
-`QuestionChoices` is the one place the rule lives ([ADR-0063](../../../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
-
-**`option_sets` is mutable; `question_revision_options` is not.** The shared
-list is the working copy an administrator maintains. When a revision is built
-from one, the live items are *copied* into that revision's own rows, and it
-answers from that copy forever. `option_set_id` and `source_item_id` record
-where a copy came from and are never consulted to render or validate anything ([ADR-0058](../../../../docs/decisions/ADR-0058-shared-option-sets-with-a-revision-snapshot.md)).
+**Choices belong to the question, not to a revision.** `question_choices` is
+edited in place: adding, rewording, reordering, or removing a choice creates no
+revision and never forks the question, because an answer stores the reporter's
+own words rather than a reference to a choice. A removed choice keeps its row
+with `deleted` stamped, and is loaded with its question — the one table without
+the live-row filter — because a fork copies it and a reporter must not revive
+it. A type-ahead's reporter-added choice may hold one language until an
+administrator supplies the other ([ADR-0095](../../../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 
 **One rule is deliberately not in the database.** "A conditional question's
 parent must be a `yes_no` question" depends on the parent's *current* revision —
@@ -262,6 +233,7 @@ this.
 | `20260921205551_RemoveStatementGroupSectionKey`        | Dropped `question_revisions.section_key` after removing the `statement` and `group` question types it existed to support — neither had a built renderer, and nothing distinguished them from each other in code.                                                                                                                                                                                                                                  |
 | `20260921224859_AddDependsOnOptionCode`                | Added `question_revisions.depends_on_option_code`, the required option a `single_select` parent must be answered with (ADR-0074). Null for a `yes_no` parent, whose condition stays the invariant "yes".                                                                                                                                                                                                                                          |
 | `20260922222239_RecordReporterChoiceLocale`           | Added nullable `option_set_items.reporter_locale`, the language a reporter typed a type-ahead choice in (ADR-0063). Null for every choice an administrator authored, which is every row that already existed. |
+| `20260923010810_GiveEachQuestionItsOwnChoices`        | Added `question_choices`, copied every question's current choices onto it (a type-ahead backed by a live shared list takes that list's items, reporter marks and removals kept; a reporter item awaiting its other language keeps only the language typed), then dropped `option_sets`, `option_set_items`, `question_revision_options`, `question_revisions.option_set_id`, and `question_revisions.allows_reporter_additions` (ADR-0095). The copy is `Sql/20260923010810_CopyChoicesOntoQuestions.sql`, the first migration SQL kept in its own file (ADR-0055). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

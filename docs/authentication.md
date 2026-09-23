@@ -28,7 +28,7 @@ invariant codes:
 |---|---|---|
 | User | `user` | Proves HPAC membership. May submit a report. Nothing else. |
 | SafetyOfficer | `safety_officer` | Review queue and private report material, safe derivatives and validated documents, summary editing, approve/reject/publish/soft-delete. |
-| Administrator | `administrator` | Every SafetyOfficer capability, plus question revisions and shared choice lists. |
+| Administrator | `administrator` | Every SafetyOfficer capability, plus question revisions and curating each question's choices. |
 
 A claim may be a string or an array; the highest role present wins. A validated
 token carrying no recognized role authenticates as `User` — membership is

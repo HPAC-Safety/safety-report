@@ -25,9 +25,7 @@ public sealed record QuestionView(
 	int DisplayOrder,
 	string? DependsOnQuestionId,
 	string? DependsOnOptionCode,
-	string? OptionSetId,
 	string? GroupedUnderQuestionId,
-	bool AllowsReporterAdditions,
 	string LabelEn,
 	string LabelFr,
 	string? HelpTextEn,
@@ -35,29 +33,22 @@ public sealed record QuestionView(
 	string? PlaceholderEn,
 	string? PlaceholderFr,
 	IReadOnlyList<OptionView> Options,
-	bool ChoicesComeFromLiveList,
+	int ReporterChoicesAwaitingReview,
 	bool HasBeenAnswered)
 {
-	/// <summary>Flattens a question and its current revision for the screen.</summary>
-	/// <param name="question">The question to show.</param>
-	/// <param name="optionSet">
-	///     The shared set the current revision names, when it names one. An
-	///     autocomplete renders the live set rather than its snapshot, so the
-	///     authoring screen shows an administrator the same list a reporter would
-	///     see — including anything reporters have added. See ADR-0063.
-	/// </param>
+	/// <summary>Flattens a question, its current revision, and its live choices for the screen.</summary>
+	/// <param name="question">The question to show, with its choices loaded.</param>
 	/// <param name="hasBeenAnswered">
 	///     Whether any answer references this question. The screen warns before a
-	///     save, because an edit to an answered question retires it and creates a
-	///     new one in its place (ADR-0071).
+	///     save, because a wording edit to an answered question retires it and
+	///     creates a new one in its place (ADR-0071) — though a choices-only edit
+	///     never does (ADR-0095).
 	/// </param>
-	public static QuestionView Of(
-		Question question, OptionSet? optionSet = null, bool hasBeenAnswered = false)
+	public static QuestionView Of(Question question, bool hasBeenAnswered = false)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 
 		var revision = question.CurrentRevision;
-		var choices = QuestionChoices.For(revision, optionSet);
 
 		return new QuestionView(
 			question.Id.Value,
@@ -72,44 +63,53 @@ public sealed record QuestionView(
 			revision.DisplayOrder,
 			revision.DependsOnQuestionId?.Value,
 			revision.DependsOnOptionCode,
-			revision.OptionSetId?.Value,
 			revision.GroupedUnderQuestionId?.Value,
-			revision.AllowsReporterAdditions,
 			revision.LabelEn,
 			revision.LabelFr,
 			revision.HelpTextEn,
 			revision.HelpTextFr,
 			revision.PlaceholderEn,
 			revision.PlaceholderFr,
-			[
-				.. choices.Select(option => new OptionView(
-					option.Code, option.LabelEn, option.LabelFr, option.SourceItemId?.Value, false))
-			],
-			QuestionChoices.RendersLiveSet(revision, optionSet),
+			[.. question.Choices.Select(OptionView.Of)],
+			question.ReporterChoicesAwaitingReview,
 			hasBeenAnswered);
 	}
 }
 
-/// <summary>One choice on a question revision, in both official languages.</summary>
-/// <summary>One choice, in both official languages.</summary>
-/// <param name="Code">The invariant code stored against an answer.</param>
-/// <param name="LabelEn">The English wording.</param>
-/// <param name="LabelFr">The French wording.</param>
-/// <param name="SourceItemId">The shared item this came from, if any.</param>
+/// <summary>One of a question's choices, as the authoring screen edits it.</summary>
+/// <param name="Code">The invariant code the choice is recorded under.</param>
+/// <param name="LabelEn">The English wording. Null only on a reporter-added choice typed in French.</param>
+/// <param name="LabelFr">The French wording. Null only on a reporter-added choice typed in English.</param>
 /// <param name="AddedByReporter">
 ///     True when a reporter typed this into a type-ahead rather than an
-///     administrator authoring it — the entries most worth curating. See ADR-0063.
+///     administrator writing it — the entries most worth curating. See ADR-0063.
 /// </param>
+/// <param name="NeedsTranslation">True while one language is missing, waiting for an administrator.</param>
+/// <param name="ReporterLocale">The language a reporter typed it in, or null.</param>
 public sealed record OptionView(
 	string Code,
-	string LabelEn,
-	string LabelFr,
-	string? SourceItemId,
-	bool AddedByReporter);
+	string? LabelEn,
+	string? LabelFr,
+	bool AddedByReporter,
+	bool NeedsTranslation,
+	string? ReporterLocale)
+{
+	/// <summary>Flattens one choice.</summary>
+	public static OptionView Of(QuestionChoice choice)
+	{
+		ArgumentNullException.ThrowIfNull(choice);
+
+		return new OptionView(
+			choice.Code, choice.LabelEn, choice.LabelFr, choice.AddedByReporter, choice.NeedsTranslation,
+			choice.ReporterLocale?.Code);
+	}
+}
 
 /// <summary>
-///     What an administrator submits to create a question or to save an edit. An
-///     edit produces a new revision; nothing here patches a row that exists.
+///     What an administrator submits to create a question or to save an edit. A
+///     change to the question's wording, type, or flags produces a new revision;
+///     <see cref="Options" />, the complete list of its choices, is applied in
+///     place and never does (ADR-0095).
 /// </summary>
 public sealed record SaveQuestionRequest(
 	string? Key,
@@ -125,9 +125,7 @@ public sealed record SaveQuestionRequest(
 	bool IsActive,
 	string? DependsOnQuestionId,
 	string? DependsOnOptionCode,
-	string? OptionSetId,
 	string? GroupedUnderQuestionId,
-	bool AllowsReporterAdditions,
 	IReadOnlyList<OptionInput>? Options);
 
 /// <summary>
@@ -140,12 +138,16 @@ public sealed record SaveQuestionRequest(
 ///     code is derived from <paramref name="LabelEn" /> exactly as a
 ///     reporter-added choice's is (ADR-0063).
 /// </param>
-/// <param name="LabelEn">The English wording.</param>
-/// <param name="LabelFr">The French wording.</param>
-public sealed record OptionInput(string? Code, string LabelEn, string LabelFr)
+/// <param name="LabelEn">
+///     The English wording. A new choice needs both languages; a reporter-added
+///     one may keep a missing language until an administrator supplies it.
+/// </param>
+/// <param name="LabelFr">The French wording, under the same rule.</param>
+public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr)
 {
 	/// <summary>The normalized code this choice is recorded under.</summary>
-	public string ResolvedCode => QuestionKey.Normalize(string.IsNullOrWhiteSpace(Code) ? LabelEn : Code);
+	public string ResolvedCode => QuestionKey.Normalize(
+		!string.IsNullOrWhiteSpace(Code) ? Code : !string.IsNullOrWhiteSpace(LabelEn) ? LabelEn : LabelFr ?? string.Empty);
 
 	/// <summary>
 	///     Every option paired with its resolved code, refusing two choices that
@@ -160,7 +162,7 @@ public sealed record OptionInput(string? Code, string LabelEn, string LabelFr)
 
 		if (resolved.GroupBy(pair => pair.Code, StringComparer.Ordinal).FirstOrDefault(group => group.Count() > 1) is { } clash)
 		{
-			var wording = string.Join(" and ", clash.Select(pair => $"'{pair.Option.LabelEn}'"));
+			var wording = string.Join(" and ", clash.Select(pair => $"'{pair.Option.LabelEn ?? pair.Option.LabelFr}'"));
 			throw new DomainRuleViolationException(
 				$"The choices {wording} are too alike to tell apart. Word one of them differently.");
 		}
@@ -171,35 +173,3 @@ public sealed record OptionInput(string? Code, string LabelEn, string LabelFr)
 
 /// <summary>Every question in the order the administrator arranged them.</summary>
 public sealed record ReorderQuestionsRequest(IReadOnlyList<string> QuestionIdsInOrder);
-
-/// <summary>A reusable choice list as the authoring screen needs it.</summary>
-public sealed record OptionSetView(
-	string Id,
-	string Key,
-	string NameEn,
-	string NameFr,
-	IReadOnlyList<OptionView> Items)
-{
-	/// <summary>Flattens a set and its live items.</summary>
-	public static OptionSetView Of(OptionSet set)
-	{
-		ArgumentNullException.ThrowIfNull(set);
-
-		return new OptionSetView(
-			set.Id.Value,
-			set.Key,
-			set.NameEn,
-			set.NameFr,
-			[
-				.. set.Items.Select(item => new OptionView(
-					item.Code, item.LabelEn, item.LabelFr, item.Id.Value, item.AddedByReporter))
-			]);
-	}
-}
-
-/// <summary>What an administrator submits to create or replace a choice list.</summary>
-public sealed record SaveOptionSetRequest(
-	string? Key,
-	string NameEn,
-	string NameFr,
-	IReadOnlyList<OptionInput> Items);

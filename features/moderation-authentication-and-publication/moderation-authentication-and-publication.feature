@@ -56,7 +56,7 @@ Scenario: A signed-in Administrator's Admin menu offers every option
   Given a visitor signs in as an Administrator
   Then the header shows an Admin menu and no other header nav change
   When the visitor activates the Admin menu
-  Then it opens with manage-reports, manage-questions, and manage-choice-lists options
+  Then it opens with manage-reports, manage-questions, and manage-answer-translations options
 
 @REQ-MOD-008
 @ui
@@ -64,7 +64,7 @@ Scenario: A signed-in SafetyOfficer's Admin menu offers manage-reports only
   Given a visitor signs in as a SafetyOfficer
   When the visitor activates the Admin menu
   Then it opens with a manage-reports option
-  And it offers no manage-questions or manage-choice-lists option
+  And it offers no manage-questions or manage-answer-translations option
 
 @REQ-MOD-009
 @ui
@@ -204,7 +204,7 @@ Scenario: SafetyOfficer capabilities
 Scenario: Administrator capabilities include everything SafetyOfficer has
   Given a member has the Administrator role
   Then the member has every SafetyOfficer capability
-  And can additionally create question revisions and manage shared choice lists
+  And can additionally create question revisions and curate reporter-added choices
 
 @REQ-MOD-028
 Scenario Outline: Only an Administrator may author a question revision
@@ -344,7 +344,6 @@ Examples:
   | User          | /admin/reports               |
   | User          | /admin/questions              |
   | SafetyOfficer | /admin/questions              |
-  | SafetyOfficer | /admin/choice-lists           |
   | SafetyOfficer | /admin/answer-translations    |
 
 @REQ-MOD-044

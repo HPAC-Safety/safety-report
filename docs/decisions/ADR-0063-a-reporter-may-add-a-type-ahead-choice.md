@@ -10,7 +10,11 @@ keywords: autocomplete, option sets, reporter-added, curation, snapshot, questio
 
 # ADR-0063 — A reporter may add a missing type-ahead choice, and an autocomplete renders the live list
 
-**Status:** The curation half stands. Two parts are superseded by
+**Status:** Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md): a reporter's addition joins the type-ahead
+question's own choices (there are no shared lists), in the language it was
+typed only. It is curated in place in the question editor, without a fork, and
+only a type-ahead takes additions; the multi-select widening from ADR-0077 is
+withdrawn. Otherwise, the curation half stands. Two parts are superseded by
 [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): the submission path
 no longer translates anything, and a reporter's answer no longer refers to an
 option row. See "Superseded by ADR-0072" below. Its scope is widened by

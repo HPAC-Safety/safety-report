@@ -188,7 +188,7 @@ public sealed class DomainAndLifecycleSteps
 		question.Deleted.ShouldNotBeNull();
 	}
 
-	[Then(@"its revisions, options, and every answer given to it are untouched")]
+	[Then(@"its revisions, choices, and every answer given to it are untouched")]
 	public async Task ThenItsRevisionsAreUntouched()
 	{
 		var host = await BootedApi.Factory();
@@ -225,7 +225,7 @@ public sealed class DomainAndLifecycleSteps
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 			var questionB = await database.Questions
 				.Include(q => q.Revisions)
-				.ThenInclude(r => r.Options)
+				.Include(q => q.AllChoices)
 				.SingleAsync(q => q.Id == questionBId);
 			var oldRevision = questionB.Revisions.Single(r => r.Id == revision1BId);
 
@@ -251,21 +251,18 @@ public sealed class DomainAndLifecycleSteps
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	[Then(@"the revision and its option children are stamped with one deleted timestamp")]
-	public async Task ThenTheRevisionAndItsOptionsAreStamped()
+	[Then(@"the revision is stamped with a deleted timestamp")]
+	public async Task ThenTheRevisionIsStamped()
 	{
 		var host = await BootedApi.Factory();
 		using var scope = host.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
 		var revision = await database.QuestionRevisions
-			.Include(r => r.Options)
 			.IgnoreQueryFilters()
 			.SingleAsync(r => r.Id == _revisionId);
 
 		revision.Deleted.ShouldNotBeNull();
-		revision.Options.ShouldNotBeEmpty();
-		revision.Options.ShouldAllBe(option => option.Deleted == revision.Deleted);
 	}
 
 	[Then(@"once any answer references a revision, that revision is never deletable again")]

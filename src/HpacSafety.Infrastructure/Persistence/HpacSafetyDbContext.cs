@@ -59,14 +59,8 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Immutable, complete bilingual question revisions.</summary>
 	public DbSet<QuestionRevision> QuestionRevisions => Set<QuestionRevision>();
 
-	/// <summary>Options on a question revision.</summary>
-	public DbSet<QuestionRevisionOption> QuestionRevisionOptions => Set<QuestionRevisionOption>();
-
-	/// <summary>Reusable choice lists shared by more than one question.</summary>
-	public DbSet<OptionSet> OptionSets => Set<OptionSet>();
-
-	/// <summary>The choices in a reusable list.</summary>
-	public DbSet<OptionSetItem> OptionSetItems => Set<OptionSetItem>();
+	/// <summary>Each question's own choices, outside its revisions (ADR-0095).</summary>
+	public DbSet<QuestionChoice> QuestionChoices => Set<QuestionChoice>();
 
 	/// <summary>Who did what, and when.</summary>
 	public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
@@ -139,9 +133,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 		modelBuilder.ApplyConfiguration(new QuestionConfiguration());
 		modelBuilder.ApplyConfiguration(new QuestionRevisionConfiguration());
-		modelBuilder.ApplyConfiguration(new QuestionRevisionOptionConfiguration());
-		modelBuilder.ApplyConfiguration(new OptionSetConfiguration());
-		modelBuilder.ApplyConfiguration(new OptionSetItemConfiguration());
+		modelBuilder.ApplyConfiguration(new QuestionChoiceConfiguration());
 
 		modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
 		modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());

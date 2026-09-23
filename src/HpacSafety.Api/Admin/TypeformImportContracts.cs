@@ -19,7 +19,6 @@ public sealed record ImportedQuestionDraftView(
 	string? HelpTextEn,
 	string? HelpTextFr,
 	string? GroupedUnderKey,
-	bool AllowsReporterAdditions,
 	IReadOnlyList<ImportedOptionView> Options,
 	bool IsPrivate,
 	bool IsRequired,
@@ -33,7 +32,7 @@ public sealed record ImportedQuestionDraftView(
 
 		return new ImportedQuestionDraftView(
 			draft.Key, EnumCode.Of(draft.Type), draft.LabelEn, draft.LabelFr, draft.FrenchDefaultedToEnglish,
-			draft.HelpTextEn, draft.HelpTextFr, draft.GroupedUnderKey, draft.AllowsReporterAdditions,
+			draft.HelpTextEn, draft.HelpTextFr, draft.GroupedUnderKey,
 			[.. draft.Options.Select(ImportedOptionView.Of)], draft.IsPrivate, draft.IsRequired, draft.DependsOnKey,
 			draft.DependsOnOptionCode);
 	}

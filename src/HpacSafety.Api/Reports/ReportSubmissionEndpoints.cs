@@ -129,7 +129,7 @@ public static class ReportSubmissionEndpoints
 
 		try
 		{
-			await RecordReporterChoices(report, revisionLookup, database, cancellationToken).ConfigureAwait(false);
+			RecordReporterChoices(report, revisionLookup);
 		}
 		catch (DomainRuleViolationException cause)
 		{
@@ -324,43 +324,23 @@ public static class ReportSubmissionEndpoints
 	}
 
 	/// <summary>
-	///     Adds each type-ahead value the reporter typed to the shared list behind
-	///     it, in the language they answered in, inside the same transaction as the
-	///     report (ADR-0063). A value the list already offers, in that language or
-	///     under the same code, is the existing choice and changes nothing. A
-	///     type-ahead with no live shared list keeps the reporter's words as the
-	///     answer and has no list to add them to.
+	///     Adds each type-ahead value the reporter typed to that question's own
+	///     choices, in the language they answered in only, inside the same
+	///     transaction as the report (ADR-0063, ADR-0095). A value the question
+	///     already offers, in either language or under the same code, is the
+	///     existing choice and changes nothing. No other type takes an addition.
 	/// </summary>
-	private static async Task RecordReporterChoices(
-		Report report,
-		Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup,
-		HpacSafetyDbContext database,
-		CancellationToken cancellationToken)
+	private static void RecordReporterChoices(
+		Report report, Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
 	{
-		var typed = report.Answers
-			.Select(answer => (answer.Value, revisionLookup[answer.QuestionRevisionId].Revision))
-			.Where(pair => pair.Revision.Type == QuestionType.Autocomplete
-						   && pair.Revision.OptionSetId is not null
-						   && !string.IsNullOrWhiteSpace(pair.Value))
-			.ToList();
-
-		if (typed.Count == 0)
+		foreach (var answer in report.Answers)
 		{
-			return;
-		}
+			var (question, revision) = revisionLookup[answer.QuestionRevisionId];
 
-		var setIds = typed.Select(pair => pair.Revision.OptionSetId!.Value).Distinct().ToList();
-		var sets = await database.OptionSets
-			.Include("_items")
-			.Where(set => setIds.Contains(set.Id) && set.Deleted == null)
-			.ToDictionaryAsync(set => set.Id, cancellationToken)
-			.ConfigureAwait(false);
-
-		foreach (var (value, revision) in typed)
-		{
-			if (sets.TryGetValue(revision.OptionSetId!.Value, out var set))
+			if (revision.TakesReporterAdditions && question.TakesReporterAdditions
+				&& !string.IsNullOrWhiteSpace(answer.Value))
 			{
-				set.AddFromReporter(value!, report.Language);
+				question.AddChoiceFromReporter(answer.Value, report.Language);
 			}
 		}
 	}

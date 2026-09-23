@@ -10,6 +10,11 @@ keywords: question bank, revisions, soft delete, fork, immutability, question ke
 
 # ADR-0071 — A question that has been answered forks instead of revising
 
+**Status:** Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md). A question's choices live outside its
+revisions, so editing only the choices never revises or forks the question. A
+fork copies every choice, removed ones and reporter-added marks included, onto
+the replacement.
+
 ## Context
 
 The question bank has one job beyond asking questions: a report has to record

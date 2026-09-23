@@ -21,8 +21,7 @@ public class QuestionRevisionDeletionTests
 			options: [new QuestionOptionInput("north", "North", "Nord")]);
 		var oldRevision = question.CurrentRevision;
 		question.Revise(
-			QuestionType.SingleSelect, "Heading (revised)", "Cap (révisé)", true, true, 0, Now.AddHours(1),
-			options: [new QuestionOptionInput("north", "North", "Nord")]);
+			QuestionType.SingleSelect, "Heading (revised)", "Cap (révisé)", true, true, 0, Now.AddHours(1));
 
 		// When
 		var at = Now.AddHours(2);
@@ -30,7 +29,7 @@ public class QuestionRevisionDeletionTests
 
 		// Then
 		oldRevision.Deleted.ShouldBe(at);
-		oldRevision.Options.ShouldAllBe(option => option.Deleted == at);
+		question.Choice("north").ShouldNotBeNull();
 		question.CurrentRevision.Deleted.ShouldBeNull();
 	}
 
@@ -67,15 +66,13 @@ public class QuestionRevisionDeletionTests
 	[Fact]
 	public void GivenARevisionAlreadyDeleted_WhenDeletedAgain_ThenTimestampDoesNotMove()
 	{
-		// Given — with an option, so the cascade's own idempotency is proven too
+		// Given
 		var question = Question.Create(
 			"heading", QuestionType.SingleSelect, "Heading", "Cap", Now,
 			options: [new QuestionOptionInput("north", "North", "Nord")]);
 		var oldRevision = question.CurrentRevision;
-		var oldOption = oldRevision.Options.Single();
 		question.Revise(
-			QuestionType.SingleSelect, "Heading (revised)", "Cap (révisé)", true, true, 0, Now.AddHours(1),
-			options: [new QuestionOptionInput("north", "North", "Nord")]);
+			QuestionType.SingleSelect, "Heading (revised)", "Cap (révisé)", true, true, 0, Now.AddHours(1));
 		var firstDeletion = Now.AddHours(2);
 		question.DeleteRevision(oldRevision.Id, hasBeenAnswered: false, firstDeletion);
 
@@ -84,7 +81,6 @@ public class QuestionRevisionDeletionTests
 
 		// Then
 		oldRevision.Deleted.ShouldBe(firstDeletion);
-		oldOption.Deleted.ShouldBe(firstDeletion);
 	}
 
 	[Fact]

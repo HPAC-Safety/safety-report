@@ -53,7 +53,7 @@ below, and a write is audited.
 | Edit both summary texts; approve/reject/publish/delete a report | SafetyOfficer or Administrator; audited. No CSRF protection is needed — a bearer token carries no ambient authority. |
 | Obtain a short-lived attachment URL | SafetyOfficer or Administrator; safe image/video derivatives or validated private document originals only. |
 | List/create/delete eligible question revisions | Administrator; every write audited. |
-| Manage shared choice lists and machine-translate question wording | Administrator; every write audited. |
+| Edit a question's choices, curate reporter-added choices, and machine-translate question wording | Administrator; every write audited. |
 
 **CON-IF-005** There is no allowlist-management endpoint. Roles come from the token, and
 access is granted or revoked at the identity provider.

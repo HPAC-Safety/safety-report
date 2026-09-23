@@ -4,387 +4,379 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-///     Which list a question renders, and what a reporter typing a missing value
-///     does to a shared set — ADR-0063.
+///     A question's own choices: edited in place, copied by a fork, and grown by a
+///     reporter only on a type-ahead — ADR-0063, ADR-0095.
 /// </summary>
 public class QuestionChoicesTests
 {
 	private static readonly DateTimeOffset At = new(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
 
-	private static OptionSet Sites()
-	{
-		var set = OptionSet.Create("sites", "Flying sites", "Sites de vol", At);
-		set.Add("coopers", "Cooper's", "Cooper's");
-		set.Add("woodside", "Woodside", "Woodside");
-		return set;
-	}
+	private static readonly QuestionOptionInput[] SiteOptions =
+	[
+		new("coopers", "Cooper's", "Cooper's"),
+		new("woodside", "Woodside", "Woodside"),
+	];
 
-	private static Question BackedBy(
-		OptionSet set, QuestionType type = QuestionType.Autocomplete, bool allowsReporterAdditions = false)
+	private static Question Sites(QuestionType type = QuestionType.Autocomplete)
 	{
 		return Question.Create(
 			"where_did_this_happen", type, "Where did this happen?", "Où cela s'est-il produit ?", At,
-			isActive: true, optionSetId: set.Id, allowsReporterAdditions: allowsReporterAdditions,
-			options: set.AsRevisionOptions());
+			isActive: true, options: SiteOptions);
+	}
+
+	private static Question Edit(Question question, bool answered, string? labelEn = null,
+		IReadOnlyList<QuestionOptionInput>? options = null)
+	{
+		var current = question.CurrentRevision;
+		return question.ApplyEdit(
+			answered, current.Type, labelEn ?? current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
+			current.DisplayOrder, At.AddDays(1), options: options);
+	}
+
+	private static string[] Codes(Question question)
+	{
+		return [.. question.Choices.Select(choice => choice.Code)];
 	}
 
 	[Fact]
-	public void GivenTypeAhead_WhenListGrows_ThenOffersNewChoice()
+	public void GivenNewQuestion_WhenCreatedWithChoices_ThenOffersThemInOrder()
 	{
-		// Given
-		var set = Sites();
-		var question = BackedBy(set);
-
-		// When
-		set.Add("mount_7", "Mount 7", "Mont 7");
-
-		// Then — the next pilot sees it without anyone republishing the question
-		QuestionChoices.For(question.CurrentRevision, set)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside", "mount_7"]);
-	}
-
-	[Fact]
-	public void GivenTypeAhead_WhenListGrows_ThenRevisionStillRecordsWhatWasShown()
-	{
-		// Given
-		var set = Sites();
-		var question = BackedBy(set);
-
-		// When
-		set.Add("mount_7", "Mount 7", "Mont 7");
-
-		// Then — the record of what that reporter was offered is untouched
-		QuestionChoices.Snapshot(question.CurrentRevision)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside"]);
+		Codes(Sites()).ShouldBe(["coopers", "woodside"]);
 	}
 
 	[Theory]
 	[InlineData(QuestionType.SingleSelect)]
 	[InlineData(QuestionType.MultiSelect)]
-	public void GivenClosedListType_WhenSharedListGrows_ThenStillRendersSnapshot(QuestionType type)
+	[InlineData(QuestionType.Autocomplete)]
+	public void GivenAnsweredQuestion_WhenOnlyChoicesChange_ThenQuestionAndRevisionAreKept(QuestionType type)
 	{
-		// Given — a curated, closed set; showing an unmentioned choice would
-		// make the revision's record misleading
-		var set = Sites();
-		var question = BackedBy(set, type);
+		// Given
+		var question = Sites(type);
+		var revision = question.CurrentRevision.Id;
 
 		// When
-		set.Add("mount_7", "Mount 7", "Mont 7");
+		var live = Edit(question, answered: true,
+			options: [new("woodside", "Woodside", "Woodside"), new("coopers", "Cooper's Hill", "Colline Cooper"), new("mara", "Mara", "Mara")]);
 
 		// Then
-		QuestionChoices.RendersLiveSet(question.CurrentRevision, set).ShouldBeFalse();
-		QuestionChoices.For(question.CurrentRevision, set)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside"]);
-	}
-
-	// ------------------------------------------------ AllowsReporterAdditions (ADR-0077) --
-
-	[Fact]
-	public void GivenAutocomplete_WhenCreatedWithFlagFalse_ThenAlwaysAllowsAdditionsAnyway()
-	{
-		// Given / When — the caller's value is irrelevant; autocomplete is
-		// always on, matching its pre-flag behaviour exactly.
-		var question = Question.Create(
-			"launch_site", QuestionType.Autocomplete, "Where from?", "D'où ?", At, isActive: true,
-			allowsReporterAdditions: false);
-
-		// Then
-		question.AllowsReporterAdditions.ShouldBeTrue();
+		live.ShouldBeSameAs(question);
+		question.Deleted.ShouldBeNull();
+		question.CurrentRevision.Id.ShouldBe(revision);
+		Codes(question).ShouldBe(["woodside", "coopers", "mara"]);
+		question.Choice("coopers")!.LabelEn.ShouldBe("Cooper's Hill");
 	}
 
 	[Fact]
-	public void GivenMultiSelect_WhenCreatedWithNoFlag_ThenDefaultsToClosed()
+	public void GivenAnsweredQuestion_WhenNothingChanges_ThenNoRevisionIsCreated()
 	{
-		// Given / When
-		var question = Question.Create(
-			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isActive: true,
-			options: [new QuestionOptionInput("p3", "P3", "P3")]);
+		var question = Sites();
 
-		// Then
-		question.AllowsReporterAdditions.ShouldBeFalse();
+		Edit(question, answered: true, options: SiteOptions).ShouldBeSameAs(question);
+
+		question.Revisions.Count.ShouldBe(1);
 	}
 
 	[Fact]
-	public void GivenMultiSelect_WhenAuthoredWithFlagTrue_ThenAllowsAdditions()
+	public void GivenAnsweredQuestion_WhenWordingChanges_ThenReplacementCarriesEveryChoice()
 	{
-		// Given / When
-		var question = Question.Create(
-			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isActive: true,
-			allowsReporterAdditions: true, options: [new QuestionOptionInput("p3", "P3", "P3")]);
+		// Given — a reporter addition, and a choice an Administrator removed
+		var question = Sites();
+		question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+		Edit(question, answered: true, options: [SiteOptions[0], new("mount_7", "Mount 7", null)]);
+
+		// When
+		var replacement = Edit(question, answered: true, labelEn: "Where were you flying?");
 
 		// Then
-		question.AllowsReporterAdditions.ShouldBeTrue();
+		replacement.ShouldNotBeSameAs(question);
+		question.Deleted.ShouldNotBeNull();
+		Codes(replacement).ShouldBe(["coopers", "mount_7"]);
+		replacement.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
+		replacement.AllChoices.Single(choice => choice.Code == "woodside").Deleted.ShouldNotBeNull();
+		Codes(question).ShouldBe(["coopers", "mount_7"]);
+	}
+
+	[Fact]
+	public void GivenAnsweredQuestion_WhenWordingAndChoicesChange_ThenReplacementTakesTheNewChoices()
+	{
+		var question = Sites(QuestionType.SingleSelect);
+
+		var replacement = Edit(question, answered: true, labelEn: "Which site?", options: [new("mara", "Mara", "Mara")]);
+
+		Codes(replacement).ShouldBe(["mara"]);
+		Codes(question).ShouldBe(["coopers", "woodside"]);
+	}
+
+	[Fact]
+	public void GivenRemovedChoice_WhenListed_ThenHiddenButKept()
+	{
+		var question = Sites(QuestionType.SingleSelect);
+
+		question.ReplaceChoices([SiteOptions[0]], At);
+
+		Codes(question).ShouldBe(["coopers"]);
+		question.AllChoices.Count.ShouldBe(2);
+		question.Offers("Woodside", Locale.EnCa).ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenRemovedChoice_WhenAdministratorWritesItAgain_ThenSameRowIsRevived()
+	{
+		var question = Sites(QuestionType.SingleSelect);
+		question.ReplaceChoices([SiteOptions[0]], At);
+
+		question.ReplaceChoices(SiteOptions, At);
+
+		Codes(question).ShouldBe(["coopers", "woodside"]);
+		question.AllChoices.Count.ShouldBe(2);
+	}
+
+	[Fact]
+	public void GivenTwoChoicesWithOneCode_WhenSaved_ThenRefused()
+	{
+		var question = Sites(QuestionType.SingleSelect);
+
+		Should.Throw<DomainRuleViolationException>(() =>
+			question.ReplaceChoices([new("mara", "Mara", "Mara"), new("mara", "Mara again", "Mara encore")], At));
 	}
 
 	[Theory]
-	[InlineData(QuestionType.SingleSelect)]
-	[InlineData(QuestionType.YesNo)]
 	[InlineData(QuestionType.ShortText)]
-	public void GivenTypeOtherThanAutocompleteOrMultiSelect_WhenFlagIsTrue_ThenRejected(QuestionType type)
+	[InlineData(QuestionType.YesNo)]
+	public void GivenTypeWithoutChoices_WhenGivenChoices_ThenRefused(QuestionType type)
 	{
-		// Given / When / Then
 		Should.Throw<DomainRuleViolationException>(() => Question.Create(
-			"authored", type, "A question", "Une question", At, isActive: true, allowsReporterAdditions: true));
+			"q", type, "Q", "Q", At, options: SiteOptions));
 	}
 
 	[Fact]
-	public void GivenFlaggedMultiSelect_WhenSharedListGrows_ThenOffersNewChoice()
+	public void GivenQuestionWithChoices_WhenRetypedToText_ThenItsChoicesMustGo()
+	{
+		var question = Sites(QuestionType.SingleSelect);
+		var current = question.CurrentRevision;
+
+		Should.Throw<DomainRuleViolationException>(() => question.ApplyEdit(
+			false, QuestionType.ShortText, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
+			current.DisplayOrder, At));
+
+		question.ApplyEdit(
+			false, QuestionType.ShortText, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
+			current.DisplayOrder, At, options: []);
+		question.Choices.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenChoiceWrittenByAdministrator_WhenSavedInOneLanguage_ThenRefused()
+	{
+		var question = Sites(QuestionType.SingleSelect);
+
+		Should.Throw<DomainRuleViolationException>(() =>
+			question.ReplaceChoices([.. SiteOptions, new("mara", "Mara", null)], At));
+	}
+
+	[Fact]
+	public void GivenValueTypeAheadDoesNotOffer_WhenReporterSubmits_ThenAddedInTheirLanguageOnly()
 	{
 		// Given
-		var set = Sites();
-		var question = BackedBy(set, QuestionType.MultiSelect, allowsReporterAdditions: true);
+		var question = Sites();
 
 		// When
-		set.Add("mount_7", "Mount 7", "Mont 7");
-
-		// Then — exactly like an autocomplete, once the flag is on
-		QuestionChoices.RendersLiveSet(question.CurrentRevision, set).ShouldBeTrue();
-		QuestionChoices.For(question.CurrentRevision, set)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside", "mount_7"]);
-	}
-
-	[Fact]
-	public void GivenUnflaggedMultiSelect_WhenSharedListGrows_ThenStillRendersSnapshot()
-	{
-		// Given — the default: an ordinary multi-select stays closed
-		var set = Sites();
-		var question = BackedBy(set, QuestionType.MultiSelect);
-
-		// When
-		set.Add("mount_7", "Mount 7", "Mont 7");
+		var added = question.AddChoiceFromReporter("  Mount 7 ", Locale.EnCa);
 
 		// Then
-		QuestionChoices.RendersLiveSet(question.CurrentRevision, set).ShouldBeFalse();
-	}
-
-	[Fact]
-	public void GivenMultiSelect_WhenReporterAdditionsAreTurnedOn_ThenNewRevisionRecords()
-	{
-		// Given
-		var question = Question.Create(
-			"ratings", QuestionType.MultiSelect, "Ratings", "Qualifications", At, isActive: true,
-			options: [new QuestionOptionInput("p3", "P3", "P3")]);
-
-		// When
-		question.AllowReporterAdditions(true, At.AddHours(1));
-
-		// Then
-		question.AllowsReporterAdditions.ShouldBeTrue();
-		question.CurrentRevision.RevisionNumber.ShouldBe(2);
-	}
-
-	[Fact]
-	public void GivenTypeAhead_WhenSharedListIsRetired_ThenFallsBackToSnapshot()
-	{
-		// Given
-		var set = Sites();
-		var question = BackedBy(set);
-
-		// When
-		set.Delete(At.AddHours(1));
-
-		// Then — a retired set leaves the question showing what it recorded,
-		// rather than showing nothing
-		QuestionChoices.RendersLiveSet(question.CurrentRevision, set).ShouldBeFalse();
-		QuestionChoices.For(question.CurrentRevision, set)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside"]);
-	}
-
-	[Fact]
-	public void GivenNoSharedListIsLoaded_WhenChoicesAreResolved_ThenSnapshotIsUsed()
-	{
-		// Given
-		var set = Sites();
-		var question = BackedBy(set);
-
-		// When / Then
-		QuestionChoices.For(question.CurrentRevision, null)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside"]);
-	}
-
-	[Fact]
-	public void GivenDifferentList_WhenChoicesAreResolved_ThenSnapshotIsUsed()
-	{
-		// Given — a revision never renders a set it does not name
-		var set = Sites();
-		var question = BackedBy(set);
-		var unrelated = OptionSet.Create("provinces", "Provinces", "Provinces", At);
-		unrelated.Add("alberta", "Alberta", "Alberta");
-
-		// When / Then
-		QuestionChoices.RendersLiveSet(question.CurrentRevision, unrelated).ShouldBeFalse();
-		QuestionChoices.For(question.CurrentRevision, unrelated)
-			.Select(option => option.Code)
-			.ShouldBe(["coopers", "woodside"]);
-	}
-
-	[Fact]
-	public void GivenHandTypedQuestion_WhenChoicesAreResolved_ThenSnapshotIsUsed()
-	{
-		// Given — an autocomplete whose options were typed for it alone
-		var question = Question.Create(
-			"launch_site", QuestionType.Autocomplete, "Where from?", "D'où ?", At, isActive: true,
-			options: [new QuestionOptionInput("golden", "Golden", "Golden")]);
-
-		// When / Then
-		QuestionChoices.For(question.CurrentRevision, null)
-			.Select(option => option.Code)
-			.ShouldBe(["golden"]);
+		added.Code.ShouldBe("mount_7");
+		added.LabelEn.ShouldBe("Mount 7");
+		added.LabelFr.ShouldBeNull();
+		added.AddedByReporter.ShouldBeTrue();
+		added.ReporterLocale.ShouldBe(Locale.EnCa);
+		added.NeedsTranslation.ShouldBeTrue();
+		question.ReporterChoicesAwaitingReview.ShouldBe(1);
+		Codes(question).ShouldBe(["coopers", "woodside", "mount_7"]);
 	}
 
 	[Fact]
 	public void GivenFrenchReporter_WhenTheyAddAChoice_ThenRecordedInFrenchWithCodeFromTheFrench()
 	{
-		// Given
-		var set = Sites();
+		var added = Sites().AddChoiceFromReporter("Élévation Sainte-Anne", Locale.FrCa);
 
-		// When
-		var added = set.AddFromReporter("Élévation Sainte-Anne", Locale.FrCa);
-
-		// Then
 		added.Code.ShouldBe("elevation_sainte_anne");
 		added.LabelFr.ShouldBe("Élévation Sainte-Anne");
+		added.LabelEn.ShouldBeNull();
 		added.ReporterLocale.ShouldBe(Locale.FrCa);
-		added.NeedsTranslation.ShouldBeTrue();
 	}
 
 	[Fact]
-	public void GivenChoiceWordedThatWayInReportersLanguage_WhenTheyTypeIt_ThenExistingChoiceIsReused()
+	public void GivenOneLanguageChoice_WhenReadInTheOther_ThenOfferedInTheLanguageItHas()
 	{
-		// Given
-		var set = Sites();
-		set.Add("mount_7", "Mount 7", "Mont 7");
+		var question = Sites();
+		var added = question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 
-		// When
-		var reused = set.AddFromReporter("mont 7", Locale.FrCa);
-
-		// Then
-		reused.Code.ShouldBe("mount_7");
-		reused.AddedByReporter.ShouldBeFalse();
-		set.Items.Count.ShouldBe(3);
-	}
-
-	[Fact]
-	public void GivenValueListDoesNotOffer_WhenReporterSubmits_ThenAddedAndMarked()
-	{
-		// Given
-		var set = Sites();
-
-		// When
-		var added = set.AddFromReporter("Mount 7", Locale.EnCa);
-
-		// Then
-		added.Code.ShouldBe("mount_7");
-		added.AddedByReporter.ShouldBeTrue();
-		added.LabelEn.ShouldBe("Mount 7");
-
-		// Nothing on the submission path translates, so the reporter's own
-		// words stand in for the other language and say so (ADR-0072).
 		added.Label(Locale.FrCa).ShouldBe("Mount 7");
-		added.NeedsTranslation.ShouldBeTrue();
-		set.Items.Select(candidate => candidate.Code).ShouldBe(["coopers", "woodside", "mount_7"]);
+		question.Offers("Mount 7", Locale.FrCa).ShouldBeTrue();
 	}
 
 	[Fact]
-	public void GivenValueAlreadyOffered_WhenReporterSubmits_ThenNothingIsAddedOrRelabelled()
+	public void GivenOneLanguageChoice_WhenAdministratorSuppliesTheOther_ThenNoLongerAwaitingReview()
 	{
-		// Given — a reporter's spelling never overwrites an administrator's
-		var set = Sites();
+		// Given
+		var question = Sites();
+		question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+		var revision = question.CurrentRevision.Id;
 
 		// When
-		var added = set.AddFromReporter("coopers", Locale.EnCa);
+		var live = Edit(question, answered: true, options: [.. SiteOptions, new("mount_7", "Mount 7", "Mont 7")]);
 
 		// Then
-		added.LabelEn.ShouldBe("Cooper's");
-		added.AddedByReporter.ShouldBeFalse();
-		set.Items.Count.ShouldBe(2);
+		live.ShouldBeSameAs(question);
+		question.CurrentRevision.Id.ShouldBe(revision);
+		question.Choice("mount_7")!.Label(Locale.FrCa).ShouldBe("Mont 7");
+		question.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
+		question.ReporterChoicesAwaitingReview.ShouldBe(0);
+	}
+
+	[Fact]
+	public void GivenOneLanguageChoice_WhenOtherChoicesAreSaved_ThenItMayStayOneLanguage()
+	{
+		var question = Sites();
+		question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+
+		question.ReplaceChoices([new("mount_7", "Mount 7", null), .. SiteOptions], At);
+
+		Codes(question).ShouldBe(["mount_7", "coopers", "woodside"]);
+		question.Choice("mount_7")!.NeedsTranslation.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenChoiceWordedThatWayInEitherLanguage_WhenReporterTypesIt_ThenExistingChoiceIsReused()
+	{
+		var question = Sites();
+		question.ReplaceChoices([.. SiteOptions, new("mount_7", "Mount 7", "Mont 7")], At);
+
+		question.AddChoiceFromReporter("mont 7", Locale.EnCa).Code.ShouldBe("mount_7");
+
+		question.Choices.Count.ShouldBe(3);
+		question.Choice("mount_7")!.AddedByReporter.ShouldBeFalse();
 	}
 
 	[Fact]
 	public void GivenTwoReportersNamingSameNewSite_WhenBothSubmit_ThenOneChoiceExists()
 	{
-		// Given
-		var set = Sites();
+		var question = Sites();
 
-		// When — the second types it differently; both normalize to one code
-		var first = set.AddFromReporter("Mount 7", Locale.EnCa);
-		var second = set.AddFromReporter("mount  7", Locale.EnCa);
+		var first = question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+		var second = question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 
-		// Then
-		second.Id.ShouldBe(first.Id);
-		second.LabelEn.ShouldBe("Mount 7");
-		set.Items.Count(item => item.Code == "mount_7").ShouldBe(1);
+		second.ShouldBeSameAs(first);
+		question.Choices.Count.ShouldBe(3);
 	}
 
 	[Fact]
 	public void GivenChoiceAdministratorRemoved_WhenReporterRetypes_ThenNotRevived()
 	{
-		// Given — removal is the only curation tool there is
-		var set = Sites();
-		set.Remove("woodside", At.AddHours(1));
+		var question = Sites();
+		question.ReplaceChoices([SiteOptions[0]], At);
 
-		// When
-		var added = set.AddFromReporter("Woodside", Locale.EnCa);
+		question.AddChoiceFromReporter("Woodside", Locale.EnCa);
 
-		// Then — the answer points at a real row, but the list still does not
-		// offer it
-		added.Code.ShouldBe("woodside");
-		added.Deleted.ShouldNotBeNull();
-		set.Items.Select(item => item.Code).ShouldBe(["coopers"]);
+		Codes(question).ShouldBe(["coopers"]);
+	}
+
+	[Theory]
+	[InlineData(QuestionType.SingleSelect)]
+	[InlineData(QuestionType.MultiSelect)]
+	public void GivenClosedListType_WhenReporterAddsChoice_ThenRefused(QuestionType type)
+	{
+		var question = Sites(type);
+
+		Should.Throw<DomainRuleViolationException>(() => question.AddChoiceFromReporter("Mount 7", Locale.EnCa));
+		question.Choices.Count.ShouldBe(2);
 	}
 
 	[Fact]
-	public void GivenRetiredList_WhenReporterAddsTo_ThenRefused()
+	public void GivenBlankValue_WhenReporterAddsChoice_ThenRefused()
+	{
+		Should.Throw<DomainRuleViolationException>(() => Sites().AddChoiceFromReporter("   ", Locale.EnCa));
+	}
+
+	[Fact]
+	public void GivenChoiceLiveQuestionDependsOn_WhenParentSavedWithoutIt_ThenRefusedNamingDependent()
 	{
 		// Given
-		var set = Sites();
-		set.Delete(At.AddHours(1));
-
-		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("Mount 7", Locale.EnCa));
-	}
-
-	[Fact]
-	public void GivenBlankLabel_WhenReporterAddsChoice_ThenRefused()
-	{
-		// Given — a choice nobody can read is not a choice
-		var set = Sites();
-
-		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("", Locale.EnCa));
-		Should.Throw<DomainRuleViolationException>(() => set.AddFromReporter("   ", Locale.EnCa));
-	}
-
-	[Fact]
-	public void GivenAdministratorAddsChoice_WhenRead_ThenNotMarkedReporterAdded()
-	{
-		// Given / When
-		var set = Sites();
-
-		// Then
-		set.Items.ShouldAllBe(item => !item.AddedByReporter);
-	}
-
-	[Fact]
-	public void GivenReporterAddedChoice_WhenAdministratorRelabels_ThenMarkerStays()
-	{
-		// Given — the flag records where a choice came from, not whether
-		// anyone has touched it since
-		var set = Sites();
-		set.AddFromReporter("Mount 7", Locale.EnCa);
+		var parent = Question.Create(
+			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
+			options: [new("hang_glider", "Hang glider", "Deltaplane"), new("paraglider", "Paraglider", "Parapente")]);
+		var child = Question.Create(
+			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
 
 		// When
-		set.Relabel("mount_7", "Mount 7", "Mont 7");
+		var refusal = Should.Throw<DomainRuleViolationException>(() =>
+			QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider"]));
 
 		// Then
-		var item = set.Items.Single(candidate => candidate.Code == "mount_7");
-		item.LabelEn.ShouldBe("Mount 7");
-		item.AddedByReporter.ShouldBeTrue();
+		refusal.Message.ShouldContain("Wing rating");
+		QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider", "paraglider"]);
+	}
+
+	[Fact]
+	public void GivenReporterAddedChoice_WhenBothLanguagesAreBlanked_ThenRefused()
+	{
+		// Given
+		var question = Sites();
+		question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+
+		// When / Then — a reporter choice may lack one language, never both
+		Should.Throw<DomainRuleViolationException>(() =>
+			question.ReplaceChoices([.. SiteOptions, new("mount_7", " ", null)], At));
+		question.Choice("mount_7")!.LabelEn.ShouldBe("Mount 7");
+	}
+
+	[Fact]
+	public void GivenFrenchOnlyChoice_WhenReadInEnglish_ThenOfferedInFrench()
+	{
+		var added = Sites().AddChoiceFromReporter("Élévation", Locale.FrCa);
+
+		added.Label(Locale.EnCa).ShouldBe("Élévation");
+	}
+
+	[Fact]
+	public void GivenDependencyOnAChoiceTheParentNoLongerOffers_WhenParentIsSaved_ThenRefusalNamesTheCode()
+	{
+		// Given — a dependency left over from before a removal was refused
+		var parent = Question.Create(
+			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
+			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")]);
+		var child = Question.Create(
+			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+
+		// When
+		var refusal = Should.Throw<DomainRuleViolationException>(() =>
+			QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider"]));
+
+		// Then
+		refusal.Message.ShouldContain("'paraglider'");
+	}
+
+	[Fact]
+	public void GivenConditionalQuestion_WhenSavedWithItsRequiredChoiceWordedDifferently_ThenNoRevisionIsCreated()
+	{
+		// Given — a single-select condition, as the editor sends it back
+		var parent = Question.Create(
+			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
+			options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+		var child = Question.Create(
+			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+		var current = child.CurrentRevision;
+
+		// When — the same code, not yet normalized
+		var live = child.ApplyEdit(
+			true, current.Type, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
+			current.DisplayOrder, At.AddDays(1), dependsOnQuestionId: parent.Id, dependsOnOptionCode: "Paraglider");
+
+		// Then — nothing about the question changed, so nothing is revised or forked
+		live.ShouldBeSameAs(child);
+		child.Revisions.Count.ShouldBe(1);
 	}
 }

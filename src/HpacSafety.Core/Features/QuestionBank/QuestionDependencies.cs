@@ -65,8 +65,7 @@ public static class QuestionDependencies
 				throw new DomainRuleViolationException(
 					$"'{parent.Key}' is a single-select question and needs a required option to enable another one.");
 
-			case QuestionType.SingleSelect
-				when parent.CurrentRevision.Option(QuestionKey.Normalize(requiredOptionCode)) is null:
+			case QuestionType.SingleSelect when parent.Choice(requiredOptionCode) is null:
 				throw new DomainRuleViolationException(
 					$"'{parent.Key}' does not currently offer the option '{requiredOptionCode}'.");
 
@@ -82,6 +81,38 @@ public static class QuestionDependencies
 		{
 			throw new DomainRuleViolationException(
 				$"'{parent.Key}' already depends on this question, directly or through another one. A cycle would leave both permanently disabled.");
+		}
+	}
+
+	/// <summary>
+	///     Checks that saving <paramref name="parent" />'s choices as
+	///     <paramref name="remainingCodes" /> removes none a live question depends
+	///     on. Removing one would silently leave that question never enabled, so
+	///     the save is refused naming it (ADR-0074, ADR-0095).
+	/// </summary>
+	/// <param name="questions">Every live question.</param>
+	/// <param name="parent">The question whose choices are being saved.</param>
+	/// <param name="remainingCodes">Every code the saved list keeps.</param>
+	/// <exception cref="DomainRuleViolationException">When a removed choice enables another question.</exception>
+	public static void EnsureChoicesRemovable(
+		IReadOnlyCollection<Question> questions, Question parent, IReadOnlyCollection<string> remainingCodes)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(parent);
+		ArgumentNullException.ThrowIfNull(remainingCodes);
+
+		var kept = remainingCodes.Select(QuestionKey.Normalize).ToHashSet(StringComparer.Ordinal);
+
+		var dependent = questions.FirstOrDefault(question => question.Deleted is null
+			&& question.DependsOnQuestionId == parent.Id
+			&& question.DependsOnOptionCode is { } code
+			&& !kept.Contains(code));
+
+		if (dependent is not null)
+		{
+			var wording = parent.Choice(dependent.DependsOnOptionCode!)?.Label(Locale.EnCa) ?? dependent.DependsOnOptionCode;
+			throw new DomainRuleViolationException(
+				$"'{dependent.CurrentRevision.LabelEn}' is shown only when '{wording}' is chosen. Change that question first, then remove the choice.");
 		}
 	}
 

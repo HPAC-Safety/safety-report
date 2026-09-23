@@ -146,7 +146,7 @@ public class ReportAnswer
 	///     Records one answer against an exact revision — the current one, or a known,
 	///     non-deleted, superseded one a reporter's browser session spanned an
 	///     Administrator's edit across. Validation always runs against that exact
-	///     revision's historical type, options, and privacy, never against whatever
+	///     revision's historical type and privacy (choices are the question's own, ADR-0095), never against whatever
 	///     the question's current revision happens to be now.
 	/// </summary>
 	internal static ReportAnswer For(
@@ -163,10 +163,12 @@ public class ReportAnswer
 		}
 
 		// A type-ahead is the one option type a reporter may answer with words the
-		// list does not offer: the submission records them as a new choice
-		// (ADR-0063), so they are validated as present, not as offered.
-		if (value is not null && revision.ExpectsOptions && revision.Type != QuestionType.Autocomplete
-			&& !revision.Offers(value, locale))
+		// question does not offer: the submission records them as a new choice
+		// (ADR-0063), so they are validated as present, not as offered. Every
+		// other select is checked against the question's live choices, which
+		// belong to the question rather than to any revision (ADR-0095).
+		if (value is not null && revision.ExpectsOptions && !revision.TakesReporterAdditions
+			&& !question.Offers(value, locale))
 		{
 			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
 		}

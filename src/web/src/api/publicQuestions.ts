@@ -6,12 +6,16 @@
  * endpoints and from the member-gated submission endpoint (reportSubmission.ts).
  */
 
+/**
+ * One of a question's own choices. A reporter-added choice may have only one
+ * language yet: both labels then carry that wording, and `onlyIn` names the
+ * language it is in, so the form can mark it (ADR-0095).
+ */
 export interface PublicOptionView {
 	code: string
 	labelEn: string
 	labelFr: string
-	sourceItemId: string | null
-	addedByReporter: boolean
+	onlyIn: string | null
 }
 
 /**
@@ -38,7 +42,6 @@ export interface PublicQuestionView {
 	placeholderEn: string | null
 	placeholderFr: string | null
 	options: PublicOptionView[]
-	choicesComeFromLiveList: boolean
 	children: PublicQuestionView[]
 }
 

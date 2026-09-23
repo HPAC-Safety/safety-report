@@ -107,7 +107,7 @@ public class Report
 	///     Records one answer against an exact revision — the current one, or a
 	///     known, non-deleted, superseded one a reporter's browser session spanned
 	///     an Administrator's edit across. Validation always runs against that exact
-	///     revision's historical type, options, and privacy; a submission never has
+	///     revision's historical type and privacy, and the question's live choices; a submission never has
 	///     to equal the latest form.
 	/// </summary>
 	public ReportAnswer Answer(Question question, QuestionRevision revision, string? value, DateTimeOffset at)

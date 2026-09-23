@@ -17,8 +17,7 @@ namespace HpacSafety.Api.PublicQuestions;
 ///     (<see href="https://github.com/HPAC-Safety/safety-report/issues/14">#14</see>)
 ///     and the Administrator-only authoring endpoints in
 ///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints" />, whose
-///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions" /> and
-///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints.LiveSets" />
+///     <see cref="HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions" />
 ///     this reuses rather than re-querying the same tables a second way.
 /// </remarks>
 public static class QuestionEndpoints
@@ -49,8 +48,6 @@ public static class QuestionEndpoints
 		var questions = await HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
-		var sets = await HpacSafety.Api.Admin.QuestionEndpoints.LiveSets(database, cancellationToken)
-			.ConfigureAwait(false);
 
 		var live = questions
 			.Where(question => question.IsActive)
@@ -65,28 +62,20 @@ public static class QuestionEndpoints
 		return Results.Ok(
 			live
 				.Where(question => question.GroupedUnderQuestionId is null)
-				.Select(question => ToView(question, sets, childrenByGroup))
+				.Select(question => ToView(question, childrenByGroup))
 				.ToList());
 	}
 
-	private static PublicQuestionView ToView(
-		Question question, IReadOnlyDictionary<TinyId, OptionSet> sets, ILookup<TinyId, Question> childrenByGroup)
+	private static PublicQuestionView ToView(Question question, ILookup<TinyId, Question> childrenByGroup)
 	{
-		var optionSet = OptionSetFor(question, sets);
-
 		var children = question.Type == QuestionType.Group
 			? childrenByGroup[question.Id]
 				.OrderBy(child => child.DisplayOrder)
 				.ThenBy(child => child.Key, StringComparer.Ordinal)
-				.Select(child => ToView(child, sets, childrenByGroup))
+				.Select(child => ToView(child, childrenByGroup))
 				.ToList()
 			: [];
 
-		return PublicQuestionView.Of(question, optionSet, children);
-	}
-
-	private static OptionSet? OptionSetFor(Question question, IReadOnlyDictionary<TinyId, OptionSet> sets)
-	{
-		return question.CurrentRevision.OptionSetId is { } id && sets.TryGetValue(id, out var set) ? set : null;
+		return PublicQuestionView.Of(question, children);
 	}
 }

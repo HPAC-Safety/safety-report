@@ -222,13 +222,13 @@ public class QuestionTests
 	[Fact]
 	public void GivenOption_WhenAdded_ThenCodeIsInvariantAndWordingIsBilingual()
 	{
-		// Given / When — a revision is born with its complete option set
+		// Given / When — a question is born with its choices
 		var question = Question.Create(
 			"time_of_day", QuestionType.SingleSelect, "Time of day", "Moment de la journée", Now,
 			options: [new QuestionOptionInput("mid_day", "Mid-day", "Milieu de journée")]);
 
-		// Then — the code is what every historical answer points at
-		var option = question.CurrentRevision.Option("mid_day")!;
+		// Then — the code is what a conditional question names
+		var option = question.Choice("mid_day")!;
 		option.Code.ShouldBe("mid_day");
 		option.LabelEn.ShouldBe("Mid-day");
 		option.LabelFr.ShouldBe("Milieu de journée");
@@ -265,9 +265,9 @@ public class QuestionTests
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
 		// Then
-		consent.CurrentRevision.Accepts("yes").ShouldBeTrue();
-		consent.CurrentRevision.Accepts("no").ShouldBeTrue();
-		consent.CurrentRevision.Accepts("maybe").ShouldBeFalse();
+		consent.Offers("yes", Locale.EnCa).ShouldBeTrue();
+		consent.Offers("no", Locale.EnCa).ShouldBeTrue();
+		consent.Offers("maybe", Locale.EnCa).ShouldBeFalse();
 	}
 
 	[Fact]

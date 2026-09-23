@@ -28,13 +28,10 @@ namespace HpacSafety.Core.Features.QuestionBank.Typeform;
 public static class TypeformExportBuilder
 {
 	/// <summary>Builds the English and French documents for the given live questions.</summary>
-	/// <param name="questions">Every live question, in display order.</param>
-	/// <param name="optionSets">Every live shared option set, by id — used the same way <see cref="QuestionChoices" /> does.</param>
-	public static (TypeformDocument English, TypeformDocument French) Build(
-		IReadOnlyList<Question> questions, IReadOnlyDictionary<TinyId, OptionSet> optionSets)
+	/// <param name="questions">Every live question, in display order, with its choices loaded.</param>
+	public static (TypeformDocument English, TypeformDocument French) Build(IReadOnlyList<Question> questions)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
-		ArgumentNullException.ThrowIfNull(optionSets);
 
 		var keysByQuestionId = questions.ToDictionary(question => question.Id, question => question.Key);
 
@@ -44,14 +41,12 @@ public static class TypeformExportBuilder
 		foreach (var question in questions)
 		{
 			var revision = question.CurrentRevision;
-			var optionSet = revision.OptionSetId is { } id && optionSets.TryGetValue(id, out var set) ? set : null;
-			var choices = QuestionChoices.For(revision, optionSet);
+			var choices = question.Choices;
 
 			var hpac = new TypeformHpacExtension(
 				EnumCode.Of(revision.Type),
 				revision.IsPrivate,
 				revision.IsRequired,
-				revision.AllowsReporterAdditions,
 				NameOf(revision.DependsOnQuestionId, keysByQuestionId),
 				revision.DependsOnOptionCode,
 				NameOf(revision.GroupedUnderQuestionId, keysByQuestionId));
@@ -73,17 +68,17 @@ public static class TypeformExportBuilder
 		string label,
 		string? helpText,
 		QuestionType type,
-		IReadOnlyList<QuestionOptionInput> choices,
+		IReadOnlyList<QuestionChoice> choices,
 		TypeformHpacExtension hpac,
 		bool english)
 	{
 		var properties = new TypeformFieldProperties(
 			helpText,
 			AllowMultipleSelection: type == QuestionType.MultiSelect ? true : null,
-			AllowOtherChoice: type == QuestionType.MultiSelect && hpac.AllowsReporterAdditions ? true : null,
+			AllowOtherChoice: null,
 			Choices: choices.Count == 0
 				? null
-				: [.. choices.Select(choice => new TypeformChoice(choice.Code, choice.Code, english ? choice.LabelEn : choice.LabelFr))],
+				: [.. choices.Select(choice => new TypeformChoice(choice.Code, choice.Code, choice.Label(english ? Locale.EnCa : Locale.FrCa)))],
 			Fields: null,
 			Hpac: hpac);
 

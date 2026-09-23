@@ -31,7 +31,7 @@ write the summary manually.
 |---|---|
 | `questions` | Stable question identity: key, role, privacy, order, section, active/deleted state. |
 | `question_revisions` | Complete, immutable bilingual revisions of a question — wording, type, required flag. Answers reference a revision, never the question row. |
-| `question_revision_options` | Choices on a revision, complete in both languages. |
+| `question_choices` | A question's own editable choices, outside its revisions. Editing them never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (ADR-0095). |
 | `reports` | The submission. Only `consent_publish` projects onto a typed property; every other answer lives in `report_answers`. **`language`** records the locale the reporter actually wrote in — see below. |
 | `report_answers` | One row per question asked, referencing the exact revision it was answered under. |
 | `report_files` | Blob keys for uploads, an `AttachmentKind`, and (once wired up) the file-upload answer they belong to. |

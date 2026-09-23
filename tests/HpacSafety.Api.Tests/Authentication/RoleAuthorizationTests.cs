@@ -30,11 +30,9 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 
 		// When
 		using var questions = await client.GetAsync(new Uri("/api/admin/questions", UriKind.Relative));
-		using var optionSets = await client.GetAsync(new Uri("/api/admin/option-sets", UriKind.Relative));
 
 		// Then — 403, not 401: they are signed in, and it is still not theirs.
 		questions.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
-		optionSets.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 	}
 
 	[Fact]

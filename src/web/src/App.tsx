@@ -10,7 +10,6 @@ import { MemberLoginPage } from "./routes/MemberLoginPage"
 import { AdminPage } from "./routes/AdminPage"
 import { ManageReportsPage } from "./routes/ManageReportsPage"
 import { ManageQuestionsPage } from "./routes/ManageQuestionsPage"
-import { ManageChoiceListsPage } from "./routes/ManageChoiceListsPage"
 import { ManageAnswerTranslationsPage } from "./routes/ManageAnswerTranslationsPage"
 import { NotFoundPage } from "./routes/NotFoundPage"
 
@@ -46,14 +45,6 @@ function App() {
 						element={
 							<AdminRouteGuard requires="administrator">
 								<ManageQuestionsPage />
-							</AdminRouteGuard>
-						}
-					/>
-					<Route
-						path="/admin/choice-lists"
-						element={
-							<AdminRouteGuard requires="administrator">
-								<ManageChoiceListsPage />
 							</AdminRouteGuard>
 						}
 					/>

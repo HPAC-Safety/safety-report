@@ -40,13 +40,19 @@ export const OPTION_TYPES: readonly QuestionType[] = ["single_select", "multi_se
  */
 export const NO_ANSWER_TYPES: readonly QuestionType[] = ["statement", "group"]
 
+/** One of a question's own choices (ADR-0095). */
 export interface OptionView {
 	code: string
-	labelEn: string
-	labelFr: string
-	sourceItemId: string | null
-	/** A reporter typed this into a type-ahead; an administrator has not reviewed it. */
+	/** Null only on a reporter-added choice typed in French, until an administrator supplies it. */
+	labelEn: string | null
+	/** Null only on a reporter-added choice typed in English, until an administrator supplies it. */
+	labelFr: string | null
+	/** A reporter typed this into a type-ahead rather than an administrator writing it (ADR-0063). */
 	addedByReporter: boolean
+	/** One language is still missing, waiting for an administrator to supply it. */
+	needsTranslation: boolean
+	/** The language a reporter typed it in, or null. */
+	reporterLocale: string | null
 }
 
 export interface QuestionView {
@@ -62,32 +68,23 @@ export interface QuestionView {
 	displayOrder: number
 	dependsOnQuestionId: string | null
 	dependsOnOptionCode: string | null
-	optionSetId: string | null
 	/** The group question this one renders together with, if any. Distinct from a conditional dependency (ADR-0076). */
 	groupedUnderQuestionId: string | null
-	/**
-	 * Whether a reporter's value not on the shared list is recorded as a new
-	 * choice rather than rejected. Always true for autocomplete;
-	 * author-controlled for multi-select (ADR-0063, amended by ADR-0077).
-	 */
-	allowsReporterAdditions: boolean
 	labelEn: string
 	labelFr: string
 	helpTextEn: string | null
 	helpTextFr: string | null
 	placeholderEn: string | null
 	placeholderFr: string | null
+	/** The question's own choices, in order; removed ones are left out (ADR-0095). */
 	options: OptionView[]
+	/** How many reporter-added choices still wait for an administrator to supply a language. */
+	reporterChoicesAwaitingReview: number
 	/**
-	 * True when this question's choices are read from the live shared list
-	 * rather than from the revision's own snapshot — which is how a site a
-	 * reporter added shows up for the next one (ADR-0063).
-	 */
-	choicesComeFromLiveList: boolean
-	/**
-	 * Whether any answer references this question. An edit to an answered
-	 * question retires it and creates a new one in its place (ADR-0071), so the
-	 * editor says so before the administrator saves.
+	 * Whether any answer references this question. A wording edit to an
+	 * answered question retires it and creates a new one in its place
+	 * (ADR-0071) — though editing only its choices never does (ADR-0095) — so
+	 * the editor says so before the administrator saves.
 	 */
 	hasBeenAnswered: boolean
 }
@@ -96,12 +93,15 @@ export interface QuestionView {
  * One choice as authored. An administrator names a choice by its wording only:
  * a new choice sends a null code and the server derives it from the English
  * wording; an existing choice sends back the code it already has, so a relabel
- * is never a recode.
+ * is never a recode. A reporter-added choice may keep one language blank until
+ * someone supplies it; every other choice needs both.
  */
 export interface OptionInput {
 	code: string | null
 	labelEn: string
 	labelFr: string
+	/** Carried for the editor's marker only; the server keeps its own record of who added a choice. */
+	addedByReporter?: boolean
 }
 
 export interface SaveQuestionRequest {
@@ -118,18 +118,9 @@ export interface SaveQuestionRequest {
 	isActive: boolean
 	dependsOnQuestionId: string | null
 	dependsOnOptionCode: string | null
-	optionSetId: string | null
 	groupedUnderQuestionId: string | null
-	allowsReporterAdditions: boolean
+	/** The complete list of the question's choices, applied in place — never a new version (ADR-0095). */
 	options: OptionInput[]
-}
-
-export interface OptionSetView {
-	id: string
-	key: string
-	nameEn: string
-	nameFr: string
-	items: OptionView[]
 }
 
 /**
@@ -208,29 +199,6 @@ export function reorderQuestions(questionIdsInOrder: string[]): Promise<Question
 
 export function deleteQuestion(id: string): Promise<void> {
 	return call<void>(`/api/admin/questions/${id}`, { method: "DELETE" })
-}
-
-export interface SaveOptionSetRequest {
-	key?: string
-	nameEn: string
-	nameFr: string
-	items: OptionInput[]
-}
-
-export function listOptionSets(): Promise<OptionSetView[]> {
-	return call<OptionSetView[]>("/api/admin/option-sets")
-}
-
-export function createOptionSet(request: SaveOptionSetRequest): Promise<OptionSetView> {
-	return call<OptionSetView>("/api/admin/option-sets", { method: "POST", body: JSON.stringify(request) })
-}
-
-export function replaceOptionSet(id: string, request: SaveOptionSetRequest): Promise<OptionSetView> {
-	return call<OptionSetView>(`/api/admin/option-sets/${id}`, { method: "PUT", body: JSON.stringify(request) })
-}
-
-export function deleteOptionSet(id: string): Promise<void> {
-	return call<void>(`/api/admin/option-sets/${id}`, { method: "DELETE" })
 }
 
 /**

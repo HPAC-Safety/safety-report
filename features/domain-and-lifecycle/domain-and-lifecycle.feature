@@ -88,7 +88,7 @@ Scenario: Soft deletion removes a report from every normal path
 Scenario: A question revision can be deleted only when unreferenced
   Given a question revision is referenced by no answer, including answers on deleted reports
   When an Administrator deletes that revision
-  Then the revision and its option children are stamped with one deleted timestamp
+  Then the revision is stamped with a deleted timestamp
   And once any answer references a revision, that revision is never deletable again
 
 @REQ-DOM-009
@@ -96,7 +96,7 @@ Scenario: Retiring a question is a soft delete with no way back
   Given a question is retired, either by an Administrator or by being replaced through an edit
   When the deletion is committed
   Then the question is stamped with a deleted timestamp rather than removed
-  And its revisions, options, and every answer given to it are untouched
+  And its revisions, choices, and every answer given to it are untouched
   And there is no restore transition
 
 @REQ-DOM-010

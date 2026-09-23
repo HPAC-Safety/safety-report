@@ -112,6 +112,28 @@ export function defaultFormQuestions(): StubQuestion[] {
 	]
 }
 
+/** The default form with a "Pick several" question as its first answer-producing page (REQ-SUB-034). */
+export function multiSelectFormQuestions(): StubQuestion[] {
+	const questions = defaultFormQuestions()
+	questions.splice(
+		1,
+		0,
+		question({
+			id: "conditions",
+			key: "conditions",
+			labelEn: "Which conditions applied?",
+			type: "multi_select",
+			displayOrder: 1,
+			options: [
+				{ code: "gusty", labelEn: "Gusty", labelFr: "Rafales", sourceItemId: null, addedByReporter: false },
+				{ code: "thermic", labelEn: "Thermic", labelFr: "Thermique", sourceItemId: null, addedByReporter: false },
+				{ code: "turbulent", labelEn: "Turbulent", labelFr: "Turbulent", sourceItemId: null, addedByReporter: false },
+			],
+		}),
+	)
+	return questions
+}
+
 export async function stubCurrentQuestions(page: Page, questions: StubQuestion[] = defaultFormQuestions()) {
 	await page.route("**/api/v1/questions/", (route) =>
 		route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(questions) }),

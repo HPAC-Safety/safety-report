@@ -118,6 +118,9 @@
     "select": {
       "placeholder": "Choisissez-en une"
     },
+    "multiSelect": {
+      "placeholder": "Choisissez n’importe lequel"
+    },
     "attachments": {
       "selectedCount": "{count} fichier(s) sélectionné(s)",
       "guidance": "Veuillez joindre des photos, des vidéos ou des documents liés à cet incident, si vous en avez.",

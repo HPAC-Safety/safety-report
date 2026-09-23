@@ -80,6 +80,16 @@ Scenario: The Next button becomes Submit on the final page
   Then the control that was Next now reads Submit
   And pressing it sends the one final multipart request
 
+@REQ-SUB-034
+@ui
+Scenario: A multi-select question is a picker dropdown, not a flat list
+  Given the current page shows a multi-select question
+  Then its options are hidden behind one closed picker labelled by the question
+  When the reporter opens the picker and checks two options
+  Then the picker stays open with both options checked
+  When the reporter presses Escape
+  Then the picker closes, returns focus to itself, and names both chosen options
+
 @REQ-SUB-004
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions

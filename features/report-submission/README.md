@@ -74,6 +74,11 @@ here is a separate server concept:
    default selection.
 5. Next becomes Submit on the last page.
 
+A `multi_select` ("Pick several") question renders as a picker dropdown, the
+same closed-control shape as a single-select: one trigger labelled by the
+question, naming what is chosen, that opens a list of checkable options and
+stays open while several are checked. Escape or leaving it closes it.
+
 ## Validation order
 
 The API performs, in order:
@@ -159,3 +164,5 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Calling a translation provider on the submission path.
 - Echoing submitted content back in a validation error.
 - A per-reporter throttle. Rate limiting is by trusted IP.
+- Searching or filtering inside the multi-select picker, or a third-party
+  select widget to provide one.

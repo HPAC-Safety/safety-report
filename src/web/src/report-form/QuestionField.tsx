@@ -1,6 +1,7 @@
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import type { DraftAnswer } from "./draft"
+import { MultiSelectPicker } from "./MultiSelectPicker"
 import { optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
 
 const fieldClassName =
@@ -45,7 +46,7 @@ export function QuestionField({
 	const describedBy = [help ? helpId : null, errorText ? errorId : null].filter(Boolean).join(" ") || undefined
 
 	const label = (
-		<label className={labelClassName} htmlFor={question.type === "yes_no" || question.type === "multi_select" ? undefined : fieldId}>
+		<label className={labelClassName} htmlFor={question.type === "yes_no" ? undefined : fieldId}>
 			{questionLabel(question, locale)}
 			{question.isRequired && (
 				<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
@@ -146,27 +147,26 @@ export function QuestionField({
 			onChange(next.length > 0 ? { kind: "options", values: next } : undefined)
 		}
 		return (
-			<fieldset className="mb-6" aria-describedby={describedBy}>
-				<legend className={labelClassName}>
-					{questionLabel(question, locale)}
-					{question.isRequired && (
-						<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
-					)}
-				</legend>
-				<div className="mt-2 flex flex-col gap-2">
-					{question.options.map((option) => {
-						const label = optionLabel(option, locale)
-						return (
-							<label key={option.code} className="touch-target inline-flex items-center gap-2 font-sans text-ink">
-								<input type="checkbox" checked={values.includes(label)} onChange={() => toggle(label)} />
-								{label}
-							</label>
-						)
-					})}
-				</div>
+			<div className="mb-6">
+				<MultiSelectPicker
+					fieldId={fieldId}
+					label={
+						<>
+							{questionLabel(question, locale)}
+							{question.isRequired && (
+								<span className="ml-1 font-sans text-xs font-normal text-ink-muted">{t("report.required.badge")}</span>
+							)}
+						</>
+					}
+					options={question.options.map((option) => ({ key: option.code, label: optionLabel(option, locale) }))}
+					values={values}
+					placeholder={t("report.multiSelect.placeholder")}
+					describedBy={describedBy}
+					onToggle={toggle}
+				/>
 				{helpNode}
 				{errorNode}
-			</fieldset>
+			</div>
 		)
 	}
 

@@ -10,7 +10,10 @@ keywords: traceability, claim IDs, Gherkin tags, generated documentation, CI gat
 
 # ADR-0084 — A claim has a stable ID, and the traceability matrix is generated
 
-**Status:** Accepted
+**Status:** Accepted. Amended by
+[ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md): CI
+regenerates the matrix onto a same-repo pull request, and a branch must be up
+to date to merge.
 
 ## Context
 

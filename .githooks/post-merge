@@ -10,9 +10,10 @@
 # real and stage the result, so the next commit carries the correct matrix
 # instead of a stale one CI's "docs" job would otherwise have to catch.
 #
-# A dev-machine convenience, not a CI gate (same framing as pre-commit) — CI
-# still re-checks the whole tree in the "docs" job as a backstop for anyone
-# who skipped ./init-dev.sh. This file is the tracked template; ./init-dev.sh
+# A dev-machine convenience, not a CI gate (same framing as pre-commit). On a
+# same-repo pull request .github/workflows/traceability.yml regenerates and
+# commits the matrix too, and CI re-checks the whole tree in the "docs" job
+# (ADR-0101). This file is the tracked template; ./init-dev.sh
 # copies it into the real hooks directory — edit this copy, not the
 # installed one, and re-run ./init-dev.sh to pick up the change.
 

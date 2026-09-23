@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-299 claims across 8 areas: 227 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+304 claims across 8 areas: 232 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 

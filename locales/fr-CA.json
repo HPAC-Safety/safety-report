@@ -133,6 +133,15 @@
     "submitted": {
       "title": "Rapport présenté",
       "body": "Merci. Nous avons bien reçu votre rapport."
+    },
+    "resume": {
+      "title": "Souhaitez-vous reprendre là où vous vous êtes arrêté?",
+      "body": "Ce navigateur a enregistré les réponses d'un rapport que vous n'avez pas encore soumis. Souhaitez-vous poursuivre avec ces réponses ou commencer un nouveau rapport? Si vous recommencez, ces réponses seront supprimées de ce navigateur.",
+      "yes": "Oui, continuez",
+      "no": "Non, recommencez",
+      "tableCaption": "Vos réponses enregistrées",
+      "questionHeader": "Question",
+      "answerHeader": "Réponse enregistrée"
     }
   },
   "notFound": {

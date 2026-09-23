@@ -1229,6 +1229,48 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "report.resume.answerHeader": {
+    "source_hash": "0a63aed29e39d348eae5002e11cccb9a0415cd4b06785153f6a41943ab7b2dfe",
+    "target_hash": "39277123492abf83b5768b68bec8895a642fd9dea0d8d60524d9bb3b9131d9de",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.resume.body": {
+    "source_hash": "02732de6e99700e73950e940f9c8b3f0f7678ddd823eb37fccb3bf8e8c72c377",
+    "target_hash": "019c15ffec4a84ae5e001cda15e5b2d2d80d5464c61787ed8f1f1f9298e23c1f",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.resume.no": {
+    "source_hash": "b8179d025fc55c7823c98080e988d520686ebe86183e39b76105a80745897a2a",
+    "target_hash": "b977fcd48add64d8a3fc403f3691c6888b2898977625e8277b6f899caa9c9841",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.resume.questionHeader": {
+    "source_hash": "289aff12b04274cb04b8f7dbf486ba8b3528c6fd16b60b9a31d31ce23b339236",
+    "target_hash": "289aff12b04274cb04b8f7dbf486ba8b3528c6fd16b60b9a31d31ce23b339236",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.resume.tableCaption": {
+    "source_hash": "d1c2d1bb04bfb168d4eecf99931d3317fb28927036c4e26297f6f06c2ccea2ab",
+    "target_hash": "c0241fb2010cb57e4fbf3c51e261413636ed69086212a15e71b2147d34159768",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.resume.title": {
+    "source_hash": "22bb1afa1c9fb2e0d7ba31914dd99e98559222851e01db5a8dc9a39d894cd336",
+    "target_hash": "e4d1842bdf189ff71f77d92b86d46ee35b9c200e9aeee3e9b7a2fe5e95f0c518",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.resume.yes": {
+    "source_hash": "490bacdff97c34019d06defad027bb55036a8f0029a2d5470d71d7b67942e6fb",
+    "target_hash": "d660c0ff8454414069712289459d58526edf1e7c2ef862c7e660ec08d077877c",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "report.select.placeholder": {
     "source_hash": "0b24aed53ab654eae8cd8d2b2c7196527480b3591d079fb08cbbd697dfe4169e",
     "target_hash": "e268f56994da8a2b7fc4dedc7449f3c40177fd2390769e6788dcfae3d8d961bf",

@@ -5,9 +5,11 @@ import { signInAs, stubAuth } from "./auth"
 import {
 	defaultFormQuestions,
 	multiSelectFormQuestions,
+	forgetDraftInBrowser,
 	readDraftFromBrowser,
 	stubCurrentQuestions,
 	stubSubmission,
+	writeSavedDraftToBrowser,
 	writeStaleDraftToBrowser,
 	type StubQuestion,
 } from "./report-form-fixture"
@@ -44,6 +46,10 @@ async function openForm(page: Page, questions: StubQuestion[] = defaultFormQuest
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
 }
 
+function resumeDialog(page: Page) {
+	return page.getByRole("dialog", { name: "Continue where you left off?" })
+}
+
 async function goNext(page: Page) {
 	await page.getByRole("button", { name: "Next" }).click()
 }
@@ -77,6 +83,7 @@ async function reachGroupPage(page: Page) {
  */
 async function resetToIntro(page: Page) {
 	await stubCurrentQuestions(page, defaultFormQuestions())
+	await forgetDraftInBrowser(page)
 	await page.reload()
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
 }
@@ -112,6 +119,17 @@ Given("local browser state is older than 15 days", async ({ page }) => {
 	await stubAuth(page)
 	await stubCurrentQuestions(page)
 	await writeStaleDraftToBrowser(page)
+})
+
+Given("this browser holds an unexpired saved report", async ({ page }) => {
+	await stubAuth(page)
+	await stubCurrentQuestions(page)
+	await writeSavedDraftToBrowser(page)
+})
+
+Given("this browser holds no saved report", async ({ page }) => {
+	await stubAuth(page)
+	await stubCurrentQuestions(page)
 })
 
 Given("the current form's first question is a live statement", async () => {}) // The default fixture's first question already is one.
@@ -192,6 +210,16 @@ When("the reporter returns to the form", async ({ page }) => {
 	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
 })
 
+When("the reporter chooses to continue", async ({ page }) => {
+	await resumeDialog(page).getByRole("button", { name: "Yes, continue" }).click()
+	await expect(resumeDialog(page)).toHaveCount(0)
+})
+
+When("the reporter declines to continue", async ({ page }) => {
+	await resumeDialog(page).getByRole("button", { name: "No, start over" }).click()
+	await expect(resumeDialog(page)).toHaveCount(0)
+})
+
 When("a reporter opens the report page", async ({ page }) => {
 	await openForm(page)
 })
@@ -233,6 +261,7 @@ When("the client validates it before submission", async ({ page }) => {
 	const narrative = questions.find((q) => q.key === "narrative")!
 	narrative.isRequired = true
 	await stubCurrentQuestions(page, questions)
+	await forgetDraftInBrowser(page)
 	await page.reload()
 	await goNext(page)
 	await goNext(page) // narrative left empty
@@ -409,6 +438,7 @@ Then("errors are linked to their fields and summarized", async ({ page }) => {
 	const narrative = questions.find((q) => q.key === "narrative")!
 	narrative.isRequired = true
 	await stubCurrentQuestions(page, questions)
+	await forgetDraftInBrowser(page)
 	await page.reload()
 	await goNext(page)
 	await goNext(page)
@@ -517,4 +547,59 @@ Then("the picker closes, returns focus to itself, and names both chosen options"
 	await expect(picker).toBeFocused()
 	await expect(picker).toHaveAccessibleName("Which conditions applied? Gusty, Turbulent")
 	await expect(page.getByRole("checkbox")).toHaveCount(0)
+})
+
+Then("a dialog asks whether to continue where they left off, with No and Yes buttons", async ({ page }) => {
+	const dialog = resumeDialog(page)
+	await expect(dialog).toBeVisible()
+	await expect(dialog.getByRole("button", { name: "No, start over" })).toBeVisible()
+	await expect(dialog.getByRole("button", { name: "Yes, continue" })).toBeVisible()
+})
+
+Then("a table below the buttons lists each saved question with its saved answer", async ({ page }) => {
+	const dialog = resumeDialog(page)
+	const table = dialog.getByRole("table")
+	const buttonsBox = await dialog.getByRole("button", { name: "Yes, continue" }).boundingBox()
+	const tableBox = await table.boundingBox()
+	expect(tableBox!.y).toBeGreaterThan(buttonsBox!.y + buttonsBox!.height)
+
+	const rows = table.getByRole("row").filter({ has: page.getByRole("rowheader") })
+	await expect(rows).toHaveText([
+		/What happened\?\s*A saved synthetic narrative\./,
+		/Was anyone injured\?\s*Yes/,
+		/Describe the injury\s*A synthetic sprain\./,
+		/Type of aircraft\s*Paraglider/,
+	])
+	await expect(table).not.toContainText("retired")
+})
+
+Then("no attachment is listed", async ({ page }) => {
+	await expect(resumeDialog(page).getByRole("table")).not.toContainText("Photos or videos")
+})
+
+Then("the saved answers are restored", async ({ page }) => {
+	await expect(page.getByLabel("Describe the injury")).toHaveValue("A synthetic sprain.")
+	await goBack(page)
+	await expect(page.getByRole("group", { name: "Was anyone injured?" }).getByRole("radio", { name: "Yes" })).toBeChecked()
+	await goBack(page)
+	await expect(page.getByLabel("What happened?")).toHaveValue("A saved synthetic narrative.")
+})
+
+Then("the form opens on the page the reporter was last on", async ({ page }) => {
+	await expect(page.getByLabel("Describe the injury")).toBeVisible()
+})
+
+Then("the browser removes the saved report", async ({ page }) => {
+	expect(await readDraftFromBrowser(page)).toBeNull()
+})
+
+Then("the form opens at its introduction with no answers", async ({ page }) => {
+	await expect(page.getByRole("heading", { level: 1 })).toContainText("Thanks for taking the time")
+	await goNext(page)
+	await expect(page.getByLabel("What happened?")).toHaveValue("")
+})
+
+Then("no dialog asks whether to continue", async ({ page }) => {
+	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+	await expect(resumeDialog(page)).toHaveCount(0)
 })

@@ -32,6 +32,40 @@ Scenario: Expired local state is not restored
   When the reporter returns to the form
   Then the browser ignores or removes the expired state
 
+@REQ-SUB-035
+@ui
+Scenario: A returning reporter is asked whether to continue their saved report
+  Given this browser holds an unexpired saved report
+  When the reporter returns to the form
+  Then a dialog asks whether to continue where they left off, with No and Yes buttons
+  And a table below the buttons lists each saved question with its saved answer
+  And no attachment is listed
+
+@REQ-SUB-036
+@ui
+Scenario: Continuing a saved report restores it where the reporter left off
+  Given this browser holds an unexpired saved report
+  When the reporter returns to the form
+  And the reporter chooses to continue
+  Then the form opens on the page the reporter was last on
+  And the saved answers are restored
+
+@REQ-SUB-037
+@ui
+Scenario: Declining a saved report starts a fresh form
+  Given this browser holds an unexpired saved report
+  When the reporter returns to the form
+  And the reporter declines to continue
+  Then the browser removes the saved report
+  And the form opens at its introduction with no answers
+
+@REQ-SUB-038
+@ui
+Scenario: A reporter with no saved report is not asked
+  Given this browser holds no saved report
+  When the reporter returns to the form
+  Then no dialog asks whether to continue
+
 @REQ-SUB-028
 @ui
 Scenario: The leading statement question renders as an introduction

@@ -45,7 +45,8 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 	private readonly MembersSiteLoginOptions _options;
 
 	/// <summary>Creates the credential source.</summary>
-	public MembersSiteCredentialSource(IHttpClientFactory clients, IOptions<MembersSiteLoginOptions> options)
+	public MembersSiteCredentialSource(IHttpClientFactory clients,
+									   IOptions<MembersSiteLoginOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
@@ -54,7 +55,9 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 	}
 
 	/// <inheritdoc />
-	public async Task<MemberRole?> Verify(string username, string password, CancellationToken cancellationToken)
+	public async Task<MemberRole?> Verify(string username,
+										  string password,
+										  CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(username);
 		ArgumentNullException.ThrowIfNull(password);
@@ -69,8 +72,8 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 			{
 				["session[email]"] = username,
 				["session[password]"] = password,
-				["authenticity_token"] = csrfToken
-			})
+				["authenticity_token"] = csrfToken,
+			}),
 		};
 		post.Headers.TryAddWithoutValidation("Cookie", cookies);
 
@@ -124,7 +127,8 @@ public sealed partial class MembersSiteCredentialSource : IDevelopmentCredential
 	}
 
 	private static async Task<(string CsrfToken, string Cookies)> FetchLoginFormAsync(
-		HttpClient client, CancellationToken cancellationToken)
+		HttpClient client,
+		CancellationToken cancellationToken)
 	{
 		HttpResponseMessage response;
 

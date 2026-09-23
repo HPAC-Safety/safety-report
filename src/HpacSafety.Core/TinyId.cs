@@ -81,7 +81,8 @@ public readonly record struct TinyId
 			Length,
 			// string.Create cannot close over a span, so the bytes are copied.
 			entropy[..Length].ToArray(),
-			static (span, source) =>
+			static (span,
+					source) =>
 			{
 				for (var i = 0; i < Length; i++)
 				{
@@ -108,11 +109,13 @@ public readonly record struct TinyId
 	/// <summary>Reads an identifier back from text, without throwing.</summary>
 	/// <param name="candidate">The text to read.</param>
 	/// <param name="id">The identifier, if the text was one.</param>
-	public static bool TryParse(string? candidate, out TinyId id)
+	public static bool TryParse(string? candidate,
+								out TinyId id)
 	{
 		id = default;
 
-		if (candidate is null || candidate.Length != Length)
+		if (candidate is null
+			|| candidate.Length != Length)
 		{
 			return false;
 		}

@@ -98,7 +98,7 @@ public sealed class AuthorizationSteps
 				labelFr = "Une question d'acceptation",
 				isPrivate = true,
 				isRequired = false,
-				isActive = true
+				isActive = true,
 			});
 	}
 

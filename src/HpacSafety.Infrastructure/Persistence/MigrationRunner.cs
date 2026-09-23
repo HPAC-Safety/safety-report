@@ -97,7 +97,9 @@ public static partial class MigrationRunner
 	private static partial void LogNoPendingMigrations(ILogger logger);
 
 	[LoggerMessage(Level = LogLevel.Information, Message = "Applying {Count} pending migration(s), latest {LatestMigration}")]
-	private static partial void LogApplyingMigrations(ILogger logger, int count, string latestMigration);
+	private static partial void LogApplyingMigrations(ILogger logger,
+													  int count,
+													  string latestMigration);
 
 	[LoggerMessage(Level = LogLevel.Information, Message = "Migrations applied.")]
 	private static partial void LogMigrationsApplied(ILogger logger);

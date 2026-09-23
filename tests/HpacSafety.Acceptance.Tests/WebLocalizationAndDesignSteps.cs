@@ -21,12 +21,17 @@ public sealed class WebLocalizationAndDesignSteps
 		RunNodeTool(relativeScriptPath, true);
 	}
 
-	private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, params string[] args)
+	private static int RunNodeTool(string relativeScriptPath,
+								   bool expectSuccess,
+								   params string[] args)
 	{
 		return RunNodeTool(relativeScriptPath, expectSuccess, out _, args);
 	}
 
-	private static int RunNodeTool(string relativeScriptPath, bool expectSuccess, out string combinedOutput, params string[] args)
+	private static int RunNodeTool(string relativeScriptPath,
+								   bool expectSuccess,
+								   out string combinedOutput,
+								   params string[] args)
 	{
 		var repositoryRoot = RepositoryRoot();
 
@@ -36,8 +41,8 @@ public sealed class WebLocalizationAndDesignSteps
 			{
 				WorkingDirectory = repositoryRoot,
 				RedirectStandardOutput = true,
-				RedirectStandardError = true
-			}
+				RedirectStandardError = true,
+			},
 		};
 		process.StartInfo.ArgumentList.Add(relativeScriptPath);
 		foreach (var arg in args)
@@ -64,7 +69,8 @@ public sealed class WebLocalizationAndDesignSteps
 	{
 		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-		while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
+		while (directory is not null
+			   && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
 		{
 			directory = directory.Parent;
 		}
@@ -168,7 +174,10 @@ public sealed class WebLocalizationAndDesignSteps
 	///     A locale set as a real generate would leave it: both hashes stamped, so
 	///     a later edit to either side is visible.
 	/// </summary>
-	private void WriteCorrectionFixture(string english, string french, string stampedEnglish, string stampedFrench)
+	private void WriteCorrectionFixture(string english,
+										string french,
+										string stampedEnglish,
+										string stampedFrench)
 	{
 		_correctionDir = Path.Combine(Path.GetTempPath(), $"locales-correction-{Guid.NewGuid():N}");
 		Directory.CreateDirectory(_correctionDir);
@@ -188,8 +197,8 @@ public sealed class WebLocalizationAndDesignSteps
 					source_hash = Sha256(stampedEnglish),
 					target_hash = Sha256(stampedFrench),
 					provider = "deepl:FR-CA:prefer_more",
-					reviewed = false
-				}
+					reviewed = false,
+				},
 			}));
 	}
 

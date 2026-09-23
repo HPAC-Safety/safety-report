@@ -26,7 +26,8 @@ public sealed class MembersSiteUnavailableException : Exception
 	///     The underlying failure. Never surfaced to a caller — the API reports
 	///     <see cref="Exception.Message" /> only.
 	/// </param>
-	public MembersSiteUnavailableException(string message, Exception innerException)
+	public MembersSiteUnavailableException(string message,
+										   Exception innerException)
 		: base(message, innerException)
 	{
 	}

@@ -13,7 +13,7 @@ public sealed class RegistrationTests
 		return new ConfigurationBuilder()
 			.AddInMemoryCollection(new Dictionary<string, string?>
 			{
-				["ConnectionStrings:HpacSafety"] = connectionString
+				["ConnectionStrings:HpacSafety"] = connectionString,
 			})
 			.Build();
 	}

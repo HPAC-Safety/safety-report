@@ -31,7 +31,8 @@ public sealed class MediaSnifferChain : IMediaSniffer
 	}
 
 	/// <inheritdoc />
-	public async Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
+	public async Task<MediaType?> Sniff(Stream content,
+										CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 

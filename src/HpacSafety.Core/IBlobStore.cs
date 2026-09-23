@@ -15,7 +15,10 @@ namespace HpacSafety.Core;
 public interface IBlobStore
 {
 	/// <summary>A short-lived URL a browser may PUT one file to, and only that one key.</summary>
-	Task<Uri> CreateUploadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken);
+	Task<Uri> CreateUploadUrl(BlobKey key,
+							  string contentType,
+							  TimeSpan lifetime,
+							  CancellationToken cancellationToken);
 
 	/// <summary>
 	///     A short-lived URL an administrator may GET one file from, and only that
@@ -23,11 +26,18 @@ public interface IBlobStore
 	///     name — never a client-supplied one — that the URL forces the browser to
 	///     download as, rather than render inline.
 	/// </summary>
-	Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken);
+	Task<Uri> CreateReadUrl(BlobKey key,
+							string downloadFileName,
+							TimeSpan lifetime,
+							CancellationToken cancellationToken);
 
 	/// <summary>Opens stored bytes for server-side work such as EXIF stripping.</summary>
-	Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken);
+	Task<Stream> OpenRead(BlobKey key,
+						  CancellationToken cancellationToken);
 
 	/// <summary>Writes bytes, such as the EXIF-stripped derivative.</summary>
-	Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken);
+	Task Write(BlobKey key,
+			   Stream content,
+			   string contentType,
+			   CancellationToken cancellationToken);
 }

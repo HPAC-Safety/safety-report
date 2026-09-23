@@ -80,7 +80,8 @@ public sealed class AuthenticationRegistrationTests
 		exception.Message.ShouldContain("Authority");
 	}
 
-	private static ServiceProvider Build(Dictionary<string, string?> settings, bool development)
+	private static ServiceProvider Build(Dictionary<string, string?> settings,
+										 bool development)
 	{
 		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 

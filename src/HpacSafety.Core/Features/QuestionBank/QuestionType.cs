@@ -39,5 +39,5 @@ public enum QuestionType
 	///     A section heading that owns nested questions and, like
 	///     <see cref="Statement" />, collects no answer itself. See ADR-0076.
 	/// </summary>
-	Group = 14
+	Group = 14,
 }

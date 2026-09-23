@@ -22,7 +22,8 @@ public static class PersistenceServiceCollectionExtensions
 	///     configure. See ADR-0019 (superseded).
 	/// </param>
 	public static IServiceCollection AddHpacSafetyPersistence(
-		this IServiceCollection services, IConfiguration configuration)
+		this IServiceCollection services,
+		IConfiguration configuration)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);

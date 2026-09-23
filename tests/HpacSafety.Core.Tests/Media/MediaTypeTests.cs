@@ -145,7 +145,8 @@ public class MediaTypeTests
 	[InlineData("application/rtf", MediaKind.Document)]
 	[InlineData("text/plain", MediaKind.Document)]
 	[InlineData("application/vnd.oasis.opendocument.text", MediaKind.Document)]
-	public void GivenADocumentContentType_WhenParsed_ThenAcceptedAsDocument(string declared, MediaKind kind)
+	public void GivenADocumentContentType_WhenParsed_ThenAcceptedAsDocument(string declared,
+																			MediaKind kind)
 	{
 		// Given / When
 		var parsed = MediaType.TryParse(declared, out var type);
@@ -160,7 +161,8 @@ public class MediaTypeTests
 	[Theory]
 	[InlineData("text/rtf", "application/rtf")]
 	[InlineData("text/markdown", "text/plain")]
-	public void GivenAnAliasContentType_WhenParsed_ThenResolvesToTheCanonicalType(string alias, string canonical)
+	public void GivenAnAliasContentType_WhenParsed_ThenResolvesToTheCanonicalType(string alias,
+																				  string canonical)
 	{
 		// Given — a format with more than one real-world MIME declaration for the
 		// same bytes; a sniffer only ever sees bytes, so it reports one canonical

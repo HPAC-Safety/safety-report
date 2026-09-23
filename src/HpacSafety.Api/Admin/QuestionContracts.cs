@@ -44,7 +44,8 @@ public sealed record QuestionView(
 	///     creates a new one in its place (ADR-0071) — though a choices-only edit
 	///     never does (ADR-0095).
 	/// </param>
-	public static QuestionView Of(Question question, bool hasBeenAnswered = false)
+	public static QuestionView Of(Question question,
+								  bool hasBeenAnswered = false)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 

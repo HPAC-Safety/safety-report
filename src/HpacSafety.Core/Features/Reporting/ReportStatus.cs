@@ -17,5 +17,5 @@ public enum ReportStatus
 	SummaryFailed = 3,
 	Approved = 4,
 	Rejected = 5,
-	Published = 6
+	Published = 6,
 }

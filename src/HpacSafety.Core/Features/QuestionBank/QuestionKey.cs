@@ -33,7 +33,8 @@ public static class QuestionKey
 			{
 				builder.Append(character);
 			}
-			else if (builder.Length > 0 && builder[^1] != '_')
+			else if (builder.Length > 0
+					 && builder[^1] != '_')
 			{
 				builder.Append('_');
 			}

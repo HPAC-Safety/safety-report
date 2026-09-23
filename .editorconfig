@@ -66,6 +66,8 @@ resharper_csharp_wrap_before_binary_opsign = true
 resharper_csharp_force_chop_compound_if_expression = true
 resharper_csharp_force_chop_compound_while_expression = true
 resharper_csharp_force_chop_compound_do_expression = true
+# Only the rules above wrap; ReSharper does not break a line for being long.
+resharper_csharp_wrap_lines = false
 
 [*.md]
 trim_trailing_whitespace = false

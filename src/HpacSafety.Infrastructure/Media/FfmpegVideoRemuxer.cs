@@ -59,7 +59,9 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	///     deployment leaves it empty and gets `ffmpeg` and `ffprobe` from PATH.
 	/// </param>
 	public FfmpegVideoRemuxer(
-		ILogger<FfmpegVideoRemuxer> logger, TimeSpan? timeout = null, string toolPrefix = "")
+		ILogger<FfmpegVideoRemuxer> logger,
+		TimeSpan? timeout = null,
+		string toolPrefix = "")
 	{
 		ArgumentNullException.ThrowIfNull(logger);
 
@@ -70,7 +72,10 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 
 	/// <inheritdoc />
 	public async Task<bool> TryRemux(
-		Stream source, Stream destination, MediaType type, CancellationToken cancellationToken)
+		Stream source,
+		Stream destination,
+		MediaType type,
+		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(source);
 		ArgumentNullException.ThrowIfNull(destination);
@@ -93,7 +98,8 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 				return false;
 			}
 
-			if (!File.Exists(output) || new FileInfo(output).Length == 0)
+			if (!File.Exists(output)
+				|| new FileInfo(output).Length == 0)
 			{
 				LogNoOutput(_logger);
 				return false;
@@ -116,7 +122,8 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		}
 	}
 
-	private static IEnumerable<string> Arguments(string input, string output)
+	private static IEnumerable<string> Arguments(string input,
+												 string output)
 	{
 		return RemuxArguments.Select(argument => argument
 			.Replace("{input}", input, StringComparison.Ordinal)
@@ -129,7 +136,8 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	///     <see cref="RemuxVerification" />, which needs no process and so can be
 	///     exercised directly.
 	/// </summary>
-	private async Task<bool> IsClean(string path, CancellationToken cancellationToken)
+	private async Task<bool> IsClean(string path,
+									 CancellationToken cancellationToken)
 	{
 		var probe = await Capture(
 			"ffprobe",
@@ -152,7 +160,9 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		return false;
 	}
 
-	private async Task<bool> Run(string executable, IEnumerable<string> arguments, CancellationToken cancellationToken)
+	private async Task<bool> Run(string executable,
+								 IEnumerable<string> arguments,
+								 CancellationToken cancellationToken)
 	{
 		return await Capture(executable, arguments, cancellationToken).ConfigureAwait(false) is not null;
 	}
@@ -173,7 +183,9 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	/// </remarks>
 	[ExcludeFromCodeCoverage]
 	private async Task<string?> Capture(
-		string executable, IEnumerable<string> arguments, CancellationToken cancellationToken)
+		string executable,
+		IEnumerable<string> arguments,
+		CancellationToken cancellationToken)
 	{
 		var start = new ProcessStartInfo(_toolPrefix + executable)
 		{
@@ -257,17 +269,25 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 	private static partial void LogNoOutput(ILogger logger);
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "{Refusal}; the original is retained instead.")]
-	private static partial void LogRefused(ILogger logger, string refusal);
+	private static partial void LogRefused(ILogger logger,
+										   string refusal);
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "{Executable} exited {ExitCode}: {Error}")]
-	private static partial void LogToolFailed(ILogger logger, string executable, string exitCode, string error);
+	private static partial void LogToolFailed(ILogger logger,
+											  string executable,
+											  string exitCode,
+											  string error);
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "{Executable} outran its {Timeout} budget.")]
-	private static partial void LogTimedOut(ILogger logger, string executable, TimeSpan timeout);
+	private static partial void LogTimedOut(ILogger logger,
+											string executable,
+											TimeSpan timeout);
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "{Executable} is not available; video is retained unstripped.")]
-	private static partial void LogToolMissing(ILogger logger, string executable);
+	private static partial void LogToolMissing(ILogger logger,
+											   string executable);
 
 	[LoggerMessage(Level = LogLevel.Warning, Message = "Could not clear the remux workspace: {Reason}")]
-	private static partial void LogWorkspaceNotCleared(ILogger logger, string reason);
+	private static partial void LogWorkspaceNotCleared(ILogger logger,
+													   string reason);
 }

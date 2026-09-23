@@ -24,7 +24,8 @@ public class ReportFileTests
 	[InlineData("video/mp4", AttachmentKind.Video)]
 	[InlineData("application/pdf", AttachmentKind.Document)]
 	[InlineData("application/octet-stream", AttachmentKind.Document)]
-	public void GivenAContentType_WhenRecorded_ThenKindReflectsIt(string contentType, AttachmentKind expected)
+	public void GivenAContentType_WhenRecorded_ThenKindReflectsIt(string contentType,
+																  AttachmentKind expected)
 	{
 		// Given / When
 		var file = new ReportFile(TinyId.New(), BlobKey.For(ReportId, MediaCompartment.Original, "file.bin").Value, contentType, 1024, Now);

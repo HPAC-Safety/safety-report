@@ -3,7 +3,9 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <summary>The verdict on one uploaded file.</summary>
 public readonly record struct MediaValidation
 {
-	private MediaValidation(bool isAccepted, MediaRejectionReason reason, MediaType type)
+	private MediaValidation(bool isAccepted,
+							MediaRejectionReason reason,
+							MediaType type)
 	{
 		IsAccepted = isAccepted;
 		RejectionReason = reason;

@@ -19,5 +19,7 @@ public interface IDevelopmentCredentialSource
 	///     the call.
 	/// </param>
 	/// <param name="cancellationToken">Cancels the verification.</param>
-	Task<MemberRole?> Verify(string username, string password, CancellationToken cancellationToken);
+	Task<MemberRole?> Verify(string username,
+							 string password,
+							 CancellationToken cancellationToken);
 }

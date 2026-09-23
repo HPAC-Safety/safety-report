@@ -23,7 +23,8 @@ public static class RateLimitingServiceCollectionExtensions
 	/// <param name="services">The container.</param>
 	/// <param name="configuration">Application configuration.</param>
 	public static IServiceCollection AddHpacSafetyRateLimiting(
-		this IServiceCollection services, IConfiguration configuration)
+		this IServiceCollection services,
+		IConfiguration configuration)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);
@@ -62,7 +63,7 @@ public static class RateLimitingServiceCollectionExtensions
 					.GetRequiredService<IOptions<RateLimitingOptions>>().Value.SignIn;
 
 				var partitionKey = httpContext.Items.TryGetValue(SignInIdentityItemsKey, out var identity)
-					&& identity is string { Length: > 0 } capturedIdentity
+								   && identity is string { Length: > 0 } capturedIdentity
 					? capturedIdentity
 					: "unknown";
 
@@ -90,13 +91,16 @@ public static class RateLimitingServiceCollectionExtensions
 	/// </summary>
 	/// <param name="app">The pipeline builder.</param>
 	/// <param name="signInPath">The sign-in route to capture the identity from.</param>
-	public static IApplicationBuilder UseSignInIdentityCapture(this IApplicationBuilder app, PathString signInPath)
+	public static IApplicationBuilder UseSignInIdentityCapture(this IApplicationBuilder app,
+															   PathString signInPath)
 	{
 		ArgumentNullException.ThrowIfNull(app);
 
-		return app.Use(async (context, next) =>
+		return app.Use(async (context,
+							  next) =>
 		{
-			if (HttpMethods.IsPost(context.Request.Method) && context.Request.Path.Equals(signInPath))
+			if (HttpMethods.IsPost(context.Request.Method)
+				&& context.Request.Path.Equals(signInPath))
 			{
 				context.Request.EnableBuffering();
 
@@ -128,7 +132,8 @@ public static class RateLimitingServiceCollectionExtensions
 		});
 	}
 
-	private static ValueTask OnRejected(OnRejectedContext context, CancellationToken cancellationToken)
+	private static ValueTask OnRejected(OnRejectedContext context,
+										CancellationToken cancellationToken)
 	{
 		context.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
 

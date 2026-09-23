@@ -19,7 +19,7 @@ public sealed record TypeformDocument(
 		// The organization's real exports hold accented French text as plain
 		// UTF-8, not \uXXXX escapes. An export matches that rather than
 		// System.Text.Json's stricter default encoder.
-		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+		Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
 	};
 
 	/// <summary>Parses a Typeform export from its raw JSON text.</summary>

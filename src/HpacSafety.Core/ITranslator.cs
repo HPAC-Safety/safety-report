@@ -50,7 +50,10 @@ public interface ITranslator
 	///     No provider is configured, or the provider could not be reached.
 	/// </exception>
 	Task<IReadOnlyList<string>> Translate(
-		IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken);
+		IReadOnlyList<string> texts,
+		Locale source,
+		Locale target,
+		CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -77,7 +80,8 @@ public sealed class TranslationUnavailableException : Exception
 	///     The underlying failure. Never surfaced to a caller — the API reports
 	///     <see cref="Exception.Message" /> only.
 	/// </param>
-	public TranslationUnavailableException(string message, Exception innerException)
+	public TranslationUnavailableException(string message,
+										   Exception innerException)
 		: base(message, innerException)
 	{
 	}

@@ -22,7 +22,8 @@ public static class AiChatClientServiceCollectionExtensions
 	/// </remarks>
 	/// <param name="services">The container.</param>
 	/// <param name="configuration">Application configuration.</param>
-	public static IServiceCollection AddHpacSafetyAiChatClient(this IServiceCollection services, IConfiguration configuration)
+	public static IServiceCollection AddHpacSafetyAiChatClient(this IServiceCollection services,
+															   IConfiguration configuration)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);

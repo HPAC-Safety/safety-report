@@ -76,7 +76,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedIn();
 		using var content = new MultipartFormDataContent
 		{
-			{ FileContent("synthetic-en.json"), "english", "synthetic-en.json" }
+			{ FileContent("synthetic-en.json"), "english", "synthetic-en.json" },
 		};
 
 		// When
@@ -188,7 +188,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent("{\"not\":\"a typeform export\"}"), "english", "bad.json" },
-			{ new StringContent("{\"not\":\"a typeform export\"}"), "french", "bad.json" }
+			{ new StringContent("{\"not\":\"a typeform export\"}"), "french", "bad.json" },
 		};
 
 		// When
@@ -206,7 +206,7 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		using var content = new MultipartFormDataContent
 		{
 			{ new StringContent("{this is not json"), "english", "bad.json" },
-			{ new StringContent("{this is not json"), "french", "bad.json" }
+			{ new StringContent("{this is not json"), "french", "bad.json" },
 		};
 
 		// When
@@ -221,11 +221,12 @@ public class TypeformImportEndpointTests(ApiPostgresFixture fixture)
 		return SignedInClient.As(_factory, role);
 	}
 
-	private static MultipartFormDataContent Multipart(string englishFileName, string frenchFileName)
+	private static MultipartFormDataContent Multipart(string englishFileName,
+													  string frenchFileName)
 	{
 		return new MultipartFormDataContent
 		{
-			{ FileContent(englishFileName), "english", englishFileName }, { FileContent(frenchFileName), "french", frenchFileName }
+			{ FileContent(englishFileName), "english", englishFileName }, { FileContent(frenchFileName), "french", frenchFileName },
 		};
 	}
 

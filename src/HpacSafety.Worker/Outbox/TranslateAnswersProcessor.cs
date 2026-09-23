@@ -18,7 +18,8 @@ public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITra
 	public OutboxMessageType HandlesType => OutboxMessageType.TranslateAnswers;
 
 	/// <inheritdoc />
-	public async Task Process(OutboxMessage message, CancellationToken cancellationToken)
+	public async Task Process(OutboxMessage message,
+							  CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(message);
 

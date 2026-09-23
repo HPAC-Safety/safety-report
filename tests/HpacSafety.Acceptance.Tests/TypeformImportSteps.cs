@@ -58,7 +58,7 @@ public sealed class TypeformImportSteps
 			"dropdown" => (
 				ChoiceField(_focusRef, "Pick", "dropdown", [new TypeformChoice("a", "a", "A")], null, null),
 				ChoiceField(_focusRef, "Choisir", "dropdown", [new TypeformChoice("a", "a", "A (fr)")], null, null)),
-			_ => (Field(_focusRef, "Field", typeformType), Field(_focusRef, "Champ", typeformType))
+			_ => (Field(_focusRef, "Field", typeformType), Field(_focusRef, "Champ", typeformType)),
 		};
 
 		_englishFields.Add(englishField);
@@ -276,23 +276,36 @@ public sealed class TypeformImportSteps
 		return _result!.Drafts.Single(draft => draft.Key == QuestionKey.Normalize(_focusRef));
 	}
 
-	private static TypeformField Field(string @ref, string title, string type)
+	private static TypeformField Field(string @ref,
+									   string title,
+									   string type)
 	{
 		return new TypeformField("id", @ref, title, type, null, new TypeformFieldProperties(null, null, null, null, null));
 	}
 
 	private static TypeformField ChoiceField(
-		string @ref, string title, string type, IReadOnlyList<TypeformChoice> choices, bool? multi, bool? other)
+		string @ref,
+		string title,
+		string type,
+		IReadOnlyList<TypeformChoice> choices,
+		bool? multi,
+		bool? other)
 	{
 		return new TypeformField("id", @ref, title, type, null, new TypeformFieldProperties(null, multi, other, choices, null));
 	}
 
 	private static TypeformField GroupField(
-		string @ref, string title, string type, string childRef1, string childRef2, string childTitle1, string childTitle2)
+		string @ref,
+		string title,
+		string type,
+		string childRef1,
+		string childRef2,
+		string childTitle1,
+		string childTitle2)
 	{
 		var children = new List<TypeformField>
 		{
-			Field(childRef1, childTitle1, "short_text"), Field(childRef2, childTitle2, "short_text")
+			Field(childRef1, childTitle1, "short_text"), Field(childRef2, childTitle2, "short_text"),
 		};
 
 		return new TypeformField("id", @ref, title, type, null, new TypeformFieldProperties(null, null, null, null, children));
@@ -304,7 +317,8 @@ public sealed class TypeformImportSteps
 			new { action = "jump", details = new { to = new { type = "field", value = toRef } }, condition = new { op = "always", vars = Array.Empty<object>() } });
 	}
 
-	private static JsonElement IsAction(string fieldRef, string choiceRef)
+	private static JsonElement IsAction(string fieldRef,
+										string choiceRef)
 	{
 		return JsonSerializer.SerializeToElement(
 			new
@@ -316,9 +330,9 @@ public sealed class TypeformImportSteps
 					op = "is",
 					vars = new object[]
 					{
-						new { type = "field", value = fieldRef }, new { type = "choice", value = choiceRef }
-					}
-				}
+						new { type = "field", value = fieldRef }, new { type = "choice", value = choiceRef },
+					},
+				},
 			});
 	}
 }

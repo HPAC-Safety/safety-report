@@ -67,14 +67,14 @@ public static class DevelopmentAdminSeed
 		return string.Create(
 			CultureInfo.InvariantCulture,
 			$"""
-             INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
-             SELECT '{Id}',
-                    '{MemberIdentifier}',
-                    '{AdministratorRoleCode}',
-                    TRUE,
-                    TIMESTAMPTZ '{QuestionBankSeed.SeededAt:yyyy-MM-dd HH:mm:sszzz}'
-             WHERE current_setting('{SettingName}', true) = 'true'
-               AND NOT EXISTS (SELECT 1 FROM admin_users WHERE member_identifier = '{MemberIdentifier}');
-             """);
+			 INSERT INTO admin_users (id, member_identifier, role, is_active, created_at)
+			 SELECT '{Id}',
+			        '{MemberIdentifier}',
+			        '{AdministratorRoleCode}',
+			        TRUE,
+			        TIMESTAMPTZ '{QuestionBankSeed.SeededAt:yyyy-MM-dd HH:mm:sszzz}'
+			 WHERE current_setting('{SettingName}', true) = 'true'
+			   AND NOT EXISTS (SELECT 1 FROM admin_users WHERE member_identifier = '{MemberIdentifier}');
+			 """);
 	}
 }

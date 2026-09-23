@@ -41,7 +41,8 @@ public sealed class ModelTests
 	[InlineData(typeof(AuditLogEntry), "audit_log")]
 	[InlineData(typeof(OutboxMessage), "outbox_messages")]
 	[InlineData(typeof(PendingImportLogic), "pending_import_logic")]
-	public void GivenModel_WhenEntityIsMapped_ThenLandsInTableIssueNamed(Type entity, string table)
+	public void GivenModel_WhenEntityIsMapped_ThenLandsInTableIssueNamed(Type entity,
+																		 string table)
 	{
 		// Given / When
 		var mapped = Model().FindEntityType(entity!);
@@ -124,7 +125,8 @@ public sealed class ModelTests
 	[InlineData("PK_Reports", "pk_reports")]
 	[InlineData("IX_ReportAnswers_ReportId", "ix_report_answers_report_id")]
 	[InlineData("already_snake", "already_snake")]
-	public void GivenName_WhenConverted_ThenReadsWayPostgresFolds(string name, string expected)
+	public void GivenName_WhenConverted_ThenReadsWayPostgresFolds(string name,
+																  string expected)
 	{
 		// Given / When / Then
 		SnakeCaseNames.ToSnakeCase(name).ShouldBe(expected);

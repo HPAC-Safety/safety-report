@@ -25,7 +25,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 			new FileSystemBlobStoreOptions
 			{
 				RootPath = _root,
-				SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+				SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
 			},
 			_clock);
 	}
@@ -97,7 +97,7 @@ public sealed class FileSystemBlobStoreTests : IDisposable
 			new FileSystemBlobStoreOptions
 			{
 				RootPath = _root,
-				SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32))
+				SigningKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32)),
 			},
 			_clock);
 		var url = await other.CreateUploadUrl(Photo, MediaType.Jpeg.ContentType, TimeSpan.FromMinutes(5), CancellationToken.None);

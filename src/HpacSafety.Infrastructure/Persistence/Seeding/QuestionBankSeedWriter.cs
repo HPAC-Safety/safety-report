@@ -51,7 +51,8 @@ public static class QuestionBankSeedWriter
 	///     without depending on what <see cref="QuestionBankSeed" /> currently
 	///     seeds.
 	/// </summary>
-	public static void Write(MigrationBuilder migrationBuilder, IReadOnlyList<SeededQuestion> questions)
+	public static void Write(MigrationBuilder migrationBuilder,
+							 IReadOnlyList<SeededQuestion> questions)
 	{
 		ArgumentNullException.ThrowIfNull(migrationBuilder);
 		AppendIfAny(migrationBuilder, Sql(questions));
@@ -77,7 +78,8 @@ public static class QuestionBankSeedWriter
 	///     <see cref="MigrationBuilder.Sql(string, bool)" /> refuses an empty
 	///     string, which an empty <see cref="QuestionBankSeed" /> produces.
 	/// </summary>
-	private static void AppendIfAny(MigrationBuilder migrationBuilder, string sql)
+	private static void AppendIfAny(MigrationBuilder migrationBuilder,
+									string sql)
 	{
 		if (sql.Length > 0)
 		{
@@ -275,7 +277,12 @@ public static class QuestionBankSeedWriter
 	///     however many times this statement runs.
 	/// </summary>
 	private static void AppendGuardedInsert(
-		StringBuilder sql, string table, string[] columns, string[] values, string guardColumn, string guardValue)
+		StringBuilder sql,
+		string table,
+		string[] columns,
+		string[] values,
+		string guardColumn,
+		string guardValue)
 	{
 		sql.Append("INSERT INTO ").Append(table)
 			.Append(" (").AppendJoin(", ", columns).Append(')')
@@ -290,7 +297,8 @@ public static class QuestionBankSeedWriter
 		return Str(id.Value);
 	}
 
-	private static string IdOrNull(string? key, Func<string, TinyId> resolve)
+	private static string IdOrNull(string? key,
+								   Func<string, TinyId> resolve)
 	{
 		return key is null ? "NULL" : Id(resolve(key));
 	}

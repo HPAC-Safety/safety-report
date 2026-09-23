@@ -14,5 +14,5 @@ public enum MediaKind
 	///     never has a stripped derivative at all. There is no malware scan
 	///     (ADR-0089); format validation is the only gate. See issue #310.
 	/// </summary>
-	Document = 2
+	Document = 2,
 }

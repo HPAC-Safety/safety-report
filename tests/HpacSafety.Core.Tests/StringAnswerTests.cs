@@ -302,7 +302,8 @@ public class StringAnswerTests
 	[Theory]
 	[InlineData(QuestionType.Date, "2026-09-21")]
 	[InlineData(QuestionType.Time, "14:30")]
-	public void GivenDateOrTimeAnswer_WhenRecorded_ThenStoredAsIso8601(QuestionType type, string given)
+	public void GivenDateOrTimeAnswer_WhenRecorded_ThenStoredAsIso8601(QuestionType type,
+																	   string given)
 	{
 		// Given
 		var question = Question.Create(

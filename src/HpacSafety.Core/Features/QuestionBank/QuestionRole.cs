@@ -25,5 +25,5 @@ public enum QuestionRole
 	None = 0,
 
 	/// <summary>Gates publication entirely. Carried by the one system question.</summary>
-	ConsentPublish = 1
+	ConsentPublish = 1,
 }

@@ -220,7 +220,8 @@ public sealed class MediaValidationSteps
 
 	private sealed class FixedMediaSniffer(MediaType? result) : IMediaSniffer
 	{
-		public Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
+		public Task<MediaType?> Sniff(Stream content,
+									  CancellationToken cancellationToken)
 		{
 			return Task.FromResult(result);
 		}
@@ -228,7 +229,10 @@ public sealed class MediaValidationSteps
 
 	private sealed class UnreachableExifStripper : IExifStripper
 	{
-		public Task Strip(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken)
+		public Task Strip(Stream source,
+						  Stream destination,
+						  MediaType type,
+						  CancellationToken cancellationToken)
 		{
 			throw new InvalidOperationException("A document is never stripped.");
 		}
@@ -246,7 +250,8 @@ public sealed class MediaValidationSteps
 	{
 		private readonly Dictionary<string, byte[]> _blobs = [];
 
-		public void Seed(BlobKey key, byte[] bytes)
+		public void Seed(BlobKey key,
+						 byte[] bytes)
 		{
 			_blobs[key.Value] = bytes;
 		}
@@ -256,22 +261,32 @@ public sealed class MediaValidationSteps
 			return _blobs[key.Value];
 		}
 
-		public Task<Uri> CreateUploadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+		public Task<Uri> CreateUploadUrl(BlobKey key,
+										 string contentType,
+										 TimeSpan lifetime,
+										 CancellationToken cancellationToken)
 		{
 			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=put&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
 		}
 
-		public Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+		public Task<Uri> CreateReadUrl(BlobKey key,
+									   string downloadFileName,
+									   TimeSpan lifetime,
+									   CancellationToken cancellationToken)
 		{
 			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=get&fn={Uri.EscapeDataString(downloadFileName)}&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
 		}
 
-		public Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)
+		public Task<Stream> OpenRead(BlobKey key,
+									 CancellationToken cancellationToken)
 		{
 			return Task.FromResult<Stream>(new MemoryStream(_blobs[key.Value]));
 		}
 
-		public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+		public async Task Write(BlobKey key,
+								Stream content,
+								string contentType,
+								CancellationToken cancellationToken)
 		{
 			using var buffer = new MemoryStream();
 			await content.CopyToAsync(buffer, cancellationToken);

@@ -51,7 +51,8 @@ public static class TypeformImportEndpoints
 	///     object for everything Typeform has no field for. See
 	///     <see cref="TypeformExportBuilder" />.
 	/// </summary>
-	private static async Task<IResult> Export(HpacSafetyDbContext database, CancellationToken cancellationToken)
+	private static async Task<IResult> Export(HpacSafetyDbContext database,
+											  CancellationToken cancellationToken)
 	{
 		var questions = await QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
@@ -74,7 +75,10 @@ public static class TypeformImportEndpoints
 	}
 
 	private static async Task WriteEntry(
-		ZipArchive archive, string entryName, string contents, CancellationToken cancellationToken)
+		ZipArchive archive,
+		string entryName,
+		string contents,
+		CancellationToken cancellationToken)
 	{
 		var entry = archive.CreateEntry(entryName, CompressionLevel.Optimal);
 		await using var entryStream = entry.Open();
@@ -122,7 +126,8 @@ public static class TypeformImportEndpoints
 				[.. notes.Select(note => note.Id.Value)]));
 	}
 
-	private static async Task<TypeformDocument> Parse(IFormFile file, CancellationToken cancellationToken)
+	private static async Task<TypeformDocument> Parse(IFormFile file,
+													  CancellationToken cancellationToken)
 	{
 		await using var stream = file.OpenReadStream();
 		using var reader = new StreamReader(stream);
@@ -133,7 +138,8 @@ public static class TypeformImportEndpoints
 
 	/// <summary>Every unresolved pending-logic note, oldest first.</summary>
 	private static async Task<IResult> ListPendingLogic(
-		HpacSafetyDbContext database, CancellationToken cancellationToken)
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
 	{
 		var notes = await database.PendingImportLogic
 			.OrderBy(note => note.CreatedAt)
@@ -149,7 +155,9 @@ public static class TypeformImportEndpoints
 	///     <see cref="PendingImportLogic" />.
 	/// </summary>
 	private static async Task<IResult> DeletePendingLogic(
-		string id, HpacSafetyDbContext database, CancellationToken cancellationToken)
+		string id,
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
 	{
 		if (!TinyId.TryParse(id, out var noteId))
 		{
@@ -171,7 +179,9 @@ public static class TypeformImportEndpoints
 		return Results.NoContent();
 	}
 
-	private static IResult Problem(string code, string title, string detail)
+	private static IResult Problem(string code,
+								   string title,
+								   string detail)
 	{
 		return Results.Problem(
 			title: title,

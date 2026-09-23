@@ -46,7 +46,11 @@ public class ReportAnswer
 #pragma warning restore CS8618
 
 	private ReportAnswer(
-		TinyId reportId, Question question, QuestionRevision revision, Locale locale, DateTimeOffset at)
+		TinyId reportId,
+		Question question,
+		QuestionRevision revision,
+		Locale locale,
+		DateTimeOffset at)
 	{
 		Id = TinyId.New();
 		ReportId = reportId;
@@ -137,7 +141,11 @@ public class ReportAnswer
 	///     calls for.
 	/// </summary>
 	internal static ReportAnswer For(
-		TinyId reportId, Question question, string? value, Locale locale, DateTimeOffset at)
+		TinyId reportId,
+		Question question,
+		string? value,
+		Locale locale,
+		DateTimeOffset at)
 	{
 		return For(reportId, question, question.CurrentRevision, value, locale, at);
 	}
@@ -150,14 +158,20 @@ public class ReportAnswer
 	///     the question's current revision happens to be now.
 	/// </summary>
 	internal static ReportAnswer For(
-		TinyId reportId, Question question, QuestionRevision revision, string? value, Locale locale, DateTimeOffset at)
+		TinyId reportId,
+		Question question,
+		QuestionRevision revision,
+		string? value,
+		Locale locale,
+		DateTimeOffset at)
 	{
 		if (revision.QuestionId != question.Id)
 		{
 			throw new DomainRuleViolationException("That revision does not belong to this question.");
 		}
 
-		if (revision.IsRequired && string.IsNullOrWhiteSpace(value))
+		if (revision.IsRequired
+			&& string.IsNullOrWhiteSpace(value))
 		{
 			throw new DomainRuleViolationException($"'{question.Key}' is required.");
 		}
@@ -167,7 +181,9 @@ public class ReportAnswer
 		// (ADR-0063), so they are validated as present, not as offered. Every
 		// other select is checked against the question's live choices, which
 		// belong to the question rather than to any revision (ADR-0095).
-		if (value is not null && revision.ExpectsOptions && !revision.TakesReporterAdditions
+		if (value is not null
+			&& revision.ExpectsOptions
+			&& !revision.TakesReporterAdditions
 			&& !question.Offers(value, locale))
 		{
 			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
@@ -175,7 +191,7 @@ public class ReportAnswer
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
 		{
-			Value = value
+			Value = value,
 		};
 	}
 
@@ -199,14 +215,17 @@ public class ReportAnswer
 		SupplyTranslation(translated, Reporting.TranslationSource.Human, allowOverwrite: true);
 	}
 
-	private void SupplyTranslation(string translated, Reporting.TranslationSource source, bool allowOverwrite = false)
+	private void SupplyTranslation(string translated,
+								   Reporting.TranslationSource source,
+								   bool allowOverwrite = false)
 	{
 		if (Value is null)
 		{
 			throw new DomainRuleViolationException("A skipped answer has nothing to translate.");
 		}
 
-		if (TranslatedValue is not null && !allowOverwrite)
+		if (TranslatedValue is not null
+			&& !allowOverwrite)
 		{
 			throw new DomainRuleViolationException("This answer already has a translation.");
 		}

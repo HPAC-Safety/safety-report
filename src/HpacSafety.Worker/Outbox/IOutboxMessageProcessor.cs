@@ -17,5 +17,6 @@ public interface IOutboxMessageProcessor
 	///     message — the claimer records the failure and reschedules or poisons
 	///     it; this method itself never marks anything processed.
 	/// </summary>
-	Task Process(OutboxMessage message, CancellationToken cancellationToken);
+	Task Process(OutboxMessage message,
+				 CancellationToken cancellationToken);
 }

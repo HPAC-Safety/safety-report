@@ -205,7 +205,8 @@ public sealed class QuestionTranslationSteps
 	{
 		var directory = new DirectoryInfo(AppContext.BaseDirectory);
 
-		while (directory is not null && !Directory.Exists(Path.Combine(directory.FullName, "src", "web", "src")))
+		while (directory is not null
+			   && !Directory.Exists(Path.Combine(directory.FullName, "src", "web", "src")))
 		{
 			directory = directory.Parent;
 		}
@@ -223,7 +224,10 @@ public sealed class QuestionTranslationSteps
 		public bool IsConfigured => Configured;
 
 		public Task<IReadOnlyList<string>> Translate(
-			IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
+			IReadOnlyList<string> texts,
+			Locale source,
+			Locale target,
+			CancellationToken cancellationToken)
 		{
 			return Configured
 				? Task.FromResult<IReadOnlyList<string>>([.. texts.Select(text => $"[{target.Code}] {text}")])

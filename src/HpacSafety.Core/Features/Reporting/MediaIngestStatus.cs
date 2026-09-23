@@ -18,5 +18,5 @@ public enum MediaIngestStatus
 	AwaitingStripping = 1,
 
 	/// <summary>Accepted, stripped, and viewable through a pre-signed GET.</summary>
-	Stripped = 2
+	Stripped = 2,
 }

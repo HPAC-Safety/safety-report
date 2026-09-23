@@ -57,7 +57,8 @@ public static class AttachmentEndpoints
 			return Problem("Use the download endpoint for a document.");
 		}
 
-		if (file.ProcessingErrorCode is not null || file.AwaitsStripping)
+		if (file.ProcessingErrorCode is not null
+			|| file.AwaitsStripping)
 		{
 			// A failed or still-processing file is inaccessible to any
 			// reviewer — REQ-MED-013. Refusing here, before minting a URL,
@@ -156,9 +157,13 @@ public static class AttachmentEndpoints
 	}
 
 	private static Task<ReportFile?> LoadAccessibleFileAsync(
-		string reportId, string attachmentId, HpacSafetyDbContext database, CancellationToken cancellationToken)
+		string reportId,
+		string attachmentId,
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
 	{
-		if (!TinyId.TryParse(reportId, out var parsedReportId) || !TinyId.TryParse(attachmentId, out var parsedAttachmentId))
+		if (!TinyId.TryParse(reportId, out var parsedReportId)
+			|| !TinyId.TryParse(attachmentId, out var parsedAttachmentId))
 		{
 			return Task.FromResult<ReportFile?>(null);
 		}

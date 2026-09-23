@@ -102,7 +102,8 @@ public sealed class RateLimitingEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	private WebApplicationFactory<Program> RateLimitedFactory(
-		int publicSubmissionPermitLimit = 100000, int signInPermitLimit = 100000)
+		int publicSubmissionPermitLimit = 100000,
+		int signInPermitLimit = 100000)
 	{
 		return _factory.WithWebHostBuilder(builder =>
 		{

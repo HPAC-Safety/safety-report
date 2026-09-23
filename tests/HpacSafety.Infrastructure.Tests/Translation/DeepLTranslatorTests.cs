@@ -158,7 +158,7 @@ public class DeepLTranslatorTests
 		var (translator, _) = Translator(new StubTransport(
 			new HttpResponseMessage(HttpStatusCode.Forbidden)
 			{
-				Content = new StringContent("{\"message\":\"Wrong endpoint. Use api-free. Text: Were you injured?\"}")
+				Content = new StringContent("{\"message\":\"Wrong endpoint. Use api-free. Text: Were you injured?\"}"),
 			}));
 
 		// When
@@ -193,7 +193,7 @@ public class DeepLTranslatorTests
 		var (translator, _) = Translator(new StubTransport(
 			new HttpResponseMessage(HttpStatusCode.OK)
 			{
-				Content = new StringContent("{}", Encoding.UTF8, "application/json")
+				Content = new StringContent("{}", Encoding.UTF8, "application/json"),
 			}));
 
 		// When / Then
@@ -276,19 +276,21 @@ public class DeepLTranslatorTests
 			Content = new StringContent(
 				JsonSerializer.Serialize(new { translations = translations.Select(text => new { text }) }),
 				Encoding.UTF8,
-				"application/json")
+				"application/json"),
 		});
 	}
 
 	private static (DeepLTranslator Translator, StubTransport Transport) Translator(
-		StubTransport? transport = null, string? apiKey = Key, string? endpoint = null)
+		StubTransport? transport = null,
+		string? apiKey = Key,
+		string? endpoint = null)
 	{
 		transport ??= Responds("Un");
 
 		var options = Options.Create(new DeepLOptions
 		{
 			ApiKey = apiKey,
-			Endpoint = endpoint
+			Endpoint = endpoint,
 		});
 
 		return (new DeepLTranslator(new StubClientFactory(transport), options), transport);
@@ -319,7 +321,8 @@ public class DeepLTranslatorTests
 		}
 
 		protected override async Task<HttpResponseMessage> SendAsync(
-			HttpRequestMessage request, CancellationToken cancellationToken)
+			HttpRequestMessage request,
+			CancellationToken cancellationToken)
 		{
 			Requests.Add(request);
 

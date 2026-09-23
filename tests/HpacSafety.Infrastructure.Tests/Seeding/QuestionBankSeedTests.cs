@@ -48,7 +48,7 @@ public sealed class QuestionBankSeedTests
 	public void GivenCurrentQuestionBankSeed_WhenRead_ThenNoQuestionThatCollectsNoAnswerIsRequiredOrPrivate()
 	{
 		foreach (var question in QuestionBankSeed.Questions.Where(question =>
-			question.Type is QuestionType.Statement or QuestionType.Group))
+					 question.Type is QuestionType.Statement or QuestionType.Group))
 		{
 			question.IsRequired.ShouldBeFalse();
 			question.IsPrivate.ShouldBeFalse();

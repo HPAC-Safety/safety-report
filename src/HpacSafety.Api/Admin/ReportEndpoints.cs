@@ -34,7 +34,11 @@ public static class ReportEndpoints
 	///     Irreversible: there is no restore endpoint (REQ-DOM-007).
 	/// </summary>
 	private static async Task<IResult> Delete(
-		string id, HpacSafetyDbContext database, TimeProvider clock, HttpContext context, CancellationToken cancellationToken)
+		string id,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		HttpContext context,
+		CancellationToken cancellationToken)
 	{
 		if (!TinyId.TryParse(id, out var reportId))
 		{

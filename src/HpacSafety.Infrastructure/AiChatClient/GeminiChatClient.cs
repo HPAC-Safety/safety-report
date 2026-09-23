@@ -30,7 +30,8 @@ public sealed class GeminiChatClient : IAiChatClient
 	/// <summary>Creates the client.</summary>
 	/// <param name="clients">Supplies the named HTTP client.</param>
 	/// <param name="options">Provider configuration.</param>
-	public GeminiChatClient(IHttpClientFactory clients, IOptions<GeminiOptions> options)
+	public GeminiChatClient(IHttpClientFactory clients,
+							IOptions<GeminiOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
@@ -42,7 +43,9 @@ public sealed class GeminiChatClient : IAiChatClient
 	public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
 
 	/// <inheritdoc />
-	public async Task<string> Complete(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken)
+	public async Task<string> Complete(string model,
+									   IReadOnlyList<ChatMessage> messages,
+									   CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(model);
 		ArgumentNullException.ThrowIfNull(messages);

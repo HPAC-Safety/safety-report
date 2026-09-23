@@ -12,7 +12,7 @@ public sealed class SummarizationInputTests
 		ClassifiedReportField[] fields =
 		[
 			new(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), false)
+			new(new SummarizationField("description", "Description", "Ada Lovelace landed hard."), false),
 		];
 
 		// When

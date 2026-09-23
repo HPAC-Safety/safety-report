@@ -30,7 +30,7 @@ public class AiChatClientRegistrationTests
 		// Given
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["Gemini:ApiKey"] = "abc123"
+			["Gemini:ApiKey"] = "abc123",
 		});
 
 		// When
@@ -48,7 +48,7 @@ public class AiChatClientRegistrationTests
 		// secrets and in the deploy workflow
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["GEMINI_API_KEY"] = "abc123"
+			["GEMINI_API_KEY"] = "abc123",
 		});
 
 		// When
@@ -66,7 +66,7 @@ public class AiChatClientRegistrationTests
 		using var provider = Provider(new Dictionary<string, string?>
 		{
 			["Gemini:ApiKey"] = "explicit",
-			["GEMINI_API_KEY"] = "fallback"
+			["GEMINI_API_KEY"] = "fallback",
 		});
 
 		// When

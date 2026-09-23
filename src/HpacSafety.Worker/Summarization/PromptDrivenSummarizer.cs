@@ -22,12 +22,12 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 
 	private static readonly JsonSerializerOptions RequestSerializerOptions = new()
 	{
-		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
 	};
 
 	private static readonly JsonSerializerOptions ResponseSerializerOptions = new()
 	{
-		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower
+		PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
 	};
 
 	private readonly IAiChatClient _aiChatClient;
@@ -35,7 +35,8 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 	private readonly string _promptsDirectory;
 	private string? _cachedPrompt;
 
-	public PromptDrivenSummarizer(IAiChatClient aiChatClient, IOptions<AiChatClientOptions> options)
+	public PromptDrivenSummarizer(IAiChatClient aiChatClient,
+								  IOptions<AiChatClientOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(aiChatClient);
 		ArgumentNullException.ThrowIfNull(options);
@@ -46,7 +47,8 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 	}
 
 	/// <inheritdoc />
-	public async Task<SummaryDraft> Summarize(SummarizationInput input, CancellationToken cancellationToken)
+	public async Task<SummaryDraft> Summarize(SummarizationInput input,
+											  CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(input);
 
@@ -102,9 +104,9 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 			throw new SummarizationFailedException("The AI chat provider's response was not valid JSON.", exception);
 		}
 
-		if (payload is null ||
-			string.IsNullOrWhiteSpace(payload.AiSummaryEn) ||
-			string.IsNullOrWhiteSpace(payload.AiSummaryFr))
+		if (payload is null
+			|| string.IsNullOrWhiteSpace(payload.AiSummaryEn)
+			|| string.IsNullOrWhiteSpace(payload.AiSummaryFr))
 		{
 			throw new SummarizationFailedException(
 				"The AI chat provider's response did not contain two nonblank summary fields.");

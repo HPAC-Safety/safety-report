@@ -27,12 +27,12 @@ public sealed class MembersSiteLoginSteps
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
 	private const string LoginPageBody = """
-		<html><body>
-		<form action="/login" method="post">
-		<input type="hidden" name="authenticity_token" value="csrf-token-abc123" />
-		</form>
-		</body></html>
-		""";
+										 <html><body>
+										 <form action="/login" method="post">
+										 <input type="hidden" name="authenticity_token" value="csrf-token-abc123" />
+										 </form>
+										 </body></html>
+										 """;
 
 	private string? _administratorEmail;
 	private string? _safetyOfficerEmail;
@@ -200,7 +200,8 @@ public sealed class MembersSiteLoginSteps
 		}
 
 		protected override Task<HttpResponseMessage> SendAsync(
-			HttpRequestMessage request, CancellationToken cancellationToken)
+			HttpRequestMessage request,
+			CancellationToken cancellationToken)
 		{
 			var result = _results.Dequeue();
 
@@ -208,7 +209,7 @@ public sealed class MembersSiteLoginSteps
 			{
 				Exception failure => throw failure,
 				HttpResponseMessage response => Task.FromResult(response),
-				_ => throw new InvalidOperationException("Unexpected stubbed result.")
+				_ => throw new InvalidOperationException("Unexpected stubbed result."),
 			};
 		}
 	}

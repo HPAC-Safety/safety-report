@@ -10,7 +10,10 @@ internal sealed class RecordingExifStripper : IExifStripper
 {
 	public int Invocations { get; private set; }
 
-	public async Task Strip(Stream source, Stream destination, MediaType type, CancellationToken cancellationToken)
+	public async Task Strip(Stream source,
+							Stream destination,
+							MediaType type,
+							CancellationToken cancellationToken)
 	{
 		Invocations++;
 		using var buffer = new MemoryStream();

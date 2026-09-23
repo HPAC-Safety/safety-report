@@ -13,14 +13,14 @@ namespace HpacSafety.Api.Tests.Authentication;
 public sealed class MembersSiteCredentialSourceTests
 {
 	private const string LoginPageBody = """
-		<html><body>
-		<form action="/login" method="post">
-		<input type="hidden" name="authenticity_token" value="csrf-token-abc123" />
-		<input type="email" name="session[email]" />
-		<input type="password" name="session[password]" />
-		</form>
-		</body></html>
-		""";
+										 <html><body>
+										 <form action="/login" method="post">
+										 <input type="hidden" name="authenticity_token" value="csrf-token-abc123" />
+										 <input type="email" name="session[email]" />
+										 <input type="password" name="session[password]" />
+										 </form>
+										 </body></html>
+										 """;
 
 	[Fact]
 	public async Task GivenAnEmailOnTheAdministratorList_WhenTheMembersSiteAcceptsTheLogin_ThenAdministratorRole()
@@ -214,7 +214,7 @@ public sealed class MembersSiteCredentialSourceTests
 		var options = Options.Create(new MembersSiteLoginOptions
 		{
 			AdministratorEmails = administratorEmails ?? [],
-			SafetyOfficerEmails = safetyOfficerEmails ?? []
+			SafetyOfficerEmails = safetyOfficerEmails ?? [],
 		});
 
 		return (new MembersSiteCredentialSource(new StubClientFactory(transport), options), transport);
@@ -234,7 +234,8 @@ public sealed class MembersSiteCredentialSourceTests
 		public List<string> Bodies { get; } = [];
 
 		protected override async Task<HttpResponseMessage> SendAsync(
-			HttpRequestMessage request, CancellationToken cancellationToken)
+			HttpRequestMessage request,
+			CancellationToken cancellationToken)
 		{
 			Requests.Add(request);
 			Bodies.Add(request.Content is null
@@ -247,7 +248,7 @@ public sealed class MembersSiteCredentialSourceTests
 			{
 				Exception failure => throw failure,
 				HttpResponseMessage response => response,
-				_ => throw new InvalidOperationException("Unexpected stubbed result.")
+				_ => throw new InvalidOperationException("Unexpected stubbed result."),
 			};
 		}
 	}

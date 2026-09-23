@@ -20,7 +20,10 @@ public class ChoiceContractTests
 	[InlineData(null, "Mount 7", "Mont 7", "mount_7")]
 	[InlineData(" ", "", "Élévation Sainte-Anne", "elevation_sainte_anne")]
 	public void GivenChoiceInput_WhenCodeIsResolved_ThenExistingCodeThenEnglishThenFrenchDecides(
-		string? code, string labelEn, string labelFr, string expected)
+		string? code,
+		string labelEn,
+		string labelFr,
+		string expected)
 	{
 		new OptionInput(code, labelEn, labelFr).ResolvedCode.ShouldBe(expected);
 	}
@@ -35,7 +38,9 @@ public class ChoiceContractTests
 	[InlineData("en-CA", "Mount 7", "en-CA")]
 	[InlineData("fr-CA", "Élévation", "fr-CA")]
 	public void GivenOneLanguageReporterChoice_WhenOfferedPublicly_ThenBothLabelsCarryItAndItsLanguageIsNamed(
-		string locale, string typed, string onlyIn)
+		string locale,
+		string typed,
+		string onlyIn)
 	{
 		// Given
 		var question = Question.Create("site", QuestionType.Autocomplete, "Site", "Site", At, isActive: true);

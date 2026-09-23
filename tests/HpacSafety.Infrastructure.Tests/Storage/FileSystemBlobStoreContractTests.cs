@@ -30,7 +30,9 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
 		return Task.FromResult<IBlobStore>(_store);
 	}
 
-	protected override async Task<bool> TryUpload(Uri uploadUrl, byte[] content, string contentType)
+	protected override async Task<bool> TryUpload(Uri uploadUrl,
+												  byte[] content,
+												  string contentType)
 	{
 		try
 		{
@@ -61,7 +63,8 @@ public sealed class FileSystemBlobStoreContractTests : BlobStoreContractTests, I
 		}
 	}
 
-	protected override Uri RetargetToKey(Uri url, BlobKey key)
+	protected override Uri RetargetToKey(Uri url,
+										 BlobKey key)
 	{
 		return new Uri(new UriBuilder(url) { Path = "/" + key.Value }.Uri.ToString());
 	}

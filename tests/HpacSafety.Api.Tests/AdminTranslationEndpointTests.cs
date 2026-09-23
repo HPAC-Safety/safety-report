@@ -179,7 +179,8 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 	[InlineData("de-DE", "fr-CA")]
 	[InlineData("en-CA", "")]
 	public async Task GivenUnusableLanguagePair_WhenTranslationIsRequested_ThenApiRejects(
-		string from, string to)
+		string from,
+		string to)
 	{
 		// Given
 		await using var factory = WithTranslator(new FakeTranslator());
@@ -199,7 +200,7 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		await using var factory = WithTranslator(new FakeTranslator
 		{
-			Failure = new TranslationUnavailableException("The translation service answered 403.")
+			Failure = new TranslationUnavailableException("The translation service answered 403."),
 		});
 
 		using var client = await SignedIn(factory);
@@ -275,7 +276,10 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 		public bool IsConfigured => Configured;
 
 		public Task<IReadOnlyList<string>> Translate(
-			IReadOnlyList<string> texts, Locale source, Locale target, CancellationToken cancellationToken)
+			IReadOnlyList<string> texts,
+			Locale source,
+			Locale target,
+			CancellationToken cancellationToken)
 		{
 			Calls++;
 			Received.AddRange(texts);

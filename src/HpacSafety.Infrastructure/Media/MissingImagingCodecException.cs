@@ -24,7 +24,8 @@ public sealed class MissingImagingCodecException : Exception
 	}
 
 	/// <summary>Creates the exception with an inner cause.</summary>
-	public MissingImagingCodecException(string message, Exception innerException)
+	public MissingImagingCodecException(string message,
+										Exception innerException)
 		: base(message, innerException)
 	{
 	}

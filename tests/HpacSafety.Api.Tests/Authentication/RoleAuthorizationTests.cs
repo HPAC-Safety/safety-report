@@ -67,7 +67,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 				labelFr = "Interdit",
 				isPrivate = true,
 				isRequired = false,
-				isActive = true
+				isActive = true,
 			});
 
 		// Then — the write is refused before anything is persisted.

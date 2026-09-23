@@ -76,10 +76,12 @@ public readonly record struct MediaType
 	private static readonly Dictionary<string, MediaType> Aliases = new(StringComparer.OrdinalIgnoreCase)
 	{
 		["text/rtf"] = Rtf,
-		["text/markdown"] = PlainText
+		["text/markdown"] = PlainText,
 	};
 
-	private MediaType(string contentType, string extension, MediaKind kind)
+	private MediaType(string contentType,
+					  string extension,
+					  MediaKind kind)
 	{
 		ContentType = contentType;
 		Extension = extension;
@@ -138,7 +140,8 @@ public readonly record struct MediaType
 	///     <c>; charset=binary</c> are ignored and casing does not matter, because
 	///     both vary between browsers.
 	/// </summary>
-	public static bool TryParse(string? candidate, out MediaType type)
+	public static bool TryParse(string? candidate,
+								out MediaType type)
 	{
 		type = default;
 

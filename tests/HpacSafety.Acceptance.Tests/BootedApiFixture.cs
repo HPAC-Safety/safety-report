@@ -132,7 +132,8 @@ public static class BootedApi
 	}
 
 	/// <summary>The same, against a specific already-booted host — see <see cref="RateLimited" />.</summary>
-	public static async Task<HttpClient> SignedInAs(MemberRole role, WebApplicationFactory<Program> host)
+	public static async Task<HttpClient> SignedInAs(MemberRole role,
+													WebApplicationFactory<Program> host)
 	{
 		ArgumentNullException.ThrowIfNull(host);
 
@@ -141,7 +142,7 @@ public static class BootedApi
 			MemberRole.Administrator => ("admin", "admin"),
 			MemberRole.SafetyOfficer => ("officer", "officer"),
 			MemberRole.User => ("user", "user"),
-			_ => throw new ArgumentOutOfRangeException(nameof(role))
+			_ => throw new ArgumentOutOfRangeException(nameof(role)),
 		};
 
 		using var anonymous = host.CreateClient();
@@ -165,7 +166,8 @@ public static class BootedApi
 	///     Development-only role allowlists — see ADR-0079.
 	/// </summary>
 	public static async Task<HttpClient> MembersSiteStubbed(
-		HttpMessageHandler handler, IReadOnlyList<string>? administratorEmails = null,
+		HttpMessageHandler handler,
+		IReadOnlyList<string>? administratorEmails = null,
 		IReadOnlyList<string>? safetyOfficerEmails = null)
 	{
 		var host = (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>

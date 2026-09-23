@@ -31,7 +31,8 @@ public static class MemberRoles
 	///     for exactly this. An unrecognized value is ignored rather than rejected:
 	///     a provider is free to carry roles that mean something to somebody else.
 	/// </remarks>
-	public static MemberRole? Highest(ClaimsPrincipal principal, string roleClaimType)
+	public static MemberRole? Highest(ClaimsPrincipal principal,
+									  string roleClaimType)
 	{
 		ArgumentNullException.ThrowIfNull(principal);
 
@@ -39,7 +40,8 @@ public static class MemberRoles
 
 		foreach (var claim in principal.FindAll(roleClaimType))
 		{
-			if (EnumCode.TryParse<MemberRole>(claim.Value, out var role) && (highest is null || role > highest))
+			if (EnumCode.TryParse<MemberRole>(claim.Value, out var role)
+				&& (highest is null || role > highest))
 			{
 				highest = role;
 			}
@@ -53,7 +55,8 @@ public static class MemberRoles
 	///     carries no recognized role is a <see cref="MemberRole.User" />:
 	///     membership is proven, and no administrative capability follows from it.
 	/// </summary>
-	public static MemberRole EffectiveRole(ClaimsPrincipal principal, string roleClaimType)
+	public static MemberRole EffectiveRole(ClaimsPrincipal principal,
+										   string roleClaimType)
 	{
 		return Highest(principal, roleClaimType) ?? MemberRole.User;
 	}
@@ -63,7 +66,8 @@ public static class MemberRoles
 	///     carries no subject — which a token that passed validation should never
 	///     do, but the API reads rather than assumes.
 	/// </summary>
-	public static MemberIdentity? IdentityOf(ClaimsPrincipal principal, string roleClaimType)
+	public static MemberIdentity? IdentityOf(ClaimsPrincipal principal,
+											 string roleClaimType)
 	{
 		ArgumentNullException.ThrowIfNull(principal);
 

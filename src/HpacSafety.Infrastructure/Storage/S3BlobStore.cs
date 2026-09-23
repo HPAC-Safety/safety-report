@@ -24,7 +24,9 @@ public sealed class S3BlobStore : IBlobStore
 	private readonly IAmazonS3 _s3;
 
 	/// <summary>Creates the adapter.</summary>
-	public S3BlobStore(IAmazonS3 s3, S3BlobStoreOptions options, TimeProvider clock)
+	public S3BlobStore(IAmazonS3 s3,
+					   S3BlobStoreOptions options,
+					   TimeProvider clock)
 	{
 		ArgumentNullException.ThrowIfNull(s3);
 		ArgumentNullException.ThrowIfNull(options);
@@ -48,7 +50,10 @@ public sealed class S3BlobStore : IBlobStore
 			: Protocol.HTTPS;
 
 	/// <inheritdoc />
-	public async Task<Uri> CreateUploadUrl(BlobKey key, string contentType, TimeSpan lifetime, CancellationToken cancellationToken)
+	public async Task<Uri> CreateUploadUrl(BlobKey key,
+										   string contentType,
+										   TimeSpan lifetime,
+										   CancellationToken cancellationToken)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
 
@@ -59,14 +64,17 @@ public sealed class S3BlobStore : IBlobStore
 			Verb = HttpVerb.PUT,
 			ContentType = contentType,
 			Expires = ExpiryFor(lifetime),
-			Protocol = ConfiguredProtocol
+			Protocol = ConfiguredProtocol,
 		}).ConfigureAwait(false);
 
 		return new Uri(url);
 	}
 
 	/// <inheritdoc />
-	public async Task<Uri> CreateReadUrl(BlobKey key, string downloadFileName, TimeSpan lifetime, CancellationToken cancellationToken)
+	public async Task<Uri> CreateReadUrl(BlobKey key,
+										 string downloadFileName,
+										 TimeSpan lifetime,
+										 CancellationToken cancellationToken)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(downloadFileName);
 
@@ -76,7 +84,7 @@ public sealed class S3BlobStore : IBlobStore
 			Key = key.Value,
 			Verb = HttpVerb.GET,
 			Expires = ExpiryFor(lifetime),
-			Protocol = ConfiguredProtocol
+			Protocol = ConfiguredProtocol,
 		};
 
 		// Forces a download rather than an inline render, regardless of what the
@@ -91,14 +99,18 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
-	public async Task<Stream> OpenRead(BlobKey key, CancellationToken cancellationToken)
+	public async Task<Stream> OpenRead(BlobKey key,
+									   CancellationToken cancellationToken)
 	{
 		var response = await _s3.GetObjectAsync(_bucketName, key.Value, cancellationToken).ConfigureAwait(false);
 		return response.ResponseStream;
 	}
 
 	/// <inheritdoc />
-	public async Task Write(BlobKey key, Stream content, string contentType, CancellationToken cancellationToken)
+	public async Task Write(BlobKey key,
+							Stream content,
+							string contentType,
+							CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
@@ -110,7 +122,7 @@ public sealed class S3BlobStore : IBlobStore
 				Key = key.Value,
 				InputStream = content,
 				ContentType = contentType,
-				AutoCloseStream = false
+				AutoCloseStream = false,
 			},
 			cancellationToken).ConfigureAwait(false);
 	}

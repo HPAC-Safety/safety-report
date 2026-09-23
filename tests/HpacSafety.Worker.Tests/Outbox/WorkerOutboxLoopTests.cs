@@ -57,7 +57,8 @@ public sealed class WorkerOutboxLoopTests(WorkerPostgresFixture postgres)
 
 		var deadline = DateTimeOffset.UtcNow.AddSeconds(10);
 		string? translated = null;
-		while (translated is null && DateTimeOffset.UtcNow < deadline)
+		while (translated is null
+			   && DateTimeOffset.UtcNow < deadline)
 		{
 			await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
 			translated = await reader.ReportAnswers.Select(a => a.TranslatedValue).FirstOrDefaultAsync();

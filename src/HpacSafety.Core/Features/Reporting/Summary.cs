@@ -19,7 +19,12 @@ public class Summary
 	}
 #pragma warning restore CS8618
 
-	private Summary(TinyId reportId, string aiSummaryEn, string aiSummaryFr, string model, string promptVersion, DateTimeOffset at)
+	private Summary(TinyId reportId,
+					string aiSummaryEn,
+					string aiSummaryFr,
+					string model,
+					string promptVersion,
+					DateTimeOffset at)
 	{
 		Id = TinyId.New();
 		ReportId = reportId;
@@ -73,7 +78,12 @@ public class Summary
 
 	/// <summary>Creates the summary generated from one Worker call.</summary>
 	public static Summary Generate(
-		TinyId reportId, string aiSummaryEn, string aiSummaryFr, string model, string promptVersion, DateTimeOffset at)
+		TinyId reportId,
+		string aiSummaryEn,
+		string aiSummaryFr,
+		string model,
+		string promptVersion,
+		DateTimeOffset at)
 	{
 		return new Summary(reportId, aiSummaryEn, aiSummaryFr, model, promptVersion, at);
 	}
@@ -82,7 +92,8 @@ public class Summary
 	///     Replaces the English text by hand — the escape hatch when the model
 	///     failed. Editing either language clears the pair's approval.
 	/// </summary>
-	public void RewriteEn(string text, DateTimeOffset at)
+	public void RewriteEn(string text,
+						  DateTimeOffset at)
 	{
 		AiSummaryEn = NotBlank(text);
 		UpdatedAt = at;
@@ -93,7 +104,8 @@ public class Summary
 	///     Replaces the French text by hand. Editing either language clears the
 	///     pair's approval.
 	/// </summary>
-	public void RewriteFr(string text, DateTimeOffset at)
+	public void RewriteFr(string text,
+						  DateTimeOffset at)
 	{
 		AiSummaryFr = NotBlank(text);
 		UpdatedAt = at;
@@ -101,7 +113,8 @@ public class Summary
 	}
 
 	/// <summary>Records a safety officer's approval of the whole pair.</summary>
-	public void Approve(string approverSubject, DateTimeOffset at)
+	public void Approve(string approverSubject,
+						DateTimeOffset at)
 	{
 		ApprovedBySubject = approverSubject;
 		ApprovedAt = at;

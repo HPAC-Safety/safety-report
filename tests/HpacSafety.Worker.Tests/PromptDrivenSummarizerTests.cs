@@ -12,11 +12,12 @@ public sealed class PromptDrivenSummarizerTests
 	{
 		return SummarizationInput.Partition([
 			new ClassifiedReportField(new SummarizationField("pilot_name", "Pilot name", "Ada Lovelace"), true),
-			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported a hard landing."), false)
+			new ClassifiedReportField(new SummarizationField("description", "Description", "Ada Lovelace reported a hard landing."), false),
 		]);
 	}
 
-	private static PromptDrivenSummarizer BuildSummarizer(FixtureAiChatClient client, string model = "fixture-model")
+	private static PromptDrivenSummarizer BuildSummarizer(FixtureAiChatClient client,
+														  string model = "fixture-model")
 	{
 		return new PromptDrivenSummarizer(client, Options.Create(new AiChatClientOptions { Model = model }));
 	}

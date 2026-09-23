@@ -29,7 +29,9 @@ public static class AuthenticationServiceCollectionExtensions
 	///     silently accepts nothing, or silently accepts everything, is worse.
 	/// </exception>
 	public static IServiceCollection AddHpacSafetyAuthentication(
-		this IServiceCollection services, IConfiguration configuration, bool useDevelopmentIssuer)
+		this IServiceCollection services,
+		IConfiguration configuration,
+		bool useDevelopmentIssuer)
 	{
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);
@@ -78,7 +80,8 @@ public static class AuthenticationServiceCollectionExtensions
 				configuration.GetSection(MembersSiteLoginOptions.SectionName));
 
 			services
-				.AddHttpClient(MembersSiteCredentialSource.HttpClientName, (provider, client) =>
+				.AddHttpClient(MembersSiteCredentialSource.HttpClientName, (provider,
+																			client) =>
 				{
 					var membersOptions = provider.GetRequiredService<IOptions<MembersSiteLoginOptions>>().Value;
 					client.BaseAddress = new Uri(membersOptions.BaseUrl);
@@ -87,7 +90,7 @@ public static class AuthenticationServiceCollectionExtensions
 				.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
 				{
 					UseCookies = false,
-					AllowAutoRedirect = false
+					AllowAutoRedirect = false,
 				});
 		}
 
@@ -104,7 +107,8 @@ public static class AuthenticationServiceCollectionExtensions
 	/// <param name="useDevelopmentIssuer">Whether this host issues its own tokens.</param>
 	/// <returns>The validation parameters.</returns>
 	public static TokenValidationParameters ValidationParametersFor(
-		HpacAuthenticationOptions options, bool useDevelopmentIssuer)
+		HpacAuthenticationOptions options,
+		bool useDevelopmentIssuer)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
@@ -146,7 +150,9 @@ public static class AuthenticationServiceCollectionExtensions
 	}
 
 	private static TokenValidationParameters Common(
-		HpacAuthenticationOptions options, string issuer, SecurityKey? signingKey)
+		HpacAuthenticationOptions options,
+		string issuer,
+		SecurityKey? signingKey)
 	{
 		return new TokenValidationParameters
 		{
@@ -167,7 +173,7 @@ public static class AuthenticationServiceCollectionExtensions
 			// So RequireRole and IsInRole read the claim this provider emits,
 			// and so the subject lands somewhere predictable.
 			RoleClaimType = options.RoleClaimType,
-			NameClaimType = ClaimTypes.NameIdentifier
+			NameClaimType = ClaimTypes.NameIdentifier,
 		};
 	}
 
@@ -194,14 +200,18 @@ public static class AuthenticationServiceCollectionExtensions
 				StatusCodes.Status403Forbidden,
 				"Not permitted.",
 				"This operation needs a role this member does not have.",
-				"https://hpac.ca/problems/insufficient-role")
+				"https://hpac.ca/problems/insufficient-role"),
 		};
 	}
 
 	// Deliberately says nothing about which claim was missing or what role
 	// would have been enough.
 	private static async Task WriteProblem(
-		HttpContext context, int status, string title, string detail, string type)
+		HttpContext context,
+		int status,
+		string title,
+		string detail,
+		string type)
 	{
 		context.Response.StatusCode = status;
 		context.Response.ContentType = "application/problem+json";
@@ -211,7 +221,7 @@ public static class AuthenticationServiceCollectionExtensions
 			type,
 			title,
 			status,
-			detail
+			detail,
 		})).ConfigureAwait(false);
 	}
 }

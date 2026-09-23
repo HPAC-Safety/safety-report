@@ -33,7 +33,9 @@ internal sealed class SyntheticOversizedStream(long length) : Stream
 		set => throw new NotSupportedException();
 	}
 
-	public override int Read(byte[] buffer, int offset, int count)
+	public override int Read(byte[] buffer,
+							 int offset,
+							 int count)
 	{
 		var remaining = length - _position;
 		var served = (int)Math.Min(count, Math.Max(0, remaining));
@@ -46,12 +48,16 @@ internal sealed class SyntheticOversizedStream(long length) : Stream
 		return served;
 	}
 
-	public override Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+	public override Task<int> ReadAsync(byte[] buffer,
+										int offset,
+										int count,
+										CancellationToken cancellationToken)
 	{
 		return Task.FromResult(Read(buffer, offset, count));
 	}
 
-	public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+	public override ValueTask<int> ReadAsync(Memory<byte> buffer,
+											 CancellationToken cancellationToken = default)
 	{
 		return ValueTask.FromResult(ReadSpan(buffer.Span));
 	}
@@ -78,7 +84,8 @@ internal sealed class SyntheticOversizedStream(long length) : Stream
 		throw new NotSupportedException();
 	}
 
-	public override long Seek(long offset, SeekOrigin origin)
+	public override long Seek(long offset,
+							  SeekOrigin origin)
 	{
 		throw new NotSupportedException();
 	}
@@ -88,7 +95,9 @@ internal sealed class SyntheticOversizedStream(long length) : Stream
 		throw new NotSupportedException();
 	}
 
-	public override void Write(byte[] buffer, int offset, int count)
+	public override void Write(byte[] buffer,
+							   int offset,
+							   int count)
 	{
 		throw new NotSupportedException();
 	}

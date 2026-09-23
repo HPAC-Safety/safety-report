@@ -28,5 +28,5 @@ public enum MediaCompartment
 	///     <c>&lt;report id&gt;/stripped/&lt;file&gt;</c>. The only compartment
 	///     <see cref="Features.Reporting.ReviewerMediaLink" /> will issue a URL for.
 	/// </summary>
-	Stripped = 2
+	Stripped = 2,
 }

@@ -22,7 +22,8 @@ public sealed class VideoContainerSniffer : IMediaSniffer
 	private const int HeaderLength = 12;
 
 	/// <inheritdoc />
-	public async Task<MediaType?> Sniff(Stream content, CancellationToken cancellationToken)
+	public async Task<MediaType?> Sniff(Stream content,
+										CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(content);
 
@@ -30,7 +31,8 @@ public sealed class VideoContainerSniffer : IMediaSniffer
 		var read = await content.ReadAtLeastAsync(header, HeaderLength, false, cancellationToken)
 			.ConfigureAwait(false);
 
-		if (read < HeaderLength || !header.AsSpan(4, 4).SequenceEqual("ftyp"u8))
+		if (read < HeaderLength
+			|| !header.AsSpan(4, 4).SequenceEqual("ftyp"u8))
 		{
 			return null;
 		}

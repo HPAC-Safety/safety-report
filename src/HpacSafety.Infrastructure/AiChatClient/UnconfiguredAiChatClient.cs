@@ -14,7 +14,9 @@ public sealed class UnconfiguredAiChatClient : IAiChatClient
 	public bool IsConfigured => false;
 
 	/// <inheritdoc />
-	public Task<string> Complete(string model, IReadOnlyList<ChatMessage> messages, CancellationToken cancellationToken)
+	public Task<string> Complete(string model,
+								 IReadOnlyList<ChatMessage> messages,
+								 CancellationToken cancellationToken)
 	{
 		throw new AiChatClientUnavailableException(
 			"No AI chat provider is configured and approved for use.");

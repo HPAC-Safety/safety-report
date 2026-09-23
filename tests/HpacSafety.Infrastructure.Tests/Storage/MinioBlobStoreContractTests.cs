@@ -47,7 +47,7 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 			{
 				ServiceURL = _minio.GetConnectionString(),
 				ForcePathStyle = true,
-				AuthenticationRegion = "ca-central-1"
+				AuthenticationRegion = "ca-central-1",
 			});
 
 		// A private bucket, created with no public read policy. Nothing in this
@@ -68,7 +68,9 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 		return Task.FromResult<IBlobStore>(new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = BucketName }, TimeProvider.System));
 	}
 
-	protected override async Task<bool> TryUpload(Uri uploadUrl, byte[] content, string contentType)
+	protected override async Task<bool> TryUpload(Uri uploadUrl,
+												  byte[] content,
+												  string contentType)
 	{
 		using var body = new ByteArrayContent(content);
 		body.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
@@ -83,7 +85,8 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 		return response.IsSuccessStatusCode;
 	}
 
-	protected override Uri RetargetToKey(Uri url, BlobKey key)
+	protected override Uri RetargetToKey(Uri url,
+										 BlobKey key)
 	{
 		return new UriBuilder(url) { Path = $"/{BucketName}/{key.Value}" }.Uri;
 	}

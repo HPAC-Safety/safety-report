@@ -21,7 +21,11 @@ public class ReportFile
 	}
 #pragma warning restore CS8618
 
-	public ReportFile(TinyId reportId, string blobKey, string contentType, long byteSize, DateTimeOffset uploadedAt)
+	public ReportFile(TinyId reportId,
+					  string blobKey,
+					  string contentType,
+					  long byteSize,
+					  DateTimeOffset uploadedAt)
 	{
 		Id = TinyId.New();
 		ReportId = reportId;
@@ -32,7 +36,7 @@ public class ReportFile
 			{
 				MediaKind.Video => AttachmentKind.Video,
 				MediaKind.Document => AttachmentKind.Document,
-				_ => AttachmentKind.Image
+				_ => AttachmentKind.Image,
 			}
 			: AttachmentKind.Document;
 		ByteSize = byteSize;
@@ -109,7 +113,8 @@ public class ReportFile
 			: Core.BlobKey.Parse(StrippedBlobKey);
 
 	/// <summary>Records the stripped derivative. Both facts are recorded together or not at all.</summary>
-	public void RecordStripped(string strippedBlobKey, DateTimeOffset at)
+	public void RecordStripped(string strippedBlobKey,
+							   DateTimeOffset at)
 	{
 		var parsed = Core.BlobKey.Parse(strippedBlobKey);
 

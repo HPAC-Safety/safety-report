@@ -191,7 +191,8 @@ public class ReportRecordTests
 	[InlineData(MemberRole.User, MemberRole.SafetyOfficer)]
 	[InlineData(MemberRole.SafetyOfficer, MemberRole.Administrator)]
 	public void GivenTwoMemberRoles_WhenTheyAreCompared_ThenMorePrivilegedOneIsGreater(
-		MemberRole lesser, MemberRole greater)
+		MemberRole lesser,
+		MemberRole greater)
 	{
 		// Given / When
 		var ordered = lesser < greater;

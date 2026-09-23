@@ -34,7 +34,7 @@ public class TranslationRegistrationTests
 		// Given
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["Translation:ApiKey"] = "abc:fx"
+			["Translation:ApiKey"] = "abc:fx",
 		});
 
 		// When
@@ -51,7 +51,7 @@ public class TranslationRegistrationTests
 		// repository settings and in tools/translator.mjs
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["DEEPL_API_KEY"] = "abc:fx"
+			["DEEPL_API_KEY"] = "abc:fx",
 		});
 
 		// When
@@ -69,7 +69,7 @@ public class TranslationRegistrationTests
 		using var provider = Provider(new Dictionary<string, string?>
 		{
 			["Translation:ApiKey"] = "explicit",
-			["DEEPL_API_KEY"] = "fallback"
+			["DEEPL_API_KEY"] = "fallback",
 		});
 
 		// When
@@ -85,7 +85,7 @@ public class TranslationRegistrationTests
 		// Given
 		using var provider = Provider(new Dictionary<string, string?>
 		{
-			["Translation:Formality"] = "prefer_less"
+			["Translation:Formality"] = "prefer_less",
 		});
 
 		// When
@@ -186,7 +186,8 @@ public class TranslationRegistrationTests
 			new ServiceCollection().AddHpacSafetyTranslation(null!));
 	}
 
-	private static ServiceProvider Provider(Dictionary<string, string?> settings, bool useStandIn = false)
+	private static ServiceProvider Provider(Dictionary<string, string?> settings,
+											bool useStandIn = false)
 	{
 		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 

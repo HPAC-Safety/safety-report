@@ -47,7 +47,8 @@ public sealed record PublicQuestionView(
 	///     question.
 	/// </param>
 	public static PublicQuestionView Of(
-		Question question, IReadOnlyList<PublicQuestionView> children)
+		Question question,
+		IReadOnlyList<PublicQuestionView> children)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(children);

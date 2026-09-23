@@ -41,7 +41,8 @@ public static class AnswerTranslationEndpoints
 	}
 
 	private static async Task<IResult> Awaiting(
-		HpacSafetyDbContext database, CancellationToken cancellationToken)
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(database);
 

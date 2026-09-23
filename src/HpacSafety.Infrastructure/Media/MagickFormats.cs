@@ -34,7 +34,7 @@ internal static class MagickFormats
 				or MagickFormat.Png48 or MagickFormat.Png64 => MediaType.Png,
 			MagickFormat.WebP => MediaType.WebP,
 			MagickFormat.Heic or MagickFormat.Heif => MediaType.Heic,
-			_ => null
+			_ => null,
 		};
 	}
 }

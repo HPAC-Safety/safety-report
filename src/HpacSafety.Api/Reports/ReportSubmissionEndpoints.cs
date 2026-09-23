@@ -204,7 +204,8 @@ public static class ReportSubmissionEndpoints
 
 		if (revision.Type == QuestionType.MultiSelect)
 		{
-			if (entry.Value is not null || entry.AttachmentPartIndexes is { Count: > 0 })
+			if (entry.Value is not null
+				|| entry.AttachmentPartIndexes is { Count: > 0 })
 			{
 				return Problem("A multi-select answer carries option codes, not a value or file indexes.");
 			}
@@ -223,7 +224,8 @@ public static class ReportSubmissionEndpoints
 
 		if (revision.Type == QuestionType.FileUpload)
 		{
-			if (entry.Value is not null || entry.OptionCodes is { Count: > 0 })
+			if (entry.Value is not null
+				|| entry.OptionCodes is { Count: > 0 })
 			{
 				return Problem("A file-upload answer carries attachment indexes, not a value or option codes.");
 			}
@@ -231,7 +233,8 @@ public static class ReportSubmissionEndpoints
 			var indexes = entry.AttachmentPartIndexes ?? [];
 			foreach (var index in indexes)
 			{
-				if (index < 0 || index >= fileCount)
+				if (index < 0
+					|| index >= fileCount)
 				{
 					return Problem("An answer referenced a file part that was not uploaded.");
 				}
@@ -257,7 +260,8 @@ public static class ReportSubmissionEndpoints
 			return null;
 		}
 
-		if (entry.OptionCodes is { Count: > 0 } || entry.AttachmentPartIndexes is { Count: > 0 })
+		if (entry.OptionCodes is { Count: > 0 }
+			|| entry.AttachmentPartIndexes is { Count: > 0 })
 		{
 			return Problem("This answer's shape does not carry option codes or file indexes.");
 		}
@@ -331,13 +335,15 @@ public static class ReportSubmissionEndpoints
 	///     existing choice and changes nothing. No other type takes an addition.
 	/// </summary>
 	private static void RecordReporterChoices(
-		Report report, Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
+		Report report,
+		Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
 	{
 		foreach (var answer in report.Answers)
 		{
 			var (question, revision) = revisionLookup[answer.QuestionRevisionId];
 
-			if (revision.TakesReporterAdditions && question.TakesReporterAdditions
+			if (revision.TakesReporterAdditions
+				&& question.TakesReporterAdditions
 				&& !string.IsNullOrWhiteSpace(answer.Value))
 			{
 				question.AddChoiceFromReporter(answer.Value, report.Language);
@@ -346,7 +352,8 @@ public static class ReportSubmissionEndpoints
 	}
 
 	private static async Task<Dictionary<TinyId, (Question Question, QuestionRevision Revision)>> LoadRevisionsAsync(
-		HpacSafetyDbContext database, CancellationToken cancellationToken)
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
 	{
 		var questions = await Admin.QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
@@ -361,7 +368,8 @@ public static class ReportSubmissionEndpoints
 	{
 		var reportPart = form["report"];
 
-		if (reportPart.Count != 1 || string.IsNullOrWhiteSpace(reportPart[0]))
+		if (reportPart.Count != 1
+			|| string.IsNullOrWhiteSpace(reportPart[0]))
 		{
 			return null;
 		}

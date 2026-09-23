@@ -52,7 +52,8 @@ namespace HpacSafety.Core.Features.QuestionBank.Typeform;
 public static class TypeformQuestionMapper
 {
 	/// <summary>Maps a matched English/French pair into drafts, rejections, and pending-logic notes.</summary>
-	public static TypeformImportResult Map(TypeformDocument english, TypeformDocument french)
+	public static TypeformImportResult Map(TypeformDocument english,
+										   TypeformDocument french)
 	{
 		ArgumentNullException.ThrowIfNull(english);
 		ArgumentNullException.ThrowIfNull(french);
@@ -174,7 +175,8 @@ public static class TypeformQuestionMapper
 		IReadOnlyDictionary<string, TypeformLogicRule> logicByRef,
 		List<PendingTypeformLogic> pendingLogic)
 	{
-		if (!logicByRef.TryGetValue(field.Ref, out var rule) || !rule.HasRealCondition())
+		if (!logicByRef.TryGetValue(field.Ref, out var rule)
+			|| !rule.HasRealCondition())
 		{
 			return;
 		}
@@ -184,7 +186,10 @@ public static class TypeformQuestionMapper
 	}
 
 	private static ImportedQuestionDraft HeadingDraft(
-		TypeformField field, TypeformField? frenchField, QuestionType type, string? groupedUnderKey)
+		TypeformField field,
+		TypeformField? frenchField,
+		QuestionType type,
+		string? groupedUnderKey)
 	{
 		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
@@ -197,7 +202,10 @@ public static class TypeformQuestionMapper
 	}
 
 	private static ImportedQuestionDraft SimpleDraft(
-		TypeformField field, TypeformField? frenchField, QuestionType type, string? groupedUnderKey)
+		TypeformField field,
+		TypeformField? frenchField,
+		QuestionType type,
+		string? groupedUnderKey)
 	{
 		var (labelEn, labelFr, defaulted) = Pair(field.Title, frenchField?.Title);
 		var (helpEn, helpFr, _) = PairHelp(field.Properties.Description, frenchField?.Properties.Description);
@@ -243,7 +251,9 @@ public static class TypeformQuestionMapper
 	///     depends-on/grouped-under relationship from the field's <c>hpac</c>
 	///     extension, when present. See the class remarks.
 	/// </summary>
-	private static ImportedQuestionDraft ApplyHpac(ImportedQuestionDraft draft, TypeformField field, string? groupedUnderKey)
+	private static ImportedQuestionDraft ApplyHpac(ImportedQuestionDraft draft,
+												   TypeformField field,
+												   string? groupedUnderKey)
 	{
 		var hpac = field.Properties.Hpac;
 
@@ -270,7 +280,8 @@ public static class TypeformQuestionMapper
 	///     was found by <c>ref</c>. Defaults to the English text, flagged, when
 	///     French is missing — see the class remarks.
 	/// </summary>
-	private static (string En, string Fr, bool Defaulted) Pair(string english, string? french)
+	private static (string En, string Fr, bool Defaulted) Pair(string english,
+															   string? french)
 	{
 		return string.IsNullOrWhiteSpace(french) ? (english, english, true) : (english, french, false);
 	}
@@ -280,7 +291,8 @@ public static class TypeformQuestionMapper
 	///     except a missing English side stays <c>null</c> rather than
 	///     defaulting anything.
 	/// </summary>
-	private static (string? En, string? Fr, bool Defaulted) PairHelp(string? english, string? french)
+	private static (string? En, string? Fr, bool Defaulted) PairHelp(string? english,
+																	 string? french)
 	{
 		if (string.IsNullOrWhiteSpace(english))
 		{
@@ -297,7 +309,8 @@ public static class TypeformQuestionMapper
 		return index;
 	}
 
-	private static void Index(IReadOnlyList<TypeformField> fields, Dictionary<string, TypeformField> index)
+	private static void Index(IReadOnlyList<TypeformField> fields,
+							  Dictionary<string, TypeformField> index)
 	{
 		foreach (var field in fields)
 		{

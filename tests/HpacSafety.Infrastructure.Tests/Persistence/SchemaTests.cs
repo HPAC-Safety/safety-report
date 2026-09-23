@@ -23,7 +23,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		"report_answers",
 		"report_files",
 		"reports",
-		"summaries"
+		"summaries",
 	];
 
 	[Fact]
@@ -134,7 +134,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		definitions[0].ShouldContain("deleted IS NULL");
 	}
 
-	private static async Task<string[]> QueryStrings(string connectionString, string sql)
+	private static async Task<string[]> QueryStrings(string connectionString,
+													 string sql)
 	{
 		await using var connection = new NpgsqlConnection(connectionString);
 		await connection.OpenAsync();

@@ -17,7 +17,7 @@ public static class SqlScript
 		ArgumentException.ThrowIfNullOrWhiteSpace(fileName);
 
 		using var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream($"Sql/{fileName}")
-			?? throw new InvalidOperationException($"No embedded SQL script named '{fileName}'.");
+						   ?? throw new InvalidOperationException($"No embedded SQL script named '{fileName}'.");
 		using var reader = new StreamReader(stream);
 		return reader.ReadToEnd();
 	}

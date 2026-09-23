@@ -79,9 +79,12 @@ public sealed class DevelopmentTokenIssuer
 	///     site is not the same failure as a wrong password.
 	/// </remarks>
 	public async Task<DevelopmentToken?> Issue(
-		string? username, string? password, CancellationToken cancellationToken)
+		string? username,
+		string? password,
+		CancellationToken cancellationToken)
 	{
-		if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+		if (string.IsNullOrEmpty(username)
+			|| string.IsNullOrEmpty(password))
 		{
 			return null;
 		}
@@ -106,7 +109,7 @@ public sealed class DevelopmentTokenIssuer
 			[
 				new Claim(JwtRegisteredClaimNames.Sub, subject),
 				new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("n")),
-				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role.Value))
+				new Claim(_options.RoleClaimType, MemberRoles.CodeFor(role.Value)),
 			],
 			issuedAt.UtcDateTime,
 			expiresAt.UtcDateTime,
@@ -117,7 +120,9 @@ public sealed class DevelopmentTokenIssuer
 	}
 
 	private async Task<MemberRole?> ResolveRole(
-		string username, string password, CancellationToken cancellationToken)
+		string username,
+		string password,
+		CancellationToken cancellationToken)
 	{
 		foreach (var source in _sources)
 		{

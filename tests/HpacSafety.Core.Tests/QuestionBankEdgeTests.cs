@@ -95,7 +95,7 @@ public class QuestionBankEdgeTests
 			options:
 			[
 				new QuestionOptionInput("morning", "Morning", "Matin"),
-				new QuestionOptionInput("Morning", "Morning again", "Encore le matin")
+				new QuestionOptionInput("Morning", "Morning again", "Encore le matin"),
 			]);
 
 		// Then — the code is normalized before the duplicate check
@@ -124,7 +124,7 @@ public class QuestionBankEdgeTests
 			options:
 			[
 				new QuestionOptionInput("evening", "Evening", "Soirée"),
-				new QuestionOptionInput("morning", "Morning", "Matin")
+				new QuestionOptionInput("morning", "Morning", "Matin"),
 			]);
 
 		// Then
@@ -234,7 +234,8 @@ public class QuestionBankEdgeTests
 	[InlineData("Élévation Sainte-Anne", "elevation_sainte_anne")]
 	[InlineData("Cœur d'Alène", "coeur_d_alene")]
 	[InlineData("king_eddy", "king_eddy")]
-	public void GivenAccentedWording_WhenNormalized_ThenAccentsAreFoldedNotDropped(string candidate, string expected)
+	public void GivenAccentedWording_WhenNormalized_ThenAccentsAreFoldedNotDropped(string candidate,
+																				   string expected)
 	{
 		QuestionKey.Normalize(candidate).ShouldBe(expected);
 	}

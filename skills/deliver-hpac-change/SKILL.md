@@ -243,8 +243,15 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    worktree on the *same* branch (no `-b`, it already exists —
    `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`),
    fix, committing, rebasing onto fresh `origin/main`, and pushing each fix as
-   it lands, repeat steps 7 and 8. Finish only when
-   checks are green and no worktree remains, and mark the session done:
+   it lands, repeat steps 7 and 8. When the checks go green, fetch again and
+   confirm the branch is still current:
+   `gh pr view <pr> --json mergeStateStatus` must not say `BEHIND`. `main`
+   keeps moving while checks run, so a branch rebased right before its push can
+   be out of date by the time it is green. If it is behind, rebase onto fresh
+   `origin/main`, push, and watch the checks again
+   ([lesson 0011](../../docs/lessons/0011-a-branch-rebased-before-its-push-is-behind-by-the-time-it-is-green.md)).
+   Finish only when checks are green on a current branch and no worktree
+   remains, and mark the session done:
    `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
 Never hand-edit generated `.claude/` content. When project-owned skills change,

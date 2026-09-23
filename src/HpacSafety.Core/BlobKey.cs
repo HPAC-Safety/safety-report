@@ -205,13 +205,9 @@ public readonly record struct BlobKey
 
 	private static string SegmentFor(MediaCompartment compartment)
 	{
-		return compartment switch
-		{
-			MediaCompartment.Quarantine => QuarantineSegment,
-			MediaCompartment.Original => OriginalSegment,
-			MediaCompartment.Stripped => StrippedSegment,
-			_ => throw new DomainRuleViolationException("The value is not a known media compartment."),
-		};
+		// Only a report's compartments reach here: For refuses quarantine and
+		// any undefined value, and Value writes a quarantine key itself.
+		return compartment == MediaCompartment.Original ? OriginalSegment : StrippedSegment;
 	}
 
 	// TEMPORARY: the shape is duplicated here only because the shared TinyId

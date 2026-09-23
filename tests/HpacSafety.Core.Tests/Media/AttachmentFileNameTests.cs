@@ -62,6 +62,20 @@ public class AttachmentFileNameTests
 	}
 
 	[Fact]
+	public void GivenOverlongNameEndingInEmojiAtTheLimit_WhenSanitized_ThenNoSurrogateIsLeftHalved()
+	{
+		// Given — 254 letters, then an emoji whose two UTF-16 halves straddle 255
+		var given = new string('a', AttachmentFileName.MaxLength - 1) + "\U0001F681" + ".jpg";
+
+		// When
+		var sanitized = AttachmentFileName.Sanitize(given)!;
+
+		// Then
+		sanitized.Length.ShouldBe(AttachmentFileName.MaxLength - 1);
+		char.IsHighSurrogate(sanitized[^1]).ShouldBeFalse();
+	}
+
+	[Fact]
 	public void GivenHeicOriginalWithJpegDerivative_WhenNamedForDownload_ThenExtensionFollowsServedBytes()
 	{
 		// Given / When

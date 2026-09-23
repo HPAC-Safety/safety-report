@@ -77,6 +77,23 @@ public class BlobKeyTests
 	}
 
 	[Fact]
+	public void GivenUndefinedCompartment_WhenKeyIsBuilt_ThenRefused()
+	{
+		// Given / When / Then
+		Should.Throw<DomainRuleViolationException>(() => BlobKey.For(ReportId, (MediaCompartment)99, "photo.jpg"));
+	}
+
+	[Fact]
+	public void GivenKey_WhenWrittenAsText_ThenItIsTheStoredValue()
+	{
+		// Given
+		var key = BlobKey.For(ReportId, MediaCompartment.Stripped, "photo.jpg");
+
+		// When / Then
+		key.ToString().ShouldBe("dQw4w9WgXcQ/stripped/photo.jpg");
+	}
+
+	[Fact]
 	public void GivenDefaultUploadId_WhenKeyIsBuilt_ThenRefused()
 	{
 		// Given / When / Then

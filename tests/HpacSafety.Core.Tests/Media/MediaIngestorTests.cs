@@ -306,6 +306,21 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
+	public async Task GivenEmptyUpload_WhenClaimed_ThenRejectedAsEmpty()
+	{
+		// Given
+		var store = new InMemoryBlobStore();
+		store.Seed(Quarantined, []);
+
+		// When
+		var outcome = await Ingestor(store, MediaType.Jpeg, new RecordingExifStripper())
+			.Ingest(Quarantined, Report, FileId, CancellationToken.None);
+
+		// Then
+		outcome.RejectionReason.ShouldBe(MediaRejectionReason.Empty);
+	}
+
+	[Fact]
 	public async Task GivenNoFileId_WhenIngested_ThenRefuses()
 	{
 		// Given

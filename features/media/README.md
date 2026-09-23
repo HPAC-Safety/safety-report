@@ -48,7 +48,6 @@ output and error messages are sanitized before logging.
 
 ## Current implementation divergence
 
-The Worker buffers each file in memory while it sniffs and strips it (#362).
 The deployed Worker image has no ffmpeg yet (#30), so a video is retained with
 no derivative there
 ([ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)). See
@@ -62,6 +61,11 @@ attachment handler then sniffs the original and writes the derivative, one
 outbox message per file
 ([ADR-0098](../../docs/decisions/ADR-0098-submission-copies-the-original-and-the-worker-makes-the-derivative.md)).
 Until it has, a reviewer sees the file as awaiting processing.
+
+Processing streams: the original is copied in bounded chunks into a temporary
+file, hashed as it goes, and every sniffer and derivative step reads that file
+or writes another, deleted when processing ends. Only decoding an image holds
+its pixels in memory, which re-encoding it requires (#362).
 
 ## A video with no derivative
 

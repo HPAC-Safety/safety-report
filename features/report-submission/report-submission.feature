@@ -47,8 +47,8 @@ Scenario: Continuing a saved report restores it where the reporter left off
   Given this browser holds an unexpired saved report
   When the reporter returns to the form
   And the reporter chooses to continue
-  Then the saved answers are restored
-  And the form opens on the page the reporter was last on
+  Then the form opens on the page the reporter was last on
+  And the saved answers are restored
 
 @REQ-SUB-037
 @ui

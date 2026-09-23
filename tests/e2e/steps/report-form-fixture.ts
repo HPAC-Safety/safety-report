@@ -180,3 +180,37 @@ export async function writeStaleDraftToBrowser(page: Page) {
 		)
 	})
 }
+
+/**
+ * A saved, unexpired report as the form would have written it: a narrative,
+ * "yes" to the injury question, its conditional detail, a group child, the
+ * page the reporter was last on, and one answer to a revision the current
+ * form no longer shows. Written once, before the first page load, so a
+ * later navigation does not put it back after the reporter removes it.
+ */
+export async function writeSavedDraftToBrowser(page: Page) {
+	await page.addInitScript(() => {
+		if (sessionStorage.getItem("hpac.test.savedDraftWritten")) return
+		sessionStorage.setItem("hpac.test.savedDraftWritten", "1")
+		localStorage.setItem(
+			"hpac.report.draft",
+			JSON.stringify({
+				locale: "en-CA",
+				answers: {
+					"rev-narrative": { kind: "value", value: "A saved synthetic narrative." },
+					"rev-injured": { kind: "value", value: "yes" },
+					"rev-injury_detail": { kind: "value", value: "A synthetic sprain." },
+					"rev-aircraft_type": { kind: "value", value: "Paraglider" },
+					"rev-retired": { kind: "value", value: "An answer to a retired question." },
+				},
+				stepRevisionId: "rev-injury_detail",
+				savedAtMs: Date.now() - 60 * 60 * 1000,
+			}),
+		)
+	})
+}
+
+/** Removes the saved report, so a reload opens the form without asking whether to continue. */
+export async function forgetDraftInBrowser(page: Page) {
+	await page.evaluate(() => localStorage.removeItem("hpac.report.draft"))
+}

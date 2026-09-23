@@ -3,8 +3,9 @@
  * `features/report-submission/report-submission.feature`'s "browser holds
  * report state locally" scenarios).
  *
- * What is kept: the selected locale, the shown revision IDs, and entered
- * answer values — for at most 15 days, and never past a successful submit.
+ * What is kept: the selected locale, the shown revision IDs, entered answer
+ * values, and the page the reporter was on — for at most 15 days, and never
+ * past a successful submit.
  * What is never kept: a `File` object, a filename, or anything that would
  * make a reload skip re-selecting an attachment.
  */
@@ -19,6 +20,8 @@ export interface ReportDraft {
 	locale: string
 	/** Keyed by question-revision ID, matching the revisions the reporter was actually shown. */
 	answers: Record<string, DraftAnswer>
+	/** The revision ID of the question heading the page the reporter was last on. */
+	stepRevisionId?: string
 	savedAtMs: number
 }
 

@@ -133,6 +133,15 @@
     "submitted": {
       "title": "Rapport présenté",
       "body": "Merci. Nous avons bien reçu votre rapport."
+    },
+    "resume": {
+      "title": "#Continue where you left off?",
+      "body": "#This browser saved answers from a report you have not submitted yet. Continue with them, or start a new report? Starting over removes them from this browser.",
+      "yes": "#Yes, continue",
+      "no": "#No, start over",
+      "tableCaption": "#Your saved answers",
+      "questionHeader": "#Question",
+      "answerHeader": "#Saved answer"
     }
   },
   "notFound": {

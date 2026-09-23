@@ -8,8 +8,9 @@ import {
 	submitReport,
 	type SubmitAnswer,
 } from "../api/reportSubmission"
-import { clearDraft, readDraft, writeDraft, type DraftAnswer } from "./draft"
+import { clearDraft, readDraft, writeDraft, type DraftAnswer, type ReportDraft } from "./draft"
 import { QuestionField } from "./QuestionField"
+import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
 import {
 	buildSteps,
 	collectsNoAnswer,
@@ -46,7 +47,8 @@ export function ReportForm() {
 	const [entering, setEntering] = useState(false)
 	const [attemptedAdvance, setAttemptedAdvance] = useState(false)
 	const [submit, setSubmit] = useState<SubmitState>({ status: "idle" })
-	const restoredDraft = useRef(false)
+	const offeredDraft = useRef(false)
+	const [pendingDraft, setPendingDraft] = useState<{ draft: ReportDraft; rows: SavedAnswerRow[] } | null>(null)
 
 	useEffect(() => {
 		let cancelled = false
@@ -63,14 +65,21 @@ export function ReportForm() {
 		}
 	}, [])
 
-	// Restored once, from whatever the browser already held — never overwrites
-	// an in-progress edit on a later render.
+	// Offered once, from whatever the browser already held, as soon as the form
+	// is known — never restored without the reporter saying so, and never
+	// overwriting an in-progress edit on a later render.
 	useEffect(() => {
-		if (restoredDraft.current) return
-		restoredDraft.current = true
+		if (load.status !== "ready" || offeredDraft.current) return
+		offeredDraft.current = true
 		const draft = readDraft()
-		if (draft) setAnswers(draft.answers)
-	}, [])
+		if (!draft) return
+		const rows = savedAnswerRows(load.questions, draft.answers, locale, t)
+		if (rows.length === 0) {
+			clearDraft() // Nothing on this form to continue.
+			return
+		}
+		setPendingDraft({ draft, rows })
+	}, [load, locale, t])
 
 	const steps = useMemo(() => (load.status === "ready" ? buildSteps(load.questions) : []), [load])
 	const questionsById = useMemo(() => (load.status === "ready" ? indexQuestionsById(load.questions) : new Map()), [load])
@@ -92,13 +101,30 @@ export function ReportForm() {
 	useEffect(() => {
 		if (submit.status === "submitted") return
 		if (Object.keys(answers).length === 0) return
-		writeDraft({ locale, answers })
-	}, [answers, locale, submit.status])
+		const stepRevisionId = visible.find((step) => stepQuestionId(step) === currentStepId)?.question.revisionId
+		writeDraft({ locale, answers, stepRevisionId })
+	}, [answers, locale, submit.status, visible, currentStepId])
 
 	const currentIndex = currentStepId ? visible.findIndex((step) => stepQuestionId(step) === currentStepId) : -1
 	const currentStep = currentIndex >= 0 ? visible[currentIndex] : null
 	const isFirst = currentIndex === 0
 	const isLast = currentIndex >= 0 && currentIndex === visible.length - 1
+
+	function continueDraft() {
+		if (!pendingDraft) return
+		const { draft, rows } = pendingDraft
+		const restored: AnswerMap = {}
+		for (const row of rows) restored[row.revisionId] = draft.answers[row.revisionId]!
+		setAnswers(restored)
+		const savedStep = steps.find((step) => step.question.revisionId === draft.stepRevisionId)
+		if (savedStep) setCurrentStepId(stepQuestionId(savedStep))
+		setPendingDraft(null)
+	}
+
+	function startOver() {
+		clearDraft()
+		setPendingDraft(null)
+	}
 
 	function setAnswer(revisionId: string, answer: DraftAnswer | undefined) {
 		setAnswers((prev) => {
@@ -240,6 +266,10 @@ export function ReportForm() {
 
 	return (
 		<div className="mx-auto max-w-measure px-6 py-10">
+			{pendingDraft && (
+				<ResumeDraftDialog rows={pendingDraft.rows} onContinue={continueDraft} onStartOver={startOver} t={t} />
+			)}
+
 			<p role="status" className="sr-only">
 				{t("report.progress", { current: currentIndex + 1, total: visible.length })}
 			</p>

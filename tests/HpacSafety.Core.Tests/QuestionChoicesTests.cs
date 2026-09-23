@@ -317,4 +317,66 @@ public class QuestionChoicesTests
 		refusal.Message.ShouldContain("Wing rating");
 		QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider", "paraglider"]);
 	}
+
+	[Fact]
+	public void GivenReporterAddedChoice_WhenBothLanguagesAreBlanked_ThenRefused()
+	{
+		// Given
+		var question = Sites();
+		question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+
+		// When / Then — a reporter choice may lack one language, never both
+		Should.Throw<DomainRuleViolationException>(() =>
+			question.ReplaceChoices([.. SiteOptions, new("mount_7", " ", null)], At));
+		question.Choice("mount_7")!.LabelEn.ShouldBe("Mount 7");
+	}
+
+	[Fact]
+	public void GivenFrenchOnlyChoice_WhenReadInEnglish_ThenOfferedInFrench()
+	{
+		var added = Sites().AddChoiceFromReporter("Élévation", Locale.FrCa);
+
+		added.Label(Locale.EnCa).ShouldBe("Élévation");
+	}
+
+	[Fact]
+	public void GivenDependencyOnAChoiceTheParentNoLongerOffers_WhenParentIsSaved_ThenRefusalNamesTheCode()
+	{
+		// Given — a dependency left over from before a removal was refused
+		var parent = Question.Create(
+			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
+			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")]);
+		var child = Question.Create(
+			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+
+		// When
+		var refusal = Should.Throw<DomainRuleViolationException>(() =>
+			QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider"]));
+
+		// Then
+		refusal.Message.ShouldContain("'paraglider'");
+	}
+
+	[Fact]
+	public void GivenConditionalQuestion_WhenSavedWithItsRequiredChoiceWordedDifferently_ThenNoRevisionIsCreated()
+	{
+		// Given — a single-select condition, as the editor sends it back
+		var parent = Question.Create(
+			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
+			options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+		var child = Question.Create(
+			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+		var current = child.CurrentRevision;
+
+		// When — the same code, not yet normalized
+		var live = child.ApplyEdit(
+			true, current.Type, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
+			current.DisplayOrder, At.AddDays(1), dependsOnQuestionId: parent.Id, dependsOnOptionCode: "Paraglider");
+
+		// Then — nothing about the question changed, so nothing is revised or forked
+		live.ShouldBeSameAs(child);
+		child.Revisions.Count.ShouldBe(1);
+	}
 }

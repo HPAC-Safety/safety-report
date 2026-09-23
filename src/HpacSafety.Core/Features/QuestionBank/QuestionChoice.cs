@@ -148,9 +148,10 @@ public class QuestionChoice
 		DisplayOrder = displayOrder;
 	}
 
+	/// <summary>Removes this choice. Only a live choice is ever removed — see <see cref="Question.ReplaceChoices" />.</summary>
 	internal void Delete(DateTimeOffset at)
 	{
-		Deleted ??= at;
+		Deleted = at;
 	}
 
 	/// <summary>

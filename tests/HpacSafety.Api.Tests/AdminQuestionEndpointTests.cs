@@ -262,6 +262,29 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 			.ShouldBe(["woodside", "mara"]);
 	}
 
+	[Fact]
+	public async Task GivenQuestionWithChoices_WhenEditSendsNoChoiceList_ThenItsChoicesAreLeftAsTheyAre()
+	{
+		// Given
+		using var client = await SignedIn();
+		var draft = Draft(UniqueKey("launch_unchanged"), "single_select") with
+		{
+			Options = [new Option(null, "Coopers", "Coopers")]
+		};
+		var created = await Create(client, draft);
+		var id = created.GetProperty("id").GetString()!;
+
+		// When — a client that sends no list at all says nothing about the choices
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
+			new { type = "single_select", labelEn = "Reworded", labelFr = "Reformulé", isRequired = false, isPrivate = true, isActive = true });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		saved.GetProperty("options").EnumerateArray().Single().GetProperty("code").GetString().ShouldBe("coopers");
+	}
+
 	// -------------------------------------------- statement/group (ADR-0076) --
 
 	private static SaveQuestion NoAnswerDraft(string key, string type)

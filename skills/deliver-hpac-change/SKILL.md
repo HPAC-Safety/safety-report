@@ -184,6 +184,17 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 ## Verify and publish
 
 1. Run focused tests, then the repository checks proportional to risk.
+   **Before opening a pull request that touches `src/`, `tests/`, or
+   `tools/`, run `tools/coverage-check.sh` and do not open it until the gate
+   passes.** It measures `origin/main` and this branch on the same machine
+   with CI's own commands and runs the same ratchet CI does, so a coverage
+   drop is found here, not by the reviewer. A green test run is not a passing
+   coverage gate: deleting well-covered code while adding code with untested
+   branches passes every test and still fails the ratchet
+   ([lesson 0010](../../docs/lessons/0010-a-coverage-gate-found-in-ci-not-before-the-pull-request.md)).
+   When it fails, add the test that pins down the behaviour of each uncovered
+   branch the change added; a branch that can never run is deleted, not
+   tested.
 2. Inspect `git diff --check`, links, generated artifacts, and `git status`.
 3. Commit any remaining work with a concise imperative message and no
    co-author trailer, rebase onto fresh `origin/main`, and push. Earlier units

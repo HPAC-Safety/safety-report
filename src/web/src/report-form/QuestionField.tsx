@@ -1,6 +1,5 @@
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
-import { MAX_ATTACHMENTS, MAX_ATTACHMENT_BYTES } from "../api/uploads"
 import { AttachmentField, type Attachment } from "./AttachmentField"
 import type { DraftAnswer } from "./draft"
 import { MultiSelectPicker } from "./MultiSelectPicker"
@@ -183,12 +182,6 @@ export function QuestionField({
 		return (
 			<div className="mb-6">
 				{label}
-				<p className="mt-1 font-sans text-xs text-ink-muted">
-					{t("report.attachments.guidance", {
-						count: MAX_ATTACHMENTS,
-						size: MAX_ATTACHMENT_BYTES / (1024 * 1024),
-					})}
-				</p>
 				<AttachmentField
 					fieldId={fieldId}
 					describedBy={describedBy}

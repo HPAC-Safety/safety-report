@@ -475,3 +475,41 @@ Scenario: Uploaded files are not restored after a reload
   When the reporter reloads the form and continues the saved report
   Then no file is listed as attached
   And the reporter is told to attach the files again
+
+@REQ-SUB-058
+@ui
+Scenario: The attachment field is a drop zone with a large choose-files control
+  Given the current page shows a file-upload question
+  Then the field shows a drop zone with a large upload icon and a localized "drag files here, or choose files" prompt
+  And the type, count, and size guidance sits inside the drop zone
+
+@REQ-SUB-059
+@ui
+Scenario: The drop zone's control opens the file chooser from a pointer or the keyboard
+  Given the current page shows a file-upload question
+  When the reporter activates the drop zone's choose-files control by pointer or keyboard
+  Then the browser's file chooser opens for that question
+
+@REQ-SUB-060
+@ui
+Scenario: Files dropped on the drop zone upload exactly as chosen files do
+  Given the current page shows a file-upload question
+  When the reporter drops two files on the drop zone
+  Then both files appear in the list of attached files under their own names
+  And each shows its own activity indicator while it uploads
+
+@REQ-SUB-061
+@ui
+Scenario: Dropped files past the attachment limit are refused
+  Given the reporter has attached one file fewer than the attachment limit allows
+  When the reporter drops two more files on the drop zone
+  Then only one of them is uploaded
+  And an inline, localized message states the limit
+
+@REQ-SUB-062
+@ui
+Scenario: A file dropped outside the drop zone does nothing
+  Given the current page shows a file-upload question
+  When the reporter drops a file on the page outside the drop zone
+  Then the browser stays on the form
+  And no file is attached or uploaded

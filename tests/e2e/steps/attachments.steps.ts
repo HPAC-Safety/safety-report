@@ -8,7 +8,7 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for uploading attachments as they are attached (ADR-0096,
- * REQ-SUB-045..052). The API is stubbed at the network boundary: an upload is
+ * REQ-SUB-045..052), and for the drop zone that chooses them (REQ-SUB-058..062). The API is stubbed at the network boundary: an upload is
  * held open until a step releases it, so "still uploading" is a state a step
  * can observe rather than a race. The server side of the same contract is
  * HpacSafety.Api.Tests' UploadEndpointTests and the acceptance steps. Every
@@ -145,7 +145,7 @@ async function reachAttachmentsPage(page: Page) {
 	await page.getByRole("group", { name: "Was anyone injured?" }).getByRole("radio", { name: "No" }).click()
 	await page.getByRole("button", { name: "Next" }).click() // -> aircraft group
 	await page.getByRole("button", { name: "Next" }).click() // -> attachments
-	await expect(page.getByLabel("Photos or videos")).toBeVisible()
+	await expect(page.getByLabel("Photos or videos")).toBeAttached()
 }
 
 async function attach(page: Page, ...names: string[]) {
@@ -348,7 +348,7 @@ When("the reporter reloads the form and continues the saved report", async ({ pa
 	await page.reload()
 	await page.getByRole("dialog", { name: "Continue where you left off?" }).getByRole("button", { name: "Yes, continue" }).click()
 	// Continue reopens the page the reporter was on — the attachments page.
-	await expect(page.getByLabel("Photos or videos")).toBeVisible()
+	await expect(page.getByLabel("Photos or videos")).toBeAttached()
 })
 
 Then("no file is listed as attached", async ({ page }) => {
@@ -358,4 +358,117 @@ Then("no file is listed as attached", async ({ page }) => {
 Then("the reporter is told to attach the files again", async ({ page }) => {
 	await expect(page.getByText(/you will need to attach them again/i)).toBeVisible()
 	await forgetDraftInBrowser(page)
+})
+
+// --- REQ-SUB-058..062: the drop zone ---
+
+function dropZone(page: Page) {
+	return page.getByTestId("attachment-drop-zone")
+}
+
+function chooseFilesButton(page: Page) {
+	return dropZone(page).getByRole("button", { name: "Drag files here, or choose files" })
+}
+
+/** Builds a DataTransfer carrying synthetic files in the page, as a real drag would. */
+async function filesTransfer(page: Page, names: string[]) {
+	return page.evaluateHandle((fileNames) => {
+		const transfer = new DataTransfer()
+		for (const name of fileNames) transfer.items.add(new File([`synthetic ${name}`], name, { type: "image/png" }))
+		return transfer
+	}, names)
+}
+
+async function dropOnZone(page: Page, ...names: string[]) {
+	const dataTransfer = await filesTransfer(page, names)
+	for (const type of ["dragenter", "dragover", "drop"]) await dropZone(page).dispatchEvent(type, { dataTransfer })
+}
+
+Then(
+	"the field shows a drop zone with a large upload icon and a localized {string} prompt",
+	async ({ page }, _prompt: string) => {
+		await expect(chooseFilesButton(page)).toBeVisible()
+		const icon = chooseFilesButton(page).locator("svg")
+		await expect(icon).toHaveAttribute("aria-hidden", "true")
+		const box = await icon.boundingBox()
+		expect(box?.width ?? 0).toBeGreaterThanOrEqual(48)
+	},
+)
+
+Then("the type, count, and size guidance sits inside the drop zone", async ({ page }) => {
+	await expect(dropZone(page).getByText(/up to 5 files in all, 50 MB each/)).toBeVisible()
+})
+
+When("the reporter activates the drop zone's choose-files control by pointer or keyboard", async ({ page }) => {
+	const byPointer = page.waitForEvent("filechooser")
+	await chooseFilesButton(page).click()
+	const pointerChooser = await byPointer
+	expect(pointerChooser.isMultiple()).toBe(true)
+	await pointerChooser.setFiles([])
+
+	const byKeyboard = page.waitForEvent("filechooser")
+	await chooseFilesButton(page).focus()
+	await page.keyboard.press("Enter")
+	const keyboardChooser = await byKeyboard
+	await keyboardChooser.setFiles(photo("keyboard.png"))
+})
+
+Then("the browser's file chooser opens for that question", async ({ page }) => {
+	// The file chosen through the keyboard-opened chooser landed in this field.
+	await expect(attachmentList(page).getByText("keyboard.png")).toBeVisible()
+})
+
+When("the reporter drops two files on the drop zone", async ({ page }) => {
+	await dropOnZone(page, "dropped-one.png", "dropped-two.png")
+})
+
+Then("both files appear in the list of attached files under their own names", async ({ page }) => {
+	await expect(attachmentList(page).getByText("dropped-one.png")).toBeVisible()
+	await expect(attachmentList(page).getByText("dropped-two.png")).toBeVisible()
+})
+
+Then("each shows its own activity indicator while it uploads", async ({ page }) => {
+	await expect(page.getByRole("progressbar", { name: "Uploading dropped-one.png" })).toBeVisible()
+	await expect(page.getByRole("progressbar", { name: "Uploading dropped-two.png" })).toBeVisible()
+	stubFor(page).release()
+	await expect(page.getByRole("button", { name: /^Remove dropped-/ })).toHaveCount(2)
+})
+
+Given("the reporter has attached one file fewer than the attachment limit allows", async ({ page }) => {
+	await stubUploads(page)
+	await reachAttachmentsPage(page)
+	await attach(page, "one.png", "two.png", "three.png", "four.png")
+	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(4)
+})
+
+When("the reporter drops two more files on the drop zone", async ({ page }) => {
+	await dropOnZone(page, "five.png", "six.png")
+})
+
+Then("only one of them is uploaded", async ({ page }) => {
+	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(6)
+	expect(stubFor(page).requests).toBe(5)
+})
+
+When("the reporter drops a file on the page outside the drop zone", async ({ page }) => {
+	const cancelled = await page.evaluate(() => {
+		const transfer = new DataTransfer()
+		transfer.items.add(new File(["synthetic stray"], "stray.png", { type: "image/png" }))
+		const target = document.querySelector("h1") ?? document.body
+		const fire = (type: string) =>
+			!target.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: transfer }))
+		return { dragover: fire("dragover"), drop: fire("drop") }
+	})
+	// A cancelled dragover and drop are what stop the browser opening the file in place of the form.
+	expect(cancelled).toEqual({ dragover: true, drop: true })
+})
+
+Then("the browser stays on the form", async ({ page }) => {
+	await expect(page).toHaveURL(/\/report/)
+	await expect(chooseFilesButton(page)).toBeVisible()
+})
+
+Then("no file is attached or uploaded", async ({ page }) => {
+	await expect(page.getByText("stray.png")).toHaveCount(0)
+	expect(stubFor(page).requests).toBe(0)
 })

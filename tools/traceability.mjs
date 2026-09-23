@@ -41,6 +41,7 @@ export function readClaims(path, source) {
 	const claims = []
 	const problems = []
 	let pending = []
+	let tags = []
 
 	for (const [index, line] of lines.entries()) {
 		const tag = line.match(CLAIM_TAG)
@@ -51,14 +52,21 @@ export function readClaims(path, source) {
 
 		const scenario = line.match(SCENARIO)
 		if (!scenario) {
-			// Any other tag line keeps the pending claim attached to the
-			// scenario below it; anything else ends the tag block.
-			if (line.trim().startsWith('@') || line.trim() === '') continue
+			// Any other tag line belongs to the scenario below it, like the
+			// claim; anything else ends the tag block, so a neighbouring
+			// scenario's @ui or @ignore never reaches this one.
+			if (line.trim().startsWith('@')) {
+				tags.push(line.trim())
+				continue
+			}
+			if (line.trim() === '') continue
 			pending = []
+			tags = []
 			continue
 		}
 
 		if (pending.length === 0) {
+			tags = []
 			problems.push(`${path}:${index + 1}: "${scenario[2]}" carries no claim ID — every scenario names one claim (ADR-0084)`)
 			continue
 		}
@@ -66,7 +74,6 @@ export function readClaims(path, source) {
 			problems.push(`${path}:${index + 1}: "${scenario[2]}" carries ${pending.length} claim IDs (${pending.join(', ')}) — a scenario is exactly one claim`)
 		}
 
-		const tags = lines.slice(Math.max(0, index - 8), index).map((candidate) => candidate.trim())
 		claims.push({
 			id: pending[0],
 			area: path.split('/')[1],
@@ -75,6 +82,7 @@ export function readClaims(path, source) {
 			status: tags.includes('@ignore') ? 'Planned' : 'Covered',
 		})
 		pending = []
+		tags = []
 	}
 
 	return { claims, problems }

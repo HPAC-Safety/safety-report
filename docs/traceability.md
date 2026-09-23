@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-277 claims across 8 areas: 188 covered by a step definition today, 89 still `@ignore`. 50 constraints.
+277 claims across 8 areas: 199 covered by a step definition today, 78 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -31,10 +31,10 @@ type: guide
 | `REQ-AI-013` | ai-anonymization | Both summaries preserve safety-relevant content while anonymizing | Reqnroll | Planned |
 | `REQ-AI-014` | ai-anonymization | An identifying category is never disclosed in a summary | Reqnroll | Planned |
 | `REQ-AI-015` | ai-anonymization | A private-only fact is never added merely for completeness | Reqnroll | Planned |
-| `REQ-AI-016` | ai-anonymization | Documents never reach the model | Reqnroll | Planned |
+| `REQ-AI-016` | ai-anonymization | Documents never reach the model | Reqnroll | Covered |
 | `REQ-AI-017` | ai-anonymization | A valid response is persisted as one pair-level summary row | Reqnroll | Covered |
 | `REQ-AI-018` | ai-anonymization | The reviewer may correct either text before approval | Reqnroll | Planned |
-| `REQ-AI-019` | ai-anonymization | Retries repeat the single-call operation without adding stages | Reqnroll | Planned |
+| `REQ-AI-019` | ai-anonymization | Retries repeat the single-call operation without adding stages | Reqnroll | Covered |
 | `REQ-AI-020` | ai-anonymization | Exhausted retries surface a manually authorable failure | Reqnroll | Covered |
 | `REQ-AI-021` | ai-anonymization | Sensitive summarization data is never logged | Reqnroll | Covered |
 | `REQ-DOM-001` | domain-and-lifecycle | A report follows the defined lifecycle transitions | Reqnroll | Planned |
@@ -43,7 +43,7 @@ type: guide
 | `REQ-DOM-004` | domain-and-lifecycle | A report is not publishable when one invariant fails | Reqnroll | Planned |
 | `REQ-DOM-005` | domain-and-lifecycle | Editing a summary text unpublishes the report | Reqnroll | Planned |
 | `REQ-DOM-006` | domain-and-lifecycle | Negative consent still allows internal review | Reqnroll | Planned |
-| `REQ-DOM-007` | domain-and-lifecycle | Soft deletion removes a report from every normal path | Reqnroll | Planned |
+| `REQ-DOM-007` | domain-and-lifecycle | Soft deletion removes a report from every normal path | Reqnroll | Covered |
 | `REQ-DOM-008` | domain-and-lifecycle | A question revision can be deleted only when unreferenced | Reqnroll | Covered |
 | `REQ-DOM-009` | domain-and-lifecycle | Retiring a question is a soft delete with no way back | Reqnroll | Covered |
 | `REQ-DOM-010` | domain-and-lifecycle | Raw reports are retained until explicit deletion | Reqnroll | Covered |
@@ -56,20 +56,20 @@ type: guide
 | `REQ-MED-004` | media | An accepted attachment starts in a private quarantine compartment | Reqnroll | Planned |
 | `REQ-MED-005` | media | Unreferenced quarantine blobs expire automatically | Reqnroll | Planned |
 | `REQ-MED-006` | media | Every image is re-encoded to strip metadata | Reqnroll | Planned |
-| `REQ-MED-007` | media | Every video is remuxed to strip metadata, never transcoded | Reqnroll | Planned |
+| `REQ-MED-007` | media | Every video is remuxed to strip metadata, never transcoded | Reqnroll | Covered |
 | `REQ-MED-015` | media | A video that cannot be stripped is kept rather than refused | Reqnroll | Covered |
 | `REQ-MED-008` | media | A document is validated but never transformed | Reqnroll | Covered |
 | `REQ-MED-009` | media | Each attachment fails and processes independently of the report | Reqnroll | Planned |
-| `REQ-MED-010` | media | A reviewer gets a short-lived URL only for successfully processed media | Reqnroll | Planned |
+| `REQ-MED-010` | media | A reviewer gets a short-lived URL only for successfully processed media | Reqnroll | Covered |
 | `REQ-MED-011` | media | A reviewer downloads a validated document as an unredacted original | Reqnroll | Covered |
 | `REQ-MED-012` | media | The admin site never inline-renders a private document | playwright-bdd | Planned |
-| `REQ-MED-013` | media | A failed attachment is inaccessible to reviewers | playwright-bdd | Covered |
+| `REQ-MED-013` | media | A failed attachment is inaccessible to reviewers | Reqnroll | Covered |
 | `REQ-MED-014` | media | Attachments are never exposed publicly, even after publication | Reqnroll | Planned |
 | `REQ-MOD-001` | moderation-authentication-and-publication | In development the login page offers no third-party sign-in option | playwright-bdd | Covered |
 | `REQ-MOD-002` | moderation-authentication-and-publication | Where a third-party provider is configured, the login page offers it | playwright-bdd | Covered |
 | `REQ-MOD-003` | moderation-authentication-and-publication | Signing in with member credentials returns a session that survives a reload | playwright-bdd | Covered |
 | `REQ-MOD-004` | moderation-authentication-and-publication | Bad credentials show one generic failure and no session | playwright-bdd | Covered |
-| `REQ-MOD-005` | moderation-authentication-and-publication | Repeated sign-in attempts for one identity are rate limited | playwright-bdd | Covered |
+| `REQ-MOD-005` | moderation-authentication-and-publication | Repeated sign-in attempts for one identity are rate limited | Reqnroll | Covered |
 | `REQ-MOD-006` | moderation-authentication-and-publication | A member's signed-in session persists across a reload and clears on logout | playwright-bdd | Covered |
 | `REQ-MOD-007` | moderation-authentication-and-publication | A signed-in Administrator's Admin menu offers every option | playwright-bdd | Covered |
 | `REQ-MOD-008` | moderation-authentication-and-publication | A signed-in SafetyOfficer's Admin menu offers manage-reports only | playwright-bdd | Covered |
@@ -77,7 +77,7 @@ type: guide
 | `REQ-MOD-010` | moderation-authentication-and-publication | An open Admin menu keeps every option on a single line | playwright-bdd | Covered |
 | `REQ-MOD-011` | moderation-authentication-and-publication | Activating an Admin menu option navigates to its placeholder page | playwright-bdd | Covered |
 | `REQ-MOD-012` | moderation-authentication-and-publication | The Admin menu is absent for a signed-out visitor | playwright-bdd | Covered |
-| `REQ-MOD-013` | moderation-authentication-and-publication | A token signed by an unknown key is rejected | playwright-bdd | Covered |
+| `REQ-MOD-013` | moderation-authentication-and-publication | A token signed by an unknown key is rejected | Reqnroll | Covered |
 | `REQ-MOD-014` | moderation-authentication-and-publication | A token whose signature has been altered is rejected | Reqnroll | Covered |
 | `REQ-MOD-015` | moderation-authentication-and-publication | An expired token is rejected | Reqnroll | Covered |
 | `REQ-MOD-016` | moderation-authentication-and-publication | A token for the wrong audience is rejected | Reqnroll | Covered |
@@ -92,7 +92,7 @@ type: guide
 | `REQ-MOD-025` | moderation-authentication-and-publication | User capabilities | Reqnroll | Planned |
 | `REQ-MOD-026` | moderation-authentication-and-publication | SafetyOfficer capabilities | Reqnroll | Planned |
 | `REQ-MOD-027` | moderation-authentication-and-publication | Administrator capabilities include everything SafetyOfficer has | Reqnroll | Planned |
-| `REQ-MOD-028` | moderation-authentication-and-publication | Only an Administrator may author a question revision | Reqnroll | Planned |
+| `REQ-MOD-028` | moderation-authentication-and-publication | Only an Administrator may author a question revision | Reqnroll | Covered |
 | `REQ-MOD-029` | moderation-authentication-and-publication | Sensitive admin actions are audited without report content | Reqnroll | Planned |
 | `REQ-MOD-030` | moderation-authentication-and-publication | The review queue shows reports needing action | Reqnroll | Planned |
 | `REQ-MOD-031` | moderation-authentication-and-publication | A report detail view exposes only what the reviewer needs | Reqnroll | Planned |
@@ -127,7 +127,7 @@ type: guide
 | `REQ-QB-012` | question-bank-and-form | A group question's response nests its children rather than repeating them | Reqnroll | Covered |
 | `REQ-QB-013` | question-bank-and-form | The current form's response includes a question's conditional dependency | Reqnroll | Covered |
 | `REQ-QB-014` | question-bank-and-form | consent_publish is the only question that can never be optional | Reqnroll | Planned |
-| `REQ-QB-015` | question-bank-and-form | An Administrator chooses whether an ordinary question must be answered | Reqnroll | Planned |
+| `REQ-QB-015` | question-bank-and-form | An Administrator chooses whether an ordinary question must be answered | Reqnroll | Covered |
 | `REQ-QB-016` | question-bank-and-form | consent_publish must resolve to an explicit yes or no | Reqnroll | Planned |
 | `REQ-QB-017` | question-bank-and-form | Skipping an ordinary question still records that it was shown | Reqnroll | Planned |
 | `REQ-QB-018` | question-bank-and-form | An answer to a picker stores the words the reporter saw | Reqnroll | Planned |
@@ -142,7 +142,7 @@ type: guide
 | `REQ-QB-027` | question-bank-and-form | Creating a revision preserves the question bank invariants | Reqnroll | Planned |
 | `REQ-QB-028` | question-bank-and-form | A report may answer a known superseded revision | Reqnroll | Planned |
 | `REQ-QB-029` | question-bank-and-form | Unknown or deleted revisions are rejected at submission | Reqnroll | Planned |
-| `REQ-QB-030` | question-bank-and-form | A revision can be soft-deleted only when no answer references it | Reqnroll | Planned |
+| `REQ-QB-030` | question-bank-and-form | A revision can be soft-deleted only when no answer references it | Reqnroll | Covered |
 | `REQ-QB-031` | question-bank-and-form | A referenced revision can never be deleted | Reqnroll | Covered |
 | `REQ-QB-032` | question-bank-and-form | A shared choice list is copied into the revision that uses it | Reqnroll | Covered |
 | `REQ-QB-033` | question-bank-and-form | Editing a shared choice list never changes a revision already built from it | Reqnroll | Covered |
@@ -156,16 +156,16 @@ type: guide
 | `REQ-QB-041` | question-bank-and-form | A multi-select may allow reporter additions the same way a type-ahead does | Reqnroll | Covered |
 | `REQ-QB-042` | question-bank-and-form | A reporter adds a choice a multi-select did not offer | Reqnroll | Planned |
 | `REQ-QB-043` | question-bank-and-form | An ordinary multi-select never accepts an unlisted value | Reqnroll | Planned |
-| `REQ-QB-044` | question-bank-and-form | A statement or a group collects no answer | Reqnroll | Planned |
+| `REQ-QB-044` | question-bank-and-form | A statement or a group collects no answer | Reqnroll | Covered |
 | `REQ-QB-045` | question-bank-and-form | A statement or a group is excluded from a submission's answer-producing revisions | Reqnroll | Planned |
 | `REQ-QB-046` | question-bank-and-form | A question may be grouped under a group question | Reqnroll | Covered |
 | `REQ-QB-047` | question-bank-and-form | A form renders a question together with its group heading and siblings | playwright-bdd | Covered |
-| `REQ-QB-048` | question-bank-and-form | Only a group question may be a grouping parent | playwright-bdd | Covered |
+| `REQ-QB-048` | question-bank-and-form | Only a group question may be a grouping parent | Reqnroll | Covered |
 | `REQ-QB-049` | question-bank-and-form | A group cannot itself be grouped under another group | Reqnroll | Covered |
 | `REQ-QB-050` | question-bank-and-form | A question cannot be grouped under itself | Reqnroll | Covered |
 | `REQ-QB-051` | question-bank-and-form | Grouping is unaffected by conditional dependency and vice versa | Reqnroll | Covered |
 | `REQ-QB-052` | question-bank-and-form | Regrouping follows a parent that stops being a group | Reqnroll | Planned |
-| `REQ-QB-053` | question-bank-and-form | A question can be made conditional only on a yes/no or single-select question | Reqnroll | Planned |
+| `REQ-QB-053` | question-bank-and-form | A question can be made conditional only on a yes/no or single-select question | Reqnroll | Covered |
 | `REQ-QB-054` | question-bank-and-form | A single-select parent's dependency records the required option | Reqnroll | Covered |
 | `REQ-QB-055` | question-bank-and-form | A single-select dependency must name one of the parent's current options | Reqnroll | Covered |
 | `REQ-QB-056` | question-bank-and-form | A yes/no dependency does not name an option | Reqnroll | Covered |
@@ -204,7 +204,7 @@ type: guide
 | `REQ-QB-089` | question-bank-and-form | An Administrator downloads the question bank as Typeform JSON | playwright-bdd | Covered |
 | `REQ-QB-090` | question-bank-and-form | An Administrator writes a question's choice by its wording alone | playwright-bdd | Covered |
 | `REQ-QB-091` | question-bank-and-form | An Administrator writes a shared choice list's choice by its wording alone | playwright-bdd | Covered |
-| `REQ-QB-092` | question-bank-and-form | A choice an Administrator writes is recorded under a code derived from its English wording | playwright-bdd | Covered |
+| `REQ-QB-092` | question-bank-and-form | A choice an Administrator writes is recorded under a code derived from its English wording | Reqnroll | Covered |
 | `REQ-QB-094` | question-bank-and-form | A reporter answering in French adds a choice recorded in French | Reqnroll | Covered |
 | `REQ-QB-095` | question-bank-and-form | Submitting a report records a type-ahead value the list did not offer | Reqnroll | Covered |
 | `REQ-QB-096` | question-bank-and-form | A new question's key is derived from its English wording and never reused | Reqnroll | Covered |
@@ -233,7 +233,7 @@ type: guide
 | `REQ-SUB-008` | report-submission | The API rejects a malformed submission DTO | Reqnroll | Covered |
 | `REQ-SUB-009` | report-submission | A submission may answer a known superseded revision | Reqnroll | Covered |
 | `REQ-SUB-010` | report-submission | A revision that was never shown as answer-producing is rejectable | Reqnroll | Planned |
-| `REQ-SUB-011` | report-submission | Reporter-visible errors never echo submitted content | Reqnroll | Planned |
+| `REQ-SUB-011` | report-submission | Reporter-visible errors never echo submitted content | Reqnroll | Covered |
 | `REQ-SUB-012` | report-submission | Accepted attachments are streamed into quarantine under a bound | Reqnroll | Covered |
 | `REQ-SUB-013` | report-submission | A valid submission is persisted atomically | Reqnroll | Covered |
 | `REQ-SUB-014` | report-submission | A failed transaction leaves no visible report and no leaked blobs | Reqnroll | Covered |
@@ -264,7 +264,7 @@ type: guide
 | `REQ-TF-015` | typeform-question-import-export | Import never saves a question by itself | Reqnroll | Covered |
 | `REQ-TF-016` | typeform-question-import-export | The imported draft's key comes from the Typeform ref | Reqnroll | Covered |
 | `REQ-TF-017` | typeform-question-import-export | Re-importing the same form updates in place | playwright-bdd | Covered |
-| `REQ-TF-018` | typeform-question-import-export | Export produces a zip of two Typeform-shaped files | playwright-bdd | Covered |
+| `REQ-TF-018` | typeform-question-import-export | Export produces a zip of two Typeform-shaped files | Reqnroll | Covered |
 | `REQ-TF-019` | typeform-question-import-export | Export preserves data Typeform has no field for | Reqnroll | Covered |
 | `REQ-TF-020` | typeform-question-import-export | Exporting and reimporting reproduces the same drafts | Reqnroll | Covered |
 | `REQ-TF-021` | typeform-question-import-export | Only an Administrator may import or export | Reqnroll | Covered |
@@ -277,7 +277,7 @@ type: guide
 | `REQ-WLD-007` | web-localization-and-design | Switching the language toggle rerenders without losing answers | playwright-bdd | Covered |
 | `REQ-WLD-008` | web-localization-and-design | A visitor can toggle and persist a light/dark theme choice | playwright-bdd | Covered |
 | `REQ-WLD-009` | web-localization-and-design | The footer sits at the bottom of the viewport on a short page but below the fold on a long one | playwright-bdd | Covered |
-| `REQ-WLD-010` | web-localization-and-design | Application chrome strings come from committed locale catalogues | playwright-bdd | Covered |
+| `REQ-WLD-010` | web-localization-and-design | Application chrome strings come from committed locale catalogues | Reqnroll | Covered |
 | `REQ-WLD-011` | web-localization-and-design | A translation missing locally is stubbed with a visible marker, and CI must replace it before merge | Reqnroll | Covered |
 | `REQ-WLD-012` | web-localization-and-design | A French value edited by hand is recorded rather than overwritten | Reqnroll | Covered |
 | `REQ-WLD-013` | web-localization-and-design | Editing both languages at once is one correction, not a conflict | Reqnroll | Covered |
@@ -285,7 +285,7 @@ type: guide
 | `REQ-WLD-015` | web-localization-and-design | Only publication consent is marked required on the form | playwright-bdd | Covered |
 | `REQ-WLD-016` | web-localization-and-design | The form explains local storage and warns about attachments | playwright-bdd | Covered |
 | `REQ-WLD-017` | web-localization-and-design | The client shows inline validation before submission | playwright-bdd | Covered |
-| `REQ-WLD-018` | web-localization-and-design | Client validation never replaces server validation | playwright-bdd | Planned |
+| `REQ-WLD-018` | web-localization-and-design | Client validation never replaces server validation | Reqnroll | Planned |
 | `REQ-WLD-019` | web-localization-and-design | The active locale controls which summary text is primary | playwright-bdd | Planned |
 | `REQ-WLD-020` | web-localization-and-design | Admin pages distinguish private, ordinary, and output content | playwright-bdd | Planned |
 | `REQ-WLD-021` | web-localization-and-design | Assets are self-hosted, never loaded from third-party CDNs | Reqnroll | Planned |

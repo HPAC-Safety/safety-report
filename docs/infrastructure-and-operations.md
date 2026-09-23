@@ -151,7 +151,7 @@ incident response. Restore drills verify retained private data stays private.
 
 ## Storage lifecycles and backups
 
-**CON-INF-010** A short lifecycle expires unreferenced quarantine candidates. No lifecycle
+**CON-INF-010** A fifteen-day lifecycle, matching the browser's saved report (ADR-0100), expires unreferenced quarantine candidates. No lifecycle
 physically purges report-linked originals/derivatives merely because a report
 was soft-deleted. RDS automated backups and final snapshots meet an explicit
 retention policy; backup access is audited and limited. This operational

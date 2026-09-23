@@ -273,7 +273,11 @@ type: guide
 | `REQ-SUB-049` | report-submission | The form refuses a file past the attachment limit | playwright-bdd | Covered |
 | `REQ-SUB-050` | report-submission | A refused upload is explained on that file's row | playwright-bdd | Covered |
 | `REQ-SUB-051` | report-submission | An expired upload is marked for re-attachment and nothing else is lost | playwright-bdd | Covered |
-| `REQ-SUB-052` | report-submission | Uploaded files are not restored after a reload | playwright-bdd | Covered |
+| `REQ-SUB-063` | report-submission | Continuing a saved report restores its uploaded files | playwright-bdd | Covered |
+| `REQ-SUB-064` | report-submission | Starting over erases the saved report's uploads | playwright-bdd | Covered |
+| `REQ-SUB-065` | report-submission | A reporter may discard the report in progress | playwright-bdd | Covered |
+| `REQ-SUB-066` | report-submission | Discarding a report asks for confirmation first | playwright-bdd | Covered |
+| `REQ-SUB-067` | report-submission | An expired saved report's uploads are erased | playwright-bdd | Covered |
 | `REQ-SUB-058` | report-submission | The attachment field is a drop zone with a large choose-files control | playwright-bdd | Covered |
 | `REQ-SUB-059` | report-submission | The drop zone's control opens the file chooser from a pointer or the keyboard | playwright-bdd | Covered |
 | `REQ-SUB-060` | report-submission | Files dropped on the drop zone upload exactly as chosen files do | playwright-bdd | Covered |

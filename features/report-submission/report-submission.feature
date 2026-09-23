@@ -3,7 +3,9 @@ A reporter's answers, revision IDs, and locale live only in the browser
 until one final submission request. Before that request, the API and database
 receive no unfinished report state. The one thing that reaches the server
 earlier is an attachment, uploaded into private quarantine as soon as it is
-attached and claimed by that request (ADR-0096).
+attached and claimed by that request (ADR-0096). The browser's saved report
+names its finished uploads, so they are kept exactly as long as it is
+(ADR-0100).
 
 Background:
   Given a reporter writes a report through POST /api/v1/reports and an attachment through POST /api/v1/uploads
@@ -17,7 +19,7 @@ Scenario: The browser holds report state locally until submission
   Given a reporter is filling out the form
   When the reporter has not yet submitted
   Then the selected locale, shown question-revision IDs, and entered answers exist only in local browser storage with a 15-day expiry
-  And image, video, and document attachments and their upload IDs are never placed in browser storage
+  And no image, video, or document file is placed in browser storage, only each finished upload's ID, name, and size
   And no server draft, report ID reservation, or resumable upload protocol exists
 
 @REQ-SUB-002
@@ -30,7 +32,7 @@ Scenario: A successful submission clears local browser state
 @REQ-SUB-003
 @ui
 Scenario: Expired local state is not restored
-  Given local browser state is older than 15 days
+  Given local browser state was started more than 15 days ago and saved again since
   When the reporter returns to the form
   Then the browser ignores or removes the expired state
 
@@ -41,7 +43,7 @@ Scenario: A returning reporter is asked whether to continue their saved report
   When the reporter returns to the form
   Then a dialog asks whether to continue where they left off, with No and Yes buttons
   And a table below the buttons lists each saved question with its saved answer
-  And no attachment is listed
+  And each saved attached file is listed by name under its question
 
 @REQ-SUB-036
 @ui
@@ -468,13 +470,47 @@ Scenario: An expired upload is marked for re-attachment and nothing else is lost
   And every other answer and upload is kept
   And the reporter can submit again once the files are re-attached
 
-@REQ-SUB-052
+@REQ-SUB-063
 @ui
-Scenario: Uploaded files are not restored after a reload
+Scenario: Continuing a saved report restores its uploaded files
   Given the reporter has uploaded files and the browser holds a saved report
   When the reporter reloads the form and continues the saved report
-  Then no file is listed as attached
-  And the reporter is told to attach the files again
+  Then each uploaded file is listed as attached under its own name, with a Remove control
+  And the submission names each restored file by its upload ID
+
+@REQ-SUB-064
+@ui
+Scenario: Starting over erases the saved report's uploads
+  Given this browser holds a saved report naming uploaded files
+  When the reporter returns to the form
+  And the reporter declines to continue
+  Then the browser asks the API to delete each of those uploads
+  And the browser removes the saved report
+
+@REQ-SUB-065
+@ui
+Scenario: A reporter may discard the report in progress
+  Given the reporter has uploaded files and the browser holds a saved report
+  When the reporter discards the report and confirms
+  Then the browser asks the API to delete each of those uploads
+  And the browser removes the saved report
+  And the form opens at its introduction with no answers
+
+@REQ-SUB-066
+@ui
+Scenario: Discarding a report asks for confirmation first
+  Given the reporter has uploaded files and the browser holds a saved report
+  When the reporter presses Discard report and then keeps the report
+  Then no upload is deleted
+  And the saved report and its answers are kept
+
+@REQ-SUB-067
+@ui
+Scenario: An expired saved report's uploads are erased
+  Given this browser holds a saved report started more than 15 days ago that names uploaded files
+  When the reporter returns to the form
+  Then the browser asks the API to delete each of those uploads
+  And the browser ignores or removes the expired state
 
 @REQ-SUB-058
 @ui

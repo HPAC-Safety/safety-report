@@ -26,7 +26,10 @@ Each file uploads the moment the reporter attaches it
   which the form maps to a localized message on that file's row.
 - `DELETE /api/v1/uploads/{{id}}` erases every version of that quarantine object
   and returns `204`, whether or not it existed.
-- The browser keeps each upload ID in memory only, never in the saved draft.
+- The browser keeps each finished upload's ID, the file's name, and its size in
+  the saved report beside the answers, never the file itself. Continuing the
+  saved report lists those files again
+  ([ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 
 At submission a file-upload answer names its uploads in `attachments`, each an
 `uploadId` and the `fileName` the reporter's browser knew it by. The API
@@ -134,10 +137,28 @@ sent to the server.
 
 - **Yes** restores the saved answers and reopens the page the reporter was on.
   If that page is no longer on the form, the form opens at its first page.
-- **No** removes the saved report from the browser and opens a fresh form.
+- **No** asks the API to delete every upload the saved report names, removes
+  the saved report from the browser, and opens a fresh form.
 - The page is saved by its question key, beside the answers, in the same
   15-day local-storage report. A report saved before that names its page by
   revision ID and still reopens it.
+- The table lists each saved attached file by name under its file-upload
+  question, and **Yes** lists those files as attached again, each with its
+  Remove control.
+- The 15 days run from the moment the report was first saved, however often
+  it is edited afterward, because each upload's quarantine copy expires
+  fifteen days after it was made and cannot be renewed. A report saved before
+  this rule has no start time and is dated from its last save. When the form
+  finds a saved report past its window, it asks the API to delete that
+  report's uploads before discarding it.
+
+## Discarding a report (#373)
+
+A **Discard report** control sits below the page navigation whenever the
+form holds an answer or an attached file. It asks first, in a dialog whose
+focus starts on the choice that keeps the report. Confirming deletes every
+finished upload, abandons any still in flight, removes the saved report, and
+returns to the introduction with no answers.
 - A saved answer whose question revision is not on the current form is not
   listed and not restored. If no saved answer is on the current form, there is
   nothing to continue: the saved report is removed and no dialog is shown.
@@ -244,9 +265,14 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - A resumable or chunked upload protocol, a pre-signed upload URL handed to the
   browser, or a percentage progress bar. An upload is one request with an
   indeterminate indicator.
-- Restoring attachments after a reload, from browser storage or by keeping
-  upload IDs. Answers and shown revision IDs persist locally; files and upload
-  IDs never do.
+- Keeping a file's bytes in browser storage, restoring an attachment on another
+  browser or device, or a server endpoint that lists, reads, previews, or
+  renews an unsubmitted upload. The saved report's upload IDs and names are
+  the only record of an unsubmitted file, and they never leave the browser.
+- Extending a saved report or its uploads past fifteen days from the moment
+  the report was started, or checking whether a restored upload still exists
+  before submission. The submission's refusal naming missing uploads is the
+  one check.
 - Counting uploads against the attachment limit on the server before
   submission. An upload belongs to no report until it is claimed; the form
   enforces the limit as files are attached, and the API enforces it on the IDs

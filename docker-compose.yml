@@ -54,7 +54,7 @@ services:
         mc alias set local http://minio:9000 hpac-dev hpac-dev-secret
         mc mb --ignore-existing local/hpac-safety-uploads
         mc version enable local/hpac-safety-uploads
-        echo '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":1},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}' | mc ilm import local/hpac-safety-uploads
+        echo '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":15},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}' | mc ilm import local/hpac-safety-uploads
     restart: "no"
 
   api:

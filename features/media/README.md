@@ -28,9 +28,12 @@ the private download label, never security handling or rendering.
 ## Storage compartments
 
 - Quarantine contains an accepted upload, under `quarantine/<upload id>`,
-  until a submission claims it or the lifecycle rule expires it. A reporter
-  removing the file erases every version of it
-  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+  until a submission claims it or the lifecycle rule expires it fifteen days
+  after it was written, the same window as the saved report that names it. A
+  reporter removing the file, or abandoning the report, erases every version
+  of it
+  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+  [ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - Private original is the retained canonical input after validation.
 - Derivative contains the safe reviewer copy.
 

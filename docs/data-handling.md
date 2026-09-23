@@ -18,8 +18,11 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
   browser. No report, draft, reserved ID, or database row exists on the server.
   An attached file is the one exception: it sits in private quarantine under
   an opaque upload ID, names no member, is erased when the reporter removes
-  it, and expires by lifecycle rule unless a submission claims it
-  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+  it or abandons the report, and expires by lifecycle rule fifteen days after
+  upload unless a submission claims it. The browser's saved report keeps its
+  upload ID and name for the same window
+  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+  [ADR-0100](decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - Use AWS-managed encryption at rest and TLS. Do not maintain application AES
   keys or ciphertext converters.
 - Keep raw reports private until an authorized officer soft-deletes them.

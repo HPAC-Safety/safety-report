@@ -60,7 +60,7 @@ Scenario: An accepted upload waits in a private quarantine compartment
 Scenario: Unclaimed uploads expire automatically
   Given an upload that no committed submission claimed
   When the storage lifecycle rule runs
-  Then the upload expires, its key stopping resolving after about a day and its bytes gone about a day after that
+  Then the upload expires, its key stopping resolving fifteen days after it was written and its bytes gone about a day after that
 
 @REQ-MED-006
 Scenario: Every image is re-encoded to strip metadata

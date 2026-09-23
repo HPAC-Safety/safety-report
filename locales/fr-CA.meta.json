@@ -1181,6 +1181,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "report.multiSelect.placeholder": {
+    "source_hash": "46b0fe9130fe57f7394fda378529269b630a8745f059a85312bc5fac4365db08",
+    "target_hash": "9232573a08c82d7777f0e3ebc03398d88684e8ac023cbdc35bd06915a845bfe4",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "report.nav.back": {
     "source_hash": "76900f1bfd16c8d4dd3d25e6f46638d7165aee23883ccea6bfe071c514421769",
     "target_hash": "ef23a5940244e0f5b4c5a5f5b53259165e40a7ab9fc639551d2819dec83d72f0",

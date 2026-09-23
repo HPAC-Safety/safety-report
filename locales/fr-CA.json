@@ -119,7 +119,7 @@
       "placeholder": "Choisissez-en une"
     },
     "multiSelect": {
-      "placeholder": "#Choose any"
+      "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
       "selectedCount": "{count} fichier(s) sélectionné(s)",

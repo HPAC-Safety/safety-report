@@ -212,21 +212,27 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    it at, and a screenshot in French reads to a reviewer as broken or
    untranslated rather than as the other official language working correctly.
 7. After pushing, bring the local Docker environment up on the pushed code:
-   `./dev-up.sh` from the worktree (`./dev-up.sh --down` first if containers
-   from another branch are running). It starts the containers detached, waits
-   until the API and the dev server actually answer, prints their URLs, and
-   returns — it does not tail logs. The running environment should be the
-   change under review, not whatever branch was built last.
-8. Remove the worktree (`git worktree remove`) immediately after — never leave
-   one sitting around, whether the PR is still open, still failing checks, or
-   already merged. Watching checks, reading logs, and commenting all work from
-   the primary checkout via `gh`; none of it needs the worktree present.
+   `./dev-up.sh` from the worktree. It takes the dev ports over from any other
+   checkout of this repository that still holds them, starts the containers
+   detached, waits until the API and the dev server actually answer, prints
+   their URLs, and returns — it does not tail logs. This proves the pushed
+   code starts, not only that it builds.
+8. Tear the environment down and remove the worktree immediately after:
+   `./dev-up.sh --down`, then `git worktree remove`. Containers belong to the
+   checkout that started them — compose names the project after the worktree
+   directory, and the web container bind-mounts it — so removing the worktree
+   without `--down` leaves containers running from a directory that no longer
+   exists, holding the ports every other checkout needs
+   ([lesson 0008](../../docs/lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
+   Never leave a worktree sitting around, whether the PR is still open, still
+   failing checks, or already merged. Watching checks, reading logs, and
+   commenting all work from the primary checkout via `gh`; none of it needs
+   the worktree present.
 9. Watch required checks from the primary checkout. If one fails, recreate the
    worktree on the *same* branch (no `-b`, it already exists —
    `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`),
    fix, committing, rebasing onto fresh `origin/main`, and pushing each fix as
-   it lands, repeat step 7, then
-   remove the worktree again. Finish only when
+   it lands, repeat steps 7 and 8. Finish only when
    checks are green and no worktree remains, and mark the session done:
    `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 

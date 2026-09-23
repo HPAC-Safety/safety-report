@@ -227,7 +227,7 @@ export async function writeSavedDraftToBrowser(page: Page) {
 					"rev-aircraft_type": { kind: "value", value: "Paraglider" },
 					"rev-retired": { kind: "value", value: "An answer to a retired question." },
 				},
-				stepRevisionId: "rev-injury_detail",
+				stepKey: "injury_detail",
 				savedAtMs: Date.now() - 60 * 60 * 1000,
 			}),
 		)

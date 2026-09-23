@@ -629,3 +629,90 @@ Then("the type-ahead offers the choice in its English wording", async ({ page })
 	await expect(offered.nth(1)).toHaveAttribute("value", "Mount 7")
 	await expect(offered.nth(1)).toHaveAttribute("lang", "en-CA")
 })
+
+/*
+ * The page in the address (#366). Each page is /report/<question-key>; the
+ * introduction is /report.
+ */
+
+function reportAddress(stepKey?: string): RegExp {
+	return stepKey ? new RegExp(`/report/${stepKey}$`) : /\/report$/
+}
+
+Given("a reporter is on the form's introduction at \\/report", async ({ page }) => {
+	await openForm(page)
+	await expect(page).toHaveURL(reportAddress())
+})
+
+Given("a reporter has answered a required question and pressed Next", async ({ page }) => {
+	const questions = defaultFormQuestions()
+	questions.find((question) => question.key === "narrative")!.isRequired = true
+	await openForm(page, questions)
+	await goNext(page) // intro -> narrative
+	await fillNarrative(page, "A synthetic occurrence narrative.")
+	await goNext(page) // narrative -> was_injured
+	await expect(page).toHaveURL(reportAddress("was_injured"))
+})
+
+When("the reporter presses Next", async ({ page }) => {
+	await goNext(page)
+})
+
+When("the reporter presses Back", async ({ page }) => {
+	await goBack(page)
+})
+
+When("the reporter presses the browser's Back button", async ({ page }) => {
+	await page.goBack()
+})
+
+When("the reporter clears the answer and presses the browser's Forward button", async ({ page }) => {
+	await fillNarrative(page, "")
+	await page.goForward()
+})
+
+When("the reporter opens the address of a page other than the one saved", async ({ page }) => {
+	await signInAs(page, "user")
+	await page.goto("/report/aircraft")
+	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+})
+
+When("the reporter opens the address of a later page of the form", async ({ page }) => {
+	await signInAs(page, "user")
+	await page.goto("/report/aircraft")
+	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+})
+
+When("the reporter opens the address of a page the form does not have", async ({ page }) => {
+	await page.goto("/report/no_such_page")
+	await expect(page.getByRole("heading", { level: 1 })).toBeVisible()
+})
+
+Then("the address names the page now shown, as \\/report\\/<question-key>", async ({ page }) => {
+	await expect(page.getByLabel("What happened?")).toBeVisible()
+	await expect(page).toHaveURL(reportAddress("narrative"))
+})
+
+Then("the address is \\/report", async ({ page }) => {
+	await expect(page).toHaveURL(reportAddress())
+})
+
+Then("the required question's page shows and the address names it", async ({ page }) => {
+	await expect(page.getByLabel("What happened?")).toHaveValue("A synthetic occurrence narrative.")
+	await expect(page).toHaveURL(reportAddress("narrative"))
+})
+
+Then("the required question's page still shows", async ({ page }) => {
+	await expect(page.getByLabel("What happened?")).toBeVisible()
+	await expect(page).toHaveURL(reportAddress("narrative"))
+})
+
+Then("the address names the page the reporter was last on", async ({ page }) => {
+	await expect(page.getByLabel("Describe the injury")).toBeVisible()
+	await expect(page).toHaveURL(reportAddress("injury_detail"))
+})
+
+Then("the form opens at its introduction at \\/report", async ({ page }) => {
+	await expect(page.getByRole("heading", { level: 1 })).toContainText("Thanks for taking the time")
+	await expect(page).toHaveURL(reportAddress())
+})

@@ -120,9 +120,29 @@ sent to the server.
 - **Yes** restores the saved answers and reopens the page the reporter was on.
   If that page is no longer on the form, the form opens at its first page.
 - **No** removes the saved report from the browser and opens a fresh form.
+- The page is saved by its question key, beside the answers, in the same
+  15-day local-storage report. A report saved before that names its page by
+  revision ID and still reopens it.
 - A saved answer whose question revision is not on the current form is not
   listed and not restored. If no saved answer is on the current form, there is
   nothing to continue: the saved report is removed and no dialog is shown.
+
+## The page in the address (#366)
+
+Decided in [ADR-0099](../../docs/decisions/ADR-0099-a-report-page-is-addressed-by-its-question-key.md).
+
+The introduction is `/report`; every other page is `/report/<question-key>`,
+named by the key of the question heading it. Pressing Next or Back adds a
+browser history entry, so the browser's own Back and Forward move between
+pages — and obey the form's rules: a page whose earlier required question is
+unanswered cannot be reached that way, and the form returns to that question
+with its inline message.
+
+The address follows the form; it never leads it on arrival. Opening any
+`/report/...` address asks the continue question exactly as `/report` does
+when a saved report exists, and the answer decides the page. With no saved
+report, the form opens at its introduction. An address naming a page the form
+does not have, or a conditional page not currently shown, becomes `/report`.
 
 ## Validation order
 
@@ -219,6 +239,11 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Restoring a saved report without asking, keeping more than one saved report,
   or editing saved values inside the continue dialog. The dialog is a yes/no
   question with a read-only table.
+- Opening a page straight from its address, a French or otherwise localized
+  page slug, a page number in the address, or anything the reporter entered in
+  the address. The address holds only an administrator-authored question key.
+- Keeping the saved page in `sessionStorage`. It would be gone when the tab
+  closes, which is exactly when a reporter comes back to continue.
 - Recording who submitted a report — no subject, no user id, no audit line, no
   log line
   ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).

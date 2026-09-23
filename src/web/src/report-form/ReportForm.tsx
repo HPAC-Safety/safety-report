@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate, useParams } from "react-router-dom"
 
 import { useLocale } from "../i18n/useLocale"
 import { fetchCurrentQuestions, type PublicQuestionView } from "../api/publicQuestions"
@@ -36,6 +37,11 @@ function stepQuestionId(step: FormStep): string {
 	return step.question.id
 }
 
+/** The introduction is the bare form address; every other page is named by its heading question's key (ADR-0099). */
+function stepPath(step: FormStep): string {
+	return step.kind === "intro" ? "/report" : `/report/${encodeURIComponent(step.question.key)}`
+}
+
 export function ReportForm() {
 	const { locale, t } = useLocale()
 	const [load, setLoad] = useState<LoadState>({ status: "loading" })
@@ -46,16 +52,22 @@ export function ReportForm() {
 	// whether anything is in flight.
 	const [attachments, setAttachments] = useState<Record<string, Attachment[]>>({})
 	const [uploading, setUploading] = useState<Record<string, boolean>>({})
-	const [currentStepId, setCurrentStepId] = useState<string | null>(null)
+	// The page shown is whichever the address names. `addressSettled` stays
+	// false until the form has loaded and put itself at /report: an address
+	// the reporter arrived on never picks the page — the continue dialog, or
+	// the introduction, does (REQ-SUB-056, REQ-SUB-057).
+	const { stepKey } = useParams<{ stepKey?: string }>()
+	const navigate = useNavigate()
+	const [addressSettled, setAddressSettled] = useState(false)
 	// Purely cosmetic: true for one paint after the step changes, so the new
 	// content fades in. Never gates navigation logic — a step change is always
-	// applied to `currentStepId` immediately, so rapid Next/Back clicks (or an
+	// applied to the address immediately, so rapid Next/Back clicks (or an
 	// impatient reporter) can never race ahead of an in-flight animation.
 	const [entering, setEntering] = useState(false)
 	const [attemptedAdvance, setAttemptedAdvance] = useState(false)
 	const [submit, setSubmit] = useState<SubmitState>({ status: "idle" })
 	const offeredDraft = useRef(false)
-	const [pendingDraft, setPendingDraft] = useState<{ draft: ReportDraft; rows: SavedAnswerRow[] } | null>(null)
+	const [pendingDraft, setPendingDraft] = useState<ReportDraft | null>(null)
 
 	useEffect(() => {
 		let cancelled = false
@@ -80,13 +92,19 @@ export function ReportForm() {
 		offeredDraft.current = true
 		const draft = readDraft()
 		if (!draft) return
-		const rows = savedAnswerRows(load.questions, draft.answers, locale, t)
-		if (rows.length === 0) {
+		if (savedAnswerRows(load.questions, draft.answers, locale, t).length === 0) {
 			clearDraft() // Nothing on this form to continue.
 			return
 		}
-		setPendingDraft({ draft, rows })
+		setPendingDraft(draft)
 	}, [load, locale, t])
+
+	// Worded at render, not when offered: the questions can arrive before the
+	// locale's catalogue does, and the table must not keep the untranslated keys.
+	const pendingRows = useMemo<SavedAnswerRow[]>(
+		() => (pendingDraft && load.status === "ready" ? savedAnswerRows(load.questions, pendingDraft.answers, locale, t) : []),
+		[pendingDraft, load, locale, t],
+	)
 
 	const steps = useMemo(() => (load.status === "ready" ? buildSteps(load.questions) : []), [load])
 	const questionsById = useMemo(() => (load.status === "ready" ? indexQuestionsById(load.questions) : new Map()), [load])
@@ -95,22 +113,40 @@ export function ReportForm() {
 		[steps, answers, questionsById, locale],
 	)
 
+	const currentIndex = !addressSettled || !stepKey ? 0 : visible.findIndex((step) => step.question.key === stepKey)
+	const currentStep = currentIndex >= 0 ? (visible[currentIndex] ?? null) : null
+	const currentStepId = currentStep ? stepQuestionId(currentStep) : null
+
 	useEffect(() => {
 		if (visible.length === 0) return
-		setCurrentStepId((current) => {
-			if (current && visible.some((step) => stepQuestionId(step) === current)) return current
-			return stepQuestionId(visible[0]!)
-		})
-	}, [visible])
+		if (!addressSettled) {
+			setAddressSettled(true)
+			if (stepKey) navigate("/report", { replace: true })
+			return
+		}
+		// Not on the form, or a conditional page not shown right now.
+		if (currentIndex < 0) {
+			navigate("/report", { replace: true })
+			return
+		}
+		// Browser Forward obeys the same rule as Next: no page past an
+		// unanswered required question (REQ-SUB-054).
+		const blocked = visible
+			.slice(0, currentIndex)
+			.find((step) => unansweredRequired(step, answers, questionsById, locale).length > 0)
+		if (blocked) {
+			setAttemptedAdvance(true)
+			navigate(stepPath(blocked), { replace: true })
+		}
+	}, [visible, addressSettled, currentIndex, stepKey, navigate, answers, questionsById, locale])
 
 	// Kept only while there is something worth keeping — an empty draft on a
 	// browser that never opened the form would just be noise.
 	useEffect(() => {
 		if (submit.status === "submitted") return
 		if (Object.keys(answers).length === 0) return
-		const stepRevisionId = visible.find((step) => stepQuestionId(step) === currentStepId)?.question.revisionId
-		writeDraft({ locale, answers, stepRevisionId })
-	}, [answers, locale, submit.status, visible, currentStepId])
+		writeDraft({ locale, answers, stepKey: currentStep?.question.key })
+	}, [answers, locale, submit.status, currentStep])
 
 	const anyUploading = Object.values(uploading).some(Boolean)
 	const attachedCount = Object.values(attachments)
@@ -126,19 +162,19 @@ export function ReportForm() {
 		setUploading((prev) => (prev[revisionId] === busy ? prev : { ...prev, [revisionId]: busy }))
 	}, [])
 
-	const currentIndex = currentStepId ? visible.findIndex((step) => stepQuestionId(step) === currentStepId) : -1
-	const currentStep = currentIndex >= 0 ? visible[currentIndex] : null
 	const isFirst = currentIndex === 0
 	const isLast = currentIndex >= 0 && currentIndex === visible.length - 1
 
 	function continueDraft() {
 		if (!pendingDraft) return
-		const { draft, rows } = pendingDraft
+		const draft = pendingDraft
 		const restored: AnswerMap = {}
-		for (const row of rows) restored[row.revisionId] = draft.answers[row.revisionId]!
+		for (const row of pendingRows) restored[row.revisionId] = draft.answers[row.revisionId]!
 		setAnswers(restored)
-		const savedStep = steps.find((step) => step.question.revisionId === draft.stepRevisionId)
-		if (savedStep) setCurrentStepId(stepQuestionId(savedStep))
+		const savedStep = steps.find((step) =>
+			draft.stepKey ? step.question.key === draft.stepKey : step.question.revisionId === draft.stepRevisionId,
+		)
+		if (savedStep) navigate(stepPath(savedStep), { replace: true })
 		setPendingDraft(null)
 	}
 
@@ -156,9 +192,10 @@ export function ReportForm() {
 		})
 	}
 
+	// A history entry per page, so the browser's Back and Forward page too (REQ-SUB-053, REQ-SUB-054).
 	function goTo(step: FormStep) {
 		setAttemptedAdvance(false)
-		setCurrentStepId(stepQuestionId(step))
+		navigate(stepPath(step))
 	}
 
 	// Fades the new step in on every change, including the very first render.
@@ -301,7 +338,7 @@ export function ReportForm() {
 	return (
 		<div className="mx-auto max-w-measure px-6 py-10">
 			{pendingDraft && (
-				<ResumeDraftDialog rows={pendingDraft.rows} onContinue={continueDraft} onStartOver={startOver} t={t} />
+				<ResumeDraftDialog rows={pendingRows} onContinue={continueDraft} onStartOver={startOver} t={t} />
 			)}
 
 			<p role="status" className="sr-only">

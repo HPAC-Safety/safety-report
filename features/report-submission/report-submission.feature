@@ -68,6 +68,52 @@ Scenario: A reporter with no saved report is not asked
   When the reporter returns to the form
   Then no dialog asks whether to continue
 
+@REQ-SUB-053
+@ui
+Scenario: Each page of the form has its own address
+  Given a reporter is on the form's introduction at /report
+  When the reporter presses Next
+  Then the address names the page now shown, as /report/<question-key>
+  When the reporter presses Back
+  Then the address is /report
+
+@REQ-SUB-054
+@ui
+Scenario: The browser's Back and Forward buttons move between pages under the form's rules
+  Given a reporter has answered a required question and pressed Next
+  When the reporter presses the browser's Back button
+  Then the required question's page shows and the address names it
+  When the reporter clears the answer and presses the browser's Forward button
+  Then the required question's page still shows
+  And an inline, localized message explains that an answer is required
+
+@REQ-SUB-055
+@ui
+Scenario: Continuing a saved report puts its page in the address
+  Given this browser holds an unexpired saved report
+  When the reporter returns to the form
+  And the reporter chooses to continue
+  Then the address names the page the reporter was last on
+
+@REQ-SUB-056
+@ui
+Scenario: A page address never answers the continue question for the reporter
+  Given this browser holds an unexpired saved report
+  When the reporter opens the address of a page other than the one saved
+  Then a dialog asks whether to continue where they left off, with No and Yes buttons
+  When the reporter declines to continue
+  Then the address is /report
+  And the form opens at its introduction with no answers
+
+@REQ-SUB-057
+@ui
+Scenario: A page address without a saved report opens the introduction
+  Given this browser holds no saved report
+  When the reporter opens the address of a later page of the form
+  Then the form opens at its introduction at /report
+  When the reporter opens the address of a page the form does not have
+  Then the form opens at its introduction at /report
+
 @REQ-SUB-028
 @ui
 Scenario: The leading statement question renders as an introduction

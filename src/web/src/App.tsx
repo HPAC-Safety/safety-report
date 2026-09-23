@@ -21,7 +21,8 @@ function App() {
 				<Routes>
 					<Route path="/" element={<HomePage />} />
 					<Route path="/reports" element={<ViewReportsPage />} />
-					<Route path="/report" element={<SubmitReportPage />} />
+					{/* One optional-segment route, not two, so moving between pages never remounts the form. */}
+					<Route path="/report/:stepKey?" element={<SubmitReportPage />} />
 					<Route path="/contact" element={<ContactPage />} />
 					<Route path="/login" element={<MemberLoginPage />} />
 					<Route

@@ -31,7 +31,9 @@ locals {
   common_environment = [
     { name = "AWS_REGION", value = var.aws_region },
     { name = "ASPNETCORE_ENVIRONMENT", value = "Production" },
-    { name = "Storage__UploadsBucket", value = aws_s3_bucket.uploads.id },
+    # The key the API binds (HpacSafety:Media:Storage:S3:BucketName). No
+    # ServiceUrl and no access key: in AWS the SDK reaches S3 as the task role.
+    { name = "HpacSafety__Media__Storage__S3__BucketName", value = aws_s3_bucket.uploads.id },
   ]
 }
 

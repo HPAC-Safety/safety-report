@@ -50,7 +50,9 @@ boundary. Model prompts/responses and report values are never logged.
 The API validates each attachment as it is uploaded — bounded at 50 MB, sniffed,
 checked against the allowlist — and writes only accepted bytes to private
 quarantine under a server-generated upload ID. The final submission may claim
-a configurable count (default 5). The client filename is never sent. There is no malware scan (ADR-0089).
+a configurable count (default 5). The upload carries no filename; the final
+submission names each file, and that name is kept, sanitized, only as a
+reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)). There is no malware scan (ADR-0089).
 
 Safe image/video derivatives may be previewed by authorized reviewers through
 short-lived access. Validated documents remain unmodified private originals and

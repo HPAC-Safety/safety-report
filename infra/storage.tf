@@ -22,10 +22,10 @@ locals {
 # Uploads
 # --------------------------------------------------------------------------
 #
-# One photo or video per report. A crash photo identifies a person and a site
-# regardless of how clean the text is, so: no public object URL ever, admin views
-# use short-lived pre-signed GETs, and both the original bytes and the
-# EXIF-stripped derivative live here. See docs/data-handling.md.
+# A report's attachments: photos, videos, and documents. A crash photo identifies
+# a person and a site regardless of how clean the text is, so: no public object
+# URL ever, admin views use short-lived pre-signed GETs, and both the original
+# bytes and the EXIF-stripped derivative live here. See docs/data-handling.md.
 
 resource "aws_s3_bucket" "uploads" {
   bucket = "${local.name}-uploads-${local.bucket_suffix}"
@@ -71,25 +71,24 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
 resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
   bucket = aws_s3_bucket.uploads.id
 
-  # EVERY upload lands under quarantine/ first and is PROMOTED out of it only
-  # after ingest validates it — content type sniffed rather than trusted, EXIF
-  # stripped. So this rule is not a cleanup for rejected files. It is what
-  # removes any upload whose ingest never completed: a rejected file, a crashed
-  # ingest, an upload slot issued for a report the pilot never submitted. Those
-  # are unverified bytes of a crash photograph sitting in a bucket, and nothing
-  # else deletes them.
+  # EVERY upload lands under quarantine/<upload id> the moment a reporter
+  # attaches it, after the API has validated it, and is PROMOTED out only when
+  # a submission claims it (ADR-0096). So this rule is what removes an upload
+  # nobody claimed: a file on a report the pilot never submitted, a failed
+  # submission, a claim whose tidy-up delete failed. Those are bytes of a crash
+  # photograph that belong to no report, and nothing else deletes them.
   #
   # A PREFIX, not a tag filter, and that is the load-bearing part. Both ways of
   # applying a tag fail OPEN:
   #
-  #   tag at upload   means signing x-amz-tagging into the pre-signed PUT and
-  #                   trusting the browser to send it. A client that omits it
-  #                   produces an object that never expires.
+  #   tag at upload   means trusting whoever writes the object to tag it. A
+  #                   write path that forgets produces an object that never
+  #                   expires.
   #   tag after ingest  means an object whose ingest never ran never gets
   #                   tagged — precisely the case this rule exists for.
   #
-  # The prefix fails CLOSED: quarantine/ is the only place an upload URL can
-  # write, so an object that got there is covered whatever else went wrong.
+  # The prefix fails CLOSED: quarantine/ is the only place an upload is ever
+  # written, so an object that got there is covered whatever else went wrong.
   #
   # The rest of the bucket is report-id-first — <report-id>/original/…,
   # <report-id>/stripped/… — and quarantine/ is the one deliberate departure,

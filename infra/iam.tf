@@ -87,10 +87,21 @@ data "aws_iam_policy_document" "api_task" {
     resources = ["${aws_s3_bucket.uploads.arn}/*"]
   }
 
+  # Removing an unclaimed upload erases every version of it, so the bytes do
+  # not survive a day as a noncurrent version on this versioned bucket. Fenced
+  # to quarantine/: a report's own media is never physically deleted
+  # (AGENTS.md invariant 8, ADR-0096).
+  statement {
+    sid       = "EraseUnclaimedUploads"
+    effect    = "Allow"
+    actions   = ["s3:DeleteObjectVersion"]
+    resources = ["${aws_s3_bucket.uploads.arn}/quarantine/*"]
+  }
+
   statement {
     sid       = "ListUploads"
     effect    = "Allow"
-    actions   = ["s3:ListBucket"]
+    actions   = ["s3:ListBucket", "s3:ListBucketVersions"]
     resources = [aws_s3_bucket.uploads.arn]
   }
 

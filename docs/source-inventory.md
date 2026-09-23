@@ -141,11 +141,9 @@ identity where source text does not exist.
 
 ### Private storage
 
-- [src/HpacSafety.Infrastructure/Storage/FileSystemBlobStore.cs](../src/HpacSafety.Infrastructure/Storage/FileSystemBlobStore.cs) — local private storage with signed URL simulation/read/write; retain streaming/read contract, remove upload-slot surface.
-- [src/HpacSafety.Infrastructure/Storage/FileSystemBlobStoreOptions.cs](../src/HpacSafety.Infrastructure/Storage/FileSystemBlobStoreOptions.cs) — local root/public-base configuration; revise so local URLs preserve target authorization behavior.
 - [src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs](../src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs) — safe signed-URL rejection type; retain only if still useful for authorized reads.
 - [src/HpacSafety.Infrastructure/Storage/README.md](../src/HpacSafety.Infrastructure/Storage/README.md) — aligned final-upload/private-review storage contract with legacy adapter note.
-- [src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs) — S3 private read/write and pre-signed operations; retain bounded streaming/short reads, remove public/pre-submit upload usage.
+- [src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs) — the one storage adapter, S3 in AWS and MinIO in development (ADR-0096): private read/write, version-purging delete of unclaimed uploads, and short-lived reviewer reads.
 - [src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs) — bucket configuration; retain for private attachment bucket.
 
 ## Worker — 8 paths after alignment

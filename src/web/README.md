@@ -52,8 +52,9 @@ separate `<script>` tag; see ADR-0052 for why. Routing is `react-router-dom`
 
 The public form renders current question revisions, requires only consent,
 keeps answers/revision IDs only in the browser for 15 days, never restores files
-or writes unfinished report state to any server, and submits one final multipart
-request. The admin site consumes only authorized DTOs; the API remains the
+or writes unfinished report state to any server except each attachment, which
+uploads as soon as it is attached, and submits one final JSON request naming
+those uploads. The admin site consumes only authorized DTOs; the API remains the
 security boundary.
 
 Current main contains the design system and asset tooling but not the complete

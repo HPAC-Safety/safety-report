@@ -1,6 +1,6 @@
 ---
 name: test-hpac-safety
-description: Test HPAC Safety privacy, immutable questions, multipart submission, Worker summarization, attachments, moderation, deletion, and publication. Use for test changes or behavior that needs verification.
+description: Test HPAC Safety privacy, immutable questions, uploads and submission, Worker summarization, attachments, moderation, deletion, and publication. Use for test changes or behavior that needs verification.
 ---
 
 # Test HPAC Safety
@@ -93,8 +93,11 @@ Test observable contracts:
 - complete question revisions are immutable; latest-revision selection cannot
   resurrect an older active revision; only consent is required;
 - unfinished answers/revision IDs stay in browser storage for 15 days and no
-  report, file, reserved ID, or database state exists before final submission;
-- one multipart request maps answers and file indexes exactly, accepts known
+  report, reserved ID, or database state exists before final submission; an
+  upload is validated before it is stored, names no member, and is erased by
+  its delete;
+- one submission maps answers and upload IDs exactly, refuses missing uploads
+  by ID, accepts known
   superseded revisions, rejects unknown/deleted ones, and commits report,
   answers, files, and outbox work atomically;
 - the Worker sends answered fields in the correct `report_content` or

@@ -17,9 +17,13 @@ contrast, and self-hosted assets.
 - Render the ordered current bilingual question-revision DTO. Only consent is
   required and it has no selected default.
 - Persist answer values and revision IDs only in the same browser for 15 days
-  or until successful submit. Never persist or restore file inputs, and make no
-  report-data write request before the final submission.
-- Submit one multipart request containing the JSON DTO and selected files.
+  or until successful submit. Never persist or restore file inputs or upload
+  IDs. The only write before the final submission is an attachment upload.
+- Upload each attached file at once through `POST /api/v1/uploads`, one
+  request per file with its own `AbortController`: show an indeterminate
+  indicator and Cancel while it uploads, Remove once it has, and hold Next and
+  Submit while any upload is in flight. Submit one JSON request naming the
+  upload IDs ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
 - Public and admin are routes within the same application, build, and
   container ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
   Treat API authorization, not hidden markup, as the admin boundary.
@@ -56,6 +60,6 @@ contrast, and self-hosted assets.
   are for broad smoke coverage only, never a substitute for scenario
   coverage of specific behavior.
 
-Do not introduce server drafts, reserved report IDs, pre-submit API/database/
-object-storage writes, upload sessions, third-party font/asset calls, or
+Do not introduce server drafts, reserved report IDs, pre-submit API/database
+writes other than attachment uploads, resumable upload sessions, third-party font/asset calls, or
 client-side access to private report data beyond authorized admin DTOs.

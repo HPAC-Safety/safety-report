@@ -13,6 +13,13 @@ keywords: blob storage, presigned URLs, S3, privacy
 **Status:** Superseded for submission by the
 [final multipart design](../../features/report-submission/report-submission.feature). Private storage and
 short-lived authorized reviewer reads remain; pre-submit upload slots do not.
+Amended by
+[ADR-0096](ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md):
+a reporter's file uploads through the API into `quarantine/<upload id>` the
+moment it is attached, still never through a pre-signed PUT;
+`CreateUploadUrl` is removed from the port and a version-purging delete is
+added; and the development adapter is MinIO behind `S3BlobStore`, replacing
+`FileSystemBlobStore`.
 **Date:** 2026-08-22
 
 ## Context

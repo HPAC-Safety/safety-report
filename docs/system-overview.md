@@ -68,8 +68,11 @@ flowchart LR
   rather than a separate site
   ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). It renders
   the form and keeps unfinished answers only in that browser. No report data
-  reaches the API, database, or object storage until it submits one finalized
-  multipart request. It also renders public summaries.
+  reaches the API or database until it submits one finalized request; the one
+  exception is an attachment, uploaded through the API to private quarantine
+  when it is attached and claimed by that request
+  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)). It also renders public
+  summaries.
 - The `/admin` route manages questions and their choices, reviews reports
   and derivatives, edits summaries, and records approval. It appears only for a
   token carrying the SafetyOfficer or Administrator role.
@@ -99,8 +102,11 @@ sequenceDiagram
     B->>A: GET current question revisions
     A-->>B: Ordered bilingual form DTO
     B->>B: Keep unfinished answers locally for up to 15 days
-    B->>A: Multipart POST report DTO + optional attachments
-    A->>S: Stream bounded files to quarantine
+    B->>A: POST each attachment as it is attached
+    A->>S: Validate, then write to quarantine
+    A-->>B: Opaque upload ID
+    B->>A: POST report DTO naming upload IDs
+    A->>S: Claim uploads into the report's compartments
     A->>D: Report + answers + files + outbox (one transaction)
     A-->>B: 202 Accepted
     W->>D: Claim report and attachment work
@@ -130,7 +136,8 @@ implementation that adds one has exceeded its scope.
 scenario can assert what the system does, not enumerate what it never grew.*
 
 - General-purpose form branching, surveys, scoring, or form templates
-- Server-side drafts or resumable upload sessions
+- Server-side drafts, a resumable or chunked upload protocol, or a pre-signed
+  upload URL handed to a reporter
 - Direct messages, email notifications, WhatsApp, Telegram, or social posting
 - Public raw reports, questions, answers, attachments, or audit history
 - Automatic approval or publication

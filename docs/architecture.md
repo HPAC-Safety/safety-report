@@ -14,7 +14,7 @@ page is a short orientation only.
 ```mermaid
 flowchart LR
     idp["Identity provider"] -->|"signed token"| web["React/TS website"]
-    web -->|"questions + final multipart report, bearer token"| api["API"]
+    web -->|"questions, attachment uploads, final report, bearer token"| api["API"]
     web -->|"authenticated review at /admin"| api
     api -->|"atomic report + outbox"| db[("PostgreSQL")]
     api --> private[("Private attachments")]
@@ -38,7 +38,8 @@ flowchart LR
 
 Questions are complete immutable bilingual database revisions. Unfinished
 answers remain only in the browser; no report data is stored server-side until
-one final multipart request. The Worker produces one bilingual row, and human
+one final request, except each attachment, which uploads to private quarantine
+when it is attached and is claimed by that request. The Worker produces one bilingual row, and human
 review plus positive consent gates a minimal public DTO.
 
 Keep only useful boundaries. The target has no server drafts, upload-slot API,

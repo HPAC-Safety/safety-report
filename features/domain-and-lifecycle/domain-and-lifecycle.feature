@@ -117,7 +117,7 @@ Scenario: Soft-deleted and private data remain under managed retention
 @REQ-DOM-012
 @ignore
 Scenario: Unreferenced quarantine objects expire without affecting reports
-  Given a multipart request fails or is abandoned before the transaction commits
+  Given a submission fails before its transaction commits, or an upload is never claimed
   When the resulting quarantine objects are never referenced by a report
   Then those objects may expire automatically through storage lifecycle rules
   And that operational cleanup does not change report retention

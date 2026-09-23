@@ -12,15 +12,17 @@ Deployable ASP.NET Core HTTP surface. The target contract is in
 ## Target responsibilities
 
 - Return the ordered current bilingual question revisions.
-- Receive one final multipart report request: JSON DTO plus optional files.
+- Receive each attachment as it is attached, validate it, and hold it in
+  private quarantine under an opaque upload ID; delete one on request.
+- Receive one final JSON report request naming its upload IDs.
 - Verify the member bearer token, rate limits, exact revision/answer shapes,
   attachment bounds, and consent.
-- Stream files to private quarantine and atomically store the report, asked
+- Claim the named uploads and atomically store the report, asked
   questions/answers, file rows, and outbox work; return `202`.
 - Expose authenticated review/administration commands and minimal public
   read-only DTOs.
 
-The API never calls AI, creates pre-submit upload slots, logs request content,
+The API never calls AI, issues pre-signed upload URLs, logs request content,
 or exposes attachment bytes publicly. Short-lived reviewer access is authorized
 per request.
 

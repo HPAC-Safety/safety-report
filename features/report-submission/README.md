@@ -1,6 +1,6 @@
 ---
 title: Report submission
-description: Supporting detail for the browser continuity, multipart API, DTO, and validation scenarios.
+description: Supporting detail for the browser continuity, upload and submission API, DTO, and validation scenarios.
 type: spec
 area: report-submission
 ---
@@ -9,6 +9,29 @@ area: report-submission
 
 Supporting detail for [`report-submission.feature`](report-submission.feature)
 that doesn't fit Gherkin.
+
+## Attachment uploads
+
+Each file uploads the moment the reporter attaches it
+([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)):
+
+- `POST /api/v1/uploads` takes the file itself as the request body, with its
+  declared type in `Content-Type`. The client filename is never sent. The API
+  reads at most one byte past 50 MB into a temporary file, sniffs and validates
+  it, and only then writes it to `quarantine/<upload id>`.
+- `201` returns `{{ "uploadId": "…", "kind": "image" | "video" | "document" }}`.
+  The upload ID is 22 URL-safe characters (128 random bits).
+- `400` returns a problem with a `reason` of `empty`, `too_large`,
+  `unrecognised_content`, `unaccepted_media_type`, or `declared_type_mismatch`,
+  which the form maps to a localized message on that file's row.
+- `DELETE /api/v1/uploads/{{id}}` erases every version of that quarantine object
+  and returns `204`, whether or not it existed.
+- The browser keeps each upload ID in memory only, never in the saved draft.
+
+At submission a file-upload answer names its uploads in `attachmentUploadIds`.
+If any named upload no longer exists, the API refuses the whole submission
+before writing anything, with a `400` whose `expiredUploadIds` lists exactly
+those IDs.
 
 ## Submission DTO shape
 
@@ -20,19 +43,19 @@ that doesn't fit Gherkin.
       "questionRevisionId": "text-revision-id",
       "value": "A short answer",
       "optionCodes": null,
-      "attachmentPartIndexes": null
+      "attachmentUploadIds": null
     },
     {
       "questionRevisionId": "select-revision-id",
       "value": null,
       "optionCodes": [],
-      "attachmentPartIndexes": null
+      "attachmentUploadIds": null
     },
     {
       "questionRevisionId": "file-revision-id",
       "value": null,
       "optionCodes": null,
-      "attachmentPartIndexes": [0]
+      "attachmentUploadIds": ["kP3x9QmR2vT8wLb6nYc4Dg"]
     }
   ]
 }
@@ -99,21 +122,27 @@ sent to the server.
 
 The API performs, in order:
 
-1. request-size, multipart-shape, trusted-client-IP, rate-limit, and bearer-token
+1. request-size, JSON-shape, trusted-client-IP, rate-limit, and bearer-token
    checks;
 2. DTO syntax, locale, duplicate, and count checks;
 3. revision lookup including soft-deleted rows;
 4. rejection of unknown or deleted revisions and validation against each exact
    historical type and the question's live choices;
 5. enforcement of an explicit answer to the `consent_publish` revision;
-6. attachment mapping/count, per-file size, declared content type, and
-   detected-type checks.
+6. upload-ID shape, duplicate, and count checks;
+7. existence of every named upload, refusing with the missing IDs before
+   anything is written.
+
+Per-file size, declared content type, and detected type are checked earlier,
+when each file is uploaded, and again when the upload is claimed.
 
 ## Failure handling
 
 If the persistence transaction fails, the API must not attempt a fragile
 distributed rollback across the database and object storage — the storage
-lifecycle rule expiring unreferenced quarantine blobs is what cleans those up.
+lifecycle rule expiring unclaimed quarantine uploads is what cleans those up.
+After a successful commit the API removes the claimed uploads from quarantine
+on a best-effort basis; a removal that fails is left to the same rule.
 
 ## Document handoff
 
@@ -169,11 +198,18 @@ What not to build here. The global list in
 [system overview](../../docs/system-overview.md) still holds; this narrows it
 to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
 
-- A server-side draft, an autosave, a reserved report ID, an upload token, or a
-  resumable upload session. Nothing reaches the server before the one final
-  multipart request.
-- Restoring attachments from browser storage. Answers and shown revision IDs
-  persist locally; files never do.
+- A server-side draft, an autosave, or a reserved report ID. Nothing but an
+  attachment reaches the server before the one final request.
+- A resumable or chunked upload protocol, a pre-signed upload URL handed to the
+  browser, or a percentage progress bar. An upload is one request with an
+  indeterminate indicator.
+- Restoring attachments after a reload, from browser storage or by keeping
+  upload IDs. Answers and shown revision IDs persist locally; files and upload
+  IDs never do.
+- Counting uploads against the attachment limit on the server before
+  submission. An upload belongs to no report until it is claimed; the form
+  enforces the limit as files are attached, and the API enforces it on the IDs
+  a submission names.
 - Restoring a saved report without asking, keeping more than one saved report,
   or editing saved values inside the continue dialog. The dialog is a yes/no
   question with a read-only table.

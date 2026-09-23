@@ -17,7 +17,11 @@ keywords: migration, canonical model, persistence, schema, admin_users, soft del
 (`summaries.approved_by`, `audit_log.admin_user_id`) are all removed. Those two
 columns become opaque token-subject strings — `approved_by_subject` and
 `actor_subject`, `varchar(256)`, with no foreign key — because this system
-stores no user records. Everything else below stands.
+stores no user records. Also partially superseded by
+[ADR-0096](ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md):
+§6's "attachments arrive with the one final multipart submission" no longer
+holds — each file uploads through the API when attached, and the final
+submission is JSON naming those uploads. Everything else below stands.
 **Date:** 2026-08-26
 
 ## Context

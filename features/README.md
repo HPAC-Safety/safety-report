@@ -113,7 +113,8 @@ A reporter signs in as an HPAC member — which proves membership and is never
 recorded against the report — sees the latest active immutable revision of each
 bilingual database question in its configured order, may skip every ordinary
 question, must make an explicit publication-consent choice, and submits the
-answers and optional attachments once. Every answer is stored as one string —
+answers once. Each optional attachment uploads as soon as it is attached, into
+private quarantine, and the submission claims it. Every answer is stored as one string —
 the words the reporter saw, in the language they saw them. The API saves the
 report, exact question revisions, files, and
 outbox work atomically. The Worker makes exactly one model call using one
@@ -125,8 +126,12 @@ with a human-approved pair can appear in the public feed.
 ## Simplicity guardrails
 
 The target deliberately writes no respondent report data server-side before the
-one final submission. It has no server-side report drafts, pre-submit upload
-sessions, deterministic text scrubber, separate PII-audit call, translation
+one final submission, with one argued exception: an attachment uploads to
+private quarantine when it is attached, names no member, has no database row,
+and expires unless a submission claims it
+([ADR-0096](../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+It has no server-side report drafts, resumable upload protocol,
+deterministic text scrubber, separate PII-audit call, translation
 call, specialized aircraft processing, outbound email, external publication
 channels, application-layer field encryption, restore workflow, or automated
 raw-report purge. New abstractions are justified by a real boundary or a second

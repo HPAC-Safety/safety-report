@@ -44,21 +44,22 @@ Scenario: The client filename never leaves the HTTP boundary
   Given a reporter uploads a file with a client-supplied filename
   When the API accepts the attachment
   Then the client filename is not persisted, logged, placed in an exception, used in a key, sent to the model, or returned to an admin
-  And the object key encodes only an opaque report/file identity and a managed compartment
+  And the object key encodes only an opaque upload, report, or file identity and a managed compartment
 
 @REQ-MED-004
-@ignore
-Scenario: An accepted attachment starts in a private quarantine compartment
-  Given an attachment part passes request and count bounds
-  When the API ingests it
-  Then the API mints an opaque filename, streams the file through a bounded counter and signature sniffer, and writes accepted bytes to a private quarantine key
+Scenario: An accepted upload waits in a private quarantine compartment
+  Given a reporter's upload passes the size bound and validation
+  When the API stores it
+  Then its bytes are written to a private quarantine key named only by a minted upload ID
+  And no database row, report, or member is linked to it
+  And no reviewer link can be issued for it
 
 @REQ-MED-005
 @ignore
-Scenario: Unreferenced quarantine blobs expire automatically
-  Given a quarantine blob was written during a submission whose transaction never committed
+Scenario: Unclaimed uploads expire automatically
+  Given an upload that no committed submission claimed
   When the storage lifecycle rule runs
-  Then the unreferenced quarantine blob expires
+  Then the upload expires, its key stopping resolving after about a day and its bytes gone about a day after that
 
 @REQ-MED-006
 @ignore
@@ -140,3 +141,23 @@ Scenario: Attachments are never exposed publicly, even after publication
   Given a report has been published
   When the public API returns the report
   Then the public DTO contains no file counts, types, keys, or links
+
+@REQ-MED-016
+Scenario: Removing an upload erases every version of it
+  Given an unclaimed upload exists in quarantine
+  When the reporter's browser deletes it
+  Then every stored version of that quarantine object is deleted at once
+  And deleting it again succeeds without error
+
+@REQ-MED-017
+Scenario: A cancelled upload leaves nothing in storage
+  Given a reporter's upload is still being received
+  When the browser aborts the request
+  Then nothing is written to object storage for it
+
+@REQ-MED-018
+Scenario: A claimed upload is promoted into the report's compartments
+  Given a submission claims an accepted upload
+  When the API ingests it
+  Then the original is written under the report's original compartment and any derivative under its stripped compartment
+  And both are named by a new server-minted file name, not by the upload ID

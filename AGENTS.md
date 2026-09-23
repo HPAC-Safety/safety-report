@@ -158,10 +158,16 @@ requirements does not touch a skill; its remedy is a claim.
    ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
    [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
 2. Until final submission, unfinished answers and shown revision IDs stay only
-   in that browser for 15 days; files are not persisted or restored. No report,
-   attachment, draft, reserved ID, or other respondent data is written to a
-   server or database. A reporter then submits one final multipart request. The
-   API stores the report, exact question revisions, answers, files, and outbox
+   in that browser for 15 days. No report, draft, reserved ID, or other
+   respondent data is written to a server or database. The one exception is an
+   attachment: each file uploads through the API into private quarantine the
+   moment it is attached, under an opaque upload ID that has no database row,
+   names no member, and expires by lifecycle rule unless a submission claims
+   it; removing the file erases it, and uploads are never restored after a
+   reload
+   ([ADR-0096](docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+   A reporter then submits one final request naming those uploads. The API
+   stores the report, exact question revisions, answers, files, and outbox
    work atomically, then returns `202` without making a model call.
 3. The Worker owns one versioned prompt and makes exactly one model call per
    summary attempt. Before that call, a deterministic marking pass replaces
@@ -212,8 +218,8 @@ requirements does not touch a skill; its remedy is a claim.
 
 There is no deterministic scrubber beyond the narrow private-value marking
 pass in item 3 above, no separate PII auditor,
-specialized aircraft processing, outbound email flow, pre-submit
-upload session, speculative publication channel, user table, allowlist,
+specialized aircraft processing, outbound email flow, server-side draft or
+resumable upload protocol, speculative publication channel, user table, allowlist,
 credential proxy, CSRF machinery, or Turnstile verification. The one carved
 exception is Development's members-site-verified login (item 7 above,
 [ADR-0079](docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)):

@@ -19,15 +19,18 @@ capability boundaries are normative.
 |---|---|---|
 | `GET /health` | Service health for platform probes | Minimal health response; no dependency details publicly exposed. |
 | `GET /api/v1/questions/current` | Load the ordered current form | Bilingual question-revision DTO, cache validator/version allowed. |
-| `POST /api/v1/reports` | Submit final report JSON plus optional attachments | `202` with opaque report ID/status. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
+| `POST /api/v1/uploads` | Upload one attachment as it is attached; raw body, declared type in `Content-Type` | `201` with an opaque upload ID and kind, or `400` with a safe rejection reason. Requires a member bearer token, rate limited, stores nothing identifying the member, and writes to quarantine only. |
+| `DELETE /api/v1/uploads/{id}` | Remove an unclaimed upload | `204`, idempotent; erases every version of the quarantine object. |
+| `POST /api/v1/reports` | Submit final report JSON naming its upload IDs | `202` with opaque report ID/status. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
 | `GET /api/v1/public/reports` | Paginated public feed | Only publishable public DTO fields. |
 | `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. |
 
 **CON-IF-002** There are no draft, upload-slot, blob-proxy, public-answer, or publication-
 channel endpoints.
-Before `POST /api/v1/reports`, the reporter-facing API is read-only:
-unfinished answers remain browser-local and create no report, attachment,
-reserved ID, or database state.
+Before `POST /api/v1/reports`, the only reporter-facing writes are the upload
+endpoints: unfinished answers remain browser-local and create no report,
+reserved ID, or database state, and an upload creates only a quarantine object
+([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
 *Verified by: REQ-SUB-001, REQ-MOD-039.*
 
 ### Authentication API

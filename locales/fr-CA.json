@@ -173,7 +173,7 @@
     "dependsOnSummary": "Cette question n’est posée que si la réponse à «{question} » est « oui »",
     "dependsOnOptionSummary": "Cette question n’est posée que lorsque la réponse à «{question} » est «{option} ».",
     "groupedUnderSummary": "Affiché sous la rubrique «{question} »",
-    "reporterChoicesAwaiting": "#Reporter-added choices waiting to be reviewed: {count}",
+    "reporterChoicesAwaiting": "Choix ajoutés par les journalistes en attente de révision : {count}",
     "editorTitleNew": "Nouvelle question",
     "editorTitleEdit": "Modifier la question",
     "error": {
@@ -200,16 +200,16 @@
       "groupedUnderNone": "Non regroupés",
       "groupedUnderHelp": "Seule une question de groupe peut comporter d'autres questions affichées en dessous.",
       "options": "Choix",
-      "optionsHelp": "#Adding, rewording, reordering, or removing a choice changes this question in place and never creates a new version. A removed choice disappears from the form; answers already given keep their own words.",
+      "optionsHelp": "L'ajout, la reformulation, le réordonnancement ou la suppression d'un choix modifie cette question sur place et ne crée jamais de nouvelle version. Un choix supprimé disparaît du formulaire; les réponses déjà fournies conservent leur libellé.",
       "optionLabelEn": "Choix (anglais)",
       "optionLabelFr": "Choix (français)",
       "addOption": "Ajouter une option",
       "removeOption": "Supprimer ce choix"
     },
     "choice": {
-      "reporterAdded": "#Added by a reporter",
-      "awaitingEnglish": "#Waiting for the English wording",
-      "awaitingFrench": "#Waiting for the French wording"
+      "reporterAdded": "Ajouté par un journaliste",
+      "awaitingEnglish": "En attente de la version anglaise",
+      "awaitingFrench": "En attente de la version française"
     },
     "type": {
       "short_text": "Texte sur une seule ligne",
@@ -237,7 +237,7 @@
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
       "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
     },
-    "forkWarning": "Cette question a déjà reçu une réponse. Lorsque vous l'enregistrez, elle est retirée et une nouvelle question est créée à sa place; ainsi, les réponses déjà fournies conservent la formulation sous laquelle elles ont été données.",
+    "forkWarning": "Cette question a déjà reçu une réponse. Si vous modifiez son libellé, son type ou ses paramètres, elle est retirée et une nouvelle question est créée à sa place; les réponses déjà fournies conservent donc le libellé sous lequel elles ont été données. Ce n’est pas le cas si vous ne modifiez que ses choix.",
     "import": {
       "openDialog": "Importer depuis Typeform",
       "title": "Importer depuis Typeform",

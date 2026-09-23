@@ -83,15 +83,6 @@ public sealed class TypeformImportSteps
 		_frenchFields.Add(ChoiceField(_focusRef, "Choisir plusieurs", "multiple_choice", choices, true, false));
 	}
 
-	[Given(@"a Typeform multiple_choice field that allows multiple selection and an other choice")]
-	public void GivenAMultiSelectFieldWithOtherChoice()
-	{
-		_focusRef = "multi-choice-other-field";
-		var choices = new List<TypeformChoice> { new("a", "a", "A") };
-		_englishFields.Add(ChoiceField(_focusRef, "Ratings", "multiple_choice", choices, true, true));
-		_frenchFields.Add(ChoiceField(_focusRef, "Qualifications", "multiple_choice", choices, true, true));
-	}
-
 	[Given(@"a Typeform group field containing several nested fields")]
 	public void GivenAGroupFieldWithNestedFields()
 	{
@@ -220,19 +211,6 @@ public sealed class TypeformImportSteps
 	{
 		Draft().Type.ShouldBe(QuestionType.MultiSelect);
 		Draft().Options.ShouldNotBeEmpty();
-	}
-
-	[Then(@"reporter additions are not enabled")]
-	public void ThenReporterAdditionsAreNotEnabled()
-	{
-		Draft().AllowsReporterAdditions.ShouldBeFalse();
-	}
-
-	[Then(@"it produces a multi-select draft with reporter additions enabled")]
-	public void ThenItProducesAMultiSelectDraftWithReporterAdditions()
-	{
-		Draft().Type.ShouldBe(QuestionType.MultiSelect);
-		Draft().AllowsReporterAdditions.ShouldBeTrue();
 	}
 
 	[Then(@"it produces one group draft from the field's title")]

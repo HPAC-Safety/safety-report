@@ -81,7 +81,6 @@ public sealed class QuestionKeyEndpointSteps
 			isRequired = false,
 			isPrivate = false,
 			isActive = true,
-			allowsReporterAdditions = false,
 			options = Array.Empty<object>(),
 		});
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());

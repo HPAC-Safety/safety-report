@@ -60,9 +60,7 @@ public static class TypeformImportEndpoints
 			.OrderBy(question => question.DisplayOrder)
 			.ThenBy(question => question.Key, StringComparer.Ordinal)
 			.ToList();
-		var sets = await QuestionEndpoints.LiveSets(database, cancellationToken).ConfigureAwait(false);
-
-		var (english, french) = TypeformExportBuilder.Build(ordered, sets);
+		var (english, french) = TypeformExportBuilder.Build(ordered);
 
 		using var zipStream = new MemoryStream();
 

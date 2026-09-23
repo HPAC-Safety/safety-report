@@ -23,7 +23,7 @@ public static class HpacPolicies
 	public const string Reviewer = "hpac:reviewer";
 
 	/// <summary>
-	///     An Administrator: question revisions and shared choice lists, on top of
+	///     An Administrator: question revisions and curating each question's choices, on top of
 	///     every Reviewer capability.
 	/// </summary>
 	public const string Administrator = "hpac:administrator";

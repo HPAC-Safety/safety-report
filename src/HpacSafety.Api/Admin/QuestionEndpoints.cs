@@ -15,7 +15,9 @@ namespace HpacSafety.Api.Admin;
 ///     Every write goes through the <see cref="Question" /> aggregate, which is what
 ///     makes an edit a new revision rather than an update. Nothing here patches a
 ///     <c>question_revisions</c> row, and nothing may: a report answered a specific
-///     revision and has to keep rendering exactly what it was asked.
+///     revision and has to keep rendering exactly what it was asked. A question's
+///     choices are the exception — they belong to the question and are edited in
+///     place (ADR-0095).
 /// </remarks>
 public static class QuestionEndpoints
 {
@@ -46,15 +48,13 @@ public static class QuestionEndpoints
 	private static async Task<IResult> List(HpacSafetyDbContext database, CancellationToken cancellationToken)
 	{
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
-		var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
 		var answered = await AnsweredQuestionIds(database, cancellationToken).ConfigureAwait(false);
 
 		return Results.Ok(
 			questions
 				.OrderBy(question => question.DisplayOrder)
 				.ThenBy(question => question.Key, StringComparer.Ordinal)
-				.Select(question => QuestionView.Of(
-					question, SetFor(question, sets), answered.Contains(question.Id)))
+				.Select(question => QuestionView.Of(question, answered.Contains(question.Id)))
 				.ToList());
 	}
 
@@ -104,7 +104,7 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, questions, null);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
-			var options = await OptionsFor(request, database, type, cancellationToken).ConfigureAwait(false);
+			var options = OptionsFor(request, type);
 
 			var question = Question.Create(
 				key,
@@ -123,23 +123,23 @@ public static class QuestionEndpoints
 				NextDisplayOrder(questions),
 				dependsOn.ParentId,
 				dependsOn.OptionCode,
-				ParsedOptionSet(request),
 				groupedUnderQuestionId,
-				request.AllowsReporterAdditions,
 				options);
 
 			database.Questions.Add(question);
 			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-			var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
-
-			return Results.Created(
-				$"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question, SetFor(question, sets)));
+			return Results.Created($"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question));
 		}).ConfigureAwait(false);
 	}
 
-	/// <summary>Saves an edit as a new revision. The previous one is left exactly as it was.</summary>
+	/// <summary>
+	///     Saves an edit. A change to a revision field is a new revision — or, once
+	///     answered, a replacement question (ADR-0071) — and the previous one is left
+	///     exactly as it was. The choices are applied in place either way, so a
+	///     choices-only edit keeps the question and its revision (ADR-0095).
+	/// </summary>
 	private static async Task<IResult> Revise(
 		string id,
 		SaveQuestionRequest request,
@@ -175,12 +175,19 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, questions, question.Id);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
-			var options = await OptionsFor(request, database, type, cancellationToken).ConfigureAwait(false);
+			var options = OptionsFor(request, type);
+
+			if (options is not null)
+			{
+				QuestionDependencies.EnsureChoicesRemovable(questions, question, [.. options.Select(option => option.Code)]);
+			}
+
 			var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
 				.ConfigureAwait(false);
 
 			// Revises while nothing has answered it, and otherwise retires
-			// this question and returns its replacement (ADR-0071).
+			// this question and returns its replacement (ADR-0071) — unless
+			// only the choices changed, which never does either (ADR-0095).
 			var live = question.ApplyEdit(
 				hasBeenAnswered,
 				type,
@@ -197,9 +204,7 @@ public static class QuestionEndpoints
 				request.IsRequired,
 				dependsOn.ParentId,
 				dependsOn.OptionCode,
-				ParsedOptionSet(request),
 				groupedUnderQuestionId,
-				request.AllowsReporterAdditions,
 				options);
 
 			var forked = !ReferenceEquals(live, question);
@@ -213,10 +218,8 @@ public static class QuestionEndpoints
 			Audit(database, context, action, live.Id, at, forked ? "forked" : null);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-			var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
-
 			// The replacement is new, so nothing has answered it yet.
-			return Results.Ok(QuestionView.Of(live, SetFor(live, sets), hasBeenAnswered && !forked));
+			return Results.Ok(QuestionView.Of(live, hasBeenAnswered && !forked));
 		}).ConfigureAwait(false);
 	}
 
@@ -277,10 +280,7 @@ public static class QuestionEndpoints
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-		var sets = await LiveSets(database, cancellationToken).ConfigureAwait(false);
-
-		return Results.Ok(
-			ordered.Select(question => QuestionView.Of(question, SetFor(question, sets))).ToList());
+		return Results.Ok(ordered.Select(question => QuestionView.Of(question)).ToList());
 	}
 
 	/// <summary>
@@ -367,19 +367,6 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>
-	///     Every live shared choice list, by id. An autocomplete renders the live
-	///     list rather than its snapshot (ADR-0063), so the screen needs them.
-	/// </summary>
-	/// <summary>
-	///     Whether any answer anywhere references this question, which is what
-	///     decides between revising it and replacing it (ADR-0071).
-	/// </summary>
-	/// <remarks>
-	///     Query filters are ignored deliberately: an answer on a soft-deleted
-	///     report is still a record of what somebody was asked, so it forces the
-	///     fork exactly as a live one does.
-	/// </remarks>
-	/// <summary>
 	///     Every question that any answer references, so the list can mark which
 	///     ones an edit would replace rather than revise.
 	/// </summary>
@@ -397,6 +384,15 @@ public static class QuestionEndpoints
 		];
 	}
 
+	/// <summary>
+	///     Whether any answer anywhere references this question, which is what
+	///     decides between revising it and replacing it (ADR-0071).
+	/// </summary>
+	/// <remarks>
+	///     Query filters are ignored deliberately: an answer on a soft-deleted
+	///     report is still a record of what somebody was asked, so it forces the
+	///     fork exactly as a live one does.
+	/// </remarks>
 	private static Task<bool> HasBeenAnswered(
 		HpacSafetyDbContext database, TinyId questionId, CancellationToken cancellationToken)
 	{
@@ -422,25 +418,6 @@ public static class QuestionEndpoints
 			.AnyAsync(answer => answer.QuestionRevisionId == revisionId, cancellationToken);
 	}
 
-	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>
-	internal static async Task<Dictionary<TinyId, OptionSet>> LiveSets(
-		HpacSafetyDbContext database, CancellationToken cancellationToken)
-	{
-		var sets = await database.OptionSets
-			.Include("_items")
-			.ToListAsync(cancellationToken)
-			.ConfigureAwait(false);
-
-		return sets.ToDictionary(set => set.Id);
-	}
-
-	/// <summary>The shared list a question's current revision names, if it names a live one.</summary>
-	private static OptionSet? SetFor(Question question, Dictionary<TinyId, OptionSet> sets)
-	{
-		return question.CurrentRevision.OptionSetId is { } id && sets.TryGetValue(id, out var set) ? set : null;
-	}
-
-	/// <summary>Also used by <see cref="TypeformImportEndpoints" /> to build an export.</summary>
 	/// <summary>
 	///     A key from the English wording, suffixed <c>_2</c>, <c>_3</c>, … past any
 	///     key a question already holds, retired questions included. Wording that
@@ -485,21 +462,17 @@ public static class QuestionEndpoints
 		}
 	}
 
+	/// <summary>Every live question with its revisions and every choice, removed ones included. Also used by the Typeform export.</summary>
 	internal static IQueryable<Question> LiveQuestions(HpacSafetyDbContext database)
 	{
 		return database.Questions
 			.Include(question => question.Revisions)
-			.ThenInclude(revision => revision.Options);
+			.Include(question => question.AllChoices);
 	}
 
 	private static int NextDisplayOrder(List<Question> questions)
 	{
 		return questions.Count == 0 ? 0 : questions.Max(question => question.DisplayOrder) + 1;
-	}
-
-	private static TinyId? ParsedOptionSet(SaveQuestionRequest request)
-	{
-		return TinyId.TryParse(request.OptionSetId, out var optionSetId) ? optionSetId : null;
 	}
 
 	/// <summary>
@@ -543,29 +516,20 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>
-	///     The complete option set the new revision is born with. When a shared set
-	///     is named, its live items are <b>copied</b> — the revision answers from
-	///     that copy forever, whatever later happens to the set. See ADR-0058.
+	///     The complete ordered list of the question's choices, each under the code
+	///     it already has or one derived from its wording. Empty for a type that
+	///     takes no choices, which clears any a retyped question still had; null
+	///     when the request sends none, which leaves the choices as they are.
 	/// </summary>
-	private static async Task<IReadOnlyList<QuestionOptionInput>> OptionsFor(
-		SaveQuestionRequest request,
-		HpacSafetyDbContext database,
-		QuestionType type,
-		CancellationToken cancellationToken)
+	private static IReadOnlyList<QuestionOptionInput>? OptionsFor(SaveQuestionRequest request, QuestionType type)
 	{
-		if (ParsedOptionSet(request) is { } optionSetId)
+		if (type is not (QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete))
 		{
-			var set = await database.OptionSets
-						  .Include("_items")
-						  .FirstOrDefaultAsync(candidate => candidate.Id == optionSetId, cancellationToken)
-						  .ConfigureAwait(false)
-					  ?? throw new DomainRuleViolationException("That choice list no longer exists.");
-
-			return set.AsRevisionOptions();
+			return [];
 		}
 
-		return type is QuestionType.YesNo || request.Options is null
-			? []
+		return request.Options is null
+			? null
 			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr))];
 	}
 

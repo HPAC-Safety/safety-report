@@ -196,8 +196,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
-	// A multi-select with reporter additions allowed is REQ-QB-042, not built yet.
-	[Then(@"a type-ahead backed by a live shared list also accepts a value the list does not yet offer")]
+	[Then(@"a type-ahead also accepts a value it does not yet offer")]
 	public async Task ThenATypeAheadAlsoAcceptsAnUnlistedValue()
 	{
 		var revisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(
@@ -218,7 +217,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 	// --- The submission path never calls a translation provider ---
 
-	[Given(@"a submission contains select answers and a value typed into a type-ahead or a multi-select with reporter additions allowed")]
+	[Given(@"a submission contains select answers and a value typed into a type-ahead")]
 	public async Task GivenASubmissionContainsSelectAnswers()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
@@ -990,9 +989,7 @@ public sealed class ReportSubmissionEndpointSteps
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
 			dependsOnOptionCode = (string?)null,
-			optionSetId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
-			allowsReporterAdditions = false,
 			options = new[]
 			{
 				new { code = "blue", labelEn = "Blue", labelFr = "Bleu" },
@@ -1039,9 +1036,7 @@ public sealed class ReportSubmissionEndpointSteps
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
 			dependsOnOptionCode = (string?)null,
-			optionSetId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
-			allowsReporterAdditions = false,
 			options = Array.Empty<object>()
 		};
 
@@ -1068,9 +1063,7 @@ public sealed class ReportSubmissionEndpointSteps
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
 			dependsOnOptionCode = (string?)null,
-			optionSetId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
-			allowsReporterAdditions = false,
 			options = Array.Empty<object>()
 		};
 

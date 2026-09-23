@@ -1,0 +1,33 @@
+#!/usr/bin/env sh
+#
+# docs/traceability.md never conflicts during a merge or rebase — see
+# .gitattributes (`merge=ours`) and init-dev.sh for why — but "never
+# conflicts" only works because it also never gets git's own content merge,
+# so the file left behind is whichever side happened to be checked out, not
+# the tree that actually landed. This hook is the other half: once the merge
+# has genuinely finished and every file (including the .feature files the
+# matrix is derived from) is on disk in its final state, regenerate it for
+# real and stage the result, so the next commit carries the correct matrix
+# instead of a stale one CI's "docs" job would otherwise have to catch.
+#
+# A dev-machine convenience, not a CI gate (same framing as pre-commit) — CI
+# still re-checks the whole tree in the "docs" job as a backstop for anyone
+# who skipped ./init-dev.sh. This file is the tracked template; ./init-dev.sh
+# copies it into the real hooks directory — edit this copy, not the
+# installed one, and re-run ./init-dev.sh to pick up the change.
+
+set -u
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 0
+
+command -v node >/dev/null 2>&1 || exit 0
+
+node tools/traceability.mjs >/dev/null 2>&1 || exit 0
+
+if ! git diff --quiet -- docs/traceability.md; then
+	git add -- docs/traceability.md
+	echo "post-merge: docs/traceability.md regenerated and staged — include it in your next commit."
+fi
+
+exit 0

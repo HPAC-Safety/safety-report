@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-294 claims across 8 areas: 222 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+299 claims across 8 areas: 227 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -220,6 +220,11 @@ type: guide
 | `REQ-SUB-036` | report-submission | Continuing a saved report restores it where the reporter left off | playwright-bdd | Covered |
 | `REQ-SUB-037` | report-submission | Declining a saved report starts a fresh form | playwright-bdd | Covered |
 | `REQ-SUB-038` | report-submission | A reporter with no saved report is not asked | playwright-bdd | Covered |
+| `REQ-SUB-053` | report-submission | Each page of the form has its own address | playwright-bdd | Covered |
+| `REQ-SUB-054` | report-submission | The browser's Back and Forward buttons move between pages under the form's rules | playwright-bdd | Covered |
+| `REQ-SUB-055` | report-submission | Continuing a saved report puts its page in the address | playwright-bdd | Covered |
+| `REQ-SUB-056` | report-submission | A page address never answers the continue question for the reporter | playwright-bdd | Covered |
+| `REQ-SUB-057` | report-submission | A page address without a saved report opens the introduction | playwright-bdd | Covered |
 | `REQ-SUB-028` | report-submission | The leading statement question renders as an introduction | playwright-bdd | Covered |
 | `REQ-SUB-029` | report-submission | A reporter pages through questions one at a time | playwright-bdd | Covered |
 | `REQ-SUB-030` | report-submission | A group question and its children page together | playwright-bdd | Covered |

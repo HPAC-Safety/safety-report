@@ -20,7 +20,9 @@ export interface ReportDraft {
 	locale: string
 	/** Keyed by question-revision ID, matching the revisions the reporter was actually shown. */
 	answers: Record<string, DraftAnswer>
-	/** The revision ID of the question heading the page the reporter was last on. */
+	/** The key of the question heading the page the reporter was last on — the same key the page's address names. */
+	stepKey?: string
+	/** What a draft saved before #366 names that page by; still honoured when reading, never written. */
 	stepRevisionId?: string
 	savedAtMs: number
 }

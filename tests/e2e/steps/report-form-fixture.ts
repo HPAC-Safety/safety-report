@@ -195,25 +195,40 @@ export async function readDraftFromBrowser(page: Page): Promise<unknown> {
 	})
 }
 
+/** The upload a saved report names, as the form would have written it after a finished upload. */
+export const SAVED_UPLOAD = { uploadId: "synthetic-upload-saved01", name: "saved-photo.png", size: 2048 }
+
+/**
+ * A saved report started sixteen days ago and saved again an hour ago: past
+ * its window, which runs from the first save however recently it was edited
+ * (ADR-0100). It names one upload, which the form must delete.
+ */
 export async function writeStaleDraftToBrowser(page: Page) {
-	await page.addInitScript(() => {
+	await page.addInitScript((upload) => {
 		const sixteenDaysAgo = Date.now() - 16 * 24 * 60 * 60 * 1000
 		localStorage.setItem(
 			"hpac.report.draft",
-			JSON.stringify({ locale: "en-CA", answers: { "rev-narrative": { kind: "value", value: "stale" } }, savedAtMs: sixteenDaysAgo }),
+			JSON.stringify({
+				locale: "en-CA",
+				answers: { "rev-narrative": { kind: "value", value: "stale" } },
+				attachments: { "rev-attachments": [upload] },
+				startedAtMs: sixteenDaysAgo,
+				savedAtMs: Date.now() - 60 * 60 * 1000,
+			}),
 		)
-	})
+	}, SAVED_UPLOAD)
 }
 
 /**
  * A saved, unexpired report as the form would have written it: a narrative,
- * "yes" to the injury question, its conditional detail, a group child, the
- * page the reporter was last on, and one answer to a revision the current
- * form no longer shows. Written once, before the first page load, so a
- * later navigation does not put it back after the reporter removes it.
+ * "yes" to the injury question, its conditional detail, a group child, one
+ * uploaded file, the page the reporter was last on, and one answer to a
+ * revision the current form no longer shows. Written once, before the first
+ * page load, so a later navigation does not put it back after the reporter
+ * removes it.
  */
 export async function writeSavedDraftToBrowser(page: Page) {
-	await page.addInitScript(() => {
+	await page.addInitScript((upload) => {
 		if (sessionStorage.getItem("hpac.test.savedDraftWritten")) return
 		sessionStorage.setItem("hpac.test.savedDraftWritten", "1")
 		localStorage.setItem(
@@ -227,11 +242,13 @@ export async function writeSavedDraftToBrowser(page: Page) {
 					"rev-aircraft_type": { kind: "value", value: "Paraglider" },
 					"rev-retired": { kind: "value", value: "An answer to a retired question." },
 				},
+				attachments: { "rev-attachments": [upload] },
 				stepKey: "injury_detail",
+				startedAtMs: Date.now() - 2 * 24 * 60 * 60 * 1000,
 				savedAtMs: Date.now() - 60 * 60 * 1000,
 			}),
 		)
-	})
+	}, SAVED_UPLOAD)
 }
 
 /** Removes the saved report, so a reload opens the form without asking whether to continue. */

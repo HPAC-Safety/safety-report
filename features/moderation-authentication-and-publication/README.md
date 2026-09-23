@@ -48,7 +48,7 @@ need no CSRF protection.
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
 | SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; approve, reject, publish, and soft-delete reports. |
-| Administrator | Every SafetyOfficer capability, plus create question revisions and manage shared choice lists. |
+| Administrator | Every SafetyOfficer capability, plus create question revisions and curate each question's choices. |
 
 Submission is a membership capability rather than a privileged one, so any of
 the three roles may file a report — and the report records nothing about who

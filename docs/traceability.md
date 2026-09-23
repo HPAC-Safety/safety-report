@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-277 claims across 8 areas: 199 covered by a step definition today, 78 still `@ignore`. 50 constraints.
+271 claims across 8 areas: 195 covered by a step definition today, 76 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -144,18 +144,10 @@ type: guide
 | `REQ-QB-029` | question-bank-and-form | Unknown or deleted revisions are rejected at submission | Reqnroll | Planned |
 | `REQ-QB-030` | question-bank-and-form | A revision can be soft-deleted only when no answer references it | Reqnroll | Covered |
 | `REQ-QB-031` | question-bank-and-form | A referenced revision can never be deleted | Reqnroll | Covered |
-| `REQ-QB-032` | question-bank-and-form | A shared choice list is copied into the revision that uses it | Reqnroll | Covered |
-| `REQ-QB-033` | question-bank-and-form | Editing a shared choice list never changes a revision already built from it | Reqnroll | Covered |
-| `REQ-QB-034` | question-bank-and-form | Removing an option from a shared list keeps every snapshot of it | Reqnroll | Covered |
 | `REQ-QB-035` | question-bank-and-form | A reporter adds a choice the type-ahead did not offer | Reqnroll | Covered |
 | `REQ-QB-036` | question-bank-and-form | Two reporters naming the same new site produce one choice | Reqnroll | Covered |
 | `REQ-QB-037` | question-bank-and-form | A choice an administrator removed is not revived by a reporter | Reqnroll | Covered |
-| `REQ-QB-038` | question-bank-and-form | A type-ahead offers the live list while its revision records what was shown | Reqnroll | Covered |
-| `REQ-QB-039` | question-bank-and-form | Only a type-ahead reads the live list | Reqnroll | Covered |
-| `REQ-QB-040` | question-bank-and-form | A retired shared list leaves a type-ahead showing what it recorded | Reqnroll | Covered |
-| `REQ-QB-041` | question-bank-and-form | A multi-select may allow reporter additions the same way a type-ahead does | Reqnroll | Covered |
-| `REQ-QB-042` | question-bank-and-form | A reporter adds a choice a multi-select did not offer | Reqnroll | Planned |
-| `REQ-QB-043` | question-bank-and-form | An ordinary multi-select never accepts an unlisted value | Reqnroll | Planned |
+| `REQ-QB-097` | question-bank-and-form | Only a type-ahead grows from reporters' answers | Reqnroll | Covered |
 | `REQ-QB-044` | question-bank-and-form | A statement or a group collects no answer | Reqnroll | Covered |
 | `REQ-QB-045` | question-bank-and-form | A statement or a group is excluded from a submission's answer-producing revisions | Reqnroll | Planned |
 | `REQ-QB-046` | question-bank-and-form | A question may be grouped under a group question | Reqnroll | Covered |
@@ -167,7 +159,7 @@ type: guide
 | `REQ-QB-052` | question-bank-and-form | Regrouping follows a parent that stops being a group | Reqnroll | Planned |
 | `REQ-QB-053` | question-bank-and-form | A question can be made conditional only on a yes/no or single-select question | Reqnroll | Covered |
 | `REQ-QB-054` | question-bank-and-form | A single-select parent's dependency records the required option | Reqnroll | Covered |
-| `REQ-QB-055` | question-bank-and-form | A single-select dependency must name one of the parent's current options | Reqnroll | Covered |
+| `REQ-QB-055` | question-bank-and-form | A single-select dependency must name one of the parent's live choices | Reqnroll | Covered |
 | `REQ-QB-056` | question-bank-and-form | A yes/no dependency does not name an option | Reqnroll | Covered |
 | `REQ-QB-057` | question-bank-and-form | A question cannot be conditional on itself or form a cycle | Reqnroll | Covered |
 | `REQ-QB-058` | question-bank-and-form | Publication consent can never be made conditional | Reqnroll | Covered |
@@ -176,8 +168,6 @@ type: guide
 | `REQ-QB-061` | question-bank-and-form | A question key is normalized and cannot be reused | Reqnroll | Covered |
 | `REQ-QB-062` | question-bank-and-form | Retiring a question keeps it and its history | Reqnroll | Covered |
 | `REQ-QB-063` | question-bank-and-form | Publication consent can never be deleted or deactivated | Reqnroll | Covered |
-| `REQ-QB-064` | question-bank-and-form | A retired choice list refuses further edits | Reqnroll | Covered |
-| `REQ-QB-065` | question-bank-and-form | A choice list is rearranged as a whole or not at all | Reqnroll | Covered |
 | `REQ-QB-066` | question-bank-and-form | Translation is offered for question wording and for a select answer's second language | Reqnroll | Covered |
 | `REQ-QB-067` | question-bank-and-form | A server with no translation credential still authors questions | Reqnroll | Covered |
 | `REQ-QB-068` | question-bank-and-form | A development server translates through a stand-in rather than refusing | Reqnroll | Covered |
@@ -203,12 +193,17 @@ type: guide
 | `REQ-QB-088` | question-bank-and-form | Reviewing an imported Typeform draft prefills the editor | playwright-bdd | Covered |
 | `REQ-QB-089` | question-bank-and-form | An Administrator downloads the question bank as Typeform JSON | playwright-bdd | Covered |
 | `REQ-QB-090` | question-bank-and-form | An Administrator writes a question's choice by its wording alone | playwright-bdd | Covered |
-| `REQ-QB-091` | question-bank-and-form | An Administrator writes a shared choice list's choice by its wording alone | playwright-bdd | Covered |
 | `REQ-QB-092` | question-bank-and-form | A choice an Administrator writes is recorded under a code derived from its English wording | Reqnroll | Covered |
-| `REQ-QB-094` | question-bank-and-form | A reporter answering in French adds a choice recorded in French | Reqnroll | Covered |
-| `REQ-QB-095` | question-bank-and-form | Submitting a report records a type-ahead value the list did not offer | Reqnroll | Covered |
+| `REQ-QB-094` | question-bank-and-form | A reporter answering in French adds a choice recorded in French only | Reqnroll | Covered |
+| `REQ-QB-095` | question-bank-and-form | Submitting a report records a type-ahead value the question did not offer | Reqnroll | Covered |
 | `REQ-QB-096` | question-bank-and-form | A new question's key is derived from its English wording and never reused | Reqnroll | Covered |
 | `REQ-QB-093` | question-bank-and-form | Editing a question opens the editor in that question's place | playwright-bdd | Covered |
+| `REQ-QB-098` | question-bank-and-form | Editing an answered question's wording carries every choice to the replacement | Reqnroll | Covered |
+| `REQ-QB-099` | question-bank-and-form | Editing an answered question's choices keeps the question and its version | Reqnroll | Covered |
+| `REQ-QB-100` | question-bank-and-form | A removed choice is hidden from the form and kept in history | Reqnroll | Covered |
+| `REQ-QB-101` | question-bank-and-form | A choice a live question depends on cannot be removed | Reqnroll | Covered |
+| `REQ-QB-102` | question-bank-and-form | A choice in only one language is offered in the language it has | Reqnroll | Covered |
+| `REQ-QB-103` | question-bank-and-form | The report form shows a one-language choice in the language it has | playwright-bdd | Covered |
 | `REQ-SUB-001` | report-submission | The browser holds report state locally until submission | playwright-bdd | Covered |
 | `REQ-SUB-002` | report-submission | A successful submission clears local browser state | playwright-bdd | Covered |
 | `REQ-SUB-003` | report-submission | Expired local state is not restored | playwright-bdd | Covered |
@@ -253,7 +248,6 @@ type: guide
 | `REQ-TF-004` | typeform-question-import-export | A Typeform field type maps to a question type | Reqnroll | Covered |
 | `REQ-TF-005` | typeform-question-import-export | A single-select multiple-choice field imports as single-select | Reqnroll | Covered |
 | `REQ-TF-006` | typeform-question-import-export | A multi-select multiple-choice field imports as multi-select | Reqnroll | Covered |
-| `REQ-TF-007` | typeform-question-import-export | A multi-select field with a free-text choice enables reporter additions | Reqnroll | Covered |
 | `REQ-TF-008` | typeform-question-import-export | A group field flattens into a heading and its children | Reqnroll | Covered |
 | `REQ-TF-009` | typeform-question-import-export | A contact-info field flattens the same way a group does | Reqnroll | Covered |
 | `REQ-TF-010` | typeform-question-import-export | The generated answer-recap screen is not imported | Reqnroll | Covered |

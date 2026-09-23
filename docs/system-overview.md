@@ -70,7 +70,7 @@ flowchart LR
   the form and keeps unfinished answers only in that browser. No report data
   reaches the API, database, or object storage until it submits one finalized
   multipart request. It also renders public summaries.
-- The `/admin` route manages questions and shared choice lists, reviews reports
+- The `/admin` route manages questions and their choices, reviews reports
   and derivatives, edits summaries, and records approval. It appears only for a
   token carrying the SafetyOfficer or Administrator role.
 - The API owns validation, authorization, persistence orchestration, read DTOs,

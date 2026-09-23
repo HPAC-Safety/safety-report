@@ -2,13 +2,18 @@
 title: A shared choice list is authored once and snapshotted into every revision that uses it
 description: Two tables, two different mutability rules, and a copy between them.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-20
 decision-makers: Chase Florell
 keywords: option sets, question bank, immutable revisions, snapshot, autocomplete
 ---
 
 # ADR-0058 — A shared choice list is authored once and snapshotted into every revision that uses it
+
+**Status:** Superseded by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md). Every question now owns one editable
+list of choices outside its revisions. There are no shared lists and no
+per-revision snapshot, and the `option_sets`, `option_set_items` and
+`question_revision_options` tables are dropped after a forward copy.
 
 ## Context
 

@@ -146,11 +146,11 @@ Scenario: A submitted select value must be one the revision offered
   When the API validates the submission
   Then the value is accepted only if the answered revision offered exactly that label
   And a value the revision never offered is rejected
-  And a type-ahead backed by a live shared list also accepts a value the list does not yet offer
+  And a type-ahead also accepts a value it does not yet offer
 
 @REQ-SUB-007
 Scenario: The submission path never calls a translation provider
-  Given a submission contains select answers and a value typed into a type-ahead or a multi-select with reporter additions allowed
+  Given a submission contains select answers and a value typed into a type-ahead
   When the API commits the submission
   Then no translation provider is called
   And the answers are stored in the language the reporter gave them in, with no translation yet

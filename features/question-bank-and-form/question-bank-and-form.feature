@@ -15,7 +15,7 @@ Background:
 Scenario: Editing an unanswered question creates a new revision instead of mutating one
   Given an active question revision exists for a stable key
   And no answer references that question
-  When an Administrator changes its wording, help text, translations, options, type, order, privacy, active state, required state, or system state
+  When an Administrator changes its wording, help text, translations, type, order, privacy, active state, required state, or system state
   Then a new complete revision is created with the next revision number
   And the previous revision is left unchanged
   And the question keeps its identifier
@@ -78,7 +78,7 @@ Scenario: Editing a question copies the latest revision into a new one
   When the API prepares the edit DTO
   Then it loads the latest revision and copies all fields into that DTO
   When the Administrator saves the edit
-  Then the API validates both languages and all options, then saves a new complete row rather than patching the existing revision
+  Then the API validates both languages, then saves a new complete row rather than patching the existing revision
 
 @REQ-QB-009
 Scenario: Only the latest active, non-deleted revision is shown on the form
@@ -234,8 +234,7 @@ Scenario: Creating a revision preserves the question bank invariants
   Given an Administrator saves a new revision
   Then the stable key is a non-empty, unique, non-localized identifier
   And both English and French labels are present for an answer-producing question
-  And an option-requiring type has at least one valid bilingual option and every other type has none
-  And option codes are unique within the revision
+  And an option-requiring type has at least one live choice and every other type has none
   And only consent_publish may be marked system
   And the consent_publish revision is active, yes/no, private, and excluded from summary input despite being stored as an answer
 
@@ -245,7 +244,7 @@ Scenario: A report may answer a known superseded revision
   Given a reporter's browser session began before an Administrator edited the form
   And the browser still references the previously shown, non-deleted revision
   When the reporter submits the form
-  Then the API validates the answer against that superseded revision's historical type, options, and privacy
+  Then the API validates the answer against that superseded revision's historical type and privacy and the question's live choices
   And accepts the submission
 
 @REQ-QB-029
@@ -269,96 +268,40 @@ Scenario: A referenced revision can never be deleted
   And the revision remains available as history indefinitely
   And deactivating it through a new revision is the normal way to remove it from future forms
 
-@REQ-QB-032
-Scenario: A shared choice list is copied into the revision that uses it
-  Given a shared choice list offers several bilingual options
-  When an Administrator saves a question revision that uses that list
-  Then the revision holds its own complete copy of those options
-  And each copy records the shared item it came from
-
-@REQ-QB-033
-Scenario: Editing a shared choice list never changes a revision already built from it
-  Given a question revision was built from a shared choice list
-  When an Administrator relabels an option, adds one, and removes another from that list
-  Then the existing revision still offers exactly the options it was saved with
-  And a revision saved afterwards offers the edited list instead
-
-@REQ-QB-034
-Scenario: Removing an option from a shared list keeps every snapshot of it
-  Given a question revision copied an option from a shared choice list
-  When an Administrator removes that option from the list
-  Then the option is retired from the list rather than erased
-  And the revision's copy of it is unchanged
-
 @REQ-QB-035
 Scenario: A reporter adds a choice the type-ahead did not offer
-  Given a type-ahead question is backed by a shared choice list
-  When a reporter submits an answer naming a site the list does not offer
-  Then the site is added to the shared list as a reporter-added choice
+  Given a type-ahead question offers several choices
+  When a reporter submits an answer naming a site the question does not offer
+  Then the question gains the site as a reporter-added choice
   And it carries the language the reporter typed it in
   And it is marked for an Administrator to supply the other language
   And the next reporter is offered it
 
 @REQ-QB-036
 Scenario: Two reporters naming the same new site produce one choice
-  Given a reporter has already added a site to a shared choice list
+  Given a reporter has already added a site to a type-ahead question
   When another reporter submits the same site name
   Then the existing choice is reused rather than duplicated
   And an administrator's wording is never replaced by a reporter's
 
 @REQ-QB-037
 Scenario: A choice an administrator removed is not revived by a reporter
-  Given an Administrator removed a choice from a shared list
+  Given an Administrator removed a reporter-added choice from a type-ahead question
   When a reporter submits that same value again
-  Then the choice stays removed from the list
+  Then the choice stays removed from the question
   And the reporter's answer still records the value they typed
 
-@REQ-QB-038
-Scenario: A type-ahead offers the live list while its revision records what was shown
-  Given a type-ahead revision was saved when the shared list was shorter
-  When a choice is added to that list afterwards
-  Then the question now offers the longer list
-  And the revision still records the shorter one
-
-@REQ-QB-039
-Scenario Outline: Only a type-ahead reads the live list
-  Given a <type> revision is backed by a shared choice list
-  When a choice is added to that list afterwards
-  Then the question offers <offered>
+@REQ-QB-097
+Scenario Outline: Only a type-ahead grows from reporters' answers
+  Given a published <type> question offers several choices
+  When a reporter submits a value the question does not offer
+  Then <outcome>
 
 Examples:
-  | type          | offered          |
-  | autocomplete  | the live list    |
-  | single_select | its own snapshot |
-  | multi_select  | its own snapshot |
-
-@REQ-QB-040
-Scenario: A retired shared list leaves a type-ahead showing what it recorded
-  Given a type-ahead revision was built from a shared choice list
-  When that shared list is retired entirely
-  Then the question still offers the choices its revision recorded
-
-@REQ-QB-041
-Scenario: A multi-select may allow reporter additions the same way a type-ahead does
-  Given an Administrator authors a multi-select question backed by a shared choice list
-  When they enable reporter additions on it
-  Then the question offers the live list the same way a type-ahead does
-  And a single-select question offers no such control
-
-@REQ-QB-042
-@ignore
-Scenario: A reporter adds a choice a multi-select did not offer
-  Given a multi-select question with reporter additions allowed is backed by a shared choice list
-  When a reporter submits a value the list does not offer
-  Then the value is added to the shared list as a reporter-added choice
-  And it is marked for an Administrator to curate, exactly like a type-ahead's reporter-added choice
-
-@REQ-QB-043
-@ignore
-Scenario: An ordinary multi-select never accepts an unlisted value
-  Given a multi-select question does not have reporter additions allowed
-  When a reporter submits a value the list does not offer
-  Then the submission is rejected
+  | type          | outcome                                                     |
+  | autocomplete  | the report is accepted and the question gains the value     |
+  | single_select | the submission is rejected and the question is unchanged    |
+  | multi_select  | the submission is rejected and the question is unchanged    |
 
 @REQ-QB-044
 Scenario Outline: A statement or a group collects no answer
@@ -446,9 +389,9 @@ Scenario: A single-select parent's dependency records the required option
   Then each rating question's saved dependency names its own required option
 
 @REQ-QB-055
-Scenario: A single-select dependency must name one of the parent's current options
+Scenario: A single-select dependency must name one of the parent's live choices
   Given a single-select question offering hang glider and paraglider
-  When an Administrator tries to make another question depend on an option the parent does not offer
+  When an Administrator tries to make another question depend on a choice the parent does not offer
   Then the attempt is rejected
 
 @REQ-QB-056
@@ -481,14 +424,14 @@ Scenario: Rearranging the form writes a new revision for every question that mov
 @REQ-QB-060
 Scenario Outline: A question type either takes options or does not
   Given an Administrator authors a <type> question
-  When they supply bilingual options with it
-  Then the revision <outcome>
+  When they supply bilingual choices with it
+  Then the question <outcome>
 
 Examples:
   | type          | outcome              |
-  | autocomplete  | stores those options |
-  | single_select | stores those options |
-  | multi_select  | stores those options |
+  | autocomplete  | stores those choices |
+  | single_select | stores those choices |
+  | multi_select  | stores those choices |
   | time          | is rejected          |
   | short_text    | is rejected          |
   | yes_no        | is rejected          |
@@ -513,20 +456,6 @@ Scenario: Publication consent can never be deleted or deactivated
   Then the attempt is rejected
   And trying to stop asking it is rejected the same way
   And an ordinary edit that clears its active flag is rejected the same way
-
-@REQ-QB-064
-Scenario: A retired choice list refuses further edits
-  Given a shared choice list offers several bilingual options
-  When an Administrator retires the whole list
-  Then its options are retired with it
-  And adding, renaming, or rearranging it is rejected
-
-@REQ-QB-065
-Scenario: A choice list is rearranged as a whole or not at all
-  Given a shared choice list offers several bilingual options
-  When an Administrator arranges every option into a new order
-  Then the list takes that order
-  And an arrangement that omits or repeats an option is rejected
 
 @REQ-QB-066
 Scenario: Translation is offered for question wording and for a select answer's second language
@@ -592,16 +521,17 @@ Scenario: A development stand-in says what it is
 @REQ-QB-074
 @ui
 Scenario: An Administrator sees which choices reporters added
-  Given a signed-in Administrator opens the manage-choice-lists page
+  Given a signed-in Administrator opens the manage-questions page
+  Then a type-ahead question with reporter-added choices says how many are waiting to be reviewed
+  When they open that question
   Then each reporter-added choice is marked as such
-  And the page says how many are waiting to be reviewed
 
 @REQ-QB-075
 @ui
 Scenario: An Administrator corrects a reporter-added choice
-  Given a signed-in Administrator opens the manage-choice-lists page
-  When they correct the wording of a reporter-added choice and save
-  Then the corrected wording is shown in the list
+  Given a signed-in Administrator opens a type-ahead question with a reporter-added choice
+  When they correct the wording of that choice and save it
+  Then the corrected wording is shown on the question
 
 @REQ-QB-076
 @ui
@@ -615,7 +545,7 @@ Scenario: An Administrator authors a question from the dashboard
 Scenario: The options editor appears only for a type that takes options
   Given a signed-in Administrator is authoring a new question
   When they choose the type-ahead list type
-  Then the page offers a shared choice list and an option editor
+  Then the page offers an option editor
   When they choose the single-line text type instead
   Then the page offers neither
 
@@ -723,13 +653,6 @@ Scenario: An Administrator writes a question's choice by its wording alone
   When they save the question with that choice
   Then the choice is sent without a code
 
-@REQ-QB-091
-@ui
-Scenario: An Administrator writes a shared choice list's choice by its wording alone
-  Given a signed-in Administrator opens the manage-choice-lists page
-  When they start a new choice list and add a choice
-  Then the choice asks only for its English and French wording
-
 @REQ-QB-092
 Scenario: A choice an Administrator writes is recorded under a code derived from its English wording
   Given an Administrator saves a single-select question with the choices "King Eddy" and "Mara"
@@ -740,20 +663,21 @@ Scenario: A choice an Administrator writes is recorded under a code derived from
   Then the save is refused naming both wordings
 
 @REQ-QB-094
-Scenario: A reporter answering in French adds a choice recorded in French
-  Given a type-ahead question is backed by a shared choice list
-  When a reporter answering in French submits "Élévation Sainte-Anne", which the list does not offer
-  Then the list gains a reporter-added choice whose French wording is "Élévation Sainte-Anne"
+Scenario: A reporter answering in French adds a choice recorded in French only
+  Given a type-ahead question offers several choices
+  When a reporter answering in French submits "Élévation Sainte-Anne", which the question does not offer
+  Then the question gains a reporter-added choice whose French wording is "Élévation Sainte-Anne"
+  And the choice has no English wording until an Administrator supplies it
   And the choice records that it was typed in French
   And its code is "elevation_sainte_anne", derived from the French wording
 
 @REQ-QB-095
-Scenario: Submitting a report records a type-ahead value the list did not offer
-  Given a published form has a type-ahead question backed by a shared choice list
+Scenario: Submitting a report records a type-ahead value the question did not offer
+  Given a published form has a type-ahead question
   When a reporter answering in French submits a report naming "Élévation Sainte-Anne" in it
   Then the report is accepted
   And the answer is stored as "Élévation Sainte-Anne", in French
-  And the shared list now offers "Élévation Sainte-Anne" as a reporter-added choice coded "elevation_sainte_anne"
+  And the question now offers "Élévation Sainte-Anne" as a reporter-added choice coded "elevation_sainte_anne"
   And the next reporter is offered "Élévation Sainte-Anne"
 
 @REQ-QB-096
@@ -775,3 +699,60 @@ Scenario: Editing a question opens the editor in that question's place
   And every other question is still shown in its place
   When they cancel the edit
   Then the second question is shown in its place again
+
+@REQ-QB-098
+Scenario: Editing an answered question's wording carries every choice to the replacement
+  Given a type-ahead question has been answered on at least one report
+  And it offers choices an Administrator wrote and a reporter-added choice
+  And an Administrator removed one of its choices
+  When an Administrator changes its wording
+  Then the replacement question offers every choice the retired one offered
+  And the reporter-added choice is still marked as reporter-added
+  And the removed choice is carried over and stays removed
+
+@REQ-QB-099
+Scenario Outline: Editing an answered question's choices keeps the question and its version
+  Given a <type> question has been answered on at least one report
+  When an Administrator <edits> its choices
+  Then the question offers the edited choices
+  And the question keeps its identifier and its current revision
+  And the answers already given still record the reporter's own words
+
+Examples:
+  | type          | edits                                   |
+  | single_select | adds a choice to                        |
+  | multi_select  | rewords one of                          |
+  | autocomplete  | reorders                                |
+  | autocomplete  | supplies the missing language of one of |
+
+@REQ-QB-100
+Scenario: A removed choice is hidden from the form and kept in history
+  Given a question has been answered with one of its choices
+  When an Administrator removes that choice
+  Then the form stops offering it
+  And the choice is retired rather than erased
+  And the answer that named it still records the reporter's own words
+  And the question keeps its identifier and its current revision
+
+@REQ-QB-101
+Scenario: A choice a live question depends on cannot be removed
+  Given a question depends on the "paraglider" choice of a single-select question
+  When an Administrator saves the single-select question without that choice
+  Then the save is refused naming the dependent question
+  And the choice is still offered
+
+@REQ-QB-102
+Scenario: A choice in only one language is offered in the language it has
+  Given a type-ahead question has a reporter-added choice typed only in English
+  When a reporter using French opens the form
+  Then the question offers that choice in its English wording
+  When an Administrator supplies the choice's French wording
+  Then a reporter using French is offered the French wording
+  And the choice is no longer waiting to be reviewed
+
+@REQ-QB-103
+@ui
+Scenario: The report form shows a one-language choice in the language it has
+  Given a type-ahead question has a reporter-added choice typed only in English
+  When a reporter using French opens that question
+  Then the type-ahead offers the choice in its English wording

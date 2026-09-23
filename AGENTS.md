@@ -129,10 +129,15 @@ requirements does not touch a skill; its remedy is a claim.
    a drafting aid while doing so; the database holds only what they saved, and
    a question cannot be saved in one language
    ([ADR-0062](docs/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-   A reporter may add a missing choice to a type-ahead, recorded at submission
-   and marked for an administrator to curate; a type-ahead therefore renders the
-   live shared list while its revision snapshot remains the record of the
-   complete set of choices that reporter was offered
+   A question's choices are not part of its revisions: each single-select,
+   multi-select, or type-ahead owns one editable list, and editing only that
+   list never revises or forks the question; a fork copies every choice, and a
+   removed choice is hidden, never erased. There are no shared choice lists
+   ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+   A reporter may add a missing choice to a type-ahead — and only a
+   type-ahead — recorded at submission in the language typed, marked for an
+   administrator to curate in place, and offered in the one language it has
+   until the other is supplied
    ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
    Every answer is stored as one string, in the reporter's own words, in the
    language they answered in, and is immutable once written. Its second
@@ -148,11 +153,10 @@ requirements does not touch a skill; its remedy is a claim.
    [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
    [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
    A question may be made conditional on a yes/no question, or on a
-   single-select question naming a required option, and its options may
-   be copied from a shared choice list
+   single-select question naming one of its live choices, which then cannot be
+   removed
    ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
-   [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
-   [ADR-0058](docs/decisions/ADR-0058-shared-option-sets-with-a-revision-snapshot.md)).
+   [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
 2. Until final submission, unfinished answers and shown revision IDs stay only
    in that browser for 15 days; files are not persisted or restored. No report,
    attachment, draft, reserved ID, or other respondent data is written to a
@@ -197,10 +201,14 @@ requirements does not touch a skill; its remedy is a claim.
    ([ADR-0079](docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
 8. Use managed encryption at rest and TLS. Do not add application-level field
    encryption, log report content, or physically delete application records.
-   The one carved exception is dropping `admin_users`, a table that never held
-   data in any deployed environment; it does not generalize, and any future
-   `DROP TABLE` needs its own argument on its own facts
-   ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+   Two carved exceptions: dropping `admin_users`, a table that never held
+   data in any deployed environment
+   ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)),
+   and dropping the shared-choice-list and per-revision option tables after
+   copying every choice forward onto its question
+   ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+   Neither generalizes, and any future `DROP TABLE` needs its own argument on
+   its own facts.
 
 There is no deterministic scrubber beyond the narrow private-value marking
 pass in item 3 above, no separate PII auditor,

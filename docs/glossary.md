@@ -14,7 +14,7 @@ type: guide
 | Group | A question type that collects no answer and acts as a section heading; other questions may be grouped under it so the form renders them together. |
 | Grouped under | A question revision's reference to a live `Group` question it renders alongside, distinct from a conditional dependency. |
 | Statement | A question type that collects no answer and displays instructional text with no input control. |
-| Reporter-added choice | An option a reporter typed that a shared choice list did not offer, added at submission and flagged for an Administrator to curate. |
+| Reporter-added choice | A choice a reporter typed that a type-ahead question did not offer, added to that question's own choices at submission in the language typed, and flagged for an Administrator to curate in place. |
 | Consent projection | The nullable `ConsentPublish` value copied from the system consent answer because publication logic must query it directly. It is the only answer projection. |
 | Deleted | Nullable soft-deletion timestamp on every persisted record except `audit_log`; a value means hidden and terminal in normal application flows. |
 | Derivative | A decoded/re-encoded image or remuxed/transcoded video with unsafe metadata removed. Documents do not have anonymized derivatives. |
@@ -26,7 +26,7 @@ type: guide
 | Public DTO | The strict allowlist of report ID, both summary texts, and publication timestamp returned by public endpoints. |
 | Quarantine | Private object-storage compartment where the API first streams an accepted attachment before its database transaction/Worker validation completes. |
 | Question key | Stable non-localized logical identifier joining the immutable revisions of the same question. |
-| Question revision | Exact immutable form record referenced by an answer, including bilingual copy/options and all behavior/display flags. |
+| Question revision | Exact immutable form record referenced by an answer, including bilingual copy and all behavior/display flags. Choices are not part of a revision; they belong to the question (ADR-0095). |
 | Report content | Labeled non-private answered fields eligible to supply safety facts to the model. |
 | Reporter | An HPAC member submitting an occurrence. Sign-in is required and proves membership only; nothing stored records who filed the report. |
 | Member role | The role claim on a validated token: `User`, `SafetyOfficer`, or `Administrator`. Never stored — this system holds no user records. |

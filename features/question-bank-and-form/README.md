@@ -18,15 +18,21 @@ Each revision contains:
   increasing revision number;
 - English and French label text and optional English and French help text;
 - question type;
-- the complete ordered bilingual option set, when applicable;
 - form sort order and optional section/group key;
 - `is_private`, `is_active`, `is_system`, and `is_required` flags;
 - creation timestamp and the revision it supersedes, when any;
 - a nullable `deleted` timestamp.
 
-Options may be immutable child rows tied to the revision. Their code, labels,
-and order are part of that revision and cannot be shared mutably with another
-revision.
+A question's choices are not part of any revision. A single-select,
+multi-select, or type-ahead question owns one ordered list of choices that an
+Administrator edits in place: adding, rewording, reordering, or removing one
+never creates a revision and never retires the question, even once it has been
+answered. A fork carries the whole list, removed choices and reporter-added
+marks included, to the replacement. A removed choice is hidden from the form,
+never erased
+([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+A reporter-added choice holds only the language it was typed in until an
+Administrator supplies the other, and is offered in the language it has.
 
 ## Current form query
 
@@ -81,9 +87,15 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Mutating a revision, reviving a retired question, or any edit that loses the
   wording an answer was given against.
 - Saving a question in one language.
-- A reporter editing, curating, or removing a shared choice list. A reporter
-  may add a missing choice; an administrator curates
-  ([ADR-0063](../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+- Shared choice lists, or reusing one question's choices on another in any
+  form ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+- A reporter editing, curating, or removing a choice. A reporter may add a
+  missing choice to a type-ahead; an Administrator curates it in the question
+  editor ([ADR-0063](../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+- A reporter adding a choice to a single-select or multi-select question.
+- A record of exactly which choices a reporter was shown. The answer stores
+  the reporter's own words (ADR-0072).
+- Machine-translating a reporter-added choice's missing language.
 - An administrator authoring, seeing, or recoding an option code. A new
   choice's code is derived from its English wording, and a reworded choice
   keeps the code it has (`REQ-QB-092`).
@@ -92,6 +104,3 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   question holds, retired ones included (`REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.
   Renaming an existing key is not built.
-- A type-ahead with no live shared list growing from reporters' answers. The
-  reporter's words are still accepted as the answer; there is no list to add
-  them to. A multi-select taking reporter additions is `REQ-QB-042`, not built.

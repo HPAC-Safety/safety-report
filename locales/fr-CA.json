@@ -362,7 +362,8 @@
       "notAnswered": "Sans réponse",
       "translation": "Traduction : {text}",
       "attachments": "Pièces jointes",
-      "attachment": "{kind} — {state}"
+      "attachment": "{kind} — {state}",
+      "rejectionNote": "#Rejection note: {note}"
     },
     "attachment": {
       "kind": {
@@ -374,7 +375,46 @@
         "ready": "prêt",
         "processing": "traitement",
         "failed": "n’a pas pu être traité"
-      }
+      },
+      "view": "#View",
+      "download": "#Download"
+    },
+    "action": {
+      "label": "#Review actions",
+      "edit": "#Edit summary",
+      "write": "#Write summary",
+      "approve": "#Approve",
+      "reject": "#Reject",
+      "reopen": "#Reopen",
+      "unpublish": "#Unpublish",
+      "delete": "#Delete",
+      "cancel": "#Cancel"
+    },
+    "approve": {
+      "publishes": "#The reporter consented, so approving publishes this report immediately.",
+      "private": "#The reporter did not consent, so approving keeps this report private."
+    },
+    "edit": {
+      "label": "#Edit the summary pair",
+      "en": "#English summary",
+      "fr": "#French summary",
+      "clearsApproval": "#Saving returns the report to Pending review and takes it off the public feed if it is published.",
+      "save": "#Save summary"
+    },
+    "reject": {
+      "label": "#Reject the report",
+      "note": "#Note for other reviewers (optional)",
+      "confirm": "#Reject report"
+    },
+    "stale": {
+      "message": "#Another reviewer changed this report since you opened it. Nothing you just did was saved.",
+      "reload": "#Reload report"
+    },
+    "delete": {
+      "title": "#Delete this report?",
+      "body": "#The report, its answers, summary, and attachments are removed from every list and cannot be restored.",
+      "confirm": "#Delete report",
+      "keep": "#Keep report"
     }
   }
 }

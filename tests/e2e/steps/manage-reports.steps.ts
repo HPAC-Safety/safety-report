@@ -179,3 +179,182 @@ Then("no action to edit, approve, reject, or publish is offered", async ({ page 
 	await expect(main.getByRole("button")).toHaveCount(0)
 	await expect(main.getByRole("textbox")).toHaveCount(0)
 })
+
+/*
+ * Review actions (REQ-MOD-062..068). One stubbed report per status; each
+ * command answers with the report as the API would leave it, so what is
+ * asserted is what the page does with the answer.
+ */
+
+type StubStatus = "pending_review" | "published" | "rejected" | "summary_failed"
+
+const STATUS_BY_WORD: Record<string, StubStatus> = {
+	"pending-review": "pending_review",
+	published: "published",
+	rejected: "rejected",
+	"summary-failed": "summary_failed",
+}
+
+interface ReviewStub {
+	detail: typeof DETAIL & { version: string; rejectionNote: string | null; publishedAt: string | null }
+	stale: boolean
+	requests: string[]
+}
+
+const reviewStubs = new WeakMap<Page, ReviewStub>()
+
+function detailIn(status: StubStatus) {
+	return {
+		...DETAIL,
+		id: "reviewaaaaa",
+		status,
+		version: "1.1",
+		rejectionNote: null,
+		publishedAt: status === "published" ? "2026-09-21T12:00:00Z" : null,
+		summaryError: status === "summary_failed" ? "The AI chat provider was unavailable." : null,
+		summary: status === "summary_failed" ? null : { ...DETAIL.summary },
+	}
+}
+
+async function stubReview(page: Page, status: StubStatus) {
+	const stub: ReviewStub = { detail: detailIn(status), stale: false, requests: [] }
+	reviewStubs.set(page, stub)
+
+	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
+		await route.fulfill({ json: [{ ...ROWS[0], id: stub.detail.id, status: stub.detail.status }] })
+	})
+
+	await page.route(/\/api\/admin\/reports\/reviewaaaaa(\/.*)?$/, async (route) => {
+		const request = route.request()
+		const path = new URL(request.url()).pathname
+		stub.requests.push(`${request.method()} ${path}`)
+
+		if (request.method() === "GET" && path.endsWith("/download")) {
+			return route.fulfill({ json: { url: "/attachment-opened", expiresAt: "2026-09-23T12:05:00Z", fileName: "evidence.pdf" } })
+		}
+
+		if (request.method() === "GET") {
+			return route.fulfill({ json: stub.detail })
+		}
+
+		if (request.method() === "DELETE") {
+			return route.fulfill({ status: 204 })
+		}
+
+		if (stub.stale) {
+			return route.fulfill({
+				status: 409,
+				contentType: "application/problem+json",
+				body: JSON.stringify({
+					type: "https://hpac.ca/problems/stale-report",
+					title: "This report changed since you opened it.",
+					detail: "Another reviewer saved a change to this report.",
+				}),
+			})
+		}
+
+		const body = request.postDataJSON() ?? {}
+		const next = { ...stub.detail, version: "1.2" }
+
+		if (path.endsWith("/approve")) {
+			next.status = "published"
+			next.publishedAt = "2026-09-23T12:00:00Z"
+		} else if (path.endsWith("/reject")) {
+			next.status = "rejected"
+			next.rejectionNote = body.note || null
+		} else if (path.endsWith("/summary")) {
+			next.status = "pending_review"
+			next.publishedAt = null
+			next.summary = { ...DETAIL.summary, aiSummaryEn: body.aiSummaryEn, aiSummaryFr: body.aiSummaryFr }
+		}
+
+		stub.detail = next
+		return route.fulfill({ json: next })
+	})
+}
+
+Given("a safety officer is signed in and a {word} report exists", async ({ page }, word: string) => {
+	await stubReview(page, STATUS_BY_WORD[word])
+	await signInAs(page, "safety_officer")
+})
+
+Given("another reviewer has changed that report since it was opened", async ({ page }) => {
+	reviewStubs.get(page)!.stale = true
+})
+
+When("the safety officer opens that report", async ({ page }) => {
+	await page.goto("/admin/reports/reviewaaaaa")
+	await expect(page.getByRole("heading", { level: 1, name: "Report" })).toBeVisible()
+	await expect(page.locator('[data-badge="status"]')).toBeVisible()
+})
+
+Then("the offered actions are {}", async ({ page }, list: string) => {
+	const expected = list.split(",").map((name) => name.trim())
+	const group = page.getByRole("group", { name: "Review actions" })
+	await expect(group.getByRole("button")).toHaveText(expected)
+})
+
+When("the safety officer edits the English summary and saves", async ({ page }) => {
+	await page.getByRole("button", { name: "Edit summary" }).click()
+	await page.getByLabel("English summary").fill("The pilot landed firmly after the collapse.")
+	await page.getByRole("button", { name: "Save summary" }).click()
+})
+
+When("the safety officer approves it", async ({ page }) => {
+	await page.getByRole("button", { name: "Approve" }).click()
+})
+
+When("the safety officer rejects it with the note {string}", async ({ page }, note: string) => {
+	await page.getByRole("button", { name: "Reject" }).click()
+	await page.getByLabel("Note for other reviewers (optional)").fill(note)
+	await page.getByRole("button", { name: "Reject report" }).click()
+})
+
+When("the safety officer chooses Delete", async ({ page }) => {
+	await page.getByRole("button", { name: "Delete" }).click()
+})
+
+When("the safety officer confirms", async ({ page }) => {
+	await page.getByRole("dialog").getByRole("button", { name: "Delete report" }).click()
+})
+
+When("the safety officer opens its document attachment", async ({ page }) => {
+	await page.route("**/attachment-opened", (route) => route.fulfill({ body: "synthetic" }))
+	await page.getByRole("button", { name: "Download" }).click()
+})
+
+Then("the report shows the {string} badge", async ({ page }, badge: string) => {
+	await expect(page.locator('[data-badge="status"]')).toHaveText(badge)
+})
+
+Then("the saved English text is shown", async ({ page }) => {
+	await expect(page.locator('[data-summary="en"]')).toHaveText("The pilot landed firmly after the collapse.")
+	const sent = reviewStubs.get(page)!.requests
+	expect(sent).toContain("PUT /api/admin/reports/reviewaaaaa/summary")
+})
+
+Then("the note {string} is shown", async ({ page }, note: string) => {
+	await expect(page.locator("[data-rejection-note]")).toContainText(note)
+})
+
+Then("a message says the report changed and offers to reload it", async ({ page }) => {
+	await expect(page.getByRole("alert")).toContainText("Another reviewer changed this report")
+	await expect(page.getByRole("button", { name: "Reload report" })).toBeVisible()
+	await expect(page.locator('[data-badge="status"]')).toHaveText("Pending review")
+})
+
+Then("a confirmation asks whether to delete the report", async ({ page }) => {
+	await expect(page.getByRole("dialog", { name: "Delete this report?" })).toBeVisible()
+	expect(reviewStubs.get(page)!.requests).not.toContain("DELETE /api/admin/reports/reviewaaaaa")
+})
+
+Then("the browser returns to Manage reports", async ({ page }) => {
+	await expect(page).toHaveURL(/\/admin\/reports$/)
+	expect(reviewStubs.get(page)!.requests).toContain("DELETE /api/admin/reports/reviewaaaaa")
+})
+
+Then("the browser requests that attachment's download link", async ({ page }) => {
+	await expect
+		.poll(() => reviewStubs.get(page)!.requests)
+		.toContain(`GET /api/admin/reports/reviewaaaaa/attachments/${DETAIL.attachments[0].id}/download`)
+})

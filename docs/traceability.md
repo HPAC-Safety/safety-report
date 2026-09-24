@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-319 claims across 8 areas: 246 covered by a step definition today, 73 still `@ignore`. 50 constraints.
+325 claims across 8 areas: 254 covered by a step definition today, 71 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -89,7 +89,7 @@ type: guide
 | `REQ-MOD-008` | moderation-authentication-and-publication | A signed-in SafetyOfficer's Admin menu offers manage-reports only | playwright-bdd | Covered |
 | `REQ-MOD-009` | moderation-authentication-and-publication | A signed-in User sees no Admin menu | playwright-bdd | Covered |
 | `REQ-MOD-010` | moderation-authentication-and-publication | An open Admin menu keeps every option on a single line | playwright-bdd | Covered |
-| `REQ-MOD-011` | moderation-authentication-and-publication | Activating an Admin menu option navigates to its placeholder page | playwright-bdd | Covered |
+| `REQ-MOD-011` | moderation-authentication-and-publication | Activating an Admin menu option navigates to its page | playwright-bdd | Covered |
 | `REQ-MOD-012` | moderation-authentication-and-publication | The Admin menu is absent for a signed-out visitor | playwright-bdd | Covered |
 | `REQ-MOD-013` | moderation-authentication-and-publication | A token signed by an unknown key is rejected | Reqnroll | Covered |
 | `REQ-MOD-014` | moderation-authentication-and-publication | A token whose signature has been altered is rejected | Reqnroll | Covered |
@@ -108,8 +108,11 @@ type: guide
 | `REQ-MOD-027` | moderation-authentication-and-publication | Administrator capabilities include everything SafetyOfficer has | Reqnroll | Planned |
 | `REQ-MOD-028` | moderation-authentication-and-publication | Only an Administrator may author a question revision | Reqnroll | Covered |
 | `REQ-MOD-029` | moderation-authentication-and-publication | Sensitive admin actions are audited without report content | Reqnroll | Planned |
-| `REQ-MOD-030` | moderation-authentication-and-publication | The review queue shows reports needing action | Reqnroll | Planned |
-| `REQ-MOD-031` | moderation-authentication-and-publication | A report detail view exposes only what the reviewer needs | Reqnroll | Planned |
+| `REQ-MOD-030` | moderation-authentication-and-publication | The admin report list shows every live report with its state | Reqnroll | Covered |
+| `REQ-MOD-049` | moderation-authentication-and-publication | The Needs action filter shows pending review, failed, and stuck reports | Reqnroll | Covered |
+| `REQ-MOD-050` | moderation-authentication-and-publication | A status filter narrows the admin report list | Reqnroll | Covered |
+| `REQ-MOD-031` | moderation-authentication-and-publication | A report detail view exposes only what the reviewer needs | Reqnroll | Covered |
+| `REQ-MOD-051` | moderation-authentication-and-publication | Opening a report's detail view is audited | Reqnroll | Covered |
 | `REQ-MOD-032` | moderation-authentication-and-publication | Editing a summary clears approval and unpublishes | Reqnroll | Planned |
 | `REQ-MOD-033` | moderation-authentication-and-publication | Approval applies once to the current bilingual pair | Reqnroll | Planned |
 | `REQ-MOD-034` | moderation-authentication-and-publication | Rejection blocks publication but keeps the report for learning | Reqnroll | Planned |
@@ -127,6 +130,9 @@ type: guide
 | `REQ-MOD-046` | moderation-authentication-and-publication | A reviewer's attachment view writes its own audit row, distinct from a raw-report view | Reqnroll | Covered |
 | `REQ-MOD-047` | moderation-authentication-and-publication | A failed audit write blocks the action it would have recorded | Reqnroll | Planned |
 | `REQ-MOD-048` | moderation-authentication-and-publication | Sign-out is not an audited event | Reqnroll | Planned |
+| `REQ-MOD-052` | moderation-authentication-and-publication | The Manage reports page lists reports with a status badge and a Private badge | playwright-bdd | Covered |
+| `REQ-MOD-053` | moderation-authentication-and-publication | Choosing a filter on Manage reports narrows the list | playwright-bdd | Covered |
+| `REQ-MOD-054` | moderation-authentication-and-publication | Opening a report shows its answers with private answers marked, and its summary pair | playwright-bdd | Covered |
 | `REQ-QB-001` | question-bank-and-form | Editing an unanswered question creates a new revision instead of mutating one | Reqnroll | Planned |
 | `REQ-QB-002` | question-bank-and-form | Editing an answered question retires it and creates a new one | Reqnroll | Planned |
 | `REQ-QB-003` | question-bank-and-form | An answer on a deleted report still forces a fork | Reqnroll | Planned |

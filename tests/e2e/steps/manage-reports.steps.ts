@@ -83,7 +83,8 @@ const DETAIL = {
 		sourceEn: "generated",
 		sourceFr: "generated",
 	},
-	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready" }],
+	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready", visibility: "private" }],
+	mediaConsent: "unanswered",
 }
 
 const FILTERED: Record<string, (row: StubRow) => boolean> = {

@@ -2,16 +2,18 @@ import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ReportComments } from "../components/ReportComments"
-import { fetchPublicReport, PublicReportNotFound, summaryIn, type PublicReport } from "../api/publicReports"
+import { ReportMedia } from "../components/ReportMedia"
+import { fetchPublicReport, PublicReportNotFound, summaryIn, type PublicReportDetail } from "../api/publicReports"
 
-type Loaded = { state: "loading" } | { state: "ready"; report: PublicReport } | { state: "missing" } | { state: "failed" }
+type Loaded = { state: "loading" } | { state: "ready"; report: PublicReportDetail } | { state: "missing" } | { state: "failed" }
 
 /*
  * One published report at its own address, /reports/<id>, which can be opened
  * directly, reloaded, and shared (REQ-MOD-079, REQ-MOD-080). The summary shows
  * in the site's language, which the header's language toggle chooses; the page
  * has no language control of its own (REQ-WLD-019). A report that is not public gets the same "not found" as one
- * that never existed (REQ-MOD-081).
+ * that never existed (REQ-MOD-081). Its photos and video, when the reporter
+ * agreed to share them, follow the summary (ADR-0117).
  */
 export function PublicReportPage() {
 	const { t, locale } = useLocale()
@@ -69,6 +71,7 @@ export function PublicReportPage() {
 					<p lang={locale} data-summary={locale} className="mt-6 whitespace-pre-line font-sans text-lg text-ink">
 						{summaryIn(loaded.report, locale)}
 					</p>
+					<ReportMedia reportId={loaded.report.id} media={loaded.report.media} />
 					<ReportComments reportId={loaded.report.id} />
 				</article>
 			)}

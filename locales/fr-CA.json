@@ -351,6 +351,11 @@
         "no": "Le journaliste n’a pas donné son accord pour la publication. Ce reportage n’a jamais été publié.",
         "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
       },
+      "mediaConsent": {
+        "yes": "#The reporter agreed to share their photos and video on the published report.",
+        "no": "#The reporter did not agree to share their photos and video. None is ever public.",
+        "unanswered": "#The reporter was not asked about sharing photos and video, so none is ever public."
+      },
       "summary": "Résumé",
       "summaryEn": "Anglais",
       "summaryFr": "Français",
@@ -386,7 +391,16 @@
         "failed": "n’a pas pu être traité"
       },
       "view": "Afficher",
-      "download": "Téléverser"
+      "download": "Téléverser",
+      "visibility": {
+        "public": "#Shown on the public report",
+        "when_published": "#Shown once the report is published",
+        "hidden": "#Hidden from the public",
+        "no_consent": "#Not public: the reporter did not agree to share media",
+        "private": "#Never public"
+      },
+      "hide": "#Hide from the public",
+      "show": "#Show on the public report"
     },
     "action": {
       "label": "Examiner les mesures",
@@ -465,6 +479,17 @@
     "comments": {
       "one": "1 commentaire",
       "other": "{count} commentaires"
+    }
+  },
+  "media": {
+    "title": "#Photos and video",
+    "photoLabel": "#Photo {index} of {count}",
+    "videoLabel": "#Video {index} of {count}",
+    "hide": "#Hide",
+    "keep": "#Keep",
+    "confirmHide": "#Hide this from everyone?",
+    "error": {
+      "hide": "#That could not be hidden. Try again."
     }
   },
   "comments": {

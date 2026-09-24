@@ -27,6 +27,8 @@ export interface PublicOptionView {
 export interface PublicQuestionView {
 	id: string
 	key: string
+	/** What logic reads the answer for: `consent_publish`, `consent_media` (ADR-0117), or `none`. */
+	role: string
 	revisionId: string
 	type: string
 	isRequired: boolean

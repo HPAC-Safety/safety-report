@@ -66,10 +66,18 @@ export interface ReportSummary {
 	sourceFr: SummarySource
 }
 
+/**
+ * Whether the published report shows a file (ADR-0117): public now, once the
+ * report is published, hidden by a reviewer, not shared because the reporter
+ * did not agree, or never public (a document, or no verified derivative).
+ */
+export type AttachmentVisibility = "public" | "when_published" | "hidden" | "no_consent" | "private"
+
 export interface ReportAttachment {
 	id: string
 	kind: "image" | "video" | "document"
 	state: "ready" | "processing" | "failed"
+	visibility: AttachmentVisibility
 }
 
 /** Everything a reviewer needs to judge one report (REQ-MOD-031). Reading it is audited. */
@@ -78,6 +86,8 @@ export interface ReportDetail extends ReportListItem {
 	answers: ReportAnswer[]
 	summary: ReportSummary | null
 	attachments: ReportAttachment[]
+	/** Whether the reporter agreed to share photos and video; unanswered when they were never asked. */
+	mediaConsent: ReportConsent
 	/** Sent back with every review command; a stale one is refused with 409 (ADR-0105). */
 	version: string
 	rejectionNote: string | null
@@ -181,6 +191,13 @@ export function deleteReport(id: string): Promise<void> {
 }
 
 /** An image or video opens its safe derivative; a document downloads its validated original. */
+/** Hides an image or video from the published report, or shows it again. Audited (REQ-MED-030). */
+export function setAttachmentHidden(reportId: string, attachmentId: string, hidden: boolean): Promise<void> {
+	return call<void>(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachmentId)}/${hidden ? "hide" : "show"}`, {
+		method: "POST",
+	})
+}
+
 export function attachmentLink(reportId: string, attachment: ReportAttachment): Promise<AttachmentLink> {
 	const verb = attachment.kind === "document" ? "download" : "view"
 	return get(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachment.id)}/${verb}`)

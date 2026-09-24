@@ -5,6 +5,7 @@ import { ApiError } from "../api/adminQuestions"
 import {
 	approveReport,
 	attachmentLink,
+	setAttachmentHidden,
 	deleteReport,
 	getReport,
 	rejectReport,
@@ -79,6 +80,15 @@ export function ReportDetailPage() {
 			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
 		} finally {
 			setBusy(false)
+		}
+	}
+
+	async function setHidden(attachment: ReportAttachment, hidden: boolean) {
+		try {
+			await setAttachmentHidden(reportId, attachment.id, hidden)
+			setReport(await getReport(reportId))
+		} catch (cause) {
+			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
 		}
 	}
 
@@ -164,6 +174,11 @@ export function ReportDetailPage() {
 							{t(`reports.detail.language.${report.language}`)}
 						</p>
 						<p className="font-sans text-sm text-ink-muted">{t(`reports.detail.consent.${report.consent}`)}</p>
+						{report.attachments.some((attachment) => attachment.kind !== "document") && (
+							<p className="font-sans text-sm text-ink-muted" data-media-consent>
+								{t(`reports.detail.mediaConsent.${report.mediaConsent}`)}
+							</p>
+						)}
 						{report.rejectionNote && (
 							<p className="font-sans text-sm text-ink" data-rejection-note>
 								{t("reports.detail.rejectionNote", { note: report.rejectionNote })}
@@ -311,6 +326,27 @@ export function ReportDetailPage() {
 												onClick={() => void open(attachment)}
 											>
 												{t(attachment.kind === "document" ? "reports.attachment.download" : "reports.attachment.view")}
+											</button>
+										)}
+										<span className="font-sans text-sm text-ink-muted" data-visibility={attachment.visibility}>
+											{t(`reports.attachment.visibility.${attachment.visibility}`)}
+										</span>
+										{(attachment.visibility === "public" || attachment.visibility === "when_published") && (
+											<button
+												type="button"
+												className="touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
+												onClick={() => void setHidden(attachment, true)}
+											>
+												{t("reports.attachment.hide")}
+											</button>
+										)}
+										{attachment.visibility === "hidden" && (
+											<button
+												type="button"
+												className="touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
+												onClick={() => void setHidden(attachment, false)}
+											>
+												{t("reports.attachment.show")}
 											</button>
 										)}
 									</li>

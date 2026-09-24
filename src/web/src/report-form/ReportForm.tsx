@@ -53,6 +53,24 @@ function deleteUploads(uploadIds: string[]) {
 }
 
 type AttachmentMap = Record<string, Attachment[]>
+
+const MEDIA_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "heic", "mp4", "mov"])
+
+/**
+ * Whether any finished upload is an image or video, which is when the form asks
+ * media consent (ADR-0117). A file restored from a saved report has no kind in
+ * memory, so its name's extension stands in; the server's sniff decides what
+ * is actually public either way.
+ */
+function hasMediaAttached(attachments: AttachmentMap): boolean {
+	return Object.values(attachments)
+		.flat()
+		.some((row) => {
+			if (row.status !== "uploaded") return false
+			if (row.kind) return row.kind !== "document"
+			return MEDIA_EXTENSIONS.has(row.name.split(".").pop()?.toLowerCase() ?? "")
+		})
+}
 type DraftAttachmentMap = Record<string, DraftAttachment[]>
 
 /** The finished uploads the draft keeps, per question; a refused or expired row is not worth restoring. */
@@ -153,9 +171,10 @@ export function ReportForm() {
 
 	const steps = useMemo(() => (load.status === "ready" ? buildSteps(load.questions) : []), [load])
 	const questionsById = useMemo(() => (load.status === "ready" ? indexQuestionsById(load.questions) : new Map()), [load])
+	const hasMedia = useMemo(() => hasMediaAttached(attachments), [attachments])
 	const visible = useMemo(
-		() => visibleSteps(steps, answers, questionsById, locale),
-		[steps, answers, questionsById, locale],
+		() => visibleSteps(steps, answers, questionsById, locale, hasMedia),
+		[steps, answers, questionsById, locale, hasMedia],
 	)
 
 	const currentIndex = !addressSettled || !stepKey ? 0 : visible.findIndex((step) => step.question.key === stepKey)
@@ -178,12 +197,12 @@ export function ReportForm() {
 		// unanswered required question (REQ-SUB-054).
 		const blocked = visible
 			.slice(0, currentIndex)
-			.find((step) => unansweredRequired(step, answers, questionsById, locale).length > 0)
+			.find((step) => unansweredRequired(step, answers, questionsById, locale, hasMedia).length > 0)
 		if (blocked) {
 			setAttemptedAdvance(true)
 			navigate(stepPath(blocked), { replace: true })
 		}
-	}, [visible, addressSettled, currentIndex, stepKey, navigate, answers, questionsById, locale])
+	}, [visible, addressSettled, currentIndex, stepKey, navigate, answers, questionsById, locale, hasMedia])
 
 	// Kept only while there is something worth keeping — an empty draft on a
 	// browser that never opened the form would just be noise.
@@ -297,7 +316,7 @@ export function ReportForm() {
 
 	function blockingRequirements(): PublicQuestionView[] {
 		if (!currentStep) return []
-		return unansweredRequired(currentStep, answers, questionsById, locale)
+		return unansweredRequired(currentStep, answers, questionsById, locale, hasMedia)
 	}
 
 	function handleNext() {
@@ -330,7 +349,7 @@ export function ReportForm() {
 		const submitAnswers: SubmitAnswer[] = []
 
 		for (const step of visible) {
-			const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, locale) : [step.question]
+			const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, locale, hasMedia) : [step.question]
 
 			for (const question of questions) {
 				if (collectsNoAnswer(question)) continue
@@ -581,7 +600,7 @@ function StepContent({
 	}
 
 	if (step.kind === "group") {
-		const children = visibleChildren(step.question, answers, questionsById, locale)
+		const children = visibleChildren(step.question, answers, questionsById, locale, hasMediaAttached(attachments))
 		return (
 			<fieldset>
 				<legend className="font-display text-lg font-semibold text-ink">{questionLabel(step.question, locale)}</legend>

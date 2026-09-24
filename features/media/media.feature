@@ -302,9 +302,9 @@ Scenario: An expired link is replaced and the video resumes where it was
 
 @REQ-MED-034
 @ui
-Scenario: Media withdrawn while the page is open is removed from it
-  Given a visitor has a published report open showing an image
-  When the image is hidden and its link stops working
+Scenario: Media that is no longer public is removed from the page
+  Given a visitor opens a published report showing an image
+  When the image's link stops working because the image is no longer public
   Then the page removes the image
 
 @REQ-MED-035

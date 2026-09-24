@@ -82,11 +82,11 @@ Scenario: An open Admin menu keeps every option on a single line
 
 @REQ-MOD-011
 @ui
-Scenario Outline: Activating an Admin menu option navigates to its placeholder page
+Scenario Outline: Activating an Admin menu option navigates to its page
   Given a visitor signs in from the member login page
   When the visitor activates the Admin menu
   And the visitor activates the <option> option
-  Then the browser navigates to the <destination> placeholder page
+  Then the browser navigates to the <destination> page
 
 Examples:
   | option           | destination      |
@@ -228,18 +228,49 @@ Scenario: Sensitive admin actions are audited without report content
   And it never records report content
 
 @REQ-MOD-030
-@ignore
-Scenario: The review queue shows reports needing action
-  Given reports exist in various non-deleted states
-  When a reviewer opens the default review queue
-  Then it shows reports that are submitted/stuck, summarizing beyond their expected age, summary failed, or pending review
+Scenario: The admin report list shows every live report with its state
+  Given reports exist in every workflow state, one without publication consent, and one soft-deleted
+  When a reviewer lists reports
+  Then every live report appears, newest first, with its workflow status and whether publication consent was refused
+  And the soft-deleted report does not appear
+  And no answer text or summary text appears in the list
+
+@REQ-MOD-049
+Scenario: The Needs action filter shows pending review, failed, and stuck reports
+  Given reports exist in every workflow state
+  And one report has waited in Submitted and one in Summarizing for more than 24 hours
+  And one report has waited in Summarizing for less than 24 hours
+  When a reviewer lists reports needing action
+  Then the list holds the pending-review, summary-failed, and two stuck reports
+  And each stuck report is marked stuck
+  And the report summarizing for less than 24 hours is not listed
+
+@REQ-MOD-050
+Scenario Outline: A status filter narrows the admin report list
+  Given reports exist in every workflow state, one without publication consent, and one soft-deleted
+  When a reviewer lists reports with the <filter> filter
+  Then the list holds only <reports>
+
+Examples:
+  | filter         | reports                                          |
+  | published      | published reports                                |
+  | private        | live reports whose reporter refused consent      |
+  | rejected       | rejected reports                                 |
+  | summary-failed | reports whose summarization failed               |
 
 @REQ-MOD-031
-@ignore
 Scenario: A report detail view exposes only what the reviewer needs
   Given a reviewer opens a report's detail view
   When the detail query runs
-  Then it supplies the reporter language, exact bilingual question labels and answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and short-lived links only for successful image/video derivatives or validated private documents
+  Then it supplies the reporter language, exact bilingual question labels and answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and each attachment's kind and whether it can be opened
+  And it supplies no storage key and no link; an attachment is opened only through its own audited view or download request
+
+@REQ-MOD-051
+Scenario: Opening a report's detail view is audited
+  Given a reviewer opens a report's detail view
+  When the detail query runs
+  Then an audit entry records the reviewer's token subject, ViewedRawReport, the report, and the time
+  And the audit entry records no report content
 
 @REQ-MOD-032
 @ignore
@@ -383,3 +414,31 @@ Scenario: Sign-out is not an audited event
   When the client discards its token
   Then no request reaches the API for that logout
   And no audit entry is written for it
+
+@REQ-MOD-052
+@ui
+Scenario: The Manage reports page lists reports with a status badge and a Private badge
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  Then each report shows its submission time and a badge for its workflow status
+  And a report whose reporter refused consent also shows a "Private (no consent)" badge
+  And a stuck report shows a "Stuck" badge
+
+@REQ-MOD-053
+@ui
+Scenario: Choosing a filter on Manage reports narrows the list
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer chooses the "Published" filter
+  Then only published reports are listed
+  And the chosen filter stays in the address bar
+
+@REQ-MOD-054
+@ui
+Scenario: Opening a report shows its answers with private answers marked, and its summary pair
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer opens a pending-review report
+  Then its answers are shown under their questions, with each private answer marked private
+  And both the English and French summary texts are shown with the model and prompt version
+  And no action to edit, approve, reject, or publish is offered

@@ -57,6 +57,31 @@ did ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is
 `Administrator` is not a superuser. No Administrator, migration, background
 worker, or direct API caller can bypass a publication guard.
 
+## The admin report list
+
+`/admin/reports` lists every live report, newest first. Each row shows the
+submission time, a badge for its workflow status, a separate **Private (no
+consent)** badge when the reporter refused publication, and a **Stuck** badge
+when it has waited in Submitted or Summarizing for more than 24 hours. Private
+is about consent and Rejected is a reviewer's decision, so the two are never
+merged into one badge.
+
+| Filter | Shows |
+|---|---|
+| All (default) | every live report |
+| Needs action | Pending review, Summary failed, and stuck reports |
+| Published | Published |
+| Private | reports whose reporter refused consent, whatever their status |
+| Rejected | Rejected |
+| Summary failed | Summary failed |
+
+The chosen filter is kept in the address bar. The list carries status and
+timing only — never answer or summary text. Opening a report shows its detail
+view, and that read is audited as `ViewedRawReport`
+([REQ-MOD-051](moderation-authentication-and-publication.feature)).
+Attachments are listed by kind and state; opening one goes through its own
+audited view or download request (REQ-MOD-046).
+
 ## Public DTO edge state
 
 The requested UI locale may determine which text is displayed first but is
@@ -80,3 +105,6 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Automatic approval or publication, including "approve if the model is
   confident."
 - A per-reporter rate limit, which would mean identifying the reporter.
+- Pagination, search, or sorting of the admin report list other than newest
+  first. HPAC receives dozens of reports a year.
+- Showing answer or summary text in the admin report list itself.

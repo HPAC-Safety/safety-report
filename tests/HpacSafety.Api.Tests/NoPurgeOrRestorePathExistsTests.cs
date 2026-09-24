@@ -43,19 +43,21 @@ public class NoPurgeOrRestorePathExistsTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public void GivenTheReportDeletionEndpoint_WhenRead_ThenItIsTheOnlyMethodMappedForThatRoute()
+	public void GivenTheReportDeletionEndpoint_WhenRead_ThenOnlyTheReadAndTheDeleteShareItsRoute()
 	{
-		// Given — DELETE exists (soft delete); nothing else may share the route,
-		// which is what would make a restore/undo possible
+		// Given — DELETE exists (soft delete) and GET reads the detail view
+		// (REQ-MOD-031); nothing that writes may share the route, which is what
+		// would make a restore/undo possible
 		using var scope = _factory.Services.CreateScope();
 		var methods = scope.ServiceProvider.GetRequiredService<EndpointDataSource>().Endpoints
 			.OfType<RouteEndpoint>()
 			.Where(endpoint => endpoint.RoutePattern.RawText == "/api/admin/reports/{id}")
 			.SelectMany(endpoint => endpoint.Metadata.OfType<Microsoft.AspNetCore.Routing.HttpMethodMetadata>())
 			.SelectMany(metadata => metadata.HttpMethods)
+			.Order(StringComparer.Ordinal)
 			.ToArray();
 
 		// Then
-		methods.ShouldBe(["DELETE"]);
+		methods.ShouldBe(["DELETE", "GET"]);
 	}
 }

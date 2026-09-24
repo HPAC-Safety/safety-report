@@ -304,5 +304,77 @@
     "error": {
       "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     }
+  },
+  "reports": {
+    "intro": "Tous les rapports reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",
+    "filter": {
+      "label": "Filtrer les rapports",
+      "all": "Tout",
+      "needs-action": "À traiter",
+      "published": "Publié",
+      "private": "Privé",
+      "rejected": "Rejeté",
+      "summary-failed": "Échec de la synthèse"
+    },
+    "listLabel": "Rapports",
+    "loading": "Chargement des rapports…",
+    "empty": "Aucun rapport ne correspond à ce filtre.",
+    "error": {
+      "unexpected": "Les rapports n'ont pas pu être chargés. Veuillez réessayer."
+    },
+    "submittedAt": "Soumis par {at}",
+    "status": {
+      "submitted": "Soumis",
+      "summarizing": "En résumé",
+      "pending_review": "En attente d'examen",
+      "summary_failed": "Échec de la synthèse",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "published": "Publié"
+    },
+    "badge": {
+      "private": "Privé (sans consentement)",
+      "stuck": "Coincé"
+    },
+    "detail": {
+      "back": "Retour aux rapports",
+      "title": "Rapport",
+      "notFound": "Ce rapport n'existe pas ou a été supprimé.",
+      "language": {
+        "en-CA": "Rédigé en anglais",
+        "fr-CA": "Rédigé en français"
+      },
+      "consent": {
+        "yes": "Le journaliste a donné son accord pour la publication.",
+        "no": "Le journaliste n’a pas donné son accord pour la publication. Ce reportage n’a jamais été publié.",
+        "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
+      },
+      "summary": "Résumé",
+      "summaryEn": "Anglais",
+      "summaryFr": "Français",
+      "summaryFailed": "Échec de la synthèse : {error}",
+      "noSummary": "Il n'y a pas encore de résumé.",
+      "provenance": "{at} généré par {model} à partir de la consigne « {prompt} ».",
+      "approved": "{at} approuvée.",
+      "notApproved": "Pas encore approuvé.",
+      "answers": "Réponses",
+      "private": "Privé",
+      "notAnswered": "Sans réponse",
+      "translation": "Traduction : {text}",
+      "attachments": "Pièces jointes",
+      "attachment": "{kind} — {state}"
+    },
+    "attachment": {
+      "kind": {
+        "image": "Image",
+        "video": "Vidéo",
+        "document": "Document"
+      },
+      "state": {
+        "ready": "prêt",
+        "processing": "traitement",
+        "failed": "n’a pas pu être traité"
+      }
+    }
   }
 }

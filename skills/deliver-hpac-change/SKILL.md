@@ -182,9 +182,43 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   the same PR — the fact and a link to the ADR, not the rationale. Do not add
   an entry for a routine or reversed-without-effect decision; keep the README
   short and let the linked ADR carry the "why."
-- Update issue acceptance criteria when the design changes; do not leave a
-  conflicting backlog item open.
 - Never include real report content or personal information.
+
+## Keep the issue true while you work
+
+The issue is the first hop of the specification chain, so it follows the same
+rule as a scenario: **correct the artifact, not the chat.** A requirement
+settled in conversation after you picked the issue up — an answered
+clarifying question, a decision the owner made, a design choice that
+narrowed or widened the work, something found to be already done — is not
+recorded until it is in the issue. The next agent, the reviewer, and the
+squash commit all read the issue; none of them read this conversation.
+
+- **Edit the issue as soon as a decision lands, before building on it** —
+  not at the end, and not only in the pull request body. Keep the original
+  need readable, and add or update:
+  - a **Decisions** section: each decision, who made it, and the date, one
+    line each, with the rejected option where there was one;
+  - the **acceptance criteria**, rewritten to match what will now be built;
+  - an **Out of scope** list naming what the discussion chose not to build.
+  Remove or strike text the decisions made false. An issue that says
+  "building is out of scope" while its pull request builds it is a
+  conflicting backlog item.
+- **Open a new issue instead when the added scope could ship on its own.**
+  Split it off when it is independently deliverable and reviewable, lands in
+  a different area or layer than the original need, or would roughly double
+  the pull request. File it with the new scope's need, the decisions that
+  produced it, and its acceptance criteria, wire it with a native relation
+  (see "Start": `blocked by` when it needs this issue first, a sub-issue when
+  it is carved out of this one), and link it from the original issue's
+  Decisions section. Scope that exists only to make the original need work
+  stays in the original issue.
+- **Re-read the issue before opening the pull request.** Its acceptance
+  criteria, the scenarios, and the pull request body must describe the same
+  change. If they disagree, fix the issue or the specification first — the
+  pull request body cites the issue, it does not replace it.
+- When the scope shrinks, say so in the issue too, and file what was dropped
+  as its own issue if it is still wanted, so it does not silently disappear.
 
 ## Verify and publish
 

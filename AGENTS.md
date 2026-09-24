@@ -298,6 +298,12 @@ hook and `linked-issue.yml` refuse one,
 [ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)),
 and keep working until required checks are green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
 
+When a requirement changes after an issue is picked up — a clarifying
+question answered, an owner's decision, scope that grew or shrank — edit the
+issue's decisions, acceptance criteria, and out-of-scope list before building
+on it, or file a new, related issue when the added scope could ship on its
+own. A decision made only in conversation is not recorded.
+
 Rebase onto fresh `origin/main` before committing, not only before pushing, and
 claim a shared identifier — an ADR number, a name, a slug — from the tree as it
 is after that rebase. `node tools/adr-numbers.mjs --next` gives the next free

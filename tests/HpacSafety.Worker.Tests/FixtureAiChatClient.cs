@@ -26,13 +26,15 @@ internal sealed class FixtureAiChatClient : IAiChatClient
 
 	public string? LastModel { get; private set; }
 
-	public Task<string> Complete(string model,
-								 IReadOnlyList<ChatMessage> messages,
+	public ReasoningEffort? LastReasoningEffort { get; private set; }
+
+	public Task<string> Complete(AiChatRequest request,
 								 CancellationToken cancellationToken)
 	{
 		CallCount++;
-		LastModel = model;
-		LastMessages = messages;
+		LastModel = request.Model;
+		LastReasoningEffort = request.ReasoningEffort;
+		LastMessages = request.Messages;
 
 		if (!IsConfigured)
 		{

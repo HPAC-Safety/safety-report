@@ -1,3 +1,4 @@
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.AiChatClient;
 using HpacSafety.Worker.Summarization;
@@ -17,9 +18,63 @@ public sealed class PromptDrivenSummarizerTests
 	}
 
 	private static PromptDrivenSummarizer BuildSummarizer(FixtureAiChatClient client,
-														  string model = "fixture-model")
+														  string? model = "fixture-model",
+														  ReasoningEffort? reasoningEffort = ReasoningEffort.Low)
 	{
-		return new PromptDrivenSummarizer(client, Options.Create(new AiChatClientOptions { Model = model }));
+		return new PromptDrivenSummarizer(
+			client,
+			Options.Create(new AiChatClientOptions { Model = model, ReasoningEffort = reasoningEffort }));
+	}
+
+	[Fact]
+	public async Task GivenConfiguredModelAndReasoningLevel_WhenTheProviderIsCalled_ThenBothAreRequested()
+	{
+		// Given
+		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var summarizer = BuildSummarizer(client, "gemini-3.7-flash", ReasoningEffort.Medium);
+
+		// When
+		await summarizer.Summarize(SampleInput(), CancellationToken.None);
+
+		// Then
+		client.LastModel.ShouldBe("gemini-3.7-flash");
+		client.LastReasoningEffort.ShouldBe(ReasoningEffort.Medium);
+	}
+
+	[Fact]
+	public async Task GivenASummarizationAttempt_WhenTheProviderIsCalled_ThenTheCurrentV3PromptIsTheSystemMessage()
+	{
+		// Given
+		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var summarizer = BuildSummarizer(client);
+
+		// When
+		var draft = await summarizer.Summarize(SampleInput(), CancellationToken.None);
+
+		// Then
+		draft.PromptVersion.ShouldBe("summarize-anonymize.v3");
+		var messages = client.LastMessages.ShouldNotBeNull();
+		messages[0].Role.ShouldBe(ChatRole.System);
+		messages[0].Content.ShouldBe(PromptContractTests.CurrentPrompt());
+	}
+
+	[Theory]
+	[InlineData(null, ReasoningEffort.Low)]
+	[InlineData("", ReasoningEffort.Low)]
+	[InlineData("gemini-3.7-flash", null)]
+	public async Task GivenNoModelOrReasoningLevel_WhenSummarized_ThenFailsWithoutCallingTheProvider(string? model,
+																									   ReasoningEffort? reasoningEffort)
+	{
+		// Given
+		var client = new FixtureAiChatClient("""{"ai_summary_en":"en","ai_summary_fr":"fr"}""");
+		var summarizer = BuildSummarizer(client, model, reasoningEffort);
+
+		// When
+		var act = async () => await summarizer.Summarize(SampleInput(), CancellationToken.None);
+
+		// Then
+		await act.ShouldThrowAsync<SummarizationFailedException>();
+		client.CallCount.ShouldBe(0);
 	}
 
 	[Fact]

@@ -25,13 +25,10 @@ public class AiChatClientRegistrationTests
 	}
 
 	[Fact]
-	public void GivenKeyInGeminiSection_WhenRegistered_ThenGeminiIsUsed()
+	public void GivenKeyAndGeminiProvider_WhenRegistered_ThenGeminiStrategyIsUsed()
 	{
 		// Given
-		using var provider = Provider(new Dictionary<string, string?>
-		{
-			["Gemini:ApiKey"] = "abc123",
-		});
+		using var provider = Provider(Usable());
 
 		// When
 		var client = provider.GetRequiredService<IAiChatClient>();
@@ -42,38 +39,89 @@ public class AiChatClientRegistrationTests
 	}
 
 	[Fact]
-	public void GivenOnlyBareEnvironmentName_WhenRegistered_ThenKeyIsUsed()
+	public void GivenProviderNameInAnotherCase_WhenRegistered_ThenStillSelectsGemini()
 	{
-		// Given — GEMINI_API_KEY is the name the credential has in repository
-		// secrets and in the deploy workflow
-		using var provider = Provider(new Dictionary<string, string?>
-		{
-			["GEMINI_API_KEY"] = "abc123",
-		});
+		// Given
+		using var provider = Provider(Usable(("AiChatClient:Provider", "gemini")));
 
-		// When
-		var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
-
-		// Then
-		options.ApiKey.ShouldBe("abc123");
-		provider.GetRequiredService<IAiChatClient>().IsConfigured.ShouldBeTrue();
+		// When / Then
+		provider.GetRequiredService<IAiChatClient>().ShouldBeOfType<GeminiChatClient>();
+		Should.NotThrow(() => Validate(provider));
 	}
 
 	[Fact]
-	public void GivenBothNames_WhenRegistered_ThenExplicitSectionWins()
+	public void GivenUsableConfiguration_WhenBound_ThenModelAndReasoningLevelAreRead()
 	{
 		// Given
-		using var provider = Provider(new Dictionary<string, string?>
-		{
-			["Gemini:ApiKey"] = "explicit",
-			["GEMINI_API_KEY"] = "fallback",
-		});
+		using var provider = Provider(Usable(("AiChatClient:ReasoningEffort", "Medium")));
 
 		// When
-		var options = provider.GetRequiredService<IOptions<GeminiOptions>>().Value;
+		var options = provider.GetRequiredService<IOptions<AiChatClientOptions>>().Value;
 
 		// Then
-		options.ApiKey.ShouldBe("explicit");
+		options.Model.ShouldBe("gemini-3.7-flash");
+		options.ReasoningEffort.ShouldBe(ReasoningEffort.Medium);
+		Should.NotThrow(() => Validate(provider));
+	}
+
+	[Theory]
+	[InlineData("AiChatClient:Provider", "Anthropic", "Provider")]
+	[InlineData("AiChatClient:Provider", "", "Provider")]
+	[InlineData("AiChatClient:Model", "", "Model")]
+	[InlineData("AiChatClient:Model", "   ", "Model")]
+	[InlineData("AiChatClient:ReasoningEffort", "", "ReasoningEffort")]
+	[InlineData("AiChatClient:ReasoningEffort", "7", "ReasoningEffort")]
+	public void GivenKeyWithUnusableSetting_WhenStartupValidates_ThenStartupFails(string key,
+																				   string value,
+																				   string named)
+	{
+		// Given
+		using var provider = Provider(Usable((key, value)));
+
+		// When
+		var failure = Should.Throw<OptionsValidationException>(() => Validate(provider));
+
+		// Then
+		failure.Message.ShouldContain(named);
+		failure.Message.ShouldNotContain("abc123");
+	}
+
+	[Theory]
+	[InlineData("minimal")]
+	[InlineData("bogus")]
+	public void GivenKeyWithUnknownReasoningWord_WhenStartupValidates_ThenStartupFails(string value)
+	{
+		// Given — the binder refuses a word that is not a ReasoningEffort name
+		using var provider = Provider(Usable(("AiChatClient:ReasoningEffort", value)));
+
+		// When / Then
+		Should.Throw<InvalidOperationException>(() => Validate(provider));
+	}
+
+	[Fact]
+	public void GivenKeyWithUnknownProvider_WhenRegistered_ThenFailClosedClientIsUsed()
+	{
+		// Given
+		using var provider = Provider(Usable(("AiChatClient:Provider", "Anthropic")));
+
+		// When / Then — nothing is sent even if startup validation were skipped
+		provider.GetRequiredService<IAiChatClient>().ShouldBeOfType<UnconfiguredAiChatClient>();
+	}
+
+	[Fact]
+	public void GivenNoKey_WhenStartupValidates_ThenPasses()
+	{
+		// Given — a local checkout: provider and model committed, no key
+		using var provider = Provider(new Dictionary<string, string?>
+		{
+			["AiChatClient:Provider"] = "Gemini",
+			["AiChatClient:Model"] = "gemini-3.7-flash",
+			["AiChatClient:ReasoningEffort"] = "low",
+		});
+
+		// When / Then
+		Should.NotThrow(() => Validate(provider));
+		provider.GetRequiredService<IAiChatClient>().ShouldBeOfType<UnconfiguredAiChatClient>();
 	}
 
 	[Fact]
@@ -85,6 +133,30 @@ public class AiChatClientRegistrationTests
 
 		Should.Throw<ArgumentNullException>(() =>
 			new ServiceCollection().AddHpacSafetyAiChatClient(null!));
+	}
+
+	private static Dictionary<string, string?> Usable(params (string Key, string? Value)[] overrides)
+	{
+		var settings = new Dictionary<string, string?>
+		{
+			["AiChatClient:Provider"] = "Gemini",
+			["AiChatClient:ApiKey"] = "abc123",
+			["AiChatClient:Model"] = "gemini-3.7-flash",
+			["AiChatClient:ReasoningEffort"] = "low",
+		};
+
+		foreach (var (key, value) in overrides)
+		{
+			settings[key] = value;
+		}
+
+		return settings;
+	}
+
+	/// <summary>What the host runs at startup for every <c>ValidateOnStart</c> registration.</summary>
+	private static void Validate(ServiceProvider provider)
+	{
+		provider.GetRequiredService<IStartupValidator>().Validate();
 	}
 
 	private static ServiceProvider Provider(Dictionary<string, string?> settings)
@@ -111,7 +183,9 @@ public class UnconfiguredAiChatClientTests
 
 		// When / Then
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.Complete("any-model", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete(
+				new AiChatRequest("any-model", ReasoningEffort.Low, [new ChatMessage(ChatRole.User, "hello")]),
+				CancellationToken.None));
 	}
 }
 

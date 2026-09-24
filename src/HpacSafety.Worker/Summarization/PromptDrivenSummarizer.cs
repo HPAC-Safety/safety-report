@@ -15,7 +15,7 @@ namespace HpacSafety.Worker.Summarization;
 public sealed class PromptDrivenSummarizer : ISummarizer
 {
 	/// <summary>The current prompt file under <c>Prompts/</c>. Bump on any behavior change.</summary>
-	public const string CurrentPromptFileName = "summarize-anonymize.v2.md";
+	public const string CurrentPromptFileName = "summarize-anonymize.v3.md";
 
 	/// <summary>The provenance value stamped on every summary this prompt produces.</summary>
 	public static readonly string CurrentPromptVersion = Path.GetFileNameWithoutExtension(CurrentPromptFileName);
@@ -31,7 +31,8 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 	};
 
 	private readonly IAiChatClient _aiChatClient;
-	private readonly string _model;
+	private readonly string? _model;
+	private readonly ReasoningEffort? _reasoningEffort;
 	private readonly string _promptsDirectory;
 	private string? _cachedPrompt;
 
@@ -42,7 +43,8 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 		ArgumentNullException.ThrowIfNull(options);
 
 		_aiChatClient = aiChatClient;
-		_model = options.Value.Model ?? string.Empty;
+		_model = options.Value.Model;
+		_reasoningEffort = options.Value.ReasoningEffort;
 		_promptsDirectory = Path.Combine(AppContext.BaseDirectory, "Prompts");
 	}
 
@@ -52,6 +54,13 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 	{
 		ArgumentNullException.ThrowIfNull(input);
 
+		// With a key, startup validation guarantees both; without one, the client
+		// would refuse anyway. Either way nothing is sent with an empty model name.
+		if (string.IsNullOrWhiteSpace(_model) || _reasoningEffort is not { } reasoningEffort)
+		{
+			throw new SummarizationFailedException("No summarization model and reasoning level are configured.");
+		}
+
 		var marked = PrivateValueMarker.Mark(input);
 		var systemPrompt = LoadPrompt();
 		var userMessage = BuildUserMessage(marked);
@@ -60,8 +69,10 @@ public sealed class PromptDrivenSummarizer : ISummarizer
 		try
 		{
 			response = await _aiChatClient.Complete(
-				_model,
-				[new ChatMessage(ChatRole.System, systemPrompt), new ChatMessage(ChatRole.User, userMessage)],
+				new AiChatRequest(
+					_model,
+					reasoningEffort,
+					[new ChatMessage(ChatRole.System, systemPrompt), new ChatMessage(ChatRole.User, userMessage)]),
 				cancellationToken).ConfigureAwait(false);
 		}
 		catch (AiChatClientUnavailableException exception)

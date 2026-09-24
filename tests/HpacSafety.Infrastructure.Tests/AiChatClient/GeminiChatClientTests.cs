@@ -26,7 +26,7 @@ public class GeminiChatClientTests
 		client.IsConfigured.ShouldBeFalse();
 
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 	}
 
 	[Fact]
@@ -36,20 +36,61 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("hello back"));
 
 		// When
-		await client.Complete(
-			"gemini-2.0-flash",
-			[new ChatMessage(ChatRole.System, "You are terse."), new ChatMessage(ChatRole.User, "Summarize this.")],
-			CancellationToken.None);
+		await client.Complete(Request([new ChatMessage(ChatRole.System, "You are terse."), new ChatMessage(ChatRole.User, "Summarize this.")]), CancellationToken.None);
 
 		// Then
 		var sent = transport.LastBody();
-		sent.GetProperty("model").GetString().ShouldBe("gemini-2.0-flash");
+		sent.GetProperty("model").GetString().ShouldBe("gemini-3.7-flash");
 
 		var messages = sent.GetProperty("messages");
 		messages[0].GetProperty("role").GetString().ShouldBe("system");
 		messages[0].GetProperty("content").GetString().ShouldBe("You are terse.");
 		messages[1].GetProperty("role").GetString().ShouldBe("user");
 		messages[1].GetProperty("content").GetString().ShouldBe("Summarize this.");
+	}
+
+	[Theory]
+	[InlineData(ReasoningEffort.Low, "low")]
+	[InlineData(ReasoningEffort.Medium, "medium")]
+	[InlineData(ReasoningEffort.High, "high")]
+	public async Task GivenReasoningLevel_WhenSent_ThenRequestCarriesItAsReasoningEffort(ReasoningEffort effort,
+																						   string expected)
+	{
+		// Given
+		var (client, transport) = Client(Responds("ok"));
+
+		// When
+		await client.Complete(Request([new ChatMessage(ChatRole.User, "hello")], effort), CancellationToken.None);
+
+		// Then
+		transport.LastBody().GetProperty("reasoning_effort").GetString().ShouldBe(expected);
+	}
+
+	[Fact]
+	public async Task GivenAnyRequest_WhenSent_ThenAsksForJsonObjectAndLeavesTemperatureAtDefault()
+	{
+		// Given
+		var (client, transport) = Client(Responds("ok"));
+
+		// When
+		await client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None);
+
+		// Then — Google recommends Gemini 3's default temperature (ADR-0104)
+		var sent = transport.LastBody();
+		sent.GetProperty("response_format").GetProperty("type").GetString().ShouldBe("json_object");
+		sent.TryGetProperty("temperature", out _).ShouldBeFalse();
+	}
+
+	[Fact]
+	public async Task GivenUndefinedReasoningLevel_WhenSent_ThenRefusedBeforeAnythingIsSent()
+	{
+		// Given
+		var (client, transport) = Client(Responds("ok"));
+
+		// When / Then
+		await Should.ThrowAsync<ArgumentOutOfRangeException>(() =>
+			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")], (ReasoningEffort)42), CancellationToken.None));
+		transport.Requests.ShouldBeEmpty();
 	}
 
 	[Fact]
@@ -59,8 +100,7 @@ public class GeminiChatClientTests
 		var (client, _) = Client(Responds("the completion text"));
 
 		// When
-		var completion = await client.Complete(
-			"gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		var completion = await client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None);
 
 		// Then
 		completion.ShouldBe("the completion text");
@@ -73,7 +113,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("ok"));
 
 		// When
-		await client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		await client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None);
 
 		// Then
 		var authorization = transport.Requests[0].Headers.Authorization;
@@ -88,7 +128,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("ok"));
 
 		// When
-		await client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		await client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("generativelanguage.googleapis.com");
@@ -101,7 +141,7 @@ public class GeminiChatClientTests
 		var (client, transport) = Client(Responds("ok"), endpoint: "https://gemini.example.invalid/openai/chat/completions");
 
 		// When
-		await client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None);
+		await client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None);
 
 		// Then
 		transport.Requests[0].RequestUri!.Host.ShouldBe("gemini.example.invalid");
@@ -119,7 +159,7 @@ public class GeminiChatClientTests
 
 		// When
 		var cause = await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 
 		// Then
 		cause.Message.ShouldContain("403");
@@ -135,7 +175,7 @@ public class GeminiChatClientTests
 
 		// When
 		var cause = await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 
 		// Then
 		cause.Message.ShouldBe("The AI chat provider could not be reached.");
@@ -154,7 +194,7 @@ public class GeminiChatClientTests
 
 		// When / Then
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
 	}
 
 	[Fact]
@@ -166,7 +206,13 @@ public class GeminiChatClientTests
 
 		// When / Then
 		await Should.ThrowAsync<AiChatClientUnavailableException>(() =>
-			client.Complete("gemini-2.0-flash", [new ChatMessage(ChatRole.User, "hello")], CancellationToken.None));
+			client.Complete(Request([new ChatMessage(ChatRole.User, "hello")]), CancellationToken.None));
+	}
+
+	private static AiChatRequest Request(IReadOnlyList<ChatMessage> messages,
+										 ReasoningEffort reasoningEffort = ReasoningEffort.Low)
+	{
+		return new AiChatRequest("gemini-3.7-flash", reasoningEffort, messages);
 	}
 
 	private static StubTransport Responds(string completion)
@@ -187,7 +233,7 @@ public class GeminiChatClientTests
 	{
 		transport ??= Responds("ok");
 
-		var options = Options.Create(new GeminiOptions
+		var options = Options.Create(new AiChatClientOptions
 		{
 			ApiKey = apiKey,
 			Endpoint = endpoint,

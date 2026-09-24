@@ -14,8 +14,11 @@ namespace HpacSafety.Infrastructure.AiChatClient;
 ///     translation layer sits between the two.
 /// </summary>
 /// <remarks>
-///     This is the only type in the repository that names Gemini on the server
-///     side. Everything above it depends on <see cref="IAiChatClient" />.
+///     This is the only type in the repository that talks to Gemini. Everything
+///     above it depends on <see cref="IAiChatClient" />. It sends the reasoning level
+///     as <c>reasoning_effort</c>, which Gemini maps to its thinking level, and asks
+///     for a JSON object response; it never sends a temperature, because Google
+///     recommends leaving Gemini 3 at its default (ADR-0104).
 /// </remarks>
 public sealed class GeminiChatClient : IAiChatClient
 {
@@ -25,13 +28,13 @@ public sealed class GeminiChatClient : IAiChatClient
 	private const string DefaultEndpoint = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 	private readonly IHttpClientFactory _clients;
-	private readonly GeminiOptions _options;
+	private readonly AiChatClientOptions _options;
 
 	/// <summary>Creates the client.</summary>
 	/// <param name="clients">Supplies the named HTTP client.</param>
 	/// <param name="options">Provider configuration.</param>
 	public GeminiChatClient(IHttpClientFactory clients,
-							IOptions<GeminiOptions> options)
+							IOptions<AiChatClientOptions> options)
 	{
 		ArgumentNullException.ThrowIfNull(options);
 
@@ -43,19 +46,21 @@ public sealed class GeminiChatClient : IAiChatClient
 	public bool IsConfigured => !string.IsNullOrWhiteSpace(_options.ApiKey);
 
 	/// <inheritdoc />
-	public async Task<string> Complete(string model,
-									   IReadOnlyList<ChatMessage> messages,
+	public async Task<string> Complete(AiChatRequest request,
 									   CancellationToken cancellationToken)
 	{
-		ArgumentNullException.ThrowIfNull(model);
-		ArgumentNullException.ThrowIfNull(messages);
+		ArgumentNullException.ThrowIfNull(request);
 
 		if (!IsConfigured)
 		{
 			throw new AiChatClientUnavailableException("No AI chat provider is configured and approved for use.");
 		}
 
-		var request = new GeminiRequest(model, [.. messages.Select(ToGeminiMessage)]);
+		var body = new GeminiRequest(
+			request.Model,
+			[.. request.Messages.Select(ToGeminiMessage)],
+			ToReasoningEffort(request.ReasoningEffort),
+			new GeminiResponseFormat("json_object"));
 
 		GeminiResponse? payload;
 
@@ -65,7 +70,7 @@ public sealed class GeminiChatClient : IAiChatClient
 			client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", _options.ApiKey);
 
 			using var response = await client
-				.PostAsJsonAsync(ResolvedEndpoint(), request, cancellationToken)
+				.PostAsJsonAsync(ResolvedEndpoint(), body, cancellationToken)
 				.ConfigureAwait(false);
 
 			if (!response.IsSuccessStatusCode)
@@ -112,10 +117,28 @@ public sealed class GeminiChatClient : IAiChatClient
 		return new GeminiMessage(message.Role == ChatRole.System ? "system" : "user", message.Content);
 	}
 
+	private static string ToReasoningEffort(ReasoningEffort effort)
+	{
+		return effort switch
+		{
+			ReasoningEffort.Low => "low",
+			ReasoningEffort.Medium => "medium",
+			ReasoningEffort.High => "high",
+			_ => throw new ArgumentOutOfRangeException(nameof(effort), effort, "Not a reasoning level."),
+		};
+	}
+
 	private sealed record GeminiRequest(
 		[property: JsonPropertyName("model")] string Model,
 		[property: JsonPropertyName("messages")]
-		IReadOnlyList<GeminiMessage> Messages);
+		IReadOnlyList<GeminiMessage> Messages,
+		[property: JsonPropertyName("reasoning_effort")]
+		string ReasoningEffort,
+		[property: JsonPropertyName("response_format")]
+		GeminiResponseFormat ResponseFormat);
+
+	private sealed record GeminiResponseFormat(
+		[property: JsonPropertyName("type")] string Type);
 
 	private sealed record GeminiMessage(
 		[property: JsonPropertyName("role")] string Role,

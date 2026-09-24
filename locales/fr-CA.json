@@ -352,7 +352,7 @@
         "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
       },
       "mediaConsent": {
-        "yes": "Le journaliste a accepté de partager les fichiers joints à son article publié.",
+        "yes": "Le journaliste a accepté de partager les fichiers joints à son rapport publié.",
         "no": "Le journaliste n'a pas accepté de partager ses fichiers joints. Aucun n'est jamais rendu public.",
         "unanswered": "On n’a pas demandé au journaliste de partager ses fichiers joints; par conséquent, aucun n’est jamais rendu public."
       },
@@ -391,7 +391,7 @@
         "failed": "n’a pas pu être traité"
       },
       "view": "Afficher",
-      "download": "Téléverser",
+      "download": "Télécharger",
       "visibility": {
         "public": "Figurant dans le rapport public",
         "when_published": "Affiché une fois le rapport publié",
@@ -485,11 +485,11 @@
     "title": "Photos, vidéos et documents",
     "photoLabel": "Photo {index} de {count}",
     "videoLabel": "Vidéo {index} de {count}",
-    "documentLabel": "{index} du document de {count} ({format})",
-    "download": "Téléverser",
-    "downloadLabel": "Téléverser « {label} »",
+    "documentLabel": "Document {index} de {count} ({format})",
+    "download": "Télécharger",
+    "downloadLabel": "Télécharger « {label} »",
     "error": {
-      "download": "Ce document n'a pas pu être téléversé. Veuillez réessayer.",
+      "download": "Ce document n'a pas pu être téléchargé. Veuillez réessayer.",
       "hide": "Cela ne pouvait pas passer inaperçu. Veuillez réessayer."
     },
     "hide": "Masquer",

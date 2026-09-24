@@ -48,6 +48,18 @@ term (REQ-WLD-026). A term is a correctness rule, not a provenance rule: a
 hand-edited value is recorded as a correction, but it still has to say the
 term correctly.
 
+## Which English a machine translation produces
+
+DeepL has no Canadian English. It rejects `EN-CA` with a 400, and plain `EN`
+is a deprecated alias for American English. The English variant is therefore
+configuration: `Translation:EnglishTarget` in both the API's and the Worker's
+`appsettings.json`, because both call DeepL. The Worker translates answers and
+comments, and the API serves authoring and reviewers' drafts. Today both are
+`EN-US`. `EN-GB` is the only other accepted value, and anything else stops the
+process at startup, so a bad value cannot become a stream of failed
+translations (REQ-WLD-028, REQ-WLD-029). French is always `FR-CA`, which
+DeepL does offer.
+
 ## Visual system
 
 Use the existing restrained HPAC token system: Tailwind v4 via

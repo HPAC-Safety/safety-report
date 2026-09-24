@@ -37,4 +37,22 @@ public sealed class DeepLOptions
 	///     support formality rather than failing the request outright.
 	/// </summary>
 	public string Formality { get; set; } = "prefer_more";
+
+	/// <summary>
+	///     The English DeepL writes when it translates into English: <c>EN-US</c>
+	///     or <c>EN-GB</c>, in any case. DeepL has no Canadian English (it answers
+	///     <c>EN-CA</c> with a 400) and treats plain <c>EN</c> as a deprecated alias,
+	///     so this is chosen per deployment in <c>appsettings.json</c> rather than
+	///     derived from <c>en-CA</c>. Required: startup fails without a supported
+	///     value (REQ-WLD-029).
+	/// </summary>
+	public string? EnglishTarget { get; set; }
+
+	/// <summary>The English targets DeepL offers.</summary>
+	public static IReadOnlyList<string> SupportedEnglishTargets { get; } = ["EN-US", "EN-GB"];
+
+	/// <summary>Whether <see cref="EnglishTarget" /> names an English DeepL offers.</summary>
+	public bool HasSupportedEnglishTarget =>
+		EnglishTarget is not null
+		&& SupportedEnglishTargets.Contains(EnglishTarget.Trim().ToUpperInvariant(), StringComparer.Ordinal);
 }

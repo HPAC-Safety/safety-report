@@ -1,36 +1,29 @@
 using System.Net.Http.Headers;
-using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
+using DotNet.Testcontainers.Containers;
 using HpacSafety.Core;
 using HpacSafety.Infrastructure.Storage;
+using HpacSafety.Testing;
 using Shouldly;
-using Testcontainers.Minio;
 
 namespace HpacSafety.Infrastructure.Tests.Storage;
 
 /// <summary>
-///     The same contract suite, against a real S3-compatible server in a container.
-///     MinIO stands in for S3 here because the API is the part under test — the
-///     pre-signed signature, the private bucket, the 403 on a retargeted URL — and
-///     none of that needs an AWS account or a network.
+///     The same contract suite, against a real S3-compatible server in a container
+///     (<see cref="S3Emulator" />).
 ///     <para>
 ///         Carries the Integration trait, so a machine with no Docker daemon can skip it
 ///         with <c>--filter "Category!=Integration"</c>. CI runs it.
 ///     </para>
 /// </summary>
 [Trait("Category", "Integration")]
-public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDisposable
+public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, IDisposable
 {
 	private const string BucketName = "hpac-safety-uploads";
 
 	private readonly HttpClient _http = new();
-
-	// Pinned rather than floating on `latest`, for the same reason the Postgres
-	// container is: a server that moves underneath the suite is a failure nobody
-	// can reproduce. Pulled from quay.io: MinIO removed `minio/minio` from
-	// Docker Hub and now only publishes to quay.io/minio/minio.
-	private readonly MinioContainer _minio = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
+	private readonly IContainer _server = S3Emulator.Build();
 	private AmazonS3Client _s3 = null!;
 
 	public void Dispose()
@@ -41,39 +34,15 @@ public sealed class MinioBlobStoreContractTests : BlobStoreContractTests, IDispo
 
 	public override async Task InitializeAsync()
 	{
-		await _minio.StartAsync();
-
-		_s3 = new AmazonS3Client(
-			new BasicAWSCredentials(_minio.GetAccessKey(), _minio.GetSecretKey()),
-			new AmazonS3Config
-			{
-				ServiceURL = _minio.GetConnectionString(),
-				ForcePathStyle = true,
-				AuthenticationRegion = "ca-central-1",
-			});
-
-		// A private bucket, created with no public read policy. Nothing in this
-		// system ever adds one. See docs/data-handling.md.
-		await _s3.PutBucketAsync(BucketName, CancellationToken.None);
-
-		// Versioned, like the production bucket (infra/storage.tf), so that
-		// deleting an upload is proven against the case where a plain delete
-		// would only leave a marker over the bytes.
-		await _s3.PutBucketVersioningAsync(
-			new PutBucketVersioningRequest
-			{
-				BucketName = BucketName,
-				VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled },
-			},
-			CancellationToken.None);
-
+		await _server.StartAsync();
+		_s3 = await S3Emulator.CreateBucket(_server, BucketName);
 		await base.InitializeAsync();
 	}
 
 	public override async Task DisposeAsync()
 	{
 		await base.DisposeAsync();
-		await _minio.DisposeAsync();
+		await _server.DisposeAsync();
 	}
 
 	protected override Task<IBlobStore> CreateStore()

@@ -22,7 +22,7 @@ document originals. Documents are forced downloads; originals are never used as
 a fallback preview. Report-linked objects remain private after soft deletion.
 
 `S3BlobStore` is the only adapter. In AWS it reaches the bucket through the
-task role; in development it points at the MinIO container with a service URL,
+task role; in development it points at the RustFS container with a service URL,
 path-style addressing, and local credentials, and signs reviewer URLs for the
 public host the browser can reach. `BlobStoreContractTests` run it against
-MinIO. See [`features/media/media.feature`](../../../features/media/media.feature).
+RustFS (ADR-0110). See [`features/media/media.feature`](../../../features/media/media.feature).

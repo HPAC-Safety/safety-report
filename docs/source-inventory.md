@@ -143,7 +143,7 @@ identity where source text does not exist.
 
 - [src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs](../src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs) — safe signed-URL rejection type; retain only if still useful for authorized reads.
 - [src/HpacSafety.Infrastructure/Storage/README.md](../src/HpacSafety.Infrastructure/Storage/README.md) — aligned final-upload/private-review storage contract with legacy adapter note.
-- [src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs) — the one storage adapter, S3 in AWS and MinIO in development (ADR-0096): private read/write, version-purging delete of unclaimed uploads, and short-lived reviewer reads.
+- [src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs) — the one storage adapter, S3 in AWS and RustFS in development (ADR-0096, ADR-0110): private read/write, version-purging delete of unclaimed uploads, and short-lived reviewer reads.
 - [src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs) — bucket configuration; retain for private attachment bucket.
 
 ## Worker — 8 paths after alignment

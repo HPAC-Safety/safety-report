@@ -1,18 +1,17 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.S3.Model;
+using DotNet.Testcontainers.Containers;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Testcontainers.Minio;
 using Testcontainers.PostgreSql;
 
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-///     One PostgreSQL 17 container, one MinIO container for private attachment
+///     One PostgreSQL 17 container, one S3-compatible container for private attachment
 ///     storage (ADR-0096), and one <see cref="WebApplicationFactory{TEntryPoint}" />
 ///     shared across every test in the collection. The API migrates the container
 ///     itself at startup (<c>HpacSafetyDbContext.EnsureMigrated</c>, ADR-0055),
@@ -30,9 +29,9 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 	public const string BucketName = "hpac-safety-uploads";
 
 	// Pinned rather than floating on `latest` — see PostgresContainerTests and
-	// MinioBlobStoreContractTests.
+	// S3Emulator.
 	private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17-alpine").Build();
-	private readonly MinioContainer _minio = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
+	private readonly IContainer _objects = S3Emulator.Build();
 
 	/// <summary>The API, booted in process against the containers above.</summary>
 	public WebApplicationFactory<Program> Factory { get; private set; } = null!;
@@ -43,17 +42,8 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 	/// <inheritdoc />
 	public async Task InitializeAsync()
 	{
-		await Task.WhenAll(_postgres.StartAsync(), _minio.StartAsync());
-
-		Storage = new AmazonS3Client(
-			new BasicAWSCredentials(_minio.GetAccessKey(), _minio.GetSecretKey()),
-			new AmazonS3Config { ServiceURL = _minio.GetConnectionString(), ForcePathStyle = true, AuthenticationRegion = "ca-central-1" });
-		await Storage.PutBucketAsync(BucketName);
-		await Storage.PutBucketVersioningAsync(new PutBucketVersioningRequest
-		{
-			BucketName = BucketName,
-			VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled },
-		});
+		await Task.WhenAll(_postgres.StartAsync(), _objects.StartAsync());
+		Storage = await S3Emulator.CreateBucket(_objects, BucketName);
 
 		Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
 		{
@@ -61,10 +51,10 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 			builder.UseSetting("ConnectionStrings:HpacSafety", _postgres.GetConnectionString());
 			builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
 			builder.UseSetting("HpacSafety:Media:Storage:S3:BucketName", BucketName);
-			builder.UseSetting("HpacSafety:Media:Storage:S3:ServiceUrl", _minio.GetConnectionString());
-			builder.UseSetting("HpacSafety:Media:Storage:S3:PublicServiceUrl", _minio.GetConnectionString());
-			builder.UseSetting("HpacSafety:Media:Storage:S3:AccessKey", _minio.GetAccessKey());
-			builder.UseSetting("HpacSafety:Media:Storage:S3:SecretKey", _minio.GetSecretKey());
+			builder.UseSetting("HpacSafety:Media:Storage:S3:ServiceUrl", S3Emulator.ServiceUrl(_objects));
+			builder.UseSetting("HpacSafety:Media:Storage:S3:PublicServiceUrl", S3Emulator.ServiceUrl(_objects));
+			builder.UseSetting("HpacSafety:Media:Storage:S3:AccessKey", S3Emulator.AccessKey);
+			builder.UseSetting("HpacSafety:Media:Storage:S3:SecretKey", S3Emulator.SecretKey);
 
 			// This factory is shared across every test in the collection, many of
 			// which sign in or submit repeatedly against the same identity/IP
@@ -86,7 +76,7 @@ public sealed class ApiPostgresFixture : IAsyncLifetime
 	{
 		await Factory.DisposeAsync();
 		Storage.Dispose();
-		await Task.WhenAll(_postgres.DisposeAsync().AsTask(), _minio.DisposeAsync().AsTask());
+		await Task.WhenAll(_postgres.DisposeAsync().AsTask(), _objects.DisposeAsync().AsTask());
 	}
 }
 

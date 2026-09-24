@@ -116,3 +116,13 @@ Test observable contracts:
 Use deterministic fakes at model and service boundaries. Do not assert exact
 generated prose beyond strict schema and required role phrases. Integration
 tests use the supported PostgreSQL version through Testcontainers.
+
+A test container's image is pinned to a version, and it comes from an upstream
+that is still maintained and publishes the architectures CI runs on. A pinned
+tag protects against an image changing, not against it disappearing. When a
+container pull fails in CI but passes locally, suspect the local cache first:
+`docker rmi` the image and pull it again, or ask the registry's token endpoint
+anonymously, before concluding the change under test broke it
+([lesson 0014](../../docs/lessons/0014-a-local-image-cache-hides-a-withdrawn-upstream.md)).
+The S3-compatible server is pinned once, in `tests/Shared/S3Emulator.cs`
+([ADR-0110](../../docs/decisions/ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md)).

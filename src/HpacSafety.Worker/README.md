@@ -53,15 +53,24 @@ English/French JSON. A successful attempt persists one summary row with
 shared provenance and moves the report to `PendingReview`; a failure lets
 `OutboxClaimer` record it on the outbox message and, once retries are
 exhausted, moves the report to `SummaryFailed` with a content-free error for
-manual bilingual entry. `IAiChatClient`'s only registered concretion today is
-the fail-closed `UnconfiguredAiChatClient` — no provider has been
-reviewed/approved yet.
+manual bilingual entry.
+
+The model call goes through `IAiChatClient`, a provider strategy chosen by the
+`AiChatClient` section of `appsettings.json`, which holds the provider, key,
+model, and reasoning level together: today Gemini, `gemini-3.7-flash`,
+reasoning `low`
+([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+The key is never committed; set `AiChatClient__ApiKey` (docker-compose maps an
+exported `GEMINI_API_KEY` to it). With no key the fail-closed
+`UnconfiguredAiChatClient` runs and every attempt retries and then fails; with
+a key, an unknown provider, blank model, or invalid reasoning level stops the
+Worker at startup.
 
 ## Target work
 
 - Ship ffmpeg in the deployed image (#30).
-- Review and wire a real `IAiChatClient` concretion (a follow-on issue; first
-  candidate is Google Gemini).
+- Pass `AiChatClient__ApiKey` into the deployed task (#30).
+- Evaluate AWS Bedrock as a second provider (#387).
 - Alert on failed/stuck work.
 
 There is no separate PII audit, general-purpose deterministic scrub beyond the

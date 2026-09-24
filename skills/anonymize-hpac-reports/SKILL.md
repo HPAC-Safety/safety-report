@@ -40,6 +40,20 @@ facts. Replace a complete private identity with the person's role: a pilot's
 repeated name (or its marker) becomes exactly “the pilot” / “le pilote,” with
 no first name, surname, initial, fragment, or literal marker remaining.
 
+The prompt also holds every statement to `report_content` (nothing inferred or
+invented) and carries the full replacement table in
+[`features/ai-anonymization/README.md`](../../features/ai-anonymization/README.md):
+roles for people, generic phrases for places, month or season for dates, time
+of day kept, generic names for organizations, category for aircraft, and never
+“redacted”, a placeholder, or an invented name. A rule added to the table is
+added to a new prompt version and to the prompt-contract test (REQ-AI-024).
+
+The call goes through `IAiChatClient`, a provider strategy chosen by the
+Worker's `AiChatClient` section (`Provider`, `ApiKey`, `Model`,
+`ReasoningEffort`); today that is Gemini at reasoning `low` with the temperature
+left at its default
+([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+
 Do not add a second model call, second redaction/audit call, runtime
 translation call, specialized aircraft processing, or repair call — and do not
 add general-purpose deterministic scrubbing beyond the narrow marking pass

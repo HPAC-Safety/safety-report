@@ -44,16 +44,18 @@ jobs:
   # Secrets:   AWS_DEPLOY_ROLE_ARN
   # Variables: AWS_REGION, ECR_REPOSITORY_WORKER, ECS_CLUSTER, ECS_SERVICE_WORKER
   #
-  # Gemini__ApiKey is the second documented exception to "runtime secrets live
-  # only in AWS Secrets Manager" — see deploy-api.yml's Translation__ApiKey /
-  # DEEPL_API_KEY comment for the first. GEMINI_API_KEY_PROD is a repository
-  # secret rather than a Secrets Manager entry, by the same reasoning: it is
-  # the Worker's only credential, and duplicating it into Secrets Manager buys
-  # nothing an operator cannot already get from GitHub's own secret store.
-  # When the service roll below is implemented (#30), pass it into the task
-  # definition as:
+  # AiChatClient__ApiKey is the second documented exception to "runtime
+  # secrets live only in AWS Secrets Manager" — see deploy-api.yml's
+  # Translation__ApiKey / DEEPL_API_KEY comment for the first, and ADR-0104.
+  # GEMINI_API_KEY_PROD is a repository secret rather than a Secrets Manager
+  # entry: it is the Worker's only external credential, and duplicating it
+  # into Secrets Manager buys nothing an operator cannot already get from
+  # GitHub's own secret store. It must be a paid, billing-enabled key. The
+  # provider, model, and reasoning level are committed in the Worker's
+  # appsettings.json; only the key is supplied here. When the service roll
+  # below is implemented (#30), pass it into the task definition as:
   #
-  #   Gemini__ApiKey = ${{ secrets.GEMINI_API_KEY_PROD }}
+  #   AiChatClient__ApiKey = ${{ secrets.GEMINI_API_KEY_PROD }}
   #
   # GEMINI_API_KEY_DEV is the local-development counterpart — see
   # docker-compose.yml — not consumed by this workflow.

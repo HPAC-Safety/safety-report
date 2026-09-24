@@ -30,6 +30,16 @@ supported safety lessons. A private pilot identity repeated in narrative
 becomes exactly “the pilot” / “le pilote,” with no identity fragment or
 literal marker remaining.
 
+Every statement in the pair is supported by `report_content`; nothing is
+inferred or invented. What identifies someone becomes a generic phrase, never
+an invented name and never a word such as “redacted” or “caviardé”: another
+person becomes the role the report supports or “a person” / “une personne”; a
+place becomes “the launch site”, “the landing field”, or “the location” /
+“le lieu”; an exact date becomes its month or season while the time of day is
+kept; a club, school, or company becomes “the club”, “the school”, or “the
+company”; an aircraft becomes its category. The full table is in the
+[AI anonymization supporting detail](../features/ai-anonymization/README.md).
+
 There is no independent PII-audit call, runtime translation call, specialized
 aircraft processing, or repair call, and no general-purpose deterministic
 scrubber beyond the narrow private-value marking pass above. Invalid output

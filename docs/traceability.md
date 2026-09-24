@@ -426,11 +426,11 @@ A reviewer hides a document and shows it again, and both are audited — *Reqnro
 
 ### REQ-MED-041
 
-The report page offers a public document as a download, never inline — *playwright-bdd, Planned*
+The report page offers a public document as a download, never inline — *playwright-bdd, Covered*
 
 ### REQ-MED-042
 
-The admin report page shows whether each document is public — *playwright-bdd, Planned*
+The admin report page shows whether each document is public — *playwright-bdd, Covered*
 
 ## Claims: moderation-authentication-and-publication
 

@@ -174,7 +174,7 @@ export function ReportDetailPage() {
 							{t(`reports.detail.language.${report.language}`)}
 						</p>
 						<p className="font-sans text-sm text-ink-muted">{t(`reports.detail.consent.${report.consent}`)}</p>
-						{report.attachments.some((attachment) => attachment.kind !== "document") && (
+						{report.attachments.length > 0 && (
 							<p className="font-sans text-sm text-ink-muted" data-media-consent>
 								{t(`reports.detail.mediaConsent.${report.mediaConsent}`)}
 							</p>

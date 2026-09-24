@@ -31,7 +31,9 @@ export interface PublicReport {
 /** One public image or video on a report's own page: an opaque id and its kind, nothing more. */
 export interface PublicMedia {
 	id: string
-	kind: "image" | "video"
+	kind: "image" | "video" | "document"
+	/** A document's coarse format, the extension it downloads with (ADR-0119); null otherwise. */
+	format: string | null
 }
 
 /** A report's own page: the feed item plus its public media. */

@@ -369,7 +369,6 @@ Scenario: A reviewer hides a document and shows it again, and both are audited
   Then the report lists the document
 
 @REQ-MED-041
-@ignore
 @ui
 Scenario: The report page offers a public document as a download, never inline
   Given a published report offers a validated PDF document
@@ -378,7 +377,6 @@ Scenario: The report page offers a public document as a download, never inline
   And the page never embeds the document's content
 
 @REQ-MED-042
-@ignore
 @ui
 Scenario: The admin report page shows whether each document is public
   Given a published report has a public document and a hidden document

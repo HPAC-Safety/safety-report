@@ -125,7 +125,7 @@ export function mediaConsentFormQuestions(): StubQuestion[] {
 			id: "media_consent",
 			key: "consent_media",
 			role: "consent_media",
-			labelEn: "Photo and video consent",
+			labelEn: "Photo, video, and document consent",
 			type: "yes_no",
 			displayOrder: 7,
 			isRequired: true,

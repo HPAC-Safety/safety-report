@@ -5,7 +5,8 @@ import { fetchMediaLink, hideMedia, PublicReportNotFound, type PublicMedia } fro
 
 /*
  * A published report's photos and video, embedded in its page (ADR-0117,
- * REQ-MED-032..035).
+ * REQ-MED-032..035), and its documents, offered for download and never shown
+ * inline (ADR-0119, REQ-MED-041).
  *
  * Each file's bytes come from a link that lives at most fifteen minutes, asked
  * for when the file is shown. When an image or video stops loading — most often
@@ -34,12 +35,10 @@ export function ReportMedia({ reportId, media }: { reportId: string; media: Publ
 	}
 
 	const isReviewer = role === "safety_officer" || role === "administrator"
-	const images = shown.filter((item) => item.kind === "image")
-	const videos = shown.filter((item) => item.kind === "video")
-
 	function label(item: PublicMedia): string {
-		const group = item.kind === "image" ? images : videos
+		const group = shown.filter((candidate) => candidate.kind === item.kind)
 		const values = { index: group.indexOf(item) + 1, count: group.length }
+		if (item.kind === "document") return t("media.documentLabel", { ...values, format: (item.format ?? "").toUpperCase() })
 		return item.kind === "image" ? t("media.photoLabel", values) : t("media.videoLabel", values)
 	}
 
@@ -68,13 +67,24 @@ export function ReportMedia({ reportId, media }: { reportId: string; media: Publ
 			<ul className="mt-4 flex flex-col gap-6">
 				{shown.map((item) => (
 					<li key={item.id} data-media={item.kind}>
-						<MediaItem
-							reportId={reportId}
-							item={item}
-							label={label(item)}
-							onGone={() => remove(item.id)}
-							onHide={isReviewer ? () => hide(item.id) : null}
-						/>
+						{item.kind === "document" ? (
+							<DocumentItem
+								reportId={reportId}
+								item={item}
+								label={label(item)}
+								onGone={() => remove(item.id)}
+								onFailed={() => setError(t("media.error.download"))}
+								onHide={isReviewer ? () => hide(item.id) : null}
+							/>
+						) : (
+							<MediaItem
+								reportId={reportId}
+								item={item}
+								label={label(item)}
+								onGone={() => remove(item.id)}
+								onHide={isReviewer ? () => hide(item.id) : null}
+							/>
+						)}
 					</li>
 				))}
 			</ul>
@@ -86,6 +96,97 @@ export function ReportMedia({ reportId, media }: { reportId: string; media: Publ
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 type Hide = () =>
 	Promise<void>
+
+/*
+ * A document is never embedded (ADR-0119): activating it asks for a fresh
+ * forced-download link and follows it, which saves the file without leaving the
+ * page. A 404 means the document is no longer public, so it is removed.
+ */
+function DocumentItem({
+	reportId,
+	item,
+	label,
+	onGone,
+	onFailed,
+	onHide,
+}: {
+	reportId: string
+	item: PublicMedia
+	label: string
+	onGone: () => void
+	onFailed: () => void
+	onHide: Hide | null
+}) {
+	const { t } = useLocale()
+
+	async function download(): Promise<void> {
+		try {
+			const link = await fetchMediaLink(reportId, item.id)
+			window.location.assign(link.url)
+		} catch (cause: unknown) {
+			if (cause instanceof PublicReportNotFound) onGone()
+			else onFailed()
+		}
+	}
+
+	return (
+		<div className="flex flex-col gap-2">
+			<div className="flex flex-wrap items-center gap-3 rounded border border-rule bg-surface-2 p-4">
+				<svg aria-hidden="true" viewBox="0 0 24 24" className="h-8 w-8 text-ink-muted" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+					<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
+					<path d="M14 3v5h5" />
+				</svg>
+				<span className="font-sans text-ink">{label}</span>
+				<button
+					type="button"
+					aria-label={t("media.downloadLabel", { label })}
+					className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface"
+					onClick={() => void download()}
+				>
+					{t("media.download")}
+				</button>
+			</div>
+			{onHide && <HideControl onHide={onHide} />}
+		</div>
+	)
+}
+
+function HideControl({ onHide }: { onHide: Hide }) {
+	const { t } = useLocale()
+	const [confirming, setConfirming] = useState(false)
+
+	return (
+		<div className="flex flex-wrap items-center gap-3">
+			{confirming ? (
+				<>
+					<span className="font-sans text-sm text-ink">{t("media.confirmHide")}</span>
+					<button
+						type="button"
+						className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-medium text-ink-inverse"
+						onClick={() => void onHide().then(() => setConfirming(false))}
+					>
+						{t("media.hide")}
+					</button>
+					<button
+						type="button"
+						className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink"
+						onClick={() => setConfirming(false)}
+					>
+						{t("media.keep")}
+					</button>
+				</>
+			) : (
+				<button
+					type="button"
+					className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink"
+					onClick={() => setConfirming(true)}
+				>
+					{t("media.hide")}
+				</button>
+			)}
+		</div>
+	)
+}
 
 function MediaItem({
 	reportId,
@@ -100,9 +201,7 @@ function MediaItem({
 	onGone: () => void
 	onHide: Hide | null
 }) {
-	const { t } = useLocale()
 	const [url, setUrl] = useState<string | null>(null)
-	const [confirming, setConfirming] = useState(false)
 	const failures = useRef(0)
 	const resume = useRef<{ at: number; playing: boolean } | null>(null)
 	// Where the video last was, kept as it plays: by the time a failed request
@@ -189,37 +288,7 @@ function MediaItem({
 				{label}
 			</figcaption>
 
-			{onHide && (
-				<div className="flex flex-wrap items-center gap-3">
-					{confirming ? (
-						<>
-							<span className="font-sans text-sm text-ink">{t("media.confirmHide")}</span>
-							<button
-								type="button"
-								className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-medium text-ink-inverse"
-								onClick={() => void onHide().then(() => setConfirming(false))}
-							>
-								{t("media.hide")}
-							</button>
-							<button
-								type="button"
-								className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink"
-								onClick={() => setConfirming(false)}
-							>
-								{t("media.keep")}
-							</button>
-						</>
-					) : (
-						<button
-							type="button"
-							className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink"
-							onClick={() => setConfirming(true)}
-						>
-							{t("media.hide")}
-						</button>
-					)}
-				</div>
-			)}
+			{onHide && <HideControl onHide={onHide} />}
 		</figure>
 	)
 }

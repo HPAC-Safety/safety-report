@@ -485,12 +485,16 @@
     "title": "Photos et vidéo",
     "photoLabel": "Photo {index} de {count}",
     "videoLabel": "Vidéo {index} de {count}",
+    "documentLabel": "#Document {index} of {count} ({format})",
+    "download": "#Download",
+    "downloadLabel": "#Download {label}",
+    "error": {
+      "download": "#That document could not be downloaded. Try again.",
+      "hide": "Cela ne pouvait pas passer inaperçu. Veuillez réessayer."
+    },
     "hide": "Masquer",
     "keep": "Conserver",
-    "confirmHide": "Cacher ceci à tout le monde?",
-    "error": {
-      "hide": "Cela ne pouvait pas passer inaperçu. Veuillez réessayer."
-    }
+    "confirmHide": "Cacher ceci à tout le monde?"
   },
   "comments": {
     "title": "Commentaires",

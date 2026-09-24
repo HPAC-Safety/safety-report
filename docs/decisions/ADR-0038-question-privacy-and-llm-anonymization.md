@@ -10,7 +10,9 @@ keywords: privacy, LLM, anonymization, question bank
 
 # ADR-0038 — Question privacy partitions an LLM-only anonymization request
 
-**Status:** Superseded in part by the
+**Status:** The provider-terms consequence below is settled by
+[ADR-0104](ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md):
+Gemini with a paid key, processing outside Canada accepted. Superseded in part by the
 [complete question-revision](../../features/question-bank-and-form/question-bank-and-form.feature) and
 [one-call AI](../../features/ai-anonymization/ai-anonymization.feature) specifications. The two-section
 privacy partition remains; separate audit/translation and identity-level

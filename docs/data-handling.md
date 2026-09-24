@@ -48,6 +48,11 @@ answered private fields as recognition-only `private_context` to one summary
 call. Consent, attachments, document text, and deleted data never cross that
 boundary. Model prompts/responses and report values are never logged.
 
+That call goes to Google Gemini with a paid, billing-enabled key, so Google
+does not use the content to train its models, and it is processed outside
+Canada. That is the one place report content leaves `ca-central-1`
+([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+
 ## Attachments
 
 The API validates each attachment as it is uploaded — bounded at 50 MB, sniffed,

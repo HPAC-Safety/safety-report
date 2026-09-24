@@ -14,6 +14,8 @@ keywords: localization, i18n, bilingual, translation
 [localization specification](../../features/web-localization-and-design/web-localization-and-design.feature).
 Database questions are manually bilingual and one model call returns both
 summary texts; the question/runtime translation clauses below are superseded.
+The Worker holds no Anthropic client: its one model call goes to Gemini
+([ADR-0104](ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 
 ## Context
 

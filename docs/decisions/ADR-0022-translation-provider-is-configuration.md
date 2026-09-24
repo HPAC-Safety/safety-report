@@ -13,6 +13,8 @@ keywords: translation provider, DeepL, configuration
 **Status:** Accepted only for application UI catalogue generation. Runtime
 question and summary translation clauses are superseded by the
 [localization specification](../../features/web-localization-and-design/web-localization-and-design.feature).
+The Worker's model provider referred to below as Anthropic is Gemini
+([ADR-0104](ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 
 Supersedes the provider clause of [ADR-0007](ADR-0007-localization.md) — and
 only that clause. Everything else ADR-0007 decided still stands: English is the

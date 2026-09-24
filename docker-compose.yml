@@ -97,7 +97,9 @@ services:
       # Optional, as for the API: without them a summary or translation waits
       # and retries, and attachment processing is unaffected.
       Translation__ApiKey: "${DEEPL_API_KEY:-}"
-      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      # A paid, billing-enabled Gemini key (ADR-0104); provider, model, and
+      # reasoning level come from the Worker's appsettings.json.
+      AiChatClient__ApiKey: "${GEMINI_API_KEY:-}"
 
   web:
     image: node:24-alpine

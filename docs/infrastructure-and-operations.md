@@ -83,7 +83,11 @@ and this system never contacts a member login endpoint
 variables, source, appsettings committed to the repository, logs, or task
 definitions. Terraform creates secret containers/references; an authorized
 operator supplies values out of band. The identity provider's client secret is
-one of these.
+one of these. Two recorded exceptions are GitHub repository secrets passed to a
+task as environment variables by the deploy workflow: DeepL's key
+([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md))
+and the summarization provider's key, `AiChatClient__ApiKey`
+([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 

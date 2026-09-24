@@ -23,7 +23,7 @@ substantially enforce the target behavior, not merely that an issue was closed.
 | Browser continuity | Implemented (#80, #373). The form keeps the selected locale, shown question-revision IDs, entered answer values, and each finished upload's ID, name, and size in `localStorage` for 15 days from the report's first save or until a successful submit, whichever comes first; a `File` is never persisted, and continuing the saved report restores its uploaded files. Start over, Discard report, and an expired saved report delete its uploads (ADR-0100). No report-data write request is made before the reporter presses Submit. | None. |
 | Abuse prevention | Implemented (#15). Turnstile and its infrastructure are removed (ADR-0068); the submission endpoint requires a valid member bearer token (#14) and a sliding-window, trusted-client-IP `RateLimiter` policy; the Development sign-in endpoint has its own stricter policy partitioned by identity. `X-Forwarded-For` is trusted because the API's security group admits traffic only from the one AWS ALB in front of it (ADR-0081). | None. |
 | Summarization DTO | Implemented (#17). `SummarizeReportProcessor` queries `ReportForSummaryDto` — exact revision labels/answers/privacy flags, joined on `ReportAnswer.QuestionRevisionId` — excluding consent, skipped/null answers, and file-upload answers; the deterministic marking pass (`PrivateValueMarker`, ADR-0082) then runs on `report_content`. | Keep. |
-| AI orchestration | Implemented end to end (#17, #20, #302). `SummarizeReportProcessor` (an `IOutboxMessageProcessor`, #271's dispatch framework) builds the DTO, calls the one `ISummarizer` (`PromptDrivenSummarizer`), and persists a `Summary` row plus the report's `PendingReview`/`SummaryFailed` transition — bounded retries via `OutboxClaimer`'s own backoff/poison threshold, content-free logging. `IAiChatClient`'s registered concretion is `GeminiChatClient` (Google Gemini's OpenAI-compatible endpoint) when `Gemini__ApiKey`/`GEMINI_API_KEY` is present, else the fail-closed `UnconfiguredAiChatClient`. | Keep. |
+| AI orchestration | Implemented end to end (#17, #20, #302). `SummarizeReportProcessor` (an `IOutboxMessageProcessor`, #271's dispatch framework) builds the DTO, calls the one `ISummarizer` (`PromptDrivenSummarizer`), and persists a `Summary` row plus the report's `PendingReview`/`SummaryFailed` transition — bounded retries via `OutboxClaimer`'s own backoff/poison threshold, content-free logging. `IAiChatClient` is a provider strategy selected by `AiChatClient:Provider`; its only concretion is `GeminiChatClient` (Google Gemini's OpenAI-compatible endpoint, `gemini-3.7-flash`, reasoning `low`) when `AiChatClient:ApiKey` is present, else the fail-closed `UnconfiguredAiChatClient` ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)). Production has no key until the Worker service roll lands (#30). | Keep. |
 | Aircraft handling | Implemented. `ReportAircraft` and the typed `Discipline`/`InjurySeverity`/`PilotRating`/`Province`/`TimeOfDay` enums were deleted (#100); aircraft responses are ordinary `ReportAnswer` rows against revision-bound questions like any other. | Keep. |
 | Summary persistence | Implemented. `Summary` is one row per report with `AiSummaryEn`/`AiSummaryFr`, shared `Model`/`PromptVersion` provenance, and one `ApprovedBy`/`ApprovedAt` pair; rewriting either language clears approval. | Keep. |
 | Media images | Signature sniffing, 50 MB policy, private storage, and decode/re-encode metadata stripping are implemented and tested; uploads are validated before they are stored (#360). | — |
@@ -76,8 +76,9 @@ projection, the current question-revision model, privacy partitioning, outbox
 retry, PostgreSQL 17 schema/atomicity/seeding (including the universal soft-
 delete filter and its `audit_log` exception), pre-signed filesystem/S3
 storage, image metadata stripping, and the current video fail-closed behavior.
-API tests cover health/404/no-blob-route; Worker tests cover only lifecycle/
-start logging. JavaScript tests cover coverage and translation tooling. Those
+API tests cover health/404/no-blob-route; Worker tests cover the outbox loop,
+summarization, translation, and attachment processors, and the shipped
+prompt's rules. JavaScript tests cover coverage and translation tooling. Those
 observations explain which target gaps are real even when issue history says
 a feature was completed.
 
@@ -112,8 +113,9 @@ Worker.
    delete.~~ Done (#100).
 2. Implement current-form and finalized multipart submission with a required member token,
    streaming quarantine, transaction, and outbox.
-3. Implement Worker summary and attachment handlers, including documents and
-   safe video derivatives.
+3. ~~Implement Worker summary and attachment handlers, including documents and
+   safe video derivatives.~~ Done (#17, #20, #302, #386); video derivatives
+   still wait on ffmpeg in the Worker image (#30).
 4. Implement JWT member authentication, review UI/API, pair approval, deletion, and
    the exact public DTO.
 5. Complete both React/TypeScript sites and end-to-end bilingual/privacy tests.

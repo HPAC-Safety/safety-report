@@ -153,7 +153,7 @@ resource "aws_ecs_service" "api" {
 # --------------------------------------------------------------------------
 #
 # No load balancer, no ingress, no public IP. It claims outbox rows FOR UPDATE
-# SKIP LOCKED and calls out to Gemini. Gemini__ApiKey is injected directly by
+# SKIP LOCKED and calls out to Gemini. AiChatClient__ApiKey is injected directly by
 # the deploy workflow from the GEMINI_API_KEY_PROD repository secret rather
 # than through this file — see deploy-worker.yml.
 

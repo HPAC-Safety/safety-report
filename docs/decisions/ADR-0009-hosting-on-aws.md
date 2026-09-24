@@ -18,7 +18,10 @@ and no SES/email resources. The API row is further superseded by
 runs on Lambda, not ECS Fargate. The Static sites row is further superseded by
 [ADR-0044](ADR-0044-containerized-web-hosting.md): the web front end runs in a
 Docker container on ECS Fargate behind the ALB, not S3. The Worker row is
-unchanged.
+unchanged. The residency rule is narrowed for one boundary by
+[ADR-0104](ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md):
+the Worker's one summarization call is processed by Google Gemini outside
+Canada; every service that stores report data stays in `ca-central-1`.
 
 ## Context
 

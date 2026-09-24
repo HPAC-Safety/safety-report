@@ -82,7 +82,7 @@ a live third-party provider or send real incident data.
 
 **CON-TQ-006** These contracts are covered by test.
 *Verified by: REQ-MED-001, REQ-MED-002, REQ-MED-003, REQ-MED-006, REQ-MED-007,
-REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-014.*
+REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-025, REQ-MED-026.*
 
 - all allowed image, video, and document formats and declared-type agreement are exercised;
 - configured default count and exact 50 MB boundary are covered with streaming

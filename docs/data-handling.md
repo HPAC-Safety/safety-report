@@ -40,6 +40,10 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
   deletion timestamp. Report deletion cascade-stamps dependents in one
   transaction; there is no restore or physical-delete workflow.
 - Public queries use exact allowlist DTOs and never join raw answers or files.
+  The one file-shaped public read is `public_report_media`: the opaque id and
+  kind of a published report's verified image and video derivatives, when its
+  reporter consented to sharing media
+  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
 
 ## Model boundary
 
@@ -63,7 +67,13 @@ submission names each file, and that name is kept, sanitized, only as a
 reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)). There is no malware scan (ADR-0089).
 
 Safe image/video derivatives may be previewed by authorized reviewers through
-short-lived access. Validated documents remain unmodified private originals and
+short-lived access. On a published report whose reporter also consented to
+sharing media, those same derivatives — never an original — are shown to any
+visitor through a pre-signed URL that lives at most fifteen minutes, minted per
+file by an anonymous endpoint that refuses a hidden or unpublished file. The
+bucket stays private, and nothing is copied to the CDN
+([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+Validated documents remain unmodified private originals and
 are forced downloads only; they are never anonymized, parsed for AI, rendered
 inline, or published. Unreferenced quarantine bytes expire by storage lifecycle;
 report-linked bytes remain private after soft deletion.

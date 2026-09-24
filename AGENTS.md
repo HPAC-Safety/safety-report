@@ -123,10 +123,12 @@ requirements does not touch a skill; its remedy is a claim.
    question as it was actually worded. Soft deletion is irreversible, and at
    most one question per key is live
    ([ADR-0071](docs/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)).
-   Publication consent is the only system
-   question and the only answer read by name; it can never be made optional,
-   and it is the one question that revises in place even when answered, because
-   it can never be deleted.
+   There are two system questions, and they are the only answers read by
+   name: publication consent, and media consent, which is asked only when
+   publication consent is yes and an image or video is attached
+   ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+   Neither can be made optional, and they are the questions that revise in
+   place even when answered, because neither can be deleted.
    Every other question's required state is authored by an administrator
    ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
    An administrator authors both languages and may use machine translation as
@@ -200,7 +202,11 @@ requirements does not touch a skill; its remedy is a claim.
 5. Documents such as PDF, DOC, DOCX, RTF, Markdown, text, and ODT are validated
    and kept private; there is no malware scan (ADR-0089). They are not
    anonymized, transformed, parsed, sent to the model, inline-rendered, or
-   published.
+   published. An image or video is published only as its verified derivative,
+   on a published report whose reporter consented to media, through a
+   pre-signed URL of at most fifteen minutes, and a reviewer may hide it; an
+   original never is
+   ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
 6. Publication requires positive consent, a non-deleted report, and human
    approval of the current bilingual pair. Editing either language clears the
    pair approval.

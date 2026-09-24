@@ -41,6 +41,12 @@ cannot be stripped fails closed. A video that cannot be remuxed is kept as a
 private original with no derivative, reachable only as a reviewer download
 ([ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
 
+A published report shows its verified image/video derivatives — never an
+original — when the reporter also consented to media, through a pre-signed
+GET of at most fifteen minutes that `PublicMediaLink` mints and the
+`public_report_media` view gates; a reviewer may hide any file (ADR-0117).
+Never copy an attachment to the CDN or a public prefix.
+
 Documents are different: preserve the validated original, do not transform or
 anonymize its contents, and never parse/extract it for AI. Allow only an
 authorized, short-lived, forced download with active-content-safe headers.

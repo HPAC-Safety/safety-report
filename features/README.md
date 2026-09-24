@@ -113,7 +113,8 @@ specification rather than preserving competing designs.
 A reporter signs in as an HPAC member — which proves membership and is never
 recorded against the report — sees the latest active immutable revision of each
 bilingual database question in its configured order, may skip every ordinary
-question, must make an explicit publication-consent choice, and submits the
+question, must make an explicit publication-consent choice — and a media-consent choice
+when they attached an image or video — and submits the
 answers once. Each optional attachment uploads as soon as it is attached, into
 private quarantine, and the submission claims it. Every answer is stored as one string —
 the words the reporter saw, in the language they saw them. The API saves the
@@ -122,7 +123,10 @@ outbox work atomically. The Worker makes exactly one model call using one
 versioned prompt to produce an anonymized English/French summary pair, using
 private answers only as recognition context. A safety officer reviews that pair
 and permitted attachments. Only a non-deleted, positively consented report
-with a human-approved pair can appear in the public feed.
+with a human-approved pair can appear in the public feed. When the reporter
+also consented to sharing media, its page embeds the verified image and video
+derivatives, never an original, and a reviewer may hide any of them
+([ADR-0117](../docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
 
 ## Simplicity guardrails
 

@@ -1,8 +1,11 @@
 @xunit:collection(MeasuresAllocation)
 Feature: Attachments
 A reporter may attach images, videos, and documents to the finalized
-report. Every attachment stays private, is validated by content rather than
-by name, and only images/videos get a safe reviewer-facing derivative.
+report. Every attachment is validated by content rather than by name, and
+only images/videos get a safe derivative. Originals and documents stay
+private. A published report shows its verified image and video derivatives
+when the reporter also consented to sharing media, and a reviewer may hide
+any of them (ADR-0117).
 
 Background:
   Given the maximum attachment count is configurable and defaults to five across all attachment kinds
@@ -135,12 +138,6 @@ Scenario: A failed attachment is inaccessible to reviewers
   And the file is inaccessible to any reviewer
   And a video whose remux fails is not a failure of this kind: it is retained under its own rule
 
-@REQ-MED-014
-Scenario: Attachments are never exposed publicly, even after publication
-  Given a report has been published
-  When the public API returns the report
-  Then the public DTO contains no file counts, types, keys, or links
-
 @REQ-MED-016
 Scenario: Removing an upload erases every version of it
   Given an unclaimed upload exists in quarantine
@@ -210,3 +207,118 @@ Scenario: Processing never holds a whole attachment in memory
   When the Worker processes that original
   Then the original is read in bounded chunks into temporary storage while it is hashed
   And no buffer the size of the file is ever allocated
+
+@REQ-MED-025
+Scenario: A published report lists its verified photos and video when media was consented to
+  Given a published report whose reporter consented to publication and to sharing media
+  And the report has a processed image and a video with a verified derivative
+  When the public API returns the report
+  Then the report lists both files in the order they were attached
+  And each file carries only its opaque id and whether it is an image or a video
+
+@REQ-MED-026
+Scenario Outline: A file that is not a verified derivative is never public
+  Given a published report whose reporter consented to publication and to sharing media
+  And the report has <file>
+  When a visitor asks for that file's public link
+  Then the API returns 404
+  And the report lists no media
+
+Examples:
+  | file                                     |
+  | a document                               |
+  | a video retained without a derivative    |
+  | an image whose processing failed         |
+  | an image the Worker has not processed yet |
+
+@REQ-MED-027
+Scenario Outline: Media is public only when the reporter consented to sharing it
+  Given a published report with a processed image whose media consent is <consent>
+  When the public API returns the report
+  Then the report lists no media
+  And a visitor asking for the image's public link gets 404
+
+Examples:
+  | consent    |
+  | no         |
+  | unanswered |
+
+@REQ-MED-028
+Scenario: A visitor gets a short-lived inline link to a public file
+  Given a published report shows a processed image
+  When an anonymous visitor asks for the image's public link
+  Then the visitor receives a pre-signed URL to the image's derivative that expires within fifteen minutes
+  And the URL serves the image inline, with the header X-Content-Type-Options: nosniff
+  And the response names no file name, size, or storage key
+
+@REQ-MED-029
+Scenario Outline: A file stops being public when its report or a reviewer withdraws it
+  Given a published report shows a processed image
+  When <withdrawal>
+  Then the report lists no media
+  And a visitor asking for the image's public link gets 404
+
+Examples:
+  | withdrawal                              |
+  | a safety officer hides the image        |
+  | a reviewer unpublishes the report       |
+  | an administrator deletes the report     |
+
+@REQ-MED-030
+Scenario: A reviewer hides a file and shows it again, and both are audited
+  Given a published report shows a processed image
+  When a safety officer hides the image
+  Then the report lists no media
+  And the audit log records who hid the image
+  When the safety officer shows the image again
+  Then the report lists the image
+  And the audit log records who showed the image
+  And the file is kept in storage throughout
+
+@REQ-MED-031
+Scenario: A member who is not a reviewer cannot hide or show a file
+  Given a published report shows a processed image
+  And a member who is not a reviewer is signed in
+  When the member tries to hide the image
+  Then the API answers 403
+  And the report still lists the image
+
+@REQ-MED-032
+@ui
+Scenario: The report page embeds its photos and video with a generic label
+  Given a published report shows an image and a video
+  When a visitor opens the report
+  Then the image is shown in the page, labelled "Photo 1 of 1"
+  And the video can be played in the page with its controls, labelled "Video 1 of 1"
+
+@REQ-MED-033
+@ui
+Scenario: An expired link is replaced and the video resumes where it was
+  Given a visitor is part-way through a public video
+  When the video's link stops working
+  Then the page fetches a new link
+  And the video resumes from where it was
+
+@REQ-MED-034
+@ui
+Scenario: Media withdrawn while the page is open is removed from it
+  Given a visitor has a published report open showing an image
+  When the image is hidden and its link stops working
+  Then the page removes the image
+
+@REQ-MED-035
+@ui
+Scenario: A reviewer hides a file from the public report page
+  Given a safety officer is signed in and a published report shows an image
+  When the safety officer opens the report
+  Then the image offers to hide it
+  When the safety officer hides the image and confirms
+  Then the image is no longer shown
+
+@REQ-MED-036
+@ui
+Scenario: The admin report page shows whether each file is public
+  Given a published report has a public image and a hidden image
+  When a safety officer opens the report in the admin area
+  Then the public image reads as shown publicly and offers to hide it
+  And the hidden image reads as hidden from the public and offers to show it

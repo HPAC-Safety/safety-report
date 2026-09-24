@@ -15,10 +15,11 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     The media-consent answer as a real submission records it (REQ-QB-114,
-///     REQ-QB-115, ADR-0117): an image uploaded through <c>/api/v1/uploads</c>,
-///     publication consent yes, and the seeded <c>consent_media</c> system
-///     question answered — or not — through the booted API.
+///     The media-consent answer as a real submission records it (REQ-QB-114 to
+///     REQ-QB-117, ADR-0117, ADR-0119): an image or document uploaded through
+///     <c>/api/v1/uploads</c>, publication consent yes, and the seeded
+///     <c>consent_media</c> system question answered — or not — through the
+///     booted API, against its current wording or a superseded one.
 /// </summary>
 [Binding]
 [Scope(Feature = "Question bank and form")]
@@ -29,13 +30,68 @@ public sealed class MediaConsentSteps
 	private HttpClient? _reporter;
 	private string? _uploadId;
 	private string? _mediaAnswer;
+	private string? _mediaRevisionId;
+	private string _fileName = "launch-site.png";
 	private HttpResponseMessage? _response;
+	private Question? _seeded;
+	private string? _reportId;
 
 	[Given(@"a submission answers yes to publication consent and attaches an image")]
 	public async Task GivenASubmissionWithAnImage()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		_uploadId = await UploadImage(_reporter);
+	}
+
+	[Given(@"a submission answers yes to publication consent and attaches a document")]
+	public async Task GivenASubmissionWithADocument()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_uploadId = await UploadDocument(_reporter);
+		_fileName = "checklist.pdf";
+	}
+
+	[Given(@"^it answers yes to the consent_media question's (current|earlier, superseded) revision$")]
+	public async Task GivenItAnswersYesToARevision(string revision)
+	{
+		_mediaAnswer = "yes";
+		var question = await MediaConsentQuestion();
+		_mediaRevisionId = revision == "current"
+			? question.CurrentRevision.Id.Value
+			: question.Revisions
+				.Where(candidate => candidate.RevisionNumber < question.CurrentRevision.RevisionNumber)
+				.MaxBy(candidate => candidate.RevisionNumber)!.Id.Value;
+	}
+
+	[Given(@"the consent_media question as seeded")]
+	public async Task GivenTheSeededMediaConsentQuestion()
+	{
+		_seeded = await MediaConsentQuestion();
+	}
+
+	[Then(@"its wording in both languages asks about photos, videos, and documents")]
+	public void ThenItsWordingNamesEveryKindOfFile()
+	{
+		var revision = _seeded!.CurrentRevision;
+		foreach (var word in new[] { "photos", "videos", "documents" })
+		{
+			revision.HelpTextEn!.ShouldContain(word);
+		}
+
+		foreach (var word in new[] { "photos", "vidéos", "documents" })
+		{
+			revision.HelpTextFr!.ShouldContain(word);
+		}
+	}
+
+	[Then(@"it says that documents are published exactly as they were uploaded and may contain personal details")]
+	public void ThenItSaysDocumentsArePublishedAsUploaded()
+	{
+		var revision = _seeded!.CurrentRevision;
+		revision.HelpTextEn!.ShouldContain("Documents are published exactly as you uploaded them");
+		revision.HelpTextEn!.ShouldContain("personal details");
+		revision.HelpTextFr!.ShouldContain("Les documents sont publiés exactement tels que vous les avez téléversés");
+		revision.HelpTextFr!.ShouldContain("renseignements personnels");
 	}
 
 	[Given(@"it answers the consent_media question with {word}")]
@@ -67,13 +123,13 @@ public sealed class MediaConsentSteps
 			new
 			{
 				questionRevisionId = await FileUploadRevisionId(),
-				attachments = new[] { new { uploadId = _uploadId!, fileName = "launch-site.png" } },
+				attachments = new[] { new { uploadId = _uploadId!, fileName = _fileName } },
 			},
 		};
 
 		if (_mediaAnswer is not null)
 		{
-			answers.Add(new { questionRevisionId = await MediaConsentRevisionId(), value = (string?)_mediaAnswer });
+			answers.Add(new { questionRevisionId = _mediaRevisionId ?? await MediaConsentRevisionId(), value = (string?)_mediaAnswer });
 		}
 
 		using var content = new StringContent(
@@ -84,19 +140,38 @@ public sealed class MediaConsentSteps
 	[Then(@"the report records media consent as {word}")]
 	public async Task ThenTheReportRecordsMediaConsent(string recorded)
 	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
-		var id = (await _response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
+		(await SubmittedReport()).ConsentMedia.ShouldBe(Consent(recorded));
+	}
+
+	[Then(@"the report records document consent as {word}")]
+	public async Task ThenTheReportRecordsDocumentConsent(string recorded)
+	{
+		(await SubmittedReport()).ConsentDocuments.ShouldBe(Consent(recorded));
+	}
+
+	private async Task<Core.Features.Reporting.Report> SubmittedReport()
+	{
+		if (_reportId is null)
+		{
+			var body = await _response!.Content.ReadAsStringAsync();
+			_response.StatusCode.ShouldBe(HttpStatusCode.Accepted, body);
+			using var document = JsonDocument.Parse(body);
+			_reportId = document.RootElement.GetProperty("id").GetString()!;
+		}
 
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var report = await database.Reports.SingleAsync(candidate => candidate.Id == TinyId.Parse(id));
+		return await database.Reports.AsNoTracking().SingleAsync(candidate => candidate.Id == TinyId.Parse(_reportId));
+	}
 
-		report.ConsentMedia.ShouldBe(recorded switch
+	private static bool? Consent(string recorded)
+	{
+		return recorded switch
 		{
 			"yes" => true,
 			"no" => false,
-			_ => (bool?)null,
-		});
+			_ => null,
+		};
 	}
 
 	[Then(@"the API rejects the submission")]
@@ -116,18 +191,35 @@ public sealed class MediaConsentSteps
 		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
 	}
 
+	private static async Task<string> UploadDocument(HttpClient reporter)
+	{
+		using var body = new ByteArrayContent("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray());
+		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+
+		using var response = await reporter.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
+	}
+
 	private static async Task<string> MediaConsentRevisionId()
+	{
+		return (await MediaConsentQuestion()).CurrentRevision.Id.Value;
+	}
+
+	private static async Task<Question> MediaConsentQuestion()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		// Seeded by the ShowPublishedMedia migration, on every database.
+		// Seeded by the ShowPublishedMedia migration and reworded to name
+		// documents by OfferPublishedDocuments, on every database.
 		var question = await database.Questions
+			.AsNoTracking()
 			.Include(candidate => candidate.Revisions)
 			.SingleAsync(candidate => candidate.Key == QuestionKey.ConsentMedia);
 
 		question.IsSystem.ShouldBeTrue();
-		return question.CurrentRevision.Id.Value;
+		return question;
 	}
 
 	private static async Task<string> FileUploadRevisionId()

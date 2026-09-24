@@ -45,6 +45,39 @@ public class MediaConsentTests
 		report.ConsentPublish.ShouldBeNull();
 	}
 
+	[Theory]
+	[InlineData("yes", true)]
+	[InlineData("no", false)]
+	public void GivenAnswerToCurrentWording_WhenAnswered_ThenDocumentConsentMatchesIt(string given,
+																					bool expected)
+	{
+		// Given — the current wording names documents (ADR-0119)
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		report.Answer(MediaConsent(), given, Now);
+
+		// Then
+		report.ConsentDocuments.ShouldBe(expected);
+	}
+
+	[Fact]
+	public void GivenYesToSupersededWording_WhenAnswered_ThenDocumentsAreNotConsentedTo()
+	{
+		// Given — a stale draft answered the wording before the question was reworded
+		var question = MediaConsent();
+		var earlier = question.CurrentRevision;
+		question.Revise(QuestionType.YesNo, "Photos, video, documents?", "Photos, vidéos, documents ?", true, true, 0, Now.AddMinutes(1));
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		report.Answer(question, earlier, "yes", Now.AddMinutes(2));
+
+		// Then — the yes still shows photos and video, never documents
+		report.ConsentMedia.ShouldBe(true);
+		report.ConsentDocuments.ShouldBeNull();
+	}
+
 	[Fact]
 	public void GivenUnansweredMediaConsent_WhenReportIsRead_ThenItIsNotConsent()
 	{

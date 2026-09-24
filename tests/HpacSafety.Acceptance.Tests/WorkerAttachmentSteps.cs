@@ -262,7 +262,7 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 	private async Task DrainAttachmentMessages()
 	{
 		// The same claim loop the Worker runs, one message at a time.
-		var processor = new ProcessAttachmentProcessor(_db!, Ingestor());
+		var processor = new ProcessAttachmentProcessor(_db!, Ingestor(), TimeProvider.System);
 		while (await OutboxClaimer.ClaimNext(
 				   _db!, OutboxMessageType.ProcessAttachment, At.AddMinutes(1), processor.Process, CancellationToken.None))
 		{
@@ -271,7 +271,7 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 
 	private async Task ProcessDirectly(TinyId fileId)
 	{
-		var processor = new ProcessAttachmentProcessor(_db!, Ingestor());
+		var processor = new ProcessAttachmentProcessor(_db!, Ingestor(), TimeProvider.System);
 		await processor.Process(
 			new OutboxMessage(_report!.Id, OutboxMessageType.ProcessAttachment, fileId.Value, At),
 			CancellationToken.None);

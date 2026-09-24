@@ -22,16 +22,20 @@ namespace HpacSafety.Core.Tests.Media;
 public class ReviewerLinkIsTheOnlyChokepointTests
 {
 	[Theory]
-	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs")]
+	// PublicMediaLink forces a download too, but only of a public document's
+	// original (ADR-0119).
+	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs,PublicMediaLink.cs")]
 	[InlineData("CreateInlineReadUrl", "PublicMediaLink.cs")]
 	public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
 		string method,
-		string chokepointFile)
+		string chokepointFiles)
 	{
 		// Given
+		ArgumentNullException.ThrowIfNull(chokepointFiles);
+
 		// The port itself declares the method, and the adapters implement it.
 		// Everything else has to go through the chokepoint.
-		var allowed = new[] { chokepointFile, "IBlobStore.cs", "S3BlobStore.cs" };
+		var allowed = chokepointFiles.Split(',').Concat(["IBlobStore.cs", "S3BlobStore.cs"]).ToArray();
 		var callSite = new Regex($@"\b{method}\s*\(", RegexOptions.None, TimeSpan.FromSeconds(5));
 
 		// When
@@ -46,7 +50,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 
 		// Then
 		offenders.ShouldBeEmpty(
-			$"'{method}' may only be called from {chokepointFile}. "
+			$"'{method}' may only be called from {chokepointFiles}. "
 			+ "Signing a URL anywhere else bypasses the rule that a reviewer sees only stripped bytes "
 			+ "and that an upload can only land in quarantine.");
 	}

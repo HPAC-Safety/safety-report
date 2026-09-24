@@ -73,6 +73,16 @@ public class Report
 	public bool? ConsentMedia { get; private set; }
 
 	/// <summary>
+	///     Whether the reporter's media consent covers their documents (ADR-0119).
+	///     It is the media-consent answer when that answer was given to the
+	///     question's current wording at submission, which names documents, and
+	///     <b>null</b> otherwise — a report filed before the rewording, or a stale
+	///     draft that answered an older wording. Only <see langword="true" /> lets
+	///     a document be public.
+	/// </summary>
+	public bool? ConsentDocuments { get; private set; }
+
+	/// <summary>
 	///     Why summarization failed, when it did. Attached so the report
 	///     still reaches a human rather than disappearing.
 	/// </summary>
@@ -512,6 +522,7 @@ public class Report
 		else if (question.Role == QuestionRole.ConsentMedia)
 		{
 			ConsentMedia = ReadConsent(answer, "Media consent");
+			ConsentDocuments = answer.QuestionRevisionId == question.CurrentRevision.Id ? ConsentMedia : null;
 		}
 	}
 

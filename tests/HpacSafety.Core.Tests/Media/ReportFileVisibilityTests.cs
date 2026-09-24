@@ -4,8 +4,8 @@ using Shouldly;
 namespace HpacSafety.Core.Tests.Media;
 
 /// <summary>
-///     A reviewer hides a published report's image or video, and shows it again
-///     (ADR-0117). A hide is a flag with who set it, never a change to the bytes.
+///     A reviewer hides a published report's image, video, or document, and shows
+///     it again (ADR-0117, ADR-0119). A hide is a flag with who set it, never a change to the bytes.
 /// </summary>
 public class ReportFileVisibilityTests
 {
@@ -52,14 +52,51 @@ public class ReportFileVisibilityTests
 	}
 
 	[Fact]
-	public void GivenDocument_WhenHiddenOrShown_ThenRefused()
+	public void GivenDocument_WhenHiddenAndShown_ThenBothAreRecorded()
 	{
-		// Given — a document is never public, so there is nothing to hide
+		// Given — a public document is moderated like a photo (ADR-0119)
 		var file = File(MediaType.Pdf);
 
+		// When
+		var hid = file.HideBy("officer-subject", Now);
+
+		// Then
+		hid.ShouldBeTrue();
+		file.HiddenAt.ShouldBe(Now);
+
+		// When
+		var showed = file.Show();
+
+		// Then
+		showed.ShouldBeTrue();
+		file.HiddenAt.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenDocument_WhenValidatedTwice_ThenFirstTimeIsKept()
+	{
+		// Given
+		var file = File(MediaType.Pdf);
+
+		// When
+		file.RecordValidated(Now);
+		file.RecordValidated(Now.AddMinutes(5));
+
+		// Then
+		file.ValidatedAt.ShouldBe(Now);
+	}
+
+	[Theory]
+	[InlineData("image/jpeg")]
+	[InlineData("video/mp4")]
+	public void GivenImageOrVideo_WhenRecordedValidated_ThenRefused(string contentType)
+	{
+		// Given — an image or video is proven by its derivative instead
+		var file = File(MediaType.Parse(contentType));
+
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => file.HideBy("officer-subject", Now));
-		Should.Throw<DomainRuleViolationException>(() => file.Show());
+		Should.Throw<DomainRuleViolationException>(() => file.RecordValidated(Now));
+		file.ValidatedAt.ShouldBeNull();
 	}
 
 	[Fact]

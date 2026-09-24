@@ -102,20 +102,29 @@ public static class PublicReportEndpoints
 			.Where(file => file.ReportId == reportId)
 			.OrderBy(file => file.UploadedAt)
 			.ThenBy(file => file.Id)
-			.Select(file => new { file.Id, file.Kind })
+			.Select(file => new { file.Id, file.Kind, file.ContentType })
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
 		return Results.Ok(new PublicReportDetail(
 			report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount,
-			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind)))]));
+			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind), FormatOf(file.Kind, file.ContentType)))]));
+	}
+
+	/// <summary>A document's coarse format, the extension it downloads with; none for an image or video.</summary>
+	private static string? FormatOf(AttachmentKind kind,
+									string contentType)
+	{
+		return kind is AttachmentKind.Document && MediaType.TryParse(contentType, out var type) ? type.Extension : null;
 	}
 
 	/// <summary>
-	///     A short-lived, inline link to one public image or video's derivative, for
-	///     anyone, or 404 for anything <c>public_report_media</c> does not hold — a
-	///     hidden file, an unpublished or deleted report, a document, an original —
-	///     indistinguishably from an unknown id (REQ-MED-026 to REQ-MED-029).
+	///     A short-lived link for anyone: inline to one public image or video's
+	///     derivative, or a forced download of one public document's original. It
+	///     is 404 for anything <c>public_report_media</c> does not hold — a hidden
+	///     file, an unpublished or deleted report, an unvalidated document, an image
+	///     or video original — indistinguishably from an unknown id (REQ-MED-026 to
+	///     REQ-MED-029, REQ-MED-038 to REQ-MED-040).
 	/// </summary>
 	private static async Task<IResult> MediaLink(
 		string reportId,
@@ -129,7 +138,7 @@ public static class PublicReportEndpoints
 		var file = await database.PublicReportMedia
 			.AsNoTracking()
 			.Where(candidate => candidate.Id == mediaId && candidate.ReportId == reportId)
-			.Select(candidate => new { candidate.ContentType, candidate.StrippedBlobKey })
+			.Select(candidate => new { candidate.Kind, candidate.ContentType, candidate.StrippedBlobKey, candidate.DocumentBlobKey })
 			.SingleOrDefaultAsync(cancellationToken)
 			.ConfigureAwait(false);
 
@@ -139,12 +148,22 @@ public static class PublicReportEndpoints
 			return Results.NotFound();
 		}
 
-		// An image's derivative is its stripped form (a HEIC becomes a JPEG); a
-		// video's is remuxed into the container it arrived in (ADR-0094).
-		var served = original.StrippedForm ?? original;
+		Uri url;
 
-		var url = await links.CreateUrl(
-			BlobKey.Parse(file.StrippedBlobKey), served.ContentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+		if (file.Kind is AttachmentKind.Document)
+		{
+			url = await links.CreateDocumentDownloadUrl(
+				TinyId.Parse(mediaId), BlobKey.Parse(file.DocumentBlobKey), original, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+		}
+		else
+		{
+			// An image's derivative is its stripped form (a HEIC becomes a JPEG); a
+			// video's is remuxed into the container it arrived in (ADR-0094).
+			var served = original.StrippedForm ?? original;
+
+			url = await links.CreateUrl(
+				BlobKey.Parse(file.StrippedBlobKey), served.ContentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+		}
 
 		context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
 

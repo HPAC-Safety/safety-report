@@ -829,7 +829,6 @@ Scenario: A media consent answer must be an explicit yes or no
   Then the API rejects the submission
 
 @REQ-QB-116
-@ignore
 Scenario Outline: A media consent answer covers documents only under the wording the form showed
   Given a submission answers yes to publication consent and attaches a document
   And it answers yes to the consent_media question's <revision> revision
@@ -843,7 +842,6 @@ Examples:
   | earlier, superseded              | unanswered |
 
 @REQ-QB-117
-@ignore
 Scenario: Media consent names documents and says they are published as uploaded
   Given the consent_media question as seeded
   Then its wording in both languages asks about photos, videos, and documents

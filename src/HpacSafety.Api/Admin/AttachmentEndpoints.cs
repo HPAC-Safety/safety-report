@@ -126,8 +126,8 @@ public static class AttachmentEndpoints
 	}
 
 	/// <summary>
-	///     A reviewer hides an image or video from the published report
-	///     (REQ-MED-030). Audited; the bytes are untouched. Hiding a file already
+	///     A reviewer hides a file from the published report (REQ-MED-030,
+	///     REQ-MED-040). Audited; the bytes are untouched. Hiding a file already
 	///     hidden changes nothing and records nothing.
 	/// </summary>
 	private static Task<IResult> Hide(string reportId,
@@ -141,7 +141,7 @@ public static class AttachmentEndpoints
 			(file, subject, at) => file.HideBy(subject, at), cancellationToken);
 	}
 
-	/// <summary>A reviewer shows a hidden image or video again (REQ-MED-030). Audited.</summary>
+	/// <summary>A reviewer shows a hidden file again (REQ-MED-030, REQ-MED-040). Audited.</summary>
 	private static Task<IResult> Show(string reportId,
 									  string attachmentId,
 									  HttpContext context,

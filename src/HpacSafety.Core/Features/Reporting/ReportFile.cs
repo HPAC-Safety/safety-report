@@ -4,9 +4,10 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     An uploaded attachment. The original bytes stay private; for an image or
 ///     video, the EXIF-stripped derivative is what a reviewer sees, and what a
 ///     published report shows when its reporter consented to media, unless a
-///     reviewer hid it (ADR-0117). A document has no derivative at all —
-///     it is validated and kept private; there is no malware scan (ADR-0089). See
-///     docs/data-handling.md.
+///     reviewer hid it (ADR-0117). A document has no derivative at all — it is
+///     validated and kept as it arrived; there is no malware scan (ADR-0089). A
+///     published report offers it, unchanged, when the reporter's media consent
+///     named documents (ADR-0119). See docs/data-handling.md.
 /// </summary>
 public class ReportFile
 {
@@ -108,12 +109,20 @@ public class ReportFile
 	/// <summary>When EXIF — GPS above all — was stripped.</summary>
 	public DateTimeOffset? ExifStrippedAt { get; private set; }
 
+	/// <summary>
+	///     When the Worker accepted a document as the format it claims to be. Only
+	///     a document records it; an image or video is proven by its derivative
+	///     instead. A document is never public before this (ADR-0119).
+	/// </summary>
+	public DateTimeOffset? ValidatedAt { get; private set; }
+
 	/// <summary>A safe, non-content error code recorded when processing this file failed.</summary>
 	public string? ProcessingErrorCode { get; private set; }
 
 	/// <summary>
 	///     When a reviewer hid this file from the published report, if one did and
-	///     has not shown it again. A hide never touches the bytes (ADR-0117).
+	///     has not shown it again. A hide never touches the bytes (ADR-0117,
+	///     ADR-0119).
 	/// </summary>
 	public DateTimeOffset? HiddenAt { get; private set; }
 
@@ -167,6 +176,20 @@ public class ReportFile
 		ExifStrippedAt = at;
 	}
 
+	/// <summary>
+	///     Records that the Worker validated this document. Validating it again
+	///     keeps the first time.
+	/// </summary>
+	public void RecordValidated(DateTimeOffset at)
+	{
+		if (Kind is not AttachmentKind.Document)
+		{
+			throw new DomainRuleViolationException("Only a document is recorded validated; an image or video records its derivative.");
+		}
+
+		ValidatedAt ??= at;
+	}
+
 	/// <summary>Links this attachment to the file-upload answer it was submitted with.</summary>
 	public void LinkToAnswer(TinyId reportAnswerId)
 	{
@@ -174,15 +197,15 @@ public class ReportFile
 	}
 
 	/// <summary>
-	///     A reviewer hides this image or video from the published report. Hiding a
-	///     file already hidden changes nothing, so the first hide's record stands.
+	///     A reviewer hides this file from the published report. Hiding a file
+	///     already hidden changes nothing, so the first hide's record stands.
 	/// </summary>
 	/// <returns>True when this call hid it.</returns>
 	public bool HideBy(string subject,
 					   DateTimeOffset at)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(subject);
-		EnsureMedia();
+		EnsureLive();
 
 		if (HiddenAt is not null)
 		{
@@ -194,11 +217,11 @@ public class ReportFile
 		return true;
 	}
 
-	/// <summary>A reviewer shows a hidden image or video again.</summary>
+	/// <summary>A reviewer shows a hidden file again.</summary>
 	/// <returns>True when this call showed it.</returns>
 	public bool Show()
 	{
-		EnsureMedia();
+		EnsureLive();
 
 		if (HiddenAt is null)
 		{
@@ -210,16 +233,11 @@ public class ReportFile
 		return true;
 	}
 
-	private void EnsureMedia()
+	private void EnsureLive()
 	{
 		if (Deleted is not null)
 		{
 			throw new DomainRuleViolationException("This file was deleted with its report.");
-		}
-
-		if (Kind is not (AttachmentKind.Image or AttachmentKind.Video))
-		{
-			throw new DomainRuleViolationException("Only an image or a video is ever public, so only one can be hidden or shown.");
 		}
 	}
 

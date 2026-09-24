@@ -159,7 +159,7 @@ When(/^the visitor activates the (.+) option$/, async ({ page }, option: string)
 	await page.getByRole("menuitem", { name: option }).click()
 })
 
-Then(/^the browser navigates to the (.+) placeholder page$/, async ({ page }, destination: string) => {
+Then(/^the browser navigates to the (.+) page$/, async ({ page }, destination: string) => {
 	const path = ADMIN_MENU_DESTINATIONS[destination]
 	await expect(page).toHaveURL(new RegExp(`${path}$`))
 	await expect(page.locator("main h1")).toBeVisible()

@@ -3,6 +3,7 @@ import { expect, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import {
+	dateTimeFormQuestions,
 	defaultFormQuestions,
 	multiSelectFormQuestions,
 	typeAheadFormQuestions,
@@ -10,6 +11,7 @@ import {
 	readDraftFromBrowser,
 	stubCurrentQuestions,
 	stubSubmission,
+	writeSavedDateTimeDraftToBrowser,
 	writeSavedDraftToBrowser,
 	writeStaleDraftToBrowser,
 	type StubQuestion,
@@ -127,6 +129,15 @@ Given("this browser holds an unexpired saved report", async ({ page }) => {
 	await stubCurrentQuestions(page)
 	await writeSavedDraftToBrowser(page)
 })
+
+Given(
+	"this browser holds an unexpired saved report with a date answer {string} and a time answer {string}",
+	async ({ page }, date: string, time: string) => {
+		await stubAuth(page)
+		await stubCurrentQuestions(page, dateTimeFormQuestions())
+		await writeSavedDateTimeDraftToBrowser(page, date, time)
+	},
+)
 
 Given("this browser holds no saved report", async ({ page }) => {
 	await stubAuth(page)
@@ -725,4 +736,11 @@ Then("the address names the page the reporter was last on", async ({ page }) => 
 Then("the form opens at its introduction at \\/report", async ({ page }) => {
 	await expect(page.getByRole("heading", { level: 1 })).toContainText("Thanks for taking the time")
 	await expect(page).toHaveURL(reportAddress())
+})
+
+Then("the continue dialog lists the date as {string} and the time as {string}", async ({ page }, date: string, time: string) => {
+	// Named by its rows, not its title, so the step holds in either language.
+	const table = page.getByRole("dialog").getByRole("table")
+	await expect(table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^On what date\?/ }) }).getByRole("cell")).toHaveText(date)
+	await expect(table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^At what time\?/ }) }).getByRole("cell")).toHaveText(time)
 })

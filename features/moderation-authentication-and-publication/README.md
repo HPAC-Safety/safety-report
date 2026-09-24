@@ -108,7 +108,21 @@ reviewer changed it since, the API answers `409` and nothing is saved; the page
 asks the reviewer to reload. Each action writes one content-free audit entry
 in the same transaction.
 
-## Translating one summary language from the other
+## Reading a date, time, or yes/no answer (#403)
+
+An answer is stored in a language-neutral form — a date as ISO 8601
+`YYYY-MM-DD`, a time as `HH:mm`, a yes/no as `yes` or `no`
+([ADR-0072](../../docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md)).
+That form is for storage only. The report view shows such an answer in the
+interface language the reviewer chose, not the language the reporter
+answered in: `2026-09-13` reads "September 13, 2026" in English and
+"13 septembre 2026" in French, `14:30` reads "2:30 p.m." or "14 h 30", and
+`yes` reads "Yes" or "Oui". The detail view names each question's type so
+the page can tell these answers from free text. Because the formatted value
+already reads in the reviewer's language, the view shows no second-language
+translation beside it. A stored value that is not a real date or time is
+shown exactly as stored.
+
 
 While editing a pair, a reviewer who changed one language may draft the other
 from it by machine translation
@@ -159,3 +173,13 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Showing a rejection note anywhere but the admin report view.
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.
+- Changing how a date, time, or yes/no answer is stored, sent by the API, or
+  sent to the Worker or the model. It stays in its ISO 8601 or `yes`/`no`
+  form; only what a person reads is localized. The Worker still fills every
+  answer's second language
+  ([ADR-0080](../../docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).
+- Converting a date or time between time zones. A date is a calendar date and
+  a time is the wall-clock time the reporter entered; neither is shifted to
+  the reviewer's zone.
+- A per-reviewer date format preference. The format follows the interface
+  language.

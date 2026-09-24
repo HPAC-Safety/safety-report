@@ -158,7 +158,7 @@ public sealed class ReportReviewSteps
 
 	// ── Then: the detail view ───────────────────────────────────────────────
 
-	[Then(@"^it supplies the reporter language, exact bilingual question labels and answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and each attachment's kind and whether it can be opened$")]
+	[Then(@"^it supplies the reporter language, exact bilingual question labels and each question's type, answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and each attachment's kind and whether it can be opened$")]
 	public void ThenTheDetailSuppliesWhatTheReviewerNeeds()
 	{
 		_detail.GetProperty("language").GetString().ShouldBe("en-CA");
@@ -167,6 +167,7 @@ public sealed class ReportReviewSteps
 		var pilot = _detail.GetProperty("answers").EnumerateArray()
 			.Single(answer => answer.GetProperty("labelEn").GetString() == "Pilot name");
 		pilot.GetProperty("labelFr").GetString().ShouldBe("Nom du pilote");
+		pilot.GetProperty("type").GetString().ShouldBe("short_text");
 		pilot.GetProperty("isPrivate").GetBoolean().ShouldBeTrue();
 		pilot.GetProperty("values")[0].GetProperty("value").GetString().ShouldBe(PilotName);
 

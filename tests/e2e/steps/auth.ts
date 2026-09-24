@@ -102,9 +102,10 @@ export async function signInAs(page: Page, role: Role) {
 	await page.goto("/login")
 
 	const { username, password } = CREDENTIALS[role]
-	await page.getByLabel("Username").fill(username)
-	await page.getByLabel("Password").fill(password)
-	await page.getByRole("button", { name: "Log in" }).click()
+	// Either language: a scenario may choose French before the member signs in.
+	await page.getByLabel(/^(Username|Nom d'utilisateur)$/).fill(username)
+	await page.getByLabel(/^(Password|Mot de passe)$/).fill(password)
+	await page.getByRole("button", { name: /^(Log in|Ouvrir une session)$/ }).click()
 
 	// The form navigates home once the token is stored.
 	await page.waitForURL((url) => !url.pathname.startsWith("/login"))

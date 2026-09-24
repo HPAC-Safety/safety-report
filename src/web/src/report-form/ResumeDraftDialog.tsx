@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react"
 
 import type { Locale } from "../i18n/locales"
+import { formatAnswer } from "../lib/formatAnswer"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import type { DraftAnswer, DraftAttachment } from "./draft"
 import { collectsNoAnswer, questionLabel } from "./steps"
@@ -44,18 +45,14 @@ export function savedAnswerRows(
 		}
 		const answer = answers[question.revisionId]
 		if (!answer) continue
-		rows.push({ revisionId: question.revisionId, kind: "answer", label, value: displayValue(question, answer, t) })
+		rows.push({ revisionId: question.revisionId, kind: "answer", label, value: displayValue(question, answer, locale, t) })
 	}
 	return rows
 }
 
-function displayValue(question: PublicQuestionView, answer: DraftAnswer, t: (key: string) => string): string {
+function displayValue(question: PublicQuestionView, answer: DraftAnswer, locale: Locale, t: (key: string) => string): string {
 	if (answer.kind === "options") return answer.values.join(", ")
-	if (question.type === "yes_no" || question.type === "checkbox") {
-		if (answer.value === "yes") return t("report.booleanYes")
-		if (answer.value === "no") return t("report.booleanNo")
-	}
-	return answer.value
+	return formatAnswer(question.type, answer.value, locale, t)
 }
 
 export function ResumeDraftDialog({

@@ -61,11 +61,14 @@ public sealed record RejectReportRequest(string? Version, string? Note);
 /// <summary>
 ///     One question as it was asked, with every value the reporter gave for it — one
 ///     for most questions, several for a multi-select, none for a skipped question.
+///     <c>Type</c> is the question's type code, so a reader can show a stored date,
+///     time, or yes/no in their own language (REQ-MOD-075).
 /// </summary>
 public sealed record ReportAnswerView(
 	string QuestionKey,
 	string LabelEn,
 	string LabelFr,
+	string Type,
 	bool IsPrivate,
 	IReadOnlyList<ReportAnswerValueView> Values);
 

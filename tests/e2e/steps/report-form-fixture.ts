@@ -158,6 +158,18 @@ export function typeAheadFormQuestions(): StubQuestion[] {
 	return questions
 }
 
+/** The default form with a date and a time question as its first answer-producing pages (REQ-SUB-068). */
+export function dateTimeFormQuestions(): StubQuestion[] {
+	const questions = defaultFormQuestions()
+	questions.splice(
+		1,
+		0,
+		question({ id: "occurred_on", key: "occurred_on", labelEn: "On what date?", type: "date", displayOrder: 1 }),
+		question({ id: "occurred_at", key: "occurred_at", labelEn: "At what time?", type: "time", displayOrder: 1 }),
+	)
+	return questions
+}
+
 export async function stubCurrentQuestions(page: Page, questions: StubQuestion[] = defaultFormQuestions()) {
 	await page.route("**/api/v1/questions/", (route) =>
 		route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(questions) }),
@@ -254,4 +266,27 @@ export async function writeSavedDraftToBrowser(page: Page) {
 /** Removes the saved report, so a reload opens the form without asking whether to continue. */
 export async function forgetDraftInBrowser(page: Page) {
 	await page.evaluate(() => localStorage.removeItem("hpac.report.draft"))
+}
+
+/** A saved, unexpired report holding a date and a time in their stored ISO 8601 form (REQ-SUB-068). */
+export async function writeSavedDateTimeDraftToBrowser(page: Page, date: string, time: string) {
+	await page.addInitScript(
+		([savedDate, savedTime]) => {
+			localStorage.setItem(
+				"hpac.report.draft",
+				JSON.stringify({
+					locale: "en-CA",
+					answers: {
+						"rev-occurred_on": { kind: "value", value: savedDate },
+						"rev-occurred_at": { kind: "value", value: savedTime },
+					},
+					attachments: {},
+					stepKey: "occurred_at",
+					startedAtMs: Date.now() - 60 * 60 * 1000,
+					savedAtMs: Date.now() - 60 * 60 * 1000,
+				}),
+			)
+		},
+		[date, time] as const,
+	)
 }

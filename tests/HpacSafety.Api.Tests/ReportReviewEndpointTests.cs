@@ -177,9 +177,11 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		pilot.GetProperty("labelEn").GetString().ShouldBe("Pilot name");
 		pilot.GetProperty("labelFr").GetString().ShouldBe("Nom du pilote");
 		pilot.GetProperty("values")[0].GetProperty("value").GetString().ShouldBe(Seeding.PilotName);
+		pilot.GetProperty("type").GetString().ShouldBe("short_text");
 
 		var narrative = answers.Single(answer => answer.GetProperty("questionKey").GetString() == seeded.NarrativeKey);
 		narrative.GetProperty("isPrivate").GetBoolean().ShouldBeFalse();
+		narrative.GetProperty("type").GetString().ShouldBe("long_text");
 		narrative.GetProperty("values")[0].GetProperty("locale").GetString().ShouldBe("en-CA");
 
 		var skipped = answers.Single(answer => answer.GetProperty("questionKey").GetString() == seeded.SkippedKey);

@@ -772,6 +772,29 @@ set_env_value() {
 	mv "$ENV_TMP" "$ENV_FILE"
 }
 
+# How to get each key, printed wherever one is asked for or reported missing.
+key_help() {
+	case "$1" in
+		DEEPL_API_KEY)
+			say "    How to get it:"
+			say "      1. Sign up for a DeepL API plan at https://www.deepl.com/pro-api —"
+			say "         API Free is enough for development. It is the API plan you need,"
+			say "         not a DeepL Translator subscription."
+			say "      2. Open https://www.deepl.com/your-account/keys and copy the key."
+			say "         A Free key ends in :fx; the API picks the right host from that."
+			;;
+		GEMINI_API_KEY)
+			say "    How to get it:"
+			say "      1. Open https://aistudio.google.com/apikey and create a key in a"
+			say "         Google Cloud project."
+			say "      2. Turn on billing for that project (Google AI Studio → Billing, or"
+			say "         https://console.cloud.google.com/billing). A free-tier key is not"
+			say "         allowed: Google may use free-tier content to improve its products"
+			say "         (ADR-0104). Local reports still use synthetic data only."
+			;;
+	esac
+}
+
 ask_key() {
 	NAME=$1
 	PURPOSE=$2
@@ -783,14 +806,17 @@ ask_key() {
 
 	if [ "$CHECK_ONLY" -eq 1 ]; then
 		note "$NAME is not set — run ./init-dev.sh to enter it ($PURPOSE)"
+		key_help "$NAME"
 		return 0
 	fi
 
 	if [ ! -t 0 ]; then
 		note "skipped: not running in a terminal — add $NAME=... to $ENV_FILE ($PURPOSE)"
+		key_help "$NAME"
 		return 0
 	fi
 
+	key_help "$NAME"
 	printf '  %s, for %s (input hidden; Enter to skip): ' "$NAME" "$PURPOSE"
 	stty -echo < /dev/tty
 	read -r KEY_VALUE < /dev/tty || KEY_VALUE=''

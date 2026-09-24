@@ -126,8 +126,8 @@ public static class AttachmentEndpoints
 	}
 
 	/// <summary>
-	///     A reviewer hides an image or video from the published report
-	///     (REQ-MED-030). Audited; the bytes are untouched. Hiding a file already
+	///     A reviewer hides a file from the published report (REQ-MED-030,
+	///     REQ-MED-040). Audited; the bytes are untouched. Hiding a file already
 	///     hidden changes nothing and records nothing.
 	/// </summary>
 	private static Task<IResult> Hide(string reportId,
@@ -141,7 +141,7 @@ public static class AttachmentEndpoints
 			(file, subject, at) => file.HideBy(subject, at), cancellationToken);
 	}
 
-	/// <summary>A reviewer shows a hidden image or video again (REQ-MED-030). Audited.</summary>
+	/// <summary>A reviewer shows a hidden file again (REQ-MED-030, REQ-MED-040). Audited.</summary>
 	private static Task<IResult> Show(string reportId,
 									  string attachmentId,
 									  HttpContext context,
@@ -176,21 +176,10 @@ public static class AttachmentEndpoints
 			return Results.Forbid();
 		}
 
+		// Every kind of file can be hidden (ADR-0119), and a deleted one was
+		// never loaded, so the change cannot be refused here.
 		var at = clock.GetUtcNow();
-		bool changed;
-
-		try
-		{
-			changed = change(file, subject, at);
-		}
-		catch (DomainRuleViolationException cause)
-		{
-			return Results.Problem(
-				title: "That attachment's visibility cannot be changed.",
-				detail: cause.Message,
-				statusCode: StatusCodes.Status400BadRequest,
-				type: "https://hpac.ca/problems/attachment-visibility");
-		}
+		var changed = change(file, subject, at);
 
 		if (changed)
 		{

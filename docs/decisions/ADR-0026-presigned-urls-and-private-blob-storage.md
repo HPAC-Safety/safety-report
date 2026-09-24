@@ -26,6 +26,10 @@ Amended by
 an anonymous visitor may also be handed a short-lived, inline pre-signed GET,
 through `PublicMediaLink`, but only for the derivative of a file a published
 report shows. The bucket stays private and no route serves blob bytes.
+Amended by
+[ADR-0119](ADR-0119-a-published-report-offers-its-documents-for-download.md):
+that visitor may also be handed a short-lived, forced-download pre-signed GET
+to a public document's unchanged original, under a server-minted name.
 **Date:** 2026-08-22
 
 ## Context

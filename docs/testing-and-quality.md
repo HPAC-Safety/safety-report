@@ -82,7 +82,8 @@ a live third-party provider or send real incident data.
 
 **CON-TQ-006** These contracts are covered by test.
 *Verified by: REQ-MED-001, REQ-MED-002, REQ-MED-003, REQ-MED-006, REQ-MED-007,
-REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-025, REQ-MED-026.*
+REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-025, REQ-MED-026, REQ-MED-037,
+REQ-MED-039.*
 
 - all allowed image, video, and document formats and declared-type agreement are exercised;
 - configured default count and exact 50 MB boundary are covered with streaming
@@ -94,10 +95,11 @@ REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-025, REQ-MED-026.*
 - synthetic video fixtures prove container/device/location/timestamp metadata
   removal after remux/transcode;
 - only verified image/video derivative keys yield preview URLs; validated
-  document originals yield forced-download URLs only to authorized reviewers;
+  document originals yield forced-download URLs only to authorized reviewers,
+  or to anyone once the document is public, under a server-minted name;
 - document format-validation failures are inaccessible and safely logged;
-- documents are never parsed into summary input, anonymized, or public, and
-  active content is not inline-rendered; and
+- documents are never parsed into summary input or anonymized, and active
+  content is not inline-rendered; and
 - failed database writes leave only lifecycle-expirable unreferenced quarantine
   blobs.
 

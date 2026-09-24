@@ -4,5 +4,10 @@
     "fr-CA": "téléverser",
     "forbidden": ["télécharg"],
     "note": "OQLF: téléverser is upload; télécharger reads as download in Canadian French (#377)."
+  },
+  "download": {
+    "fr-CA": "télécharger",
+    "forbidden": ["téléverse"],
+    "note": "The other direction of upload: a visitor or reviewer saving a file. The translator once rendered Download as Téléverser (#428)."
   }
 }

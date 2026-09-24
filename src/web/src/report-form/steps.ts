@@ -73,15 +73,16 @@ export function buildSteps(topLevel: PublicQuestionView[]): FormStep[] {
 
 /**
  * Media consent is asked by a built-in rule rather than an authored
- * dependency (ADR-0117): only when publication consent is yes and an image or
- * video is attached. `hasMedia` says whether one is.
+ * dependency (ADR-0117): only when publication consent is yes and a file is
+ * attached, since it covers documents too (ADR-0119). `hasAttachment` says
+ * whether one is.
  */
 function isMediaConsentAsked(
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
-	hasMedia: boolean,
+	hasAttachment: boolean,
 ): boolean {
-	if (!hasMedia) return false
+	if (!hasAttachment) return false
 	const publication = [...questionsById.values()].find((candidate) => candidate.role === "consent_publish")
 	const answer = publication ? answers[publication.revisionId] : undefined
 	return answer?.kind === "value" && answer.value === "yes"
@@ -98,9 +99,9 @@ export function isConditionMet(
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
 	locale: Locale,
-	hasMedia = false,
+	hasAttachment = false,
 ): boolean {
-	if (question.role === "consent_media") return isMediaConsentAsked(answers, questionsById, hasMedia)
+	if (question.role === "consent_media") return isMediaConsentAsked(answers, questionsById, hasAttachment)
 	if (!question.dependsOnQuestionId) return true
 
 	const parent = questionsById.get(question.dependsOnQuestionId)
@@ -129,16 +130,16 @@ export function visibleSteps(
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
 	locale: Locale,
-	hasMedia = false,
+	hasAttachment = false,
 ): FormStep[] {
 	return steps.filter((step) => {
 		if (step.kind === "intro") return true
-		if (step.kind === "question") return isConditionMet(step.question, answers, questionsById, locale, hasMedia)
+		if (step.kind === "question") return isConditionMet(step.question, answers, questionsById, locale, hasAttachment)
 
 		// A group page stays visible while at least one child is visible;
 		// grouping and conditional dependency are independent (ADR-0076), so a
 		// child can be conditional even though the group itself never is.
-		return step.question.children.some((child) => isConditionMet(child, answers, questionsById, locale, hasMedia))
+		return step.question.children.some((child) => isConditionMet(child, answers, questionsById, locale, hasAttachment))
 	})
 }
 
@@ -147,9 +148,9 @@ export function visibleChildren(
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
 	locale: Locale,
-	hasMedia = false,
+	hasAttachment = false,
 ): PublicQuestionView[] {
-	return question.children.filter((child) => isConditionMet(child, answers, questionsById, locale, hasMedia))
+	return question.children.filter((child) => isConditionMet(child, answers, questionsById, locale, hasAttachment))
 }
 
 function isAnswered(question: PublicQuestionView, answers: AnswerMap): boolean {
@@ -165,7 +166,7 @@ export function unansweredRequired(
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
 	locale: Locale,
-	hasMedia = false,
+	hasAttachment = false,
 ): PublicQuestionView[] {
 	if (step.kind === "intro") return []
 
@@ -174,7 +175,7 @@ export function unansweredRequired(
 		return step.question.isRequired && !isAnswered(step.question, answers) ? [step.question] : []
 	}
 
-	return visibleChildren(step.question, answers, questionsById, locale, hasMedia).filter(
+	return visibleChildren(step.question, answers, questionsById, locale, hasAttachment).filter(
 		(child) => child.isRequired && !isAnswered(child, answers),
 	)
 }

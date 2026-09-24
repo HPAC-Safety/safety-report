@@ -797,12 +797,17 @@ Scenario: Media consent is a system question that can never be removed or made c
 
 @REQ-QB-113
 @ui
-Scenario: The form asks for media consent only when there is media to share
+Scenario Outline: The form asks for media consent only when there is a file to share
   Given a reporter is filling in the form
-  When they answer yes to publication consent and attach an image
+  When they answer yes to publication consent and attach <file>
   Then the form asks the media consent question, and it must be answered to submit
-  When they remove the image, or answer no to publication consent
+  When they remove the file, or answer no to publication consent
   Then the form no longer asks it, and submits no answer to it
+
+Examples:
+  | file       |
+  | an image   |
+  | a document |
 
 @REQ-QB-114
 Scenario Outline: A media consent answer is recorded on the report
@@ -822,3 +827,22 @@ Scenario: A media consent answer must be an explicit yes or no
   Given a submission answers the consent_media question with a value that is neither yes nor no
   When the reporter submits it
   Then the API rejects the submission
+
+@REQ-QB-116
+Scenario Outline: A media consent answer covers documents only under the wording the form showed
+  Given a submission answers yes to publication consent and attaches a document
+  And it answers yes to the consent_media question's <revision> revision
+  When the API accepts the submission
+  Then the report records media consent as yes
+  And the report records document consent as <documents>
+
+Examples:
+  | revision                         | documents  |
+  | current                          | yes        |
+  | earlier, superseded              | unanswered |
+
+@REQ-QB-117
+Scenario: Media consent names documents and says they are published as uploaded
+  Given the consent_media question as seeded
+  Then its wording in both languages asks about photos, videos, and documents
+  And it says that documents are published exactly as they were uploaded and may contain personal details

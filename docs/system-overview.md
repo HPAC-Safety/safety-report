@@ -142,10 +142,11 @@ scenario can assert what the system does, not enumerate what it never grew.*
 - Server-side drafts, a resumable or chunked upload protocol, or a pre-signed
   upload URL handed to a reporter
 - Direct messages, email notifications, WhatsApp, Telegram, or social posting
-- Public raw reports, questions, answers, documents, attachment originals, or
-  audit history. A published report's verified image and video derivatives are
-  the one exception
-  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md))
+- Public raw reports, questions, answers, attachment originals, or audit
+  history. A published report's verified image and video derivatives, and its
+  validated documents as forced downloads, are the exceptions
+  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+  [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md))
 - A CDN-served or public-bucket copy of any attachment
 - A comment author's name, email address, or HPAC number (#413), and replies,
   reactions, or notifications on comments

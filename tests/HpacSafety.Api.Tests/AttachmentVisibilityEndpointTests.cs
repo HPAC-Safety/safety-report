@@ -59,9 +59,9 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenDocument_WhenHidden_ThenBadRequest()
+	public async Task GivenDocument_WhenHidden_ThenNoContent()
 	{
-		// Given
+		// Given — a public document is moderated like a photo (ADR-0119)
 		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: "yes", MediaType.Pdf);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
@@ -69,7 +69,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		using var response = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
 	[Fact]

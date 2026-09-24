@@ -13,10 +13,10 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     A published report's photos and video, through the booted API and the real
-///     S3-compatible store (REQ-MED-025 to REQ-MED-031, ADR-0117): which files the
-///     report page lists, the anonymous link to each, and a reviewer hiding and
-///     showing one. Every file is synthetic, and every derivative a link is minted
+///     A published report's photos, video, and documents, through the booted API
+///     and the real S3-compatible store (REQ-MED-025 to REQ-MED-031, REQ-MED-037 to
+///     REQ-MED-040, ADR-0117, ADR-0119): which files the report page lists, the
+///     anonymous link to each, and a reviewer hiding and showing one. Every file is synthetic, and every derivative a link is minted
 ///     for is written to storage so the link is followed, not only parsed.
 /// </summary>
 [Binding]
@@ -29,9 +29,12 @@ public sealed class PublicMediaSteps
 
 	private static readonly byte[] SyntheticJpeg = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0xFF, 0xD9];
 
+	private static readonly byte[] SyntheticPdf = "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray();
+
 	private readonly List<string> _fileIds = [];
 	private string _reportId = null!;
 	private string _imageId = null!;
+	private string _documentId = null!;
 	private HttpResponseMessage? _linkResponse;
 	private HttpResponseMessage? _hideResponse;
 	private JsonElement? _link;
@@ -56,10 +59,70 @@ public sealed class PublicMediaSteps
 		});
 	}
 
-	[Given(@"the report has a document")]
-	public async Task GivenADocument()
+	[Given(@"the report has a document the Worker has not validated yet")]
+	public async Task GivenAnUnvalidatedDocument()
 	{
-		await SeedOne(report => report.AddFile(TinyId.New(), $"{report.Id}/original/{TinyId.New()}", MediaType.Pdf.ContentType, 1024, "witness.pdf", DateTimeOffset.UtcNow));
+		await SeedOne(report => AddDocument(report, validated: false, DateTimeOffset.UtcNow));
+	}
+
+	[Given(@"the report has a document whose validation failed")]
+	public async Task GivenAFailedDocument()
+	{
+		await SeedOne(report =>
+		{
+			var file = AddDocument(report, validated: false, DateTimeOffset.UtcNow);
+			file.RecordProcessingFailure("processing_failed");
+			return file;
+		});
+	}
+
+	[Given(@"a published report whose reporter consented to publication and to sharing media under wording that names documents")]
+	public void GivenAPublishedReportWithDocumentConsent()
+	{
+		// Seeded with its files by the next step, as for photos and video.
+	}
+
+	[Given(@"the report has a validated PDF document and a processed image")]
+	public async Task GivenAValidatedDocumentAndAnImage()
+	{
+		await Seed("yes", report =>
+		{
+			var at = DateTimeOffset.UtcNow;
+			_fileIds.Add(_documentId = AddDocument(report, validated: true, at).Id.Value);
+			_fileIds.Add(_imageId = BootedReports.AddProcessedImage(report, at.AddSeconds(1)).Id.Value);
+		});
+	}
+
+	[Given(@"a published report with a processed image and a validated document")]
+	public void GivenAnImageAndADocumentAwaitingConsent()
+	{
+		// Seeded by the next step, which says how the reporter answered.
+	}
+
+	[Given(@"^the reporter answered media consent (yes, to wording that named only photos and video|no|not at all)$")]
+	public async Task GivenTheReporterAnsweredMediaConsent(string answer)
+	{
+		var consent = answer switch
+		{
+			"no" => "no",
+			"not at all" => null,
+			_ => "yes",
+		};
+
+		await Seed(consent, report =>
+		{
+			var at = DateTimeOffset.UtcNow;
+			_imageId = BootedReports.AddProcessedImage(report, at).Id.Value;
+			_documentId = AddDocument(report, validated: true, at.AddSeconds(1)).Id.Value;
+		}, mediaConsentToEarlierWording: answer.StartsWith("yes", StringComparison.Ordinal));
+	}
+
+	[Given(@"a published report offers a validated PDF document")]
+	[Given(@"a published report offers a validated document")]
+	public async Task GivenAPublishedReportOffersADocument()
+	{
+		await Seed("yes", report => _documentId = AddDocument(report, validated: true, DateTimeOffset.UtcNow).Id.Value);
+		(await Listed()).ShouldBe([_documentId]);
 	}
 
 	[Given(@"the report has a video retained without a derivative")]
@@ -120,20 +183,35 @@ public sealed class PublicMediaSteps
 		_linkResponse = await client.GetAsync(LinkUri(_imageId));
 	}
 
+	[When(@"an anonymous visitor asks for the document's public link")]
+	public async Task WhenAVisitorAsksForTheDocumentLink()
+	{
+		using var client = await Anonymous();
+		_linkResponse = await client.GetAsync(LinkUri(_documentId));
+	}
+
 	[When(@"a safety officer hides the image")]
 	public async Task WhenASafetyOfficerHidesTheImage()
 	{
-		using var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		using var response = await officer.PostAsync(AdminUri("hide"), null);
-		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		await ChangeVisibility(_imageId, "hide");
 	}
 
 	[When(@"the safety officer shows the image again")]
 	public async Task WhenTheSafetyOfficerShowsTheImage()
 	{
-		using var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		using var response = await officer.PostAsync(AdminUri("show"), null);
-		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		await ChangeVisibility(_imageId, "show");
+	}
+
+	[When(@"a safety officer hides the document")]
+	public async Task WhenASafetyOfficerHidesTheDocument()
+	{
+		await ChangeVisibility(_documentId, "hide");
+	}
+
+	[When(@"the safety officer shows the document again")]
+	public async Task WhenTheSafetyOfficerShowsTheDocument()
+	{
+		await ChangeVisibility(_documentId, "show");
 	}
 
 	[When(@"a reviewer unpublishes the report")]
@@ -168,8 +246,93 @@ public sealed class PublicMediaSteps
 	{
 		var media = (await Detail()).GetProperty("media").EnumerateArray().ToList();
 
-		media.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).SequenceEqual(new[] { "id", "kind" }));
+		// A format is a document's alone (ADR-0119); an image or video has none.
+		media.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).SequenceEqual(new[] { "id", "kind", "format" }));
+		media.ShouldAllBe(item => item.GetProperty("format").ValueKind == JsonValueKind.Null);
 		media.Select(item => item.GetProperty("kind").GetString()).ShouldBe(["image", "video"]);
+	}
+
+	[Then(@"the document carries only its opaque id, the kind document, and the format pdf")]
+	public async Task ThenTheDocumentCarriesOnlyIdKindAndFormat()
+	{
+		var document = (await Detail()).GetProperty("media").EnumerateArray()
+			.Single(item => item.GetProperty("id").GetString() == _documentId);
+
+		document.EnumerateObject().Select(property => property.Name).ShouldBe(["id", "kind", "format"]);
+		document.GetProperty("kind").GetString().ShouldBe("document");
+		document.GetProperty("format").GetString().ShouldBe("pdf");
+		document.GetRawText().ShouldNotContain("witness");
+	}
+
+	[Then(@"the report lists only the image")]
+	public async Task ThenTheReportListsOnlyTheImage()
+	{
+		(await Listed()).ShouldBe([_imageId]);
+	}
+
+	[Then(@"the report lists the document")]
+	public async Task ThenTheReportListsTheDocument()
+	{
+		(await Listed()).ShouldBe([_documentId]);
+	}
+
+	[Then(@"a visitor asking for the document's public link gets 404")]
+	public async Task ThenTheDocumentLinkIs404()
+	{
+		using var client = await Anonymous();
+		using var response = await client.GetAsync(LinkUri(_documentId));
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Then(@"the visitor receives a pre-signed URL to the document's unchanged original that expires within fifteen minutes")]
+	public async Task ThenTheVisitorReceivesTheDocumentOriginal()
+	{
+		var body = await Link();
+		var url = new Uri(body.GetProperty("url").GetString()!);
+
+		url.AbsolutePath.ShouldContain($"/{_reportId}/original/{_documentId}");
+		int.Parse(QueryValue(url, "X-Amz-Expires"), System.Globalization.CultureInfo.InvariantCulture)
+			.ShouldBeLessThanOrEqualTo((int)BlobUrlLifetime.Maximum.TotalSeconds + 1);
+		body.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow.Add(BlobUrlLifetime.Maximum));
+
+		using var storage = new HttpClient();
+		using var served = await storage.GetAsync(url);
+		served.StatusCode.ShouldBe(HttpStatusCode.OK);
+		(await served.Content.ReadAsByteArrayAsync()).ShouldBe(SyntheticPdf);
+	}
+
+	[Then(@"the URL forces a download under a name made from the file id and the format, never the reporter's file name")]
+	public async Task ThenTheDocumentDownloadsUnderAServerMintedName()
+	{
+		var body = await Link();
+		using var storage = new HttpClient();
+		using var served = await storage.GetAsync(new Uri(body.GetProperty("url").GetString()!));
+
+		var disposition = served.Content.Headers.ContentDisposition!;
+		disposition.DispositionType.ShouldBe("attachment");
+		(disposition.FileNameStar ?? disposition.FileName!.Trim('"')).ShouldBe($"{_documentId}.pdf");
+		served.Content.Headers.ContentDisposition!.ToString().ShouldNotContain("witness");
+	}
+
+	[Then(@"the response names no reporter file name or size")]
+	public async Task ThenTheResponseNamesNoFileNameOrSize()
+	{
+		var body = await Link();
+
+		body.EnumerateObject().Select(property => property.Name).ShouldBe(["url", "expiresAt"]);
+		body.GetRawText().ShouldNotContain("witness");
+	}
+
+	[Then(@"the audit log records who hid the document")]
+	public async Task ThenTheDocumentHideIsAudited()
+	{
+		var database = await Database();
+		var file = await database.ReportFiles.SingleAsync(candidate => candidate.Id == TinyId.Parse(_documentId));
+		var entry = await database.AuditLog.SingleAsync(candidate =>
+			candidate.Action == AuditAction.HidMedia && candidate.TargetId == TinyId.Parse(_documentId));
+
+		entry.TargetType.ShouldBe("ReportFile");
+		entry.ActorSubject.ShouldBe(file.HiddenBySubject);
 	}
 
 	[Then(@"the API returns 404")]
@@ -282,9 +445,10 @@ public sealed class PublicMediaSteps
 	// ── Helpers ─────────────────────────────────────────────────────────────
 
 	private async Task Seed(string? mediaConsent,
-							Action<Report> arrange)
+							Action<Report> arrange,
+							bool mediaConsentToEarlierWording = false)
 	{
-		_reportId = await BootedReports.Seed(ReportStatus.Published, "yes", arrange, mediaConsent: mediaConsent);
+		_reportId = await BootedReports.Seed(ReportStatus.Published, "yes", arrange, mediaConsent: mediaConsent, mediaConsentToEarlierWording: mediaConsentToEarlierWording);
 
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var store = scope.ServiceProvider.GetRequiredService<IBlobStore>();
@@ -295,6 +459,13 @@ public sealed class PublicMediaSteps
 		{
 			using var bytes = new MemoryStream(SyntheticJpeg);
 			await store.Write(BlobKey.Parse(file.StrippedBlobKey), bytes, file.Kind is AttachmentKind.Video ? file.ContentType : MediaType.Jpeg.ContentType, CancellationToken.None);
+		}
+
+		// A document is offered as its unchanged original (ADR-0119).
+		foreach (var file in files.Where(file => file.Kind is AttachmentKind.Document))
+		{
+			using var bytes = new MemoryStream(SyntheticPdf);
+			await store.Write(BlobKey.Parse(file.BlobKey), bytes, file.ContentType, CancellationToken.None);
 		}
 	}
 
@@ -307,6 +478,29 @@ public sealed class PublicMediaSteps
 	{
 		var fileId = TinyId.New();
 		return report.AddFile(fileId, $"{report.Id}/original/{fileId}", MediaType.Jpeg.ContentType, 1024, "launch-site.jpg", DateTimeOffset.UtcNow);
+	}
+
+	private static ReportFile AddDocument(Report report,
+										  bool validated,
+										  DateTimeOffset at)
+	{
+		var fileId = TinyId.New();
+		var file = report.AddFile(fileId, $"{report.Id}/original/{fileId}", MediaType.Pdf.ContentType, SyntheticPdf.Length, "witness-statement.pdf", at);
+
+		if (validated)
+		{
+			file.RecordValidated(at);
+		}
+
+		return file;
+	}
+
+	private async Task ChangeVisibility(string fileId,
+										string action)
+	{
+		using var officer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		using var response = await officer.PostAsync(new Uri($"/api/admin/reports/{_reportId}/attachments/{fileId}/{action}", UriKind.Relative), null);
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
 	private static ReportFile AddVideo(Report report,

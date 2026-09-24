@@ -29,7 +29,7 @@ public sealed class ProcessAttachmentProcessorTests(WorkerPostgresFixture postgr
 	public void GivenProcessAttachmentOutboxType_WhenAsked_ThenHandlesProcessAttachment()
 	{
 		// Given
-		var processor = new ProcessAttachmentProcessor(null!, null!);
+		var processor = new ProcessAttachmentProcessor(null!, null!, TimeProvider.System);
 
 		// Then
 		processor.HandlesType.ShouldBe(OutboxMessageType.ProcessAttachment);
@@ -109,11 +109,44 @@ public sealed class ProcessAttachmentProcessorTests(WorkerPostgresFixture postgr
 	}
 
 	[Fact]
-	public async Task GivenClaimedDocument_WhenProcessed_ThenRetainedWithNoDerivativeAndNoFailure()
+	public async Task GivenClaimedDocument_WhenProcessed_ThenRetainedWithNoDerivativeAndRecordedValidated()
 	{
 		// Given
-		var pdf = "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray();
-		var (context, store, file) = await Claimed(pdf, MediaType.Pdf);
+		var (context, store, file) = await Claimed(Pdf(), MediaType.Pdf);
+		await using var _ = context;
+
+		// When
+		await Process(context, store, file.Id);
+
+		// Then — validation is what lets a document be public (ADR-0119)
+		var stored = await Reload(context, file.Id);
+		stored.ProcessingErrorCode.ShouldBeNull();
+		stored.AwaitsStripping.ShouldBeTrue();
+		stored.ValidatedAt.ShouldNotBeNull();
+		store.Writes.ShouldBe(0);
+	}
+
+	[Fact]
+	public async Task GivenValidatedDocument_WhenMessageIsDeliveredAgain_ThenValidationTimeIsUnchanged()
+	{
+		// Given
+		var (context, store, file) = await Claimed(Pdf(), MediaType.Pdf);
+		await using var _ = context;
+		await Process(context, store, file.Id);
+		var before = await Reload(context, file.Id);
+
+		// When
+		await Process(context, store, file.Id);
+
+		// Then
+		(await Reload(context, file.Id)).ValidatedAt.ShouldBe(before.ValidatedAt);
+	}
+
+	[Fact]
+	public async Task GivenDocumentThatIsNotAPdf_WhenProcessed_ThenMarkedFailedAndNeverValidated()
+	{
+		// Given
+		var (context, store, file) = await Claimed(Encoding.ASCII.GetBytes("not a document at all"), MediaType.Pdf);
 		await using var _ = context;
 
 		// When
@@ -121,9 +154,8 @@ public sealed class ProcessAttachmentProcessorTests(WorkerPostgresFixture postgr
 
 		// Then
 		var stored = await Reload(context, file.Id);
-		stored.ProcessingErrorCode.ShouldBeNull();
-		stored.AwaitsStripping.ShouldBeTrue();
-		store.Writes.ShouldBe(0);
+		stored.ProcessingErrorCode.ShouldNotBeNull();
+		stored.ValidatedAt.ShouldBeNull();
 	}
 
 	[Fact]
@@ -172,7 +204,7 @@ public sealed class ProcessAttachmentProcessorTests(WorkerPostgresFixture postgr
 			new MediaPolicyOptions().ToPolicy(),
 			TimeProvider.System);
 
-		var processor = new ProcessAttachmentProcessor(context, ingestor);
+		var processor = new ProcessAttachmentProcessor(context, ingestor, TimeProvider.System);
 		await processor.Process(
 			new OutboxMessage(TinyId.New(), OutboxMessageType.ProcessAttachment, fileId.Value, At),
 			CancellationToken.None);
@@ -184,6 +216,11 @@ public sealed class ProcessAttachmentProcessorTests(WorkerPostgresFixture postgr
 	{
 		context.ChangeTracker.Clear();
 		return await context.ReportFiles.IgnoreQueryFilters().SingleAsync(file => file.Id == fileId);
+	}
+
+	private static byte[] Pdf()
+	{
+		return "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray();
 	}
 
 	private static byte[] Photo()

@@ -28,12 +28,18 @@ public sealed record PublicReportDetail(
 	int CommentCount,
 	IReadOnlyList<PublicMediaView> Media);
 
-/// <summary>One public image or video: its opaque id, and <c>image</c> or <c>video</c>.</summary>
-public sealed record PublicMediaView(string Id, string Kind);
+/// <summary>
+///     One public file: its opaque id, <c>image</c>, <c>video</c>, or
+///     <c>document</c>, and for a document only its coarse format — the extension
+///     it downloads with, such as <c>pdf</c> (ADR-0119). Nothing else about it is
+///     public.
+/// </summary>
+public sealed record PublicMediaView(string Id, string Kind, string? Format);
 
 /// <summary>
-///     A short-lived, inline link to one public file's derivative (REQ-MED-028),
-///     and when it stops working, so the page knows to ask again.
+///     A short-lived link to one public file — inline to an image or video's
+///     derivative (REQ-MED-028), or a forced download of a document's original
+///     (REQ-MED-039) — and when it stops working, so the page knows to ask again.
 /// </summary>
 public sealed record PublicMediaLinkView(string Url, DateTimeOffset ExpiresAt);
 

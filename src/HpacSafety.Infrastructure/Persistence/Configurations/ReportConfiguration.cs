@@ -27,6 +27,10 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 		// there is media to share (ADR-0117).
 		builder.Property(report => report.ConsentMedia);
 
+		// Nullable too: only a media-consent answer to the wording that names
+		// documents sets it (ADR-0119).
+		builder.Property(report => report.ConsentDocuments);
+
 		builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
 		// Reviewer-authored, reviewer-only (REQ-MOD-058).
@@ -181,6 +185,12 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_report_files_hidden_coherence",
 			"(hidden_at IS NULL) = (hidden_by_subject IS NULL)"));
+
+		// Only a document records validation; an image or video is proven by
+		// its derivative instead (ADR-0119).
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_files_validated_document",
+			"validated_at IS NULL OR kind = 'document'"));
 	}
 }
 

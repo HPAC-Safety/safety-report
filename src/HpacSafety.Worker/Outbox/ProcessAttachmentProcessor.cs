@@ -20,7 +20,7 @@ namespace HpacSafety.Worker.Outbox;
 ///     (REQ-MED-013). A storage or database error is not caught: the message is
 ///     retried with backoff.
 /// </remarks>
-public sealed class ProcessAttachmentProcessor(HpacSafetyDbContext database, MediaIngestor ingestor)
+public sealed class ProcessAttachmentProcessor(HpacSafetyDbContext database, MediaIngestor ingestor, TimeProvider clock)
 	: IOutboxMessageProcessor
 {
 	/// <inheritdoc />
@@ -44,7 +44,8 @@ public sealed class ProcessAttachmentProcessor(HpacSafetyDbContext database, Med
 		if (file is null
 			|| file.Deleted is not null
 			|| file.ProcessingErrorCode is not null
-			|| !file.AwaitsStripping)
+			|| !file.AwaitsStripping
+			|| file.ValidatedAt is not null)
 		{
 			return;
 		}
@@ -70,7 +71,13 @@ public sealed class ProcessAttachmentProcessor(HpacSafetyDbContext database, Med
 			file.RecordStripped(outcome.DerivativeKey.Value, outcome.StrippedAt!.Value);
 		}
 
-		// Otherwise retained with no derivative — a document, or a video that
-		// could not be remuxed (ADR-0094). Nothing more to record.
+		else if (file.Kind is AttachmentKind.Document)
+		{
+			// A document has no derivative; this is what says it passed (ADR-0119).
+			file.RecordValidated(clock.GetUtcNow());
+		}
+
+		// Otherwise a video retained with no derivative because it could not be
+		// remuxed (ADR-0094). Nothing more to record.
 	}
 }

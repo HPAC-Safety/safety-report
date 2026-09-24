@@ -8,8 +8,9 @@ import { mediaConsentFormQuestions, stubCurrentQuestions } from "./report-form-f
 const { Given, When, Then } = createBdd()
 
 /*
- * The @ui scenarios for a published report's photos and video (REQ-MED-032..036,
- * ADR-0117) and the form asking media consent (REQ-QB-113).
+ * The @ui scenarios for a published report's photos, video, and documents
+ * (REQ-MED-032..036, REQ-MED-041/042, ADR-0117, ADR-0119) and the form asking
+ * media consent (REQ-QB-113).
  *
  * The API and the storage links are stubbed at the network boundary, so each
  * scenario controls when a link works, stops working, or answers 404. Which
@@ -22,6 +23,7 @@ const { Given, When, Then } = createBdd()
  */
 
 const PHOTO = readFileSync(new URL("../fixtures/synthetic-photo.png", import.meta.url))
+const PDF = Buffer.from("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n")
 const CLIP = readFileSync(new URL("../fixtures/synthetic-clip.webm", import.meta.url))
 
 const REPORT = {
@@ -32,12 +34,19 @@ const REPORT = {
 	commentCount: 0,
 }
 
-const IMAGE = { id: "imageaaaaa1", kind: "image" }
-const VIDEO = { id: "videoaaaaa1", kind: "video" }
+const IMAGE = { id: "imageaaaaa1", kind: "image", format: null }
+const VIDEO = { id: "videoaaaaa1", kind: "video", format: null }
+const DOCUMENT = { id: "documentaa1", kind: "document", format: "pdf" }
 const STORAGE = "https://storage.example.test"
 
+interface StubMedia {
+	id: string
+	kind: string
+	format: string | null
+}
+
 interface MediaStub {
-	media: { id: string; kind: string }[]
+	media: StubMedia[]
 	/** How many links each file has been issued. */
 	issued: Record<string, number>
 	/** Files whose link endpoint now answers 404. */
@@ -51,7 +60,7 @@ interface MediaStub {
 
 const stubs = new WeakMap<Page, MediaStub>()
 
-async function stubReport(page: Page, media: { id: string; kind: string }[]) {
+async function stubReport(page: Page, media: StubMedia[]) {
 	const stub: MediaStub = { media: [...media], issued: {}, gone: new Set(), goneAfter: {}, expired: new Set(), hidden: [] }
 	stubs.set(page, stub)
 
@@ -79,6 +88,17 @@ async function stubReport(page: Page, media: { id: string; kind: string }[]) {
 			await route.fulfill({ status: 403, body: "" })
 			return
 		}
+		// A document is only ever a forced download, as S3 serves it (ADR-0119).
+		if (name.startsWith(DOCUMENT.id)) {
+			await route.fulfill({
+				status: 200,
+				contentType: "application/pdf",
+				headers: { "Content-Disposition": `attachment; filename="${DOCUMENT.id}.pdf"` },
+				body: PDF,
+			})
+			return
+		}
+
 		const isVideo = name.startsWith(VIDEO.id)
 		const body = isVideo ? CLIP : PHOTO
 		const contentType = isVideo ? "video/webm" : "image/png"
@@ -196,7 +216,7 @@ When("the image's link stops working because the image is no longer public", asy
 Then("the page removes the image", async ({ page }) => {
 	await expect.poll(() => stubOf(page).issued[IMAGE.id]).toBe(1)
 	await expect(page.locator('[data-media="image"]')).toHaveCount(0)
-	await expect(page.getByRole("heading", { name: "Photos and video" })).toHaveCount(0)
+	await expect(page.getByRole("heading", { name: "Photos, video, and documents" })).toHaveCount(0)
 	await expect(page.locator("[data-summary]")).toBeVisible()
 })
 
@@ -227,7 +247,28 @@ Then("the image is no longer shown", async ({ page }) => {
 	expect(stubOf(page).hidden).toEqual([IMAGE.id])
 })
 
-// --- REQ-MED-036: the admin page shows whether each file is public ---
+// --- REQ-MED-041: a public document is offered as a download, never inline ---
+
+Given("a published report offers a validated PDF document", async ({ page }) => {
+	await stubReport(page, [DOCUMENT])
+})
+
+Then("the document is offered as a download labelled {string}", async ({ page }, label: string) => {
+	const item = page.locator('[data-media="document"]')
+	await expect(item.getByText(label)).toBeVisible()
+
+	const download = page.waitForEvent("download")
+	await item.getByRole("button", { name: `Download ${label}` }).click()
+	expect((await download).suggestedFilename()).toBe(`${DOCUMENT.id}.pdf`)
+	expect(stubOf(page).issued[DOCUMENT.id]).toBe(1)
+})
+
+Then("the page never embeds the document's content", async ({ page }) => {
+	await expect(page.locator("iframe, embed, object")).toHaveCount(0)
+	await expect(page).toHaveURL(new RegExp(`/reports/${REPORT.id}$`))
+})
+
+// --- REQ-MED-036/042: the admin page shows whether each file is public ---
 
 const ADMIN_REPORT = {
 	id: "adminmedia1",
@@ -256,10 +297,10 @@ const ADMIN_REPORT = {
 	publishedAt: "2026-09-20T16:00:00Z",
 }
 
-Given("a published report has a public image and a hidden image", async ({ page }) => {
+Given("a published report has a public {word} and a hidden {word}", async ({ page }, kind: string, _hidden: string) => {
 	const files = [
-		{ id: "publicimag1", kind: "image", state: "ready", visibility: "public" },
-		{ id: "hiddenimag1", kind: "image", state: "ready", visibility: "hidden" },
+		{ id: "publicfile1", kind, state: "ready", visibility: "public" },
+		{ id: "hiddenfile1", kind, state: "ready", visibility: "hidden" },
 	]
 	const changed: string[] = []
 
@@ -279,13 +320,13 @@ When("a safety officer opens the report in the admin area", async ({ page }) => 
 	await expect(page.getByRole("heading", { level: 2, name: "Attachments" })).toBeVisible()
 })
 
-Then("the public image reads as shown publicly and offers to hide it", async ({ page }) => {
+Then("the public {word} reads as shown publicly and offers to hide it", async ({ page }, _kind: string) => {
 	const row = page.getByRole("listitem").filter({ has: page.locator('[data-visibility="public"]') })
 	await expect(row.locator('[data-visibility="public"]')).toHaveText("Shown on the public report")
 	await expect(row.getByRole("button", { name: "Hide from the public" })).toBeVisible()
 })
 
-Then("the hidden image reads as hidden from the public and offers to show it", async ({ page }) => {
+Then("the hidden {word} reads as hidden from the public and offers to show it", async ({ page }, _kind: string) => {
 	const row = page.getByRole("listitem").filter({ has: page.locator('[data-visibility="hidden"]') })
 	await expect(row.locator('[data-visibility="hidden"]')).toHaveText("Hidden from the public")
 	await row.getByRole("button", { name: "Show on the public report" }).click()
@@ -339,28 +380,37 @@ Given("a reporter is filling in the form", async ({ page }) => {
 })
 
 When("they answer yes to publication consent and attach an image", async ({ page }) => {
-	await page.getByLabel("Photos or videos").setInputFiles({ name: "launch-site.png", mimeType: "image/png", buffer: PHOTO })
+	await attachAndConsent(page, { name: "launch-site.png", mimeType: "image/png", buffer: PHOTO })
+})
+
+When("they answer yes to publication consent and attach a document", async ({ page }) => {
+	// Media consent covers documents too (ADR-0119).
+	await attachAndConsent(page, { name: "checklist.pdf", mimeType: "application/pdf", buffer: PDF })
+})
+
+async function attachAndConsent(page: Page, file: { name: string; mimeType: string; buffer: Buffer }) {
+	await page.getByLabel("Photos or videos").setInputFiles(file)
 	await expect(page.getByRole("button", { name: /Remove/ })).toBeVisible()
 	await next(page) // -> publication consent
 	await consentGroup(page, "May we publish a summary of this report?").getByRole("radio", { name: "Yes" }).click()
-})
+}
 
 Then("the form asks the media consent question, and it must be answered to submit", async ({ page }) => {
 	await next(page) // -> media consent, which now follows
-	const media = consentGroup(page, "Photo and video consent")
+	const media = consentGroup(page, "Photo, video, and document consent")
 	await expect(media).toBeVisible()
 	await page.getByRole("button", { name: "Submit report" }).click()
 	await expect(page.getByText("This question is required.").first()).toBeVisible()
 	expect(forms.get(page)!.submissions).toHaveLength(0)
 })
 
-When("they remove the image, or answer no to publication consent", async ({ page }) => {
+When("they remove the file, or answer no to publication consent", async ({ page }) => {
 	// Answering no: publication consent becomes the last page.
 	await page.getByRole("button", { name: "Back" }).click()
 	await consentGroup(page, "May we publish a summary of this report?").getByRole("radio", { name: "No" }).click()
 	await expect(page.getByRole("button", { name: "Submit report" })).toBeVisible()
 
-	// Yes again, but with the image removed: still the last page.
+	// Yes again, but with the file removed: still the last page.
 	await consentGroup(page, "May we publish a summary of this report?").getByRole("radio", { name: "Yes" }).click()
 	await expect(page.getByRole("button", { name: "Next" })).toBeVisible()
 	await page.getByRole("button", { name: "Back" }).click()

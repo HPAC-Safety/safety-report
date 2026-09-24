@@ -408,6 +408,30 @@ A reviewer hides a file from the public report page — *playwright-bdd, Covered
 
 The admin report page shows whether each file is public — *playwright-bdd, Covered*
 
+### REQ-MED-037
+
+A published report lists its validated documents when media consent names documents — *Reqnroll, Covered*
+
+### REQ-MED-038
+
+A document is public only when its media consent named documents — *Reqnroll, Covered*
+
+### REQ-MED-039
+
+A visitor gets a short-lived forced download of a public document — *Reqnroll, Covered*
+
+### REQ-MED-040
+
+A reviewer hides a document and shows it again, and both are audited — *Reqnroll, Covered*
+
+### REQ-MED-041
+
+The report page offers a public document as a download, never inline — *playwright-bdd, Covered*
+
+### REQ-MED-042
+
+The admin report page shows whether each document is public — *playwright-bdd, Covered*
+
 ## Claims: moderation-authentication-and-publication
 
 ### REQ-MOD-001
@@ -1150,7 +1174,7 @@ Media consent is a system question that can never be removed or made conditional
 
 ### REQ-QB-113
 
-The form asks for media consent only when there is media to share — *playwright-bdd, Covered*
+The form asks for media consent only when there is a file to share — *playwright-bdd, Covered*
 
 ### REQ-QB-114
 
@@ -1159,6 +1183,14 @@ A media consent answer is recorded on the report — *Reqnroll, Covered*
 ### REQ-QB-115
 
 A media consent answer must be an explicit yes or no — *Reqnroll, Covered*
+
+### REQ-QB-116
+
+A media consent answer covers documents only under the wording the form showed — *Reqnroll, Covered*
+
+### REQ-QB-117
+
+Media consent names documents and says they are published as uploaded — *Reqnroll, Covered*
 
 ## Claims: report-submission
 
@@ -1835,7 +1867,7 @@ testing-and-quality.md — verified by `REQ-AI-001`, `REQ-AI-009`, `REQ-AI-010`,
 
 ### CON-TQ-006
 
-testing-and-quality.md — verified by `REQ-MED-001`, `REQ-MED-002`, `REQ-MED-003`, `REQ-MED-006`, `REQ-MED-007`, `REQ-MED-008`, `REQ-MED-010`, `REQ-MED-011`, `REQ-MED-025`, `REQ-MED-026`
+testing-and-quality.md — verified by `REQ-MED-001`, `REQ-MED-002`, `REQ-MED-003`, `REQ-MED-006`, `REQ-MED-007`, `REQ-MED-008`, `REQ-MED-010`, `REQ-MED-011`, `REQ-MED-025`, `REQ-MED-026`, `REQ-MED-037`, `REQ-MED-039`
 
 ### CON-TQ-007
 

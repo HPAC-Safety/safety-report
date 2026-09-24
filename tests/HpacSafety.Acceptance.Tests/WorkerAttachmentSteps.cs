@@ -222,6 +222,21 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 		_allocated.ShouldBeLessThan(LargeOriginal / 4);
 	}
 
+	// --- REQ-MED-008: a validated document is recorded validated ---
+
+	[Then(@"the Worker records that the document was validated")]
+	public async Task ThenTheWorkerRecordsTheDocumentValidated()
+	{
+		// The real processor against a migrated database: validation is the only
+		// record that lets a document be public (ADR-0119).
+		await Claim(MediaType.Pdf, "%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray());
+		await DrainAttachmentMessages();
+
+		var file = await Reload(_fileIds.Single());
+		file.ValidatedAt.ShouldNotBeNull();
+		file.ProcessingErrorCode.ShouldBeNull();
+	}
+
 	/// <summary>
 	///     A report as the submission leaves it: each original copied into the
 	///     report's compartment under its file's id, a summary message, and one
@@ -262,7 +277,7 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 	private async Task DrainAttachmentMessages()
 	{
 		// The same claim loop the Worker runs, one message at a time.
-		var processor = new ProcessAttachmentProcessor(_db!, Ingestor());
+		var processor = new ProcessAttachmentProcessor(_db!, Ingestor(), TimeProvider.System);
 		while (await OutboxClaimer.ClaimNext(
 				   _db!, OutboxMessageType.ProcessAttachment, At.AddMinutes(1), processor.Process, CancellationToken.None))
 		{
@@ -271,7 +286,7 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 
 	private async Task ProcessDirectly(TinyId fileId)
 	{
-		var processor = new ProcessAttachmentProcessor(_db!, Ingestor());
+		var processor = new ProcessAttachmentProcessor(_db!, Ingestor(), TimeProvider.System);
 		await processor.Process(
 			new OutboxMessage(_report!.Id, OutboxMessageType.ProcessAttachment, fileId.Value, At),
 			CancellationToken.None);

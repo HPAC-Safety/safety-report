@@ -7,7 +7,6 @@ import {
 	UploadRejectedError,
 	deleteUpload,
 	uploadAttachment,
-	type AttachmentKind,
 	type UploadRejectionReason,
 } from "../api/uploads"
 
@@ -24,8 +23,6 @@ export interface Attachment {
 	status: "uploaded" | "rejected" | "expired"
 	/** Set once the API has accepted the file. */
 	uploadId?: string
-	/** What the API judged the file to be, once it accepted it. Kept in memory only. */
-	kind?: AttachmentKind
 	reason?: UploadRejectionReason | "unknown" | "network" | "limit"
 }
 
@@ -124,7 +121,7 @@ export function AttachmentField({
 				void deleteUpload(uploaded.uploadId)
 				return
 			}
-			settle(key, { ...base, status: "uploaded", uploadId: uploaded.uploadId, kind: uploaded.kind })
+			settle(key, { ...base, status: "uploaded", uploadId: uploaded.uploadId })
 		} catch (error) {
 			if (controller.signal.aborted) return // Cancel already removed the row.
 			const reason = error instanceof UploadRejectedError ? error.reason : "network"

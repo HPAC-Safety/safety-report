@@ -427,15 +427,16 @@ public static class ReportEndpoints
 
 	/// <summary>
 	///     Whether the published report shows this file, by the same rule the
-	///     <c>public_report_media</c> view holds (ADR-0117), so a reviewer sees
-	///     what a visitor would.
+	///     <c>public_report_media</c> view holds (ADR-0117, ADR-0119), so a
+	///     reviewer sees what a visitor would.
 	/// </summary>
 	private static string Visibility(Report report,
 									 ReportFile file)
 	{
-		if (file.Kind is AttachmentKind.Document
-			|| file.ProcessingErrorCode is not null
-			|| file.AwaitsStripping)
+		var isDocument = file.Kind is AttachmentKind.Document;
+
+		if (file.ProcessingErrorCode is not null
+			|| (isDocument ? file.ValidatedAt is null : file.AwaitsStripping))
 		{
 			return "private";
 		}
@@ -445,7 +446,7 @@ public static class ReportEndpoints
 			return "hidden";
 		}
 
-		if (report.ConsentMedia is not true)
+		if ((isDocument ? report.ConsentDocuments : report.ConsentMedia) is not true)
 		{
 			return "no_consent";
 		}

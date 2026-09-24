@@ -885,7 +885,7 @@ describe('recording a correction', () => {
 	})
 })
 
-/** The one term the catalogue holds today, as locales/terms.json writes it. */
+/** A term as locales/terms.json writes it. */
 const uploadTerm = () => ({
 	_comment: 'commentary, not a term',
 	upload: { 'fr-CA': 'téléverser', forbidden: ['télécharg'] },

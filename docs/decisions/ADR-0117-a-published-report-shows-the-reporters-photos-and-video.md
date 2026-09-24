@@ -20,6 +20,10 @@ where they say no attachment is ever published: a verified image or video
 derivative may be; a retained unstripped original still never is. Changes
 `AGENTS.md` invariant 1: publication consent is no longer the only system
 question.
+**Amended by**
+[ADR-0119](ADR-0119-a-published-report-offers-its-documents-for-download.md):
+a validated document is public too, as a forced download, and media consent is
+reworded to cover documents and asked whenever any file is attached.
 
 ## Context
 

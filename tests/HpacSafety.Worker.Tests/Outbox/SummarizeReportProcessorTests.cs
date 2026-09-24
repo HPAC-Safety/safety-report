@@ -287,6 +287,43 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	[Fact]
+	public async Task GivenTheReportIsSoftDeletedWhileAFailingCallIsInFlight_WhenTheCallFails_ThenTheDeletedReportIsLeftAloneAndTheFailureIsRecorded()
+	{
+		// Given — the deletion lands mid-call and the call then fails; the report
+		// row now carries a row version (ADR-0105), so writing Summarizing back
+		// over the deletion must not be attempted at all
+		var connectionString = await postgres.CreateMigratedDatabase();
+		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
+		var report = await Seed(context);
+
+		var summarizer = new FakeSummarizer(
+			failing: true,
+			onCall: () =>
+			{
+				using var deleter = WorkerPostgresFixture.ContextFor(connectionString);
+				var deleting = deleter.Reports.Single(r => r.Id == report.Id);
+				deleting.SoftDelete(At);
+				deleter.SaveChanges();
+			});
+		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
+
+		// When
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
+
+		// Then — the attempt's failure is recorded on the message, and the deleted
+		// report keeps the status it had when it was deleted
+		claimed.ShouldBeTrue();
+
+		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
+		var stored = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id);
+		stored.Deleted.ShouldNotBeNull();
+		stored.Status.ShouldBe(ReportStatus.Submitted);
+
+		var message = await reader.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.AggregateId == report.Id);
+		message.Attempts.ShouldBe(1);
+	}
+
+	[Fact]
 	public async Task GivenTwoConcurrentClaims_WhenBothClaimTheSameDueMessage_ThenOnlyOneSucceeds()
 	{
 		// Given

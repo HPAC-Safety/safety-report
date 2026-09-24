@@ -132,11 +132,20 @@ Then("every option is on one line and none is truncated", async ({ page }) => {
 		.getByRole("menuitem")
 		.evaluateAll((items) =>
 			items.map((item) => {
-				const range = document.createRange()
-				range.selectNodeContents(item)
+				// Distinct line positions of the visible text, not rect count: a
+				// label wrapped in its own span is still one line (REQ-MOD-010).
+				const tops = new Set<number>()
+				const walker = document.createTreeWalker(item, NodeFilter.SHOW_TEXT)
+				for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+					const range = document.createRange()
+					range.selectNodeContents(node)
+					for (const rect of range.getClientRects()) {
+						if (rect.width > 1 && rect.height > 1) tops.add(Math.round(rect.top))
+					}
+				}
 				return {
 					text: item.textContent ?? "",
-					lineBoxes: range.getClientRects().length,
+					lineBoxes: tops.size,
 					clientWidth: item.clientWidth,
 					scrollWidth: item.scrollWidth,
 				}

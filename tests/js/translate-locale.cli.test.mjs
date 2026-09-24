@@ -113,6 +113,8 @@ describe('the locale translation command', () => {
 			// Then
 			assert.equal(code, 0)
 			assert.match(outputs, /changed=true/)
+			assert.match(outputs, /^translated=1$/m)
+			assert.match(outputs, /^translated_keys=form\.reset$/m)
 			assert.match(output, /form\.reset/)
 			assert.doesNotMatch(output.split('Translating')[1] ?? output, /form\.cancel/)
 
@@ -125,6 +127,26 @@ describe('the locale translation command', () => {
 			assert.equal(meta['form.reset'].reviewed, false)
 			assert.equal(meta['form.reset'].provider, 'stub')
 			assert.ok(meta['form.reset'].source_hash)
+		})
+		it('when only a French value was edited by hand then it reports the change but no provider call', () => {
+			// Given — a settled set, then one French value corrected by hand
+			const dir = locales({ 'en-CA.json': english, '.fr-CA.pending': 'initial generation pending' })
+			assert.equal(run(['--locales', dir, '--generate'], stub).code, 0)
+			const french = read(dir, 'fr-CA.json')
+			writeFileSync(
+				join(dir, 'fr-CA.json'),
+				`${JSON.stringify({ form: { ...french.form, submit: 'Envoyer' } }, null, 2)}\n`,
+			)
+
+			// When
+			const { code, outputs } = run(['--locales', dir, '--generate'], stub)
+
+			// Then — the record changed, but nothing was sent to a provider
+			assert.equal(code, 0)
+			assert.match(outputs, /changed=true/)
+			assert.match(outputs, /^keys=1$/m)
+			assert.match(outputs, /^translated=0$/m)
+			assert.match(outputs, /^translated_keys=$/m)
 		})
 	})
 

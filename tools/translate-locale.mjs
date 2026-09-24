@@ -730,7 +730,18 @@ async function main() {
 	const summary =
 		`${plan.translate.length} translated, ${plan.pin.length} pinned, ${plan.remove.length} removed`
 	console.log(`\n${summary}.`)
-	setOutput({ changed: 'true', keys: String(total), summary })
+	// `keys` counts every key the run touched, including ones pinned from the
+	// glossary, recorded as hand-edited, or removed — none of which reach a
+	// provider. `translated` counts only what the provider was actually asked,
+	// so a workflow can tell a run that exercised the provider from one that
+	// did not (see i18n-translate.yml's reporting steps).
+	setOutput({
+		changed: 'true',
+		keys: String(total),
+		translated: String(plan.translate.length),
+		translated_keys: plan.translate.map(({ key }) => key).join(','),
+		summary,
+	})
 }
 
 if (runAsCommand) {

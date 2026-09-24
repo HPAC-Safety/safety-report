@@ -26,6 +26,14 @@ name: Translate locales
 # Nothing here ever sees report data. Its input is a JSON file of UI labels that
 # ships in the repository. Invariant 4 in AGENTS.md — raw reports are never
 # translated and never leave the system — is untouched by this job.
+#
+# The job also reports its own outcome to every open issue labelled
+# `verify:translation-run` — an issue that can only be settled by a run that
+# actually calls the provider (e.g. #381: does DeepL accept the term list?).
+# When the run exercised the provider, it comments with what happened and
+# closes the issue if the result passed the i18n check; when the run failed,
+# it comments with the provider's error and leaves the issue open. Nothing has
+# to poll for a run nobody can schedule.
 
 on:
   push:
@@ -71,6 +79,9 @@ jobs:
       # main itself is protected; this workflow never writes to it.
       contents: write
       pull-requests: write
+      # Commenting on, and closing, the issues labelled verify:translation-run
+      # — the built-in token is enough for that, and no PAT is used for it.
+      issues: write
     steps:
       - uses: actions/checkout@v7
         with:
@@ -114,7 +125,13 @@ jobs:
           TRANSLATION_ENDPOINT: ${{ vars.TRANSLATION_ENDPOINT }}
           TRANSLATION_MODEL: ${{ vars.TRANSLATION_MODEL }}
           TRANSLATION_API_KEY: ${{ secrets.TRANSLATION_API_KEY }}
-        run: node tools/translate-locale.mjs --generate --locales locales
+        # The output is kept in a file as well as the log, so a failure can be
+        # quoted to the issues waiting on this run. It holds UI strings and
+        # the provider's status line, never a secret: the key travels in a
+        # header the tool never prints.
+        run: |
+          set -o pipefail
+          node tools/translate-locale.mjs --generate --locales locales 2>&1 | tee "$RUNNER_TEMP/translate.log"
 
       # Same-repo pull request (ADR-0057): commit the result straight onto the
       # PR's own branch instead of opening a second one — the PR under review
@@ -127,6 +144,7 @@ jobs:
       # nudge (an empty commit, or closing/reopening the PR) before checks
       # re-run.
       - name: Commit the translation onto the pull request's own branch
+        id: commit_to_pr
         if: github.event_name == 'pull_request_target' && steps.translate.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
@@ -164,6 +182,7 @@ jobs:
       # before it can merge. That trade-off is recorded in ADR-0021, and the
       # warning below is what tells whoever reads the run which happened.
       - name: Open a pull request with the French
+        id: open_pr
         if: github.event_name != 'pull_request_target' && steps.translate.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
@@ -230,3 +249,118 @@ jobs:
               --title 'Regenerate the French UI strings' \
               --body-file "$RUNNER_TEMP/pr-body.md"
           fi
+
+      # The same i18n check ci.yml runs, including the term-list rule
+      # (ADR-0102), on the French this run just produced. It never fails the
+      # job: the French is already committed where a person reads it, and
+      # ci.yml fails that pull request on the same check. Its verdict only
+      # decides what the report below says, and whether it closes anything.
+      - name: Check the French this run produced
+        id: verify
+        if: steps.translate.outputs.translated != '' && steps.translate.outputs.translated != '0'
+        continue-on-error: true
+        run: node tools/translate-locale.mjs --check --locales locales
+
+      # `translated` — not `keys` — is what says the provider was actually
+      # called: `keys` also counts glossary pins, hand-edits recorded as human,
+      # and removals, none of which reach a provider. A run that translated
+      # nothing settles nothing, so it leaves every waiting issue alone.
+      - name: Report to the issues waiting on a translation run
+        if: success() && steps.translate.outputs.translated != '' && steps.translate.outputs.translated != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TRANSLATED: ${{ steps.translate.outputs.translated }}
+          TRANSLATED_KEYS: ${{ steps.translate.outputs.translated_keys }}
+          CHECK_OUTCOME: ${{ steps.verify.outcome }}
+          PROVIDER: ${{ vars.TRANSLATION_PROVIDER || 'deepl' }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${PR_NUMBER:-}" ]; then
+            event="pull request #${PR_NUMBER}"
+          else
+            event="${GITHUB_EVENT_NAME} on ${GITHUB_REF_NAME}"
+          fi
+
+          issues=$(gh issue list --repo "$GITHUB_REPOSITORY" --label 'verify:translation-run' --state open --json number --jq '.[].number')
+          if [ -z "$issues" ]; then
+            echo 'No open issue is waiting on a translation run.'
+            exit 0
+          fi
+
+          keys=$(printf '%s' "$TRANSLATED_KEYS" | tr ',' '\n' | sed 's/^/- `/; s/$/`/')
+          if [ "$CHECK_OUTCOME" = 'success' ]; then
+            verdict='`translate-locale.mjs --check` passed on the result, including the term-list rule in `locales/terms.json`.'
+          else
+            verdict='`translate-locale.mjs --check` **failed** on the result — see the run log. This issue stays open.'
+          fi
+
+          {
+            printf 'A translation run called the provider (`%s`) and succeeded.\n\n' "$PROVIDER"
+            printf -- '- Run: %s\n- Event: %s\n- Keys sent to the provider: %s\n\n' "$RUN_URL" "$event" "$TRANSLATED"
+            printf '%s\n\n%s\n\n' "$keys" "$verdict"
+            printf '_Posted by `.github/workflows/i18n-translate.yml` to every open issue labelled `verify:translation-run`._\n'
+          } > "$RUNNER_TEMP/report.md"
+
+          for issue in $issues; do
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/report.md"
+            if [ "$CHECK_OUTCOME" = 'success' ]; then
+              gh issue close "$issue" --repo "$GITHUB_REPOSITORY" --reason completed
+            fi
+          done
+
+      # A failed run is exactly what some of those issues wait to hear about —
+      # a provider rejecting a request shape answers with a status line the
+      # tool prints ("The translation provider answered 400 …"). Quote it,
+      # name the failed step, and leave the issue open for a person.
+      - name: Report a failed run to the issues waiting on one
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          OUTCOMES: >-
+            node=${{ steps.node.outcome }}
+            translate=${{ steps.translate.outcome }}
+            commit_to_pr=${{ steps.commit_to_pr.outcome }}
+            open_pr=${{ steps.open_pr.outcome }}
+        run: |
+          set -euo pipefail
+
+          if [ -n "${PR_NUMBER:-}" ]; then
+            event="pull request #${PR_NUMBER}"
+          else
+            event="${GITHUB_EVENT_NAME} on ${GITHUB_REF_NAME}"
+          fi
+
+          issues=$(gh issue list --repo "$GITHUB_REPOSITORY" --label 'verify:translation-run' --state open --json number --jq '.[].number')
+          if [ -z "$issues" ]; then
+            echo 'No open issue is waiting on a translation run.'
+            exit 0
+          fi
+
+          failed=$(printf '%s\n' $OUTCOMES | awk -F= '$2 == "failure" { print $1 }' | paste -sd, -)
+          log="$RUNNER_TEMP/translate.log"
+          error=''
+          if [ -f "$log" ]; then
+            error=$(grep -m1 -E 'The translation provider answered [0-9]+' "$log" || true)
+            if [ -z "$error" ]; then
+              error=$(tail -n 5 "$log")
+            fi
+          fi
+
+          {
+            printf 'A translation run **failed**.\n\n'
+            printf -- '- Run: %s\n- Event: %s\n- Failed step(s): %s\n\n' "$RUN_URL" "$event" "${failed:-a step before translation}"
+            if [ -n "$error" ]; then
+              printf '```\n%s\n```\n\n' "$error"
+            fi
+            printf 'This issue stays open.\n\n'
+            printf '_Posted by `.github/workflows/i18n-translate.yml` to every open issue labelled `verify:translation-run`._\n'
+          } > "$RUNNER_TEMP/report.md"
+
+          for issue in $issues; do
+            gh issue comment "$issue" --repo "$GITHUB_REPOSITORY" --body-file "$RUNNER_TEMP/report.md"
+          done

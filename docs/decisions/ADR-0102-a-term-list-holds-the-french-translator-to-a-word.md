@@ -82,7 +82,10 @@ or the severity scale. It can't express "this word, wherever it appears".
 - **Unverified until the next real translation run:** whether DeepL accepts
   `custom_instructions` alongside `tag_handling: xml` and `formality` for
   `FR-CA`. If it answers 400, the run fails loudly, as any provider error
-  does, and this ADR's DeepL mechanism needs revisiting.
+  does, and this ADR's DeepL mechanism needs revisiting. #381 tracks it, and
+  the translation run itself settles it:
+  [ADR-0103](ADR-0103-a-translation-run-reports-to-the-issues-waiting-on-it.md)
+  has the run comment on, and close, the issue.
 - The server-side `ITranslator`, used by question authoring (ADR-0062) and
   Worker answer translation (ADR-0080), is not held to the term list. Its
   output is either reviewed by an administrator or is an answer's second

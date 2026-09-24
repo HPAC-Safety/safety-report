@@ -188,7 +188,9 @@ describe('push-to-pr-branch failures', () => {
 		// Every push is refused, and the branch gains an empty commit each time
 		// — a push that changes no trigger path, so the run keeps replaying.
 		// Refs can't be updated inside the push's quarantine, so step out of it.
-		hook(`env -u GIT_QUARANTINE_PATH -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES sh -c '
+		// A bare origin has no identity of its own, and CI has no global one.
+		hook(`export GIT_AUTHOR_NAME=test GIT_AUTHOR_EMAIL=test@example.invalid GIT_COMMITTER_NAME=test GIT_COMMITTER_EMAIL=test@example.invalid
+env -u GIT_QUARANTINE_PATH -u GIT_OBJECT_DIRECTORY -u GIT_ALTERNATE_OBJECT_DIRECTORIES sh -ec '
 parent=$(git rev-parse refs/heads/${BRANCH})
 next=$(git commit-tree "$parent^{tree}" -p "$parent" -m moved)
 git update-ref refs/heads/${BRANCH} "$next"'

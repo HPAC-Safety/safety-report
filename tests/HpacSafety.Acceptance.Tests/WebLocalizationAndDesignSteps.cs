@@ -260,6 +260,119 @@ public sealed class WebLocalizationAndDesignSteps
 		french.ShouldContain("Joignez-nous");
 	}
 
+	// --- a listed term (ADR-0102) -----------------------------------------
+
+	private const string UploadEnglish = "Cancel uploading {name}";
+	private const string UploadFrenchForbidden = "Annuler le téléchargement de {name}";
+
+	private const string TermsJson =
+		"""{ "upload": { "fr-CA": "téléverser", "forbidden": ["télécharg"] } }""";
+
+	private string _termsPath = string.Empty;
+	private string _requestOutput = string.Empty;
+
+	[Given(@"the term list requires ""upload"" to be rendered ""téléverser"", never ""télécharg…""")]
+	public void GivenTheTermListRequiresTeleverser()
+	{
+		_correctionDir = Path.Combine(Path.GetTempPath(), $"locales-terms-{Guid.NewGuid():N}");
+		Directory.CreateDirectory(_correctionDir);
+		_termsPath = Path.Combine(_correctionDir, "terms.json");
+		File.WriteAllText(_termsPath, TermsJson);
+	}
+
+	[Given(@"an English value says ""upload"" and its French says ""télécharger""")]
+	public void GivenAnUploadRenderedAsTelecharger()
+	{
+		// Stamped exactly as a generate would leave it, so nothing but the term
+		// can be what verification objects to.
+		WriteTermFixture("deepl:FR-CA:prefer_more");
+	}
+
+	private void WriteTermFixture(string provider)
+	{
+		File.WriteAllText(
+			Path.Combine(_correctionDir, "en-CA.json"),
+			JsonSerializer.Serialize(new { upload = new { cancel = UploadEnglish } }));
+		File.WriteAllText(
+			Path.Combine(_correctionDir, "fr-CA.json"),
+			JsonSerializer.Serialize(new { upload = new { cancel = UploadFrenchForbidden } }));
+		File.WriteAllText(
+			Path.Combine(_correctionDir, "fr-CA.meta.json"),
+			JsonSerializer.Serialize(new Dictionary<string, object>
+			{
+				["upload.cancel"] = new
+				{
+					source_hash = Sha256(UploadEnglish),
+					target_hash = Sha256(UploadFrenchForbidden),
+					provider,
+					reviewed = provider == "human",
+				},
+			}));
+	}
+
+	[Then(@"verification fails, naming that key and the term")]
+	public void ThenVerificationFailsNamingTheKeyAndTerm()
+	{
+		// Even with the branch allowance: no workflow fixes a wrong term.
+		_verifyExitCode.ShouldNotBe(0);
+		_verifyOutput.ShouldContain("'upload.cancel'");
+		_verifyOutput.ShouldContain("\"upload\"");
+		_verifyOutput.ShouldContain("téléverser");
+	}
+
+	[Then(@"it fails whether a machine or a person wrote that French")]
+	public void ThenItFailsForAPersonsFrenchToo()
+	{
+		WriteTermFixture("human");
+		WhenTheLocalesAreVerified();
+
+		_verifyExitCode.ShouldNotBe(0);
+		_verifyOutput.ShouldContain("'upload.cancel'");
+	}
+
+	[When(@"a translation request is built for DeepL or for a chat-completions provider")]
+	public void WhenATranslationRequestIsBuilt()
+	{
+		// The adapters' own request builders, fed the term list the way
+		// translate-locale.mjs feeds them. Nothing is sent anywhere.
+		var tools = Path.Combine(RepositoryRoot(), "tools");
+		var script = Path.Combine(_correctionDir, "build-request.mjs");
+		File.WriteAllText(
+			script,
+			$$"""
+			import { readFileSync } from 'node:fs'
+			import { createTranslator } from '{{new Uri(Path.Combine(tools, "translator.mjs")).AbsoluteUri}}'
+			import { termInstructions } from '{{new Uri(Path.Combine(tools, "translate-locale.mjs")).AbsoluteUri}}'
+
+			const instructions = termInstructions(JSON.parse(readFileSync(process.argv[2], 'utf8')))
+			const items = [{ key: 'a', text: 'Upload a photo' }]
+			const locales = { source: 'en-CA', target: 'fr-CA', instructions }
+			const deepl = createTranslator({ provider: 'deepl', apiKey: 'k' }).buildRequest(items, locales)
+			const chat = createTranslator({
+				provider: 'chat-completions', endpoint: 'https://example.invalid', model: 'm', apiKey: 'k',
+			}).buildRequest(items, locales)
+			console.log(JSON.stringify({ deepl: deepl.custom_instructions, chat: chat.messages[0].content }))
+			""");
+
+		RunNodeTool(script, true, out _requestOutput, _termsPath);
+	}
+
+	[Then(@"the request instructs the provider to render ""upload"" as ""téléverser"" and never ""télécharg…""")]
+	public void ThenTheRequestCarriesTheRendering()
+	{
+		using var request = JsonDocument.Parse(_requestOutput.Trim());
+
+		var deepl = request.RootElement.GetProperty("deepl").EnumerateArray().Select(e => e.GetString()!).ToList();
+		var chat = request.RootElement.GetProperty("chat").GetString()!;
+
+		foreach (var carried in new[] { string.Join('\n', deepl), chat })
+		{
+			carried.ShouldContain("\"upload\"");
+			carried.ShouldContain("\"téléverser\"");
+			carried.ShouldContain("never use \"télécharg…\"");
+		}
+	}
+
 	private static string Sha256(string value)
 	{
 		return Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

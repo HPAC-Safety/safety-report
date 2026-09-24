@@ -1,0 +1,8 @@
+{
+  "_comment": "Single English terms and the French they must become, for every French value in fr-CA.json. glossary.json pins whole strings by key; this file pins words. Each entry is told to the CI translator with every request, and translate-locale.mjs --check fails on a French value that uses a forbidden form where the English uses the term, whoever wrote that French. Forbidden forms are matched case-insensitively as substrings, so a stem covers every conjugation. See ADR-0102.",
+  "upload": {
+    "fr-CA": "téléverser",
+    "forbidden": ["télécharg"],
+    "note": "OQLF: téléverser is upload; télécharger reads as download in Canadian French (#377)."
+  }
+}

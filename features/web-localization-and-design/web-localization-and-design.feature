@@ -114,6 +114,20 @@ Scenario: Editing both languages at once is one correction, not a conflict
   Then the edit is accepted as a human correction
   And neither language is overwritten
 
+@REQ-WLD-026
+Scenario: French that renders a listed term the forbidden way fails verification
+  Given the term list requires "upload" to be rendered "téléverser", never "télécharg…"
+  And an English value says "upload" and its French says "télécharger"
+  When the locales are verified
+  Then verification fails, naming that key and the term
+  And it fails whether a machine or a person wrote that French
+
+@REQ-WLD-027
+Scenario: The machine translator is told the required rendering of every listed term
+  Given the term list requires "upload" to be rendered "téléverser", never "télécharg…"
+  When a translation request is built for DeepL or for a chat-completions provider
+  Then the request instructs the provider to render "upload" as "téléverser" and never "télécharg…"
+
 @REQ-WLD-014
 @ignore
 Scenario: Question content comes from the bilingual database revision

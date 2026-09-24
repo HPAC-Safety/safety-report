@@ -33,6 +33,7 @@ on:
     paths:
       - locales/en-CA.json
       - locales/glossary.json
+      - locales/terms.json
       - tools/translate-locale.mjs
       - tools/translator.mjs
       - .github/workflows/i18n-translate.yml
@@ -40,6 +41,7 @@ on:
     paths:
       - locales/en-CA.json
       - locales/glossary.json
+      - locales/terms.json
       - tools/translate-locale.mjs
       - tools/translator.mjs
       - .github/workflows/i18n-translate.yml
@@ -209,6 +211,9 @@ jobs:
 
           Do not hand-edit `locales/fr-CA.json` to fix a translation; the next run
           regenerates it. Fix the English, or pin the term in `locales/glossary.json`.
+          A word that must always translate one way (`upload` → *téléverser*) goes in
+          `locales/terms.json` (ADR-0102): the translator is told it, and the i18n
+          check fails on French that breaks it.
 
           See `docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md`.
           MD

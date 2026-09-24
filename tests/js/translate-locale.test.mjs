@@ -13,6 +13,11 @@ import {
 	checkVerdict,
 	classifyKey,
 	HUMAN_PROVIDER,
+	englishUsesTerm,
+	termEntries,
+	termInstructions,
+	termViolations,
+	MAX_TERM_INSTRUCTIONS,
 } from '../../tools/translate-locale.mjs'
 
 /** The smallest English set that still has a nested shape. */
@@ -877,5 +882,171 @@ describe('recording a correction', () => {
 		assert.deepEqual(plan.record, [])
 		assert.deepEqual(plan.translate, [])
 		assert.deepEqual(plan.unchanged, ['nav.contact'])
+	})
+})
+
+/** The one term the catalogue holds today, as locales/terms.json writes it. */
+const uploadTerm = () => ({
+	_comment: 'commentary, not a term',
+	upload: { 'fr-CA': 'téléverser', forbidden: ['télécharg'] },
+})
+
+describe('the term list', () => {
+	describe('given an entry with a rendering and forbidden forms', () => {
+		it('when it is read then commentary keys are skipped', () => {
+			// Given / When
+			const entries = termEntries(uploadTerm())
+
+			// Then
+			assert.deepEqual(entries, [{ term: 'upload', french: 'téléverser', forbidden: ['télécharg'] }])
+		})
+	})
+
+	describe('given an entry with no forbidden forms', () => {
+		it('when it is read then it refuses, because a term nobody checks protects nobody', () => {
+			// Given
+			const terms = { upload: { 'fr-CA': 'téléverser', forbidden: [] } }
+
+			// When / Then
+			assert.throws(() => termEntries(terms), /upload/)
+		})
+	})
+
+	describe('given an entry with no French rendering', () => {
+		it('when it is read then it refuses and names the term', () => {
+			// Given
+			const terms = { upload: { forbidden: ['télécharg'] } }
+
+			// When / Then
+			assert.throws(() => termEntries(terms), /'upload' has no fr-CA rendering/)
+		})
+	})
+
+	describe('given no term list at all', () => {
+		it('when it is read then there are no terms', () => {
+			// Given / When / Then
+			assert.deepEqual(termEntries(null), [])
+		})
+	})
+
+	describe('given English that uses the term in any form', () => {
+		it('when it is matched then every inflection is found, at the start of a word only', () => {
+			// Given / When / Then
+			assert.equal(englishUsesTerm('Upload a photo', 'upload'), true)
+			assert.equal(englishUsesTerm('Each file uploads as soon as you choose it.', 'upload'), true)
+			assert.equal(englishUsesTerm('This file could not be uploaded.', 'upload'), true)
+			assert.equal(englishUsesTerm('Cancel uploading {name}', 'upload'), true)
+			assert.equal(englishUsesTerm('Download the file', 'upload'), false)
+		})
+	})
+})
+
+describe('a French value that renders a listed term', () => {
+	const english = { a: { cancel: 'Cancel uploading {name}' }, b: { other: 'Download the report' } }
+
+	describe('given the forbidden form, whatever its case or conjugation', () => {
+		it('when it is checked then the key and the term are named', () => {
+			// Given
+			const french = { a: { cancel: 'Annuler le Téléchargement de {name}' }, b: { other: 'Télécharger le rapport' } }
+
+			// When
+			const violations = termViolations({ english, french, terms: uploadTerm() })
+
+			// Then — "Download" is not the term, so its télécharger is correct French
+			assert.deepEqual(violations, [{ key: 'a.cancel', term: 'upload', french: 'téléverser', found: 'télécharg' }])
+		})
+	})
+
+	describe('given a French value that is missing or still a local # stub', () => {
+		it('when it is checked then it is left to the checks that report those', () => {
+			// Given
+			const french = { b: { other: '#Download the report' } }
+
+			// When / Then — a.cancel is missing and b.other is not French yet
+			assert.deepEqual(termViolations({ english, french, terms: uploadTerm() }), [])
+		})
+	})
+
+	describe('given the required form', () => {
+		it('when it is checked then nothing is reported', () => {
+			// Given
+			const french = { a: { cancel: 'Annuler le téléversement de {name}' }, b: { other: 'Télécharger le rapport' } }
+
+			// When / Then
+			assert.deepEqual(termViolations({ english, french, terms: uploadTerm() }), [])
+		})
+	})
+
+	describe('given a French value a person wrote by hand, recorded as human', () => {
+		it('when the locales are verified then it still fails, because a term is a correctness rule', () => {
+			// Given
+			const en = { a: { cancel: 'Cancel uploading {name}' } }
+			const fr = { a: { cancel: 'Annuler le téléchargement de {name}' } }
+			const meta = {
+				'a.cancel': {
+					source_hash: hashOf(en.a.cancel),
+					target_hash: hashOf(fr.a.cancel),
+					provider: HUMAN_PROVIDER,
+					reviewed: true,
+				},
+			}
+
+			// When
+			const result = verifyLocales({ english: en, french: fr, meta, glossary: {}, terms: uploadTerm() })
+			const verdict = checkVerdict(result, { allowPending: true })
+
+			// Then — no workflow resolves it, so the branch allowance does not either
+			assert.equal(verdict.ok, false)
+			assert.match(verdict.blocking[0], /'a\.cancel'.*"upload".*téléverser/)
+		})
+	})
+
+	describe('given no term list at all', () => {
+		it('when the locales are verified then nothing new is asserted', () => {
+			// Given
+			const en = { a: { cancel: 'Cancel uploading {name}' } }
+			const fr = { a: { cancel: 'Annuler le téléchargement de {name}' } }
+			const meta = { 'a.cancel': { source_hash: hashOf(en.a.cancel), target_hash: hashOf(fr.a.cancel), provider: HUMAN_PROVIDER, reviewed: true } }
+
+			// When / Then
+			assert.equal(verifyLocales({ english: en, french: fr, meta, glossary: {} }).ok, true)
+		})
+	})
+})
+
+describe('the instructions a translator is given', () => {
+	describe('given the term list', () => {
+		it('when they are built then each term says what to use and what never to use', () => {
+			// Given / When
+			const [instruction, ...rest] = termInstructions(uploadTerm())
+
+			// Then
+			assert.deepEqual(rest, [])
+			assert.match(instruction, /"upload"/)
+			assert.match(instruction, /"téléverser"/)
+			assert.match(instruction, /never use "télécharg…"/)
+		})
+	})
+
+	describe('given an instruction longer than the translator accepts', () => {
+		it('when they are built then it refuses rather than sending one the provider would reject', () => {
+			// Given
+			const terms = { upload: { 'fr-CA': 'téléverser', forbidden: Array.from({ length: 40 }, (_, index) => `forme${index}`) } }
+
+			// When / Then
+			assert.throws(() => termInstructions(terms), /at most 300/)
+		})
+	})
+
+	describe('given more terms than the translator accepts', () => {
+		it('when they are built then it refuses rather than dropping one silently', () => {
+			// Given
+			const terms = Object.fromEntries(
+				Array.from({ length: MAX_TERM_INSTRUCTIONS + 1 }, (_, index) => [`term${index}`, { 'fr-CA': 'x', forbidden: ['y'] }]),
+			)
+
+			// When / Then
+			assert.throws(() => termInstructions(terms), /at most 10/)
+		})
 	})
 })

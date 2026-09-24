@@ -37,6 +37,10 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # A persisted GITHUB_TOKEN header outranks the PAT the push step puts
+          # on the remote URL, so CI would not run as the PAT (lesson 0018).
+          persist-credentials: false
 
       # Version comes out of infra/.terraform-version, never restated here —
       # see ADR-0015 and terraform.yml's infra job, which installs the same way.

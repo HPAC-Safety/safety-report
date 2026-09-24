@@ -278,6 +278,12 @@ top
 ([ADR-0113](../../docs/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
 [lesson 0016](../../docs/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
 
+A workflow that puts a token on its remote URL to push checks out with
+`persist-credentials: false`. The `GITHUB_TOKEN` header `actions/checkout`
+persists outranks the URL, so the push authenticates as `github-actions[bot]`
+and the CI it starts waits for a maintainer to approve it
+([lesson 0018](../../docs/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md)).
+
 Never hand-edit generated `.claude/` content. When project-owned skills change,
 update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill
 validation.

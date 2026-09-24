@@ -89,6 +89,10 @@ jobs:
           # than the branch name, so a push landing between the event firing
           # and this checkout can't change what gets translated.
           ref: ${{ github.event_name == 'pull_request_target' && github.event.pull_request.head.sha || github.ref }}
+          # A persisted GITHUB_TOKEN header outranks the PAT the push steps
+          # put on the remote URL, and a push made with it needs a maintainer
+          # to approve CI (lesson 0018).
+          persist-credentials: false
 
       # The Node major is pinned in ci.yml and nowhere else — see ADR-0015 and
       # skills/deliver-hpac-change/SKILL.md. Reading it here rather than writing

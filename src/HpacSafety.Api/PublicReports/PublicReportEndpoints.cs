@@ -61,7 +61,7 @@ public static class PublicReportEndpoints
 			.OrderByDescending(report => report.PublishedAt)
 			.ThenByDescending(report => report.Id)
 			.Take(PageSize + 1)
-			.Select(report => new PublicReportView(report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt))
+			.Select(report => new PublicReportView(report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount))
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
@@ -85,7 +85,7 @@ public static class PublicReportEndpoints
 		var report = await database.PublicReports
 			.AsNoTracking()
 			.Where(candidate => candidate.Id == reportId)
-			.Select(candidate => new PublicReportView(candidate.Id, candidate.AiSummaryEn, candidate.AiSummaryFr, candidate.PublishedAt))
+			.Select(candidate => new PublicReportView(candidate.Id, candidate.AiSummaryEn, candidate.AiSummaryFr, candidate.PublishedAt, candidate.CommentCount))
 			.SingleOrDefaultAsync(cancellationToken)
 			.ConfigureAwait(false);
 

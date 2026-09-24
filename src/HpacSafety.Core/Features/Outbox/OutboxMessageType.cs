@@ -24,4 +24,10 @@ public enum OutboxMessageType
 	///     them. See ADR-0080.
 	/// </summary>
 	TranslateAnswers = 2,
+
+	/// <summary>
+	///     Machine-translate one revision of a member's comment into the other
+	///     official language. The payload is the revision's ID (ADR-0114).
+	/// </summary>
+	TranslateComment = 3,
 }

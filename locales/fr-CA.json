@@ -461,9 +461,40 @@
       "body": "Il n'existe aucun rapport de sécurité publié à cette adresse."
     },
     "reportTitle": "Rapport de sécurité",
-    "readIn": {
-      "en-CA": "Lire en anglais",
-      "fr-CA": "Lire en français"
+    "comments": {
+      "one": "1 commentaire",
+      "other": "{count} commentaires"
     }
+  },
+  "comments": {
+    "title": "Commentaires",
+    "listLabel": "Commentaires sur ce rapport",
+    "loading": "Chargement des commentaires…",
+    "empty": "Aucun commentaire pour l'instant.",
+    "error": {
+      "load": "Les commentaires n'ont pas pu être chargés. Veuillez réessayer.",
+      "save": "Cela n'a pas pu être enregistré. Veuillez réessayer."
+    },
+    "author": {
+      "member": "Membre",
+      "you": "Vous"
+    },
+    "edited": "Modifié",
+    "translated": "Traduction automatique",
+    "awaitingTranslation": "La traduction est en cours",
+    "signIn": "Ouvrez une session pour laisser un commentaire",
+    "newLabel": "Ajouter un commentaire",
+    "editLabel": "Modifier votre commentaire",
+    "reminder": "Les commentaires sont publics. Veuillez ne pas nommer ni identifier les personnes impliquées dans l'incident.",
+    "length": "{count} {max}s caractères",
+    "post": "Publier un commentaire",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "hide": "Masquer",
+    "keep": "Conserver",
+    "confirmDelete": "Souhaitez-vous supprimer votre commentaire?",
+    "confirmHide": "Voulez-vous cacher ce commentaire à tout le monde?"
   }
 }

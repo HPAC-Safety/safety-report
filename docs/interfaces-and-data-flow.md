@@ -24,6 +24,10 @@ capability boundaries are normative.
 | `POST /api/v1/reports` | Submit final report JSON naming its upload IDs | `202` with opaque report ID/status. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
 | `GET /api/v1/public/reports?after=<cursor>` | Paginated public feed, newest published first | Only publishable public DTO fields, plus the opaque cursor for the next page (`null` on the last). Anonymous. |
 | `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. Anonymous. |
+| `GET /api/v1/public/reports/{id}/comments` | A published report's visible comments, oldest first | Each comment's ID, current text and language, machine translation, timestamps, whether it was edited, and `isMine` for a signed-in reader. Never an author. `404` unless the report is public. Anonymous; a bearer token is read only to compute `isMine`. |
+| `POST /api/v1/public/reports/{id}/comments` | Post a comment | `201` with the comment. Requires a member token of any role. `404` unless the report is public. Queues its translation; calls no provider. |
+| `PUT /api/v1/public/reports/{id}/comments/{commentId}` | Edit one's own comment | `200` with the comment as a new revision; `403` for anyone but its author. |
+| `DELETE /api/v1/public/reports/{id}/comments/{commentId}` | Delete one's own comment | `204`, soft delete; `403` for anyone but its author. |
 
 **CON-IF-002** There are no draft, upload-slot, blob-proxy, public-answer, or publication-
 channel endpoints.
@@ -48,12 +52,13 @@ reserved ID, or database state, and an upload creates only a quarantine object
 
 **CON-IF-004** Every admin capability is authorized by the API at the role stated
 below, and a write is audited.
-*Verified by: REQ-MOD-023, REQ-MOD-024, REQ-MOD-028, REQ-MOD-029.*
+*Verified by: REQ-MOD-023, REQ-MOD-024, REQ-MOD-028, REQ-MOD-029, REQ-COM-011, REQ-COM-012.*
 
 | Capability | Authorization |
 |---|---|
 | List review work and read report detail | SafetyOfficer or Administrator. |
 | Edit both summary texts; approve/reject/publish/delete a report | SafetyOfficer or Administrator; audited. No CSRF protection is needed — a bearer token carries no ambient authority. |
+| Hide a member's comment on a published report (`POST /api/admin/comments/{id}/hide`) | SafetyOfficer or Administrator; audited without the comment's text ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | Obtain a short-lived attachment URL | SafetyOfficer or Administrator; safe image/video derivatives or validated private document originals only. |
 | List/create/delete eligible question revisions | Administrator; every write audited. |
 | Edit a question's choices, curate reporter-added choices, and machine-translate question wording | Administrator; every write audited. |

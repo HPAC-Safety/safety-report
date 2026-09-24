@@ -24,4 +24,6 @@ public enum AuditAction
 	SignedInSucceeded = 20,
 	SignedInFailed = 21,
 	ViewedAttachment = 22,
+	HidComment = 30,
+	DeletedComment = 31,
 }

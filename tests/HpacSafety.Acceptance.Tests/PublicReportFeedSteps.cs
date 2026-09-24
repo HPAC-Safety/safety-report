@@ -37,7 +37,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	private const string Feed = "/api/v1/public/reports";
 
-	private static readonly string[] Allowlist = ["id", "aiSummaryEn", "aiSummaryFr", "publishedAt"];
+	private static readonly string[] Allowlist = ["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount"];
 
 	private readonly List<string> _publishable = [];
 	private readonly List<string> _hidden = [];
@@ -173,7 +173,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, and the publication timestamp")]
+	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, and the number of visible comments")]
 	[Then(@"the public DTO contains no file counts, types, keys, or links")]
 	public async Task ThenTheResponseIsExactlyTheAllowlist()
 	{

@@ -65,10 +65,9 @@ here rather than restating them.
 4. **Diff the checklist.** Every item is still in the file or one link away.
    Put the checklist, or its result, in the pull-request body.
 5. **Verify.**
-   - `node tools/check-frontmatter.mjs` passes. A `SKILL.md` or `agents/*.md`
-     keeps exactly `name` and `description`; every other markdown file keeps
-     `title`, `description`, `type`
-     ([ADR-0087](../docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+   - `node tools/check-frontmatter.mjs` passes (rules:
+     [`deliver-hpac-change`](../skills/deliver-hpac-change/SKILL.md)
+     "Markdown").
    - A skill's `description` still triggers on the same work — tighten the
      wording, never narrow the scope.
    - Every relative link resolves.

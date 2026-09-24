@@ -279,8 +279,10 @@ version with each summary, and remove obsolete active-pipeline machinery.
 
 Every change starts from an issue and reaches `main` through a pull request.
 Put `Closes #<number>` on its own line in the PR body, use a squash-ready title,
-do not add `Co-Authored-By` trailers, and keep working until required checks are
-green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
+do not add `Co-Authored-By` trailers or an agent session link (the `commit-msg`
+hook and `linked-issue.yml` refuse one,
+[ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)),
+and keep working until required checks are green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
 
 Rebase onto fresh `origin/main` before committing, not only before pushing, and
 claim a shared identifier — an ADR number, a name, a slug — from the tree as it

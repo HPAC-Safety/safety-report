@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+#
+# Refuses a commit message that carries a coding agent's session link
+# (ADR-0107). The repository is public, and a squash merge makes the
+# pull-request body a commit message too; the "Linked issue" workflow checks
+# that body, and this checks every commit before it exists. The agents whose
+# links are refused are the collection in tools/agent-session-links.mjs.
+#
+# This file is the tracked template; ./init-dev.sh copies it into the real
+# hooks directory — edit this copy, not the installed one.
+
+set -u
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+cd "$REPO_ROOT" || exit 0
+
+command -v node >/dev/null 2>&1 || exit 0
+
+exec node tools/agent-session-links.mjs "$1"

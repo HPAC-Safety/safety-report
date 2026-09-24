@@ -73,3 +73,22 @@ jobs:
           echo "If the change genuinely has no issue behind it, open one first —"
           echo "the backlog is how this project tracks dependencies between changes."
           exit 1
+
+  # The body becomes the squash commit message on a public repository, so a
+  # coding agent's session link in it would publish that session. The agents
+  # whose links are refused are a collection in the tool (ADR-0107). No bot
+  # exemption: no author may publish one.
+  no-session-link:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Body carries no agent session link
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: node tools/agent-session-links.mjs

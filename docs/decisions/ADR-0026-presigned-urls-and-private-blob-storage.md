@@ -19,7 +19,8 @@ a reporter's file uploads through the API into `quarantine/<upload id>` the
 moment it is attached, still never through a pre-signed PUT;
 `CreateUploadUrl` is removed from the port and a version-purging delete is
 added; and the development adapter is MinIO behind `S3BlobStore`, replacing
-`FileSystemBlobStore`.
+`FileSystemBlobStore`. The development server is RustFS since
+[ADR-0110](ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md).
 **Date:** 2026-08-22
 
 ## Context

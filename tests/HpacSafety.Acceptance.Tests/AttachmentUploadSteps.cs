@@ -18,7 +18,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     The attachment scenarios that describe <c>POST</c> and
 ///     <c>DELETE /api/v1/uploads</c> and the claim a submission makes, against the
-///     booted API and its MinIO bucket (ADR-0096, ADR-0097). Every file here is
+///     booted API and its S3-compatible bucket (ADR-0096, ADR-0097). Every file here is
 ///     synthetic.
 /// </summary>
 /// <remarks>

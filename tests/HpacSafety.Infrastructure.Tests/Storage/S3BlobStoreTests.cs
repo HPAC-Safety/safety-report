@@ -9,7 +9,7 @@ namespace HpacSafety.Infrastructure.Tests.Storage;
 /// <summary>
 ///     Presigning is a local SDK computation — no network call reaches S3 to
 ///     build the URL — so the forced-download header override is verified
-///     directly here rather than only through the MinIO contract suite.
+///     directly here rather than only through the emulated-S3 contract suite.
 /// </summary>
 public sealed class S3BlobStoreTests : IDisposable
 {
@@ -43,12 +43,12 @@ public sealed class S3BlobStoreTests : IDisposable
 	public async Task GivenPublicSigner_WhenReadUrlIsCreated_ThenItPointsAtTheHostTheBrowserCanReach()
 	{
 		// Given
-		// In docker-compose the API reaches MinIO as minio:9000; a browser only
+		// In docker-compose the API reaches the S3 server as s3:9000; a browser only
 		// as localhost:9000. SigV4 signs the host, so the URL must be signed for
 		// the second one.
 		using var internalClient = new AmazonS3Client(
 			new BasicAWSCredentials("test", "test"),
-			new AmazonS3Config { ServiceURL = "http://minio:9000", ForcePathStyle = true, AuthenticationRegion = "ca-central-1" });
+			new AmazonS3Config { ServiceURL = "http://s3:9000", ForcePathStyle = true, AuthenticationRegion = "ca-central-1" });
 		var store = new S3BlobStore(
 			internalClient, new S3BlobStoreOptions { BucketName = "hpac-media" }, TimeProvider.System, signer: _s3);
 

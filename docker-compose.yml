@@ -20,41 +20,47 @@ services:
 
   # Private attachment storage, S3-compatible, in its own container: the API
   # reaches it through the same S3BlobStore production uses against S3, so
-  # only configuration differs (ADR-0096). Pinned, like the test containers.
-  # Console at http://localhost:9001 (hpac-dev / hpac-dev-secret).
-  minio:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
-    command: server /data --console-address ":9001"
+  # only configuration differs (ADR-0096). RustFS, pinned to the same image
+  # the test containers use (ADR-0110). Console at http://localhost:9001/rustfs/console/
+  # (hpac-dev / hpac-dev-secret).
+  s3:
+    image: rustfs/rustfs:1.0.0
     environment:
-      MINIO_ROOT_USER: hpac-dev
-      MINIO_ROOT_PASSWORD: hpac-dev-secret
+      RUSTFS_ACCESS_KEY: hpac-dev
+      RUSTFS_SECRET_KEY: hpac-dev-secret
+      RUSTFS_CONSOLE_ENABLE: "true"
     ports:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio-data:/data
+      - s3-data:/data
     healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
+      test: ["CMD", "curl", "-fsS", "http://localhost:9000/health/ready"]
       interval: 2s
       timeout: 2s
       retries: 15
 
-  # One-shot: the bucket, versioned like production, with the same 1-day
-  # quarantine/ expiry infra/storage.tf gives S3. Idempotent, so it runs on
-  # every ./dev-up.sh and exits 0.
-  minio-init:
-    image: quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z
+  # One-shot: the bucket, versioned like production, with the same quarantine/
+  # expiry infra/storage.tf gives S3. Plain AWS CLI, so nothing here depends on
+  # the server's own tooling. Idempotent, so it runs on every ./dev-up.sh and
+  # exits 0.
+  s3-init:
+    image: amazon/aws-cli:2.37.1
     depends_on:
-      minio:
+      s3:
         condition: service_healthy
+    environment:
+      AWS_ACCESS_KEY_ID: hpac-dev
+      AWS_SECRET_ACCESS_KEY: hpac-dev-secret
+      AWS_DEFAULT_REGION: ca-central-1
+      AWS_ENDPOINT_URL: http://s3:9000
     entrypoint: ["/bin/sh", "-c"]
     command:
       - |
         set -e
-        mc alias set local http://minio:9000 hpac-dev hpac-dev-secret
-        mc mb --ignore-existing local/hpac-safety-uploads
-        mc version enable local/hpac-safety-uploads
-        echo '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":15},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}' | mc ilm import local/hpac-safety-uploads
+        aws s3api head-bucket --bucket hpac-safety-uploads 2>/dev/null || aws s3api create-bucket --bucket hpac-safety-uploads
+        aws s3api put-bucket-versioning --bucket hpac-safety-uploads --versioning-configuration Status=Enabled
+        aws s3api put-bucket-lifecycle-configuration --bucket hpac-safety-uploads --lifecycle-configuration '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":15},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}'
     restart: "no"
 
   api:
@@ -63,15 +69,15 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio-init:
+      s3-init:
         condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres"
-      # Inside the compose network MinIO is minio:9000. Reviewer URLs stay
+      # Inside the compose network the S3 server is s3:9000. Reviewer URLs stay
       # signed for localhost:9000 (appsettings.Development.json), the host a
       # browser can reach.
-      HpacSafety__Media__Storage__S3__ServiceUrl: "http://minio:9000"
+      HpacSafety__Media__Storage__S3__ServiceUrl: "http://s3:9000"
       # Optional. Export DEEPL_API_KEY before ./dev-up.sh to get a working
       # Translate button on /admin/questions; without it the API reports
       # translation unavailable and the control is disabled. See ADR-0062.
@@ -88,12 +94,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      minio-init:
+      s3-init:
         condition: service_completed_successfully
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres"
-      HpacSafety__Media__Storage__S3__ServiceUrl: "http://minio:9000"
+      HpacSafety__Media__Storage__S3__ServiceUrl: "http://s3:9000"
       # Optional, as for the API: without them a summary or translation waits
       # and retries, and attachment processing is unaffected.
       Translation__ApiKey: "${DEEPL_API_KEY:-}"
@@ -120,5 +126,5 @@ services:
 
 volumes:
   postgres-data:
-  minio-data:
+  s3-data:
   web-node-modules:

@@ -1,16 +1,15 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Amazon.Runtime;
 using Amazon.S3;
-using Amazon.S3.Model;
+using DotNet.Testcontainers.Containers;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Testing;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
-using Testcontainers.Minio;
 using Testcontainers.PostgreSql;
 
 namespace HpacSafety.Acceptance.Tests;
@@ -53,7 +52,7 @@ public static class BootedApi
 	public const string BucketName = "hpac-safety-uploads";
 
 	private static PostgreSqlContainer? postgres;
-	private static MinioContainer? minio;
+	private static IContainer? objectStore;
 	private static AmazonS3Client? storage;
 	private static WebApplicationFactory<Program>? factory;
 
@@ -75,22 +74,11 @@ public static class BootedApi
 			if (factory is null)
 			{
 				var container = new PostgreSqlBuilder("postgres:17-alpine").Build();
-				var objects = new MinioBuilder("quay.io/minio/minio:RELEASE.2025-04-22T22-12-26Z").Build();
+				var objects = S3Emulator.Build();
 				await Task.WhenAll(container.StartAsync(), objects.StartAsync()).ConfigureAwait(false);
 				postgres = container;
-				minio = objects;
-
-				// Versioned, like the production bucket (ADR-0096).
-				var client = new AmazonS3Client(
-					new BasicAWSCredentials(objects.GetAccessKey(), objects.GetSecretKey()),
-					new AmazonS3Config { ServiceURL = objects.GetConnectionString(), ForcePathStyle = true, AuthenticationRegion = "ca-central-1" });
-				await client.PutBucketAsync(BucketName).ConfigureAwait(false);
-				await client.PutBucketVersioningAsync(new PutBucketVersioningRequest
-				{
-					BucketName = BucketName,
-					VersioningConfig = new S3BucketVersioningConfig { Status = VersionStatus.Enabled },
-				}).ConfigureAwait(false);
-				storage = client;
+				objectStore = objects;
+				storage = await S3Emulator.CreateBucket(objects, BucketName).ConfigureAwait(false);
 
 				factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
 				{
@@ -99,10 +87,10 @@ public static class BootedApi
 					builder.UseSetting("ConnectionStrings:HpacSafety", container.GetConnectionString());
 					builder.UseSetting("HpacSafety:Authentication:DevelopmentSigningKey", SigningKey);
 					builder.UseSetting("HpacSafety:Media:Storage:S3:BucketName", BucketName);
-					builder.UseSetting("HpacSafety:Media:Storage:S3:ServiceUrl", objects.GetConnectionString());
-					builder.UseSetting("HpacSafety:Media:Storage:S3:PublicServiceUrl", objects.GetConnectionString());
-					builder.UseSetting("HpacSafety:Media:Storage:S3:AccessKey", objects.GetAccessKey());
-					builder.UseSetting("HpacSafety:Media:Storage:S3:SecretKey", objects.GetSecretKey());
+					builder.UseSetting("HpacSafety:Media:Storage:S3:ServiceUrl", S3Emulator.ServiceUrl(objects));
+					builder.UseSetting("HpacSafety:Media:Storage:S3:PublicServiceUrl", S3Emulator.ServiceUrl(objects));
+					builder.UseSetting("HpacSafety:Media:Storage:S3:AccessKey", S3Emulator.AccessKey);
+					builder.UseSetting("HpacSafety:Media:Storage:S3:SecretKey", S3Emulator.SecretKey);
 
 					// Shared across every scenario in the run, many of which sign in
 					// or submit repeatedly. Effectively unlimited here so ordinary
@@ -252,10 +240,10 @@ public static class BootedApi
 		storage?.Dispose();
 		storage = null;
 
-		if (minio is not null)
+		if (objectStore is not null)
 		{
-			await minio.DisposeAsync().ConfigureAwait(false);
-			minio = null;
+			await objectStore.DisposeAsync().ConfigureAwait(false);
+			objectStore = null;
 		}
 	}
 

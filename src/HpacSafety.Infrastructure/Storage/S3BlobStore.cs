@@ -8,7 +8,7 @@ namespace HpacSafety.Infrastructure.Storage;
 ///     An <b>Adapter</b> (Gang of Four) over the AWS S3 SDK, which is why
 ///     <c>HpacSafety.Core</c> can talk about private object storage without knowing
 ///     AWS exists. It is S3-compatible rather than AWS-specific, so the same class
-///     serves S3 in production and the MinIO container development and the contract
+///     serves S3 in production and the S3-compatible container development and the contract
 ///     suite run against; only configuration differs. See ADR-0026 and ADR-0096.
 ///     <para>
 ///         A pre-signed URL is signed over the bucket, the key, the verb, and the
@@ -30,8 +30,8 @@ public sealed class S3BlobStore : IBlobStore
 	/// <param name="clock">The clock a URL's expiry is measured from.</param>
 	/// <param name="signer">
 	///     The client that signs pre-signed URLs, when the host a browser reaches the
-	///     bucket by differs from the host this process does — MinIO in
-	///     docker-compose is <c>minio:9000</c> to the API and <c>localhost:9000</c> to
+	///     bucket by differs from the host this process does — the S3 container in
+	///     docker-compose is <c>s3:9000</c> to the API and <c>localhost:9000</c> to
 	///     the browser, and SigV4 signs the host. Signing is local, so this client
 	///     never sends a request. <see langword="null" /> signs with
 	///     <paramref name="s3" />, which is right for S3 itself.
@@ -54,7 +54,7 @@ public sealed class S3BlobStore : IBlobStore
 
 	// The SDK defaults a pre-signed URL to HTTPS regardless of the configured
 	// endpoint, which is right for S3 and wrong for an S3-compatible server
-	// reached over plain HTTP - MinIO in development and in the contract suite.
+	// reached over plain HTTP - the container in development and in the contract suite.
 	// The scheme is not part of what SigV4 signs, so this decides where the URL
 	// points, never whether it is valid. Production has no ServiceURL set and
 	// therefore stays on HTTPS.

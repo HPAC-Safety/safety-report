@@ -23,7 +23,7 @@ public static class MediaServiceCollectionExtensions
 	///     There is one storage adapter, <see cref="S3BlobStore" />, in every
 	///     environment. Configuration decides where it points: with no
 	///     <see cref="S3BlobStoreOptions.ServiceUrl" /> it is AWS S3, authenticated by
-	///     the ECS task role; with one it is the MinIO container docker-compose runs
+	///     the ECS task role; with one it is the S3-compatible container docker-compose runs
 	///     for development (ADR-0096).
 	/// </remarks>
 	public static IServiceCollection AddHpacSafetyMedia(

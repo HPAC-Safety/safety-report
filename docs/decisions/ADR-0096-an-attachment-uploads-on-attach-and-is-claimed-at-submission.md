@@ -15,7 +15,9 @@ keywords: attachments, uploads, quarantine, S3, MinIO, lifecycle, submission, pr
 Accepted; amended by
 [ADR-0100](ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md),
 which restores uploads with the saved report and keeps unclaimed uploads for
-fifteen days. This ADR:
+fifteen days, and by
+[ADR-0110](ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md),
+under which development and the tests run RustFS where this record says MinIO. This ADR:
 
 - **amends** AGENTS.md invariant 2 and the guardrail list in
   [`features/README.md`](../../features/README.md): a reporter's attachment is

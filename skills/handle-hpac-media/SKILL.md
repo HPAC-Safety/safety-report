@@ -24,7 +24,7 @@ as a reviewer's forced-download name with the served type's extension
 ([ADR-0097](../../docs/decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)).
 
 `S3BlobStore` is the only storage adapter: S3 through the task role in AWS,
-MinIO in docker-compose for development. Do not add a filesystem adapter or a
+RustFS in docker-compose for development (ADR-0110). Do not add a filesystem adapter or a
 pre-signed PUT for reporters.
 
 Accepted formats:

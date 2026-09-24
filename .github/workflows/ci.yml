@@ -205,6 +205,13 @@ jobs:
       - name: Decision records are numbered without collision
         run: node tools/adr-numbers.mjs
 
+      # The .NET major lives in global.json, the target framework, the Worker's
+      # base image, and Renovate's allowedVersions. Here, not behind the dotnet
+      # path filter, because a renovate.json-only change must run it too.
+      # ADR-0120.
+      - name: The .NET major agrees everywhere it is declared
+        run: node tools/dotnet-major.mjs
+
       # The matrix is generated from the claim tags and the CON ids, so a
       # scenario added without an id, a duplicate, or a constraint naming a
       # claim that does not exist fails here. Regenerating and diffing also

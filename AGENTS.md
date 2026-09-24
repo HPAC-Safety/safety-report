@@ -324,6 +324,12 @@ decision-record number, counting every fetched remote branch;
 `--renumber <old> <new>` moves the file and rewrites every reference if somebody
 took it first ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 
+The .NET major lives in `global.json`, `<TargetFramework>`, the Worker's
+`Dockerfile` base image, and `renovate.json`'s `allowedVersions`. An upgrade
+changes all four in one pull request, and `node tools/dotnet-major.mjs` fails
+when they disagree
+([ADR-0120](docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
+
 A method this repository names carries no `Async` suffix: the return type says
 it is asynchronous. A member implementing a contract we do not own keeps the
 name that contract gives it

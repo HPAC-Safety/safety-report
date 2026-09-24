@@ -52,6 +52,8 @@ const DEPENDENCY_MANIFESTS = [
 	/(^|\/)Directory\.Build\.props$/,
 	/(^|\/)package(-lock)?\.json$/,
 	/(^|\/)[^/]+\.lock(\.hcl)?$/,
+	// A Dockerfile pins its base image, which Renovate moves (ADR-0120).
+	/(^|\/)Dockerfile$/,
 ]
 
 /** Every claim id the generated matrix declares. */

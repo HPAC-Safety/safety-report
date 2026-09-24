@@ -127,7 +127,7 @@ describe('rejectExemption', () => {
 	})
 
 	it('accepts a dependency exemption over manifests and lock files', () => {
-		const changed = ['src/HpacSafety.Api/HpacSafety.Api.csproj', 'Directory.Packages.props', 'src/web/package-lock.json']
+		const changed = ['src/HpacSafety.Api/HpacSafety.Api.csproj', 'Directory.Packages.props', 'src/web/package-lock.json', 'src/HpacSafety.Worker/Dockerfile']
 
 		assert.deepEqual(rejectExemption({ ...ok, category: 'dependency' }, changed, KNOWN), [])
 	})

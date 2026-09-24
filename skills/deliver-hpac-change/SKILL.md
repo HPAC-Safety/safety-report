@@ -7,347 +7,278 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 
 ## Start
 
-- Work from a focused GitHub issue.
-- **Never pick up an issue labelled `in progress`.** When choosing what to
-  work on next, leave out every issue that carries the label —
-  `gh issue list --state open --search '-label:"in progress"'` — even when it
-  looks stalled, is the obvious next piece, or was assigned by number. Another
-  agent or contributor has claimed it. If you were asked for that issue by
-  number and it carries the label, stop and ask the person rather than
-  starting it.
-- **Label an issue `in progress` the moment you pick it up, every time,
-  before anything else** — before the worktree, the branch, or the first
-  edit: `gh issue edit <number> --add-label "in progress"`. This is a hard
-  rule with no exception: not for a one-line fix, not for an issue you
-  filed yourself a minute ago, not when resuming a session. Several agents
-  work from the same board at once, and this label is the only thing that
-  tells the next one the issue is taken. If you stop working on an issue
-  without opening a pull request for it, remove the label
-  (`gh issue edit <number> --remove-label "in progress"`) so it returns to the
-  board; the label stays while a pull request is open, and closing the issue
-  takes it off the board.
-- When creating a new issue, check its real relationships to existing open
-  issues before filing it, and wire them in with GitHub's native issue
-  relations (`gh api graphql`; there is no `blocked` label) rather than only
-  describing them in prose:
-  - **Blocked by**: if the new issue's scope genuinely cannot be implemented
-    or verified until another open issue lands (a schema/endpoint/DTO it
-    consumes, a domain method it calls, a screen it extends), add the
-    relation with the `addBlockedBy` mutation
-    (`issueId` = the new issue, `blockingIssueId` = the prerequisite).
-    State it in the body too (`Blocked by #N — <why>`, first paragraph) so it
-    reads without opening the GitHub sidebar. Don't add a relation for a
-    soft/parallel dependency ("touches similar code," "related area") —
-    only a hard prerequisite.
-  - **Parent / sub-issue**: only when the new issue is actually a piece
-    carved out of a larger issue being split up (the larger issue's scope
-    shrinks to what's left once the new issue is filed) — use `addSubIssue`
-    to attach it to that parent. Do not create a parent/child link between
-    independently-scoped issues that merely happen to be prerequisites of
-    each other or of a checklist/capstone issue; that's a `blocked by`
-    relation, not a hierarchy — forcing one misrepresents GitHub's rollup
-    completion percentage.
-  - **Duplicate of**: if filing would duplicate an already-open issue's
-    scope instead of narrowing or splitting it, don't file a second issue —
-    either extend the existing one or, if both must exist for tracking
-    reasons, mark the new one `duplicateOf` the original.
-  - When an issue closes or a design change removes a dependency, remove the
-    now-stale relation (`removeBlockedBy`) in the same pass rather than
-    leaving it pointing at resolved work.
-- Never create work directly on a branch in the primary checkout. Fetch fresh
-  `origin/main`, then create a git worktree off it at
-  `.claude/worktrees/issue-<number>/<short-description>` (already gitignored),
-  with a branch named `issue-<number>/<short-description>` inside it:
+### Claim the issue
+
+- Work from one focused GitHub issue.
+- **Never pick up an issue labelled `in progress`** — another agent has claimed
+  it, even if it looks stalled or is the obvious next piece. Find work with
+  `gh issue list --state open --search '-label:"in progress"'`. Asked for a
+  labelled issue by number? Stop and ask the person.
+- **Label it `in progress` the moment you pick it up, before anything else** —
+  before the worktree, branch, or first edit:
+  `gh issue edit <number> --add-label "in progress"`.
+  - No exceptions: not for a one-line fix, an issue you just filed, or a
+    resumed session. The label is the only thing telling the next agent it is
+    taken.
+  - Stop without a pull request? Remove it:
+    `gh issue edit <number> --remove-label "in progress"`.
+  - It stays while a pull request is open; closing the issue takes it off the
+    board.
+
+### File a new issue
+
+Check its real relationships to open issues first, and wire them with GitHub's
+native relations (`gh api graphql`; there is no `blocked` label), not only
+prose:
+
+- **Blocked by** — only a hard prerequisite: it cannot be implemented or
+  verified until another issue lands (a schema, endpoint, DTO, domain method,
+  or screen it builds on). Add `addBlockedBy` (`issueId` = new issue,
+  `blockingIssueId` = prerequisite), and say `Blocked by #N — <why>` in the
+  body's first paragraph. No relation for a soft dependency ("touches similar
+  code", "related area").
+- **Sub-issue** — only when the new issue is carved out of a larger one being
+  split, so the parent's scope shrinks. Use `addSubIssue`. Never link
+  independently scoped prerequisites as parent and child; that is `blocked by`,
+  and a false hierarchy skews GitHub's completion rollup.
+- **Duplicate** — never file a second issue for the same scope. Extend the
+  existing one, or, if both must exist, mark the new one `duplicateOf` it.
+- When an issue closes or a design change removes a dependency, remove the
+  stale relation (`removeBlockedBy`) in the same pass.
+
+### Worktree and branch
+
+- **Never work on a branch in the primary checkout.** Create a worktree off
+  fresh `origin/main`:
   `git fetch origin main && git worktree add -b issue-<number>/<short-description> .claude/worktrees/issue-<number>/<short-description> origin/main`.
-  Multiple agents may be working in this repository at once; a worktree per
-  issue means no agent ever switches a branch out from under another one's
-  in-progress checkout.
-  - **Check this at the moment of the first edit, not only once at the start
-    of a session.** Before the first `Edit` or `Write` call for an issue, run
-    `git branch --show-current`. If it reports `main`, stop and create the
-    worktree first — do not write the file "just this once" and fix it
-    later. A rule read once, hours earlier in a long conversation, is not a
-    rule checked again on its own; nothing about resuming a session, a
-    sequencing detour ("which of these blockers do we do first?"), or a
-    plain "continue"/"yes" looks like "starting an issue," which is exactly
-    why this is the moment the check gets skipped
-    ([Lesson 0004](../../docs/lessons/0004-a-rule-read-once-is-not-a-rule-checked-again.md)).
-    Having followed this rule correctly on an earlier issue in the same
-    session is not evidence it will hold on the next one — check every time.
-- Push the branch to `origin` the moment it exists, before any work begins:
-  `git push -u origin issue-<number>/<short-description>` from inside the
-  worktree. This also replaces the `origin/main` upstream that
-  `git worktree add` sets, so a later bare `git push` targets the issue branch.
-- Label the session with the issue it owns, in the same step:
-  `tools/session-label.sh "#<number> <short-description>"`. Several agents run
-  at once, one terminal tab each, and the person running them finds the tab
-  that owns an issue or pull request by this label — not by reading scrollback.
-  Relabel when the pull request opens and when its checks go green (see
-  "Verify and publish"), and open every final report to the person with
-  `[#<number> · PR #<pr>]` (just `[#<number>]` before the pull request exists),
-  even when the report is one line.
-- Commit and push each unit of work as soon as it is complete — a scenario
-  written, a test passing, a step definition wired up, a document updated —
-  rather than holding everything until the change is ready for a pull request.
-  The first commit never waits for the whole change to be finished. Work that
-  exists only in a local worktree is invisible to other agents and
-  contributors and is lost if the worktree or session goes away.
-- Rebase onto fresh `origin/main` before every **commit**, not only before
-  every push — each unit of work, the final commit before opening a pull
-  request, and each fix while watching checks, whether or not a pull request
-  exists yet:
-  `git fetch origin main && git rebase origin/main`. Other agents merge to
-  `main` continuously; a branch that is not rebased before it is pushed is
-  out of date, and often conflicted, the moment it lands. Resolve any
-  conflicts locally, and if the rebase brought in new commits, re-run the
-  checks the change affects before pushing. When the rebase rewrote commits
-  already on `origin`, push with `git push --force-with-lease`, never plain
-  `--force`, so a push someone else made to the branch is never discarded.
-- **Claim a shared identifier from the tree as it is after that rebase, never
-  from the tree as it was when you started.** A number, a name, a slug or a
-  migration timestamp is claimed the moment you write it down, and somebody
-  else may have claimed it while you were working
+  Several agents share this repository; a worktree per issue means none
+  switches a branch out from under another.
+- **Check at the first edit, every time.** Before the first `Edit` or `Write`
+  for an issue, run `git branch --show-current`. If it says `main`, stop and
+  create the worktree. A resumed session, a sequencing detour, or a plain
+  "continue" does not look like "starting an issue", which is exactly when this
+  gets skipped. Having done it right on an earlier issue proves nothing
+  ([lesson 0004](../../docs/lessons/0004-a-rule-read-once-is-not-a-rule-checked-again.md)).
+- **Push the branch at once**, from the worktree:
+  `git push -u origin issue-<number>/<short-description>`. This also replaces
+  the `origin/main` upstream, so a bare `git push` targets the branch.
+- **Label the session** in the same step:
+  `tools/session-label.sh "#<number> <short-description>"`. The person finds
+  the tab that owns an issue by this label. Relabel when the pull request opens
+  and when checks go green (see "Verify and publish").
+- Open every final report to the person with `[#<number> · PR #<pr>]` (just
+  `[#<number>]` before the pull request exists), even a one-line report.
+- Do all work in the worktree. It comes down once the pull request is open
+  (step 8).
+
+### Commit, rebase, claim identifiers
+
+- **Commit and push each unit of work as soon as it is done** — a scenario, a
+  passing test, a step definition, a document. Never hold work for the pull
+  request; local-only work is invisible to others and lost with the worktree.
+- **Rebase onto fresh `origin/main` before every commit**, not only before a
+  push — each unit, the final commit, and each fix while watching checks:
+  `git fetch origin main && git rebase origin/main`.
+  - Resolve conflicts locally. If the rebase brought in commits, re-run the
+    affected checks before pushing.
+  - Rewrote commits already on `origin`? `git push --force-with-lease`, never
+    plain `--force`.
+- **Claim a shared identifier after that rebase**, never from the tree as you
+  started — a number, name, slug, or migration timestamp is claimed the moment
+  someone else merges it
   ([lesson 0003](../../docs/lessons/0003-a-number-is-claimed-the-moment-someone-else-merges.md)).
-  For a decision record, `node tools/adr-numbers.mjs --next` reads every
-  fetched remote branch, so a number an open pull request has already taken is
-  skipped. If you lose the race anyway,
-  `node tools/adr-numbers.mjs --renumber <old> <new>` moves the file and
-  rewrites every reference in one pass — renaming is cheap, so take the new
-  number rather than arguing for the old one. When two records already share
-  the number, add `--file <name>` to say which one moves, and expect a list of
-  bare `ADR-NNNN` mentions it deliberately left alone: while the number names
-  two records, only a reference by filename says which is meant, and those are
-  resolved by hand.
-- Do all work for the issue inside that worktree. Remove it once the pull
-  request is open — see "Verify and publish" for exactly when it comes down
-  and how it comes back if a check fails.
-- Read the affected `/features` pages before editing. Update them first if the
-  target behavior is changing.
+  - ADR number: `node tools/adr-numbers.mjs --next` (counts every fetched
+    remote branch, so an open pull request's number is skipped).
+  - Lost the race? `node tools/adr-numbers.mjs --renumber <old> <new>` moves
+    the file and rewrites every reference. Take the new number; renaming is
+    cheap.
+  - Two records already share the number? Add `--file <name>` to say which
+    moves. Bare `ADR-NNNN` mentions it leaves alone are ambiguous; resolve them
+    by hand.
+
+### Before editing
+
+- Read the affected `/features` pages. Update them first if the target
+  behavior changes.
 - Preserve unrelated work in a dirty tree.
 
 ## Document
 
-- `/features` describes the target. Every user-facing requirement is covered by
-  a scenario in a `.feature` file. This is mandatory, not discretionary — if a
-  change adds or changes behavior, add or update the scenario in the same PR.
-- A behavior change with no scenario fails `feature-coverage`. An exemption is
-  a **citation**, never an assertion: a closed category, a reason that says what
-  changed and why no behavior did, and the claim IDs the change leaves standing,
-  each checked against the matrix
+### Scenarios
+
+- Every user-facing requirement has a scenario in a `.feature` file. A change
+  that adds or changes behavior adds or updates it in the same pull request —
+  mandatory.
+- Write the scenario first; when the implementation is wrong, correct the
+  scenario, not the conversation
+  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
+- The PR body names what changed upstream — scenario, page, boundary — because
+  it becomes the squash commit message.
+- `@ignore` and superseded scenarios: see
+  [`test-hpac-safety`](../test-hpac-safety/SKILL.md) "Scenarios".
+- Each `features/<area>/README.md` records what **not** to build. A change that
+  draws a new boundary writes it there, not only in the pull request.
+- Component READMEs describe scope and implementation status without
+  duplicating the specification.
+
+### The `feature-coverage` exemption
+
+- Rules: `AGENTS.md` "The `feature-coverage` exemption"
   ([ADR-0090](../../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
-  Do not reach for it because writing the scenario is slower — if you cannot
-  name the claims your change preserves, the change needs a scenario. Run
-  `node tools/feature-coverage.mjs` locally rather than discovering this in CI.
-  Renovate writes its own `dependency` exemption for `src/web` bumps from
+- Run `node tools/feature-coverage.mjs` locally, not only in CI.
+- Renovate writes its own `dependency` exemption for `src/web` bumps from
   `renovate.json`
   ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
-  It writes one for Worker `Dockerfile` base-image bumps too
-  ([ADR-0120](../../docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
-  If that check fails on a Renovate pull request, fix the citation in
-  `renovate.json`; never edit the pull request's body by hand.
-- The .NET major moves in one pull request, never through Renovate
-  ([ADR-0120](../../docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
-  To upgrade, change all four together:
-  - `global.json` `sdk.version`
-  - `<TargetFramework>` in `Directory.Build.props`
-  - the `FROM` tag and digest in `src/HpacSafety.Worker/Dockerfile`
-  - the .NET rule's `allowedVersions` in `renovate.json` (`/^N\./`)
+  If the check fails on a Renovate pull request, fix the citation in
+  `renovate.json`; never hand-edit the pull request body.
 
-  Also move any `Microsoft.*` package whose major follows .NET's. Run
-  `node tools/dotnet-major.mjs`; the required `docs` check runs it too.
-- Write the scenario before the implementation, and when the implementation
-  turns out to do the wrong thing, correct the scenario rather than arguing it
-  out in conversation
-  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
-  The PR body states what changed upstream — which scenario, which page, which
-  boundary — because the body becomes the squash commit message, so the
-  specification delta is what lands in history.
-- A scenario carries `@ignore` until its behavior is implemented (ADR-0049).
-  When a decision supersedes what a scenario asserts, **delete the scenario**
-  rather than parking it behind `@ignore` — `@ignore` means "not built yet,"
-  never "no longer true." Git history keeps the removed text.
-  Implementing it means writing its Reqnroll step definitions in
-  `tests/HpacSafety.Acceptance.Tests` and removing the `@ignore` tag, in the
-  same PR that implements the behavior.
-- Component READMEs describe their scope and current implementation status
-  without duplicating the specification.
-- Each `features/<area>/README.md` records what **not** to build in that area,
-  and a change that draws a new boundary writes it there rather than only in
-  the pull request that argued about it.
+### Lessons
+
 - A bug fix that reveals a specification gap writes a lesson under
-  [`docs/lessons/`](../../docs/lessons/README.md) in the same pull request —
+  [`docs/lessons/`](../../docs/lessons/README.md) in the same pull request:
   symptom, root cause, spec delta, and the claim that now proves it
   ([ADR-0085](../../docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
-  A fix that reveals nothing does not.
-- When that lesson is about the **development process** — tooling, CI, hooks,
-  conventions, the delivery workflow, how agents are expected to work — it also
-  updates the skill that would have prevented it, in the same pull request, and
-  names that skill in its `## Skill` section. The skill states the general
-  rule; the lesson keeps the incident. An agent reads the skills before it
-  starts and does not read the lessons index looking for a mistake it has not
-  made yet.
-- A lesson about **product requirements** does not change a skill. Its remedy
-  is a claim and a scenario, and restating product behavior in a skill creates
-  a second place for it to drift from `/features`.
-- Every markdown file you add opens with frontmatter naming its `title`,
-  `description`, and `type`
+  A fix that reveals nothing writes none.
+- **Process lesson** (tooling, CI, hooks, conventions, delivery, how agents
+  work): also update the skill that would have prevented it, in the same pull
+  request, and name it in the lesson's `## Skill` section. The skill holds the
+  general rule; the lesson keeps the incident. Agents read skills, not the
+  lessons index.
+- **Product lesson**: no skill change. Its remedy is a claim and a scenario;
+  restating product behavior in a skill creates a second place to drift from
+  `/features`.
+
+### ADRs
+
+- One ADR per durable architectural decision (technology choice, rejected
+  alternative, durable trade-off), in the same pull request — mandatory. A
+  routine detail with no rejected alternative needs none.
+- Number it after rebasing (see "Commit, rebase, claim identifiers"). Keep the
+  filename and the `# ADR-NNNN` heading in step; `node tools/adr-numbers.mjs`
+  fails a duplicate or a mismatch, in the pre-commit hook and CI
+  ([ADR-0091](../../docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
+- Keep rationale and requirements apart: never restate a scenario's acceptance
+  criteria in an ADR, and never justify a technology or pattern choice in a
+  `.feature` file or its README.
+- An ADR that changes a technology choice or how the system is broken up (new
+  or replaced framework, language, runtime, hosting, topology, service split or
+  merge) updates the root [`README.md`](../../README.md) in the same pull
+  request — the fact and the ADR link, not the rationale. Skip routine or
+  reversed-without-effect decisions.
+
+### Markdown
+
+- Every tracked markdown file opens with frontmatter: `title`, `description`,
+  and `type` — one of `adr`, `spec`, `guide`, `readme`, `lesson`,
+  `instructions`, `template` — plus the keys that type adds
   ([ADR-0087](../../docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
-  A `SKILL.md` or an `agents/*.md` carries the `name`/`description` pair its
-  loader expects instead. `node tools/check-frontmatter.mjs` is the authority.
-- ADRs are historical rationale, one per durable architectural decision
-  (technology choice, rejected alternative, durable trade-off). This is
-  mandatory, not discretionary — if a change makes such a decision, add the ADR
-  in the same PR. A routine implementation detail with no rejected alternative
-  does not need one. Number it with `node tools/adr-numbers.mjs --next` after
-  rebasing, and keep the filename and the document's own `# ADR-NNNN` heading
-  in step — `node tools/adr-numbers.mjs` fails a duplicate or a disagreement,
-  in the pre-commit hook and in CI (ADR-0091).
-- Never restate a `.feature` scenario's acceptance criteria inside an ADR, and
-  never justify a technology/pattern choice inside a `.feature` file or its
-  README — keep decision rationale and behavior requirements in their own
-  document.
-- An ADR that changes a technology choice or how the system is broken up
-  (a new or replaced framework/language/runtime, a hosting/topology change, a
-  service split or merge) updates the root [`README.md`](../../README.md) in
-  the same PR — the fact and a link to the ADR, not the rationale. Do not add
-  an entry for a routine or reversed-without-effect decision; keep the README
-  short and let the linked ADR carry the "why."
+- A `skills/*/SKILL.md` or `agents/*.md` carries exactly `name` and
+  `description` instead; its type comes from its path.
+- The Worker's runtime prompts are exempt; their bytes are the model payload.
+- `node tools/check-frontmatter.mjs` is the authority; the pre-commit hook runs
+  it over staged markdown.
 - Never include real report content or personal information.
+
+### Agent instructions
+
+- `AGENTS.md`, skills, and role agents follow
+  [`ai-author`](../../agents/ai-author.md).
+- Never hand-edit generated `.claude/` content. When a project-owned skill or
+  agent changes, update `Skillfile`, regenerate `Skillfile.lock`, and run the
+  skill validation (`skillfile validate`, `skillfile install`).
 
 ## Keep the issue true while you work
 
-The issue is the first hop of the specification chain, so it follows the same
-rule as a scenario: **correct the artifact, not the chat.** A requirement
-settled in conversation after you picked the issue up — an answered
-clarifying question, a decision the owner made, a design choice that
-narrowed or widened the work, something found to be already done — is not
-recorded until it is in the issue. The next agent, the reviewer, and the
-squash commit all read the issue; none of them read this conversation.
+The issue is the first hop of the specification chain: **correct the artifact,
+not the chat.** A decision made after pickup — an answered question, an owner's
+call, a scope change, something found already done — is not recorded until it
+is in the issue. The next agent, the reviewer, and the squash commit read the
+issue, not this conversation.
 
-- **Edit the issue as soon as a decision lands, before building on it** —
-  not at the end, and not only in the pull request body. Keep the original
-  need readable, and add or update:
-  - a **Decisions** section: each decision, who made it, and the date, one
-    line each, with the rejected option where there was one;
-  - the **acceptance criteria**, rewritten to match what will now be built;
-  - an **Out of scope** list naming what the discussion chose not to build.
-  Remove or strike text the decisions made false. An issue that says
-  "building is out of scope" while its pull request builds it is a
-  conflicting backlog item.
-- **Open a new issue instead when the added scope could ship on its own.**
-  Split it off when it is independently deliverable and reviewable, lands in
-  a different area or layer than the original need, or would roughly double
-  the pull request. File it with the new scope's need, the decisions that
-  produced it, and its acceptance criteria, wire it with a native relation
-  (see "Start": `blocked by` when it needs this issue first, a sub-issue when
-  it is carved out of this one), and link it from the original issue's
-  Decisions section. Scope that exists only to make the original need work
-  stays in the original issue.
+- **Edit the issue as soon as a decision lands, before building on it.** Keep
+  the original need readable, and add or update:
+  - **Decisions** — each decision, who made it, the date, one line each, with
+    the rejected option where there was one;
+  - **Acceptance criteria** — rewritten to match what will now be built;
+  - **Out of scope** — what the discussion chose not to build.
+  Strike or remove text the decisions made false.
+- **Open a new issue** when added scope could ship on its own: independently
+  deliverable, in a different area or layer, or roughly doubling the pull
+  request. Give it its need, decisions, and acceptance criteria; wire it with a
+  native relation (see "File a new issue"); link it from the original's
+  Decisions. Scope that only makes the original need work stays.
+- **Scope shrank?** Say so in the issue, and file what was dropped as its own
+  issue if it is still wanted.
 - **Re-read the issue before opening the pull request.** Its acceptance
-  criteria, the scenarios, and the pull request body must describe the same
-  change. If they disagree, fix the issue or the specification first — the
-  pull request body cites the issue, it does not replace it.
-- When the scope shrinks, say so in the issue too, and file what was dropped
-  as its own issue if it is still wanted, so it does not silently disappear.
+  criteria, the scenarios, and the PR body describe the same change; if not,
+  fix the issue or specification first.
 
 ## Verify and publish
 
-1. Run focused tests, then the repository checks proportional to risk.
-   **Before opening a pull request that touches `src/`, `tests/`, or
-   `tools/`, run `tools/coverage-check.sh` and do not open it until the gate
-   passes.** It measures `origin/main` and this branch on the same machine
-   with CI's own commands and runs the same ratchet CI does, so a coverage
-   drop is found here, not by the reviewer. A green test run is not a passing
-   coverage gate: deleting well-covered code while adding code with untested
-   branches passes every test and still fails the ratchet
+1. **Test, then pass the coverage gate.** Run focused tests, then repository
+   checks in proportion to risk. **A pull request touching `src/`, `tests/`, or
+   `tools/` is not opened until `tools/coverage-check.sh` passes.** It measures
+   `origin/main` and this branch on one machine with CI's commands and ratchet.
+   A green test run is not a passing gate
    ([lesson 0010](../../docs/lessons/0010-a-coverage-gate-found-in-ci-not-before-the-pull-request.md)).
-   When it fails, add the test that pins down the behaviour of each uncovered
-   branch the change added; a branch that can never run is deleted, not
-   tested.
-2. Inspect `git diff --check`, links, generated artifacts, and `git status`.
-3. Commit any remaining work with a concise imperative message and no
-   co-author trailer, rebase onto fresh `origin/main`, and push. Earlier units
-   of work are already committed and pushed (see "Start"); this is the last of
-   them, not the first. A pull request is never opened from a branch that is
-   behind `origin/main`.
-4. Open a pull request with a squash-ready title, then relabel the session
-   with it: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
-   After the worktree is removed the session runs from the primary checkout
-   on `main`, so this label is the only thing still saying which pull request
-   the session owns.
-5. Put `Closes #<number>` on its own line in the PR body, and name the
-   scenarios the change satisfies. If it built anything the specification does
-   not describe, either the specification was incomplete — fix it — or the
-   change exceeded its scope.
-6. A PR that changes anything user-visible in `src/web` attaches screenshots
-   demonstrating it, in the PR body or a comment — a browser tool
-   (Playwright, Claude in Chrome) capturing the real running app, not a
-   mockup. A new page/component (a CREATE) needs an after screenshot; a
-   change to an existing one (an UPDATE) needs both before and after. Commit
-   the image files under `docs/screenshots/<short-description>/`, named
-   `before-*`/`after-*`, and reference them from the PR body or a comment
-   (`gh pr create`/`gh pr comment --attach`) rather than only pasting them
-   inline. Set the locale to English before capturing — the default locale
-   the running app starts in is whatever the browser or a prior session left
-   it at, and a screenshot in French reads to a reviewer as broken or
-   untranslated rather than as the other official language working correctly.
-   Reference each image by its fully qualified raw URL, pinned to the commit
-   that added it:
-   `https://raw.githubusercontent.com/HPAC-Safety/safety-report/<sha>/docs/screenshots/<dir>/<file>.png`.
-   GitHub resolves neither a relative path nor a `github.com/…/blob/…` URL as
-   an image in a PR body: a relative path has no base, and a blob URL returns
-   an HTML page. Both render as broken images. Before you report the PR,
-   check that every image URL answers `image/png`
-   (`curl -sI <url> | grep -i content-type`)
-   ([lesson 0017](../../docs/lessons/0017-a-screenshot-linked-by-a-page-url-renders-broken.md)).
-7. After pushing, bring the local Docker environment up on the pushed code:
-   `./dev-up.sh` from the worktree. It takes the dev ports over from any other
-   checkout of this repository that still holds them, starts the containers
-   detached, waits until the API and the dev server actually answer, prints
-   their URLs, and returns — it does not tail logs. This proves the pushed
-   code starts, not only that it builds.
-8. Tear the environment down and remove the worktree immediately after:
-   `./dev-up.sh --down`, then `git worktree remove`. Containers belong to the
-   checkout that started them — compose names the project after the worktree
-   directory, and the web container bind-mounts it — so removing the worktree
-   without `--down` leaves containers running from a directory that no longer
-   exists, holding the ports every other checkout needs
+   On failure, test each uncovered branch the change added; delete a branch
+   that can never run.
+2. **Inspect** `git diff --check`, links, generated artifacts, and
+   `git status`.
+3. **Commit the last unit** — concise imperative message, no co-author
+   trailer — rebase onto fresh `origin/main`, and push. Never open a pull
+   request from a branch behind `origin/main`.
+4. **Open the pull request** with a squash-ready title, then relabel:
+   `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`. Once
+   the worktree is gone this label is the only record of which pull request the
+   session owns.
+5. **PR body**: `Closes #<number>` on its own line, and the scenarios it
+   satisfies. Built something the specification does not describe? Either fix
+   the specification or the change exceeded its scope.
+6. **Screenshots** for any user-visible `src/web` change:
+   - captured from the real running app by a browser tool (Playwright, Claude
+     in Chrome), not a mockup;
+   - a new page or component: an after shot; a changed one: before and after;
+   - set the locale to English first — a French shot reads as broken;
+   - commit under `docs/screenshots/<short-description>/`, named `before-*` /
+     `after-*`, and reference them from the body or a comment
+     (`gh pr create` / `gh pr comment --attach`), not only pasted inline;
+   - reference each by its raw URL pinned to the adding commit:
+     `https://raw.githubusercontent.com/HPAC-Safety/safety-report/<sha>/docs/screenshots/<dir>/<file>.png`.
+     A relative path or `github.com/…/blob/…` URL renders broken;
+   - before reporting, check each URL answers `image/png`:
+     `curl -sI <url> | grep -i content-type`
+     ([lesson 0017](../../docs/lessons/0017-a-screenshot-linked-by-a-page-url-renders-broken.md)).
+7. **Prove it starts.** After pushing, run `./dev-up.sh` from the worktree. It
+   takes the dev ports from any other checkout, starts containers detached,
+   waits until the API and dev server answer, prints their URLs, and returns.
+8. **Tear down at once**: `./dev-up.sh --down`, then `git worktree remove`.
+   Containers belong to the checkout that started them; removing the worktree
+   first leaves them holding the ports
    ([lesson 0008](../../docs/lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
-   Never leave a worktree sitting around, whether the PR is still open, still
-   failing checks, or already merged. Watching checks, reading logs, and
-   commenting all work from the primary checkout via `gh`; none of it needs
-   the worktree present.
-9. Watch required checks from the primary checkout. If one fails, recreate the
-   worktree on the *same* branch (no `-b`, it already exists —
-   `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`),
-   fix, committing, rebasing onto fresh `origin/main`, and pushing each fix as
-   it lands, repeat steps 7 and 8. When the checks go green, fetch again and
-   confirm the branch is still current:
-   `gh pr view <pr> --json mergeStateStatus` must not say `BEHIND`. `main`
-   keeps moving while checks run, so a branch rebased right before its push can
-   be out of date by the time it is green. If it is behind, rebase onto fresh
-   `origin/main`, push, and watch the checks again
-   ([lesson 0011](../../docs/lessons/0011-a-branch-rebased-before-its-push-is-behind-by-the-time-it-is-green.md)).
-   Finish only when checks are green on a current branch and no worktree
-   remains, and mark the session done:
-   `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
+   Never leave a worktree behind — open, failing, or merged. Watching checks,
+   reading logs, and commenting work from the primary checkout via `gh`.
+9. **Watch required checks** from the primary checkout.
+   - A check fails: recreate the worktree on the same branch (no `-b`):
+     `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`.
+     Fix, commit, rebase, push each fix, and repeat steps 7 and 8.
+   - Green: fetch and confirm `gh pr view <pr> --json mergeStateStatus` is not
+     `BEHIND` — `main` moves while checks run. Behind? Rebase, push, watch again
+     ([lesson 0011](../../docs/lessons/0011-a-branch-rebased-before-its-push-is-behind-by-the-time-it-is-green.md)).
+   - Finish only when checks are green on a current branch and no worktree
+     remains, then: `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
-A workflow that commits onto a pull request's own branch pushes through
-`tools/push-to-pr-branch.mjs` and passes its own `pull_request_target.paths`,
-never a bare `git push`. Two bots fire on the same push, and GitHub filters
-`paths` per push, so the one that pushes first usually starts no run of the
-other. "The newer push redoes this work" is true only when that push changed
-a file the workflow is triggered by; otherwise the tool replays the commit on
-top
-([ADR-0113](../../docs/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
-[lesson 0016](../../docs/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
+## Workflows that push
 
-A workflow that puts a token on its remote URL to push checks out with
-`persist-credentials: false`. The `GITHUB_TOKEN` header `actions/checkout`
-persists outranks the URL, so the push authenticates as `github-actions[bot]`
-and the CI it starts waits for a maintainer to approve it
-([lesson 0018](../../docs/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md)).
-
-Never hand-edit generated `.claude/` content. When project-owned skills change,
-update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill
-validation.
+- **Onto a pull request's branch**: push through `tools/push-to-pr-branch.mjs`,
+  passing the workflow's own `pull_request_target.paths`, never a bare
+  `git push`. GitHub filters `paths` per push, so a bot's push often starts no
+  run of the other bot; the tool replays the commit on top when the newer push
+  touched none of the workflow's trigger files
+  ([ADR-0113](../../docs/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
+  [lesson 0016](../../docs/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
+- **With a token on the remote URL**: check out with
+  `persist-credentials: false`. The persisted `GITHUB_TOKEN` header outranks
+  the URL, so the push authenticates as `github-actions[bot]` and its CI waits
+  for maintainer approval
+  ([lesson 0018](../../docs/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md)).

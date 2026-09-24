@@ -22,8 +22,8 @@ capability boundaries are normative.
 | `POST /api/v1/uploads` | Upload one attachment as it is attached; raw body, declared type in `Content-Type` | `201` with an opaque upload ID and kind, or `400` with a safe rejection reason. Requires a member bearer token, rate limited, stores nothing identifying the member, and writes to quarantine only. |
 | `DELETE /api/v1/uploads/{id}` | Remove an unclaimed upload | `204`, idempotent; erases every version of the quarantine object. |
 | `POST /api/v1/reports` | Submit final report JSON naming its upload IDs | `202` with opaque report ID/status. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
-| `GET /api/v1/public/reports` | Paginated public feed | Only publishable public DTO fields. |
-| `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. |
+| `GET /api/v1/public/reports?after=<cursor>` | Paginated public feed, newest published first | Only publishable public DTO fields, plus the opaque cursor for the next page (`null` on the last). Anonymous. |
+| `GET /api/v1/public/reports/{id}` | Public detail | Same allowlisted fields for one publishable report, otherwise `404`. Anonymous. |
 
 **CON-IF-002** There are no draft, upload-slot, blob-proxy, public-answer, or publication-
 channel endpoints.

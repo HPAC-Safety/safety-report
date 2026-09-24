@@ -27,7 +27,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// </summary>
 [Binding]
 [Scope(Feature = "Moderation, authentication, and publication")]
-public sealed class ReviewActionSteps : IDisposable
+public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
@@ -338,16 +338,23 @@ public sealed class ReviewActionSteps : IDisposable
 
 		_logs!.Messages.ShouldNotContain(message => message.Contains(Note, StringComparison.Ordinal));
 
-		// Outside /api/admin, a report route only accepts a submission: nothing public
-		// reads a report back yet (#28), so nothing public can carry the note.
-		var publicReportMethods = (await BootedApi.Factory()).Services.GetRequiredService<EndpointDataSource>().Endpoints
-			.OfType<RouteEndpoint>()
-			.Where(endpoint => (endpoint.RoutePattern.RawText ?? string.Empty).Contains("reports", StringComparison.Ordinal)
-				&& !(endpoint.RoutePattern.RawText ?? string.Empty).StartsWith("/api/admin/", StringComparison.Ordinal))
-			.SelectMany(endpoint => endpoint.Metadata.OfType<HttpMethodMetadata>())
-			.SelectMany(metadata => metadata.HttpMethods)
-			.Distinct();
-		publicReportMethods.ShouldBe(["POST"]);
+		// The public API reads only the public_reports view, which carries no note
+		// column and no rejected report (#28): the report is not found, and the
+		// note is in no page of the feed.
+		using var visitor = (await BootedApi.Factory()).CreateClient();
+		using var detail = await visitor.GetAsync(new Uri($"/api/v1/public/reports/{_reportId}", UriKind.Relative));
+		detail.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+
+		string? after = null;
+		do
+		{
+			var page = await visitor.GetFromJsonAsync<JsonElement>(new Uri(
+				after is null ? "/api/v1/public/reports" : $"/api/v1/public/reports?after={Uri.EscapeDataString(after)}",
+				UriKind.Relative));
+			page.GetRawText().ShouldNotContain(Note);
+			after = page.GetProperty("next").GetString();
+		}
+		while (after is not null);
 	}
 
 	[Then(@"rejecting without a note also succeeds")]
@@ -513,6 +520,7 @@ public sealed class ReviewActionSteps : IDisposable
 								   string consent)
 	{
 		_reportId = await BootedReports.Seed(status, consent);
+		seeded.Id = _reportId;
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
 		_version = detail.GetProperty("version").GetString()!;
@@ -604,6 +612,16 @@ public sealed class ReviewActionSteps : IDisposable
 }
 
 /// <summary>
+///     The report a scenario's Given step seeded, shared with the other step
+///     classes the same scenario binds to. Reqnroll gives each scenario its own.
+/// </summary>
+public sealed class SeededReport
+{
+	/// <summary>The seeded report's ID, once a step has seeded one.</summary>
+	public string Id { get; set; } = string.Empty;
+}
+
+/// <summary>
 ///     Seeds one synthetic report in a given review state into the booted database,
 ///     through the domain's own transitions.
 /// </summary>
@@ -612,14 +630,16 @@ internal static class BootedReports
 	public const string PilotName = "Morgan Synthetic";
 
 	public static async Task<string> Seed(ReportStatus status,
-										  string consent)
+										  string consent,
+										  Action<Report>? arrange = null,
+										  DateTimeOffset? at = null)
 	{
 		var factory = await BootedApi.Factory();
 		await ReportSubmissionEndpointSteps.ConsentRevisionId();
 
 		await using var scope = factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var now = DateTimeOffset.UtcNow;
+		var now = at ?? DateTimeOffset.UtcNow;
 
 		var consentQuestion = await database.Questions
 			.Include(question => question.Revisions)
@@ -630,6 +650,7 @@ internal static class BootedReports
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consentQuestion, consent, now);
 		report.Answer(pilot, PilotName, now);
+		arrange?.Invoke(report);
 		report.BeginSummarizing();
 
 		if (status == ReportStatus.SummaryFailed)

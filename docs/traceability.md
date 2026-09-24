@@ -138,11 +138,11 @@ SummaryFailed remains visible to safety officers — *Reqnroll, Planned*
 
 ### REQ-DOM-003
 
-A report is publishable only when every invariant holds — *Reqnroll, Planned*
+A report is publishable only when every invariant holds — *Reqnroll, Covered*
 
 ### REQ-DOM-004
 
-A report is not publishable when one invariant fails — *Reqnroll, Planned*
+A report is not publishable when one invariant fails — *Reqnroll, Covered*
 
 ### REQ-DOM-005
 
@@ -240,7 +240,7 @@ A failed attachment is inaccessible to reviewers — *Reqnroll, Covered*
 
 ### REQ-MED-014
 
-Attachments are never exposed publicly, even after publication — *Reqnroll, Planned*
+Attachments are never exposed publicly, even after publication — *Reqnroll, Covered*
 
 ### REQ-MED-015
 
@@ -426,15 +426,15 @@ Publication requires every guard to pass, with no bypass — *Reqnroll, Covered*
 
 ### REQ-MOD-036
 
-The public DTO exposes only the approved summary and its metadata — *Reqnroll, Planned*
+The public DTO exposes only the approved summary and its metadata — *Reqnroll, Covered*
 
 ### REQ-MOD-037
 
-The public feed lists only publishable reports — *Reqnroll, Planned*
+The public feed lists only publishable reports — *Reqnroll, Covered*
 
 ### REQ-MOD-038
 
-An unknown or non-public report id returns 404 — *Reqnroll, Planned*
+An unknown or non-public report id returns 404 — *Reqnroll, Covered*
 
 ### REQ-MOD-039
 
@@ -595,6 +595,26 @@ The report detail view gives a second language only for an answer that has one �
 ### REQ-MOD-078
 
 Opening a report shows a translation only under answers that have one — *playwright-bdd, Covered*
+
+### REQ-MOD-079
+
+Each report in the public feed opens at its own address — *playwright-bdd, Covered*
+
+### REQ-MOD-080
+
+A report's address opens it directly and survives a reload — *playwright-bdd, Covered*
+
+### REQ-MOD-081
+
+An address for a report that is not public shows not found — *playwright-bdd, Covered*
+
+### REQ-MOD-082
+
+The public feed pages forward and the address keeps the page — *playwright-bdd, Covered*
+
+### REQ-MOD-083
+
+A reviewer can open a published report's public page — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 
@@ -1414,7 +1434,7 @@ Client validation never replaces server validation — *Reqnroll, Planned*
 
 ### REQ-WLD-019
 
-The active locale controls which summary text is primary — *playwright-bdd, Planned*
+The active locale controls which summary text is primary — *playwright-bdd, Covered*
 
 ### REQ-WLD-020
 

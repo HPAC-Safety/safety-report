@@ -152,6 +152,11 @@ export function ReportDetailPage() {
 				<>
 					<div className="mt-4 flex flex-col gap-2">
 						<ReportBadges status={report.status} consent={report.consent} isStuck={report.isStuck} />
+						{report.status === "published" && (
+							<Link to={`/reports/${report.id}`} className="font-sans text-sm text-ink underline" data-public-link>
+								{t("reports.detail.publicPage")}
+							</Link>
+						)}
 						<p className="font-sans text-sm text-ink-muted">
 							{t("reports.submittedAt", { at: at.format(new Date(report.submittedAt)) })}
 						</p>

@@ -540,3 +540,16 @@ Then("a name or email answer shows no translation line", async ({ page }) => {
 	await expect(page.locator('[data-question-key="pilot_email"]')).toContainText("casey@example.test")
 	await expect(page.locator('[data-question-key="pilot_email"]')).not.toContainText("Translation:")
 })
+
+// REQ-MOD-083: a published report's view links to its public address.
+Then("the report view links to the report's public address", async ({ page }) => {
+	await expect(page.getByRole("link", { name: "View the public page" })).toHaveAttribute("href", "/reports/reviewaaaaa")
+})
+
+Then("a report that is not published shows no such link", async ({ page }) => {
+	// The later route wins, so the same report now reads back as pending review.
+	await stubReview(page, "pending_review", "pending-review")
+	await page.reload()
+	await expect(page.locator('[data-badge="status"]')).toBeVisible()
+	await expect(page.locator("[data-public-link]")).toHaveCount(0)
+})

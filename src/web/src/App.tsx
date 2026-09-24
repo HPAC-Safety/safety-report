@@ -4,6 +4,7 @@ import { Footer } from "./components/Footer"
 import { AdminRouteGuard } from "./components/AdminRouteGuard"
 import { HomePage } from "./routes/HomePage"
 import { ViewReportsPage } from "./routes/ViewReportsPage"
+import { PublicReportPage } from "./routes/PublicReportPage"
 import { SubmitReportPage } from "./routes/SubmitReportPage"
 import { ContactPage } from "./routes/ContactPage"
 import { MemberLoginPage } from "./routes/MemberLoginPage"
@@ -22,6 +23,7 @@ function App() {
 				<Routes>
 					<Route path="/" element={<HomePage />} />
 					<Route path="/reports" element={<ViewReportsPage />} />
+					<Route path="/reports/:reportId" element={<PublicReportPage />} />
 					{/* One optional-segment route, not two, so moving between pages never remounts the form. */}
 					<Route path="/report/:stepKey?" element={<SubmitReportPage />} />
 					<Route path="/contact" element={<ContactPage />} />

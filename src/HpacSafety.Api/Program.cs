@@ -1,6 +1,7 @@
 using HpacSafety.Api.Admin;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Api.PublicQuestions;
+using HpacSafety.Api.PublicReports;
 using HpacSafety.Api.RateLimiting;
 using HpacSafety.Api.Reports;
 using HpacSafety.Infrastructure.Media;
@@ -86,6 +87,10 @@ app.MapAuth(app.Environment.IsDevelopment());
 // Today's live question set, as the reporter-facing form renders it. Public,
 // unlike everything below it.
 app.MapPublicQuestions();
+
+// The published reports and each one's own page (#28). Anonymous, and read
+// only through the public_reports view.
+app.MapPublicReports();
 
 // The reporter-facing writes. Both require a member token. An attachment
 // uploads to quarantine when it is attached; the report is written once, by the

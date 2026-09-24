@@ -301,7 +301,6 @@ Scenario: Publication requires every guard to pass, with no bypass
   And no Administrator, migration, background worker, or direct API caller can bypass any of these guards
 
 @REQ-MOD-036
-@ignore
 Scenario: The public DTO exposes only the approved summary and its metadata
   Given a report is published
   When the public API returns it
@@ -309,15 +308,14 @@ Scenario: The public DTO exposes only the approved summary and its metadata
   And it never contains question keys, labels, answers, consent value, report language, private flags, raw reports, attachment metadata or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-037
-@ignore
 Scenario: The public feed lists only publishable reports
   Given some reports are publishable and others are not
   When the public feed is queried
   Then the response is a deterministic paginated list containing only publishable reports
   And no non-publishable report ever appears
+  And the list is newest published first, a tie broken by report ID, and each page names the cursor that continues it
 
 @REQ-MOD-038
-@ignore
 Scenario: An unknown or non-public report id returns 404
   Given a report id is unknown, deleted, unapproved, rejected, or not consented
   When the public API is asked for that report
@@ -689,3 +687,44 @@ Scenario: The report view shows how each summary language was produced
   When the safety officer opens that report
   Then the English text is labelled as edited by a reviewer
   And the French text is labelled as machine-translated
+
+@REQ-MOD-079
+@ui
+Scenario: Each report in the public feed opens at its own address
+  Given the public feed has published reports
+  When a visitor opens View safety reports and selects one
+  Then the address bar shows /reports/ followed by that report's ID
+  And the page shows that report's full summary in the visitor's language
+
+@REQ-MOD-080
+@ui
+Scenario: A report's address opens it directly and survives a reload
+  Given a visitor has the address of a published report
+  When the visitor opens that address directly
+  Then the page shows that report's full summary
+  When the page reloads
+  Then the page still shows that report's full summary
+
+@REQ-MOD-081
+@ui
+Scenario: An address for a report that is not public shows not found
+  Given a report ID the public API answers with 404
+  When a visitor opens /reports/ followed by that ID
+  Then the page says the report was not found
+  And it says nothing about whether such a report exists
+
+@REQ-MOD-082
+@ui
+Scenario: The public feed pages forward and the address keeps the page
+  Given the public feed has more published reports than fit on one page
+  When a visitor moves to the next page
+  Then the address bar carries that page's cursor
+  And going back returns the visitor to the first page
+
+@REQ-MOD-083
+@ui
+Scenario: A reviewer can open a published report's public page
+  Given a safety officer is signed in and a published report exists
+  When the safety officer opens that report
+  Then the report view links to the report's public address
+  And a report that is not published shows no such link

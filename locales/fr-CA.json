@@ -370,7 +370,8 @@
         "generated": "Généré par l'IA",
         "human": "Rédigé par un critique",
         "machine": "Traduction automatique"
-      }
+      },
+      "publicPage": "#View the public page"
     },
     "attachment": {
       "kind": {
@@ -439,6 +440,30 @@
         "accept": "Utiliser la traduction",
         "keep": "Conserver le texte actuel"
       }
+    }
+  },
+  "feed": {
+    "intro": "#Lessons from occurrences HPAC members reported and agreed to share. Each summary was anonymized and approved by a safety officer.",
+    "listLabel": "#Published safety reports",
+    "loading": "#Loading reports…",
+    "empty": "#No safety reports have been published yet.",
+    "error": "#The published reports could not be loaded. Try again.",
+    "publishedAt": "#Published {at}",
+    "read": "#Read the full report",
+    "pagesLabel": "#More reports",
+    "next": "#Older reports",
+    "newest": "#Newest reports",
+    "back": "#Back to safety reports",
+    "loadingOne": "#Loading the report…",
+    "errorOne": "#The report could not be loaded. Try again.",
+    "notFound": {
+      "title": "#Report not found",
+      "body": "#There is no published safety report at this address."
+    },
+    "reportTitle": "#Safety report",
+    "readIn": {
+      "en-CA": "#Read in English",
+      "fr-CA": "#Read in French"
     }
   }
 }

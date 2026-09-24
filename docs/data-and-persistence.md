@@ -138,6 +138,13 @@ positive allowlist rather than an entity projection with fields removed later.
 Each query selects only its required columns. In particular, public queries are
 positive allowlists rather than entity projections with fields removed later.
 
+The public report DTO is read from the `public_reports` view, never from the
+tables. The view states the whole publication invariant in SQL, including
+nonblank summary texts. Its columns are the allowlist itself: `id`,
+`ai_summary_en`, `ai_summary_fr`, and `published_at`. So a public query cannot
+reach a column the view does not carry
+([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+
 ## Migrations and seeding
 
 **CON-DP-012** Schema changes are explicit EF migrations run as a deployment step before new

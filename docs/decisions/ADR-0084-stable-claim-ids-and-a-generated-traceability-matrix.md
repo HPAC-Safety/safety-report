@@ -13,7 +13,9 @@ keywords: traceability, claim IDs, Gherkin tags, generated documentation, CI gat
 **Status:** Accepted. Amended by
 [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md): CI
 regenerates the matrix onto a same-repo pull request, and a branch must be up
-to date to merge.
+to date to merge. Amended by
+[ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md):
+the matrix carries no totals and one block per item, so git can merge it.
 
 ## Context
 

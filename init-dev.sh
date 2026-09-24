@@ -269,15 +269,15 @@ done
 # --------------------------------------------------- traceability merge attr --
 #
 # docs/traceability.md is generated entirely from features/**/*.feature
-# (ADR-0084): a summary line plus one row per claim across the whole
-# repository. Any two branches that touch different scenarios routinely
-# conflict on it during a rebase, even when their actual changes don't
-# overlap, because git's default 3-way text merge compares this file's own
-# lines with no idea they're derived. `merge=ours` tells git never to attempt
-# that comparison at all — always keep whichever side is already checked
-# out, so this file can never conflict — and the post-merge/post-rewrite
-# hooks above regenerate it for real immediately afterward, once the tree
-# (including the .feature files it's derived from) is in its final state.
+# (ADR-0084). Its format already lets git merge it: every line derives from
+# one scenario or constraint, with no whole-tree totals, and each item sits in
+# its own block (ADR-0106), so two branches with correct matrices merge into
+# the correct matrix — on GitHub too, which never reads this clone-local
+# attribute. `merge=ours` remains a local convenience for the case the format
+# cannot absorb (two branches claiming the same new ID): git keeps whichever
+# side is checked out instead of stopping the rebase, and the
+# post-merge/post-rewrite hooks above regenerate the file for real once the
+# tree, including the .feature files it derives from, is in its final state.
 #
 # .gitattributes is deliberately clone-local in this repository (see
 # .gitignore) rather than a tracked file, so it is written here rather than

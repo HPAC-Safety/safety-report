@@ -62,6 +62,14 @@ description: Repository-wide HPAC Safety conventions. Use for any code, test, do
    artifact, and keep the CI step as a backstop rather than as the mechanism
    ([lesson 0001](../../docs/lessons/0001-a-guard-that-lives-only-in-ci-is-not-a-guard.md),
    [ADR-0073](../../docs/decisions/ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
+12. A committed generated file must merge the way its sources do. Every line
+   derives from one source item: no totals or other counts across the whole
+   tree. Independent items are sorted by a stable key and separated by
+   unchanged lines, so git's merge of two correct copies is the correct copy.
+   A count belongs in the generator's output or a CI job summary, not in the
+   file
+   ([lesson 0013](../../docs/lessons/0013-a-generated-file-with-a-whole-tree-total-conflicts-with-every-branch.md),
+   [ADR-0106](../../docs/decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)).
 
 Before finishing, run the narrowest relevant checks, inspect the diff for
 unrelated changes, and update `/features` whenever the target design changes.

@@ -635,6 +635,18 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.field.translatable": {
+    "source_hash": "abad95a8d62594d6af288009ae1a88e80bc67fa11d8ec411bff2291874a7b95a",
+    "target_hash": "e5bf3553630552724d107b570925606675d7e648c3e8f6010d07cc678e353340",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.field.translatableHelp": {
+    "source_hash": "f0717548c8faff6bddba17ce094f1fa471a01926b20534e3f33cf4c02aacf801",
+    "target_hash": "0dbf094144888fd4e1574da80dfad24cb047b90c9621c7f2eb827b6af0a1ddf8",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "questions.field.type": {
     "source_hash": "baaddf70fb5d432b8bd948ef91d6f910124a6d138edae4d5f000c4610ddc8eae",
     "target_hash": "baaddf70fb5d432b8bd948ef91d6f910124a6d138edae4d5f000c4610ddc8eae",

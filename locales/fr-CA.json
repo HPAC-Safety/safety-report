@@ -304,5 +304,77 @@
     "error": {
       "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     }
+  },
+  "reports": {
+    "intro": "#Every report received, newest first. Open one to read its answers and summary.",
+    "filter": {
+      "label": "#Filter reports",
+      "all": "#All",
+      "needs-action": "#Needs action",
+      "published": "#Published",
+      "private": "#Private",
+      "rejected": "#Rejected",
+      "summary-failed": "#Summary failed"
+    },
+    "listLabel": "#Reports",
+    "loading": "#Loading reports…",
+    "empty": "#No reports match this filter.",
+    "error": {
+      "unexpected": "#The reports could not be loaded. Try again."
+    },
+    "submittedAt": "#Submitted {at}",
+    "status": {
+      "submitted": "#Submitted",
+      "summarizing": "#Summarizing",
+      "pending_review": "#Pending review",
+      "summary_failed": "#Summary failed",
+      "approved": "#Approved",
+      "rejected": "#Rejected",
+      "published": "#Published"
+    },
+    "badge": {
+      "private": "#Private (no consent)",
+      "stuck": "#Stuck"
+    },
+    "detail": {
+      "back": "#Back to reports",
+      "title": "#Report",
+      "notFound": "#This report does not exist or was deleted.",
+      "language": {
+        "en-CA": "#Written in English",
+        "fr-CA": "#Written in French"
+      },
+      "consent": {
+        "yes": "#The reporter consented to publication.",
+        "no": "#The reporter did not consent to publication. This report is never published.",
+        "unanswered": "#The reporter did not answer the publication question."
+      },
+      "summary": "#Summary",
+      "summaryEn": "#English",
+      "summaryFr": "#French",
+      "summaryFailed": "#Summarization failed: {error}",
+      "noSummary": "#No summary yet.",
+      "provenance": "#Generated {at} by {model} with prompt {prompt}.",
+      "approved": "#Approved {at}.",
+      "notApproved": "#Not approved yet.",
+      "answers": "#Answers",
+      "private": "#Private",
+      "notAnswered": "#Not answered",
+      "translation": "#Translation: {text}",
+      "attachments": "#Attachments",
+      "attachment": "#{kind} — {state}"
+    },
+    "attachment": {
+      "kind": {
+        "image": "#Image",
+        "video": "#Video",
+        "document": "#Document"
+      },
+      "state": {
+        "ready": "#ready",
+        "processing": "#processing",
+        "failed": "#could not be processed"
+      }
+    }
   }
 }

@@ -9,6 +9,7 @@ import { ContactPage } from "./routes/ContactPage"
 import { MemberLoginPage } from "./routes/MemberLoginPage"
 import { AdminPage } from "./routes/AdminPage"
 import { ManageReportsPage } from "./routes/ManageReportsPage"
+import { ReportDetailPage } from "./routes/ReportDetailPage"
 import { ManageQuestionsPage } from "./routes/ManageQuestionsPage"
 import { ManageAnswerTranslationsPage } from "./routes/ManageAnswerTranslationsPage"
 import { NotFoundPage } from "./routes/NotFoundPage"
@@ -38,6 +39,14 @@ function App() {
 						element={
 							<AdminRouteGuard requires="reviewer">
 								<ManageReportsPage />
+							</AdminRouteGuard>
+						}
+					/>
+					<Route
+						path="/admin/reports/:reportId"
+						element={
+							<AdminRouteGuard requires="reviewer">
+								<ReportDetailPage />
 							</AdminRouteGuard>
 						}
 					/>

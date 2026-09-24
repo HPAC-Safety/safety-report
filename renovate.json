@@ -64,6 +64,18 @@
 			]
 		},
 		{
+			"description": "A web dependency PR changes src/web/package.json or its lock file, and feature-coverage counts src/** as behavior-bearing. The PR cites the Playwright-covered claims the bump leaves standing, in the one shape tools/feature-coverage.mjs accepts; the required web and e2e checks re-prove those claims on the same PR, and the dependency category fails if anything but a manifest or lock file changed (ADR-0090, ADR-0111).",
+			"matchFileNames": [
+				"src/web/package.json",
+				"src/web/package-lock.json"
+			],
+			"prBodyNotes": [
+				"",
+				"No .feature scenario needed: dependency — a web package or lock version moved; no application source file changed",
+				"Claims preserved: REQ-SUB-001, REQ-SUB-029, REQ-SUB-045, REQ-MOD-003, REQ-MOD-052, REQ-QB-076"
+			]
+		},
+		{
 			"description": "Skip pinned versions",
 			"matchManagers": [
 				"nuget"

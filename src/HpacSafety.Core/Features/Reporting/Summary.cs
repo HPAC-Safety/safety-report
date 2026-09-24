@@ -120,7 +120,8 @@ public class Summary
 		ApprovedAt = at;
 	}
 
-	private void ClearApproval()
+	/// <summary>Withdraws the pair's approval, as unpublishing does (REQ-MOD-057).</summary>
+	internal void ClearApproval()
 	{
 		ApprovedBySubject = null;
 		ApprovedAt = null;

@@ -397,7 +397,7 @@
         "when_published": "#Shown once the report is published",
         "hidden": "#Hidden from the public",
         "no_consent": "#Not public: the reporter did not agree to share media",
-        "private": "#Never public"
+        "private": "#Not public"
       },
       "hide": "#Hide from the public",
       "show": "#Show on the public report"

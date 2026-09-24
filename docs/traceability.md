@@ -398,7 +398,7 @@ An expired link is replaced and the video resumes where it was — *playwright-b
 
 ### REQ-MED-034
 
-Media withdrawn while the page is open is removed from it — *playwright-bdd, Covered*
+Media that is no longer public is removed from the page — *playwright-bdd, Covered*
 
 ### REQ-MED-035
 

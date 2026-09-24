@@ -306,7 +306,7 @@
   "reports.attachment.visibility.when_published": "Shown once the report is published",
   "reports.attachment.visibility.hidden": "Hidden from the public",
   "reports.attachment.visibility.no_consent": "Not public: the reporter did not agree to share media",
-  "reports.attachment.visibility.private": "Never public",
+  "reports.attachment.visibility.private": "Not public",
   "reports.attachment.hide": "Hide from the public",
   "reports.attachment.show": "Show on the public report",
   "reports.detail.notSummarized": "Not summarized: the reporter did not consent to publication, so this report was never sent to the AI.",

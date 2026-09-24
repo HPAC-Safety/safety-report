@@ -115,8 +115,8 @@ export function defaultFormQuestions(): StubQuestion[] {
 
 /**
  * The default form with the media-consent system question after publication
- * consent, as the migration seeds it (ADR-0117). The form asks it only when
- * publication consent is yes and an image or video is attached.
+ * consent, as the migrations seed it (ADR-0117, ADR-0119). The form asks it
+ * only when publication consent is yes and a file is attached.
  */
 export function mediaConsentFormQuestions(): StubQuestion[] {
 	return [

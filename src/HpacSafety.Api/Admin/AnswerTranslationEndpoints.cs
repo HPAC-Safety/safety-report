@@ -47,15 +47,13 @@ public static class AnswerTranslationEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(database);
 
-		var waiting = await database.ReportAnswers
-			.Where(answer => answer.Value != null
-							 && answer.TranslatedValue == null
-							 && answer.TranslationMode == TranslationMode.Machine)
+		var waiting = await database.AnswersAwaitingTranslation
+			.AsNoTracking()
 			.OrderBy(answer => answer.AnsweredAt)
 			.Select(answer => new AwaitingTranslationView(
 				answer.Id.ToString(),
 				answer.QuestionKey,
-				answer.Value!,
+				answer.Value,
 				answer.Locale.Code,
 				answer.Locale.Counterpart.Code))
 			.ToListAsync(cancellationToken)

@@ -7,6 +7,7 @@ import { useAuth } from "../auth/useAuth"
 import { useTheme } from "../theme/useTheme"
 import { Nav } from "./Nav"
 import { AdminMenu } from "./AdminMenu"
+import { usePendingCounts } from "./usePendingCounts"
 import { LanguageToggle } from "./LanguageToggle"
 import { ThemeToggle } from "./ThemeToggle"
 
@@ -38,6 +39,9 @@ export function Header() {
 	const toggleButtonRef = useRef<HTMLButtonElement>(null)
 	const effectiveDark = theme === "dark" || (theme === null && prefersDark())
 	const logo = effectiveDark ? logoDark : logoLight
+	const isReviewer = isSignedIn && role !== "user"
+	// Read once here, not in each AdminMenu: the header draws the menu twice.
+	const pendingCounts = usePendingCounts(isReviewer)
 
 	useEffect(() => {
 		if (!menuOpen) return
@@ -62,7 +66,7 @@ export function Header() {
 
 				<div className="hidden flex-wrap items-center justify-end gap-x-4 gap-y-2 lg:flex">
 					<Nav />
-					{isSignedIn && role !== "user" && <AdminMenu />}
+					{isReviewer && <AdminMenu counts={pendingCounts} />}
 					<div className="flex items-center gap-1">
 						<LanguageToggle />
 						<ThemeToggle />
@@ -115,7 +119,7 @@ export function Header() {
 
 						<div className="flex flex-col gap-1 px-6 py-4">
 							<Nav stacked onNavigate={() => setMenuOpen(false)} />
-							{isSignedIn && role !== "user" && <AdminMenu stacked onNavigate={() => setMenuOpen(false)} />}
+							{isReviewer && <AdminMenu stacked counts={pendingCounts} onNavigate={() => setMenuOpen(false)} />}
 						</div>
 
 						{isSignedIn ? (

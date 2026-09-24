@@ -297,6 +297,25 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAnswerAwaitingTranslation_WhenAdministratorReadsPendingCounts_ThenItIsCounted()
+	{
+		// Given — the collection runs one test at a time, so the difference is
+		// exactly the answer this test recorded
+		using var client = await SignedIn();
+		var before = await PendingTranslationCount(client);
+		var created = await Create(client, UniqueKey("counted"));
+		await Answer(created.GetProperty("id").GetString()!, "It was windy.");
+
+		// When
+		var after = await PendingTranslationCount(client);
+
+		// Then
+		after.ShouldBe(before + 1);
+		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		after.ShouldBe(queued.GetProperty("waiting").GetInt32());
+	}
+
+	[Fact]
 	public async Task GivenAnswerWithNoValue_WhenTranslationIsSupplied_ThenApiRefuses()
 	{
 		// Given — a skipped answer has nothing to translate
@@ -334,6 +353,12 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	///     Writes one report answer straight to the database, because there is no
 	///     submission endpoint to post one through yet.
 	/// </summary>
+	private static async Task<int> PendingTranslationCount(HttpClient client)
+	{
+		var counts = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/counts", UriKind.Relative));
+		return counts.GetProperty("answersAwaitingTranslation").GetInt32();
+	}
+
 	private async Task<string> Answer(string questionId,
 									  string? value,
 									  bool deleteReport = false)

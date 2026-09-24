@@ -40,7 +40,9 @@ function watchAdminRequests(page: Page) {
 
 	page.on("request", (request) => {
 		const url = request.url()
-		if (url.includes("/api/admin/")) {
+		// The header's Admin menu reads its pending counts on every page; that
+		// is the menu's data, not the guarded route's (REQ-MOD-043, REQ-MOD-087).
+		if (url.includes("/api/admin/") && !url.includes("/api/admin/counts")) {
 			adminRequestsSeenAfterNavigation.get(page)?.push(url)
 		}
 	})
@@ -60,6 +62,6 @@ Then("it is not the not-found page", async ({ page }) => {
 	await expect(page.getByRole("heading", { name: "Page not found" })).toBeHidden()
 })
 
-Then("no request for that route's data is made", async ({ page }) => {
+Then("no request for that route's data is made, the Admin menu's pending counts aside", async ({ page }) => {
 	expect(adminRequestsSeenAfterNavigation.get(page) ?? []).toEqual([])
 })

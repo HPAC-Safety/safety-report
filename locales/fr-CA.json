@@ -28,7 +28,8 @@
     "admin": "Admin",
     "manageReports": "Gérer les rapports",
     "manageQuestions": "Gérer les questions",
-    "manageAnswerTranslations": "Réponses en attente de traduction"
+    "manageAnswerTranslations": "Réponses en attente de traduction",
+    "pendingCount": "#{count} waiting"
   },
   "language": {
     "switchTo": "Passer à {language}",

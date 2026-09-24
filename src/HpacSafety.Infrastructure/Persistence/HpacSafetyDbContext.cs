@@ -82,6 +82,15 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Publishable reports, as the public side reads them (the <c>public_reports</c> view).</summary>
 	public DbSet<PublicReport> PublicReports => Set<PublicReport>();
 
+	/// <summary>Live reports as the admin list reads them (the <c>admin_report_queue</c> view).</summary>
+	public DbSet<AdminReportQueueItem> AdminReportQueue => Set<AdminReportQueueItem>();
+
+	/// <summary>Answers waiting for a second language (the <c>answers_awaiting_translation</c> view).</summary>
+	public DbSet<AnswerAwaitingTranslation> AnswersAwaitingTranslation => Set<AnswerAwaitingTranslation>();
+
+	/// <summary>How much admin work is waiting (the single-row <c>admin_pending_counts</c> view).</summary>
+	public DbSet<AdminPendingCounts> AdminPendingCounts => Set<AdminPendingCounts>();
+
 	/// <summary>Typeform-imported fields whose branching logic still needs manual wiring.</summary>
 	public DbSet<PendingImportLogic> PendingImportLogic => Set<PendingImportLogic>();
 
@@ -156,6 +165,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new ReportCommentRevisionConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportCommentConfiguration());
+		modelBuilder.ApplyConfiguration(new AdminReportQueueItemConfiguration());
+		modelBuilder.ApplyConfiguration(new AnswerAwaitingTranslationConfiguration());
+		modelBuilder.ApplyConfiguration(new AdminPendingCountsConfiguration());
 
 		// Every application table except the append-only audit log is filtered
 		// to its live rows by default. See docs/data-and-persistence.md.

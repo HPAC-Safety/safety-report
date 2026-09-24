@@ -155,6 +155,19 @@ comments are public exactly while the report is. Its one non-public column,
 serialized
 ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
+The admin side reads its rules from views in the same way
+([ADR-0116](decisions/ADR-0116-a-read-rule-lives-in-a-view.md)):
+
+- `admin_report_queue` is every live report, with `is_stuck` and
+  `needs_action` computed in SQL.
+- `answers_awaiting_translation` is every live answer still waiting for its
+  machine-translated second language.
+- `admin_pending_counts` is one row counting both.
+
+The report list and its filters, the translation queue, and the Admin menu's
+counts all read these views. So they share one definition of "stuck", "needs
+action", and "awaiting".
+
 ## Migrations and seeding
 
 **CON-DP-012** Schema changes are explicit EF migrations run as a deployment step before new

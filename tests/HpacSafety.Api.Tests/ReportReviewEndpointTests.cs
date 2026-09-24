@@ -42,6 +42,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 	[Theory]
 	[InlineData("/api/admin/reports")]
 	[InlineData("/api/admin/reports/abcdefghijk")]
+	[InlineData("/api/admin/counts")]
 	public async Task GivenUserRole_WhenReportListOrDetailIsRead_ThenApiForbids(string path)
 	{
 		// Given
@@ -118,6 +119,51 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		Item(listed, seeded["stuckSubmitted"]).GetProperty("isStuck").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["stuckSummarizing"]).GetProperty("isStuck").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["pending"]).GetProperty("isStuck").GetBoolean().ShouldBeFalse();
+	}
+
+	[Fact]
+	public async Task GivenNoBearerToken_WhenPendingCountsAreRead_ThenApiRefuses()
+	{
+		// Given
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await client.GetAsync(PendingCounts);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+	}
+
+	[Fact]
+	public async Task GivenReportsInEveryState_WhenPendingCountsAreRead_ThenPendingFailedAndStuckAreCounted()
+	{
+		// Given — the collection runs one test at a time, so the difference is
+		// exactly what this test seeded: pending, pendingPrivate, failed, and the
+		// stuck pair, but not the fresh, approved, published, rejected, or deleted.
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var before = await Counts(client);
+		await Seed();
+
+		// When
+		var after = await Counts(client);
+
+		// Then
+		after.GetProperty("reportsNeedingAction").GetInt32()
+			.ShouldBe(before.GetProperty("reportsNeedingAction").GetInt32() + 5);
+		after.GetProperty("reportsNeedingAction").GetInt32().ShouldBe((await List(client, "needs-action")).Count);
+	}
+
+	[Fact]
+	public async Task GivenSafetyOfficer_WhenPendingCountsAreRead_ThenNoTranslationCountIsGiven()
+	{
+		// Given
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var counts = await Counts(client);
+
+		// Then
+		counts.GetProperty("answersAwaitingTranslation").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
 	[Theory]
@@ -319,6 +365,13 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var path = filter is null ? "/api/admin/reports" : $"/api/admin/reports?filter={filter}";
 		var body = await client.GetFromJsonAsync<JsonElement>(new Uri(path, UriKind.Relative));
 		return [.. body.EnumerateArray()];
+	}
+
+	private static readonly Uri PendingCounts = new("/api/admin/counts", UriKind.Relative);
+
+	private static Task<JsonElement> Counts(HttpClient client)
+	{
+		return client.GetFromJsonAsync<JsonElement>(PendingCounts);
 	}
 
 	private async Task<Seeding.Seeded> Seed()

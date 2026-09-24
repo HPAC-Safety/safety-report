@@ -85,7 +85,11 @@ sometimes about themselves. It is not a marketing page.
   one-question-at-a-time pacing becomes grouped sections with a progress rail.
 - **Red is reserved for primary action and error state.** Never decoration.
   That is what lets "Serious injury" and "Fatality" read as urgent instead of
-  competing with the brand.
+  competing with the brand. The one addition is the Admin menu's pending-work
+  count (#418): a filled brand-700 pill with white text, shown only when
+  something is waiting. It is a call to act, like a primary action. Brand-700
+  rather than 600, because white 12px text needs 4.5:1. There is still no
+  blue.
 - No celebratory microcopy, no animation flourishes on submit.
 
 **The homepage is the deliberate exception**, not a contradiction of the

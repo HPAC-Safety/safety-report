@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
+import type { PendingCounts } from "../api/adminReports"
+import { CountBadge } from "./CountBadge"
 
 const rowLinkClassName =
 	"touch-target flex items-center whitespace-nowrap rounded px-4 font-sans text-sm font-medium text-ink underline-offset-4 hover:underline"
@@ -17,7 +19,15 @@ const stackedLinkClassName =
  * purpose (ADR-0048). Hiding an option a member cannot use just keeps the menu
  * honest about what it offers.
  */
-export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; onNavigate?: () => void }) {
+export function AdminMenu({
+	stacked = false,
+	onNavigate,
+	counts = null,
+}: {
+	stacked?: boolean
+	onNavigate?: () => void
+	counts?: PendingCounts | null
+}) {
 	const { t } = useLocale()
 	const { role } = useAuth()
 	const [open, setOpen] = useState(false)
@@ -48,6 +58,9 @@ export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; 
 		}
 	}, [open])
 
+	const reports = counts?.reportsNeedingAction ?? 0
+	const translations = role === "administrator" ? (counts?.answersAwaitingTranslation ?? 0) : 0
+
 	function selectItem() {
 		setOpen(false)
 		onNavigate?.()
@@ -64,6 +77,7 @@ export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; 
 				className={stacked ? stackedLinkClassName : "touch-target inline-flex items-center rounded px-2 font-sans text-sm font-medium text-ink underline-offset-4 hover:underline"}
 			>
 				{t("nav.admin")}
+				<CountBadge count={reports + translations} />
 			</button>
 
 			{open && (
@@ -78,6 +92,7 @@ export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; 
 				>
 					<Link role="menuitem" to="/admin/reports" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
 						{t("nav.manageReports")}
+						<CountBadge count={reports} />
 					</Link>
 					{role === "administrator" && (
 						<>
@@ -86,6 +101,7 @@ export function AdminMenu({ stacked = false, onNavigate }: { stacked?: boolean; 
 							</Link>
 							<Link role="menuitem" to="/admin/answer-translations" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
 								{t("nav.manageAnswerTranslations")}
+								<CountBadge count={translations} />
 							</Link>
 						</>
 					)}

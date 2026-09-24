@@ -82,6 +82,24 @@ view, and that read is audited as `ViewedRawReport`
 Attachments are listed by kind and state; opening one goes through its own
 audited view or download request (REQ-MOD-046).
 
+## Pending counts on the Admin menu (#418)
+
+The Admin menu shows how much work is waiting, so a reviewer sees it without
+opening each page. **Manage reports** carries the number of reports the
+*Needs action* filter lists, and **Answers awaiting translation** carries the
+number of answers in that queue. That second number is only for an
+administrator, since the queue is theirs alone. The closed **Admin** button
+carries the total of the counts the member can see. A count of zero shows no
+badge. The badge is a filled brand-red pill
+([design system](../../docs/design-system.md)).
+
+`GET /api/admin/counts` answers any reviewer. It gives the translation count
+only to an administrator and carries no report content, so it is not
+audited. The counts are read from the same database views as the list and the
+queue, so they cannot disagree with them
+([REQ-MOD-084..089](moderation-authentication-and-publication.feature)). The
+menu refetches on each navigation.
+
 ## Review actions
 
 The report view offers only what the report's state allows:
@@ -169,6 +187,10 @@ What not to build here. The global list in
 [system overview](../../docs/system-overview.md) still holds; this narrows it
 to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md)).
 
+- A live-updating or polling count on the Admin menu. The counts refresh when
+  the member navigates.
+- A count on Manage questions, or a per-status breakdown of the reports
+  needing action.
 - A user table, an allowlist, an allowlist-management screen, or a session
   store. Roles come from the token
   ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).

@@ -152,10 +152,10 @@ Scenario Outline: A development login verified against the members site resolves
   Then the API returns a signed development token with the <role> role
 
 Examples:
-  | email                       | listed                                | role          |
-  | admin@example.test          | on the development administrator list | Administrator |
+  | email                       | listed                                 | role          |
+  | admin@example.test          | on the development administrator list  | Administrator |
   | officer@example.test        | on the development safety-officer list | SafetyOfficer |
-  | nobody-special@example.test | on neither development list           | User          |
+  | nobody-special@example.test | on neither development list            | User          |
 
 @REQ-MOD-021
 Scenario: Bad members-site credentials show the same generic failure as bad fixed-account credentials
@@ -252,11 +252,11 @@ Scenario Outline: A status filter narrows the admin report list
   Then the list holds only <reports>
 
 Examples:
-  | filter         | reports                                          |
-  | published      | published reports                                |
-  | private        | live reports whose reporter refused consent      |
-  | rejected       | rejected reports                                 |
-  | summary-failed | reports whose summarization failed               |
+  | filter         | reports                                     |
+  | published      | published reports                           |
+  | private        | live reports whose reporter refused consent |
+  | rejected       | rejected reports                            |
+  | summary-failed | reports whose summarization failed          |
 
 @REQ-MOD-031
 Scenario: A report detail view exposes only what the reviewer needs
@@ -273,7 +273,6 @@ Scenario: Opening a report's detail view is audited
   And the audit entry records no report content
 
 @REQ-MOD-032
-@ignore
 Scenario: Editing a summary clears approval and unpublishes
   Given a reviewer edits either summary language
   When the edit is saved
@@ -281,7 +280,6 @@ Scenario: Editing a summary clears approval and unpublishes
   And a previously published report is unpublished
 
 @REQ-MOD-033
-@ignore
 Scenario: Approval applies once to the current bilingual pair
   Given a reviewer approves the current English/French summary pair
   When the approval is recorded
@@ -289,7 +287,6 @@ Scenario: Approval applies once to the current bilingual pair
   And the approving token subject is recorded as an opaque string
 
 @REQ-MOD-034
-@ignore
 Scenario: Rejection blocks publication but keeps the report for learning
   Given a reviewer rejects a report
   When the rejection is recorded
@@ -297,11 +294,10 @@ Scenario: Rejection blocks publication but keeps the report for learning
   And the report remains available for internal learning
 
 @REQ-MOD-035
-@ignore
 Scenario: Publication requires every guard to pass, with no bypass
-  Given a report is non-deleted, has explicit positive consent, has two nonblank summary texts, and has current human approval of the pair
-  When the report is published
-  Then publication succeeds
+  Given a report is non-deleted, has explicit positive consent, has two nonblank summary texts, and a reviewer approves the pair
+  When the approval is recorded
+  Then the report is published in the same action
   And no Administrator, migration, background worker, or direct API caller can bypass any of these guards
 
 @REQ-MOD-036
@@ -371,11 +367,11 @@ Scenario Outline: A signed-in member without the required role sees a real 403, 
   And no request for that route's data is made
 
 Examples:
-  | role          | route                       |
-  | User          | /admin/reports               |
-  | User          | /admin/questions              |
-  | SafetyOfficer | /admin/questions              |
-  | SafetyOfficer | /admin/answer-translations    |
+  | role          | route                      |
+  | User          | /admin/reports             |
+  | User          | /admin/questions           |
+  | SafetyOfficer | /admin/questions           |
+  | SafetyOfficer | /admin/answer-translations |
 
 @REQ-MOD-044
 Scenario: A successful sign-in writes an audit row
@@ -441,4 +437,137 @@ Scenario: Opening a report shows its answers with private answers marked, and it
   And the safety officer opens a pending-review report
   Then its answers are shown under their questions, with each private answer marked private
   And both the English and French summary texts are shown with the model and prompt version
-  And no action to edit, approve, reject, or publish is offered
+
+@REQ-MOD-055
+Scenario Outline: Approving the pair publishes it only when the reporter consented
+  Given a pending-review report whose reporter answered <consent> to publication
+  When a reviewer approves the pair
+  Then the report becomes <status>
+  And the approval and any publication are recorded in one audited action
+
+Examples:
+  | consent | status    |
+  | yes     | Published |
+  | no      | Approved  |
+
+@REQ-MOD-056
+Scenario: A rejected report can be reopened for review
+  Given a reviewer rejected a report
+  When a reviewer reopens it
+  Then the report returns to Pending review
+  And the reopening is audited
+
+@REQ-MOD-057
+Scenario: Unpublishing takes a report off the public feed and back to review
+  Given a report is published
+  When a reviewer unpublishes it
+  Then it is no longer publishable
+  And the pair's approval is cleared and the report returns to Pending review
+  And the unpublishing is audited
+
+@REQ-MOD-058
+Scenario: A rejection may carry a note that only reviewers see
+  Given a reviewer rejects a report with a note
+  When the rejection is recorded
+  Then the detail view shows the note to reviewers
+  And the note never reaches the public API, the audit log, or the application logs
+  And rejecting without a note also succeeds
+
+@REQ-MOD-059
+Scenario: A reviewer writes the pair by hand when summarization failed
+  Given a report is SummaryFailed
+  When a reviewer saves an English and a French summary text
+  Then the report has one summary pair with "manual" as its model and prompt version
+  And the report returns to Pending review
+  And writing the pair is audited
+
+@REQ-MOD-060
+Scenario: A review action based on a stale view is refused
+  Given two reviewers opened the same report
+  And the first reviewer has saved a change to it
+  When the second reviewer sends a change based on the view they loaded
+  Then the API answers 409 with a problem that asks them to reload
+  And nothing the second reviewer sent is saved
+
+@REQ-MOD-061
+Scenario Outline: Every review action writes one content-free audit entry in its own transaction
+  Given a report on which a reviewer can <action>
+  When the reviewer does so
+  Then one audit entry records the reviewer's token subject, <audit action>, the report, and the time
+  And the entry records no summary text, answer, or rejection note
+
+Examples:
+  | action                | audit action      |
+  | edit the summary pair | EditedSummary     |
+  | approve the pair      | ApprovedReport    |
+  | reject the report     | RejectedReport    |
+  | reopen the report     | ReopenedReport    |
+  | unpublish the report  | UnpublishedReport |
+  | write a manual pair   | EditedSummary     |
+
+@REQ-MOD-062
+@ui
+Scenario Outline: The report view offers only the actions its state allows
+  Given a safety officer is signed in and a <status> report exists
+  When the safety officer opens that report
+  Then the offered actions are <actions>
+
+Examples:
+  | status         | actions                               |
+  | pending-review | Edit summary, Approve, Reject, Delete |
+  | published      | Edit summary, Unpublish, Delete       |
+  | rejected       | Reopen, Delete                        |
+  | summary-failed | Write summary, Delete                 |
+
+@REQ-MOD-063
+@ui
+Scenario: Editing the summary pair saves both texts and clears approval
+  Given a safety officer is signed in and a published report exists
+  When the safety officer opens that report
+  And the safety officer edits the English summary and saves
+  Then the report shows the "Pending review" badge
+  And the saved English text is shown
+
+@REQ-MOD-064
+@ui
+Scenario: Approving a consented report publishes it
+  Given a safety officer is signed in and a pending-review report exists
+  When the safety officer opens that report
+  And the safety officer approves it
+  Then the report shows the "Published" badge
+
+@REQ-MOD-065
+@ui
+Scenario: Rejecting with a note shows the note on the report
+  Given a safety officer is signed in and a pending-review report exists
+  When the safety officer opens that report
+  And the safety officer rejects it with the note "Duplicate of an earlier report"
+  Then the report shows the "Rejected" badge
+  And the note "Duplicate of an earlier report" is shown
+
+@REQ-MOD-066
+@ui
+Scenario: A stale action tells the reviewer to reload
+  Given a safety officer is signed in and a pending-review report exists
+  And another reviewer has changed that report since it was opened
+  When the safety officer opens that report
+  And the safety officer approves it
+  Then a message says the report changed and offers to reload it
+
+@REQ-MOD-067
+@ui
+Scenario: Deleting a report asks for confirmation first
+  Given a safety officer is signed in and a pending-review report exists
+  When the safety officer opens that report
+  And the safety officer chooses Delete
+  Then a confirmation asks whether to delete the report
+  When the safety officer confirms
+  Then the browser returns to Manage reports
+
+@REQ-MOD-068
+@ui
+Scenario: Opening an attachment requests its own audited link
+  Given a safety officer is signed in and a pending-review report exists
+  When the safety officer opens that report
+  And the safety officer opens its document attachment
+  Then the browser requests that attachment's download link

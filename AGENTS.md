@@ -304,6 +304,13 @@ hook and `linked-issue.yml` refuse one,
 [ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)),
 and keep working until required checks are green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
 
+Picking up an issue labels it `in progress` before anything else — before the
+worktree, the branch, or the first edit —
+`gh issue edit <number> --add-label "in progress"`. This is a hard rule with no
+exception. When looking for work, never pick up an issue that already carries
+the label; another agent has claimed it. Stopping without a pull request
+removes the label so the issue returns to the board.
+
 When a requirement changes after an issue is picked up — a clarifying
 question answered, an owner's decision, scope that grew or shrank — edit the
 issue's decisions, acceptance criteria, and out-of-scope list before building

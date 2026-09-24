@@ -130,7 +130,8 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
 							 && answer.Value != null
-							 && answer.QuestionKey != QuestionKey.ConsentPublish)
+							 && answer.QuestionKey != QuestionKey.ConsentPublish
+							 && answer.QuestionKey != QuestionKey.ConsentMedia)
 			.Join(
 				database.QuestionRevisions,
 				answer => answer.QuestionRevisionId,

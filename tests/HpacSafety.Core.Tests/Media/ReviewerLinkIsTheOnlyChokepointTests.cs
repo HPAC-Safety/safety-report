@@ -23,6 +23,7 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 {
 	[Theory]
 	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs")]
+	[InlineData("CreateInlineReadUrl", "PublicMediaLink.cs")]
 	public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
 		string method,
 		string chokepointFile)
@@ -64,6 +65,19 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 		// matter that it saw none elsewhere. A guard that cannot fail is not a
 		// guard.
 		source.ShouldContain("CreateReadUrl(");
+	}
+
+	[Fact]
+	public void GivenPublicChokepoint_WhenSourceIsScanned_ThenScanIsFindingRealCallSites()
+	{
+		// Given
+		var publicLink = Path.Combine(RepositoryRoot(), "src", "HpacSafety.Core", "Features", "Reporting", "PublicMediaLink.cs");
+
+		// When
+		var source = File.ReadAllText(publicLink);
+
+		// Then
+		source.ShouldContain("CreateInlineReadUrl(");
 	}
 
 	internal static string RepositoryRoot()

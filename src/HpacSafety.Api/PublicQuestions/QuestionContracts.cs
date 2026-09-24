@@ -6,8 +6,9 @@ namespace HpacSafety.Api.PublicQuestions;
 /// <summary>
 ///     One question as the reporter-facing form needs it: its current
 ///     revision, bilingual, with a group's children nested inside it. Carries
-///     no authoring-only field (no <c>HasBeenAnswered</c>, no system/role
-///     detail) — see <c>skills/persist-hpac-data</c>: this is purpose-built for
+///     no authoring-only field (no <c>HasBeenAnswered</c>, no system flag) —
+///     only the role, because the form asks media consent by a rule that reads
+///     the publication-consent answer and the attachments (ADR-0117) — see <c>skills/persist-hpac-data</c>: this is purpose-built for
 ///     the public form, not a reuse of the admin screen's shape.
 /// </summary>
 /// <remarks>
@@ -22,6 +23,7 @@ namespace HpacSafety.Api.PublicQuestions;
 public sealed record PublicQuestionView(
 	string Id,
 	string Key,
+	string Role,
 	string RevisionId,
 	string Type,
 	bool IsRequired,
@@ -58,6 +60,7 @@ public sealed record PublicQuestionView(
 		return new PublicQuestionView(
 			question.Id.Value,
 			question.Key,
+			EnumCode.Of(question.Role),
 			revision.Id.Value,
 			EnumCode.Of(revision.Type),
 			revision.IsRequired,

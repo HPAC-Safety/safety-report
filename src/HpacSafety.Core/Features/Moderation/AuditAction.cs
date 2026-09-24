@@ -26,4 +26,6 @@ public enum AuditAction
 	ViewedAttachment = 22,
 	HidComment = 30,
 	DeletedComment = 31,
+	HidMedia = 32,
+	ShowedMedia = 33,
 }

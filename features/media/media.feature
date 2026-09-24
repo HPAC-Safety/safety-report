@@ -248,7 +248,8 @@ Scenario: A visitor gets a short-lived inline link to a public file
   Given a published report shows a processed image
   When an anonymous visitor asks for the image's public link
   Then the visitor receives a pre-signed URL to the image's derivative that expires within fifteen minutes
-  And the URL serves the image inline, with the header X-Content-Type-Options: nosniff
+  And the URL serves the derivative inline, under the derivative's own image content type
+  And the response carries the header X-Content-Type-Options: nosniff
   And the response names no file name, size, or storage key
 
 @REQ-MED-029

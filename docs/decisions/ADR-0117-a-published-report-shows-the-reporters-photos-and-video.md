@@ -72,8 +72,10 @@ nobody has identified.
    report page lists each public file's opaque id and kind. For each one the
    page asks `GET /api/v1/public/reports/{id}/media/{fileId}`, which needs no
    sign-in and returns a pre-signed GET to the derivative. The GET lives at
-   most `BlobUrlLifetime.Maximum` (15 minutes), is served inline, and carries
-   `X-Content-Type-Options: nosniff`. The endpoint returns 404 for anything
+   most `BlobUrlLifetime.Maximum` (15 minutes) and is served inline under the
+   derivative's own content type, pinned in the signature. The link response
+   carries `X-Content-Type-Options: nosniff`, as the reviewer's does; a
+   pre-signed S3 response cannot be made to add a header of its own. The endpoint returns 404 for anything
    the view does not hold. The bucket stays private and there is still no
    route that serves blob bytes. `PublicMediaLink` joins
    `ReviewerMediaLink` and `MediaUploadSlot` as the only callers allowed to
@@ -100,7 +102,7 @@ sequenceDiagram
     V->>A: GET /public/reports/{id}/media/{fileId}
     A->>D: is this file public?
     alt listed
-        A-->>V: { url (≤15 min, inline, nosniff), expiresAt }
+        A-->>V: { url (≤15 min, inline), expiresAt }
         V->>S: GET derivative
     else hidden, unpublished, or never public
         A-->>V: 404

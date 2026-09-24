@@ -31,6 +31,8 @@ public static class AttachmentEndpoints
 
 		group.MapGet("/view", ViewAsync);
 		group.MapGet("/download", DownloadAsync);
+		group.MapPost("/hide", Hide);
+		group.MapPost("/show", Show);
 
 		return group;
 	}
@@ -121,6 +123,82 @@ public static class AttachmentEndpoints
 		}
 
 		return await IssueAsync(file, url, DownloadFileName(file, derivative: false), context, database, authOptions, clock, cancellationToken).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	///     A reviewer hides an image or video from the published report
+	///     (REQ-MED-030). Audited; the bytes are untouched. Hiding a file already
+	///     hidden changes nothing and records nothing.
+	/// </summary>
+	private static Task<IResult> Hide(string reportId,
+									  string attachmentId,
+									  HttpContext context,
+									  HpacSafetyDbContext database,
+									  TimeProvider clock,
+									  CancellationToken cancellationToken)
+	{
+		return ChangeVisibility(reportId, attachmentId, context, database, clock, AuditAction.HidMedia,
+			(file, subject, at) => file.HideBy(subject, at), cancellationToken);
+	}
+
+	/// <summary>A reviewer shows a hidden image or video again (REQ-MED-030). Audited.</summary>
+	private static Task<IResult> Show(string reportId,
+									  string attachmentId,
+									  HttpContext context,
+									  HpacSafetyDbContext database,
+									  TimeProvider clock,
+									  CancellationToken cancellationToken)
+	{
+		return ChangeVisibility(reportId, attachmentId, context, database, clock, AuditAction.ShowedMedia,
+			(file, _, _) => file.Show(), cancellationToken);
+	}
+
+	private static async Task<IResult> ChangeVisibility(string reportId,
+														string attachmentId,
+														HttpContext context,
+														HpacSafetyDbContext database,
+														TimeProvider clock,
+														AuditAction action,
+														Func<ReportFile, string, DateTimeOffset, bool> change,
+														CancellationToken cancellationToken)
+	{
+		var file = await LoadAccessibleFileAsync(reportId, attachmentId, database, cancellationToken).ConfigureAwait(false);
+
+		if (file is null)
+		{
+			return Results.NotFound();
+		}
+
+		var subject = MemberRoles.SubjectOf(context.User);
+
+		if (subject is null)
+		{
+			return Results.Forbid();
+		}
+
+		var at = clock.GetUtcNow();
+		bool changed;
+
+		try
+		{
+			changed = change(file, subject, at);
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Results.Problem(
+				title: "That attachment's visibility cannot be changed.",
+				detail: cause.Message,
+				statusCode: StatusCodes.Status400BadRequest,
+				type: "https://hpac.ca/problems/attachment-visibility");
+		}
+
+		if (changed)
+		{
+			database.AuditLog.Add(new AuditLogEntry(subject, action, "ReportFile", file.Id, at));
+			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+		}
+
+		return Results.NoContent();
 	}
 
 	/// <summary>

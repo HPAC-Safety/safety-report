@@ -16,6 +16,14 @@ internal sealed class SingleStreamBlobStore(Stream source) : IBlobStore
 		throw new NotSupportedException();
 	}
 
+	public Task<Uri> CreateInlineReadUrl(BlobKey key,
+											 string contentType,
+											 TimeSpan lifetime,
+											 CancellationToken cancellationToken)
+	{
+		throw new NotSupportedException();
+	}
+
 	public Task<Stream> OpenRead(BlobKey key,
 								 CancellationToken cancellationToken)
 	{

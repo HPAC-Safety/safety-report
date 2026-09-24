@@ -2,8 +2,9 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 ///     An uploaded attachment. The original bytes stay private; for an image or
-///     video, the EXIF-stripped derivative is what a reviewer sees, and media is
-///     never attached to a published summary. A document has no derivative at all —
+///     video, the EXIF-stripped derivative is what a reviewer sees, and what a
+///     published report shows when its reporter consented to media, unless a
+///     reviewer hid it (ADR-0117). A document has no derivative at all —
 ///     it is validated and kept private; there is no malware scan (ADR-0089). See
 ///     docs/data-handling.md.
 /// </summary>
@@ -110,6 +111,15 @@ public class ReportFile
 	/// <summary>A safe, non-content error code recorded when processing this file failed.</summary>
 	public string? ProcessingErrorCode { get; private set; }
 
+	/// <summary>
+	///     When a reviewer hid this file from the published report, if one did and
+	///     has not shown it again. A hide never touches the bytes (ADR-0117).
+	/// </summary>
+	public DateTimeOffset? HiddenAt { get; private set; }
+
+	/// <summary>The opaque token subject of the reviewer who hid it — never shown publicly.</summary>
+	public string? HiddenBySubject { get; private set; }
+
 	/// <summary>When this file was deleted along with its report, if it was.</summary>
 	public DateTimeOffset? Deleted { get; private set; }
 
@@ -161,6 +171,56 @@ public class ReportFile
 	public void LinkToAnswer(TinyId reportAnswerId)
 	{
 		ReportAnswerId = reportAnswerId;
+	}
+
+	/// <summary>
+	///     A reviewer hides this image or video from the published report. Hiding a
+	///     file already hidden changes nothing, so the first hide's record stands.
+	/// </summary>
+	/// <returns>True when this call hid it.</returns>
+	public bool HideBy(string subject,
+					   DateTimeOffset at)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+		EnsureMedia();
+
+		if (HiddenAt is not null)
+		{
+			return false;
+		}
+
+		HiddenAt = at;
+		HiddenBySubject = subject;
+		return true;
+	}
+
+	/// <summary>A reviewer shows a hidden image or video again.</summary>
+	/// <returns>True when this call showed it.</returns>
+	public bool Show()
+	{
+		EnsureMedia();
+
+		if (HiddenAt is null)
+		{
+			return false;
+		}
+
+		HiddenAt = null;
+		HiddenBySubject = null;
+		return true;
+	}
+
+	private void EnsureMedia()
+	{
+		if (Deleted is not null)
+		{
+			throw new DomainRuleViolationException("This file was deleted with its report.");
+		}
+
+		if (Kind is not (AttachmentKind.Image or AttachmentKind.Video))
+		{
+			throw new DomainRuleViolationException("Only an image or a video is ever public, so only one can be hidden or shown.");
+		}
 	}
 
 	/// <summary>Records that processing this file failed, with a safe non-content code.</summary>

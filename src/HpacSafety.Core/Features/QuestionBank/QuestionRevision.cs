@@ -71,10 +71,10 @@ public class QuestionRevision
 				$"A {type} question collects no answer and cannot be marked required or private.");
 		}
 
-		// Only the publication-consent question is a system question, and it is
-		// always required — a form that lets a reporter skip consent cannot
-		// publish anything. Every other question's required state is authored
-		// by an administrator. See ADR-0061.
+		// A system question — publication or media consent — is always required
+		// whenever the form asks it: silence is not consent. Every other
+		// question's required state is authored by an administrator. See
+		// ADR-0061 and ADR-0117.
 		if (isTranslatable
 			&& !CanBeTranslatable(type))
 		{
@@ -113,7 +113,7 @@ public class QuestionRevision
 	public QuestionType Type { get; private init; }
 
 	/// <summary>
-	///     True only for the publication-consent revision. Copied from the
+	///     True only for a publication- or media-consent revision. Copied from the
 	///     question at revision-creation time — every revision of the same
 	///     question carries the same value, since a question's system status
 	///     never changes across its history.
@@ -122,8 +122,8 @@ public class QuestionRevision
 
 	/// <summary>
 	///     Whether a reporter must answer before submitting. Authored by an
-	///     administrator on every ordinary question, and forced true on the
-	///     publication-consent question, which cannot be made optional. See
+	///     administrator on every ordinary question, and forced true on the two
+	///     consent questions, which cannot be made optional. See
 	///     ADR-0061.
 	/// </summary>
 	public bool IsRequired { get; private init; }
@@ -321,7 +321,7 @@ public class QuestionRevision
 	/// <summary>
 	///     Checks the part of a dependency this row can see on its own: that it
 	///     does not point at itself, that the question is not the
-	///     publication-consent system question, and that a question collecting no
+	///     a system question, and that a question collecting no
 	///     answer is not made conditional. Whether the <i>parent</i> is a
 	///     question type that can enable another one is a fact about a different
 	///     row, so <see cref="QuestionDependencies" /> checks that. See ADR-0060,
@@ -345,7 +345,7 @@ public class QuestionRevision
 		if (isSystem)
 		{
 			throw new DomainRuleViolationException(
-				"Publication consent is always asked. Making it conditional would let a report reach the form with no consent question at all.");
+				"A consent question is never conditional on another question. Publication consent is always asked, and when media consent is asked is a rule of its own.");
 		}
 
 		if (CollectsNoAnswerType(type))

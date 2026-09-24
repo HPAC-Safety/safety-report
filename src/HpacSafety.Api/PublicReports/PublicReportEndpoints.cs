@@ -2,6 +2,7 @@ using System.Buffers.Text;
 using System.Globalization;
 using System.Text;
 using HpacSafety.Core;
+using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +29,7 @@ public static class PublicReportEndpoints
 
 		group.MapGet("/", List);
 		group.MapGet("/{reportId}", Get);
+		group.MapGet("/{reportId}/media/{mediaId}", MediaLink);
 
 		return group;
 	}
@@ -89,7 +91,67 @@ public static class PublicReportEndpoints
 			.SingleOrDefaultAsync(cancellationToken)
 			.ConfigureAwait(false);
 
-		return report is null ? Results.NotFound() : Results.Ok(report);
+		if (report is null)
+		{
+			return Results.NotFound();
+		}
+
+		// The view holds the whole public-media rule (ADR-0117); this only lists it.
+		var media = await database.PublicReportMedia
+			.AsNoTracking()
+			.Where(file => file.ReportId == reportId)
+			.OrderBy(file => file.UploadedAt)
+			.ThenBy(file => file.Id)
+			.Select(file => new { file.Id, file.Kind })
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		return Results.Ok(new PublicReportDetail(
+			report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount,
+			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind)))]));
+	}
+
+	/// <summary>
+	///     A short-lived, inline link to one public image or video's derivative, for
+	///     anyone, or 404 for anything <c>public_report_media</c> does not hold — a
+	///     hidden file, an unpublished or deleted report, a document, an original —
+	///     indistinguishably from an unknown id (REQ-MED-026 to REQ-MED-029).
+	/// </summary>
+	private static async Task<IResult> MediaLink(
+		string reportId,
+		string mediaId,
+		HttpContext context,
+		HpacSafetyDbContext database,
+		PublicMediaLink links,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		var file = await database.PublicReportMedia
+			.AsNoTracking()
+			.Where(candidate => candidate.Id == mediaId && candidate.ReportId == reportId)
+			.Select(candidate => new { candidate.ContentType, candidate.StrippedBlobKey })
+			.SingleOrDefaultAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		if (file is null
+			|| !MediaType.TryParse(file.ContentType, out var original))
+		{
+			return Results.NotFound();
+		}
+
+		// An image's derivative is its stripped form (a HEIC becomes a JPEG); a
+		// video's is remuxed into the container it arrived in (ADR-0094).
+		var served = original.StrippedForm ?? original;
+
+		var url = await links.CreateUrl(
+			BlobKey.Parse(file.StrippedBlobKey), served.ContentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);
+
+		context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+
+		// A link is minted per request and never cached by anyone else.
+		context.Response.Headers.CacheControl = "no-store";
+
+		return Results.Ok(new PublicMediaLinkView(url.ToString(), clock.GetUtcNow().Add(BlobUrlLifetime.Maximum)));
 	}
 
 	/// <summary>

@@ -23,6 +23,10 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 		// consent is not a "no" — see ADR-0016.
 		builder.Property(report => report.ConsentPublish);
 
+		// Nullable for the same reason, and because the form asks it only when
+		// there is media to share (ADR-0117).
+		builder.Property(report => report.ConsentMedia);
+
 		builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
 		// Reviewer-authored, reviewer-only (REQ-MOD-058).
@@ -140,6 +144,9 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 		builder.Property(file => file.OriginalFileName).HasMaxLength(AttachmentFileName.MaxLength);
 		builder.Property(file => file.ProcessingErrorCode).HasMaxLength(128);
 
+		// An opaque token subject, never a key (ADR-0065), and never public.
+		builder.Property(file => file.HiddenBySubject).HasMaxLength(256);
+
 		builder.HasIndex(file => file.ReportId);
 		builder.HasIndex(file => new { file.ReportId, file.ReportAnswerId });
 
@@ -170,6 +177,10 @@ public sealed class ReportFileConfiguration : IEntityTypeConfiguration<ReportFil
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_report_files_exif_stripped_coherence",
 			"(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)"));
+
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_files_hidden_coherence",
+			"(hidden_at IS NULL) = (hidden_by_subject IS NULL)"));
 	}
 }
 

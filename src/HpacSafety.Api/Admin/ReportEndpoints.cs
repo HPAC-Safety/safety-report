@@ -1,9 +1,11 @@
+using System.Linq.Expressions;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Infrastructure.Persistence.Views;
 using Microsoft.EntityFrameworkCore;
 
 namespace HpacSafety.Api.Admin;
@@ -16,21 +18,19 @@ namespace HpacSafety.Api.Admin;
 /// </summary>
 public static class ReportEndpoints
 {
-	/// <summary>How long a report may sit in Submitted or Summarizing before it counts as stuck.</summary>
-	public static readonly TimeSpan StuckAfter = TimeSpan.FromHours(24);
-
-	/// <summary>Each filter the list accepts, by its query-string code.</summary>
-	private static readonly Dictionary<string, Func<ReportListItem, bool>> Filters =
+	/// <summary>
+	///     Each filter the list accepts, by its query-string code. Stuck and needs
+	///     action are the <c>admin_report_queue</c> view's rule, not this file's.
+	/// </summary>
+	private static readonly Dictionary<string, Expression<Func<AdminReportQueueItem, bool>>> Filters =
 		new(StringComparer.Ordinal)
 		{
 			["all"] = _ => true,
-			["needs-action"] = item => item.IsStuck
-				|| item.Status == EnumCode.Of(ReportStatus.PendingReview)
-				|| item.Status == EnumCode.Of(ReportStatus.SummaryFailed),
-			["published"] = item => item.Status == EnumCode.Of(ReportStatus.Published),
-			["private"] = item => item.Consent == "no",
-			["rejected"] = item => item.Status == EnumCode.Of(ReportStatus.Rejected),
-			["summary-failed"] = item => item.Status == EnumCode.Of(ReportStatus.SummaryFailed),
+			["needs-action"] = item => item.NeedsAction,
+			["published"] = item => item.Status == ReportStatus.Published,
+			["private"] = item => item.ConsentPublish == false,
+			["rejected"] = item => item.Status == ReportStatus.Rejected,
+			["summary-failed"] = item => item.Status == ReportStatus.SummaryFailed,
 		};
 
 	/// <summary>Maps the admin report endpoints.</summary>
@@ -62,7 +62,6 @@ public static class ReportEndpoints
 	private static async Task<IResult> List(
 		string? filter,
 		HpacSafetyDbContext database,
-		TimeProvider clock,
 		CancellationToken cancellationToken)
 	{
 		filter = string.IsNullOrWhiteSpace(filter) ? "all" : filter;
@@ -76,14 +75,12 @@ public static class ReportEndpoints
 				type: "https://hpac.ca/problems/unknown-filter");
 		}
 
-		var reports = await database.Reports
+		var reports = await database.AdminReportQueue
 			.AsNoTracking()
+			.Where(matches)
 			.OrderByDescending(report => report.SubmittedAt)
-			.Select(report => new { report.Id, report.SubmittedAt, report.Status, report.Language, report.ConsentPublish })
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
-
-		var now = clock.GetUtcNow();
 
 		return Results.Ok(reports
 			.Select(report => new ReportListItem(
@@ -92,8 +89,7 @@ public static class ReportEndpoints
 				EnumCode.Of(report.Status),
 				report.Language.Code,
 				ConsentCode(report.ConsentPublish),
-				IsStuck(report.Status, report.SubmittedAt, now)))
-			.Where(matches)
+				report.IsStuck))
 			.ToList());
 	}
 
@@ -121,7 +117,7 @@ public static class ReportEndpoints
 		database.AuditLog.Add(new AuditLogEntry(SubjectOf(context), AuditAction.ViewedRawReport, "Report", report.Id, at));
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-		return Results.Ok(await DetailOf(database, report, at, cancellationToken).ConfigureAwait(false));
+		return Results.Ok(await DetailOf(database, report, cancellationToken).ConfigureAwait(false));
 	}
 
 	/// <summary>Saves both texts of the pair, or writes it by hand after a failure (REQ-MOD-032, REQ-MOD-059).</summary>
@@ -302,7 +298,7 @@ public static class ReportEndpoints
 			return Stale();
 		}
 
-		return Results.Ok(await DetailOf(database, report, at, cancellationToken).ConfigureAwait(false));
+		return Results.Ok(await DetailOf(database, report, cancellationToken).ConfigureAwait(false));
 	}
 
 	private static IResult Stale()
@@ -340,9 +336,14 @@ public static class ReportEndpoints
 
 	private static async Task<ReportDetail> DetailOf(HpacSafetyDbContext database,
 													 Report report,
-													 DateTimeOffset at,
 													 CancellationToken cancellationToken)
 	{
+		var isStuck = await database.AdminReportQueue
+			.Where(item => item.Id == report.Id)
+			.Select(item => item.IsStuck)
+			.SingleOrDefaultAsync(cancellationToken)
+			.ConfigureAwait(false);
+
 		// The exact revisions answered, retired ones included: an answer always
 		// shows the wording the reporter actually saw (ADR-0071).
 		var revisionIds = report.Answers.Select(answer => answer.QuestionRevisionId).Distinct().ToList();
@@ -359,7 +360,7 @@ public static class ReportEndpoints
 			EnumCode.Of(report.Status),
 			report.Language.Code,
 			ConsentCode(report.ConsentPublish),
-			IsStuck(report.Status, report.SubmittedAt, at),
+			isStuck,
 			report.SummaryError,
 			AnswersOf(report, revisions),
 			report.Summary is { } summary
@@ -431,14 +432,6 @@ public static class ReportEndpoints
 			false => "no",
 			null => "unanswered",
 		};
-	}
-
-	private static bool IsStuck(ReportStatus status,
-								DateTimeOffset submittedAt,
-								DateTimeOffset now)
-	{
-		return status is ReportStatus.Submitted or ReportStatus.Summarizing
-			&& now - submittedAt > StuckAfter;
 	}
 
 	/// <summary>

@@ -185,3 +185,14 @@ export function attachmentLink(reportId: string, attachment: ReportAttachment): 
 	const verb = attachment.kind === "document" ? "download" : "view"
 	return get(`${reportPath(reportId)}/attachments/${encodeURIComponent(attachment.id)}/${verb}`)
 }
+
+/** How much admin work is waiting, for the Admin menu's badges (REQ-MOD-084). */
+export interface PendingCounts {
+	reportsNeedingAction: number
+	/** Null unless the member is an administrator: the queue is theirs alone. */
+	answersAwaitingTranslation: number | null
+}
+
+export function getPendingCounts(): Promise<PendingCounts> {
+	return get("/api/admin/counts")
+}

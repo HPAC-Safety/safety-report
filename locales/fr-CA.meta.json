@@ -479,6 +479,12 @@
     "provider": "glossary",
     "reviewed": true
   },
+  "nav.pendingCount": {
+    "source_hash": "15c46d8024fd85cd2b9029cce03b1ac10945114d871cdbead1b7360cd1a345f8",
+    "target_hash": "8c164178ebecaa3fe0e1f25d44691d71294467d8299d61eaf632058ea370a9c0",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "nav.primaryLabel": {
     "source_hash": "efe10c80ec8a9f38624cbb47103010a8cf32488a503e4b4bfe4f92307a9cefa7",
     "target_hash": "4fc90e0c9ff24d794480cf0181ad8701c1ad473da57466013407d5dbd5c92f9d",

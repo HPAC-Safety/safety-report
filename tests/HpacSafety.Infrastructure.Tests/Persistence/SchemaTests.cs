@@ -58,8 +58,30 @@ public sealed class SchemaTests(PostgresFixture postgres)
 			"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'public_reports' ORDER BY ordinal_position");
 
 		// Then — the view's columns are the public DTO's allowlist (CON-DP-011).
-		views.ShouldBe(["public_report_comments", "public_reports"]);
+		views.ShouldBe(["admin_pending_counts", "admin_report_queue", "answers_awaiting_translation", "public_report_comments", "public_reports"]);
 		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count"]);
+	}
+
+	[Theory]
+	[InlineData("admin_report_queue", "id,submitted_at,status,language,consent_publish,is_stuck,needs_action")]
+	[InlineData("answers_awaiting_translation", "id,question_key,value,locale,answered_at")]
+	[InlineData("admin_pending_counts", "reports_needing_action,answers_awaiting_translation")]
+	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenAdminViewCarriesOnlyItsColumns(string view,
+		string expected)
+	{
+		ArgumentNullException.ThrowIfNull(expected);
+
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+
+		// When
+		var columns = await QueryStrings(
+			connectionString,
+			$"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = '{view}' ORDER BY ordinal_position");
+
+		// Then — the report queue carries state and timing only, never answer
+		// or summary text (REQ-MOD-030, ADR-0116).
+		columns.ShouldBe(expected.Split(','));
 	}
 
 	[Fact]

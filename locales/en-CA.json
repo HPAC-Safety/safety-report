@@ -180,6 +180,7 @@
   "questions.translate.unavailable": "Translation is not available on this server.",
   "questions.translate.failed": "The translation could not be completed. Please try again or write the other language yourself.",
   "nav.manageAnswerTranslations": "Answers awaiting translation",
+  "nav.pendingCount": "{count} waiting",
   "answerTranslations.title": "Answers awaiting translation",
   "answerTranslations.intro": "A reporter answers a picker or a type-ahead in one official language, and nothing translates it on its way in. Supply the other language here; what the reporter wrote is never changed.",
   "answerTranslations.loading": "Loading answers…",

@@ -24,12 +24,28 @@ export const CREDENTIALS: Record<Role, { username: string; password: string }> =
 // through a When that also needs the endpoints stubbed.
 const configured = new WeakMap<Page, boolean>()
 
+// Pages whose scenario stubbed the Admin menu's pending counts itself, so the
+// default below does not shadow it: Playwright tries the latest route first.
+export const pendingCountsStubbed = new WeakSet<Page>()
+
 /** Answers the three auth endpoints for a member of this role. */
 export async function stubAuth(page: Page, options?: { thirdPartySignIn?: boolean }) {
 	if (options?.thirdPartySignIn !== undefined) {
 		configured.set(page, options.thirdPartySignIn)
 	} else if (!configured.has(page)) {
 		configured.set(page, false)
+	}
+
+	// The header reads the Admin menu's counts on every page; with no API behind
+	// the preview server, nothing is waiting unless a scenario says otherwise.
+	if (!pendingCountsStubbed.has(page)) {
+		await page.route("**/api/admin/counts", (route) =>
+			route.fulfill({
+				status: 200,
+				contentType: "application/json",
+				body: JSON.stringify({ reportsNeedingAction: 0, answersAwaitingTranslation: null }),
+			}),
+		)
 	}
 
 	await page.route("**/api/auth/config", (route) => {

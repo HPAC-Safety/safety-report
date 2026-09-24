@@ -99,6 +99,35 @@ Scenario: The Admin menu is absent for a signed-out visitor
   Given a visitor loads the homepage
   Then the header shows no Admin menu
 
+@REQ-MOD-087
+@ui
+Scenario: An Administrator's Admin menu shows how much work is waiting
+  Given the API counts 3 reports needing action and 2 answers awaiting translation
+  And a visitor signs in as an Administrator
+  Then the Admin menu shows a count of 5
+  When the visitor activates the Admin menu
+  Then the manage-reports option shows a count of 3
+  And the manage-answer-translations option shows a count of 2
+  And the manage-questions option shows no count
+
+@REQ-MOD-088
+@ui
+Scenario: A SafetyOfficer's Admin menu counts only the reports needing action
+  Given the API counts 4 reports needing action and no answers awaiting translation
+  And a visitor signs in as a SafetyOfficer
+  Then the Admin menu shows a count of 4
+  When the visitor activates the Admin menu
+  Then the manage-reports option shows a count of 4
+
+@REQ-MOD-089
+@ui
+Scenario: With nothing waiting, the Admin menu shows no count
+  Given the API counts 0 reports needing action and 0 answers awaiting translation
+  And a visitor signs in as an Administrator
+  Then the Admin menu shows no count
+  When the visitor activates the Admin menu
+  Then no option shows a count
+
 @REQ-MOD-013
 Scenario: A token signed by an unknown key is rejected
   Given a bearer token signed with a key the API does not trust
@@ -258,6 +287,25 @@ Examples:
   | rejected       | rejected reports                            |
   | summary-failed | reports whose summarization failed          |
 
+@REQ-MOD-084
+Scenario: A reviewer reads how many reports need action
+  Given reports exist in every workflow state
+  And one report has waited in Submitted and one in Summarizing for more than 24 hours
+  When a SafetyOfficer reads the pending counts
+  Then the reports count equals the number of reports the Needs action filter lists
+  And the counts carry no answers-awaiting-translation count
+
+@REQ-MOD-085
+Scenario: Only an Administrator's pending counts include answers awaiting translation
+  Given an answer is awaiting machine translation
+  When an Administrator reads the pending counts
+  Then the translation count equals the number of answers in the translation queue
+
+@REQ-MOD-086
+Scenario: A User cannot read the pending counts
+  When a User reads the pending counts
+  Then the API refuses the pending counts with 403
+
 @REQ-MOD-031
 Scenario: A report detail view exposes only what the reviewer needs
   Given a reviewer opens a report's detail view
@@ -362,7 +410,7 @@ Scenario Outline: A signed-in member without the required role sees a real 403, 
   When the visitor navigates directly to <route>, which their role cannot use
   Then the page shows a forbidden (403) view in place of the route's content
   And it is not the not-found page
-  And no request for that route's data is made
+  And no request for that route's data is made, the Admin menu's pending counts aside
 
 Examples:
   | role          | route                      |

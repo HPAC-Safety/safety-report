@@ -138,6 +138,18 @@ To also render the graphify knowledge graph into a local Obsidian vault at
 ./init-dev.sh --obsidian
 ```
 
+To get answer translations and report summaries locally, put the provider keys
+in a `.env` file at the root of the primary checkout (it is gitignored).
+`./dev-up.sh` passes it to every checkout's containers:
+
+```bash
+DEEPL_API_KEY=...
+GEMINI_API_KEY=...
+```
+
+Without them, translation is unavailable and summaries fail. There is no
+stand-in ([ADR-0109](docs/decisions/ADR-0109-no-translation-stand-in-in-any-environment.md)).
+
 Common verification commands:
 
 ```bash

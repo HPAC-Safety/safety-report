@@ -17,6 +17,15 @@
 #
 #     ./dev-up.sh          build and start everything
 #     ./dev-up.sh --down   stop and remove the containers
+#
+# Provider keys live in the primary checkout's .env (gitignored), written once:
+#
+#     DEEPL_API_KEY=...    answer and question translation (ADR-0109)
+#     GEMINI_API_KEY=...   report summaries (ADR-0104)
+#
+# Compose only reads a .env beside the compose file, and every worktree is its
+# own directory, so this script passes the primary checkout's file explicitly.
+# Without the keys, summaries and translations fail after their retries.
 
 set -eu
 
@@ -125,7 +134,20 @@ echo "Starting containers"
 # Always recreated: after a Docker Desktop restart a reused container can come
 # back "Up" with its published ports silently gone, and compose sees no
 # configuration change that would make it recreate the container itself.
-docker compose up --build --detach --force-recreate --remove-orphans
+ENV_FILE=""
+if [ -f "$REPO_ROOT/.env" ]; then
+	ENV_FILE="$REPO_ROOT/.env"
+elif [ -f "$MAIN_ROOT/.env" ]; then
+	ENV_FILE="$MAIN_ROOT/.env"
+fi
+
+if [ -n "$ENV_FILE" ]; then
+	echo "Provider keys from $ENV_FILE"
+	docker compose --env-file "$ENV_FILE" up --build --detach --force-recreate --remove-orphans
+else
+	echo "warning: no .env with DEEPL_API_KEY / GEMINI_API_KEY; translations and summaries will fail" >&2
+	docker compose up --build --detach --force-recreate --remove-orphans
+fi
 
 echo "Waiting for the API and the web dev server"
 

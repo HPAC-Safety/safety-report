@@ -261,8 +261,7 @@
       "hint": "Écrivez dans une langue, puis traduisez-le dans l’autre.",
       "draftWarning": "Une traduction n’est qu’un premier jet. Lisez-la et corrigez-la avant de l’enregistrer.",
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
-      "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
-      "standIn": "Ce serveur de développement ne dispose pas de service de traduction; par conséquent, Translate copie le texte tel quel. C’est le serveur de production qui se charge de la traduction."
+      "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue."
     },
     "forkWarning": "Cette question a déjà reçu une réponse. Si vous modifiez son libellé, son type ou ses paramètres, elle est retirée et une nouvelle question est créée à sa place; les réponses déjà fournies conservent donc le libellé sous lequel elles ont été données. Ce n’est pas le cas si vous ne modifiez que ses choix.",
     "import": {

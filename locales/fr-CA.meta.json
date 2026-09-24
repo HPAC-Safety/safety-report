@@ -857,12 +857,6 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "questions.translate.standIn": {
-    "source_hash": "ce8eccf27484a970cef4018a6ad00cfe0a1fafd4f851ee58a7b64d9745d9dc20",
-    "target_hash": "2b937a484fe0b2ddbbe49d4d13bedf05f2501c395e97033345dd8fe50ac91241",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
   "questions.translate.unavailable": {
     "source_hash": "82ed2298688c1840af6049800cf7ae109ab3b4d3d678d91512177c2807207e14",
     "target_hash": "8d56201c0b6fb334743db22e233c8767484f29e36c1ceedabe565185e0870ef5",

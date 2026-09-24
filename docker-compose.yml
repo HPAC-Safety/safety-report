@@ -78,9 +78,9 @@ services:
       # signed for localhost:9000 (appsettings.Development.json), the host a
       # browser can reach.
       HpacSafety__Media__Storage__S3__ServiceUrl: "http://s3:9000"
-      # Optional. Export DEEPL_API_KEY before ./dev-up.sh to get a working
-      # Translate button on /admin/questions; without it the API reports
-      # translation unavailable and the control is disabled. See ADR-0062.
+      # From the primary checkout's .env (see dev-up.sh). Without it the API
+      # reports translation unavailable and the Translate control is
+      # disabled; there is no stand-in. See ADR-0062, ADR-0109.
       Translation__ApiKey: "${DEEPL_API_KEY:-}"
     ports:
       - "8080:8080"
@@ -100,8 +100,9 @@ services:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__HpacSafety: "Host=postgres;Port=5432;Database=hpac_safety;Username=postgres;Password=postgres"
       HpacSafety__Media__Storage__S3__ServiceUrl: "http://s3:9000"
-      # Optional, as for the API: without them a summary or translation waits
-      # and retries, and attachment processing is unaffected.
+      # From the primary checkout's .env, as for the API. Without them a
+      # summary or answer translation retries and is then marked failed;
+      # attachment processing is unaffected. See ADR-0109.
       Translation__ApiKey: "${DEEPL_API_KEY:-}"
       # A paid, billing-enabled Gemini key (ADR-0104); provider, model, and
       # reasoning level come from the Worker's appsettings.json.

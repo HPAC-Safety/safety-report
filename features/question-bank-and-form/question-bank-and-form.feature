@@ -462,18 +462,11 @@ Scenario: Translation is offered for question wording and for a select answer's 
 
 @REQ-QB-067
 Scenario: A server with no translation credential still authors questions
-  Given no translation provider is configured outside development
+  Given no translation provider is configured, in development or anywhere else
   When the authoring screen asks whether translation is available
   Then it is told that translation is unavailable
   And the answer carries no credential and no provider detail
-
-@REQ-QB-068
-Scenario: A development server translates through a stand-in rather than refusing
-  Given a development server has no translation provider configured
-  When an Administrator asks for the other language to be translated
-  Then the text comes back unchanged through the same interface
-  And the screen is told it is a stand-in so nobody mistakes it for a translation
-  And a server outside development never substitutes one
+  And no environment substitutes a stand-in that returns the text unchanged
 
 @REQ-QB-069
 @ui
@@ -504,12 +497,6 @@ Scenario: A question cannot be saved in one language
 Scenario: Translation is not offered when the server has no provider
   Given a signed-in Administrator is authoring a question on a server with no translation provider
   Then the Translate action is unavailable and says so
-
-@REQ-QB-073
-@ui
-Scenario: A development stand-in says what it is
-  Given a signed-in Administrator is authoring a question on a development server
-  Then the Translate action works and the screen says the text is copied unchanged
 
 @REQ-QB-074
 @ui

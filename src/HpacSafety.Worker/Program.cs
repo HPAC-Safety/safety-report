@@ -13,8 +13,7 @@ using Microsoft.EntityFrameworkCore;
 // the variable WebApplication-based HpacSafety.Api reads automatically.
 // Preferring it here, and falling back to the Generic Host's own resolution
 // when it is unset, keeps both hosts driven by the one variable a deploy
-// actually sets rather than silently disabling the Development
-// translation stand-in below.
+// actually sets rather than silently skipping appsettings.Development.json.
 var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
 {
 	Args = args,
@@ -26,13 +25,10 @@ builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
 builder.Services.AddHpacSafetyAiChatClient(builder.Configuration);
 builder.Services.AddScoped<ISummarizer, PromptDrivenSummarizer>();
 
-// Same port and adapter selection question authoring uses: a real credential
-// gets DeepL, Development with none gets an echo stand-in, everywhere else
-// with none reports translation unavailable and the message backs off
-// rather than being marked done. See ADR-0062, ADR-0080.
-builder.Services.AddHpacSafetyTranslation(
-	builder.Configuration,
-	builder.Environment.IsDevelopment());
+// Same port and adapter question authoring uses. With no credential, in any
+// environment, translation is unavailable and the message backs off rather
+// than being marked done. See ADR-0080, ADR-0109.
+builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 
 // Attachment derivatives are produced here, one outbox message per file, never
 // on the submission path (ADR-0098). The same storage adapter and ingest

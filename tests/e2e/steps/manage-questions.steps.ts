@@ -257,16 +257,13 @@ async function stubAdminApi(page: Page) {
  * machine-made, so a scenario asserts that the field was filled from the other
  * language rather than asserting the quality of any French.
  */
-async function stubTranslation(
-	page: Page,
-	{ available = true, standIn = false }: { available?: boolean; standIn?: boolean } = {},
-) {
+async function stubTranslation(page: Page, { available = true }: { available?: boolean } = {}) {
 	await page.route("**/api/admin/translate", async (route) => {
 		if (route.request().method() === "GET") {
 			await route.fulfill({
 				status: 200,
 				contentType: "application/json",
-				body: JSON.stringify({ available, standIn }),
+				body: JSON.stringify({ available }),
 			})
 			return
 		}
@@ -281,16 +278,13 @@ async function stubTranslation(
 	})
 }
 
-async function signInAndOpenQuestions(
-	page: Page,
-	{ translation = true, standIn = false }: { translation?: boolean; standIn?: boolean } = {},
-) {
+async function signInAndOpenQuestions(page: Page, { translation = true }: { translation?: boolean } = {}) {
 	// Genuinely signed in as an Administrator. Clicking "Log in" with empty
 	// fields used to be enough only because the admin routes are unguarded by
 	// design (ADR-0048) — the page would render without a session at all.
 	await signInAs(page, "administrator")
 	await stubAdminApi(page)
-	await stubTranslation(page, { available: translation, standIn })
+	await stubTranslation(page, { available: translation })
 	await page.goto("/admin/questions")
 }
 
@@ -529,20 +523,6 @@ When("the other language is written as well", async ({ page }) => {
 
 Then("saving becomes available", async ({ page }) => {
 	await expect(page.getByRole("button", { name: "Save" })).toBeEnabled()
-})
-
-Given("a signed-in Administrator is authoring a question on a development server", async ({ page }) => {
-	await signInAndOpenQuestions(page, { standIn: true })
-	await page.getByRole("button", { name: "Add a question" }).click()
-})
-
-Then("the Translate action works and the screen says the text is copied unchanged", async ({ page }) => {
-	await page.getByLabel("Question (English)").fill("Were you injured?")
-
-	await expect(translateButton(page)).toBeEnabled()
-	await expect(
-		page.getByText("This development server has no translation service", { exact: false }),
-	).toBeVisible()
 })
 
 Then("the Translate action is unavailable and says so", async ({ page }) => {

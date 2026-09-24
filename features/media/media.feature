@@ -82,6 +82,7 @@ Scenario: Every video is remuxed to strip metadata, never transcoded
   And the derivative carries only the video and any audio stream, with timed-metadata, data, and subtitle tracks dropped
   And the derivative is verified to hold none of those before it is accepted
   And a byte-for-byte copy of the original video is never used as the derivative
+  And the derivative is an MP4 container, stored as video/mp4, whatever container the video arrived in
 
 @REQ-MED-015
 Scenario: A video that cannot be stripped is kept rather than refused
@@ -383,3 +384,15 @@ Scenario: The admin report page shows whether each document is public
   When a safety officer opens the report in the admin area
   Then the public document reads as shown publicly and offers to hide it
   And the hidden document reads as hidden from the public and offers to show it
+
+@REQ-MED-043
+Scenario: A QuickTime video downloads as an MP4
+  Given a reporter attached "IMG_0412.MOV" and its derivative is an MP4
+  When an authorized reviewer requests to view it
+  Then the download is named "IMG_0412.mp4"
+
+@REQ-MED-044
+Scenario: A published QuickTime video is served as an MP4
+  Given a published report shows a processed QuickTime video
+  When an anonymous visitor asks for the video's public link
+  Then the URL serves the derivative inline, as video/mp4

@@ -70,6 +70,12 @@ public sealed class AttachmentAccessSteps
 		await SeedAsync(MediaType.Heic.ContentType, stripped: true, failed: false, originalFileName: fileName);
 	}
 
+	[Given(@"a reporter attached ""(.*)"" and its derivative is an MP4")]
+	public async Task GivenAReporterAttachedAQuickTimeWithAnMp4Derivative(string fileName)
+	{
+		await SeedAsync(MediaType.QuickTime.ContentType, stripped: true, failed: false, originalFileName: fileName);
+	}
+
 	[Given(@"signature validation, decoding, metadata removal, writing, or verification fails for an image")]
 	public async Task GivenProcessingFailsForAnImage()
 	{

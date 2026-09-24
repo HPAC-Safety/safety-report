@@ -80,6 +80,23 @@ public class MediaIngestorTests
 	}
 
 	[Fact]
+	public async Task GivenQuickTimeVideo_WhenRemuxed_ThenDerivativeIsStoredAsMp4()
+	{
+		// Given — an iPhone's QuickTime; the remux always writes MP4 (ADR-0122)
+		var store = new InMemoryBlobStore();
+		store.Seed(Stored, Encoding.ASCII.GetBytes("pretend-quicktime-bytes"));
+
+		// When
+		var outcome = await Ingestor(store, MediaType.QuickTime, new RecordingExifStripper())
+			.Process(Stored, MediaType.QuickTime, CancellationToken.None);
+
+		// Then
+		var derivative = await store.Describe(outcome.DerivativeKey, CancellationToken.None);
+		derivative.ShouldNotBeNull();
+		derivative.ContentType.ShouldBe(MediaType.Mp4.ContentType);
+	}
+
+	[Fact]
 	public async Task GivenVideoThatCannotBeRemuxed_WhenIngested_ThenOriginalIsRetainedWithoutDerivative()
 	{
 		// Given — REQ-MED-015: the reporter does not lose their footage because

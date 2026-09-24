@@ -432,6 +432,14 @@ The report page offers a public document as a download, never inline — *playwr
 
 The admin report page shows whether each document is public — *playwright-bdd, Covered*
 
+### REQ-MED-043
+
+A QuickTime video downloads as an MP4 — *Reqnroll, Covered*
+
+### REQ-MED-044
+
+A published QuickTime video is served as an MP4 — *Reqnroll, Covered*
+
 ## Claims: moderation-authentication-and-publication
 
 ### REQ-MOD-001

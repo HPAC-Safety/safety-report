@@ -156,12 +156,13 @@ Scenario: A signed-in member posts, edits, and deletes their own comment
 
 @REQ-COM-018
 @ui
-Scenario: A reader sees a comment in their language, and can show the original
+Scenario: A reader sees every comment in the site's language, a translated one marked by a subtle icon
   Given a published report has a comment written in English and machine-translated into French
   When a visitor reads the report in French
-  Then the comment shows its French text, marked as translated automatically
-  When the visitor asks for the original
-  Then the comment shows its English text
+  Then the comment shows its French text, with a small icon that says it was translated automatically
+  And the comment offers no control to show the original
+  When the visitor switches the site's language
+  Then the comment shows its English text, with no translation icon
 
 @REQ-COM-019
 @ui

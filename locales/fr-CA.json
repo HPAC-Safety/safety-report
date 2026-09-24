@@ -461,10 +461,6 @@
       "body": "Il n'existe aucun rapport de sécurité publié à cette adresse."
     },
     "reportTitle": "Rapport de sécurité",
-    "readIn": {
-      "en-CA": "Lire en anglais",
-      "fr-CA": "Lire en français"
-    },
     "comments": {
       "one": "1 commentaire",
       "other": "{count} commentaires"
@@ -485,9 +481,6 @@
     },
     "edited": "Modifié",
     "translated": "Traduction automatique",
-    "original": "Original",
-    "showOriginal": "Afficher l'original",
-    "showTranslation": "Afficher la traduction",
     "awaitingTranslation": "La traduction est en cours",
     "signIn": "Ouvrez une session pour laisser un commentaire",
     "newLabel": "Ajouter un commentaire",

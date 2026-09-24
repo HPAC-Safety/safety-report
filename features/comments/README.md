@@ -27,13 +27,17 @@ reader gets `isMine` on each comment, and nothing else about who wrote it.
 
 ## What a comment looks like
 
-Each comment is labelled "Member", or "You" on the reader's own. It shows the
-text in the reader's language:
+Each comment is labelled "Member", or "You" on the reader's own. Every comment
+is machine-translated into the other official language, and a reader sees
+each one in the site's language, the one chosen with the header's language
+toggle. As with a report's summary, there is no per-comment language control:
 
 - **Written in the reader's language:** the text as written.
-- **Translated:** the machine translation, marked "Translated automatically",
-  with a control to show the original.
-- **Not translated yet:** the original, marked as awaiting translation.
+- **Translated:** the machine translation, with a small, muted translation
+  icon beside the author label. Its accessible name and tooltip are
+  "Translated automatically".
+- **Not translated yet:** the original, marked as awaiting translation, until
+  the Worker supplies it.
 
 A visitor who is not signed in sees "Sign in to comment". It opens the member
 login with `returnTo` set to the report. The login page follows it only to a

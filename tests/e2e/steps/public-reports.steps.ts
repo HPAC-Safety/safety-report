@@ -159,11 +159,18 @@ Then("going back returns the visitor to the first page", async ({ page }) => {
 	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
 })
 
-Then("that locale's text is shown first", async ({ page }) => {
+Then("only that locale's text is shown, with no language control on the report itself", async ({ page }) => {
 	await expect(page.locator('[data-summary="fr-CA"]')).toHaveText(FIRST.aiSummaryFr)
+	await expect(page.locator('[data-summary="en-CA"]')).toHaveCount(0)
+	await expect(page.getByRole("main").getByRole("button")).toHaveCount(0)
 })
 
-Then("the visitor can switch to the counterpart text", async ({ page }) => {
-	await page.getByRole("article").getByRole("button").click()
+When("the visitor switches the site's language", async ({ page }) => {
+	// The header's one language toggle; its label is in whichever language is active.
+	await page.getByRole("banner").getByRole("button", { name: /^(Switch to|Passer)/ }).click()
+})
+
+Then("the report shows the other language's text", async ({ page }) => {
 	await expect(page.locator('[data-summary="en-CA"]')).toHaveText(FIRST.aiSummaryEn)
+	await expect(page).toHaveURL(new RegExp(`/reports/${FIRST.id}$`))
 })

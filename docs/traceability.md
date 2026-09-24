@@ -198,7 +198,7 @@ A signed-in member posts, edits, and deletes their own comment — *playwright-b
 
 ### REQ-COM-018
 
-A reader sees a comment in their language, and can show the original — *playwright-bdd, Covered*
+A reader sees every comment in the site's language, a translated one marked by a subtle icon — *playwright-bdd, Covered*
 
 ### REQ-COM-019
 
@@ -1516,7 +1516,7 @@ Client validation never replaces server validation — *Reqnroll, Planned*
 
 ### REQ-WLD-019
 
-The active locale controls which summary text is primary — *playwright-bdd, Covered*
+The interface language alone decides which summary text is shown — *playwright-bdd, Covered*
 
 ### REQ-WLD-020
 

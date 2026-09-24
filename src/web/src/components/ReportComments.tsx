@@ -132,15 +132,14 @@ function CommentItem({
 	onHide: Attempt
 }) {
 	const { t } = useLocale()
-	const [showOriginal, setShowOriginal] = useState(false)
 	const [editing, setEditing] = useState(false)
 	const [confirming, setConfirming] = useState<"delete" | "hide" | null>(null)
 	const at = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
 
 	const written = comment.locale === locale
 	const translated = !written && comment.translatedText !== null
-	const shownText = translated && !showOriginal ? comment.translatedText! : comment.text
-	const shownLocale = translated && !showOriginal ? locale : comment.locale
+	const shownText = translated ? comment.translatedText! : comment.text
+	const shownLocale = translated ? locale : comment.locale
 
 	return (
 		<li
@@ -152,6 +151,7 @@ function CommentItem({
 				<span className="font-medium text-ink">{comment.isMine ? t("comments.author.you") : t("comments.author.member")}</span>
 				<span>{at.format(new Date(comment.createdAt))}</span>
 				{comment.edited && <span data-comment-edited>{t("comments.edited")}</span>}
+				{translated && !editing && <TranslatedIcon label={t("comments.translated")} />}
 			</p>
 
 			{editing ? (
@@ -171,22 +171,9 @@ function CommentItem({
 						{shownText}
 					</p>
 
-					{!written && (
-						<p className="mt-2 flex flex-wrap items-center gap-3 font-sans text-sm text-ink-muted">
-							{translated ? (
-								<>
-									<span data-comment-translated>{showOriginal ? t("comments.original") : t("comments.translated")}</span>
-									<button
-										type="button"
-										className="underline"
-										onClick={() => setShowOriginal((value) => !value)}
-									>
-										{showOriginal ? t("comments.showTranslation") : t("comments.showOriginal")}
-									</button>
-								</>
-							) : (
-								<span data-comment-awaiting>{t("comments.awaitingTranslation")}</span>
-							)}
+					{!written && !translated && (
+						<p data-comment-awaiting className="mt-2 font-sans text-sm text-ink-muted">
+							{t("comments.awaitingTranslation")}
 						</p>
 					)}
 				</>
@@ -236,6 +223,32 @@ function CommentItem({
 				</div>
 			)}
 		</li>
+	)
+}
+
+/**
+ * A small, muted mark that the text shown is a machine translation. It is
+ * deliberately quiet; its name reaches screen readers, and the tooltip explains
+ * it to anyone who hovers (REQ-COM-018).
+ */
+function TranslatedIcon({ label }: { label: string }) {
+	return (
+		<span data-comment-translated title={label} className="inline-flex items-center self-center text-ink-muted opacity-70">
+			<svg
+				aria-hidden="true"
+				viewBox="0 0 24 24"
+				className="h-3.5 w-3.5"
+				fill="none"
+				stroke="currentColor"
+				strokeWidth="2"
+				strokeLinecap="round"
+				strokeLinejoin="round"
+			>
+				<path d="M4 5h8M8 3v2M10 5c0 4-3 7-6 8M6 9c1 2 3 4 6 5" />
+				<path d="M13 21l4-9 4 9M14.5 18h5" />
+			</svg>
+			<span className="sr-only">{label}</span>
+		</span>
 	)
 }
 

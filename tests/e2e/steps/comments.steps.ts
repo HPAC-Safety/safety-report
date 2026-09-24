@@ -198,9 +198,6 @@ When("the member deletes that comment and confirms", async ({ page }) => {
 	await mine.getByRole("button", { name: "Delete" }).click()
 })
 
-When("the visitor asks for the original", async ({ page }) => {
-	await items(page).first().getByRole("button").click()
-})
 
 When("the safety officer hides a comment and confirms", async ({ page }) => {
 	const first = items(page).first()
@@ -262,18 +259,7 @@ Then("no other member's comment offers to edit or delete it", async ({ page }) =
 	}
 })
 
-Then("the comment shows its French text, marked as translated automatically", async ({ page }) => {
-	const first = items(page).first()
-	await expect(first.locator("[data-comment-text]")).toHaveText("Synthétique : gardez de la hauteur en approche.")
-	await expect(first.locator("[data-comment-text]")).toHaveAttribute("lang", "fr-CA")
-	await expect(first.locator("[data-comment-translated]")).toBeVisible()
-})
 
-Then("the comment shows its English text", async ({ page }) => {
-	const first = items(page).first()
-	await expect(first.locator("[data-comment-text]")).toHaveText("Synthetic: keep extra height on approach.")
-	await expect(first.locator("[data-comment-text]")).toHaveAttribute("lang", "en-CA")
-})
 
 Then("the comment shows its English text, marked as awaiting translation", async ({ page }) => {
 	const first = items(page).first()
@@ -290,4 +276,25 @@ Then("every comment offers to hide it", async ({ page }) => {
 Then("that comment is no longer listed", async ({ page }) => {
 	await expect(items(page)).toHaveCount(1)
 	await expect(page.locator('[data-comment-id="othersaaaa1"]')).toHaveCount(0)
+})
+
+Then("the comment shows its French text, with a small icon that says it was translated automatically", async ({ page }) => {
+	const first = items(page).first()
+	await expect(first.locator("[data-comment-text]")).toHaveText("Synthétique : gardez de la hauteur en approche.")
+	await expect(first.locator("[data-comment-text]")).toHaveAttribute("lang", "fr-CA")
+	const icon = first.locator("[data-comment-translated]")
+	await expect(icon).toBeVisible()
+	await expect(icon).toHaveAttribute("title", /.+/)
+	await expect(icon.locator(".sr-only")).not.toBeEmpty()
+})
+
+Then("the comment offers no control to show the original", async ({ page }) => {
+	await expect(items(page).first().getByRole("button")).toHaveCount(0)
+})
+
+Then("the comment shows its English text, with no translation icon", async ({ page }) => {
+	const first = items(page).first()
+	await expect(first.locator("[data-comment-text]")).toHaveText("Synthetic: keep extra height on approach.")
+	await expect(first.locator("[data-comment-text]")).toHaveAttribute("lang", "en-CA")
+	await expect(first.locator("[data-comment-translated]")).toHaveCount(0)
 })

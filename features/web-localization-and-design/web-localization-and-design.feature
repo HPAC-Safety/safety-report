@@ -169,11 +169,12 @@ Scenario: Client validation never replaces server validation
 
 @REQ-WLD-019
 @ui
-Scenario: The active locale controls which summary text is primary
+Scenario: The interface language alone decides which summary text is shown
   Given a published report has both ai_summary_en and ai_summary_fr
   When a visitor views it in a given locale
-  Then that locale's text is shown first
-  And the visitor can switch to the counterpart text
+  Then only that locale's text is shown, with no language control on the report itself
+  When the visitor switches the site's language
+  Then the report shows the other language's text
 
 @REQ-WLD-020
 @ignore

@@ -157,9 +157,10 @@ Its publication time is `published_at`, or the pair's approval time for a
 report approved before approval published it. A report that stops being
 publishable disappears from both pages with no further step.
 
-The requested UI locale decides which summary text is shown first, and the
-visitor can switch to the other one. The locale is edge state, not extra
-report data. The admin report view links to a published report's public
+The site's language, chosen with the language toggle in the header, decides
+which summary text is shown. A report page has no language control of its
+own. To read the other language, the visitor switches the site's language.
+The locale is edge state, not extra report data. The admin report view links to a published report's public
 address.
 
 ## Out of scope

@@ -55,6 +55,19 @@ public sealed class RemuxVerificationTests
 		refusal.ShouldContain("MP4");
 	}
 
+	[Theory]
+	[InlineData("""{ "streams": [ { "codec_type": "video" } ], "format": { } }""")]
+	[InlineData("""{ "streams": [ { "codec_type": "video" } ], "format": { "tags": null } }""")]
+	[InlineData("""{ "streams": [ { "codec_type": "video" } ], "format": { "tags": { "minor_version": "512" } } }""")]
+	public void GivenContainerThatNamesNoBrand_WhenVerified_ThenRefused(string json)
+	{
+		// Given — a container that does not say it is an MP4 is not proven to be one
+		var probe = Probe(json);
+
+		// When / Then
+		RemuxVerification.Reject(probe).ShouldBe("Remux did not produce an MP4 container");
+	}
+
 	[Fact]
 	public void GivenProbeWithNoContainer_WhenVerified_ThenRefused()
 	{

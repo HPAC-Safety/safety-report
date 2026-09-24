@@ -29,7 +29,6 @@ public sealed class QuestionTranslationSteps
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
 	private readonly StubTranslator _translator = new();
-	private EchoTranslator? _standIn;
 	private IReadOnlyList<string> _translated = [];
 	private bool _available;
 
@@ -39,57 +38,10 @@ public sealed class QuestionTranslationSteps
 		_translator.Configured = true;
 	}
 
-	[Given(@"no translation provider is configured outside development")]
+	[Given(@"no translation provider is configured, in development or anywhere else")]
 	public void GivenNoProvider()
 	{
 		_translator.Configured = false;
-	}
-
-	[Given(@"a development server has no translation provider configured")]
-	public void GivenADevelopmentStandIn()
-	{
-		_standIn = new EchoTranslator();
-	}
-
-	[When(@"an Administrator asks for the other language to be translated")]
-	public async Task WhenTheStandInIsAsked()
-	{
-		_translated = await _standIn!.Translate(
-			["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
-	}
-
-	[Then(@"the text comes back unchanged through the same interface")]
-	public void ThenItComesBackUnchanged()
-	{
-		// The same port the real provider implements — the endpoint above it
-		// cannot tell them apart.
-		_standIn.ShouldBeAssignableTo<ITranslator>();
-		_translated.ShouldBe(["Were you injured?"]);
-	}
-
-	[Then(@"the screen is told it is a stand-in so nobody mistakes it for a translation")]
-	public void ThenTheScreenIsToldItIsAStandIn()
-	{
-		// The availability response carries the flag the editor reads.
-		var availability = Assembly.Load("HpacSafety.Api").GetType("HpacSafety.Api.Admin.TranslationAvailability");
-
-		availability.ShouldNotBeNull();
-		availability.GetProperties().Select(property => property.Name).ShouldContain("StandIn");
-	}
-
-	[Then(@"a server outside development never substitutes one")]
-	public void ThenProductionNeverSubstitutes()
-	{
-		// Registration only reaches the stand-in when the caller opts in, and
-		// the only caller passes IHostEnvironment.IsDevelopment().
-		var register = typeof(TranslationServiceCollectionExtensions)
-			.GetMethod(nameof(TranslationServiceCollectionExtensions.AddHpacSafetyTranslation));
-
-		var optIn = register!.GetParameters().Single(parameter => parameter.ParameterType == typeof(bool));
-
-		optIn.Name.ShouldBe("useStandInWhenUnconfigured");
-		optIn.HasDefaultValue.ShouldBeTrue();
-		optIn.DefaultValue.ShouldBe(false);
 	}
 
 	[When(@"they ask for the other language to be translated")]
@@ -198,6 +150,24 @@ public sealed class QuestionTranslationSteps
 
 		cause.Message.ShouldNotContain("key");
 		cause.Message.ShouldNotContain("Were you injured?");
+	}
+
+	[Then(@"no environment substitutes a stand-in that returns the text unchanged")]
+	public void ThenNoEnvironmentSubstitutesAStandIn()
+	{
+		// Registration takes no environment switch, and the only adapter it
+		// ever registers is the real provider. A stand-in that echoed its input
+		// got stored as an answer's translation (ADR-0109).
+		var register = typeof(TranslationServiceCollectionExtensions)
+			.GetMethod(nameof(TranslationServiceCollectionExtensions.AddHpacSafetyTranslation));
+
+		register!.GetParameters().ShouldNotContain(parameter => parameter.ParameterType == typeof(bool));
+
+		typeof(ITranslator).Assembly.GetTypes()
+			.Concat(typeof(TranslationServiceCollectionExtensions).Assembly.GetTypes())
+			.Where(type => type is { IsClass: true, IsAbstract: false } && typeof(ITranslator).IsAssignableFrom(type))
+			.Select(type => type.Name)
+			.ShouldBe(["DeepLTranslator"]);
 	}
 
 	/// <summary>The web application's source, found from the test binary.</summary>

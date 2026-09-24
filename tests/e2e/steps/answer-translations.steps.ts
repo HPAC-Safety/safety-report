@@ -41,7 +41,7 @@ async function stubQueue(page: Page) {
 			await route.fulfill({
 				status: 200,
 				contentType: "application/json",
-				body: JSON.stringify({ available: true, standIn: false }),
+				body: JSON.stringify({ available: true }),
 			})
 			return
 		}

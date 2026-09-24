@@ -34,7 +34,6 @@ export function ManageQuestionsPage() {
 	const { t } = useLocale()
 	const [questions, setQuestions] = useState<QuestionView[]>([])
 	const [canTranslate, setCanTranslate] = useState(false)
-	const [translationIsStandIn, setTranslationIsStandIn] = useState(false)
 	const [draft, setDraft] = useState<QuestionDraft | null>(null)
 	const [editing, setEditing] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
@@ -54,11 +53,10 @@ export function ManageQuestionsPage() {
 				listQuestions(),
 				// Asked once, so the Translate control is disabled rather than
 				// offered and then failing on a server with no credential.
-				translationAvailable().catch(() => ({ available: false, standIn: false })),
+				translationAvailable().catch(() => ({ available: false })),
 			])
 			setQuestions(loadedQuestions)
 			setCanTranslate(translation.available)
-			setTranslationIsStandIn(translation.standIn)
 			setError(null)
 		} catch (cause) {
 			report(cause)
@@ -142,7 +140,6 @@ export function ManageQuestionsPage() {
 			isEditing={editing !== null}
 			hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 			translationAvailable={canTranslate}
-			translationIsStandIn={translationIsStandIn}
 			onChange={setDraft}
 			onCancel={() => {
 				setDraft(null)

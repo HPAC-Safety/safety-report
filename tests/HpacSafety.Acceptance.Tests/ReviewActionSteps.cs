@@ -11,6 +11,7 @@ using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -427,7 +428,14 @@ public sealed class ReviewActionSteps : IDisposable
 	[When(@"that member requests a translation")]
 	public async Task WhenThatMemberRequestsATranslation()
 	{
-		using var client = await BootedApi.SignedInAs(_role);
+		// The booted host has no DeepL key, and there is no stand-in
+		// (ADR-0109), so a stub answers in the provider's place. This scenario
+		// is about who may ask, not about the provider.
+		await using var host = (await BootedApi.Factory()).WithWebHostBuilder(builder =>
+			builder.ConfigureTestServices(services =>
+				services.AddScoped<ITranslator, PrefixingTranslator>()));
+
+		using var client = await BootedApi.SignedInAs(_role, host);
 		_response = await client.PostAsJsonAsync(
 			"/api/admin/translate",
 			new { texts = new[] { "The pilot landed." }, from = "en-CA", to = "fr-CA" });
@@ -442,7 +450,6 @@ public sealed class ReviewActionSteps : IDisposable
 			return;
 		}
 
-		// The booted host runs in Development with no DeepL key: the echo stand-in answers.
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
 		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
 		body.GetProperty("texts").GetArrayLength().ShouldBe(1);
@@ -577,6 +584,21 @@ public sealed class ReviewActionSteps : IDisposable
 			{
 				messages.Enqueue(formatter(state, exception) + " " + exception);
 			}
+		}
+	}
+
+	/// <summary>A translator that answers without a provider.</summary>
+	private sealed class PrefixingTranslator : ITranslator
+	{
+		public bool IsConfigured => true;
+
+		public Task<IReadOnlyList<string>> Translate(
+			IReadOnlyList<string> texts,
+			Locale source,
+			Locale target,
+			CancellationToken cancellationToken)
+		{
+			return Task.FromResult<IReadOnlyList<string>>([.. texts.Select(text => $"[{target.Code}] {text}")]);
 		}
 	}
 }

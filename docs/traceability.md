@@ -802,10 +802,6 @@ Translation is offered for question wording and for a select answer's second lan
 
 A server with no translation credential still authors questions — *Reqnroll, Covered*
 
-### REQ-QB-068
-
-A development server translates through a stand-in rather than refusing — *Reqnroll, Covered*
-
 ### REQ-QB-069
 
 An Administrator drafts the French from the English — *playwright-bdd, Covered*
@@ -821,10 +817,6 @@ A question cannot be saved in one language — *playwright-bdd, Covered*
 ### REQ-QB-072
 
 Translation is not offered when the server has no provider — *playwright-bdd, Covered*
-
-### REQ-QB-073
-
-A development stand-in says what it is — *playwright-bdd, Covered*
 
 ### REQ-QB-074
 

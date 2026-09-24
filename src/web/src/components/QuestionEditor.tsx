@@ -142,7 +142,6 @@ export function QuestionEditor({
 	isEditing,
 	hasBeenAnswered,
 	translationAvailable,
-	translationIsStandIn,
 	onChange,
 	onCancel,
 	onSave,
@@ -153,7 +152,6 @@ export function QuestionEditor({
 	isEditing: boolean
 	hasBeenAnswered: boolean
 	translationAvailable: boolean
-	translationIsStandIn: boolean
 	onChange: (draft: QuestionDraft) => void
 	onCancel: () => void
 	onSave: (draft: QuestionDraft) => void
@@ -353,11 +351,9 @@ export function QuestionEditor({
 				<p className="font-sans text-xs text-ink-muted">
 					{!translationAvailable
 						? t("questions.translate.unavailable")
-						: translationIsStandIn
-							? t("questions.translate.standIn")
-							: translationDirection === null
-								? t("questions.translate.hint")
-								: t("questions.translate.draftWarning")}
+						: translationDirection === null
+							? t("questions.translate.hint")
+							: t("questions.translate.draftWarning")}
 				</p>
 			</div>
 

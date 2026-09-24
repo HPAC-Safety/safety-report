@@ -49,41 +49,9 @@ public class AdminTranslationEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		body.GetProperty("available").GetBoolean().ShouldBeTrue();
-		body.GetProperty("standIn").GetBoolean().ShouldBeFalse();
-	}
 
-	[Fact]
-	public async Task GivenDevelopmentStandIn_WhenAvailabilityIsAsked_ThenSaysStandIn()
-	{
-		// Given — a developer's server with no credential
-		await using var factory = WithTranslator(new EchoTranslator());
-		using var client = await SignedIn(factory);
-
-		// When
-		var body = await client.GetFromJsonAsync<JsonElement>(Translate);
-
-		// Then — the screen says so, so copied English is never mistaken for
-		// a translation
-		body.GetProperty("available").GetBoolean().ShouldBeTrue();
-		body.GetProperty("standIn").GetBoolean().ShouldBeTrue();
-	}
-
-	[Fact]
-	public async Task GivenDevelopmentStandIn_WhenTextIsTranslated_ThenComesBackUnchanged()
-	{
-		// Given
-		await using var factory = WithTranslator(new EchoTranslator());
-		using var client = await SignedIn(factory);
-
-		// When — the browser posts and the endpoint answers exactly as in
-		// production; only the adapter differs
-		using var response = await client.PostAsJsonAsync(Translate, Request(["Were you injured?"]));
-
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-		var body = await response.Content.ReadFromJsonAsync<JsonElement>();
-		body.GetProperty("texts")[0].GetString().ShouldBe("Were you injured?");
+		// No stand-in flag: there is no stand-in to report (ADR-0109).
+		body.TryGetProperty("standIn", out _).ShouldBeFalse();
 	}
 
 	[Fact]

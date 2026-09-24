@@ -109,69 +109,16 @@ public class TranslationRegistrationTests
 	}
 
 	[Fact]
-	public void GivenDevelopmentAndNoCredential_WhenRegistered_ThenStandInIsUsed()
+	public async Task GivenNoCredential_WhenTextIsTranslated_ThenRefusedRatherThanEchoed()
 	{
-		// Given — a developer's checkout
-		using var provider = Provider([], true);
-
-		// When
-		var translator = provider.GetRequiredService<ITranslator>();
-
-		// Then — the control works locally and exercises the same port
-		translator.ShouldBeOfType<EchoTranslator>();
-		translator.IsConfigured.ShouldBeTrue();
-	}
-
-	[Fact]
-	public void GivenDevelopmentAndCredential_WhenRegistered_ThenRealProviderWins()
-	{
-		// Given — a developer who does have a key wants the real thing
-		using var provider = Provider(
-			new Dictionary<string, string?> { ["Translation:ApiKey"] = "abc:fx" }, true);
-
-		// When / Then
-		provider.GetRequiredService<ITranslator>().ShouldBeOfType<DeepLTranslator>();
-	}
-
-	[Fact]
-	public void GivenNoCredentialOutsideDevelopment_WhenRegistered_ThenNoStandInIsUsed()
-	{
-		// Given — copying English into the French column of a live question
-		// bank would put untranslated English in front of French-speaking
-		// pilots, so this is never a production fallback
+		// Given — any environment, Development included: a stand-in that
+		// returned its input unchanged got stored as a translation (ADR-0109)
 		using var provider = Provider([]);
-
-		// When
 		var translator = provider.GetRequiredService<ITranslator>();
-
-		// Then
-		translator.ShouldBeOfType<DeepLTranslator>();
-		translator.IsConfigured.ShouldBeFalse();
-	}
-
-	[Fact]
-	public async Task GivenStandIn_WhenTextIsTranslated_ThenComesBackUnchanged()
-	{
-		// Given
-		var translator = new EchoTranslator();
-
-		// When
-		var translated = await translator.Translate(
-			["Were you injured?", "Describe the weather"], Locale.EnCa, Locale.FrCa, CancellationToken.None);
-
-		// Then
-		translated.ShouldBe(["Were you injured?", "Describe the weather"]);
-	}
-
-	[Fact]
-	public async Task GivenStandIn_WhenOneLanguageIsTranslatedIntoItself_ThenRefused()
-	{
-		// Given — the stand-in still honours the contract it stands in for
-		var translator = new EchoTranslator();
 
 		// When / Then
 		await Should.ThrowAsync<TranslationUnavailableException>(() =>
-			translator.Translate(["One"], Locale.EnCa, Locale.EnCa, CancellationToken.None));
+			translator.Translate(["Were you injured?"], Locale.EnCa, Locale.FrCa, CancellationToken.None));
 	}
 
 	[Fact]
@@ -186,13 +133,12 @@ public class TranslationRegistrationTests
 			new ServiceCollection().AddHpacSafetyTranslation(null!));
 	}
 
-	private static ServiceProvider Provider(Dictionary<string, string?> settings,
-											bool useStandIn = false)
+	private static ServiceProvider Provider(Dictionary<string, string?> settings)
 	{
 		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 
 		return new ServiceCollection()
-			.AddHpacSafetyTranslation(configuration, useStandIn)
+			.AddHpacSafetyTranslation(configuration)
 			.BuildServiceProvider();
 	}
 }

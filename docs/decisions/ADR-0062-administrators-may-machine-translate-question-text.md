@@ -2,13 +2,18 @@
 title: An administrator may machine-translate question text while authoring; the database still stores only what they saved
 description: An administrator may press Translate while authoring a question.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-20
 decision-makers: Chase Florell
 keywords: translation, DeepL, question bank, authoring, ITranslator, API key
 ---
 
 # ADR-0062 — An administrator may machine-translate question text while authoring; the database still stores only what they saved
+
+**Status:** The Development stand-in (`EchoTranslator`) described under "When
+no credential is configured" is superseded by
+[ADR-0109](ADR-0109-no-translation-stand-in-in-any-environment.md): there is
+no stand-in in any environment. The rest of this record stands.
 
 ## Context
 

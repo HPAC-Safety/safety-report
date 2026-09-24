@@ -138,6 +138,20 @@ To also render the graphify knowledge graph into a local Obsidian vault at
 ./init-dev.sh --obsidian
 ```
 
+`./init-dev.sh` also asks for the two private provider keys local development
+needs — `DEEPL_API_KEY` (translation) and `GEMINI_API_KEY` (summaries) — and
+writes them to a `.env` file at the root of the primary checkout. That file is
+gitignored and never committed. `./dev-up.sh` passes it to the API and Worker
+containers, from the primary checkout and from every worktree:
+
+```bash
+DEEPL_API_KEY=...
+GEMINI_API_KEY=...
+```
+
+Without them, translation is unavailable and summaries fail. There is no
+stand-in ([ADR-0109](docs/decisions/ADR-0109-no-translation-stand-in-in-any-environment.md)).
+
 Common verification commands:
 
 ```bash

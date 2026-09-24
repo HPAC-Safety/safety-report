@@ -18,14 +18,10 @@ builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddDbContext<HpacSafetyDbContext>(options =>
 	options.UseNpgsql(builder.Configuration.GetConnectionString("HpacSafety")));
 
-// Machine translation for the question-authoring screen. In Development with
-// no credential this resolves a stand-in that echoes its input, so the control
-// works locally and exercises the same endpoint and port as production. A
-// non-development deployment with no credential reports translation
-// unavailable instead. See ADR-0062.
-builder.Services.AddHpacSafetyTranslation(
-	builder.Configuration,
-	builder.Environment.IsDevelopment());
+// Machine translation for the question-authoring screen. With no credential
+// the API reports translation unavailable, in Development as everywhere else.
+// See ADR-0062, ADR-0109.
+builder.Services.AddHpacSafetyTranslation(builder.Configuration);
 
 // Identity is a signed JWT this API validates; it never sees a password. In
 // Development the API also issues the tokens it validates, so the same

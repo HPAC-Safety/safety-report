@@ -177,7 +177,6 @@
   "questions.translate.draftWarning": "A translation is a draft. Read it and correct it before saving.",
   "questions.translate.unavailable": "Translation is not available on this server.",
   "questions.translate.failed": "The translation could not be completed. Please try again or write the other language yourself.",
-  "questions.translate.standIn": "This development server has no translation service, so Translate copies the text across unchanged. Production translates it for real.",
   "nav.manageAnswerTranslations": "Answers awaiting translation",
   "answerTranslations.title": "Answers awaiting translation",
   "answerTranslations.intro": "A reporter answers a picker or a type-ahead in one official language, and nothing translates it on its way in. Supply the other language here; what the reporter wrote is never changed.",

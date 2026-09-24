@@ -21,6 +21,7 @@ public sealed record QuestionView(
 	bool IsSystem,
 	bool IsRequired,
 	bool IsPrivate,
+	bool IsTranslatable,
 	bool IsActive,
 	int DisplayOrder,
 	string? DependsOnQuestionId,
@@ -60,6 +61,7 @@ public sealed record QuestionView(
 			question.IsSystem,
 			revision.IsRequired,
 			revision.IsPrivate,
+			revision.IsTranslatable,
 			revision.IsActive,
 			revision.DisplayOrder,
 			revision.DependsOnQuestionId?.Value,
@@ -110,7 +112,9 @@ public sealed record OptionView(
 ///     What an administrator submits to create a question or to save an edit. A
 ///     change to the question's wording, type, or flags produces a new revision;
 ///     <see cref="Options" />, the complete list of its choices, is applied in
-///     place and never does (ADR-0095).
+///     place and never does (ADR-0095). <see cref="IsTranslatable" /> may be left
+///     out: a new question then takes its type's default, and an edit that keeps
+///     the type keeps the current setting (ADR-0110).
 /// </summary>
 public sealed record SaveQuestionRequest(
 	string? Key,
@@ -127,7 +131,8 @@ public sealed record SaveQuestionRequest(
 	string? DependsOnQuestionId,
 	string? DependsOnOptionCode,
 	string? GroupedUnderQuestionId,
-	IReadOnlyList<OptionInput>? Options);
+	IReadOnlyList<OptionInput>? Options,
+	bool? IsTranslatable = null);
 
 /// <summary>
 ///     One option as authored. An administrator names a choice by its wording

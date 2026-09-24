@@ -79,6 +79,7 @@ erDiagram
         boolean is_system
         boolean is_required "authored; forced true for consent"
         boolean is_private "answers are recognition context only"
+        boolean is_translatable "free text machine-translated for reviewers"
         boolean is_active
         int display_order
         char(11) depends_on_question_id FK "nullable; a yes_no or single_select question"
@@ -119,6 +120,8 @@ erDiagram
         char(11) question_revision_id FK "the exact revision shown"
         boolean is_private "privacy as it was at the time"
         text value
+        text translated_value "the other language, when it has one"
+        varchar(64) translation_mode "none, choice, or machine (ADR-0110)"
         timestamptz deleted
     }
 
@@ -237,6 +240,7 @@ this.
 | `20260923010810_GiveEachQuestionItsOwnChoices`        | Added `question_choices`, copied every question's current choices onto it (a type-ahead backed by a live shared list takes that list's items, reporter marks and removals kept; a reporter item awaiting its other language keeps only the language typed), then dropped `option_sets`, `option_set_items`, `question_revision_options`, `question_revisions.option_set_id`, and `question_revisions.allows_reporter_additions` (ADR-0095). The copy is `Sql/20260923010810_CopyChoicesOntoQuestions.sql`, the first migration SQL kept in its own file (ADR-0055). |
 | `20260923205108_AddReportFileOriginalFileName`        | Added nullable `report_files.original_file_name`, the reporter's sanitized filename, used only as a reviewer's download name (ADR-0097). Null for every file that already existed, which keeps its server-minted download name. |
 | `20260923224129_WordAttachmentQuestionForSeveralFiles` | No schema change. Rewords the seeded attachment question for several files, only where it still reads exactly as seeded: an unanswered question gets a new revision, an answered one forks (ADR-0071). An Administrator's own wording is left alone. |
+| `20260924143055_TranslateOnlyAnswersThatNeedIt`       | Added `question_revisions.is_translatable` (true for existing long-text revisions, false otherwise, and checked to be false for anything but short or long text) and `report_answers.translation_mode` (`none`, `choice`, or `machine`; existing long-text, select, and type-ahead answers backfilled `machine`, everything else `none`). The awaiting-translation index now covers only `machine` answers (ADR-0110). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

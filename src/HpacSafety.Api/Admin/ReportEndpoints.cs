@@ -403,8 +403,10 @@ public static class ReportEndpoints
 						.Select(answer => new ReportAnswerValueView(
 							answer.Value!,
 							answer.Locale.Code,
-							answer.TranslatedValue,
-							answer.TranslationSource is { } source ? EnumCode.Of(source) : null)),
+							answer.DisplayedTranslation,
+							answer.DisplayedTranslation is not null && answer.TranslationSource is { } source
+								? EnumCode.Of(source)
+								: null)),
 				]))
 			.ToList();
 	}

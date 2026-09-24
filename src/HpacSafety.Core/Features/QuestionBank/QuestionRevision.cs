@@ -3,7 +3,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// <summary>
 ///     A question exactly as it was asked at a point in time: its type, its complete
 ///     bilingual wording, its order, privacy, active state, required
-///     state, and system state. Immutable once created — rewording,
+///     state, system state, and whether its answers need translation. Immutable once created — rewording,
 ///     retyping, reordering, changing privacy, activating, or
 ///     deactivating produces a new revision, so a report filed last year still
 ///     renders the revision it was actually answering. Its choices are not part
@@ -56,6 +56,7 @@ public class QuestionRevision
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
 		TinyId? groupedUnderQuestionId,
+		bool isTranslatable,
 		DateTimeOffset at)
 	{
 		Id = TinyId.New();
@@ -74,9 +75,17 @@ public class QuestionRevision
 		// always required — a form that lets a reporter skip consent cannot
 		// publish anything. Every other question's required state is authored
 		// by an administrator. See ADR-0061.
+		if (isTranslatable
+			&& !CanBeTranslatable(type))
+		{
+			throw new DomainRuleViolationException(
+				$"Only a short- or long-text question can need translation; a {type} answer never has a second language. See ADR-0110.");
+		}
+
 		IsSystem = isSystem;
 		IsRequired = isSystem || isRequired;
 		IsPrivate = isPrivate;
+		IsTranslatable = isTranslatable;
 		IsActive = isActive;
 		DisplayOrder = displayOrder;
 		DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
@@ -124,6 +133,13 @@ public class QuestionRevision
 	///     eligible for the summary.
 	/// </summary>
 	public bool IsPrivate { get; private init; }
+
+	/// <summary>
+	///     Whether an answer to this revision is machine-translated into the other
+	///     official language. Only ever true for short or long text; an
+	///     administrator decides, and long text starts out true. See ADR-0110.
+	/// </summary>
+	public bool IsTranslatable { get; private init; }
 
 	/// <summary>Whether this revision is the one the form asks.</summary>
 	public bool IsActive { get; private init; }
@@ -222,6 +238,24 @@ public class QuestionRevision
 	/// </summary>
 	public bool StoresLocalizedValue => ExpectsOptions && Type != QuestionType.YesNo;
 
+	/// <summary>
+	///     True when this type's answers are the reporter's own free text, the only
+	///     kind an administrator may mark as needing machine translation (ADR-0110).
+	/// </summary>
+	public static bool CanBeTranslatable(QuestionType type)
+	{
+		return type is QuestionType.ShortText or QuestionType.LongText;
+	}
+
+	/// <summary>
+	///     Whether a question of this type needs translation when nobody has said:
+	///     long text does, and everything else does not (ADR-0110).
+	/// </summary>
+	public static bool TranslatableByDefault(QuestionType type)
+	{
+		return type == QuestionType.LongText;
+	}
+
 	/// <summary>True when this type takes at most one answer.</summary>
 	public bool TakesOneAnswer =>
 		Type is QuestionType.SingleSelect or QuestionType.YesNo or QuestionType.Autocomplete;
@@ -275,12 +309,13 @@ public class QuestionRevision
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
 		TinyId? groupedUnderQuestionId,
+		bool isTranslatable,
 		DateTimeOffset at)
 	{
 		return new QuestionRevision(
 			questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-			groupedUnderQuestionId, at);
+			groupedUnderQuestionId, isTranslatable, at);
 	}
 
 	/// <summary>

@@ -216,7 +216,8 @@ Scenario: The submission path never calls a translation provider
   Given a submission contains select answers and a value typed into a type-ahead
   When the API commits the submission
   Then no translation provider is called
-  And the answers are stored in the language the reporter gave them in, with no translation yet
+  And the answers are stored in the language the reporter gave them in
+  And only a picker answer carries a second language yet, copied from the choice it names
 
 @REQ-SUB-025
 Scenario: Every answer's value and locale are immutable once submitted
@@ -225,12 +226,40 @@ Scenario: Every answer's value and locale are immutable once submitted
   And this holds for every answer type, not only select-shaped ones
 
 @REQ-SUB-026
-Scenario: The Worker mechanically translates every answer into its second language
-  Given a submitted report has answers with values in one locale
+Scenario: The Worker mechanically translates every answer that needs it
+  Given a submitted report has answers needing machine translation, in one locale
   When the Worker claims that report's translation outbox message
   Then it calls the mechanical translation port once per locale group, never the summarization model
   And it writes each answer's translated value and marks the translation source "auto"
   And a skipped answer, with no value, is never sent to the translator
+
+@REQ-SUB-071
+Scenario: Only free text marked for translation is machine-translated
+  Given a submitted report answers a long-text question marked for translation
+  And it answers a short-text question not marked for translation
+  And it answers an email, a phone number, a date, a time, a number, and a yes/no question
+  When the Worker translates that report's answers
+  Then only the long-text answer is sent to the translator
+  And every other answer keeps no second language
+
+@REQ-SUB-069
+Scenario: A picker answer takes its choice's other-language label at submission
+  Given a single-select and a multi-select question offer choices written in both official languages
+  When a reporter answering in English picks one choice from each and submits
+  Then each stored answer holds the French label of the choice picked, as its second language
+  And the translation source is marked "choice"
+  And no translation provider is called and nothing is sent to the Worker's translator
+
+@REQ-SUB-070
+Scenario Outline: A type-ahead answer uses its choice when it names one, and the Worker otherwise
+  Given a type-ahead question offers a choice written in both official languages
+  When a reporter answering in English submits <answer>
+  Then the answer's second language comes from <source>
+
+Examples:
+  | answer                               | source                                 |
+  | that choice's English label          | the choice's French label, at submission |
+  | words the question does not offer    | the Worker's machine translation       |
 
 @REQ-SUB-027
 Scenario: An administrator's correction always wins over the Worker's translation

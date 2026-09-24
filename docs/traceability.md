@@ -588,6 +588,14 @@ A date, time, or yes/no answer reads in the reviewer's language, not in its stor
 
 A stored date that is not a real date is shown as stored — *playwright-bdd, Covered*
 
+### REQ-MOD-077
+
+The report detail view gives a second language only for an answer that has one — *Reqnroll, Covered*
+
+### REQ-MOD-078
+
+Opening a report shows a translation only under answers that have one — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -665,14 +673,6 @@ An answer to a picker stores the words the reporter saw — *Reqnroll, Planned*
 ### REQ-QB-019
 
 Every answer is stored in one invariant written form — *Reqnroll, Planned*
-
-### REQ-QB-020
-
-A select answer records the reporter's language and waits for the other — *Reqnroll, Planned*
-
-### REQ-QB-021
-
-A curated list's other language is not copied onto the answer — *Reqnroll, Planned*
 
 ### REQ-QB-022
 
@@ -958,6 +958,22 @@ The seeded single-file wording on an answered attachment question forks it — *
 
 An attachment question an Administrator already reworded is left alone — *Reqnroll, Covered*
 
+### REQ-QB-108
+
+Only free text can be marked as needing translation — *Reqnroll, Covered*
+
+### REQ-QB-109
+
+Marking a non-text question as needing translation is rejected — *Reqnroll, Covered*
+
+### REQ-QB-110
+
+Whether a question needs translation is a revision field — *Reqnroll, Covered*
+
+### REQ-QB-111
+
+The editor offers Needs translation only for free text — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -1062,7 +1078,7 @@ Every answer's value and locale are immutable once submitted — *Reqnroll, Cove
 
 ### REQ-SUB-026
 
-The Worker mechanically translates every answer into its second language — *Reqnroll, Covered*
+The Worker mechanically translates every answer that needs it — *Reqnroll, Covered*
 
 ### REQ-SUB-027
 
@@ -1227,6 +1243,18 @@ An expired saved report's uploads are erased — *playwright-bdd, Covered*
 ### REQ-SUB-068
 
 The continue dialog shows a saved date or time in the reporter's language — *playwright-bdd, Covered*
+
+### REQ-SUB-069
+
+A picker answer takes its choice's other-language label at submission — *Reqnroll, Covered*
+
+### REQ-SUB-070
+
+A type-ahead answer uses its choice when it names one, and the Worker otherwise — *Reqnroll, Covered*
+
+### REQ-SUB-071
+
+Only free text marked for translation is machine-translated — *Reqnroll, Covered*
 
 ## Claims: typeform-question-import-export
 

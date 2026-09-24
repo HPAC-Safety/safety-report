@@ -37,7 +37,6 @@ public sealed class ReportSubmissionEndpointSteps
 	private static readonly Uri Submit = new("/api/v1/reports", UriKind.Relative);
 	private static readonly Uri AdminQuestions = new("/api/admin/questions", UriKind.Relative);
 	private static readonly Uri PublicQuestions = new("/api/v1/questions", UriKind.Relative);
-	private static readonly Uri AwaitingTranslation = new("/api/admin/answers/awaiting-translation", UriKind.Relative);
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 	private static readonly SemaphoreSlim ConsentGate = new(1, 1);
 	private const string Secret = "Wind picked up on final approach — synthetic narrative for a test only.";
@@ -51,6 +50,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _selectRevisionId;
 	private string? _selectedLabel;
 	private string? _answerId;
+	private string? _submittedReportId;
 	private string? _supersededRevisionId;
 	private string? _problem;
 	private string? _uploadId;
@@ -289,13 +289,33 @@ public sealed class ReportSubmissionEndpointSteps
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 	}
 
-	[Then(@"the answers are stored in the language the reporter gave them in, with no translation yet")]
-	public async Task ThenTheAnswersAreStoredWithNoTranslationYet()
+	[Then(@"the answers are stored in the language the reporter gave them in")]
+	public async Task ThenTheAnswersAreStoredInTheReportersLanguage()
 	{
-		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
-		var queue = await _admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
-		var entries = queue.GetProperty("answers").EnumerateArray().ToList();
-		entries.ShouldContain(entry => entry.GetProperty("value").GetString() == _selectedLabel);
+		var stored = await SubmittedSelectAnswer();
+		stored.Value.ShouldBe(_selectedLabel);
+		stored.Locale.ShouldBe(Locale.EnCa);
+	}
+
+	[Then(@"only a picker answer carries a second language yet, copied from the choice it names")]
+	public async Task ThenOnlyAPickerCarriesASecondLanguage()
+	{
+		// "Blue" is offered as "Bleu" (CreateSelectQuestion); copying it is a
+		// lookup, not a provider call (ADR-0110).
+		var stored = await SubmittedSelectAnswer();
+		stored.TranslatedValue.ShouldBe("Bleu");
+		stored.TranslationSource.ShouldBe(TranslationSource.Choice);
+	}
+
+	private async Task<ReportAnswer> SubmittedSelectAnswer()
+	{
+		_submittedReportId ??= (await _response!.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		var reportId = TinyId.Parse(_submittedReportId!);
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		return await database.ReportAnswers.AsNoTracking()
+			.SingleAsync(candidate => candidate.ReportId == reportId && candidate.Value == _selectedLabel);
 	}
 
 	// --- Every answer's value and locale are immutable once submitted ---
@@ -325,10 +345,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenNoEndpointEverChangesValueOrLocale()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
-		var queue = await _admin.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
-		var entry = queue.GetProperty("answers").EnumerateArray()
-			.Single(candidate => candidate.GetProperty("value").GetString() == _selectedLabel);
-		var answerId = entry.GetProperty("id").GetString()!;
+		var answerId = (await SubmittedSelectAnswer()).Id.ToString();
 
 		// The only endpoint that ever writes to this row is the translation
 		// queue's PUT, and its request/response shape carries one field:
@@ -360,7 +377,7 @@ public sealed class ReportSubmissionEndpointSteps
 
 	// --- The Worker mechanically translates every answer into its second language ---
 
-	[Given(@"a submitted report has answers with values in one locale")]
+	[Given(@"a submitted report has answers needing machine translation, in one locale")]
 	public void GivenASubmittedReportHasAnswersWithValuesInOneLocale()
 	{
 		// Covered in detail, against a real database, by
@@ -395,11 +412,11 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"an answer already has a translation the Worker supplied automatically")]
 	public async Task GivenAnAnswerAlreadyHasAnAutoTranslation()
 	{
+		// A narrative: the kind of answer the Worker translates (ADR-0110). A
+		// picker's second language comes from its choice instead.
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
-		var key = await CreateSelectQuestion();
-		_selectRevisionId = await RevisionIdFor(key);
-		_selectedLabel = "Blue";
+		_extraRevisionId = await CreateSyntheticQuestion("long_text");
 
 		_response = await Post(new
 		{
@@ -407,7 +424,7 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
-				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
+				new { questionRevisionId = _extraRevisionId, value = (string?)Secret },
 			},
 		});
 		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
@@ -416,11 +433,11 @@ public sealed class ReportSubmissionEndpointSteps
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var answer = await database.ReportAnswers.FirstAsync(candidate =>
-			candidate.ReportId == TinyId.Parse(reportId) && candidate.Value == _selectedLabel);
+			candidate.ReportId == TinyId.Parse(reportId) && candidate.Value == Secret);
 
 		// Standing in for the Worker, whose own behavior is covered above:
 		// this is the state a real claim would leave the row in.
-		answer.SupplyAutoTranslation("Bleu (auto)");
+		answer.SupplyAutoTranslation("Le vent s'est levé en finale (auto).");
 		await database.SaveChangesAsync();
 		_answerId = answer.Id.ToString();
 	}

@@ -195,7 +195,8 @@ public class QuestionBankEdgeTests
 		// Then
 		answers.Count.ShouldBe(2);
 		answers.Select(answer => answer.Value).ShouldBe(["P3", "Paragliding Instructor"]);
-		answers.ShouldAllBe(answer => answer.NeedsTranslation);
+		answers.Select(answer => answer.TranslatedValue).ShouldBe(["P3", "Instructeur de parapente"]);
+		answers.ShouldAllBe(answer => answer.TranslationMode == TranslationMode.Choice && !answer.NeedsTranslation);
 	}
 
 	[Fact]

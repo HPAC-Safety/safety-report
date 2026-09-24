@@ -81,17 +81,24 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 
 		builder.Property(answer => answer.Locale).IsRequired();
 
+		// Decided once, when the answer is recorded (ADR-0110). Existing rows are
+		// backfilled from their revision by the migration that added it.
+		builder.Property(answer => answer.TranslationMode).IsRequired();
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_answers_translation_mode",
+			"translation_mode IN ('none', 'choice', 'machine')"));
+
 		// Not unique on (report, question): a multi-select records one row per
 		// chosen value, so a report legitimately holds several answers to one
 		// question (ADR-0072).
 		builder.HasIndex(answer => new { answer.ReportId, answer.QuestionId });
 		builder.HasIndex(answer => answer.QuestionRevisionId);
 
-		// The translation queue: every answer with a value and no translation yet,
-		// whichever question type it belongs to (ADR-0080). Ordered by when it was
-		// answered, so the queue reads oldest first without a sort at query time.
+		// The translation queue: every answer awaiting machine translation (ADR-0080,
+		// ADR-0110). Ordered by when it was answered, so the queue reads oldest
+		// first without a sort at query time.
 		builder.HasIndex(answer => answer.AnsweredAt)
-			.HasFilter("value IS NOT NULL AND translated_value IS NULL");
+			.HasFilter("value IS NOT NULL AND translated_value IS NULL AND translation_mode = 'machine'");
 
 		// Lets a report_files row enforce, at the database level, that the
 		// answer it links to belongs to the same report — see

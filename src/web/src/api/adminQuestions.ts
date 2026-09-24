@@ -40,6 +40,17 @@ export const OPTION_TYPES: readonly QuestionType[] = ["single_select", "multi_se
  */
 export const NO_ANSWER_TYPES: readonly QuestionType[] = ["statement", "group"]
 
+/**
+ * Types whose answers are the reporter's own free text — the only ones an
+ * administrator may mark as needing machine translation (ADR-0110).
+ */
+export const TRANSLATABLE_TYPES: readonly QuestionType[] = ["short_text", "long_text"]
+
+/** Whether a question of this type needs translation until an administrator says otherwise. */
+export function translatableByDefault(type: QuestionType): boolean {
+	return type === "long_text"
+}
+
 /** One of a question's own choices (ADR-0095). */
 export interface OptionView {
 	code: string
@@ -64,6 +75,8 @@ export interface QuestionView {
 	isSystem: boolean
 	isRequired: boolean
 	isPrivate: boolean
+	/** Whether answers are machine-translated. Only ever true for short or long text (ADR-0110). */
+	isTranslatable: boolean
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
@@ -115,6 +128,7 @@ export interface SaveQuestionRequest {
 	placeholderFr: string | null
 	isRequired: boolean
 	isPrivate: boolean
+	isTranslatable: boolean
 	isActive: boolean
 	dependsOnQuestionId: string | null
 	dependsOnOptionCode: string | null

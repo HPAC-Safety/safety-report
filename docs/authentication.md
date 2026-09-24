@@ -6,9 +6,11 @@ type: guide
 
 # Authentication and authorization
 
-Reading the public feed and a public report detail requires no account.
-**Everything else — filing a report, and every review or administration
-action — requires a signed-in HPAC member.**
+Reading the public feed, a public report detail, and its comments requires no
+account. **Everything else — filing a report, commenting on a published
+report, and every review or administration action — requires a signed-in HPAC
+member.** A bearer token sent to a public read is used only to mark the
+reader's own comments.
 
 ## The token is the identity
 
@@ -26,8 +28,8 @@ invariant codes:
 
 | Role | Claim value | Capabilities |
 |---|---|---|
-| User | `user` | Proves HPAC membership. May submit a report. Nothing else. |
-| SafetyOfficer | `safety_officer` | Review queue and private report material, safe derivatives and validated documents, summary editing, approve/reject/publish/soft-delete. |
+| User | `user` | Proves HPAC membership. May submit a report, and comment on a published report and edit or delete their own comments ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). Nothing else. |
+| SafetyOfficer | `safety_officer` | Review queue and private report material, safe derivatives and validated documents, summary editing, approve/reject/publish/soft-delete, hiding a member's comment. |
 | Administrator | `administrator` | Every SafetyOfficer capability, plus question revisions and curating each question's choices. |
 
 A claim may be a string or an array; the highest role present wins. A validated

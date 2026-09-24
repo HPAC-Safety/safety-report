@@ -92,6 +92,10 @@ app.MapPublicQuestions();
 // only through the public_reports view.
 app.MapPublicReports();
 
+// Members' comments on a published report (ADR-0114): read by anyone, written
+// by members, hidden by reviewers.
+app.MapComments();
+
 // The reporter-facing writes. Both require a member token. An attachment
 // uploads to quarantine when it is attached; the report is written once, by the
 // final submission that claims those uploads. See ADR-0096.

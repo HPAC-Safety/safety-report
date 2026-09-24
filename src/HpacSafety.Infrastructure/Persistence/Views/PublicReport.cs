@@ -22,4 +22,7 @@ public sealed class PublicReport
 
 	/// <summary>When the report became public.</summary>
 	public DateTimeOffset PublishedAt { get; private init; }
+
+	/// <summary>Its comments that are neither deleted nor hidden (ADR-0114).</summary>
+	public int CommentCount { get; private init; }
 }

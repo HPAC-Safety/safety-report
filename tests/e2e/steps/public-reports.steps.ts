@@ -20,6 +20,7 @@ interface StubReport {
 	aiSummaryEn: string
 	aiSummaryFr: string
 	publishedAt: string
+	commentCount: number
 }
 
 const FIRST: StubReport = {
@@ -27,6 +28,7 @@ const FIRST: StubReport = {
 	aiSummaryEn: "The pilot launched in a crosswind and landed safely in a nearby field.",
 	aiSummaryFr: "Le pilote a décollé par vent de travers et s'est posé sans incident dans un champ voisin.",
 	publishedAt: "2026-09-20T15:30:00Z",
+	commentCount: 0,
 }
 
 const SECOND: StubReport = {
@@ -34,6 +36,7 @@ const SECOND: StubReport = {
 	aiSummaryEn: "A reserve was deployed after a collapse at low altitude.",
 	aiSummaryFr: "Un parachute de secours a été déployé après une fermeture à basse altitude.",
 	publishedAt: "2026-09-18T15:30:00Z",
+	commentCount: 0,
 }
 
 const OLDER: StubReport = {
@@ -41,6 +44,7 @@ const OLDER: StubReport = {
 	aiSummaryEn: "The pilot misjudged the approach and landed short.",
 	aiSummaryFr: "Le pilote a mal évalué l'approche et s'est posé court.",
 	publishedAt: "2026-08-02T15:30:00Z",
+	commentCount: 0,
 }
 
 const CURSOR = "c2Vjb25kLXBhZ2U"
@@ -52,6 +56,11 @@ async function stubFeed(page: Page) {
 		await route.fulfill({
 			json: after === CURSOR ? { items: [OLDER], next: null } : { items: [FIRST, SECOND], next: CURSOR },
 		})
+	})
+
+	// The report page reads its comments too; these reports have none.
+	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?$/, async (route) => {
+		await route.fulfill({ json: [] })
 	})
 
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, async (route) => {

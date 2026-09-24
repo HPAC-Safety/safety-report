@@ -126,6 +126,88 @@ A place becomes a generic phrase that fits its role, never an invented name — 
 
 Only a report with publication consent reaches the model — *Reqnroll, Covered*
 
+## Claims: comments
+
+### REQ-COM-001
+
+A signed-in member comments on a published report — *Reqnroll, Covered*
+
+### REQ-COM-002
+
+Commenting requires a member — *Reqnroll, Covered*
+
+### REQ-COM-003
+
+A report the public cannot see cannot be commented on — *Reqnroll, Covered*
+
+### REQ-COM-004
+
+A comment must have text, and at most 2000 characters — *Reqnroll, Covered*
+
+### REQ-COM-005
+
+A comment is stored in the language it was written in, and the Worker supplies the other — *Reqnroll, Covered*
+
+### REQ-COM-006
+
+Posting a comment never waits for, or calls, a translation provider — *Reqnroll, Covered*
+
+### REQ-COM-007
+
+The API tells a reader which comments are theirs and never who wrote the others — *Reqnroll, Covered*
+
+### REQ-COM-008
+
+An author's edit adds a revision and keeps the one before it — *Reqnroll, Covered*
+
+### REQ-COM-009
+
+An author's deleted comment disappears but is not erased — *Reqnroll, Covered*
+
+### REQ-COM-010
+
+Nobody may change another member's comment — *Reqnroll, Covered*
+
+### REQ-COM-011
+
+A reviewer hides a comment, and the hiding is audited — *Reqnroll, Covered*
+
+### REQ-COM-012
+
+A member who is not a reviewer cannot hide a comment — *Reqnroll, Covered*
+
+### REQ-COM-013
+
+Unpublishing a report hides its comments, and publishing it again brings them back — *Reqnroll, Covered*
+
+### REQ-COM-014
+
+The public feed carries each report's comment count — *Reqnroll, Covered*
+
+### REQ-COM-015
+
+The feed shows how many comments each report has — *playwright-bdd, Covered*
+
+### REQ-COM-016
+
+A visitor who is not signed in is invited to sign in to comment — *playwright-bdd, Covered*
+
+### REQ-COM-017
+
+A signed-in member posts, edits, and deletes their own comment — *playwright-bdd, Covered*
+
+### REQ-COM-018
+
+A reader sees a comment in their language, and can show the original — *playwright-bdd, Covered*
+
+### REQ-COM-019
+
+A comment still awaiting translation shows its original text — *playwright-bdd, Covered*
+
+### REQ-COM-020
+
+A reviewer hides a comment from the report page — *playwright-bdd, Covered*
+
 ## Claims: domain-and-lifecycle
 
 ### REQ-DOM-001
@@ -1537,7 +1619,7 @@ interfaces-and-data-flow.md — verified by `REQ-MOD-017`, `REQ-MOD-019`
 
 ### CON-IF-004
 
-interfaces-and-data-flow.md — verified by `REQ-MOD-023`, `REQ-MOD-024`, `REQ-MOD-028`, `REQ-MOD-029`
+interfaces-and-data-flow.md — verified by `REQ-MOD-023`, `REQ-MOD-024`, `REQ-MOD-028`, `REQ-MOD-029`, `REQ-COM-011`, `REQ-COM-012`
 
 ### CON-IF-005
 

@@ -97,6 +97,7 @@ specification rather than preserving competing designs.
 | One-call bilingual summarization and anonymization | [AI anonymization](ai-anonymization/ai-anonymization.feature) |
 | Images, videos, documents, quarantine, and derivatives | [Attachments](media/media.feature) |
 | Member authentication, authorization, review, and public feed | [Moderation, authentication, and publication](moderation-authentication-and-publication/moderation-authentication-and-publication.feature) |
+| Member comments on a published report, their translation and moderation | [Comments](comments/comments.feature) |
 | Target records, naming, transactions, and query DTOs | [Data and persistence](../docs/data-and-persistence.md) |
 | HTTP surfaces, ports, and end-to-end data flow | [Interfaces and data flow](../docs/interfaces-and-data-flow.md) |
 | React/TypeScript sites, bilingual behavior, design, and accessibility | [Web, localization, and design](web-localization-and-design/web-localization-and-design.feature) |

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
+import { ReportComments } from "../components/ReportComments"
 import { fetchPublicReport, PublicReportNotFound, summaryIn, type PublicReport } from "../api/publicReports"
 
 type Loaded = { state: "loading" } | { state: "ready"; report: PublicReport } | { state: "missing" } | { state: "failed" }
@@ -81,6 +82,7 @@ export function PublicReportPage() {
 					>
 						{t(showingOther ? `feed.readIn.${locale}` : `feed.readIn.${other}`)}
 					</button>
+					<ReportComments reportId={loaded.report.id} />
 				</article>
 			)}
 		</main>

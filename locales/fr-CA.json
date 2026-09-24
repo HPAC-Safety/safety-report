@@ -464,6 +464,44 @@
     "readIn": {
       "en-CA": "Lire en anglais",
       "fr-CA": "Lire en français"
+    },
+    "comments": {
+      "one": "#1 comment",
+      "other": "#{count} comments"
     }
+  },
+  "comments": {
+    "title": "#Comments",
+    "listLabel": "#Comments on this report",
+    "loading": "#Loading comments…",
+    "empty": "#No comments yet.",
+    "error": {
+      "load": "#The comments could not be loaded. Try again.",
+      "save": "#That could not be saved. Try again."
+    },
+    "author": {
+      "member": "#Member",
+      "you": "#You"
+    },
+    "edited": "#Edited",
+    "translated": "#Translated automatically",
+    "original": "#Original",
+    "showOriginal": "#Show original",
+    "showTranslation": "#Show translation",
+    "awaitingTranslation": "#Translation on its way",
+    "signIn": "#Sign in to comment",
+    "newLabel": "#Add a comment",
+    "editLabel": "#Edit your comment",
+    "reminder": "#Comments are public. Do not name or identify anyone involved in the occurrence.",
+    "length": "#{count} of {max} characters",
+    "post": "#Post comment",
+    "save": "#Save",
+    "cancel": "#Cancel",
+    "edit": "#Edit",
+    "delete": "#Delete",
+    "hide": "#Hide",
+    "keep": "#Keep",
+    "confirmDelete": "#Delete your comment?",
+    "confirmHide": "#Hide this comment from everyone?"
   }
 }

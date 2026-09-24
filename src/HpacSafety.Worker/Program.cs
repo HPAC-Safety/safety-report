@@ -37,6 +37,7 @@ builder.Services.AddHpacSafetyMedia(builder.Configuration);
 builder.Services.AddScoped<IOutboxMessageProcessor, ProcessAttachmentProcessor>();
 
 builder.Services.AddScoped<IOutboxMessageProcessor, TranslateAnswersProcessor>();
+builder.Services.AddScoped<IOutboxMessageProcessor, TranslateCommentProcessor>();
 builder.Services.AddScoped<IOutboxMessageProcessor, SummarizeReportProcessor>();
 builder.Services.AddHostedService<Worker>();
 

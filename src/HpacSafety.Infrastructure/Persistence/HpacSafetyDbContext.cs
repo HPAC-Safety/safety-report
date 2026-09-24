@@ -1,4 +1,5 @@
 using HpacSafety.Core;
+using HpacSafety.Core.Features.Comments;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
@@ -68,6 +69,15 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 	/// <summary>Outbox messages awaiting a worker.</summary>
 	public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+	/// <summary>Members' comments on published reports (ADR-0114).</summary>
+	public DbSet<ReportComment> ReportComments => Set<ReportComment>();
+
+	/// <summary>Every version of every comment's text.</summary>
+	public DbSet<ReportCommentRevision> ReportCommentRevisions => Set<ReportCommentRevision>();
+
+	/// <summary>Visible comments on public reports, current text only (the <c>public_report_comments</c> view).</summary>
+	public DbSet<PublicReportComment> PublicReportComments => Set<PublicReportComment>();
 
 	/// <summary>Publishable reports, as the public side reads them (the <c>public_reports</c> view).</summary>
 	public DbSet<PublicReport> PublicReports => Set<PublicReport>();
@@ -142,7 +152,10 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
 		modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
 		modelBuilder.ApplyConfiguration(new PendingImportLogicConfiguration());
+		modelBuilder.ApplyConfiguration(new ReportCommentConfiguration());
+		modelBuilder.ApplyConfiguration(new ReportCommentRevisionConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
+		modelBuilder.ApplyConfiguration(new PublicReportCommentConfiguration());
 
 		// Every application table except the append-only audit log is filtered
 		// to its live rows by default. See docs/data-and-persistence.md.

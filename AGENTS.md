@@ -244,13 +244,16 @@ generalize, never reaches Production, and any future allowlist or
 credential-proxy-shaped code outside this scope needs its own argument on
 its own facts. Machine translation never runs on the submission path itself —
 nothing a reporter's request touches calls a translation provider. Off that
-path it now has four purposes: drafting question wording while authoring;
+path it now has five purposes: drafting question wording while authoring;
 for every answer that needs one, the Worker mechanically supplying its second
 language or an administrator correcting/supplying one by hand
 ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
 [ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
-and a reviewer drafting one language of a summary pair from the other while
-editing it. The Worker's generated pair still comes from its one anonymized
+a reviewer drafting one language of a summary pair from the other while
+editing it; and the Worker translating each revision of a member's comment on
+a published report into the other language
+([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+The Worker's generated pair still comes from its one anonymized
 model call, never from a translation provider; a reviewer's translation is a
 draft they confirm, and each saved language records whether it was generated,
 written by a human, or machine-translated

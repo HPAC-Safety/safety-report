@@ -304,7 +304,7 @@ Scenario: Publication requires every guard to pass, with no bypass
 Scenario: The public DTO exposes only the approved summary and its metadata
   Given a report is published
   When the public API returns it
-  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, and the publication timestamp
+  Then the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, and the number of visible comments
   And it never contains question keys, labels, answers, consent value, report language, private flags, raw reports, attachment metadata or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-037

@@ -60,6 +60,7 @@ jobs:
               - 'Directory.Packages.props'
               - 'coverlet.runsettings'
               - 'init-dev.sh'
+              - 'tools/build-worker-image.sh'
               - '.github/workflows/ci.yml'
             web:
               - 'src/web/**'
@@ -93,6 +94,25 @@ jobs:
       # Directory.Build.props sets TreatWarningsAsErrors, so a warning already
       # fails. --warnaserror is belt and braces for anything outside that scope.
       - run: dotnet build HpacSafety.slnx --configuration Release --no-restore --warnaserror
+
+      # The Worker image is the one deployed (ADR-0118), built by the same script
+      # dev-up.sh and deploy-worker.yml use. What is proven here is that ffmpeg
+      # and ffprobe are on the image's PATH, where FfmpegVideoRemuxer looks, and
+      # that the Worker runs unprivileged. The remux itself is proven by
+      # FfmpegVideoRemuxerTests against the runner's Ubuntu ffmpeg, the same
+      # archive the image installs from.
+      - name: shellcheck the Worker image build
+        run: shellcheck tools/build-worker-image.sh
+      - name: Build the Worker image and prove ffmpeg runs inside it
+        run: |
+          tools/build-worker-image.sh hpacsafety-worker:ci
+          docker run --rm --entrypoint ffmpeg hpacsafety-worker:ci -hide_banner -version
+          docker run --rm --entrypoint ffprobe hpacsafety-worker:ci -hide_banner -version
+          docker run --rm --entrypoint dotnet hpacsafety-worker:ci --list-runtimes
+          if [ "$(docker run --rm --entrypoint id hpacsafety-worker:ci -u)" = "0" ]; then
+            echo "::error::The Worker image runs as root."
+            exit 1
+          fi
 
   test:
     needs: changes

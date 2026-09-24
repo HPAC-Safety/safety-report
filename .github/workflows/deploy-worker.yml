@@ -108,14 +108,15 @@ jobs:
       - id: ecr
         uses: aws-actions/amazon-ecr-login@v3
 
-      - name: Publish container
-        run: >
-          dotnet publish src/HpacSafety.Worker/HpacSafety.Worker.csproj
-          --configuration Release
-          /t:PublishContainer
-          -p:ContainerRegistry=${{ steps.ecr.outputs.registry }}
-          -p:ContainerRepository=${{ vars.ECR_REPOSITORY_WORKER }}
-          -p:ContainerImageTag=${{ env.IMAGE_TAG }}
+      # A Dockerfile over the publish output rather than PublishContainer,
+      # because the Worker needs ffmpeg (ADR-0118). The runner is x86_64, the
+      # Fargate task's architecture, so the script publishes for linux-x64.
+      - name: Build and push the Worker image
+        env:
+          IMAGE: ${{ steps.ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY_WORKER }}:${{ env.IMAGE_TAG }}
+        run: |
+          tools/build-worker-image.sh "$IMAGE"
+          docker push "$IMAGE"
 
   deploy:
     needs: image

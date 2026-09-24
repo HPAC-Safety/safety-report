@@ -49,12 +49,14 @@ Processing records status, safe content type, byte size, derivative key where
 applicable, and timestamps without recording supplied names or metadata. Tool
 output and error messages are sanitized before logging.
 
-## Current implementation divergence
+## Where ffmpeg comes from
 
-The deployed Worker image has no ffmpeg yet (#30), so a video is retained with
-no derivative there
-([ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)). See
-[implementation status](../../docs/implementation-status.md).
+The Worker image installs Ubuntu's ffmpeg, in development and deployed, and
+runs it only as a child process
+([ADR-0118](../../docs/decisions/ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md)).
+A Worker run without it, such as a local `dotnet run` on a machine with no
+ffmpeg, still accepts video and keeps it with no derivative
+([ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
 
 ## Where processing happens
 

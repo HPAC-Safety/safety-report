@@ -13,7 +13,9 @@ keywords: video, ffmpeg, remux, metadata, attachments, privacy, media
 ## Status
 
 Accepted. Amends [ADR-0025](ADR-0025-magick-net-for-exif-stripping.md), which
-chose Magick.NET for images and deliberately left video unhandled.
+chose Magick.NET for images and deliberately left video unhandled. Amended by
+[ADR-0118](ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md): only the
+Worker's image needs ffmpeg, and it installs Ubuntu's.
 
 ## Context
 

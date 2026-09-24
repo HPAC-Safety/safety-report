@@ -117,11 +117,9 @@ dotnet publish src/HpacSafety.Api/HpacSafety.Api.csproj \
 	-p:ContainerImageTag=dev
 
 echo "Building the Worker container image"
-dotnet publish src/HpacSafety.Worker/HpacSafety.Worker.csproj \
-	--configuration Release \
-	/t:PublishContainer \
-	-p:ContainerRepository=hpacsafety-worker \
-	-p:ContainerImageTag=dev
+# A Dockerfile rather than PublishContainer, because the Worker needs ffmpeg
+# (ADR-0118). The script is the same one CI and the deploy use.
+tools/build-worker-image.sh hpacsafety-worker:dev
 
 echo "Starting containers"
 # The web container runs Vite's own dev server (npm ci && npm run dev)

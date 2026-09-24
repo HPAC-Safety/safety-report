@@ -1,6 +1,7 @@
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -8,12 +9,29 @@ using Microsoft.EntityFrameworkCore;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-///     The one admin report endpoint that exists so far: soft deletion. The review
-///     queue and its approve/reject/publish/edit-summary endpoints are issue #25 —
-///     not built yet.
+///     The admin report endpoints: the report list, one report's read-only detail
+///     view, and soft deletion. Editing, approving, rejecting, and publishing are
+///     the second half of issue #25 — not built yet.
 /// </summary>
 public static class ReportEndpoints
 {
+	/// <summary>How long a report may sit in Submitted or Summarizing before it counts as stuck.</summary>
+	public static readonly TimeSpan StuckAfter = TimeSpan.FromHours(24);
+
+	/// <summary>Each filter the list accepts, by its query-string code.</summary>
+	private static readonly Dictionary<string, Func<ReportListItem, bool>> Filters =
+		new(StringComparer.Ordinal)
+		{
+			["all"] = _ => true,
+			["needs-action"] = item => item.IsStuck
+				|| item.Status == EnumCode.Of(ReportStatus.PendingReview)
+				|| item.Status == EnumCode.Of(ReportStatus.SummaryFailed),
+			["published"] = item => item.Status == EnumCode.Of(ReportStatus.Published),
+			["private"] = item => item.Consent == "no",
+			["rejected"] = item => item.Status == EnumCode.Of(ReportStatus.Rejected),
+			["summary-failed"] = item => item.Status == EnumCode.Of(ReportStatus.SummaryFailed),
+		};
+
 	/// <summary>Maps the admin report endpoints.</summary>
 	/// <param name="app">The route builder.</param>
 	/// <returns>The group, so the caller can see what was mapped.</returns>
@@ -23,9 +41,180 @@ public static class ReportEndpoints
 
 		var group = app.MapGroup("/api/admin/reports").RequireAuthorization(HpacPolicies.Reviewer);
 
+		group.MapGet("/", List);
+		group.MapGet("/{id}", Detail);
 		group.MapDelete("/{id}", Delete);
 
 		return group;
+	}
+
+	/// <summary>
+	///     Every live report, newest first, narrowed by <paramref name="filter" />
+	///     (REQ-MOD-030, REQ-MOD-049, REQ-MOD-050). State and timing only — the list
+	///     carries no answer or summary text, so reading it is not audited.
+	/// </summary>
+	private static async Task<IResult> List(
+		string? filter,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		CancellationToken cancellationToken)
+	{
+		filter = string.IsNullOrWhiteSpace(filter) ? "all" : filter;
+
+		if (!Filters.TryGetValue(filter, out var matches))
+		{
+			return Results.Problem(
+				title: "That filter is not known.",
+				detail: $"Use one of: {string.Join(", ", Filters.Keys)}.",
+				statusCode: StatusCodes.Status400BadRequest,
+				type: "https://hpac.ca/problems/unknown-filter");
+		}
+
+		var reports = await database.Reports
+			.AsNoTracking()
+			.OrderByDescending(report => report.SubmittedAt)
+			.Select(report => new { report.Id, report.SubmittedAt, report.Status, report.Language, report.ConsentPublish })
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		var now = clock.GetUtcNow();
+
+		return Results.Ok(reports
+			.Select(report => new ReportListItem(
+				report.Id.Value,
+				report.SubmittedAt,
+				EnumCode.Of(report.Status),
+				report.Language.Code,
+				ConsentCode(report.ConsentPublish),
+				IsStuck(report.Status, report.SubmittedAt, now)))
+			.Where(matches)
+			.ToList());
+	}
+
+	/// <summary>
+	///     One report as a reviewer judges it (REQ-MOD-031). Reading it is a sensitive
+	///     read, audited as <see cref="AuditAction.ViewedRawReport" /> in the same save
+	///     that precedes the response, so no content leaves without its record
+	///     (REQ-MOD-051).
+	/// </summary>
+	private static async Task<IResult> Detail(
+		string id,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		HttpContext context,
+		CancellationToken cancellationToken)
+	{
+		if (!TinyId.TryParse(id, out var reportId))
+		{
+			return Results.NotFound();
+		}
+
+		var report = await database.Reports
+			.AsNoTracking()
+			.Include(candidate => candidate.Answers)
+			.Include(candidate => candidate.Files)
+			.Include(candidate => candidate.Summary)
+			.SingleOrDefaultAsync(candidate => candidate.Id == reportId, cancellationToken)
+			.ConfigureAwait(false);
+
+		if (report is null)
+		{
+			return Results.NotFound();
+		}
+
+		// The exact revisions answered, retired ones included: an answer always
+		// shows the wording the reporter actually saw (ADR-0071).
+		var revisionIds = report.Answers.Select(answer => answer.QuestionRevisionId).Distinct().ToList();
+		var revisions = await database.QuestionRevisions
+			.IgnoreQueryFilters()
+			.AsNoTracking()
+			.Where(revision => revisionIds.Contains(revision.Id))
+			.ToDictionaryAsync(revision => revision.Id, cancellationToken)
+			.ConfigureAwait(false);
+
+		var at = clock.GetUtcNow();
+		var subject = MemberRoles.SubjectOf(context.User) ?? "(unknown)";
+		database.AuditLog.Add(new AuditLogEntry(subject, AuditAction.ViewedRawReport, "Report", reportId, at));
+		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+		return Results.Ok(new ReportDetail(
+			report.Id.Value,
+			report.SubmittedAt,
+			EnumCode.Of(report.Status),
+			report.Language.Code,
+			ConsentCode(report.ConsentPublish),
+			IsStuck(report.Status, report.SubmittedAt, at),
+			report.SummaryError,
+			AnswersOf(report, revisions),
+			report.Summary is { } summary
+				? new ReportSummaryView(
+					summary.AiSummaryEn,
+					summary.AiSummaryFr,
+					summary.Model,
+					summary.PromptVersion,
+					summary.GeneratedAt,
+					summary.UpdatedAt,
+					summary.ApprovedBySubject,
+					summary.ApprovedAt)
+				: null,
+			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file)))]));
+	}
+
+	/// <summary>Groups answers by question, in form order, under the revision each was given against.</summary>
+	private static List<ReportAnswerView> AnswersOf(Report report,
+													Dictionary<TinyId, QuestionRevision> revisions)
+	{
+		return report.Answers
+			.Where(answer => revisions.ContainsKey(answer.QuestionRevisionId))
+			.GroupBy(answer => answer.QuestionRevisionId)
+			.Select(group => (Revision: revisions[group.Key], Answers: group.ToList()))
+			.OrderBy(entry => entry.Revision.DisplayOrder)
+			.ThenBy(entry => entry.Answers[0].QuestionKey, StringComparer.Ordinal)
+			.Select(entry => new ReportAnswerView(
+				entry.Answers[0].QuestionKey,
+				entry.Revision.LabelEn,
+				entry.Revision.LabelFr,
+				entry.Answers[0].IsPrivate,
+				[
+					.. entry.Answers
+						.Where(answer => answer.Value is not null)
+						.Select(answer => new ReportAnswerValueView(
+							answer.Value!,
+							answer.Locale.Code,
+							answer.TranslatedValue,
+							answer.TranslationSource is { } source ? EnumCode.Of(source) : null)),
+				]))
+			.ToList();
+	}
+
+	private static string AttachmentState(ReportFile file)
+	{
+		if (file.ProcessingErrorCode is not null)
+		{
+			return "failed";
+		}
+
+		// A document is served as its validated original; only images and videos
+		// wait for a stripped derivative (REQ-MED-013).
+		return file.Kind is AttachmentKind.Document || !file.AwaitsStripping ? "ready" : "processing";
+	}
+
+	private static string ConsentCode(bool? consent)
+	{
+		return consent switch
+		{
+			true => "yes",
+			false => "no",
+			null => "unanswered",
+		};
+	}
+
+	private static bool IsStuck(ReportStatus status,
+								DateTimeOffset submittedAt,
+								DateTimeOffset now)
+	{
+		return status is ReportStatus.Submitted or ReportStatus.Summarizing
+			&& now - submittedAt > StuckAfter;
 	}
 
 	/// <summary>

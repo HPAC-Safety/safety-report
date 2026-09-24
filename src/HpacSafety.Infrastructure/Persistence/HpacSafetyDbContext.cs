@@ -7,6 +7,7 @@ using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence.Configurations;
 using HpacSafety.Infrastructure.Persistence.Conventions;
 using HpacSafety.Infrastructure.Persistence.Conversions;
+using HpacSafety.Infrastructure.Persistence.Views;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -67,6 +68,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 	/// <summary>Outbox messages awaiting a worker.</summary>
 	public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+
+	/// <summary>Publishable reports, as the public side reads them (the <c>public_reports</c> view).</summary>
+	public DbSet<PublicReport> PublicReports => Set<PublicReport>();
 
 	/// <summary>Typeform-imported fields whose branching logic still needs manual wiring.</summary>
 	public DbSet<PendingImportLogic> PendingImportLogic => Set<PendingImportLogic>();
@@ -138,6 +142,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
 		modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());
 		modelBuilder.ApplyConfiguration(new PendingImportLogicConfiguration());
+		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
 
 		// Every application table except the append-only audit log is filtered
 		// to its live rows by default. See docs/data-and-persistence.md.

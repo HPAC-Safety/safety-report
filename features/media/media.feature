@@ -136,7 +136,6 @@ Scenario: A failed attachment is inaccessible to reviewers
   And a video whose remux fails is not a failure of this kind: it is retained under its own rule
 
 @REQ-MED-014
-@ignore
 Scenario: Attachments are never exposed publicly, even after publication
   Given a report has been published
   When the public API returns the report

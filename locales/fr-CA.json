@@ -370,7 +370,8 @@
         "generated": "Généré par l'IA",
         "human": "Rédigé par un critique",
         "machine": "Traduction automatique"
-      }
+      },
+      "publicPage": "Consultez la page publique"
     },
     "attachment": {
       "kind": {
@@ -439,6 +440,30 @@
         "accept": "Utiliser la traduction",
         "keep": "Conserver le texte actuel"
       }
+    }
+  },
+  "feed": {
+    "intro": "Leçons tirées des incidents signalés par les membres du HPAC et qu’ils ont accepté de partager. Chaque résumé a été anonymisé et approuvé par un responsable de la sécurité.",
+    "listLabel": "Rapports de sécurité publiés",
+    "loading": "Chargement des rapports…",
+    "empty": "Aucun rapport de sécurité n'a encore été publié.",
+    "error": "Les rapports publiés n'ont pas pu être chargés. Veuillez réessayer.",
+    "publishedAt": "Publié le {at}",
+    "read": "Lisez le rapport complet",
+    "pagesLabel": "D'autres rapports",
+    "next": "Anciens rapports",
+    "newest": "Derniers rapports",
+    "back": "Retour aux rapports de sécurité",
+    "loadingOne": "Chargement du rapport…",
+    "errorOne": "Le rapport n'a pas pu être chargé. Veuillez réessayer.",
+    "notFound": {
+      "title": "Rapport introuvable",
+      "body": "Il n'existe aucun rapport de sécurité publié à cette adresse."
+    },
+    "reportTitle": "Rapport de sécurité",
+    "readIn": {
+      "en-CA": "Lire en anglais",
+      "fr-CA": "Lire en français"
     }
   }
 }

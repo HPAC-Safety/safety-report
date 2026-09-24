@@ -168,7 +168,6 @@ Scenario: Client validation never replaces server validation
   Then the API's validation is authoritative regardless of what the client allowed or displayed
 
 @REQ-WLD-019
-@ignore
 @ui
 Scenario: The active locale controls which summary text is primary
   Given a published report has both ai_summary_en and ai_summary_fr

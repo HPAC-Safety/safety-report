@@ -241,6 +241,7 @@ this.
 | `20260923205108_AddReportFileOriginalFileName`        | Added nullable `report_files.original_file_name`, the reporter's sanitized filename, used only as a reviewer's download name (ADR-0097). Null for every file that already existed, which keeps its server-minted download name. |
 | `20260923224129_WordAttachmentQuestionForSeveralFiles` | No schema change. Rewords the seeded attachment question for several files, only where it still reads exactly as seeded: an unanswered question gets a new revision, an answered one forks (ADR-0071). An Administrator's own wording is left alone. |
 | `20260924143055_TranslateOnlyAnswersThatNeedIt`       | Added `question_revisions.is_translatable` (true for existing long-text revisions, false otherwise, and checked to be false for anything but short or long text) and `report_answers.translation_mode` (`none`, `choice`, or `machine`; existing long-text, select, and type-ahead answers backfilled `machine`, everything else `none`). The awaiting-translation index now covers only `machine` answers (ADR-0112). |
+| `20260924161944_CreatePublicReportsView`              | No table change. Creates the `public_reports` view (`Sql/20260924161944_CreatePublicReportsView.sql`). It is the whole publication invariant in SQL, and its columns are the public DTO's allowlist (#28, CON-DP-011). The public feed and detail read only this view. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

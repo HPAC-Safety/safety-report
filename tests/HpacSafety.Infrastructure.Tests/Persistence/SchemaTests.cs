@@ -35,10 +35,29 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// When
 		var tables = await QueryStrings(
 			connectionString,
-			"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_name <> '__EFMigrationsHistory' ORDER BY table_name");
+			"SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' AND table_name <> '__EFMigrationsHistory' ORDER BY table_name");
 
 		// Then
 		tables.ShouldBe(ExpectedTables);
+	}
+
+	[Fact]
+	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenPublicReportsViewCarriesOnlyTheAllowlist()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+
+		// When
+		var views = await QueryStrings(
+			connectionString,
+			"SELECT table_name FROM information_schema.views WHERE table_schema = 'public' ORDER BY table_name");
+		var columns = await QueryStrings(
+			connectionString,
+			"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'public_reports' ORDER BY ordinal_position");
+
+		// Then — the view's columns are the public DTO's allowlist (CON-DP-011).
+		views.ShouldBe(["public_reports"]);
+		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at"]);
 	}
 
 	[Fact]

@@ -51,7 +51,6 @@ Scenario: SummaryFailed remains visible to safety officers
   And it does not disappear because AI processing failed
 
 @REQ-DOM-003
-@ignore
 Scenario: A report is publishable only when every invariant holds
   Given a report and its summary row are not deleted
   And ConsentPublish is exactly true
@@ -62,7 +61,6 @@ Scenario: A report is publishable only when every invariant holds
   Then the report is publishable
 
 @REQ-DOM-004
-@ignore
 Scenario Outline: A report is not publishable when one invariant fails
   Given a report otherwise satisfies every publication invariant
   But <violation>

@@ -140,10 +140,27 @@ Each saved language records how it was produced — `generated` by the Worker,
 translation — and the report view shows it. Translation goes through the
 server's translation port; safety officers and administrators may use it.
 
-## Public DTO edge state
+## The public feed and report page (#329)
 
-The requested UI locale may determine which text is displayed first but is
-edge state, not extra report data.
+**View safety reports** (`/reports`) is anonymous. It lists every publishable
+report, newest published first. Each entry shows its summary in the visitor's
+language and its publication date, and links to the report's own address,
+`/reports/<id>`. A visitor can bookmark, share, or reload that address.
+Paging forward puts an opaque cursor in the address bar (`?after=`), so the
+back button returns to the page the visitor came from.
+
+The API reads both pages from the `public_reports` database view. The view
+holds the whole publication invariant, so it is the only place the public
+side decides what is public
+([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+Its publication time is `published_at`, or the pair's approval time for a
+report approved before approval published it. A report that stops being
+publishable disappears from both pages with no further step.
+
+The requested UI locale decides which summary text is shown first, and the
+visitor can switch to the other one. The locale is edge state, not extra
+report data. The admin report view links to a published report's public
+address.
 
 ## Out of scope
 
@@ -171,6 +188,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Editing one language without the other in separate saves: the pair is
   saved together.
 - Showing a rejection note anywhere but the admin report view.
+- Search, filtering, or sorting of the public feed other than newest
+  published first, and a page-count or jump-to-page control.
+- Embedded images or video on the public report page, which has its own
+  design issue (#412), and any other attachment metadata there.
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.
 - Changing how a date, time, or yes/no answer is stored, sent by the API, or

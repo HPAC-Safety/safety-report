@@ -172,7 +172,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, and each public media file's opaque id and kind")]
+	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, and each public file's opaque id, kind, and — for a document only — coarse format")]
 	public async Task ThenTheResponseIsExactlyTheAllowlist()
 	{
 		var body = await Body();
@@ -181,7 +181,9 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 		var media = body.GetProperty("media").EnumerateArray().ToList();
 		media.ShouldNotBeEmpty();
-		media.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).SequenceEqual(new[] { "id", "kind" }));
+		media.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).SequenceEqual(new[] { "id", "kind", "format" }));
+		media.Where(item => item.GetProperty("kind").GetString() != "document")
+			.ShouldAllBe(item => item.GetProperty("format").ValueKind == JsonValueKind.Null);
 	}
 
 	[Then(@"it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records")]

@@ -410,19 +410,19 @@ The admin report page shows whether each file is public — *playwright-bdd, Cov
 
 ### REQ-MED-037
 
-A published report lists its validated documents when media consent names documents — *Reqnroll, Planned*
+A published report lists its validated documents when media consent names documents — *Reqnroll, Covered*
 
 ### REQ-MED-038
 
-A document is public only when its media consent named documents — *Reqnroll, Planned*
+A document is public only when its media consent named documents — *Reqnroll, Covered*
 
 ### REQ-MED-039
 
-A visitor gets a short-lived forced download of a public document — *Reqnroll, Planned*
+A visitor gets a short-lived forced download of a public document — *Reqnroll, Covered*
 
 ### REQ-MED-040
 
-A reviewer hides a document and shows it again, and both are audited — *Reqnroll, Planned*
+A reviewer hides a document and shows it again, and both are audited — *Reqnroll, Covered*
 
 ### REQ-MED-041
 
@@ -1186,11 +1186,11 @@ A media consent answer must be an explicit yes or no — *Reqnroll, Covered*
 
 ### REQ-QB-116
 
-A media consent answer covers documents only under the wording the form showed — *Reqnroll, Planned*
+A media consent answer covers documents only under the wording the form showed — *Reqnroll, Covered*
 
 ### REQ-QB-117
 
-Media consent names documents and says they are published as uploaded — *Reqnroll, Planned*
+Media consent names documents and says they are published as uploaded — *Reqnroll, Covered*
 
 ## Claims: report-submission
 

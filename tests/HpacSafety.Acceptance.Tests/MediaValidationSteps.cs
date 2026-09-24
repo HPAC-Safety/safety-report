@@ -201,7 +201,7 @@ public sealed class MediaValidationSteps
 		_outcome.ContentType.ShouldBe(MediaType.Pdf);
 	}
 
-	[Then(@"the Worker never extracts its text, and the document is never sent to the model and never published")]
+	[Then(@"the Worker never extracts its text, and the document is never sent to the model and never rendered inline")]
 	public void ThenTheWorkerNeverExtractsItsTextOrSendsItAnywhere()
 	{
 		// A document's StrippedForm is null, so ingest never produces a
@@ -211,7 +211,7 @@ public sealed class MediaValidationSteps
 		_outcome.AwaitsStripping.ShouldBeTrue();
 	}
 
-	[Then(@"the document remains the reporter-supplied original, available for private download, and the review UI labels it as unredacted private evidence")]
+	[Then(@"the document remains the reporter-supplied original, available for download, and the review UI labels it as unredacted evidence")]
 	public void ThenTheDocumentRemainsTheOriginal()
 	{
 		_outcome.IsAccepted.ShouldBeTrue();

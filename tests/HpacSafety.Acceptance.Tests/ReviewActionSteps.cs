@@ -652,7 +652,8 @@ internal static class BootedReports
 										  string consent,
 										  Action<Report>? arrange = null,
 										  DateTimeOffset? at = null,
-										  string? mediaConsent = null)
+										  string? mediaConsent = null,
+										  bool mediaConsentToEarlierWording = false)
 	{
 		var factory = await BootedApi.Factory();
 		await ReportSubmissionEndpointSteps.ConsentRevisionId();
@@ -676,7 +677,19 @@ internal static class BootedReports
 			var mediaQuestion = await database.Questions
 				.Include(question => question.Revisions)
 				.SingleAsync(question => question.Key == QuestionKey.ConsentMedia);
-			report.Answer(mediaQuestion, mediaConsent, now);
+			if (mediaConsentToEarlierWording)
+			{
+				// A stale draft's answer to the wording before it named documents
+				// (ADR-0119).
+				var earlier = mediaQuestion.Revisions
+					.Where(revision => revision.RevisionNumber < mediaQuestion.CurrentRevision.RevisionNumber)
+					.MaxBy(revision => revision.RevisionNumber)!;
+				report.Answer(mediaQuestion, earlier, mediaConsent, now);
+			}
+			else
+			{
+				report.Answer(mediaQuestion, mediaConsent, now);
+			}
 		}
 
 		arrange?.Invoke(report);

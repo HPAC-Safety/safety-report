@@ -176,21 +176,10 @@ public static class AttachmentEndpoints
 			return Results.Forbid();
 		}
 
+		// Every kind of file can be hidden (ADR-0119), and a deleted one was
+		// never loaded, so the change cannot be refused here.
 		var at = clock.GetUtcNow();
-		bool changed;
-
-		try
-		{
-			changed = change(file, subject, at);
-		}
-		catch (DomainRuleViolationException cause)
-		{
-			return Results.Problem(
-				title: "That attachment's visibility cannot be changed.",
-				detail: cause.Message,
-				statusCode: StatusCodes.Status400BadRequest,
-				type: "https://hpac.ca/problems/attachment-visibility");
-		}
+		var changed = change(file, subject, at);
 
 		if (changed)
 		{

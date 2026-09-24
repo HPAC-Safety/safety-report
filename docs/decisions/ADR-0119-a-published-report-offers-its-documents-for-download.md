@@ -64,7 +64,9 @@ detail, author and tracked-change metadata, and embedded content they hold.
    ([ADR-0116](ADR-0116-a-read-rule-lives-in-a-view.md)).
 5. **A forced download of the original, under a server-minted name.** The
    report page lists each public document's opaque id, the kind `document`,
-   and a coarse format (`pdf`, `doc`, `docx`, `rtf`, `md`, `txt`, `odt`).
+   and a coarse format: the extension it downloads with (`pdf`, `doc`,
+   `docx`, `rtf`, `txt`, `odt`). Markdown downloads as `txt`, because its
+   bytes cannot be told apart from plain text.
    `GET /api/v1/public/reports/{id}/media/{fileId}` returns a pre-signed GET
    to the private original that lives at most `BlobUrlLifetime.Maximum` (15
    minutes). It carries `Content-Disposition: attachment` under a name built

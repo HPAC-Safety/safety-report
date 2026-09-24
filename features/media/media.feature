@@ -328,7 +328,6 @@ Scenario: The admin report page shows whether each file is public
   And the hidden image reads as hidden from the public and offers to show it
 
 @REQ-MED-037
-@ignore
 Scenario: A published report lists its validated documents when media consent names documents
   Given a published report whose reporter consented to publication and to sharing media under wording that names documents
   And the report has a validated PDF document and a processed image
@@ -337,7 +336,6 @@ Scenario: A published report lists its validated documents when media consent na
   And the document carries only its opaque id, the kind document, and the format pdf
 
 @REQ-MED-038
-@ignore
 Scenario Outline: A document is public only when its media consent named documents
   Given a published report with a processed image and a validated document
   And the reporter answered media consent <consent>
@@ -352,17 +350,15 @@ Examples:
   | not at all                                           | no media        |
 
 @REQ-MED-039
-@ignore
 Scenario: A visitor gets a short-lived forced download of a public document
   Given a published report offers a validated PDF document
   When an anonymous visitor asks for the document's public link
   Then the visitor receives a pre-signed URL to the document's unchanged original that expires within fifteen minutes
   And the URL forces a download under a name made from the file id and the format, never the reporter's file name
   And the response carries the header X-Content-Type-Options: nosniff
-  And the response names no reporter file name, size, or storage key
+  And the response names no reporter file name or size
 
 @REQ-MED-040
-@ignore
 Scenario: A reviewer hides a document and shows it again, and both are audited
   Given a published report offers a validated document
   When a safety officer hides the document

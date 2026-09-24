@@ -6,29 +6,29 @@ type: instructions
 
 # AGENTS.md
 
-Instructions for any coding agent working in this repository. `CLAUDE.md`,
-`.github/copilot-instructions.md`, and `.cursor/rules/agents.mdc` are symlinks to
-this file; edit only this file.
+Instructions for any coding agent in this repository. `CLAUDE.md`,
+`.github/copilot-instructions.md`, and `.cursor/rules/agents.mdc` are symlinks
+to this file; edit only this file, following
+[`ai-author`](agents/ai-author.md).
+
+The system receives real aviation occurrence reports holding personal and
+medical information. Keep it small, and treat every data boundary as
+privacy-sensitive.
 
 ## Design authority
 
-[`features/README.md`](features/README.md) is the canonical target design.
-Source and tests show the current implementation, while issues and ADRs
-preserve history. They do not override the specification. If a requested
-design change conflicts with `/features`, call out the conflict and update
-the affected specification pages before implementing it. A feature file must
-never contradict an accepted ADR, in either direction: a new or updated ADR
-that changes what a feature file asserts updates that feature file in the
-same pull request
-([ADR-0047](docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
-
-The application receives real aviation occurrence reports containing personal
-and medical information. Keep the system small and treat every data boundary as
-privacy-sensitive.
+- [`features/README.md`](features/README.md) is the canonical target design.
+- Source and tests show current state; issues and ADRs are history. Neither
+  overrides the specification.
+- A requested change that conflicts with `/features`: call out the conflict and
+  update the specification pages first.
+- A feature file never contradicts an accepted ADR, in either direction. An ADR
+  that changes what a feature file asserts updates it in the same pull request
+  ([ADR-0047](docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
 
 ## Specification-driven development
 
-Behavior flows through an artifact chain, and every hop is a tracked file
+Every hop is a tracked file
 ([ADR-0083](docs/decisions/ADR-0083-specification-driven-development.md)):
 
 ```
@@ -39,26 +39,24 @@ need (issue)
   → code                src/**
 ```
 
-Four rules follow, and they are not discretionary.
+### Rules (not discretionary)
 
-1. **Specify before implementing.** When behavior is added or changed, author
-   or amend the scenario first, in the same pull request, and write the
-   implementation that makes it pass.
-2. **Correct the specification, not the chat.** When an implementation does the
-   wrong thing, first ask whether the scenario said the wrong thing. If it did,
-   change the scenario and re-run the chain from there. A correction argued in
-   conversation leaves no artifact and does not survive the next run.
-3. **The specification delta is the change.** A pull request that changes
-   behavior names what it changed upstream and cites what it satisfies. The
-   pull-request body becomes the commit message, so the delta lands in history.
-4. **Say what not to build.** A specification that states only the target
-   invites over-delivery into territory nobody asked for. Record the boundary
-   where the scenarios are read, not only in the global list in
-   [`docs/system-overview.md`](docs/system-overview.md).
+1. **Specify before implementing.** Author or amend the scenario first, in the
+   same pull request as the code that makes it pass.
+2. **Correct the specification, not the chat.** When code does the wrong thing,
+   first ask whether the scenario said the wrong thing; fix it there and re-run
+   the chain. A correction argued in conversation leaves no artifact.
+3. **The specification delta is the change.** A behavior-changing pull request
+   names what it changed upstream and cites what it satisfies; its body becomes
+   the commit message.
+4. **Say what not to build.** Record the boundary where the area's scenarios
+   are read, not only in [`docs/system-overview.md`](docs/system-overview.md).
 
-A behavior change that touches no scenario fails `feature-coverage`. You may
-claim an exemption only by **citing the claims the change leaves standing** —
-a closed category, a real reason, and claim IDs that exist in the matrix
+### The `feature-coverage` exemption
+
+A behavior change touching no scenario fails `feature-coverage`. An exemption
+**cites the claims the change leaves standing** — a closed category, a real
+reason, and claim IDs that exist in the matrix
 ([ADR-0090](docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)):
 
 ```
@@ -67,213 +65,228 @@ still validates, streams, and persists exactly as before
 Claims preserved: REQ-SUB-012, REQ-SUB-013
 ```
 
-**This is not a shortcut you are permitted to take because writing the scenario
-is slower.** The exemption exists for a change that genuinely alters no
-behavior, and it costs the same honesty as compliance: to skip the scenario you
-must know, and say, what your change preserves. If you cannot name the claims,
-that is the answer — the change needs a scenario. Reaching for the exemption to
-get a green build is the one use of it this repository forbids outright.
+- It is for a change that genuinely alters no behavior.
+- **Never use it because the scenario is slower to write**, or to get a green
+  build. That is the one use this repository forbids outright.
+- Cannot name the preserved claims? Then the change needs a scenario.
 
-You are not trusted to improvise the missing half of a requirement. If reading
-the specification leaves a material question, ask it — see
-[`clarify-hpac-requirements`](skills/clarify-hpac-requirements/SKILL.md) — and
-write the answer back into the specification as a scenario or an out-of-scope
-line, so the next run starts from the answer rather than from the question.
+### Missing requirements
 
-Every scenario carries one stable claim ID as a Gherkin tag —
-`@REQ-<AREA>-<NNN>` — and every normative constraint in a canonical `docs/`
-page carries a `CON-<PAGE>-<NNN>` ID naming the claims that verify it. An ID is
-never reused and never renumbered, so it can be cited from an ADR, an issue, a
-review finding, or a commit already in history
-([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
-[`docs/traceability.md`](docs/traceability.md) is generated by
-`node tools/traceability.mjs` and never hand-edited; a duplicate, malformed,
-missing, or dangling ID fails the build. Nobody opens a pull request to
-regenerate it: the local hooks regenerate it after a merge or rebase, and
-`traceability.yml` commits it onto a same-repo pull request's branch, and the
-`docs` check that verifies it is required to merge
-([ADR-0101](docs/decisions/ADR-0101-ci-regenerates-the-traceability-matrix.md)).
+- Do not improvise the missing half of a requirement. Ask — see
+  [`clarify-hpac-requirements`](skills/clarify-hpac-requirements/SKILL.md).
+- Write the answer back as a scenario or an out-of-scope line.
 
-Four roles hold the steps of that chain, declared under `agents/` and installed
-by `skillfile` ([ADR-0086](docs/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)):
-**spec-author** writes scenarios and states what is out of scope,
-**test-writer** turns a claim into a failing step definition, **implementer**
-makes it pass against the cited claims and nothing else, and **spec-reviewer**
-judges a diff against those claims and the ADRs. Each trusts only the artifact
-from the role before it; none of them is required, and a contributor who never
-invokes one is unaffected.
+### Claim IDs and the matrix
 
-A bug fix that reveals a specification gap writes a lesson under
-[`docs/lessons/`](docs/lessons/README.md) — symptom, root cause, spec delta,
-and the claim that now proves it — in the same pull request as the fix
-([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
-Read them on a design pass, alongside `/features` and the ADRs: a bug fixed
-with the specification unchanged is the same bug next quarter. When the lesson
-is about the development process rather than the product, it also updates the
-skill that would have prevented it, in the same pull request — the skill
-carries the general rule, the lesson keeps the incident. A lesson about product
-requirements does not touch a skill; its remedy is a claim.
+- Every scenario carries one stable `@REQ-<AREA>-<NNN>` tag. Every normative
+  constraint in a canonical `docs/` page carries a `CON-<PAGE>-<NNN>` ID naming
+  the claims that verify it.
+- An ID is never reused or renumbered
+  ([ADR-0084](docs/decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
+- [`docs/traceability.md`](docs/traceability.md) is generated by
+  `node tools/traceability.mjs`; never hand-edit it. A duplicate, malformed,
+  missing, or dangling ID fails the build.
+- Nobody opens a pull request to regenerate it. Local hooks regenerate it after
+  a merge or rebase; `traceability.yml` commits it onto a same-repo pull
+  request; the required `docs` check verifies it
+  ([ADR-0101](docs/decisions/ADR-0101-ci-regenerates-the-traceability-matrix.md)).
+
+### Role agents
+
+Declared under `agents/`, installed by `skillfile`. None is required; a
+contributor who never invokes one is unaffected.
+
+- The chain's four, each trusting only the artifact from the role before it
+  ([ADR-0086](docs/decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)):
+  - **spec-author** — writes scenarios and what is out of scope;
+  - **test-writer** — turns a claim into a failing step definition;
+  - **implementer** — makes it pass against the cited claims and nothing else;
+  - **spec-reviewer** — judges a diff against those claims and the ADRs.
+- **ai-author** — maintains these instruction files
+  ([ADR-0121](docs/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
+
+### Lessons
+
+- A bug fix that reveals a specification gap writes a lesson under
+  [`docs/lessons/`](docs/lessons/README.md) in the same pull request
+  ([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
+  What it contains and which skill it updates:
+  [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Document".
+- Read lessons on a design pass, alongside `/features` and the ADRs.
 
 ## Product invariants
 
-1. Questions come from the database as complete immutable bilingual revisions.
-   An edit to a question nobody has answered creates a new revision; once any
-   answer references it, an edit soft-deletes the question and creates a new
-   one carrying the same stable key, so an old answer always correlates to the
-   question as it was actually worded. Soft deletion is irreversible, and at
-   most one question per key is live
-   ([ADR-0071](docs/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)).
-   There are two system questions, and they are the only answers read by
-   name: publication consent, and media consent, which is asked only when
-   publication consent is yes and a file is attached
-   ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
-   [ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
-   Neither can be made optional, and they are the questions that revise in
-   place even when answered, because neither can be deleted.
-   Every other question's required state is authored by an administrator
-   ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
-   An administrator authors both languages and may use machine translation as
-   a drafting aid while doing so; the database holds only what they saved, and
-   a question cannot be saved in one language
-   ([ADR-0062](docs/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
-   A question's choices are not part of its revisions: each single-select,
-   multi-select, or type-ahead owns one editable list, and editing only that
-   list never revises or forks the question; a fork copies every choice, and a
-   removed choice is hidden, never erased. There are no shared choice lists
-   ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-   A reporter may add a missing choice to a type-ahead — and only a
-   type-ahead — recorded at submission in the language typed, marked for an
-   administrator to curate in place, and offered in the one language it has
-   until the other is supplied
-   ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
-   Every answer is stored as one string, in the reporter's own words, in the
-   language they answered in, and is immutable once written. Only an answer
-   that needs a second language gets one. Free text an administrator marked
-   as needing translation, and a type-ahead value naming no bilingual choice,
-   are filled off the submission path: mechanically by the Worker via the
-   same machine-translation port question authoring uses, or by an
-   administrator correcting or supplying it by hand. A select answer instead
-   copies its choice's other-language label at submission, which is a lookup,
-   not a translation. Every other answer — unmarked text, email, phone, date,
-   time, number, yes/no — never has one. The source (`auto`, `human`, or
-   `choice`) is recorded
-   ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
-   A boolean is
-   `yes` or `no`; a date, time, or date-and-time is ISO 8601 in the shape that
-   fits. ISO 8601 is the storage form only — the domain still uses `DateOnly`,
-   `TimeOnly`, and `DateTimeOffset`
-   ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
-   [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
-   [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
-   A question may be made conditional on a yes/no question, or on a
-   single-select question naming one of its live choices, which then cannot be
-   removed
-   ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
-   [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
-2. Until final submission, unfinished answers and shown revision IDs stay only
-   in that browser for 15 days. No report, draft, reserved ID, or other
-   respondent data is written to a server or database. The one exception is an
-   attachment: each file uploads through the API into private quarantine the
-   moment it is attached, under an opaque upload ID that has no database row,
-   names no member, and expires by lifecycle rule fifteen days after upload
-   unless a submission claims it; removing the file erases it. The browser's
-   saved report keeps each upload's ID and name beside the answers, so the
-   files are restored with it, and both share one window fixed at fifteen days
-   from the report's first save; abandoning the report erases its uploads
-   ([ADR-0096](docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-   [ADR-0100](docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
-   A reporter then submits one final request naming those uploads. The API
-   stores the report, exact question revisions, answers, files, and outbox
-   work atomically, then returns `202` without making a model call.
-3. The Worker owns one versioned prompt and makes exactly one model call per
-   summary attempt, and only for a report whose reporter consented to
-   publication; a report without consent is never sent to the model. Before
-   that call, a deterministic marking pass replaces any exact or token-level
-   occurrence of a private answer's value found in
-   `report_content` with a `[PRIVATE:<question-key>]` marker
-   ([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md));
-   `report_content` supplies eligible facts, and labeled `private_context`
-   (still sent in full) may only help recognize identifying text the marking
-   pass did not catch. The response is one strict English/French summary
-   pair.
-4. Replace a private person's complete identity with a role. A pilot's name
-   repeated in eligible narrative becomes exactly “the pilot” / “le pilote,”
-   with no name fragment remaining. Private-only facts never become summary
+1. **Questions are immutable bilingual revisions from the database.**
+   - Editing an unanswered question creates a new revision. Editing an answered
+     one soft-deletes it and creates a new question with the same stable key,
+     so an old answer always matches the wording it was given under. Soft
+     deletion is irreversible; at most one question per key is live
+     ([ADR-0071](docs/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)).
+   - Two system questions are the only answers read by name: publication
+     consent, and media consent — asked only when publication consent is yes
+     and a file is attached
+     ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+     [ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+     Neither can be optional or deleted, so both revise in place even when
+     answered.
+   - An administrator authors every other question's required state
+     ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
+   - An administrator authors both languages, may use machine translation as a
+     drafting aid, and cannot save one language alone. The database holds only
+     what they saved
+     ([ADR-0062](docs/decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
+   - **Choices sit outside revisions.** Each single-select, multi-select, or
+     type-ahead owns one editable list. Editing only the list never revises or
+     forks the question; a fork copies every choice; a removed choice is
+     hidden, never erased. No shared choice lists
+     ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+   - A reporter may add a missing choice to a type-ahead — only a type-ahead.
+     It is recorded at submission in the language typed, marked for an
+     administrator to curate in place, and offered in its one language until
+     the other is supplied
+     ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+   - **Answers**: one immutable string, in the reporter's own words and
+     language.
+   - **Second language, only where needed**
+     ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)):
+     - free text an administrator marked as needing translation, and a
+       type-ahead value naming no bilingual choice: filled off the submission
+       path, by the Worker through the question-authoring translation port or
+       by an administrator by hand;
+     - a select answer: copies its choice's other-language label at
+       submission — a lookup, not a translation;
+     - everything else (unmarked text, email, phone, date, time, number,
+       yes/no): never has one;
+     - the source is recorded: `auto`, `human`, or `choice`.
+   - **Storage forms**: a boolean is `yes`/`no`; a date, time, or date-and-time
+     is ISO 8601 in the fitting shape. The domain still uses `DateOnly`,
+     `TimeOnly`, and `DateTimeOffset`
+     ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
+     [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
+     [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
+   - **Conditional questions** depend on a yes/no question, or on a
+     single-select naming one of its live choices — which then cannot be
+     removed
+     ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
+     [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
+2. **Nothing reaches the server before final submission — except
+   attachments.**
+   - Unfinished answers and shown revision IDs stay only in that browser, for
+     15 days. No report, draft, reserved ID, or other respondent data is
+     written to a server or database.
+   - Each attachment uploads through the API into private quarantine the
+     moment it is attached, under an opaque upload ID with no database row and
+     no member named. It expires by lifecycle rule 15 days after upload unless
+     a submission claims it. Removing the file erases it.
+   - The browser's saved report keeps each upload's ID and name beside the
+     answers, so files restore with it. Both share one window: 15 days from
+     the report's first save. Abandoning the report erases its uploads
+     ([ADR-0096](docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+     [ADR-0100](docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+   - One final request names those uploads. The API stores report, exact
+     question revisions, answers, files, and outbox work atomically, then
+     returns `202` without a model call.
+3. **One model call, only with consent.**
+   - The Worker owns one versioned prompt and makes exactly one model call per
+     summary attempt, only for a report whose reporter consented to
+     publication. A report without consent never reaches the model.
+   - First, a deterministic marking pass replaces every exact or token-level
+     occurrence of a private answer's value in `report_content` with
+     `[PRIVATE:<question-key>]`
+     ([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+   - `report_content` supplies eligible facts. Labeled `private_context`,
+     still sent in full, only helps recognize identifying text the marking pass
+     missed.
+   - The response is one strict English/French summary pair.
+4. **Replace a private person's complete identity with a role.** A pilot's
+   name repeated in eligible narrative becomes exactly “the pilot” /
+   “le pilote,” with no fragment left. Private-only facts never become summary
    facts.
-5. Documents such as PDF, DOC, DOCX, RTF, Markdown, text, and ODT are validated
-   and kept as they arrived; there is no malware scan (ADR-0089). They are not
-   anonymized, transformed, parsed, sent to the model, or inline-rendered. An
-   image or video is published only as its verified derivative, on a
-   published report whose reporter consented to media, through a pre-signed
-   URL of at most fifteen minutes, and a reviewer may hide it; its original
-   never is
-   ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
-   A validated document is published the same way, unchanged, as a forced
-   download under a server-minted name. It needs a media-consent yes given
-   to wording that names documents
-   ([ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
-6. Publication requires positive consent, a non-deleted report, and human
+5. **Attachments are published only with media consent, and never
+   transformed for it.**
+   - Documents (PDF, DOC, DOCX, RTF, Markdown, text, ODT) are validated and
+     kept as they arrived. No malware scan (ADR-0089). Never anonymized,
+     transformed, parsed, sent to the model, or inline-rendered.
+   - An image or video is published only as its verified derivative, on a
+     published report whose reporter consented to media, through a pre-signed
+     URL of at most 15 minutes. A reviewer may hide it. Its original never is
+     published
+     ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+   - A validated document is published the same way, unchanged, as a forced
+     download under a server-minted name. It needs a media-consent yes given
+     to wording that names documents
+     ([ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+6. **Publication** requires positive consent, a non-deleted report, and human
    approval of the current bilingual pair. Editing either language clears the
    pair approval.
-7. Identity arrives as a signed JWT that the API validates, reading the subject
-   and the role claim and nothing else. This system never handles a member's
-   password and stores no user records of any kind: there is no user table, no
-   allowlist, and no session store, and an approver or audit actor is an opaque
-   token subject that joins to nothing
-   ([ADR-0064](docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
-   [ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-   There are three roles — `User`, `SafetyOfficer`, `Administrator`. Filing a
-   report requires a member of any role and records nothing about them; the
-   form tells the reporter so
-   ([ADR-0067](docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
-   The one carved exception is Development, where a fourth sign-in path may
-   verify a real member's password against the live members site for the
-   single call that checks it, never logging or storing it; it does not
-   generalize, and it never runs outside Development
-   ([ADR-0079](docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
-8. Use managed encryption at rest and TLS. Do not add application-level field
-   encryption, log report content, or physically delete application records.
-   Two carved exceptions: dropping `admin_users`, a table that never held
-   data in any deployed environment
-   ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)),
-   and dropping the shared-choice-list and per-revision option tables after
-   copying every choice forward onto its question
-   ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-   Neither generalizes, and any future `DROP TABLE` needs its own argument on
-   its own facts.
+7. **Identity is a validated JWT, and nothing is stored about members.**
+   - The API reads the subject and the role claim, nothing else. The system
+     never handles a member's password.
+   - No user records of any kind: no user table, allowlist, or session store.
+     An approver or audit actor is an opaque token subject that joins to
+     nothing
+     ([ADR-0064](docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+     [ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+   - Three roles: `User`, `SafetyOfficer`, `Administrator`.
+   - Filing a report requires a member of any role and records nothing about
+     them; the form says so
+     ([ADR-0067](docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+   - **Development-only exception**: a fourth sign-in path may verify a real
+     member's password against the live members site for the one call that
+     checks it, never logging or storing it. It never runs outside Development
+     and does not generalize
+     ([ADR-0079](docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+8. **Managed encryption, no deletion.**
+   - Use managed encryption at rest and TLS. No application-level field
+     encryption.
+   - Never log report content. Never physically delete application records.
+   - Two carved exceptions, neither generalizing:
+     - dropping `admin_users`, which never held data in any deployed
+       environment
+       ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
+     - dropping the shared-choice-list and per-revision option tables after
+       copying every choice onto its question
+       ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+   - Any future `DROP TABLE` needs its own argument on its own facts.
 
-There is no deterministic scrubber beyond the narrow private-value marking
-pass in item 3 above, no separate PII auditor,
-specialized aircraft processing, outbound email flow, server-side draft or
-resumable upload protocol, speculative publication channel, user table, allowlist,
-credential proxy, CSRF machinery, or Turnstile verification. The one carved
-exception is Development's members-site-verified login (item 7 above,
-[ADR-0079](docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)):
-a hardcoded, Development-only email allowlist for role, and CSRF/session
-handling scoped entirely to that one credential source. It does not
-generalize, never reaches Production, and any future allowlist or
-credential-proxy-shaped code outside this scope needs its own argument on
-its own facts. Machine translation never runs on the submission path itself —
-nothing a reporter's request touches calls a translation provider. Off that
-path it now has five purposes: drafting question wording while authoring;
-for every answer that needs one, the Worker mechanically supplying its second
-language or an administrator correcting/supplying one by hand
-([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
-[ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
-a reviewer drafting one language of a summary pair from the other while
-editing it; and the Worker translating each revision of a member's comment on
-a published report into the other language
-([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
-The Worker's generated pair still comes from its one anonymized
-model call, never from a translation provider; a reviewer's translation is a
-draft they confirm, and each saved language records whether it was generated,
-written by a human, or machine-translated
-([ADR-0108](docs/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)).
+## Not built
+
+- **None of these exist**: a deterministic scrubber beyond the marking pass
+  (invariant 3), a separate PII auditor, specialized aircraft processing, an
+  outbound email flow, a server-side draft or resumable upload protocol, a
+  speculative publication channel, a user table, an allowlist, a credential
+  proxy, CSRF machinery, or Turnstile verification.
+- **One carved exception**: Development's members-site login (invariant 7)
+  carries a hardcoded, Development-only email allowlist for role, and
+  CSRF/session handling scoped entirely to that credential source. It never
+  reaches Production. Any other allowlist or credential-proxy-shaped code needs
+  its own argument on its own facts.
+
+### Machine translation
+
+- **Never on the submission path.** Nothing a reporter's request touches calls a
+  translation provider.
+- Off that path it has five purposes:
+  1. drafting question wording while authoring;
+  2. the Worker mechanically supplying the second language of an answer that
+     needs one
+     ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
+     [ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
+  3. an administrator correcting or supplying that language by hand;
+  4. a reviewer drafting one language of a summary pair from the other;
+  5. the Worker translating each revision of a member's comment on a published
+     report
+     ([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+- The Worker's generated pair comes only from its one anonymized model call,
+  never a translation provider.
+- A reviewer's translation is a draft they confirm. Each saved language records
+  whether it was generated, written by a human, or machine-translated
+  ([ADR-0108](docs/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)).
 
 ## Focused skills
 
-Read only the skills relevant to the task. Installed copies under
-`.claude/skills/` are generated; the project-owned sources are under `skills/`.
+Read only the skills the task needs. Sources live under `skills/`; copies under
+`.claude/skills/` are generated.
 
 | Work | Guidance |
 |---|---|
@@ -289,74 +302,39 @@ Read only the skills relevant to the task. Installed copies under
 | Static HTML/JS and design system | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
 | AWS, Terraform, or deployment | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
 | Issues, docs, worktrees, PRs, or CI | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
-
-Use plain code until a real external boundary or a second implementation makes
-an abstraction useful. Do not introduce a pattern merely to name one.
+| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md) |
 
 ## Runtime prompt
 
-Runtime model instructions live with the Worker under
-`src/HpacSafety.Worker/Prompts/`; they are not coding-agent skills. Keep one
-current versioned prompt. Add a version when behavior changes, record its
-version with each summary, and remove obsolete active-pipeline machinery.
+- Runtime model instructions live with the Worker under
+  `src/HpacSafety.Worker/Prompts/`. They are not coding-agent skills.
+- Keep one current versioned prompt. Add a version when behavior changes,
+  record the version with each summary, and remove obsolete active-pipeline
+  machinery.
 
 ## Delivery
 
-Every change starts from an issue and reaches `main` through a pull request.
-Put `Closes #<number>` on its own line in the PR body, use a squash-ready title,
-do not add `Co-Authored-By` trailers or an agent session link (the `commit-msg`
-hook and `linked-issue.yml` refuse one,
-[ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)),
-and keep working until required checks are green. Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md).
+Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md). The
+minimum:
 
-Picking up an issue labels it `in progress` before anything else — before the
-worktree, the branch, or the first edit —
-`gh issue edit <number> --add-label "in progress"`. This is a hard rule with no
-exception. When looking for work, never pick up an issue that already carries
-the label; another agent has claimed it. Stopping without a pull request
-removes the label so the issue returns to the board.
-
-When a requirement changes after an issue is picked up — a clarifying
-question answered, an owner's decision, scope that grew or shrank — edit the
-issue's decisions, acceptance criteria, and out-of-scope list before building
-on it, or file a new, related issue when the added scope could ship on its
-own. A decision made only in conversation is not recorded.
-
-Rebase onto fresh `origin/main` before committing, not only before pushing, and
-claim a shared identifier — an ADR number, a name, a slug — from the tree as it
-is after that rebase. `node tools/adr-numbers.mjs --next` gives the next free
-decision-record number, counting every fetched remote branch;
-`--renumber <old> <new>` moves the file and rewrites every reference if somebody
-took it first ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
-
-The .NET major lives in `global.json`, `<TargetFramework>`, the Worker's
-`Dockerfile` base image, and `renovate.json`'s `allowedVersions`. An upgrade
-changes all four in one pull request, and `node tools/dotnet-major.mjs` fails
-when they disagree
-([ADR-0120](docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
-
-A method this repository names carries no `Async` suffix: the return type says
-it is asynchronous. A member implementing a contract we do not own keeps the
-name that contract gives it
-([ADR-0093](docs/decisions/ADR-0093-the-return-type-says-a-method-is-asynchronous.md)).
-This overrides the upstream `csharp-async` skill on that one point.
-
-Use Shouldly for .NET assertions, `GivenX_WhenY_ThenZ` test names
-([ADR-0069](docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)),
-Mermaid for diagrams
-([ADR-0046](docs/decisions/ADR-0046-mermaid-for-diagrams.md)), locale
-catalogues for UI copy, and synthetic data in tests and docs. Never hand-edit
-generated files.
-
-Every tracked markdown file opens with YAML frontmatter declaring `title`,
-`description`, and `type` — one of `adr`, `spec`, `guide`, `readme`, `lesson`,
-`instructions`, or `template` — plus the keys that type adds
-([ADR-0087](docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
-A `skills/*/SKILL.md` and an `agents/*.md` instead carry exactly the `name` and
-`description` their loader expects; their type comes from their path. The
-Worker's runtime prompts are exempt, because their bytes are the model payload.
-`node tools/check-frontmatter.mjs` is the authority, and the pre-commit hook
-runs it over staged markdown.
+- Every change starts from an issue and reaches `main` through a pull request.
+- **Label the issue `in progress` before anything else**; never pick up an
+  issue that already carries it.
+- Keep the issue true: record decisions, acceptance criteria, and scope changes
+  in it before building on them.
+- Rebase onto fresh `origin/main` before every commit, and claim a shared
+  identifier (ADR number, name, slug) only after that rebase
+  ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
+- PR body: `Closes #<number>` on its own line; squash-ready title.
+- No `Co-Authored-By` trailer and no agent session link — the `commit-msg` hook
+  and `linked-issue.yml` refuse one
+  ([ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)).
+- Keep working until required checks are green.
+- Every tracked markdown file declares its frontmatter; see
+  `deliver-hpac-change` "Document"
+  ([ADR-0087](docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
+- Code conventions (naming, dates, tests, diagrams, .NET version): see
+  [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md).
 
 ## Where to look
 
@@ -371,12 +349,21 @@ runs it over staged markdown.
 
 ## graphify
 
-This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+A knowledge graph lives at `graphify-out/`.
 
-Rules:
-- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
-- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
-- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
-- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).
-- The specification reaches the graph through [`docs/traceability.md`](docs/traceability.md), not through the `.feature` files. graphify ingests markdown and cannot ingest Gherkin, and this repository does not fork it to change that ([ADR-0088](docs/decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)). The matrix carries every claim ID, its area, its scenario name, its engine, and whether it is covered — so ask the graph about a claim, and read the `.feature` file when you need the step text.
-- A markdown change reaches the graph one step later than a code change: `graphify update .` re-extracts code only, and a document needs the semantic pass. A newly tagged scenario is in the matrix immediately and in the graph at the next semantic extraction.
+- **Codebase questions**: when `graphify-out/graph.json` exists, run
+  `graphify query "<question>"` first. Use `graphify path "<A>" "<B>"` for
+  relationships and `graphify explain "<concept>"` for one concept. They return
+  a scoped subgraph, smaller than `GRAPH_REPORT.md` or raw grep output.
+- **Broad navigation**: use `graphify-out/wiki/index.md` when it exists.
+- **`GRAPH_REPORT.md`**: only for broad architecture review, or when
+  query/path/explain surface too little.
+- **After modifying code**: run `graphify update .` (AST-only, no API cost).
+- **Specification**: reaches the graph through
+  [`docs/traceability.md`](docs/traceability.md), not the `.feature` files —
+  graphify cannot ingest Gherkin, and this repository does not fork it
+  ([ADR-0088](docs/decisions/ADR-0088-the-matrix-carries-the-specification-into-the-graph.md)).
+  Ask the graph about a claim; read the `.feature` file for step text.
+- **Markdown lags one step**: `graphify update .` re-extracts code only; a
+  document needs the semantic pass. A newly tagged scenario is in the matrix
+  immediately and in the graph at the next semantic extraction.

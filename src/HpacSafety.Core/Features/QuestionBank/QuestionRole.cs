@@ -12,8 +12,9 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Publication consent is the one required system question, and it is the only
-///         answer read by name. Every other question is ordinary revision-bound data —
+///         Publication consent and media consent are the two system questions, and
+///         the only answers read by name (ADR-0117). Every other question is
+///         ordinary revision-bound data —
 ///         the admin review DTO reads exact asked questions and answers directly, so
 ///         nothing else needs a typed projection. See
 ///         <c>docs/data-and-persistence.md</c>.
@@ -24,6 +25,12 @@ public enum QuestionRole
 	/// <summary>An ordinary question. Nothing reads it by name.</summary>
 	None = 0,
 
-	/// <summary>Gates publication entirely. Carried by the one system question.</summary>
+	/// <summary>Gates publication entirely. Carried by the publication-consent system question.</summary>
 	ConsentPublish = 1,
+
+	/// <summary>
+	///     Gates whether a published report shows its photos and video. Carried by
+	///     the media-consent system question (ADR-0117).
+	/// </summary>
+	ConsentMedia = 2,
 }

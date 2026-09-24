@@ -26,11 +26,14 @@ Each outcome carries a stable constraint ID and names the claims that verify it
 - **CON-SO-001** Questions are bilingual database records and complete
   revisions are immutable.
   *Verified by: REQ-QB-001, REQ-QB-002, REQ-QB-009.*
-- **CON-SO-002** Only publication consent is mandatory; it has no default.
-  *Verified by: REQ-QB-014, REQ-QB-016, REQ-WLD-015.*
+- **CON-SO-002** Only the two consent questions are mandatory by rule:
+  publication consent always, and media consent whenever it is shown. Neither
+  has a default.
+  *Verified by: REQ-QB-014, REQ-QB-016, REQ-WLD-015, REQ-QB-112, REQ-QB-113.*
 - **CON-SO-003** Raw answers and originals are private and never returned by a
-  public API.
-  *Verified by: REQ-MOD-036, REQ-MED-014.*
+  public API. The only attachment bytes a visitor can reach are a published
+  report's verified image and video derivatives, when media was consented to.
+  *Verified by: REQ-MOD-036, REQ-MED-025, REQ-MED-026.*
 - **CON-SO-004** One Worker-owned prompt and one model call produce both
   official-language summary texts.
   *Verified by: REQ-AI-001, REQ-AI-011.*
@@ -139,7 +142,11 @@ scenario can assert what the system does, not enumerate what it never grew.*
 - Server-side drafts, a resumable or chunked upload protocol, or a pre-signed
   upload URL handed to a reporter
 - Direct messages, email notifications, WhatsApp, Telegram, or social posting
-- Public raw reports, questions, answers, attachments, or audit history
+- Public raw reports, questions, answers, documents, attachment originals, or
+  audit history. A published report's verified image and video derivatives are
+  the one exception
+  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md))
+- A CDN-served or public-bucket copy of any attachment
 - A comment author's name, email address, or HPAC number (#413), and replies,
   reactions, or notifications on comments
 - Automatic approval or publication

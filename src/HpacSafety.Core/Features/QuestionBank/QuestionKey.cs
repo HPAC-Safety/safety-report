@@ -10,8 +10,15 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </summary>
 public static class QuestionKey
 {
-	/// <summary>The key of the one question this system will not run without.</summary>
+	/// <summary>The key of the publication-consent system question, which this system will not run without.</summary>
 	public const string ConsentPublish = "consent_publish";
+
+	/// <summary>
+	///     The key of the media-consent system question, which the form asks only
+	///     when publication consent is yes and an image or video is attached
+	///     (ADR-0117).
+	/// </summary>
+	public const string ConsentMedia = "consent_media";
 
 	/// <summary>
 	///     Normalizes a candidate key. Rejects an empty result rather than inventing

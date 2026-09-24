@@ -77,12 +77,40 @@ than refused (REQ-MED-015,
 [ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
 It then behaves exactly as a document does: a private original, reachable only
 by an authorized reviewer as a short-lived forced download, never rendered
-inline and never published. That reviewer path is REQ-MED-011's rule and is
+inline and never published — not even on a published report that shows its
+other media. That reviewer path is REQ-MED-011's rule and is
 built with the reviewer endpoints (#311); this page records that an unstripped
 video joins it rather than getting a rule of its own.
 
 The anonymity contract is unaffected. No attachment of any kind reaches the
-model or the public feed — the summary never sees one.
+model — the summary never sees one.
+
+## Public media
+
+A published report's page shows its image and video derivatives (REQ-MED-025
+to REQ-MED-036,
+[ADR-0117](../../docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+One view, `public_report_media`, holds the whole rule: the report is in
+`public_reports`, its reporter answered yes to media consent, and the file is
+a live image or video with a verified derivative, no processing error, and no
+reviewer hide. The report page lists each such file's opaque id and kind,
+nothing more.
+
+The bytes are never on the CDN. The page asks
+`GET /api/v1/public/reports/{id}/media/{fileId}` for each file and gets back a
+pre-signed GET to the derivative that lives at most fifteen minutes and is
+served inline. When an image or video errors, the page asks again — a video
+resumes where it was — and removes the file if the answer is 404. So a hide or
+an unpublish reaches every open page within fifteen minutes.
+
+Moderation happens after publication. A safety officer or administrator hides
+a file from the public report page or the admin report page, and shows it
+again from the admin report page; both are audited. The file itself is never
+deleted by a hide.
+
+Media consent (`consent_media`) is the form's second system question. The form
+asks it only when publication consent is yes and an image or video is
+attached. A report filed before it existed has no answer and shows no media.
 
 ## Out of scope
 
@@ -93,7 +121,17 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Parsing, extracting, indexing, or searching the contents of a document.
 - Inline rendering or preview of a document, including a thumbnail or a first
   page.
-- Any public delivery of an attachment, before or after publication.
+- Any public delivery of a document or an original, and any public delivery
+  of an image or video before its report is published.
+- A CDN-served, public-bucket, or long-lived copy of any attachment.
+- Reviewer-authored alt text, captions, or transcripts. A public file carries
+  a generic localized label.
+- Blurring, cropping, muting, or otherwise editing media before publication,
+  and a pre-publication media review step.
+- Choosing, per file, which attachments to share. Media consent covers all of
+  a report's images and videos.
+- Media in the public feed list, thumbnails, or a gallery or lightbox beyond
+  the native image and video controls.
 - Anonymizing or transforming a document. A validated original is retained
   exactly as it arrived.
 - Client-side processing, resizing, or stripping before upload. Validation and

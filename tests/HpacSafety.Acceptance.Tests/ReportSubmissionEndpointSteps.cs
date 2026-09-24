@@ -963,8 +963,11 @@ public sealed class ReportSubmissionEndpointSteps
 		typeof(ReportAnswer).GetProperties().ShouldNotContain(property =>
 			property.Name.Contains("Subject", StringComparison.OrdinalIgnoreCase) ||
 			property.Name.Contains("Submitter", StringComparison.OrdinalIgnoreCase));
+		// HiddenBySubject is the reviewer who hid a file from the public page
+		// (ADR-0117), never the member who filed the report.
 		typeof(ReportFile).GetProperties().ShouldNotContain(property =>
-			property.Name.Contains("Subject", StringComparison.OrdinalIgnoreCase) ||
+			(property.Name.Contains("Subject", StringComparison.OrdinalIgnoreCase)
+			 && property.Name != nameof(ReportFile.HiddenBySubject)) ||
 			property.Name.Contains("Submitter", StringComparison.OrdinalIgnoreCase));
 		typeof(OutboxMessage).GetProperties().ShouldNotContain(property =>
 			property.Name.Contains("Subject", StringComparison.OrdinalIgnoreCase) ||

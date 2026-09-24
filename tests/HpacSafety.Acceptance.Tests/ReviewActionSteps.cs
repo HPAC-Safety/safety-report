@@ -51,7 +51,8 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[Given(@"a report is published")]
 	public async Task GivenAPublishedReport()
 	{
-		await SeedAndLoad(ReportStatus.Published, "yes");
+		// It shows a public image, so there is media metadata the DTO could leak.
+		await SeedAndLoad(ReportStatus.Published, "yes", mediaConsent: "yes", arrange: report => BootedReports.AddProcessedImage(report));
 	}
 
 	[Given(@"^a reviewer approves the current English/French summary pair$")]
@@ -517,9 +518,11 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	}
 
 	private async Task SeedAndLoad(ReportStatus status,
-								   string consent)
+								   string consent,
+								   string? mediaConsent = null,
+								   Action<Report>? arrange = null)
 	{
-		_reportId = await BootedReports.Seed(status, consent);
+		_reportId = await BootedReports.Seed(status, consent, arrange, mediaConsent: mediaConsent);
 		seeded.Id = _reportId;
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
@@ -629,10 +632,27 @@ internal static class BootedReports
 {
 	public const string PilotName = "Morgan Synthetic";
 
+	/// <summary>
+	///     Adds an image whose derivative the Worker has already verified, under a
+	///     reporter's filename that must never reach a public read.
+	/// </summary>
+	public static ReportFile AddProcessedImage(Report report,
+											   DateTimeOffset? at = null)
+	{
+		ArgumentNullException.ThrowIfNull(report);
+
+		var fileId = TinyId.New();
+		var file = report.AddFile(
+			fileId, $"{report.Id}/original/{fileId}", MediaType.Jpeg.ContentType, 1024, "launch-site.jpg", at ?? DateTimeOffset.UtcNow);
+		file.RecordStripped($"{report.Id}/stripped/{fileId}", at ?? DateTimeOffset.UtcNow);
+		return file;
+	}
+
 	public static async Task<string> Seed(ReportStatus status,
 										  string consent,
 										  Action<Report>? arrange = null,
-										  DateTimeOffset? at = null)
+										  DateTimeOffset? at = null,
+										  string? mediaConsent = null)
 	{
 		var factory = await BootedApi.Factory();
 		await ReportSubmissionEndpointSteps.ConsentRevisionId();
@@ -650,6 +670,15 @@ internal static class BootedReports
 		var report = new Report(Locale.EnCa, now);
 		report.Answer(consentQuestion, consent, now);
 		report.Answer(pilot, PilotName, now);
+
+		if (mediaConsent is not null)
+		{
+			var mediaQuestion = await database.Questions
+				.Include(question => question.Revisions)
+				.SingleAsync(question => question.Key == QuestionKey.ConsentMedia);
+			report.Answer(mediaQuestion, mediaConsent, now);
+		}
+
 		arrange?.Invoke(report);
 		report.BeginSummarizing();
 

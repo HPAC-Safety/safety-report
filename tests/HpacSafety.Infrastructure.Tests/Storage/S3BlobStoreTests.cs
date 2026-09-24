@@ -40,6 +40,35 @@ public sealed class S3BlobStoreTests : IDisposable
 	}
 
 	[Fact]
+	public async Task GivenAnInlineReadUrl_WhenCreated_ThenItRendersInlineUnderTheGivenType()
+	{
+		// Given
+		var store = new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = "hpac-media" }, TimeProvider.System);
+		var derivative = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Stripped, "photo");
+
+		// When
+		var url = await store.CreateInlineReadUrl(derivative, "image/jpeg", TimeSpan.FromMinutes(15), CancellationToken.None);
+
+		// Then
+		// A published report's page embeds it (ADR-0117), under the type its
+		// derivative was verified as, both pinned by the signature.
+		url.Query.ShouldContain("response-content-disposition=inline");
+		url.Query.ShouldContain("response-content-type=image%2Fjpeg");
+		url.Query.ShouldContain("X-Amz-Expires=900");
+	}
+
+	[Fact]
+	public async Task GivenAnInlineReadUrl_WhenLifetimeIsOverTheCap_ThenRefused()
+	{
+		// Given
+		var store = new S3BlobStore(_s3, new S3BlobStoreOptions { BucketName = "hpac-media" }, TimeProvider.System);
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			store.CreateInlineReadUrl(Key, "image/jpeg", TimeSpan.FromHours(1), CancellationToken.None));
+	}
+
+	[Fact]
 	public async Task GivenPublicSigner_WhenReadUrlIsCreated_ThenItPointsAtTheHostTheBrowserCanReach()
 	{
 		// Given

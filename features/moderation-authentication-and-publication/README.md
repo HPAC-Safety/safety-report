@@ -213,8 +213,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Showing a rejection note anywhere but the admin report view.
 - Search, filtering, or sorting of the public feed other than newest
   published first, and a page-count or jump-to-page control.
-- Embedded images or video on the public report page, which has its own
-  design issue (#412), and any other attachment metadata there.
+- Any attachment metadata on the public report page beyond each public media
+  file's opaque id and kind. Which media is public is
+  [`features/media`](../media/README.md)'s rule (ADR-0117).
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.
 - Changing how a date, time, or yes/no answer is stored, sent by the API, or

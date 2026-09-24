@@ -4,9 +4,9 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 ///     An occurrence report. Every ordinary answer is data — one row per question
-///     asked, in <see cref="Answers" /> — and publication consent is the only one
-///     that additionally projects onto a typed property here, because it is read by
-///     logic rather than only displayed. See <c>docs/data-and-persistence.md</c>.
+///     asked, in <see cref="Answers" /> — and the two consents, publication and
+///     media, are the only ones that additionally project onto a typed property
+///     here, because they are read by logic rather than only displayed. See <c>docs/data-and-persistence.md</c>.
 /// </summary>
 public class Report
 {
@@ -62,6 +62,15 @@ public class Report
 
 	/// <summary>True once the reporter has actually chosen yes or no.</summary>
 	public bool HasAnsweredConsent => ConsentPublish is not null;
+
+	/// <summary>
+	///     Whether the reporter agreed to HPAC showing their photos and video on the
+	///     published report (ADR-0117). <b>Null means unanswered</b> — the form asks
+	///     it only when publication consent is yes and an image or video is attached,
+	///     and a report filed before the question existed never answered it. Only
+	///     <see langword="true" /> lets any media be public.
+	/// </summary>
+	public bool? ConsentMedia { get; private set; }
 
 	/// <summary>
 	///     Why summarization failed, when it did. Attached so the report
@@ -498,7 +507,11 @@ public class Report
 	{
 		if (question.Role == QuestionRole.ConsentPublish)
 		{
-			ConsentPublish = ReadConsent(answer);
+			ConsentPublish = ReadConsent(answer, "Publication consent");
+		}
+		else if (question.Role == QuestionRole.ConsentMedia)
+		{
+			ConsentMedia = ReadConsent(answer, "Media consent");
 		}
 	}
 
@@ -507,7 +520,8 @@ public class Report
 	///     no default answer, so an unreadable one is an error rather than a
 	///     silently negative consent.
 	/// </summary>
-	private static bool ReadConsent(ReportAnswer answer)
+	private static bool ReadConsent(ReportAnswer answer,
+									string consent)
 	{
 		// "yes" and "no" are the invariant stored forms of every boolean answer
 		// (ADR-0072), so this reads the same two tokens whichever language the
@@ -523,6 +537,6 @@ public class Report
 		}
 
 		throw new DomainRuleViolationException(
-			"Publication consent must be answered yes or no. There is no default and no third state.");
+			$"{consent} must be answered yes or no. There is no default and no third state.");
 	}
 }

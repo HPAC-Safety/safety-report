@@ -92,6 +92,34 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
+	public async Task<Uri> CreateInlineReadUrl(BlobKey key,
+											   string contentType,
+											   TimeSpan lifetime,
+											   CancellationToken cancellationToken)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
+
+		var request = new GetPreSignedUrlRequest
+		{
+			BucketName = _bucketName,
+			Key = key.Value,
+			Verb = HttpVerb.GET,
+			Expires = ExpiryFor(lifetime),
+			Protocol = ConfiguredProtocol,
+		};
+
+		// Inline, so a page can embed it, and under the type the derivative was
+		// verified as rather than whatever the object happens to carry. Both are
+		// part of the signature, so the URL cannot be edited into anything else.
+		request.ResponseHeaderOverrides.ContentDisposition = "inline";
+		request.ResponseHeaderOverrides.ContentType = contentType;
+
+		var url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+
+		return new Uri(url);
+	}
+
+	/// <inheritdoc />
 	public async Task<Stream> OpenRead(BlobKey key,
 									   CancellationToken cancellationToken)
 	{

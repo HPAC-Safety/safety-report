@@ -66,7 +66,7 @@ async function stubFeed(page: Page) {
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, async (route) => {
 		const id = new URL(route.request().url()).pathname.split("/").pop()
 		const report = [FIRST, SECOND, OLDER].find((candidate) => candidate.id === id)
-		await (report ? route.fulfill({ json: report }) : route.fulfill({ status: 404, body: "" }))
+		await (report ? route.fulfill({ json: { ...report, media: [] } }) : route.fulfill({ status: 404, body: "" }))
 	})
 }
 

@@ -2,8 +2,8 @@ namespace HpacSafety.Core;
 
 /// <summary>
 ///     Private object storage for uploaded media. There are no public object URLs,
-///     ever — a reviewer sees a short-lived pre-signed GET. See
-///     docs/data-handling.md.
+///     ever — a reviewer, and a visitor to a published report's page, sees a
+///     short-lived pre-signed GET. See docs/data-handling.md and ADR-0117.
 ///     <para>
 ///         Two rules bind every implementation, and both are covered by the shared
 ///         contract suite in <c>HpacSafety.Infrastructure.Tests</c>, run against
@@ -23,6 +23,17 @@ public interface IBlobStore
 							string downloadFileName,
 							TimeSpan lifetime,
 							CancellationToken cancellationToken);
+
+	/// <summary>
+	///     A short-lived URL a browser may GET one file from, and only that one key,
+	///     served inline under <paramref name="contentType" /> so a page can embed it.
+	///     Only a stripped derivative on a published report is ever issued one
+	///     (ADR-0117); see <c>PublicMediaLink</c>.
+	/// </summary>
+	Task<Uri> CreateInlineReadUrl(BlobKey key,
+								  string contentType,
+								  TimeSpan lifetime,
+								  CancellationToken cancellationToken);
 
 	/// <summary>Opens stored bytes for server-side work such as EXIF stripping.</summary>
 	Task<Stream> OpenRead(BlobKey key,

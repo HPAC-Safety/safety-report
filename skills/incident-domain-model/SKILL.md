@@ -101,9 +101,10 @@ be sent to a model:
    a translation service.
 2. **Internal** — manufacturer, model, precise site. Used for HPAC's own trend
    analysis; never published.
-3. **Publishable** — the approved summary and the publication timestamp. The
-   public DTO is `{id, ai_summary_en, ai_summary_fr, published_at}` and
-   nothing else — no province, severity, or aircraft type is ever published,
+3. **Publishable** — the approved summary, the publication timestamp, the
+   visible comment count, and, when media was consented to, each public
+   image or video derivative's opaque id and kind (ADR-0117). The public DTO
+   is that allowlist and nothing else — no province, severity, or aircraft type is ever published,
    because they are ordinary `report_answers` rows, not typed columns a public
    query could accidentally select.
 
@@ -116,14 +117,16 @@ Privacy is enforced by `Question.IsPrivate` controlling what reaches the
 model's `report_content` section, by access control on who may query
 `report_answers` at all, and by the public DTO being a positive allowlist.
 
-## Consent is the only answer a report reads by name
+## The two consents are the only answers a report reads by name
 
 Every other question — province, injury, occurrence date, aircraft, whatever
 role an administrator assigns it — is simply an ordinary row in
 `report_answers`. `Report` carries no typed projection for any of them: the
 admin review DTO reads exact asked questions and answers directly, and nothing
 downstream needs a hardcoded key to find "the injury one." `QuestionRole` has
-exactly two members, `None` and `ConsentPublish`, for this reason.
+exactly three members, `None`, `ConsentPublish`, and `ConsentMedia`, for this
+reason; the two consents project onto `reports.consent_publish` and
+`reports.consent_media` (ADR-0117).
 
 ## Enums
 

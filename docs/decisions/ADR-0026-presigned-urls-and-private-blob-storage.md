@@ -21,6 +21,11 @@ moment it is attached, still never through a pre-signed PUT;
 added; and the development adapter is MinIO behind `S3BlobStore`, replacing
 `FileSystemBlobStore`. The development server is RustFS since
 [ADR-0110](ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md).
+Amended by
+[ADR-0117](ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md):
+an anonymous visitor may also be handed a short-lived, inline pre-signed GET,
+through `PublicMediaLink`, but only for the derivative of a file a published
+report shows. The bucket stays private and no route serves blob bytes.
 **Date:** 2026-08-22
 
 ## Context

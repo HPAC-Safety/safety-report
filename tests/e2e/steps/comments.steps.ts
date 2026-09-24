@@ -69,7 +69,7 @@ async function stubReport(page: Page, comments: StubComment[]) {
 	})
 
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, async (route) => {
-		await route.fulfill({ json: { ...REPORT, commentCount: comments.length } })
+		await route.fulfill({ json: { ...REPORT, commentCount: comments.length, media: [] } })
 	})
 
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?(\?.*)?$/, async (route) => {

@@ -311,7 +311,7 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
                     b.ToTable("questions", null, t =>
                         {
-                            t.HasCheckConstraint("ck_questions_role", "role IN ('none', 'consent_publish')");
+                            t.HasCheckConstraint("ck_questions_role", "role IN ('none', 'consent_publish', 'consent_media')");
                         });
                 });
 
@@ -552,6 +552,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnName("id")
                         .IsFixedLength();
 
+                    b.Property<bool?>("ConsentMedia")
+                        .HasColumnType("boolean")
+                        .HasColumnName("consent_media");
+
                     b.Property<bool?>("ConsentPublish")
                         .HasColumnType("boolean")
                         .HasColumnName("consent_publish");
@@ -739,6 +743,15 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("exif_stripped_at");
 
+                    b.Property<DateTimeOffset?>("HiddenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("hidden_at");
+
+                    b.Property<string>("HiddenBySubject")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("hidden_by_subject");
+
                     b.Property<string>("Kind")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -793,6 +806,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.ToTable("report_files", null, t =>
                         {
                             t.HasCheckConstraint("ck_report_files_exif_stripped_coherence", "(exif_stripped_at IS NULL) = (stripped_blob_key IS NULL)");
+
+                            t.HasCheckConstraint("ck_report_files_hidden_coherence", "(hidden_at IS NULL) = (hidden_by_subject IS NULL)");
 
                             t.HasCheckConstraint("ck_report_files_kind", "kind IN ('image', 'video', 'document')");
                         });
@@ -1073,6 +1088,49 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.ToTable((string)null);
 
                     b.ToView("public_report_comments", (string)null);
+                });
+
+            modelBuilder.Entity("HpacSafety.Infrastructure.Persistence.Views.PublicReportMedia", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_type");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
+
+                    b.Property<string>("StrippedBlobKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("stripped_blob_key");
+
+                    b.Property<DateTimeOffset>("UploadedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("uploaded_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_public_report_media");
+
+                    b.ToTable((string)null);
+
+                    b.ToView("public_report_media", (string)null);
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Comments.ReportComment", b =>

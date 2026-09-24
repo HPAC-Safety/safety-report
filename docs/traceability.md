@@ -320,10 +320,6 @@ The admin site never inline-renders a private document — *playwright-bdd, Plan
 
 A failed attachment is inaccessible to reviewers — *Reqnroll, Covered*
 
-### REQ-MED-014
-
-Attachments are never exposed publicly, even after publication — *Reqnroll, Covered*
-
 ### REQ-MED-015
 
 A video that cannot be stripped is kept rather than refused — *Reqnroll, Covered*
@@ -363,6 +359,54 @@ The Worker skips an attachment whose report was deleted — *Reqnroll, Covered*
 ### REQ-MED-024
 
 Processing never holds a whole attachment in memory — *Reqnroll, Covered*
+
+### REQ-MED-025
+
+A published report lists its verified photos and video when media was consented to — *Reqnroll, Covered*
+
+### REQ-MED-026
+
+A file that is not a verified derivative is never public — *Reqnroll, Covered*
+
+### REQ-MED-027
+
+Media is public only when the reporter consented to sharing it — *Reqnroll, Covered*
+
+### REQ-MED-028
+
+A visitor gets a short-lived inline link to a public file — *Reqnroll, Covered*
+
+### REQ-MED-029
+
+A file stops being public when its report or a reviewer withdraws it — *Reqnroll, Covered*
+
+### REQ-MED-030
+
+A reviewer hides a file and shows it again, and both are audited — *Reqnroll, Covered*
+
+### REQ-MED-031
+
+A member who is not a reviewer cannot hide or show a file — *Reqnroll, Covered*
+
+### REQ-MED-032
+
+The report page embeds its photos and video with a generic label — *playwright-bdd, Covered*
+
+### REQ-MED-033
+
+An expired link is replaced and the video resumes where it was — *playwright-bdd, Covered*
+
+### REQ-MED-034
+
+Media that is no longer public is removed from the page — *playwright-bdd, Covered*
+
+### REQ-MED-035
+
+A reviewer hides a file from the public report page — *playwright-bdd, Covered*
+
+### REQ-MED-036
+
+The admin report page shows whether each file is public — *playwright-bdd, Covered*
 
 ## Claims: moderation-authentication-and-publication
 
@@ -778,7 +822,7 @@ The current form's response includes a question's conditional dependency — *Re
 
 ### REQ-QB-014
 
-consent_publish is the only question that can never be optional — *Reqnroll, Planned*
+consent_publish can never be optional — *Reqnroll, Planned*
 
 ### REQ-QB-015
 
@@ -1099,6 +1143,22 @@ Whether a question needs translation is a revision field — *Reqnroll, Covered*
 ### REQ-QB-111
 
 The editor offers Auto-translate answer only for free text — *playwright-bdd, Covered*
+
+### REQ-QB-112
+
+Media consent is a system question that can never be removed or made conditional — *Reqnroll, Covered*
+
+### REQ-QB-113
+
+The form asks for media consent only when there is media to share — *playwright-bdd, Covered*
+
+### REQ-QB-114
+
+A media consent answer is recorded on the report — *Reqnroll, Covered*
+
+### REQ-QB-115
+
+A media consent answer must be an explicit yes or no — *Reqnroll, Covered*
 
 ## Claims: report-submission
 
@@ -1723,11 +1783,11 @@ system-overview.md — verified by `REQ-QB-001`, `REQ-QB-002`, `REQ-QB-009`
 
 ### CON-SO-002
 
-system-overview.md — verified by `REQ-QB-014`, `REQ-QB-016`, `REQ-WLD-015`
+system-overview.md — verified by `REQ-QB-014`, `REQ-QB-016`, `REQ-WLD-015`, `REQ-QB-112`, `REQ-QB-113`
 
 ### CON-SO-003
 
-system-overview.md — verified by `REQ-MOD-036`, `REQ-MED-014`
+system-overview.md — verified by `REQ-MOD-036`, `REQ-MED-025`, `REQ-MED-026`
 
 ### CON-SO-004
 
@@ -1775,7 +1835,7 @@ testing-and-quality.md — verified by `REQ-AI-001`, `REQ-AI-009`, `REQ-AI-010`,
 
 ### CON-TQ-006
 
-testing-and-quality.md — verified by `REQ-MED-001`, `REQ-MED-002`, `REQ-MED-003`, `REQ-MED-006`, `REQ-MED-007`, `REQ-MED-008`, `REQ-MED-010`, `REQ-MED-011`, `REQ-MED-014`
+testing-and-quality.md — verified by `REQ-MED-001`, `REQ-MED-002`, `REQ-MED-003`, `REQ-MED-006`, `REQ-MED-007`, `REQ-MED-008`, `REQ-MED-010`, `REQ-MED-011`, `REQ-MED-025`, `REQ-MED-026`
 
 ### CON-TQ-007
 

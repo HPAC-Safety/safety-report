@@ -7,13 +7,15 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Exactly one question is a <b>system question</b>: publication consent. It
-///         cannot be deleted, deactivated, retyped, or rekeyed, because it is the gate
-///         every publication path checks and there is no defined behaviour without it.
-///         Its wording is still editable, and it reorders like any other.
+///         Two questions are <b>system questions</b>: publication consent, the gate
+///         every publication path checks, and media consent, the gate on a published
+///         report's photos and video (ADR-0117). Neither can be deleted, deactivated,
+///         retyped, rekeyed, made conditional, or given another role, because there is
+///         no defined behaviour without them. Their wording is still editable, and
+///         they reorder like any other.
 ///     </para>
 ///     <para>
-///         Nothing but consent projects onto a typed property of
+///         Nothing but the two consents projects onto a typed property of
 ///         <see cref="Reporting.Report" /> — the admin review DTO reads exact asked
 ///         questions and answers directly. See <c>docs/data-and-persistence.md</c>.
 ///     </para>
@@ -70,7 +72,7 @@ public class Question
 	/// <summary>Stable invariant identity, used by exports and integrations.</summary>
 	public string Key { get; private init; }
 
-	/// <summary>True only for publication consent.</summary>
+	/// <summary>True only for publication consent and media consent.</summary>
 	public bool IsSystem { get; private init; }
 
 	/// <summary>What downstream logic reads this answer for, if anything.</summary>
@@ -192,8 +194,38 @@ public class Question
 		string? helpTextFr = null,
 		int displayOrder = 0)
 	{
+		return CreateSystem(QuestionKey.ConsentPublish, QuestionRole.ConsentPublish, labelEn, labelFr, at, helpTextEn, helpTextFr, displayOrder);
+	}
+
+	/// <summary>
+	///     Creates the media-consent question (ADR-0117). The form asks it only when
+	///     publication consent is yes and an image or video is attached; that is a
+	///     built-in rule rather than an authored dependency, so it is never
+	///     conditional here.
+	/// </summary>
+	public static Question CreateConsentMedia(
+		string labelEn,
+		string labelFr,
+		DateTimeOffset at,
+		string? helpTextEn = null,
+		string? helpTextFr = null,
+		int displayOrder = 0)
+	{
+		return CreateSystem(QuestionKey.ConsentMedia, QuestionRole.ConsentMedia, labelEn, labelFr, at, helpTextEn, helpTextFr, displayOrder);
+	}
+
+	private static Question CreateSystem(
+		string key,
+		QuestionRole role,
+		string labelEn,
+		string labelFr,
+		DateTimeOffset at,
+		string? helpTextEn,
+		string? helpTextFr,
+		int displayOrder)
+	{
 		return Create(
-			QuestionKey.ConsentPublish,
+			key,
 			QuestionType.YesNo,
 			labelEn,
 			labelFr,
@@ -203,7 +235,7 @@ public class Question
 			helpTextFr,
 			null,
 			null,
-			QuestionRole.ConsentPublish,
+			role,
 			true,
 			true,
 			true,
@@ -286,7 +318,7 @@ public class Question
 		if (IsSystem && !isActive)
 		{
 			throw new DomainRuleViolationException(
-				$"'{Key}' gates publication. A form that does not ask it cannot publish anything.");
+				$"'{Key}' is a system question and gates publication. The form must keep asking it.");
 		}
 
 		return ReviseInternal(
@@ -318,7 +350,7 @@ public class Question
 	///         no revision field creates no revision at all.
 	///     </para>
 	///     <para>
-	///         Publication consent never forks. It cannot be deleted, so it revises in
+	///         A system question never forks. It cannot be deleted, so it revises in
 	///         place however many answers it has.
 	///     </para>
 	///     <para>
@@ -384,7 +416,7 @@ public class Question
 
 	/// <summary>
 	///     Whether an edit would replace this question rather than revise it. False
-	///     for a question nobody has answered, and false for publication consent
+	///     for a question nobody has answered, and false for a system question
 	///     however many answers it has.
 	/// </summary>
 	public bool ForksWhenEdited(bool hasBeenAnswered)
@@ -636,9 +668,9 @@ public class Question
 	{
 		EnsureNotDeleted();
 
-		if (IsSystem && role != QuestionRole.ConsentPublish)
+		if (IsSystem && role != Role)
 		{
-			throw new DomainRuleViolationException($"'{Key}' carries publication consent and cannot give up that role.");
+			throw new DomainRuleViolationException($"'{Key}' is a system question and cannot give up its role.");
 		}
 
 		Role = role;
@@ -663,7 +695,7 @@ public class Question
 		if (IsSystem)
 		{
 			throw new DomainRuleViolationException(
-				$"'{Key}' gates publication. A form that does not ask it cannot publish anything.");
+				$"'{Key}' is a system question and gates publication. The form must keep asking it.");
 		}
 
 		return ReviseInternal(CurrentDraft() with { IsActive = false }, at);
@@ -700,7 +732,7 @@ public class Question
 		if (IsSystem)
 		{
 			throw new DomainRuleViolationException(
-				$"'{Key}' is publication consent and cannot be deleted. Nothing may be published without it.");
+				$"'{Key}' is a system question and cannot be deleted. Publication depends on it.");
 		}
 
 		if (hasBeenAnswered)

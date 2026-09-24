@@ -79,6 +79,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Visible comments on public reports, current text only (the <c>public_report_comments</c> view).</summary>
 	public DbSet<PublicReportComment> PublicReportComments => Set<PublicReportComment>();
 
+	/// <summary>The images and videos published reports show (the <c>public_report_media</c> view, ADR-0117).</summary>
+	public DbSet<PublicReportMedia> PublicReportMedia => Set<PublicReportMedia>();
+
 	/// <summary>Publishable reports, as the public side reads them (the <c>public_reports</c> view).</summary>
 	public DbSet<PublicReport> PublicReports => Set<PublicReport>();
 
@@ -165,6 +168,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new ReportCommentRevisionConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportCommentConfiguration());
+		modelBuilder.ApplyConfiguration(new PublicReportMediaConfiguration());
 		modelBuilder.ApplyConfiguration(new AdminReportQueueItemConfiguration());
 		modelBuilder.ApplyConfiguration(new AnswerAwaitingTranslationConfiguration());
 		modelBuilder.ApplyConfiguration(new AdminPendingCountsConfiguration());

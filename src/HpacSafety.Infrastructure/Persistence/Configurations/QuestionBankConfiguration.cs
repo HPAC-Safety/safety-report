@@ -42,7 +42,7 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_questions_role",
-			"role IN ('none', 'consent_publish')"));
+			"role IN ('none', 'consent_publish', 'consent_media')"));
 
 		builder.HasMany(question => question.Revisions)
 			.WithOne()

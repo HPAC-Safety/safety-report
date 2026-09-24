@@ -117,7 +117,7 @@ Scenario: The current form's response includes a question's conditional dependen
 
 @REQ-QB-014
 @ignore
-Scenario: consent_publish is the only question that can never be optional
+Scenario: consent_publish can never be optional
   Given the form is assembled for a reporter
   When the reporter submits without an answer to consent_publish
   Then the API rejects the submission
@@ -784,3 +784,41 @@ Scenario: An attachment question an Administrator already reworded is left alone
   Given a database whose attachment question an Administrator has already reworded
   When the attachment rewording migration runs
   Then the attachment question and its revisions are unchanged
+
+@REQ-QB-112
+Scenario: Media consent is a system question that can never be removed or made conditional
+  Given the consent_media question exists
+  When an Administrator tries to delete it
+  Then the attempt is rejected
+  And trying to stop asking it is rejected the same way
+  And trying to make it conditional on another question is rejected the same way
+  And trying to give it another role is rejected the same way
+  And an Administrator may still change its wording in both languages
+
+@REQ-QB-113
+@ui
+Scenario: The form asks for media consent only when there is media to share
+  Given a reporter is filling in the form
+  When they answer yes to publication consent and attach an image
+  Then the form asks the media consent question, and it must be answered to submit
+  When they remove the image, or answer no to publication consent
+  Then the form no longer asks it, and submits no answer to it
+
+@REQ-QB-114
+Scenario Outline: A media consent answer is recorded on the report
+  Given a submission answers yes to publication consent and attaches an image
+  And it answers the consent_media question with <answer>
+  When the API accepts the submission
+  Then the report records media consent as <recorded>
+
+Examples:
+  | answer    | recorded   |
+  | yes       | yes        |
+  | no        | no         |
+  | no answer | unanswered |
+
+@REQ-QB-115
+Scenario: A media consent answer must be an explicit yes or no
+  Given a submission answers the consent_media question with a value that is neither yes nor no
+  When the reporter submits it
+  Then the API rejects the submission

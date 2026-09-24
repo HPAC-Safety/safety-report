@@ -351,6 +351,11 @@
         "no": "Le journaliste n’a pas donné son accord pour la publication. Ce reportage n’a jamais été publié.",
         "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
       },
+      "mediaConsent": {
+        "yes": "Le journaliste a accepté que ses photos et sa vidéo soient incluses dans l'article publié.",
+        "no": "Le journaliste n'a pas accepté de partager ses photos et sa vidéo. Aucune n'est jamais rendue publique.",
+        "unanswered": "On n'a pas demandé au journaliste s'il partageait des photos et des vidéos; par conséquent, aucune n'est jamais rendue publique."
+      },
       "summary": "Résumé",
       "summaryEn": "Anglais",
       "summaryFr": "Français",
@@ -386,7 +391,16 @@
         "failed": "n’a pas pu être traité"
       },
       "view": "Afficher",
-      "download": "Téléverser"
+      "download": "Téléverser",
+      "visibility": {
+        "public": "Figurant dans le rapport public",
+        "when_published": "Affiché une fois le rapport publié",
+        "hidden": "À l’abri des regards du public",
+        "no_consent": "Non public : le journaliste n’a pas accepté de partager les fichiers multimédias",
+        "private": "Non public"
+      },
+      "hide": "Se cacher du public",
+      "show": "Afficher dans le rapport public"
     },
     "action": {
       "label": "Examiner les mesures",
@@ -465,6 +479,17 @@
     "comments": {
       "one": "1 commentaire",
       "other": "{count} commentaires"
+    }
+  },
+  "media": {
+    "title": "Photos et vidéo",
+    "photoLabel": "Photo {index} de {count}",
+    "videoLabel": "Vidéo {index} de {count}",
+    "hide": "Masquer",
+    "keep": "Conserver",
+    "confirmHide": "Cacher ceci à tout le monde?",
+    "error": {
+      "hide": "Cela ne pouvait pas passer inaperçu. Veuillez réessayer."
     }
   },
   "comments": {

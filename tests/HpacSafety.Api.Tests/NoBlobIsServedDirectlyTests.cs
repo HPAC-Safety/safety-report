@@ -53,6 +53,9 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
 	[
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/view",
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/download",
+		// Hide and show change a flag and return 204; they never touch bytes (ADR-0117).
+		"/api/admin/reports/{reportId}/attachments/{attachmentId}/hide",
+		"/api/admin/reports/{reportId}/attachments/{attachmentId}/show",
 	];
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;

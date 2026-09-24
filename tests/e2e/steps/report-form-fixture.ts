@@ -21,6 +21,7 @@ export interface StubOption {
 export interface StubQuestion {
 	id: string
 	key: string
+	role: string
 	revisionId: string
 	type: string
 	isRequired: boolean
@@ -41,6 +42,7 @@ export interface StubQuestion {
 
 function question(overrides: Partial<StubQuestion> & { id: string; key: string; labelEn: string; type: string; displayOrder: number }): StubQuestion {
 	return {
+		role: "none",
 		revisionId: `rev-${overrides.id}`,
 		isRequired: false,
 		isPrivate: false,
@@ -102,9 +104,30 @@ export function defaultFormQuestions(): StubQuestion[] {
 		question({
 			id: "consent",
 			key: "consent_publish",
+			role: "consent_publish",
 			labelEn: "May we publish a summary of this report?",
 			type: "yes_no",
 			displayOrder: 6,
+			isRequired: true,
+		}),
+	]
+}
+
+/**
+ * The default form with the media-consent system question after publication
+ * consent, as the migration seeds it (ADR-0117). The form asks it only when
+ * publication consent is yes and an image or video is attached.
+ */
+export function mediaConsentFormQuestions(): StubQuestion[] {
+	return [
+		...defaultFormQuestions(),
+		question({
+			id: "media_consent",
+			key: "consent_media",
+			role: "consent_media",
+			labelEn: "Photo and video consent",
+			type: "yes_no",
+			displayOrder: 7,
 			isRequired: true,
 		}),
 	]

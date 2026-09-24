@@ -360,6 +360,7 @@ public static class ReportEndpoints
 			EnumCode.Of(report.Status),
 			report.Language.Code,
 			ConsentCode(report.ConsentPublish),
+			ConsentCode(report.ConsentMedia),
 			isStuck,
 			report.SummaryError,
 			AnswersOf(report, revisions),
@@ -376,7 +377,7 @@ public static class ReportEndpoints
 					EnumCode.Of(summary.SourceEn),
 					EnumCode.Of(summary.SourceFr))
 				: null,
-			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file)))],
+			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file)))],
 			ConcurrencyToken.Of(database, report),
 			report.RejectionNote,
 			report.PublishedAt);
@@ -422,6 +423,34 @@ public static class ReportEndpoints
 		// A document is served as its validated original; only images and videos
 		// wait for a stripped derivative (REQ-MED-013).
 		return file.Kind is AttachmentKind.Document || !file.AwaitsStripping ? "ready" : "processing";
+	}
+
+	/// <summary>
+	///     Whether the published report shows this file, by the same rule the
+	///     <c>public_report_media</c> view holds (ADR-0117), so a reviewer sees
+	///     what a visitor would.
+	/// </summary>
+	private static string Visibility(Report report,
+									 ReportFile file)
+	{
+		if (file.Kind is AttachmentKind.Document
+			|| file.ProcessingErrorCode is not null
+			|| file.AwaitsStripping)
+		{
+			return "private";
+		}
+
+		if (file.HiddenAt is not null)
+		{
+			return "hidden";
+		}
+
+		if (report.ConsentMedia is not true)
+		{
+			return "no_consent";
+		}
+
+		return report.Status is ReportStatus.Published ? "public" : "when_published";
 	}
 
 	private static string ConsentCode(bool? consent)

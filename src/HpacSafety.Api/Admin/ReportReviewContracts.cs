@@ -31,6 +31,7 @@ public sealed record ReportDetail(
 	string Status,
 	string Language,
 	string Consent,
+	string MediaConsent,
 	bool IsStuck,
 	string? SummaryError,
 	IReadOnlyList<ReportAnswerView> Answers,
@@ -103,11 +104,18 @@ public sealed record ReportSummaryView(
 	string SourceEn,
 	string SourceFr);
 
-/// <summary>An attachment's kind and whether it can be opened now.</summary>
+/// <summary>An attachment's kind, whether it can be opened now, and whether the public sees it.</summary>
 /// <param name="Id">The attachment, for its view or download request.</param>
 /// <param name="Kind"><c>image</c>, <c>video</c>, or <c>document</c>.</param>
 /// <param name="State"><c>ready</c>, <c>processing</c>, or <c>failed</c>.</param>
+/// <param name="Visibility">
+///     Whether the published report shows it (ADR-0117): <c>public</c>;
+///     <c>when_published</c> once the report is; <c>hidden</c> by a reviewer;
+///     <c>no_consent</c> because the reporter did not agree to share media; or
+///     <c>private</c> — a document, or a file with no verified derivative.
+/// </param>
 public sealed record ReportAttachmentView(
 	string Id,
 	string Kind,
-	string State);
+	string State,
+	string Visibility);

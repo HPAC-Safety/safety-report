@@ -10,6 +10,11 @@
  * Comments (ADR-0114) are read by anyone. When a session exists the token is
  * sent with the read too, only so the API can mark the reader's own comments.
  * Writing needs a member; hiding needs a reviewer.
+ *
+ * A report's own page also lists its public photos and video (ADR-0117) as
+ * opaque ids. Each file's bytes are reached through a short-lived link the page
+ * asks for separately, and asks for again when it stops working; a 404 means
+ * the file is no longer public.
  */
 
 import { ApiError, authorization } from "./adminQuestions"
@@ -21,6 +26,23 @@ export interface PublicReport {
 	publishedAt: string
 	/** Comments that are neither deleted nor hidden. */
 	commentCount: number
+}
+
+/** One public image or video on a report's own page: an opaque id and its kind, nothing more. */
+export interface PublicMedia {
+	id: string
+	kind: "image" | "video"
+}
+
+/** A report's own page: the feed item plus its public media. */
+export interface PublicReportDetail extends PublicReport {
+	media: PublicMedia[]
+}
+
+/** A short-lived link to one public file's bytes, and when it stops working. */
+export interface PublicMediaLink {
+	url: string
+	expiresAt: string
 }
 
 /** One page of the feed, newest first; `next` continues it, or is null on the last page. */
@@ -48,7 +70,7 @@ export async function fetchPublicReports(after: string | null): Promise<PublicRe
 	return (await response.json()) as PublicReportPage
 }
 
-export async function fetchPublicReport(id: string): Promise<PublicReport> {
+export async function fetchPublicReport(id: string): Promise<PublicReportDetail> {
 	const response = await fetch(`/api/v1/public/reports/${encodeURIComponent(id)}`)
 
 	if (response.status === 404) {
@@ -59,7 +81,22 @@ export async function fetchPublicReport(id: string): Promise<PublicReport> {
 		throw new Error(`The report could not be loaded (${response.status}).`)
 	}
 
-	return (await response.json()) as PublicReport
+	return (await response.json()) as PublicReportDetail
+}
+
+/** A fresh link to one public file, or PublicReportNotFound once it is no longer public. */
+export async function fetchMediaLink(reportId: string, mediaId: string): Promise<PublicMediaLink> {
+	const response = await fetch(`/api/v1/public/reports/${encodeURIComponent(reportId)}/media/${encodeURIComponent(mediaId)}`)
+
+	if (response.status === 404) {
+		throw new PublicReportNotFound()
+	}
+
+	if (!response.ok) {
+		throw new Error(`The media link could not be loaded (${response.status}).`)
+	}
+
+	return (await response.json()) as PublicMediaLink
 }
 
 /** The summary text in the given locale, falling back to English. */
@@ -126,6 +163,12 @@ export function editComment(reportId: string, commentId: string, text: string, l
 
 export function deleteComment(reportId: string, commentId: string): Promise<void> {
 	return send<void>(`${commentsOf(reportId)}/${encodeURIComponent(commentId)}`, { method: "DELETE" })
+}
+
+export function hideMedia(reportId: string, mediaId: string): Promise<void> {
+	return send<void>(`/api/admin/reports/${encodeURIComponent(reportId)}/attachments/${encodeURIComponent(mediaId)}/hide`, {
+		method: "POST",
+	})
 }
 
 export function hideComment(commentId: string): Promise<void> {

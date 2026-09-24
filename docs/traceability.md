@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-314 claims across 8 areas: 242 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+319 claims across 8 areas: 246 covered by a step definition today, 73 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -26,17 +26,22 @@ type: guide
 | `REQ-AI-008` | ai-anonymization | Concurrent workers cannot claim the same summarization outbox item twice | Reqnroll | Covered |
 | `REQ-AI-009` | ai-anonymization | Only eligible, labeled fields reach the model | Reqnroll | Covered |
 | `REQ-AI-010` | ai-anonymization | A fact appearing only in private context is never summarized | Reqnroll | Planned |
-| `REQ-AI-011` | ai-anonymization | The Worker accepts only the exact two-field JSON response | Reqnroll | Planned |
+| `REQ-AI-011` | ai-anonymization | The Worker accepts only the exact two-field JSON response | Reqnroll | Covered |
 | `REQ-AI-012` | ai-anonymization | A private person's identity is replaced with their role | Reqnroll | Planned |
 | `REQ-AI-013` | ai-anonymization | Both summaries preserve safety-relevant content while anonymizing | Reqnroll | Planned |
 | `REQ-AI-014` | ai-anonymization | An identifying category is never disclosed in a summary | Reqnroll | Planned |
 | `REQ-AI-015` | ai-anonymization | A private-only fact is never added merely for completeness | Reqnroll | Planned |
+| `REQ-AI-025` | ai-anonymization | An exact date generalizes to its month or season while the time of day is kept | Reqnroll | Planned |
+| `REQ-AI-026` | ai-anonymization | A place becomes a generic phrase that fits its role, never an invented name | Reqnroll | Planned |
 | `REQ-AI-016` | ai-anonymization | Documents never reach the model | Reqnroll | Covered |
 | `REQ-AI-017` | ai-anonymization | A valid response is persisted as one pair-level summary row | Reqnroll | Covered |
 | `REQ-AI-018` | ai-anonymization | The reviewer may correct either text before approval | Reqnroll | Planned |
 | `REQ-AI-019` | ai-anonymization | Retries repeat the single-call operation without adding stages | Reqnroll | Covered |
 | `REQ-AI-020` | ai-anonymization | Exhausted retries surface a manually authorable failure | Reqnroll | Covered |
 | `REQ-AI-021` | ai-anonymization | Sensitive summarization data is never logged | Reqnroll | Covered |
+| `REQ-AI-022` | ai-anonymization | The Worker requests the configured model at the configured reasoning level | Reqnroll | Covered |
+| `REQ-AI-023` | ai-anonymization | A Worker holding a key refuses to start with an unusable provider configuration | Reqnroll | Covered |
+| `REQ-AI-024` | ai-anonymization | The current prompt carries every anonymization and accuracy rule | Reqnroll | Covered |
 | `REQ-DOM-001` | domain-and-lifecycle | A report follows the defined lifecycle transitions | Reqnroll | Planned |
 | `REQ-DOM-002` | domain-and-lifecycle | SummaryFailed remains visible to safety officers | Reqnroll | Planned |
 | `REQ-DOM-003` | domain-and-lifecycle | A report is publishable only when every invariant holds | Reqnroll | Planned |

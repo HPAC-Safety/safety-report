@@ -296,5 +296,6 @@
   "reports.delete.keep": "Keep report",
   "reports.detail.rejectionNote": "Rejection note: {note}",
   "reports.attachment.view": "View",
-  "reports.attachment.download": "Download"
+  "reports.attachment.download": "Download",
+  "reports.detail.notSummarized": "Not summarized: the reporter did not consent to publication, so this report was never sent to the AI."
 }

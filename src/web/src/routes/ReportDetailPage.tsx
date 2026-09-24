@@ -221,7 +221,9 @@ export function ReportDetailPage() {
 							</>
 						) : (
 							!report.summaryError && (
-								<p className="mt-4 font-sans text-ink-muted">{t("reports.detail.noSummary")}</p>
+								<p className="mt-4 font-sans text-ink-muted" data-no-summary>
+									{t(report.consent === "yes" ? "reports.detail.noSummary" : "reports.detail.notSummarized")}
+								</p>
 							)
 						)}
 					</section>

@@ -363,7 +363,8 @@
       "translation": "Traduction : {text}",
       "attachments": "Pièces jointes",
       "attachment": "{kind} — {state}",
-      "rejectionNote": "#Rejection note: {note}"
+      "rejectionNote": "#Rejection note: {note}",
+      "notSummarized": "#Not summarized: the reporter did not consent to publication, so this report was never sent to the AI."
     },
     "attachment": {
       "kind": {

@@ -89,6 +89,7 @@ The report view offers only what the report's state allows:
 | Status | Actions |
 |---|---|
 | Pending review | Edit summary, Approve, Reject, Delete |
+| Pending review without consent (never summarized) | Reject, Delete |
 | Approved (no consent) | Edit summary, Delete |
 | Published | Edit summary, Unpublish, Delete |
 | Rejected | Reopen, Delete |

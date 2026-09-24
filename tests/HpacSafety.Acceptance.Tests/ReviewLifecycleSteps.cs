@@ -43,6 +43,10 @@ public sealed class ReviewLifecycleSteps
 				_report.AttachSummary(Summary.Generate(_report.Id, "The pilot landed.", "Le pilote s'est posé.", "gemini-3.7-flash", "summarize-anonymize.v3", Now));
 				_report.AwaitReview();
 				break;
+			case "the reporter did not consent to publication":
+				_report = In(ReportStatus.Summarizing, consent: "no");
+				_report.ReviewWithoutSummary();
+				break;
 			case "bounded retries are exhausted":
 				_report.FailSummarization("The provider was unavailable.");
 				break;

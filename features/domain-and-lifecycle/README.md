@@ -19,6 +19,7 @@ stateDiagram-v2
     Submitted --> Summarizing: Worker claims summary job
     Summarizing --> PendingReview: valid bilingual pair saved
     Summarizing --> SummaryFailed: bounded retries exhausted
+    Summarizing --> PendingReview: no consent, never summarized
     SummaryFailed --> PendingReview: officer writes both texts
     PendingReview --> PendingReview: either text edited; approval cleared
     PendingReview --> Published: officer approves pair, consent yes
@@ -33,7 +34,9 @@ Approving and publishing are one action: approval publishes the pair
 immediately when the reporter consented, and otherwise leaves the report
 Approved and never public
 ([ADR-0105](../../docs/decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)).
-An action from a state the diagram does not allow is refused and changes
+A report whose reporter did not consent is never sent to the model: it goes
+to Pending review with no summary, can be rejected or deleted, and can never be
+published (REQ-DOM-006). An action from a state the diagram does not allow is refused and changes
 nothing (REQ-DOM-014).
 
 Soft deletion may occur from any state and is a terminal application state

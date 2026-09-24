@@ -190,13 +190,22 @@ type StubStatus = "pending_review" | "published" | "rejected" | "summary_failed"
 
 const STATUS_BY_WORD: Record<string, StubStatus> = {
 	"pending-review": "pending_review",
+	"private-pending-review": "pending_review",
 	published: "published",
 	rejected: "rejected",
 	"summary-failed": "summary_failed",
 }
 
 interface ReviewStub {
-	detail: typeof DETAIL & { version: string; rejectionNote: string | null; publishedAt: string | null }
+	detail: Omit<typeof DETAIL, "summary" | "consent" | "status" | "summaryError"> & {
+		status: string
+		consent: string
+		summaryError: string | null
+		summary: typeof DETAIL.summary | null
+		version: string
+		rejectionNote: string | null
+		publishedAt: string | null
+	}
 	stale: boolean
 	requests: string[]
 }
@@ -216,8 +225,14 @@ function detailIn(status: StubStatus) {
 	}
 }
 
-async function stubReview(page: Page, status: StubStatus) {
-	const stub: ReviewStub = { detail: detailIn(status), stale: false, requests: [] }
+async function stubReview(page: Page, status: StubStatus, word = "") {
+	const detail = detailIn(status)
+	const stub: ReviewStub = {
+		// A report without consent is never summarized (REQ-DOM-006).
+		detail: word.startsWith("private-") ? { ...detail, consent: "no", summary: null } : detail,
+		stale: false,
+		requests: [],
+	}
 	reviewStubs.set(page, stub)
 
 	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
@@ -274,7 +289,7 @@ async function stubReview(page: Page, status: StubStatus) {
 }
 
 Given("a safety officer is signed in and a {word} report exists", async ({ page }, word: string) => {
-	await stubReview(page, STATUS_BY_WORD[word])
+	await stubReview(page, STATUS_BY_WORD[word], word)
 	await signInAs(page, "safety_officer")
 })
 

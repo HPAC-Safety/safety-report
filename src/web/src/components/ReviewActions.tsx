@@ -127,7 +127,12 @@ export function ReviewActions({
 		)
 	}
 
-	const actions = ACTIONS[report.status]
+	// A report without consent is never summarized (REQ-DOM-006): there is no
+	// pair to edit or approve, only a decision to reject or delete it.
+	const actions =
+		report.status === "pending_review" && !report.summary
+			? ACTIONS.pending_review.filter((action) => action === "reject" || action === "delete")
+			: ACTIONS[report.status]
 
 	return (
 		<div className="mt-4 flex flex-col gap-2">

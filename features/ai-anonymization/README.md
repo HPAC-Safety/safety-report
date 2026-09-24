@@ -67,6 +67,10 @@ current prompt carries every row of this table
 
 ## Provider configuration
 
+Only a report whose reporter consented to publication is summarized. A report
+without consent is never sent to the model, so its content never leaves Canada
+([REQ-AI-027](ai-anonymization.feature), REQ-DOM-006).
+
 The Worker's `AiChatClient` configuration section holds the provider, its key,
 the model, and the reasoning level together. The provider is Google Gemini,
 the model `gemini-3.7-flash`, the reasoning level `low`, called with a paid key

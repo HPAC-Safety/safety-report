@@ -47,6 +47,15 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			return;
 		}
 
+		// Only a consented report ever reaches the model. One without consent goes
+		// to review with no summary and no model call, so its content never
+		// leaves this system (REQ-DOM-006, REQ-AI-027).
+		if (report.ConsentPublish is not true)
+		{
+			report.ReviewWithoutSummary();
+			return;
+		}
+
 		report.BeginSummarizing();
 
 		var dto = await LoadForSummary(report.Id, report.Language, cancellationToken).ConfigureAwait(false);

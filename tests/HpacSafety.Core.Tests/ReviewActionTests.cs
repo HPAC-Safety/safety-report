@@ -176,6 +176,49 @@ public class ReviewActionTests
 	}
 
 	[Theory]
+	[InlineData(false)]
+	[InlineData(true)]
+	public void GivenUnconsentedReport_WhenItGoesToReviewWithoutSummary_ThenPendingReviewWithNoSummary(bool claimed)
+	{
+		// Given
+		var report = Consented("no");
+		if (claimed)
+		{
+			report.BeginSummarizing();
+		}
+
+		// When
+		report.ReviewWithoutSummary();
+
+		// Then
+		report.Status.ShouldBe(ReportStatus.PendingReview);
+		report.Summary.ShouldBeNull();
+		report.IsPublishable.ShouldBeFalse();
+		Should.Throw<DomainRuleViolationException>(() => report.ApprovePair(Officer, Later));
+	}
+
+	[Fact]
+	public void GivenConsentedReport_WhenItGoesToReviewWithoutSummary_ThenRefused()
+	{
+		// Given
+		var report = Consented("yes");
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(report.ReviewWithoutSummary);
+		report.Status.ShouldBe(ReportStatus.Submitted);
+	}
+
+	[Fact]
+	public void GivenPendingReport_WhenItGoesToReviewWithoutSummary_ThenRefusedAsATransition()
+	{
+		// Given
+		var report = Pending("no");
+
+		// When / Then
+		Should.Throw<ReviewTransitionException>(report.ReviewWithoutSummary);
+	}
+
+	[Theory]
 	[InlineData(ReportStatus.Submitted, "approve")]
 	[InlineData(ReportStatus.SummaryFailed, "approve")]
 	[InlineData(ReportStatus.Rejected, "approve")]

@@ -221,3 +221,14 @@ Examples:
   | "redacted", "caviardé", placeholders, and invented names are never written               |
   | every private marker is resolved and never appears literally                             |
   | the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object          |
+
+@REQ-AI-027
+Scenario Outline: Only a report with publication consent reaches the model
+  Given a report whose reporter answered <consent> to publication is due for summarization
+  When the Worker processes its summarization attempt
+  Then the model is called <calls> time(s)
+
+Examples:
+  | consent | calls |
+  | yes     | 1     |
+  | no      | 0     |

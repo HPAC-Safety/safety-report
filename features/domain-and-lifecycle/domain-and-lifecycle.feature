@@ -85,11 +85,11 @@ Scenario: Editing a summary text unpublishes the report
   And the report immediately stops satisfying the publication invariant
 
 @REQ-DOM-006
-@ignore
-Scenario: Negative consent still allows internal review
-  Given a reporter has not consented to publication
-  When the report is summarized and reviewed
-  Then internal summarization and safety review proceed normally
+Scenario: A report without publication consent is never summarized
+  Given a report whose reporter did not consent to publication is due for summarization
+  When the Worker processes its summarization attempt
+  Then no model call is made
+  And the report goes to Pending review with no summary
   And the report can never satisfy the public query
 
 @REQ-DOM-007

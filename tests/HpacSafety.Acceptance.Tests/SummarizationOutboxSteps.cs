@@ -37,6 +37,54 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		_report = await Seed(_db);
 	}
 
+	[Given(@"^a report whose reporter answered (yes|no) to publication is due for summarization$")]
+	public async Task GivenAReportWithConsentIsDue(string consent)
+	{
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db, consent: consent);
+	}
+
+	[Given(@"a report whose reporter did not consent to publication is due for summarization")]
+	public async Task GivenAnUnconsentedReportIsDue()
+	{
+		await GivenAReportWithConsentIsDue("no");
+	}
+
+	[When(@"the Worker processes its summarization attempt")]
+	public async Task WhenTheWorkerProcessesItsAttempt()
+	{
+		await WhenTheWorkerProcessesTheAttempt();
+	}
+
+	[Then(@"no model call is made")]
+	public void ThenNoModelCall()
+	{
+		_summarizer!.CallCount.ShouldBe(0);
+	}
+
+	[Then(@"^the model is called (\d+) time\(s\)$")]
+	public void ThenTheModelIsCalled(int calls)
+	{
+		_summarizer!.CallCount.ShouldBe(calls);
+	}
+
+	[Then(@"the report goes to Pending review with no summary")]
+	public async Task ThenPendingReviewWithNoSummary()
+	{
+		_db!.ChangeTracker.Clear();
+		(await _db.Reports.SingleAsync(r => r.Id == _report!.Id)).Status.ShouldBe(ReportStatus.PendingReview);
+		(await _db.Summaries.AnyAsync(s => s.ReportId == _report!.Id)).ShouldBeFalse();
+	}
+
+	[Then(@"the report can never satisfy the public query")]
+	public async Task ThenNeverPublishable()
+	{
+		_db!.ChangeTracker.Clear();
+		var stored = await _db.Reports.Include(r => r.Summary).SingleAsync(r => r.Id == _report!.Id);
+		stored.IsPublishable.ShouldBeFalse();
+		Should.Throw<DomainRuleViolationException>(() => stored.ApprovePair("synthetic-officer", At));
+	}
+
 	[When(@"the Worker processes the summarization attempt")]
 	public async Task WhenTheWorkerProcessesTheAttempt()
 	{
@@ -342,16 +390,17 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		HpacSafetyDbContext db,
 		string questionKeySuffix = "",
 		string pilotName = "Ada Lovelace",
-		string narrative = "Ada Lovelace reported a hard landing.")
+		string narrative = "Ada Lovelace reported a hard landing.",
+		string consent = "yes")
 	{
 		// A second report seeded into the same database (e.g. the logging scenario,
 		// which needs both a success and a failure) reuses the one consent question
 		// rather than colliding on its unique key.
-		var consent = await db.Questions.SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish).ConfigureAwait(false);
-		if (consent is null)
+		var consentQuestion = await db.Questions.SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish).ConfigureAwait(false);
+		if (consentQuestion is null)
 		{
-			consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
-			db.Questions.Add(consent);
+			consentQuestion = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+			db.Questions.Add(consentQuestion);
 		}
 
 		var pilotNameQuestion = Question.Create(
@@ -362,7 +411,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		await db.SaveChangesAsync().ConfigureAwait(false);
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consent, ["yes"], At);
+		report.Answer(consentQuestion, [consent], At);
 		report.Answer(pilotNameQuestion, pilotName, At);
 		report.Answer(narrativeQuestion, narrative, At);
 		report.EnsureReadyForSubmission();

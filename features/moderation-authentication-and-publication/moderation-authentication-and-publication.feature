@@ -513,11 +513,12 @@ Scenario Outline: The report view offers only the actions its state allows
   Then the offered actions are <actions>
 
 Examples:
-  | status         | actions                               |
-  | pending-review | Edit summary, Approve, Reject, Delete |
-  | published      | Edit summary, Unpublish, Delete       |
-  | rejected       | Reopen, Delete                        |
-  | summary-failed | Write summary, Delete                 |
+  | status                 | actions                               |
+  | pending-review         | Edit summary, Approve, Reject, Delete |
+  | published              | Edit summary, Unpublish, Delete       |
+  | rejected               | Reopen, Delete                        |
+  | summary-failed         | Write summary, Delete                 |
+  | private-pending-review | Reject, Delete                        |
 
 @REQ-MOD-063
 @ui

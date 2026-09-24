@@ -6,7 +6,8 @@ description: Preserve HPAC Safety's one-call bilingual summarization and anonymi
 # Anonymize HPAC reports
 
 The Worker owns one versioned prompt and makes exactly one model call per
-attempt. The input has two labeled sections:
+attempt, and only when the reporter consented to publication — a report
+without consent is never sent to the model (REQ-AI-027). The input has two labeled sections:
 
 - `report_content`: answered non-private questions and the only eligible facts;
 - `private_context`: answered private questions used only to recognize

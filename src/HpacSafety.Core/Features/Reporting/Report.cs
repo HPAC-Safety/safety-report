@@ -258,6 +258,24 @@ public class Report
 		Status = ReportStatus.SummaryFailed;
 	}
 
+	/// <summary>
+	///     The reporter did not consent to publication, so the Worker never sends
+	///     the report to the model: it goes to review with no summary and can never
+	///     be published (REQ-DOM-006, REQ-AI-027).
+	/// </summary>
+	public void ReviewWithoutSummary()
+	{
+		EnsureLive();
+		EnsureIn("go to review without a summary", ReportStatus.Submitted, ReportStatus.Summarizing);
+
+		if (ConsentPublish is true)
+		{
+			throw new DomainRuleViolationException("A report with publication consent is summarized before review.");
+		}
+
+		Status = ReportStatus.PendingReview;
+	}
+
 	/// <summary>A safety officer approved the report.</summary>
 	public void Approve()
 	{

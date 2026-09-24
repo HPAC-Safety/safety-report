@@ -2,10 +2,10 @@
   "upload": {
     "rejected": {
       "empty": "Ce fichier semble être vide. Veuillez sélectionner à nouveau la photo ou la vidéo.",
-      "tooLarge": "Ce fichier est trop volumineux. Veuillez télécharger une photo ou une vidéo plus petite.",
-      "unrecognisedContent": "Nous n'avons pas pu lire ce fichier. Veuillez télécharger une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
-      "unacceptedMediaType": "Nous ne pouvons pas accepter ce type de fichier. Veuillez télécharger une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
-      "declaredTypeMismatch": "Ce fichier n'est pas du format indiqué; nous n'avons donc pas pu l'accepter. Veuillez télécharger à nouveau la photo ou la vidéo.",
+      "tooLarge": "Ce fichier est trop volumineux. Veuillez téléverser une photo ou une vidéo plus petite.",
+      "unrecognisedContent": "Nous n'avons pas pu lire ce fichier. Veuillez téléverser une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
+      "unacceptedMediaType": "Nous ne pouvons pas accepter ce type de fichier. Veuillez téléverser une photo au format JPEG, PNG, WebP ou HEIC, ou une vidéo au format MP4 ou QuickTime.",
+      "declaredTypeMismatch": "Ce fichier n'est pas du format indiqué; nous n'avons donc pas pu l'accepter. Veuillez téléverser à nouveau la photo ou la vidéo.",
       "couldNotStrip": "Nous n'avons pas pu supprimer les informations cachées relatives au lieu et à l'appareil photo de cette image; nous ne pouvons donc pas la montrer. L'original est conservé à titre privé."
     },
     "awaitingStripping": "Nous avons bien reçu votre vidéo. Elle est conservée en toute sécurité et n’est pas encore disponible pour examen."
@@ -100,7 +100,7 @@
     "loadError": "Le formulaire de rapport n'a pas pu être chargé. Veuillez actualiser la page.",
     "progress": "Étape n°{current}, tirée de {total}",
     "privacy": {
-      "localStorage": "Vos réponses sont conservées uniquement dans ce navigateur, pendant une période maximale de 15 jours à compter du moment où vous commencez, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents sont téléchargés au fur et à mesure que vous les joignez et sont conservés pendant ces mêmes 15 jours, puis supprimés si vous ne les avez pas soumis."
+      "localStorage": "Vos réponses sont conservées uniquement dans ce navigateur, pendant une période maximale de 15 jours à compter du moment où vous commencez, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents sont téléversés au fur et à mesure que vous les joignez et sont conservés pendant ces mêmes 15 jours, puis supprimés si vous ne les avez pas soumis."
     },
     "nav": {
       "next": "Suivant",
@@ -122,14 +122,14 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
-      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléchargé dès que vous le sélectionnez.",
+      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléversé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",
       "keptWithReport": "Les fichiers joints sont conservés avec votre rapport enregistré pendant un maximum de 15 jours; vous les retrouverez donc si vous quittez la page et y revenez.",
       "listLabel": "Fichiers joints",
       "uploading": "Téléversement en cours…",
       "uploadingNamed": "Téléversement de {name}",
       "cancel": "Annuler",
-      "cancelNamed": "Annuler le téléchargement de {name}",
+      "cancelNamed": "Annuler le téléversement de {name}",
       "remove": "Supprimer",
       "removeNamed": "Supprimer {name}",
       "expired": "Ce fichier n'est plus disponible. Supprimez-le et joignez-le à nouveau.",
@@ -141,8 +141,8 @@
         "unaccepted_media_type": "Ce type de fichier n'est pas accepté.",
         "declared_type_mismatch": "Le contenu de ce fichier ne correspond pas à son type.",
         "limit": "Il n'est plus possible de joindre des fichiers à ce rapport.",
-        "network": "Le téléchargement de ce fichier a échoué. Vérifiez votre connexion, supprimez le fichier, puis réessayez.",
-        "unknown": "Ce fichier n'a pas pu être téléchargé."
+        "network": "Le téléversement de ce fichier a échoué. Vérifiez votre connexion, supprimez le fichier, puis réessayez.",
+        "unknown": "Ce fichier n'a pas pu être téléversé."
       }
     },
     "error": {

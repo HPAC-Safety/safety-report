@@ -34,6 +34,8 @@ public class Summary
 		PromptVersion = promptVersion;
 		GeneratedAt = at;
 		UpdatedAt = at;
+		SourceEn = SummaryTextSource.Generated;
+		SourceFr = SummaryTextSource.Generated;
 	}
 
 	/// <summary>Surrogate key.</summary>
@@ -41,6 +43,12 @@ public class Summary
 
 	/// <summary>The report summarized. Unique: exactly one summary per report.</summary>
 	public TinyId ReportId { get; private init; }
+
+	/// <summary>How the English text was produced (ADR-0106).</summary>
+	public SummaryTextSource SourceEn { get; private set; }
+
+	/// <summary>How the French text was produced (ADR-0106).</summary>
+	public SummaryTextSource SourceFr { get; private set; }
 
 	/// <summary>The English text. Publishable only once the pair is approved.</summary>
 	public string AiSummaryEn { get; private set; }
@@ -93,9 +101,11 @@ public class Summary
 	///     failed. Editing either language clears the pair's approval.
 	/// </summary>
 	public void RewriteEn(string text,
-						  DateTimeOffset at)
+						  DateTimeOffset at,
+						  SummaryTextSource source = SummaryTextSource.Human)
 	{
 		AiSummaryEn = NotBlank(text);
+		SourceEn = ReviewerSource(source);
 		UpdatedAt = at;
 		ClearApproval();
 	}
@@ -105,9 +115,11 @@ public class Summary
 	///     pair's approval.
 	/// </summary>
 	public void RewriteFr(string text,
-						  DateTimeOffset at)
+						  DateTimeOffset at,
+						  SummaryTextSource source = SummaryTextSource.Human)
 	{
 		AiSummaryFr = NotBlank(text);
+		SourceFr = ReviewerSource(source);
 		UpdatedAt = at;
 		ClearApproval();
 	}
@@ -131,6 +143,14 @@ public class Summary
 	internal void Delete(DateTimeOffset at)
 	{
 		Deleted ??= at;
+	}
+
+	/// <summary>A reviewer's text is theirs or an accepted translation — never "generated".</summary>
+	internal static SummaryTextSource ReviewerSource(SummaryTextSource source)
+	{
+		return source is SummaryTextSource.Human or SummaryTextSource.Machine
+			? source
+			: throw new DomainRuleViolationException("A reviewer's text is written by hand or machine-translated, never generated.");
 	}
 
 	private static string NotBlank(string text)

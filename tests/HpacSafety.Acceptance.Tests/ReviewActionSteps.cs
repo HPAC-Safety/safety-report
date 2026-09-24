@@ -40,6 +40,9 @@ public sealed class ReviewActionSteps : IDisposable
 	private string _requestedAction = string.Empty;
 	private CapturingLoggerProvider? _logs;
 	private WebApplicationFactory<Program>? _host;
+	private MemberRole _role;
+	private string _situation = string.Empty;
+	private Report? _sourcesReport;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -411,6 +414,83 @@ public sealed class ReviewActionSteps : IDisposable
 			detail.ShouldNotContain(Note);
 			detail.ShouldNotContain(BootedReports.PilotName);
 		}
+	}
+
+	// ── REQ-MOD-069: who may translate ──────────────────────────────────────
+
+	[Given(@"^a member signed in as (User|SafetyOfficer|Administrator)$")]
+	public void GivenAMemberSignedInAs(string role)
+	{
+		_role = Enum.Parse<MemberRole>(role);
+	}
+
+	[When(@"that member requests a translation")]
+	public async Task WhenThatMemberRequestsATranslation()
+	{
+		using var client = await BootedApi.SignedInAs(_role);
+		_response = await client.PostAsJsonAsync(
+			"/api/admin/translate",
+			new { texts = new[] { "The pilot landed." }, from = "en-CA", to = "fr-CA" });
+	}
+
+	[Then(@"^the API answers (forbidden|a translation)$")]
+	public async Task ThenTheApiAnswers(string outcome)
+	{
+		if (outcome == "forbidden")
+		{
+			_response!.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+			return;
+		}
+
+		// The booted host runs in Development with no DeepL key: the echo stand-in answers.
+		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var body = await _response.Content.ReadFromJsonAsync<JsonElement>();
+		body.GetProperty("texts").GetArrayLength().ShouldBe(1);
+	}
+
+	// ── REQ-MOD-070: how each language was produced ─────────────────────────
+
+	[Given(@"^(the Worker produced the pair|a reviewer edited only the English text of a generated pair|a reviewer edited the English text and accepted its French translation|a reviewer wrote both texts by hand after summarization failed|a reviewer wrote the French text by hand and accepted its English translation)$")]
+	public void GivenASituation(string situation)
+	{
+		_situation = situation;
+	}
+
+	[When(@"the pair is saved")]
+	public void WhenThePairIsSaved()
+	{
+		var at = DateTimeOffset.UtcNow;
+		_sourcesReport = _situation.Contains("failed", StringComparison.Ordinal) || _situation.Contains("French text by hand", StringComparison.Ordinal)
+			? ReviewLifecycleSteps.In(ReportStatus.SummaryFailed, "yes")
+			: ReviewLifecycleSteps.In(ReportStatus.PendingReview, "yes");
+
+		switch (_situation)
+		{
+			case "the Worker produced the pair":
+				break;
+			case "a reviewer edited only the English text of a generated pair":
+				_sourcesReport.EditSummary("The pilot landed firmly.", _sourcesReport.Summary!.AiSummaryFr, at);
+				break;
+			case "a reviewer edited the English text and accepted its French translation":
+				_sourcesReport.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", at, SummaryTextSource.Human, SummaryTextSource.Machine);
+				break;
+			case "a reviewer wrote both texts by hand after summarization failed":
+				_sourcesReport.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", at);
+				break;
+			case "a reviewer wrote the French text by hand and accepted its English translation":
+				_sourcesReport.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", at, SummaryTextSource.Machine, SummaryTextSource.Human);
+				break;
+			default:
+				throw new ArgumentOutOfRangeException(nameof(_situation), _situation, "No such situation.");
+		}
+	}
+
+	[Then(@"^the English text is recorded as (\w+) and the French text as (\w+)$")]
+	public void ThenTheSourcesAre(string english,
+								  string french)
+	{
+		EnumCode.Of(_sourcesReport!.Summary!.SourceEn).ShouldBe(english);
+		EnumCode.Of(_sourcesReport.Summary.SourceFr).ShouldBe(french);
 	}
 
 	// ── Helpers ─────────────────────────────────────────────────────────────

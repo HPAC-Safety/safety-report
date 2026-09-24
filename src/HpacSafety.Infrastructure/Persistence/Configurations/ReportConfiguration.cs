@@ -190,6 +190,18 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 		// Exactly one summary row per report.
 		builder.HasIndex(summary => summary.ReportId).IsUnique();
 
+		// How each language was produced (ADR-0106).
+		builder.Property(summary => summary.SourceEn).IsRequired();
+		builder.Property(summary => summary.SourceFr).IsRequired();
+
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_summaries_source_en",
+			"source_en IN ('generated', 'human', 'machine')"));
+
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_summaries_source_fr",
+			"source_fr IN ('generated', 'human', 'machine')"));
+
 		// Edits land on this row, not the report's, so it carries its own token.
 		builder.Property<uint>(ConcurrencyToken.PropertyName).HasColumnName("xmin").IsRowVersion();
 

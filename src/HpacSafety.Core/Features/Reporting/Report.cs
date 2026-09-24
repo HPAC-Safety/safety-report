@@ -393,35 +393,57 @@ public class Report
 	/// <summary>
 	///     A reviewer saves both texts of the pair together. Approval is cleared and
 	///     the report returns to review, off the public feed if it was on it
-	///     (REQ-MOD-032, REQ-DOM-005).
+	///     (REQ-MOD-032, REQ-DOM-005). A language whose text did not change keeps how
+	///     it was produced; a changed one records <paramref name="sourceEn" /> or
+	///     <paramref name="sourceFr" /> (ADR-0106).
 	/// </summary>
 	public void EditSummary(string textEn,
 							string textFr,
-							DateTimeOffset at)
+							DateTimeOffset at,
+							SummaryTextSource sourceEn = SummaryTextSource.Human,
+							SummaryTextSource sourceFr = SummaryTextSource.Human)
 	{
 		EnsureLive();
 		EnsureIn("edit a summary text", ReportStatus.PendingReview, ReportStatus.Approved, ReportStatus.Published);
 
 		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to edit.");
-		summary.RewriteEn(textEn, at);
-		summary.RewriteFr(textFr, at);
+
+		if (!string.Equals(textEn, summary.AiSummaryEn, StringComparison.Ordinal))
+		{
+			summary.RewriteEn(textEn, at, sourceEn);
+		}
+
+		if (!string.Equals(textFr, summary.AiSummaryFr, StringComparison.Ordinal))
+		{
+			summary.RewriteFr(textFr, at, sourceFr);
+		}
+
+		// Saving is a review decision even when nothing changed: approval always
+		// clears and the report always returns to review.
+		summary.ClearApproval();
 		PublishedAt = null;
 		Status = ReportStatus.PendingReview;
 	}
 
 	/// <summary>
 	///     Summarization failed, so a reviewer writes the pair by hand. It carries
-	///     <see cref="ManualProvenance" /> as its model and prompt version and goes to
-	///     review like any other pair (REQ-MOD-059).
+	///     <see cref="ManualProvenance" /> as its model and prompt version, each
+	///     language records whether it was typed or an accepted translation, and it
+	///     goes to review like any other pair (REQ-MOD-059, ADR-0106).
 	/// </summary>
 	public void WriteManualSummary(string textEn,
 								   string textFr,
-								   DateTimeOffset at)
+								   DateTimeOffset at,
+								   SummaryTextSource sourceEn = SummaryTextSource.Human,
+								   SummaryTextSource sourceFr = SummaryTextSource.Human)
 	{
 		EnsureLive();
 		EnsureIn("write a manual pair", ReportStatus.SummaryFailed);
 
-		AttachSummary(Summary.Generate(Id, textEn, textFr, ManualProvenance, ManualProvenance, at));
+		var summary = Summary.Generate(Id, textEn, textFr, ManualProvenance, ManualProvenance, at);
+		summary.RewriteEn(textEn, at, sourceEn);
+		summary.RewriteFr(textFr, at, sourceFr);
+		AttachSummary(summary);
 		AwaitReview();
 	}
 

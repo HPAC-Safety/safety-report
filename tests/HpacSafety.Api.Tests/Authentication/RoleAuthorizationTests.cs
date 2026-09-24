@@ -74,22 +74,38 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 	}
 
-	[Theory]
-	[InlineData(MemberRole.User)]
-	[InlineData(MemberRole.SafetyOfficer)]
-	public async Task GivenRoleBelowAdministrator_WhenTranslationIsRequested_ThenApiForbidsIt(MemberRole role)
+	[Fact]
+	public async Task GivenUserRole_WhenTranslationIsRequested_ThenApiForbidsIt()
 	{
-		// Given — translation is a question-authoring aid (ADR-0062), so it
-		// carries the same role as authoring.
+		// Given — translation is a drafting aid for authoring and review
+		// (ADR-0062, ADR-0106), never for a member filing a report
+		using var client = await SignedInClient.As(_factory, MemberRole.User);
+
+		// When
+		using var response = await client.PostAsJsonAsync(
+			new Uri("/api/admin/translate", UriKind.Relative),
+			new { texts = new[] { "A short question." }, from = "en-CA", to = "fr-CA" });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+	}
+
+	[Theory]
+	[InlineData(MemberRole.SafetyOfficer)]
+	[InlineData(MemberRole.Administrator)]
+	public async Task GivenReviewerRole_WhenTranslationIsRequested_ThenApiAllowsIt(MemberRole role)
+	{
+		// Given — a reviewer drafts one summary language from the other (ADR-0106)
 		using var client = await SignedInClient.As(_factory, role);
 
 		// When
 		using var response = await client.PostAsJsonAsync(
 			new Uri("/api/admin/translate", UriKind.Relative),
-			new { text = "A short question.", from = "en-CA", to = "fr-CA" });
+			new { texts = new[] { "The pilot landed." }, from = "en-CA", to = "fr-CA" });
 
-		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+		// Then — allowed past authorization; whether a provider is configured is
+		// a separate answer (503), never a 401 or 403
+		response.StatusCode.ShouldBeOneOf(HttpStatusCode.OK, HttpStatusCode.ServiceUnavailable);
 	}
 
 	[Fact]

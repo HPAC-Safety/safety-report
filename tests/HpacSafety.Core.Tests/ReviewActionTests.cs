@@ -147,6 +147,79 @@ public class ReviewActionTests
 	}
 
 	[Fact]
+	public void GivenGeneratedPair_WhenOnlyEnglishIsEdited_ThenEnglishIsHumanAndFrenchStaysGenerated()
+	{
+		// Given
+		var report = Pending("yes");
+
+		// When
+		report.EditSummary("The pilot landed firmly.", report.Summary!.AiSummaryFr, Later);
+
+		// Then
+		report.Summary.SourceEn.ShouldBe(SummaryTextSource.Human);
+		report.Summary.SourceFr.ShouldBe(SummaryTextSource.Generated);
+		report.Summary.IsApproved.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenAcceptedTranslation_WhenPairIsSaved_ThenThatLanguageIsMachine()
+	{
+		// Given
+		var report = Pending("yes");
+
+		// When
+		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Later, SummaryTextSource.Human, SummaryTextSource.Machine);
+
+		// Then
+		report.Summary!.SourceEn.ShouldBe(SummaryTextSource.Human);
+		report.Summary.SourceFr.ShouldBe(SummaryTextSource.Machine);
+	}
+
+	[Fact]
+	public void GivenUnchangedPair_WhenSaved_ThenSourcesAreKeptButApprovalStillClears()
+	{
+		// Given — a published pair saved without a change is still a review decision
+		var report = In(ReportStatus.Published);
+		var summary = report.Summary!;
+
+		// When
+		report.EditSummary(summary.AiSummaryEn, summary.AiSummaryFr, Later, SummaryTextSource.Machine, SummaryTextSource.Machine);
+
+		// Then
+		summary.SourceEn.ShouldBe(SummaryTextSource.Generated);
+		summary.SourceFr.ShouldBe(SummaryTextSource.Generated);
+		summary.IsApproved.ShouldBeFalse();
+		report.Status.ShouldBe(ReportStatus.PendingReview);
+	}
+
+	[Fact]
+	public void GivenFailedReport_WhenFrenchIsTypedAndEnglishTranslated_ThenSourcesSaySo()
+	{
+		// Given
+		var report = Consented("yes");
+		report.BeginSummarizing();
+		report.FailSummarization("The provider was unavailable.");
+
+		// When
+		report.WriteManualSummary("The pilot landed.", "Le pilote s'est posé.", Later, SummaryTextSource.Machine, SummaryTextSource.Human);
+
+		// Then
+		report.Summary!.SourceEn.ShouldBe(SummaryTextSource.Machine);
+		report.Summary.SourceFr.ShouldBe(SummaryTextSource.Human);
+	}
+
+	[Fact]
+	public void GivenReviewerClaimsGenerated_WhenPairIsEdited_ThenRefused()
+	{
+		// Given — only the Worker's model call produces generated text
+		var report = Pending("yes");
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() =>
+			report.EditSummary("Changed.", report.Summary!.AiSummaryFr, Later, SummaryTextSource.Generated));
+	}
+
+	[Fact]
 	public void GivenBlankText_WhenPairIsEdited_ThenRefused()
 	{
 		// Given

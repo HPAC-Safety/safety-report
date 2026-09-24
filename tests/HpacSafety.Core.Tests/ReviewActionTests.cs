@@ -198,6 +198,34 @@ public class ReviewActionTests
 	}
 
 	[Fact]
+	public void GivenUnsummarizedReport_WhenPairIsEdited_ThenRefusedBecauseThereIsNoPair()
+	{
+		// Given — a report without consent is never summarized (REQ-DOM-006)
+		var report = Consented("no");
+		report.ReviewWithoutSummary();
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => report.EditSummary("en", "fr", Later)).Message.ShouldContain("no summary pair");
+	}
+
+	[Fact]
+	public void GivenUnansweredConsent_WhenPairIsApproved_ThenApprovedAndNotPublished()
+	{
+		// Given — an older report with no consent answer at all
+		var report = new Report(Locale.EnCa, Now);
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, "The pilot landed.", "Le pilote s'est posé.", "gemini-3.7-flash", "summarize-anonymize.v3", Now));
+		report.AwaitReview();
+
+		// When
+		var published = report.ApprovePair(Officer, Later);
+
+		// Then — silence is not consent
+		published.ShouldBeFalse();
+		report.Status.ShouldBe(ReportStatus.Approved);
+	}
+
+	[Fact]
 	public void GivenConsentedReport_WhenItGoesToReviewWithoutSummary_ThenRefused()
 	{
 		// Given

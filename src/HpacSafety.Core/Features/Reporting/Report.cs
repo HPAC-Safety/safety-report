@@ -384,7 +384,8 @@ public class Report
 		EnsureLive();
 		EnsureIn("unpublish the report", ReportStatus.Published);
 
-		Summary?.ClearApproval();
+		// A published report always has an approved pair; publication requires it.
+		Summary!.ClearApproval();
 		PublishedAt = null;
 		Status = ReportStatus.PendingReview;
 	}

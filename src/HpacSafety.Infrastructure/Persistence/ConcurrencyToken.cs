@@ -30,9 +30,17 @@ public static class ConcurrencyToken
 
 	/// <summary>
 	///     Tells EF that the rows were loaded at <paramref name="expected" />, so the
-	///     save fails with <see cref="DbUpdateConcurrencyException" /> if either row
-	///     changed since. Returns false when the version is not one this system issued.
+	///     save fails with <see cref="DbUpdateConcurrencyException" /> if a row it
+	///     writes changed since. Returns false when the version is not one this system
+	///     issued.
 	/// </summary>
+	/// <remarks>
+	///     EF checks the token only on a row it updates, so a command that writes the
+	///     report but not the summary would not see a concurrent summary edit here.
+	///     The caller therefore also compares <see cref="Of" /> with the version it was
+	///     sent before applying anything; this closes the remaining window between
+	///     that comparison and the save.
+	/// </remarks>
 	public static bool Expect(HpacSafetyDbContext database,
 							  Report report,
 							  string? expected)

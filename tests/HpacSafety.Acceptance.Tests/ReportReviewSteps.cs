@@ -24,6 +24,8 @@ public sealed class ReportReviewSteps
 	private const string PilotName = "Rowan Synthetic";
 	private const string SummaryEn = "The pilot landed in a field.";
 
+	private static readonly SemaphoreSlim ConsentGate = new(1, 1);
+
 	private readonly Dictionary<string, string> _seeded = new(StringComparer.Ordinal);
 	private List<JsonElement> _listed = [];
 	private JsonElement _detail;
@@ -242,6 +244,50 @@ public sealed class ReportReviewSteps
 	}
 
 	/// <summary>
+	///     The one consent question, created by whichever scenario needs it first.
+	///     Scenarios run in parallel against one database, and its key is unique, so
+	///     creation is serialized here and a lost race simply reads the winner's row.
+	/// </summary>
+	private static async Task<Question> ConsentQuestion(HpacSafetyDbContext database,
+														DateTimeOffset at)
+	{
+		await ConsentGate.WaitAsync();
+		try
+		{
+			var existing = await database.Questions
+				.Include(question => question.Revisions)
+				.SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish);
+
+			if (existing is not null)
+			{
+				return existing;
+			}
+
+			var consent = Question.CreateConsentPublish(
+				"May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", at);
+			database.Questions.Add(consent);
+
+			try
+			{
+				await database.SaveChangesAsync();
+				return consent;
+			}
+			catch (DbUpdateException)
+			{
+				// Another step file created it first.
+				database.Entry(consent).State = EntityState.Detached;
+				return await database.Questions
+					.Include(question => question.Revisions)
+					.SingleAsync(question => question.Key == QuestionKey.ConsentPublish);
+			}
+		}
+		finally
+		{
+			ConsentGate.Release();
+		}
+	}
+
+	/// <summary>
 	///     One report per workflow state, submitted a minute apart in the future so
 	///     their order is known and no other scenario's reports interleave, plus two
 	///     reports stuck for more than a day.
@@ -254,12 +300,7 @@ public sealed class ReportReviewSteps
 
 		var now = DateTimeOffset.UtcNow;
 		var suffix = Guid.NewGuid().ToString("n")[..8];
-		var consent = await database.Questions.Include(question => question.Revisions).SingleOrDefaultAsync(question => question.Key == QuestionKey.ConsentPublish)
-			?? Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", now);
-		if (database.Entry(consent).State == EntityState.Detached)
-		{
-			database.Questions.Add(consent);
-		}
+		var consent = await ConsentQuestion(database, now);
 
 		var pilot = Question.Create($"pilot_{suffix}", QuestionType.ShortText, "Pilot name", "Nom du pilote", now, isPrivate: true);
 		database.Questions.Add(pilot);

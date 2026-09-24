@@ -120,6 +120,11 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   Do not reach for it because writing the scenario is slower — if you cannot
   name the claims your change preserves, the change needs a scenario. Run
   `node tools/feature-coverage.mjs` locally rather than discovering this in CI.
+  Renovate writes its own `dependency` exemption for `src/web` bumps from
+  `renovate.json`
+  ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
+  If that check fails on a Renovate pull request, fix the citation in
+  `renovate.json`; never edit the pull request's body by hand.
 - Write the scenario before the implementation, and when the implementation
   turns out to do the wrong thing, correct the scenario rather than arguing it
   out in conversation

@@ -232,7 +232,7 @@ fi
 # setting core.hooksPath: that directory is where graphify's own `graphify
 # hook install` (below) puts post-checkout/post-commit, and core.hooksPath
 # repoints git at a single directory for *every* hook, which would silently
-# stop those from running. Every name here (pre-commit, post-merge,
+# stop those from running. Every name here (pre-commit, commit-msg, post-merge,
 # post-rewrite) is distinct from post-checkout/post-commit, so all coexist
 # with no collision. Resolved with `git rev-parse --git-path hooks` rather
 # than a hardcoded `.git/hooks` because this repository is worked in
@@ -247,7 +247,7 @@ fi
 # reported with note(), not missing(): it must never fail a fresh CI
 # checkout's `--check` step.
 HOOKS_DIR=$(git rev-parse --git-path hooks)
-for hook in pre-commit post-merge post-rewrite; do
+for hook in pre-commit commit-msg post-merge post-rewrite; do
 	if [ "$CHECK_ONLY" -eq 1 ]; then
 		if [ -x "$HOOKS_DIR/$hook" ] && cmp -s ".githooks/$hook" "$HOOKS_DIR/$hook"; then
 			ok "git $hook hook"

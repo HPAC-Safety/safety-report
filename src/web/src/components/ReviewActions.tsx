@@ -1,6 +1,13 @@
 import { useState } from "react"
 import { useLocale } from "../i18n/useLocale"
-import type { ReportDetail, ReportStatus } from "../api/adminReports"
+import { ApiError, translate } from "../api/adminQuestions"
+import type { ReportDetail, ReportStatus, SummarySource } from "../api/adminReports"
+import { TranslateConfirmDialog } from "./TranslateConfirmDialog"
+
+type Language = "en" | "fr"
+
+const LOCALE: Record<Language, string> = { en: "en-CA", fr: "fr-CA" }
+const OTHER: Record<Language, Language> = { en: "fr", fr: "en" }
 
 /** What a reviewer may do in each state (REQ-MOD-062, ADR-0105). Delete is always offered. */
 export type ReviewAction = "edit" | "write" | "approve" | "reject" | "reopen" | "unpublish" | "delete"
@@ -38,7 +45,7 @@ export function ReviewActions({
 }: {
 	report: ReportDetail
 	busy: boolean
-	onSave: (aiSummaryEn: string, aiSummaryFr: string) =>
+	onSave: (aiSummaryEn: string, aiSummaryFr: string, sourceEn: SummarySource, sourceFr: SummarySource) =>
 		Promise<boolean>
 	onApprove: () => void
 	onReject: (note: string) =>
@@ -49,18 +56,62 @@ export function ReviewActions({
 }) {
 	const { t } = useLocale()
 	const [mode, setMode] = useState<"view" | "edit" | "reject">("view")
-	const [draftEn, setDraftEn] = useState("")
-	const [draftFr, setDraftFr] = useState("")
+	const [original, setOriginal] = useState<Record<Language, string>>({ en: "", fr: "" })
+	const [draft, setDraft] = useState<Record<Language, string>>({ en: "", fr: "" })
+	// How each draft got its current text: typed by the reviewer, filled by an
+	// accepted translation, or untouched since the editor opened (ADR-0106).
+	const [source, setSource] = useState<Record<Language, "typed" | "translated" | null>>({ en: null, fr: null })
+	const [proposal, setProposal] = useState<{ target: Language; text: string } | null>(null)
+	const [translating, setTranslating] = useState(false)
+	const [translateError, setTranslateError] = useState<string | null>(null)
 	const [note, setNote] = useState("")
 
 	function openEditor() {
-		setDraftEn(report.summary?.aiSummaryEn ?? "")
-		setDraftFr(report.summary?.aiSummaryFr ?? "")
+		const opened = { en: report.summary?.aiSummaryEn ?? "", fr: report.summary?.aiSummaryFr ?? "" }
+		setOriginal(opened)
+		setDraft(opened)
+		setSource({ en: null, fr: null })
+		setTranslateError(null)
 		setMode("edit")
 	}
 
+	function type(language: Language, text: string) {
+		setDraft((current) => ({ ...current, [language]: text }))
+		setSource((current) => ({ ...current, [language]: "typed" }))
+	}
+
+	/** A language the reviewer typed a change into; an accepted translation does not count. */
+	const changed = (language: Language) =>
+		source[language] === "typed" && draft[language].trim() !== "" && draft[language] !== original[language]
+
+	async function translateFrom(language: Language) {
+		const target = OTHER[language]
+		setTranslating(true)
+		setTranslateError(null)
+		try {
+			const result = await translate([draft[language]], LOCALE[language], LOCALE[target])
+			const text = result.texts[0] ?? ""
+			// Nothing to overwrite: fill it straight away. Otherwise ask first (REQ-MOD-072).
+			if (draft[target].trim() === "") accept(target, text)
+			else setProposal({ target, text })
+		} catch (cause) {
+			setTranslateError(cause instanceof ApiError ? cause.detail : t("reports.translate.error"))
+		} finally {
+			setTranslating(false)
+		}
+	}
+
+	function accept(target: Language, text: string) {
+		setDraft((current) => ({ ...current, [target]: text }))
+		setSource((current) => ({ ...current, [target]: "translated" }))
+		setProposal(null)
+	}
+
+	const savedSource = (language: Language): SummarySource =>
+		source[language] === "translated" ? "machine" : "human"
+
 	async function save() {
-		if (await onSave(draftEn, draftFr)) setMode("view")
+		if (await onSave(draft.en, draft.fr, savedSource("en"), savedSource("fr"))) setMode("view")
 	}
 
 	async function reject() {
@@ -82,15 +133,43 @@ export function ReviewActions({
 			>
 				<label className="block font-sans text-sm text-ink">
 					{t("reports.edit.en")}
-					<textarea lang="en-CA" rows={6} className={FIELD} value={draftEn} onChange={(e) => setDraftEn(e.target.value)} />
+					<textarea lang="en-CA" rows={6} className={FIELD} value={draft.en} onChange={(e) => type("en", e.target.value)} />
 				</label>
 				<label className="block font-sans text-sm text-ink">
 					{t("reports.edit.fr")}
-					<textarea lang="fr-CA" rows={6} className={FIELD} value={draftFr} onChange={(e) => setDraftFr(e.target.value)} />
+					<textarea lang="fr-CA" rows={6} className={FIELD} value={draft.fr} onChange={(e) => type("fr", e.target.value)} />
 				</label>
+				{(changed("en") || changed("fr")) && (
+					<div role="group" aria-label={t("reports.translate.label")} className="flex flex-wrap gap-3">
+						{changed("en") && (
+							<button type="button" className={SECONDARY} disabled={busy || translating} onClick={() => void translateFrom("en")}>
+								{t("reports.translate.toFrench")}
+							</button>
+						)}
+						{changed("fr") && (
+							<button type="button" className={SECONDARY} disabled={busy || translating} onClick={() => void translateFrom("fr")}>
+								{t("reports.translate.toEnglish")}
+							</button>
+						)}
+					</div>
+				)}
+				{translateError && (
+					<p role="alert" className="rounded border border-brand-700 bg-surface-2 p-3 font-sans text-sm text-ink">
+						{translateError}
+					</p>
+				)}
+				{proposal && (
+					<TranslateConfirmDialog
+						target={proposal.target}
+						current={draft[proposal.target]}
+						proposed={proposal.text}
+						onAccept={() => accept(proposal.target, proposal.text)}
+						onKeep={() => setProposal(null)}
+					/>
+				)}
 				<p className="font-sans text-sm text-ink-muted">{t("reports.edit.clearsApproval")}</p>
 				<div className="flex flex-wrap gap-3">
-					<button type="submit" className={PRIMARY} disabled={busy || !draftEn.trim() || !draftFr.trim()}>
+					<button type="submit" className={PRIMARY} disabled={busy || !draft.en.trim() || !draft.fr.trim()}>
 						{t("reports.edit.save")}
 					</button>
 					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("view")}>

@@ -113,6 +113,60 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenGeneratedPair_WhenEnglishIsEditedAndFrenchTranslationAccepted_ThenSourcesAreHumanAndMachine()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var detail = await Ok(await Send(client, id, "summary", new
+		{
+			version,
+			aiSummaryEn = "The pilot landed firmly.",
+			aiSummaryFr = "Le pilote s'est posé fermement.",
+			sourceEn = "human",
+			sourceFr = "machine",
+		}));
+
+		// Then
+		detail.GetProperty("summary").GetProperty("sourceEn").GetString().ShouldBe("human");
+		detail.GetProperty("summary").GetProperty("sourceFr").GetString().ShouldBe("machine");
+	}
+
+	[Fact]
+	public async Task GivenGeneratedPair_WhenOnlyEnglishChangesWithNoSourcesSent_ThenEnglishHumanAndFrenchStillGenerated()
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var detail = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "Changed.", aiSummaryFr = "Le pilote s'est posé." }));
+
+		// Then
+		detail.GetProperty("summary").GetProperty("sourceEn").GetString().ShouldBe("human");
+		detail.GetProperty("summary").GetProperty("sourceFr").GetString().ShouldBe("generated");
+	}
+
+	[Theory]
+	[InlineData("generated")]
+	[InlineData("robot")]
+	public async Task GivenSourceAReviewerCannotClaim_WhenPairIsSaved_ThenBadRequest(string source)
+	{
+		// Given
+		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await Send(client, id, "summary", new { version, aiSummaryEn = "Changed.", aiSummaryFr = "Changé.", sourceEn = source });
+
+		// Then
+		await ProblemOf(response, HttpStatusCode.BadRequest, "invalid-review");
+		(await Audits(id)).ShouldBeEmpty();
+	}
+
+	[Fact]
 	public async Task GivenFailedReport_WhenPairIsSaved_ThenManualPairAndPendingReview()
 	{
 		// Given

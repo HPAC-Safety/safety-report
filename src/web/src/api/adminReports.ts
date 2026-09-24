@@ -48,6 +48,9 @@ export interface ReportAnswer {
 	values: ReportAnswerValue[]
 }
 
+/** How one summary language was produced (ADR-0106). */
+export type SummarySource = "generated" | "human" | "machine"
+
 export interface ReportSummary {
 	aiSummaryEn: string
 	aiSummaryFr: string
@@ -57,6 +60,8 @@ export interface ReportSummary {
 	updatedAt: string
 	approvedBySubject: string | null
 	approvedAt: string | null
+	sourceEn: SummarySource
+	sourceFr: SummarySource
 }
 
 export interface ReportAttachment {
@@ -138,10 +143,17 @@ export function getReport(id: string): Promise<ReportDetail> {
 const reportPath = (id: string) => `/api/admin/reports/${encodeURIComponent(id)}`
 
 /** Saves both texts together; after a failed summarization this writes the pair by hand. */
-export function saveSummaryPair(id: string, version: string, aiSummaryEn: string, aiSummaryFr: string): Promise<ReportDetail> {
+export function saveSummaryPair(
+	id: string,
+	version: string,
+	aiSummaryEn: string,
+	aiSummaryFr: string,
+	sourceEn: SummarySource = "human",
+	sourceFr: SummarySource = "human",
+): Promise<ReportDetail> {
 	return call(`${reportPath(id)}/summary`, {
 		method: "PUT",
-		body: JSON.stringify({ version, aiSummaryEn, aiSummaryFr }),
+		body: JSON.stringify({ version, aiSummaryEn, aiSummaryFr, sourceEn, sourceFr }),
 	})
 }
 

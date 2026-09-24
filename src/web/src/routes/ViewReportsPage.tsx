@@ -64,7 +64,14 @@ export function ViewReportsPage() {
 										{t("feed.publishedAt", { at: published.format(new Date(report.publishedAt)) })}
 									</span>
 									<span className="line-clamp-3 whitespace-pre-line font-sans text-ink">{summaryIn(report, locale)}</span>
-									<span className="font-sans text-sm font-medium text-brand-700 underline">{t("feed.read")}</span>
+									<span className="flex flex-wrap items-center gap-x-4 font-sans text-sm">
+										<span className="font-medium text-brand-700 underline">{t("feed.read")}</span>
+										<span data-comment-count={report.commentCount} className="text-ink-muted">
+											{t(report.commentCount === 1 ? "feed.comments.one" : "feed.comments.other", {
+												count: String(report.commentCount),
+											})}
+										</span>
+									</span>
 								</Link>
 							</li>
 						))}

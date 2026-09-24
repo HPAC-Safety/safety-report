@@ -140,6 +140,8 @@ scenario can assert what the system does, not enumerate what it never grew.*
   upload URL handed to a reporter
 - Direct messages, email notifications, WhatsApp, Telegram, or social posting
 - Public raw reports, questions, answers, attachments, or audit history
+- A comment author's name, email address, or HPAC number (#413), and replies,
+  reactions, or notifications on comments
 - Automatic approval or publication
 - Identity-provider-specific authorization rules in domain code
 - Application-managed encryption keys or ciphertext fields

@@ -21,6 +21,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		"question_revisions",
 		"questions",
 		"report_answers",
+		"report_comment_revisions",
+		"report_comments",
 		"report_files",
 		"reports",
 		"summaries",
@@ -56,8 +58,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
 			"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'public_reports' ORDER BY ordinal_position");
 
 		// Then — the view's columns are the public DTO's allowlist (CON-DP-011).
-		views.ShouldBe(["public_reports"]);
-		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at"]);
+		views.ShouldBe(["public_report_comments", "public_reports"]);
+		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count"]);
 	}
 
 	[Fact]

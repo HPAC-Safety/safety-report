@@ -45,12 +45,15 @@ constraints permit, but it must preserve these logical records.
 | `report_files` | ID, report ID, file-upload report-answer ID, attachment kind, server-minted original and nullable derivative keys, detected/safe types and sizes, processing status/timestamps, safe error code, Deleted. The answer identifies the exact revision. Documents normally have no derivative. The reporter's sanitized original filename, nullable, used only as a reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)); never in a key. No extracted document text. |
 | `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, generated/updated timestamps, nullable ApprovedBySubject/ApprovedAt, Deleted. One row per report. |
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
+| `report_comments` | ID, report ID, the author's token subject (opaque, no foreign key), created timestamp, nullable hidden timestamp and hiding reviewer's subject, Deleted. A member's comment on a published report ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
+| `report_comment_revisions` | ID, comment ID, revision number (unique per comment), text, the locale it was written in, nullable machine translation and its source (`auto`), created timestamp, Deleted. Immutable once written, except that its translation is filled in once. The comment's current text is its highest revision. |
 | `audit_log` | ID, acting token subject where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
 
 **CON-DP-005** **There is no user table.** Identity and role come from claims on a validated
 token, per request, and are never written down
 ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-`summaries.approved_by_subject` and `audit_log.actor_subject` hold the token's
+`summaries.approved_by_subject`, `report_comments.author_subject`,
+`report_comments.hidden_by_subject`, and `audit_log.actor_subject` hold the token's
 `sub` claim as an opaque `varchar(256)` string with **no foreign key** — there
 is nothing to reference.
 *Verified by: REQ-MOD-018.*
@@ -133,7 +136,10 @@ positive allowlist rather than an entity projection with fields removed later.
    `private_context`, labeled in the report language.
 3. Admin review DTO: exact asked questions and answers, privacy, attachment
    state/authorized links, status, summary pair, and provenance.
-4. Public report DTO: only ID, both summary texts, and publication timestamp.
+4. Public report DTO: only ID, both summary texts, publication timestamp, and
+   the number of visible comments. A public comment carries its ID, current
+   text, language, machine translation, timestamps, and whether it was edited,
+   and never its author.
 
 Each query selects only its required columns. In particular, public queries are
 positive allowlists rather than entity projections with fields removed later.
@@ -141,8 +147,12 @@ positive allowlists rather than entity projections with fields removed later.
 The public report DTO is read from the `public_reports` view, never from the
 tables. The view states the whole publication invariant in SQL, including
 nonblank summary texts. Its columns are the allowlist itself: `id`,
-`ai_summary_en`, `ai_summary_fr`, and `published_at`. So a public query cannot
-reach a column the view does not carry
+`ai_summary_en`, `ai_summary_fr`, `published_at`, and `comment_count`. So a
+public query cannot reach a column the view does not carry. Comments are read
+from `public_report_comments`, which joins to `public_reports`, so a report's
+comments are public exactly while the report is. Its one non-public column,
+`author_subject`, is compared on the server to compute `isMine` and is never
+serialized
 ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 ## Migrations and seeding

@@ -1,5 +1,7 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text;
 using Amazon.S3;
 using DotNet.Testcontainers.Containers;
 using HpacSafety.Api.Authentication;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
 using Reqnroll;
 using Testcontainers.PostgreSql;
 
@@ -150,6 +153,33 @@ public static class BootedApi
 	public static async Task<HttpClient> SignedInAs(MemberRole role)
 	{
 		return await SignedInAs(role, await Factory().ConfigureAwait(false)).ConfigureAwait(false);
+	}
+
+	/// <summary>
+	///     A client for one particular member, identified by <paramref name="subject" />:
+	///     a token signed with the booted host's own development key, so scenarios
+	///     that need two different members of the same role can have them.
+	/// </summary>
+	public static HttpClient SignedInAsMember(WebApplicationFactory<Program> host,
+											  string subject,
+											  string role = "user")
+	{
+		ArgumentNullException.ThrowIfNull(host);
+
+		var token = new JwtSecurityToken(
+			DevelopmentTokenIssuer.IssuerName,
+			"hpac-safety-api",
+			[new(JwtRegisteredClaimNames.Sub, subject), new("roles", role)],
+
+			// JwtSecurityToken wants DateTime. Convert at this boundary and
+			// never carry one past it (ADR-0035).
+			DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime,
+			DateTimeOffset.UtcNow.AddHours(1).UtcDateTime,
+			new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(SigningKey)), SecurityAlgorithms.HmacSha256));
+
+		var client = host.CreateClient();
+		client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", new JwtSecurityTokenHandler().WriteToken(token));
+		return client;
 	}
 
 	/// <summary>The same, against a specific already-booted host — see <see cref="RateLimited" />.</summary>

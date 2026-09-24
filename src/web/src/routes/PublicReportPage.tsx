@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
+import { ReportComments } from "../components/ReportComments"
 import { fetchPublicReport, PublicReportNotFound, summaryIn, type PublicReport } from "../api/publicReports"
 
 type Loaded = { state: "loading" } | { state: "ready"; report: PublicReport } | { state: "missing" } | { state: "failed" }
@@ -8,17 +9,14 @@ type Loaded = { state: "loading" } | { state: "ready"; report: PublicReport } | 
 /*
  * One published report at its own address, /reports/<id>, which can be opened
  * directly, reloaded, and shared (REQ-MOD-079, REQ-MOD-080). The summary shows
- * first in the visitor's language, and they can switch to the other one
- * (REQ-WLD-019). A report that is not public gets the same "not found" as one
+ * in the site's language, which the header's language toggle chooses; the page
+ * has no language control of its own (REQ-WLD-019). A report that is not public gets the same "not found" as one
  * that never existed (REQ-MOD-081).
  */
 export function PublicReportPage() {
 	const { t, locale } = useLocale()
 	const { reportId = "" } = useParams()
 	const [loaded, setLoaded] = useState<Loaded>({ state: "loading" })
-	// Remembered against the locale it was chosen in, so changing the site's
-	// language shows that language's text first again.
-	const [otherChosenIn, setOtherChosenIn] = useState<string | null>(null)
 
 	useEffect(() => {
 		let current = true
@@ -39,9 +37,6 @@ export function PublicReportPage() {
 		}
 	}, [reportId])
 
-	const showingOther = otherChosenIn === locale
-	const other = locale === "fr-CA" ? "en-CA" : "fr-CA"
-	const shown = showingOther ? other : locale
 	const published = new Intl.DateTimeFormat(locale, { dateStyle: "long" })
 
 	return (
@@ -71,16 +66,10 @@ export function PublicReportPage() {
 					<p className="mt-2 font-sans text-sm text-ink-muted">
 						{t("feed.publishedAt", { at: published.format(new Date(loaded.report.publishedAt)) })}
 					</p>
-					<p lang={shown} data-summary={shown} className="mt-6 whitespace-pre-line font-sans text-lg text-ink">
-						{summaryIn(loaded.report, shown)}
+					<p lang={locale} data-summary={locale} className="mt-6 whitespace-pre-line font-sans text-lg text-ink">
+						{summaryIn(loaded.report, locale)}
 					</p>
-					<button
-						type="button"
-						onClick={() => setOtherChosenIn(showingOther ? null : locale)}
-						className="touch-target mt-6 inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
-					>
-						{t(showingOther ? `feed.readIn.${locale}` : `feed.readIn.${other}`)}
-					</button>
+					<ReportComments reportId={loaded.report.id} />
 				</article>
 			)}
 		</main>

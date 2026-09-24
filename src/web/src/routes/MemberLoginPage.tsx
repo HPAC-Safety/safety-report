@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { useAuth } from "../auth/useAuth"
 import { loadAuthConfig } from "../auth/authApi"
@@ -16,6 +16,7 @@ export function MemberLoginPage() {
 	const { t } = useLocale()
 	const { signInWithPassword } = useAuth()
 	const navigate = useNavigate()
+	const [searchParams] = useSearchParams()
 
 	const [username, setUsername] = useState("")
 	const [password, setPassword] = useState("")
@@ -43,7 +44,7 @@ export function MemberLoginPage() {
 
 		try {
 			await signInWithPassword(username, password)
-			navigate("/")
+			navigate(returnTarget(searchParams.get("returnTo")))
 		} catch {
 			// One message for every reason, matching what the API returns.
 			setFailed(true)
@@ -106,4 +107,13 @@ export function MemberLoginPage() {
 			</form>
 		</main>
 	)
+}
+
+/**
+ * Where to go after signing in: the page that sent the member here, such as a
+ * report they wanted to comment on, but only a path on this site. Anything
+ * else — another origin, a protocol-relative URL — goes home.
+ */
+function returnTarget(requested: string | null): string {
+	return requested && requested.startsWith("/") && !requested.startsWith("//") && !requested.startsWith("/\\") ? requested : "/"
 }

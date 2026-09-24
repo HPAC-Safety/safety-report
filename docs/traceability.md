@@ -698,6 +698,30 @@ The public feed pages forward and the address keeps the page — *playwright-bdd
 
 A reviewer can open a published report's public page — *playwright-bdd, Covered*
 
+### REQ-MOD-084
+
+A reviewer reads how many reports need action — *Reqnroll, Covered*
+
+### REQ-MOD-085
+
+Only an Administrator's pending counts include answers awaiting translation — *Reqnroll, Covered*
+
+### REQ-MOD-086
+
+A User cannot read the pending counts — *Reqnroll, Covered*
+
+### REQ-MOD-087
+
+An Administrator's Admin menu shows how much work is waiting — *playwright-bdd, Covered*
+
+### REQ-MOD-088
+
+A SafetyOfficer's Admin menu counts only the reports needing action — *playwright-bdd, Covered*
+
+### REQ-MOD-089
+
+With nothing waiting, the Admin menu shows no count — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

@@ -41,6 +41,10 @@ type LoadState =
 	| { status: "error" }
 	| { status: "ready"; questions: PublicQuestionView[] }
 
+// Every state of the form sits in the same column as the not-tracked notice
+// above it, so the confirmation lines up with the page rather than the viewport.
+const COLUMN = "mx-auto max-w-measure px-6 py-10"
+
 type SubmitState = { status: "idle" } | { status: "submitting" } | { status: "submitted"; id: string } | { status: "failed"; message: string; keepsLocalState: boolean }
 
 /** Best effort, one request each: an upload this fails to erase is never claimed, and the lifecycle rule expires it. */
@@ -393,24 +397,38 @@ export function ReportForm() {
 	}
 
 	if (load.status === "loading") {
-		return <p aria-busy="true" className="font-sans text-ink-muted">{t("report.loading")}</p>
+		return (
+			<div className={COLUMN}>
+				<p aria-busy="true" className="font-sans text-ink-muted">{t("report.loading")}</p>
+			</div>
+		)
 	}
 
 	if (load.status === "error") {
-		return <p role="alert" className="font-sans text-brand-700">{t("report.loadError")}</p>
+		return (
+			<div className={COLUMN}>
+				<p role="alert" className="font-sans text-brand-700">{t("report.loadError")}</p>
+			</div>
+		)
 	}
 
 	if (submit.status === "submitted") {
 		return (
-			<div role="status" className="rounded border border-rule bg-surface-2 p-6">
-				<h2 className="font-display text-xl font-bold text-ink">{t("report.submitted.title")}</h2>
-				<p className="mt-2 font-sans text-ink-muted">{t("report.submitted.body")}</p>
+			<div className={COLUMN}>
+				<div role="status" className="rounded border border-rule bg-surface-2 p-6">
+					<h2 className="font-display text-xl font-bold text-ink">{t("report.submitted.title")}</h2>
+					<p className="mt-2 font-sans text-ink-muted">{t("report.submitted.body")}</p>
+				</div>
 			</div>
 		)
 	}
 
 	if (!currentStep) {
-		return <p className="font-sans text-ink-muted">{t("report.loading")}</p>
+		return (
+			<div className={COLUMN}>
+				<p className="font-sans text-ink-muted">{t("report.loading")}</p>
+			</div>
+		)
 	}
 
 	const blocking = attemptedAdvance ? blockingRequirements() : []
@@ -419,7 +437,7 @@ export function ReportForm() {
 	const blockingIds = new Set(blocking.map((question) => question.revisionId))
 
 	return (
-		<div className="mx-auto max-w-measure px-6 py-10">
+		<div className={COLUMN}>
 			{pendingDraft && (
 				<ResumeDraftDialog rows={pendingRows} onContinue={continueDraft} onStartOver={startOver} t={t} />
 			)}

@@ -15,9 +15,12 @@
  *
  * ## The port
  *
- *   translate(items, { source, target }) -> Promise<Map<key, string>>
+ *   translate(items, { source, target, instructions }) -> Promise<Map<key, string>>
  *
- * where `items` is `[{ key, text }]`. Every key in one call, one request: the
+ * where `items` is `[{ key, text }]` and `instructions` is an optional list of
+ * plain-language rules the provider must follow — today, one per term in
+ * `locales/terms.json` (ADR-0102). DeepL receives them as `custom_instructions`;
+ * a chat-completions model receives them in its system prompt. Every key in one call, one request: the
  * batching is the caller's, not the provider's, so a per-request-priced vendor
  * and a per-token one cost the same shape of money.
  *
@@ -65,7 +68,7 @@ export function configFromEnv(env = process.env) {
 	}
 }
 
-const SYSTEM_PROMPT = (source, target) =>
+const SYSTEM_PROMPT = (source, target, instructions = []) =>
 	[
 		`You are translating user-interface strings for a Canadian aviation safety`,
 		`reporting system from ${source} to ${target}.`,
@@ -77,6 +80,7 @@ const SYSTEM_PROMPT = (source, target) =>
 		'- Preserve leading and trailing whitespace and any HTML tags.',
 		'- These are short interface labels. Translate them as labels, not sentences.',
 		'- Use Canadian French conventions.',
+		...(instructions.length > 0 ? ['', 'Required terminology:', ...instructions.map((line) => `- ${line}`)] : []),
 	].join('\n')
 
 /**
@@ -119,13 +123,13 @@ function chatCompletionsTranslator({ endpoint, model, apiKey }) {
 		)
 	}
 
-	const buildRequest = (items, { source, target }) => ({
+	const buildRequest = (items, { source, target, instructions = [] }) => ({
 		model,
 		// Deterministic where the provider honours it: the same English twice
 		// should not produce two different French strings and a spurious diff.
 		temperature: 0,
 		messages: [
-			{ role: 'system', content: SYSTEM_PROMPT(source, target) },
+			{ role: 'system', content: SYSTEM_PROMPT(source, target, instructions) },
 			{
 				role: 'user',
 				content: JSON.stringify(Object.fromEntries(items.map(({ key, text }) => [key, text]))),
@@ -171,7 +175,7 @@ function chatCompletionsTranslator({ endpoint, model, apiKey }) {
 function stubTranslator() {
 	return {
 		name: 'stub',
-		buildRequest: (items) => ({ model: 'stub', messages: [], items }),
+		buildRequest: (items, { instructions = [] } = {}) => ({ model: 'stub', messages: [], items, instructions }),
 		parseResponse: parseJsonObject,
 		async translate(items, { target }) {
 			return new Map(items.map(({ key, text }) => [key, `[${target} STUB] ${text}`]))
@@ -255,7 +259,7 @@ function deeplTranslator({ apiKey, endpoint, formality }) {
 		return code
 	}
 
-	const buildRequest = (items, { source, target }) => ({
+	const buildRequest = (items, { source, target, instructions = [] }) => ({
 		text: items.map(({ text }) => protectPlaceholders(text)),
 		source_lang: codeFor(source),
 		target_lang: codeFor(target),
@@ -267,6 +271,13 @@ function deeplTranslator({ apiKey, endpoint, formality }) {
 		// protectPlaceholders above, wrapping every `{placeholder}` token.
 		tag_handling: 'xml',
 		ignore_tags: ['ph'],
+		// The required rendering of each term in locales/terms.json (ADR-0102).
+		// Inline rather than a stored DeepL glossary: DeepL documents custom
+		// instructions for French "and its variants", but documents glossary
+		// variant support only for EN, PT, and ZH, and a stored glossary is
+		// account state this job would have to create, find, and clean up.
+		// Omitted when empty, so a run with no terms sends what it always did.
+		...(instructions.length > 0 ? { custom_instructions: instructions } : {}),
 	})
 
 	/**

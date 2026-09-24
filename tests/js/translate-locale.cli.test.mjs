@@ -377,3 +377,51 @@ describe('the command, when a French value was edited by hand', () => {
 		})
 	})
 })
+
+describe('the command, when a listed term is rendered the forbidden way', () => {
+	const en = { upload: { cancel: 'Cancel uploading {name}' }, form: { submit: 'Submit' } }
+	const fr = { upload: { cancel: 'Annuler le téléchargement de {name}' } }
+	const meta = {
+		'upload.cancel': {
+			source_hash: hashOf(en.upload.cancel),
+			target_hash: hashOf(fr.upload.cancel),
+			provider: 'deepl:FR-CA:prefer_more',
+			reviewed: false,
+		},
+	}
+	const terms = { upload: { 'fr-CA': 'téléverser', forbidden: ['télécharg'] } }
+
+	describe('given another key waiting to be translated', () => {
+		it('when it generates then the French is written and the violation is warned about, for the pull request to catch', () => {
+			// Given
+			const dir = locales({ 'en-CA.json': en, 'fr-CA.json': fr, 'fr-CA.meta.json': meta, 'terms.json': terms })
+
+			// When
+			const { code, output } = run(['--locales', dir, '--generate'], stub)
+
+			// Then
+			assert.equal(code, 0)
+			assert.match(output, /::warning::'upload\.cancel' came back rendering "upload"/)
+			assert.ok(read(dir, 'fr-CA.json').form.submit)
+		})
+	})
+
+	describe('given the locales are verified with the branch allowance', () => {
+		it('when it verifies then it still fails, because no workflow fixes a wrong term', () => {
+			// Given
+			const dir = locales({
+				'en-CA.json': { upload: en.upload },
+				'fr-CA.json': fr,
+				'fr-CA.meta.json': meta,
+				'terms.json': terms,
+			})
+
+			// When
+			const { code, output } = run(['--locales', dir, '--check', '--allow-pending-translation'])
+
+			// Then
+			assert.equal(code, 1)
+			assert.match(output, /'upload\.cancel' in fr-CA\.json renders "upload" as "télécharg…"/)
+		})
+	})
+})

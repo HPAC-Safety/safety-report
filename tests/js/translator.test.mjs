@@ -298,6 +298,55 @@ describe('the translator adapter', () => {
 		})
 	})
 
+	describe('given DeepL and a required rendering for a term', () => {
+		it('when the request is built then the rendering travels as a custom instruction', () => {
+			// Given
+			const instructions = ['Translate the English "upload" and its forms as "téléverser"; never use "télécharg…".']
+
+			// When
+			const body = createTranslator({ provider: 'deepl', apiKey: 'k' }).buildRequest(
+				[{ key: 'a', text: 'Upload a photo' }],
+				{ source: 'en-CA', target: 'fr-CA', instructions },
+			)
+
+			// Then — inline, so no DeepL glossary is created or left behind (ADR-0102)
+			assert.deepEqual(body.custom_instructions, instructions)
+			assert.equal(body.glossary_id, undefined)
+		})
+
+		it('when there is no term then the request is exactly what it was before', () => {
+			// Given / When
+			const body = createTranslator({ provider: 'deepl', apiKey: 'k' }).buildRequest(
+				[{ key: 'a', text: 'A' }],
+				{ source: 'en-CA', target: 'fr-CA' },
+			)
+
+			// Then
+			assert.equal(Object.hasOwn(body, 'custom_instructions'), false)
+		})
+	})
+
+	describe('given a chat-completions provider and a required rendering for a term', () => {
+		it('when the request is built then the system prompt states it', () => {
+			// Given
+			const translator = createTranslator({
+				provider: 'chat-completions',
+				endpoint: 'https://example.invalid/chat/completions',
+				model: 'vendor/a-model',
+				apiKey: 'k',
+			})
+
+			// When
+			const body = translator.buildRequest(
+				[{ key: 'a', text: 'Upload a photo' }],
+				{ source: 'en-CA', target: 'fr-CA', instructions: ['Translate "upload" as "téléverser".'] },
+			)
+
+			// Then
+			assert.match(body.messages[0].content, /Required terminology:\n- Translate "upload" as "téléverser"\./)
+		})
+	})
+
 	describe('given a locale DeepL has no code for', () => {
 		it('when the request is built then it refuses rather than guessing a code', () => {
 			// Given

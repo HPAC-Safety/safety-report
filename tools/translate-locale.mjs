@@ -49,6 +49,14 @@
  * `locales/glossary.json` take their French from that file, are stamped
  * `provider: "glossary", reviewed: true`, and are never put in a request.
  *
+ * ## Listed terms hold everywhere
+ *
+ * `locales/terms.json` pins words rather than strings: `upload` is
+ * *téléverser*, never *télécharger*. Every request tells the provider each
+ * term's required rendering, and `--check` fails on any French value — a
+ * machine's or a person's — that uses a forbidden form where the English uses
+ * the term. See ADR-0102.
+ *
  * Usage:
  *   node tools/translate-locale.mjs --check    [--locales locales]
  *   node tools/translate-locale.mjs --generate [--locales locales]
@@ -134,6 +142,108 @@ export function glossaryFrench(key, glossary = {}) {
 	if (typeof entry === 'object' && typeof entry[TARGET_LOCALE] === 'string') return entry[TARGET_LOCALE]
 
 	throw new Error(`glossary.json entry '${key}' has no ${TARGET_LOCALE} wording.`)
+}
+
+/**
+ * The entries of `locales/terms.json`, validated.
+ *
+ * `glossary.json` pins a whole string by key. A term pins a word wherever it
+ * appears: the French it must become, and the forms it must never become.
+ * Keys beginning `_` are file-level commentary, as in the glossary.
+ *
+ * @throws when an entry has no French or no list of forbidden forms. A term
+ *   that cannot be checked is a term nobody is protected by.
+ */
+export function termEntries(terms = {}) {
+	return Object.entries(terms ?? {})
+		.filter(([term]) => !term.startsWith('_'))
+		.map(([term, entry]) => {
+			const french = entry?.[TARGET_LOCALE]
+			const forbidden = entry?.forbidden
+			if (typeof french !== 'string' || french.length === 0) {
+				throw new Error(`terms.json entry '${term}' has no ${TARGET_LOCALE} rendering.`)
+			}
+			if (!Array.isArray(forbidden) || forbidden.length === 0 || !forbidden.every((form) => typeof form === 'string' && form.length > 0)) {
+				throw new Error(`terms.json entry '${term}' needs a non-empty "forbidden" list of French forms.`)
+			}
+			return { term, french, forbidden }
+		})
+}
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+/**
+ * Whether an English value uses a term. Matched at the start of a word and
+ * case-insensitively, so `upload` also finds "Uploads", "uploaded", and
+ * "uploading" — but not "reupload"'s middle or an unrelated word containing it.
+ */
+export function englishUsesTerm(text, term) {
+	return new RegExp(`\\b${escapeRegExp(term)}`, 'i').test(String(text))
+}
+
+/**
+ * Every French value that renders a listed term the forbidden way.
+ *
+ * Checked for every key, whoever wrote the French: a hand correction is
+ * recorded rather than overwritten (ADR-0070), but it still has to say the
+ * term correctly. A French value still carrying its local `#` stub is not
+ * French yet and is reported elsewhere.
+ *
+ * @returns {{key: string, term: string, french: string, found: string}[]}
+ */
+export function termViolations({ english, french = {}, terms = {} }) {
+	const entries = termEntries(terms)
+	if (entries.length === 0) return []
+
+	const frenchByKey = new Map(flatten(french))
+	const violations = []
+
+	for (const [key, text] of flatten(english)) {
+		const value = frenchByKey.get(key)
+		if (typeof value !== 'string' || value.startsWith('#')) continue
+
+		const lowered = value.normalize('NFC').toLocaleLowerCase('fr-CA')
+		for (const entry of entries) {
+			if (!englishUsesTerm(text, entry.term)) continue
+			const found = entry.forbidden.find((form) => lowered.includes(form.normalize('NFC').toLocaleLowerCase('fr-CA')))
+			if (found !== undefined) {
+				violations.push({ key, term: entry.term, french: entry.french, found })
+			}
+		}
+	}
+
+	return violations
+}
+
+/** DeepL's ceiling on custom instructions per request, and on each one's length. */
+export const MAX_TERM_INSTRUCTIONS = 10
+export const MAX_TERM_INSTRUCTION_LENGTH = 300
+
+/**
+ * One plain-language instruction per term, for the translator to follow.
+ *
+ * The same sentence goes to DeepL (as `custom_instructions`) and to a
+ * chat-completions model (in its system prompt), so both providers are held
+ * to exactly the wording the check enforces.
+ *
+ * @throws when there are more terms, or a longer instruction, than DeepL
+ *   accepts. Silently dropping one would leave that term unprotected.
+ */
+export function termInstructions(terms = {}) {
+	const entries = termEntries(terms)
+	if (entries.length > MAX_TERM_INSTRUCTIONS) {
+		throw new Error(`terms.json has ${entries.length} terms; the translator accepts at most ${MAX_TERM_INSTRUCTIONS} instructions per request.`)
+	}
+
+	return entries.map(({ term, french, forbidden }) => {
+		const instruction =
+			`Translate the English "${term}" and its forms as "${french}", conjugated or as a noun to fit; ` +
+			`never use ${forbidden.map((form) => `"${form}…"`).join(' or ')}.`
+		if (instruction.length > MAX_TERM_INSTRUCTION_LENGTH) {
+			throw new Error(`The instruction for term '${term}' is ${instruction.length} characters; the translator accepts at most ${MAX_TERM_INSTRUCTION_LENGTH}.`)
+		}
+		return instruction
+	})
 }
 
 /**
@@ -334,7 +444,7 @@ function sortKeys(object) {
  * This is what runs on a pull request. It never constructs a translator, so a
  * fork cannot make CI spend an inference call by opening one.
  */
-export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }) {
+export function verifyLocales({ english, french = {}, meta = {}, glossary = {}, terms = {} }) {
 	const problems = []
 
 	// The subset of `problems` that a translation workflow will resolve on its
@@ -418,6 +528,16 @@ export function verifyLocales({ english, french = {}, meta = {}, glossary = {} }
 		}
 	}
 
+	// A term is a correctness rule, not a provenance rule, so it holds for a
+	// machine's French and a person's alike, and no workflow resolves it: a
+	// person corrects the French by hand (ADR-0070 then records it).
+	for (const { key, term, french: required, found } of termViolations({ english, french, terms })) {
+		problems.push(
+			`'${key}' in ${TARGET_LOCALE}.json renders "${term}" as "${found}…"; locales/terms.json requires "${required}". ` +
+				'Correct the French by hand.',
+		)
+	}
+
 	return { ok: problems.length === 0, problems, pending }
 }
 
@@ -496,6 +616,7 @@ async function main() {
 	const frenchPath = join(dir, `${TARGET_LOCALE}.json`)
 	const metaPath = join(dir, `${TARGET_LOCALE}.meta.json`)
 	const glossaryPath = join(dir, 'glossary.json')
+	const termsPath = join(dir, 'terms.json')
 	const initialGenerationPath = join(dir, '.fr-CA.pending')
 
 	if (!existsSync(englishPath)) {
@@ -518,9 +639,10 @@ async function main() {
 	const french = readJson(frenchPath, {})
 	const meta = readJson(metaPath, {})
 	const glossary = readJson(glossaryPath, {})
+	const terms = readJson(termsPath, {})
 
 	if (check) {
-		const verdict = checkVerdict(verifyLocales({ english, french, meta, glossary }), { allowPending })
+		const verdict = checkVerdict(verifyLocales({ english, french, meta, glossary, terms }), { allowPending })
 
 		for (const problem of verdict.tolerated) console.log(`::notice::${problem}`)
 
@@ -587,6 +709,7 @@ async function main() {
 		translations = await translator.translate(plan.translate, {
 			source: SOURCE_LOCALE,
 			target: TARGET_LOCALE,
+			instructions: termInstructions(terms),
 		})
 		provider = translator.name
 	}
@@ -595,6 +718,13 @@ async function main() {
 
 	writeJson(frenchPath, result.french)
 	writeJson(metaPath, result.meta)
+
+	// The provider was told every term, but an instruction is not a guarantee.
+	// The French is still written, so the pull request carries it, and --check
+	// fails on it there, where a person reads and corrects it.
+	for (const { key, term, french: required, found } of termViolations({ english, french: result.french, terms })) {
+		console.log(`::warning::'${key}' came back rendering "${term}" as "${found}…"; locales/terms.json requires "${required}".`)
+	}
 	if (existsSync(initialGenerationPath)) unlinkSync(initialGenerationPath)
 
 	const summary =

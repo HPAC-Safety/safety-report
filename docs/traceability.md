@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-312 claims across 8 areas: 240 covered by a step definition today, 72 still `@ignore`. 50 constraints.
+314 claims across 8 areas: 242 covered by a step definition today, 72 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -316,6 +316,8 @@ type: guide
 | `REQ-WLD-011` | web-localization-and-design | A translation missing locally is stubbed with a visible marker, and CI must replace it before merge | Reqnroll | Covered |
 | `REQ-WLD-012` | web-localization-and-design | A French value edited by hand is recorded rather than overwritten | Reqnroll | Covered |
 | `REQ-WLD-013` | web-localization-and-design | Editing both languages at once is one correction, not a conflict | Reqnroll | Covered |
+| `REQ-WLD-026` | web-localization-and-design | French that renders a listed term the forbidden way fails verification | Reqnroll | Covered |
+| `REQ-WLD-027` | web-localization-and-design | The machine translator is told the required rendering of every listed term | Reqnroll | Covered |
 | `REQ-WLD-014` | web-localization-and-design | Question content comes from the bilingual database revision | Reqnroll | Planned |
 | `REQ-WLD-015` | web-localization-and-design | Only publication consent is marked required on the form | playwright-bdd | Covered |
 | `REQ-WLD-016` | web-localization-and-design | The form explains local storage and warns about attachments | playwright-bdd | Covered |

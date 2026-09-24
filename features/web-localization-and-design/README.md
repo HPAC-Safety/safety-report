@@ -38,6 +38,16 @@ Summary texts are returned together by the one runtime model call; neither is
 a UI-catalogue string. Terms in `locales/glossary.json` are pinned and must
 not be machine-translated.
 
+`locales/glossary.json` pins whole strings by key. `locales/terms.json` holds
+single words instead: for each English term, the French it must become and
+the forms it must never become. `upload` is *téléverser*, never *télécharger*,
+which Canadian French reads as download. The CI translator is told every term
+with each request (REQ-WLD-027). Verification fails on any French value, from
+a machine or a person, that uses a forbidden form where the English has the
+term (REQ-WLD-026). A term is a correctness rule, not a provenance rule: a
+hand-edited value is recorded as a correction, but it still has to say the
+term correctly.
+
 ## Visual system
 
 Use the existing restrained HPAC token system: Tailwind v4 via
@@ -64,3 +74,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Hand-editing `locales/fr-CA.json`. A French correction is a recorded
   provenance event
   ([ADR-0070](../../docs/decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
+- Rewriting a translation after the fact to replace a forbidden term. French
+  conjugates and agrees (*téléverser*, *téléversés*, *téléversement*), so a
+  string substitution produces wrong French. A forbidden form fails
+  verification and a person corrects it.
+- Holding the server-side `ITranslator` (question authoring, Worker answer
+  translation) to the term list. The term list governs the UI catalogue only.

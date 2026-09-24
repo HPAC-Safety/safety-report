@@ -306,74 +306,74 @@
     }
   },
   "reports": {
-    "intro": "#Every report received, newest first. Open one to read its answers and summary.",
+    "intro": "Tous les rapports reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",
     "filter": {
-      "label": "#Filter reports",
-      "all": "#All",
-      "needs-action": "#Needs action",
-      "published": "#Published",
-      "private": "#Private",
-      "rejected": "#Rejected",
-      "summary-failed": "#Summary failed"
+      "label": "Filtrer les rapports",
+      "all": "Tout",
+      "needs-action": "À traiter",
+      "published": "Publié",
+      "private": "Privé",
+      "rejected": "Rejeté",
+      "summary-failed": "Échec de la synthèse"
     },
-    "listLabel": "#Reports",
-    "loading": "#Loading reports…",
-    "empty": "#No reports match this filter.",
+    "listLabel": "Rapports",
+    "loading": "Chargement des rapports…",
+    "empty": "Aucun rapport ne correspond à ce filtre.",
     "error": {
-      "unexpected": "#The reports could not be loaded. Try again."
+      "unexpected": "Les rapports n'ont pas pu être chargés. Veuillez réessayer."
     },
-    "submittedAt": "#Submitted {at}",
+    "submittedAt": "Soumis par {at}",
     "status": {
-      "submitted": "#Submitted",
-      "summarizing": "#Summarizing",
-      "pending_review": "#Pending review",
-      "summary_failed": "#Summary failed",
-      "approved": "#Approved",
-      "rejected": "#Rejected",
-      "published": "#Published"
+      "submitted": "Soumis",
+      "summarizing": "En résumé",
+      "pending_review": "En attente d'examen",
+      "summary_failed": "Échec de la synthèse",
+      "approved": "Approuvé",
+      "rejected": "Rejeté",
+      "published": "Publié"
     },
     "badge": {
-      "private": "#Private (no consent)",
-      "stuck": "#Stuck"
+      "private": "Privé (sans consentement)",
+      "stuck": "Coincé"
     },
     "detail": {
-      "back": "#Back to reports",
-      "title": "#Report",
-      "notFound": "#This report does not exist or was deleted.",
+      "back": "Retour aux rapports",
+      "title": "Rapport",
+      "notFound": "Ce rapport n'existe pas ou a été supprimé.",
       "language": {
-        "en-CA": "#Written in English",
-        "fr-CA": "#Written in French"
+        "en-CA": "Rédigé en anglais",
+        "fr-CA": "Rédigé en français"
       },
       "consent": {
-        "yes": "#The reporter consented to publication.",
-        "no": "#The reporter did not consent to publication. This report is never published.",
-        "unanswered": "#The reporter did not answer the publication question."
+        "yes": "Le journaliste a donné son accord pour la publication.",
+        "no": "Le journaliste n’a pas donné son accord pour la publication. Ce reportage n’a jamais été publié.",
+        "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
       },
-      "summary": "#Summary",
-      "summaryEn": "#English",
-      "summaryFr": "#French",
-      "summaryFailed": "#Summarization failed: {error}",
-      "noSummary": "#No summary yet.",
-      "provenance": "#Generated {at} by {model} with prompt {prompt}.",
-      "approved": "#Approved {at}.",
-      "notApproved": "#Not approved yet.",
-      "answers": "#Answers",
-      "private": "#Private",
-      "notAnswered": "#Not answered",
-      "translation": "#Translation: {text}",
-      "attachments": "#Attachments",
-      "attachment": "#{kind} — {state}"
+      "summary": "Résumé",
+      "summaryEn": "Anglais",
+      "summaryFr": "Français",
+      "summaryFailed": "Échec de la synthèse : {error}",
+      "noSummary": "Il n'y a pas encore de résumé.",
+      "provenance": "{at} généré par {model} à partir de la consigne « {prompt} ».",
+      "approved": "{at} approuvée.",
+      "notApproved": "Pas encore approuvé.",
+      "answers": "Réponses",
+      "private": "Privé",
+      "notAnswered": "Sans réponse",
+      "translation": "Traduction : {text}",
+      "attachments": "Pièces jointes",
+      "attachment": "{kind} — {state}"
     },
     "attachment": {
       "kind": {
-        "image": "#Image",
-        "video": "#Video",
-        "document": "#Document"
+        "image": "Image",
+        "video": "Vidéo",
+        "document": "Document"
       },
       "state": {
-        "ready": "#ready",
-        "processing": "#processing",
-        "failed": "#could not be processed"
+        "ready": "prêt",
+        "processing": "traitement",
+        "failed": "n’a pas pu être traité"
       }
     }
   }

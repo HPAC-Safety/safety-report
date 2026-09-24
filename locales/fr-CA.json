@@ -363,8 +363,8 @@
       "translation": "Traduction : {text}",
       "attachments": "Pièces jointes",
       "attachment": "{kind} — {state}",
-      "rejectionNote": "#Rejection note: {note}",
-      "notSummarized": "#Not summarized: the reporter did not consent to publication, so this report was never sent to the AI."
+      "rejectionNote": "Avis de rejet : {note}",
+      "notSummarized": "Non résumé : le journaliste n'ayant pas donné son consentement à la publication, ce rapport n'a jamais été transmis à AI."
     },
     "attachment": {
       "kind": {
@@ -377,45 +377,45 @@
         "processing": "traitement",
         "failed": "n’a pas pu être traité"
       },
-      "view": "#View",
-      "download": "#Download"
+      "view": "Afficher",
+      "download": "Téléverser"
     },
     "action": {
-      "label": "#Review actions",
-      "edit": "#Edit summary",
-      "write": "#Write summary",
-      "approve": "#Approve",
-      "reject": "#Reject",
-      "reopen": "#Reopen",
-      "unpublish": "#Unpublish",
-      "delete": "#Delete",
-      "cancel": "#Cancel"
+      "label": "Examiner les mesures",
+      "edit": "Résumé de la modification",
+      "write": "Rédiger un résumé",
+      "approve": "Approuver",
+      "reject": "Refuser",
+      "reopen": "Rouvrir",
+      "unpublish": "Retirer de la publication",
+      "delete": "Supprimer",
+      "cancel": "Annuler"
     },
     "approve": {
-      "publishes": "#The reporter consented, so approving publishes this report immediately.",
-      "private": "#The reporter did not consent, so approving keeps this report private."
+      "publishes": "Le journaliste a donné son accord; « Approving » publie donc cet article sans délai.",
+      "private": "Le journaliste n’ayant pas donné son consentement, la validation de ce rapport garantit la confidentialité de celui-ci."
     },
     "edit": {
-      "label": "#Edit the summary pair",
-      "en": "#English summary",
-      "fr": "#French summary",
-      "clearsApproval": "#Saving returns the report to Pending review and takes it off the public feed if it is published.",
-      "save": "#Save summary"
+      "label": "Modifier la paire de résumés",
+      "en": "Résumé en anglais",
+      "fr": "Résumé en français",
+      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le rapport revient à l’état « En attente de révision » et est retiré du fil d’actualité s’il a été publié.",
+      "save": "Enregistrer le résumé"
     },
     "reject": {
-      "label": "#Reject the report",
-      "note": "#Note for other reviewers (optional)",
-      "confirm": "#Reject report"
+      "label": "Rejeter le rapport",
+      "note": "Remarque à l'intention des autres évaluateurs (facultatif)",
+      "confirm": "Rejeter le rapport"
     },
     "stale": {
-      "message": "#Another reviewer changed this report since you opened it. Nothing you just did was saved.",
-      "reload": "#Reload report"
+      "message": "Un autre réviseur a modifié ce rapport depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",
+      "reload": "Recharger le rapport"
     },
     "delete": {
-      "title": "#Delete this report?",
-      "body": "#The report, its answers, summary, and attachments are removed from every list and cannot be restored.",
-      "confirm": "#Delete report",
-      "keep": "#Keep report"
+      "title": "Souhaitez-vous supprimer ce rapport?",
+      "body": "Le rapport, ses réponses, son résumé et ses pièces jointes sont supprimés de toutes les listes et ne peuvent pas être restaurés.",
+      "confirm": "Supprimer le rapport",
+      "keep": "Conserver le rapport"
     }
   }
 }

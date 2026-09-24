@@ -18,6 +18,7 @@ import {
 } from "../api/adminReports"
 import { ReportBadges } from "../components/ReportBadges"
 import { ReviewActions } from "../components/ReviewActions"
+import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
 
 /*
@@ -263,10 +264,14 @@ export function ReportDetailPage() {
 									) : (
 										answer.values.map((value, index) => (
 											<dd key={index} className="mt-1 font-sans text-ink">
-												<span lang={value.locale} className="whitespace-pre-line">
-													{value.value}
-												</span>
-												{value.translatedValue && (
+												{isLanguageNeutral(answer.type) ? (
+													<span className="whitespace-pre-line">{formatAnswer(answer.type, value.value, locale, t)}</span>
+												) : (
+													<span lang={value.locale} className="whitespace-pre-line">
+														{value.value}
+													</span>
+												)}
+												{value.translatedValue && !isLanguageNeutral(answer.type) && (
 													<span
 														lang={value.locale === "fr-CA" ? "en-CA" : "fr-CA"}
 														className="mt-1 block whitespace-pre-line text-sm text-ink-muted"

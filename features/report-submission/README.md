@@ -142,6 +142,9 @@ sent to the server.
 - The page is saved by its question key, beside the answers, in the same
   15-day local-storage report. A report saved before that names its page by
   revision ID and still reopens it.
+- A saved date, time, or yes/no answer reads in the interface language, as
+  the admin report view shows it (#403): `2026-09-13` reads "September 13,
+  2026" or "13 septembre 2026". The saved report keeps the stored form.
 - The table lists each saved attached file by name under its file-upload
   question, and **Yes** lists those files as attached again, each with its
   Remove control.

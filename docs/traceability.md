@@ -580,6 +580,14 @@ Writing a pair by hand offers the translate buttons too — *playwright-bdd, Cov
 
 The report view shows how each summary language was produced — *playwright-bdd, Covered*
 
+### REQ-MOD-075
+
+A date, time, or yes/no answer reads in the reviewer's language, not in its stored form — *playwright-bdd, Covered*
+
+### REQ-MOD-076
+
+A stored date that is not a real date is shown as stored — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -1215,6 +1223,10 @@ Discarding a report asks for confirmation first — *playwright-bdd, Covered*
 ### REQ-SUB-067
 
 An expired saved report's uploads are erased — *playwright-bdd, Covered*
+
+### REQ-SUB-068
+
+The continue dialog shows a saved date or time in the reporter's language — *playwright-bdd, Covered*
 
 ## Claims: typeform-question-import-export
 

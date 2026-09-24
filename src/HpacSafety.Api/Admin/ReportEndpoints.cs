@@ -395,6 +395,7 @@ public static class ReportEndpoints
 				entry.Answers[0].QuestionKey,
 				entry.Revision.LabelEn,
 				entry.Revision.LabelFr,
+				EnumCode.Of(entry.Revision.Type),
 				entry.Answers[0].IsPrivate,
 				[
 					.. entry.Answers

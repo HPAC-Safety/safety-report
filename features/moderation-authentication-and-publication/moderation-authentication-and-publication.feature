@@ -262,7 +262,7 @@ Examples:
 Scenario: A report detail view exposes only what the reviewer needs
   Given a reviewer opens a report's detail view
   When the detail query runs
-  Then it supplies the reporter language, exact bilingual question labels and answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and each attachment's kind and whether it can be opened
+  Then it supplies the reporter language, exact bilingual question labels and each question's type, answers with privacy indicated, processing state, both summary texts with their shared provenance/approval, and each attachment's kind and whether it can be opened
   And it supplies no storage key and no link; an attachment is opened only through its own audited view or download request
 
 @REQ-MOD-051
@@ -437,6 +437,32 @@ Scenario: Opening a report shows its answers with private answers marked, and it
   And the safety officer opens a pending-review report
   Then its answers are shown under their questions, with each private answer marked private
   And both the English and French summary texts are shown with the model and prompt version
+
+@REQ-MOD-075
+@ui
+Scenario Outline: A date, time, or yes/no answer reads in the reviewer's language, not in its stored form
+  Given a safety officer is signed in and a report with a <type> answer stored as "<stored>" exists
+  And the interface language is <language>
+  When the safety officer opens that report
+  Then the answer reads "<shown>"
+  And no translation is shown beside it
+
+Examples:
+  | type   | stored     | language | shown              |
+  | date   | 2026-09-13 | English  | September 13, 2026 |
+  | date   | 2026-09-13 | French   | 13 septembre 2026  |
+  | time   | 14:30      | English  | 2:30 p.m.          |
+  | time   | 14:30      | French   | 14 h 30            |
+  | yes/no | yes        | English  | Yes                |
+  | yes/no | no         | French   | Non                |
+
+@REQ-MOD-076
+@ui
+Scenario: A stored date that is not a real date is shown as stored
+  Given a safety officer is signed in and a report with a date answer stored as "2026-13-45" exists
+  And the interface language is English
+  When the safety officer opens that report
+  Then the answer reads "2026-13-45"
 
 @REQ-MOD-055
 Scenario Outline: Approving the pair publishes it only when the reporter consented

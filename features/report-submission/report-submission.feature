@@ -45,6 +45,19 @@ Scenario: A returning reporter is asked whether to continue their saved report
   And a table below the buttons lists each saved question with its saved answer
   And each saved attached file is listed by name under its question
 
+@REQ-SUB-068
+@ui
+Scenario Outline: The continue dialog shows a saved date or time in the reporter's language
+  Given this browser holds an unexpired saved report with a date answer "2026-09-13" and a time answer "14:30"
+  And the interface language is <language>
+  When the reporter returns to the form
+  Then the continue dialog lists the date as "<date>" and the time as "<time>"
+
+Examples:
+  | language | date               | time      |
+  | English  | September 13, 2026 | 2:30 p.m. |
+  | French   | 13 septembre 2026  | 14 h 30   |
+
 @REQ-SUB-036
 @ui
 Scenario: Continuing a saved report restores it where the reporter left off

@@ -42,6 +42,7 @@ const DETAIL = {
 			questionKey: "pilot_name",
 			labelEn: "Pilot name",
 			labelFr: "Nom du pilote",
+			type: "short_text",
 			isPrivate: true,
 			values: [{ value: "Casey Synthetic", locale: "en-CA", translatedValue: null, translationSource: null }],
 		},
@@ -49,6 +50,7 @@ const DETAIL = {
 			questionKey: "narrative",
 			labelEn: "What happened",
 			labelFr: "Ce qui s'est passé",
+			type: "long_text",
 			isPrivate: false,
 			values: [
 				{
@@ -306,7 +308,7 @@ Given("another reviewer has changed that report since it was opened", async ({ p
 
 When("the safety officer opens that report", async ({ page }) => {
 	await page.goto("/admin/reports/reviewaaaaa")
-	await expect(page.getByRole("heading", { level: 1, name: "Report" })).toBeVisible()
+	await expect(page.getByRole("heading", { level: 1, name: /^(Report|Rapport)$/ })).toBeVisible()
 	await expect(page.locator('[data-badge="status"]')).toBeVisible()
 })
 
@@ -474,4 +476,44 @@ Then("the English text is labelled as edited by a reviewer", async ({ page }) =>
 
 Then("the French text is labelled as machine-translated", async ({ page }) => {
 	await expect(page.locator('[data-source="fr"]')).toHaveText("Machine-translated")
+})
+
+// ── A date, time, or yes/no answer in the reviewer's language (REQ-MOD-075, REQ-MOD-076) ──
+
+const STORED_TYPE: Record<string, string> = { date: "date", time: "time", "yes/no": "yes_no" }
+
+Given(
+	"a safety officer is signed in and a report with a {} answer stored as {string} exists",
+	async ({ page }, type: string, stored: string) => {
+		const detail = {
+			...DETAIL,
+			id: "reviewaaaaa",
+			answers: [
+				{
+					questionKey: "occurred",
+					labelEn: "When did it happen?",
+					labelFr: "Quand est-ce arrivé?",
+					type: STORED_TYPE[type],
+					isPrivate: false,
+					// The Worker fills a second language for every answer (ADR-0080),
+					// so the stub carries one, as the API would.
+					values: [{ value: stored, locale: "en-CA", translatedValue: stored, translationSource: "auto" }],
+				},
+			],
+		}
+		await page.route(/\/api\/admin\/reports\/[^/?]+$/, (route) => route.fulfill({ json: detail }))
+		await signInAs(page, "safety_officer")
+	},
+)
+
+function occurredAnswer(page: Page) {
+	return page.locator('[data-question-key="occurred"] dd')
+}
+
+Then("the answer reads {string}", async ({ page }, shown: string) => {
+	await expect(occurredAnswer(page)).toHaveText(shown)
+})
+
+Then("no translation is shown beside it", async ({ page }) => {
+	await expect(occurredAnswer(page)).not.toContainText(/Translation|Traduction/)
 })

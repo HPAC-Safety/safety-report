@@ -44,6 +44,8 @@ export interface ReportAnswer {
 	questionKey: string
 	labelEn: string
 	labelFr: string
+	/** The question's type code, so a stored value can be shown in the reader's language (REQ-MOD-075). */
+	type: string
 	isPrivate: boolean
 	values: ReportAnswerValue[]
 }

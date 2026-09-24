@@ -64,3 +64,10 @@ Then("the language choice persists to local storage across a reload", async ({ p
 	await page.reload()
 	await expect(page.locator("html")).toHaveAttribute("lang", "fr-CA")
 })
+
+// Shared by the scenarios that read a stored value in the chosen language
+// (REQ-MOD-075, REQ-MOD-076, REQ-SUB-068): the choice a visitor made with the
+// language toggle, in place before the first page load.
+Given(/^the interface language is (English|French)$/, async ({ context }, language: string) => {
+	await context.addInitScript((locale) => localStorage.setItem("hpac.locale", locale), language === "French" ? "fr-CA" : "en-CA")
+})

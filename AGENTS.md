@@ -125,8 +125,9 @@ requirements does not touch a skill; its remedy is a claim.
    ([ADR-0071](docs/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)).
    There are two system questions, and they are the only answers read by
    name: publication consent, and media consent, which is asked only when
-   publication consent is yes and an image or video is attached
-   ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+   publication consent is yes and a file is attached
+   ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+   [ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
    Neither can be made optional, and they are the questions that revise in
    place even when answered, because neither can be deleted.
    Every other question's required state is authored by an administrator
@@ -200,13 +201,17 @@ requirements does not touch a skill; its remedy is a claim.
    with no name fragment remaining. Private-only facts never become summary
    facts.
 5. Documents such as PDF, DOC, DOCX, RTF, Markdown, text, and ODT are validated
-   and kept private; there is no malware scan (ADR-0089). They are not
-   anonymized, transformed, parsed, sent to the model, inline-rendered, or
-   published. An image or video is published only as its verified derivative,
-   on a published report whose reporter consented to media, through a
-   pre-signed URL of at most fifteen minutes, and a reviewer may hide it; an
-   original never is
+   and kept as they arrived; there is no malware scan (ADR-0089). They are not
+   anonymized, transformed, parsed, sent to the model, or inline-rendered. An
+   image or video is published only as its verified derivative, on a
+   published report whose reporter consented to media, through a pre-signed
+   URL of at most fifteen minutes, and a reviewer may hide it; its original
+   never is
    ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+   A validated document is published the same way, unchanged, as a forced
+   download under a server-minted name. It needs a media-consent yes given
+   to wording that names documents
+   ([ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 6. Publication requires positive consent, a non-deleted report, and human
    approval of the current bilingual pair. Editing either language clears the
    pair approval.

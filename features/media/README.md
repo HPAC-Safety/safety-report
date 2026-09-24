@@ -77,10 +77,10 @@ its pixels in memory, which re-encoding it requires (#362).
 A video that cannot be remuxed into a verified derivative is retained rather
 than refused (REQ-MED-015,
 [ADR-0094](../../docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md)).
-It then behaves exactly as a document does: a private original, reachable only
-by an authorized reviewer as a short-lived forced download, never rendered
-inline and never published — not even on a published report that shows its
-other media. That reviewer path is REQ-MED-011's rule and is
+It then behaves as a private document does: an original reachable only by an
+authorized reviewer as a short-lived forced download, never rendered inline.
+Unlike a document it is never published, not even on a published report that
+shows its other media. That reviewer path is REQ-MED-011's rule and is
 built with the reviewer endpoints (#311); this page records that an unstripped
 video joins it rather than getting a rule of its own.
 
@@ -111,8 +111,29 @@ again from the admin report page; both are audited. The file itself is never
 deleted by a hide.
 
 Media consent (`consent_media`) is the form's second system question. The form
-asks it only when publication consent is yes and an image or video is
-attached. A report filed before it existed has no answer and shows no media.
+asks it only when publication consent is yes and a file is attached. A report
+filed before it existed has no answer and shows no media.
+
+## Public documents
+
+A published report also offers its validated documents (REQ-MED-037 to
+REQ-MED-042,
+[ADR-0119](../../docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+`public_report_media` lists a live, unhidden document with no processing error
+once the Worker has recorded it validated (`validated_at`), on a report whose
+`consent_documents` is yes. The report page lists its opaque id, the kind
+`document`, and a coarse format, nothing more.
+
+The link endpoint answers a document with a pre-signed GET to the unchanged
+original that lives at most fifteen minutes and forces a download under a name
+made from the file id and the format. The reporter's own filename never
+reaches the public.
+
+`consent_documents` is `consent_media`'s answer, recorded only when the
+reporter answered the wording the form showed at submission. Media consent was
+reworded to name documents. A yes given before that, or to a superseded wording
+a stale draft still held, shows the report's photos and video and keeps its
+documents private.
 
 ## Out of scope
 
@@ -122,16 +143,20 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 
 - Parsing, extracting, indexing, or searching the contents of a document.
 - Inline rendering or preview of a document, including a thumbnail or a first
-  page.
-- Any public delivery of a document or an original, and any public delivery
-  of an image or video before its report is published.
+  page, publicly or for a reviewer.
+- Any public delivery of an image or video original, of a document other than
+  as a forced download of its validated original, or of any file before its
+  report is published.
+- Stripping a document's metadata, converting it, or redacting it before
+  publication. A public document is exactly what the reporter uploaded.
+- Showing the reporter's filename to the public.
 - A CDN-served, public-bucket, or long-lived copy of any attachment.
 - Reviewer-authored alt text, captions, or transcripts. A public file carries
   a generic localized label.
 - Blurring, cropping, muting, or otherwise editing media before publication,
   and a pre-publication media review step.
 - Choosing, per file, which attachments to share. Media consent covers all of
-  a report's images and videos.
+  a report's images, videos, and documents.
 - Media in the public feed list, thumbnails, or a gallery or lightbox beyond
   the native image and video controls.
 - Anonymizing or transforming a document. A validated original is retained

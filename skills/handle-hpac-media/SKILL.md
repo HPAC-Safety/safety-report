@@ -48,9 +48,10 @@ GET of at most fifteen minutes that `PublicMediaLink` mints and the
 Never copy an attachment to the CDN or a public prefix.
 
 Documents are different: preserve the validated original, do not transform or
-anonymize its contents, and never parse/extract it for AI. Allow only an
-authorized, short-lived, forced download with active-content-safe headers.
-Documents are never inline-rendered or public.
+anonymize its contents, and never parse/extract it for AI. Allow only a
+short-lived, forced download with active-content-safe headers: to a reviewer,
+or to anyone once `public_report_media` lists it, under a server-minted name
+(ADR-0119). Documents are never inline-rendered.
 
 Database failure leaves only unclaimed quarantine uploads for lifecycle expiry.
 Report-linked originals/derivatives remain private after soft deletion. Never

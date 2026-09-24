@@ -2,10 +2,11 @@
 Feature: Attachments
 A reporter may attach images, videos, and documents to the finalized
 report. Every attachment is validated by content rather than by name, and
-only images/videos get a safe derivative. Originals and documents stay
+only images/videos get a safe derivative. Image and video originals stay
 private. A published report shows its verified image and video derivatives
-when the reporter also consented to sharing media, and a reviewer may hide
-any of them (ADR-0117).
+when the reporter also consented to sharing media, and offers its validated
+documents, unchanged, as downloads when that consent named documents. A
+reviewer may hide any of them (ADR-0117, ADR-0119).
 
 Background:
   Given the maximum attachment count is configurable and defaults to five across all attachment kinds
@@ -95,8 +96,9 @@ Scenario: A document is validated but never transformed
   Given an accepted document attachment enters Worker processing
   When the Worker processes it
   Then the Worker validates its actual format, including internal package shape for DOCX/ODT and bounded text decoding for Markdown/plain text
-  And the Worker never extracts its text, and the document is never sent to the model and never published
-  And the document remains the reporter-supplied original, available for private download, and the review UI labels it as unredacted private evidence
+  And the Worker records that the document was validated
+  And the Worker never extracts its text, and the document is never sent to the model and never rendered inline
+  And the document remains the reporter-supplied original, available for download, and the review UI labels it as unredacted evidence
 
 @REQ-MED-009
 Scenario: Each attachment fails and processes independently of the report
@@ -226,7 +228,8 @@ Scenario Outline: A file that is not a verified derivative is never public
 
 Examples:
   | file                                     |
-  | a document                               |
+  | a document the Worker has not validated yet |
+  | a document whose validation failed       |
   | a video retained without a derivative    |
   | an image whose processing failed         |
   | an image the Worker has not processed yet |
@@ -323,3 +326,66 @@ Scenario: The admin report page shows whether each file is public
   When a safety officer opens the report in the admin area
   Then the public image reads as shown publicly and offers to hide it
   And the hidden image reads as hidden from the public and offers to show it
+
+@REQ-MED-037
+@ignore
+Scenario: A published report lists its validated documents when media consent names documents
+  Given a published report whose reporter consented to publication and to sharing media under wording that names documents
+  And the report has a validated PDF document and a processed image
+  When the public API returns the report
+  Then the report lists both files in the order they were attached
+  And the document carries only its opaque id, the kind document, and the format pdf
+
+@REQ-MED-038
+@ignore
+Scenario Outline: A document is public only when its media consent named documents
+  Given a published report with a processed image and a validated document
+  And the reporter answered media consent <consent>
+  When the public API returns the report
+  Then the report lists <listed>
+  And a visitor asking for the document's public link gets 404
+
+Examples:
+  | consent                                              | listed          |
+  | yes, to wording that named only photos and video     | only the image  |
+  | no                                                   | no media        |
+  | not at all                                           | no media        |
+
+@REQ-MED-039
+@ignore
+Scenario: A visitor gets a short-lived forced download of a public document
+  Given a published report offers a validated PDF document
+  When an anonymous visitor asks for the document's public link
+  Then the visitor receives a pre-signed URL to the document's unchanged original that expires within fifteen minutes
+  And the URL forces a download under a name made from the file id and the format, never the reporter's file name
+  And the response carries the header X-Content-Type-Options: nosniff
+  And the response names no reporter file name, size, or storage key
+
+@REQ-MED-040
+@ignore
+Scenario: A reviewer hides a document and shows it again, and both are audited
+  Given a published report offers a validated document
+  When a safety officer hides the document
+  Then the report lists no media
+  And a visitor asking for the document's public link gets 404
+  And the audit log records who hid the document
+  When the safety officer shows the document again
+  Then the report lists the document
+
+@REQ-MED-041
+@ignore
+@ui
+Scenario: The report page offers a public document as a download, never inline
+  Given a published report offers a validated PDF document
+  When a visitor opens the report
+  Then the document is offered as a download labelled "Document 1 of 1 (PDF)"
+  And the page never embeds the document's content
+
+@REQ-MED-042
+@ignore
+@ui
+Scenario: The admin report page shows whether each document is public
+  Given a published report has a public document and a hidden document
+  When a safety officer opens the report in the admin area
+  Then the public document reads as shown publicly and offers to hide it
+  And the hidden document reads as hidden from the public and offers to show it

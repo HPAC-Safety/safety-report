@@ -73,9 +73,12 @@ visitor through a pre-signed URL that lives at most fifteen minutes, minted per
 file by an anonymous endpoint that refuses a hidden or unpublished file. The
 bucket stays private, and nothing is copied to the CDN
 ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
-Validated documents remain unmodified private originals and
-are forced downloads only; they are never anonymized, parsed for AI, rendered
-inline, or published. Unreferenced quarantine bytes expire by storage lifecycle;
+Validated documents remain unmodified originals and are forced downloads
+only; they are never anonymized, parsed for AI, or rendered inline. On a
+published report whose reporter consented to media under wording that names
+documents, a validated document's unchanged original is offered to any visitor
+the same way, under a server-minted name
+([ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)). Unreferenced quarantine bytes expire by storage lifecycle;
 report-linked bytes remain private after soft deletion.
 
 ## Logging

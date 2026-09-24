@@ -8,6 +8,24 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 ## Start
 
 - Work from a focused GitHub issue.
+- **Never pick up an issue labelled `in progress`.** When choosing what to
+  work on next, leave out every issue that carries the label —
+  `gh issue list --state open --search '-label:"in progress"'` — even when it
+  looks stalled, is the obvious next piece, or was assigned by number. Another
+  agent or contributor has claimed it. If you were asked for that issue by
+  number and it carries the label, stop and ask the person rather than
+  starting it.
+- **Label an issue `in progress` the moment you pick it up, every time,
+  before anything else** — before the worktree, the branch, or the first
+  edit: `gh issue edit <number> --add-label "in progress"`. This is a hard
+  rule with no exception: not for a one-line fix, not for an issue you
+  filed yourself a minute ago, not when resuming a session. Several agents
+  work from the same board at once, and this label is the only thing that
+  tells the next one the issue is taken. If you stop working on an issue
+  without opening a pull request for it, remove the label
+  (`gh issue edit <number> --remove-label "in progress"`) so it returns to the
+  board; the label stays while a pull request is open, and closing the issue
+  takes it off the board.
 - When creating a new issue, check its real relationships to existing open
   issues before filing it, and wire them in with GitHub's native issue
   relations (`gh api graphql`; there is no `blocked` label) rather than only

@@ -108,6 +108,24 @@ reviewer changed it since, the API answers `409` and nothing is saved; the page
 asks the reviewer to reload. Each action writes one content-free audit entry
 in the same transaction.
 
+## Translating one summary language from the other
+
+While editing a pair, a reviewer who changed one language may draft the other
+from it by machine translation
+([ADR-0106](../../docs/decisions/ADR-0106-a-reviewer-may-machine-translate-a-summary-language.md)).
+**Translate to French** appears once the English text was changed, **Translate
+to English** once the French text was changed, and both when both were. A
+language filled by an accepted translation does not count as changed, so it
+never offers to translate back. Translating never overwrites silently: it
+shows the current text beside the proposed one with their differences marked,
+and replaces it only when the reviewer accepts. The same buttons appear when a
+pair is written by hand after summarization failed.
+
+Each saved language records how it was produced — `generated` by the Worker,
+`human` when a reviewer typed it, or `machine` when it is an accepted
+translation — and the report view shows it. Translation goes through the
+server's translation port; safety officers and administrators may use it.
+
 ## Public DTO edge state
 
 The requested UI locale may determine which text is displayed first but is
@@ -139,3 +157,5 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Editing one language without the other in separate saves: the pair is
   saved together.
 - Showing a rejection note anywhere but the admin report view.
+- Translating a summary automatically on save, or with the summarization
+  model. Translation is a draft the reviewer asks for and accepts.

@@ -572,3 +572,77 @@ Scenario: Opening an attachment requests its own audited link
   When the safety officer opens that report
   And the safety officer opens its document attachment
   Then the browser requests that attachment's download link
+
+@REQ-MOD-069
+Scenario Outline: Only a reviewer may request a machine translation
+  Given a member signed in as <role>
+  When that member requests a translation
+  Then the API answers <outcome>
+
+Examples:
+  | role          | outcome       |
+  | User          | forbidden     |
+  | SafetyOfficer | a translation |
+  | Administrator | a translation |
+
+@REQ-MOD-070
+Scenario Outline: Each summary language records how it was produced
+  Given <situation>
+  When the pair is saved
+  Then the English text is recorded as <english> and the French text as <french>
+
+Examples:
+  | situation                                                                     | english   | french    |
+  | the Worker produced the pair                                                  | generated | generated |
+  | a reviewer edited only the English text of a generated pair                   | human     | generated |
+  | a reviewer edited the English text and accepted its French translation        | human     | machine   |
+  | a reviewer wrote both texts by hand after summarization failed                | human     | human     |
+  | a reviewer wrote the French text by hand and accepted its English translation | machine   | human     |
+
+@REQ-MOD-071
+@ui
+Scenario Outline: The editor offers a translate button for each language the reviewer changed
+  Given a safety officer is signed in and a pending-review report exists
+  When the safety officer opens that report
+  And the safety officer opens the summary editor
+  And the safety officer changes <changed>
+  Then the translate buttons offered are <buttons>
+
+Examples:
+  | changed                     | buttons                                   |
+  | nothing                     | none                                      |
+  | the English text            | Translate to French                       |
+  | the French text             | Translate to English                      |
+  | the English and French text | Translate to French, Translate to English |
+
+@REQ-MOD-072
+@ui
+Scenario: Translating asks before overwriting and shows what would change
+  Given a safety officer is signed in and a pending-review report exists
+  When the safety officer opens that report
+  And the safety officer opens the summary editor
+  And the safety officer changes the English text
+  And the safety officer chooses Translate to French
+  Then a confirmation shows the current French text and the proposed translation with their differences marked
+  When the safety officer keeps the current text
+  Then the French text is unchanged
+  When the safety officer chooses Translate to French and accepts the translation
+  Then the French text is the proposed translation
+  And the Translate to English button is not offered for it
+
+@REQ-MOD-073
+@ui
+Scenario: Writing a pair by hand offers the translate buttons too
+  Given a safety officer is signed in and a summary-failed report exists
+  When the safety officer opens that report
+  And the safety officer chooses Write summary
+  And the safety officer types the English text
+  Then the translate buttons offered are Translate to French
+
+@REQ-MOD-074
+@ui
+Scenario: The report view shows how each summary language was produced
+  Given a safety officer is signed in and a report whose French text was machine-translated exists
+  When the safety officer opens that report
+  Then the English text is labelled as edited by a reviewer
+  And the French text is labelled as machine-translated

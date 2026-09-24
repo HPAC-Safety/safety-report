@@ -134,19 +134,42 @@ public static class ReportEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
+		if (!TryReadSource(request.SourceEn, out var sourceEn) || !TryReadSource(request.SourceFr, out var sourceFr))
+		{
+			return Task.FromResult(Results.Problem(
+				title: "That change cannot be saved.",
+				detail: "A summary language is saved as human or machine.",
+				statusCode: StatusCodes.Status400BadRequest,
+				type: "https://hpac.ca/problems/invalid-review"));
+		}
+
 		return Act(id, request.Version, database, clock, context, (report, _, at) =>
 		{
 			if (report.Status == ReportStatus.SummaryFailed)
 			{
-				report.WriteManualSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at);
+				report.WriteManualSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at, sourceEn, sourceFr);
 			}
 			else
 			{
-				report.EditSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at);
+				report.EditSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at, sourceEn, sourceFr);
 			}
 
 			return AuditAction.EditedSummary;
 		}, cancellationToken);
+	}
+
+	/// <summary>A reviewer's language is <c>human</c> unless they say it is an accepted translation.</summary>
+	private static bool TryReadSource(string? code,
+									  out SummaryTextSource source)
+	{
+		source = SummaryTextSource.Human;
+
+		if (string.IsNullOrWhiteSpace(code))
+		{
+			return true;
+		}
+
+		return EnumCode.TryParse(code, out source) && source is SummaryTextSource.Human or SummaryTextSource.Machine;
 	}
 
 	/// <summary>Approves the pair, publishing it when the reporter consented (REQ-MOD-055, ADR-0105).</summary>
@@ -348,7 +371,9 @@ public static class ReportEndpoints
 					summary.GeneratedAt,
 					summary.UpdatedAt,
 					summary.ApprovedBySubject,
-					summary.ApprovedAt)
+					summary.ApprovedAt,
+					EnumCode.Of(summary.SourceEn),
+					EnumCode.Of(summary.SourceFr))
 				: null,
 			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file)))],
 			ConcurrencyToken.Of(database, report),

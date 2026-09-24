@@ -169,7 +169,9 @@ export function ReportDetailPage() {
 						key={report.version}
 						report={report}
 						busy={busy}
-						onSave={(en, fr) => run((current) => saveSummaryPair(current.id, current.version, en, fr))}
+						onSave={(en, fr, sourceEn, sourceFr) =>
+							run((current) => saveSummaryPair(current.id, current.version, en, fr, sourceEn, sourceFr))
+						}
 						onApprove={() => void run((current) => approveReport(current.id, current.version))}
 						onReject={(note) => run((current) => rejectReport(current.id, current.version, note))}
 						onReopen={() => void run((current) => reopenReport(current.id, current.version))}
@@ -193,6 +195,9 @@ export function ReportDetailPage() {
 										<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
 											{t("reports.detail.summaryEn")}
 										</h3>
+										<p className="mt-1 font-sans text-xs text-ink-muted" data-source="en">
+											{t(`reports.detail.source.${report.summary.sourceEn}`)}
+										</p>
 										<p className="mt-2 whitespace-pre-line font-sans text-ink" data-summary="en">
 											{report.summary.aiSummaryEn}
 										</p>
@@ -201,6 +206,9 @@ export function ReportDetailPage() {
 										<h3 className="font-sans text-xs uppercase tracking-wide text-ink-muted">
 											{t("reports.detail.summaryFr")}
 										</h3>
+										<p className="mt-1 font-sans text-xs text-ink-muted" data-source="fr">
+											{t(`reports.detail.source.${report.summary.sourceFr}`)}
+										</p>
 										<p className="mt-2 whitespace-pre-line font-sans text-ink" data-summary="fr">
 											{report.summary.aiSummaryFr}
 										</p>

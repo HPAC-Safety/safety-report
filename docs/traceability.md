@@ -556,6 +556,30 @@ Deleting a report asks for confirmation first — *playwright-bdd, Covered*
 
 Opening an attachment requests its own audited link — *playwright-bdd, Covered*
 
+### REQ-MOD-069
+
+Only a reviewer may request a machine translation — *Reqnroll, Covered*
+
+### REQ-MOD-070
+
+Each summary language records how it was produced — *Reqnroll, Covered*
+
+### REQ-MOD-071
+
+The editor offers a translate button for each language the reviewer changed — *playwright-bdd, Covered*
+
+### REQ-MOD-072
+
+Translating asks before overwriting and shows what would change — *playwright-bdd, Covered*
+
+### REQ-MOD-073
+
+Writing a pair by hand offers the translate buttons too — *playwright-bdd, Covered*
+
+### REQ-MOD-074
+
+The report view shows how each summary language was produced — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -645,10 +669,6 @@ A curated list's other language is not copied onto the answer — *Reqnroll, Pla
 ### REQ-QB-022
 
 An Administrator supplies the second language of an answer — *Reqnroll, Planned*
-
-### REQ-QB-023
-
-Only an Administrator may translate — *Reqnroll, Planned*
 
 ### REQ-QB-024
 

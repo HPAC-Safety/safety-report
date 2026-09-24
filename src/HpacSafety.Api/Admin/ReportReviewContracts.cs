@@ -43,8 +43,17 @@ public sealed record ReportDetail(
 /// <summary>A review command that carries nothing but the version the reviewer loaded.</summary>
 public sealed record ReviewCommand(string? Version);
 
-/// <summary>Both texts of the pair, saved together, with the version the reviewer loaded.</summary>
-public sealed record SaveSummaryPairRequest(string? Version, string? AiSummaryEn, string? AiSummaryFr);
+/// <summary>
+///     Both texts of the pair, saved together, with the version the reviewer loaded.
+///     <c>SourceEn</c>/<c>SourceFr</c> are <c>human</c> (the default) or
+///     <c>machine</c> for a language filled by an accepted translation (ADR-0108).
+/// </summary>
+public sealed record SaveSummaryPairRequest(
+	string? Version,
+	string? AiSummaryEn,
+	string? AiSummaryFr,
+	string? SourceEn = null,
+	string? SourceFr = null);
 
 /// <summary>A rejection, with an optional reviewer-only note.</summary>
 public sealed record RejectReportRequest(string? Version, string? Note);
@@ -72,6 +81,10 @@ public sealed record ReportAnswerValueView(
 	string? TranslationSource);
 
 /// <summary>The bilingual summary pair with its shared provenance and approval.</summary>
+/// <remarks>
+///     <c>SourceEn</c> and <c>SourceFr</c> say how each language was produced:
+///     <c>generated</c>, <c>human</c>, or <c>machine</c> (ADR-0108).
+/// </remarks>
 public sealed record ReportSummaryView(
 	string AiSummaryEn,
 	string AiSummaryFr,
@@ -80,7 +93,9 @@ public sealed record ReportSummaryView(
 	DateTimeOffset GeneratedAt,
 	DateTimeOffset UpdatedAt,
 	string? ApprovedBySubject,
-	DateTimeOffset? ApprovedAt);
+	DateTimeOffset? ApprovedAt,
+	string SourceEn,
+	string SourceFr);
 
 /// <summary>An attachment's kind and whether it can be opened now.</summary>
 /// <param name="Id">The attachment, for its view or download request.</param>

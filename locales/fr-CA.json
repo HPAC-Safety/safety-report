@@ -364,7 +364,12 @@
       "attachments": "Pièces jointes",
       "attachment": "{kind} — {state}",
       "rejectionNote": "Avis de rejet : {note}",
-      "notSummarized": "Non résumé : le journaliste n'ayant pas donné son consentement à la publication, ce rapport n'a jamais été transmis à AI."
+      "notSummarized": "Non résumé : le journaliste n'ayant pas donné son consentement à la publication, ce rapport n'a jamais été transmis à AI.",
+      "source": {
+        "generated": "Généré par l'IA",
+        "human": "Rédigé par un critique",
+        "machine": "Traduction automatique"
+      }
     },
     "attachment": {
       "kind": {
@@ -416,6 +421,23 @@
       "body": "Le rapport, ses réponses, son résumé et ses pièces jointes sont supprimés de toutes les listes et ne peuvent pas être restaurés.",
       "confirm": "Supprimer le rapport",
       "keep": "Conserver le rapport"
+    },
+    "translate": {
+      "label": "Traduire",
+      "toFrench": "Traduire en français",
+      "toEnglish": "Traduire en anglais",
+      "error": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue.",
+      "confirm": {
+        "title": {
+          "fr": "Voulez-vous remplacer le texte en français?",
+          "en": "Voulez-vous remplacer le texte en anglais?"
+        },
+        "body": "Les mots supprimés sont barrés et les mots ajoutés sont soulignés. Aucune modification n'est enregistrée tant que vous n'avez pas sauvegardé le résumé.",
+        "current": "Texte actuel",
+        "proposed": "Traduction proposée",
+        "accept": "Utiliser la traduction",
+        "keep": "Conserver le texte actuel"
+      }
     }
   }
 }

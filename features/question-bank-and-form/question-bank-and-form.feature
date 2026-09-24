@@ -197,13 +197,6 @@ Scenario: An Administrator supplies the second language of an answer
   And it is no longer flagged
   And the value the reporter gave is unchanged
 
-@REQ-QB-023
-@ignore
-Scenario: Only an Administrator may translate
-  Given a member does not have the Administrator role
-  When that member requests a translation
-  Then the API rejects the request
-
 @REQ-QB-024
 @ignore
 Scenario: A skipped file-upload question produces an answer with no attachment

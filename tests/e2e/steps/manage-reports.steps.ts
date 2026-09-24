@@ -69,6 +69,8 @@ const DETAIL = {
 		updatedAt: "2026-09-20T15:35:00Z",
 		approvedBySubject: null,
 		approvedAt: null,
+		sourceEn: "generated",
+		sourceFr: "generated",
 	},
 	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready" }],
 }
@@ -191,6 +193,7 @@ type StubStatus = "pending_review" | "published" | "rejected" | "summary_failed"
 const STATUS_BY_WORD: Record<string, StubStatus> = {
 	"pending-review": "pending_review",
 	"private-pending-review": "pending_review",
+	"machine-translated": "pending_review",
 	published: "published",
 	rejected: "rejected",
 	"summary-failed": "summary_failed",
@@ -229,7 +232,11 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 	const detail = detailIn(status)
 	const stub: ReviewStub = {
 		// A report without consent is never summarized (REQ-DOM-006).
-		detail: word.startsWith("private-") ? { ...detail, consent: "no", summary: null } : detail,
+		detail: word.startsWith("private-")
+			? { ...detail, consent: "no", summary: null }
+			: word === "machine-translated"
+				? { ...detail, summary: { ...detail.summary!, sourceEn: "human", sourceFr: "machine" } }
+				: detail,
 		stale: false,
 		requests: [],
 	}
@@ -372,4 +379,99 @@ Then("the browser requests that attachment's download link", async ({ page }) =>
 	await expect
 		.poll(() => reviewStubs.get(page)!.requests)
 		.toContain(`GET /api/admin/reports/reviewaaaaa/attachments/${DETAIL.attachments[0].id}/download`)
+})
+
+/*
+ * Translating one summary language from the other (REQ-MOD-071..074,
+ * ADR-0108). The translation endpoint is stubbed with a recognisable marker so
+ * the proposed text is predictable.
+ */
+
+const translatedFrom = (text: string) => `Traduction : ${text}`
+
+async function stubTranslate(page: Page) {
+	await page.route("**/api/admin/translate", async (route) => {
+		const body = route.request().postDataJSON() as { texts: string[] }
+		await route.fulfill({ json: { texts: body.texts.map(translatedFrom) } })
+	})
+}
+
+Given("a safety officer is signed in and a report whose French text was machine-translated exists", async ({ page }) => {
+	await stubReview(page, "pending_review", "machine-translated")
+	await signInAs(page, "safety_officer")
+})
+
+When("the safety officer opens the summary editor", async ({ page }) => {
+	await stubTranslate(page)
+	await page.getByRole("button", { name: "Edit summary" }).click()
+})
+
+When("the safety officer changes {}", async ({ page }, what: string) => {
+	if (what.includes("English")) await page.getByLabel("English summary").fill("The pilot landed firmly after the collapse.")
+	if (what.includes("French")) await page.getByLabel("French summary").fill("Le pilote s'est posé fermement après la fermeture.")
+})
+
+When("the safety officer chooses Write summary", async ({ page }) => {
+	await stubTranslate(page)
+	await page.getByRole("button", { name: "Write summary" }).click()
+})
+
+When("the safety officer types the English text", async ({ page }) => {
+	await page.getByLabel("English summary").fill("The pilot landed in a field.")
+})
+
+When("the safety officer chooses Translate to French", async ({ page }) => {
+	await page.getByRole("button", { name: "Translate to French" }).click()
+})
+
+When("the safety officer keeps the current text", async ({ page }) => {
+	await page.getByRole("dialog").getByRole("button", { name: "Keep current text" }).click()
+})
+
+When("the safety officer chooses Translate to French and accepts the translation", async ({ page }) => {
+	await page.getByRole("button", { name: "Translate to French" }).click()
+	await page.getByRole("dialog").getByRole("button", { name: "Use translation" }).click()
+})
+
+Then("the translate buttons offered are {}", async ({ page }, list: string) => {
+	const group = page.getByRole("group", { name: "Translate" })
+	if (list === "none") {
+		await expect(group).toHaveCount(0)
+		return
+	}
+	await expect(group.getByRole("button")).toHaveText(list.split(",").map((name) => name.trim()))
+})
+
+Then(
+	"a confirmation shows the current French text and the proposed translation with their differences marked",
+	async ({ page }) => {
+		const dialog = page.getByRole("dialog", { name: "Replace the French text?" })
+		await expect(dialog).toBeVisible()
+		await expect(dialog.locator('[data-diff="current"]')).toContainText(DETAIL.summary.aiSummaryFr.split(" ")[0])
+		await expect(dialog.locator('[data-diff="current"] del').first()).toBeVisible()
+		await expect(dialog.locator('[data-diff="proposed"]')).toContainText("Traduction")
+		await expect(dialog.locator('[data-diff="proposed"] ins').first()).toBeVisible()
+	},
+)
+
+Then("the French text is unchanged", async ({ page }) => {
+	await expect(page.getByRole("dialog")).toHaveCount(0)
+	await expect(page.getByLabel("French summary")).toHaveValue(DETAIL.summary.aiSummaryFr)
+})
+
+Then("the French text is the proposed translation", async ({ page }) => {
+	await expect(page.getByLabel("French summary")).toHaveValue(translatedFrom("The pilot landed firmly after the collapse."))
+})
+
+Then("the Translate to English button is not offered for it", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Translate to English" })).toHaveCount(0)
+	await expect(page.getByRole("button", { name: "Translate to French" })).toBeVisible()
+})
+
+Then("the English text is labelled as edited by a reviewer", async ({ page }) => {
+	await expect(page.locator('[data-source="en"]')).toHaveText("Written by a reviewer")
+})
+
+Then("the French text is labelled as machine-translated", async ({ page }) => {
+	await expect(page.locator('[data-source="fr"]')).toHaveText("Machine-translated")
 })

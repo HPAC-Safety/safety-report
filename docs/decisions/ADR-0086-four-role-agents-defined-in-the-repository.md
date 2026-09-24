@@ -10,7 +10,9 @@ keywords: agents, skillfile, roles, spec author, test writer, implementer, revie
 
 # ADR-0086 — Four roles are defined as repository agents
 
-**Status:** Accepted
+**Status:** Accepted. Extended by
+[ADR-0121](ADR-0121-a-fifth-role-maintains-the-agent-instructions.md), which
+adds a fifth role outside the specification chain.
 
 ## Context
 

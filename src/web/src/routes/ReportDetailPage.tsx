@@ -1,21 +1,94 @@
-import { useEffect, useState } from "react"
-import { Link, useParams } from "react-router-dom"
+import { useCallback, useEffect, useState } from "react"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
-import { getReport, type ReportAnswer, type ReportDetail } from "../api/adminReports"
+import {
+	approveReport,
+	attachmentLink,
+	deleteReport,
+	getReport,
+	rejectReport,
+	reopenReport,
+	saveSummaryPair,
+	STALE_REPORT,
+	unpublishReport,
+	type ReportAnswer,
+	type ReportAttachment,
+	type ReportDetail,
+} from "../api/adminReports"
 import { ReportBadges } from "../components/ReportBadges"
+import { ReviewActions } from "../components/ReviewActions"
+import { DeleteReportDialog } from "../components/DeleteReportDialog"
 
 /*
  * One report as a reviewer judges it: every question as it was asked, with
- * each private answer marked, and the bilingual summary pair with its
- * provenance. Read-only — editing, approving, rejecting, and publishing are the
- * second half of issue #25. Loading this page is an audited read.
+ * each private answer marked, the bilingual summary pair with its provenance,
+ * and the actions its state allows (REQ-MOD-062). Every action sends the
+ * version this page loaded; if another reviewer changed the report since, the
+ * page says so and offers to reload rather than overwriting their work
+ * (ADR-0105). Loading this page is an audited read.
  */
 export function ReportDetailPage() {
 	const { t, locale } = useLocale()
 	const { reportId = "" } = useParams()
+	const navigate = useNavigate()
 	const [report, setReport] = useState<ReportDetail | null>(null)
 	const [error, setError] = useState<string | null>(null)
+	const [stale, setStale] = useState(false)
+	const [busy, setBusy] = useState(false)
+	const [confirmingDelete, setConfirmingDelete] = useState(false)
+	const [reloads, setReloads] = useState(0)
+
+	const reload = useCallback(() => {
+		setStale(false)
+		setError(null)
+		setReloads((count) => count + 1)
+	}, [])
+
+	/** Runs one review command and shows its result; false when it was refused. */
+	async function run(
+		command: (current: ReportDetail) =>
+			Promise<ReportDetail>,
+	): Promise<boolean> {
+		if (!report) return false
+		setBusy(true)
+		setError(null)
+		try {
+			setReport(await command(report))
+			return true
+		} catch (cause) {
+			if (cause instanceof ApiError && cause.type === STALE_REPORT) {
+				setStale(true)
+			} else {
+				setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
+			}
+			return false
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	async function remove() {
+		setConfirmingDelete(false)
+		setBusy(true)
+		try {
+			await deleteReport(reportId)
+			navigate("/admin/reports")
+		} catch (cause) {
+			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
+		} finally {
+			setBusy(false)
+		}
+	}
+
+	async function open(attachment: ReportAttachment) {
+		try {
+			const link = await attachmentLink(reportId, attachment)
+			window.open(link.url, "_blank", "noopener")
+		} catch (cause) {
+			setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
+		}
+	}
 
 	useEffect(() => {
 		let current = true
@@ -39,7 +112,7 @@ export function ReportDetailPage() {
 		return () => {
 			current = false
 		}
-	}, [reportId, t])
+	}, [reportId, t, reloads])
 
 	const at = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
 	const label = (answer: ReportAnswer) => (locale === "fr-CA" ? answer.labelFr : answer.labelEn)
@@ -57,6 +130,21 @@ export function ReportDetailPage() {
 				</p>
 			)}
 
+			{stale && (
+				<div role="alert" className="mt-6 flex flex-wrap items-center gap-3 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
+					<p>{t("reports.stale.message")}</p>
+					<button
+						type="button"
+						className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-medium text-ink-inverse"
+						onClick={reload}
+					>
+						{t("reports.stale.reload")}
+					</button>
+				</div>
+			)}
+
+			{confirmingDelete && <DeleteReportDialog onConfirm={() => void remove()} onKeep={() => setConfirmingDelete(false)} />}
+
 			{!report && !error && <p className="mt-8 font-sans text-ink-muted">{t("reports.loading")}</p>}
 
 			{report && (
@@ -70,7 +158,24 @@ export function ReportDetailPage() {
 							{t(`reports.detail.language.${report.language}`)}
 						</p>
 						<p className="font-sans text-sm text-ink-muted">{t(`reports.detail.consent.${report.consent}`)}</p>
+						{report.rejectionNote && (
+							<p className="font-sans text-sm text-ink" data-rejection-note>
+								{t("reports.detail.rejectionNote", { note: report.rejectionNote })}
+							</p>
+						)}
 					</div>
+
+					<ReviewActions
+						key={report.version}
+						report={report}
+						busy={busy}
+						onSave={(en, fr) => run((current) => saveSummaryPair(current.id, current.version, en, fr))}
+						onApprove={() => void run((current) => approveReport(current.id, current.version))}
+						onReject={(note) => run((current) => rejectReport(current.id, current.version, note))}
+						onReopen={() => void run((current) => reopenReport(current.id, current.version))}
+						onUnpublish={() => void run((current) => unpublishReport(current.id, current.version))}
+						onDelete={() => setConfirmingDelete(true)}
+					/>
 
 					<section aria-labelledby="summary-heading" className="mt-10">
 						<h2 id="summary-heading" className="font-display text-2xl font-bold">
@@ -116,7 +221,9 @@ export function ReportDetailPage() {
 							</>
 						) : (
 							!report.summaryError && (
-								<p className="mt-4 font-sans text-ink-muted">{t("reports.detail.noSummary")}</p>
+								<p className="mt-4 font-sans text-ink-muted" data-no-summary>
+									{t(report.consent === "yes" ? "reports.detail.noSummary" : "reports.detail.notSummarized")}
+								</p>
 							)
 						)}
 					</section>
@@ -174,11 +281,20 @@ export function ReportDetailPage() {
 							</h2>
 							<ul className="mt-4 flex flex-col gap-2">
 								{report.attachments.map((attachment) => (
-									<li key={attachment.id} className="font-sans text-ink">
+									<li key={attachment.id} className="flex flex-wrap items-center gap-3 font-sans text-ink">
 										{t("reports.detail.attachment", {
 											kind: t(`reports.attachment.kind.${attachment.kind}`),
 											state: t(`reports.attachment.state.${attachment.state}`),
 										})}
+										{attachment.state === "ready" && (
+											<button
+												type="button"
+												className="touch-target inline-flex items-center rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
+												onClick={() => void open(attachment)}
+											>
+												{t(attachment.kind === "document" ? "reports.attachment.download" : "reports.attachment.view")}
+											</button>
+										)}
 									</li>
 								))}
 							</ul>

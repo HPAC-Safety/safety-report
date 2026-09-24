@@ -14,11 +14,19 @@ stateDiagram-v2
     Summarizing --> PendingReview
     Summarizing --> SummaryFailed: worker error / poison message
     SummaryFailed --> PendingReview: officer writes the summary by hand
-    PendingReview --> Approved
-    PendingReview --> Rejected
-    Approved --> Published: phase 2
-    Rejected --> [*]
+    PendingReview --> Published: officer approves, consent yes
+    PendingReview --> Approved: officer approves, consent not yes
+    PendingReview --> Rejected: optional reviewer-only note
+    Approved --> PendingReview: pair edited
+    Published --> PendingReview: pair edited, or unpublished
+    Rejected --> PendingReview: reopened
 ```
+
+Approval and publication are one officer action (ADR-0105). Review commands
+live on `Report` — `ApprovePair`, `RejectReview`, `Reopen`, `Unpublish`,
+`EditSummary`, `WriteManualSummary` — and refuse any state the diagram does not
+allow. The report and summary use PostgreSQL `xmin` as their row version, so a
+command based on a stale view is refused with `409`.
 
 `SummaryFailed` exists so that a report can never become invisible. If the model
 is down, the API key is wrong, or a message poisons the queue, the report still

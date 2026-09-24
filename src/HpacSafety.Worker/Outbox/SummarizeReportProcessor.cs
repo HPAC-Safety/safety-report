@@ -47,6 +47,15 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			return;
 		}
 
+		// Only a consented report ever reaches the model. One without consent goes
+		// to review with no summary and no model call, so its content never
+		// leaves this system (REQ-DOM-006, REQ-AI-027).
+		if (report.ConsentPublish is not true)
+		{
+			report.ReviewWithoutSummary();
+			return;
+		}
+
 		report.BeginSummarizing();
 
 		var dto = await LoadForSummary(report.Id, report.Language, cancellationToken).ConfigureAwait(false);
@@ -62,6 +71,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			// by output that arrives after it (REQ-DOM-007).
 			if (await IsDeleted(report.Id, cancellationToken).ConfigureAwait(false))
 			{
+				Abandon(report);
 				return;
 			}
 
@@ -78,14 +88,28 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			// the message stops being retried, so the report must not be left
 			// silently stuck in Summarizing — unless it was deleted while this
 			// attempt was in flight, in which case there is nothing left to update.
-			if (message.Attempts + 1 >= OutboxMessage.PoisonThreshold
-				&& !await IsDeleted(report.Id, cancellationToken).ConfigureAwait(false))
+			if (await IsDeleted(report.Id, cancellationToken).ConfigureAwait(false))
+			{
+				Abandon(report);
+			}
+			else if (message.Attempts + 1 >= OutboxMessage.PoisonThreshold)
 			{
 				report.FailSummarization(exception.Message);
 			}
 
 			throw;
 		}
+	}
+
+	/// <summary>
+	///     Drops this attempt's own change to a report deleted while it ran. The
+	///     report row carries a row version (ADR-0105), so writing Summarizing back
+	///     over the deletion would fail the whole save; and a deleted report should
+	///     not be touched anyway (REQ-DOM-007).
+	/// </summary>
+	private void Abandon(Report report)
+	{
+		database.Entry(report).State = EntityState.Unchanged;
 	}
 
 	/// <summary>Whether the report has been soft-deleted since it was loaded, read past the default live-row filter.</summary>

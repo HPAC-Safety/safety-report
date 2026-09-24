@@ -177,8 +177,10 @@ requirements does not touch a skill; its remedy is a claim.
    stores the report, exact question revisions, answers, files, and outbox
    work atomically, then returns `202` without making a model call.
 3. The Worker owns one versioned prompt and makes exactly one model call per
-   summary attempt. Before that call, a deterministic marking pass replaces
-   any exact or token-level occurrence of a private answer's value found in
+   summary attempt, and only for a report whose reporter consented to
+   publication; a report without consent is never sent to the model. Before
+   that call, a deterministic marking pass replaces any exact or token-level
+   occurrence of a private answer's value found in
    `report_content` with a `[PRIVATE:<question-key>]` marker
    ([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md));
    `report_content` supplies eligible facts, and labeled `private_context`

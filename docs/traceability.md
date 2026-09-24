@@ -10,7 +10,7 @@ type: guide
 > Regenerate with `node tools/traceability.mjs`. CI fails on a difference
 > ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).
 
-325 claims across 8 areas: 254 covered by a step definition today, 71 still `@ignore`. 50 constraints.
+341 claims across 8 areas: 277 covered by a step definition today, 64 still `@ignore`. 50 constraints.
 
 ## Claims
 
@@ -42,12 +42,14 @@ type: guide
 | `REQ-AI-022` | ai-anonymization | The Worker requests the configured model at the configured reasoning level | Reqnroll | Covered |
 | `REQ-AI-023` | ai-anonymization | A Worker holding a key refuses to start with an unusable provider configuration | Reqnroll | Covered |
 | `REQ-AI-024` | ai-anonymization | The current prompt carries every anonymization and accuracy rule | Reqnroll | Covered |
-| `REQ-DOM-001` | domain-and-lifecycle | A report follows the defined lifecycle transitions | Reqnroll | Planned |
+| `REQ-AI-027` | ai-anonymization | Only a report with publication consent reaches the model | Reqnroll | Covered |
+| `REQ-DOM-001` | domain-and-lifecycle | A report follows the defined lifecycle transitions | Reqnroll | Covered |
+| `REQ-DOM-014` | domain-and-lifecycle | A review action outside its states is refused and changes nothing | Reqnroll | Covered |
 | `REQ-DOM-002` | domain-and-lifecycle | SummaryFailed remains visible to safety officers | Reqnroll | Planned |
 | `REQ-DOM-003` | domain-and-lifecycle | A report is publishable only when every invariant holds | Reqnroll | Planned |
 | `REQ-DOM-004` | domain-and-lifecycle | A report is not publishable when one invariant fails | Reqnroll | Planned |
-| `REQ-DOM-005` | domain-and-lifecycle | Editing a summary text unpublishes the report | Reqnroll | Planned |
-| `REQ-DOM-006` | domain-and-lifecycle | Negative consent still allows internal review | Reqnroll | Planned |
+| `REQ-DOM-005` | domain-and-lifecycle | Editing a summary text unpublishes the report | Reqnroll | Covered |
+| `REQ-DOM-006` | domain-and-lifecycle | A report without publication consent is never summarized | Reqnroll | Covered |
 | `REQ-DOM-007` | domain-and-lifecycle | Soft deletion removes a report from every normal path | Reqnroll | Covered |
 | `REQ-DOM-008` | domain-and-lifecycle | A question revision can be deleted only when unreferenced | Reqnroll | Covered |
 | `REQ-DOM-009` | domain-and-lifecycle | Retiring a question is a soft delete with no way back | Reqnroll | Covered |
@@ -113,10 +115,10 @@ type: guide
 | `REQ-MOD-050` | moderation-authentication-and-publication | A status filter narrows the admin report list | Reqnroll | Covered |
 | `REQ-MOD-031` | moderation-authentication-and-publication | A report detail view exposes only what the reviewer needs | Reqnroll | Covered |
 | `REQ-MOD-051` | moderation-authentication-and-publication | Opening a report's detail view is audited | Reqnroll | Covered |
-| `REQ-MOD-032` | moderation-authentication-and-publication | Editing a summary clears approval and unpublishes | Reqnroll | Planned |
-| `REQ-MOD-033` | moderation-authentication-and-publication | Approval applies once to the current bilingual pair | Reqnroll | Planned |
-| `REQ-MOD-034` | moderation-authentication-and-publication | Rejection blocks publication but keeps the report for learning | Reqnroll | Planned |
-| `REQ-MOD-035` | moderation-authentication-and-publication | Publication requires every guard to pass, with no bypass | Reqnroll | Planned |
+| `REQ-MOD-032` | moderation-authentication-and-publication | Editing a summary clears approval and unpublishes | Reqnroll | Covered |
+| `REQ-MOD-033` | moderation-authentication-and-publication | Approval applies once to the current bilingual pair | Reqnroll | Covered |
+| `REQ-MOD-034` | moderation-authentication-and-publication | Rejection blocks publication but keeps the report for learning | Reqnroll | Covered |
+| `REQ-MOD-035` | moderation-authentication-and-publication | Publication requires every guard to pass, with no bypass | Reqnroll | Covered |
 | `REQ-MOD-036` | moderation-authentication-and-publication | The public DTO exposes only the approved summary and its metadata | Reqnroll | Planned |
 | `REQ-MOD-037` | moderation-authentication-and-publication | The public feed lists only publishable reports | Reqnroll | Planned |
 | `REQ-MOD-038` | moderation-authentication-and-publication | An unknown or non-public report id returns 404 | Reqnroll | Planned |
@@ -133,6 +135,20 @@ type: guide
 | `REQ-MOD-052` | moderation-authentication-and-publication | The Manage reports page lists reports with a status badge and a Private badge | playwright-bdd | Covered |
 | `REQ-MOD-053` | moderation-authentication-and-publication | Choosing a filter on Manage reports narrows the list | playwright-bdd | Covered |
 | `REQ-MOD-054` | moderation-authentication-and-publication | Opening a report shows its answers with private answers marked, and its summary pair | playwright-bdd | Covered |
+| `REQ-MOD-055` | moderation-authentication-and-publication | Approving the pair publishes it only when the reporter consented | Reqnroll | Covered |
+| `REQ-MOD-056` | moderation-authentication-and-publication | A rejected report can be reopened for review | Reqnroll | Covered |
+| `REQ-MOD-057` | moderation-authentication-and-publication | Unpublishing takes a report off the public feed and back to review | Reqnroll | Covered |
+| `REQ-MOD-058` | moderation-authentication-and-publication | A rejection may carry a note that only reviewers see | Reqnroll | Covered |
+| `REQ-MOD-059` | moderation-authentication-and-publication | A reviewer writes the pair by hand when summarization failed | Reqnroll | Covered |
+| `REQ-MOD-060` | moderation-authentication-and-publication | A review action based on a stale view is refused | Reqnroll | Covered |
+| `REQ-MOD-061` | moderation-authentication-and-publication | Every review action writes one content-free audit entry in its own transaction | Reqnroll | Covered |
+| `REQ-MOD-062` | moderation-authentication-and-publication | The report view offers only the actions its state allows | playwright-bdd | Covered |
+| `REQ-MOD-063` | moderation-authentication-and-publication | Editing the summary pair saves both texts and clears approval | playwright-bdd | Covered |
+| `REQ-MOD-064` | moderation-authentication-and-publication | Approving a consented report publishes it | playwright-bdd | Covered |
+| `REQ-MOD-065` | moderation-authentication-and-publication | Rejecting with a note shows the note on the report | playwright-bdd | Covered |
+| `REQ-MOD-066` | moderation-authentication-and-publication | A stale action tells the reviewer to reload | playwright-bdd | Covered |
+| `REQ-MOD-067` | moderation-authentication-and-publication | Deleting a report asks for confirmation first | playwright-bdd | Covered |
+| `REQ-MOD-068` | moderation-authentication-and-publication | Opening an attachment requests its own audited link | playwright-bdd | Covered |
 | `REQ-QB-001` | question-bank-and-form | Editing an unanswered question creates a new revision instead of mutating one | Reqnroll | Planned |
 | `REQ-QB-002` | question-bank-and-form | Editing an answered question retires it and creates a new one | Reqnroll | Planned |
 | `REQ-QB-003` | question-bank-and-form | An answer on a deleted report still forces a fork | Reqnroll | Planned |

@@ -25,6 +25,13 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 
 		builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
+		// Reviewer-authored, reviewer-only (REQ-MOD-058).
+		builder.Property(report => report.RejectionNote).HasMaxLength(Report.RejectionNoteMaxLength);
+
+		// PostgreSQL's own row version: a stale review command is refused rather
+		// than overwriting another reviewer's work (ADR-0105, CON-IF-006).
+		builder.Property<uint>(ConcurrencyToken.PropertyName).HasColumnName("xmin").IsRowVersion();
+
 		// The review queue reads by status, oldest first.
 		builder.HasIndex(report => new { report.Status, report.SubmittedAt });
 
@@ -182,6 +189,9 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 
 		// Exactly one summary row per report.
 		builder.HasIndex(summary => summary.ReportId).IsUnique();
+
+		// Edits land on this row, not the report's, so it carries its own token.
+		builder.Property<uint>(ConcurrencyToken.PropertyName).HasColumnName("xmin").IsRowVersion();
 
 		// IsApproved reads ApprovedAt alone, but a row with one of the pair
 		// set and not the other is not a state the domain can represent —

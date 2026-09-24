@@ -69,6 +69,13 @@ public class Report
 	/// </summary>
 	public string? SummaryError { get; private set; }
 
+	/// <summary>
+	///     A reviewer's optional note on why the report was rejected. Shown only in
+	///     the admin report view — never public, audited, or logged (REQ-MOD-058).
+	///     Cleared when the report is reopened.
+	/// </summary>
+	public string? RejectionNote { get; private set; }
+
 	/// <summary>When this report was soft-deleted, if it was.</summary>
 	public DateTimeOffset? Deleted { get; private set; }
 
@@ -251,6 +258,24 @@ public class Report
 		Status = ReportStatus.SummaryFailed;
 	}
 
+	/// <summary>
+	///     The reporter did not consent to publication, so the Worker never sends
+	///     the report to the model: it goes to review with no summary and can never
+	///     be published (REQ-DOM-006, REQ-AI-027).
+	/// </summary>
+	public void ReviewWithoutSummary()
+	{
+		EnsureLive();
+		EnsureIn("go to review without a summary", ReportStatus.Submitted, ReportStatus.Summarizing);
+
+		if (ConsentPublish is true)
+		{
+			throw new DomainRuleViolationException("A report with publication consent is summarized before review.");
+		}
+
+		Status = ReportStatus.PendingReview;
+	}
+
 	/// <summary>A safety officer approved the report.</summary>
 	public void Approve()
 	{
@@ -285,6 +310,136 @@ public class Report
 
 		Status = ReportStatus.Published;
 		PublishedAt = at;
+	}
+
+	/// <summary>The longest rejection note a reviewer may write.</summary>
+	public const int RejectionNoteMaxLength = 2000;
+
+	/// <summary>The provenance a hand-written summary pair carries as its model and prompt version.</summary>
+	public const string ManualProvenance = "manual";
+
+	/// <summary>
+	///     A reviewer approves the current pair (REQ-MOD-033). When the reporter
+	///     consented, the report is published in the same action; otherwise it is
+	///     Approved and never public (ADR-0105). Every publication guard still runs.
+	/// </summary>
+	/// <returns>True when the approval also published the report.</returns>
+	public bool ApprovePair(string approverSubject,
+							DateTimeOffset at)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(approverSubject);
+		EnsureLive();
+		EnsureIn("approve the pair", ReportStatus.PendingReview);
+
+		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to approve.");
+		summary.Approve(approverSubject, at);
+		Status = ReportStatus.Approved;
+
+		if (ConsentPublish is not true)
+		{
+			return false;
+		}
+
+		MarkPublished(at);
+		return true;
+	}
+
+	/// <summary>
+	///     A reviewer rejects the report, optionally saying why. It stays for internal
+	///     learning and can never be published while rejected (REQ-MOD-034, REQ-MOD-058).
+	/// </summary>
+	public void RejectReview(string? note)
+	{
+		EnsureLive();
+		EnsureIn("reject the report", ReportStatus.PendingReview);
+
+		note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+
+		if (note is { Length: > RejectionNoteMaxLength })
+		{
+			throw new DomainRuleViolationException(
+				$"A rejection note is at most {RejectionNoteMaxLength} characters.");
+		}
+
+		RejectionNote = note;
+		Status = ReportStatus.Rejected;
+	}
+
+	/// <summary>A reviewer changes their mind: a rejected report returns to review (REQ-MOD-056).</summary>
+	public void Reopen()
+	{
+		EnsureLive();
+		EnsureIn("reopen the report", ReportStatus.Rejected);
+
+		RejectionNote = null;
+		Status = ReportStatus.PendingReview;
+	}
+
+	/// <summary>
+	///     A reviewer takes a published report down without editing it. Approval is
+	///     cleared and the report returns to review (REQ-MOD-057).
+	/// </summary>
+	public void Unpublish()
+	{
+		EnsureLive();
+		EnsureIn("unpublish the report", ReportStatus.Published);
+
+		// A published report always has an approved pair; publication requires it.
+		Summary!.ClearApproval();
+		PublishedAt = null;
+		Status = ReportStatus.PendingReview;
+	}
+
+	/// <summary>
+	///     A reviewer saves both texts of the pair together. Approval is cleared and
+	///     the report returns to review, off the public feed if it was on it
+	///     (REQ-MOD-032, REQ-DOM-005).
+	/// </summary>
+	public void EditSummary(string textEn,
+							string textFr,
+							DateTimeOffset at)
+	{
+		EnsureLive();
+		EnsureIn("edit a summary text", ReportStatus.PendingReview, ReportStatus.Approved, ReportStatus.Published);
+
+		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to edit.");
+		summary.RewriteEn(textEn, at);
+		summary.RewriteFr(textFr, at);
+		PublishedAt = null;
+		Status = ReportStatus.PendingReview;
+	}
+
+	/// <summary>
+	///     Summarization failed, so a reviewer writes the pair by hand. It carries
+	///     <see cref="ManualProvenance" /> as its model and prompt version and goes to
+	///     review like any other pair (REQ-MOD-059).
+	/// </summary>
+	public void WriteManualSummary(string textEn,
+								   string textFr,
+								   DateTimeOffset at)
+	{
+		EnsureLive();
+		EnsureIn("write a manual pair", ReportStatus.SummaryFailed);
+
+		AttachSummary(Summary.Generate(Id, textEn, textFr, ManualProvenance, ManualProvenance, at));
+		AwaitReview();
+	}
+
+	private void EnsureLive()
+	{
+		if (Deleted is not null)
+		{
+			throw new DomainRuleViolationException("This report was deleted.");
+		}
+	}
+
+	private void EnsureIn(string action,
+						  params ReportStatus[] allowed)
+	{
+		if (!allowed.Contains(Status))
+		{
+			throw new ReviewTransitionException(action, Status);
+		}
 	}
 
 	/// <summary>

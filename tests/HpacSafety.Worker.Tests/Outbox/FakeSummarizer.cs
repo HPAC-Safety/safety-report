@@ -29,9 +29,14 @@ public sealed class FakeSummarizer : ISummarizer
 		_onCall = onCall;
 	}
 
-	public FakeSummarizer(bool failing)
+	/// <summary>A fixture summarizer that fails, optionally after acting mid-call.</summary>
+	/// <param name="failing">Whether every call fails.</param>
+	/// <param name="onCall">Runs just before the failure — see the other constructor.</param>
+	public FakeSummarizer(bool failing,
+						  Action? onCall = null)
 	{
 		_failing = failing;
+		_onCall = onCall;
 	}
 
 	public int CallCount { get; private set; }
@@ -44,12 +49,12 @@ public sealed class FakeSummarizer : ISummarizer
 		CallCount++;
 		LastInput = input;
 
+		_onCall?.Invoke();
+
 		if (_failing || _draft is null)
 		{
 			throw new SummarizationFailedException("The fixture summarizer was told to fail.");
 		}
-
-		_onCall?.Invoke();
 
 		return Task.FromResult(new SummaryDraft(_draft.Value.TextEn, _draft.Value.TextFr, "fixture-model", "fixture-v1"));
 	}

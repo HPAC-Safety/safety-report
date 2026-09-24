@@ -77,6 +77,10 @@ tier may use submitted content to improve its products. Reports carry names,
 contact details, and injuries, so no environment uses a free-tier key, and
 development runs on synthetic data.
 
+**Only a consented report crosses.** A report whose reporter did not consent
+to publication is never summarized, so it is never sent to Google (amended
+2026-09-23, REQ-DOM-006, REQ-AI-027).
+
 **Processing outside Canada is accepted for this one boundary.** The Gemini API
 offers no Canadian-region guarantee. The owner accepts that `report_content`
 (after marking) and `private_context` are processed by Google for the one call

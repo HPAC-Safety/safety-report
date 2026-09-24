@@ -132,6 +132,8 @@ export class ApiError extends Error {
 	constructor(
 		readonly status: number,
 		readonly detail: string,
+		/** The problem's `type` URI when the API sent one, e.g. `…/problems/stale-report`. */
+		readonly type: string | null = null,
 	) {
 		super(detail)
 		this.name = "ApiError"

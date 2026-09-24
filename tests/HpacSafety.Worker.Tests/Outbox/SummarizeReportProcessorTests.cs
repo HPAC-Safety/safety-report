@@ -287,6 +287,66 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	[Fact]
+	public async Task GivenTheReportIsSoftDeletedWhileAFailingCallIsInFlight_WhenTheCallFails_ThenTheDeletedReportIsLeftAloneAndTheFailureIsRecorded()
+	{
+		// Given — the deletion lands mid-call and the call then fails; the report
+		// row now carries a row version (ADR-0105), so writing Summarizing back
+		// over the deletion must not be attempted at all
+		var connectionString = await postgres.CreateMigratedDatabase();
+		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
+		var report = await Seed(context);
+
+		var summarizer = new FakeSummarizer(
+			failing: true,
+			onCall: () =>
+			{
+				using var deleter = WorkerPostgresFixture.ContextFor(connectionString);
+				var deleting = deleter.Reports.Single(r => r.Id == report.Id);
+				deleting.SoftDelete(At);
+				deleter.SaveChanges();
+			});
+		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
+
+		// When
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
+
+		// Then — the attempt's failure is recorded on the message, and the deleted
+		// report keeps the status it had when it was deleted
+		claimed.ShouldBeTrue();
+
+		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
+		var stored = await reader.Reports.IgnoreQueryFilters().SingleAsync(r => r.Id == report.Id);
+		stored.Deleted.ShouldNotBeNull();
+		stored.Status.ShouldBe(ReportStatus.Submitted);
+
+		var message = await reader.OutboxMessages.IgnoreQueryFilters().SingleAsync(m => m.AggregateId == report.Id);
+		message.Attempts.ShouldBe(1);
+	}
+
+	[Fact]
+	public async Task GivenReporterDidNotConsent_WhenTheMessageIsProcessed_ThenNoModelCallAndPendingReviewWithNoSummary()
+	{
+		// Given — only a consented report may reach the model (REQ-AI-027)
+		var connectionString = await postgres.CreateMigratedDatabase();
+		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
+		var report = await Seed(context, consent: "no");
+		var summarizer = new FakeSummarizer(("en", "fr"));
+		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
+
+		// When
+		var claimed = await OutboxClaimer.ClaimNext(context, OutboxMessageType.SummarizeReport, At, processor.Process, CancellationToken.None);
+
+		// Then
+		claimed.ShouldBeTrue();
+		summarizer.CallCount.ShouldBe(0);
+
+		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
+		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Status.ShouldBe(ReportStatus.PendingReview);
+		(await reader.Summaries.AnyAsync(s => s.ReportId == report.Id)).ShouldBeFalse();
+		(await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id)).IsProcessed.ShouldBeTrue();
+	}
+
+	[Fact]
 	public async Task GivenTwoConcurrentClaims_WhenBothClaimTheSameDueMessage_ThenOnlyOneSucceeds()
 	{
 		// Given
@@ -312,16 +372,17 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		(summarizerA.CallCount + summarizerB.CallCount).ShouldBe(1);
 	}
 
-	private static async Task<Report> Seed(HpacSafetyDbContext context)
+	private static async Task<Report> Seed(HpacSafetyDbContext context,
+										   string consent = "yes")
 	{
-		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+		var consentQuestion = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
 		var pilotName = Question.Create("pilot_name", QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);
 		var narrative = Question.Create("narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", At, isPrivate: false);
-		context.Questions.AddRange(consent, pilotName, narrative);
+		context.Questions.AddRange(consentQuestion, pilotName, narrative);
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consent, ["yes"], At);
+		report.Answer(consentQuestion, [consent], At);
 		report.Answer(pilotName, "Ada Lovelace", At);
 		report.Answer(narrative, "Ada Lovelace reported a hard landing.", At);
 		report.EnsureReadyForSubmission();

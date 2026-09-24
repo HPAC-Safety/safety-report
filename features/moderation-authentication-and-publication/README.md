@@ -82,6 +82,32 @@ view, and that read is audited as `ViewedRawReport`
 Attachments are listed by kind and state; opening one goes through its own
 audited view or download request (REQ-MOD-046).
 
+## Review actions
+
+The report view offers only what the report's state allows:
+
+| Status | Actions |
+|---|---|
+| Pending review | Edit summary, Approve, Reject, Delete |
+| Pending review without consent (never summarized) | Reject, Delete |
+| Approved (no consent) | Edit summary, Delete |
+| Published | Edit summary, Unpublish, Delete |
+| Rejected | Reopen, Delete |
+| Summary failed | Write summary, Delete |
+| Submitted, Summarizing | Delete |
+
+**Approve** publishes at once when the reporter said yes, and otherwise only
+approves ([ADR-0105](../../docs/decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)).
+**Edit summary** saves both texts together and returns the report to Pending
+review, taking it off the public feed if it was there. **Reject** takes an
+optional note that only reviewers see. A hand-written pair after a failed
+summarization carries `manual` as its model and prompt version.
+
+Every action carries the version of the report the reviewer loaded. If another
+reviewer changed it since, the API answers `409` and nothing is saved; the page
+asks the reviewer to reload. Each action writes one content-free audit entry
+in the same transaction.
+
 ## Public DTO edge state
 
 The requested UI locale may determine which text is displayed first but is
@@ -108,3 +134,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Pagination, search, or sorting of the admin report list other than newest
   first. HPAC receives dozens of reports a year.
 - Showing answer or summary text in the admin report list itself.
+- Re-running summarization from the review screen. A failed summary is
+  written by hand.
+- Editing one language without the other in separate saves: the pair is
+  saved together.
+- Showing a rejection note anywhere but the admin report view.

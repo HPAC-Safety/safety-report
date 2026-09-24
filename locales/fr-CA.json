@@ -362,7 +362,9 @@
       "notAnswered": "Sans réponse",
       "translation": "Traduction : {text}",
       "attachments": "Pièces jointes",
-      "attachment": "{kind} — {state}"
+      "attachment": "{kind} — {state}",
+      "rejectionNote": "Avis de rejet : {note}",
+      "notSummarized": "Non résumé : le journaliste n'ayant pas donné son consentement à la publication, ce rapport n'a jamais été transmis à AI."
     },
     "attachment": {
       "kind": {
@@ -374,7 +376,46 @@
         "ready": "prêt",
         "processing": "traitement",
         "failed": "n’a pas pu être traité"
-      }
+      },
+      "view": "Afficher",
+      "download": "Téléverser"
+    },
+    "action": {
+      "label": "Examiner les mesures",
+      "edit": "Résumé de la modification",
+      "write": "Rédiger un résumé",
+      "approve": "Approuver",
+      "reject": "Refuser",
+      "reopen": "Rouvrir",
+      "unpublish": "Retirer de la publication",
+      "delete": "Supprimer",
+      "cancel": "Annuler"
+    },
+    "approve": {
+      "publishes": "Le journaliste a donné son accord; « Approving » publie donc cet article sans délai.",
+      "private": "Le journaliste n’ayant pas donné son consentement, la validation de ce rapport garantit la confidentialité de celui-ci."
+    },
+    "edit": {
+      "label": "Modifier la paire de résumés",
+      "en": "Résumé en anglais",
+      "fr": "Résumé en français",
+      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le rapport revient à l’état « En attente de révision » et est retiré du fil d’actualité s’il a été publié.",
+      "save": "Enregistrer le résumé"
+    },
+    "reject": {
+      "label": "Rejeter le rapport",
+      "note": "Remarque à l'intention des autres évaluateurs (facultatif)",
+      "confirm": "Rejeter le rapport"
+    },
+    "stale": {
+      "message": "Un autre réviseur a modifié ce rapport depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",
+      "reload": "Recharger le rapport"
+    },
+    "delete": {
+      "title": "Souhaitez-vous supprimer ce rapport?",
+      "body": "Le rapport, ses réponses, son résumé et ses pièces jointes sont supprimés de toutes les listes et ne peuvent pas être restaurés.",
+      "confirm": "Supprimer le rapport",
+      "keep": "Conserver le rapport"
     }
   }
 }

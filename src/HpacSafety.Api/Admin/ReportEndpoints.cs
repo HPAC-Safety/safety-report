@@ -9,9 +9,10 @@ using Microsoft.EntityFrameworkCore;
 namespace HpacSafety.Api.Admin;
 
 /// <summary>
-///     The admin report endpoints: the report list, one report's read-only detail
-///     view, and soft deletion. Editing, approving, rejecting, and publishing are
-///     the second half of issue #25 — not built yet.
+///     The admin report endpoints: the report list, one report's audited detail
+///     view, the review commands (save the pair, approve-and-publish, reject,
+///     reopen, unpublish), and soft deletion. Every command carries the version the
+///     reviewer loaded and is refused with <c>409</c> when it is stale (ADR-0105).
 /// </summary>
 public static class ReportEndpoints
 {
@@ -43,6 +44,11 @@ public static class ReportEndpoints
 
 		group.MapGet("/", List);
 		group.MapGet("/{id}", Detail);
+		group.MapPut("/{id}/summary", SaveSummary);
+		group.MapPost("/{id}/approve", Approve);
+		group.MapPost("/{id}/reject", Reject);
+		group.MapPost("/{id}/reopen", Reopen);
+		group.MapPost("/{id}/unpublish", Unpublish);
 		group.MapDelete("/{id}", Delete);
 
 		return group;
@@ -104,24 +110,216 @@ public static class ReportEndpoints
 		HttpContext context,
 		CancellationToken cancellationToken)
 	{
-		if (!TinyId.TryParse(id, out var reportId))
-		{
-			return Results.NotFound();
-		}
-
-		var report = await database.Reports
-			.AsNoTracking()
-			.Include(candidate => candidate.Answers)
-			.Include(candidate => candidate.Files)
-			.Include(candidate => candidate.Summary)
-			.SingleOrDefaultAsync(candidate => candidate.Id == reportId, cancellationToken)
-			.ConfigureAwait(false);
+		var report = await Load(id, database, cancellationToken).ConfigureAwait(false);
 
 		if (report is null)
 		{
 			return Results.NotFound();
 		}
 
+		var at = clock.GetUtcNow();
+		database.AuditLog.Add(new AuditLogEntry(SubjectOf(context), AuditAction.ViewedRawReport, "Report", report.Id, at));
+		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+
+		return Results.Ok(await DetailOf(database, report, at, cancellationToken).ConfigureAwait(false));
+	}
+
+	/// <summary>Saves both texts of the pair, or writes it by hand after a failure (REQ-MOD-032, REQ-MOD-059).</summary>
+	private static Task<IResult> SaveSummary(string id,
+											 SaveSummaryPairRequest request,
+											 HpacSafetyDbContext database,
+											 TimeProvider clock,
+											 HttpContext context,
+											 CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		return Act(id, request.Version, database, clock, context, (report, _, at) =>
+		{
+			if (report.Status == ReportStatus.SummaryFailed)
+			{
+				report.WriteManualSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at);
+			}
+			else
+			{
+				report.EditSummary(request.AiSummaryEn ?? string.Empty, request.AiSummaryFr ?? string.Empty, at);
+			}
+
+			return AuditAction.EditedSummary;
+		}, cancellationToken);
+	}
+
+	/// <summary>Approves the pair, publishing it when the reporter consented (REQ-MOD-055, ADR-0105).</summary>
+	private static Task<IResult> Approve(string id,
+										 ReviewCommand request,
+										 HpacSafetyDbContext database,
+										 TimeProvider clock,
+										 HttpContext context,
+										 CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		return Act(id, request.Version, database, clock, context, (report, subject, at) =>
+		{
+			report.ApprovePair(subject, at);
+			return AuditAction.ApprovedReport;
+		}, cancellationToken);
+	}
+
+	/// <summary>Rejects the report, with an optional reviewer-only note (REQ-MOD-034, REQ-MOD-058).</summary>
+	private static Task<IResult> Reject(string id,
+										RejectReportRequest request,
+										HpacSafetyDbContext database,
+										TimeProvider clock,
+										HttpContext context,
+										CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		return Act(id, request.Version, database, clock, context, (report, _, _) =>
+		{
+			report.RejectReview(request.Note);
+			return AuditAction.RejectedReport;
+		}, cancellationToken);
+	}
+
+	/// <summary>Returns a rejected report to review (REQ-MOD-056).</summary>
+	private static Task<IResult> Reopen(string id,
+										ReviewCommand request,
+										HpacSafetyDbContext database,
+										TimeProvider clock,
+										HttpContext context,
+										CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		return Act(id, request.Version, database, clock, context, (report, _, _) =>
+		{
+			report.Reopen();
+			return AuditAction.ReopenedReport;
+		}, cancellationToken);
+	}
+
+	/// <summary>Takes a published report off the public feed and back to review (REQ-MOD-057).</summary>
+	private static Task<IResult> Unpublish(string id,
+										   ReviewCommand request,
+										   HpacSafetyDbContext database,
+										   TimeProvider clock,
+										   HttpContext context,
+										   CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		return Act(id, request.Version, database, clock, context, (report, _, _) =>
+		{
+			report.Unpublish();
+			return AuditAction.UnpublishedReport;
+		}, cancellationToken);
+	}
+
+	/// <summary>
+	///     Runs one review command: refuses a stale version with <c>409</c>, applies the
+	///     domain command, and saves it with one content-free audit entry in the same
+	///     transaction (REQ-MOD-060, REQ-MOD-061). Answers with the updated detail view,
+	///     carrying its new version; that response is not a second audited read.
+	/// </summary>
+	private static async Task<IResult> Act(string id,
+										   string? version,
+										   HpacSafetyDbContext database,
+										   TimeProvider clock,
+										   HttpContext context,
+										   Func<Report, string, DateTimeOffset, AuditAction> command,
+										   CancellationToken cancellationToken)
+	{
+		var report = await Load(id, database, cancellationToken).ConfigureAwait(false);
+
+		if (report is null)
+		{
+			return Results.NotFound();
+		}
+
+		if (version != ConcurrencyToken.Of(database, report) || !ConcurrencyToken.Expect(database, report, version))
+		{
+			return Stale();
+		}
+
+		var at = clock.GetUtcNow();
+		var subject = SubjectOf(context);
+		AuditAction action;
+
+		try
+		{
+			action = command(report, subject, at);
+		}
+		catch (ReviewTransitionException refusal)
+		{
+			return Results.Problem(
+				title: "That action is not allowed now.",
+				detail: refusal.Message,
+				statusCode: StatusCodes.Status409Conflict,
+				type: "https://hpac.ca/problems/invalid-transition");
+		}
+		catch (DomainRuleViolationException refusal)
+		{
+			return Results.Problem(
+				title: "That change cannot be saved.",
+				detail: refusal.Message,
+				statusCode: StatusCodes.Status400BadRequest,
+				type: "https://hpac.ca/problems/invalid-review");
+		}
+
+		database.AuditLog.Add(new AuditLogEntry(subject, action, "Report", report.Id, at));
+
+		try
+		{
+			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
+		}
+		catch (DbUpdateConcurrencyException)
+		{
+			return Stale();
+		}
+
+		return Results.Ok(await DetailOf(database, report, at, cancellationToken).ConfigureAwait(false));
+	}
+
+	private static IResult Stale()
+	{
+		return Results.Problem(
+			title: "This report changed since you opened it.",
+			detail: "Another reviewer saved a change to this report. Reload it to see the latest version, then try again.",
+			statusCode: StatusCodes.Status409Conflict,
+			type: "https://hpac.ca/problems/stale-report");
+	}
+
+	private static string SubjectOf(HttpContext context)
+	{
+		// A validated token should always carry a subject, but /me already treats
+		// that as unguaranteed; the audit row records it as unknown rather than failing.
+		return MemberRoles.SubjectOf(context.User) ?? "(unknown)";
+	}
+
+	private static async Task<Report?> Load(string id,
+											HpacSafetyDbContext database,
+											CancellationToken cancellationToken)
+	{
+		if (!TinyId.TryParse(id, out var reportId))
+		{
+			return null;
+		}
+
+		return await database.Reports
+			.Include(candidate => candidate.Answers)
+			.Include(candidate => candidate.Files)
+			.Include(candidate => candidate.Summary)
+			.SingleOrDefaultAsync(candidate => candidate.Id == reportId, cancellationToken)
+			.ConfigureAwait(false);
+	}
+
+	private static async Task<ReportDetail> DetailOf(HpacSafetyDbContext database,
+													 Report report,
+													 DateTimeOffset at,
+													 CancellationToken cancellationToken)
+	{
 		// The exact revisions answered, retired ones included: an answer always
 		// shows the wording the reporter actually saw (ADR-0071).
 		var revisionIds = report.Answers.Select(answer => answer.QuestionRevisionId).Distinct().ToList();
@@ -132,12 +330,7 @@ public static class ReportEndpoints
 			.ToDictionaryAsync(revision => revision.Id, cancellationToken)
 			.ConfigureAwait(false);
 
-		var at = clock.GetUtcNow();
-		var subject = MemberRoles.SubjectOf(context.User) ?? "(unknown)";
-		database.AuditLog.Add(new AuditLogEntry(subject, AuditAction.ViewedRawReport, "Report", reportId, at));
-		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
-
-		return Results.Ok(new ReportDetail(
+		return new ReportDetail(
 			report.Id.Value,
 			report.SubmittedAt,
 			EnumCode.Of(report.Status),
@@ -157,7 +350,10 @@ public static class ReportEndpoints
 					summary.ApprovedBySubject,
 					summary.ApprovedAt)
 				: null,
-			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file)))]));
+			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file)))],
+			ConcurrencyToken.Of(database, report),
+			report.RejectionNote,
+			report.PublishedAt);
 	}
 
 	/// <summary>Groups answers by question, in form order, under the revision each was given against.</summary>
@@ -263,7 +459,7 @@ public static class ReportEndpoints
 		// A validated token should always carry a subject, but the /me endpoint
 		// already treats that as unguaranteed rather than assumed — a role claim
 		// alone does not prove a subject claim exists. Same stance here.
-		var subject = MemberRoles.SubjectOf(context.User) ?? "(unknown)";
+		var subject = SubjectOf(context);
 		database.AuditLog.Add(new AuditLogEntry(subject, AuditAction.DeletedReport, "Report", reportId, at));
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

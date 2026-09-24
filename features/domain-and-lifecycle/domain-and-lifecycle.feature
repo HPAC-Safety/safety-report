@@ -4,24 +4,43 @@ publication, and soft deletion can remove it from that lifecycle at any
 point.
 
 @REQ-DOM-001
-@ignore
 Scenario Outline: A report follows the defined lifecycle transitions
   Given a report is in state <from>
   When <event> occurs
   Then the report moves to state <to>
 
 Examples:
-  | from          | event                                        | to            |
-  | Submitted     | Worker claims the summary job                | Summarizing   |
-  | Summarizing   | a valid bilingual pair is saved              | PendingReview |
-  | Summarizing   | bounded retries are exhausted                | SummaryFailed |
-  | SummaryFailed | an officer writes both texts                 | PendingReview |
-  | PendingReview | either summary text is edited                | PendingReview |
-  | PendingReview | an officer approves the pair                 | Approved      |
-  | PendingReview | an officer rejects the report                | Rejected      |
-  | Approved      | either summary text is edited                | PendingReview |
-  | Approved      | consent is yes and the report is not deleted | Published     |
-  | Published     | either summary text is edited                | PendingReview |
+  | from          | event                                           | to            |
+  | Submitted     | Worker claims the summary job                   | Summarizing   |
+  | Summarizing   | a valid bilingual pair is saved                 | PendingReview |
+  | Summarizing   | bounded retries are exhausted                   | SummaryFailed |
+  | SummaryFailed | an officer writes both texts                    | PendingReview |
+  | PendingReview | either summary text is edited                   | PendingReview |
+  | PendingReview | an officer approves the pair and consent is yes | Published     |
+  | PendingReview | an officer approves the pair and consent is no  | Approved      |
+  | PendingReview | an officer rejects the report                   | Rejected      |
+  | Approved      | either summary text is edited                   | PendingReview |
+  | Published     | either summary text is edited                   | PendingReview |
+  | Published     | an officer unpublishes the report               | PendingReview |
+  | Rejected      | an officer reopens the report                   | PendingReview |
+
+@REQ-DOM-014
+Scenario Outline: A review action outside its states is refused and changes nothing
+  Given a report is in state <from>
+  When an officer tries to <action>
+  Then the action is refused
+  And the report stays in state <from>
+
+Examples:
+  | from          | action               |
+  | Submitted     | approve the pair     |
+  | SummaryFailed | approve the pair     |
+  | Rejected      | approve the pair     |
+  | Rejected      | edit a summary text  |
+  | Published     | reject the report    |
+  | PendingReview | reopen the report    |
+  | PendingReview | unpublish the report |
+  | PendingReview | write a manual pair  |
 
 @REQ-DOM-002
 @ignore
@@ -59,7 +78,6 @@ Examples:
   | the report has been rejected                |
 
 @REQ-DOM-005
-@ignore
 Scenario: Editing a summary text unpublishes the report
   Given a report is Published
   When either the English or French summary text is edited
@@ -67,11 +85,11 @@ Scenario: Editing a summary text unpublishes the report
   And the report immediately stops satisfying the publication invariant
 
 @REQ-DOM-006
-@ignore
-Scenario: Negative consent still allows internal review
-  Given a reporter has not consented to publication
-  When the report is summarized and reviewed
-  Then internal summarization and safety review proceed normally
+Scenario: A report without publication consent is never summarized
+  Given a report whose reporter did not consent to publication is due for summarization
+  When the Worker processes its summarization attempt
+  Then no model call is made
+  And the report goes to Pending review with no summary
   And the report can never satisfy the public query
 
 @REQ-DOM-007

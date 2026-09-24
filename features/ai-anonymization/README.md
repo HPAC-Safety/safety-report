@@ -42,19 +42,39 @@ and types before persisting anything.
 
 ## Anonymization policy notes
 
-Dates and locations are generalized only as far as anonymity requires. The
-summary may retain weather, terrain category, flight phase, approximate
-timing, injury severity, and other learning value when they do not identify
-someone.
+The summary keeps weather, terrain category, flight phase, time of day, injury
+severity, and other learning value. It replaces what identifies someone with a
+generic phrase, never with an invented name and never with a word such as
+"redacted":
 
-When replacing a private identity with a role, use the most accurate known
-role such as passenger, instructor, reporter, witness, or launch director; do
-not invent a role.
+| What the report says | English | French |
+|---|---|---|
+| The pilot, by name or marker | the pilot | le pilote |
+| Another person | the role the report supports — the instructor, the passenger, a witness, another pilot, the reporter | l'instructeur, le passager, un témoin, un autre pilote, le déclarant |
+| A person with no clear role | a person | une personne |
+| A launch site | the launch site | le site de décollage |
+| A landing field | the landing field | le champ d'atterrissage |
+| Any other place | the location | le lieu |
+| An exact date | its month or season | son mois ou sa saison |
+| A time of day | kept as reported | conservée telle quelle |
+| A club, school, or company | the club, the school, the company | le club, l'école, l'entreprise |
+| An aircraft make or model | its category, such as a paraglider | sa catégorie, par exemple un parapente |
+| Contact or account details | omitted | omis |
+
+Use the most accurate role the report supports; do not invent one. The
+current prompt carries every row of this table
+([REQ-AI-024](ai-anonymization.feature)).
 
 ## Provider configuration
 
-Provider retention and regional/data-use settings must meet HPAC's privacy
-requirements before production configuration is enabled.
+The Worker's `AiChatClient` configuration section holds the provider, its key,
+the model, and the reasoning level together. The provider is Google Gemini,
+the model `gemini-3.7-flash`, the reasoning level `low`, called with a paid key
+in every environment
+([ADR-0104](../../docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)).
+The key is never committed. An unknown provider, a blank model, or an invalid
+reasoning level stops the Worker at startup rather than sending report content
+anywhere ([REQ-AI-023](ai-anonymization.feature)).
 
 ## Superseded material
 
@@ -82,3 +102,12 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
 - Per-sentence or per-field redaction output. The result is one bilingual pair.
+- A deterministic check of the model's output for leaked names, markers, or
+  the word "redacted". The reviewer owns the final privacy decision
+  ([ADR-0004](../../docs/decisions/ADR-0004-human-review-required.md)).
+- Live-model evaluation in the test suite. Every test uses a fixture client;
+  what the model actually writes is judged by the reviewer.
+- A second provider concretion (Claude, OpenAI), a fallback provider, or a
+  Canadian-region endpoint. The provider is a strategy selected by
+  configuration, and adding one is its own decision.
+- Setting a sampling temperature. Gemini 3 is run at its default.

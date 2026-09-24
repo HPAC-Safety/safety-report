@@ -76,7 +76,6 @@ Scenario: A fact appearing only in private context is never summarized
   Then that fact does not appear in either summary text
 
 @REQ-AI-011
-@ignore
 Scenario: The Worker accepts only the exact two-field JSON response
   Given the model returns a response for a summarization attempt
   When the Worker validates the response
@@ -112,6 +111,8 @@ Examples:
   | an exact site, coordinates, or uniquely identifying location description                |
   | an aircraft manufacturer or model                                                       |
   | a filename, attachment/document content, metadata, or a hidden private answer           |
+  | a club, school, or company name                                                         |
+  | an exact calendar date                                                                  |
 
 @REQ-AI-015
 @ignore
@@ -120,6 +121,23 @@ Scenario: A private-only fact is never added merely for completeness
   And that fact is not otherwise eligible summary content
   When the model produces the summary
   Then the fact is not added to either summary text
+
+@REQ-AI-025
+@ignore
+Scenario: An exact date generalizes to its month or season while the time of day is kept
+  Given a report's eligible content gives an exact calendar date and a time of day
+  When the model produces the anonymized summary
+  Then both summaries give only the month or season of that date
+  And both summaries keep the time of day as reported
+
+@REQ-AI-026
+@ignore
+Scenario: A place becomes a generic phrase that fits its role, never an invented name
+  Given a report's eligible content names a launch site, a landing field, or another place
+  When the model produces the anonymized summary
+  Then each place becomes a generic phrase for its role, such as "the launch site" / "le site de décollage" or "the location" / "le lieu"
+  And no place name, invented or real, appears in either summary
+  And the terrain category and weather are kept
 
 @REQ-AI-016
 Scenario: Documents never reach the model
@@ -163,3 +181,43 @@ Scenario: Sensitive summarization data is never logged
   Given a summarization attempt runs, succeeds, or fails
   When the Worker emits application logs
   Then prompts, model responses, private context, and raw report content are never written to those logs
+
+@REQ-AI-022
+Scenario: The Worker requests the configured model at the configured reasoning level
+  Given the Worker is configured with a provider, a model, and a reasoning level
+  When the Worker makes the summarization call
+  Then the call names the configured model and asks for the configured reasoning level
+  And the call asks the provider for a JSON object response
+  And the call leaves the sampling temperature at the provider's default
+
+@REQ-AI-023
+Scenario Outline: A Worker holding a key refuses to start with an unusable provider configuration
+  Given the Worker has a model provider key
+  And its provider configuration has <problem>
+  When the Worker starts
+  Then startup fails before any report is claimed
+
+Examples:
+  | problem                                        |
+  | a provider no strategy is registered for       |
+  | a blank model                                  |
+  | a reasoning level other than low, medium, high |
+
+@REQ-AI-024
+Scenario Outline: The current prompt carries every anonymization and accuracy rule
+  Given the prompt version the Worker currently sends
+  When the prompt is read
+  Then it states the rule that <rule>
+
+Examples:
+  | rule                                                                                     |
+  | every statement must be supported by report_content, and nothing is invented             |
+  | a pilot becomes exactly "the pilot" / "le pilote"                                        |
+  | any other person becomes the role the report supports, or "a person" / "une personne"    |
+  | a place becomes a generic phrase such as "the launch site" or "the location" / "le lieu" |
+  | an exact date becomes its month or season, and the time of day is kept                   |
+  | a club, school, or company becomes "the club", "the school", or "the company"            |
+  | an aircraft make or model becomes its category                                           |
+  | "redacted", "caviardé", placeholders, and invented names are never written               |
+  | every private marker is resolved and never appears literally                             |
+  | the response is exactly the two-field ai_summary_en / ai_summary_fr JSON object          |

@@ -36,7 +36,7 @@ builder.Services.AddHpacSafetyAuthentication(
 	builder.Environment.IsDevelopment());
 
 // Private object storage and the media-ingest pipeline behind attachment
-// uploads and report submission. S3 in AWS, the MinIO container in
+// uploads and report submission. S3 in AWS, an S3-compatible container in
 // development; only configuration differs. See ADR-0096.
 builder.Services.AddHpacSafetyMedia(builder.Configuration);
 

@@ -16,7 +16,7 @@ namespace HpacSafety.Api.Tests;
 /// <summary>
 ///     A reporter's attachment uploads the moment it is attached, is validated before
 ///     anything is stored, and waits in quarantine under an opaque id until a
-///     submission claims it (ADR-0096). Against real PostgreSQL and MinIO containers;
+///     submission claims it (ADR-0096). Against real PostgreSQL and S3-compatible containers;
 ///     every file here is synthetic.
 /// </summary>
 [Trait("Category", "Integration")]

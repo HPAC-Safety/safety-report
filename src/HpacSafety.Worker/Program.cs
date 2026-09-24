@@ -36,7 +36,7 @@ builder.Services.AddHpacSafetyTranslation(
 
 // Attachment derivatives are produced here, one outbox message per file, never
 // on the submission path (ADR-0098). The same storage adapter and ingest
-// pipeline the API uses: S3 in AWS, MinIO in development.
+// pipeline the API uses: S3 in AWS, an S3-compatible container in development.
 builder.Services.AddHpacSafetyMedia(builder.Configuration);
 builder.Services.AddScoped<IOutboxMessageProcessor, ProcessAttachmentProcessor>();
 

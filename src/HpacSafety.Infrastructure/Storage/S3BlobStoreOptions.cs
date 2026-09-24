@@ -10,7 +10,7 @@ public sealed class S3BlobStoreOptions
 	public string BucketName { get; set; } = string.Empty;
 
 	/// <summary>
-	///     An S3-compatible endpoint to use instead of AWS — the MinIO container in
+	///     An S3-compatible endpoint to use instead of AWS — the S3-compatible container in
 	///     development. Empty in production, where the SDK resolves S3 for the region
 	///     and authenticates as the ECS task role.
 	/// </summary>

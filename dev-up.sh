@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 #
-# dev-up.sh — build and run the dev environment: Postgres, MinIO (private
-# attachment storage), API, Worker, and web, each in its own Docker container
-# (docker-compose.yml).
+# dev-up.sh — build and run the dev environment: Postgres, an S3-compatible
+# server (private attachment storage), API, Worker, and web, each in its own
+# Docker container (docker-compose.yml).
 #
 # Run ./init-dev.sh first. This script assumes Docker and the .NET SDK are
 # already installed and does not check for them beyond confirming Docker is
@@ -23,7 +23,7 @@ set -eu
 REPO_ROOT=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
 cd "$REPO_ROOT"
 
-# Host ports docker-compose.yml publishes: postgres, minio (API, console),
+# Host ports docker-compose.yml publishes: postgres, s3 (API, console),
 # api, web.
 PORTS="5432 9000 9001 8080 5173"
 
@@ -142,12 +142,12 @@ while [ "$WAITED" -lt "$LIMIT" ]; do
 		echo
 		echo "Web  http://localhost:5173"
 		echo "API  http://localhost:8080"
-		echo "Storage console  http://localhost:9001"
+		echo "Storage console  http://localhost:9001/rustfs/console/"
 		echo "Logs docker compose logs -f     Stop ./dev-up.sh --down"
 		exit 0
 	fi
 
-	# A service that exited will not come up by waiting for it. minio-init is
+	# A service that exited will not come up by waiting for it. s3-init is
 	# one-shot and is meant to exit, so only a non-zero exit counts.
 	EXITED=$(docker compose ps --all --status exited --status dead --format '{{.Service}} {{.ExitCode}}' | awk '$2 != 0 { print $1 }')
 	if [ -n "$EXITED" ]; then

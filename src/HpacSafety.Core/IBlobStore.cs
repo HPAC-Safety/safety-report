@@ -7,7 +7,7 @@ namespace HpacSafety.Core;
 ///     <para>
 ///         Two rules bind every implementation, and both are covered by the shared
 ///         contract suite in <c>HpacSafety.Infrastructure.Tests</c>, run against
-///         MinIO: a URL is scoped to exactly one <see cref="BlobKey" /> and cannot be reused
+///         an S3-compatible server: a URL is scoped to exactly one <see cref="BlobKey" /> and cannot be reused
 ///         for another, and every lifetime passes <see cref="BlobUrlLifetime.Validate" />.
 ///     </para>
 /// </summary>

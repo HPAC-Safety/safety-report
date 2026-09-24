@@ -103,5 +103,5 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   has validated it
   ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
 - An upload table, or any record linking an upload to the member who made it.
-- A filesystem storage adapter. Development runs MinIO behind the same
-  `S3BlobStore` production uses.
+- A filesystem storage adapter. Development runs an S3-compatible server
+  (RustFS, ADR-0110) behind the same `S3BlobStore` production uses.

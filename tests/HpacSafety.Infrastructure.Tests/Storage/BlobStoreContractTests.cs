@@ -9,8 +9,8 @@ using Shouldly;
 namespace HpacSafety.Infrastructure.Tests.Storage;
 
 /// <summary>
-///     The contract every <see cref="IBlobStore" /> keeps. It runs against MinIO,
-///     the same S3-compatible server development uses, through the one adapter
+///     The contract every <see cref="IBlobStore" /> keeps. It runs against the
+///     same S3-compatible server development uses (ADR-0110), through the one adapter
 ///     production uses. See ADR-0026, ADR-0096, and
 ///     <c>skills/test-hpac-safety/SKILL.md</c>.
 /// </summary>

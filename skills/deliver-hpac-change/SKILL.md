@@ -259,6 +259,16 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    remains, and mark the session done:
    `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
+A workflow that commits onto a pull request's own branch pushes through
+`tools/push-to-pr-branch.mjs` and passes its own `pull_request_target.paths`,
+never a bare `git push`. Two bots fire on the same push, and GitHub filters
+`paths` per push, so the one that pushes first usually starts no run of the
+other. "The newer push redoes this work" is true only when that push changed
+a file the workflow is triggered by; otherwise the tool replays the commit on
+top
+([ADR-0113](../../docs/decisions/ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md),
+[lesson 0016](../../docs/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
+
 Never hand-edit generated `.claude/` content. When project-owned skills change,
 update `Skillfile`, regenerate `Skillfile.lock`, and run the repository's skill
 validation.

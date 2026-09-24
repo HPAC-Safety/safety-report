@@ -81,11 +81,7 @@ public static class PublicReportEndpoints
 		HpacSafetyDbContext database,
 		CancellationToken cancellationToken)
 	{
-		if (!TinyId.TryParse(reportId, out _))
-		{
-			return Results.NotFound();
-		}
-
+		// Any text is only a lookup key here: an ID that is not one simply has no row.
 		var report = await database.PublicReports
 			.AsNoTracking()
 			.Where(candidate => candidate.Id == reportId)
@@ -123,9 +119,9 @@ public static class PublicReportEndpoints
 
 			var parts = Encoding.UTF8.GetString(Base64Url.DecodeFromChars(token)).Split('.');
 
+			// NumberStyles.None admits no sign, so a parsed tick count is never negative.
 			if (parts.Length != 2
 				|| !long.TryParse(parts[0], NumberStyles.None, CultureInfo.InvariantCulture, out var ticks)
-				|| ticks < DateTimeOffset.MinValue.UtcTicks
 				|| ticks > DateTimeOffset.MaxValue.UtcTicks
 				|| !TinyId.TryParse(parts[1], out _))
 			{

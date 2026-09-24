@@ -22,6 +22,7 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 
 	public static TheoryData<string> UnreadableCursors =>
 	[
+		"",
 		"not a cursor",
 		"!!!!",
 		Base64Url("12345"),

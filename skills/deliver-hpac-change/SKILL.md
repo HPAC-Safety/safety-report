@@ -227,6 +227,15 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
    the running app starts in is whatever the browser or a prior session left
    it at, and a screenshot in French reads to a reviewer as broken or
    untranslated rather than as the other official language working correctly.
+   Reference each image by its fully qualified raw URL, pinned to the commit
+   that added it:
+   `https://raw.githubusercontent.com/HPAC-Safety/safety-report/<sha>/docs/screenshots/<dir>/<file>.png`.
+   GitHub resolves neither a relative path nor a `github.com/…/blob/…` URL as
+   an image in a PR body: a relative path has no base, and a blob URL returns
+   an HTML page. Both render as broken images. Before you report the PR,
+   check that every image URL answers `image/png`
+   (`curl -sI <url> | grep -i content-type`)
+   ([lesson 0017](../../docs/lessons/0017-a-screenshot-linked-by-a-page-url-renders-broken.md)).
 7. After pushing, bring the local Docker environment up on the pushed code:
    `./dev-up.sh` from the worktree. It takes the dev ports over from any other
    checkout of this repository that still holds them, starts the containers

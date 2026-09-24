@@ -39,11 +39,11 @@ recorded on the answer at submission.** Each `report_answers` row carries a
 
 | Mode | Applies to | Second language |
 |---|---|---|
-| `machine` | long or short text whose revision is marked **needs translation**; a type-ahead value that names no choice written in both languages; a select value whose choice has one language only | The Worker, through `ITranslator`, as ADR-0080 describes (`auto`) |
+| `machine` | long or short text whose revision is marked **Auto-translate answer**; a type-ahead value that names no choice written in both languages; a select value whose choice has one language only | The Worker, through `ITranslator`, as ADR-0080 describes (`auto`) |
 | `choice` | a single-select, multi-select, or type-ahead value naming a choice written in both languages | That choice's other-language label, copied at submission (`choice`) |
 | `none` | everything else: text not marked, email, phone, date, time, number, yes/no, checkbox, file | None, ever |
 
-**Needs translation is a question-revision field**, like required and
+**Auto-translate answer is a question-revision field** (`is_translatable`), like required and
 private. The editor offers it only for long and short text. It defaults on
 for long text and off for short text, and marking any other type as needing
 translation is rejected. Changing it revises or, once the question has been

@@ -579,14 +579,14 @@ Scenario: Editing an answered question warns that it will be replaced
 
 @REQ-QB-111
 @ui
-Scenario: The editor offers Needs translation only for free text
+Scenario: The editor offers Auto-translate answer only for free text
   Given a signed-in Administrator is authoring a new question
   When they choose long text
-  Then Needs translation is offered and checked
+  Then Auto-translate answer is offered and checked
   When they choose short text
-  Then Needs translation is offered and unchecked
+  Then Auto-translate answer is offered and unchecked
   When they choose email
-  Then Needs translation is not offered
+  Then Auto-translate answer is not offered
 
 @REQ-QB-083
 @ui

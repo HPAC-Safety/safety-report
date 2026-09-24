@@ -101,7 +101,7 @@ its second language depends on its question:
 
 | Question | Second language |
 |---|---|
-| Long or short text marked **Needs translation** | The Worker, mechanically, via `ITranslator` |
+| Long or short text marked **Auto-translate answer** | The Worker, mechanically, via `ITranslator` |
 | Single-select, multi-select | The chosen choice's other label, copied here at submission (`choice`) |
 | Type-ahead | As a picker when it names a choice written in both languages; otherwise the Worker |
 | Text not marked, email, phone, date, time, number, yes/no, checkbox, file | None, ever |

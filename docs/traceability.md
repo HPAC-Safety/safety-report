@@ -972,7 +972,7 @@ Whether a question needs translation is a revision field — *Reqnroll, Covered*
 
 ### REQ-QB-111
 
-The editor offers Needs translation only for free text — *playwright-bdd, Covered*
+The editor offers Auto-translate answer only for free text — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 

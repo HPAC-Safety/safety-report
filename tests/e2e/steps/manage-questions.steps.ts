@@ -731,9 +731,9 @@ Then("the corrected wording is shown on the question", async ({ page }) => {
 	await expect(choice).not.toContainText("Waiting for")
 })
 
-// REQ-QB-111: Needs translation is offered only for free text (ADR-0110).
+// REQ-QB-111: Auto-translate answer is offered only for free text (ADR-0110).
 
-const needsTranslation = (page: Page) => page.getByRole("checkbox", { name: "Needs translation" })
+const needsTranslation = (page: Page) => page.getByRole("checkbox", { name: "Auto-translate answer" })
 
 When("they choose long text", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("long_text")
@@ -747,15 +747,15 @@ When("they choose email", async ({ page }) => {
 	await page.getByLabel("Type").selectOption("email")
 })
 
-Then("Needs translation is offered and checked", async ({ page }) => {
+Then("Auto-translate answer is offered and checked", async ({ page }) => {
 	await expect(needsTranslation(page)).toBeChecked()
 })
 
-Then("Needs translation is offered and unchecked", async ({ page }) => {
+Then("Auto-translate answer is offered and unchecked", async ({ page }) => {
 	await expect(needsTranslation(page)).toBeVisible()
 	await expect(needsTranslation(page)).not.toBeChecked()
 })
 
-Then("Needs translation is not offered", async ({ page }) => {
+Then("Auto-translate answer is not offered", async ({ page }) => {
 	await expect(needsTranslation(page)).toHaveCount(0)
 })

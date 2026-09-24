@@ -87,7 +87,8 @@ public class DeepLTranslatorTests
 		// Then
 		var sent = transport.LastBody();
 		sent.GetProperty("source_lang").GetString().ShouldBe("FR");
-		sent.GetProperty("target_lang").GetString().ShouldBe("EN-CA");
+		// DeepL has no EN-CA; the configured English is asked for (REQ-WLD-028).
+		sent.GetProperty("target_lang").GetString().ShouldBe("EN-US");
 	}
 
 	[Fact]
@@ -291,6 +292,7 @@ public class DeepLTranslatorTests
 		{
 			ApiKey = apiKey,
 			Endpoint = endpoint,
+			EnglishTarget = "EN-US",
 		});
 
 		return (new DeepLTranslator(new StubClientFactory(transport), options), transport);

@@ -26,7 +26,7 @@ public static class TranslationServiceCollectionExtensions
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);
 
-		services.Configure<DeepLOptions>(options =>
+		services.AddOptions<DeepLOptions>().Configure(options =>
 		{
 			configuration.GetSection(DeepLOptions.SectionName).Bind(options);
 
@@ -36,7 +36,15 @@ public static class TranslationServiceCollectionExtensions
 			// exports the same variable the CI tooling uses gets a working
 			// Translate button without learning a second name.
 			options.ApiKey ??= configuration["DEEPL_API_KEY"];
-		});
+		})
+			// Checked at startup, key or no key: an unsupported English target is
+			// a 400 on every French-to-English translation, which would otherwise
+			// surface only as failed outbox messages (REQ-WLD-029).
+			.Validate(
+				options => options.HasSupportedEnglishTarget,
+				$"{DeepLOptions.SectionName}:{nameof(DeepLOptions.EnglishTarget)} must be one of "
+				+ $"{string.Join(", ", DeepLOptions.SupportedEnglishTargets)}. DeepL has no Canadian English.")
+			.ValidateOnStart();
 
 		services.AddHttpClient(DeepLTranslator.HttpClientName);
 		services.AddScoped<ITranslator, DeepLTranslator>();

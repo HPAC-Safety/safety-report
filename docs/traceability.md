@@ -1550,6 +1550,14 @@ French that renders a listed term the forbidden way fails verification — *Reqn
 
 The machine translator is told the required rendering of every listed term — *Reqnroll, Covered*
 
+### REQ-WLD-028
+
+French is machine-translated into the English the configuration names — *Reqnroll, Covered*
+
+### REQ-WLD-029
+
+A translator with no usable English target refuses to start — *Reqnroll, Covered*
+
 ## Constraints
 
 A constraint states something the system must be true of; the claims beside

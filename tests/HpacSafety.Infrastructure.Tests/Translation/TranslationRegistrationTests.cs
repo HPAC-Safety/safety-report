@@ -17,7 +17,7 @@ public class TranslationRegistrationTests
 	public void GivenNoConfigurationAtAll_WhenTranslationIsRegistered_ThenResolvesAndReportsUnconfigured()
 	{
 		// Given — an ordinary local checkout
-		using var provider = Provider([]);
+		using var provider = Provider(new Dictionary<string, string?>());
 
 		// When
 		var translator = provider.GetRequiredService<ITranslator>();
@@ -99,7 +99,7 @@ public class TranslationRegistrationTests
 	public void GivenNoFormality_WhenRegistered_ThenDefaultsToFormalForm()
 	{
 		// Given — a national association addressing pilots uses "vous"
-		using var provider = Provider([]);
+		using var provider = Provider(new Dictionary<string, string?>());
 
 		// When
 		var options = provider.GetRequiredService<IOptions<DeepLOptions>>().Value;
@@ -113,7 +113,7 @@ public class TranslationRegistrationTests
 	{
 		// Given — any environment, Development included: a stand-in that
 		// returned its input unchanged got stored as a translation (ADR-0109)
-		using var provider = Provider([]);
+		using var provider = Provider(new Dictionary<string, string?>());
 		var translator = provider.GetRequiredService<ITranslator>();
 
 		// When / Then
@@ -135,6 +135,9 @@ public class TranslationRegistrationTests
 
 	private static ServiceProvider Provider(Dictionary<string, string?> settings)
 	{
+		// Every appsettings.json names the English target (REQ-WLD-029); these
+		// tests are about the key, so they supply the committed value.
+		settings.TryAdd("Translation:EnglishTarget", "EN-US");
 		var configuration = new ConfigurationBuilder().AddInMemoryCollection(settings).Build();
 
 		return new ServiceCollection()

@@ -9,6 +9,13 @@ Use xUnit and Shouldly. JavaScript uses `node:test`; browser journeys use
 Playwright. Generate synthetic report and file fixtures and never use real
 personal data.
 
+A test of what an external provider is sent (a DeepL language code, a model
+parameter, a request field) takes its expected value from that provider's
+documentation, never from the code under test. Exercise every direction a
+translation runs, French to English as well as English to French, not only
+the one development data happens to use
+([lesson 0019](../../docs/lessons/0019-a-language-code-the-provider-never-offered.md)).
+
 Name a C# test as three PascalCase segments joined by single underscores, each
 opening with `Given`, `When`, or `Then`
 ([ADR-0069](../../docs/decisions/ADR-0069-scannable-given-when-then-test-names.md)):

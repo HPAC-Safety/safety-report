@@ -128,6 +128,29 @@ Scenario: The machine translator is told the required rendering of every listed 
   When a translation request is built for DeepL or for a chat-completions provider
   Then the request instructs the provider to render "upload" as "téléverser" and never "télécharg…"
 
+@REQ-WLD-028
+Scenario Outline: French is machine-translated into the English the configuration names
+  Given the translation settings name <setting> as the English target
+  When French text is sent to DeepL to be translated into English
+  Then the request asks DeepL for French to <code>
+
+Examples:
+  | setting | code  |
+  | en-US   | EN-US |
+  | EN-GB   | EN-GB |
+
+@REQ-WLD-029
+Scenario Outline: A translator with no usable English target refuses to start
+  Given the translation settings name <setting> as the English target
+  When the translator's settings are validated at startup
+  Then startup fails, naming the Translation:EnglishTarget setting
+
+Examples:
+  | setting |
+  | nothing |
+  | EN-CA   |
+  | EN      |
+
 @REQ-WLD-014
 @ignore
 Scenario: Question content comes from the bilingual database revision

@@ -33,16 +33,13 @@ public sealed partial class DeepLTranslator : ITranslator
 	private const string ProTierHost = "https://api.deepl.com/v2/translate";
 
 	/// <summary>
-	///     DeepL's own language codes. <c>FR-CA</c> is a <b>target-only</b>
-	///     variant, so it appears here as a target and French is asked for as
-	///     plain <c>FR</c> when it is the source. See the remarks on
+	///     DeepL's own French target. <c>FR-CA</c> is a <b>target-only</b> variant,
+	///     so French is asked for as plain <c>FR</c> when it is the source. English
+	///     has no Canadian variant in DeepL, so its target is configuration,
+	///     <see cref="DeepLOptions.EnglishTarget" />. See the remarks on
 	///     <see cref="SourceCodeFor" />.
 	/// </summary>
-	private static readonly Dictionary<string, string> TargetCodes = new(StringComparer.Ordinal)
-	{
-		["en-CA"] = "EN-CA",
-		["fr-CA"] = "FR-CA",
-	};
+	private const string FrenchTarget = "FR-CA";
 
 	private static readonly Dictionary<string, string> SourceCodes = new(StringComparer.Ordinal)
 	{
@@ -180,11 +177,14 @@ public sealed partial class DeepLTranslator : ITranslator
 			: throw new TranslationUnavailableException($"No translation language is configured for '{locale.Code}'.");
 	}
 
-	private static string TargetCodeFor(Locale locale)
+	private string TargetCodeFor(Locale locale)
 	{
-		return TargetCodes.TryGetValue(locale.Code, out var code)
-			? code
-			: throw new TranslationUnavailableException($"No translation language is configured for '{locale.Code}'.");
+		return locale.Code switch
+		{
+			"fr-CA" => FrenchTarget,
+			"en-CA" => _options.EnglishTarget!.Trim().ToUpperInvariant(),
+			_ => throw new TranslationUnavailableException($"No translation language is configured for '{locale.Code}'."),
+		};
 	}
 
 	/// <summary>

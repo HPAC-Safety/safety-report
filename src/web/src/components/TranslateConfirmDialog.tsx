@@ -5,7 +5,7 @@ import { wordDiff } from "../lib/wordDiff"
 /*
  * Asks before a machine translation replaces a summary language, showing the
  * current text and the proposed one with their differences marked (REQ-MOD-072,
- * ADR-0106). Focus starts on keeping the current text, and Escape keeps it too.
+ * ADR-0108). Focus starts on keeping the current text, and Escape keeps it too.
  */
 export function TranslateConfirmDialog({
 	target,

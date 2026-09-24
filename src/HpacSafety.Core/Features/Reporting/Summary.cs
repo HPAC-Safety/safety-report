@@ -44,10 +44,10 @@ public class Summary
 	/// <summary>The report summarized. Unique: exactly one summary per report.</summary>
 	public TinyId ReportId { get; private init; }
 
-	/// <summary>How the English text was produced (ADR-0106).</summary>
+	/// <summary>How the English text was produced (ADR-0108).</summary>
 	public SummaryTextSource SourceEn { get; private set; }
 
-	/// <summary>How the French text was produced (ADR-0106).</summary>
+	/// <summary>How the French text was produced (ADR-0108).</summary>
 	public SummaryTextSource SourceFr { get; private set; }
 
 	/// <summary>The English text. Publishable only once the pair is approved.</summary>

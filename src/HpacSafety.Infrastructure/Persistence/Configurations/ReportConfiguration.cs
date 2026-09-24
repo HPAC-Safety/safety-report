@@ -190,7 +190,7 @@ public sealed class SummaryConfiguration : IEntityTypeConfiguration<Summary>
 		// Exactly one summary row per report.
 		builder.HasIndex(summary => summary.ReportId).IsUnique();
 
-		// How each language was produced (ADR-0106).
+		// How each language was produced (ADR-0108).
 		builder.Property(summary => summary.SourceEn).IsRequired();
 		builder.Property(summary => summary.SourceFr).IsRequired();
 

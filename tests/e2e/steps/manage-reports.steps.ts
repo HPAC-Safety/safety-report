@@ -383,7 +383,7 @@ Then("the browser requests that attachment's download link", async ({ page }) =>
 
 /*
  * Translating one summary language from the other (REQ-MOD-071..074,
- * ADR-0106). The translation endpoint is stubbed with a recognisable marker so
+ * ADR-0108). The translation endpoint is stubbed with a recognisable marker so
  * the proposed text is predictable.
  */
 

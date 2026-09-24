@@ -48,7 +48,7 @@ export interface ReportAnswer {
 	values: ReportAnswerValue[]
 }
 
-/** How one summary language was produced (ADR-0106). */
+/** How one summary language was produced (ADR-0108). */
 export type SummarySource = "generated" | "human" | "machine"
 
 export interface ReportSummary {

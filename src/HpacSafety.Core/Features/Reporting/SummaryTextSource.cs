@@ -1,7 +1,7 @@
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-///     How one language of a summary pair was produced (ADR-0106). Recorded per
+///     How one language of a summary pair was produced (ADR-0108). Recorded per
 ///     language, so a later reviewer can see which text a person wrote.
 /// </summary>
 public enum SummaryTextSource

@@ -78,7 +78,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	public async Task GivenUserRole_WhenTranslationIsRequested_ThenApiForbidsIt()
 	{
 		// Given — translation is a drafting aid for authoring and review
-		// (ADR-0062, ADR-0106), never for a member filing a report
+		// (ADR-0062, ADR-0108), never for a member filing a report
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
@@ -95,7 +95,7 @@ public sealed class RoleAuthorizationTests(ApiPostgresFixture fixture)
 	[InlineData(MemberRole.Administrator)]
 	public async Task GivenReviewerRole_WhenTranslationIsRequested_ThenApiAllowsIt(MemberRole role)
 	{
-		// Given — a reviewer drafts one summary language from the other (ADR-0106)
+		// Given — a reviewer drafts one summary language from the other (ADR-0108)
 		using var client = await SignedInClient.As(_factory, role);
 
 		// When

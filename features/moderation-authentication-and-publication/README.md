@@ -112,7 +112,7 @@ in the same transaction.
 
 While editing a pair, a reviewer who changed one language may draft the other
 from it by machine translation
-([ADR-0106](../../docs/decisions/ADR-0106-a-reviewer-may-machine-translate-a-summary-language.md)).
+([ADR-0108](../../docs/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)).
 **Translate to French** appears once the English text was changed, **Translate
 to English** once the French text was changed, and both when both were. A
 language filled by an accepted translation does not count as changed, so it

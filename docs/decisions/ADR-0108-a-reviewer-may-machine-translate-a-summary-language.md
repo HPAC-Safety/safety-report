@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: translation, summary, DeepL, reviewer, provenance, diff, ADR-0062, ADR-0080, ADR-0105
 ---
 
-# ADR-0106 — A reviewer may machine-translate one summary language from the other
+# ADR-0108 — A reviewer may machine-translate one summary language from the other
 
 **Status:** Accepted. Amends the product invariant that machine translation
 "never touches a summary", and widens

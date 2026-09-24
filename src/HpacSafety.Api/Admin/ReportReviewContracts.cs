@@ -46,7 +46,7 @@ public sealed record ReviewCommand(string? Version);
 /// <summary>
 ///     Both texts of the pair, saved together, with the version the reviewer loaded.
 ///     <c>SourceEn</c>/<c>SourceFr</c> are <c>human</c> (the default) or
-///     <c>machine</c> for a language filled by an accepted translation (ADR-0106).
+///     <c>machine</c> for a language filled by an accepted translation (ADR-0108).
 /// </summary>
 public sealed record SaveSummaryPairRequest(
 	string? Version,
@@ -83,7 +83,7 @@ public sealed record ReportAnswerValueView(
 /// <summary>The bilingual summary pair with its shared provenance and approval.</summary>
 /// <remarks>
 ///     <c>SourceEn</c> and <c>SourceFr</c> say how each language was produced:
-///     <c>generated</c>, <c>human</c>, or <c>machine</c> (ADR-0106).
+///     <c>generated</c>, <c>human</c>, or <c>machine</c> (ADR-0108).
 /// </remarks>
 public sealed record ReportSummaryView(
 	string AiSummaryEn,

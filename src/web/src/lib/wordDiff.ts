@@ -6,7 +6,7 @@ export interface DiffPart {
 
 /*
  * A word-level difference by longest common subsequence, for showing a reviewer
- * what a proposed translation would change (ADR-0106). Whitespace is kept with
+ * what a proposed translation would change (ADR-0108). Whitespace is kept with
  * the word before it, so joining every part of one side rebuilds that side.
  * Summaries are a few paragraphs, so the quadratic table is fine.
  */

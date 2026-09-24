@@ -247,7 +247,7 @@ editing it. The Worker's generated pair still comes from its one anonymized
 model call, never from a translation provider; a reviewer's translation is a
 draft they confirm, and each saved language records whether it was generated,
 written by a human, or machine-translated
-([ADR-0106](docs/decisions/ADR-0106-a-reviewer-may-machine-translate-a-summary-language.md)).
+([ADR-0108](docs/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)).
 
 ## Focused skills
 

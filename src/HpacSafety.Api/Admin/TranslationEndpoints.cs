@@ -7,7 +7,7 @@ namespace HpacSafety.Api.Admin;
 /// <summary>
 ///     Machine translation as a drafting aid: an administrator authoring a question
 ///     (ADR-0062), or a reviewer drafting one summary language from the other
-///     (ADR-0106).
+///     (ADR-0108).
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -32,7 +32,7 @@ public static class TranslationEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(app);
 
-		// Reviewers too, since ADR-0106: a safety officer editing a summary drafts
+		// Reviewers too, since ADR-0108: a safety officer editing a summary drafts
 		// its other language here. A User is still refused.
 		var group = app.MapGroup("/api/admin/translate").RequireAuthorization(HpacPolicies.Reviewer);
 

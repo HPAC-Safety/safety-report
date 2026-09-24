@@ -395,7 +395,7 @@ public class Report
 	///     the report returns to review, off the public feed if it was on it
 	///     (REQ-MOD-032, REQ-DOM-005). A language whose text did not change keeps how
 	///     it was produced; a changed one records <paramref name="sourceEn" /> or
-	///     <paramref name="sourceFr" /> (ADR-0106).
+	///     <paramref name="sourceFr" /> (ADR-0108).
 	/// </summary>
 	public void EditSummary(string textEn,
 							string textFr,
@@ -429,7 +429,7 @@ public class Report
 	///     Summarization failed, so a reviewer writes the pair by hand. It carries
 	///     <see cref="ManualProvenance" /> as its model and prompt version, each
 	///     language records whether it was typed or an accepted translation, and it
-	///     goes to review like any other pair (REQ-MOD-059, ADR-0106).
+	///     goes to review like any other pair (REQ-MOD-059, ADR-0108).
 	/// </summary>
 	public void WriteManualSummary(string textEn,
 								   string textFr,

@@ -59,7 +59,7 @@ export function ReviewActions({
 	const [original, setOriginal] = useState<Record<Language, string>>({ en: "", fr: "" })
 	const [draft, setDraft] = useState<Record<Language, string>>({ en: "", fr: "" })
 	// How each draft got its current text: typed by the reviewer, filled by an
-	// accepted translation, or untouched since the editor opened (ADR-0106).
+	// accepted translation, or untouched since the editor opened (ADR-0108).
 	const [source, setSource] = useState<Record<Language, "typed" | "translated" | null>>({ en: null, fr: null })
 	const [proposal, setProposal] = useState<{ target: Language; text: string } | null>(null)
 	const [translating, setTranslating] = useState(false)

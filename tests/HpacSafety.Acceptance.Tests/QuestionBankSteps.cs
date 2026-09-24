@@ -114,6 +114,52 @@ public sealed class QuestionBankSteps
 		_questions.Add(Ordinary("were_you_injured", QuestionType.YesNo));
 	}
 
+	[Given(@"the consent_media question exists")]
+	public void GivenMediaConsentExists()
+	{
+		_question = Question.CreateConsentMedia(
+			"May we show your photos and videos?",
+			"Pouvons-nous montrer vos photos et vidéos ?",
+			Noon);
+
+		_questions.Add(_question);
+		_questions.Add(Ordinary("were_you_injured", QuestionType.YesNo));
+	}
+
+	[Then(@"trying to make it conditional on another question is rejected the same way")]
+	public void ThenMakingItConditionalIsRejected()
+	{
+		var other = _questions.Find(question => question.Key == "were_you_injured")!;
+
+		Should.Throw<DomainRuleViolationException>(() => _question!.DependOn(other.Id, null, Noon.AddHours(1)));
+	}
+
+	[Then(@"trying to give it another role is rejected the same way")]
+	public void ThenGivingItAnotherRoleIsRejected()
+	{
+		Should.Throw<DomainRuleViolationException>(() => _question!.AssignRole(QuestionRole.None));
+		Should.Throw<DomainRuleViolationException>(() => _question!.AssignRole(QuestionRole.ConsentPublish));
+		_question!.Role.ShouldBe(QuestionRole.ConsentMedia);
+	}
+
+	[Then(@"an Administrator may still change its wording in both languages")]
+	public void ThenItsWordingCanChange()
+	{
+		var revision = _question!.Revise(
+			_question.CurrentRevision.Type,
+			"May HPAC show the photos and videos you attached?",
+			"L'ACVL peut-elle montrer les photos et vidéos jointes ?",
+			_question.CurrentRevision.IsPrivate,
+			true,
+			_question.CurrentRevision.DisplayOrder,
+			Noon.AddHours(2));
+
+		revision.LabelEn.ShouldBe("May HPAC show the photos and videos you attached?");
+		revision.LabelFr.ShouldBe("L'ACVL peut-elle montrer les photos et vidéos jointes ?");
+		revision.IsRequired.ShouldBeTrue();
+		_question.Deleted.ShouldBeNull();
+	}
+
 	[When(@"an Administrator tries to make another question conditional on it")]
 	public void WhenAnotherQuestionDependsOnIt()
 	{

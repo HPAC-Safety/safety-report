@@ -14,8 +14,8 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The anonymous public feed and detail through the booted API, read from the
-///     <c>public_reports</c> view (#28): the allowlisted DTO (REQ-MOD-036,
-///     REQ-MED-014), the paginated feed (REQ-MOD-037), the indistinguishable 404
+///     <c>public_reports</c> view (#28): the allowlisted DTO (REQ-MOD-036),
+///     the paginated feed (REQ-MOD-037), the indistinguishable 404
 ///     (REQ-MOD-038), and the publication invariant as that view states it
 ///     (REQ-DOM-003/004).
 /// </summary>
@@ -29,7 +29,6 @@ namespace HpacSafety.Acceptance.Tests;
 /// </remarks>
 [Binding]
 [Scope(Feature = "Moderation, authentication, and publication")]
-[Scope(Feature = "Attachments")]
 [Scope(Feature = "Domain and lifecycle")]
 public sealed class PublicReportFeedSteps(SeededReport seeded)
 {
@@ -37,7 +36,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	private const string Feed = "/api/v1/public/reports";
 
-	private static readonly string[] Allowlist = ["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount"];
+	private static readonly string[] Allowlist = ["id", "aiSummaryEn", "aiSummaryFr", "publishedAt", "commentCount", "media"];
 
 	private readonly List<string> _publishable = [];
 	private readonly List<string> _hidden = [];
@@ -173,16 +172,19 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 	// ── Then ────────────────────────────────────────────────────────────────
 
-	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, and the number of visible comments")]
-	[Then(@"the public DTO contains no file counts, types, keys, or links")]
+	[Then(@"the response contains only the opaque report ID, ai_summary_en, ai_summary_fr, the publication timestamp, the number of visible comments, and each public media file's opaque id and kind")]
 	public async Task ThenTheResponseIsExactlyTheAllowlist()
 	{
 		var body = await Body();
 		body.EnumerateObject().Select(property => property.Name).ShouldBe(Allowlist, ignoreOrder: true);
 		body.GetProperty("id").GetString().ShouldBe(seeded.Id);
+
+		var media = body.GetProperty("media").EnumerateArray().ToList();
+		media.ShouldNotBeEmpty();
+		media.ShouldAllBe(item => item.EnumerateObject().Select(property => property.Name).SequenceEqual(new[] { "id", "kind" }));
 	}
 
-	[Then(@"it never contains question keys, labels, answers, consent value, report language, private flags, raw reports, attachment metadata or URLs, member or reviewer identities, model provenance, or audit records")]
+	[Then(@"it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records")]
 	public async Task ThenItNeverContainsAnythingElse()
 	{
 		var raw = (await Body()).GetRawText();
@@ -195,6 +197,10 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		raw.ShouldNotContain("gemini");
 		raw.ShouldNotContain("summarize-anonymize");
 		raw.ShouldNotContain("en-CA");
+		raw.ShouldNotContain("image/");
+		raw.ShouldNotContain("launch-site");
+		raw.ShouldNotContain("stripped");
+		raw.ShouldNotContain("original");
 	}
 
 	[Then(@"the response is a deterministic paginated list containing only publishable reports")]

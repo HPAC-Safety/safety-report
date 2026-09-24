@@ -45,20 +45,25 @@ public class StringAnswerTests
 	}
 
 	[Fact]
-	public void GivenFrenchReporter_WhenPickingCuratedChoice_ThenStoredInFrenchAndFlagged()
+	public void GivenFrenchReporter_WhenPickingCuratedChoice_ThenStoredInFrenchWithTheChoicesEnglish()
 	{
 		// Given
 		var report = new Report(Locale.FrCa, Now);
+		var question = Question.Create(
+			"province", QuestionType.SingleSelect, "Province", "Province", Now, isActive: true,
+			options: [new QuestionOptionInput("british_columbia", "British Columbia", "Colombie-Britannique")]);
 
 		// When
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(question, "Colombie-Britannique", Now);
 
-		// Then — the other language is not yet supplied, even though the
-		// curated list already holds one
+		// Then — the curated list already holds the other language, so it is
+		// copied now rather than sent anywhere (ADR-0112)
 		answer.Locale.ShouldBe(Locale.FrCa);
-		answer.NeedsTranslation.ShouldBeTrue();
-		answer.TranslatedValue.ShouldBeNull();
-		answer.TranslationSource.ShouldBeNull();
+		answer.Value.ShouldBe("Colombie-Britannique");
+		answer.TranslationMode.ShouldBe(TranslationMode.Choice);
+		answer.TranslatedValue.ShouldBe("British Columbia");
+		answer.TranslationSource.ShouldBe(TranslationSource.Choice);
+		answer.NeedsTranslation.ShouldBeFalse();
 	}
 
 	[Fact]
@@ -66,7 +71,7 @@ public class StringAnswerTests
 	{
 		// Given
 		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(Narrative(), "Alberta", Now);
 
 		// When
 		answer.SupplyAutoTranslation("Alberta, as written in English");
@@ -85,7 +90,7 @@ public class StringAnswerTests
 	{
 		// Given
 		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(Narrative(), "Alberta", Now);
 
 		// When
 		answer.SupplyHumanTranslation("Alberta, as written in English");
@@ -100,7 +105,7 @@ public class StringAnswerTests
 	{
 		// Given — the Worker already produced a draft
 		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(Narrative(), "Alberta", Now);
 		answer.SupplyAutoTranslation("Alberta");
 
 		// When — an administrator overwrites it
@@ -118,7 +123,7 @@ public class StringAnswerTests
 		// Given — idempotency: the Worker must not silently overwrite a
 		// translation, its own or an administrator's
 		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(Narrative(), "Alberta", Now);
 		answer.SupplyAutoTranslation("Alberta");
 
 		// When
@@ -137,7 +142,7 @@ public class StringAnswerTests
 		// Given — clearing the flag with nothing in the box would leave the
 		// answer looking translated when half of it is missing
 		var report = new Report(Locale.FrCa, Now);
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(Narrative(), "Alberta", Now);
 
 		// When
 		var supplying = () => answer.SupplyHumanTranslation(blank);
@@ -150,8 +155,8 @@ public class StringAnswerTests
 	[Fact]
 	public void GivenNarrativeAnswer_WhenRecorded_ThenAlsoFlaggedForTranslation()
 	{
-		// Given — ADR-0080 widens translation to every answer with a value,
-		// narrative included; nothing on the submission path translates it
+		// Given — long text needs translation unless an administrator says
+		// otherwise (ADR-0112); nothing on the submission path translates it
 		var report = new Report(Locale.EnCa, Now);
 
 		// When

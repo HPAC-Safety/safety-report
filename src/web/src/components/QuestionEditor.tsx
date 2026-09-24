@@ -4,6 +4,8 @@ import {
 	ApiError,
 	NO_ANSWER_TYPES,
 	OPTION_TYPES,
+	TRANSLATABLE_TYPES,
+	translatableByDefault,
 	QUESTION_TYPES,
 	translate,
 	type OptionInput,
@@ -54,6 +56,7 @@ export function blankDraft(): QuestionDraft {
 			// someone is the safe assumption, and an administrator opts out
 			// deliberately. See ADR-0038.
 			isPrivate: true,
+			isTranslatable: translatableByDefault("short_text"),
 			isActive: true,
 			dependsOnQuestionId: null,
 			dependsOnOptionCode: null,
@@ -75,6 +78,7 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			placeholderFr: question.placeholderFr,
 			isRequired: question.isRequired,
 			isPrivate: question.isPrivate,
+			isTranslatable: question.isTranslatable,
 			isActive: question.isActive,
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			dependsOnOptionCode: question.dependsOnOptionCode,
@@ -117,6 +121,7 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			placeholderFr: null,
 			isRequired: imported.isRequired,
 			isPrivate: imported.isPrivate,
+			isTranslatable: translatableByDefault(imported.type),
 			isActive: true,
 			dependsOnQuestionId: dependsOn?.id ?? null,
 			dependsOnOptionCode: dependsOn ? imported.dependsOnOptionCode : null,
@@ -276,7 +281,14 @@ export function QuestionEditor({
 							const clearedForNoAnswer = NO_ANSWER_TYPES.includes(type)
 								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnOptionCode: null }
 								: {}
-							update({ type, ...clearedOptions, ...clearedForNoAnswer })
+							// A retype takes the new type's translation default: only
+							// free text can need translation at all (ADR-0112).
+							update({
+								type,
+								...clearedOptions,
+								...clearedForNoAnswer,
+								isTranslatable: translatableByDefault(type),
+							})
 						}}
 					>
 						{QUESTION_TYPES.map((type) => (
@@ -388,6 +400,17 @@ export function QuestionEditor({
 					</>
 				)}
 
+				{TRANSLATABLE_TYPES.includes(request.type) && (
+					<label className="flex items-center gap-2 font-sans text-sm text-ink">
+						<input
+							type="checkbox"
+							checked={request.isTranslatable}
+							onChange={(event) => update({ isTranslatable: event.target.checked })}
+						/>
+						{t("questions.field.translatable")}
+					</label>
+				)}
+
 				<label className="flex items-center gap-2 font-sans text-sm text-ink">
 					<input
 						type="checkbox"
@@ -399,6 +422,10 @@ export function QuestionEditor({
 			</fieldset>
 
 			{!collectsNoAnswer && <p className="font-sans text-xs text-ink-muted">{t("questions.field.privateHelp")}</p>}
+
+			{TRANSLATABLE_TYPES.includes(request.type) && (
+				<p className="font-sans text-xs text-ink-muted">{t("questions.field.translatableHelp")}</p>
+			)}
 
 			{!collectsNoAnswer && (
 				<div>

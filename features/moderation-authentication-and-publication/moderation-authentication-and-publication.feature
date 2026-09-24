@@ -665,6 +665,23 @@ Scenario: Writing a pair by hand offers the translate buttons too
   And the safety officer types the English text
   Then the translate buttons offered are Translate to French
 
+@REQ-MOD-077
+Scenario: The report detail view gives a second language only for an answer that has one
+  Given a submitted report answered a first name, an email, a date, a picker, and a narrative marked for translation
+  And the Worker has translated the narrative
+  When a reviewer opens the report's detail view
+  Then the picker and the narrative each carry their second language
+  And the first name, the email, and the date carry none, even if one was stored before this rule
+
+@REQ-MOD-078
+@ui
+Scenario: Opening a report shows a translation only under answers that have one
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer opens a pending-review report
+  Then a translated narrative answer shows its translation beneath it
+  And a name or email answer shows no translation line
+
 @REQ-MOD-074
 @ui
 Scenario: The report view shows how each summary language was produced

@@ -93,14 +93,27 @@ Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
 clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
 The report language is exactly `en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080)
+## Bilingual answers (ADR-0080, ADR-0112)
 
 `value` and `locale` are written once, here, and never again — no endpoint
-ever updates either column after this one inserts them. `value_translated`
-and `translation_source` stay null on insert; this endpoint enqueues one
-answer-translation outbox message so the Worker can fill them later,
-mechanically, via the same `ITranslator` port ADR-0062 built for admin-drafted
-translation. This endpoint never calls a translation provider itself.
+ever updates either column after this one inserts them. How an answer gets
+its second language depends on its question:
+
+| Question | Second language |
+|---|---|
+| Long or short text marked **Auto-translate answer** | The Worker, mechanically, via `ITranslator` |
+| Single-select, multi-select | The chosen choice's other label, copied here at submission (`choice`) |
+| Type-ahead | As a picker when it names a choice written in both languages; otherwise the Worker |
+| Text not marked, email, phone, date, time, number, yes/no, checkbox, file | None, ever |
+
+Each answer records which of these applies (`translation_mode`), so the admin
+report view never shows a "translation" of an answer that has none. This
+endpoint enqueues one answer-translation outbox message and never calls a
+translation provider itself; copying a choice's label is a lookup, not a
+translation.
+
+Out of scope: detecting which language a reporter actually typed, and
+translating the invariant types above.
 
 ## Presentation order (#80)
 

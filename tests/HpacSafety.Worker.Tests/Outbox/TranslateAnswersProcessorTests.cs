@@ -32,19 +32,25 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	}
 
 	[Fact]
-	public async Task GivenNarrativeAndSelectAnswers_WhenProcessed_ThenBothGetAnAutoTranslation()
+	public async Task GivenNarrativePickerNameAndEmail_WhenProcessed_ThenOnlyTheNarrativeIsSent()
 	{
-		// Given
+		// Given — ADR-0112: long text marked for translation goes to the
+		// Worker; a picker already took its choice's label at submission; a
+		// name (unmarked short text) and an email never have a second language
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 		var province = Province();
 		var narrative = Narrative();
-		context.Questions.AddRange(province, narrative);
+		var name = Question.Create("first_name", QuestionType.ShortText, "First name", "Prénom", At, isActive: true);
+		var email = Question.Create("email", QuestionType.Email, "Email", "Courriel", At, isActive: true);
+		context.Questions.AddRange(province, narrative, name, email);
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);
 		report.Answer(province, "Alberta", At);
 		report.Answer(narrative, "Wind picked up on final; the pilot walked away.", At);
+		report.Answer(name, "Avery", At);
+		report.Answer(email, "avery@example.test", At);
 		context.Reports.Add(report);
 		await context.SaveChangesAsync();
 
@@ -56,21 +62,23 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		await processor.Process(message, CancellationToken.None);
 		await context.SaveChangesAsync();
 
-		// Then
+		// Then — one call, carrying only the narrative
+		translator.Calls.ShouldHaveSingleItem().Texts.ShouldBe(["Wind picked up on final; the pilot walked away."]);
+
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
 		var answers = await reader.ReportAnswers.Where(a => a.ReportId == report.Id).ToListAsync();
 
-		answers.ShouldAllBe(answer => answer.TranslatedValue != null);
-		answers.ShouldAllBe(answer => answer.TranslationSource == TranslationSource.Auto);
+		var narrativeAnswer = answers.Single(a => a.QuestionKey == "narrative");
+		narrativeAnswer.TranslatedValue.ShouldBe("[fr-CA] Wind picked up on final; the pilot walked away.");
+		narrativeAnswer.TranslationSource.ShouldBe(TranslationSource.Auto);
 
 		var provinceAnswer = answers.Single(a => a.QuestionKey == "province");
-		provinceAnswer.Value.ShouldBe("Alberta");
-		provinceAnswer.Locale.ShouldBe(Locale.EnCa);
-		provinceAnswer.TranslatedValue.ShouldBe("[fr-CA] Alberta");
+		provinceAnswer.TranslatedValue.ShouldBe("Alberta (FR)");
+		provinceAnswer.TranslationSource.ShouldBe(TranslationSource.Choice);
 
-		var narrativeAnswer = answers.Single(a => a.QuestionKey == "narrative");
-		narrativeAnswer.Value.ShouldBe("Wind picked up on final; the pilot walked away.");
-		narrativeAnswer.TranslatedValue.ShouldBe("[fr-CA] Wind picked up on final; the pilot walked away.");
+		answers.Single(a => a.QuestionKey == "first_name").TranslatedValue.ShouldBeNull();
+		answers.Single(a => a.QuestionKey == "email").TranslatedValue.ShouldBeNull();
+		answers.Single(a => a.QuestionKey == "email").TranslationMode.ShouldBe(TranslationMode.None);
 	}
 
 	[Fact]
@@ -143,7 +151,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	{
 		return Question.Create(
 			"province", QuestionType.SingleSelect, "Province", "Province", At, isActive: true, displayOrder: 1,
-			options: [new QuestionOptionInput("alberta", "Alberta", "Alberta")]);
+			options: [new QuestionOptionInput("alberta", "Alberta", "Alberta (FR)")]);
 	}
 
 	private static Question Narrative()

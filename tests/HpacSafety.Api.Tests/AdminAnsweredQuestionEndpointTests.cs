@@ -226,36 +226,45 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenFlaggedAnswer_WhenAdministratorSuppliesTranslation_ThenItLeavesTheQueue()
+	public async Task GivenPickerAnswer_WhenRecorded_ThenCarriesItsChoicesFrenchAndIsNeverQueued()
 	{
-		// Given
+		// Given — a picker's choices are written in both languages, so its
+		// answer takes the other label at submission (ADR-0112)
 		using var client = await SignedIn();
 		var created = await Create(client, UniqueKey("site"), "single_select");
 		var id = created.GetProperty("id").GetString()!;
-		var answerId = await Answer(id, "Cooper's Hill");
-
-		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
-		queued.GetProperty("answers").EnumerateArray()
-			.ShouldContain(answer => answer.GetProperty("id").GetString() == answerId);
 
 		// When
-		using var response = await client.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
-			new { value = "Colline Cooper" });
+		var answerId = await Answer(id, "Cooper's Hill");
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
-
-		var after = await client.GetFromJsonAsync<JsonElement>(Awaiting);
-		after.GetProperty("answers").EnumerateArray()
+		var queued = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		queued.GetProperty("answers").EnumerateArray()
 			.ShouldNotContain(answer => answer.GetProperty("id").GetString() == answerId);
 
-		// And the reporter's own value is untouched
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var stored = await database.ReportAnswers.SingleAsync(a => a.Id == TinyId.Parse(answerId));
 		stored.Value.ShouldBe("Cooper's Hill");
 		stored.TranslatedValue.ShouldBe("Colline Cooper");
+		stored.TranslationSource.ShouldBe(TranslationSource.Choice);
+	}
+
+	[Fact]
+	public async Task GivenEmailAnswer_WhenAdministratorSuppliesTranslation_ThenRefused()
+	{
+		// Given — an email never has a second language (ADR-0112)
+		using var client = await SignedIn();
+		var created = await Create(client, UniqueKey("contact"), "email");
+		var answerId = await Answer(created.GetProperty("id").GetString()!, "avery@example.test");
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
+			new { value = "avery@example.test" });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
 	[Fact]

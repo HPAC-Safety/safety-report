@@ -86,6 +86,7 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		builder.Property(revision => revision.IsSystem).IsRequired();
 		builder.Property(revision => revision.IsRequired).IsRequired();
 		builder.Property(revision => revision.IsPrivate).IsRequired();
+		builder.Property(revision => revision.IsTranslatable).IsRequired();
 		builder.Property(revision => revision.IsActive).IsRequired();
 		builder.Property(revision => revision.DisplayOrder).IsRequired();
 		builder.Ignore(revision => revision.TakesReporterAdditions);
@@ -129,6 +130,11 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 			"type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', " +
 			"'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group', 'time', " +
 			"'autocomplete')"));
+
+		// Only free text is ever machine-translated (ADR-0112).
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_revisions_translatable_text",
+			"NOT is_translatable OR type IN ('short_text', 'long_text')"));
 	}
 }
 

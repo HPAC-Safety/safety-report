@@ -2,13 +2,20 @@
 title: Every answer gets a Worker-translated second language; the submitted value is immutable
 description: Every answer with a value gets translated into the other official language, mechanically, off the request path.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-22
 decision-makers: Chase Florell
 keywords: translation, DeepL, ITranslator, worker, answers, provenance, immutability
 ---
 
 # ADR-0080 — Every answer gets a Worker-translated second language; the submitted value is immutable
+
+**Status:** Narrowed by
+[ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md): only
+free text marked as needing translation, and a type-ahead value naming no
+bilingual choice, are machine-translated. A select answer copies its choice's
+other label at submission, and every other answer has no second language. The
+immutability of `value` and `locale` stands.
 
 ## Context
 

@@ -94,7 +94,7 @@ public sealed class QuestionTranslationSteps
 			.ShouldNotContain(name => name.Contains("Save", StringComparison.Ordinal));
 	}
 
-	[Then(@"the same action is available for the second language of a select answer awaiting translation")]
+	[Then(@"the same action is available for the second language of an answer awaiting translation")]
 	public void ThenTheActionIsAvailableForAnAnswer()
 	{
 		// The same route and the same policy. What an administrator may draft

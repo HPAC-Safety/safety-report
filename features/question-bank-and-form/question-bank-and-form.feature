@@ -130,6 +130,32 @@ Scenario: An Administrator chooses whether an ordinary question must be answered
   Then the new revision records that it is required
   And marking it optional again records that on a further new revision
 
+@REQ-QB-108
+Scenario Outline: Only free text can be marked as needing translation
+  Given an Administrator authors a <type> question without saying whether it needs translation
+  Then the new revision <records>
+
+Examples:
+  | type       | records                                        |
+  | long_text  | records that its answers need translation      |
+  | short_text | records that its answers do not need translation |
+  | email      | records that its answers do not need translation |
+  | date       | records that its answers do not need translation |
+
+@REQ-QB-109
+Scenario: Marking a non-text question as needing translation is rejected
+  Given an Administrator authors an email, date, yes/no, or select question
+  When they mark it as needing translation
+  Then saving that question is rejected
+
+@REQ-QB-110
+Scenario: Whether a question needs translation is a revision field
+  Given a short-text question that does not need translation
+  When an Administrator marks it as needing translation while nobody has answered it
+  Then a new revision records that it needs translation
+  When an Administrator changes it back after it has been answered
+  Then the question is retired and replaced, so each answer keeps the setting it was given under
+
 @REQ-QB-016
 @ignore
 Scenario: consent_publish must resolve to an explicit yes or no
@@ -169,24 +195,6 @@ Examples:
   | date       | the 21st of September 2026     | 2026-09-21          |
   | time       | half past two in the afternoon | 14:30               |
   | short_text | a line of prose                | that line, as typed |
-
-@REQ-QB-020
-@ignore
-Scenario: A select answer records the reporter's language and waits for the other
-  Given a reporter answering in French chooses a value from a curated list
-  When the answer is persisted
-  Then the stored value is the French label they saw
-  And the answer records that it was given in French
-  And the answer is flagged for an Administrator to supply English
-  And nothing on the submission path translates it
-
-@REQ-QB-021
-@ignore
-Scenario: A curated list's other language is not copied onto the answer
-  Given a curated choice offers both official languages
-  When a reporter picks it in one language
-  Then the stored answer holds only the language they saw
-  And it is flagged for translation like any other select answer
 
 @REQ-QB-022
 @ignore
@@ -456,7 +464,7 @@ Scenario: Translation is offered for question wording and for a select answer's 
   When they ask for the other language to be translated
   Then the request goes to the application's own API rather than to a provider from the browser
   And the translated text is returned as a draft that is not saved anywhere
-  And the same action is available for the second language of a select answer awaiting translation
+  And the same action is available for the second language of an answer awaiting translation
   And no narrative, free-text answer, or summary is ever translated this way
   And nothing is translated unless an Administrator asked for it
 
@@ -568,6 +576,17 @@ Scenario: Editing an answered question warns that it will be replaced
   Then the page says that saving retires this question and creates a new one
   When they save
   Then the list shows one question for that key, with the new wording
+
+@REQ-QB-111
+@ui
+Scenario: The editor offers Auto-translate answer only for free text
+  Given a signed-in Administrator is authoring a new question
+  When they choose long text
+  Then Auto-translate answer is offered and checked
+  When they choose short text
+  Then Auto-translate answer is offered and unchecked
+  When they choose email
+  Then Auto-translate answer is not offered
 
 @REQ-QB-083
 @ui

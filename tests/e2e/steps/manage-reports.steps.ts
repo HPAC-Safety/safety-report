@@ -47,6 +47,15 @@ const DETAIL = {
 			values: [{ value: "Casey Synthetic", locale: "en-CA", translatedValue: null, translationSource: null }],
 		},
 		{
+			// The API gives an email no second language, even for a row that
+			// stored one before ADR-0112.
+			questionKey: "pilot_email",
+			labelEn: "Email",
+			labelFr: "Courriel",
+			isPrivate: true,
+			values: [{ value: "casey@example.test", locale: "en-CA", translatedValue: null, translationSource: null }],
+		},
+		{
 			questionKey: "narrative",
 			labelEn: "What happened",
 			labelFr: "Ce qui s'est passé",
@@ -516,4 +525,18 @@ Then("the answer reads {string}", async ({ page }, shown: string) => {
 
 Then("no translation is shown beside it", async ({ page }) => {
 	await expect(occurredAnswer(page)).not.toContainText(/Translation|Traduction/)
+})
+
+// REQ-MOD-078: a translation line only under an answer that has one (ADR-0112).
+
+Then("a translated narrative answer shows its translation beneath it", async ({ page }) => {
+	await expect(page.locator('[data-question-key="narrative"]')).toContainText(
+		"Translation: Un atterrissage ferme synthétique.",
+	)
+})
+
+Then("a name or email answer shows no translation line", async ({ page }) => {
+	await expect(page.locator('[data-question-key="pilot_name"]')).not.toContainText("Translation:")
+	await expect(page.locator('[data-question-key="pilot_email"]')).toContainText("casey@example.test")
+	await expect(page.locator('[data-question-key="pilot_email"]')).not.toContainText("Translation:")
 })

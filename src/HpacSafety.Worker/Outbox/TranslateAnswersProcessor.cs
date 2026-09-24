@@ -1,14 +1,17 @@
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
+using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace HpacSafety.Worker.Outbox;
 
 /// <summary>
-///     Mechanically supplies the second language of every answer on one report,
-///     via the same <see cref="ITranslator" /> port question authoring uses. See
-///     ADR-0080. Never touches <c>Value</c> or <c>Locale</c> — those are
+///     Mechanically supplies the second language of every answer on one report
+///     that needs machine translation, via the same <see cref="ITranslator" /> port
+///     question authoring uses. An answer that never has a second language, or
+///     took one from its choice at submission, is never sent. See ADR-0080,
+///     ADR-0112. Never touches <c>Value</c> or <c>Locale</c> — those are
 ///     immutable, written once by the submission endpoint.
 /// </summary>
 public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITranslator translator)
@@ -26,7 +29,10 @@ public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITra
 		var reportId = TinyId.Parse(message.Payload);
 
 		var untranslated = await database.ReportAnswers
-			.Where(answer => answer.ReportId == reportId && answer.Value != null && answer.TranslatedValue == null)
+			.Where(answer => answer.ReportId == reportId
+							 && answer.Value != null
+							 && answer.TranslatedValue == null
+							 && answer.TranslationMode == TranslationMode.Machine)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 

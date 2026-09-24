@@ -144,12 +144,18 @@ requirements does not touch a skill; its remedy is a claim.
    until the other is supplied
    ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
    Every answer is stored as one string, in the reporter's own words, in the
-   language they answered in, and is immutable once written. Its second
-   language starts unset and is filled off the submission path — mechanically
-   by the Worker via the same machine-translation port question authoring
-   uses, or by an administrator correcting or supplying it by hand — with the
-   source (`auto` or `human`) recorded. This applies to every answer, select
-   or free text alike; there is no answer type this ever skips. A boolean is
+   language they answered in, and is immutable once written. Only an answer
+   that needs a second language gets one. Free text an administrator marked
+   as needing translation, and a type-ahead value naming no bilingual choice,
+   are filled off the submission path: mechanically by the Worker via the
+   same machine-translation port question authoring uses, or by an
+   administrator correcting or supplying it by hand. A select answer instead
+   copies its choice's other-language label at submission, which is a lookup,
+   not a translation. Every other answer — unmarked text, email, phone, date,
+   time, number, yes/no — never has one. The source (`auto`, `human`, or
+   `choice`) is recorded
+   ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+   A boolean is
    `yes` or `no`; a date, time, or date-and-time is ISO 8601 in the shape that
    fits. ISO 8601 is the storage form only — the domain still uses `DateOnly`,
    `TimeOnly`, and `DateTimeOffset`
@@ -239,9 +245,10 @@ credential-proxy-shaped code outside this scope needs its own argument on
 its own facts. Machine translation never runs on the submission path itself —
 nothing a reporter's request touches calls a translation provider. Off that
 path it now has four purposes: drafting question wording while authoring;
-for every answer including a narrative one, the Worker mechanically
-supplying its second language or an administrator correcting/supplying one by
-hand ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md));
+for every answer that needs one, the Worker mechanically supplying its second
+language or an administrator correcting/supplying one by hand
+([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
+[ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
 and a reviewer drafting one language of a summary pair from the other while
 editing it. The Worker's generated pair still comes from its one anonymized
 model call, never from a translation provider; a reviewer's translation is a

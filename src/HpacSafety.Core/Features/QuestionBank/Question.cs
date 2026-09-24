@@ -171,12 +171,13 @@ public class Question
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
 		TinyId? groupedUnderQuestionId = null,
-		IReadOnlyList<QuestionOptionInput>? options = null)
+		IReadOnlyList<QuestionOptionInput>? options = null,
+		bool? isTranslatable = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-			groupedUnderQuestionId, options);
+			groupedUnderQuestionId, options, isTranslatable ?? QuestionRevision.TranslatableByDefault(type));
 	}
 
 	/// <summary>
@@ -210,7 +211,8 @@ public class Question
 			null,
 			null,
 			null,
-			null);
+			null,
+			false);
 	}
 
 	private static Question Create(
@@ -232,14 +234,15 @@ public class Question
 		TinyId? dependsOnQuestionId,
 		string? dependsOnOptionCode,
 		TinyId? groupedUnderQuestionId,
-		IReadOnlyList<QuestionOptionInput>? options)
+		IReadOnlyList<QuestionOptionInput>? options,
+		bool isTranslatable)
 	{
 		var question = new Question(key, isSystem, role, at);
 		question._revisions.Add(
 			QuestionRevision.Create(
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-				groupedUnderQuestionId, at));
+				groupedUnderQuestionId, isTranslatable, at));
 		question.ReplaceChoices(options ?? [], at);
 		return question;
 	}
@@ -268,7 +271,8 @@ public class Question
 		bool isRequired = false,
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
-		TinyId? groupedUnderQuestionId = null)
+		TinyId? groupedUnderQuestionId = null,
+		bool? isTranslatable = null)
 	{
 		if (IsSystem && type != Type)
 		{
@@ -289,7 +293,7 @@ public class Question
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
-				groupedUnderQuestionId),
+				groupedUnderQuestionId, TranslatableFor(type, isTranslatable)),
 			at);
 	}
 
@@ -341,14 +345,16 @@ public class Question
 		TinyId? dependsOnQuestionId = null,
 		string? dependsOnOptionCode = null,
 		TinyId? groupedUnderQuestionId = null,
-		IReadOnlyList<QuestionOptionInput>? options = null)
+		IReadOnlyList<QuestionOptionInput>? options = null,
+		bool? isTranslatable = null)
 	{
 		EnsureNotDeleted();
 
 		var draft = new RevisionDraft(
 			type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId,
-			dependsOnOptionCode is null ? null : QuestionKey.Normalize(dependsOnOptionCode), groupedUnderQuestionId);
+			dependsOnOptionCode is null ? null : QuestionKey.Normalize(dependsOnOptionCode), groupedUnderQuestionId,
+			TranslatableFor(type, isTranslatable));
 
 		var live = this;
 
@@ -363,7 +369,7 @@ public class Question
 				Revise(
 					type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
 					helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-					dependsOnOptionCode, groupedUnderQuestionId);
+					dependsOnOptionCode, groupedUnderQuestionId, draft.IsTranslatable);
 			}
 		}
 
@@ -450,6 +456,22 @@ public class Question
 			? QuestionRevision.YesNoCodes.Contains(value, StringComparer.Ordinal)
 			: _choices.Exists(choice => choice.Deleted is null
 										&& string.Equals(choice.Label(locale), value, StringComparison.Ordinal));
+	}
+
+	/// <summary>
+	///     The other official language's label of the live choice a reporter named in
+	///     <paramref name="locale" />, or null when no live choice has that label or the
+	///     choice has only one language so far. See ADR-0112.
+	/// </summary>
+	public string? OtherLabelOf(string value,
+								Locale locale)
+	{
+		var choice = _choices.Find(candidate => candidate.Deleted is null
+												&& string.Equals(candidate.Label(locale), value, StringComparison.Ordinal));
+
+		return choice is { LabelEn: not null, LabelFr: not null }
+			? choice.Label(locale.Counterpart)
+			: null;
 	}
 
 	/// <summary>
@@ -758,7 +780,8 @@ public class Question
 				replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
 				draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 				false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId, at));
+				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId,
+				draft.IsTranslatable, at));
 
 		// Every choice crosses, removed ones and reporter-added marks included,
 		// so the replacement offers exactly what this one did (ADR-0095).
@@ -777,7 +800,8 @@ public class Question
 			Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
 			draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 			IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId, at);
+			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId,
+			draft.IsTranslatable, at);
 		_revisions.Add(revision);
 		return revision;
 	}
@@ -796,7 +820,25 @@ public class Question
 			current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
 			current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
 			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode,
-			current.GroupedUnderQuestionId);
+			current.GroupedUnderQuestionId, current.IsTranslatable);
+	}
+
+	/// <summary>
+	///     Whether the next revision needs translation. An explicit answer wins. With
+	///     none, a question that keeps its type keeps its setting, and one that
+	///     changes type — or is new — takes the new type's default (ADR-0112).
+	/// </summary>
+	private bool TranslatableFor(QuestionType type,
+								 bool? requested)
+	{
+		if (requested is { } explicitly)
+		{
+			return explicitly;
+		}
+
+		return type == Type
+			? CurrentRevision.IsTranslatable
+			: QuestionRevision.TranslatableByDefault(type);
 	}
 
 	private void EnsureNotDeleted()
@@ -826,5 +868,6 @@ public class Question
 		int DisplayOrder,
 		TinyId? DependsOnQuestionId,
 		string? DependsOnOptionCode,
-		TinyId? GroupedUnderQuestionId);
+		TinyId? GroupedUnderQuestionId,
+		bool IsTranslatable);
 }

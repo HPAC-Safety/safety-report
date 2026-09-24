@@ -13,13 +13,16 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         choice tomorrow cannot change what this answer says (ADR-0072).
 ///     </para>
 ///     <para>
-///         Every answer is recorded in the reporter's language only, and is immutable
-///         once written — nothing on the submission path, or anywhere else, ever
-///         overwrites <see cref="Value" /> or <see cref="Locale" />.
-///         <see cref="TranslatedValue" /> starts null and is filled later, off the
-///         submission path: mechanically by the Worker
-///         (<see cref="TranslationSource.Auto" />), or by an administrator editing it
-///         afterward (<see cref="TranslationSource.Human" />). See ADR-0080.
+///         Every answer is recorded in the reporter's language, and is immutable once
+///         written — nothing on the submission path, or anywhere else, ever
+///         overwrites <see cref="Value" /> or <see cref="Locale" />. Whether it has a
+///         second language at all is decided when it is recorded
+///         (<see cref="TranslationMode" />, ADR-0112): a select answer copies its
+///         choice's other label then (<see cref="TranslationSource.Choice" />);
+///         free text marked for translation is filled later, off the submission
+///         path, mechanically by the Worker (<see cref="TranslationSource.Auto" />) or
+///         by an administrator (<see cref="TranslationSource.Human" />); and anything
+///         else never has one. See ADR-0080.
 ///     </para>
 ///     <para>
 ///         A multi-select produces one of these per chosen value, so "an answer is one
@@ -113,11 +116,24 @@ public class ReportAnswer
 	public TranslationSource? TranslationSource { get; private set; }
 
 	/// <summary>
-	///     True while this answer has a value but no translation of it yet. False for
-	///     a skipped answer — there is nothing to translate — and false once
-	///     <see cref="TranslatedValue" /> has been supplied.
+	///     How this answer gets its second language, decided when it is recorded and
+	///     never changed. See ADR-0112.
 	/// </summary>
-	public bool NeedsTranslation => Value is not null && TranslatedValue is null;
+	public TranslationMode TranslationMode { get; private init; }
+
+	/// <summary>
+	///     True while this answer is waiting for machine translation: it has a value,
+	///     its mode is <see cref="Reporting.TranslationMode.Machine" />, and no
+	///     translation has been supplied yet.
+	/// </summary>
+	public bool NeedsTranslation =>
+		Value is not null && TranslatedValue is null && TranslationMode == TranslationMode.Machine;
+
+	/// <summary>
+	///     The second language as a reader should see it: null for an answer that
+	///     never has one, even if an older row stored one before ADR-0112.
+	/// </summary>
+	public string? DisplayedTranslation => TranslationMode == TranslationMode.None ? null : TranslatedValue;
 
 	/// <summary>When the answer was given.</summary>
 	public DateTimeOffset AnsweredAt { get; private init; }
@@ -131,7 +147,7 @@ public class ReportAnswer
 	/// </summary>
 	public string? ValueIn(Locale locale)
 	{
-		return locale == Locale ? Value : TranslatedValue ?? Value;
+		return locale == Locale ? Value : DisplayedTranslation ?? Value;
 	}
 
 	/// <summary>
@@ -189,10 +205,47 @@ public class ReportAnswer
 			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
 		}
 
+		var (mode, fromChoice) = SecondLanguageOf(question, revision, value, locale);
+
 		return new ReportAnswer(reportId, question, revision, locale, at)
 		{
 			Value = value,
+			TranslationMode = mode,
+			TranslatedValue = fromChoice,
+			TranslationSource = fromChoice is null ? null : Reporting.TranslationSource.Choice,
 		};
+	}
+
+	/// <summary>
+	///     How this answer gets its second language, and — for a value naming a
+	///     choice written in both languages — that choice's other label, copied now.
+	///     A lookup in the question's own choices, never a translation provider, so
+	///     the submission path stays provider-free. See ADR-0112.
+	/// </summary>
+	private static (TranslationMode Mode, string? FromChoice) SecondLanguageOf(
+		Question question,
+		QuestionRevision revision,
+		string? value,
+		Locale locale)
+	{
+		if (!revision.StoresLocalizedValue)
+		{
+			return (revision.IsTranslatable ? TranslationMode.Machine : TranslationMode.None, null);
+		}
+
+		if (value is null)
+		{
+			return (TranslationMode.Choice, null);
+		}
+
+		// A choice with both languages supplies the other one. A value naming no
+		// such choice — a type-ahead value the reporter typed, or a choice that
+		// still has one language — is left for the Worker.
+		var other = question.OtherLabelOf(value, locale);
+
+		return other is null
+			? (TranslationMode.Machine, null)
+			: (TranslationMode.Choice, other);
 	}
 
 	/// <summary>
@@ -222,6 +275,11 @@ public class ReportAnswer
 		if (Value is null)
 		{
 			throw new DomainRuleViolationException("A skipped answer has nothing to translate.");
+		}
+
+		if (TranslationMode == TranslationMode.None)
+		{
+			throw new DomainRuleViolationException("This answer never has a second language. See ADR-0112.");
 		}
 
 		if (TranslatedValue is not null

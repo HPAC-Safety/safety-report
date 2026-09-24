@@ -46,6 +46,7 @@ interface StubQuestion {
 	isSystem: boolean
 	isRequired: boolean
 	isPrivate: boolean
+	isTranslatable: boolean
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
@@ -78,6 +79,7 @@ function question(
 		isSystem: false,
 		isRequired: false,
 		isPrivate: true,
+		isTranslatable: type === "long_text",
 		isActive: true,
 		displayOrder,
 		dependsOnQuestionId: null,
@@ -727,4 +729,33 @@ Then("the corrected wording is shown on the question", async ({ page }) => {
 	await expect(choice.getByLabel("Choice (English)")).toHaveValue("Mount 7")
 	await expect(choice.getByLabel("Choice (French)")).toHaveValue("Mont 7")
 	await expect(choice).not.toContainText("Waiting for")
+})
+
+// REQ-QB-111: Auto-translate answer is offered only for free text (ADR-0112).
+
+const needsTranslation = (page: Page) => page.getByRole("checkbox", { name: "Auto-translate answer" })
+
+When("they choose long text", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("long_text")
+})
+
+When("they choose short text", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("short_text")
+})
+
+When("they choose email", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("email")
+})
+
+Then("Auto-translate answer is offered and checked", async ({ page }) => {
+	await expect(needsTranslation(page)).toBeChecked()
+})
+
+Then("Auto-translate answer is offered and unchecked", async ({ page }) => {
+	await expect(needsTranslation(page)).toBeVisible()
+	await expect(needsTranslation(page)).not.toBeChecked()
+})
+
+Then("Auto-translate answer is not offered", async ({ page }) => {
+	await expect(needsTranslation(page)).toHaveCount(0)
 })

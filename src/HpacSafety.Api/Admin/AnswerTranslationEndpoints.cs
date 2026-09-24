@@ -1,5 +1,6 @@
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
+using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -47,7 +48,9 @@ public static class AnswerTranslationEndpoints
 		ArgumentNullException.ThrowIfNull(database);
 
 		var waiting = await database.ReportAnswers
-			.Where(answer => answer.Value != null && answer.TranslatedValue == null)
+			.Where(answer => answer.Value != null
+							 && answer.TranslatedValue == null
+							 && answer.TranslationMode == TranslationMode.Machine)
 			.OrderBy(answer => answer.AnsweredAt)
 			.Select(answer => new AwaitingTranslationView(
 				answer.Id.ToString(),

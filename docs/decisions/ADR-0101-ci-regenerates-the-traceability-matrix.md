@@ -13,7 +13,10 @@ keywords: traceability, generated documentation, pull_request_target, required s
 **Status:** Accepted. Amends
 [ADR-0084](ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)
 on one point: who regenerates `docs/traceability.md`. The matrix is still
-generated, still tracked, and never hand-edited.
+generated, still tracked, and never hand-edited. Amended by
+[ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md):
+a push rejected because the author pushed meanwhile is a superseded run, not
+a failure.
 
 ## Context
 

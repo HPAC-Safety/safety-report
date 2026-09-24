@@ -14,7 +14,7 @@
 //
 // The exit code is the contract: a duplicate, malformed, missing, or dangling
 // id fails rather than producing a matrix with a hole in it.
-import { readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { appendFileSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = process.cwd()
@@ -127,10 +127,21 @@ function featureFiles(root) {
 		.sort()
 }
 
-const escape = (text) => text.replaceAll('|', '\\|')
+// A scenario name is free text on a line of its own; one that opens with "#"
+// would render as a heading.
+const escape = (text) => text.replace(/^#/, '\\#')
 
+const byId = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0)
+
+/**
+ * The matrix is built so that git can merge it (ADR-0106). Every line depends
+ * on exactly one scenario or one constraint — nothing is counted across the
+ * whole tree — and every item's data line sits between unchanged heading and
+ * blank lines, so two branches that each carry a correct matrix merge into the
+ * matrix of the merged tree. Totals go to stdout instead; see `totals`.
+ */
 export function render(claims, constraints) {
-	const planned = claims.filter((claim) => claim.status === 'Planned').length
+	const areas = [...new Set(claims.map((claim) => claim.area))].sort()
 	const lines = [
 		'---',
 		'title: Traceability',
@@ -143,16 +154,22 @@ export function render(claims, constraints) {
 		'> **Generated file — do not edit by hand.**',
 		'> Regenerate with `node tools/traceability.mjs`. CI fails on a difference',
 		'> ([ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)).',
+		'> One block per claim and per constraint, in ID order, and no totals, so',
+		'> branches merge it without conflicting',
+		'> ([ADR-0106](decisions/ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md)).',
 		'',
-		`${claims.length} claims across ${new Set(claims.map((claim) => claim.area)).size} areas: ` +
-			`${claims.length - planned} covered by a step definition today, ${planned} still \`@ignore\`. ` +
-			`${constraints.length} constraints.`,
-		'',
-		'## Claims',
-		'',
-		'| Claim | Area | Scenario | Engine | Status |',
-		'|---|---|---|---|---|',
-		...claims.map((claim) => `| \`${claim.id}\` | ${claim.area} | ${escape(claim.scenario)} | ${claim.engine} | ${claim.status} |`),
+		'Each claim reads: the scenario that states it — *engine, status*. A',
+		'`Planned` claim is still `@ignore`.',
+	]
+
+	for (const area of areas) {
+		lines.push('', `## Claims: ${area}`)
+		for (const claim of claims.filter((each) => each.area === area).sort(byId)) {
+			lines.push('', `### ${claim.id}`, '', `${escape(claim.scenario)} — *${claim.engine}, ${claim.status}*`)
+		}
+	}
+
+	lines.push(
 		'',
 		'## Constraints',
 		'',
@@ -160,17 +177,25 @@ export function render(claims, constraints) {
 		'it are the scenarios that prove it. `none` is an honest answer — an',
 		'infrastructure or test-suite property is not observable from a scenario —',
 		'and it carries its reason.',
-		'',
-		'| Constraint | Page | Verified by |',
-		'|---|---|---|',
-		...constraints.map(
-			(constraint) =>
-				`| \`${constraint.id}\` | ${constraint.page.replace('docs/', '')} | ` +
-				`${constraint.verifiedBy.length > 0 ? constraint.verifiedBy.map((id) => `\`${id}\``).join(', ') : escape(constraint.note)} |`,
-		),
-		'',
-	]
+	)
+	for (const constraint of [...constraints].sort(byId)) {
+		const verifiedBy =
+			constraint.verifiedBy.length > 0 ? constraint.verifiedBy.map((id) => `\`${id}\``).join(', ') : escape(constraint.note)
+		lines.push('', `### ${constraint.id}`, '', `${constraint.page.replace('docs/', '')} — verified by ${verifiedBy}`)
+	}
+
+	lines.push('')
 	return lines.join('\n')
+}
+
+/** The whole-tree counts, reported rather than committed (ADR-0106). */
+export function totals(claims, constraints) {
+	const planned = claims.filter((claim) => claim.status === 'Planned').length
+	return (
+		`${claims.length} claims across ${new Set(claims.map((claim) => claim.area)).size} areas: ` +
+		`${claims.length - planned} covered by a step definition today, ${planned} still \`@ignore\`. ` +
+		`${constraints.length} constraints.`
+	)
 }
 
 export function build(root = ROOT) {
@@ -223,6 +248,8 @@ export function main(root = ROOT, { write = true } = {}) {
 
 	if (write) writeFileSync(join(root, OUTPUT), matrix)
 	console.log(`${claims.length} claim(s) and ${constraints.length} constraint(s) written to ${OUTPUT}.`)
+	console.log(totals(claims, constraints))
+	if (write && process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `**Traceability:** ${totals(claims, constraints)}\n`)
 	return 0
 }
 

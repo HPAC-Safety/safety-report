@@ -2,10 +2,17 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 
 import { CATEGORIES, claimsInMatrix, judge, main, parseExemption, rejectExemption } from '../../tools/feature-coverage.mjs'
+import { render } from '../../tools/traceability.mjs'
 
-const MATRIX = `| \`REQ-SUB-012\` | report-submission | Attachments stream | Reqnroll | Covered |
-| \`REQ-SUB-013\` | report-submission | Persisted atomically | Reqnroll | Covered |
-| \`REQ-WLD-008\` | web-localization-and-design | Theme toggle | playwright-bdd | Covered |`
+// Rendered by the real generator, so this fixture follows the matrix format.
+const MATRIX = render(
+	[
+		{ id: 'REQ-SUB-012', area: 'report-submission', scenario: 'Attachments stream', engine: 'Reqnroll', status: 'Covered' },
+		{ id: 'REQ-SUB-013', area: 'report-submission', scenario: 'Persisted atomically', engine: 'Reqnroll', status: 'Covered' },
+		{ id: 'REQ-WLD-008', area: 'web-localization-and-design', scenario: 'Theme toggle', engine: 'playwright-bdd', status: 'Covered' },
+	],
+	[],
+)
 
 const KNOWN = claimsInMatrix(MATRIX)
 

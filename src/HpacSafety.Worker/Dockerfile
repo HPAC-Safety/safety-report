@@ -9,7 +9,7 @@
 # security team patches it; rebuilding picks the fix up. It runs only as a child
 # process doing a stream-copy remux (ADR-0094), never linked into the Worker.
 # The base is pinned by digest; Renovate moves the pin.
-FROM mcr.microsoft.com/dotnet/runtime:10.0@sha256:ff17a18b639a0327e52c7c296fa2e1abe6e03eb61d8121a8ef67cc6aa430a27e
+FROM mcr.microsoft.com/dotnet/runtime:11.0@sha256:4bfa5230dba9942d1cba737836e8b26dd6a912d974723cc8fad372d85408ba6a
 
 RUN apt-get update \
 	&& apt-get install --yes --no-install-recommends ffmpeg \

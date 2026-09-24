@@ -352,9 +352,9 @@
         "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
       },
       "mediaConsent": {
-        "yes": "Le journaliste a accepté que ses photos et sa vidéo soient incluses dans l'article publié.",
-        "no": "Le journaliste n'a pas accepté de partager ses photos et sa vidéo. Aucune n'est jamais rendue publique.",
-        "unanswered": "On n'a pas demandé au journaliste s'il partageait des photos et des vidéos; par conséquent, aucune n'est jamais rendue publique."
+        "yes": "Le journaliste a accepté de partager les fichiers joints à son article publié.",
+        "no": "Le journaliste n'a pas accepté de partager ses fichiers joints. Aucun n'est jamais rendu public.",
+        "unanswered": "On n’a pas demandé au journaliste de partager ses fichiers joints; par conséquent, aucun n’est jamais rendu public."
       },
       "summary": "Résumé",
       "summaryEn": "Anglais",
@@ -396,7 +396,7 @@
         "public": "Figurant dans le rapport public",
         "when_published": "Affiché une fois le rapport publié",
         "hidden": "À l’abri des regards du public",
-        "no_consent": "Non public : le journaliste n’a pas accepté de partager les fichiers multimédias",
+        "no_consent": "Non accessible au public : le journaliste n'a pas accepté de partager ce fichier",
         "private": "Non public"
       },
       "hide": "Se cacher du public",
@@ -482,14 +482,14 @@
     }
   },
   "media": {
-    "title": "Photos et vidéo",
+    "title": "Photos, vidéos et documents",
     "photoLabel": "Photo {index} de {count}",
     "videoLabel": "Vidéo {index} de {count}",
-    "documentLabel": "#Document {index} of {count} ({format})",
-    "download": "#Download",
-    "downloadLabel": "#Download {label}",
+    "documentLabel": "{index} du document de {count} ({format})",
+    "download": "Téléverser",
+    "downloadLabel": "Téléverser « {label} »",
     "error": {
-      "download": "#That document could not be downloaded. Try again.",
+      "download": "Ce document n'a pas pu être téléversé. Veuillez réessayer.",
       "hide": "Cela ne pouvait pas passer inaperçu. Veuillez réessayer."
     },
     "hide": "Masquer",

@@ -9,6 +9,10 @@
 #     ./init-dev.sh --obsidian  also hydrate obsidian-vault/ from the graphify graph
 #     ./init-dev.sh --help
 #
+# It also asks, once, for the private provider keys local development needs
+# (DEEPL_API_KEY, GEMINI_API_KEY) and keeps them in the primary checkout's
+# gitignored .env, which ./dev-up.sh passes to the containers.
+#
 # macOS and Linux run it natively. Windows runs it under Git Bash, which every
 # contributor here already has — CONTRIBUTING.md requires Git for Windows with
 # `core.symlinks true`, so the shell is not a new dependency. See ADR-0015.
@@ -154,8 +158,10 @@ fi
 # under the very download that asked for it.
 SCRATCH=$(mktemp -d 2>/dev/null || mktemp -d -t init-dev)
 trap 'rm -rf "$SCRATCH"' EXIT
-trap 'rm -rf "$SCRATCH"; exit 130' INT
-trap 'rm -rf "$SCRATCH"; exit 143' TERM
+# Echo is restored too: an interrupt during the hidden key prompt below would
+# otherwise leave the terminal not showing what is typed.
+trap '{ stty echo < /dev/tty; } 2>/dev/null; rm -rf "$SCRATCH"; exit 130' INT
+trap '{ stty echo < /dev/tty; } 2>/dev/null; rm -rf "$SCRATCH"; exit 143' TERM
 
 fetch() {
 	# fetch <url> <destination>
@@ -729,6 +735,79 @@ else
 		note "skillfile install failed — skills are optional; run it directly to see why"
 	fi
 fi
+
+# ------------------------------------------------------------- provider keys ---
+#
+# DeepL translates answers and question wording; Gemini writes report
+# summaries. Neither has a stand-in (ADR-0109), so without them a local report
+# is never translated or summarized. The keys are private: they are written to
+# the primary checkout's .env, which is gitignored and never committed, and
+# ./dev-up.sh hands that file to the API and Worker containers — from the
+# primary checkout and from every worktree alike. A key already in .env is not
+# asked for again; Enter skips one.
+
+heading "provider keys"
+
+COMMON_GIT_DIR=$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)
+if [ -n "$COMMON_GIT_DIR" ]; then
+	ENV_FILE="$(dirname -- "$COMMON_GIT_DIR")/.env"
+else
+	ENV_FILE="$REPO_ROOT/.env"
+fi
+
+env_value() {
+	[ -f "$ENV_FILE" ] || return 0
+	sed -n "s/^$1=//p" "$ENV_FILE" | tail -n 1
+}
+
+set_env_value() {
+	ENV_TMP="$ENV_FILE.tmp.$$"
+	if [ -f "$ENV_FILE" ]; then
+		grep -v "^$1=" "$ENV_FILE" > "$ENV_TMP" || true
+	else
+		: > "$ENV_TMP"
+	fi
+	printf '%s=%s\n' "$1" "$2" >> "$ENV_TMP"
+	chmod 600 "$ENV_TMP"
+	mv "$ENV_TMP" "$ENV_FILE"
+}
+
+ask_key() {
+	NAME=$1
+	PURPOSE=$2
+
+	if [ -n "$(env_value "$NAME")" ]; then
+		ok "$NAME is set in $ENV_FILE"
+		return 0
+	fi
+
+	if [ "$CHECK_ONLY" -eq 1 ]; then
+		note "$NAME is not set — run ./init-dev.sh to enter it ($PURPOSE)"
+		return 0
+	fi
+
+	if [ ! -t 0 ]; then
+		note "skipped: not running in a terminal — add $NAME=... to $ENV_FILE ($PURPOSE)"
+		return 0
+	fi
+
+	printf '  %s, for %s (input hidden; Enter to skip): ' "$NAME" "$PURPOSE"
+	stty -echo < /dev/tty
+	read -r KEY_VALUE < /dev/tty || KEY_VALUE=''
+	stty echo < /dev/tty
+	printf '\n'
+
+	if [ -n "$KEY_VALUE" ]; then
+		set_env_value "$NAME" "$KEY_VALUE"
+		added "$NAME saved to $ENV_FILE"
+	else
+		manual "Add $NAME=... to $ENV_FILE for $PURPOSE, then rerun ./dev-up.sh."
+	fi
+	KEY_VALUE=''
+}
+
+ask_key DEEPL_API_KEY "answer and question translation"
+ask_key GEMINI_API_KEY "report summaries, with a paid, billing-enabled key"
 
 # ------------------------------------------------------------------ summary ---
 

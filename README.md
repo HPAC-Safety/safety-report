@@ -138,9 +138,11 @@ To also render the graphify knowledge graph into a local Obsidian vault at
 ./init-dev.sh --obsidian
 ```
 
-To get answer translations and report summaries locally, put the provider keys
-in a `.env` file at the root of the primary checkout (it is gitignored).
-`./dev-up.sh` passes it to every checkout's containers:
+`./init-dev.sh` also asks for the two private provider keys local development
+needs — `DEEPL_API_KEY` (translation) and `GEMINI_API_KEY` (summaries) — and
+writes them to a `.env` file at the root of the primary checkout. That file is
+gitignored and never committed. `./dev-up.sh` passes it to the API and Worker
+containers, from the primary checkout and from every worktree:
 
 ```bash
 DEEPL_API_KEY=...

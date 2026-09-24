@@ -51,8 +51,10 @@ The availability response drops its `standIn` flag, and the screen drops its
 
 **A developer who wants translation, or a summary, sets a real key.** The API
 and Worker read `DEEPL_API_KEY` and `GEMINI_API_KEY` from the environment.
-`dev-up.sh` passes the primary checkout's `.env` (gitignored) to Compose, so
-the keys are written once and reach every worktree's containers.
+`init-dev.sh` asks for both once and writes them to the primary checkout's
+`.env`, which is gitignored and never committed. `dev-up.sh` passes that file
+to Compose, so the keys reach every worktree's containers, and names any key
+that is missing.
 
 ## Rejected alternatives
 

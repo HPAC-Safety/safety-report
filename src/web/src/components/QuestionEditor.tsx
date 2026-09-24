@@ -282,7 +282,7 @@ export function QuestionEditor({
 								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnOptionCode: null }
 								: {}
 							// A retype takes the new type's translation default: only
-							// free text can need translation at all (ADR-0110).
+							// free text can need translation at all (ADR-0112).
 							update({
 								type,
 								...clearedOptions,

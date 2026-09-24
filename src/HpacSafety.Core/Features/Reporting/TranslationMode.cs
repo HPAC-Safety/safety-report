@@ -2,7 +2,7 @@ namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
 ///     How an answer gets its second official language, decided when it is
-///     recorded and never changed. Stored as an invariant code. See ADR-0110.
+///     recorded and never changed. Stored as an invariant code. See ADR-0112.
 /// </summary>
 public enum TranslationMode
 {

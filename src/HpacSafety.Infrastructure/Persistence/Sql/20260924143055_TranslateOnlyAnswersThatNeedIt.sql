@@ -1,4 +1,4 @@
--- ADR-0110: only free text marked as needing translation is machine-translated.
+-- ADR-0112: only free text marked as needing translation is machine-translated.
 -- Long text starts out marked; every other type (including short text) does not.
 UPDATE question_revisions
 SET is_translatable = true

@@ -131,7 +131,7 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 			"'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group', 'time', " +
 			"'autocomplete')"));
 
-		// Only free text is ever machine-translated (ADR-0110).
+		// Only free text is ever machine-translated (ADR-0112).
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_question_revisions_translatable_text",
 			"NOT is_translatable OR type IN ('short_text', 'long_text')"));

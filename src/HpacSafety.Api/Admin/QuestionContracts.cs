@@ -114,7 +114,7 @@ public sealed record OptionView(
 ///     <see cref="Options" />, the complete list of its choices, is applied in
 ///     place and never does (ADR-0095). <see cref="IsTranslatable" /> may be left
 ///     out: a new question then takes its type's default, and an edit that keeps
-///     the type keeps the current setting (ADR-0110).
+///     the type keeps the current setting (ADR-0112).
 /// </summary>
 public sealed record SaveQuestionRequest(
 	string? Key,

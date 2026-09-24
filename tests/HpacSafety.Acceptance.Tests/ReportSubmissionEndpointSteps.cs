@@ -301,7 +301,7 @@ public sealed class ReportSubmissionEndpointSteps
 	public async Task ThenOnlyAPickerCarriesASecondLanguage()
 	{
 		// "Blue" is offered as "Bleu" (CreateSelectQuestion); copying it is a
-		// lookup, not a provider call (ADR-0110).
+		// lookup, not a provider call (ADR-0112).
 		var stored = await SubmittedSelectAnswer();
 		stored.TranslatedValue.ShouldBe("Bleu");
 		stored.TranslationSource.ShouldBe(TranslationSource.Choice);
@@ -412,7 +412,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[Given(@"an answer already has a translation the Worker supplied automatically")]
 	public async Task GivenAnAnswerAlreadyHasAnAutoTranslation()
 	{
-		// A narrative: the kind of answer the Worker translates (ADR-0110). A
+		// A narrative: the kind of answer the Worker translates (ADR-0112). A
 		// picker's second language comes from its choice instead.
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();

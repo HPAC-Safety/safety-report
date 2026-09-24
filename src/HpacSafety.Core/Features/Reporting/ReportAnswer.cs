@@ -17,7 +17,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         written — nothing on the submission path, or anywhere else, ever
 ///         overwrites <see cref="Value" /> or <see cref="Locale" />. Whether it has a
 ///         second language at all is decided when it is recorded
-///         (<see cref="TranslationMode" />, ADR-0110): a select answer copies its
+///         (<see cref="TranslationMode" />, ADR-0112): a select answer copies its
 ///         choice's other label then (<see cref="TranslationSource.Choice" />);
 ///         free text marked for translation is filled later, off the submission
 ///         path, mechanically by the Worker (<see cref="TranslationSource.Auto" />) or
@@ -117,7 +117,7 @@ public class ReportAnswer
 
 	/// <summary>
 	///     How this answer gets its second language, decided when it is recorded and
-	///     never changed. See ADR-0110.
+	///     never changed. See ADR-0112.
 	/// </summary>
 	public TranslationMode TranslationMode { get; private init; }
 
@@ -131,7 +131,7 @@ public class ReportAnswer
 
 	/// <summary>
 	///     The second language as a reader should see it: null for an answer that
-	///     never has one, even if an older row stored one before ADR-0110.
+	///     never has one, even if an older row stored one before ADR-0112.
 	/// </summary>
 	public string? DisplayedTranslation => TranslationMode == TranslationMode.None ? null : TranslatedValue;
 
@@ -220,7 +220,7 @@ public class ReportAnswer
 	///     How this answer gets its second language, and — for a value naming a
 	///     choice written in both languages — that choice's other label, copied now.
 	///     A lookup in the question's own choices, never a translation provider, so
-	///     the submission path stays provider-free. See ADR-0110.
+	///     the submission path stays provider-free. See ADR-0112.
 	/// </summary>
 	private static (TranslationMode Mode, string? FromChoice) SecondLanguageOf(
 		Question question,
@@ -279,7 +279,7 @@ public class ReportAnswer
 
 		if (TranslationMode == TranslationMode.None)
 		{
-			throw new DomainRuleViolationException("This answer never has a second language. See ADR-0110.");
+			throw new DomainRuleViolationException("This answer never has a second language. See ADR-0112.");
 		}
 
 		if (TranslatedValue is not null

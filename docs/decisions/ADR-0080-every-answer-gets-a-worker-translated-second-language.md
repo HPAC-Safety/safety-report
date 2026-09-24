@@ -11,7 +11,7 @@ keywords: translation, DeepL, ITranslator, worker, answers, provenance, immutabi
 # ADR-0080 — Every answer gets a Worker-translated second language; the submitted value is immutable
 
 **Status:** Narrowed by
-[ADR-0110](ADR-0110-only-answers-that-need-it-get-a-second-language.md): only
+[ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md): only
 free text marked as needing translation, and a type-ahead value naming no
 bilingual choice, are machine-translated. A select answer copies its choice's
 other label at submission, and every other answer has no second language. The

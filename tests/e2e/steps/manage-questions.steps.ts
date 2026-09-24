@@ -731,7 +731,7 @@ Then("the corrected wording is shown on the question", async ({ page }) => {
 	await expect(choice).not.toContainText("Waiting for")
 })
 
-// REQ-QB-111: Auto-translate answer is offered only for free text (ADR-0110).
+// REQ-QB-111: Auto-translate answer is offered only for free text (ADR-0112).
 
 const needsTranslation = (page: Page) => page.getByRole("checkbox", { name: "Auto-translate answer" })
 

@@ -229,7 +229,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenPickerAnswer_WhenRecorded_ThenCarriesItsChoicesFrenchAndIsNeverQueued()
 	{
 		// Given — a picker's choices are written in both languages, so its
-		// answer takes the other label at submission (ADR-0110)
+		// answer takes the other label at submission (ADR-0112)
 		using var client = await SignedIn();
 		var created = await Create(client, UniqueKey("site"), "single_select");
 		var id = created.GetProperty("id").GetString()!;
@@ -253,7 +253,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	[Fact]
 	public async Task GivenEmailAnswer_WhenAdministratorSuppliesTranslation_ThenRefused()
 	{
-		// Given — an email never has a second language (ADR-0110)
+		// Given — an email never has a second language (ADR-0112)
 		using var client = await SignedIn();
 		var created = await Create(client, UniqueKey("contact"), "email");
 		var answerId = await Answer(created.GetProperty("id").GetString()!, "avery@example.test");

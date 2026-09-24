@@ -48,7 +48,7 @@ const DETAIL = {
 		},
 		{
 			// The API gives an email no second language, even for a row that
-			// stored one before ADR-0110.
+			// stored one before ADR-0112.
 			questionKey: "pilot_email",
 			labelEn: "Email",
 			labelFr: "Courriel",
@@ -527,7 +527,7 @@ Then("no translation is shown beside it", async ({ page }) => {
 	await expect(occurredAnswer(page)).not.toContainText(/Translation|Traduction/)
 })
 
-// REQ-MOD-078: a translation line only under an answer that has one (ADR-0110).
+// REQ-MOD-078: a translation line only under an answer that has one (ADR-0112).
 
 Then("a translated narrative answer shows its translation beneath it", async ({ page }) => {
 	await expect(page.locator('[data-question-key="narrative"]')).toContainText(

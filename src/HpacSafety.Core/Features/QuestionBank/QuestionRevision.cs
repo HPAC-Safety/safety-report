@@ -79,7 +79,7 @@ public class QuestionRevision
 			&& !CanBeTranslatable(type))
 		{
 			throw new DomainRuleViolationException(
-				$"Only a short- or long-text question can need translation; a {type} answer never has a second language. See ADR-0110.");
+				$"Only a short- or long-text question can need translation; a {type} answer never has a second language. See ADR-0112.");
 		}
 
 		IsSystem = isSystem;
@@ -137,7 +137,7 @@ public class QuestionRevision
 	/// <summary>
 	///     Whether an answer to this revision is machine-translated into the other
 	///     official language. Only ever true for short or long text; an
-	///     administrator decides, and long text starts out true. See ADR-0110.
+	///     administrator decides, and long text starts out true. See ADR-0112.
 	/// </summary>
 	public bool IsTranslatable { get; private init; }
 
@@ -240,7 +240,7 @@ public class QuestionRevision
 
 	/// <summary>
 	///     True when this type's answers are the reporter's own free text, the only
-	///     kind an administrator may mark as needing machine translation (ADR-0110).
+	///     kind an administrator may mark as needing machine translation (ADR-0112).
 	/// </summary>
 	public static bool CanBeTranslatable(QuestionType type)
 	{
@@ -249,7 +249,7 @@ public class QuestionRevision
 
 	/// <summary>
 	///     Whether a question of this type needs translation when nobody has said:
-	///     long text does, and everything else does not (ADR-0110).
+	///     long text does, and everything else does not (ADR-0112).
 	/// </summary>
 	public static bool TranslatableByDefault(QuestionType type)
 	{

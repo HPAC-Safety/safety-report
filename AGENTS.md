@@ -154,7 +154,7 @@ requirements does not touch a skill; its remedy is a claim.
    not a translation. Every other answer — unmarked text, email, phone, date,
    time, number, yes/no — never has one. The source (`auto`, `human`, or
    `choice`) is recorded
-   ([ADR-0110](docs/decisions/ADR-0110-only-answers-that-need-it-get-a-second-language.md)).
+   ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
    A boolean is
    `yes` or `no`; a date, time, or date-and-time is ISO 8601 in the shape that
    fits. ISO 8601 is the storage form only — the domain still uses `DateOnly`,
@@ -248,7 +248,7 @@ path it now has four purposes: drafting question wording while authoring;
 for every answer that needs one, the Worker mechanically supplying its second
 language or an administrator correcting/supplying one by hand
 ([ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
-[ADR-0110](docs/decisions/ADR-0110-only-answers-that-need-it-get-a-second-language.md));
+[ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
 and a reviewer drafting one language of a summary pair from the other while
 editing it. The Worker's generated pair still comes from its one anonymized
 model call, never from a translation provider; a reviewer's translation is a

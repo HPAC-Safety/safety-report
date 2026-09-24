@@ -461,7 +461,7 @@ public class Question
 	/// <summary>
 	///     The other official language's label of the live choice a reporter named in
 	///     <paramref name="locale" />, or null when no live choice has that label or the
-	///     choice has only one language so far. See ADR-0110.
+	///     choice has only one language so far. See ADR-0112.
 	/// </summary>
 	public string? OtherLabelOf(string value,
 								Locale locale)
@@ -826,7 +826,7 @@ public class Question
 	/// <summary>
 	///     Whether the next revision needs translation. An explicit answer wins. With
 	///     none, a question that keeps its type keeps its setting, and one that
-	///     changes type — or is new — takes the new type's default (ADR-0110).
+	///     changes type — or is new — takes the new type's default (ADR-0112).
 	/// </summary>
 	private bool TranslatableFor(QuestionType type,
 								 bool? requested)

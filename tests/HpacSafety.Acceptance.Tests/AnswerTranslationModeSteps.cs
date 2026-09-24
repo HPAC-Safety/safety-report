@@ -16,7 +16,7 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     Which answers get a second language, and where it comes from (ADR-0110):
+///     Which answers get a second language, and where it comes from (ADR-0112):
 ///     REQ-SUB-069, REQ-SUB-070, REQ-SUB-071, REQ-MOD-077, and REQ-QB-108..110.
 /// </summary>
 /// <remarks>
@@ -192,7 +192,7 @@ public sealed class AnswerTranslationModeSteps
 
 		await SubmitInEnglish();
 
-		// A row written before ADR-0110, when every answer was machine-translated:
+		// A row written before ADR-0112, when every answer was machine-translated:
 		// its copy is still in the database, and must still not be shown.
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();

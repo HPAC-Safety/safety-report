@@ -42,7 +42,7 @@ export const NO_ANSWER_TYPES: readonly QuestionType[] = ["statement", "group"]
 
 /**
  * Types whose answers are the reporter's own free text — the only ones an
- * administrator may mark as needing machine translation (ADR-0110).
+ * administrator may mark as needing machine translation (ADR-0112).
  */
 export const TRANSLATABLE_TYPES: readonly QuestionType[] = ["short_text", "long_text"]
 
@@ -75,7 +75,7 @@ export interface QuestionView {
 	isSystem: boolean
 	isRequired: boolean
 	isPrivate: boolean
-	/** Whether answers are machine-translated. Only ever true for short or long text (ADR-0110). */
+	/** Whether answers are machine-translated. Only ever true for short or long text (ADR-0112). */
 	isTranslatable: boolean
 	isActive: boolean
 	displayOrder: number

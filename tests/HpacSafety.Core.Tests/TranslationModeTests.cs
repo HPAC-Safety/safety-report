@@ -5,7 +5,7 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-///     Which answers get a second language, and where it comes from (ADR-0110).
+///     Which answers get a second language, and where it comes from (ADR-0112).
 /// </summary>
 public class TranslationModeTests
 {

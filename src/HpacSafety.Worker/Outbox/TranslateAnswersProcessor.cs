@@ -11,7 +11,7 @@ namespace HpacSafety.Worker.Outbox;
 ///     that needs machine translation, via the same <see cref="ITranslator" /> port
 ///     question authoring uses. An answer that never has a second language, or
 ///     took one from its choice at submission, is never sent. See ADR-0080,
-///     ADR-0110. Never touches <c>Value</c> or <c>Locale</c> — those are
+///     ADR-0112. Never touches <c>Value</c> or <c>Locale</c> — those are
 ///     immutable, written once by the submission endpoint.
 /// </summary>
 public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITranslator translator)

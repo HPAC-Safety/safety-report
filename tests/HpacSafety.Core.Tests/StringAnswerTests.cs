@@ -57,7 +57,7 @@ public class StringAnswerTests
 		var answer = report.Answer(question, "Colombie-Britannique", Now);
 
 		// Then — the curated list already holds the other language, so it is
-		// copied now rather than sent anywhere (ADR-0110)
+		// copied now rather than sent anywhere (ADR-0112)
 		answer.Locale.ShouldBe(Locale.FrCa);
 		answer.Value.ShouldBe("Colombie-Britannique");
 		answer.TranslationMode.ShouldBe(TranslationMode.Choice);
@@ -156,7 +156,7 @@ public class StringAnswerTests
 	public void GivenNarrativeAnswer_WhenRecorded_ThenAlsoFlaggedForTranslation()
 	{
 		// Given — long text needs translation unless an administrator says
-		// otherwise (ADR-0110); nothing on the submission path translates it
+		// otherwise (ADR-0112); nothing on the submission path translates it
 		var report = new Report(Locale.EnCa, Now);
 
 		// When

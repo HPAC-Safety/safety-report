@@ -77,7 +77,7 @@ public sealed record ReportAnswerView(
 /// <param name="Locale">The language <paramref name="Value" /> is written in.</param>
 /// <param name="TranslatedValue">
 ///     The other official language, once supplied. Always null for an answer that
-///     never has one, such as a name, an email, or a date (ADR-0110).
+///     never has one, such as a name, an email, or a date (ADR-0112).
 /// </param>
 /// <param name="TranslationSource"><c>auto</c>, <c>human</c>, or <c>choice</c>, once supplied.</param>
 public sealed record ReportAnswerValueView(

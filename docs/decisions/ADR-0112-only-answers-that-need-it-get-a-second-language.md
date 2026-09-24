@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: translation, answers, DeepL, ITranslator, worker, choices, question bank, ADR-0080, ADR-0072
 ---
 
-# ADR-0110 — Only answers that need it get a second language; a picker's comes from its choice
+# ADR-0112 — Only answers that need it get a second language; a picker's comes from its choice
 
 **Status:** Accepted. Amends
 [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md):

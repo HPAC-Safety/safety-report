@@ -34,7 +34,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	[Fact]
 	public async Task GivenNarrativePickerNameAndEmail_WhenProcessed_ThenOnlyTheNarrativeIsSent()
 	{
-		// Given — ADR-0110: long text marked for translation goes to the
+		// Given — ADR-0112: long text marked for translation goes to the
 		// Worker; a picker already took its choice's label at submission; a
 		// name (unmarked short text) and an email never have a second language
 		var connectionString = await postgres.CreateMigratedDatabase();

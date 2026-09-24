@@ -93,7 +93,7 @@ Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
 clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
 The report language is exactly `en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080, ADR-0110)
+## Bilingual answers (ADR-0080, ADR-0112)
 
 `value` and `locale` are written once, here, and never again — no endpoint
 ever updates either column after this one inserts them. How an answer gets

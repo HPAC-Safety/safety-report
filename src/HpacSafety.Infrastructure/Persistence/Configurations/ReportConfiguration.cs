@@ -81,7 +81,7 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 
 		builder.Property(answer => answer.Locale).IsRequired();
 
-		// Decided once, when the answer is recorded (ADR-0110). Existing rows are
+		// Decided once, when the answer is recorded (ADR-0112). Existing rows are
 		// backfilled from their revision by the migration that added it.
 		builder.Property(answer => answer.TranslationMode).IsRequired();
 		builder.ToTable(t => t.HasCheckConstraint(
@@ -95,7 +95,7 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 		builder.HasIndex(answer => answer.QuestionRevisionId);
 
 		// The translation queue: every answer awaiting machine translation (ADR-0080,
-		// ADR-0110). Ordered by when it was answered, so the queue reads oldest
+		// ADR-0112). Ordered by when it was answered, so the queue reads oldest
 		// first without a sort at query time.
 		builder.HasIndex(answer => answer.AnsweredAt)
 			.HasFilter("value IS NOT NULL AND translated_value IS NULL AND translation_mode = 'machine'");

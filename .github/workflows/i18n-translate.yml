@@ -150,6 +150,8 @@ jobs:
           GH_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN || github.token }}
           USING_DEFAULT_TOKEN: ${{ secrets.TRANSLATION_PR_TOKEN == '' }}
           SUMMARY: ${{ steps.translate.outputs.summary }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
 
@@ -167,7 +169,17 @@ jobs:
             git add locales/.fr-CA.pending
           fi
           git commit -m 'Translate new/changed locale keys' -m "$SUMMARY."
-          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
+
+          # traceability.yml may have committed onto the same branch for the
+          # same push. Its commit changes nothing below, so it started no run
+          # of this workflow; the tool replays this commit on top of it
+          # (ADR-0113). --paths is this workflow's pull_request_target paths,
+          # verbatim; tests/js/push-to-pr-branch.test.mjs fails if they
+          # disagree.
+          node tools/push-to-pr-branch.mjs \
+            --branch "$HEAD_REF" \
+            --event-sha "$HEAD_SHA" \
+            --paths 'locales/en-CA.json,locales/glossary.json,locales/terms.json,tools/translate-locale.mjs,tools/translator.mjs,.github/workflows/i18n-translate.yml'
 
       # A pull request opened with the built-in GITHUB_TOKEN does not trigger
       # workflows — GitHub's loop protection — so CI would never report on it and

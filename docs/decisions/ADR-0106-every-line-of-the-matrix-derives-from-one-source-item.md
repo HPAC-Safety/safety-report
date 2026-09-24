@@ -16,7 +16,10 @@ on the matrix's format, and
 [ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md) on how
 `traceability.yml` handles a rejected push. The matrix is still generated,
 still tracked, still drift-checked, and still regenerated onto same-repo pull
-requests.
+requests. Amended by
+[ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md)
+on point 4: a push moved by the other bot started no run, so the commit is
+replayed on top of it rather than dropped.
 
 ## Context
 

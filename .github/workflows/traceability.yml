@@ -19,8 +19,12 @@ name: Traceability matrix
 #     (the post-merge/post-rewrite hooks do it after every merge or rebase),
 #     and ci.yml's "docs" job still checks the result with the head's code.
 #
-# A push rejected because the author pushed meanwhile is a superseded run,
-# not a failure: the newer push regenerates over the newer head (ADR-0106).
+# A push can be rejected because the branch moved while this ran. When the
+# newer push changed a file below, it started its own run, and this one is
+# superseded (ADR-0106). When it didn't — i18n-translate.yml committed its
+# French for the same push — nothing else will regenerate, so the commit is
+# replayed on top and pushed again (ADR-0113). tools/push-to-pr-branch.mjs
+# decides which.
 #
 # The main ruleset already requires branches to be up to date; with ci.yml's
 # "docs" job required too, a PR that falls behind is updated, this job re-runs
@@ -129,15 +133,10 @@ jobs:
           git add docs/traceability.md
           git commit -m 'Regenerate the traceability matrix'
 
-          # The author may push while this runs. That push starts its own run
-          # of this job over the newer head, so a rejection here means this
-          # run is superseded, not failed (ADR-0106). Anything else is real.
-          if ! git push origin "HEAD:${HEAD_REF}"; then
-            current=$(git ls-remote origin "refs/heads/${HEAD_REF}" | cut -f1)
-            if [ -n "$current" ] && [ "$current" != "$HEAD_SHA" ]; then
-              echo "::notice::${HEAD_REF} moved to ${current} while the matrix was regenerating. The run for that push regenerates it; nothing to do here."
-              exit 0
-            fi
-            echo "::error::Could not push the regenerated matrix to ${HEAD_REF}."
-            exit 1
-          fi
+          # --paths is this workflow's pull_request_target paths, verbatim;
+          # tests/js/push-to-pr-branch.test.mjs fails if they disagree. The
+          # tool is the base branch's copy, like the generator.
+          node ../base/tools/push-to-pr-branch.mjs \
+            --branch "$HEAD_REF" \
+            --event-sha "$HEAD_SHA" \
+            --paths 'features/**,docs/system-overview.md,docs/data-and-persistence.md,docs/interfaces-and-data-flow.md,docs/infrastructure-and-operations.md,docs/testing-and-quality.md,docs/traceability.md,tools/traceability.mjs,.github/workflows/traceability.yml'

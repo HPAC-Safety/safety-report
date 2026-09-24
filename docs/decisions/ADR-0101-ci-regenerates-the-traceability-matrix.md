@@ -17,6 +17,10 @@ generated, still tracked, and never hand-edited. Amended by
 [ADR-0106](ADR-0106-every-line-of-the-matrix-derives-from-one-source-item.md):
 a push rejected because the author pushed meanwhile is a superseded run, not
 a failure.
+Amended by
+[ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md):
+a push rejected because the translation bot pushed first is replayed on top
+of it.
 
 ## Context
 

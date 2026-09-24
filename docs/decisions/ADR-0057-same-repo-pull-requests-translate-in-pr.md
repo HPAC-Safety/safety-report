@@ -15,7 +15,10 @@ keywords: i18n, DeepL, pull_request_target, security boundary, ADR-0021
 boundary that ADR describes (`pull_request` never translates, only a push to
 `main` does) is unchanged for fork-authored pull requests. This ADR adds a
 second, narrower path for pull requests opened from a branch of this
-repository itself.
+repository itself. Amended by
+[ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md):
+the commit is pushed through `tools/push-to-pr-branch.mjs`, which replays it
+on top of a traceability commit that landed first.
 
 ## Context
 

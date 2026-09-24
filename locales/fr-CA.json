@@ -352,9 +352,9 @@
         "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
       },
       "mediaConsent": {
-        "yes": "#The reporter agreed to share their photos and video on the published report.",
-        "no": "#The reporter did not agree to share their photos and video. None is ever public.",
-        "unanswered": "#The reporter was not asked about sharing photos and video, so none is ever public."
+        "yes": "Le journaliste a accepté que ses photos et sa vidéo soient incluses dans l'article publié.",
+        "no": "Le journaliste n'a pas accepté de partager ses photos et sa vidéo. Aucune n'est jamais rendue publique.",
+        "unanswered": "On n'a pas demandé au journaliste s'il partageait des photos et des vidéos; par conséquent, aucune n'est jamais rendue publique."
       },
       "summary": "Résumé",
       "summaryEn": "Anglais",
@@ -393,14 +393,14 @@
       "view": "Afficher",
       "download": "Téléverser",
       "visibility": {
-        "public": "#Shown on the public report",
-        "when_published": "#Shown once the report is published",
-        "hidden": "#Hidden from the public",
-        "no_consent": "#Not public: the reporter did not agree to share media",
-        "private": "#Not public"
+        "public": "Figurant dans le rapport public",
+        "when_published": "Affiché une fois le rapport publié",
+        "hidden": "À l’abri des regards du public",
+        "no_consent": "Non public : le journaliste n’a pas accepté de partager les fichiers multimédias",
+        "private": "Non public"
       },
-      "hide": "#Hide from the public",
-      "show": "#Show on the public report"
+      "hide": "Se cacher du public",
+      "show": "Afficher dans le rapport public"
     },
     "action": {
       "label": "Examiner les mesures",
@@ -482,14 +482,14 @@
     }
   },
   "media": {
-    "title": "#Photos and video",
-    "photoLabel": "#Photo {index} of {count}",
-    "videoLabel": "#Video {index} of {count}",
-    "hide": "#Hide",
-    "keep": "#Keep",
-    "confirmHide": "#Hide this from everyone?",
+    "title": "Photos et vidéo",
+    "photoLabel": "Photo {index} de {count}",
+    "videoLabel": "Vidéo {index} de {count}",
+    "hide": "Masquer",
+    "keep": "Conserver",
+    "confirmHide": "Cacher ceci à tout le monde?",
     "error": {
-      "hide": "#That could not be hidden. Try again."
+      "hide": "Cela ne pouvait pas passer inaperçu. Veuillez réessayer."
     }
   },
   "comments": {

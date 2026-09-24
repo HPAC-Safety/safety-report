@@ -29,7 +29,7 @@
     "manageReports": "Gérer les rapports",
     "manageQuestions": "Gérer les questions",
     "manageAnswerTranslations": "Réponses en attente de traduction",
-    "pendingCount": "#{count} waiting"
+    "pendingCount": "{count} en attente"
   },
   "language": {
     "switchTo": "Passer à {language}",

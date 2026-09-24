@@ -22,53 +22,47 @@ stateDiagram-v2
     Rejected --> PendingReview: reopened
 ```
 
-Approval and publication are one officer action (ADR-0105). Review commands
-live on `Report` — `ApprovePair`, `RejectReview`, `Reopen`, `Unpublish`,
-`EditSummary`, `WriteManualSummary` — and refuse any state the diagram does not
-allow. The report and summary use PostgreSQL `xmin` as their row version, so a
-command based on a stale view is refused with `409`.
-
-`SummaryFailed` exists so that a report can never become invisible. If the model
-is down, the API key is wrong, or a message poisons the queue, the report still
-lands in front of a human with the error attached. A safety officer can always
-write the summary manually.
+- Approval and publication are one officer action (ADR-0105).
+- Review commands live on `Report` — `ApprovePair`, `RejectReview`, `Reopen`,
+  `Unpublish`, `EditSummary`, `WriteManualSummary` — and refuse any transition
+  the diagram does not allow.
+- Report and summary use PostgreSQL `xmin` as row version; a command from a
+  stale view gets `409`.
+- **`SummaryFailed` keeps a report visible.** Model down, wrong API key, or a
+  poison message: the report still reaches a human with the error attached,
+  and a safety officer can always write the summary by hand.
 
 ## Tables
 
 | Table | Holds |
 |---|---|
 | `questions` | Stable question identity: key, role, privacy, order, section, active/deleted state. |
-| `question_revisions` | Complete, immutable bilingual revisions of a question — wording, type, required flag. Answers reference a revision, never the question row. |
-| `question_choices` | A question's own editable choices, outside its revisions. Editing them never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (ADR-0095). |
-| `reports` | The submission. Only `consent_publish` projects onto a typed property; every other answer lives in `report_answers`. **`language`** records the locale the reporter actually wrote in — see below. |
-| `report_answers` | One row per question asked, referencing the exact revision it was answered under. |
-| `report_files` | Blob keys for uploads, an `AttachmentKind`, and (once wired up) the file-upload answer they belong to. |
-| `summaries` | **One row per report**, holding `ai_summary_en`, `ai_summary_fr`, shared model/prompt provenance, and one approval covering the pair. |
-| `outbox_messages` | Work to be done, written in the same transaction as the report. |
-| `audit_log` | Which token subject approved, edited, or rejected what, and when. The one table with no `Deleted` column — it is append-only. |
+| `question_revisions` | Complete, immutable bilingual revisions — wording, type, required flag. Answers reference a revision, never the question row. |
+| `question_choices` | A question's own editable choices, outside its revisions. Editing never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (ADR-0095). |
+| `reports` | The submission. Only the two consents project onto typed columns (see "The two consents"); every other answer is in `report_answers`. `language` is the locale the reporter wrote in. |
+| `report_answers` | One row per question asked, referencing the exact revision answered. |
+| `report_files` | Blob keys, an `AttachmentKind`, and (once wired up) the file-upload answer they belong to. |
+| `summaries` | **One row per report**: `ai_summary_en`, `ai_summary_fr`, shared model/prompt provenance, one approval for the pair. |
+| `outbox_messages` | Work to do, written in the same transaction as the report. |
+| `audit_log` | Which token subject approved, edited, or rejected what, and when. Append-only; the one table with no `Deleted` column. |
 
-**There is no user table.** Identity and role come from claims on a validated
-bearer token, per request, and are never persisted
-([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-An approver or audit actor is an opaque `varchar(256)` subject with no foreign
-key. The three roles are `User`, `SafetyOfficer`, and `Administrator`; a report
-records nothing about the member who filed it.
+- **No user table.** Identity and role come from a validated bearer token per
+  request and are never persisted
+  ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
+  An approver or audit actor is an opaque `varchar(256)` subject with no
+  foreign key. A report records nothing about the member who filed it.
+- Every table except `audit_log` has `Deleted timestamptz` and a default
+  live-row query filter (ADR-0040).
 
-Every table above except `audit_log` has a `Deleted timestamptz` column and a
-default live-row query filter. See ADR-0040.
+## Language
 
-## Language, and why `reports.language` exists
-
-A report submitted in French is stored in French. The raw narrative is never
-translated — it is the reporter's own account, and a translated account of a
-crash is a paraphrased account of a crash.
-
-`reports.language` records the locale the report was written in. The Worker
-makes exactly one model call using that locale and receives both official
-languages back in the same response — there is no separate translation step,
-and therefore no separate row or approval per language. `summaries` holds one
-row per report; `AiSummaryEn`/`AiSummaryFr` are both populated by that one
-call, and editing either one clears the pair's shared approval.
+- A report is stored in the language it was written in. The raw narrative is
+  never translated: a translated account of a crash is a paraphrased one.
+- `reports.language` is that locale. The Worker makes one model call in it and
+  gets both official languages back — no separate translation step, row, or
+  per-language approval.
+- `AiSummaryEn` and `AiSummaryFr` both come from that call; editing either
+  clears the pair's shared approval.
 
 ```mermaid
 flowchart LR
@@ -79,64 +73,63 @@ flowchart LR
 
 ## The outbox
 
-The API writes the report and its outbox row in **one** `SaveChangesAsync`.
-There is no "save, then call the worker" — that loses reports whenever the
-process dies between the two.
-
-The worker claims rows with `SELECT ... FOR UPDATE SKIP LOCKED`, applies
-exponential backoff, and moves a message aside after a poison threshold rather
-than retrying it forever. Polling is the source of truth; Postgres
-`LISTEN/NOTIFY` may be layered on later purely to cut latency, never as the only
-delivery mechanism. `OutboxMessage.Type` is a typed `OutboxMessageType`
-(`SummarizeReport` today), stored as an invariant code like every other domain
-enum; `Payload` carries identifiers only, never report content.
+- The API writes the report and its outbox row in **one** `SaveChangesAsync`.
+  Never "save, then call the worker" — that loses reports when the process dies
+  between the two.
+- The Worker claims rows with `SELECT ... FOR UPDATE SKIP LOCKED`, backs off
+  exponentially, and moves a message aside past a poison threshold.
+- Polling is the source of truth. `LISTEN/NOTIFY` may be added later only to
+  cut latency, never as the sole delivery.
+- `OutboxMessage.Type` is a typed `OutboxMessageType` (`SummarizeReport`
+  today), stored as an invariant code. `Payload` carries identifiers only,
+  never report content.
 
 ## Sensitivity
 
-Three tiers, and the distinction drives access control, logging, and what may
-be sent to a model:
+Three tiers drive access control, logging, and what may reach a model:
 
 1. **Restricted** — reporter and pilot names, phone, email, member number, raw
    narrative, original uploaded media. Admin-only, never logged, never sent to
    a translation service.
-2. **Internal** — manufacturer, model, precise site. Used for HPAC's own trend
+2. **Internal** — manufacturer, model, precise site. For HPAC's own trend
    analysis; never published.
-3. **Publishable** — the approved summary, the publication timestamp, the
-   visible comment count, and, when media was consented to, each public
-   image or video derivative's opaque id and kind (ADR-0117). The public DTO
-   is that allowlist and nothing else — no province, severity, or aircraft type is ever published,
-   because they are ordinary `report_answers` rows, not typed columns a public
-   query could accidentally select.
+3. **Publishable** — the approved summary, publication timestamp, visible
+   comment count, and, with media consent, each public image or video
+   derivative's opaque id and kind (ADR-0117).
+   - The public DTO is that allowlist and nothing else. No province, severity,
+     or aircraft type is ever published: they are ordinary `report_answers`
+     rows, not typed columns a public query could select by accident.
 
-A field's tier is a property of the field, not of the screen it appears on. If
-you are unsure which tier something belongs to, it is Restricted.
+- A field's tier belongs to the field, not the screen. Unsure? Restricted.
+- Encryption is AWS-managed at rest plus TLS; no application field cipher
+  (ADR-0019, superseded by ADR-0040).
+- Privacy is enforced by:
+  - `Question.IsPrivate` controlling what reaches the model's
+    `report_content`;
+  - access control on who may query `report_answers`;
+  - the public DTO being a positive allowlist.
 
-Storage and transport encryption are AWS-managed encryption at rest and TLS —
-there is no application-side field cipher (ADR-0019, superseded by ADR-0040).
-Privacy is enforced by `Question.IsPrivate` controlling what reaches the
-model's `report_content` section, by access control on who may query
-`report_answers` at all, and by the public DTO being a positive allowlist.
+## The two consents
 
-## The two consents are the only answers a report reads by name
-
-Every other question — province, injury, occurrence date, aircraft, whatever
-role an administrator assigns it — is simply an ordinary row in
-`report_answers`. `Report` carries no typed projection for any of them: the
-admin review DTO reads exact asked questions and answers directly, and nothing
-downstream needs a hardcoded key to find "the injury one." `QuestionRole` has
-exactly three members, `None`, `ConsentPublish`, and `ConsentMedia`, for this
-reason; the two consents project onto `reports.consent_publish` and
-`reports.consent_media` (ADR-0117).
+- The two consents are the only answers a report reads by name. They project
+  onto `reports.consent_publish` and `reports.consent_media` (ADR-0117).
+- Every other question — province, injury, date, aircraft, any role an
+  administrator assigns — is an ordinary `report_answers` row. `Report` has no
+  typed projection for them; the admin review DTO reads the exact asked
+  questions and answers, and nothing needs a hardcoded key.
+- So `QuestionRole` has exactly `None`, `ConsentPublish`, and `ConsentMedia`.
 
 ## Enums
 
-Stored as stable invariant codes, localized only at the edge. Never store
-display text in the database — the same row has to render in English and French.
+Stored as stable invariant codes and localized only at the edge. Never store
+display text: the same row renders in English and French.
 
 ## Related
 
-- `docs/data-and-persistence.md` — the canonical target schema
-- `docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md` — the migration that reached it
-- `docs/form-spec.md` — the source of the field set
+- `docs/data-and-persistence.md` — canonical target schema
+- `docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md` — the
+  migration that reached it
+- `docs/form-spec.md` — source of the field set
 - `docs/data-handling.md` — retention, encryption, PIPEDA
-- `anonymize-hpac-reports` — what happens between `Submitted` and `PendingReview`
+- `anonymize-hpac-reports` — what happens between `Submitted` and
+  `PendingReview`

@@ -141,8 +141,20 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
   Renovate writes its own `dependency` exemption for `src/web` bumps from
   `renovate.json`
   ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
+  It writes one for Worker `Dockerfile` base-image bumps too
+  ([ADR-0120](../../docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
   If that check fails on a Renovate pull request, fix the citation in
   `renovate.json`; never edit the pull request's body by hand.
+- The .NET major moves in one pull request, never through Renovate
+  ([ADR-0120](../../docs/decisions/ADR-0120-the-dotnet-major-moves-in-one-pull-request.md)).
+  To upgrade, change all four together:
+  - `global.json` `sdk.version`
+  - `<TargetFramework>` in `Directory.Build.props`
+  - the `FROM` tag and digest in `src/HpacSafety.Worker/Dockerfile`
+  - the .NET rule's `allowedVersions` in `renovate.json` (`/^N\./`)
+
+  Also move any `Microsoft.*` package whose major follows .NET's. Run
+  `node tools/dotnet-major.mjs`; the required `docs` check runs it too.
 - Write the scenario before the implementation, and when the implementation
   turns out to do the wrong thing, correct the scenario rather than arguing it
   out in conversation

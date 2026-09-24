@@ -97,12 +97,31 @@
 			"enabled": false
 		},
 		{
-			"description": "The .NET SDK in global.json is pinned deliberately; never automerge it",
-			"matchManagers": [
+			"description": "The .NET SDK in global.json is pinned deliberately; never automerge it. Renovate reads global.json with its nuget manager as the dependency dotnet-sdk; there is no dotnet-sdk manager, so matching on one matched nothing (ADR-0120).",
+			"matchPackageNames": [
 				"dotnet-sdk"
 			],
 			"groupName": ".NET SDK",
 			"automerge": false
+		},
+		{
+			"description": "Hold the .NET SDK and every mcr.microsoft.com/dotnet image to the major the projects target. Renovate cannot see the target framework, so on its own it offered runtime:11.0 to a net10.0 Worker that would not start on it (#429). Digest, minor, and patch updates still flow. The next major is moved by hand in one pull request: global.json, <TargetFramework> in Directory.Build.props, the Dockerfile FROM, and this allowedVersions. tools/dotnet-major.mjs fails the docs check when they disagree (ADR-0120).",
+			"matchPackageNames": [
+				"dotnet-sdk",
+				"mcr.microsoft.com/dotnet/**"
+			],
+			"allowedVersions": "/^10\\./"
+		},
+		{
+			"description": "A Worker base-image bump changes src/HpacSafety.Worker/Dockerfile, and feature-coverage counts src/** as behavior-bearing. The PR cites the video claims the image carries. The required build check re-proves them by building the image and running ffmpeg and ffprobe inside it. The dependency category fails if anything but a manifest, lock file, or Dockerfile changed (ADR-0090, ADR-0111, ADR-0120).",
+			"matchFileNames": [
+				"src/HpacSafety.Worker/Dockerfile"
+			],
+			"prBodyNotes": [
+				"",
+				"No .feature scenario needed: dependency — the Worker's base image moved within its .NET major; no application source file changed",
+				"Claims preserved: REQ-MED-007, REQ-MED-015"
+			]
 		},
 		{
 			"description": "Renovate's terraform manager computes .terraform.lock.hcl checksums itself instead of running terraform, and has produced a checksum that did not match the registry's real package (issue #118). Disabled here; .github/workflows/terraform-relock.yml regenerates the lock file with the real terraform binary on a schedule instead, verified by the required infra CI check.",

@@ -35,7 +35,7 @@ import {
 	type FormStep,
 } from "./steps"
 import { useStrayFileDropGuard } from "./useStrayFileDropGuard"
-import { isYesNoType, yesNoWord } from "./yesNo"
+import { isYesNoType, yesNoValue } from "./yesNo"
 
 type LoadState =
 	| { status: "loading" }
@@ -375,8 +375,8 @@ export function ReportForm() {
 
 				submitAnswers.push({
 					questionRevisionId: question.revisionId,
-					// Written in the language the report is sent in (ADR-0127).
-					value: value !== null && isYesNoType(question.type) ? yesNoWord(value, locale) : value,
+					// A yes/no is sent as a JSON boolean, whatever the language (ADR-0130).
+					value: value !== null && isYesNoType(question.type) ? yesNoValue(value) : value,
 					choices: null,
 					attachments: null,
 				})

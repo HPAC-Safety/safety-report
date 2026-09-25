@@ -33,7 +33,8 @@ export interface ReportListItem {
 }
 
 export interface ReportAnswerValue {
-	value: string
+	/** A boolean for a yes/no or checkbox answer (ADR-0130); the reporter's words otherwise. */
+	value: string | boolean
 	locale: string
 	translatedValue: string | null
 	translationSource: string | null

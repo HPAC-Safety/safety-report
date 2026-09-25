@@ -190,8 +190,9 @@ known differences:
 The website's S3 bucket, CloudFront distribution, certificates, network, RDS,
 uploads bucket, alarms, and ECR already match.
 
-**CON-INF-002** No SES/email resources, messaging integrations, public attachment distribution,
-application encryption key, speculative queueing platform, or autoscaling
+**CON-INF-002** No SES/email resources, messaging integrations, public bucket or CDN copy of
+an attachment (a published file is reached only through a pre-signed GET of
+at most 15 minutes, ADR-0117), application encryption key, speculative queueing platform, or autoscaling
 machinery is part of the target.
 *Verified by: REQ-MOD-039 for the publication and messaging boundary; none for
 the rest.* Existing infrastructure for those removed
@@ -216,15 +217,20 @@ application code.
 ## Configuration and secrets
 
 Configuration includes database/storage endpoints, attachment count and 50 MB size
-limit, accepted attachment types, trusted proxy networks, the site origin,
+limit, accepted attachment types, the site origin,
 rate limits, the authentication issuer, audience, and role-claim name,
 model/prompt version, retry bounds, and stuck-work thresholds.
 
 **CON-INF-004** There are no cookie settings, no Turnstile configuration, and no HPAC auth kill
 switch or hardcoded endpoint. Sessions are bearer tokens, Turnstile is gone
 ([ADR-0068](decisions/ADR-0068-the-member-token-replaces-turnstile-on-submission.md)),
-and this system never contacts a member login endpoint
+and outside Development this system never contacts a member login endpoint
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+The one exception is Development's members-site sign-in
+([ADR-0079](decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
+Forwarded headers are trusted without a proxy list, because the security group
+admits only the load balancer
+([ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
 *Verified by: REQ-SUB-018, REQ-MOD-003.*
 
 **CON-INF-005** Secret values live in Secrets Manager and never in Terraform state, GitHub
@@ -259,11 +265,11 @@ production mutation.
 
 On an approved main deployment:
 
-1. immutable API, Worker, and web images are built and pushed with the
-   commit SHA;
-2. the API (Lambda function), Worker, and web (ECS services) deploy
-   independently using that image version, and the web deploy invalidates
-   the CloudFront distribution; and
+1. immutable API and Worker images are built and pushed to ECR with the commit
+   SHA, and the website is built once;
+2. the API and Worker Lambda functions are updated to that image, and the
+   website build is synced to its S3 bucket and the CloudFront distribution
+   invalidated, each independently; and
 3. health/readiness checks confirm the rollout.
 
 There is no migration task or deploy step. The API and the Worker each apply

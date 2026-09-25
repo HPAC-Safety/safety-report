@@ -6,10 +6,11 @@ type: guide
 
 # Authentication and authorization
 
-Reading the public feed, a public report detail, and its comments requires no
-account. **Everything else — filing a report, commenting on a published
-report, and every review or administration action — requires a signed-in HPAC
-member.** A bearer token sent to a public read is used only to mark the
+No account is needed to read the current form, the public feed, a public
+report's detail, its media links, or its comments, or the authentication
+configuration and the health check. **Filing a report, uploading an
+attachment, commenting on a published report, and every review or
+administration action require a signed-in HPAC member.** A bearer token sent to a public read is used only to mark the
 reader's own comments.
 
 ## The token is the identity

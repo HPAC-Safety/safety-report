@@ -36,14 +36,17 @@ fatalities. The canonical storage, deletion, AI, and attachment rules are in
   validated token, per request. Where an approver or an audit actor is
   recorded, it is an opaque token subject that joins to nothing
   ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
-- Every application record except append-only `audit_log` has an irreversible
-  deletion timestamp. Report deletion cascade-stamps dependents in one
+- Every application record except append-only `audit_log` and the Typeform
+  import's hard-deleted `pending_import_logic` notes (ADR-0077) has an
+  irreversible deletion timestamp. Report deletion cascade-stamps dependents in one
   transaction; there is no restore or physical-delete workflow.
 - Public queries use exact allowlist DTOs and never join raw answers or files.
-  The one file-shaped public read is `public_report_media`: the opaque id and
-  kind of a published report's verified image and video derivatives, when its
-  reporter consented to sharing media
-  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+  The one file-shaped public read is `public_report_media`. It lists the
+  opaque id, kind, and (for a document) coarse format of a published report's
+  verified image and video derivatives when media was consented to, and of
+  its validated documents when `consent_documents` is true
+  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+  [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 ## Model boundary
 

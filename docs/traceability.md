@@ -1502,6 +1502,10 @@ A choice answer reads both languages from its choice — *Reqnroll, Covered*
 
 A type-ahead answer names a value, and the Worker translates only a new one — *Reqnroll, Planned*
 
+### REQ-SUB-083
+
+The form names each chosen choice by its identifier — *playwright-bdd, Covered*
+
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001

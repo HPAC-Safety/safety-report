@@ -32,6 +32,10 @@ Accepted. This ADR:
   [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md)'s
   immutability, once, for the conversion below. It does not generalize.
 
+Extended by #495: the admin report API's `consent` and `mediaConsent` fields,
+the report's projected consent state, are also JSON `true`, `false`, or `null`
+(unanswered), never the words `yes`, `no`, or `unanswered`.
+
 ## Context
 
 A yes/no answer is a fact, not a phrase. ADR-0072 stored it as the tokens

@@ -86,7 +86,7 @@ public static class ReportEndpoints
 				report.SubmittedAt,
 				EnumCode.Of(report.Status),
 				report.Language.Code,
-				ConsentCode(report.ConsentPublish),
+				report.ConsentPublish,
 				report.IsStuck))
 			.ToList());
 	}
@@ -326,8 +326,8 @@ public static class ReportEndpoints
 			report.SubmittedAt,
 			EnumCode.Of(report.Status),
 			report.Language.Code,
-			ConsentCode(report.ConsentPublish),
-			ConsentCode(report.ConsentMedia),
+			report.ConsentPublish,
+			report.ConsentMedia,
 			isStuck,
 			report.SummaryError,
 			AnswersOf(report, revisions),
@@ -419,16 +419,6 @@ public static class ReportEndpoints
 		}
 
 		return report.Status is ReportStatus.Published ? "public" : "when_published";
-	}
-
-	private static string ConsentCode(bool? consent)
-	{
-		return consent switch
-		{
-			true => "yes",
-			false => "no",
-			null => "unanswered",
-		};
 	}
 
 	/// <summary>

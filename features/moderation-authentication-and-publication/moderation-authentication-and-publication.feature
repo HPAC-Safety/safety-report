@@ -262,6 +262,20 @@ Scenario: A Safety Officer reviews flagged type-ahead values on one page
   Then "Coopers" leaves the list
   And "Cooper's" is no longer flagged
 
+@REQ-MOD-096
+Scenario Outline: A report's consent reaches the admin view as true, false, or null
+  Given a report whose publication consent is <publication> and whose media consent is <media>
+  When a safety officer reads the report list and the report's detail
+  Then the list row and the detail give consent as <consent json>
+  And the detail gives media consent as <media json>
+
+Examples:
+  | publication | media     | consent json | media json |
+  | given       | given     | true         | true       |
+  | given       | refused   | true         | false      |
+  | given       | not asked | true         | null       |
+  | refused     | not asked | false        | null       |
+
 @REQ-MOD-028
 Scenario Outline: Only an Administrator may author a question revision
   Given a member has the <role> role

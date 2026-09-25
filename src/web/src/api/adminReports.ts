@@ -10,8 +10,14 @@ export type ReportStatus =
 	| "published"
 	| "unpublished"
 
-/** Publication consent: the reporter's yes or no, or unanswered on an older report. */
-export type ReportConsent = "yes" | "no" | "unanswered"
+/** A consent the reporter gave (`true`), refused (`false`), or left unanswered (`null`), never a word (ADR-0130). */
+export type ReportConsent = boolean | null
+
+/** The locale-catalogue suffix a consent reads as: `reports.detail.consent.<suffix>`. */
+export function consentKey(consent: ReportConsent): "yes" | "no" | "unanswered" {
+	if (consent === null) return "unanswered"
+	return consent ? "yes" : "no"
+}
 
 /** Each filter the admin report list accepts, in the order the page offers them. */
 export const REPORT_FILTERS = ["all", "needs-action", "published", "unpublished", "private", "summary-failed"] as const

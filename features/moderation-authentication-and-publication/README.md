@@ -69,6 +69,13 @@ when it has waited in Submitted or Summarizing for more than 24 hours. Private
 is about consent and Unpublished is a status, so the two are never merged into
 one badge: a report without consent shows both.
 
+The API gives a report's publication consent (`consent`, on the row and the
+detail) and media consent (`mediaConsent`, on the detail) as a JSON `true`,
+`false`, or `null` when unanswered — never a word. The interface renders each
+from its locale catalogue
+([ADR-0130](../../docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md),
+REQ-MOD-096).
+
 | Filter | Shows |
 |---|---|
 | All (default) | every live report |

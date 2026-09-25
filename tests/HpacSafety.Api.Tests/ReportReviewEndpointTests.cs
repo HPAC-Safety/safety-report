@@ -69,9 +69,9 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var mine = listed.Where(item => seeded.Ids.Contains(item.GetProperty("id").GetString()!)).ToList();
 		mine.Select(item => item.GetProperty("id").GetString())
 			.ShouldBe(seeded.LiveNewestFirst);
-		Item(listed, seeded["private"]).GetProperty("consent").GetString().ShouldBe("no");
+		Item(listed, seeded["private"]).GetProperty("consent").GetBoolean().ShouldBeFalse();
 		Item(listed, seeded["private"]).GetProperty("status").GetString().ShouldBe("unpublished");
-		Item(listed, seeded["published"]).GetProperty("consent").GetString().ShouldBe("yes");
+		Item(listed, seeded["published"]).GetProperty("consent").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["published"]).GetProperty("status").GetString().ShouldBe("published");
 		Item(listed, seeded["pending"]).GetProperty("status").GetString().ShouldBe("pending");
 		Item(listed, seeded["pending"]).GetProperty("language").GetString().ShouldBe("en-CA");
@@ -217,7 +217,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		detail.GetProperty("status").GetString().ShouldBe("pending");
 		detail.GetProperty("language").GetString().ShouldBe("en-CA");
-		detail.GetProperty("consent").GetString().ShouldBe("yes");
+		detail.GetProperty("consent").GetBoolean().ShouldBeTrue();
 
 		var answers = detail.GetProperty("answers").EnumerateArray().ToList();
 		var pilot = answers.Single(answer => answer.GetProperty("questionKey").GetString() == seeded.PilotKey);

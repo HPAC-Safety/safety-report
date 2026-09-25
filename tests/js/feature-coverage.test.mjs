@@ -1,5 +1,6 @@
 import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 import { CATEGORIES, claimsInMatrix, judge, main, parseExemption, rejectExemption } from '../../tools/feature-coverage.mjs'
 import { render } from '../../tools/traceability.mjs'
@@ -199,5 +200,21 @@ describe('main', () => {
 		const { output } = runMain({ changed: ['src/a.cs'], features: [], body: '' })
 
 		for (const category of Object.keys(CATEGORIES)) assert.match(output.error.join('\n'), new RegExp(category))
+	})
+})
+
+// The template is where an author writes the pull-request body, so it names the
+// categories the check accepts (issue #473, lesson 0022).
+describe('pull request template', () => {
+	const template = readFileSync(new URL('../../.github/pull_request_template.md', import.meta.url), 'utf8')
+
+	it('lists exactly the categories the check accepts, with their meanings', () => {
+		const listed = Object.fromEntries([...template.matchAll(/^- ([a-z-]+) — (.+)$/gm)].map(([, category, meaning]) => [category, meaning]))
+
+		assert.deepEqual(listed, CATEGORIES)
+	})
+
+	it('is not itself read as an exemption when left in a body', () => {
+		assert.equal(parseExemption(template), null)
 	})
 })

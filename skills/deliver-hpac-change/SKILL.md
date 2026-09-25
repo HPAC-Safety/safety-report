@@ -125,7 +125,17 @@ prose:
 
 - Rules: `AGENTS.md` "The `feature-coverage` exemption"
   ([ADR-0090](../../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
-- Run `node tools/feature-coverage.mjs` locally, not only in CI.
+- Pick the category from the list in `.github/pull_request_template.md`
+  ("Specification delta"). Never invent one: the vocabulary is closed, and a
+  test keeps the template's list equal to the tool's.
+- Run the check locally, not only in CI. The tool reads its inputs from the
+  environment, so a bare run checks nothing and always passes:
+
+  ```sh
+  CHANGED_BEHAVIOR="$(git diff --name-only origin/main...HEAD -- 'src/**' 'tests/e2e/**/*.ts')" \
+  CHANGED_FEATURES="$(git diff --name-only origin/main...HEAD -- 'features/**/*.feature')" \
+  PR_BODY="$(cat pr-body.md)" node tools/feature-coverage.mjs
+  ```
 - Renovate writes its own `dependency` exemption for `src/web` bumps from
   `renovate.json`
   ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).

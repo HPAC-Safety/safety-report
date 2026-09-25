@@ -15,7 +15,9 @@ keywords: translation, DeepL, ITranslator, worker, answers, provenance, immutabi
 free text marked as needing translation, and a type-ahead value naming no
 bilingual choice, are machine-translated. A select answer copies its choice's
 other label at submission, and every other answer has no second language. The
-immutability of `value` and `locale` stands.
+immutability of `value` and `locale` stands, with one exception:
+[ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md) converts
+every stored yes/no and checkbox word to a boolean, once, in one migration.
 
 ## Context
 

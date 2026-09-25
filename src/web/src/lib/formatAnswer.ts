@@ -2,8 +2,9 @@ import type { Locale } from "../i18n/locales"
 
 /*
  * A date is stored as ISO 8601 `YYYY-MM-DD` and a time as `HH:mm` (ADR-0072),
- * and a yes/no in the reporter's language: `yes`/`no` or `oui`/`non`
- * (ADR-0127). Each reads in the interface language
+ * and a yes/no as a boolean with no words at all (ADR-0130); a report saved in
+ * the browser holds the form's `yes`/`no` token instead. Each reads in the
+ * interface language
  * (REQ-MOD-075, REQ-SUB-068). A stored value that does not parse is shown as
  * stored rather than as "Invalid Date" (REQ-MOD-076).
  */
@@ -20,7 +21,8 @@ export function isLanguageNeutral(type: string): boolean {
 }
 
 /** The stored answer as a person reads it in `locale`. */
-export function formatAnswer(type: string, value: string, locale: Locale, t: (key: string) => string): string {
+export function formatAnswer(type: string, value: string | boolean, locale: Locale, t: (key: string) => string): string {
+	if (typeof value === "boolean") return t(value ? "report.booleanYes" : "report.booleanNo")
 	switch (type) {
 		case "date":
 			return formatDate(value, locale) ?? value
@@ -28,8 +30,8 @@ export function formatAnswer(type: string, value: string, locale: Locale, t: (ke
 			return formatTime(value, locale) ?? value
 		case "yes_no":
 		case "checkbox":
-			if (value === "yes" || value === "oui") return t("report.booleanYes")
-			if (value === "no" || value === "non") return t("report.booleanNo")
+			if (value === "yes") return t("report.booleanYes")
+			if (value === "no") return t("report.booleanNo")
 			return value
 		default:
 			return value

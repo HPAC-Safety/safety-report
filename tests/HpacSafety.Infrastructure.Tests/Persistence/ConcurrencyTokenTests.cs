@@ -141,7 +141,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 		context.Questions.Add(consent);
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consent, [withSummary ? "yes" : "no"], At);
+		report.Answer(consent, withSummary, At);
 		report.BeginSummarizing();
 
 		if (withSummary)

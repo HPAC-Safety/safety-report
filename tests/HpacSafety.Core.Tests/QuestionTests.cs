@@ -267,14 +267,14 @@ public class QuestionTests
 	}
 
 	[Fact]
-	public void GivenYesNoQuestion_WhenAnswersAreChecked_ThenOnlyYesAndNoAreAccepted()
+	public void GivenYesNoQuestion_WhenTextIsChecked_ThenNoneIsOffered()
 	{
-		// Given
+		// Given — a yes/no answer is a boolean, never a word (ADR-0130)
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
 		// Then
-		consent.Offers("yes", Locale.EnCa).ShouldBeTrue();
-		consent.Offers("no", Locale.EnCa).ShouldBeTrue();
+		consent.Offers("yes", Locale.EnCa).ShouldBeFalse();
+		consent.Offers("oui", Locale.FrCa).ShouldBeFalse();
 		consent.Offers("maybe", Locale.EnCa).ShouldBeFalse();
 	}
 

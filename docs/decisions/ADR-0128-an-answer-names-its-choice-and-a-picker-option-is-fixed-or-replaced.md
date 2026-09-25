@@ -75,9 +75,11 @@ option a reporter answered is kept, with its original identity, forever.
 - **A choice an answer names is never erased.** Removing it is a soft delete
   (ADR-0095): it stops being offered, and every answer that names it still
   resolves to it and shows its label.
-- **Yes/no and checkbox answers are not choices.** They stay words in the
-  reporter's language
-  ([ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md)).
+- **Yes/no and checkbox answers are not choices.** They are stored as a
+  boolean
+  ([ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md), which
+  amends this line; it first said they stay words in the reporter's language
+  under [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md)).
 - **The submission names choices by ID.** A picker or multi-select answer
   carries the chosen choices' IDs, and the API accepts only live choices of
   that question. A type-ahead answer carries either a choice's ID or, for a
@@ -164,4 +166,4 @@ in place: answers are immutable (ADR-0080).
 - [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md) — type-ahead values.
 - [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md), [ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md) — partially superseded.
 - [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md), [ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md), [ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md) — amended.
-- [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md) — yes/no stays a word.
+- [ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md) — yes/no is a boolean, not a choice (supersedes ADR-0127).

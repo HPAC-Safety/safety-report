@@ -94,7 +94,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _extraRevisionId, value = (string?)"a synthetic answer" },
 				new { questionRevisionId = _multiSelectRevisionId, choices = new[] { "Blue", "Red" } },
 			},
@@ -146,7 +146,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _extraRevisionId, value = (string?)null },
 				new { questionRevisionId = _fileRevisionId, attachments = Array.Empty<object>() },
 			},
@@ -181,7 +181,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 					new { questionRevisionId = _extraRevisionId, value = (string?)_marker },
 					new
 					{
@@ -205,7 +205,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 					new { questionRevisionId = _supersededRevisionId, value = (string?)"an old answer" },
 				},
 			});
@@ -218,7 +218,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _selectRevisionId, value = (string?)"Blue" },
 			},
 		});
@@ -230,7 +230,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _selectRevisionId, value = (string?)"Not an offered option" },
 			},
 		});
@@ -259,7 +259,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = revisionId, value = (string?)"A site nobody listed" },
 			},
 		});
@@ -288,7 +288,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 					new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
 				},
 			}
@@ -297,7 +297,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 					new { questionRevisionId = _extraRevisionId, value = (string?)Secret },
 				},
 			};
@@ -356,7 +356,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
 			},
 		});
@@ -445,7 +445,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _extraRevisionId, value = (string?)Secret },
 			},
 		});
@@ -535,7 +535,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _selectRevisionId, value = (string?)"Green" },
 			},
 		})));
@@ -605,7 +605,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _consentRevisionId, value = (string?)Secret },
 			},
 		});
@@ -737,7 +737,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new
 				{
 					questionRevisionId = _fileRevisionId,
@@ -849,7 +849,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
 		});
 	}
 
@@ -888,7 +888,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _extraRevisionId, value = (string?)_marker },
 			},
 		});
@@ -917,7 +917,7 @@ public sealed class ReportSubmissionEndpointSteps
 		await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
 		});
 	}
 
@@ -927,7 +927,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
 		});
 	}
 
@@ -986,7 +986,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
 		});
 	}
 
@@ -1006,7 +1006,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response = await Post(new
 		{
 			language = "en-CA",
-			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (string?)"yes" } },
+			answers = new object[] { new { questionRevisionId = _consentRevisionId, value = (bool?)true } },
 		});
 	}
 
@@ -1068,8 +1068,8 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = consent, value = (string?)"yes" },
-					new { questionRevisionId = consent, value = (string?)"no" },
+					new { questionRevisionId = consent, value = (bool?)true },
+					new { questionRevisionId = consent, value = (bool?)false },
 				},
 			}),
 			"an unknown question_revision_id" => await Post(new
@@ -1077,7 +1077,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = consent, value = (bool?)true },
 					new { questionRevisionId = (string?)"not-a-real-id", value = (string?)"x" },
 				},
 			}),
@@ -1086,7 +1086,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = consent, value = (bool?)true },
 					new { questionRevisionId = (string?)await DeletedRevisionId(), value = (string?)"x" },
 				},
 			}),
@@ -1103,7 +1103,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = consent, value = (bool?)true },
 					new
 					{
 						questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"),
@@ -1116,7 +1116,7 @@ public sealed class ReportSubmissionEndpointSteps
 				language = "en-CA",
 				answers = new object[]
 				{
-					new { questionRevisionId = consent, value = (string?)"yes" },
+					new { questionRevisionId = consent, value = (bool?)true },
 					new
 					{
 						questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),
@@ -1149,7 +1149,7 @@ public sealed class ReportSubmissionEndpointSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consent, value = (string?)"yes" },
+				new { questionRevisionId = consent, value = (bool?)true },
 				new
 				{
 					questionRevisionId = (string?)await CreateSyntheticQuestion("file_upload"),

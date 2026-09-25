@@ -202,18 +202,18 @@ Scenario: One answer entry per shown answer-producing revision
 
 @REQ-SUB-077
 @ui
-Scenario Outline: A yes or no is sent in the language the report is submitted in
+Scenario Outline: A yes or no is sent as a JSON boolean whatever language the report is submitted in
   Given a signed-in reporter answers a yes/no question and publication consent in <answered in>
   And the reporter switches the form to <submitted in> before submitting
   When the reporter submits the report
-  Then the yes/no answer is sent as "<no>" and the consent answer as "<yes>"
+  Then the yes/no answer is sent as the JSON boolean false and the consent answer as the JSON boolean true
 
 Examples:
-  | answered in | submitted in | no  | yes |
-  | English     | English      | no  | yes |
-  | French      | French       | non | oui |
-  | English     | French       | non | oui |
-  | French      | English      | no  | yes |
+  | answered in | submitted in |
+  | English     | English      |
+  | French      | French       |
+  | English     | French       |
+  | French      | English      |
 
 @REQ-SUB-005
 Scenario: A skipped answer is represented by an empty value, not omission
@@ -283,8 +283,8 @@ Scenario: Only free text marked for translation is machine-translated
   And it answers an email, a phone number, a date, a time, a number, and a yes/no question
   When the Worker translates that report's answers
   Then only the long-text answer is sent to the translator
-  And the yes/no answer has only its fixed counterpart, written at submission
-  And every other answer keeps no second language
+  And the yes/no answer, stored as a boolean, is never sent to the translator
+  And every other answer, the yes/no answer included, keeps no second language
 
 @REQ-SUB-027
 Scenario: An administrator's correction always wins over the Worker's translation

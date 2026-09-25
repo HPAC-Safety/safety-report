@@ -89,12 +89,24 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 
 		builder.Property(answer => answer.Locale).IsRequired();
 
+		// Named beside `value`, the text form it stands in for (ADR-0130).
+		builder.Property(answer => answer.BooleanValue).HasColumnName("value_boolean");
+
 		// Decided once, when the answer is recorded (ADR-0112). Existing rows are
 		// backfilled from their revision by the migration that added it.
 		builder.Property(answer => answer.TranslationMode).IsRequired();
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_report_answers_translation_mode",
-			"translation_mode IN ('none', 'choice', 'machine', 'fixed')"));
+			"translation_mode IN ('none', 'choice', 'machine')"));
+
+		// A yes/no or checkbox answer is a boolean, never words, and has no second
+		// language (ADR-0130). A row carries text or a boolean, never both.
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_answers_text_or_boolean",
+			"value IS NULL OR value_boolean IS NULL"));
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_report_answers_boolean_has_no_words",
+			"value_boolean IS NULL OR (translated_value IS NULL AND translation_source IS NULL AND translation_mode = 'none')"));
 
 		// Not unique on (report, question): a multi-select records one row per
 		// chosen value, so a report legitimately holds several answers to one

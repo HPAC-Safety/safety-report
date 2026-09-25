@@ -155,12 +155,13 @@ Scenario Outline: Every answer is stored in its written form
 
 Examples:
   | language | type       | submitted       | stored                                  |
-  | English  | yes_no     | yes             | yes                                     |
-  | English  | yes_no     | no              | no                                      |
-  | French   | yes_no     | oui             | oui                                     |
-  | French   | yes_no     | non             | non                                     |
-  | English  | checkbox   | yes             | yes                                     |
-  | French   | checkbox   | oui             | oui                                     |
+  | English  | yes_no     | JSON true       | the boolean true                        |
+  | English  | yes_no     | JSON false      | the boolean false                       |
+  | French   | yes_no     | JSON true       | the boolean true                        |
+  | French   | yes_no     | JSON false      | the boolean false                       |
+  | English  | checkbox   | JSON true       | the boolean true                        |
+  | French   | checkbox   | JSON false      | the boolean false                       |
+  | English  | yes_no     | JSON null       | nothing, because the answer was skipped |
   | English  | date       | 2026-09-21      | 2026-09-21                              |
   | French   | date       | 2026-09-21      | 2026-09-21                              |
   | English  | time       | 14:30           | 14:30                                   |
@@ -184,53 +185,78 @@ Examples:
   | English  | time     | 25:00                      |
   | English  | time     | 14:30:00                   |
   | English  | checkbox | checked                    |
-  | English  | checkbox | oui                        |
-  | French   | checkbox | yes                        |
-  | English  | yes_no   | oui                        |
-  | French   | yes_no   | yes                        |
+  | English  | checkbox | yes                        |
+  | French   | checkbox | oui                        |
+  | English  | yes_no   | yes                        |
+  | French   | yes_no   | non                        |
+  | English  | yes_no   | true                       |
+  | English  | date     | JSON true                  |
+  | English  | number   | JSON false                 |
 
 @REQ-QB-119
-Scenario Outline: A yes or no answer takes its fixed counterpart at submission
+Scenario Outline: A yes or no answer has no second language
   Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
   When the answer is persisted
-  Then its other language is <counterpart>, recorded as a fixed counterpart
+  Then it holds no words and no second language in either column, and its translation mode is none
   And no translation provider was called and nothing waits for the Worker to translate it
 
 Examples:
-  | language | type     | submitted | counterpart |
-  | English  | yes_no   | yes       | oui         |
-  | English  | yes_no   | no        | non         |
-  | French   | yes_no   | oui       | yes         |
-  | French   | yes_no   | non       | no          |
-  | French   | checkbox | oui       | yes         |
+  | language | type     | submitted  |
+  | English  | yes_no   | JSON true  |
+  | French   | yes_no   | JSON false |
+  | French   | checkbox | JSON true  |
 
 @REQ-QB-120
-Scenario Outline: A yes in either language enables a conditional question
+Scenario Outline: Only true enables a conditional question, in either language
   Given a question depends on a yes/no question
   When a reporter writing in <language> answers the yes/no question <answer>
   Then the conditional question is <asked>
 
 Examples:
   | language | answer | asked     |
-  | English  | yes    | asked     |
-  | English  | no     | not asked |
-  | French   | oui    | asked     |
-  | French   | non    | not asked |
+  | English  | true   | asked     |
+  | English  | false  | not asked |
+  | French   | true   | asked     |
+  | French   | false  | not asked |
 
 @REQ-QB-121
-Scenario Outline: A consent answer means the same in either language
-  Given a reporter's answer to <consent> is stored as <stored>
+Scenario Outline: Only true is consent, in either language
+  Given a reporter writing in <language> answers <consent> <answer>
   When the answer is projected onto the report
   Then the report records <consent> as <recorded>
 
 Examples:
-  | consent         | stored | recorded |
-  | consent_publish | yes    | given    |
-  | consent_publish | oui    | given    |
-  | consent_publish | no     | refused  |
-  | consent_publish | non    | refused  |
-  | consent_media   | oui    | given    |
-  | consent_media   | non    | refused  |
+  | language | consent         | answer | recorded |
+  | English  | consent_publish | true   | given    |
+  | French   | consent_publish | true   | given    |
+  | English  | consent_publish | false  | refused  |
+  | French   | consent_publish | false  | refused  |
+  | French   | consent_media   | true   | given    |
+  | English  | consent_media   | false  | refused  |
+
+@REQ-QB-137
+Scenario Outline: A yes or no stored as a word is converted to a boolean once
+  Given a <type> answer was stored as the word "<word>" before yes/no answers were booleans
+  When the database is migrated
+  Then that answer's boolean is <boolean>
+  And the converted answer carries no words and no second language, and its translation mode is none
+  And its locale is unchanged
+
+Examples:
+  | type     | word | boolean |
+  | yes_no   | yes  | true    |
+  | yes_no   | oui  | true    |
+  | yes_no   | no   | false   |
+  | yes_no   | non  | false   |
+  | checkbox | yes  | true    |
+  | checkbox | non  | false   |
+
+@REQ-QB-138
+Scenario: A yes or no stored as anything but the four words stops the conversion
+  Given a yes_no answer was stored as the word "maybe" before yes/no answers were booleans
+  When the database is migrated
+  Then the migration fails and names no answer's value
+  And no answer was converted
 
 @REQ-QB-025
 Scenario: Only consent is projected onto the report aggregate

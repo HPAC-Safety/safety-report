@@ -154,11 +154,12 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 			.SingleAsync(question => question.Key == QuestionKey.ConsentMedia);
 
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(consent, "yes", Now);
+		report.Answer(consent, true, Now);
 
+		// The string is also the consent code the admin view reports.
 		if (mediaConsent is not null)
 		{
-			report.Answer(media, mediaConsent, Now);
+			report.Answer(media, mediaConsent == "yes", Now);
 		}
 
 		var ids = new List<string>();

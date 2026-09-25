@@ -2,7 +2,7 @@
 title: A yes or no answer is stored in the reporter's language
 description: A French reporter's answer to a yes/no, checkbox, or consent question is stored as oui or non, its other language is the fixed counterpart written at submission, and every reader accepts all four words.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-25
 decision-makers: Chase Florell
 keywords: answers, yes/no, checkbox, consent, oui, non, locale, translation, conditional questions, ADR-0072, ADR-0112
@@ -12,7 +12,13 @@ keywords: answers, yes/no, checkbox, consent, oui, non, locale, translation, con
 
 ## Status
 
-Accepted. This ADR:
+Superseded by
+[ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md): a
+yes/no or checkbox answer is stored as `true` or `false`, has no fixed
+counterpart, and is turned into words only by the interface. Existing word
+answers are converted once. The record below is history.
+
+When accepted, this ADR:
 
 - **partially supersedes**
   [ADR-0072](ADR-0072-every-answer-is-stored-as-a-string.md): its boolean row

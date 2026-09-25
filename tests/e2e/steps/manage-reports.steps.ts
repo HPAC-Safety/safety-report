@@ -512,9 +512,13 @@ Given(
 					labelFr: "Quand est-ce arrivé?",
 					type: STORED_TYPE[type],
 					isPrivate: false,
-					// The Worker fills a second language for every answer (ADR-0080),
-					// so the stub carries one, as the API would.
-					values: [{ value: stored, locale: "en-CA", translatedValue: stored, translationSource: "auto" }],
+					// A yes/no is a JSON boolean with no second language (ADR-0130). A
+					// stub of any other type carries one, so the page is seen to hide it.
+					values: [
+						type === "yes/no"
+							? { value: stored === "true", locale: "en-CA", translatedValue: null, translationSource: null }
+							: { value: stored, locale: "en-CA", translatedValue: stored, translationSource: "auto" },
+					],
 				},
 			],
 		}

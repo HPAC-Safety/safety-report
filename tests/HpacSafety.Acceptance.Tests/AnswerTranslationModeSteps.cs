@@ -40,7 +40,7 @@ public sealed class AnswerTranslationModeSteps
 
 	// Each answer this scenario submits, by a name the steps use, with the
 	// revision it answers and the value (or values) given.
-	private readonly Dictionary<string, (string RevisionId, string? Value, string[]? Values)> _answers = [];
+	private readonly Dictionary<string, (string RevisionId, object? Value, string[]? Values)> _answers = [];
 	private readonly RecordingTranslator _translator = new();
 
 	private HttpClient? _admin;
@@ -75,7 +75,7 @@ public sealed class AnswerTranslationModeSteps
 		_answers["date"] = (await CreateQuestion("date"), "2026-09-21", null);
 		_answers["time"] = (await CreateQuestion("time"), "14:30", null);
 		_answers["number"] = (await CreateQuestion("number"), "3", null);
-		_answers["yes_no"] = (await CreateQuestion("yes_no"), "yes", null);
+		_answers["yes_no"] = (await CreateQuestion("yes_no"), true, null);
 	}
 
 	[When(@"the Worker translates that report's answers")]
@@ -91,23 +91,22 @@ public sealed class AnswerTranslationModeSteps
 		_translator.Sent.ShouldBe(["The wind picked up on final."]);
 	}
 
-	[Then(@"^the yes/no answer has only its fixed counterpart, written at submission$")]
-	public async Task ThenTheYesNoAnswerHasItsFixedCounterpart()
+	[Then(@"^the yes/no answer, stored as a boolean, is never sent to the translator$")]
+	public async Task ThenTheYesNoAnswerIsNeverSentToTheTranslator()
 	{
 		var answer = (await StoredAnswers()).Single(answer => answer.QuestionRevisionId == TinyId.Parse(_answers["yes_no"].RevisionId));
 
-		answer.TranslatedValue.ShouldBe("oui");
-		answer.TranslationMode.ShouldBe(TranslationMode.Fixed);
-		answer.TranslationSource.ShouldBe(TranslationSource.Fixed);
+		answer.BooleanValue.ShouldBe(true);
+		answer.Value.ShouldBeNull();
+		_translator.Sent.ShouldNotContain("true");
 	}
 
-	[Then(@"every other answer keeps no second language")]
+	[Then(@"every other answer, the yes\/no answer included, keeps no second language")]
 	public async Task ThenEveryOtherAnswerKeepsNoSecondLanguage()
 	{
 		var stored = await StoredAnswers();
 
 		foreach (var answer in stored.Where(answer => answer.QuestionRevisionId != TinyId.Parse(_answers["long_text"].RevisionId)
-													  && answer.QuestionRevisionId != TinyId.Parse(_answers["yes_no"].RevisionId)
 													  && answer.QuestionKey != QuestionKey.ConsentPublish))
 		{
 			answer.TranslatedValue.ShouldBeNull(answer.QuestionKey);
@@ -367,7 +366,7 @@ public sealed class AnswerTranslationModeSteps
 		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
 		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
 
-		var answers = new List<object> { new { questionRevisionId = consent, value = (string?)"yes", choices = (string[]?)null } };
+		var answers = new List<object> { new { questionRevisionId = consent, value = (bool?)true, choices = (string[]?)null } };
 		answers.AddRange(_answers.Values.Select(answer => new
 		{
 			questionRevisionId = answer.RevisionId,

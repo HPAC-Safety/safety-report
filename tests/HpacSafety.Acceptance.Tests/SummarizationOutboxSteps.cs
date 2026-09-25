@@ -42,7 +42,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	public async Task GivenAReportWithConsentIsDue(string consent)
 	{
 		_db = await WorkerDatabase.NewMigratedContext();
-		_report = await Seed(_db, consent: consent);
+		_report = await Seed(_db, consent: consent == "yes");
 	}
 
 	[Given(@"a report whose reporter did not consent to publication is due for summarization")]
@@ -158,6 +158,39 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		(_report, _consentKeys) = await SeedWithExclusions(_db);
 	}
 
+	// --- REQ-AI-029: a yes/no reaches the model as true or false (ADR-0130) ---
+
+	[Given(@"^a report written in (English|French) answers an ordinary yes\/no question (true|false)$")]
+	public async Task GivenAReportAnswersAYesNoQuestion(string language,
+														 bool answer)
+	{
+		_db = await WorkerDatabase.NewMigratedContext();
+		var consent = await _db.Questions.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
+		var question = Question.Create(
+			"was_injured", QuestionType.YesNo, "Was anyone injured?", "Y a-t-il eu des blessés ?", At, isActive: true, isPrivate: false);
+		_db.Questions.Add(question);
+		await _db.SaveChangesAsync();
+
+		var report = new Report(language == "French" ? Locale.FrCa : Locale.EnCa, At);
+		report.Answer(consent, true, At);
+		report.Answer(question, answer, At);
+		report.EnsureReadyForSubmission();
+
+		_db.Reports.Add(report);
+		_db.OutboxMessages.Add(new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, report.Id.Value, At));
+		await _db.SaveChangesAsync();
+		_report = report;
+	}
+
+	[Then(@"^report_content carries that answer's value as ""(true|false)""$")]
+	public void ThenReportContentCarriesTheBoolean(string value)
+	{
+		var field = _summarizer!.LastInput!.ReportContent.Single(candidate => candidate.QuestionKey == "was_injured");
+		field.Value.ShouldBe(value);
+		field.IsBoolean.ShouldBeTrue();
+	}
+
 	[When(@"the Worker claims the message and builds the model input DTO")]
 	public async Task WhenBuildsInputDto()
 	{
@@ -195,9 +228,10 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	[Then(@"the DTO contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames")]
 	public void ThenNoOtherDataShape()
 	{
-		// SummarizationField carries exactly QuestionKey/Label/Value — there is no
+		// SummarizationField carries exactly QuestionKey/Label/Value, plus the flag
+		// that keeps a yes/no out of the marking pass (ADR-0130) — there is no
 		// shape here for any of those categories to travel through.
-		typeof(SummarizationField).GetProperties().Select(property => property.Name).ShouldBe(["QuestionKey", "Label", "Value"]);
+		typeof(SummarizationField).GetProperties().Select(property => property.Name).ShouldBe(["QuestionKey", "Label", "Value", "IsBoolean"]);
 	}
 
 	[Given(@"a report has document attachments")]
@@ -394,7 +428,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		string questionKeySuffix = "",
 		string pilotName = "Ada Lovelace",
 		string narrative = "Ada Lovelace reported a hard landing.",
-		string consent = "yes")
+		bool consent = true)
 	{
 		// A second report seeded into the same database (e.g. the logging scenario,
 		// which needs both a success and a failure) reuses the one consent question
@@ -414,7 +448,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		await db.SaveChangesAsync().ConfigureAwait(false);
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consentQuestion, [consent], At);
+		report.Answer(consentQuestion, consent, At);
 		report.Answer(pilotNameQuestion, pilotName, At);
 		report.Answer(narrativeQuestion, narrative, At);
 		report.EnsureReadyForSubmission();
@@ -442,8 +476,8 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		await db.SaveChangesAsync().ConfigureAwait(false);
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consent, ["yes"], At);
-		report.Answer(media, ["yes"], At);
+		report.Answer(consent, true, At);
+		report.Answer(media, true, At);
 		report.Answer(pilotName, "Ada Lovelace", At);
 		report.Answer(narrative, "Ada Lovelace reported a hard landing.", At);
 		report.Answer(weather, value: null, At);

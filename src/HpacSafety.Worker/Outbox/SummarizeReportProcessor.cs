@@ -133,7 +133,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		// choose. Privacy is the second guard (ADR-0082), never the first.
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
-							 && answer.Value != null
+							 && (answer.Value != null || answer.BooleanValue != null)
 							 && !database.Questions.IgnoreQueryFilters()
 								 .Any(question => question.Id == answer.QuestionId && question.Role != QuestionRole.None))
 			.Join(
@@ -145,6 +145,7 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 				 {
 					 answer.QuestionKey,
 					 answer.Value,
+					 answer.BooleanValue,
 					 answer.IsPrivate,
 					 revision.Type,
 					 revision.LabelEn,
@@ -154,9 +155,15 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
+		// A yes/no reaches the model as `true` or `false`, never as words in either
+		// language (ADR-0130).
 		var fields = rows
 			.Select(row => new ClassifiedReportField(
-				new SummarizationField(row.QuestionKey, language == Locale.FrCa ? row.LabelFr : row.LabelEn, row.Value!),
+				new SummarizationField(
+					row.QuestionKey,
+					language == Locale.FrCa ? row.LabelFr : row.LabelEn,
+					row.BooleanValue is { } boolean ? (boolean ? "true" : "false") : row.Value!,
+					row.BooleanValue is not null),
 				row.IsPrivate))
 			.ToList();
 

@@ -19,10 +19,4 @@ public enum TranslationSource
 	///     reporter picked. A lookup, not a translation. See ADR-0112.
 	/// </summary>
 	Choice = 2,
-
-	/// <summary>
-	///     A yes or no answer's fixed counterpart in the other language, written at
-	///     submission. A lookup, not a translation. See ADR-0127.
-	/// </summary>
-	Fixed = 3,
 }

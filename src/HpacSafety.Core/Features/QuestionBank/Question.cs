@@ -489,16 +489,14 @@ public class Question
 	///     it in their own language — which, for a one-language choice, may be the
 	///     other language (<see cref="QuestionChoice.Label" />). This is what a select
 	///     answer is validated against now that answers store their words (ADR-0072).
-	///     Yes/no is written in the reporter's language: <c>yes</c>/<c>no</c> or
-	///     <c>oui</c>/<c>non</c> (ADR-0127).
+	///     A yes/no question offers no text at all: its answer is a boolean (ADR-0130).
 	/// </summary>
 	public bool Offers(string value,
 					   Locale locale)
 	{
-		return Type == QuestionType.YesNo
-			? YesNoAnswer.IsWordIn(value, locale)
-			: _choices.Exists(choice => choice.Deleted is null
-										&& string.Equals(choice.Label(locale), value, StringComparison.Ordinal));
+		return Type != QuestionType.YesNo
+			   && _choices.Exists(choice => choice.Deleted is null
+											&& string.Equals(choice.Label(locale), value, StringComparison.Ordinal));
 	}
 
 	/// <summary>

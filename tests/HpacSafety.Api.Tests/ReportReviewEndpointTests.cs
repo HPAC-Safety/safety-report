@@ -416,7 +416,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 
 			Report Add(string name,
 					   DateTimeOffset submittedAt,
-					   string consentAnswer)
+					   bool consentAnswer)
 			{
 				var report = new Report(Locale.EnCa, submittedAt);
 				report.Answer(consent, consentAnswer, submittedAt);
@@ -428,36 +428,36 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 				return report;
 			}
 
-			var pending = Add("pending", future, "yes");
+			var pending = Add("pending", future, true);
 			Summarize(pending, now);
 			pending.AddFile(TinyId.New(), $"{pending.Id}/original/doc", "application/pdf", 10, OriginalFileName, now);
 			pending.AddFile(TinyId.New(), $"{pending.Id}/original/img", "image/jpeg", 10, "photo.jpg", now);
 			pending.AddFile(TinyId.New(), $"{pending.Id}/original/vid", "video/mp4", 10, "clip.mp4", now)
 				.RecordProcessingFailure("remux_failed");
 
-			var unconsented = Add("private", future.AddMinutes(-1), "no");
+			var unconsented = Add("private", future.AddMinutes(-1), false);
 			unconsented.BeginSummarizing();
 			unconsented.KeepUnpublished();
 
-			var failed = Add("failed", future.AddMinutes(-2), "yes");
+			var failed = Add("failed", future.AddMinutes(-2), true);
 			failed.BeginSummarizing();
 			failed.FailSummarization(SummaryError);
 
-			var unpublished = Add("unpublished", future.AddMinutes(-3), "yes");
+			var unpublished = Add("unpublished", future.AddMinutes(-3), true);
 			Summarize(unpublished, now);
 			unpublished.Unpublish();
 
-			var published = Add("published", future.AddMinutes(-4), "yes");
+			var published = Add("published", future.AddMinutes(-4), true);
 			Summarize(published, now);
 			published.Publish(ApproverSubject, now);
 
-			Add("freshSummarizing", future.AddMinutes(-6), "yes").BeginSummarizing();
+			Add("freshSummarizing", future.AddMinutes(-6), true).BeginSummarizing();
 
-			var deleted = Add("deleted", future.AddMinutes(-7), "yes");
+			var deleted = Add("deleted", future.AddMinutes(-7), true);
 			deleted.SoftDelete(now);
 
-			Add("stuckSubmitted", now.AddHours(-25), "yes");
-			Add("stuckSummarizing", now.AddHours(-26), "yes").BeginSummarizing();
+			Add("stuckSubmitted", now.AddHours(-25), true);
+			Add("stuckSummarizing", now.AddHours(-26), true).BeginSummarizing();
 
 			await database.SaveChangesAsync();
 

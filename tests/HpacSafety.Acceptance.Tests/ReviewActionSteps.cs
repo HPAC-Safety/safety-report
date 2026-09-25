@@ -55,7 +55,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	public async Task GivenAPublishedReport()
 	{
 		// It shows a public image, so there is media metadata the DTO could leak.
-		await SeedAndLoad(ReportStatus.Published, "yes", mediaConsent: "yes", arrange: report => BootedReports.AddProcessedImage(report));
+		await SeedAndLoad(ReportStatus.Published, true, mediaConsent: true, arrange: report => BootedReports.AddProcessedImage(report));
 	}
 
 	[Given(@"^a reviewer publishes the current English/French summary pair$")]
@@ -63,31 +63,31 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[Given(@"a reviewer unpublishes a report with a note")]
 	public async Task GivenAConsentedPendingReport()
 	{
-		await SeedAndLoad(ReportStatus.Pending, "yes");
+		await SeedAndLoad(ReportStatus.Pending, true);
 	}
 
 	[Given(@"^an? (Pending|Published|Unpublished) report whose reporter consented to publication$")]
 	public async Task GivenAConsentedReportIn(string status)
 	{
-		await SeedAndLoad(Enum.Parse<ReportStatus>(status), "yes");
+		await SeedAndLoad(Enum.Parse<ReportStatus>(status), true);
 	}
 
 	[Given(@"^a report whose reporter did not consent to publication is Unpublished$")]
 	public async Task GivenAnUnconsentedReport()
 	{
-		await SeedAndLoad(ReportStatus.Unpublished, "no");
+		await SeedAndLoad(ReportStatus.Unpublished, false);
 	}
 
 	[Given(@"a report is SummaryFailed")]
 	public async Task GivenAFailedReport()
 	{
-		await SeedAndLoad(ReportStatus.SummaryFailed, "yes");
+		await SeedAndLoad(ReportStatus.SummaryFailed, true);
 	}
 
 	[Given(@"two reviewers opened the same report")]
 	public async Task GivenTwoReviewersOpenedTheReport()
 	{
-		await SeedAndLoad(ReportStatus.Pending, "yes");
+		await SeedAndLoad(ReportStatus.Pending, true);
 	}
 
 	[Given(@"the first reviewer has saved a change to it")]
@@ -111,7 +111,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 			_ => ReportStatus.Pending,
 		};
 
-		await SeedAndLoad(status, "yes");
+		await SeedAndLoad(status, true);
 	}
 
 	// ── When ────────────────────────────────────────────────────────────────
@@ -257,7 +257,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	public async Task ThenNoCallerCanBypassTheGuards()
 	{
 		// An administrator publishing a report without consent is refused.
-		var unconsented = await BootedReports.Seed(ReportStatus.Unpublished, "no");
+		var unconsented = await BootedReports.Seed(ReportStatus.Unpublished, false);
 		using var admin = await BootedApi.SignedInAs(MemberRole.Administrator);
 		var loaded = await admin.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{unconsented}", UriKind.Relative));
 		using var refused = await admin.PostAsJsonAsync($"/api/admin/reports/{unconsented}/publish", new { version = loaded.GetProperty("version").GetString() });
@@ -356,7 +356,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[Then(@"unpublishing without a note also succeeds")]
 	public async Task ThenUnpublishingWithoutANoteSucceeds()
 	{
-		var other = await BootedReports.Seed(ReportStatus.Pending, "yes");
+		var other = await BootedReports.Seed(ReportStatus.Pending, true);
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var loaded = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{other}", UriKind.Relative));
 		using var unpublished = await client.PostAsJsonAsync($"/api/admin/reports/{other}/unpublish", new { version = loaded.GetProperty("version").GetString() });
@@ -471,8 +471,8 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	{
 		var at = DateTimeOffset.UtcNow;
 		_sourcesReport = _situation.Contains("failed", StringComparison.Ordinal) || _situation.Contains("French text by hand", StringComparison.Ordinal)
-			? ReviewLifecycleSteps.In(ReportStatus.SummaryFailed, "yes")
-			: ReviewLifecycleSteps.In(ReportStatus.Pending, "yes");
+			? ReviewLifecycleSteps.In(ReportStatus.SummaryFailed, true)
+			: ReviewLifecycleSteps.In(ReportStatus.Pending, true);
 
 		switch (_situation)
 		{
@@ -513,8 +513,8 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	}
 
 	private async Task SeedAndLoad(ReportStatus status,
-								   string consent,
-								   string? mediaConsent = null,
+								   bool consent,
+								   bool? mediaConsent = null,
 								   Action<Report>? arrange = null)
 	{
 		_reportId = await BootedReports.Seed(status, consent, arrange, mediaConsent: mediaConsent);
@@ -644,10 +644,10 @@ internal static class BootedReports
 	}
 
 	public static async Task<string> Seed(ReportStatus status,
-										  string consent,
+										  bool consent,
 										  Action<Report>? arrange = null,
 										  DateTimeOffset? at = null,
-										  string? mediaConsent = null,
+										  bool? mediaConsent = null,
 										  bool mediaConsentToEarlierWording = false)
 	{
 		var factory = await BootedApi.Factory();
@@ -679,18 +679,18 @@ internal static class BootedReports
 				var earlier = mediaQuestion.Revisions
 					.Where(revision => revision.RevisionNumber < mediaQuestion.CurrentRevision.RevisionNumber)
 					.MaxBy(revision => revision.RevisionNumber)!;
-				report.Answer(mediaQuestion, earlier, mediaConsent, now);
+				report.Answer(mediaQuestion, earlier, mediaConsent.Value, now);
 			}
 			else
 			{
-				report.Answer(mediaQuestion, mediaConsent, now);
+				report.Answer(mediaQuestion, mediaConsent.Value, now);
 			}
 		}
 
 		arrange?.Invoke(report);
 		report.BeginSummarizing();
 
-		if (consent != "yes")
+		if (!consent)
 		{
 			report.KeepUnpublished();
 		}

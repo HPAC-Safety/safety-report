@@ -279,7 +279,7 @@ public sealed class ReportReviewSteps
 		var offset = 0;
 
 		Report Add(string name,
-				   string consentAnswer,
+				   bool consentAnswer,
 				   DateTimeOffset? submittedAt = null)
 		{
 			var report = new Report(Locale.EnCa, submittedAt ?? future.AddMinutes(-offset++));
@@ -297,30 +297,30 @@ public sealed class ReportReviewSteps
 			report.AwaitReview();
 		}
 
-		var pending = Add("pending", "yes");
+		var pending = Add("pending", true);
 		Summarize(pending);
 		pending.AddFile(TinyId.New(), $"{pending.Id}/original/doc", "application/pdf", 10, "synthetic.pdf", now);
 
-		var unconsented = Add("private", "no");
+		var unconsented = Add("private", false);
 		unconsented.BeginSummarizing();
 		unconsented.KeepUnpublished();
 
-		var failed = Add("failed", "yes");
+		var failed = Add("failed", true);
 		failed.BeginSummarizing();
 		failed.FailSummarization("The AI chat provider was unavailable for this summarization attempt.");
 
-		var unpublished = Add("unpublished", "yes");
+		var unpublished = Add("unpublished", true);
 		Summarize(unpublished);
 		unpublished.Unpublish();
 
-		var published = Add("published", "yes");
+		var published = Add("published", true);
 		Summarize(published);
 		published.Publish("synthetic-approver", now);
 
-		Add("freshSummarizing", "yes").BeginSummarizing();
-		Add("deleted", "yes").SoftDelete(now);
-		Add("stuckSubmitted", "yes", now.AddHours(-25));
-		Add("stuckSummarizing", "yes", now.AddHours(-26)).BeginSummarizing();
+		Add("freshSummarizing", true).BeginSummarizing();
+		Add("deleted", true).SoftDelete(now);
+		Add("stuckSubmitted", true, now.AddHours(-25));
+		Add("stuckSummarizing", true, now.AddHours(-26)).BeginSummarizing();
 
 		await database.SaveChangesAsync();
 	}

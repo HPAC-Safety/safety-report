@@ -29,24 +29,23 @@ public class ProjectionTests
 	}
 
 	[Theory]
-	[InlineData("yes", true)]
-	[InlineData("no", false)]
-	public void GivenConsentRoleOnTextQuestion_WhenAnswered_ThenBooleanWordIsRead(string given,
-																				  bool expected)
+	[InlineData("yes")]
+	[InlineData("oui")]
+	public void GivenConsentRoleOnTextQuestion_WhenAnsweredWithWords_ThenRefused(string given)
 	{
-		// Given — "yes" and "no" are the invariant stored forms of every
-		// boolean answer (ADR-0072); the role can be moved to a question that
-		// is not the YesNo one
+		// Given — consent is a boolean (ADR-0130); words on a text question
+		// carrying the role are not consent, and there is no default
 		var question = Question.Create(
 			"consent", QuestionType.ShortText, "May we publish?", "Pouvons-nous publier ?", Now,
 			role: QuestionRole.ConsentPublish);
 		var report = new Report(Locale.EnCa, Now);
 
 		// When
-		report.Answer(question, given, Now);
+		var answering = () => report.Answer(question, given, Now);
 
 		// Then
-		report.ConsentPublish.ShouldBe(expected);
+		answering.ShouldThrow<DomainRuleViolationException>();
+		report.ConsentPublish.ShouldBeNull();
 	}
 
 	[Fact]
@@ -145,16 +144,14 @@ public class ProjectionTests
 	}
 
 	[Fact]
-	public void GivenConsentRoleOnTextQuestion_WhenAnswerIsNo_ThenConsentIsRefused()
+	public void GivenConsentQuestion_WhenAnswerIsFalse_ThenConsentIsRefused()
 	{
 		// Given
-		var question = Question.Create(
-			"consent", QuestionType.ShortText, "May we publish?", "Pouvons-nous publier ?", Now,
-			role: QuestionRole.ConsentPublish);
+		var question = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 		var report = new Report(Locale.EnCa, Now);
 
 		// When
-		report.Answer(question, "no", Now);
+		report.Answer(question, false, Now);
 
 		// Then
 		report.ConsentPublish.ShouldBe(false);
@@ -167,7 +164,7 @@ public class ProjectionTests
 		// Given
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(consent, ["yes"], Now);
+		report.Answer(consent, true, Now);
 
 		// When
 		var publishing = () => report.Publish("subject-officer", Now);
@@ -237,7 +234,7 @@ public class ProjectionTests
 		// Given — the human gate is separate from the consent gate
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(consent, ["yes"], Now);
+		report.Answer(consent, true, Now);
 
 		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
 		summary.Approve("subject-officer", Now);
@@ -257,7 +254,7 @@ public class ProjectionTests
 		// Given
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(consent, ["yes"], Now);
+		report.Answer(consent, true, Now);
 
 		report.BeginSummarizing();
 		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));

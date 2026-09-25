@@ -199,15 +199,14 @@ public class StringAnswerTests
 	}
 
 	[Theory]
-	[InlineData("fr-CA", "oui", "yes")]
-	[InlineData("fr-CA", "non", "no")]
-	[InlineData("en-CA", "yes", "oui")]
-	[InlineData("en-CA", "no", "non")]
-	public void GivenBooleanAnswer_WhenRecorded_ThenStoredInReportersLanguageWithFixedCounterpart(string language,
-																								  string given,
-																								  string counterpart)
+	[InlineData("fr-CA", true)]
+	[InlineData("fr-CA", false)]
+	[InlineData("en-CA", true)]
+	[InlineData("en-CA", false)]
+	public void GivenBooleanAnswer_WhenRecorded_ThenStoredAsBooleanWithNoWordsAndNoSecondLanguage(string language,
+																								 bool given)
 	{
-		// Given — a French reporter's yes is "oui" in the database (ADR-0127)
+		// Given — a yes/no is a boolean whatever the report's language (ADR-0130)
 		var locale = Locale.Parse(language);
 		var report = new Report(locale, Now);
 
@@ -215,30 +214,75 @@ public class StringAnswerTests
 		var answer = report.Answer(Injury(), given, Now);
 
 		// Then
-		answer.Value.ShouldBe(given);
-		answer.ValueIn(locale.Counterpart).ShouldBe(counterpart);
-		answer.TranslationMode.ShouldBe(TranslationMode.Fixed);
-		answer.TranslationSource.ShouldBe(TranslationSource.Fixed);
+		answer.BooleanValue.ShouldBe(given);
+		answer.Value.ShouldBeNull();
+		answer.Locale.ShouldBe(locale);
+		answer.TranslatedValue.ShouldBeNull();
+		answer.TranslationSource.ShouldBeNull();
+		answer.TranslationMode.ShouldBe(TranslationMode.None);
 		answer.NeedsTranslation.ShouldBeFalse();
 	}
 
 	[Theory]
-	[InlineData("fr-CA", "yes")]
-	[InlineData("fr-CA", "no")]
-	[InlineData("en-CA", "oui")]
-	[InlineData("en-CA", "non")]
+	[InlineData("fr-CA", "oui")]
+	[InlineData("en-CA", "yes")]
+	[InlineData("en-CA", "no")]
+	[InlineData("en-CA", "true")]
 	[InlineData("fr-CA", "True")]
-	public void GivenBooleanNotInReportsLanguage_WhenRecorded_ThenRefused(string language,
-																		  string given)
+	public void GivenTextForBooleanQuestion_WhenRecorded_ThenRefusedWithoutEchoingIt(string language,
+																					 string given)
 	{
 		// Given
 		var report = new Report(Locale.Parse(language), Now);
 
 		// When
-		var answering = () => report.Answer(Injury(), given, Now);
+		var refusal = Should.Throw<DomainRuleViolationException>(() => report.Answer(Injury(), given, Now));
 
-		// Then — the stored word is the reporter's own
+		// Then — a yes/no is a boolean, never words
+		refusal.Message.ShouldNotContain(given);
+		report.Answers.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenBooleanForTextQuestion_WhenRecorded_ThenRefused()
+	{
+		// Given
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		var answering = () => report.Answer(Province(), true, Now);
+
+		// Then
 		answering.ShouldThrow<DomainRuleViolationException>();
+		report.Answers.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenAnotherQuestionsRevision_WhenBooleanRecorded_ThenRefused()
+	{
+		// Given — a yes/no revision that belongs to a different question
+		var report = new Report(Locale.EnCa, Now);
+		var other = Injury();
+
+		// When
+		var answering = () => report.Answer(Injury(), other.CurrentRevision, true, Now);
+
+		// Then
+		answering.ShouldThrow<DomainRuleViolationException>();
+		report.Answers.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenBooleanAnswer_WhenTranslationSupplied_ThenRefused()
+	{
+		// Given
+		var answer = new Report(Locale.EnCa, Now).Answer(Injury(), true, Now);
+
+		// When
+		var supplying = () => answer.SupplyHumanTranslation("oui");
+
+		// Then
+		supplying.ShouldThrow<DomainRuleViolationException>();
 	}
 
 	[Fact]
@@ -345,6 +389,7 @@ public class StringAnswerTests
 	[InlineData(QuestionType.Time, "9:30")]
 	[InlineData(QuestionType.Checkbox, "checked")]
 	[InlineData(QuestionType.Checkbox, "oui")]
+	[InlineData(QuestionType.Checkbox, "yes")]
 	public void GivenAnswerNotInItsStoredForm_WhenRecorded_ThenRefusedWithoutEchoingIt(QuestionType type,
 																						  string given)
 	{
@@ -399,9 +444,9 @@ public class StringAnswerTests
 	}
 
 	[Theory]
-	[InlineData("oui")]
-	[InlineData("non")]
-	public void GivenCheckboxAnswer_WhenRecorded_ThenStoredInReportersLanguage(string given)
+	[InlineData(true)]
+	[InlineData(false)]
+	public void GivenCheckboxAnswer_WhenRecorded_ThenStoredAsBoolean(bool given)
 	{
 		// Given
 		var question = Question.Create(
@@ -412,7 +457,8 @@ public class StringAnswerTests
 		var answer = report.Answer(question, given, Now);
 
 		// Then
-		answer.Value.ShouldBe(given);
+		answer.BooleanValue.ShouldBe(given);
+		answer.Value.ShouldBeNull();
 	}
 
 	private static Question Province()

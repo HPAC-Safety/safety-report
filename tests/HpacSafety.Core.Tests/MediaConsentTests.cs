@@ -29,9 +29,9 @@ public class MediaConsentTests
 	}
 
 	[Theory]
-	[InlineData("yes", true)]
-	[InlineData("no", false)]
-	public void GivenMediaConsentAnswer_WhenAnswered_ThenItProjectsOntoReport(string given,
+	[InlineData(true, true)]
+	[InlineData(false, false)]
+	public void GivenMediaConsentAnswer_WhenAnswered_ThenItProjectsOntoReport(bool given,
 																		   bool expected)
 	{
 		// Given
@@ -46,9 +46,9 @@ public class MediaConsentTests
 	}
 
 	[Theory]
-	[InlineData("yes", true)]
-	[InlineData("no", false)]
-	public void GivenAnswerToCurrentWording_WhenAnswered_ThenDocumentConsentMatchesIt(string given,
+	[InlineData(true, true)]
+	[InlineData(false, false)]
+	public void GivenAnswerToCurrentWording_WhenAnswered_ThenDocumentConsentMatchesIt(bool given,
 																					bool expected)
 	{
 		// Given — the current wording names documents (ADR-0119)
@@ -71,7 +71,7 @@ public class MediaConsentTests
 		var report = new Report(Locale.EnCa, Now);
 
 		// When
-		report.Answer(question, earlier, "yes", Now.AddMinutes(2));
+		report.Answer(question, earlier, true, Now.AddMinutes(2));
 
 		// Then — the yes still shows photos and video, never documents
 		report.ConsentMedia.ShouldBe(true);
@@ -85,7 +85,7 @@ public class MediaConsentTests
 		var report = new Report(Locale.EnCa, Now);
 
 		// When
-		report.Answer(Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now), "yes", Now);
+		report.Answer(Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now), true, Now);
 
 		// Then
 		report.ConsentMedia.ShouldBeNull();

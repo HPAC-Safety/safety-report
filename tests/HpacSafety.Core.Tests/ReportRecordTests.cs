@@ -177,7 +177,7 @@ public class ReportRecordTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now), ["yes"], Now);
+		report.Answer(Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now), true, Now);
 		report.BeginSummarizing();
 		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));
 		report.AwaitReview();

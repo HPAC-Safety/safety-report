@@ -27,6 +27,12 @@ question key, the label in the reporter's language, and its rendered answer.
 Question labels delimit fields; answer text is untrusted data and cannot issue
 instructions.
 
+A yes/no or checkbox answer is rendered as `true` or `false`, never as words in
+either language, and the marking pass never uses it as a candidate: a private
+yes/no would otherwise mark every literal `true` in the narrative
+([ADR-0130](../../docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md),
+`REQ-AI-028`, `REQ-AI-029`).
+
 ## Output contract
 
 ```json

@@ -4,13 +4,15 @@ using HpacSafety.Core.Features.QuestionBank;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-///     One answer to one question, as it was asked, stored as one string.
+///     One answer to one question, as it was asked, stored as one string — or, for a
+///     yes/no or checkbox question, as one boolean.
 /// </summary>
 /// <remarks>
 ///     <para>
 ///         The value is the words the reporter saw — the label they picked, the text
-///         they typed, yes or no in their language (<c>yes</c>/<c>no</c> or
-///         <c>oui</c>/<c>non</c>, ADR-0127), or an ISO 8601 date or time. It is not
+///         they typed, or an ISO 8601 date or time. A yes/no or checkbox answer holds
+///         no words at all: it is <see cref="BooleanValue" />, and only the interface
+///         turns it into Yes / Oui or No / Non (ADR-0130). It is not
 ///         an option code and it resolves through nothing, so relabelling or removing a
 ///         choice tomorrow cannot change what this answer says (ADR-0072).
 ///     </para>
@@ -20,8 +22,7 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         overwrites <see cref="Value" /> or <see cref="Locale" />. Whether it has a
 ///         second language at all is decided when it is recorded
 ///         (<see cref="TranslationMode" />, ADR-0112): a select answer copies its
-///         choice's other label then (<see cref="TranslationSource.Choice" />), and a
-///         yes or no its fixed counterpart (<see cref="TranslationSource.Fixed" />);
+///         choice's other label then (<see cref="TranslationSource.Choice" />);
 ///         free text marked for translation is filled later, off the submission
 ///         path, mechanically by the Worker (<see cref="TranslationSource.Auto" />) or
 ///         by an administrator (<see cref="TranslationSource.Human" />); and anything
@@ -99,6 +100,14 @@ public class ReportAnswer
 	///     submission.
 	/// </summary>
 	public string? Value { get; private init; }
+
+	/// <summary>
+	///     A yes/no or checkbox answer: <c>true</c> or <c>false</c>, with
+	///     <see cref="Value" /> null and no second language. Null for every other
+	///     type and for a skipped question. Immutable, like <see cref="Value" />
+	///     (ADR-0130).
+	/// </summary>
+	public bool? BooleanValue { get; private init; }
 
 	/// <summary>
 	///     The official language <see cref="Value" /> is written in. Immutable, like
@@ -189,7 +198,7 @@ public class ReportAnswer
 			throw new DomainRuleViolationException("That revision does not belong to this question.");
 		}
 
-		value = InStoredForm(question, revision, value, locale);
+		value = InStoredForm(question, revision, value);
 
 		if (revision.IsRequired
 			&& string.IsNullOrWhiteSpace(value))
@@ -217,18 +226,45 @@ public class ReportAnswer
 			Value = value,
 			TranslationMode = mode,
 			TranslatedValue = other,
-			TranslationSource = other is null
-				? null
-				: mode == TranslationMode.Fixed
-					? Reporting.TranslationSource.Fixed
-					: Reporting.TranslationSource.Choice,
+			TranslationSource = other is null ? null : Reporting.TranslationSource.Choice,
 		};
 	}
 
 	/// <summary>
-	///     A date, time, or checkbox answer exactly as ADR-0072 stores it — a
-	///     <c>YYYY-MM-DD</c> calendar day, an <c>HH:mm</c> wall-clock time, or yes or
-	///     no in the report's language (ADR-0127) — or a refusal. Nothing is converted: the form's own
+	///     Records a yes/no or checkbox answer against an exact revision, as a boolean
+	///     with no words and no second language (ADR-0130). Any other type refuses
+	///     it.
+	/// </summary>
+	internal static ReportAnswer For(
+		TinyId reportId,
+		Question question,
+		QuestionRevision revision,
+		bool value,
+		Locale locale,
+		DateTimeOffset at)
+	{
+		if (revision.QuestionId != question.Id)
+		{
+			throw new DomainRuleViolationException("That revision does not belong to this question.");
+		}
+
+		if (!revision.IsBoolean)
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' is not a yes or no question.");
+		}
+
+		return new ReportAnswer(reportId, question, revision, locale, at)
+		{
+			BooleanValue = value,
+			TranslationMode = TranslationMode.None,
+		};
+	}
+
+	/// <summary>
+	///     A date or time answer exactly as ADR-0072 stores it — a
+	///     <c>YYYY-MM-DD</c> calendar day or an <c>HH:mm</c> wall-clock time — or a
+	///     refusal. A yes/no or checkbox answer is a boolean, never text, so any text
+	///     for one is refused (ADR-0130). Nothing is converted: the form's own
 	///     inputs already send these, so any other shape came from somewhere else
 	///     (REQ-QB-118). A blank one is a skip. Every other type passes through.
 	/// </summary>
@@ -238,10 +274,9 @@ public class ReportAnswer
 	/// </remarks>
 	private static string? InStoredForm(Question question,
 										QuestionRevision revision,
-										string? value,
-										Locale locale)
+										string? value)
 	{
-		if (revision.Type is not (QuestionType.Date or QuestionType.Time or QuestionType.Checkbox))
+		if (revision.Type is not (QuestionType.Date or QuestionType.Time) && !revision.IsBoolean)
 		{
 			return value;
 		}
@@ -251,16 +286,16 @@ public class ReportAnswer
 			return null;
 		}
 
-		var (stored, shape) = revision.Type switch
+		if (revision.IsBoolean)
 		{
-			QuestionType.Date => (
-				DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-				"a date written YYYY-MM-DD"),
-			QuestionType.Time => (
-				TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-				"a time written HH:mm"),
-			_ => (YesNoAnswer.IsWordIn(value, locale), $"{YesNoAnswer.Yes(locale)} or {YesNoAnswer.No(locale)}"),
-		};
+			throw new DomainRuleViolationException($"'{question.Key}' must be answered with a boolean, never with words.");
+		}
+
+		var (stored, shape) = revision.Type == QuestionType.Date
+			? (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				"a date written YYYY-MM-DD")
+			: (TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				"a time written HH:mm");
 
 		return stored
 			? value
@@ -269,10 +304,9 @@ public class ReportAnswer
 
 	/// <summary>
 	///     How this answer gets its second language, and — for a value naming a
-	///     choice written in both languages — that choice's other label, or for a yes
-	///     or no its fixed counterpart, copied now. A lookup, never a translation
-	///     provider, so the submission path stays provider-free. See ADR-0112,
-	///     ADR-0127.
+	///     choice written in both languages — that choice's other label, copied now.
+	///     A lookup, never a translation provider, so the submission path stays
+	///     provider-free. See ADR-0112.
 	/// </summary>
 	private static (TranslationMode Mode, string? FromChoice) SecondLanguageOf(
 		Question question,
@@ -280,11 +314,6 @@ public class ReportAnswer
 		string? value,
 		Locale locale)
 	{
-		if (revision.Type is QuestionType.YesNo or QuestionType.Checkbox)
-		{
-			return (TranslationMode.Fixed, YesNoAnswer.Counterpart(value));
-		}
-
 		if (!revision.StoresLocalizedValue)
 		{
 			return (revision.IsTranslatable ? TranslationMode.Machine : TranslationMode.None, null);
@@ -329,14 +358,14 @@ public class ReportAnswer
 								   Reporting.TranslationSource source,
 								   bool allowOverwrite = false)
 	{
-		if (Value is null)
-		{
-			throw new DomainRuleViolationException("A skipped answer has nothing to translate.");
-		}
-
 		if (TranslationMode == TranslationMode.None)
 		{
 			throw new DomainRuleViolationException("This answer never has a second language. See ADR-0112.");
+		}
+
+		if (Value is null)
+		{
+			throw new DomainRuleViolationException("A skipped answer has nothing to translate.");
 		}
 
 		if (TranslatedValue is not null

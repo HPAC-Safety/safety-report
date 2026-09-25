@@ -244,7 +244,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consent, value = (string?)"no" },
+				new { questionRevisionId = consent, value = (bool?)false },
 				new { questionRevisionId = revisionId, value = (string?)"A synthetic answer" },
 			},
 		});

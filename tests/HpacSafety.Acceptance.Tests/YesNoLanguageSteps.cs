@@ -7,9 +7,11 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     REQ-QB-120 and REQ-QB-121: a yes or no means the same whichever language it
-///     was stored in (ADR-0127). Both run against the domain, where the condition
-///     and the consent projection live; every question here is synthetic.
+///     REQ-QB-120 and REQ-QB-121: a yes/no answer is a boolean, so it means the same
+///     whatever language the report is written in, and only <c>true</c> enables a
+///     conditional question or gives consent (ADR-0130). Both run against the
+///     domain, where the condition and the consent projection live; every question
+///     here is synthetic.
 /// </summary>
 [Binding]
 public sealed class YesNoLanguageSteps
@@ -18,8 +20,7 @@ public sealed class YesNoLanguageSteps
 
 	private Question? _parent;
 	private Question? _child;
-	private string? _parentAnswer;
-	private Locale _language = Locale.EnCa;
+	private bool? _parentAnswer;
 	private Report? _report;
 
 	// --- REQ-QB-120 ---
@@ -33,33 +34,29 @@ public sealed class YesNoLanguageSteps
 			dependsOnQuestionId: _parent.Id);
 	}
 
-	[When(@"^a reporter writing in (English|French) answers the yes\/no question (\w+)$")]
+	[When(@"^a reporter writing in (English|French) answers the yes\/no question (true|false)$")]
 	public void WhenAReporterAnswersTheParent(string language,
-											  string answer)
+											  bool answer)
 	{
-		_language = language == "French" ? Locale.FrCa : Locale.EnCa;
-
-		// Recorded as the submission would record it, so the value is one the
-		// report's language accepts.
-		_parentAnswer = new Report(_language, Noon).Answer(_parent!, answer, Noon).Value;
+		// Recorded as the submission would record it, in the report's language.
+		_parentAnswer = new Report(LocaleOf(language), Noon).Answer(_parent!, answer, Noon).BooleanValue;
 	}
 
 	[Then(@"^the conditional question is (asked|not asked)$")]
 	public void ThenTheConditionalQuestionIs(string asked)
 	{
-		_child!.CurrentRevision.IsEnabledGiven(_parent, _parentAnswer, _language).ShouldBe(asked == "asked");
+		_child!.CurrentRevision.IsEnabledGiven(_parent, _parentAnswer).ShouldBe(asked == "asked");
 	}
 
 	// --- REQ-QB-121 ---
 
-	[Given(@"^a reporter's answer to (consent_publish|consent_media) is stored as (\w+)$")]
-	public void GivenAConsentAnswerIsStored(string consent,
-											string stored)
+	[Given(@"^a reporter writing in (English|French) answers (consent_publish|consent_media) (true|false)$")]
+	public void GivenAConsentAnswer(string language,
+									string consent,
+									bool answer)
 	{
-		// The word decides the report's language: a French report stores oui/non.
-		_language = stored is "oui" or "non" ? Locale.FrCa : Locale.EnCa;
-		_report = new Report(_language, Noon);
-		_parentAnswer = stored;
+		_report = new Report(LocaleOf(language), Noon);
+		_parentAnswer = answer;
 		_parent = consent == QuestionKey.ConsentMedia
 			? Question.CreateConsentMedia("May we show your files?", "Pouvons-nous montrer vos fichiers ?", Noon)
 			: Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Noon);
@@ -68,7 +65,7 @@ public sealed class YesNoLanguageSteps
 	[When(@"the answer is projected onto the report")]
 	public void WhenTheAnswerIsProjected()
 	{
-		_report!.Answer(_parent!, _parentAnswer, Noon);
+		_report!.Answer(_parent!, _parentAnswer!.Value, Noon);
 	}
 
 	[Then(@"^the report records (consent_publish|consent_media) as (given|refused)$")]
@@ -77,5 +74,10 @@ public sealed class YesNoLanguageSteps
 	{
 		var projected = consent == QuestionKey.ConsentMedia ? _report!.ConsentMedia : _report!.ConsentPublish;
 		projected.ShouldBe(recorded == "given");
+	}
+
+	private static Locale LocaleOf(string language)
+	{
+		return language == "French" ? Locale.FrCa : Locale.EnCa;
 	}
 }

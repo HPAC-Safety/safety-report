@@ -161,6 +161,37 @@ public class Report
 	}
 
 	/// <summary>
+	///     Records a yes/no or checkbox answer against the question's current
+	///     revision, as a boolean (ADR-0130).
+	/// </summary>
+	public ReportAnswer Answer(Question question,
+							   bool value,
+							   DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(question);
+
+		return Answer(question, question.CurrentRevision, value, at);
+	}
+
+	/// <summary>
+	///     Records a yes/no or checkbox answer against an exact revision, as a
+	///     boolean with no words and no second language (ADR-0130).
+	/// </summary>
+	public ReportAnswer Answer(Question question,
+							   QuestionRevision revision,
+							   bool value,
+							   DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(question);
+		ArgumentNullException.ThrowIfNull(revision);
+
+		var answer = ReportAnswer.For(Id, question, revision, value, Language, at);
+		_answers.Add(answer);
+		Project(question, answer);
+		return answer;
+	}
+
+	/// <summary>
 	///     Records a multi-select answer against the question's current revision, as
 	///     one row per chosen value, so each value is a string in its own right and
 	///     is translated on its own (ADR-0072). An empty list records one skipped
@@ -490,27 +521,15 @@ public class Report
 	}
 
 	/// <summary>
-	///     Reads a yes or a no, and refuses anything else. The consent question has
-	///     no default answer, so an unreadable one is an error rather than a
-	///     silently negative consent.
+	///     Reads the boolean, and refuses a skip. The consent question has no default
+	///     answer, so an unanswered one is an error rather than a silently negative
+	///     consent. Only <c>true</c> is consent (ADR-0130).
 	/// </summary>
 	private static bool ReadConsent(ReportAnswer answer,
 									string consent)
 	{
-		// A consent answer is stored in the reporter's language (ADR-0127), and one
-		// given before that is stored as yes or no whatever the language, so this
-		// reads all four words.
-		if (YesNoAnswer.IsYes(answer.Value))
-		{
-			return true;
-		}
-
-		if (YesNoAnswer.IsNo(answer.Value))
-		{
-			return false;
-		}
-
-		throw new DomainRuleViolationException(
-			$"{consent} must be answered yes or no. There is no default and no third state.");
+		return answer.BooleanValue
+			   ?? throw new DomainRuleViolationException(
+				   $"{consent} must be answered yes or no. There is no default and no third state.");
 	}
 }

@@ -263,9 +263,25 @@ public static partial class ReportSubmissionEndpoints
 			return Problem("This answer's shape does not carry choices or upload ids.");
 		}
 
+		// A yes/no or checkbox answer is a JSON boolean and everything else a JSON
+		// string (ADR-0130). The domain refuses a boolean for any other type and
+		// text for a yes/no, so neither is converted here.
 		try
 		{
-			report.Answer(question, revision, entry.Value, at);
+			switch (entry.Value?.ValueKind)
+			{
+				case null or JsonValueKind.Null:
+					report.Answer(question, revision, (string?)null, at);
+					break;
+				case JsonValueKind.True or JsonValueKind.False:
+					report.Answer(question, revision, entry.Value.Value.GetBoolean(), at);
+					break;
+				case JsonValueKind.String:
+					report.Answer(question, revision, entry.Value.Value.GetString(), at);
+					break;
+				default:
+					return Problem("An answer's value must be a string or a boolean.");
+			}
 		}
 		catch (DomainRuleViolationException cause)
 		{

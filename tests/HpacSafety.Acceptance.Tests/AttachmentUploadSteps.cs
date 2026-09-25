@@ -321,7 +321,7 @@ public sealed class AttachmentUploadSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consent, value = (string?)"yes" },
+				new { questionRevisionId = consent, value = (bool?)true },
 				new
 				{
 					questionRevisionId = fileRevision,

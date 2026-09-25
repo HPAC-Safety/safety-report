@@ -51,7 +51,7 @@ public sealed class PublicMediaSteps
 	[Given(@"the report has a processed image and a video with a verified derivative")]
 	public async Task GivenAProcessedImageAndVideo()
 	{
-		await Seed("yes", report =>
+		await Seed(true, report =>
 		{
 			var at = DateTimeOffset.UtcNow;
 			_fileIds.Add(BootedReports.AddProcessedImage(report, at).Id.Value);
@@ -85,7 +85,7 @@ public sealed class PublicMediaSteps
 	[Given(@"the report has a validated PDF document and a processed image")]
 	public async Task GivenAValidatedDocumentAndAnImage()
 	{
-		await Seed("yes", report =>
+		await Seed(true, report =>
 		{
 			var at = DateTimeOffset.UtcNow;
 			_fileIds.Add(_documentId = AddDocument(report, validated: true, at).Id.Value);
@@ -102,11 +102,11 @@ public sealed class PublicMediaSteps
 	[Given(@"^the reporter answered media consent (yes, to wording that named only photos and video|no|not at all)$")]
 	public async Task GivenTheReporterAnsweredMediaConsent(string answer)
 	{
-		var consent = answer switch
+		bool? consent = answer switch
 		{
-			"no" => "no",
+			"no" => false,
 			"not at all" => null,
-			_ => "yes",
+			_ => true,
 		};
 
 		await Seed(consent, report =>
@@ -121,7 +121,7 @@ public sealed class PublicMediaSteps
 	[Given(@"a published report offers a validated document")]
 	public async Task GivenAPublishedReportOffersADocument()
 	{
-		await Seed("yes", report => _documentId = AddDocument(report, validated: true, DateTimeOffset.UtcNow).Id.Value);
+		await Seed(true, report => _documentId = AddDocument(report, validated: true, DateTimeOffset.UtcNow).Id.Value);
 		(await Listed()).ShouldBe([_documentId]);
 	}
 
@@ -151,7 +151,7 @@ public sealed class PublicMediaSteps
 	[Given(@"a published report with a processed image whose media consent is {word}")]
 	public async Task GivenAPublishedReportWithMediaConsent(string consent)
 	{
-		await Seed(consent == "unanswered" ? null : consent, report => _imageId = BootedReports.AddProcessedImage(report).Id.Value);
+		await Seed(consent == "unanswered" ? null : consent == "yes", report => _imageId = BootedReports.AddProcessedImage(report).Id.Value);
 	}
 
 	[Given(@"a published report shows a processed image")]
@@ -164,7 +164,7 @@ public sealed class PublicMediaSteps
 	[Given(@"a published report shows a processed QuickTime video")]
 	public async Task GivenAPublishedReportShowsAQuickTimeVideo()
 	{
-		await Seed("yes", report =>
+		await Seed(true, report =>
 		{
 			var fileId = TinyId.New();
 			var file = report.AddFile(fileId, $"{report.Id}/original/{fileId}", MediaType.QuickTime.ContentType, 4096, "IMG_0412.MOV", DateTimeOffset.UtcNow);
@@ -470,11 +470,11 @@ public sealed class PublicMediaSteps
 
 	// ── Helpers ─────────────────────────────────────────────────────────────
 
-	private async Task Seed(string? mediaConsent,
+	private async Task Seed(bool? mediaConsent,
 							Action<Report> arrange,
 							bool mediaConsentToEarlierWording = false)
 	{
-		_reportId = await BootedReports.Seed(ReportStatus.Published, "yes", arrange, mediaConsent: mediaConsent, mediaConsentToEarlierWording: mediaConsentToEarlierWording);
+		_reportId = await BootedReports.Seed(ReportStatus.Published, true, arrange, mediaConsent: mediaConsent, mediaConsentToEarlierWording: mediaConsentToEarlierWording);
 
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var store = scope.ServiceProvider.GetRequiredService<IBlobStore>();
@@ -497,7 +497,7 @@ public sealed class PublicMediaSteps
 
 	private Task SeedOne(Func<Report, ReportFile> add)
 	{
-		return Seed("yes", report => _imageId = add(report).Id.Value);
+		return Seed(true, report => _imageId = add(report).Id.Value);
 	}
 
 	private static ReportFile Unprocessed(Report report)

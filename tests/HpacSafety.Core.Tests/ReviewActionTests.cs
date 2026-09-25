@@ -53,7 +53,7 @@ public class ReviewActionTests
 	public void GivenRefusedConsentWithPair_WhenPublished_ThenRefused()
 	{
 		// Given — never reachable through the Worker, but the guard is the domain's
-		var report = Summarized("no");
+		var report = Summarized(false);
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() => report.Publish(Officer, Later)).Message.ShouldContain("did not consent");
@@ -148,7 +148,7 @@ public class ReviewActionTests
 	public void GivenGeneratedPair_WhenOnlyEnglishIsEdited_ThenEnglishIsHumanAndFrenchStaysGenerated()
 	{
 		// Given
-		var report = Summarized("yes");
+		var report = Summarized(true);
 
 		// When
 		report.EditSummary("The pilot landed firmly.", report.Summary!.AiSummaryFr, Later);
@@ -163,7 +163,7 @@ public class ReviewActionTests
 	public void GivenAcceptedTranslation_WhenPairIsSaved_ThenThatLanguageIsMachine()
 	{
 		// Given
-		var report = Summarized("yes");
+		var report = Summarized(true);
 
 		// When
 		report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Later, SummaryTextSource.Human, SummaryTextSource.Machine);
@@ -194,7 +194,7 @@ public class ReviewActionTests
 	public void GivenFailedReport_WhenFrenchIsTypedAndEnglishTranslated_ThenSourcesSaySo()
 	{
 		// Given
-		var report = Consented("yes");
+		var report = Consented(true);
 		report.BeginSummarizing();
 		report.FailSummarization("The provider was unavailable.");
 
@@ -210,7 +210,7 @@ public class ReviewActionTests
 	public void GivenReviewerClaimsGenerated_WhenPairIsEdited_ThenRefused()
 	{
 		// Given — only the Worker's model call produces generated text
-		var report = Summarized("yes");
+		var report = Summarized(true);
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() =>
@@ -221,7 +221,7 @@ public class ReviewActionTests
 	public void GivenBlankText_WhenPairIsEdited_ThenRefused()
 	{
 		// Given
-		var report = Summarized("yes");
+		var report = Summarized(true);
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() => report.EditSummary("Text.", " ", Later));
@@ -250,7 +250,7 @@ public class ReviewActionTests
 	public void GivenUnconsentedReport_WhenKeptUnpublished_ThenUnpublishedForGoodWithNoSummary(bool claimed)
 	{
 		// Given
-		var report = Consented("no");
+		var report = Consented(false);
 		if (claimed)
 		{
 			report.BeginSummarizing();
@@ -274,7 +274,7 @@ public class ReviewActionTests
 	public void GivenUnpublishedForGood_WhenAnyReviewActionIsAttempted_ThenRefusedAndUnchanged(string action)
 	{
 		// Given
-		var report = Consented("no");
+		var report = Consented(false);
 		report.KeepUnpublished();
 
 		// When
@@ -290,7 +290,7 @@ public class ReviewActionTests
 	public void GivenUnpublishedForGood_WhenSoftDeleted_ThenDeleted()
 	{
 		// Given
-		var report = Consented("no");
+		var report = Consented(false);
 		report.KeepUnpublished();
 
 		// When
@@ -320,7 +320,7 @@ public class ReviewActionTests
 	public void GivenPendingReportWithNoPair_WhenPairActionIsAttempted_ThenRefusedBecauseThereIsNoPair(string action)
 	{
 		// Given — pending with no pair attached, so there is nothing to approve or rewrite
-		var report = Consented("yes");
+		var report = Consented(true);
 		report.BeginSummarizing();
 		report.AwaitReview();
 
@@ -333,7 +333,7 @@ public class ReviewActionTests
 	public void GivenConsentedReport_WhenKeptUnpublished_ThenRefused()
 	{
 		// Given
-		var report = Consented("yes");
+		var report = Consented(true);
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(report.KeepUnpublished);
@@ -426,9 +426,9 @@ public class ReviewActionTests
 	{
 		var report = status switch
 		{
-			ReportStatus.Submitted => Consented("yes"),
+			ReportStatus.Submitted => Consented(true),
 			ReportStatus.SummaryFailed => Failed(),
-			ReportStatus.Pending => Summarized("yes"),
+			ReportStatus.Pending => Summarized(true),
 			ReportStatus.Published => Published(),
 			ReportStatus.Unpublished => Unpublished(),
 			_ => throw new ArgumentOutOfRangeException(nameof(status)),
@@ -440,7 +440,7 @@ public class ReviewActionTests
 
 	private static Report Failed()
 	{
-		var report = Consented("yes");
+		var report = Consented(true);
 		report.BeginSummarizing();
 		report.FailSummarization("The provider was unavailable.");
 		return report;
@@ -448,19 +448,19 @@ public class ReviewActionTests
 
 	private static Report Published()
 	{
-		var report = Summarized("yes");
+		var report = Summarized(true);
 		report.Publish(Officer, Now);
 		return report;
 	}
 
 	private static Report Unpublished()
 	{
-		var report = Summarized("yes");
+		var report = Summarized(true);
 		report.Unpublish();
 		return report;
 	}
 
-	private static Report Summarized(string consent)
+	private static Report Summarized(bool consent)
 	{
 		var report = Consented(consent);
 		report.BeginSummarizing();
@@ -469,12 +469,12 @@ public class ReviewActionTests
 		return report;
 	}
 
-	private static Report Consented(string consent)
+	private static Report Consented(bool consent)
 	{
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(
 			Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now),
-			[consent],
+			consent,
 			Now);
 		return report;
 	}

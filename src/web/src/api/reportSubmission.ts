@@ -17,7 +17,8 @@ export interface SubmitAttachment {
 /** Exactly one of `value`, `choices`, or `attachments` carries data. */
 export interface SubmitAnswer {
 	questionRevisionId: string
-	value: string | null
+	/** A JSON boolean for a yes/no or checkbox question (ADR-0130); a string for every other. */
+	value: string | boolean | null
 	/** A multi-select answer's chosen labels, in the reporter's language. */
 	choices: string[] | null
 	attachments: SubmitAttachment[] | null

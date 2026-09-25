@@ -14,11 +14,12 @@ export interface SubmitAttachment {
 	fileName: string
 }
 
-/** Exactly one of `value`, `optionCodes`, or `attachments` carries data. */
+/** Exactly one of `value`, `choices`, or `attachments` carries data. */
 export interface SubmitAnswer {
 	questionRevisionId: string
 	value: string | null
-	optionCodes: string[] | null
+	/** A multi-select answer's chosen labels, in the reporter's language. */
+	choices: string[] | null
 	attachments: SubmitAttachment[] | null
 }
 

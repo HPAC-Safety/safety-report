@@ -202,12 +202,12 @@ public static partial class ReportSubmissionEndpoints
 			if (entry.Value is not null
 				|| entry.Attachments is { Count: > 0 })
 			{
-				return Problem("A multi-select answer carries option codes, not a value or upload ids.");
+				return Problem("A multi-select answer carries choices, not a value or upload ids.");
 			}
 
 			try
 			{
-				report.Answer(question, revision, entry.OptionCodes ?? [], at);
+				report.Answer(question, revision, entry.Choices ?? [], at);
 			}
 			catch (DomainRuleViolationException cause)
 			{
@@ -220,9 +220,9 @@ public static partial class ReportSubmissionEndpoints
 		if (revision.Type == QuestionType.FileUpload)
 		{
 			if (entry.Value is not null
-				|| entry.OptionCodes is { Count: > 0 })
+				|| entry.Choices is { Count: > 0 })
 			{
-				return Problem("A file-upload answer carries upload ids, not a value or option codes.");
+				return Problem("A file-upload answer carries upload ids, not a value or choices.");
 			}
 
 			var uploads = new List<(UploadId Upload, string? FileName)>();
@@ -257,10 +257,10 @@ public static partial class ReportSubmissionEndpoints
 			return null;
 		}
 
-		if (entry.OptionCodes is { Count: > 0 }
+		if (entry.Choices is { Count: > 0 }
 			|| entry.Attachments is { Count: > 0 })
 		{
-			return Problem("This answer's shape does not carry option codes or upload ids.");
+			return Problem("This answer's shape does not carry choices or upload ids.");
 		}
 
 		try

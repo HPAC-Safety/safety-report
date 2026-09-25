@@ -18,7 +18,7 @@ capability boundaries are normative.
 | Method and route | Purpose | Result |
 |---|---|---|
 | `GET /health` | Service health for platform probes | Minimal health response; no dependency details publicly exposed. |
-| `GET /api/v1/questions/current` | Load the ordered current form | Bilingual question-revision DTO, cache validator/version allowed. |
+| `GET /api/v1/questions` | Load the ordered current form. Anonymous. | Bilingual question-revision DTO, cache validator/version allowed. |
 | `POST /api/v1/uploads` | Upload one attachment as it is attached; raw body, declared type in `Content-Type` | `201` with an opaque upload ID and kind, or `400` with a safe rejection reason. Requires a member bearer token, rate limited, stores nothing identifying the member, and writes to quarantine only. |
 | `DELETE /api/v1/uploads/{id}` | Remove an unclaimed upload | `204`, idempotent; erases every version of the quarantine object. |
 | `POST /api/v1/reports` | Submit final report JSON naming its upload IDs | `202` with opaque report ID/status. Requires a member bearer token of any role, and rate limited. Stores nothing identifying the member. |
@@ -40,7 +40,7 @@ reserved ID, or database state, and an upload creates only a quarantine object
 ### Authentication API
 
 **CON-IF-003** Each authentication capability is reachable only as stated below.
-*Verified by: REQ-MOD-017, REQ-MOD-019.*
+*Verified by: REQ-MOD-019.*
 
 | Capability | Authorization |
 |---|---|
@@ -70,7 +70,7 @@ access is granted or revoked at the identity provider.
 **CON-IF-006** Admin mutation routes use explicit command DTOs and concurrency tokens where a
 stale edit could overwrite another officer's work. Error bodies are localized
 problem details with stable machine codes and no secrets/private values.
-*Verified by: REQ-SUB-011.*
+*Verified by: REQ-MOD-060.*
 
 ## Core ports
 
@@ -85,7 +85,13 @@ it is enforced in review and by the conventions skill.*
 - a private blob store supporting bounded stream write/read and short-lived
   derivative read access;
 - an attachment detector/processor for controlled image/video derivatives and
-  document validation; and
+  document validation;
+- a machine translator (`ITranslator`, DeepL) for drafting question wording,
+  the Worker's answer and comment translations, and a reviewer's summary
+  draft
+  ([ADR-0022](decisions/ADR-0022-translation-provider-is-configuration.md),
+  [ADR-0112](decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
+  and
 - `TimeProvider` for testable expiry, retries, and lifecycle decisions.
 
 **Authentication needs no port.** The API does not call the identity provider;
@@ -95,7 +101,7 @@ crossed at request time
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 
 Do not keep ports whose only reason was a removed feature: field cipher,
-translator, PII auditor, publication channel, email sender, upload-URL slot,
+PII auditor, publication channel, email sender, upload-URL slot,
 member authenticator, Turnstile verifier, or specialized aircraft processing. A concrete implementation may be used directly
 when no domain boundary or second adapter exists.
 
@@ -105,8 +111,9 @@ when no domain boundary or second adapter exists.
 flowchart TD
     qdb[(Question revisions)] --> fq[Current-form query DTO]
     fq --> browser[Reporter browser]
-    browser -->|JSON DTO + files| validate[API validation]
-    validate --> quarantine[(Private quarantine)]
+    browser -->|each file, as attached: POST /uploads| quarantine[(Private quarantine)]
+    browser -->|final JSON naming upload IDs| validate[API validation]
+    quarantine -->|claimed: copied to the report's original| tx
     validate --> tx[One DB transaction]
     tx --> reports[(Report + answers)]
     tx --> outbox[(Outbox)]

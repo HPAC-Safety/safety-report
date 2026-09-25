@@ -30,4 +30,10 @@ public enum OutboxMessageType
 	///     official language. The payload is the revision's ID (ADR-0114).
 	/// </summary>
 	TranslateComment = 3,
+
+	/// <summary>
+	///     Machine-translate the missing language of one type-ahead value a reporter
+	///     added, onto the value itself. The payload is the choice's ID (ADR-0129).
+	/// </summary>
+	TranslateChoice = 4,
 }

@@ -71,6 +71,6 @@ public sealed class OutboxMessageConfiguration : IEntityTypeConfiguration<Outbox
 
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_outbox_messages_type",
-			"type IN ('summarize_report', 'process_attachment', 'translate_answers', 'translate_comment')"));
+			"type IN ('summarize_report', 'process_attachment', 'translate_answers', 'translate_comment', 'translate_choice')"));
 	}
 }

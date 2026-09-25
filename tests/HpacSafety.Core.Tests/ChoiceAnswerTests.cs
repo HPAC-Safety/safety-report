@@ -114,6 +114,55 @@ public class ChoiceAnswerTests
 		choice.Label(Locale.EnCa).ShouldBe("Élévation Sainte-Anne");
 	}
 
+	[Fact]
+	public void GivenAChoiceWithBothLanguages_WhenAMachineTranslationArrives_ThenNothingChanges()
+	{
+		// Given — ADR-0129: a person's wording is never overwritten by the Worker
+		var choice = Conditions().Choices[0];
+
+		// When
+		var supplied = choice.SupplyAutoTranslation("Venteux");
+
+		// Then
+		supplied.ShouldBeFalse();
+		choice.LabelFr.ShouldBe("Rafales");
+		choice.LabelFrSource.ShouldBe(LabelSource.Human);
+	}
+
+	[Fact]
+	public void GivenABlankMachineTranslation_WhenSupplied_ThenRefused()
+	{
+		// Given
+		var question = Question.Create("launch", QuestionType.Autocomplete, "Launch", "Décollage", Now, isActive: true);
+		var choice = question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => choice.SupplyAutoTranslation(" "));
+		choice.LabelFr.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenAMachineTranslatedLabel_WhenAnAdministratorResavesOrRewritesIt_ThenItsSourceFollows()
+	{
+		// Given
+		var question = Question.Create("launch", QuestionType.Autocomplete, "Launch", "Décollage", Now, isActive: true);
+		var choice = question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
+		choice.SupplyAutoTranslation("Mont 7").ShouldBeTrue();
+
+		// When — the editor resaves it unchanged
+		question.ReplaceChoices([new QuestionOptionInput(choice.Code, "Mount 7", "Mont 7")], Now);
+
+		// Then — still the machine's
+		choice.LabelFrSource.ShouldBe(LabelSource.Auto);
+		choice.LabelEnSource.ShouldBe(LabelSource.Human);
+
+		// When — a person rewrites it
+		question.ReplaceChoices([new QuestionOptionInput(choice.Code, "Mount 7", "Mont Sept")], Now);
+
+		// Then — now theirs
+		choice.LabelFrSource.ShouldBe(LabelSource.Human);
+	}
+
 	private static Question Conditions()
 	{
 		return Question.Create(

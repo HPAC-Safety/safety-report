@@ -208,6 +208,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		configurationBuilder.Properties<OutboxMessageType>().HaveConversion<EnumCodeConverter<OutboxMessageType>>().HaveMaxLength(64);
 		configurationBuilder.Properties<TranslationSource>().HaveConversion<EnumCodeConverter<TranslationSource>>().HaveMaxLength(64);
 		configurationBuilder.Properties<TranslationMode>().HaveConversion<EnumCodeConverter<TranslationMode>>().HaveMaxLength(64);
+		configurationBuilder.Properties<LabelSource>().HaveConversion<EnumCodeConverter<LabelSource>>().HaveMaxLength(16);
 		configurationBuilder.Properties<SummaryTextSource>().HaveConversion<EnumCodeConverter<SummaryTextSource>>().HaveMaxLength(64);
 	}
 

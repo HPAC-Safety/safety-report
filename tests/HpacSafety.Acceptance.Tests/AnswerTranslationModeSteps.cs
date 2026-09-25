@@ -42,6 +42,10 @@ public sealed class AnswerTranslationModeSteps
 	// revision it answers and the value (or values) given.
 	private readonly Dictionary<string, (string RevisionId, object? Value, string[]? Values)> _answers = [];
 	private readonly RecordingTranslator _translator = new();
+	private readonly string _typed = $"A ridge nobody listed {Guid.NewGuid():N}"[..30];
+	private bool _pickedFromList;
+
+	private string Typed => _typed;
 
 	private HttpClient? _admin;
 	private string? _reportId;
@@ -160,6 +164,68 @@ public sealed class AnswerTranslationModeSteps
 		// The Worker ran and found nothing to send: a choice answer has no
 		// translation of its own.
 		_translator.Sent.ShouldBeEmpty();
+	}
+
+	// ── REQ-SUB-082: a type-ahead names a value; the Worker translates a new one
+
+	[Given(@"a type-ahead question offers a value written in both official languages")]
+	public async Task GivenATypeAheadWithABilingualValue()
+	{
+		_answers["autocomplete"] = (await CreateQuestion("autocomplete", options: [("Mount Seven", "Mont Sept")]), null, null);
+	}
+
+	[When(@"^a reporter answering in English submits (that value, picked from the list|words the question does not offer)$")]
+	public async Task WhenAReporterSubmitsATypeAheadValue(string answer)
+	{
+		ArgumentNullException.ThrowIfNull(answer);
+		_pickedFromList = answer.StartsWith("that value", StringComparison.Ordinal);
+		_answers["autocomplete"] = (_answers["autocomplete"].RevisionId, _pickedFromList ? "Mount Seven" : Typed, null);
+
+		await SubmitInEnglish();
+		await RunTheWorker();
+		await RunTheChoiceWorker();
+		await OpenTheDetailView();
+	}
+
+	[Then(@"^the answer names (that value|a new reporter-added value)$")]
+	public async Task ThenTheAnswerNames(string named)
+	{
+		ArgumentNullException.ThrowIfNull(named);
+		var choice = await ChoiceNamedBy("autocomplete");
+
+		if (named == "that value")
+		{
+			choice.LabelEn.ShouldBe("Mount Seven");
+			choice.AddedByReporter.ShouldBeFalse();
+		}
+		else
+		{
+			choice.LabelEn.ShouldBe(Typed);
+			choice.AddedByReporter.ShouldBeTrue();
+		}
+	}
+
+	[Then(@"^its second language comes from (the value's French label|the value's French label, once the Worker supplies it)$")]
+	public async Task ThenItsSecondLanguageComesFrom(string source)
+	{
+		ArgumentNullException.ThrowIfNull(source);
+		var choice = await ChoiceNamedBy("autocomplete");
+		var (_, translation) = await ShownFor("autocomplete");
+
+		if (source == "the value's French label")
+		{
+			translation.ShouldBe("Mont Sept");
+			_translator.Sent.ShouldBeEmpty();
+			return;
+		}
+
+		// The Worker filled the value, not the answer (ADR-0129).
+		_translator.Sent.ShouldBe([Typed]);
+		choice.LabelFr.ShouldBe($"[fr-CA] {Typed}");
+		choice.LabelFrSource.ShouldBe(LabelSource.Auto);
+		choice.LabelEnSource.ShouldBe(LabelSource.Human);
+		translation.ShouldBe($"[fr-CA] {Typed}");
+		(await StoredFor("autocomplete")).Single().TranslatedValue.ShouldBeNull();
 	}
 
 	// ── REQ-MOD-077: the detail view hides a second language that isn't one ─
@@ -349,7 +415,7 @@ public sealed class AnswerTranslationModeSteps
 		{
 			// A picker names its choices by identifier (ADR-0128); a type-ahead
 			// sends the words the reporter typed.
-			var picker = name is "single_select" or "multi_select";
+			var picker = name is "single_select" or "multi_select" || (name == "autocomplete" && _pickedFromList);
 			answers.Add(new
 			{
 				questionRevisionId = answer.RevisionId,
@@ -376,6 +442,33 @@ public sealed class AnswerTranslationModeSteps
 			.GetProperty("options").EnumerateArray().ToList();
 
 		return [.. labelsEn.Select(label => options.Single(option => option.GetProperty("labelEn").GetString() == label).GetProperty("id").GetString()!)];
+	}
+
+	/// <summary>Runs the Worker's value-translation step for every value this report's questions queued (ADR-0129).</summary>
+	private async Task RunTheChoiceWorker()
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var questionIds = (await StoredAnswers()).Select(answer => answer.QuestionId).ToList();
+		var queued = await database.OutboxMessages.AsNoTracking()
+			.Where(message => message.Type == OutboxMessageType.TranslateChoice && questionIds.Contains(message.AggregateId))
+			.ToListAsync();
+
+		var processor = new TranslateChoiceProcessor(database, _translator);
+		foreach (var message in queued)
+		{
+			await processor.Process(message, CancellationToken.None);
+		}
+
+		await database.SaveChangesAsync();
+	}
+
+	private async Task<QuestionChoice> ChoiceNamedBy(string name)
+	{
+		var choiceId = (await StoredFor(name)).Single().ChoiceId!.Value;
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		return await database.QuestionChoices.AsNoTracking().SingleAsync(choice => choice.Id == choiceId);
 	}
 
 	private async Task RunTheWorker()

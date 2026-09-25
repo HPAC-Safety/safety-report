@@ -238,7 +238,6 @@ Scenario: A submitted choice must be one the question offers
   And only a type-ahead also accepts typed text naming a value it does not yet offer
 
 @REQ-SUB-080
-@ignore
 Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead
   When the API commits the submission
@@ -255,7 +254,6 @@ Scenario: A choice answer reads both languages from its choice
   And nothing is sent to the Worker's translator
 
 @REQ-SUB-082
-@ignore
 Scenario Outline: A type-ahead answer names a value, and the Worker translates only a new one
   Given a type-ahead question offers a value written in both official languages
   When a reporter answering in English submits <answer>

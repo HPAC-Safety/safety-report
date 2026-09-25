@@ -158,6 +158,12 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 		builder.Property(choice => choice.ReporterLocale);
 		builder.Ignore(choice => choice.NeedsTranslation);
 
+		// How each language was produced: written by a person, or supplied by the
+		// Worker (ADR-0129). Present exactly when its label is.
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_choices_label_source",
+			"(label_en_source IS NULL OR label_en_source IN ('human', 'auto')) AND (label_fr_source IS NULL OR label_fr_source IN ('human', 'auto')) AND (label_en IS NULL) = (label_en_source IS NULL) AND (label_fr IS NULL) = (label_fr_source IS NULL)"));
+
 		// Unique across removed rows too: an Administrator writing a removed
 		// choice again revives that row, and a reporter never does, so a code
 		// has exactly one row on its question for life.

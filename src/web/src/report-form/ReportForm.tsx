@@ -352,7 +352,7 @@ export function ReportForm() {
 					submitAnswers.push({
 						questionRevisionId: question.revisionId,
 						value: null,
-						optionCodes: answer?.kind === "options" ? answer.values : [],
+						choices: answer?.kind === "options" ? answer.values : [],
 						attachments: null,
 					})
 					continue
@@ -362,7 +362,7 @@ export function ReportForm() {
 					submitAnswers.push({
 						questionRevisionId: question.revisionId,
 						value: null,
-						optionCodes: null,
+						choices: null,
 						attachments: (attachments[question.revisionId] ?? [])
 							.filter((row) => row.status === "uploaded" && row.uploadId)
 							.map((row) => ({ uploadId: row.uploadId!, fileName: row.name })),
@@ -373,7 +373,7 @@ export function ReportForm() {
 				submitAnswers.push({
 					questionRevisionId: question.revisionId,
 					value: answer?.kind === "value" ? answer.value : null,
-					optionCodes: null,
+					choices: null,
 					attachments: null,
 				})
 			}

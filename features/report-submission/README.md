@@ -79,19 +79,19 @@ it nor leaves the form.
     {
       "questionRevisionId": "text-revision-id",
       "value": "A short answer",
-      "optionCodes": null,
+      "choices": null,
       "attachments": null
     },
     {
-      "questionRevisionId": "select-revision-id",
+      "questionRevisionId": "multi-select-revision-id",
       "value": null,
-      "optionCodes": [],
+      "choices": ["Paraglider", "Hang glider"],
       "attachments": null
     },
     {
       "questionRevisionId": "file-revision-id",
       "value": null,
-      "optionCodes": null,
+      "choices": null,
       "attachments": [
         { "uploadId": "kP3x9QmR2vT8wLb6nYc4Dg", "fileName": "launch-site.jpg" }
       ]
@@ -99,6 +99,10 @@ it nor leaves the form.
   ]
 }
 ```
+
+`choices` carries a multi-select answer's chosen labels, in the reporter's
+language, exactly as the form offered them. It never carries a choice code
+(ADR-0095): a single-select answer's label travels in `value` the same way.
 
 Field names are camelCase on the wire (ASP.NET's default JSON casing), not
 the snake_case the Gherkin prose uses when it names them — the scenarios are

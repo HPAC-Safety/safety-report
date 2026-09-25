@@ -356,12 +356,12 @@ public sealed class AnswerTranslationModeSteps
 		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
 		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
 
-		var answers = new List<object> { new { questionRevisionId = consent, value = (string?)"yes", optionCodes = (string[]?)null } };
+		var answers = new List<object> { new { questionRevisionId = consent, value = (string?)"yes", choices = (string[]?)null } };
 		answers.AddRange(_answers.Values.Select(answer => new
 		{
 			questionRevisionId = answer.RevisionId,
 			value = answer.Values is null ? answer.Value : null,
-			optionCodes = answer.Values,
+			choices = answer.Values,
 		}));
 
 		using var response = await reporter.PostAsJsonAsync(Submit, new { language = "en-CA", answers });

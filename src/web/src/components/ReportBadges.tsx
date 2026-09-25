@@ -5,8 +5,8 @@ const BADGE = "inline-flex items-center rounded-full border px-3 py-0.5 font-san
 
 /*
  * A report's workflow status and, separately, whether its reporter refused
- * publication. Private is about consent and Rejected is a reviewer's decision,
- * so they are never merged into one badge. Tokens only: red is kept for the
+ * publication. Private is about consent and Unpublished is a status, so they
+ * are never merged into one badge. Tokens only: red is kept for the
  * primary action and errors, so badges differ by weight and fill, not by hue.
  */
 export function ReportBadges({

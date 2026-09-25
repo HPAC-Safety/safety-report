@@ -5,17 +5,16 @@ import { ApiError, authorization } from "./adminQuestions"
 export type ReportStatus =
 	| "submitted"
 	| "summarizing"
-	| "pending_review"
 	| "summary_failed"
-	| "approved"
-	| "rejected"
+	| "pending"
 	| "published"
+	| "unpublished"
 
 /** Publication consent: the reporter's yes or no, or unanswered on an older report. */
 export type ReportConsent = "yes" | "no" | "unanswered"
 
 /** Each filter the admin report list accepts, in the order the page offers them. */
-export const REPORT_FILTERS = ["all", "needs-action", "published", "private", "rejected", "summary-failed"] as const
+export const REPORT_FILTERS = ["all", "needs-action", "published", "unpublished", "private", "summary-failed"] as const
 
 export type ReportFilter = (typeof REPORT_FILTERS)[number]
 
@@ -90,7 +89,7 @@ export interface ReportDetail extends ReportListItem {
 	mediaConsent: ReportConsent
 	/** Sent back with every review command; a stale one is refused with 409 (ADR-0105). */
 	version: string
-	rejectionNote: string | null
+	unpublishNote: string | null
 	publishedAt: string | null
 }
 
@@ -169,21 +168,14 @@ export function saveSummaryPair(
 	})
 }
 
-/** Approves the pair; the API publishes it too when the reporter consented (ADR-0105). */
-export function approveReport(id: string, version: string): Promise<ReportDetail> {
-	return post(`${reportPath(id)}/approve`, { version })
+/** Approves the pair and makes the report public in one action (ADR-0125). */
+export function publishReport(id: string, version: string): Promise<ReportDetail> {
+	return post(`${reportPath(id)}/publish`, { version })
 }
 
-export function rejectReport(id: string, version: string, note: string): Promise<ReportDetail> {
-	return post(`${reportPath(id)}/reject`, { version, note })
-}
-
-export function reopenReport(id: string, version: string): Promise<ReportDetail> {
-	return post(`${reportPath(id)}/reopen`, { version })
-}
-
-export function unpublishReport(id: string, version: string): Promise<ReportDetail> {
-	return post(`${reportPath(id)}/unpublish`, { version })
+/** Takes a report off the public feed, or declines a pending one, with an optional reviewer-only note. */
+export function unpublishReport(id: string, version: string, note: string): Promise<ReportDetail> {
+	return post(`${reportPath(id)}/unpublish`, { version, note })
 }
 
 export function deleteReport(id: string): Promise<void> {

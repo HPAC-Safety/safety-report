@@ -122,7 +122,8 @@ Worker.
    carries ffmpeg since #423.
 4. ~~Implement JWT member authentication, review UI/API, pair approval,
    deletion, and the exact public DTO.~~ Done (#191, #192, #25, #28).
-5. Complete the end-to-end bilingual and privacy journey (#27).
+5. ~~Complete the end-to-end bilingual and privacy journey (#27).~~ Closed as
+   unnecessary: the per-area claims cover each step.
 6. Bring the Terraform to the target: the API and Worker on Lambda (#443), and
    the unused migrate task and SES removed (#441). Then deploy (#30) and verify
    the focused operational alerts.

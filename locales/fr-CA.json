@@ -282,7 +282,7 @@
       "rejectedTitle": "Champs non importés",
       "rejectedIntro": "Ces champs n'ont pas d'équivalent dans la banque de questions et ont été ignorés.",
       "pendingLogicTitle": "Logique de branchement à configurer manuellement",
-      "pendingLogicIntro": "Ces champs comportaient une logique conditionnelle que l'importateur n'a pas pu traduire automatiquement. Veuillez configurer manuellement le paramètre « Dépend de » correspondant, puis corrigez la note.",
+      "pendingLogicIntro": "Ces champs comportaient une logique conditionnelle que l'importateur n'a pas pu traduire automatiquement. Veuillez configurer manuellement le paramètre « Ne posez la question que lorsqu’une autre question a reçu une certaine réponse » correspondant, puis corrigez la note.",
       "pendingLogicResolve": "Résolu",
       "error": {
         "unexpected": "Une erreur s'est produite. Veuillez réessayer."

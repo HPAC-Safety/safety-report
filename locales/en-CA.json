@@ -206,7 +206,7 @@
   "questions.import.rejectedTitle": "Fields not imported",
   "questions.import.rejectedIntro": "These fields have no equivalent in the question bank and were skipped.",
   "questions.import.pendingLogicTitle": "Branching logic to wire up manually",
-  "questions.import.pendingLogicIntro": "These fields had conditional logic the importer could not translate automatically. Wire up the equivalent \"Depends on\" setting by hand, then resolve the note.",
+  "questions.import.pendingLogicIntro": "These fields had conditional logic the importer could not translate automatically. Wire up the equivalent \"Only ask when another question is answered a certain way\" setting by hand, then resolve the note.",
   "questions.import.pendingLogicResolve": "Resolved",
   "questions.import.error.unexpected": "Something went wrong. Please try again.",
   "questions.export.action": "Export to Typeform JSON",

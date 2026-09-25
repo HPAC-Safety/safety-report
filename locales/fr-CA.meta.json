@@ -1044,10 +1044,10 @@
     "reviewed": false
   },
   "questions.import.pendingLogicIntro": {
-    "source_hash": "0c5b38796a555600abd8dd1620319e88553683ac9d5aeab7bf8685ba63c6d7dc",
-    "target_hash": "0b54dfa9b9b401c75daf0534d4927d88c032fcf38eb68a378d31ae5e6e33082d",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "source_hash": "54090d4d9892a5b934b311ad2bab44159833d5630183fcf365788aabecf381ed",
+    "target_hash": "39670f258cc23275d806271a76699e42539224ea885d640264397643ffdc6fbc",
+    "provider": "human",
+    "reviewed": true
   },
   "questions.import.pendingLogicResolve": {
     "source_hash": "5be3c2c8354e1eb924b03a3dcc7fa4172e9aa0f4917b46b44fcc7daf8835d7a7",

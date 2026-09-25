@@ -188,12 +188,14 @@ Scenario: A multi-select question is a picker dropdown, not a flat list
   When the reporter presses Escape
   Then the picker closes, returns focus to itself, and names both chosen options
 
-@REQ-SUB-004
+@REQ-SUB-078
+@ignore
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
   When the reporter submits the form
   Then the submission DTO contains exactly one answer entry for each of those revisions
-  And a multi-select answer carries its chosen labels, as the form offered them, in "choices" and never a choice code
+  And a single-select, multi-select, or type-ahead answer carries the identifiers of the chosen choices in "choices"
+  And a type-ahead answer naming a value the question does not offer carries the typed text in "value" instead
   And every other answer uses "value", a single string, alongside the locale it was given in
   And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
   And fields for the other answer shapes are null
@@ -220,21 +222,45 @@ Scenario: A skipped answer is represented by an empty value, not omission
   Then a skipped answer of any type has a null value
   And a skipped file upload has an empty attachments list
 
-@REQ-SUB-006
-Scenario: A submitted select value must be one the revision offered
-  Given a reporter submits a value for a picker or multi-select question
+@REQ-SUB-079
+@ignore
+Scenario: A submitted choice must be one the question offers
+  Given a reporter submits a single-select, multi-select, or type-ahead answer naming choices by identifier
   When the API validates the submission
-  Then the value is accepted only if the answered revision offered exactly that label
-  And a value the revision never offered is rejected
-  And a type-ahead also accepts a value it does not yet offer
+  Then the answer is accepted only if every named choice is a live choice of that question
+  And a removed choice, or another question's choice, is rejected
+  And only a type-ahead also accepts typed text naming a value it does not yet offer
 
-@REQ-SUB-007
+@REQ-SUB-080
+@ignore
 Scenario: The submission path never calls a translation provider
-  Given a submission contains select answers and a value typed into a type-ahead
+  Given a submission contains choice answers and a value typed into a type-ahead
   When the API commits the submission
   Then no translation provider is called
-  And the answers are stored in the language the reporter gave them in
-  And only a picker answer carries a second language yet, copied from the choice it names
+  And no choice answer stores a copy of either of its choice's labels
+  And a new type-ahead value is queued for the Worker to translate, on the value itself
+
+@REQ-SUB-081
+@ignore
+Scenario: A choice answer reads both languages from its choice
+  Given a single-select and a multi-select question offer choices written in both official languages
+  When a reporter answering in English picks one choice from each and submits
+  Then each answer reads as its choice's English label, with its French label as the second language
+  And the translation source is marked "choice"
+  And nothing is sent to the Worker's translator
+
+@REQ-SUB-082
+@ignore
+Scenario Outline: A type-ahead answer names a value, and the Worker translates only a new one
+  Given a type-ahead question offers a value written in both official languages
+  When a reporter answering in English submits <answer>
+  Then the answer names <named>
+  And its second language comes from <source>
+
+Examples:
+  | answer                            | named                          | source                                                 |
+  | that value, picked from the list  | that value                     | the value's French label                               |
+  | words the question does not offer | a new reporter-added value     | the value's French label, once the Worker supplies it  |
 
 @REQ-SUB-025
 Scenario: Every answer's value and locale are immutable once submitted
@@ -259,25 +285,6 @@ Scenario: Only free text marked for translation is machine-translated
   Then only the long-text answer is sent to the translator
   And the yes/no answer has only its fixed counterpart, written at submission
   And every other answer keeps no second language
-
-@REQ-SUB-069
-Scenario: A picker answer takes its choice's other-language label at submission
-  Given a single-select and a multi-select question offer choices written in both official languages
-  When a reporter answering in English picks one choice from each and submits
-  Then each stored answer holds the French label of the choice picked, as its second language
-  And the translation source is marked "choice"
-  And no translation provider is called and nothing is sent to the Worker's translator
-
-@REQ-SUB-070
-Scenario Outline: A type-ahead answer uses its choice when it names one, and the Worker otherwise
-  Given a type-ahead question offers a choice written in both official languages
-  When a reporter answering in English submits <answer>
-  Then the answer's second language comes from <source>
-
-Examples:
-  | answer                               | source                                 |
-  | that choice's English label          | the choice's French label, at submission |
-  | words the question does not offer    | the Worker's machine translation       |
 
 @REQ-SUB-027
 Scenario: An administrator's correction always wins over the Worker's translation

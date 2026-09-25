@@ -24,15 +24,30 @@ Each revision contains:
 - a nullable `deleted` timestamp.
 
 A question's choices are not part of any revision. A single-select,
-multi-select, or type-ahead question owns one ordered list of choices that an
-Administrator edits in place: adding, rewording, reordering, or removing one
-never creates a revision and never retires the question, even once it has been
-answered. A fork carries the whole list, removed choices and reporter-added
-marks included, to the replacement. A removed choice is hidden from the form,
-never erased
+multi-select, or type-ahead question owns one ordered list of choices, edited
+in place: adding, changing, reordering, or removing one never creates a
+revision and never retires the question, even once it has been answered. A
+fork carries a copy of the whole list, removed choices and reporter-added
+marks included, to the replacement
 ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-A reporter-added choice holds only the language it was typed in until an
-Administrator supplies the other, and is offered in the language it has.
+
+An answer names its choice by identifier and copies none of its wording; both
+languages are read from the choice. A removed choice is hidden from the form,
+never erased, and every answer that named it still names it and reads its
+wording ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+
+- **Picker options** (single-select, multi-select) are authored by an
+  Administrator in both languages. Changing an option's wording, they choose
+  to **fix it in place** (same choice; every answer reads the fix) or
+  **replace it** (the old choice is retired, still named by every earlier
+  answer, and a new choice takes its place). A condition naming a replaced
+  choice follows it to its replacement ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+- **Type-ahead values** are corrected in place for every answer that names
+  them, removed by soft delete, and merged: merging B into A retires B, and
+  answers naming B read A without being rewritten. A value a reporter adds is
+  flagged for review, offered at once in the language it was typed, and given
+  its other language by the Worker. A Safety Officer or an Administrator
+  reviews it ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 
 A single-select or multi-select question always keeps at least one live
 choice: one with none could not be answered, so saving it, retyping a question
@@ -122,15 +137,23 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Shared choice lists, or reusing one question's choices on another in any
   form ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 - A reporter editing, curating, or removing a choice. A reporter may add a
-  missing choice to a type-ahead; an Administrator curates it in the question
-  editor ([ADR-0063](../../docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
+  missing value to a type-ahead; a Safety Officer or an Administrator reviews
+  it ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - A reporter adding a choice to a single-select or multi-select question.
-- A record of exactly which choices a reporter was shown. The answer stores
-  the reporter's own words (ADR-0072).
-- Machine-translating a reporter-added choice's missing language.
+- A record of exactly which choices a reporter was shown. The answer names the
+  choice it was given under ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+- Holding a reporter's new type-ahead value back until it is approved. It is
+  offered at once and reviewed afterwards ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+- Merging picker options, or a Safety Officer editing one. A picker option is
+  fixed or replaced by an Administrator ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+- Replacing a type-ahead value, or un-merging one. A type-ahead value is only
+  ever corrected in place ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+- Rewriting an answer to name a different choice, on merge, replacement, or
+  migration. Readers follow the link instead.
+- Copying a choice's wording onto an answer, in either language.
 - An administrator authoring, seeing, or recoding an option code. A new
-  choice's code is derived from its English wording, and a reworded choice
-  keeps the code it has (`REQ-QB-092`).
+  choice's code is derived from its English wording, and a choice fixed in
+  place keeps the code it has (`REQ-QB-092`).
 - An administrator authoring, seeing, or changing a question key. A new
   question's key is derived from its English wording and never reuses a key any
   question holds, retired ones included (`REQ-QB-096`). Only an imported

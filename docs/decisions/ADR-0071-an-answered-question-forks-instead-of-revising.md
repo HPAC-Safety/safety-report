@@ -13,7 +13,8 @@ keywords: question bank, revisions, soft delete, fork, immutability, question ke
 **Status:** Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md). A question's choices live outside its
 revisions, so editing only the choices never revises or forks the question. A
 fork copies every choice, removed ones and reporter-added marks included, onto
-the replacement.
+the replacement. Amended again by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): the copies are new
+choice rows, and answers to the retired question keep naming its rows.
 
 ## Context
 

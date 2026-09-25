@@ -18,6 +18,11 @@ a yes or no answer is stored in the reporter's language (`oui`/`non` for a
 French reporter), and a stored `oui` is no longer a bug. The date, time, and
 date-and-time forms below stand.
 
+Partially superseded by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): a single-select,
+multi-select, or type-ahead answer references its choice by ID and stores no
+label. The select rows and the rejection of "keep option codes" below no
+longer hold; every other answer type is still one string.
+
 ## Context
 
 `report_answers` stores two shapes today. A text-shaped question writes `value`;

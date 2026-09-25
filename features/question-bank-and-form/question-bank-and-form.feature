@@ -147,14 +147,6 @@ Scenario: consent_publish must resolve to an explicit yes or no
   When the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no
   Then the API rejects the submission
 
-@REQ-QB-018
-Scenario: An answer to a picker stores the words the reporter saw
-  Given a reporter is shown a picker, type-ahead, or multi-select question
-  When the reporter chooses a value and submits
-  Then the stored answer holds that value's label exactly as it was shown
-  And it holds no option code and no reference to an option row
-  And relabelling or removing that option afterwards leaves the stored answer unchanged
-
 @REQ-QB-019
 Scenario Outline: Every answer is stored in its written form
   Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
@@ -279,28 +271,12 @@ Scenario: A referenced revision can never be deleted
   And the revision remains available as history indefinitely
   And deactivating it through a new revision is the normal way to remove it from future forms
 
-@REQ-QB-035
-Scenario: A reporter adds a choice the type-ahead did not offer
-  Given a type-ahead question offers several choices
-  When a reporter submits an answer naming a site the question does not offer
-  Then the question gains the site as a reporter-added choice
-  And it carries the language the reporter typed it in
-  And it is marked for an Administrator to supply the other language
-  And the next reporter is offered it
-
 @REQ-QB-036
 Scenario: Two reporters naming the same new site produce one choice
   Given a reporter has already added a site to a type-ahead question
   When another reporter submits the same site name
   Then the existing choice is reused rather than duplicated
   And an administrator's wording is never replaced by a reporter's
-
-@REQ-QB-037
-Scenario: A choice an administrator removed is not revived by a reporter
-  Given an Administrator removed a reporter-added choice from a type-ahead question
-  When a reporter submits that same value again
-  Then the choice stays removed from the question
-  And the reporter's answer still records the value they typed
 
 @REQ-QB-097
 Scenario Outline: Only a type-ahead grows from reporters' answers
@@ -671,24 +647,6 @@ Scenario: A choice an Administrator writes is recorded under a code derived from
   When they save choices whose English wording reads "Site A-1" and "Site A 1"
   Then the save is refused naming both wordings
 
-@REQ-QB-094
-Scenario: A reporter answering in French adds a choice recorded in French only
-  Given a type-ahead question offers several choices
-  When a reporter answering in French submits "Élévation Sainte-Anne", which the question does not offer
-  Then the question gains a reporter-added choice whose French wording is "Élévation Sainte-Anne"
-  And the choice has no English wording until an Administrator supplies it
-  And the choice records that it was typed in French
-  And its code is "elevation_sainte_anne", derived from the French wording
-
-@REQ-QB-095
-Scenario: Submitting a report records a type-ahead value the question did not offer
-  Given a published form has a type-ahead question
-  When a reporter answering in French submits a report naming "Élévation Sainte-Anne" in it
-  Then the report is accepted
-  And the answer is stored as "Élévation Sainte-Anne", in French
-  And the question now offers "Élévation Sainte-Anne" as a reporter-added choice coded "elevation_sainte_anne"
-  And the next reporter is offered "Élévation Sainte-Anne"
-
 @REQ-QB-096
 Scenario: A new question's key is derived from its English wording and never reused
   Given an Administrator saves a new question without a key
@@ -719,30 +677,6 @@ Scenario: Editing an answered question's wording carries every choice to the rep
   And the reporter-added choice is still marked as reporter-added
   And the removed choice is carried over and stays removed
 
-@REQ-QB-099
-Scenario Outline: Editing an answered question's choices keeps the question and its version
-  Given a <type> question has been answered on at least one report
-  When an Administrator <edits> its choices
-  Then the question offers the edited choices
-  And the question keeps its identifier and its current revision
-  And the answers already given still record the reporter's own words
-
-Examples:
-  | type          | edits                                   |
-  | single_select | adds a choice to                        |
-  | multi_select  | rewords one of                          |
-  | autocomplete  | reorders                                |
-  | autocomplete  | supplies the missing language of one of |
-
-@REQ-QB-100
-Scenario: A removed choice is hidden from the form and kept in history
-  Given a question has been answered with one of its choices
-  When an Administrator removes that choice
-  Then the form stops offering it
-  And the choice is retired rather than erased
-  And the answer that named it still records the reporter's own words
-  And the question keeps its identifier and its current revision
-
 @REQ-QB-101
 Scenario: A choice a live question depends on cannot be removed
   Given a question depends on the "paraglider" choice of a single-select question
@@ -750,21 +684,172 @@ Scenario: A choice a live question depends on cannot be removed
   Then the save is refused naming the dependent question
   And the choice is still offered
 
-@REQ-QB-102
-Scenario: A choice in only one language is offered in the language it has
-  Given a type-ahead question has a reporter-added choice typed only in English
-  When a reporter using French opens the form
-  Then the question offers that choice in its English wording
-  When an Administrator supplies the choice's French wording
-  Then a reporter using French is offered the French wording
-  And the choice is no longer waiting to be reviewed
-
 @REQ-QB-103
 @ui
 Scenario: The report form shows a one-language choice in the language it has
   Given a type-ahead question has a reporter-added choice typed only in English
   When a reporter using French opens that question
   Then the type-ahead offers the choice in its English wording
+
+@REQ-QB-122
+@ignore
+Scenario Outline: An answer names the choice it was given under
+  Given a reporter answering in English is shown a <type> question whose choices are written in both official languages
+  When the reporter chooses one of its choices and submits
+  Then the stored answer references that choice by its identifier
+  And it stores no copy of the choice's wording
+  And the answer reads as the choice's English label, with its French label as the second language
+
+Examples:
+  | type          |
+  | single_select |
+  | multi_select  |
+  | autocomplete  |
+
+@REQ-QB-123
+@ignore
+Scenario: Fixing a picker option in place corrects every answer that named it
+  Given a single-select question has been answered with its option "Cooprs"
+  When an Administrator fixes that option's wording in place to "Coopers"
+  Then the option keeps its identifier
+  And the earlier answer now reads "Coopers"
+  And the question keeps its identifier and its current revision
+
+@REQ-QB-124
+@ignore
+Scenario: Replacing a picker option keeps the old option under every earlier answer
+  Given a single-select question offering "foo", "bar", and "baz" has been answered with "baz"
+  When an Administrator replaces "baz" with "fizz"
+  Then the form offers "foo", "bar", and "fizz"
+  And "baz" is retired, not erased, and records that "fizz" replaced it
+  And "fizz" has an identifier of its own
+  And the earlier answer still names "baz" and reads "baz"
+  And the question keeps its identifier and its current revision
+
+@REQ-QB-125
+@ignore
+Scenario: A condition follows its choice's replacement
+  Given a question depends on the "paraglider" choice of a single-select question
+  When an Administrator replaces "paraglider" with "paraglider (solo)"
+  Then the dependent question is enabled by an answer naming "paraglider (solo)"
+  And the dependent question keeps its current revision
+
+@REQ-QB-126
+@ignore
+Scenario Outline: A removed choice is no longer offered but still names every answer given under it
+  Given a <type> question has been answered with one of its choices
+  When that choice is removed
+  Then the form stops offering it
+  And the choice is retired rather than erased
+  And the earlier answer still names it and reads its wording
+  And the question keeps its identifier and its current revision
+
+Examples:
+  | type          |
+  | single_select |
+  | multi_select  |
+  | autocomplete  |
+
+@REQ-QB-127
+@ignore
+Scenario: A fork's choices are new rows, and old answers keep naming the retired question's
+  Given a single-select question has been answered with one of its choices
+  When an Administrator changes the question's wording
+  Then the replacement question offers a copy of every choice, each with its own identifier
+  And the earlier answer still names the retired question's choice
+
+@REQ-QB-128
+@ignore
+Scenario Outline: A reporter's new type-ahead value is flagged for review and offered at once
+  Given a type-ahead question offers several choices
+  When a reporter answering in <language> submits "<value>", which the question does not offer
+  Then the question gains a reporter-added value whose <language> wording is "<value>"
+  And the value is flagged for review
+  And the reporter's answer names that value
+  And the next reporter is offered it, in <language> until its other language is supplied
+
+Examples:
+  | language | value                  |
+  | English  | Mount 7                |
+  | French   | Élévation Sainte-Anne  |
+
+@REQ-QB-129
+@ignore
+Scenario: A type-ahead value is corrected in place for every answer that names it
+  Given two reports answered a type-ahead question with the value "coopers"
+  When a Safety Officer corrects that value's wording to "Cooper's"
+  Then the value keeps its identifier
+  And both answers now read "Cooper's"
+  And the next reporter is offered "Cooper's"
+
+@REQ-QB-130
+@ignore
+Scenario: A reporter typing a removed type-ahead value names it without reviving it
+  Given a Safety Officer removed the type-ahead value "Test site"
+  When a reporter submits "test site" for that question
+  Then the reporter's answer names the removed value
+  And the value stays removed and is not offered
+  And the value is flagged for review again
+
+@REQ-QB-131
+@ignore
+Scenario: Merging one type-ahead value into another leaves every answer untouched
+  Given reports answered a type-ahead question with "Coopers" and with "Cooper's", two separate values
+  When a Safety Officer merges "Coopers" into "Cooper's"
+  Then "Coopers" is removed and records that it was merged into "Cooper's"
+  And the answers that named "Coopers" still name it, and read "Cooper's"
+  And the form offers "Cooper's" only
+  When a reporter later submits "coopers" for that question
+  Then the new answer names "Cooper's"
+
+@REQ-QB-132
+@ignore
+Scenario: Merges resolve in a chain and never form a cycle
+  Given the type-ahead value "A" was merged into "B"
+  When a Safety Officer merges "B" into "C"
+  Then an answer naming "A" reads "C"
+  And merging "C" into "A" is refused
+
+@REQ-QB-133
+@ignore
+Scenario Outline: Only a type-ahead value can be merged or edited by a Safety Officer
+  Given a <type> question has two choices
+  When a Safety Officer tries to <action> one of them
+  Then the attempt is <outcome>
+
+Examples:
+  | type          | action                     | outcome  |
+  | autocomplete  | merge it into the other    | accepted |
+  | autocomplete  | correct its wording        | accepted |
+  | single_select | merge it into the other    | refused  |
+  | single_select | correct its wording        | refused  |
+  | multi_select  | merge it into the other    | refused  |
+
+@REQ-QB-134
+@ignore
+Scenario: The Worker supplies a reporter-added value's other language
+  Given a reporter answering in French added the type-ahead value "Élévation Sainte-Anne"
+  When the Worker processes its translation work
+  Then the value gains an English wording from the translation provider, marked as machine-translated
+  And the value is still flagged for review
+  And no translation provider was called while the report was submitted
+
+@REQ-QB-135
+@ignore
+Scenario: Reviewing a type-ahead value clears its flag
+  Given a type-ahead question has a reporter-added value flagged for review
+  When a Safety Officer approves it
+  Then the value is no longer flagged for review
+  And the review records the Safety Officer's token subject and the time
+
+@REQ-QB-136
+@ignore
+Scenario: Existing answers are linked to their choices without being rewritten
+  Given reports stored before this change answered a single-select question with one of its current labels and with a label it no longer offers
+  When the choice-reference migration runs
+  Then the first answer names the choice with that label
+  And the second answer names a removed choice carrying the label it stored, in its language
+  And neither answer's stored text changes
 
 @REQ-QB-104
 Scenario: A new installation asks for several attachments

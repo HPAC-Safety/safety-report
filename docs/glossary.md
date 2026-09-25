@@ -14,7 +14,9 @@ type: guide
 | Group | A question type that collects no answer and acts as a section heading; other questions may be grouped under it so the form renders them together. |
 | Grouped under | A question revision's reference to a live `Group` question it renders alongside, distinct from a conditional dependency. |
 | Statement | A question type that collects no answer and displays instructional text with no input control. |
-| Reporter-added choice | A choice a reporter typed that a type-ahead question did not offer, added to that question's own choices at submission in the language typed, and flagged for an Administrator to curate in place. |
+| Reporter-added choice | A value a reporter typed that a type-ahead question did not offer, added to that question's own choices at submission in the language typed, given its other language by the Worker, and flagged for a Safety Officer or Administrator to review (ADR-0129). |
+| Replaced choice | A picker option an Administrator replaced with a new one: retired, still named by every earlier answer, and linked to its replacement (ADR-0128). |
+| Merged value | A type-ahead value merged into another: retired, and every answer naming it reads the value it was merged into (ADR-0129). |
 | Consent projection | The nullable `consent_publish`, `consent_media`, and `consent_documents` values copied from the two system consent answers because publication logic must query them directly. They are the only answer projections (ADR-0117, ADR-0119). |
 | Deleted | Nullable soft-deletion timestamp on every persisted record except `audit_log` and the hard-deleted `pending_import_logic` notes (ADR-0077); a value means hidden and terminal in normal application flows. |
 | Derivative | A decoded and re-encoded image, or a video remuxed into MP4 (never transcoded), with unsafe metadata removed (ADR-0094, ADR-0122). Documents do not have anonymized derivatives. |

@@ -13,7 +13,11 @@ keywords: translation, answers, DeepL, ITranslator, worker, choices, question ba
 **Status:** Accepted; partially superseded by
 [ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md),
 under which a yes/no or checkbox answer takes its fixed counterpart at
-submission (`fixed`) instead of never having a second language. Amends
+submission (`fixed`) instead of never having a second language; and by
+[ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md) and [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md): a choice answer copies nothing at
+submission and reads both labels from its choice, and the Worker translates a
+reporter-added type-ahead value's missing label on the choice rather than on
+each answer. Amends
 [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md):
 not every answer is machine-translated, and a select answer's second language
 is no longer machine-made. Amends the product invariant that "there is no

@@ -2,7 +2,7 @@
 title: A reporter may add a missing type-ahead choice, and an autocomplete renders the live list
 description: A reporter may add a missing choice to a type-ahead, recorded at submission for an administrator to curate, while the field renders the live shared list.
 type: adr
-status: partially-superseded
+status: superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: autocomplete, option sets, reporter-added, curation, snapshot, question bank, multi-select
@@ -10,7 +10,10 @@ keywords: autocomplete, option sets, reporter-added, curation, snapshot, questio
 
 # ADR-0063 — A reporter may add a missing type-ahead choice, and an autocomplete renders the live list
 
-**Status:** Amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md): a reporter's addition joins the type-ahead
+**Status:** Superseded by [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md), which restates
+what still stood here (a reporter may add a type-ahead value, one row per
+value, no approval gate) and moves curation to a Safety Officer or
+Administrator. Before that, amended by [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md): a reporter's addition joins the type-ahead
 question's own choices (there are no shared lists), in the language it was
 typed only. It is curated in place in the question editor, without a fork, and
 only a type-ahead takes additions; the multi-select widening from ADR-0077 is

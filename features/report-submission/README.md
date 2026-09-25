@@ -85,7 +85,7 @@ it nor leaves the form.
     {
       "questionRevisionId": "multi-select-revision-id",
       "value": null,
-      "choices": ["Paraglider", "Hang glider"],
+      "choices": ["Qm7pR2xT9aB", "Zt4kW8nV1cD"],
       "attachments": null
     },
     {
@@ -100,9 +100,13 @@ it nor leaves the form.
 }
 ```
 
-`choices` carries a multi-select answer's chosen labels, in the reporter's
-language, exactly as the form offered them. It never carries a choice code
-(ADR-0095): a single-select answer's label travels in `value` the same way.
+`choices` carries the identifiers of the choices a single-select,
+multi-select, or type-ahead answer names; the API accepts only live choices of
+that question. A type-ahead answer naming a value the question does not offer
+carries the reporter's typed text in `value` instead, and becomes a new
+reporter-added value. No answer carries a choice's wording or code
+([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md),
+[ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 
 Field names are camelCase on the wire (ASP.NET's default JSON casing), not
 the snake_case the Gherkin prose uses when it names them — the scenarios are
@@ -116,7 +120,7 @@ answer while the reporter works and writes the word when it submits, so
 switching language mid-form loses nothing. The report language is exactly
 `en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080, ADR-0112, ADR-0127)
+## Bilingual answers (ADR-0080, ADR-0112, ADR-0127, ADR-0128, ADR-0129)
 
 `value` and `locale` are written once, here, and never again — no endpoint
 ever updates either column after this one inserts them. How an answer gets
@@ -125,16 +129,16 @@ its second language depends on its question:
 | Question | Second language |
 |---|---|
 | Long or short text marked **Auto-translate answer** | The Worker, mechanically, via `ITranslator` |
-| Single-select, multi-select | The chosen choice's other label, copied here at submission (`choice`); the Worker, when that choice has only one language |
-| Type-ahead | As a picker when it names a choice written in both languages; otherwise the Worker |
+| Single-select, multi-select | The named choice's other label, read from the choice whenever the answer is read (`choice`); nothing is copied onto the answer |
+| Type-ahead | As a picker. A new reporter-added value gets its other label from the Worker, on the value itself, not on the answer |
 | Yes/no, checkbox | The fixed counterpart, written here at submission (`fixed`): `yes`↔`oui`, `no`↔`non` |
 | Text not marked, email, phone, date, time, number, file | None, ever |
 
 Each answer records which of these applies (`translation_mode`), so the admin
 report view never shows a "translation" of an answer that has none. This
 endpoint enqueues one answer-translation outbox message and never calls a
-translation provider itself; copying a choice's label or a yes/no counterpart
-is a lookup, not a translation.
+translation provider itself; reading a choice's label or writing a yes/no
+counterpart is a lookup, not a translation.
 
 Out of scope: detecting which language a reporter actually typed, and
 translating the invariant types above.

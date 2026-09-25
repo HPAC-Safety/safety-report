@@ -20,6 +20,12 @@ Accepted. This ADR:
   [ADR-0074](ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md) and
   [ADR-0077](ADR-0077-typeform-json-import-and-export.md).
 
+Amended by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md) (an answer names its choice by ID; an
+Administrator fixes a picker option in place or replaces it) and
+[ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md) (a type-ahead value is edited in place, merged, and
+reviewed by a Safety Officer or Administrator; the Worker translates a
+reporter-added value).
+
 It carries the second argued exception to AGENTS.md invariant 8's ban on
 `DROP TABLE`, after
 [ADR-0065](ADR-0065-no-user-records-identity-is-the-token-subject.md)'s

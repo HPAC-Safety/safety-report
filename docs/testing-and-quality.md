@@ -36,12 +36,13 @@ relies on API behavior, a server-side test covering that behavior
 ### Questions and submission
 
 **CON-TQ-004** These contracts are covered by test.
-*Verified by: REQ-QB-001, REQ-QB-009, REQ-QB-016, REQ-SUB-004, REQ-SUB-005,
+*Verified by: REQ-QB-001, REQ-QB-009, REQ-QB-016, REQ-SUB-078, REQ-SUB-005,
 REQ-SUB-009, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018.*
 
 - every display-affecting edit to an unanswered question creates a complete
   immutable revision, an edit to an answered one forks it (ADR-0071), and an
-  edit to choices alone changes them in place (ADR-0095);
+  edit to choices alone changes them in place (ADR-0095); an Administrator
+  fixes a picker option in place or replaces it (ADR-0128);
 - current-form query examines the latest revision per key, does not resurrect an
   older active revision, and orders included active/live revisions deterministically;
 - locale toggle preserves answers and revision IDs;

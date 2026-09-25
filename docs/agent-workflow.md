@@ -70,4 +70,5 @@ revision is manually authored in English and French.
 
 Run relevant tests and validation, inspect the diff, push the branch, and open a
 PR containing `Closes #<number>`. Keep working until required checks are green.
-See [`deliver-hpac-change`](../skills/deliver-hpac-change/SKILL.md).
+See [`deliver-change`](../skills/deliver-change/SKILL.md) and
+[`deliver-hpac-change`](../skills/deliver-hpac-change/SKILL.md).

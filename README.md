@@ -202,7 +202,7 @@ the `gh` fetch and enforces only the floor.
 | [`features/`](features/README.md) | Canonical product and system specification, one claim per scenario |
 | [`src/`](src/HpacSafety.Core/README.md) | Core, Infrastructure, API, Worker, and the React/Vite web app |
 | [`tests/`](tests/README.md) | Unit, integration, contract, JS, and browser tests |
-| [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused project-specific coding-agent guidance |
+| [`skills/`](skills/hpac-safety-conventions/SKILL.md) | Focused coding-agent guidance: generic skills, and the project skills that extend them |
 | [`docs/`](docs/architecture.md) | Constraints, operational notes, the generated [traceability matrix](docs/traceability.md), and historical ADRs |
 | [`infra/`](infra/README.md) | Terraform and AWS bootstrap scaffolding |
 | [`locales/`](locales/en-CA.json) | Reviewed application UI catalogues |

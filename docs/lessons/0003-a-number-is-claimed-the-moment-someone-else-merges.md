@@ -92,3 +92,7 @@ a shared identifier — a number, a name, a slug — from the tree as it is afte
 that rebase, never from the tree as it was when you started. It also names
 `--next` and `--renumber` so the recovery is a command rather than an
 investigation.
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

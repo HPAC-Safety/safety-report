@@ -1,13 +1,13 @@
 ---
-name: clarify-hpac-requirements
-description: Resolve genuinely material HPAC Safety requirement ambiguity. Use when two plausible interpretations would change privacy, publication, retention, security, data shape, or user-visible behavior.
+name: clarify-requirements
+description: Resolve genuinely material requirement ambiguity in a specification-driven repository. Use when two plausible interpretations would change privacy, publication, retention, security, data shape, or user-visible behavior.
 ---
 
-# Clarify HPAC Safety requirements
+# Clarify requirements
 
 ## First, look
 
-Read the relevant `/features` pages, source, tests, and issue.
+Read the relevant specification pages, source, tests, and issue.
 
 ## Decide or ask
 
@@ -27,9 +27,8 @@ Read the relevant `/features` pages, source, tests, and issue.
 In the same change:
 
 - the answer becomes a scenario or an out-of-scope line, so the next run starts
-  from the answer
-  ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-development.md));
+  from the answer;
 - a design change updates the affected canonical specification pages and the
   issue's acceptance criteria (see
-  [`deliver-hpac-change`](../deliver-hpac-change/SKILL.md) "Keep the issue true
-  while you work").
+  [`deliver-change`](../deliver-change/SKILL.md) "Keep the issue true while
+  you work").

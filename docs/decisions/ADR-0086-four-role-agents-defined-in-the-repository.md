@@ -12,7 +12,10 @@ keywords: agents, skillfile, roles, spec author, test writer, implementer, revie
 
 **Status:** Accepted. Extended by
 [ADR-0121](ADR-0121-a-fifth-role-maintains-the-agent-instructions.md), which
-adds a fifth role outside the specification chain.
+adds a fifth role outside the specification chain. Extended by
+[ADR-0131](ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md),
+which makes the role agents generic and moves this repository's specifics into
+the `hpac-role-agents` skill.
 
 ## Context
 

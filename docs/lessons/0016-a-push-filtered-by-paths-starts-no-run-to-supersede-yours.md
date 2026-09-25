@@ -46,3 +46,7 @@ its trigger paths.
 that a workflow committing onto a pull request's branch pushes through
 `tools/push-to-pr-branch.mjs`, never a bare `git push`. "Someone else's run
 will redo it" holds only when that push matches your workflow's `paths`.
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

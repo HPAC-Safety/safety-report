@@ -60,3 +60,7 @@ names the specific trap this lesson hit — a mid-conversation sequencing
 detour, a resumed session, or a plain "continue" — as exactly the moment this
 check is most likely to be skipped, because nothing about the moment looks
 like "starting an issue."
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

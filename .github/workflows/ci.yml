@@ -204,6 +204,11 @@ jobs:
       - name: Every markdown file declares what it is
         run: node tools/check-frontmatter.mjs
 
+      # The generic skills and role agents are reused elsewhere, so they name
+      # nothing specific to this repository. ADR-0131.
+      - name: Generic agent instructions name nothing specific to this repository
+        run: node tools/check-generic-instructions.mjs
+
       # An ADR's number is its identity and is claimed by naming a file, so two
       # branches can claim the same one and only a rebase notices. ADR-0091.
       - name: Decision records are numbered without collision

@@ -14,7 +14,10 @@ keywords: agents, skills, AGENTS.md, ai-author, instructions, style, skillfile, 
 [ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amended by
 [ADR-0124](ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md):
 the role may also edit a skill's `agents/*.yaml` and its `Skillfile` entries,
-and mend a link its own move broke.
+and mend a link its own move broke. Extended by
+[ADR-0131](ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md):
+the role agents and the skills whose practice transfers are generic, with a
+project skill holding this repository's rules.
 
 ## Context
 

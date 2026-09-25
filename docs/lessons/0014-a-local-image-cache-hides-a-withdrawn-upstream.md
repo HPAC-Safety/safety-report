@@ -63,3 +63,7 @@ guarantee the old server did.
 - When a pull fails in CI but passes locally, ask the registry anonymously
   (`docker pull` after `docker rmi`, or the registry's token endpoint) before
   trusting the local result.
+
+Since #492 the general rule lives in the generic
+[`test-from-scenarios`](../../skills/test-from-scenarios/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

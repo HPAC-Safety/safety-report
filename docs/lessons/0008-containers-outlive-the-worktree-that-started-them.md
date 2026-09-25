@@ -57,3 +57,7 @@ started them, and removing the checkout does not remove them. Step 7 no longer
 asks the agent to judge whether another branch's containers are running —
 `dev-up.sh` handles that itself, so an agent that still forgets step 8 costs
 the next person nothing.
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

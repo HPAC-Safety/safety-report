@@ -43,3 +43,7 @@ ends with a second freshness check. Once the checks are green, fetch again and
 confirm that `gh pr view <pr> --json mergeStateStatus` does not say `BEHIND`.
 If it does, rebase, push, and watch the checks again. A run is finished only
 when its checks are green on a current branch.
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

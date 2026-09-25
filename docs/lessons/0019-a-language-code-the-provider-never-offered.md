@@ -49,3 +49,7 @@ English, so the broken direction never ran.
 test of what an external provider is sent takes its expected values from the
 provider's documentation, and that every direction of a translation is
 exercised, not only the one development data happens to use.
+
+Since #492 the general rule lives in the generic
+[`test-from-scenarios`](../../skills/test-from-scenarios/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

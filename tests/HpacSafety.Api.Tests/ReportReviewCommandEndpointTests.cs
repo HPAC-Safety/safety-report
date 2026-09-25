@@ -17,7 +17,7 @@ namespace HpacSafety.Api.Tests;
 /// <summary>
 ///     The review commands against a real PostgreSQL container: authorization,
 ///     optimistic concurrency on xmin, state refusals, validation, and audit rows
-///     (REQ-MOD-032..035, REQ-MOD-055..061, ADR-0105). Every report is synthetic.
+///     (REQ-MOD-032..035, REQ-MOD-055..061, REQ-DOM-015, ADR-0105, ADR-0125). Every report is synthetic.
 /// </summary>
 [Trait("Category", "Integration")]
 [Collection(SharedApiPostgres.Name)]
@@ -28,9 +28,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
 	[Theory]
-	[InlineData("approve")]
-	[InlineData("reject")]
-	[InlineData("reopen")]
+	[InlineData("publish")]
 	[InlineData("unpublish")]
 	[InlineData("summary")]
 	public async Task GivenNoBearerToken_WhenACommandIsSent_ThenApiRefuses(string command)
@@ -46,12 +44,12 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Theory]
-	[InlineData("approve")]
+	[InlineData("publish")]
 	[InlineData("summary")]
 	public async Task GivenUserRole_WhenACommandIsSent_ThenApiForbids(string command)
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
@@ -62,40 +60,79 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenConsentedPendingReport_WhenApproved_ThenPublishedWithApproverAndOneAuditRow()
+	public async Task GivenConsentedPendingReport_WhenPublished_ThenPublishedWithApproverAndOneAuditRow()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var detail = await Ok(await Send(client, id, "approve", new { version }));
+		var detail = await Ok(await Send(client, id, "publish", new { version }));
 
 		// Then
 		detail.GetProperty("status").GetString().ShouldBe("published");
 		detail.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.String);
 		detail.GetProperty("summary").GetProperty("approvedBySubject").GetString().ShouldNotBeNullOrWhiteSpace();
 		detail.GetProperty("version").GetString().ShouldNotBe(version);
-		(await Audits(id)).ShouldBe([AuditAction.ApprovedReport]);
+		(await Audits(id)).ShouldBe([AuditAction.PublishedReport]);
 	}
 
 	[Fact]
-	public async Task GivenUnconsentedPendingReport_WhenApproved_ThenApprovedAndNotPublished()
+	public async Task GivenConsentedUnpublishedReport_WhenPublished_ThenPublishedAgain()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "no");
+		var (id, version) = await Seed(ReportStatus.Unpublished, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
-		var detail = await Ok(await Send(client, id, "approve", new { version }));
+		var detail = await Ok(await Send(client, id, "publish", new { version }));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("approved");
-		detail.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
+		detail.GetProperty("status").GetString().ShouldBe("published");
+		detail.GetProperty("unpublishNote").ValueKind.ShouldBe(JsonValueKind.Null);
+	}
+
+	[Theory]
+	[InlineData("publish")]
+	[InlineData("unpublish")]
+	[InlineData("summary")]
+	public async Task GivenReportWithoutConsent_WhenAnyReviewCommandIsSent_ThenInvalidTransitionAndNothingChanges(string command)
+	{
+		// Given — the Worker set it Unpublished for good (REQ-DOM-015)
+		var (id, version) = await Seed(ReportStatus.Unpublished, "no");
+		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
+
+		// When
+		using var response = await Send(client, id, command, new { version, aiSummaryEn = "en", aiSummaryFr = "fr" });
+
+		// Then
+		await ProblemOf(response, HttpStatusCode.Conflict, "invalid-transition");
+		(await Audits(id)).ShouldBeEmpty();
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+		detail.GetProperty("status").GetString().ShouldBe("unpublished");
+		detail.GetProperty("summary").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
 	[Fact]
-	public async Task GivenPublishedReport_WhenPairIsEdited_ThenPendingReviewApprovalClearedAndAudited()
+	public async Task GivenReportWithoutConsent_WhenDeleted_ThenDeletedAndAudited()
+	{
+		// Given
+		var (id, _) = await Seed(ReportStatus.Unpublished, "no");
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		using var scope = _factory.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var reportId = TinyId.Parse(id);
+		(await database.AuditLog.AnyAsync(e => e.TargetId == reportId && e.Action == AuditAction.DeletedReport)).ShouldBeTrue();
+	}
+
+	[Fact]
+	public async Task GivenPublishedReport_WhenPairIsEdited_ThenPendingApprovalClearedAndAudited()
 	{
 		// Given
 		var (id, version) = await Seed(ReportStatus.Published, "yes");
@@ -105,7 +142,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		var detail = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé fermement." }));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("pending_review");
+		detail.GetProperty("status").GetString().ShouldBe("pending");
 		detail.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 		detail.GetProperty("summary").GetProperty("aiSummaryEn").GetString().ShouldBe("The pilot landed firmly.");
 		detail.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.Null);
@@ -116,7 +153,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGeneratedPair_WhenEnglishIsEditedAndFrenchTranslationAccepted_ThenSourcesAreHumanAndMachine()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -138,7 +175,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGeneratedPair_WhenOnlyEnglishChangesWithNoSourcesSent_ThenEnglishHumanAndFrenchStillGenerated()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -155,7 +192,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSourceAReviewerCannotClaim_WhenPairIsSaved_ThenBadRequest(string source)
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -167,7 +204,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenFailedReport_WhenPairIsSaved_ThenManualPairAndPendingReview()
+	public async Task GivenFailedReport_WhenPairIsSaved_ThenManualPairAndPending()
 	{
 		// Given
 		var (id, version) = await Seed(ReportStatus.SummaryFailed, "yes");
@@ -177,51 +214,34 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		var detail = await Ok(await Send(client, id, "summary", new { version, aiSummaryEn = "The pilot landed.", aiSummaryFr = "Le pilote s'est posé." }));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("pending_review");
+		detail.GetProperty("status").GetString().ShouldBe("pending");
 		detail.GetProperty("summaryError").ValueKind.ShouldBe(JsonValueKind.Null);
 		detail.GetProperty("summary").GetProperty("model").GetString().ShouldBe("manual");
 		detail.GetProperty("summary").GetProperty("promptVersion").GetString().ShouldBe("manual");
 	}
 
 	[Fact]
-	public async Task GivenPendingReport_WhenRejectedWithNote_ThenNoteShownAndAuditRowCarriesNoNote()
+	public async Task GivenPendingReport_WhenUnpublishedWithNote_ThenNoteShownAndAuditRowCarriesNoNote()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		var detail = await Ok(await Send(client, id, "reject", new { version, note = Note }));
+		var detail = await Ok(await Send(client, id, "unpublish", new { version, note = Note }));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("rejected");
-		detail.GetProperty("rejectionNote").GetString().ShouldBe(Note);
+		detail.GetProperty("status").GetString().ShouldBe("unpublished");
+		detail.GetProperty("unpublishNote").GetString().ShouldBe(Note);
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportId = TinyId.Parse(id);
-		var entry = await database.AuditLog.SingleAsync(e => e.TargetId == reportId && e.Action == AuditAction.RejectedReport);
+		var entry = await database.AuditLog.SingleAsync(e => e.TargetId == reportId && e.Action == AuditAction.UnpublishedReport);
 		(entry.Detail ?? string.Empty).ShouldNotContain(Note);
 	}
 
 	[Fact]
-	public async Task GivenRejectedReport_WhenReopened_ThenPendingReviewNoteClearedAndAudited()
-	{
-		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
-		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		var rejected = await Ok(await Send(client, id, "reject", new { version, note = Note }));
-
-		// When
-		var detail = await Ok(await Send(client, id, "reopen", new { version = rejected.GetProperty("version").GetString() }));
-
-		// Then
-		detail.GetProperty("status").GetString().ShouldBe("pending_review");
-		detail.GetProperty("rejectionNote").ValueKind.ShouldBe(JsonValueKind.Null);
-		(await Audits(id)).ShouldBe([AuditAction.RejectedReport, AuditAction.ReopenedReport], ignoreOrder: true);
-	}
-
-	[Fact]
-	public async Task GivenPublishedReport_WhenUnpublished_ThenPendingReviewApprovalClearedAndAudited()
+	public async Task GivenPublishedReport_WhenUnpublished_ThenUnpublishedApprovalClearedAndAudited()
 	{
 		// Given
 		var (id, version) = await Seed(ReportStatus.Published, "yes");
@@ -231,7 +251,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		var detail = await Ok(await Send(client, id, "unpublish", new { version }));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("pending_review");
+		detail.GetProperty("status").GetString().ShouldBe("unpublished");
 		detail.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 		detail.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 		(await Audits(id)).ShouldBe([AuditAction.UnpublishedReport]);
@@ -246,11 +266,11 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenMissingOrMalformedVersion_WhenACommandIsSent_ThenStaleAndNothingChanges(string? version)
 	{
 		// Given
-		var (id, _) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, _) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await Send(client, id, "approve", new { version });
+		using var response = await Send(client, id, "publish", new { version });
 
 		// Then
 		await ProblemOf(response, HttpStatusCode.Conflict, "stale-report");
@@ -261,7 +281,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnotherReviewerSavedFirst_WhenAStaleEditIsSent_ThenConflictAndTheFirstEditStands()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var first = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		using var second = await SignedInClient.As(_factory, MemberRole.Administrator);
 		await Ok(await Send(first, id, "summary", new { version, aiSummaryEn = "First.", aiSummaryFr = "Premier." }));
@@ -276,27 +296,25 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAReviewerApprovedFirst_WhenAStaleRejectIsSent_ThenConflict()
+	public async Task GivenAReviewerPublishedFirst_WhenAStaleUnpublishIsSent_ThenConflict()
 	{
-		// Given — the approval changes the report row, not only the summary
-		var (id, version) = await Seed(ReportStatus.PendingReview, "no");
+		// Given — publishing changes the report row, not only the summary
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
-		await Ok(await Send(client, id, "approve", new { version }));
+		await Ok(await Send(client, id, "publish", new { version }));
 
 		// When
-		using var response = await Send(client, id, "reject", new { version });
+		using var response = await Send(client, id, "unpublish", new { version });
 
 		// Then
 		await ProblemOf(response, HttpStatusCode.Conflict, "stale-report");
 	}
 
 	[Theory]
-	[InlineData(ReportStatus.Rejected, "approve")]
-	[InlineData(ReportStatus.SummaryFailed, "approve")]
-	[InlineData(ReportStatus.PendingReview, "reopen")]
-	[InlineData(ReportStatus.PendingReview, "unpublish")]
-	[InlineData(ReportStatus.Published, "reject")]
-	[InlineData(ReportStatus.Rejected, "summary")]
+	[InlineData(ReportStatus.Published, "publish")]
+	[InlineData(ReportStatus.SummaryFailed, "publish")]
+	[InlineData(ReportStatus.SummaryFailed, "unpublish")]
+	[InlineData(ReportStatus.Unpublished, "unpublish")]
 	public async Task GivenStateThatRefusesTheAction_WhenSent_ThenInvalidTransitionAndNoAuditRow(ReportStatus status,
 																								  string command)
 	{
@@ -317,7 +335,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenBlankText_WhenPairIsSaved_ThenBadRequestAndNothingChanges()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -329,14 +347,14 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenNoteLongerThanAllowed_WhenRejected_ThenBadRequest()
+	public async Task GivenNoteLongerThanAllowed_WhenUnpublished_ThenBadRequest()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await Send(client, id, "reject", new { version, note = new string('x', Report.RejectionNoteMaxLength + 1) });
+		using var response = await Send(client, id, "unpublish", new { version, note = new string('x', Report.UnpublishNoteMaxLength + 1) });
 
 		// Then
 		await ProblemOf(response, HttpStatusCode.BadRequest, "invalid-review");
@@ -351,7 +369,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
-		using var response = await Send(client, id ?? TinyId.New().Value, "approve", new { version = "1.1" });
+		using var response = await Send(client, id ?? TinyId.New().Value, "publish", new { version = "1.1" });
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -361,12 +379,12 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDeletedReport_WhenACommandIsSent_ThenNotFound()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		(await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative))).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
 		// When
-		using var response = await Send(client, id, "approve", new { version });
+		using var response = await Send(client, id, "publish", new { version });
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -376,7 +394,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDetailRead_WhenVersionIsReturned_ThenItNamesBothRows()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.PendingReview, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, "yes");
 
 		// When
 		var parts = version.Split('.');
@@ -456,7 +474,11 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 			report.Answer(consentQuestion, consent, now);
 			report.BeginSummarizing();
 
-			if (status == ReportStatus.SummaryFailed)
+			if (consent == "no")
+			{
+				report.KeepUnpublished();
+			}
+			else if (status == ReportStatus.SummaryFailed)
 			{
 				report.FailSummarization("The provider was unavailable.");
 			}
@@ -465,13 +487,13 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 				report.AttachSummary(Summary.Generate(report.Id, "The pilot landed.", "Le pilote s'est posé.", "gemini-3.7-flash", "summarize-anonymize.v3", now));
 				report.AwaitReview();
 
-				if (status is ReportStatus.Published or ReportStatus.Approved)
+				if (status == ReportStatus.Published)
 				{
-					report.ApprovePair("synthetic-approver", now);
+					report.Publish("synthetic-approver", now);
 				}
-				else if (status == ReportStatus.Rejected)
+				else if (status == ReportStatus.Unpublished)
 				{
-					report.RejectReview(null);
+					report.Unpublish();
 				}
 			}
 

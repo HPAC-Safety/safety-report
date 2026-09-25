@@ -69,10 +69,11 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var mine = listed.Where(item => seeded.Ids.Contains(item.GetProperty("id").GetString()!)).ToList();
 		mine.Select(item => item.GetProperty("id").GetString())
 			.ShouldBe(seeded.LiveNewestFirst);
-		Item(listed, seeded["pendingPrivate"]).GetProperty("consent").GetString().ShouldBe("no");
+		Item(listed, seeded["private"]).GetProperty("consent").GetString().ShouldBe("no");
+		Item(listed, seeded["private"]).GetProperty("status").GetString().ShouldBe("unpublished");
 		Item(listed, seeded["published"]).GetProperty("consent").GetString().ShouldBe("yes");
 		Item(listed, seeded["published"]).GetProperty("status").GetString().ShouldBe("published");
-		Item(listed, seeded["pending"]).GetProperty("status").GetString().ShouldBe("pending_review");
+		Item(listed, seeded["pending"]).GetProperty("status").GetString().ShouldBe("pending");
 		Item(listed, seeded["pending"]).GetProperty("language").GetString().ShouldBe("en-CA");
 		listed.ShouldNotContain(item => item.GetProperty("id").GetString() == seeded["deleted"]);
 	}
@@ -108,14 +109,13 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		var ids = listed.Select(item => item.GetProperty("id").GetString()).ToHashSet();
 		ids.ShouldContain(seeded["pending"]);
-		ids.ShouldContain(seeded["pendingPrivate"]);
 		ids.ShouldContain(seeded["failed"]);
 		ids.ShouldContain(seeded["stuckSubmitted"]);
 		ids.ShouldContain(seeded["stuckSummarizing"]);
 		ids.ShouldNotContain(seeded["freshSummarizing"]);
-		ids.ShouldNotContain(seeded["approved"]);
+		ids.ShouldNotContain(seeded["private"]);
+		ids.ShouldNotContain(seeded["unpublished"]);
 		ids.ShouldNotContain(seeded["published"]);
-		ids.ShouldNotContain(seeded["rejected"]);
 		Item(listed, seeded["stuckSubmitted"]).GetProperty("isStuck").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["stuckSummarizing"]).GetProperty("isStuck").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["pending"]).GetProperty("isStuck").GetBoolean().ShouldBeFalse();
@@ -138,8 +138,8 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenReportsInEveryState_WhenPendingCountsAreRead_ThenPendingFailedAndStuckAreCounted()
 	{
 		// Given — the collection runs one test at a time, so the difference is
-		// exactly what this test seeded: pending, pendingPrivate, failed, and the
-		// stuck pair, but not the fresh, approved, published, rejected, or deleted.
+		// exactly what this test seeded: pending, failed, and the stuck pair, but
+		// not the fresh, private, unpublished, published, or deleted (REQ-MOD-090).
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		var before = await Counts(client);
 		await Seed();
@@ -149,7 +149,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 
 		// Then
 		after.GetProperty("reportsNeedingAction").GetInt32()
-			.ShouldBe(before.GetProperty("reportsNeedingAction").GetInt32() + 5);
+			.ShouldBe(before.GetProperty("reportsNeedingAction").GetInt32() + 4);
 		after.GetProperty("reportsNeedingAction").GetInt32().ShouldBe((await List(client, "needs-action")).Count);
 	}
 
@@ -168,8 +168,8 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 
 	[Theory]
 	[InlineData("published", "published")]
-	[InlineData("private", "pendingPrivate")]
-	[InlineData("rejected", "rejected")]
+	[InlineData("private", "private")]
+	[InlineData("unpublished", "private,unpublished")]
 	[InlineData("summary-failed", "failed")]
 	public async Task GivenAStatusFilter_WhenListed_ThenOnlyMatchingReportsOfMineAppear(string filter,
 																					   string expected)
@@ -178,13 +178,15 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var seeded = await Seed();
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
+		ArgumentNullException.ThrowIfNull(expected);
+
 		// When
 		var listed = await List(client, filter);
 
 		// Then
 		listed.Select(item => item.GetProperty("id").GetString()!)
 			.Where(seeded.Ids.Contains)
-			.ShouldBe([seeded[expected]]);
+			.ShouldBe(expected.Split(',').Select(name => seeded[name]));
 	}
 
 	[Fact]
@@ -213,7 +215,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded["pending"]}", UriKind.Relative));
 
 		// Then
-		detail.GetProperty("status").GetString().ShouldBe("pending_review");
+		detail.GetProperty("status").GetString().ShouldBe("pending");
 		detail.GetProperty("language").GetString().ShouldBe("en-CA");
 		detail.GetProperty("consent").GetString().ShouldBe("yes");
 
@@ -280,7 +282,7 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAnApprovedReport_WhenDetailIsRead_ThenApprovalProvenanceIsSupplied()
+	public async Task GivenAPublishedReport_WhenDetailIsRead_ThenApprovalProvenanceIsSupplied()
 	{
 		// Given
 		var seeded = await Seed();
@@ -433,27 +435,21 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 			pending.AddFile(TinyId.New(), $"{pending.Id}/original/vid", "video/mp4", 10, "clip.mp4", now)
 				.RecordProcessingFailure("remux_failed");
 
-			var pendingPrivate = Add("pendingPrivate", future.AddMinutes(-1), "no");
-			Summarize(pendingPrivate, now);
+			var unconsented = Add("private", future.AddMinutes(-1), "no");
+			unconsented.BeginSummarizing();
+			unconsented.KeepUnpublished();
 
 			var failed = Add("failed", future.AddMinutes(-2), "yes");
 			failed.BeginSummarizing();
 			failed.FailSummarization(SummaryError);
 
-			var approved = Add("approved", future.AddMinutes(-3), "yes");
-			Summarize(approved, now);
-			approved.Summary!.Approve(ApproverSubject, now);
-			approved.Approve();
+			var unpublished = Add("unpublished", future.AddMinutes(-3), "yes");
+			Summarize(unpublished, now);
+			unpublished.Unpublish();
 
 			var published = Add("published", future.AddMinutes(-4), "yes");
 			Summarize(published, now);
-			published.Summary!.Approve(ApproverSubject, now);
-			published.Approve();
-			published.MarkPublished(now);
-
-			var rejected = Add("rejected", future.AddMinutes(-5), "yes");
-			Summarize(rejected, now);
-			rejected.Reject();
+			published.Publish(ApproverSubject, now);
 
 			Add("freshSummarizing", future.AddMinutes(-6), "yes").BeginSummarizing();
 
@@ -513,8 +509,8 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 			/// <summary>Every seeded live report, in the order the list must return them.</summary>
 			public IReadOnlyList<string> LiveNewestFirst =>
 			[
-				this["pending"], this["pendingPrivate"], this["failed"], this["approved"], this["published"],
-				this["rejected"], this["freshSummarizing"], this["stuckSubmitted"], this["stuckSummarizing"],
+				this["pending"], this["private"], this["failed"], this["unpublished"], this["published"],
+				this["freshSummarizing"], this["stuckSubmitted"], this["stuckSummarizing"],
 			];
 		}
 	}

@@ -718,7 +718,6 @@ Scenario: The report form shows a one-language choice in the language it has
   Then the type-ahead offers the choice in its English wording
 
 @REQ-QB-122
-@ignore
 Scenario Outline: An answer names the choice it was given under
   Given a reporter answering in English is shown a <type> question whose choices are written in both official languages
   When the reporter chooses one of its choices and submits
@@ -761,7 +760,6 @@ Scenario: A condition follows its choice's replacement
   And the dependent question keeps its current revision
 
 @REQ-QB-126
-@ignore
 Scenario Outline: A removed choice is no longer offered but still names every answer given under it
   Given a <type> question has been answered with one of its choices
   When that choice is removed
@@ -777,7 +775,6 @@ Examples:
   | autocomplete  |
 
 @REQ-QB-127
-@ignore
 Scenario: A fork's choices are new rows, and old answers keep naming the retired question's
   Given a single-select question has been answered with one of its choices
   When an Administrator changes the question's wording
@@ -869,7 +866,6 @@ Scenario: Reviewing a type-ahead value clears its flag
   And the review records the Safety Officer's token subject and the time
 
 @REQ-QB-136
-@ignore
 Scenario: Existing answers are linked to their choices without being rewritten
   Given reports stored before this change answered a single-select question with one of its current labels and with a label it no longer offers
   When the choice-reference migration runs

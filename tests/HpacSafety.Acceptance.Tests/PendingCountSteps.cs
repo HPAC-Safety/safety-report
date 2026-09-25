@@ -30,11 +30,22 @@ public sealed class PendingCountSteps
 	[Given(@"an answer is awaiting machine translation")]
 	public async Task GivenAnAnswerAwaitingTranslation()
 	{
-		// A type-ahead value naming no bilingual choice is filled by machine
-		// translation off the submission path (ADR-0112), and nothing in the
-		// booted host runs the Worker, so it stays waiting.
+		// A long-text answer is marked for machine translation off the
+		// submission path (ADR-0112), and nothing in the booted host runs the
+		// Worker, so it stays waiting. A choice answer never waits: it reads its
+		// second language from its choice (ADR-0128).
 		using var admin = await BootedApi.SignedInAs(MemberRole.Administrator);
-		var revisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(admin);
+		using var created = await admin.PostAsJsonAsync(new Uri("/api/admin/questions", UriKind.Relative), new
+		{
+			type = "long_text",
+			labelEn = $"What happened? {Guid.NewGuid():N}",
+			labelFr = $"Que s'est-il passé? {Guid.NewGuid():N}",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+		});
+		created.StatusCode.ShouldBe(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+		var revisionId = (await created.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("revisionId").GetString();
 
 		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
 		var dto = new
@@ -43,7 +54,7 @@ public sealed class PendingCountSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)true },
-				new { questionRevisionId = revisionId, value = (string?)$"Site {Guid.NewGuid():N}"[..16] },
+				new { questionRevisionId = revisionId, value = (string?)"Le vent s'est levé en finale." },
 			},
 		};
 

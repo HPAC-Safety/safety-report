@@ -113,15 +113,6 @@ public static partial class ReportSubmissionEndpoints
 			return Problem(cause.Message);
 		}
 
-		try
-		{
-			RecordReporterChoices(report, revisionLookup);
-		}
-		catch (DomainRuleViolationException cause)
-		{
-			return Problem(cause.Message);
-		}
-
 		// Every named upload must still be waiting in quarantine before a single
 		// byte is copied, so an expired one refuses the submission cleanly and
 		// the form can say exactly which files to attach again (ADR-0096).
@@ -197,24 +188,9 @@ public static partial class ReportSubmissionEndpoints
 
 		var at = clock.GetUtcNow();
 
-		if (revision.Type == QuestionType.MultiSelect)
+		if (revision.StoresLocalizedValue)
 		{
-			if (entry.Value is not null
-				|| entry.Attachments is { Count: > 0 })
-			{
-				return Problem("A multi-select answer carries choices, not a value or upload ids.");
-			}
-
-			try
-			{
-				report.Answer(question, revision, entry.Choices ?? [], at);
-			}
-			catch (DomainRuleViolationException cause)
-			{
-				return Problem(cause.Message);
-			}
-
-			return null;
+			return TryApplyChoiceAnswer(report, entry, question, revision, at);
 		}
 
 		if (revision.Type == QuestionType.FileUpload)
@@ -281,6 +257,72 @@ public static partial class ReportSubmissionEndpoints
 					break;
 				default:
 					return Problem("An answer's value must be a string or a boolean.");
+			}
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Problem(cause.Message);
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	///     A single-select, multi-select, or type-ahead answer names the question's
+	///     live choices by identifier (ADR-0128). Only a type-ahead may instead carry
+	///     the text a reporter typed, which names or becomes one of its values
+	///     (ADR-0129).
+	/// </summary>
+	private static IResult? TryApplyChoiceAnswer(
+		Report report,
+		SubmitAnswerRequest entry,
+		Question question,
+		QuestionRevision revision,
+		DateTimeOffset at)
+	{
+		if (entry.Attachments is { Count: > 0 })
+		{
+			return Problem("A choice answer carries choices, not upload ids.");
+		}
+
+		if (entry.Value?.ValueKind is not (null or JsonValueKind.Null or JsonValueKind.String))
+		{
+			return Problem("A choice answer's typed text must be a string.");
+		}
+
+		var text = entry.Value?.ValueKind == JsonValueKind.String ? entry.Value.Value.GetString() : null;
+		var typed = !string.IsNullOrWhiteSpace(text);
+
+		if (typed && entry.Choices is { Count: > 0 })
+		{
+			return Problem("A choice answer names its choices or carries typed text, not both.");
+		}
+
+		if (typed && !revision.TakesReporterAdditions)
+		{
+			return Problem("A choice answer names the question's choices by identifier.");
+		}
+
+		var choiceIds = new List<TinyId>();
+		foreach (var choice in entry.Choices ?? [])
+		{
+			if (!TinyId.TryParse(choice, out var choiceId))
+			{
+				return Problem("An answer named an invalid choice.");
+			}
+
+			choiceIds.Add(choiceId);
+		}
+
+		try
+		{
+			if (typed)
+			{
+				report.Answer(question, revision, text, at);
+			}
+			else
+			{
+				report.AnswerChoices(question, revision, choiceIds, at);
 			}
 		}
 		catch (DomainRuleViolationException cause)
@@ -374,30 +416,6 @@ public static partial class ReportSubmissionEndpoints
 				// No upload id or key in the message: an id is a capability, and
 				// a key is private. The exception type is enough to notice a trend.
 				LogUploadNotReleased(logger, cause.GetType().Name);
-			}
-		}
-	}
-
-	/// <summary>
-	///     Adds each type-ahead value the reporter typed to that question's own
-	///     choices, in the language they answered in only, inside the same
-	///     transaction as the report (ADR-0063, ADR-0095). A value the question
-	///     already offers, in either language or under the same code, is the
-	///     existing choice and changes nothing. No other type takes an addition.
-	/// </summary>
-	private static void RecordReporterChoices(
-		Report report,
-		Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
-	{
-		foreach (var answer in report.Answers)
-		{
-			var (question, revision) = revisionLookup[answer.QuestionRevisionId];
-
-			if (revision.TakesReporterAdditions
-				&& question.TakesReporterAdditions
-				&& !string.IsNullOrWhiteSpace(answer.Value))
-			{
-				question.AddChoiceFromReporter(answer.Value, report.Language);
 			}
 		}
 	}

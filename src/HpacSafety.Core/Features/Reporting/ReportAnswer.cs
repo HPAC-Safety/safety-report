@@ -4,39 +4,42 @@ using HpacSafety.Core.Features.QuestionBank;
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>
-///     One answer to one question, as it was asked, stored as one string — or, for a
-///     yes/no or checkbox question, as one boolean.
+///     One answer to one question, as it was asked: the choice it names, one
+///     boolean, or one string.
 /// </summary>
 /// <remarks>
 ///     <para>
-///         The value is the words the reporter saw — the label they picked, the text
-///         they typed, or an ISO 8601 date or time. A yes/no or checkbox answer holds
-///         no words at all: it is <see cref="BooleanValue" />, and only the interface
-///         turns it into Yes / Oui or No / Non (ADR-0130). It is not
-///         an option code and it resolves through nothing, so relabelling or removing a
-///         choice tomorrow cannot change what this answer says (ADR-0072).
+///         A single-select, multi-select, or type-ahead answer names its
+///         <see cref="QuestionChoice" /> by <see cref="ChoiceId" /> and stores none of
+///         its wording: both languages are read from the choice (ADR-0128). A choice an
+///         answer names is never erased, so the answer always resolves.
+///     </para>
+///     <para>
+///         A yes/no or checkbox answer holds no words at all: it is
+///         <see cref="BooleanValue" />, and only the interface turns it into Yes / Oui
+///         or No / Non (ADR-0130). Every other answer is one string, the words the
+///         reporter gave — the text they typed, or an ISO 8601 date or time
+///         (ADR-0072).
 ///     </para>
 ///     <para>
 ///         Every answer is recorded in the reporter's language, and is immutable once
 ///         written — nothing on the submission path, or anywhere else, ever
-///         overwrites <see cref="Value" /> or <see cref="Locale" />. Whether it has a
-///         second language at all is decided when it is recorded
-///         (<see cref="TranslationMode" />, ADR-0112): a select answer copies its
-///         choice's other label then (<see cref="TranslationSource.Choice" />);
+///         overwrites <see cref="Value" />, <see cref="ChoiceId" />, or
+///         <see cref="Locale" />. Whether it has a second language at all is decided
+///         when it is recorded (<see cref="TranslationMode" />, ADR-0112): a choice
+///         answer reads its choice's other label (<see cref="TranslationSource.Choice" />);
 ///         free text marked for translation is filled later, off the submission
 ///         path, mechanically by the Worker (<see cref="TranslationSource.Auto" />) or
 ///         by an administrator (<see cref="TranslationSource.Human" />); and anything
 ///         else never has one. See ADR-0080.
 ///     </para>
 ///     <para>
-///         A multi-select produces one of these per chosen value, so "an answer is one
-///         string" stays literally true and each value is translated on its own.
+///         A select answer stored before ADR-0128 keeps the label it copied in
+///         <see cref="Value" />, and names its choice as well: the migration linked it
+///         without rewriting it. The choice wins wherever the answer is read.
 ///     </para>
 ///     <para>
-///         The reference is to a <see cref="QuestionRevision" /> as well as to the
-///         question, because the revision is the record of the complete set of choices
-///         this reporter was offered (ADR-0058) even though the answer no longer reads
-///         its own content from it.
+///         A multi-select produces one of these per chosen choice.
 ///     </para>
 /// </remarks>
 public class ReportAnswer
@@ -110,6 +113,23 @@ public class ReportAnswer
 	public bool? BooleanValue { get; private init; }
 
 	/// <summary>
+	///     The choice this answer names, for a single-select, multi-select, or
+	///     type-ahead question; null for every other type and for a skipped answer.
+	///     Immutable. See ADR-0128.
+	/// </summary>
+	public TinyId? ChoiceId { get; private init; }
+
+	/// <summary>
+	///     The choice <see cref="ChoiceId" /> names, when the reader loaded it. Every
+	///     read of a choice answer's wording goes through it; reading one without it
+	///     loaded throws rather than showing a choice answer as skipped.
+	/// </summary>
+	public QuestionChoice? Choice { get; private set; }
+
+	/// <summary>Whether the reporter gave this answer at all: it names a choice, holds a boolean, or holds a value.</summary>
+	public bool IsAnswered => ChoiceId is not null || BooleanValue is not null || Value is not null;
+
+	/// <summary>
 	///     The official language <see cref="Value" /> is written in. Immutable, like
 	///     <see cref="Value" /> itself.
 	/// </summary>
@@ -139,13 +159,25 @@ public class ReportAnswer
 	///     translation has been supplied yet.
 	/// </summary>
 	public bool NeedsTranslation =>
-		Value is not null && TranslatedValue is null && TranslationMode == TranslationMode.Machine;
+		ChoiceId is null && Value is not null && TranslatedValue is null && TranslationMode == TranslationMode.Machine;
 
 	/// <summary>
 	///     The second language as a reader should see it: null for an answer that
 	///     never has one, even if an older row stored one before ADR-0112.
 	/// </summary>
-	public string? DisplayedTranslation => TranslationMode == TranslationMode.None ? null : TranslatedValue;
+	public string? DisplayedTranslation =>
+		ChoiceId is not null
+			? NamedChoice.OtherLabel(Locale)
+			: TranslationMode == TranslationMode.None
+				? null
+				: TranslatedValue;
+
+	/// <summary>
+	///     The answer's words in the language it was given in: its choice's label in
+	///     that language (or the one language the choice has), or its value. Null for
+	///     a skipped answer and for a yes/no or checkbox, which has no words.
+	/// </summary>
+	public string? Text => ChoiceId is not null ? NamedChoice.Label(Locale) : Value;
 
 	/// <summary>When the answer was given.</summary>
 	public DateTimeOffset AnsweredAt { get; private init; }
@@ -159,8 +191,16 @@ public class ReportAnswer
 	/// </summary>
 	public string? ValueIn(Locale locale)
 	{
-		return locale == Locale ? Value : DisplayedTranslation ?? Value;
+		return ChoiceId is not null
+			? NamedChoice.Label(locale)
+			: locale == Locale
+				? Value
+				: DisplayedTranslation ?? Value;
 	}
+
+	private QuestionChoice NamedChoice =>
+		Choice ?? throw new InvalidOperationException(
+			"This answer names a choice that was not loaded with it. Include the answer's choice to read its wording.");
 
 	/// <summary>
 	///     Records one answer, of any type, against the question's current revision. A
@@ -206,27 +246,15 @@ public class ReportAnswer
 			throw new DomainRuleViolationException($"'{question.Key}' is required.");
 		}
 
-		// A type-ahead is the one option type a reporter may answer with words the
-		// question does not offer: the submission records them as a new choice
-		// (ADR-0063), so they are validated as present, not as offered. Every
-		// other select is checked against the question's live choices, which
-		// belong to the question rather than to any revision (ADR-0095).
-		if (value is not null
-			&& revision.ExpectsOptions
-			&& !revision.TakesReporterAdditions
-			&& !question.Offers(value, locale))
+		if (revision.StoresLocalizedValue)
 		{
-			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
+			return Naming(reportId, question, revision, ChoiceWorded(question, revision, value, locale), locale, at);
 		}
-
-		var (mode, other) = SecondLanguageOf(question, revision, value, locale);
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
 		{
 			Value = value,
-			TranslationMode = mode,
-			TranslatedValue = other,
-			TranslationSource = other is null ? null : Reporting.TranslationSource.Choice,
+			TranslationMode = revision.IsTranslatable ? TranslationMode.Machine : TranslationMode.None,
 		};
 	}
 
@@ -257,6 +285,81 @@ public class ReportAnswer
 		{
 			BooleanValue = value,
 			TranslationMode = TranslationMode.None,
+		};
+	}
+
+	/// <summary>
+	///     Records a single-select, multi-select, or type-ahead answer naming one of
+	///     the question's live choices by its identifier — what the submission sends
+	///     (ADR-0128). A removed choice, or another question's, is refused.
+	/// </summary>
+	internal static ReportAnswer ForChoice(
+		TinyId reportId,
+		Question question,
+		QuestionRevision revision,
+		TinyId choiceId,
+		Locale locale,
+		DateTimeOffset at)
+	{
+		if (revision.QuestionId != question.Id)
+		{
+			throw new DomainRuleViolationException("That revision does not belong to this question.");
+		}
+
+		if (!revision.StoresLocalizedValue)
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' does not take a choice.");
+		}
+
+		var choice = question.OfferedChoice(choiceId)
+					 ?? throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
+
+		return Naming(reportId, question, revision, choice, locale, at);
+	}
+
+	/// <summary>
+	///     The choice a reporter's words name, for a choice type answered in words
+	///     rather than by identifier. A single-select or multi-select accepts only a
+	///     live choice labelled exactly that way in the reporter's language; a
+	///     type-ahead matches or adds one (ADR-0129). Null for a skipped answer.
+	/// </summary>
+	private static QuestionChoice? ChoiceWorded(Question question,
+												QuestionRevision revision,
+												string? value,
+												Locale locale)
+	{
+		if (string.IsNullOrWhiteSpace(value))
+		{
+			return null;
+		}
+
+		if (revision.TakesReporterAdditions)
+		{
+			return question.AddChoiceFromReporter(value, locale);
+		}
+
+		return question.OfferedChoiceLabelled(value, locale)
+			   ?? throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
+	}
+
+	/// <summary>
+	///     A choice answer: the choice named, no wording copied, both languages read
+	///     from it. A null choice is a skip, which the caller has already checked the
+	///     question allows.
+	/// </summary>
+	private static ReportAnswer Naming(TinyId reportId,
+									   Question question,
+									   QuestionRevision revision,
+									   QuestionChoice? choice,
+									   Locale locale,
+									   DateTimeOffset at)
+	{
+		return new ReportAnswer(reportId, question, revision, locale, at)
+		{
+			ChoiceId = choice?.Id,
+			Choice = choice,
+			TranslationMode = TranslationMode.Choice,
+			TranslationSource = choice is null ? null : Reporting.TranslationSource.Choice,
 		};
 	}
 
@@ -303,38 +406,6 @@ public class ReportAnswer
 	}
 
 	/// <summary>
-	///     How this answer gets its second language, and — for a value naming a
-	///     choice written in both languages — that choice's other label, copied now.
-	///     A lookup, never a translation provider, so the submission path stays
-	///     provider-free. See ADR-0112.
-	/// </summary>
-	private static (TranslationMode Mode, string? FromChoice) SecondLanguageOf(
-		Question question,
-		QuestionRevision revision,
-		string? value,
-		Locale locale)
-	{
-		if (!revision.StoresLocalizedValue)
-		{
-			return (revision.IsTranslatable ? TranslationMode.Machine : TranslationMode.None, null);
-		}
-
-		if (value is null)
-		{
-			return (TranslationMode.Choice, null);
-		}
-
-		// A choice with both languages supplies the other one. A value naming no
-		// such choice — a type-ahead value the reporter typed, or a choice that
-		// still has one language — is left for the Worker.
-		var other = question.OtherLabelOf(value, locale);
-
-		return other is null
-			? (TranslationMode.Machine, null)
-			: (TranslationMode.Choice, other);
-	}
-
-	/// <summary>
 	///     Supplies the second language of this answer, mechanically. The reporter's
 	///     own <see cref="Value" /> is never touched — this fills the language they
 	///     did not answer in.
@@ -358,6 +429,12 @@ public class ReportAnswer
 								   Reporting.TranslationSource source,
 								   bool allowOverwrite = false)
 	{
+		if (ChoiceId is not null)
+		{
+			throw new DomainRuleViolationException(
+				"A choice answer reads its second language from its choice. See ADR-0128.");
+		}
+
 		if (TranslationMode == TranslationMode.None)
 		{
 			throw new DomainRuleViolationException("This answer never has a second language. See ADR-0112.");

@@ -273,9 +273,9 @@ public class QuestionTests
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 
 		// Then
-		consent.Offers("yes", Locale.EnCa).ShouldBeFalse();
-		consent.Offers("oui", Locale.FrCa).ShouldBeFalse();
-		consent.Offers("maybe", Locale.EnCa).ShouldBeFalse();
+		consent.OfferedChoiceLabelled("yes", Locale.EnCa).ShouldBeNull();
+		consent.OfferedChoiceLabelled("oui", Locale.FrCa).ShouldBeNull();
+		consent.AllChoices.ShouldBeEmpty();
 	}
 
 	[Fact]

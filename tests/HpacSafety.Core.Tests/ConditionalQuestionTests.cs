@@ -258,8 +258,8 @@ public class ConditionalQuestionTests
 
 		// Then
 		question.Choices.Count.ShouldBe(1);
-		question.Offers("Golden", Locale.EnCa).ShouldBeTrue();
-		question.Offers("Lumby", Locale.EnCa).ShouldBeFalse();
+		question.OfferedChoiceLabelled("Golden", Locale.EnCa).ShouldNotBeNull();
+		question.OfferedChoiceLabelled("Lumby", Locale.EnCa).ShouldBeNull();
 		question.CurrentRevision.TakesOneAnswer.ShouldBeTrue();
 	}
 

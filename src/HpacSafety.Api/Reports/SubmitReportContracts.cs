@@ -18,13 +18,16 @@ public sealed record SubmitReportRequest(string? Language, IReadOnlyList<SubmitA
 /// </summary>
 /// <param name="QuestionRevisionId">The exact immutable revision this answers.</param>
 /// <param name="Value">
-///     The answer, for every shape except multi-select and file upload: a JSON
-///     <c>true</c> or <c>false</c> for a yes/no or checkbox question (ADR-0130), a
-///     JSON string for every other, or <c>null</c> for a skip.
+///     The answer, for every shape except a choice named from the list and a file
+///     upload: a JSON <c>true</c> or <c>false</c> for a yes/no or checkbox question
+///     (ADR-0130), a JSON string for every other, or <c>null</c> for a skip. For a
+///     type-ahead, the text the reporter typed when it names a value the question
+///     does not offer (ADR-0129).
 /// </param>
 /// <param name="Choices">
-///     The chosen choices' labels, in the reporter's language, for a multi-select
-///     answer only. Never a choice code (ADR-0095).
+///     The identifiers of the chosen choices, for a single-select, multi-select,
+///     or type-ahead answer naming the question's choices (ADR-0128). Never a
+///     label or a code.
 /// </param>
 /// <param name="Attachments">
 ///     This question's files, for a file-upload answer only: each the upload id

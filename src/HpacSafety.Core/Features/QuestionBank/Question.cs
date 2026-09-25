@@ -34,8 +34,9 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     <para>
 ///         Choices are the exception, deliberately: they live here, on
 ///         <see cref="QuestionChoice" /> rows the question owns, and are edited in
-///         place without a revision or a fork. An answer stores the reporter's own
-///         words, so no answer depends on a choice staying as it was (ADR-0095).
+///         place without a revision or a fork (ADR-0095). An answer names its
+///         choice and reads its wording there, so a choice an answer names is
+///         removed by a stamp, never erased (ADR-0128).
 ///     </para>
 /// </remarks>
 public class Question
@@ -485,34 +486,25 @@ public class Question
 	}
 
 	/// <summary>
-	///     Whether this question offers the given value, written as the reporter saw
-	///     it in their own language — which, for a one-language choice, may be the
-	///     other language (<see cref="QuestionChoice.Label" />). This is what a select
-	///     answer is validated against now that answers store their words (ADR-0072).
-	///     A yes/no question offers no text at all: its answer is a boolean (ADR-0130).
+	///     The live choice with this identifier, or null when this question does not
+	///     offer it — a removed choice, or another question's. What a submitted
+	///     choice answer is validated against (ADR-0128).
 	/// </summary>
-	public bool Offers(string value,
-					   Locale locale)
+	public QuestionChoice? OfferedChoice(TinyId choiceId)
 	{
-		return Type != QuestionType.YesNo
-			   && _choices.Exists(choice => choice.Deleted is null
-											&& string.Equals(choice.Label(locale), value, StringComparison.Ordinal));
+		return _choices.Find(choice => choice.Id == choiceId && choice.Deleted is null);
 	}
 
 	/// <summary>
-	///     The other official language's label of the live choice a reporter named in
-	///     <paramref name="locale" />, or null when no live choice has that label or the
-	///     choice has only one language so far. See ADR-0112.
+	///     The live choice labelled exactly this way in the reporter's language —
+	///     which, for a one-language choice, may be the other language
+	///     (<see cref="QuestionChoice.Label" />) — or null when none is.
 	/// </summary>
-	public string? OtherLabelOf(string value,
-								Locale locale)
+	public QuestionChoice? OfferedChoiceLabelled(string label,
+												 Locale locale)
 	{
-		var choice = _choices.Find(candidate => candidate.Deleted is null
-												&& string.Equals(candidate.Label(locale), value, StringComparison.Ordinal));
-
-		return choice is { LabelEn: not null, LabelFr: not null }
-			? choice.Label(locale.Counterpart)
-			: null;
+		return _choices.Find(choice => choice.Deleted is null
+									   && string.Equals(choice.Label(locale), label, StringComparison.Ordinal));
 	}
 
 	/// <summary>

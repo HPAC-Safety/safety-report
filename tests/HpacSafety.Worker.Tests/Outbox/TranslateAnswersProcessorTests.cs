@@ -35,7 +35,7 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 	public async Task GivenNarrativePickerNameAndEmail_WhenProcessed_ThenOnlyTheNarrativeIsSent()
 	{
 		// Given — ADR-0112: long text marked for translation goes to the
-		// Worker; a picker already took its choice's label at submission; a
+		// Worker; a picker reads its choice's other label; a
 		// name (unmarked short text) and an email never have a second language
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
@@ -72,8 +72,11 @@ public sealed class TranslateAnswersProcessorTests(WorkerPostgresFixture postgre
 		narrativeAnswer.TranslatedValue.ShouldBe("[fr-CA] Wind picked up on final; the pilot walked away.");
 		narrativeAnswer.TranslationSource.ShouldBe(TranslationSource.Auto);
 
+		// A picker names its choice and reads its French there (ADR-0128): the
+		// Worker has nothing of its own to write.
 		var provinceAnswer = answers.Single(a => a.QuestionKey == "province");
-		provinceAnswer.TranslatedValue.ShouldBe("Alberta (FR)");
+		provinceAnswer.ChoiceId.ShouldNotBeNull();
+		provinceAnswer.TranslatedValue.ShouldBeNull();
 		provinceAnswer.TranslationSource.ShouldBe(TranslationSource.Choice);
 
 		answers.Single(a => a.QuestionKey == "first_name").TranslatedValue.ShouldBeNull();

@@ -17,7 +17,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     Which answers get a second language, and where it comes from (ADR-0112):
-///     REQ-SUB-069, REQ-SUB-070, REQ-SUB-071, REQ-MOD-077, and REQ-QB-108..110.
+///     REQ-SUB-071, REQ-SUB-081, REQ-MOD-077, and REQ-QB-108..110.
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -114,7 +114,7 @@ public sealed class AnswerTranslationModeSteps
 		}
 	}
 
-	// ── REQ-SUB-069: a picker takes its choice's other label ────────────────
+	// ── REQ-SUB-081: a choice answer reads both languages from its choice ───
 
 	[Given(@"a single-select and a multi-select question offer choices written in both official languages")]
 	public async Task GivenPickersWithBilingualChoices()
@@ -130,11 +130,21 @@ public sealed class AnswerTranslationModeSteps
 		await RunTheWorker();
 	}
 
-	[Then(@"each stored answer holds the French label of the choice picked, as its second language")]
-	public async Task ThenEachStoredAnswerHoldsTheFrenchLabel()
+	[Then(@"each answer reads as its choice's English label, with its French label as the second language")]
+	public async Task ThenEachAnswerReadsAsItsChoice()
 	{
-		(await StoredFor("single_select")).Single().TranslatedValue.ShouldBe("Parapente");
-		(await StoredFor("multi_select")).Single().TranslatedValue.ShouldBe("Instructeur tandem");
+		// Stored: the choice named, none of its wording copied (ADR-0128).
+		foreach (var stored in (await StoredFor("single_select")).Concat(await StoredFor("multi_select")))
+		{
+			stored.ChoiceId.ShouldNotBeNull();
+			stored.Value.ShouldBeNull();
+			stored.TranslatedValue.ShouldBeNull();
+		}
+
+		// Read: both languages come from the choice.
+		await OpenTheDetailView();
+		(await ShownFor("single_select")).ShouldBe(("Paraglider", "Parapente"));
+		(await ShownFor("multi_select")).ShouldBe(("Tandem instructor", "Instructeur tandem"));
 	}
 
 	[Then(@"the translation source is marked ""choice""")]
@@ -144,49 +154,12 @@ public sealed class AnswerTranslationModeSteps
 			.ShouldAllBe(answer => answer.TranslationSource == TranslationSource.Choice);
 	}
 
-	[Then(@"no translation provider is called and nothing is sent to the Worker's translator")]
+	[Then(@"nothing is sent to the Worker's translator")]
 	public void ThenNothingIsSentToTheTranslator()
 	{
-		// The submission path has no translator to call at all (REQ-SUB-007);
-		// the Worker ran and found nothing to send.
+		// The Worker ran and found nothing to send: a choice answer has no
+		// translation of its own.
 		_translator.Sent.ShouldBeEmpty();
-	}
-
-	// ── REQ-SUB-070: a type-ahead uses its choice when it names one ─────────
-
-	[Given(@"a type-ahead question offers a choice written in both official languages")]
-	public async Task GivenATypeAheadWithABilingualChoice()
-	{
-		_answers["autocomplete"] = (await CreateQuestion("autocomplete", options: [("Mount Seven", "Mont Sept")]), null, null);
-	}
-
-	[When(@"^a reporter answering in English submits (that choice's English label|words the question does not offer)$")]
-	public async Task WhenAReporterSubmitsATypeAheadValue(string answer)
-	{
-		var value = answer == "that choice's English label" ? "Mount Seven" : "A ridge nobody listed";
-		_answers["autocomplete"] = (_answers["autocomplete"].RevisionId, value, null);
-
-		await SubmitInEnglish();
-		await RunTheWorker();
-	}
-
-	[Then(@"^the answer's second language comes from (the choice's French label, at submission|the Worker's machine translation)$")]
-	public async Task ThenTheSecondLanguageComesFrom(string source)
-	{
-		ArgumentNullException.ThrowIfNull(source);
-		var stored = (await StoredFor("autocomplete")).Single();
-
-		if (source.StartsWith("the choice's", StringComparison.Ordinal))
-		{
-			stored.TranslatedValue.ShouldBe("Mont Sept");
-			stored.TranslationSource.ShouldBe(TranslationSource.Choice);
-			_translator.Sent.ShouldBeEmpty();
-		}
-		else
-		{
-			stored.TranslatedValue.ShouldBe("[fr-CA] A ridge nobody listed");
-			stored.TranslationSource.ShouldBe(TranslationSource.Auto);
-		}
 	}
 
 	// ── REQ-MOD-077: the detail view hides a second language that isn't one ─
@@ -219,6 +192,11 @@ public sealed class AnswerTranslationModeSteps
 
 	[When(@"a reviewer opens the report's detail view")]
 	public async Task WhenAReviewerOpensTheDetailView()
+	{
+		await OpenTheDetailView();
+	}
+
+	private async Task OpenTheDetailView()
 	{
 		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		_detail = await reviewer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
@@ -367,16 +345,37 @@ public sealed class AnswerTranslationModeSteps
 		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
 
 		var answers = new List<object> { new { questionRevisionId = consent, value = (bool?)true, choices = (string[]?)null } };
-		answers.AddRange(_answers.Values.Select(answer => new
+		foreach (var (name, answer) in _answers)
 		{
-			questionRevisionId = answer.RevisionId,
-			value = answer.Values is null ? answer.Value : null,
-			choices = answer.Values,
-		}));
+			// A picker names its choices by identifier (ADR-0128); a type-ahead
+			// sends the words the reporter typed.
+			var picker = name is "single_select" or "multi_select";
+			answers.Add(new
+			{
+				questionRevisionId = answer.RevisionId,
+				value = picker || answer.Values is not null ? null : answer.Value,
+				choices = picker
+					? await ChoiceIdsOf(answer.RevisionId, answer.Values ?? [(string)answer.Value!])
+					: answer.Values,
+			});
+		}
 
 		using var response = await reporter.PostAsJsonAsync(Submit, new { language = "en-CA", answers });
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
 		_reportId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+	}
+
+	/// <summary>The identifiers of the choices with these English labels, as the public form offers them.</summary>
+	private static async Task<string[]> ChoiceIdsOf(string revisionId,
+													 IReadOnlyList<string> labelsEn)
+	{
+		using var client = (await BootedApi.Factory()).CreateClient();
+		var questions = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative));
+		var options = questions.EnumerateArray()
+			.Single(question => question.GetProperty("revisionId").GetString() == revisionId)
+			.GetProperty("options").EnumerateArray().ToList();
+
+		return [.. labelsEn.Select(label => options.Single(option => option.GetProperty("labelEn").GetString() == label).GetProperty("id").GetString()!)];
 	}
 
 	private async Task RunTheWorker()
@@ -414,6 +413,17 @@ public sealed class AnswerTranslationModeSteps
 		var shown = entry.GetProperty("values").EnumerateArray().Single().GetProperty("translatedValue");
 
 		return shown.ValueKind == JsonValueKind.Null ? null : shown.GetString();
+	}
+
+	private async Task<(string? Value, string? Translation)> ShownFor(string name)
+	{
+		var key = (await StoredFor(name)).First().QuestionKey;
+		var shown = _detail.GetProperty("answers").EnumerateArray()
+			.Single(answer => answer.GetProperty("questionKey").GetString() == key)
+			.GetProperty("values").EnumerateArray().Single();
+		var translation = shown.GetProperty("translatedValue");
+
+		return (shown.GetProperty("value").GetString(), translation.ValueKind == JsonValueKind.Null ? null : translation.GetString());
 	}
 
 	/// <summary>A translator that records what it was sent and answers without a provider.</summary>

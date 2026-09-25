@@ -5,8 +5,9 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-///     Every answer is one string — the words the reporter saw, in the language
-///     they saw them, and immutable once written. Every answer with a value is
+///     Every answer that is not a choice is one string — the words the reporter
+///     gave, in their language, and immutable once written; a choice answer names
+///     its choice (ADR-0128). Every answer with a value is
 ///     eventually translated into the other official language, mechanically by the
 ///     Worker or by an administrator; nothing on the submission path translates
 ///     anything. See ADR-0072 and ADR-0080.
@@ -16,36 +17,41 @@ public class StringAnswerTests
 	private static readonly DateTimeOffset Now = new(2026, 9, 21, 12, 0, 0, TimeSpan.Zero);
 
 	[Fact]
-	public void GivenPickerAnswer_WhenRecorded_ThenStoresTheLabelNotACode()
+	public void GivenPickerAnswer_WhenRecorded_ThenNamesItsChoiceAndCopiesNoWording()
 	{
 		// Given
+		var question = Province();
 		var report = new Report(Locale.EnCa, Now);
 
 		// When
-		var answer = report.Answer(Province(), "Alberta", Now);
+		var answer = report.Answer(question, "Alberta", Now);
 
-		// Then
-		answer.Value.ShouldBe("Alberta");
+		// Then — ADR-0128
+		answer.ChoiceId.ShouldBe(question.Choices.Single().Id);
+		answer.Value.ShouldBeNull();
+		answer.Text.ShouldBe("Alberta");
 		answer.Locale.ShouldBe(Locale.EnCa);
 	}
 
 	[Fact]
-	public void GivenPickerAnswer_WhenOptionIsRelabelledAfterwards_ThenAnswerIsUnchanged()
+	public void GivenPickerAnswer_WhenOptionIsFixedInPlaceAfterwards_ThenAnswerReadsTheFix()
 	{
 		// Given
 		var question = Province();
 		var report = new Report(Locale.EnCa, Now);
 		var answer = report.Answer(question, "Alberta", Now);
 
-		// When — the choice is later reworded entirely
+		// When — the same choice is reworded in place
 		question.ReplaceChoices([new QuestionOptionInput("alberta", "Province of Alberta", "Province de l'Alberta")], Now);
 
-		// Then — the answer carries its own words and resolves through nothing
-		answer.Value.ShouldBe("Alberta");
+		// Then — the answer still names that choice, and reads its wording
+		answer.ChoiceId.ShouldBe(question.Choices.Single().Id);
+		answer.Text.ShouldBe("Province of Alberta");
+		answer.ValueIn(Locale.FrCa).ShouldBe("Province de l'Alberta");
 	}
 
 	[Fact]
-	public void GivenFrenchReporter_WhenPickingCuratedChoice_ThenStoredInFrenchWithTheChoicesEnglish()
+	public void GivenFrenchReporter_WhenPickingCuratedChoice_ThenReadsInFrenchWithTheChoicesEnglish()
 	{
 		// Given
 		var report = new Report(Locale.FrCa, Now);
@@ -56,14 +62,33 @@ public class StringAnswerTests
 		// When
 		var answer = report.Answer(question, "Colombie-Britannique", Now);
 
-		// Then — the curated list already holds the other language, so it is
-		// copied now rather than sent anywhere (ADR-0112)
+		// Then — both languages are the choice's, read rather than copied (ADR-0128)
 		answer.Locale.ShouldBe(Locale.FrCa);
-		answer.Value.ShouldBe("Colombie-Britannique");
+		answer.Text.ShouldBe("Colombie-Britannique");
 		answer.TranslationMode.ShouldBe(TranslationMode.Choice);
-		answer.TranslatedValue.ShouldBe("British Columbia");
+		answer.TranslatedValue.ShouldBeNull();
+		answer.DisplayedTranslation.ShouldBe("British Columbia");
 		answer.TranslationSource.ShouldBe(TranslationSource.Choice);
 		answer.NeedsTranslation.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenPickerAnswer_WhenNamedByIdentifier_ThenOnlyALiveChoiceOfThatQuestionIsAccepted()
+	{
+		// Given
+		var question = Province();
+		var other = Province();
+		var report = new Report(Locale.EnCa, Now);
+		var alberta = question.Choices.Single().Id;
+
+		// When / Then — another question's choice is refused
+		Should.Throw<DomainRuleViolationException>(() =>
+			report.AnswerChoices(question, question.CurrentRevision, [other.Choices.Single().Id], Now));
+
+		// When / Then — a removed one too
+		question.ReplaceChoices([new QuestionOptionInput("saskatchewan", "Saskatchewan", "Saskatchewan")], Now);
+		Should.Throw<DomainRuleViolationException>(() =>
+			report.AnswerChoices(question, question.CurrentRevision, [alberta], Now));
 	}
 
 	[Fact]

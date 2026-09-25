@@ -226,10 +226,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenPickerAnswer_WhenRecorded_ThenCarriesItsChoicesFrenchAndIsNeverQueued()
+	public async Task GivenPickerAnswer_WhenRecorded_ThenReadsItsChoicesFrenchAndIsNeverQueued()
 	{
 		// Given — a picker's choices are written in both languages, so its
-		// answer takes the other label at submission (ADR-0112)
+		// answer reads the other label from its choice (ADR-0128)
 		using var client = await SignedIn();
 		var created = await Create(client, UniqueKey("site"), "single_select");
 		var id = created.GetProperty("id").GetString()!;
@@ -244,9 +244,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 
 		using var scope = _factory.Services.CreateScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.SingleAsync(a => a.Id == TinyId.Parse(answerId));
-		stored.Value.ShouldBe("Cooper's Hill");
-		stored.TranslatedValue.ShouldBe("Colline Cooper");
+		var stored = await database.ReportAnswers.Include(a => a.Choice).SingleAsync(a => a.Id == TinyId.Parse(answerId));
+		stored.Value.ShouldBeNull();
+		stored.Text.ShouldBe("Cooper's Hill");
+		stored.DisplayedTranslation.ShouldBe("Colline Cooper");
 		stored.TranslationSource.ShouldBe(TranslationSource.Choice);
 	}
 

@@ -5,8 +5,19 @@
 # "rebase" once the whole rebase has finished and the working tree is in its
 # final state, which is exactly when regenerating is safe to do. Intermediate
 # commits mid-rebase are not touched: only the tip matters here, since this
-# repository squash-merges PRs and a rewritten-but-uncommitted
-# docs/traceability.md is picked up by the next commit either way.
+# repository squash-merges PRs and a rewritten-but-uncommitted file is picked
+# up by the next commit either way.
+#
+# Two things happen here:
+#
+# 1. C# formatting. A rebase commits without running pre-commit — neither a
+#    replayed pick nor the commit `git rebase --continue` makes after a
+#    conflict is resolved — so a file written while resolving one (a
+#    regenerated migration, say) reaches the branch unformatted and fails CI's
+#    `dotnet format --verify-no-changes`. Every .cs or .csproj file the
+#    rewritten commits touched is formatted now, and staged if that changed it.
+#    stdin carries one "<old-sha> <new-sha>" line per rewritten commit.
+# 2. docs/traceability.md is regenerated and staged if it changed.
 #
 # A dev-machine convenience, not a CI gate — see .githooks/post-merge. This
 # file is the tracked template; ./init-dev.sh copies it into the real hooks
@@ -18,6 +29,28 @@ set -u
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
 cd "$REPO_ROOT" || exit 0
+
+REWRITTEN_CS=$(
+	while read -r _old new _rest; do
+		git diff-tree --no-commit-id --name-only -r "$new"
+	done | grep -E '\.(cs|csproj)$' | sort -u
+)
+
+if [ -n "$REWRITTEN_CS" ] && command -v dotnet >/dev/null 2>&1; then
+	EXISTING_CS=$(echo "$REWRITTEN_CS" | while IFS= read -r f; do [ -f "$f" ] && echo "$f"; done)
+
+	if [ -n "$EXISTING_CS" ]; then
+		# shellcheck disable=SC2086 # word-split on purpose: one path per --include arg
+		dotnet format HpacSafety.slnx --include $EXISTING_CS >/dev/null 2>&1
+
+		# shellcheck disable=SC2086
+		if ! git diff --quiet -- $EXISTING_CS; then
+			# shellcheck disable=SC2086
+			git add -- $EXISTING_CS
+			echo "post-rewrite: dotnet format fixed C# files the rebase wrote and staged them — include them in your next commit."
+		fi
+	fi
+fi
 
 command -v node >/dev/null 2>&1 || exit 0
 

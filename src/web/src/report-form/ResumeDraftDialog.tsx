@@ -4,7 +4,7 @@ import type { Locale } from "../i18n/locales"
 import { formatAnswer } from "../lib/formatAnswer"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import type { DraftAnswer, DraftAttachment } from "./draft"
-import { collectsNoAnswer, questionLabel } from "./steps"
+import { collectsNoAnswer, optionFor, optionLabel, questionLabel } from "./steps"
 
 /*
  * Asks a returning reporter whether to continue the report this browser saved
@@ -51,7 +51,12 @@ export function savedAnswerRows(
 }
 
 function displayValue(question: PublicQuestionView, answer: DraftAnswer, locale: Locale, t: (key: string) => string): string {
-	if (answer.kind === "options") return answer.values.join(", ")
+	const labelOf = (stored: string) => {
+		const option = optionFor(question, stored)
+		return option ? optionLabel(option, locale) : stored
+	}
+	if (answer.kind === "options") return answer.values.map(labelOf).join(", ")
+	if (question.type === "single_select") return labelOf(answer.value)
 	return formatAnswer(question.type, answer.value, locale, t)
 }
 

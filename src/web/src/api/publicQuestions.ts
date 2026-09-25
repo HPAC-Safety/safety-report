@@ -12,6 +12,9 @@
  * language it is in, so the form can mark it (ADR-0095).
  */
 export interface PublicOptionView {
+	/** The choice's identifier: what a submitted answer names (ADR-0128). */
+	id: string
+	/** The invariant code a conditional question names (ADR-0074). */
 	code: string
 	labelEn: string
 	labelFr: string

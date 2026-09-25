@@ -11,6 +11,8 @@ import type { Page } from "@playwright/test"
  */
 
 export interface StubOption {
+	/** The choice's identifier, which a submitted answer names (ADR-0128). */
+	id: string
 	code: string
 	labelEn: string
 	labelFr: string
@@ -93,8 +95,8 @@ export function defaultFormQuestions(): StubQuestion[] {
 					type: "single_select",
 					displayOrder: 0,
 					options: [
-						{ code: "hang_glider", labelEn: "Hang glider", labelFr: "Deltaplane", onlyIn: null },
-						{ code: "paraglider", labelEn: "Paraglider", labelFr: "Parapente", onlyIn: null },
+						{ id: "choice-hang_glider", code: "hang_glider", labelEn: "Hang glider", labelFr: "Deltaplane", onlyIn: null },
+						{ id: "choice-paraglider", code: "paraglider", labelEn: "Paraglider", labelFr: "Parapente", onlyIn: null },
 					],
 				}),
 				question({ id: "aircraft_model", key: "aircraft_model", labelEn: "Model", type: "short_text", displayOrder: 1 }),
@@ -146,9 +148,9 @@ export function multiSelectFormQuestions(): StubQuestion[] {
 			type: "multi_select",
 			displayOrder: 1,
 			options: [
-				{ code: "gusty", labelEn: "Gusty", labelFr: "Rafales", onlyIn: null },
-				{ code: "thermic", labelEn: "Thermic", labelFr: "Thermique", onlyIn: null },
-				{ code: "turbulent", labelEn: "Turbulent", labelFr: "Turbulent", onlyIn: null },
+				{ id: "choice-gusty", code: "gusty", labelEn: "Gusty", labelFr: "Rafales", onlyIn: null },
+				{ id: "choice-thermic", code: "thermic", labelEn: "Thermic", labelFr: "Thermique", onlyIn: null },
+				{ id: "choice-turbulent", code: "turbulent", labelEn: "Turbulent", labelFr: "Turbulent", onlyIn: null },
 			],
 		}),
 	)
@@ -173,8 +175,8 @@ export function typeAheadFormQuestions(): StubQuestion[] {
 			displayOrder: 1,
 			allowsReporterAdditions: true,
 			options: [
-				{ code: "coopers", labelEn: "Cooper's Hill", labelFr: "Colline Cooper", onlyIn: null },
-				{ code: "mount_7", labelEn: "Mount 7", labelFr: "Mount 7", onlyIn: "en-CA" },
+				{ id: "choice-coopers", code: "coopers", labelEn: "Cooper's Hill", labelFr: "Colline Cooper", onlyIn: null },
+				{ id: "choice-mount_7", code: "mount_7", labelEn: "Mount 7", labelFr: "Mount 7", onlyIn: "en-CA" },
 			],
 		}),
 	)

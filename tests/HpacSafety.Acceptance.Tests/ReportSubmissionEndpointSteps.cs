@@ -50,7 +50,15 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _multiSelectRevisionId;
 	private string? _fileRevisionId;
 	private string? _selectRevisionId;
-	private string? _selectedLabel;
+	private string? _selectedChoiceId;
+	private string? _typeAheadRevisionId;
+	private string? _liveChoiceId;
+	private string? _removedChoiceId;
+	private string? _otherQuestionChoiceId;
+	private bool _choiceValidation;
+	private readonly Dictionary<string, string[]> _namedChoiceIds = [];
+	private readonly List<(string Submission, HttpResponseMessage Response)> _accepted = [];
+	private string? _narrativeRevisionId;
 	private string? _answerId;
 	private string? _submittedReportId;
 	private string? _supersededRevisionId;
@@ -83,7 +91,15 @@ public sealed class ReportSubmissionEndpointSteps
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
 		_extraRevisionId = await CreateSyntheticQuestion("short_text");
-		_multiSelectRevisionId = await RevisionIdFor(await CreateSelectQuestion("multi_select"));
+		var multiSelect = await CreateSelectQuestion("multi_select");
+		_multiSelectRevisionId = await RevisionIdFor(multiSelect);
+		var singleSelect = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(singleSelect);
+		_typeAheadRevisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(
+			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
+
+		_namedChoiceIds[_multiSelectRevisionId] = [await ChoiceIdFor(multiSelect, "Blue"), await ChoiceIdFor(multiSelect, "Red")];
+		_namedChoiceIds[_selectRevisionId] = [await ChoiceIdFor(singleSelect, "Blue")];
 	}
 
 	[When(@"the reporter submits the form")]
@@ -96,9 +112,79 @@ public sealed class ReportSubmissionEndpointSteps
 			{
 				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = _extraRevisionId, value = (string?)"a synthetic answer" },
-				new { questionRevisionId = _multiSelectRevisionId, choices = new[] { "Blue", "Red" } },
+				new { questionRevisionId = _multiSelectRevisionId, value = (string?)null, choices = _namedChoiceIds[_multiSelectRevisionId!] },
+				new { questionRevisionId = _selectRevisionId, value = (string?)null, choices = _namedChoiceIds[_selectRevisionId!] },
+				new { questionRevisionId = _typeAheadRevisionId, value = (string?)_marker, choices = (string[]?)null },
 			},
 		});
+	}
+
+	[Then(@"a single-select, multi-select, or type-ahead answer carries the identifiers of the chosen choices in ""choices""")]
+	public async Task ThenAChoiceAnswerCarriesItsChoiceIds()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+		var stored = await StoredAnswersOfThisReport();
+
+		foreach (var (revisionId, choiceIds) in _namedChoiceIds)
+		{
+			stored.Where(answer => answer.QuestionRevisionId == TinyId.Parse(revisionId))
+				.Select(answer => answer.ChoiceId?.Value)
+				.ShouldBe(choiceIds, ignoreOrder: true);
+		}
+	}
+
+	[Then(@"a type-ahead answer naming a value the question does not offer carries the typed text in ""value"" instead")]
+	public async Task ThenATypedValueNamesANewChoice()
+	{
+		var answer = (await StoredAnswersOfThisReport(includeChoices: true))
+			.Single(candidate => candidate.QuestionRevisionId == TinyId.Parse(_typeAheadRevisionId!));
+
+		answer.Value.ShouldBeNull();
+		answer.Choice!.LabelEn.ShouldBe(_marker);
+		answer.Choice.AddedByReporter.ShouldBeTrue();
+	}
+
+	// --- A submitted choice must be one the question offers ---
+
+	[Given(@"a reporter submits a single-select, multi-select, or type-ahead answer naming choices by identifier")]
+	public async Task GivenAReporterNamesChoicesByIdentifier()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
+		_liveChoiceId = await ChoiceIdFor(key, "Blue");
+		_removedChoiceId = await ChoiceIdFor(key, "Red");
+		await RemoveChoice(key, keep: "blue");
+
+		_otherQuestionChoiceId = await ChoiceIdFor(await CreateSelectQuestion(), "Blue");
+		_typeAheadRevisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(
+			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
+		_choiceValidation = true;
+	}
+
+	[Then(@"the answer is accepted only if every named choice is a live choice of that question")]
+	public void ThenOnlyALiveChoiceIsAccepted()
+	{
+		_accepted.Select(entry => entry.Response.StatusCode)
+			.ShouldAllBe(status => status == HttpStatusCode.Accepted);
+	}
+
+	[Then(@"a removed choice, or another question's choice, is rejected")]
+	public void ThenARemovedOrForeignChoiceIsRejected()
+	{
+		foreach (var (submission, response) in _refused)
+		{
+			response.StatusCode.ShouldBe(HttpStatusCode.BadRequest, $"{submission} is refused");
+		}
+	}
+
+	[Then(@"only a type-ahead also accepts typed text naming a value it does not yet offer")]
+	public void ThenOnlyATypeAheadAcceptsTypedText()
+	{
+		_accepted.ShouldContain(entry => entry.Submission == "typed text in a type-ahead");
+		_refused.ShouldContain(entry => entry.Submission == "typed text in a single-select");
 	}
 
 	[Then(@"the submission DTO contains exactly one answer entry for each of those revisions")]
@@ -108,23 +194,6 @@ public sealed class ReportSubmissionEndpointSteps
 	public void ThenTheDtoShapeIsHonored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, "the API accepts a DTO built exactly this way");
-	}
-
-	[Then(@"a multi-select answer carries its chosen labels, as the form offered them, in ""choices"" and never a choice code")]
-	public async Task ThenAMultiSelectAnswerCarriesItsLabelsInChoices()
-	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
-		var reportId = TinyId.Parse((await _response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!);
-		var revisionId = TinyId.Parse(_multiSelectRevisionId!);
-
-		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
-		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.AsNoTracking()
-			.Where(answer => answer.ReportId == reportId && answer.QuestionRevisionId == revisionId)
-			.Select(answer => answer.Value)
-			.ToListAsync();
-
-		stored.ShouldBe(["Blue", "Red"], ignoreOrder: true);
 	}
 
 	// --- A skipped answer is represented by an empty value, not omission ---
@@ -162,18 +231,15 @@ public sealed class ReportSubmissionEndpointSteps
 
 	// --- A submitted select value must be one the revision offered ---
 
-	[Given(@"a reporter submits a value for a picker or multi-select question")]
-	public async Task GivenAReporterSubmitsAValueForAPickerQuestion()
-	{
-		_reporter = await BootedApi.SignedInAs(MemberRole.User);
-		await EnsureConsentQuestion();
-		var key = await CreateSelectQuestion();
-		_selectRevisionId = await RevisionIdFor(key);
-	}
-
 	[When(@"the API validates the submission")]
 	public async Task WhenTheApiValidatesTheSubmission()
 	{
+		if (_choiceValidation)
+		{
+			await SubmitEachChoiceAnswer();
+			return;
+		}
+
 		if (_expiredUploadId is not null)
 		{
 			_response = await Post(new
@@ -209,135 +275,29 @@ public sealed class ReportSubmissionEndpointSteps
 					new { questionRevisionId = _supersededRevisionId, value = (string?)"an old answer" },
 				},
 			});
-
-			return;
 		}
+	}
 
-		using var accepted = await Post(new
-		{
-			language = "en-CA",
-			answers = new object[]
-			{
-				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-				new { questionRevisionId = _selectRevisionId, value = (string?)"Blue" },
-			},
-		});
-		accepted.StatusCode.ShouldBe(HttpStatusCode.Accepted, await accepted.Content.ReadAsStringAsync());
-		_selectedLabel = "Blue";
+	// --- The submission path never calls a translation provider ---
 
+	[When(@"the API commits the submission")]
+	public async Task WhenTheApiCommitsTheSubmission()
+	{
 		_response = await Post(new
 		{
 			language = "en-CA",
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-				new { questionRevisionId = _selectRevisionId, value = (string?)"Not an offered option" },
+				new { questionRevisionId = _extraRevisionId, value = (string?)Secret },
 			},
 		});
-	}
-
-	[Then(@"the value is accepted only if the answered revision offered exactly that label")]
-	public void ThenTheValueIsAcceptedOnlyIfOffered()
-	{
-		// Asserted by the two-request sequence above.
-	}
-
-	[Then(@"a value the revision never offered is rejected")]
-	public void ThenAValueNeverOfferedIsRejected()
-	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-	}
-
-	[Then(@"a type-ahead also accepts a value it does not yet offer")]
-	public async Task ThenATypeAheadAlsoAcceptsAnUnlistedValue()
-	{
-		var revisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(
-			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
-
-		using var response = await Post(new
-		{
-			language = "en-CA",
-			answers = new object[]
-			{
-				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-				new { questionRevisionId = revisionId, value = (string?)"A site nobody listed" },
-			},
-		});
-
-		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
-	}
-
-	// --- The submission path never calls a translation provider ---
-
-	[Given(@"a submission contains select answers and a value typed into a type-ahead")]
-	public async Task GivenASubmissionContainsSelectAnswers()
-	{
-		_reporter = await BootedApi.SignedInAs(MemberRole.User);
-		await EnsureConsentQuestion();
-		var key = await CreateSelectQuestion();
-		_selectRevisionId = await RevisionIdFor(key);
-		_selectedLabel = "Blue";
-	}
-
-	[When(@"the API commits the submission")]
-	public async Task WhenTheApiCommitsTheSubmission()
-	{
-		object dto = _selectRevisionId is not null
-			? new
-			{
-				language = "en-CA",
-				answers = new object[]
-				{
-					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-					new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
-				},
-			}
-			: new
-			{
-				language = "en-CA",
-				answers = new object[]
-				{
-					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-					new { questionRevisionId = _extraRevisionId, value = (string?)Secret },
-				},
-			};
-
-		_response = await Post(dto);
 	}
 
 	[Then(@"no translation provider is called")]
 	public void ThenNoTranslationProviderIsCalled()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
-	}
-
-	[Then(@"the answers are stored in the language the reporter gave them in")]
-	public async Task ThenTheAnswersAreStoredInTheReportersLanguage()
-	{
-		var stored = await SubmittedSelectAnswer();
-		stored.Value.ShouldBe(_selectedLabel);
-		stored.Locale.ShouldBe(Locale.EnCa);
-	}
-
-	[Then(@"only a picker answer carries a second language yet, copied from the choice it names")]
-	public async Task ThenOnlyAPickerCarriesASecondLanguage()
-	{
-		// "Blue" is offered as "Bleu" (CreateSelectQuestion); copying it is a
-		// lookup, not a provider call (ADR-0112).
-		var stored = await SubmittedSelectAnswer();
-		stored.TranslatedValue.ShouldBe("Bleu");
-		stored.TranslationSource.ShouldBe(TranslationSource.Choice);
-	}
-
-	private async Task<ReportAnswer> SubmittedSelectAnswer()
-	{
-		_submittedReportId ??= (await _response!.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
-		var reportId = TinyId.Parse(_submittedReportId!);
-
-		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
-		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		return await database.ReportAnswers.AsNoTracking()
-			.SingleAsync(candidate => candidate.ReportId == reportId && candidate.Value == _selectedLabel);
 	}
 
 	// --- Every answer's value and locale are immutable once submitted ---
@@ -349,7 +309,8 @@ public sealed class ReportSubmissionEndpointSteps
 		await EnsureConsentQuestion();
 		var key = await CreateSelectQuestion();
 		_selectRevisionId = await RevisionIdFor(key);
-		_selectedLabel = "Blue";
+		_selectedChoiceId = await ChoiceIdFor(key, "Blue");
+		_narrativeRevisionId = await CreateSyntheticQuestion("long_text");
 
 		_response = await Post(new
 		{
@@ -357,33 +318,60 @@ public sealed class ReportSubmissionEndpointSteps
 			answers = new object[]
 			{
 				new { questionRevisionId = _consentRevisionId, value = (bool?)true },
-				new { questionRevisionId = _selectRevisionId, value = (string?)_selectedLabel },
+				new { questionRevisionId = _selectRevisionId, value = (string?)null, choices = new[] { _selectedChoiceId } },
+				new { questionRevisionId = _narrativeRevisionId, value = (string?)Narrative },
 			},
 		});
-		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
 	}
 
 	[Then(@"no endpoint ever changes an answer's value or the locale it was given in")]
 	public async Task ThenNoEndpointEverChangesValueOrLocale()
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
-		var answerId = (await SubmittedSelectAnswer()).Id.ToString();
+		var (narrative, select) = await SubmittedNarrativeAndSelectAnswers();
 
-		// The only endpoint that ever writes to this row is the translation
-		// queue's PUT, and its request/response shape carries one field:
-		// the translated value. There is no route, admin or otherwise, whose
-		// body could reach the reporter's own Value or Locale.
+		// The only endpoint that ever writes to an answer row is the translation
+		// queue's PUT, and its request/response shape carries one field: the
+		// translated value. There is no route, admin or otherwise, whose body
+		// could reach the reporter's own value, choice, or locale.
 		using var put = await _admin.PutAsJsonAsync(
-			new Uri($"/api/admin/answers/{answerId}/translation", UriKind.Relative),
-			new { value = "Bleu (admin)" });
+			new Uri($"/api/admin/answers/{narrative.Id}/translation", UriKind.Relative),
+			new { value = "Le vent s'est levé (admin)" });
 		put.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+		// A choice answer has no translation of its own to write (ADR-0128).
+		using var refused = await _admin.PutAsJsonAsync(
+			new Uri($"/api/admin/answers/{select.Id}/translation", UriKind.Relative),
+			new { value = "Bleu (admin)" });
+		refused.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var (storedNarrative, storedSelect) = await SubmittedNarrativeAndSelectAnswers();
+		storedNarrative.Value.ShouldBe(Narrative);
+		storedNarrative.Locale.ShouldBe(Locale.EnCa);
+		storedNarrative.TranslatedValue.ShouldBe("Le vent s'est levé (admin)");
+		storedSelect.ChoiceId.ShouldBe(TinyId.Parse(_selectedChoiceId!));
+		storedSelect.Value.ShouldBeNull();
+		storedSelect.Locale.ShouldBe(Locale.EnCa);
+		storedSelect.TranslatedValue.ShouldBeNull();
+	}
+
+	private const string Narrative = "The wind picked up on final.";
+
+	private async Task<(ReportAnswer Narrative, ReportAnswer Select)> SubmittedNarrativeAndSelectAnswers()
+	{
+		_submittedReportId ??= (await _response!.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		var reportId = TinyId.Parse(_submittedReportId!);
+		var narrativeRevision = TinyId.Parse(_narrativeRevisionId!);
+		var selectRevision = TinyId.Parse(_selectRevisionId!);
 
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var stored = await database.ReportAnswers.FirstAsync(candidate => candidate.Id == TinyId.Parse(answerId));
-		stored.Value.ShouldBe(_selectedLabel);
-		stored.Locale.ShouldBe(Locale.EnCa);
-		stored.TranslatedValue.ShouldBe("Bleu (admin)");
+		var answers = await database.ReportAnswers.AsNoTracking()
+			.Where(candidate => candidate.ReportId == reportId)
+			.ToListAsync();
+		return (answers.Single(answer => answer.QuestionRevisionId == narrativeRevision),
+			answers.Single(answer => answer.QuestionRevisionId == selectRevision));
 	}
 
 	[Then(@"this holds for every answer type, not only select-shaped ones")]
@@ -1233,6 +1221,84 @@ public sealed class ReportSubmissionEndpointSteps
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 
 		return key;
+	}
+
+	/// <summary>
+	///     Each way a choice answer can name its choices, sent as its own report:
+	///     the live choice and a type-ahead's typed text are accepted; a removed
+	///     choice, another question's, and a single-select's typed text are refused.
+	/// </summary>
+	private async Task SubmitEachChoiceAnswer()
+	{
+		async Task<HttpResponseMessage> Send(string revisionId,
+											 string? value,
+											 string[]? choices)
+		{
+			return await Post(new
+			{
+				language = "en-CA",
+				answers = new object[]
+				{
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true, choices = (string[]?)null },
+					new { questionRevisionId = revisionId, value, choices },
+				},
+			});
+		}
+
+		_accepted.Add(("a live choice", await Send(_selectRevisionId!, null, [_liveChoiceId!])));
+		_accepted.Add(("typed text in a type-ahead", await Send(_typeAheadRevisionId!, _marker, null)));
+		_refused.Add(("a removed choice", await Send(_selectRevisionId!, null, [_removedChoiceId!])));
+		_refused.Add(("another question's choice", await Send(_selectRevisionId!, null, [_otherQuestionChoiceId!])));
+		_refused.Add(("typed text in a single-select", await Send(_selectRevisionId!, "Blue", null)));
+	}
+
+	/// <summary>Removes every choice but one from a question CreateSelectQuestion made, as an Administrator's save.</summary>
+	private async Task RemoveChoice(string key,
+									string keep)
+	{
+		var admin = _admin!;
+		var questions = await admin.GetFromJsonAsync<JsonElement>(AdminQuestions);
+		var id = questions.EnumerateArray().Single(candidate => candidate.GetProperty("key").GetString() == key)
+			.GetProperty("id").GetString();
+
+		using var response = await admin.PutAsJsonAsync(new Uri($"/api/admin/questions/{id}", UriKind.Relative), new
+		{
+			key,
+			type = "single_select",
+			labelEn = "A synthetic question",
+			labelFr = "Une question synthétique",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+			options = new[] { new { code = keep, labelEn = "Blue", labelFr = "Bleu" } },
+		});
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+	}
+
+	/// <summary>Every answer of the report this scenario submitted, optionally with the choices they name.</summary>
+	private async Task<List<ReportAnswer>> StoredAnswersOfThisReport(bool includeChoices = false)
+	{
+		_submittedReportId ??= (await _response!.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		var reportId = TinyId.Parse(_submittedReportId!);
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var answers = database.ReportAnswers.AsNoTracking().Where(answer => answer.ReportId == reportId);
+
+		return includeChoices
+			? await answers.Include(answer => answer.Choice).ToListAsync()
+			: await answers.ToListAsync();
+	}
+
+	private static async Task<string> ChoiceIdFor(string key,
+												 string labelEn)
+	{
+		using var client = (await BootedApi.Factory()).CreateClient();
+		var body = await client.GetFromJsonAsync<JsonElement>(PublicQuestions);
+		return body.EnumerateArray().Single(candidate => candidate.GetProperty("key").GetString() == key)
+			.GetProperty("options").EnumerateArray()
+			.Single(option => option.GetProperty("labelEn").GetString() == labelEn)
+			.GetProperty("id").GetString()!;
 	}
 
 	private async Task<string> RevisionIdFor(string key)

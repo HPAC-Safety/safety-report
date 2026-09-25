@@ -129,7 +129,7 @@ public class TranslationModeTests
 	}
 
 	[Fact]
-	public void GivenTypeAheadValueNamingNoChoice_WhenRecorded_ThenLeftForTheWorker()
+	public void GivenTypeAheadValueNamingNoChoice_WhenRecorded_ThenNamesTheNewValueAndQueuesNoAnswer()
 	{
 		// Given
 		var question = Question.Create(
@@ -139,10 +139,12 @@ public class TranslationModeTests
 		// When
 		var answer = new Report(Locale.EnCa, Now).Answer(question, "A ridge nobody listed", Now);
 
-		// Then
-		answer.TranslationMode.ShouldBe(TranslationMode.Machine);
-		answer.NeedsTranslation.ShouldBeTrue();
-		answer.TranslatedValue.ShouldBeNull();
+		// Then — the value is the new choice's to translate, not the answer's (ADR-0129)
+		answer.TranslationMode.ShouldBe(TranslationMode.Choice);
+		answer.ChoiceId.ShouldBe(question.Choices.Single(choice => choice.LabelEn == "A ridge nobody listed").Id);
+		answer.NeedsTranslation.ShouldBeFalse();
+		answer.DisplayedTranslation.ShouldBeNull();
+		answer.ValueIn(Locale.FrCa).ShouldBe("A ridge nobody listed");
 	}
 
 	[Fact]
@@ -167,10 +169,27 @@ public class TranslationModeTests
 	{
 		// Given — a reporter-added choice has only the language it was typed in
 		var question = Question.Create("launch", QuestionType.Autocomplete, "Launch", "Décollage", Now, isActive: true);
-		question.AddChoiceFromReporter("Hidden Valley", Locale.EnCa);
+		var choice = question.AddChoiceFromReporter("Hidden Valley", Locale.EnCa);
 
 		// When / Then
-		question.OtherLabelOf("Hidden Valley", Locale.EnCa).ShouldBeNull();
-		question.OtherLabelOf("Somewhere else", Locale.EnCa).ShouldBeNull();
+		choice.OtherLabel(Locale.EnCa).ShouldBeNull();
+		choice.OtherLabel(Locale.FrCa).ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenChoiceAnswer_WhenAdministratorSuppliesATranslation_ThenRefused()
+	{
+		// Given
+		var question = Question.Create(
+			"province", QuestionType.SingleSelect, "Province", "Province", Now, isActive: true,
+			options: [new QuestionOptionInput("quebec", "Quebec", "Québec")]);
+		var answer = new Report(Locale.EnCa, Now).Answer(question, "Quebec", Now);
+
+		// When
+		var supplying = () => answer.SupplyHumanTranslation("Kebek");
+
+		// Then — its second language is its choice's (ADR-0128)
+		supplying.ShouldThrow<DomainRuleViolationException>();
+		answer.DisplayedTranslation.ShouldBe("Québec");
 	}
 }

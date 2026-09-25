@@ -9,7 +9,7 @@ export interface MultiSelectPickerProps {
 	values: string[]
 	placeholder: string
 	describedBy: string | undefined
-	onToggle: (label: string) => void
+	onToggle: (key: string) => void
 }
 
 /**
@@ -50,7 +50,7 @@ export function MultiSelectPicker({ fieldId, label, options, values, placeholder
 		}
 	}, [open])
 
-	const chosen = options.filter((option) => values.includes(option.label)).map((option) => option.label)
+	const chosen = options.filter((option) => values.includes(option.key)).map((option) => option.label)
 
 	return (
 		<div
@@ -92,7 +92,7 @@ export function MultiSelectPicker({ fieldId, label, options, values, placeholder
 					>
 						{options.map((option) => (
 							<label key={option.key} className="touch-target flex items-center gap-2 px-3 font-sans text-ink">
-								<input type="checkbox" checked={values.includes(option.label)} onChange={() => onToggle(option.label)} />
+								<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
 								{option.label}
 							</label>
 						))}

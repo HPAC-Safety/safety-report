@@ -27,6 +27,8 @@ import {
 	buildSteps,
 	collectsNoAnswer,
 	indexQuestionsById,
+	optionFor,
+	optionTyped,
 	questionLabel,
 	unansweredRequired,
 	visibleChildren,
@@ -166,7 +168,7 @@ export function ReportForm() {
 	const questionsById = useMemo(() => (load.status === "ready" ? indexQuestionsById(load.questions) : new Map()), [load])
 	const hasAttachment = useMemo(() => hasFileAttached(attachments), [attachments])
 	const visible = useMemo(
-		() => visibleSteps(steps, answers, questionsById, locale, hasAttachment),
+		() => visibleSteps(steps, answers, questionsById, hasAttachment),
 		[steps, answers, questionsById, locale, hasAttachment],
 	)
 
@@ -190,7 +192,7 @@ export function ReportForm() {
 		// unanswered required question (REQ-SUB-054).
 		const blocked = visible
 			.slice(0, currentIndex)
-			.find((step) => unansweredRequired(step, answers, questionsById, locale, hasAttachment).length > 0)
+			.find((step) => unansweredRequired(step, answers, questionsById, hasAttachment).length > 0)
 		if (blocked) {
 			setAttemptedAdvance(true)
 			navigate(stepPath(blocked), { replace: true })
@@ -309,7 +311,7 @@ export function ReportForm() {
 
 	function blockingRequirements(): PublicQuestionView[] {
 		if (!currentStep) return []
-		return unansweredRequired(currentStep, answers, questionsById, locale, hasAttachment)
+		return unansweredRequired(currentStep, answers, questionsById, hasAttachment)
 	}
 
 	function handleNext() {
@@ -342,18 +344,26 @@ export function ReportForm() {
 		const submitAnswers: SubmitAnswer[] = []
 
 		for (const step of visible) {
-			const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, locale, hasAttachment) : [step.question]
+			const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, hasAttachment) : [step.question]
 
 			for (const question of questions) {
 				if (collectsNoAnswer(question)) continue
 
 				const answer = answers[question.revisionId]
 
-				if (question.type === "multi_select") {
+				// A choice answer names its choices by ID (ADR-0128); a type-ahead
+				// value no choice carries yet goes as the typed text (ADR-0129).
+				if (question.type === "multi_select" || question.type === "single_select" || question.type === "autocomplete") {
+					const stored = answer?.kind === "options" ? answer.values : answer?.kind === "value" ? [answer.value] : []
+					const named =
+						question.type === "autocomplete"
+							? stored.map((typed) => optionTyped(question, typed))
+							: stored.map((value) => optionFor(question, value))
+					const typed = question.type === "autocomplete" && stored.length > 0 && !named[0] ? stored[0].trim() : null
 					submitAnswers.push({
 						questionRevisionId: question.revisionId,
-						value: null,
-						choices: answer?.kind === "options" ? answer.values : [],
+						value: typed || null,
+						choices: typed ? null : named.flatMap((option) => (option ? [option.id] : [])),
 						attachments: null,
 					})
 					continue
@@ -596,7 +606,7 @@ function StepContent({
 	}
 
 	if (step.kind === "group") {
-		const children = visibleChildren(step.question, answers, questionsById, locale, hasFileAttached(attachments))
+		const children = visibleChildren(step.question, answers, questionsById, hasFileAttached(attachments))
 		return (
 			<fieldset>
 				<legend className="font-display text-lg font-semibold text-ink">{questionLabel(step.question, locale)}</legend>

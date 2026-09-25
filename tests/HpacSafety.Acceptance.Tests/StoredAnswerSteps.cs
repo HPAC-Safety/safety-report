@@ -15,12 +15,13 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     What a stored answer holds — REQ-QB-018, a picker's answer is the words the
-///     reporter saw, and REQ-QB-025, only consent is projected onto the report
-///     (ADR-0072, ADR-0095, ADR-0117, ADR-0119).
+///     reporter saw; REQ-QB-019 and REQ-QB-118, every answer in its one invariant
+///     written form or refused; and REQ-QB-025, only consent is projected onto the
+///     report (ADR-0072, ADR-0095, ADR-0117, ADR-0119).
 /// </summary>
 /// <remarks>
-///     REQ-QB-018 goes through the booted API, because "the words the reporter saw"
-///     is a claim about what the submission endpoint persists. REQ-QB-025 is a rule
+///     REQ-QB-018, REQ-QB-019, and REQ-QB-118 go through the booted API, because
+///     each is a claim about what the submission endpoint persists. REQ-QB-025 is a rule
 ///     of the <see cref="Report" /> aggregate and runs against it directly. Every
 ///     question, choice, and answer here is synthetic.
 /// </remarks>
@@ -47,6 +48,12 @@ public sealed class StoredAnswerSteps
 	private readonly Dictionary<string, string[]> _chosen = [];
 	private HttpClient? _admin;
 	private string? _reportId;
+
+	private const string Prose = "Wind picked up on final approach — synthetic.";
+
+	private JsonElement _answered;
+	private string? _submitted;
+	private HttpResponseMessage? _submission;
 
 	private readonly Dictionary<string, string> _ordinary = [];
 	private Report? _report;
@@ -199,7 +206,90 @@ public sealed class StoredAnswerSteps
 		}
 	}
 
+	// --- REQ-QB-019 and REQ-QB-118: one invariant written form, or a refusal ---
+
+	[Given(@"^a reporter submits (.+) as the answer to a (\w+) question$")]
+	public async Task GivenAReporterSubmitsAnAnswer(string submitted,
+													string type)
+	{
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, []));
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+
+		_answered = await response.Content.ReadFromJsonAsync<JsonElement>();
+		_submitted = submitted switch
+		{
+			"an empty string" => string.Empty,
+			"a line of prose" => Prose,
+			_ => submitted,
+		};
+	}
+
+	[When(@"the answer is persisted")]
+	public async Task WhenTheAnswerIsPersisted()
+	{
+		await WhenTheSubmissionIsMade();
+		_submission!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _submission.Content.ReadAsStringAsync());
+	}
+
+	[When(@"the submission is made")]
+	public async Task WhenTheSubmissionIsMade()
+	{
+		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_submission = await reporter.PostAsJsonAsync(Submit, new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"no" },
+				new { questionRevisionId = _answered.GetProperty("revisionId").GetString(), value = (string?)_submitted },
+			},
+		});
+	}
+
+	[Then(@"^the stored value is (.+)$")]
+	public async Task ThenTheStoredValueIs(string stored)
+	{
+		var expected = stored switch
+		{
+			"nothing, because the answer was skipped" => null,
+			"that line, as typed" => Prose,
+			_ => stored,
+		};
+
+		(await AnswersToTheQuestion()).ShouldHaveSingleItem().Value.ShouldBe(expected);
+	}
+
+	[Then(@"the submission is rejected")]
+	public async Task ThenTheSubmissionIsRejected()
+	{
+		_submission!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		// A refusal names the question, never the reporter's words.
+		(await _submission.Content.ReadAsStringAsync()).ShouldNotContain(_submitted!);
+	}
+
+	[Then(@"no stored answer carries that value")]
+	public async Task ThenNoStoredAnswerCarriesIt()
+	{
+		(await AnswersToTheQuestion()).ShouldBeEmpty();
+	}
+
 	// --- helpers ---
+
+	/// <summary>Every stored answer to this scenario's own question, from any report.</summary>
+	private async Task<List<ReportAnswer>> AnswersToTheQuestion()
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var questionId = TinyId.Parse(_answered.GetProperty("id").GetString());
+
+		return await database.ReportAnswers
+			.IgnoreQueryFilters()
+			.AsNoTracking()
+			.Where(answer => answer.QuestionId == questionId)
+			.ToListAsync();
+	}
 
 	private string RevisionOf(string type)
 	{

@@ -322,6 +322,88 @@ public class StringAnswerTests
 		answer.Value.ShouldBe(given);
 	}
 
+	[Theory]
+	[InlineData(QuestionType.Date, "the 21st of September 2026")]
+	[InlineData(QuestionType.Date, "21/09/2026")]
+	[InlineData(QuestionType.Date, "2026-9-21")]
+	[InlineData(QuestionType.Date, "2026-02-30")]
+	[InlineData(QuestionType.Date, " 2026-09-21")]
+	[InlineData(QuestionType.Time, "2:30 PM")]
+	[InlineData(QuestionType.Time, "25:00")]
+	[InlineData(QuestionType.Time, "14:30:00")]
+	[InlineData(QuestionType.Time, "9:30")]
+	[InlineData(QuestionType.Checkbox, "checked")]
+	[InlineData(QuestionType.Checkbox, "oui")]
+	public void GivenAnswerNotInItsStoredForm_WhenRecorded_ThenRefusedWithoutEchoingIt(QuestionType type,
+																						  string given)
+	{
+		// Given
+		ArgumentNullException.ThrowIfNull(given);
+		var question = Question.Create(
+			"occurred", type, "When did it happen?", "Quand est-ce arrivé ?", Now, isActive: true);
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		var refusal = Should.Throw<DomainRuleViolationException>(() => report.Answer(question, given, Now));
+
+		// Then — nothing is converted, and the value never reaches the message
+		refusal.Message.ShouldContain("occurred");
+		refusal.Message.ShouldNotContain(given.Trim());
+		report.Answers.ShouldBeEmpty();
+	}
+
+	[Theory]
+	[InlineData(QuestionType.Date, "")]
+	[InlineData(QuestionType.Time, "   ")]
+	[InlineData(QuestionType.Checkbox, "")]
+	public void GivenBlankDateTimeOrCheckboxAnswer_WhenRecorded_ThenStoredAsSkipped(QuestionType type,
+																				   string given)
+	{
+		// Given — a cleared input sends an empty string
+		var question = Question.Create(
+			"occurred", type, "When did it happen?", "Quand est-ce arrivé ?", Now, isActive: true);
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		var answer = report.Answer(question, given, Now);
+
+		// Then
+		answer.Value.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenBlankRequiredDateAnswer_WhenRecorded_ThenRefusedAsUnanswered()
+	{
+		// Given
+		var question = Question.Create(
+			"occurred", QuestionType.Date, "When did it happen?", "Quand est-ce arrivé ?", Now, isActive: true,
+			isRequired: true);
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		var refusal = Should.Throw<DomainRuleViolationException>(() => report.Answer(question, "", Now));
+
+		// Then
+		refusal.Message.ShouldContain("is required");
+	}
+
+	[Theory]
+	[InlineData("yes")]
+	[InlineData("no")]
+	public void GivenCheckboxAnswer_WhenRecorded_ThenStoredAsYesOrNo(string given)
+	{
+		// Given
+		var question = Question.Create(
+			"agreed", QuestionType.Checkbox, "I agree", "J'accepte", Now, isActive: true);
+		var report = new Report(Locale.FrCa, Now);
+
+		// When
+		var answer = report.Answer(question, given, Now);
+
+		// Then
+		answer.Value.ShouldBe(given);
+	}
+
 	private static Question Province()
 	{
 		return Question.Create(

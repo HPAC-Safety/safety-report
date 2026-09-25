@@ -28,4 +28,7 @@ public enum AuditAction
 	DeletedComment = 31,
 	HidMedia = 32,
 	ShowedMedia = 33,
+	ApprovedTypeAheadValue = 40,
+	CorrectedTypeAheadValue = 41,
+	RemovedTypeAheadValue = 42,
 }

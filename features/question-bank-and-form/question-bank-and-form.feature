@@ -782,7 +782,6 @@ Scenario: A fork's choices are new rows, and old answers keep naming the retired
   And the earlier answer still names the retired question's choice
 
 @REQ-QB-128
-@ignore
 Scenario Outline: A reporter's new type-ahead value is flagged for review and offered at once
   Given a type-ahead question offers several choices
   When a reporter answering in <language> submits "<value>", which the question does not offer
@@ -797,7 +796,6 @@ Examples:
   | French   | Élévation Sainte-Anne  |
 
 @REQ-QB-129
-@ignore
 Scenario: A type-ahead value is corrected in place for every answer that names it
   Given two reports answered a type-ahead question with the value "coopers"
   When a Safety Officer corrects that value's wording to "Cooper's"
@@ -806,7 +804,6 @@ Scenario: A type-ahead value is corrected in place for every answer that names i
   And the next reporter is offered "Cooper's"
 
 @REQ-QB-130
-@ignore
 Scenario: A reporter typing a removed type-ahead value names it without reviving it
   Given a Safety Officer removed the type-ahead value "Test site"
   When a reporter submits "test site" for that question
@@ -858,7 +855,6 @@ Scenario: The Worker supplies a reporter-added value's other language
   And no translation provider was called while the report was submitted
 
 @REQ-QB-135
-@ignore
 Scenario: Reviewing a type-ahead value clears its flag
   Given a type-ahead question has a reporter-added value flagged for review
   When a Safety Officer approves it

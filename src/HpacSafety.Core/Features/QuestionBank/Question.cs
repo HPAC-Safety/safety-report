@@ -114,9 +114,11 @@ public class Question
 	/// <summary>Every choice this question has ever had, removed ones included. A fork copies all of them.</summary>
 	public IReadOnlyCollection<QuestionChoice> AllChoices => _choices;
 
-	/// <summary>How many reporter-added choices are still waiting for an Administrator to supply a language.</summary>
-	public int ReporterChoicesAwaitingReview =>
-		_choices.Count(choice => choice.Deleted is null && choice.AddedByReporter && choice.NeedsTranslation);
+	/// <summary>
+	///     How many type-ahead values a Safety Officer or Administrator has yet to
+	///     review — a removed one a reporter typed again included (ADR-0129).
+	/// </summary>
+	public int ReporterChoicesAwaitingReview => _choices.Count(choice => choice.NeedsReview);
 
 	/// <summary>
 	///     Where this question sits on the form today. Not versioned
@@ -572,34 +574,36 @@ public class Question
 	}
 
 	/// <summary>
-	///     Records a value a reporter typed into this type-ahead that it did not
-	///     already offer — the pilot who flew at a site nobody had written down.
-	///     Runs at submission, in the report's transaction. See ADR-0063, ADR-0095.
+	///     The value a reporter's typed words name on this type-ahead, adding one when
+	///     none does — the pilot who flew at a site nobody had written down. Runs at
+	///     submission, in the report's transaction. See ADR-0129.
 	/// </summary>
 	/// <remarks>
-	///     <para>Three cases, and the difference between them is the whole method:</para>
-	///     <list type="bullet">
+	///     <para>Matched ignoring case, in either language, in this order:</para>
+	///     <list type="number">
 	///         <item>
-	///             A live choice already reads that way, in either language — the reporter
-	///             typed a site that exists, or a second pilot typed the same new one. It is
-	///             returned unchanged, so a busy weekend at a new site produces one choice,
-	///             and an Administrator's wording is never replaced by a reporter's.
+	///             A live value reads that way — the reporter typed a site that exists, or
+	///             a second pilot typed the same new one. It is returned unchanged, so a
+	///             busy weekend at a new site produces one value, and a reviewer's wording
+	///             is never replaced by a reporter's.
 	///         </item>
 	///         <item>
-	///             The code exists but was removed. It is returned <b>without</b> being
-	///             revived: an Administrator removed it on purpose, and a reporter typing it
-	///             again must not undo that. The answer keeps the reporter's words either way.
+	///             A removed value reads that way, or has the code the words reduce to. It
+	///             is returned <b>without</b> being revived — a reviewer removed it on
+	///             purpose — and flagged for review again, so a reviewer sees it is still
+	///             in use.
 	///         </item>
 	///         <item>
-	///             The code is new. A choice is added holding only the language the reporter
-	///             typed, marked <see cref="QuestionChoice.AddedByReporter" />, and offered
-	///             from now on — in that language to every reporter until an Administrator
-	///             supplies the other. Nothing on the submission path translates it.
+	///             Nothing does. A value is added holding only the language the reporter
+	///             typed, marked <see cref="QuestionChoice.AddedByReporter" />, flagged for
+	///             review, and offered from now on. Nothing on the submission path
+	///             translates it.
 	///         </item>
 	///     </list>
 	/// </remarks>
 	public QuestionChoice AddChoiceFromReporter(string value,
-												Locale locale)
+												Locale locale,
+												DateTimeOffset? at = null)
 	{
 		ArgumentNullException.ThrowIfNull(value);
 		EnsureNotDeleted();
@@ -612,23 +616,106 @@ public class Question
 
 		var typed = value.Trim();
 
-		if (_choices.Find(choice => choice.Deleted is null
-									&& (string.Equals(choice.LabelEn, typed, StringComparison.OrdinalIgnoreCase)
-										|| string.Equals(choice.LabelFr, typed, StringComparison.OrdinalIgnoreCase))) is { } worded)
+		if (_choices.Find(choice => choice.Deleted is null && ReadsAs(choice, typed)) is { } worded)
 		{
 			return worded;
 		}
 
 		var code = QuestionKey.Normalize(typed);
 
-		if (_choices.Find(choice => choice.Code == code) is { } existing)
+		if ((_choices.Find(choice => choice.Deleted is not null && ReadsAs(choice, typed))
+			 ?? _choices.Find(choice => choice.Code == code)) is { } existing)
 		{
+			if (existing.Deleted is not null)
+			{
+				existing.FlagForReview();
+			}
+
 			return existing;
 		}
 
-		var added = QuestionChoice.FromReporter(Id, code, NextChoiceOrder(), typed, locale);
+		var added = QuestionChoice.FromReporter(Id, code, NextChoiceOrder(), typed, locale, at);
 		_choices.Add(added);
 		return added;
+	}
+
+	/// <summary>
+	///     A reviewer approves a type-ahead value as it stands, clearing its review
+	///     flag (ADR-0129).
+	/// </summary>
+	public void ApproveValue(TinyId choiceId,
+							 string reviewer,
+							 DateTimeOffset at)
+	{
+		ReviewedValue(choiceId).MarkReviewed(reviewer, at);
+	}
+
+	/// <summary>
+	///     A reviewer corrects a type-ahead value's wording in place: same value,
+	///     so every answer that names it reads the correction (ADR-0129). A reporter-
+	///     added value may keep one language missing; one an Administrator wrote keeps
+	///     both. Wording another live value already has is refused — that is a
+	///     duplicate to merge, not a correction.
+	/// </summary>
+	public void CorrectValue(TinyId choiceId,
+							 string? labelEn,
+							 string? labelFr,
+							 string reviewer,
+							 DateTimeOffset at)
+	{
+		var value = ReviewedValue(choiceId);
+
+		foreach (var label in new[] { labelEn, labelFr }.Where(label => !string.IsNullOrWhiteSpace(label)))
+		{
+			if (_choices.Exists(other => other.Id != value.Id && other.Deleted is null && ReadsAs(other, label!.Trim())))
+			{
+				throw new DomainRuleViolationException(
+					$"'{Key}' already offers a value reading '{label!.Trim()}'. Merge the two instead.");
+			}
+		}
+
+		value.Relabel(labelEn?.Trim(), labelFr?.Trim());
+		value.MarkReviewed(reviewer, at);
+	}
+
+	/// <summary>
+	///     A reviewer removes a type-ahead value: it stops being offered, and every
+	///     answer that names it still does and reads it (ADR-0128, ADR-0129).
+	/// </summary>
+	public void RemoveValue(TinyId choiceId,
+							string reviewer,
+							DateTimeOffset at)
+	{
+		var value = ReviewedValue(choiceId);
+
+		if (value.Deleted is null)
+		{
+			value.Delete(at);
+		}
+
+		value.MarkReviewed(reviewer, at);
+	}
+
+	/// <summary>This type-ahead's value by identifier, removed ones included; any other question type refuses review.</summary>
+	private QuestionChoice ReviewedValue(TinyId choiceId)
+	{
+		EnsureNotDeleted();
+
+		if (!TakesReporterAdditions)
+		{
+			throw new DomainRuleViolationException(
+				$"'{Key}' is a {EnumCode.Of(Type)} question. Only a type-ahead value is reviewed; an Administrator edits a picker's options.");
+		}
+
+		return _choices.Find(choice => choice.Id == choiceId)
+			   ?? throw new DomainRuleViolationException($"'{Key}' has no such value.");
+	}
+
+	private static bool ReadsAs(QuestionChoice choice,
+								string words)
+	{
+		return string.Equals(choice.LabelEn, words, StringComparison.OrdinalIgnoreCase)
+			   || string.Equals(choice.LabelFr, words, StringComparison.OrdinalIgnoreCase);
 	}
 
 	/// <summary>

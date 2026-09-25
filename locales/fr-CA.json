@@ -29,6 +29,7 @@
     "manageReports": "Gérer les signalements",
     "manageQuestions": "Gérer les questions",
     "manageAnswerTranslations": "Réponses en attente de traduction",
+    "reviewTypeAheadValues": "#Type-ahead values to review",
     "pendingCount": "{count} en attente"
   },
   "language": {
@@ -306,6 +307,26 @@
     "error": {
       "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     }
+  },
+  "typeAheadValues": {
+    "title": "#Type-ahead values to review",
+    "intro": "#Reporters add a value to a type-ahead when it does not offer the one they need, and the next reporter is offered it at once. Approve it, correct its wording for every answer that names it, or remove it from the form; answers that named it keep it.",
+    "loading": "#Loading values…",
+    "empty": "#No type-ahead values are waiting for review.",
+    "error": {
+      "unexpected": "#Something went wrong. Try again."
+    },
+    "typedIn": "#Typed in {locale}",
+    "written": "#Written by an administrator",
+    "answerCount": "#Answers naming it: {count}",
+    "removedBadge": "#Removed, typed again",
+    "labelEn": "#English wording",
+    "labelFr": "#French wording",
+    "approve": "#Approve",
+    "correct": "#Correct",
+    "saveCorrection": "#Save correction",
+    "cancel": "#Cancel",
+    "remove": "#Remove"
   },
   "reports": {
     "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",

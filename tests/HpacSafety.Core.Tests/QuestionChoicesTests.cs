@@ -218,7 +218,7 @@ public class QuestionChoicesTests
 	}
 
 	[Fact]
-	public void GivenOneLanguageChoice_WhenAdministratorSuppliesTheOther_ThenNoLongerAwaitingReview()
+	public void GivenOneLanguageChoice_WhenAdministratorSuppliesTheOther_ThenItHasBothAndStaysFlaggedForReview()
 	{
 		// Given
 		var question = Sites();
@@ -233,7 +233,10 @@ public class QuestionChoicesTests
 		question.CurrentRevision.Id.ShouldBe(revision);
 		question.Choice("mount_7")!.Label(Locale.FrCa).ShouldBe("Mont 7");
 		question.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
-		question.ReporterChoicesAwaitingReview.ShouldBe(0);
+
+		// Supplying a language is not a review: that is a Safety Officer's or an
+		// Administrator's explicit approval, correction, or removal (ADR-0129).
+		question.ReporterChoicesAwaitingReview.ShouldBe(1);
 	}
 
 	[Fact]

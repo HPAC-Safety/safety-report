@@ -129,17 +129,24 @@ When("the visitor activates the Admin menu", async ({ page }) => {
 	await page.locator("header").getByRole("button", { name: "Admin" }).click()
 })
 
-Then("it opens with manage-reports, manage-questions, and manage-answer-translations options", async ({ page }) => {
+Then(
+	"it opens with manage-reports, review-type-ahead-values, manage-questions, and manage-answer-translations options",
+	async ({ page }) => {
+		const menu = page.getByRole("menu", { name: "Admin" })
+		await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
+		await expect(menu.getByRole("menuitem", { name: "Type-ahead values to review" })).toBeVisible()
+		await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
+		await expect(menu.getByRole("menuitem", { name: "Answers awaiting translation" })).toBeVisible()
+		// Shared choice lists are gone: each question owns its choices (ADR-0095).
+		await expect(menu.getByRole("menuitem")).toHaveCount(4)
+	},
+)
+
+Then("it opens with manage-reports and review-type-ahead-values options", async ({ page }) => {
 	const menu = page.getByRole("menu", { name: "Admin" })
 	await expect(menu.getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
-	await expect(menu.getByRole("menuitem", { name: "Manage questions" })).toBeVisible()
-	await expect(menu.getByRole("menuitem", { name: "Answers awaiting translation" })).toBeVisible()
-	// Shared choice lists are gone: each question owns its choices (ADR-0095).
-	await expect(menu.getByRole("menuitem")).toHaveCount(3)
-})
-
-Then("it opens with a manage-reports option", async ({ page }) => {
-	await expect(page.getByRole("menu", { name: "Admin" }).getByRole("menuitem", { name: "Manage reports" })).toBeVisible()
+	await expect(menu.getByRole("menuitem", { name: "Type-ahead values to review" })).toBeVisible()
+	await expect(menu.getByRole("menuitem")).toHaveCount(2)
 })
 
 Then("it offers no manage-questions or manage-answer-translations option", async ({ page }) => {

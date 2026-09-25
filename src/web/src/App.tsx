@@ -13,6 +13,7 @@ import { ManageReportsPage } from "./routes/ManageReportsPage"
 import { ReportDetailPage } from "./routes/ReportDetailPage"
 import { ManageQuestionsPage } from "./routes/ManageQuestionsPage"
 import { ManageAnswerTranslationsPage } from "./routes/ManageAnswerTranslationsPage"
+import { ReviewTypeAheadValuesPage } from "./routes/ReviewTypeAheadValuesPage"
 import { NotFoundPage } from "./routes/NotFoundPage"
 
 function App() {
@@ -65,6 +66,14 @@ function App() {
 						element={
 							<AdminRouteGuard requires="administrator">
 								<ManageAnswerTranslationsPage />
+							</AdminRouteGuard>
+						}
+					/>
+					<Route
+						path="/admin/type-ahead-values"
+						element={
+							<AdminRouteGuard requires="reviewer">
+								<ReviewTypeAheadValuesPage />
 							</AdminRouteGuard>
 						}
 					/>

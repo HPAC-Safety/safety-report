@@ -207,6 +207,8 @@ export interface PendingCounts {
 	reportsNeedingAction: number
 	/** Null unless the member is an administrator: the queue is theirs alone. */
 	answersAwaitingTranslation: number | null
+	/** Type-ahead values waiting for a Safety Officer or Administrator to review (ADR-0129). */
+	typeAheadValuesAwaitingReview: number
 }
 
 export function getPendingCounts(): Promise<PendingCounts> {

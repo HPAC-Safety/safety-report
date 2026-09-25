@@ -274,3 +274,48 @@ export function supplyAnswerTranslation(id: string, value: string): Promise<void
 		body: JSON.stringify({ value }),
 	})
 }
+
+/**
+ * One type-ahead value waiting for a Safety Officer or Administrator to
+ * review (ADR-0129): added by a reporter, or a removed one a reporter typed
+ * again.
+ */
+export interface TypeAheadValueView {
+	id: string
+	questionId: string
+	questionLabelEn: string
+	questionLabelFr: string
+	/** Null while the value has no English wording yet. */
+	labelEn: string | null
+	/** Null while the value has no French wording yet. */
+	labelFr: string | null
+	/** The language a reporter typed it in, or null for a value an Administrator wrote. */
+	typedIn: string | null
+	isRemoved: boolean
+	answerCount: number
+	addedAt: string | null
+}
+
+export function listTypeAheadValuesAwaitingReview(): Promise<{
+	values: TypeAheadValueView[]
+	count: number
+}> {
+	return call("/api/admin/type-ahead-values/awaiting-review")
+}
+
+export function approveTypeAheadValue(id: string): Promise<void> {
+	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/approval`, { method: "POST" })
+}
+
+/** Corrects the value in place, so every answer that names it reads the correction. */
+export function correctTypeAheadValue(id: string, labelEn: string, labelFr: string): Promise<void> {
+	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, {
+		method: "PUT",
+		body: JSON.stringify({ labelEn, labelFr }),
+	})
+}
+
+/** Removes the value from the form; every answer that names it still does. */
+export function removeTypeAheadValue(id: string): Promise<void> {
+	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, { method: "DELETE" })
+}

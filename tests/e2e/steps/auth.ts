@@ -43,7 +43,7 @@ export async function stubAuth(page: Page, options?: { thirdPartySignIn?: boolea
 			route.fulfill({
 				status: 200,
 				contentType: "application/json",
-				body: JSON.stringify({ reportsNeedingAction: 0, answersAwaitingTranslation: null }),
+				body: JSON.stringify({ reportsNeedingAction: 0, answersAwaitingTranslation: null, typeAheadValuesAwaitingReview: 0 }),
 			}),
 		)
 	}

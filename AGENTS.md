@@ -67,7 +67,7 @@ reason, and claim IDs that exist in the matrix
 ```
 No .feature scenario needed: refactor — extracted the ingest loop; the endpoint
 still validates, streams, and persists exactly as before
-Claims preserved: REQ-SUB-012, REQ-SUB-013
+Claims preserved: REQ-SUB-013, REQ-SUB-042
 ```
 
 - It is for a change that genuinely alters no behavior.

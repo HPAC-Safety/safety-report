@@ -36,6 +36,9 @@ candidates, and any provider emitting the claim shape above satisfies the
 contract. In development the API issues its own genuinely signed token and
 validates it through the same middleware, so only the issuer and the key differ
 ([ADR-0066](../../docs/decisions/ADR-0066-a-development-identity-provider-signed-with-a-dev-key.md)).
+Development may also sign a real member in by checking their password against
+the live members site, for that one call only
+([ADR-0079](../../docs/decisions/ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)).
 The third-party sign-in option is production-only; the browser learns whether
 to offer it from `GET /api/auth/config`, never from a build flag.
 
@@ -113,6 +116,10 @@ The report view offers only what the report's state allows:
 | Rejected | Reopen, Delete |
 | Summary failed | Write summary, Delete |
 | Submitted, Summarizing | Delete |
+
+A report without consent never has a summary pair, so today nothing reaches
+Approved (no consent): such a report closes only by Reject or Delete. #445 adds
+**Mark reviewed**, which moves it to Approved without a summary.
 
 **Approve** publishes at once when the reporter said yes, and otherwise only
 approves ([ADR-0105](../../docs/decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)).
@@ -213,16 +220,16 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Showing a rejection note anywhere but the admin report view.
 - Search, filtering, or sorting of the public feed other than newest
   published first, and a page-count or jump-to-page control.
-- Any attachment metadata on the public report page beyond each public media
-  file's opaque id and kind. Which media is public is
-  [`features/media`](../media/README.md)'s rule (ADR-0117).
+- Any attachment metadata on the public report page beyond each public file's
+  opaque id, its kind, and a document's format. Which files are public is
+  [`features/media`](../media/README.md)'s rule (ADR-0117, ADR-0119).
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.
 - Changing how a date, time, or yes/no answer is stored, sent by the API, or
   sent to the Worker or the model. It stays in its ISO 8601 or `yes`/`no`
-  form; only what a person reads is localized. The Worker still fills every
-  answer's second language
-  ([ADR-0080](../../docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).
+  form; only what a person reads is localized. Such an answer never gets a
+  second language
+  ([ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
 - Converting a date or time between time zones. A date is a calendar date and
   a time is the wall-clock time the reporter entered; neither is shifted to
   the reviewer's zone.

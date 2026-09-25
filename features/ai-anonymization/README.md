@@ -80,11 +80,54 @@ The key is never committed. An unknown provider, a blank model, or an invalid
 reasoning level stops the Worker at startup rather than sending report content
 anywhere ([REQ-AI-023](ai-anonymization.feature)).
 
+## Reviewer checklist
+
+What the model writes cannot be asserted by a test: the suite never calls a
+live model (see Out of scope). REQ-AI-024 proves the prompt carries each rule.
+Whether a given summary follows them is the reviewer's judgment before
+approval, and the reviewer owns the final privacy decision
+([ADR-0004](../../docs/decisions/ADR-0004-human-review-required.md)).
+Before approving a pair, check that it follows each of these rules. They
+replace the untestable model-output scenarios REQ-AI-010, 012, 013, 014, 015,
+025, and 026 (#437).
+
+- **Private-only facts stay out.** A fact that appears only in
+  `private_context` is in neither text, and no private fact is added to make
+  the narrative more complete.
+- **A private person becomes their role.** Every occurrence of a pilot's
+  identity is exactly "the pilot" / "le pilote", with no first name, surname,
+  initials, fragment, hash, bracket, or numbered placeholder left.
+- **Safety content survives.** Both texts keep the sequence, conditions,
+  contributing factors, actions, outcome, and lessons. Identifying material is
+  removed or generalized, never the safety content.
+- **No identifying category appears.** Neither text contains:
+  - a name, initial, membership number, email, phone, address, or account
+    identifier;
+  - an exact site, coordinates, or a uniquely identifying location
+    description;
+  - an aircraft manufacturer or model;
+  - a filename, attachment or document content, metadata, or a hidden private
+    answer;
+  - a club, school, or company name;
+  - an exact calendar date.
+- **Dates generalize.** An exact date becomes its month or season, and the time
+  of day is kept as reported.
+- **Places become generic.** Each place becomes a phrase for its role, such as
+  "the launch site" / "le site de décollage" or "the location" / "le lieu".
+  No real or invented place name appears, and the terrain category and weather
+  are kept.
+
+The reviewer may correct either language before approving. Saving clears the
+pair's approval (REQ-MOD-032, REQ-MOD-063, REQ-MOD-070).
+
 ## Superseded material
 
 Repository prompts, skills, ADRs, issues, ports, and tests that prescribe
-deterministic scrubbing, independent PII auditing, summary translation, or
-one-language summary rows describe earlier designs. They are migration input,
+deterministic scrubbing, independent PII auditing, automatic summary
+translation as a pipeline stage, or one-language summary rows describe earlier
+designs. A reviewer's machine-translated draft of one language is not such a
+stage; it is a draft they confirm
+([ADR-0108](../../docs/decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)). They are migration input,
 not additional stages to preserve. The target implementation should keep one
 concise anonymization skill explaining the purpose and rules above and remove
 redundant pipeline-specific guidance.
@@ -101,8 +144,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   precedes the one call
   ([ADR-0082](../../docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
 - Sending a document, an attachment, or extracted document text to the model.
-- Translating a narrative or a free-text answer. The one call returns both
-  languages; nothing else translates report prose.
+- Translating report prose with the summarization model, or as a stage of
+  summarization. The one call returns both languages. Giving a marked free-text
+  answer its second language is a separate Worker job through DeepL
+  ([ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
 - Publishing, notifying, or advancing a report's state because a summary
   succeeded. Publication is a human decision.
 - Per-sentence or per-field redaction output. The result is one bilingual pair.

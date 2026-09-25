@@ -62,8 +62,9 @@ REQ-SUB-009, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018.*
 ### AI and privacy
 
 **CON-TQ-005** These contracts are covered by test.
-*Verified by: REQ-AI-001, REQ-AI-009, REQ-AI-010, REQ-AI-011, REQ-AI-012,
-REQ-AI-013, REQ-AI-020, REQ-AI-021.*
+*Verified by: REQ-AI-001, REQ-AI-009, REQ-AI-011, REQ-AI-020, REQ-AI-021,
+REQ-AI-024. What the model writes is the reviewer's checklist in the
+[AI anonymization detail](../features/ai-anonymization/README.md#reviewer-checklist).*
 
 - partitioning never puts a private field in `report_content` and never treats
   private-only facts as summary facts;
@@ -111,7 +112,7 @@ REQ-MED-039.*
 
 **CON-TQ-007** These contracts are covered by test.
 *Verified by: REQ-MOD-024, REQ-MOD-029, REQ-MOD-032, REQ-MOD-033,
-REQ-MOD-035, REQ-MOD-036, REQ-MOD-040, REQ-DOM-007.*
+REQ-MOD-035, REQ-MOD-036, REQ-DOM-007.*
 
 - a token that is unsigned, signed by an unknown key, tampered with, expired,
   or issued for another audience is refused, and `alg: none` is refused;

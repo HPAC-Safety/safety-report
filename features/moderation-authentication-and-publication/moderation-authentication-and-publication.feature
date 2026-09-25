@@ -378,14 +378,6 @@ Scenario: There is no publication channel besides the HPAC public feed
   Then it appears only on the HPAC public feed and report-detail page
   And no email, messaging, social, webhook, or third-party channel publishes it
 
-@REQ-MOD-040
-@ignore
-Scenario: Soft-deleting a report stops it everywhere immediately
-  Given a report exists in any state
-  When a safety officer soft-deletes it
-  Then it is immediately removed from the public feed and normal review queries
-  And ordinary Worker processing for it stops
-
 @REQ-MOD-041
 @ignore
 Scenario: Revoking a member's access is the identity provider's decision

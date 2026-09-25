@@ -17,9 +17,9 @@ fit Gherkin.
 stateDiagram-v2
     [*] --> Submitted
     Submitted --> Summarizing: Worker claims summary job
+    Submitted --> PendingReview: no consent, never summarized
     Summarizing --> PendingReview: valid bilingual pair saved
     Summarizing --> SummaryFailed: bounded retries exhausted
-    Summarizing --> PendingReview: no consent, never summarized
     SummaryFailed --> PendingReview: officer writes both texts
     PendingReview --> PendingReview: either text edited; approval cleared
     PendingReview --> Published: officer approves pair, consent yes

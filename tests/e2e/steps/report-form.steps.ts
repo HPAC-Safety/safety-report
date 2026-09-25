@@ -414,7 +414,7 @@ Then("entered answers are neither cleared nor remapped", async ({ page }) => {
 	await expect(page.getByLabel("What happened?")).toHaveValue("Written in English.")
 })
 
-Then("only the consent_publish question displays required treatment", async ({ page }) => {
+Then("only the questions made required display required treatment, and consent_publish is always one of them", async ({ page }) => {
 	await resetToIntro(page)
 	await expect(page.getByText("Required")).not.toBeVisible()
 	await reachLastPage(page)

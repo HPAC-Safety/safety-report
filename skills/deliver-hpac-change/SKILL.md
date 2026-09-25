@@ -268,6 +268,17 @@ issue, not this conversation.
    - Finish only when checks are green on a current branch and no worktree
      remains, then: `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
+## Path filters
+
+- A CI job's path filter lists every input that job reads, not only the
+  directory its code lives in. The web bundle loads `locales/` from the
+  repository root, so `web` and `e2e` both list it. A missing input skips the
+  job, and GitHub counts a skipped job as passing.
+- A change to `locales/` runs the browser suite locally
+  (`npm --prefix tests/e2e test`) before the pull request, because a step may
+  match the copy you changed
+  ([lesson 0020](../../docs/lessons/0020-a-copy-change-that-ran-no-browser-test.md)).
+
 ## Workflows that push
 
 - **Onto a pull request's branch**: push through `tools/push-to-pr-branch.mjs`,

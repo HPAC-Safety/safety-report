@@ -107,7 +107,7 @@ public sealed class QuestionTranslationSteps
 			.ShouldNotBeNull();
 	}
 
-	[Then(@"no narrative, free-text answer, or summary is ever translated this way")]
+	[Then(@"the reviewer-gated translate endpoint is the only API code that calls a translator")]
 	public void ThenNoReportContentIsTranslated()
 	{
 		// One caller, and it is the authoring endpoint. If a second appears,
@@ -122,7 +122,7 @@ public sealed class QuestionTranslationSteps
 		callers.ShouldBe(["TranslationEndpoints"]);
 	}
 
-	[Then(@"nothing is translated unless an Administrator asked for it")]
+	[Then(@"no domain code a reporter's submission runs calls a translator")]
 	public void ThenNothingTranslatesOnItsOwn()
 	{
 		// The submission path used to translate a reporter's typed choice.

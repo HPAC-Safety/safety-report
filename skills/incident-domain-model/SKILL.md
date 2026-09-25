@@ -11,7 +11,8 @@ description: The HPAC occurrence-reporting domain — report lifecycle states, t
 stateDiagram-v2
     [*] --> Submitted
     Submitted --> Summarizing
-    Summarizing --> PendingReview
+    Summarizing --> PendingReview: valid pair saved
+    Submitted --> PendingReview: no consent, never summarized
     Summarizing --> SummaryFailed: worker error / poison message
     SummaryFailed --> PendingReview: officer writes the summary by hand
     PendingReview --> Published: officer approves, consent yes
@@ -24,7 +25,8 @@ stateDiagram-v2
 
 - Approval and publication are one officer action (ADR-0105).
 - Review commands live on `Report` — `ApprovePair`, `RejectReview`, `Reopen`,
-  `Unpublish`, `EditSummary`, `WriteManualSummary` — and refuse any transition
+  `Unpublish`, `EditSummary`, `WriteManualSummary`, and the Worker's
+  `ReviewWithoutSummary` — and refuse any transition
   the diagram does not allow.
 - Report and summary use PostgreSQL `xmin` as row version; a command from a
   stale view gets `409`.

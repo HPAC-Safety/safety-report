@@ -14,7 +14,7 @@ Background:
 
 @REQ-MED-001
 Scenario Outline: Only allowlisted content types are accepted
-  Given an attachment part has detected content type <mime>
+  Given an uploaded file has detected content type <mime>
   When the API validates the attachment's content type
   Then the attachment is accepted as an allowlisted <kind>
 
@@ -99,7 +99,7 @@ Scenario: A document is validated but never transformed
   Then the Worker validates its actual format, including internal package shape for DOCX/ODT and bounded text decoding for Markdown/plain text
   And the Worker records that the document was validated
   And the Worker never extracts its text, and the document is never sent to the model and never rendered inline
-  And the document remains the reporter-supplied original, available for download, and the review UI labels it as unredacted evidence
+  And the document remains the reporter-supplied original, available for download
 
 @REQ-MED-009
 Scenario: Each attachment fails and processes independently of the report
@@ -220,7 +220,7 @@ Scenario: A published report lists its verified photos and video when media was 
   And each file carries only its opaque id and whether it is an image or a video
 
 @REQ-MED-026
-Scenario Outline: A file that is not a verified derivative is never public
+Scenario Outline: A file that is neither a verified derivative nor a validated document is never public
   Given a published report whose reporter consented to publication and to sharing media
   And the report has <file>
   When a visitor asks for that file's public link

@@ -136,7 +136,7 @@ identifier-only payloads. The Worker deployment registers handlers for both.
 A handler loads current database state rather than trusting content in the
 message. Work is idempotent: an already completed live summary/file is not
 duplicated, and a deleted report is ignored/marked complete without output.
-*Verified by: REQ-AI-008, REQ-MED-009, REQ-MOD-040.*
+*Verified by: REQ-AI-008, REQ-MED-009, REQ-DOM-007.*
 
 **CON-IF-009** The summary handler builds its DTO at runtime so privacy and labels come from
 the immutable revision actually answered. It makes one provider call per

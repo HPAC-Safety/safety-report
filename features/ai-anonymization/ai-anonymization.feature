@@ -65,15 +65,8 @@ Scenario: Only eligible, labeled fields reach the model
   When the Worker claims the message and builds the model input DTO
   Then report_content contains only non-private answered fields eligible to contribute facts
   And private_context contains only private answered fields, supplied to help recognize identifying details that recur in report content
-  And skipped/null answers, the system consent answer, and file-upload answers are excluded from both arrays
+  And skipped/null answers, both system consent answers, and file-upload answers are excluded from both arrays
   And the DTO contains no attachment bytes, document text, storage keys, admin data, audit data, deleted content, or client filenames
-
-@REQ-AI-010
-@ignore
-Scenario: A fact appearing only in private context is never summarized
-  Given a fact exists only in private_context and nowhere in report_content
-  When the model produces a summary
-  Then that fact does not appear in either summary text
 
 @REQ-AI-011
 Scenario: The Worker accepts only the exact two-field JSON response
@@ -81,63 +74,6 @@ Scenario: The Worker accepts only the exact two-field JSON response
   When the Worker validates the response
   Then a response with exactly two nonblank string fields "ai_summary_en" and "ai_summary_fr" is accepted
   And a response with a Markdown fence, commentary, an extra key, a null field, or only one language is rejected
-
-@REQ-AI-012
-@ignore
-Scenario: A private person's identity is replaced with their role
-  Given a private pilot's name is repeated in a report's narrative
-  When the model produces the anonymized summary
-  Then every occurrence of that identity becomes exactly "the pilot" in the English summary and "le pilote" in the French summary
-  And no first name, surname, initials, fragment, hash, bracket, or generic numbered placeholder remains
-
-@REQ-AI-013
-@ignore
-Scenario: Both summaries preserve safety-relevant content while anonymizing
-  Given a report's eligible content includes the sequence, conditions, contributing factors, actions, outcome, and lessons of an occurrence
-  When the model produces the anonymized summary
-  Then both the English and French summary preserve that safety-relevant sequence, conditions, contributing factors, actions, outcome, and lessons
-  And material that could identify a person is removed or generalized instead of removing safety-relevant content
-
-@REQ-AI-014
-@ignore
-Scenario Outline: An identifying category is never disclosed in a summary
-  Given a report's eligible content contains <category>
-  When the model produces the anonymized summary
-  Then <category> does not appear in either summary text
-
-Examples:
-  | category                                                                                |
-  | a name, initial, membership number, email, phone number, address, or account identifier |
-  | an exact site, coordinates, or uniquely identifying location description                |
-  | an aircraft manufacturer or model                                                       |
-  | a filename, attachment/document content, metadata, or a hidden private answer           |
-  | a club, school, or company name                                                         |
-  | an exact calendar date                                                                  |
-
-@REQ-AI-015
-@ignore
-Scenario: A private-only fact is never added merely for completeness
-  Given a private fact would make the narrative more complete
-  And that fact is not otherwise eligible summary content
-  When the model produces the summary
-  Then the fact is not added to either summary text
-
-@REQ-AI-025
-@ignore
-Scenario: An exact date generalizes to its month or season while the time of day is kept
-  Given a report's eligible content gives an exact calendar date and a time of day
-  When the model produces the anonymized summary
-  Then both summaries give only the month or season of that date
-  And both summaries keep the time of day as reported
-
-@REQ-AI-026
-@ignore
-Scenario: A place becomes a generic phrase that fits its role, never an invented name
-  Given a report's eligible content names a launch site, a landing field, or another place
-  When the model produces the anonymized summary
-  Then each place becomes a generic phrase for its role, such as "the launch site" / "le site de décollage" or "the location" / "le lieu"
-  And no place name, invented or real, appears in either summary
-  And the terrain category and weather are kept
 
 @REQ-AI-016
 Scenario: Documents never reach the model
@@ -152,14 +88,6 @@ Scenario: A valid response is persisted as one pair-level summary row
   When the Worker persists it
   Then one summary row is created or replaced with AiSummaryEn, AiSummaryFr, shared model and prompt_version provenance, and creation/update timestamps
   And no separate row is created per locale
-
-@REQ-AI-018
-@ignore
-Scenario: The reviewer may correct either text before approval
-  Given a safety officer is reviewing a summary pair before approval
-  When the officer edits either the English or French text
-  Then the correction is saved before approval
-  And the reviewer is responsible for the final privacy decision
 
 @REQ-AI-019
 Scenario: Retries repeat the single-call operation without adding stages

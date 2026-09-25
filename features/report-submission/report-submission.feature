@@ -351,7 +351,7 @@ Scenario: A rate-limited submission is rejected
   Given a submission request arrives
   When the per-IP rate limit is exceeded
   Then the API rejects the request with 429 and a safe retry signal
-  And the client IP used for rate limiting comes only from explicitly trusted proxy headers and is never stored on the report
+  And the client IP used for rate limiting comes from X-Forwarded-For, trusted because only the load balancer can reach the API, and is never stored on the report
 
 @REQ-SUB-018
 Scenario: An unauthenticated submission is rejected

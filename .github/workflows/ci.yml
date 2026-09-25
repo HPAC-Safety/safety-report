@@ -62,11 +62,15 @@ jobs:
               - 'init-dev.sh'
               - 'tools/build-worker-image.sh'
               - '.github/workflows/ci.yml'
+            # The web bundle loads its catalogues from locales/ at the repository
+            # root, so a copy change is a web change (lesson 0020).
             web:
               - 'src/web/**'
+              - 'locales/**'
               - '.github/workflows/ci.yml'
             e2e:
               - 'src/web/**'
+              - 'locales/**'
               - 'tests/e2e/**'
               - '.github/workflows/ci.yml'
 

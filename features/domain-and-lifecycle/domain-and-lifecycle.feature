@@ -42,14 +42,6 @@ Examples:
   | PendingReview | unpublish the report |
   | PendingReview | write a manual pair  |
 
-@REQ-DOM-002
-@ignore
-Scenario: SummaryFailed remains visible to safety officers
-  Given a report's summarization retries are exhausted
-  When the report becomes SummaryFailed
-  Then it remains visible in the safety officer review queue
-  And it does not disappear because AI processing failed
-
 @REQ-DOM-003
 Scenario: A report is publishable only when every invariant holds
   Given a report and its summary row are not deleted

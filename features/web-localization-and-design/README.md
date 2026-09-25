@@ -33,9 +33,12 @@ using semantic HTML and compiled Tailwind CSS.
 ## Localization scope
 
 Dates, numbers, and accessible labels use locale-aware formatting. Stored
-codes/values remain invariant. Free-text report answers are never translated.
-Summary texts are returned together by the one runtime model call; neither is
-a UI-catalogue string. Terms in `locales/glossary.json` are pinned and must
+codes/values remain invariant. A free-text answer gets a second language only
+when an administrator marked its question for translation, and then off the
+submission path
+([ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md));
+the reporter's own words are never changed. Summary texts are returned together
+by the one runtime model call; neither is a UI-catalogue string. Terms in `locales/glossary.json` are pinned and must
 not be machine-translated.
 
 `locales/glossary.json` pins whole strings by key. `locales/terms.json` holds

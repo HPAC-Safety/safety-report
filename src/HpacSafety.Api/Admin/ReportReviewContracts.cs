@@ -73,8 +73,12 @@ public sealed record ReportAnswerView(
 	bool IsPrivate,
 	IReadOnlyList<ReportAnswerValueView> Values);
 
-/// <summary>One stored answer string and its second-language counterpart, when one exists.</summary>
-/// <param name="Value">The reporter's own words, in <paramref name="Locale" />.</param>
+/// <summary>One stored answer and its second-language counterpart, when one exists.</summary>
+/// <param name="Value">
+///     The reporter's own words, in <paramref name="Locale" /> — a JSON string — or,
+///     for a yes/no or checkbox question, a JSON <c>true</c> or <c>false</c> that
+///     the interface renders in the reader's language (ADR-0130).
+/// </param>
 /// <param name="Locale">The language <paramref name="Value" /> is written in.</param>
 /// <param name="TranslatedValue">
 ///     The other official language, once supplied. Always null for an answer that
@@ -82,7 +86,7 @@ public sealed record ReportAnswerView(
 /// </param>
 /// <param name="TranslationSource"><c>auto</c>, <c>human</c>, or <c>choice</c>, once supplied.</param>
 public sealed record ReportAnswerValueView(
-	string Value,
+	object Value,
 	string Locale,
 	string? TranslatedValue,
 	string? TranslationSource);

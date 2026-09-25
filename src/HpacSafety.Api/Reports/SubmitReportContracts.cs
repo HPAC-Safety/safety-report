@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace HpacSafety.Api.Reports;
 
 /// <summary>
@@ -15,7 +17,11 @@ public sealed record SubmitReportRequest(string? Language, IReadOnlyList<SubmitA
 ///     empty in all three means the reporter skipped an optional question.
 /// </summary>
 /// <param name="QuestionRevisionId">The exact immutable revision this answers.</param>
-/// <param name="Value">The answer, for every shape except multi-select and file upload.</param>
+/// <param name="Value">
+///     The answer, for every shape except multi-select and file upload: a JSON
+///     <c>true</c> or <c>false</c> for a yes/no or checkbox question (ADR-0130), a
+///     JSON string for every other, or <c>null</c> for a skip.
+/// </param>
 /// <param name="Choices">
 ///     The chosen choices' labels, in the reporter's language, for a multi-select
 ///     answer only. Never a choice code (ADR-0095).
@@ -27,7 +33,7 @@ public sealed record SubmitReportRequest(string? Language, IReadOnlyList<SubmitA
 /// </param>
 public sealed record SubmitAnswerRequest(
 	string? QuestionRevisionId,
-	string? Value,
+	JsonElement? Value,
 	IReadOnlyList<string>? Choices,
 	IReadOnlyList<SubmitAttachmentRequest>? Attachments);
 

@@ -368,9 +368,9 @@ public static class ReportEndpoints
 				entry.Answers[0].IsPrivate,
 				[
 					.. entry.Answers
-						.Where(answer => answer.Value is not null)
+						.Where(answer => answer.Value is not null || answer.BooleanValue is not null)
 						.Select(answer => new ReportAnswerValueView(
-							answer.Value!,
+							(object?)answer.BooleanValue ?? answer.Value!,
 							answer.Locale.Code,
 							answer.DisplayedTranslation,
 							answer.DisplayedTranslation is not null && answer.TranslationSource is { } source

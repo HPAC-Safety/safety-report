@@ -1,7 +1,15 @@
 namespace HpacSafety.Core.Features.Reporting;
 
 /// <summary>A labeled answer prepared for the summarization model.</summary>
-public sealed record SummarizationField(string QuestionKey, string Label, string Value);
+/// <param name="QuestionKey">The question's stable key.</param>
+/// <param name="Label">The question's wording in the report's language.</param>
+/// <param name="Value">The answer as the model reads it: <c>true</c> or <c>false</c> for a yes/no (ADR-0130).</param>
+/// <param name="IsBoolean">
+///     Whether the answer is a yes/no or checkbox. The marking pass never uses one as
+///     a candidate, or a private yes/no would mark every literal <c>true</c> in the
+///     narrative (ADR-0130).
+/// </param>
+public sealed record SummarizationField(string QuestionKey, string Label, string Value, bool IsBoolean = false);
 
 /// <summary>
 ///     An answer paired with the immutable privacy classification copied from its

@@ -189,6 +189,12 @@ public class QuestionRevision
 	/// </summary>
 	public bool TakesReporterAdditions => Type == QuestionType.Autocomplete;
 
+	/// <summary>
+	///     True for a yes/no or checkbox question, whose answer is a boolean with no
+	///     words and no second language (ADR-0130).
+	/// </summary>
+	public bool IsBoolean => Type is QuestionType.YesNo or QuestionType.Checkbox;
+
 	/// <summary>The English wording.</summary>
 	public string LabelEn { get; private init; }
 
@@ -401,9 +407,11 @@ public class QuestionRevision
 	}
 
 	/// <summary>
-	///     Whether the reporter's answer to <paramref name="parent" /> satisfies
-	///     this revision's condition, so the question it belongs to should be
-	///     shown. Always true when this revision is unconditional. See ADR-0074.
+	///     Whether the reporter's answer to a single-select <paramref name="parent" />
+	///     names this revision's required option, so the question it belongs to should
+	///     be shown. Always true when this revision is unconditional; never true for a
+	///     yes/no parent, whose answer is a boolean (see the other overload). See
+	///     ADR-0074.
 	/// </summary>
 	/// <param name="parent">
 	///     The question named by <see cref="DependsOnQuestionId" />, or null when
@@ -424,18 +432,37 @@ public class QuestionRevision
 		}
 
 		if (parent is null
-			|| parentAnswerValue is null)
+			|| parentAnswerValue is null
+			|| parent.CurrentRevision.Type == QuestionType.YesNo)
 		{
 			return false;
 		}
 
-		var parentRevision = parent.CurrentRevision;
+		return DependsOnOptionCode is { } requiredOptionCode
+			   && string.Equals(
+				   parent.Choice(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);
+	}
 
-		return parentRevision.Type == QuestionType.YesNo
-			? YesNoAnswer.IsYes(parentAnswerValue)
-			: DependsOnOptionCode is { } requiredOptionCode
-			  && string.Equals(
-				  parent.Choice(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);
+	/// <summary>
+	///     Whether the reporter's boolean answer to a yes/no <paramref name="parent" />
+	///     enables the question this revision belongs to. Only <c>true</c> does, in
+	///     either language (ADR-0060, ADR-0130). Always true when this revision is
+	///     unconditional.
+	/// </summary>
+	/// <param name="parent">
+	///     The question named by <see cref="DependsOnQuestionId" />, or null when
+	///     this revision is unconditional or the caller has not loaded it.
+	/// </param>
+	/// <param name="parentAnswer">The reporter's answer so far, or null when unanswered.</param>
+	public bool IsEnabledGiven(Question? parent,
+							   bool? parentAnswer)
+	{
+		if (DependsOnQuestionId is null)
+		{
+			return true;
+		}
+
+		return parent?.CurrentRevision.Type == QuestionType.YesNo && parentAnswer is true;
 	}
 
 	private static string NotBlank(string label)

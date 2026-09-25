@@ -56,7 +56,9 @@ public static class PrivateValueMarker
 		var candidates = new List<Candidate>();
 		var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-		foreach (var field in privateContext)
+		// A boolean is never a candidate: marking every `true` in the narrative
+		// would hide facts and protect nothing (ADR-0130).
+		foreach (var field in privateContext.Where(field => !field.IsBoolean))
 		{
 			var value = CollapseWhitespace(field.Value);
 			if (value.Length == 0)

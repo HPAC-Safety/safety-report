@@ -119,7 +119,8 @@ erDiagram
         char(11) report_id FK
         char(11) question_revision_id FK "the exact revision shown"
         boolean is_private "privacy as it was at the time"
-        text value
+        text value "null for yes/no and checkbox"
+        boolean value_boolean "yes/no and checkbox (ADR-0130)"
         text translated_value "the other language, when it has one"
         varchar(64) translation_mode "none, choice, or machine (ADR-0112)"
         timestamptz deleted
@@ -245,6 +246,7 @@ this.
 | `20260924170847_AddReportComments`                    | Added `report_comments` (author and hiding reviewer as opaque token subjects, `hidden_at`, `deleted`) and `report_comment_revisions` (text, locale, machine translation and its source, one row per edit, unique per comment and number), and `translate_comment` as an outbox type. Replaces `public_reports` to add `comment_count` and creates `public_report_comments`, each visible comment's current revision on a public report (`Sql/20260924170847_AddReportComments.sql`, ADR-0114). |
 | `20260925212255_KeepSystemQuestionsPrivate`           | No schema change. Gives each live system question whose current revision is not private a new, private revision (`Sql/20260925212255_KeepSystemQuestionsPrivate.sql`). The seeded publication consent was not private; the domain now refuses that (#450). |
 | `20260925213420_StoreYesOrNoInTheReportersLanguage` | Recreated `ck_report_answers_translation_mode` to allow `fixed`: a yes/no or checkbox answer's counterpart (`yes`↔`oui`, `no`↔`non`), written at submission (ADR-0127). Existing answers are unchanged. |
+| `20260925223046_StoreYesOrNoAsABoolean` | Added `report_answers.value_boolean`, and converted every stored yes/no and checkbox answer to it once: `yes`/`oui` → `true`, `no`/`non` → `false`, clearing `value`, `translated_value`, and `translation_source`, with mode `none`. Any other stored value stops the migration (ADR-0130). Dropped `fixed` from `ck_report_answers_translation_mode`, and added `ck_report_answers_text_or_boolean` and `ck_report_answers_boolean_has_no_words`. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

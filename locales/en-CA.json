@@ -281,7 +281,7 @@
   "reports.action.delete": "Delete",
   "reports.action.cancel": "Cancel",
   "reports.publish.hint": "Publishing approves this summary pair and makes the report public immediately.",
-  "reports.private.hint": "The reporter did not consent to publication, so this report was never sent to the AI and stays unpublished. It can only be deleted.",
+  "reports.private.hint": "It was never sent to the AI and can only be deleted.",
   "reports.edit.label": "Edit the summary pair",
   "reports.edit.en": "English summary",
   "reports.edit.fr": "French summary",

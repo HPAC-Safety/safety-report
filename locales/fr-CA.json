@@ -314,8 +314,8 @@
       "all": "Tout",
       "needs-action": "À traiter",
       "published": "Publié",
+      "unpublished": "#Unpublished",
       "private": "Privé",
-      "rejected": "Rejeté",
       "summary-failed": "Échec de la synthèse"
     },
     "listLabel": "Signalements",
@@ -328,11 +328,10 @@
     "status": {
       "submitted": "Soumis",
       "summarizing": "En résumé",
-      "pending_review": "En attente d'examen",
+      "pending": "#Pending",
       "summary_failed": "Échec de la synthèse",
-      "approved": "Approuvé",
-      "rejected": "Rejeté",
-      "published": "Publié"
+      "published": "Publié",
+      "unpublished": "#Unpublished"
     },
     "badge": {
       "private": "Privé (sans consentement)",
@@ -370,8 +369,7 @@
       "translation": "Traduction : {text}",
       "attachments": "Pièces jointes",
       "attachment": "{kind} — {state}",
-      "rejectionNote": "Avis de rejet : {note}",
-      "notSummarized": "Non résumé : la personne déclarante n’a pas consenti à la publication, ce signalement n’a donc jamais été transmis à l’IA.",
+      "unpublishNote": "#Unpublishing note: {note}",
       "source": {
         "generated": "Généré par l'IA",
         "human": "Rédigé par un critique",
@@ -406,16 +404,16 @@
       "label": "Examiner les mesures",
       "edit": "Résumé de la modification",
       "write": "Rédiger un résumé",
-      "approve": "Approuver",
-      "reject": "Refuser",
-      "reopen": "Rouvrir",
+      "publish": "#Publish",
       "unpublish": "Retirer de la publication",
       "delete": "Supprimer",
       "cancel": "Annuler"
     },
-    "approve": {
-      "publishes": "La personne déclarante a consenti; l’approbation publie donc ce signalement immédiatement.",
-      "private": "La personne déclarante n’a pas consenti; l’approbation garde donc ce signalement privé."
+    "publish": {
+      "hint": "#Publishing approves this summary pair and makes the report public immediately."
+    },
+    "private": {
+      "hint": "#It was never sent to the AI and can only be deleted."
     },
     "edit": {
       "label": "Modifier la paire de résumés",
@@ -424,10 +422,10 @@
       "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le signalement revient à l’état « En attente de révision » et est retiré du fil d’actualité s’il a été publié.",
       "save": "Enregistrer le résumé"
     },
-    "reject": {
-      "label": "Rejeter le signalement",
-      "note": "Remarque à l'intention des autres évaluateurs (facultatif)",
-      "confirm": "Rejeter le signalement"
+    "unpublish": {
+      "label": "#Unpublish the report",
+      "note": "#Note for other reviewers (optional)",
+      "confirm": "#Unpublish report"
     },
     "stale": {
       "message": "Un autre réviseur a modifié ce signalement depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",

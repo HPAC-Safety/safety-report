@@ -1,195 +1,102 @@
 ---
 title: Source inventory
-description: Every audited path under src/, with its disposition against the target.
+description: Every project and directory under src/, what it holds, and the decisions that govern it.
 type: guide
 ---
 
 # Source inventory
 
-This inventory accounts for every one of the 135 tracked paths under `src/` on
-the audited main commit plus the Worker prompt added during guidance alignment.
-“Current” describes what a path did on the baseline unless an alignment note
-says otherwise; “target” identifies whether its idea is retained, revised, or
-removed. Generated and binary assets were inspected by metadata/content
-identity where source text does not exist.
+This page maps every project and directory under `src/`, as of 2026-09-25
+(#437). It is kept at directory level so it stays true: a new file in an
+existing directory needs no entry, but a new directory does. Issue #444 adds
+the check that fails when an entry is missing or names a directory that no
+longer exists. Migrations are listed in
+[`Persistence/Migrations/README.md`](../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md),
+not here.
 
-## API — 6 paths
+## HpacSafety.Api — the HTTP host
 
-- [src/HpacSafety.Api/HpacSafety.Api.csproj](../src/HpacSafety.Api/HpacSafety.Api.csproj) — ASP.NET Core project and references; retain and add only target endpoint dependencies.
-- [src/HpacSafety.Api/Program.cs](../src/HpacSafety.Api/Program.cs) — host with `/health`, `/api/auth/*`, and the admin routes; implement submission and public routes.
-- [src/HpacSafety.Api/Authentication/](../src/HpacSafety.Api/Authentication/) — bearer-token options, role reading, the three policies, the Development-only token issuer, and the auth endpoints (ADR-0064, ADR-0066). Replaced the `AdminGate` session-header stub wholesale.
-- [src/HpacSafety.Api/Properties/launchSettings.json](../src/HpacSafety.Api/Properties/launchSettings.json) — local HTTP/HTTPS launch profiles; development-only configuration.
-- [src/HpacSafety.Api/README.md](../src/HpacSafety.Api/README.md) — aligned target-boundary orientation with an explicit current-scaffold warning.
-- [src/HpacSafety.Api/appsettings.Development.json](../src/HpacSafety.Api/appsettings.Development.json) — development logging and the throwaway JWT signing key; add safe local adapters without secrets.
-- [src/HpacSafety.Api/appsettings.json](../src/HpacSafety.Api/appsettings.json) — base logging/host settings; add validated target configuration references, never values of secrets.
+It runs on Lambda
+([ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md);
+today's Terraform still uses ECS, #443). It validates tokens and applies
+migrations at startup, and does no AI work.
 
-## Core — 57 paths
+| Directory | Holds |
+|---|---|
+| [`src/HpacSafety.Api`](../src/HpacSafety.Api/) | The project, `Program.cs` (host, forwarded headers per ADR-0081, startup migrations per ADR-0055), and settings. |
+| [`Admin/`](../src/HpacSafety.Api/Admin/) | Reviewer and administrator endpoints: question authoring and Translate drafts (ADR-0062), report review and actions (ADR-0105), attachment links and hide/show (ADR-0117, ADR-0119), the answer-translation queue (ADR-0112), pending counts (ADR-0116), and Typeform import/export (ADR-0077, ADR-0078). |
+| [`Authentication/`](../src/HpacSafety.Api/Authentication/) | JWT bearer validation, the three role policies, the Development-only token issuer and credential sources, including the members-site sign-in (ADR-0064, ADR-0066, ADR-0079). |
+| [`Properties/`](../src/HpacSafety.Api/Properties/) | Local launch profiles. |
+| [`PublicQuestions/`](../src/HpacSafety.Api/PublicQuestions/) | `GET /api/v1/questions`: the anonymous current form. |
+| [`PublicReports/`](../src/HpacSafety.Api/PublicReports/) | The public feed, a report's page, its media links (ADR-0117, ADR-0119), and member comments (ADR-0114). |
+| [`RateLimiting/`](../src/HpacSafety.Api/RateLimiting/) | Per-IP policies for submission and sign-in (ADR-0081). |
+| [`Reports/`](../src/HpacSafety.Api/Reports/) | `POST /api/v1/uploads` into quarantine and the JSON report submission that claims them (ADR-0096, ADR-0098). |
 
-### Moderation and outbox
+## HpacSafety.Core — domain rules and small ports
 
-- [src/HpacSafety.Core/Features/Moderation/MemberRole.cs](../src/HpacSafety.Core/Features/Moderation/MemberRole.cs) — User/SafetyOfficer/Administrator, ordered so the highest role claim wins; never persisted.
-- [src/HpacSafety.Core/Features/Moderation/MemberIdentity.cs](../src/HpacSafety.Core/Features/Moderation/MemberIdentity.cs) — one request's subject and role, established from a validated token.
-- [src/HpacSafety.Core/Features/Moderation/AuditAction.cs](../src/HpacSafety.Core/Features/Moderation/AuditAction.cs) — stable audit action codes; expand for target revisions, pair review, publication, and deletion.
-- [src/HpacSafety.Core/Features/Moderation/AuditLogEntry.cs](../src/HpacSafety.Core/Features/Moderation/AuditLogEntry.cs) — immutable actor/action/target record; retain and intentionally do not add `Deleted`.
-- [src/HpacSafety.Core/Features/Outbox/OutboxMessage.cs](../src/HpacSafety.Core/Features/Outbox/OutboxMessage.cs) — identifier-only durable work with retries/poison threshold; retain concept, add claims and soft deletion.
+Core has no runtime package dependency.
 
-### Question bank
+| Directory | Holds |
+|---|---|
+| [`src/HpacSafety.Core`](../src/HpacSafety.Core/) | Shared value types (`TinyId`, `UploadId`, `BlobKey`, `Locale`, `EnumCode`) and the ports `IBlobStore`, `IAiChatClient`, and `ITranslator`. |
+| [`Features/Comments/`](../src/HpacSafety.Core/Features/Comments/) | A member's comment and its immutable revisions (ADR-0114). |
+| [`Features/Moderation/`](../src/HpacSafety.Core/Features/Moderation/) | Roles, the token identity, and the append-only audit entry (ADR-0064, ADR-0065). |
+| [`Features/Outbox/`](../src/HpacSafety.Core/Features/Outbox/) | Outbox messages and their four types (ADR-0002). |
+| [`Features/QuestionBank/`](../src/HpacSafety.Core/Features/QuestionBank/) | Questions, immutable revisions, forks, owned choices, dependencies, grouping, and the two system consent questions (ADR-0071, ADR-0095, ADR-0117). |
+| [`Features/QuestionBank/Typeform/`](../src/HpacSafety.Core/Features/QuestionBank/Typeform/) | The Typeform mapper, export builder, and the hard-deleted pending-logic notes (ADR-0077, ADR-0078). |
+| [`Features/Reporting/`](../src/HpacSafety.Core/Features/Reporting/) | The report aggregate, answers, files, summary, lifecycle, the media policy and ingestor, the private-value marker (ADR-0082), and the two link chokepoints, `ReviewerMediaLink` and `PublicMediaLink`. |
 
-- [src/HpacSafety.Core/Features/QuestionBank/Question.cs](../src/HpacSafety.Core/Features/QuestionBank/Question.cs) — current stable aggregate with mutable display/privacy state; replace with stable key plus complete immutable revision semantics.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionKey.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionKey.cs) — validated stable logical key; retain, including `consent_publish` identity.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionOption.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionOption.cs) — current version-bound option; revise as immutable complete-revision child with bilingual labels/order.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionOptionTranslation.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionOptionTranslation.cs) — current normalized option locale row; fold into the complete revision aggregate/DTO unless physical normalization remains demonstrably simpler.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionRole.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionRole.cs) — drives current ordinary typed projections; remove except the fixed consent invariant represented by key/system metadata.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionTranslation.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionTranslation.cs) — current normalized label/help locale row; fold into complete bilingual revision semantics.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionType.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionType.cs) — answer-shape enum; retain stable types and localize only at edges.
-- [src/HpacSafety.Core/Features/QuestionBank/QuestionVersion.cs](../src/HpacSafety.Core/Features/QuestionBank/QuestionVersion.cs) — current immutable wording/type container; expand/replace with the complete revision defined by this specification.
+## HpacSafety.Infrastructure — adapters
 
-### Reporting and attachments
+| Directory | Holds |
+|---|---|
+| [`src/HpacSafety.Infrastructure`](../src/HpacSafety.Infrastructure/) | Persistence service registration. |
+| [`AiChatClient/`](../src/HpacSafety.Infrastructure/AiChatClient/) | The Gemini client and the fail-closed unconfigured client (ADR-0104). |
+| [`Media/`](../src/HpacSafety.Infrastructure/Media/) | Sniffers, the Magick.NET image stripper (ADR-0025), and the ffmpeg remuxer and its verification (ADR-0094, ADR-0122). |
+| [`Persistence/`](../src/HpacSafety.Infrastructure/Persistence/) | The `DbContext`, `MigrationRunner` (ADR-0055), the outbox claimer, and the concurrency token. |
+| [`Persistence/Configurations/`](../src/HpacSafety.Infrastructure/Persistence/Configurations/) | EF mappings for every table and view. |
+| [`Persistence/Conventions/`](../src/HpacSafety.Infrastructure/Persistence/Conventions/) | Snake-case naming and the soft-delete filters with their exceptions (ADR-0040, ADR-0095). |
+| [`Persistence/Conversions/`](../src/HpacSafety.Infrastructure/Persistence/Conversions/) | `TinyId`, `Locale`, and enum-code converters. |
+| [`Persistence/Migrations/`](../src/HpacSafety.Infrastructure/Persistence/Migrations/) | Every migration and the model snapshot. |
+| [`Persistence/Seeding/`](../src/HpacSafety.Infrastructure/Persistence/Seeding/) | The question-bank seed from the Typeform fixtures (ADR-0020, ADR-0077), deterministic seed IDs, and the inert `DevelopmentAdminSeed` that only the first migration still calls. |
+| [`Persistence/Sql/`](../src/HpacSafety.Infrastructure/Persistence/Sql/) | Raw SQL the migrations load: data transforms and every view (ADR-0055, ADR-0116). |
+| [`Persistence/Views/`](../src/HpacSafety.Infrastructure/Persistence/Views/) | Read-only entities for the six views. |
+| [`Storage/`](../src/HpacSafety.Infrastructure/Storage/) | `S3BlobStore`, the one storage adapter: S3 in AWS, RustFS in development (ADR-0096, ADR-0110). |
+| [`Translation/`](../src/HpacSafety.Infrastructure/Translation/) | The DeepL translator behind `ITranslator` (ADR-0022, ADR-0115). |
 
-- [src/HpacSafety.Core/Features/Reporting/Discipline.cs](../src/HpacSafety.Core/Features/Reporting/Discipline.cs) — current typed aircraft projection enum; ordinary answers no longer require this report projection.
-- [src/HpacSafety.Core/Features/Reporting/IExifStripper.cs](../src/HpacSafety.Core/Features/Reporting/IExifStripper.cs) — image-only processor port; revise to a clear attachment derivative processor boundary covering images/videos.
-- [src/HpacSafety.Core/Features/Reporting/IMediaSniffer.cs](../src/HpacSafety.Core/Features/Reporting/IMediaSniffer.cs) — stream signature-detection port; retain concept and expand to documents.
-- [src/HpacSafety.Core/Features/Reporting/IPiiAuditor.cs](../src/HpacSafety.Core/Features/Reporting/IPiiAuditor.cs) — separate PII model stage; remove.
-- [src/HpacSafety.Core/Features/Reporting/IPublicationChannel.cs](../src/HpacSafety.Core/Features/Reporting/IPublicationChannel.cs) — generic external publication abstraction; remove because only the first-party public query exists.
-- [src/HpacSafety.Core/Features/Reporting/ISummarizer.cs](../src/HpacSafety.Core/Features/Reporting/ISummarizer.cs) — current one-language summary port/result; revise to one strict bilingual result with shared provenance.
-- [src/HpacSafety.Core/Features/Reporting/InjurySeverity.cs](../src/HpacSafety.Core/Features/Reporting/InjurySeverity.cs) — current typed report projection enum; keep only if useful as question option vocabulary, not an aggregate projection.
-- [src/HpacSafety.Core/Features/Reporting/MediaIngestOutcome.cs](../src/HpacSafety.Core/Features/Reporting/MediaIngestOutcome.cs) — current retained/ingested/rejected outcome; revise for image/video derivatives and validated private documents.
-- [src/HpacSafety.Core/Features/Reporting/MediaIngestStatus.cs](../src/HpacSafety.Core/Features/Reporting/MediaIngestStatus.cs) — current media processing state; revise/name for all attachment categories.
-- [src/HpacSafety.Core/Features/Reporting/MediaIngestor.cs](../src/HpacSafety.Core/Features/Reporting/MediaIngestor.cs) — current image stripper/video retention orchestrator; revise for per-file Worker processing and document validation.
-- [src/HpacSafety.Core/Features/Reporting/MediaKind.cs](../src/HpacSafety.Core/Features/Reporting/MediaKind.cs) — current image/video discriminator; add Document or rename to AttachmentKind.
-- [src/HpacSafety.Core/Features/Reporting/MediaPolicy.cs](../src/HpacSafety.Core/Features/Reporting/MediaPolicy.cs) — per-file size and MIME/signature policy; retain, add count and document allowlist support.
-- [src/HpacSafety.Core/Features/Reporting/MediaRejection.cs](../src/HpacSafety.Core/Features/Reporting/MediaRejection.cs) — localized-safe rejection mapping; revise for document failures without echoing filenames.
-- [src/HpacSafety.Core/Features/Reporting/MediaRejectionReason.cs](../src/HpacSafety.Core/Features/Reporting/MediaRejectionReason.cs) — stable failure codes; expand for attachment count and invalid document container/text.
-- [src/HpacSafety.Core/Features/Reporting/MediaType.cs](../src/HpacSafety.Core/Features/Reporting/MediaType.cs) — six current image/video types; retain and add configured PDF/DOC/DOCX/RTF/MD/TXT/ODT types.
-- [src/HpacSafety.Core/Features/Reporting/MediaUploadSlot.cs](../src/HpacSafety.Core/Features/Reporting/MediaUploadSlot.cs) — pre-submit signed upload reservation; remove.
-- [src/HpacSafety.Core/Features/Reporting/MediaValidation.cs](../src/HpacSafety.Core/Features/Reporting/MediaValidation.cs) — policy validation result; retain/adapt for attachments.
-- [src/HpacSafety.Core/Features/Reporting/PilotRating.cs](../src/HpacSafety.Core/Features/Reporting/PilotRating.cs) — typed pilot-rating projection; ordinary question options do not need a report property.
-- [src/HpacSafety.Core/Features/Reporting/Province.cs](../src/HpacSafety.Core/Features/Reporting/Province.cs) — typed province projection; ordinary question options do not need a report property.
-- [src/HpacSafety.Core/Features/Reporting/Report.cs](../src/HpacSafety.Core/Features/Reporting/Report.cs) — aggregate with consent plus current ordinary projections/status transitions; simplify to revision answers, consent, pair summary, attachments, lifecycle, and deletion.
-- [src/HpacSafety.Core/Features/Reporting/ReportAircraft.cs](../src/HpacSafety.Core/Features/Reporting/ReportAircraft.cs) — separate typed aircraft child; remove in favor of ordinary question-revision answers.
-- [src/HpacSafety.Core/Features/Reporting/ReportAnswer.cs](../src/HpacSafety.Core/Features/Reporting/ReportAnswer.cs) — exact question-version answer and privacy snapshot; retain concept, reference complete revision and persist skips.
-- [src/HpacSafety.Core/Features/Reporting/ReportFile.cs](../src/HpacSafety.Core/Features/Reporting/ReportFile.cs) — original/derivative metadata and processing state; expand to document kind, no filename/extracted text, and `Deleted`.
-- [src/HpacSafety.Core/Features/Reporting/ReportStatus.cs](../src/HpacSafety.Core/Features/Reporting/ReportStatus.cs) — submitted-through-published lifecycle including `SummaryFailed`; retain with pair-level transitions and deletion outside the enum.
-- [src/HpacSafety.Core/Features/Reporting/ReviewerMediaLink.cs](../src/HpacSafety.Core/Features/Reporting/ReviewerMediaLink.cs) — current derivative-only URL choke point; revise to permit validated private document originals only as forced downloads.
-- [src/HpacSafety.Core/Features/Reporting/SummarizationInput.cs](../src/HpacSafety.Core/Features/Reporting/SummarizationInput.cs) — labeled public/private partition; retain and ensure all attachment/document material is absent.
-- [src/HpacSafety.Core/Features/Reporting/Summary.cs](../src/HpacSafety.Core/Features/Reporting/Summary.cs) — current one-locale row/source-translation link; replace with one EN/FR row and one approval.
-- [src/HpacSafety.Core/Features/Reporting/TimeOfDay.cs](../src/HpacSafety.Core/Features/Reporting/TimeOfDay.cs) — current time projection/bucketing; no target report projection, though reusable display logic may remain at an edge if needed.
+## HpacSafety.Worker — outbox processing
 
-### Core project and cross-cutting root types
+It runs on Lambda
+([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md);
+today it is a polling loop on ECS, #443).
 
-- [src/HpacSafety.Core/HpacSafety.Core.csproj](../src/HpacSafety.Core/HpacSafety.Core.csproj) — dependency-free Core project; retain minimal dependency direction.
-- [src/HpacSafety.Core/README.md](../src/HpacSafety.Core/README.md) — aligned target-domain orientation that distinguishes useful current scaffolding from retired types.
-- [src/HpacSafety.Core/BlobKey.cs](../src/HpacSafety.Core/BlobKey.cs) — validated opaque report/compartment/server filename key; retain and extend attachment semantics without client names.
-- [src/HpacSafety.Core/BlobUrlLifetime.cs](../src/HpacSafety.Core/BlobUrlLifetime.cs) — enforces short signed-read maximum; retain for reviewer attachment reads, not pre-submit writes.
-- [src/HpacSafety.Core/DomainRuleViolationException.cs](../src/HpacSafety.Core/DomainRuleViolationException.cs) — domain invariant exception; retain without private data in messages.
-- [src/HpacSafety.Core/EnumCode.cs](../src/HpacSafety.Core/EnumCode.cs) — invariant enum-code conversion; retain.
-- [src/HpacSafety.Core/FieldDecryptionException.cs](../src/HpacSafety.Core/FieldDecryptionException.cs) — application field-encryption error; remove with AES field encryption.
-- [src/HpacSafety.Core/IBlobStore.cs](../src/HpacSafety.Core/IBlobStore.cs) — current read/write plus signed-upload/read port; revise to streaming private writes/reads and signed authorized reads, no upload URL.
-- [src/HpacSafety.Core/IEmailSender.cs](../src/HpacSafety.Core/IEmailSender.cs) — unused outbound-email port; remove.
-- [src/HpacSafety.Core/IFieldCipher.cs](../src/HpacSafety.Core/IFieldCipher.cs) — application encryption port; remove.
-- [src/HpacSafety.Core/ITranslator.cs](../src/HpacSafety.Core/ITranslator.cs) — runtime summary translation port; remove.
-- [src/HpacSafety.Core/ITurnstileVerifier.cs](../src/HpacSafety.Core/ITurnstileVerifier.cs) — anti-bot boundary; **delete**. The member bearer token is the abuse control on submission (ADR-0068).
-- [src/HpacSafety.Core/Locale.cs](../src/HpacSafety.Core/Locale.cs) — exact `en-CA`/`fr-CA` value; retain.
-- [src/HpacSafety.Core/MediaCompartment.cs](../src/HpacSafety.Core/MediaCompartment.cs) — quarantine/original/derivative compartments; rename/generalize for attachments while preserving private boundaries.
-- [src/HpacSafety.Core/TinyId.cs](../src/HpacSafety.Core/TinyId.cs) — validated opaque compact identifier; retain.
+| Directory | Holds |
+|---|---|
+| [`src/HpacSafety.Worker`](../src/HpacSafety.Worker/) | The host, the polling loop (`Worker.cs`), settings, and the Dockerfile that installs Ubuntu's ffmpeg (ADR-0118). |
+| [`Outbox/`](../src/HpacSafety.Worker/Outbox/) | One processor per message type: summarize, process an attachment (ADR-0098), translate answers (ADR-0112), and translate a comment (ADR-0114). |
+| [`Prompts/`](../src/HpacSafety.Worker/Prompts/) | The versioned runtime prompts. The newest is current, and each summary records its version. |
+| [`Properties/`](../src/HpacSafety.Worker/Properties/) | Local launch profiles. |
+| [`Summarization/`](../src/HpacSafety.Worker/Summarization/) | The prompt-driven summarizer that makes the one model call. |
 
-## Infrastructure — 44 paths
+## web — the one website
 
-### Project and attachment processing
+One React/TypeScript/Vite build, with the review queue as its `/admin` route
+([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
+[ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). It is served
+from S3 through CloudFront
+([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
 
-- [src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj](../src/HpacSafety.Infrastructure/HpacSafety.Infrastructure.csproj) — EF/Npgsql/AWS/Magick.NET dependencies; retain project, add only the chosen video/document tooling and remove encryption-only dependencies if any.
-- [src/HpacSafety.Infrastructure/Media/ImagingCapabilities.cs](../src/HpacSafety.Infrastructure/Media/ImagingCapabilities.cs) — verifies configured image codecs at startup; retain for image allowlist.
-- [src/HpacSafety.Infrastructure/Media/MagickFormats.cs](../src/HpacSafety.Infrastructure/Media/MagickFormats.cs) — MediaType/Magick mapping; retain for allowed images.
-- [src/HpacSafety.Infrastructure/Media/MagickNetExifStripper.cs](../src/HpacSafety.Infrastructure/Media/MagickNetExifStripper.cs) — decodes/re-encodes images and removes metadata; retain, with naming generalized from EXIF only.
-- [src/HpacSafety.Infrastructure/Media/MagickNetMediaSniffer.cs](../src/HpacSafety.Infrastructure/Media/MagickNetMediaSniffer.cs) — detects supported image formats from bytes; retain.
-- [src/HpacSafety.Infrastructure/Media/MediaPolicyOptions.cs](../src/HpacSafety.Infrastructure/Media/MediaPolicyOptions.cs) — configured 50 MB policy; add combined attachment count/default five and document allowlist.
-- [src/HpacSafety.Infrastructure/Media/MediaSnifferChain.cs](../src/HpacSafety.Infrastructure/Media/MediaSnifferChain.cs) — composes image/video signature detectors; add document detector(s).
-- [src/HpacSafety.Infrastructure/Media/MissingImagingCodecException.cs](../src/HpacSafety.Infrastructure/Media/MissingImagingCodecException.cs) — fail-fast codec configuration error; retain.
-- [src/HpacSafety.Infrastructure/Media/README.md](../src/HpacSafety.Infrastructure/Media/README.md) — aligned attachment matrix and current image/video/document gap note.
-- [src/HpacSafety.Infrastructure/Media/VideoContainerSniffer.cs](../src/HpacSafety.Infrastructure/Media/VideoContainerSniffer.cs) — bounded MP4/QuickTime `ftyp` detection; retain and pair with controlled derivative processing.
-
-### Persistence
-
-- [src/HpacSafety.Infrastructure/Persistence/Configurations/ModerationConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/ModerationConfiguration.cs) — audit/outbox mappings; the `admin_users` mapping and its foreign keys are gone, and the audit actor is an indexed opaque subject.
-- [src/HpacSafety.Infrastructure/Persistence/Configurations/QuestionBankConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/QuestionBankConfiguration.cs) — current normalized question/version/translation mappings; replace with complete-revision mappings.
-- [src/HpacSafety.Infrastructure/Persistence/Configurations/ReportConfiguration.cs](../src/HpacSafety.Infrastructure/Persistence/Configurations/ReportConfiguration.cs) — current report/answer/aircraft/file/locale-summary mappings and encryption converters; simplify to target records and managed encryption only.
-- [src/HpacSafety.Infrastructure/Persistence/Conventions/SnakeCaseNames.cs](../src/HpacSafety.Infrastructure/Persistence/Conventions/SnakeCaseNames.cs) — deterministic snake_case relational naming; retain.
-- [src/HpacSafety.Infrastructure/Persistence/Conversions/EnumCodeConverter.cs](../src/HpacSafety.Infrastructure/Persistence/Conversions/EnumCodeConverter.cs) — stable enum string converter; retain.
-- [src/HpacSafety.Infrastructure/Persistence/Conversions/LocaleConverter.cs](../src/HpacSafety.Infrastructure/Persistence/Conversions/LocaleConverter.cs) — locale value converter; retain.
-- [src/HpacSafety.Infrastructure/Persistence/Conversions/TinyIdConverter.cs](../src/HpacSafety.Infrastructure/Persistence/Conversions/TinyIdConverter.cs) — TinyId string converter; retain.
-- [src/HpacSafety.Infrastructure/Persistence/Encryption/AesGcmFieldCipher.cs](../src/HpacSafety.Infrastructure/Persistence/Encryption/AesGcmFieldCipher.cs) — AES-GCM field cipher; remove.
-- [src/HpacSafety.Infrastructure/Persistence/Encryption/EncryptedStringConverter.cs](../src/HpacSafety.Infrastructure/Persistence/Encryption/EncryptedStringConverter.cs) — encrypted-string EF converter; remove.
-- [src/HpacSafety.Infrastructure/Persistence/Encryption/EncryptedTimeOnlyConverter.cs](../src/HpacSafety.Infrastructure/Persistence/Encryption/EncryptedTimeOnlyConverter.cs) — encrypted-time EF converter; remove.
-- [src/HpacSafety.Infrastructure/Persistence/Encryption/FieldCipherModelCacheKeyFactory.cs](../src/HpacSafety.Infrastructure/Persistence/Encryption/FieldCipherModelCacheKeyFactory.cs) — cipher-sensitive EF model cache key; remove.
-- [src/HpacSafety.Infrastructure/Persistence/Encryption/FieldEncryptionOptions.cs](../src/HpacSafety.Infrastructure/Persistence/Encryption/FieldEncryptionOptions.cs) — application key configuration; remove.
-- [src/HpacSafety.Infrastructure/Persistence/HpacSafetyDbContext.cs](../src/HpacSafety.Infrastructure/Persistence/HpacSafetyDbContext.cs) — current 13-set context, conventions, encryption injection, immutable-question guard; revise sets, global Deleted filters, and target guards.
-- [src/HpacSafety.Infrastructure/Persistence/HpacSafetyDbContextFactory.cs](../src/HpacSafety.Infrastructure/Persistence/HpacSafetyDbContextFactory.cs) — design-time migration context with synthetic cipher; retain factory but remove cipher requirement.
-- [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823001528_InitialSchema.Designer.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823001528_InitialSchema.Designer.cs) — generated metadata for current initial schema; historical migration evidence, not target shape.
-- [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823001528_InitialSchema.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823001528_InitialSchema.cs) — creates current 13 tables and seed; preserve in migration history and add a forward target migration.
-- [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.Designer.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.Designer.cs) — generated metadata for privacy migration; historical.
-- [src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/20260823022839_ReplaceSensitivityWithQuestionPrivacy.cs) — replaces sensitivity with current question privacy snapshot; migrate forward to revision-owned privacy.
-- [src/HpacSafety.Infrastructure/Persistence/Migrations/HpacSafetyDbContextModelSnapshot.cs](../src/HpacSafety.Infrastructure/Persistence/Migrations/HpacSafetyDbContextModelSnapshot.cs) — generated current model snapshot; regenerate from target model.
-- [src/HpacSafety.Infrastructure/Persistence/README.md](../src/HpacSafety.Infrastructure/Persistence/README.md) — aligned canonical-schema summary with explicit legacy migration gaps.
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/DevelopmentAdminSeed.cs) — environment-guarded synthetic local admin SQL; **frozen history**. It cannot be deleted because `InitialSchema` calls it, but `DropAdminUsersForJwtIdentity` drops the table it writes to, so it is inert (ADR-0065).
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeed.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeed.cs) — Typeform-derived bilingual seed definitions; convert to initial complete revisions.
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeedWriter.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/QuestionBankSeedWriter.cs) — migration SQL writer for current normalized schema; rewrite for target complete revisions.
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/SeedIds.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/SeedIds.cs) — deterministic seed TinyIds; retain.
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/SeededOption.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/SeededOption.cs) — current bilingual option seed record; adapt to complete revision child.
-- [src/HpacSafety.Infrastructure/Persistence/Seeding/SeededQuestion.cs](../src/HpacSafety.Infrastructure/Persistence/Seeding/SeededQuestion.cs) — current seed question shape; add every complete revision field and remove projection roles.
-- [src/HpacSafety.Infrastructure/PersistenceServiceCollectionExtensions.cs](../src/HpacSafety.Infrastructure/PersistenceServiceCollectionExtensions.cs) — Npgsql/DbContext registration and cipher options; retain registration but remove cipher/key plumbing.
-- [src/HpacSafety.Infrastructure/README.md](../src/HpacSafety.Infrastructure/README.md) — aligned target-adapter overview and retired-feature warning.
-
-### Private storage
-
-- [src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs](../src/HpacSafety.Infrastructure/Storage/PresignedUrlRejectedException.cs) — safe signed-URL rejection type; retain only if still useful for authorized reads.
-- [src/HpacSafety.Infrastructure/Storage/README.md](../src/HpacSafety.Infrastructure/Storage/README.md) — aligned final-upload/private-review storage contract with legacy adapter note.
-- [src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStore.cs) — the one storage adapter, S3 in AWS and RustFS in development (ADR-0096, ADR-0110): private read/write, version-purging delete of unclaimed uploads, and short-lived reviewer reads.
-- [src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs](../src/HpacSafety.Infrastructure/Storage/S3BlobStoreOptions.cs) — bucket configuration; retain for private attachment bucket.
-
-## Worker — 8 paths after alignment
-
-- [src/HpacSafety.Worker/HpacSafety.Worker.csproj](../src/HpacSafety.Worker/HpacSafety.Worker.csproj) — Worker project/reference scaffold; add persistence, model, and attachment handler composition.
-- [src/HpacSafety.Worker/Prompts/summarize-anonymize.v1.md](../src/HpacSafety.Worker/Prompts/summarize-anonymize.v1.md) — one concise versioned runtime prompt added after the baseline audit; load it from the Worker and version it with summary provenance.
-- [src/HpacSafety.Worker/Program.cs](../src/HpacSafety.Worker/Program.cs) — generic host registration; compose DB/outbox, one summarizer, and attachment processors.
-- [src/HpacSafety.Worker/Properties/launchSettings.json](../src/HpacSafety.Worker/Properties/launchSettings.json) — local Worker launch profile; retain.
-- [src/HpacSafety.Worker/README.md](../src/HpacSafety.Worker/README.md) — aligned one-call/attachment target and current-host warning.
-- [src/HpacSafety.Worker/Worker.cs](../src/HpacSafety.Worker/Worker.cs) — startup log only; replace with an orchestrator that delegates typed outbox handlers without embedding domain policy.
-- [src/HpacSafety.Worker/appsettings.Development.json](../src/HpacSafety.Worker/appsettings.Development.json) — development logging; add safe fake/local adapter configuration without secrets.
-- [src/HpacSafety.Worker/appsettings.json](../src/HpacSafety.Worker/appsettings.json) — base Worker logging; add validated references for model/prompt/retries/tooling, not secret values.
-
-## Web — 21 paths
-
-- [src/web/README.md](../src/web/README.md) — aligned static-site, form-continuity, accessibility, and current-page gap summary.
-- [src/web/admin/.gitkeep](../src/web/admin/.gitkeep) — empty admin-site placeholder; **remove**. The admin surface is a route on the one React site (ADR-0048), and there is no allowlist screen.
-- [src/web/assets/README.md](../src/web/assets/README.md) — asset provenance/pinning guidance; retain.
-- [src/web/assets/fonts/OFL-Aleo.txt](../src/web/assets/fonts/OFL-Aleo.txt) — Aleo SIL Open Font License; retain with font.
-- [src/web/assets/fonts/OFL-Poppins.txt](../src/web/assets/fonts/OFL-Poppins.txt) — Poppins SIL Open Font License; retain with font.
-- [src/web/assets/fonts/README.md](../src/web/assets/fonts/README.md) — self-hosted font source/subset provenance; retain.
-- [src/web/assets/fonts/aleo-latin-ext.woff2](../src/web/assets/fonts/aleo-latin-ext.woff2) — Aleo variable Latin-ext WOFF2 binary; retained display font asset.
-- [src/web/assets/fonts/aleo-latin.woff2](../src/web/assets/fonts/aleo-latin.woff2) — Aleo variable Latin WOFF2 binary; retained display font asset.
-- [src/web/assets/fonts/poppins-400-latin-ext.woff2](../src/web/assets/fonts/poppins-400-latin-ext.woff2) — Poppins 400 Latin-ext WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-400-latin.woff2](../src/web/assets/fonts/poppins-400-latin.woff2) — Poppins 400 Latin WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-500-latin-ext.woff2](../src/web/assets/fonts/poppins-500-latin-ext.woff2) — Poppins 500 Latin-ext WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-500-latin.woff2](../src/web/assets/fonts/poppins-500-latin.woff2) — Poppins 500 Latin WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-600-latin-ext.woff2](../src/web/assets/fonts/poppins-600-latin-ext.woff2) — Poppins 600 Latin-ext WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-600-latin.woff2](../src/web/assets/fonts/poppins-600-latin.woff2) — Poppins 600 Latin WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-700-latin-ext.woff2](../src/web/assets/fonts/poppins-700-latin-ext.woff2) — Poppins 700 Latin-ext WOFF2 binary; retained UI font asset.
-- [src/web/assets/fonts/poppins-700-latin.woff2](../src/web/assets/fonts/poppins-700-latin.woff2) — Poppins 700 Latin WOFF2 binary; retained UI font asset.
-- [src/web/assets/hpac-light.svg](../src/web/assets/hpac-light.svg) — HPAC mark for the light theme.
-- [src/web/assets/hpac-dark.svg](../src/web/assets/hpac-dark.svg) — HPAC mark for the dark theme.
-- [src/web/public/.gitkeep](../src/web/public/.gitkeep) — empty public-site placeholder; replace with report form/feed/detail static pages and modules.
-- [src/web/shared/.gitkeep](../src/web/shared/.gitkeep) — empty shared-code placeholder; add only genuinely shared locale/API/presentation utilities.
-- [src/web/src/auth/session.ts](../src/web/src/auth/session.ts) — the stored bearer session. The token is kept, never parsed; role and expiry come from the API's response (ADR-0048).
-- [src/web/src/auth/authApi.ts](../src/web/src/auth/authApi.ts) — the three auth endpoints as the browser calls them, including the config that decides whether a third-party sign-in option is offered (ADR-0066).
-- [src/web/src/auth/AuthContext.tsx](../src/web/src/auth/AuthContext.tsx) — holds the session, re-checks a stored token against `/api/auth/me` on load, and exposes the role the chrome reads.
-- [src/web/src/index.css](../src/web/src/index.css) — HPAC tokens, self-hosted font faces, components, and dark token overrides, compiled by `@tailwindcss/vite`; retain as shared design source.
-- [src/web/theme-preview.html](../src/web/theme-preview.html) — static token/component preview in both themes, served by the Vite dev server; retain as visual regression/design reference, not a product page.
-
-## Test-derived observations
-
-All 69 tracked paths under `tests/` were read to infer enforced behavior. The
-test conclusions and target replacements are summarized in
-[implementation status](implementation-status.md) and the required future
-contracts are in [testing and quality](testing-and-quality.md). The binary HEIC
-fixture is a small synthetic GPS-bearing image used to prove metadata removal;
-it contains no real incident or person data.
+| Directory | Holds |
+|---|---|
+| [`src/web`](../src/web/) | The npm project, Vite config, `index.html`, and the theme preview page. |
+| [`assets/`](../src/web/assets/) | Logos. |
+| [`assets/fonts/`](../src/web/assets/fonts/) | Self-hosted Aleo and Poppins WOFF2 files and their licences (ADR-0023). |
+| [`src/`](../src/web/src/) | The app shell, routes table, global CSS tokens (ADR-0024), and theme bootstrap. |
+| [`src/api/`](../src/web/src/api/) | Typed clients for the public, reporter, and admin endpoints. |
+| [`src/auth/`](../src/web/src/auth/) | The session, sign-in, and role-aware context; the browser never parses a JWT. |
+| [`src/components/`](../src/web/src/components/) | Shared UI: header and menus, the admin route guard (ADR-0092), review actions, report media (ADR-0117) and comments, and the question editor. |
+| [`src/i18n/`](../src/web/src/i18n/) | Locale resolution and catalogue loading. |
+| [`src/lib/`](../src/web/src/lib/) | Answer formatting and the word diff behind translation confirmation (ADR-0108). |
+| [`src/report-form/`](../src/web/src/report-form/) | The paged reporter form, its saved report, attachment field, and the media-consent rule (ADR-0100, ADR-0119). |
+| [`src/routes/`](../src/web/src/routes/) | One component per page. |
+| [`src/theme/`](../src/web/src/theme/) | Light/dark theme selection. |

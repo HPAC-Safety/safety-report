@@ -53,8 +53,10 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 - Public and admin are routes in one application, build, and container
   ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
-- **API authorization is the boundary**, not hidden markup. Role-gate the
-  chrome, never the route; no client-side route guards.
+- **API authorization is the boundary**, not hidden markup. Every `/admin/*`
+  route is wrapped in `AdminRouteGuard`: signed out redirects to `/login`, and
+  the wrong role gets a real 403 view (ADR-0092). The guard only decides what
+  to render; the API still answers 401/403 on every request.
   - `User`: no Admin menu. `SafetyOfficer`: review options. `Administrator`:
     authoring too.
 - The browser never parses a JWT. Role and expiry come from the token response

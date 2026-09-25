@@ -11,12 +11,17 @@ description: Keep HPAC Safety application chrome, database questions, validation
   CI translation tooling applies only to those catalogues.
 - Add every new string to `locales/en-CA.json` and read it through `t(...)`;
   never a literal in markup (`tools/check-hardcoded-strings.mjs` enforces it).
-- **Never hand-author `fr-CA.json`.** Only CI translates it; `DEEPL_API_KEY`
-  lives only in CI (ADR-0021).
+- **Never add or generate `fr-CA.json` keys by hand.** Only
+  `i18n-translate.yml` runs `translate-locale.mjs --generate` (ADR-0021,
+  ADR-0057). Correcting an existing French value by hand is allowed: it is
+  recorded as a human correction and never machine-translated again
+  (ADR-0070). A developer's `.env` holds a `DEEPL_API_KEY` for the API and
+  Worker (ADR-0109); no local tool uses it to write the catalogue.
 - `npm run dev` / `npm run build` in `src/web` first run
   `tools/stub-missing-translations.mjs`: a key missing from either file gets
   the other's text prefixed `#` (`#Contact`), visibly untranslated instead of
-  silently English, until CI replaces it after merge (ADR-0054).
+  silently English, until CI replaces it: on a same-repo pull request's own
+  branch (ADR-0057), or after merge for a fork's (ADR-0054).
 - A committed `#`-prefixed value fails `translate-locale.mjs --check` and must
   never reach `main`.
 
@@ -44,10 +49,13 @@ description: Keep HPAC Safety application chrome, database questions, validation
 - Reporter content is machine-translated only off the submission path, in these
   cases:
   - an answer that needs a second language, by the Worker (ADR-0112);
+  - an answer's second language an administrator drafts with Translate in the
+    answer-translation queue, then saves (ADR-0112);
   - a summary language a reviewer asks to draft from the other (ADR-0108);
   - each revision of a member's comment (ADR-0114).
-- A select answer copies its choice's other label instead, which is a lookup,
-  not a translation.
+- A select answer naming a choice written in both languages copies that
+  choice's other label instead, which is a lookup, not a translation. One
+  naming a one-language choice is translated by the Worker (ADR-0112).
 
 ## Runtime behavior
 

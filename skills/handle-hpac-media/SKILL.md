@@ -58,8 +58,8 @@ derivative
 
 ## Images and video
 
-- Decode and re-encode images, and safely remux or transcode videos, to strip
-  metadata. Reviewers see only verified derivatives.
+- Decode and re-encode images, and remux videos into MP4 (a stream copy, never
+  a transcode; ADR-0094, ADR-0122), to strip metadata. Reviewers see only verified derivatives.
 - An image that cannot be stripped fails closed.
 - A video that cannot be remuxed is kept as a private original with no
   derivative, reachable only as a reviewer download

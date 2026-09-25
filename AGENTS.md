@@ -153,8 +153,9 @@ contributor who never invokes one is unaffected.
        type-ahead value naming no bilingual choice: filled off the submission
        path, by the Worker through the question-authoring translation port or
        by an administrator by hand;
-     - a select answer: copies its choice's other-language label at
-       submission — a lookup, not a translation;
+     - a select answer naming a choice written in both languages: copies that
+       choice's other-language label at submission — a lookup, not a
+       translation. One naming a one-language choice is filled by the Worker;
      - everything else (unmarked text, email, phone, date, time, number,
        yes/no): never has one;
      - the source is recorded: `auto`, `human`, or `choice`.
@@ -240,13 +241,19 @@ contributor who never invokes one is unaffected.
    - Use managed encryption at rest and TLS. No application-level field
      encryption.
    - Never log report content. Never physically delete application records.
-   - Two carved exceptions, neither generalizing:
+   - The carved exceptions, none generalizing:
+     - dropping the legacy per-language question tables and `report_aircraft`
+       after folding their data forward
+       ([ADR-0040](docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md));
      - dropping `admin_users`, which never held data in any deployed
        environment
        ([ADR-0065](docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
      - dropping the shared-choice-list and per-revision option tables after
        copying every choice onto its question
-       ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+       ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md));
+     - hard-deleting a `pending_import_logic` row, a transient Typeform import
+       note, when an administrator resolves it
+       ([ADR-0077](docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
    - Any future `DROP TABLE` needs its own argument on its own facts.
 
 ## Not built
@@ -266,7 +273,7 @@ contributor who never invokes one is unaffected.
 
 - **Never on the submission path.** Nothing a reporter's request touches calls a
   translation provider.
-- Off that path it has five purposes:
+- Off that path it has six purposes:
   1. drafting question wording while authoring;
   2. the Worker mechanically supplying the second language of an answer that
      needs one
@@ -276,7 +283,10 @@ contributor who never invokes one is unaffected.
   4. a reviewer drafting one language of a summary pair from the other;
   5. the Worker translating each revision of a member's comment on a published
      report
-     ([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+     ([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md));
+  6. CI translating the English interface catalogue into `locales/fr-CA.json`
+     ([ADR-0021](docs/decisions/ADR-0021-ci-translation-opens-a-pull-request.md),
+     [ADR-0057](docs/decisions/ADR-0057-same-repo-pull-requests-translate-in-pr.md)).
 - The Worker's generated pair comes only from its one anonymized model call,
   never a translation provider.
 - A reviewer's translation is a draft they confirm. Each saved language records
@@ -299,7 +309,7 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 | Writing or applying a migration | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | Attachments or private object storage | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
 | English/French behavior | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
-| Static HTML/JS and design system | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
+| React/TypeScript web UI and design system | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
 | AWS, Terraform, or deployment | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
 | Issues, docs, worktrees, PRs, or CI | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
 | Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md) |
@@ -326,8 +336,9 @@ minimum:
   identifier (ADR number, name, slug) only after that rebase
   ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 - PR body: `Closes #<number>` on its own line; squash-ready title.
-- No `Co-Authored-By` trailer and no agent session link — the `commit-msg` hook
-  and `linked-issue.yml` refuse one
+- No `Co-Authored-By` trailer; this is a convention, and nothing checks it.
+- No agent session link: the `commit-msg` hook and `linked-issue.yml`'s
+  `no-session-link` job refuse one
   ([ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)).
 - Keep working until required checks are green.
 - Every tracked markdown file declares its frontmatter; see

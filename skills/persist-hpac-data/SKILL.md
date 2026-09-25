@@ -15,9 +15,12 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 
 - PostgreSQL is `snake_case`; C# is PascalCase.
 - Store complete immutable question revisions and revision-bound answers. Only
-  the two consents, publication and media, project onto the report (ADR-0117).
-- One summary row per report: English/French text, shared provenance, pair
-  approval.
+  consent projects onto the report: `consent_publish`, `consent_media`
+  (ADR-0117), and `consent_documents`, which is `consent_media` when it
+  answered the question's current wording (ADR-0119).
+- One summary row per report: English/French text, shared generation
+  provenance (model, prompt version), a per-language source (ADR-0108), and
+  pair approval.
 - Save report, answers, file rows, and typed outbox messages in one
   transaction.
 - No user, member, or session entity — identity lives in the token.
@@ -26,14 +29,18 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 
 - Query purpose-built DTOs holding exactly the fields a use case needs.
 - The summary DTO returns exact revision labels, answers, and privacy flags.
-- The public DTO cannot carry raw answers or attachment originals. The one
-  file-shaped public read is `public_report_media`: opaque ids and kinds only
-  (ADR-0117).
+- The public DTO never carries raw answers or an image or video original.
+  `public_report_media` is the one file-shaped public read: opaque id, kind,
+  and a document's download format. A published document's unchanged original
+  is reachable only as a short-lived forced download through `PublicMediaLink`
+  (ADR-0117, ADR-0119).
 
 ## Soft deletion
 
 - `deleted timestamptz` and a default filter on every table except append-only
-  `audit_log`.
+  `audit_log` and hard-deleted `pending_import_logic` (ADR-0077).
+  `question_choices` has the column but no default filter, because its
+  aggregate reads removed rows (ADR-0095).
 - Cascade soft deletion explicitly, with one timestamp.
 - Reference checks for question deletion include answers beneath deleted
   reports.

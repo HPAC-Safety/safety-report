@@ -70,6 +70,9 @@ still validates, streams, and persists exactly as before
 Claims preserved: REQ-SUB-012, REQ-SUB-013
 ```
 
+- The category is one of `refactor`, `styling`, `dependency`, `test-only`,
+  `build`, `revert`, or `docs`. Their meanings are in the pull request
+  template; any other word fails.
 - It is for a change that genuinely alters no behavior.
 - **Never use it because the scenario is slower to write**, or to get a green
   build. That is the one use this repository forbids outright.

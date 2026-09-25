@@ -312,7 +312,7 @@ public class QuestionChoicesTests
 			options: [new("hang_glider", "Hang glider", "Deltaplane"), new("paraglider", "Paraglider", "Parapente")]);
 		var child = Question.Create(
 			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("paraglider")!.Id);
 
 		// When
 		var refusal = Should.Throw<DomainRuleViolationException>(() =>
@@ -345,40 +345,38 @@ public class QuestionChoicesTests
 	}
 
 	[Fact]
-	public void GivenDependencyOnAChoiceTheParentNoLongerOffers_WhenParentIsSaved_ThenRefusalNamesTheCode()
+	public void GivenDependencyOnAChoiceAlreadyRemoved_WhenParentIsSaved_ThenNotRefused()
 	{
-		// Given — a dependency left over from before a removal was refused
+		// Given — a dependency left naming a choice removed before this save
 		var parent = Question.Create(
 			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
-			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")]);
+			options: [new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"), new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
 		var child = Question.Create(
 			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("paraglider")!.Id);
+		parent.ReplaceChoices([new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane")], At);
 
-		// When
-		var refusal = Should.Throw<DomainRuleViolationException>(() =>
-			QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider"]));
-
-		// Then
-		refusal.Message.ShouldContain("'paraglider'");
+		// When / Then — this save removes nothing the child still depends on
+		Should.NotThrow(() => QuestionDependencies.EnsureChoicesRemovable([parent, child], parent, ["hang_glider"]));
 	}
 
 	[Fact]
-	public void GivenConditionalQuestion_WhenSavedWithItsRequiredChoiceWordedDifferently_ThenNoRevisionIsCreated()
+	public void GivenConditionalQuestion_WhenSavedWithTheSameRequiredChoice_ThenNoRevisionIsCreated()
 	{
 		// Given — a single-select condition, as the editor sends it back
 		var parent = Question.Create(
 			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", At, isActive: true,
 			options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+		var paraglider = parent.Choice("paraglider")!.Id;
 		var child = Question.Create(
 			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "paraglider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: paraglider);
 		var current = child.CurrentRevision;
 
-		// When — the same code, not yet normalized
+		// When
 		var live = child.ApplyEdit(
 			true, current.Type, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
-			current.DisplayOrder, At.AddDays(1), dependsOnQuestionId: parent.Id, dependsOnOptionCode: "Paraglider");
+			current.DisplayOrder, At.AddDays(1), dependsOnQuestionId: parent.Id, dependsOnChoiceId: paraglider);
 
 		// Then — nothing about the question changed, so nothing is revised or forked
 		live.ShouldBeSameAs(child);

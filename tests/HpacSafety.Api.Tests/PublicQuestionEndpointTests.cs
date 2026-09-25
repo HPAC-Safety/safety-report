@@ -198,7 +198,7 @@ public class PublicQuestionEndpointTests(ApiPostgresFixture fixture)
 		bool IsPrivate,
 		bool IsActive,
 		string? DependsOnQuestionId,
-		string? DependsOnOptionCode,
+		string? DependsOnChoiceId,
 		string? OptionSetId,
 		string? GroupedUnderQuestionId,
 		bool AllowsReporterAdditions,

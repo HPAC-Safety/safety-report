@@ -154,6 +154,8 @@
   "questions.choice.reporterAdded": "Added by a reporter",
   "questions.choice.awaitingEnglish": "Waiting for the English wording",
   "questions.choice.awaitingFrench": "Waiting for the French wording",
+  "questions.choice.replace": "Replace with a new option",
+  "questions.choice.replaceHelp": "An edited option is fixed in place: every earlier answer shows the new wording. Tick Replace when the option now means something different; earlier answers keep the old option and its wording.",
   "questions.field.optionLabelEn": "Choice (English)",
   "questions.field.optionLabelFr": "Choice (French)",
   "questions.field.addOption": "Add a choice",

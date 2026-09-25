@@ -28,7 +28,7 @@ function yesNoForm(): StubQuestion[] {
 		isRequired: false,
 		isPrivate: false,
 		dependsOnQuestionId: null,
-		dependsOnOptionCode: null,
+		dependsOnChoiceId: null,
 		allowsReporterAdditions: false,
 		helpTextEn: null,
 		helpTextFr: null,

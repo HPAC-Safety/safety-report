@@ -38,7 +38,8 @@ export interface PublicQuestionView {
 	isPrivate: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
-	dependsOnOptionCode: string | null
+	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */
+	dependsOnChoiceId: string | null
 	allowsReporterAdditions: boolean
 	labelEn: string
 	labelFr: string

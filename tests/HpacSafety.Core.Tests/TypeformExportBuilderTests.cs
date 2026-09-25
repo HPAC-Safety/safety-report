@@ -60,7 +60,7 @@ public class TypeformExportBuilderTests
 			options: [new QuestionOptionInput("glider", "Hang glider", "Deltaplane")]);
 		var child = Question.Create(
 			"glider_model", QuestionType.ShortText, "Model", "Modèle", At, isPrivate: false,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("glider")!.Id);
 
 		// When
 		var (english, _) = TypeformExportBuilder.Build([parent, child]);

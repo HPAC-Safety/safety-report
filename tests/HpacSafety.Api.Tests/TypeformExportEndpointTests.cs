@@ -123,7 +123,7 @@ public class TypeformExportEndpointTests(ApiPostgresFixture fixture)
 			IsPrivate = true,
 			IsActive = true,
 			DependsOnQuestionId = (string?)null,
-			DependsOnOptionCode = (string?)null,
+			DependsOnChoiceId = (string?)null,
 			OptionSetId = (string?)null,
 			GroupedUnderQuestionId = (string?)null,
 			AllowsReporterAdditions = false,

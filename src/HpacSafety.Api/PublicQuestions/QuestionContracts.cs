@@ -30,7 +30,7 @@ public sealed record PublicQuestionView(
 	bool IsPrivate,
 	int DisplayOrder,
 	string? DependsOnQuestionId,
-	string? DependsOnOptionCode,
+	string? DependsOnChoiceId,
 	bool AllowsReporterAdditions,
 	string LabelEn,
 	string LabelFr,
@@ -48,9 +48,14 @@ public sealed record PublicQuestionView(
 	///     Empty for anything but a live <see cref="QuestionType.Group" />
 	///     question.
 	/// </param>
+	/// <param name="bank">
+	///     Every live question, so a condition naming a replaced option names the
+	///     option that replaced it — the one the form offers (ADR-0128).
+	/// </param>
 	public static PublicQuestionView Of(
 		Question question,
-		IReadOnlyList<PublicQuestionView> children)
+		IReadOnlyList<PublicQuestionView> children,
+		IReadOnlyCollection<Question> bank)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(children);
@@ -67,7 +72,7 @@ public sealed record PublicQuestionView(
 			revision.IsPrivate,
 			revision.DisplayOrder,
 			revision.DependsOnQuestionId?.Value,
-			revision.DependsOnOptionCode,
+			(QuestionDependencies.RequiredChoiceToday(bank, revision)?.Id ?? revision.DependsOnChoiceId)?.Value,
 			revision.TakesReporterAdditions,
 			revision.LabelEn,
 			revision.LabelFr,

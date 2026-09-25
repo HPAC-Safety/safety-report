@@ -362,7 +362,7 @@ public sealed class StoredAnswerSteps
 			isPrivate = false,
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
-			dependsOnOptionCode = (string?)null,
+			dependsOnChoiceId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			options,
 		};

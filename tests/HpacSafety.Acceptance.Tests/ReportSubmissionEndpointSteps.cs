@@ -1285,7 +1285,7 @@ public sealed class ReportSubmissionEndpointSteps
 			isPrivate = false,
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
-			dependsOnOptionCode = (string?)null,
+			dependsOnChoiceId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			options = new[]
 			{
@@ -1412,7 +1412,7 @@ public sealed class ReportSubmissionEndpointSteps
 			isPrivate = false,
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
-			dependsOnOptionCode = (string?)null,
+			dependsOnChoiceId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			options = Array.Empty<object>(),
 		};
@@ -1442,7 +1442,7 @@ public sealed class ReportSubmissionEndpointSteps
 			isPrivate = false,
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
-			dependsOnOptionCode = (string?)null,
+			dependsOnChoiceId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			options = Array.Empty<object>(),
 		};

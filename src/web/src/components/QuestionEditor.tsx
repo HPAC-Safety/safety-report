@@ -59,7 +59,7 @@ export function blankDraft(): QuestionDraft {
 			isTranslatable: translatableByDefault("short_text"),
 			isActive: true,
 			dependsOnQuestionId: null,
-			dependsOnOptionCode: null,
+			dependsOnChoiceId: null,
 			groupedUnderQuestionId: null,
 			options: [],
 		},
@@ -81,7 +81,7 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			isTranslatable: question.isTranslatable,
 			isActive: question.isActive,
 			dependsOnQuestionId: question.dependsOnQuestionId,
-			dependsOnOptionCode: question.dependsOnOptionCode,
+			dependsOnChoiceId: question.dependsOnChoiceId,
 			groupedUnderQuestionId: question.groupedUnderQuestionId,
 			options: question.options.map((option) => ({
 				code: option.code,
@@ -124,7 +124,9 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			isTranslatable: translatableByDefault(imported.type),
 			isActive: true,
 			dependsOnQuestionId: dependsOn?.id ?? null,
-			dependsOnOptionCode: dependsOn ? imported.dependsOnOptionCode : null,
+			// The Typeform file names the required option by code; the editor names
+			// the parent's choice by ID (ADR-0128).
+			dependsOnChoiceId: dependsOn?.options.find((option) => option.code === imported.dependsOnOptionCode)?.id ?? null,
 			groupedUnderQuestionId: group?.id ?? null,
 			options: imported.options.map((option) => ({
 				code: option.code,
@@ -164,6 +166,9 @@ export function QuestionEditor({
 	const { t } = useLocale()
 	const request = draft.request
 	const takesOptions = OPTION_TYPES.includes(request.type)
+	// Only a picker option is replaced; a type-ahead value is corrected in place
+	// (ADR-0128, ADR-0129).
+	const canReplace = request.type === "single_select" || request.type === "multi_select"
 	// A statement or a group collects no answer, so it can be neither required,
 	// private, a conditional child, nor a conditional parent (ADR-0076).
 	const collectsNoAnswer = NO_ANSWER_TYPES.includes(request.type)
@@ -181,7 +186,7 @@ export function QuestionEditor({
 	// single-select condition additionally needs its required option named,
 	// or the API rejects the save (ADR-0074).
 	const canSave =
-		hasEnglish && hasFrench && (dependsOnParent?.type !== "single_select" || request.dependsOnOptionCode !== null)
+		hasEnglish && hasFrench && (dependsOnParent?.type !== "single_select" || request.dependsOnChoiceId !== null)
 	const translationDirection = hasEnglish && !hasFrench ? "toFrench" : !hasEnglish && hasFrench ? "toEnglish" : null
 
 	function update(changes: Partial<SaveQuestionRequest>) {
@@ -236,7 +241,7 @@ export function QuestionEditor({
 		}
 	}
 
-	function updateOption(index: number, changes: Partial<Pick<OptionInput, "labelEn" | "labelFr">>) {
+	function updateOption(index: number, changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace">>) {
 		const options = request.options.map((option, current) => (current === index ? { ...option, ...changes } : option))
 		update({ options })
 	}
@@ -279,7 +284,7 @@ export function QuestionEditor({
 							// be required, private, or conditional on anything
 							// (ADR-0076).
 							const clearedForNoAnswer = NO_ANSWER_TYPES.includes(type)
-								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnOptionCode: null }
+								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnChoiceId: null }
 								: {}
 							// A retype takes the new type's translation default: only
 							// free text can need translation at all (ADR-0112).
@@ -437,7 +442,7 @@ export function QuestionEditor({
 						className={fieldClassName}
 						value={request.dependsOnQuestionId ?? ""}
 						onChange={(event) =>
-							update({ dependsOnQuestionId: event.target.value || null, dependsOnOptionCode: null })
+							update({ dependsOnQuestionId: event.target.value || null, dependsOnChoiceId: null })
 						}
 					>
 						<option value="">{t("questions.field.dependsOnNone")}</option>
@@ -457,13 +462,13 @@ export function QuestionEditor({
 							<select
 								id="question-depends-on-option"
 								className={fieldClassName}
-								value={request.dependsOnOptionCode ?? ""}
+								value={request.dependsOnChoiceId ?? ""}
 								required
-								onChange={(event) => update({ dependsOnOptionCode: event.target.value || null })}
+								onChange={(event) => update({ dependsOnChoiceId: event.target.value || null })}
 							>
 								<option value="">{t("questions.field.dependsOnOptionNone")}</option>
 								{dependsOnParent.options.map((option) => (
-									<option key={option.code} value={option.code}>
+									<option key={option.id} value={option.id}>
 										{option.labelEn}
 									</option>
 								))}
@@ -551,9 +556,22 @@ export function QuestionEditor({
 										</button>
 									</div>
 								</div>
+								{canReplace && option.code !== null && (
+									<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
+										<input
+											type="checkbox"
+											checked={option.replace === true}
+											onChange={(event) => updateOption(index, { replace: event.target.checked })}
+										/>
+										{t("questions.choice.replace")}
+									</label>
+								)}
 							</div>
 						)
 					})}
+					{canReplace && request.options.some((option) => option.code !== null) && (
+						<p className="font-sans text-xs text-ink-muted">{t("questions.choice.replaceHelp")}</p>
+					)}
 
 					<button
 						type="button"

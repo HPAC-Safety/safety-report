@@ -294,7 +294,7 @@ public class ConditionalQuestionTests
 
 		// When / Then
 		Should.NotThrow(() =>
-			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "hang_glider"));
+			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, parent.Choice("hang_glider")!.Id));
 	}
 
 	[Fact]
@@ -305,9 +305,9 @@ public class ConditionalQuestionTests
 
 		// When / Then
 		var cause = Should.Throw<DomainRuleViolationException>(() =>
-			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "trike"));
+			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, PilotType().Choice("hang_glider")!.Id));
 
-		cause.Message.ShouldContain("trike");
+		cause.Message.ShouldContain("does not currently offer");
 	}
 
 	[Fact]
@@ -330,7 +330,7 @@ public class ConditionalQuestionTests
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() =>
-			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "yes"));
+			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, TinyId.New()));
 	}
 
 	[Fact]
@@ -344,7 +344,7 @@ public class ConditionalQuestionTests
 
 		// When / Then
 		var cause = Should.Throw<DomainRuleViolationException>(() =>
-			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, "hang_glider"));
+			QuestionDependencies.EnsureDependencyAllowed([parent], null, parent.Id, parent.Choice("hang_glider")!.Id));
 
 		cause.Message.ShouldContain("yes/no or single-select");
 	}
@@ -355,22 +355,23 @@ public class ConditionalQuestionTests
 		// Given / When / Then
 		Should.Throw<DomainRuleViolationException>(() => Question.Create(
 			"injury_detail", QuestionType.LongText, "What was the injury?", "Quelle était la blessure ?", At,
-			isActive: true, dependsOnOptionCode: "hang_glider"));
+			isActive: true, dependsOnChoiceId: TinyId.New()));
 	}
 
 	[Fact]
-	public void GivenSingleSelectDependency_WhenChildRecordsIt_ThenOptionCodeIsNormalized()
+	public void GivenSingleSelectDependency_WhenChildRecordsIt_ThenItNamesTheChoiceById()
 	{
 		// Given
 		var parent = PilotType();
+		var hangGlider = parent.Choice("hang_glider")!.Id;
 
 		// When
 		var child = Question.Create(
 			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "Hang Glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: hangGlider);
 
-		// Then
-		child.DependsOnOptionCode.ShouldBe("hang_glider");
+		// Then — ADR-0128
+		child.DependsOnChoiceId.ShouldBe(hangGlider);
 	}
 
 	// -------------------------------------------------- IsEnabledGiven (ADR-0074) --
@@ -382,7 +383,7 @@ public class ConditionalQuestionTests
 		var question = Ordinary("occurrence_notes", QuestionType.LongText);
 
 		// When / Then
-		question.CurrentRevision.IsEnabledGiven(null, null, Locale.EnCa).ShouldBeTrue();
+		question.CurrentRevision.IsEnabledGiven(null, (TinyId?)null).ShouldBeTrue();
 	}
 
 	[Theory]
@@ -401,14 +402,14 @@ public class ConditionalQuestionTests
 	}
 
 	[Fact]
-	public void GivenYesNoParent_WhenEnabledIsCheckedWithAWord_ThenFalse()
+	public void GivenYesNoParent_WhenEnabledIsCheckedWithAChoice_ThenFalse()
 	{
-		// Given — a yes/no answer is a boolean, never a word (ADR-0130)
+		// Given — a yes/no answer is a boolean, never a choice (ADR-0130)
 		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
 		var child = Ordinary("injury_detail", QuestionType.LongText, parent.Id);
 
 		// When / Then
-		child.CurrentRevision.IsEnabledGiven(parent, "yes", Locale.EnCa).ShouldBeFalse();
+		child.CurrentRevision.IsEnabledGiven(parent, TinyId.New()).ShouldBeFalse();
 	}
 
 	[Fact]
@@ -418,10 +419,10 @@ public class ConditionalQuestionTests
 		var parent = PilotType();
 		var child = Question.Create(
 			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("hang_glider")!.Id);
 
-		// When / Then — the reporter's answer is the localized label they saw
-		child.CurrentRevision.IsEnabledGiven(parent, "Hang glider", Locale.EnCa).ShouldBeTrue();
+		// When / Then — the reporter's answer names the choice (ADR-0128)
+		child.CurrentRevision.IsEnabledGiven(parent, parent.Choice("hang_glider")!.Id).ShouldBeTrue();
 	}
 
 	[Fact]
@@ -431,10 +432,10 @@ public class ConditionalQuestionTests
 		var parent = PilotType();
 		var child = Question.Create(
 			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("hang_glider")!.Id);
 
 		// When / Then
-		child.CurrentRevision.IsEnabledGiven(parent, "Paraglider", Locale.EnCa).ShouldBeFalse();
+		child.CurrentRevision.IsEnabledGiven(parent, parent.Choice("paraglider")!.Id).ShouldBeFalse();
 	}
 
 	[Fact]
@@ -444,10 +445,10 @@ public class ConditionalQuestionTests
 		var parent = PilotType();
 		var child = Question.Create(
 			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("hang_glider")!.Id);
 
 		// When / Then
-		child.CurrentRevision.IsEnabledGiven(parent, null, Locale.EnCa).ShouldBeFalse();
+		child.CurrentRevision.IsEnabledGiven(parent, (TinyId?)null).ShouldBeFalse();
 	}
 
 	[Fact]
@@ -457,10 +458,10 @@ public class ConditionalQuestionTests
 		var parent = PilotType();
 		var child = Question.Create(
 			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("hang_glider")!.Id);
 
 		// When / Then — caller has not loaded the parent
-		child.CurrentRevision.IsEnabledGiven(null, "Hang glider", Locale.EnCa).ShouldBeFalse();
+		child.CurrentRevision.IsEnabledGiven(null, parent.Choice("hang_glider")!.Id).ShouldBeFalse();
 	}
 
 	[Fact]
@@ -491,7 +492,7 @@ public class ConditionalQuestionTests
 		var parent = PilotType();
 		var child = Question.Create(
 			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
-			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("hang_glider")!.Id);
 
 		// When / Then
 		child.CurrentRevision.IsEnabledGiven(parent, true).ShouldBeFalse();

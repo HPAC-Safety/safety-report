@@ -240,7 +240,9 @@
     "choice": {
       "reporterAdded": "Ajouté par une personne déclarante",
       "awaitingEnglish": "En attente de la version anglaise",
-      "awaitingFrench": "En attente de la version française"
+      "awaitingFrench": "En attente de la version française",
+      "replace": "#Replace with a new option",
+      "replaceHelp": "#An edited option is fixed in place: every earlier answer shows the new wording. Tick Replace when the option now means something different; earlier answers keep the old option and its wording."
     },
     "type": {
       "short_text": "Texte sur une seule ligne",

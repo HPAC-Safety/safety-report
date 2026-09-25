@@ -55,6 +55,8 @@ erDiagram
     questions ||--o{ question_revisions : "versions"
     questions ||--o{ question_choices : "its own choices"
     question_revisions }o--o| questions : "conditional on"
+    question_revisions }o--o| question_choices : "requires"
+    question_choices |o--o| question_choices : "replaced by"
 
     reports ||--o{ report_answers : "answers"
     reports ||--o{ report_files : "attachments"
@@ -84,7 +86,7 @@ erDiagram
         boolean is_active
         int display_order
         char(11) depends_on_question_id FK "nullable; a yes_no or single_select question"
-        varchar(128) depends_on_option_code "nullable; required option on a single_select parent"
+        char(11) depends_on_choice_id FK "nullable; the single_select parent's required choice, followed through replacements"
         text label_en
         text label_fr
         text help_text_en
@@ -108,6 +110,7 @@ erDiagram
         timestamptz reviewed_at "last approved, corrected, or removed"
         varchar(256) reviewed_by "the reviewer's token subject; joins to nothing"
         timestamptz created_at "when a reporter added it; null before this was recorded"
+        char(11) replaced_by_choice_id FK "nullable; the picker option that replaced this one"
         timestamptz deleted "removed; hidden from the form, never erased"
     }
 
@@ -260,6 +263,7 @@ this.
 | `20260925230357_NameEachAnswersChoice` | Added `report_answers.choice_id` (a restricted foreign key to `question_choices`) and linked every existing select and type-ahead answer to the choice its stored label names; a label no choice carries any more gets a removed choice holding it, in the answer's language, so every old answer resolves. No answer's text is rewritten. `ck_question_choices_label` now also lets such a removed choice hold one language, and the translation queue (its index and `answers_awaiting_translation`) leaves choice answers out (ADR-0128). The backfill is `Sql/20260925230357_NameEachAnswersChoice.sql`. |
 | `20260925233040_TranslateReporterAddedValues` | Added `question_choices.label_en_source` and `label_fr_source` (`human` or `auto`, present exactly when their label is; every existing label backfilled `human`), and allowed the outbox type `translate_choice`: the Worker supplies a reporter-added type-ahead value's missing language on the value itself (ADR-0129). The backfill is `Sql/20260925233040_TranslateReporterAddedValues.sql`. |
 | `20260925235946_ReviewTypeAheadValues` | Added `question_choices.needs_review`, `reviewed_at`, `reviewed_by`, and `created_at`, and flagged every live reporter-added value still missing a language (what "awaiting review" meant before). `admin_pending_counts` gains `type_ahead_values_awaiting_review`, counted on live questions; its Down script drops and recreates the view without it (ADR-0129). |
+| `20260926001923_ReplacePickerOptionsAndNameConditionsByChoice` | Added `question_choices.replaced_by_choice_id` (a replaced picker option names its replacement) and `question_revisions.depends_on_choice_id`, backfilled from `depends_on_option_code` by the parent's choice with that code; the script stops the migration if any code resolves to no choice, and only then is `depends_on_option_code` dropped — nothing it held is lost. Both new columns are restricted foreign keys to `question_choices` (ADR-0128). The backfill is `Sql/20260926001923_ReplacePickerOptionsAndNameConditionsByChoice.sql`; `Down` puts the codes back first. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

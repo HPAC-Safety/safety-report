@@ -40,9 +40,27 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 - **Verify** with `gh issue view <number> --json milestone,labels` before
   linking or picking the issue up. Missing either? Fix it before anything else.
 
-Check its real relationships to open issues first, and wire them with GitHub's
-native relations (`gh api graphql`; there is no `blocked` label), not only
-prose:
+#### Relationships
+
+**Wire relationships when the issue is created, not later.** Every new issue is
+checked against open issues (`gh issue list --state open`) and against every
+other issue filed in the same pass. Set each relationship that genuinely
+exists, with GitHub's native relations (`gh api graphql`; there is no `blocked`
+label), not only prose. A link known at filing and left unset is lost.
+
+- **Filing several issues at once** — splitting a feature, or recording
+  follow-ups found mid-change: plan the graph before creating any.
+  1. Which issue is the parent, and which are carved out of it (sub-issue)?
+  2. Which must land before which (blocked by)?
+  3. Which only relate (relates to)?
+
+  Create the parent first, then the children, then wire every relation in the
+  same pass.
+- **Verify** alongside milestone and labels:
+  `gh api graphql -f query='{repository(owner:"HPAC-Safety",name:"safety-report"){issue(number:<n>){parent{number} subIssues(first:50){nodes{number}} blockedBy(first:20){nodes{number}}}}}'`.
+
+The relations, strongest first. Use the strongest that is true, never a
+stronger one:
 
 - **Blocked by** — only a hard prerequisite: it cannot be implemented or
   verified until another issue lands (a schema, endpoint, DTO, domain method,
@@ -59,8 +77,10 @@ prose:
 - When an issue closes or a design change removes a dependency, remove the
   stale relation (`removeBlockedBy`) in the same pass.
 - **Relates to** — for a soft link between issues that are neither a
-  prerequisite nor a split. It has no API: set it in the issue sidebar,
-  Relationships → "Add relates to".
+  prerequisite nor a split: a follow-up, a sibling in the same area, the issue
+  whose work surfaced this one. Set it rather than leaving the link only in
+  prose. It has no API: set it in the issue sidebar, Relationships → "Add
+  relates to".
 
 ### Worktree and branch
 

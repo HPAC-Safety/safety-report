@@ -314,7 +314,7 @@
       "all": "Tout",
       "needs-action": "À traiter",
       "published": "Publié",
-      "unpublished": "#Unpublished",
+      "unpublished": "Non publié",
       "private": "Privé",
       "summary-failed": "Échec de la synthèse"
     },
@@ -328,10 +328,10 @@
     "status": {
       "submitted": "Soumis",
       "summarizing": "En résumé",
-      "pending": "#Pending",
+      "pending": "En attente",
       "summary_failed": "Échec de la synthèse",
       "published": "Publié",
-      "unpublished": "#Unpublished"
+      "unpublished": "Non publié"
     },
     "badge": {
       "private": "Privé (sans consentement)",
@@ -369,7 +369,7 @@
       "translation": "Traduction : {text}",
       "attachments": "Pièces jointes",
       "attachment": "{kind} — {state}",
-      "unpublishNote": "#Unpublishing note: {note}",
+      "unpublishNote": "Note relative au retrait de la publication : {note}",
       "source": {
         "generated": "Généré par l'IA",
         "human": "Rédigé par un critique",
@@ -404,28 +404,28 @@
       "label": "Examiner les mesures",
       "edit": "Résumé de la modification",
       "write": "Rédiger un résumé",
-      "publish": "#Publish",
+      "publish": "Publier",
       "unpublish": "Retirer de la publication",
       "delete": "Supprimer",
       "cancel": "Annuler"
     },
     "publish": {
-      "hint": "#Publishing approves this summary pair and makes the report public immediately."
+      "hint": "Le service de publication approuve cet ensemble de résumés et rend le signalement public immédiatement."
     },
     "private": {
-      "hint": "#It was never sent to the AI and can only be deleted."
+      "hint": "Ce message n'a jamais été envoyé à l'IA et ne peut être que supprimé."
     },
     "edit": {
       "label": "Modifier la paire de résumés",
       "en": "Résumé en anglais",
       "fr": "Résumé en français",
-      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le signalement revient à l’état « En attente de révision » et est retiré du fil d’actualité s’il a été publié.",
+      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le signalement repasse à l’état « En attente » et est retiré du fil d’actualité s’il a été publié.",
       "save": "Enregistrer le résumé"
     },
     "unpublish": {
-      "label": "#Unpublish the report",
-      "note": "#Note for other reviewers (optional)",
-      "confirm": "#Unpublish report"
+      "label": "Retirer le signalement de la publication",
+      "note": "Remarque à l'intention des autres évaluateurs (facultatif)",
+      "confirm": "Retirer le signalement de la publication"
     },
     "stale": {
       "message": "Un autre réviseur a modifié ce signalement depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",

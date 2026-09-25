@@ -127,11 +127,15 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 														   Locale language,
 														   CancellationToken cancellationToken)
 	{
+		// A consent answer is never an occurrence fact. It is left out by its
+		// question's role, not its key: a question seeded from the Typeform form
+		// keeps the key the import gave it, and a key is an Administrator's to
+		// choose. Privacy is the second guard (ADR-0082), never the first.
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
 							 && answer.Value != null
-							 && answer.QuestionKey != QuestionKey.ConsentPublish
-							 && answer.QuestionKey != QuestionKey.ConsentMedia)
+							 && !database.Questions.IgnoreQueryFilters()
+								 .Any(question => question.Id == answer.QuestionId && question.Role != QuestionRole.None))
 			.Join(
 				database.QuestionRevisions,
 				answer => answer.QuestionRevisionId,

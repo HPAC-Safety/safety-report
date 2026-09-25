@@ -586,7 +586,7 @@ public static class QuestionBankSeed
 			"08f3eedb_e682_431d_be9b_2d83765bf022",
 			QuestionType.YesNo,
 			QuestionRole.ConsentPublish,
-			false,
+			true,
 			true,
 			true,
 			"Publication consent",

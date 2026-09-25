@@ -131,7 +131,11 @@ public class TypeformExportBuilderTests
 		string nativeType)
 	{
 		// Given
-		var question = Question.Create("field", type, "Field", "Champ", At, isPrivate: false);
+		var question = Question.Create(
+			"field", type, "Field", "Champ", At, isPrivate: false,
+			options: type is QuestionType.SingleSelect or QuestionType.MultiSelect
+				? [new QuestionOptionInput("first", "First", "Premier")]
+				: null);
 
 		// When
 		var (english, _) = TypeformExportBuilder.Build([question]);

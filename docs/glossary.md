@@ -8,23 +8,23 @@ type: guide
 
 | Term | Meaning |
 |---|---|
-| Answer | The report's nullable scalar or option selection for one exact answer-producing question revision. A stored null/empty selection records a skip. |
-| Attachment | An optional image, video, or document submitted with a report. Attachments are always private. |
-| Complete revision | One immutable question record/aggregate containing every value needed to render, validate, order, classify, and localize that revision. |
+| Answer | One immutable string, in the reporter's own words and language, for one exact answer-producing question revision; a multi-select stores one row per chosen value. A stored null records a skip (ADR-0072). |
+| Attachment | An optional image, video, or document submitted with a report. Stored privately. With media consent, a published report shows its verified image and video derivatives and offers its validated documents as forced downloads (ADR-0117, ADR-0119). |
+| Complete revision | One immutable question record containing every value needed to render, validate, order, classify, and localize that revision, except its choices, which belong to the question (ADR-0095). |
 | Group | A question type that collects no answer and acts as a section heading; other questions may be grouped under it so the form renders them together. |
 | Grouped under | A question revision's reference to a live `Group` question it renders alongside, distinct from a conditional dependency. |
 | Statement | A question type that collects no answer and displays instructional text with no input control. |
 | Reporter-added choice | A choice a reporter typed that a type-ahead question did not offer, added to that question's own choices at submission in the language typed, and flagged for an Administrator to curate in place. |
-| Consent projection | The nullable `ConsentPublish` value copied from the system consent answer because publication logic must query it directly. It is the only answer projection. |
-| Deleted | Nullable soft-deletion timestamp on every persisted record except `audit_log`; a value means hidden and terminal in normal application flows. |
-| Derivative | A decoded/re-encoded image or remuxed/transcoded video with unsafe metadata removed. Documents do not have anonymized derivatives. |
-| Document | Private unredacted evidence such as PDF, Word, RTF, Markdown, text, or ODT. It is format-checked (no malware scan — ADR-0089) and offered only as an authorized forced download; it is not model input or public content. |
+| Consent projection | The nullable `consent_publish`, `consent_media`, and `consent_documents` values copied from the two system consent answers because publication logic must query them directly. They are the only answer projections (ADR-0117, ADR-0119). |
+| Deleted | Nullable soft-deletion timestamp on every persisted record except `audit_log` and the hard-deleted `pending_import_logic` notes (ADR-0077); a value means hidden and terminal in normal application flows. |
+| Derivative | A decoded and re-encoded image, or a video remuxed into MP4 (never transcoded), with unsafe metadata removed (ADR-0094, ADR-0122). Documents do not have anonymized derivatives. |
+| Document | Private unredacted evidence such as PDF, Word, RTF, Markdown, text, or ODT. It is format-checked (no malware scan — ADR-0089) and offered as a forced download: to reviewers, and to the public on a published report whose media consent names documents (ADR-0119). It is never model input. |
 | Immutable | Never updated in place after creation. A change creates a new complete revision. Soft deletion remains a separately audited lifecycle operation. |
 | Managed encryption | Encryption at rest provided by AWS for RDS, backups, S3, logs, and secrets, combined with TLS in transit; no application ciphertext fields. |
 | Outbox | Database rows committed atomically with state changes so asynchronous work cannot be lost between saving a report and notifying the Worker. |
 | Private context | Labeled private answers sent to the one summary call only to recognize identifying material repeated in eligible content. They may not contribute facts. |
-| Public DTO | The strict allowlist of report ID, both summary texts, and publication timestamp returned by public endpoints. |
-| Quarantine | Private object-storage compartment where the API first streams an accepted attachment before its database transaction/Worker validation completes. |
+| Public DTO | The strict allowlist returned by public endpoints: report ID, both summary texts, publication timestamp, and visible comment count; a report's own page adds each public file's opaque id, kind, and a document's format (ADR-0114, ADR-0117, ADR-0119). |
+| Quarantine | Private object-storage prefix where the API stores an upload it has already validated, the moment it is attached, until a submission claims it or it expires after 15 days (ADR-0096, ADR-0100). |
 | Question key | Stable non-localized logical identifier joining the immutable revisions of the same question. |
 | Question revision | Exact immutable form record referenced by an answer, including bilingual copy and all behavior/display flags. Choices are not part of a revision; they belong to the question (ADR-0095). |
 | Report content | Labeled non-private answered fields eligible to supply safety facts to the model. |

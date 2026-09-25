@@ -45,7 +45,7 @@ services:
   # the server's own tooling. Idempotent, so it runs on every ./dev-up.sh and
   # exits 0.
   s3-init:
-    image: amazon/aws-cli:2.37.3
+    image: amazon/aws-cli:2.37.4
     depends_on:
       s3:
         condition: service_healthy

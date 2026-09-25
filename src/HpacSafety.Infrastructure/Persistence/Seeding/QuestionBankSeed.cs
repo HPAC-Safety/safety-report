@@ -21,7 +21,8 @@ namespace HpacSafety.Infrastructure.Persistence.Seeding;
 ///         only a genuinely reducible single-parent gate is ever auto-mapped.
 ///         None of the three reduce that way, so every seeded question here
 ///         asks unconditionally; an Administrator wires the equivalent
-///         "Depends on" relationship by hand once the bank is live.
+///         "Only ask when another question is answered a certain way" setting
+///         by hand once the bank is live.
 ///     </para>
 ///     <para>
 ///         The attachment question departs from the Typeform wording on purpose.

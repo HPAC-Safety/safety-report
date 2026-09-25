@@ -9,14 +9,15 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     The non-<c>@ui</c> scenarios for a question's own choices: a reporter
 ///     adding one to a type-ahead, an Administrator editing them in place, and a
-///     fork carrying them across — ADR-0063, ADR-0095.
+///     fork carrying them across — ADR-0063, ADR-0095. Its wording edit also
+///     serves REQ-QB-002 and REQ-QB-006, judged by <see cref="QuestionForkSteps" />.
 /// </summary>
 /// <remarks>
 ///     These run against the domain; <c>REQ-QB-095</c> proves the same rule over
 ///     the submission endpoint. Every site name here is synthetic.
 /// </remarks>
 [Binding]
-public sealed class ReporterAddedChoiceSteps
+public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
@@ -83,6 +84,22 @@ public sealed class ReporterAddedChoiceSteps
 		{
 			_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 		}
+	}
+
+	[Given(@"a question has been answered on at least one report")]
+	public void GivenAnAnsweredOrdinaryQuestion()
+	{
+		_question = Question.Create(
+			"occurrence_site", QuestionType.ShortText, "Which site were you flying?", "Où voliez-vous ?", Noon, isActive: true);
+		_answer = new Report(Locale.EnCa, Noon).Answer(_question, "Cooper's", Noon);
+	}
+
+	[Given(@"the consent_publish question has been answered on at least one report")]
+	public void GivenAnAnsweredConsentQuestion()
+	{
+		_question = Question.CreateConsentPublish(
+			"May we publish a summary of this report?", "Pouvons-nous publier un résumé de ce rapport ?", Noon);
+		_answer = new Report(Locale.EnCa, Noon).Answer(_question, "yes", Noon);
 	}
 
 	[Given(@"a question has been answered with one of its choices")]
@@ -162,9 +179,17 @@ public sealed class ReporterAddedChoiceSteps
 	public void WhenAnAdministratorRewordsIt()
 	{
 		var current = _question.CurrentRevision;
+		outcome.OriginalLabelEn = current.LabelEn;
+
 		_live = _question.ApplyEdit(
 			true, current.Type, "Where were you flying?", current.LabelFr, current.IsPrivate, current.IsActive,
 			current.DisplayOrder, Noon.AddDays(1));
+
+		// QuestionForkSteps judges the edit with the sentences REQ-QB-002 and
+		// REQ-QB-006 share with the API-driven REQ-QB-003.
+		outcome.Original = _question;
+		outcome.Live = _live;
+		outcome.Answer = _answer;
 	}
 
 	[When(@"^an Administrator (adds a choice to|rewords one of|reorders|supplies the missing language of one of) its choices$")]

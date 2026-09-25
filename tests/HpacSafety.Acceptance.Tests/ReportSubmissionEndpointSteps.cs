@@ -20,7 +20,8 @@ namespace HpacSafety.Acceptance.Tests;
 ///     <c>features/report-submission/report-submission.feature</c> that describe
 ///     what <c>POST /api/v1/reports</c> does over HTTP — validation order, the
 ///     immutable value/locale split, atomic persistence, and the opaque receipt.
-///     See issue #14 and ADR-0080.
+///     See issue #14 and ADR-0080. Also REQ-WLD-018, that the endpoint validates
+///     whatever the form would have allowed.
 /// </summary>
 /// <remarks>
 ///     Detailed coverage of every rejected shape lives in
@@ -56,6 +57,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _uploadId;
 	private string? _expiredUploadId;
 	private JsonElement? _responseBody;
+	private readonly List<(string Submission, HttpResponseMessage Response)> _refused = [];
 	// A value only this scenario submits. Other scenarios submit reports into the
 	// same database in parallel, so "nothing was created" is asserted as "no
 	// stored answer carries this value", never as an unchanged report count.
@@ -490,6 +492,50 @@ public sealed class ReportSubmissionEndpointSteps
 	public void ThenTheApiRejectsTheSubmission()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	// --- REQ-WLD-018: client validation never replaces server validation ---
+
+	[Given(@"a submission reaches the API")]
+	public async Task GivenASubmissionReachesTheApi()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await EnsureConsentQuestion();
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
+	}
+
+	[When(@"the API independently validates it")]
+	public async Task WhenTheApiIndependentlyValidatesIt()
+	{
+		// Each of these is one the form would never send: it cannot offer a value
+		// the question does not, and it will not submit without consent.
+		_refused.Add(("a choice the question never offered", await Post(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = _selectRevisionId, value = (string?)"Green" },
+			},
+		})));
+
+		_refused.Add(("a report with no consent answer", await Post(new
+		{
+			language = "en-CA",
+			answers = new object[] { new { questionRevisionId = _selectRevisionId, value = (string?)"Blue" } },
+		})));
+	}
+
+	[Then(@"the API's validation is authoritative regardless of what the client allowed or displayed")]
+	public void ThenTheApiValidationIsAuthoritative()
+	{
+		_refused.Count.ShouldBe(2);
+
+		foreach (var (submission, response) in _refused)
+		{
+			response.StatusCode.ShouldBe(HttpStatusCode.BadRequest, $"{submission} is refused");
+		}
 	}
 
 	// --- A submission may answer a known superseded revision ---

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Reqnroll;
 using Shouldly;
 
@@ -371,6 +372,103 @@ public sealed class WebLocalizationAndDesignSteps
 			carried.ShouldContain("\"téléverser\"");
 			carried.ShouldContain("never use \"télécharg…\"");
 		}
+	}
+
+	// --- REQ-WLD-021: assets are self-hosted, never loaded from third-party CDNs ---
+
+	// A reference that makes the browser fetch from another origin: a stylesheet
+	// url() or @import, or a src/href on a script, link, image, or source. A
+	// hyperlink a visitor chooses to follow is not an asset, so <a href> is not.
+	private static readonly Regex ForeignAsset = new(
+		"""(url\(\s*["']?|@import\s+["']?|<(?:script|link|img|source|video|audio|iframe)\b[^>]*\b(?:src|href)\s*=\s*\{?\s*["'])(?:https?:)?//""",
+		RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+	private static readonly Regex FontFace = new(
+		"""@font-face\s*\{[^}]*font-family:\s*"(?<family>[^"]+)"[^}]*src:\s*url\("(?<url>[^"]+)"\)\s*format\("(?<format>[^"]+)"\)""",
+		RegexOptions.Compiled);
+
+	[Given(@"the site renders fonts, styles, or imagery")]
+	public void GivenTheSiteRendersAssets()
+	{
+		// Contextual. The Then steps read the web source and its committed assets.
+	}
+
+	[Then(@"Aleo, Poppins, and other assets are bundled and served from the site's own origin, as committed WOFF2 files")]
+	public void ThenFontsAreCommittedWoff2()
+	{
+		var web = Path.Combine(RepositoryRoot(), "src", "web", "src");
+		var faces = FontFace.Matches(File.ReadAllText(Path.Combine(web, "index.css")));
+
+		faces.Select(face => face.Groups["family"].Value).Distinct().Order().ShouldBe(["Aleo", "Poppins"]);
+
+		foreach (Match face in faces)
+		{
+			face.Groups["format"].Value.ShouldBe("woff2");
+
+			// A relative path Vite bundles and serves from this origin.
+			var url = face.Groups["url"].Value;
+			url.ShouldStartWith("../assets/fonts/");
+			url.ShouldEndWith(".woff2");
+			IsCommitted(Path.GetFullPath(Path.Combine(web, url))).ShouldBeTrue($"{url} is committed");
+		}
+	}
+
+	[Then(@"no asset is loaded from a third-party CDN")]
+	public void ThenNoAssetIsLoadedFromACdn()
+	{
+		var site = Path.Combine(RepositoryRoot(), "src", "web");
+		var sources = Directory.EnumerateFiles(Path.Combine(site, "src"), "*", SearchOption.AllDirectories)
+			.Where(path => path.EndsWith(".css", StringComparison.Ordinal)
+						   || path.EndsWith(".ts", StringComparison.Ordinal)
+						   || path.EndsWith(".tsx", StringComparison.Ordinal))
+			.Append(Path.Combine(site, "index.html"))
+			.ToList();
+
+		sources.Count.ShouldBeGreaterThan(1);
+
+		foreach (var source in sources)
+		{
+			ForeignAsset.IsMatch(File.ReadAllText(source)).ShouldBeFalse($"{source} loads an asset from another origin");
+		}
+	}
+
+	[Then(@"the logo is the approved HPAC mark, as light\/dark SVG variants")]
+	public void ThenTheLogoIsTheApprovedMark()
+	{
+		var assets = Path.Combine(RepositoryRoot(), "src", "web", "assets");
+		var header = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "web", "src", "components", "Header.tsx"));
+
+		foreach (var variant in new[] { "hpac-light.svg", "hpac-dark.svg" })
+		{
+			var path = Path.Combine(assets, variant);
+			IsCommitted(path).ShouldBeTrue($"{variant} is committed");
+			File.ReadAllText(path).ShouldStartWith("<svg");
+			File.ReadAllText(path).ShouldContain("""aria-label="HPAC ACVL mark""");
+			header.ShouldContain($"""from "../../assets/{variant}""");
+		}
+	}
+
+	private static bool IsCommitted(string path)
+	{
+		using var git = new Process
+		{
+			StartInfo = new ProcessStartInfo("git")
+			{
+				WorkingDirectory = RepositoryRoot(),
+				RedirectStandardOutput = true,
+				RedirectStandardError = true,
+			},
+		};
+		git.StartInfo.ArgumentList.Add("ls-files");
+		git.StartInfo.ArgumentList.Add("--error-unmatch");
+		git.StartInfo.ArgumentList.Add(path);
+
+		git.Start();
+		git.StandardOutput.ReadToEnd();
+		git.StandardError.ReadToEnd();
+		git.WaitForExit();
+
+		return git.ExitCode == 0;
 	}
 
 	private static string Sha256(string value)

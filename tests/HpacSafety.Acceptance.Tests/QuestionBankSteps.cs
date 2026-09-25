@@ -658,6 +658,58 @@ public sealed class QuestionBankSteps
 				Noon.AddHours(1)));
 	}
 
+	// ------------------------------------------------------ no way back --
+
+	[Given(@"a question has been stamped as deleted")]
+	public void GivenARetiredQuestion()
+	{
+		_question = Ordinary("occurrence_notes", QuestionType.LongText);
+		_question.Delete(false, Noon.AddHours(1));
+	}
+
+	[When(@"anything attempts to restore, revive, or revise it")]
+	public void WhenAnythingTriesToBringItBack()
+	{
+		var question = _question!;
+		var current = question.CurrentRevision;
+		var at = Noon.AddHours(2);
+
+		Action[] attempts =
+		[
+			() => question.Activate(at),
+			() => question.Revise(current.Type, "Reworded", "Reformulée", current.IsPrivate, true, current.DisplayOrder, at),
+			() => question.ApplyEdit(false, current.Type, "Reworded", "Reformulée", current.IsPrivate, true, current.DisplayOrder, at),
+			() => question.ApplyEdit(true, current.Type, "Reworded", "Reformulée", current.IsPrivate, true, current.DisplayOrder, at),
+			() => question.Reorder(4, at),
+			() => question.DependOn(null, null, at),
+			() => question.GroupUnder(null, at),
+			() => question.AssignRole(QuestionRole.None),
+		];
+
+		var rejections = attempts.Select(Record).ToList();
+
+		// One attempt that got through is enough to make the scenario false.
+		_rejection = rejections.TrueForAll(rejection => rejection is not null) ? rejections[0] : null;
+	}
+
+	[Then(@"an Administrator who wants it back authors it again as a new question")]
+	public void ThenItIsAuthoredAgain()
+	{
+		// There is no restore, undelete, or revive to call (ADR-0071).
+		typeof(Question).GetMethods()
+			.Select(method => method.Name)
+			.ShouldNotContain(name => name.Contains("Restore", StringComparison.Ordinal)
+									  || name.Contains("Undelete", StringComparison.Ordinal)
+									  || name.Contains("Revive", StringComparison.Ordinal));
+
+		var again = Ordinary(_question!.Key, QuestionType.LongText);
+
+		again.Id.ShouldNotBe(_question.Id);
+		again.IsActive.ShouldBeTrue();
+		_question.Deleted.ShouldNotBeNull();
+		_question.Revisions.Count.ShouldBe(1);
+	}
+
 	// ------------------------------------------------------------- helpers --
 
 	private QuestionType _pendingType = QuestionType.ShortText;

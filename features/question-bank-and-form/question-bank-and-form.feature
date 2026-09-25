@@ -11,17 +11,15 @@ Background:
   And at most one live question exists for a stable key
 
 @REQ-QB-001
-@ignore
 Scenario: Editing an unanswered question creates a new revision instead of mutating one
   Given an active question revision exists for a stable key
   And no answer references that question
-  When an Administrator changes its wording, help text, translations, type, order, privacy, active state, required state, or system state
+  When an Administrator changes its wording, help text, translations, type, order, privacy, active state, or required state
   Then a new complete revision is created with the next revision number
   And the previous revision is left unchanged
   And the question keeps its identifier
 
 @REQ-QB-002
-@ignore
 Scenario: Editing an answered question retires it and creates a new one
   Given a question has been answered on at least one report
   When an Administrator changes its wording
@@ -32,7 +30,6 @@ Scenario: Editing an answered question retires it and creates a new one
   And the answers already given still refer to the retired question and its original wording
 
 @REQ-QB-003
-@ignore
 Scenario: An answer on a deleted report still forces a fork
   Given the only answer to a question is on a report that has been deleted
   When an Administrator changes that question's wording
@@ -40,7 +37,6 @@ Scenario: An answer on a deleted report still forces a fork
   And a new question is created with a new identifier
 
 @REQ-QB-004
-@ignore
 Scenario: A retired question can never be brought back
   Given a question has been stamped as deleted
   When anything attempts to restore, revive, or revise it
@@ -48,7 +44,6 @@ Scenario: A retired question can never be brought back
   And an Administrator who wants it back authors it again as a new question
 
 @REQ-QB-005
-@ignore
 Scenario: Only one question per key is live at a time
   Given a stable key has a retired question and a live one
   When anything resolves that key
@@ -56,7 +51,6 @@ Scenario: Only one question per key is live at a time
   And a second live question for the same key is rejected
 
 @REQ-QB-006
-@ignore
 Scenario: Publication consent revises in place even when answered
   Given the consent_publish question has been answered on at least one report
   When an Administrator changes its wording
@@ -65,7 +59,6 @@ Scenario: Publication consent revises in place even when answered
   And it is never stamped as deleted
 
 @REQ-QB-008
-@ignore
 Scenario: Editing a question copies the latest revision into a new one
   Given an Administrator requests to edit a question with an existing revision
   When the API prepares the edit DTO
@@ -109,7 +102,6 @@ Scenario: The current form's response includes a question's conditional dependen
   Then the conditional question's entry names the question it depends on
 
 @REQ-QB-014
-@ignore
 Scenario: consent_publish can never be optional
   Given the form is assembled for a reporter
   When the reporter submits without an answer to consent_publish
@@ -150,14 +142,12 @@ Scenario: Whether a question needs translation is a revision field
   Then the question is retired and replaced, so each answer keeps the setting it was given under
 
 @REQ-QB-016
-@ignore
 Scenario: consent_publish must resolve to an explicit yes or no
   Given the consent_publish revision has no preselected value
   When the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no
   Then the API rejects the submission
 
 @REQ-QB-018
-@ignore
 Scenario: An answer to a picker stores the words the reporter saw
   Given a reporter is shown a picker, type-ahead, or multi-select question
   When the reporter chooses a value and submits
@@ -182,7 +172,6 @@ Examples:
   | short_text | a line of prose                | that line, as typed |
 
 @REQ-QB-025
-@ignore
 Scenario: Only consent is projected onto the report aggregate
   Given a submitted report has answers to several ordinary questions
   When those answers are persisted

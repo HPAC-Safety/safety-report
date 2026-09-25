@@ -248,7 +248,6 @@ Examples:
   | Administrator | accepts |
 
 @REQ-MOD-029
-@ignore
 Scenario: Sensitive admin actions are audited without report content
   Given a sensitive read or material mutation occurs in the admin application
   When the action completes
@@ -442,12 +441,17 @@ Scenario: A failed audit write blocks the action it would have recorded
   And the caller sees the action as failed, not succeeded
 
 @REQ-MOD-048
-@ignore
-Scenario: Sign-out is not an audited event
+@ui
+Scenario: Signing out sends nothing to the API
   Given a signed-in member activates the logout action
   When the client discards its token
   Then no request reaches the API for that logout
-  And no audit entry is written for it
+
+@REQ-MOD-091
+Scenario: Sign-out is not an audited event
+  Given the API's mapped routes
+  Then none of them signs a member out
+  And no audit action records a sign-out
 
 @REQ-MOD-052
 @ui

@@ -36,7 +36,6 @@ Examples:
   | application/vnd.oasis.opendocument.text                                 | document |
 
 @REQ-MED-002
-@ignore
 Scenario: Declared content type must agree with detected content type
   Given an attachment's declared content type differs from its detected, allowlisted type
   When the API validates the attachment

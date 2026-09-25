@@ -142,6 +142,44 @@ public sealed class AttachmentUploadSteps
 		(await QuarantineHoldsObjectOfSize(_bytes.Length)).ShouldBeFalse();
 	}
 
+	// --- REQ-MED-002: declared content type must agree with detected content type ---
+
+	[Given(@"an attachment's declared content type differs from its detected, allowlisted type")]
+	public async Task GivenADeclaredTypeThatDisagrees()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+
+		// A PDF declared as a PNG, under a name whose extension agrees with the
+		// declaration — so only the bytes say what it really is.
+		_bytes = UniquePdf();
+		_declaredType = "image/png";
+	}
+
+	[When(@"the API validates the attachment")]
+	public async Task WhenTheApiValidatesTheAttachment()
+	{
+		_response = await UploadNamed(_bytes, _declaredType, "photo.png");
+		await _response.Content.LoadIntoBufferAsync();
+	}
+
+	[Then(@"the API rejects the attachment")]
+	public async Task ThenTheApiRejectsTheAttachment()
+	{
+		await ThenTheApiRejectsItWithReason("declared_type_mismatch");
+		await ThenNothingIsWrittenToObjectStorage();
+	}
+
+	[Then(@"the file extension and client filename are never trusted as the basis for acceptance")]
+	public async Task ThenTheNameIsNeverTrusted()
+	{
+		// The same kind of file, declared truthfully under the same misleading
+		// name, is accepted as what its bytes are: the name decided neither.
+		using var truthful = await UploadNamed(UniquePdf(), "application/pdf", "photo.png");
+
+		truthful.StatusCode.ShouldBe(HttpStatusCode.Created, await truthful.Content.ReadAsStringAsync());
+		(await truthful.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("kind").GetString().ShouldBe("document");
+	}
+
 	// --- An accepted upload waits in a private quarantine compartment ---
 
 	[Given(@"a reporter's upload passes the size bound and validation")]
@@ -374,6 +412,17 @@ public sealed class AttachmentUploadSteps
 		using var response = await _reporter!.PostAsync(Uploads, body);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
+	}
+
+	/// <summary>Posts an upload carrying a client filename, which the API has no reason to read.</summary>
+	private async Task<HttpResponseMessage> UploadNamed(byte[] bytes,
+														string declaredType,
+														string fileName)
+	{
+		using var body = new ByteArrayContent(bytes);
+		body.Headers.ContentType = new MediaTypeHeaderValue(declaredType);
+		body.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = fileName };
+		return await _reporter!.PostAsync(Uploads, body);
 	}
 
 	private async Task<ReportFile> ClaimedFile()

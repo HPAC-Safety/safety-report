@@ -830,7 +830,7 @@ An answer to a picker stores the words the reporter saw — *Reqnroll, Covered*
 
 ### REQ-QB-019
 
-Every answer is stored in one invariant written form — *Reqnroll, Planned*
+Every answer is stored in one invariant written form — *Reqnroll, Covered*
 
 ### REQ-QB-025
 
@@ -1139,6 +1139,10 @@ A media consent answer covers documents only under the wording the form showed �
 ### REQ-QB-117
 
 Media consent names documents and says they are published as uploaded — *Reqnroll, Covered*
+
+### REQ-QB-118
+
+An answer not in its invariant written form is rejected — *Reqnroll, Covered*
 
 ## Claims: report-submission
 

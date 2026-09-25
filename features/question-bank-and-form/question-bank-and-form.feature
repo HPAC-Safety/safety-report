@@ -156,20 +156,38 @@ Scenario: An answer to a picker stores the words the reporter saw
   And relabelling or removing that option afterwards leaves the stored answer unchanged
 
 @REQ-QB-019
-@ignore
 Scenario Outline: Every answer is stored in one invariant written form
-  Given a reporter answers a <type> question with <entered>
+  Given a reporter submits <submitted> as the answer to a <type> question
   When the answer is persisted
   Then the stored value is <stored>
 
 Examples:
-  | type       | entered                        | stored              |
-  | yes_no     | yes                            | yes                 |
-  | yes_no     | oui, in French                 | yes                 |
-  | yes_no     | no                             | no                  |
-  | date       | the 21st of September 2026     | 2026-09-21          |
-  | time       | half past two in the afternoon | 14:30               |
-  | short_text | a line of prose                | that line, as typed |
+  | type       | submitted       | stored                                   |
+  | yes_no     | yes             | yes                                      |
+  | yes_no     | no              | no                                       |
+  | checkbox   | yes             | yes                                      |
+  | date       | 2026-09-21      | 2026-09-21                               |
+  | time       | 14:30           | 14:30                                    |
+  | date       | an empty string | nothing, because the answer was skipped  |
+  | short_text | a line of prose | that line, as typed                      |
+
+@REQ-QB-118
+Scenario Outline: An answer not in its invariant written form is rejected
+  Given a reporter submits <submitted> as the answer to a <type> question
+  When the submission is made
+  Then the submission is rejected
+  And no stored answer carries that value
+
+Examples:
+  | type     | submitted                  |
+  | date     | the 21st of September 2026 |
+  | date     | 21/09/2026                 |
+  | date     | 2026-9-21                  |
+  | date     | 2026-02-30                 |
+  | time     | 2:30 PM                    |
+  | time     | 25:00                      |
+  | time     | 14:30:00                   |
+  | checkbox | checked                    |
 
 @REQ-QB-025
 Scenario: Only consent is projected onto the report aggregate

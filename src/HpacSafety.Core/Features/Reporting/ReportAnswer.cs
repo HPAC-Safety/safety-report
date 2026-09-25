@@ -1,3 +1,4 @@
+using System.Globalization;
 using HpacSafety.Core.Features.QuestionBank;
 
 namespace HpacSafety.Core.Features.Reporting;
@@ -186,6 +187,8 @@ public class ReportAnswer
 			throw new DomainRuleViolationException("That revision does not belong to this question.");
 		}
 
+		value = InStoredForm(question, revision, value);
+
 		if (revision.IsRequired
 			&& string.IsNullOrWhiteSpace(value))
 		{
@@ -214,6 +217,47 @@ public class ReportAnswer
 			TranslatedValue = fromChoice,
 			TranslationSource = fromChoice is null ? null : Reporting.TranslationSource.Choice,
 		};
+	}
+
+	/// <summary>
+	///     A date, time, or checkbox answer exactly as ADR-0072 stores it — a
+	///     <c>YYYY-MM-DD</c> calendar day, an <c>HH:mm</c> wall-clock time, or
+	///     <c>yes</c>/<c>no</c> — or a refusal. Nothing is converted: the form's own
+	///     inputs already send these, so any other shape came from somewhere else
+	///     (REQ-QB-118). A blank one is a skip. Every other type passes through.
+	/// </summary>
+	/// <remarks>
+	///     The refusal names the question, never the value: it reaches the reporter
+	///     in a problem response, and a value is report content.
+	/// </remarks>
+	private static string? InStoredForm(Question question,
+										QuestionRevision revision,
+										string? value)
+	{
+		if (revision.Type is not (QuestionType.Date or QuestionType.Time or QuestionType.Checkbox))
+		{
+			return value;
+		}
+
+		if (string.IsNullOrWhiteSpace(value))
+		{
+			return null;
+		}
+
+		var (stored, shape) = revision.Type switch
+		{
+			QuestionType.Date => (
+				DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				"a date written YYYY-MM-DD"),
+			QuestionType.Time => (
+				TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				"a time written HH:mm"),
+			_ => (QuestionRevision.YesNoCodes.Contains(value, StringComparer.Ordinal), "yes or no"),
+		};
+
+		return stored
+			? value
+			: throw new DomainRuleViolationException($"'{question.Key}' must be answered with {shape}.");
 	}
 
 	/// <summary>

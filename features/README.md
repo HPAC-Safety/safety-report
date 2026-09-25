@@ -46,12 +46,14 @@ through issue #82. The audited implementation baseline is main at
 1. This specification defines the target design.
 2. Source and tests show what is implemented today; they do not silently
    override this target.
-3. Issues and ADRs preserve history and rationale. A contradictory issue, ADR,
+3. Issues and ADRs preserve history and rationale. A contradictory issue,
    README, prompt, skill, test, or implementation is superseded until it is
-   aligned with this specification. This resolves *inherited* drift; it is not
-   license to introduce new drift — a feature file must never contradict an
-   accepted ADR, and a change to one that affects the other updates both in
-   the same pull request
+   aligned with this specification. An accepted ADR is different: a feature
+   file and an accepted ADR never contradict each other, and a contradiction
+   is fixed by correcting whichever one is wrong — the feature file, or the
+   ADR through a new ADR that supersedes it. "This specification wins" settles
+   only drift inherited from ADRs older than it, never new drift. A change to
+   one that affects the other updates both in the same pull request
    ([ADR-0047](../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
 4. [Implementation status](../docs/implementation-status.md) records gaps explicitly.
    A documented target feature must not be described as already working merely

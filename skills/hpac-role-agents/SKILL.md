@@ -1,6 +1,6 @@
 ---
 name: hpac-role-agents
-description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries for the five role agents — spec-author, test-writer, implementer, spec-reviewer, ai-author — which are generic. Use whenever acting as one of those roles in this repository.
+description: HPAC Safety's paths, tags, commands, ADRs, and privacy boundaries for the six role agents — spec-author, test-writer, implementer, spec-reviewer, ai-author, database-administrator — which are generic. Use whenever acting as one of those roles in this repository.
 ---
 
 # HPAC Safety role agents
@@ -71,6 +71,25 @@ roles and why each trusts only the artifact before it:
   summary.
 - The exemption: `No .feature scenario needed:`
   ([ADR-0090](../../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+
+## database-administrator
+
+- Conventions and commands:
+  [`manage-hpac-migrations`](../manage-hpac-migrations/SKILL.md), then
+  [`persist-hpac-data`](../persist-hpac-data/SKILL.md) for records, queries,
+  and soft deletion.
+- They override the generic database skills: tiny `char(11)` keys, never
+  `uuid` or identity
+  ([ADR-0034](../../docs/decisions/ADR-0034-tiny-ids.md)); no `DateTime`; no
+  physical deletion (`AGENTS.md` invariant 8); enums as `varchar` codes with a
+  `CHECK`.
+- The schema as built:
+  [`Persistence/Migrations/README.md`](../../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md);
+  the target: [`docs/data-and-persistence.md`](../../docs/data-and-persistence.md).
+- A disposable database: the `postgres` service in `docker-compose.yml`, or
+  the PostgreSQL container the API and Infrastructure test suites start.
+- Tables hold personal and medical information. Audit queries return counts
+  and shapes, never row content.
 
 ## ai-author
 

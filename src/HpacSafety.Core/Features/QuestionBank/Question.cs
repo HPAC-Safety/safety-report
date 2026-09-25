@@ -276,6 +276,7 @@ public class Question
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
 				groupedUnderQuestionId, isTranslatable, at));
 		question.ReplaceChoices(options ?? [], at);
+		question.EnsureChoicesFitType();
 		return question;
 	}
 
@@ -319,6 +320,15 @@ public class Question
 		{
 			throw new DomainRuleViolationException(
 				$"'{Key}' is a system question and gates publication. The form must keep asking it.");
+		}
+
+		// A consent answer is not an occurrence fact. The Worker already leaves it
+		// out of summary input by its key; keeping it private is the second guard,
+		// so no path that classifies by privacy alone can ever treat it as one.
+		if (IsSystem && !isPrivate)
+		{
+			throw new DomainRuleViolationException(
+				$"'{Key}' is a system question. Its answer is always private.");
 		}
 
 		return ReviseInternal(
@@ -566,6 +576,8 @@ public class Question
 				existing.MoveTo(i);
 			}
 		}
+
+		EnsureChoicesFitType();
 	}
 
 	/// <summary>
@@ -629,14 +641,22 @@ public class Question
 	}
 
 	/// <summary>
-	///     Refuses a question whose type takes no choices while it still offers
-	///     some — the state a retype would otherwise leave behind.
+	///     Refuses a question whose choices do not fit its type: one that takes no
+	///     choices while it still offers some — the state a retype would otherwise
+	///     leave behind — and a single- or multi-select that offers none, which no
+	///     reporter could answer. A type-ahead may offer none: reporters add to it
+	///     (ADR-0063).
 	/// </summary>
 	private void EnsureChoicesFitType()
 	{
 		if (Choices.Count > 0)
 		{
 			EnsureTakesChoices(Type);
+		}
+		else if (Type is QuestionType.SingleSelect or QuestionType.MultiSelect)
+		{
+			throw new DomainRuleViolationException(
+				$"A {EnumCode.Of(Type)} question needs at least one choice. A reporter could not answer it otherwise.");
 		}
 	}
 

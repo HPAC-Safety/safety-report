@@ -204,7 +204,7 @@ describe('main', () => {
 })
 
 // The template is where an author writes the pull-request body, so it names the
-// categories the check accepts (issue #473, lesson 0021).
+// categories the check accepts (issue #473, lesson 0022).
 describe('pull request template', () => {
 	const template = readFileSync(new URL('../../.github/pull_request_template.md', import.meta.url), 'utf8')
 

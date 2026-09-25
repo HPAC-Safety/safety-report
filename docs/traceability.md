@@ -842,7 +842,7 @@ Privacy is a property of the revision, not the answer — *Reqnroll, Planned*
 
 ### REQ-QB-027
 
-Creating a revision preserves the question bank invariants — *Reqnroll, Planned*
+Creating a revision preserves the question bank invariants — *Reqnroll, Covered*
 
 ### REQ-QB-030
 

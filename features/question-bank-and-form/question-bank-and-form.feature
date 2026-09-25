@@ -206,14 +206,13 @@ Scenario: Privacy is a property of the revision, not the answer
   And it never becomes public content
 
 @REQ-QB-027
-@ignore
 Scenario: Creating a revision preserves the question bank invariants
   Given an Administrator saves a new revision
   Then the stable key is a non-empty, unique, non-localized identifier
   And both English and French labels are present for an answer-producing question
-  And an option-requiring type has at least one live choice and every other type has none
-  And only consent_publish and consent_media may be marked system
-  And the consent_publish revision is active, yes/no, private, and excluded from summary input despite being stored as an answer
+  And a single-select or multi-select question has at least one live choice, a type-ahead may start with none, and every other type has none
+  And only the publication-consent and media-consent questions may be marked system
+  And both consent questions stay active, yes/no, and private, and no edit can make either one otherwise
 
 @REQ-QB-030
 Scenario: A revision can be soft-deleted only when no answer references it

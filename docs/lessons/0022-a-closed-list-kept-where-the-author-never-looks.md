@@ -7,7 +7,7 @@ issue: 473
 status: accepted
 ---
 
-# Lesson 0021 — A closed list kept where the author never looks
+# Lesson 0022 — A closed list kept where the author never looks
 
 ## Symptom
 

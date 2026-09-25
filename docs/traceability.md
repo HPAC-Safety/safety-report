@@ -438,10 +438,6 @@ A member's signed-in session persists across a reload and clears on logout — *
 
 A signed-in Administrator's Admin menu offers every option — *playwright-bdd, Covered*
 
-### REQ-MOD-008
-
-A signed-in SafetyOfficer's Admin menu offers manage-reports only — *playwright-bdd, Covered*
-
 ### REQ-MOD-009
 
 A signed-in User sees no Admin menu — *playwright-bdd, Covered*
@@ -746,10 +742,6 @@ A User cannot read the pending counts — *Reqnroll, Covered*
 
 An Administrator's Admin menu shows how much work is waiting — *playwright-bdd, Covered*
 
-### REQ-MOD-088
-
-A SafetyOfficer's Admin menu counts only the reports needing action — *playwright-bdd, Covered*
-
 ### REQ-MOD-089
 
 With nothing waiting, the Admin menu shows no count — *playwright-bdd, Covered*
@@ -761,6 +753,22 @@ A report without publication consent never needs action — *Reqnroll, Covered*
 ### REQ-MOD-091
 
 Sign-out is not an audited event — *Reqnroll, Covered*
+
+### REQ-MOD-092
+
+A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review — *playwright-bdd, Planned*
+
+### REQ-MOD-093
+
+A SafetyOfficer's Admin menu counts reports and type-ahead values waiting — *playwright-bdd, Planned*
+
+### REQ-MOD-094
+
+A Safety Officer or an Administrator reviews type-ahead values — *Reqnroll, Planned*
+
+### REQ-MOD-095
+
+A Safety Officer reviews flagged type-ahead values on one page — *playwright-bdd, Planned*
 
 ## Claims: question-bank-and-form
 
@@ -824,10 +832,6 @@ An Administrator chooses whether an ordinary question must be answered — *Reqn
 
 consent_publish must resolve to an explicit yes or no — *Reqnroll, Covered*
 
-### REQ-QB-018
-
-An answer to a picker stores the words the reporter saw — *Reqnroll, Covered*
-
 ### REQ-QB-019
 
 Every answer is stored in its written form — *Reqnroll, Covered*
@@ -852,17 +856,9 @@ A revision can be soft-deleted only when no answer references it — *Reqnroll, 
 
 A referenced revision can never be deleted — *Reqnroll, Covered*
 
-### REQ-QB-035
-
-A reporter adds a choice the type-ahead did not offer — *Reqnroll, Covered*
-
 ### REQ-QB-036
 
 Two reporters naming the same new site produce one choice — *Reqnroll, Covered*
-
-### REQ-QB-037
-
-A choice an administrator removed is not revived by a reporter — *Reqnroll, Covered*
 
 ### REQ-QB-044
 
@@ -1044,14 +1040,6 @@ A choice an Administrator writes is recorded under a code derived from its Engli
 
 Editing a question opens the editor in that question's place — *playwright-bdd, Covered*
 
-### REQ-QB-094
-
-A reporter answering in French adds a choice recorded in French only — *Reqnroll, Covered*
-
-### REQ-QB-095
-
-Submitting a report records a type-ahead value the question did not offer — *Reqnroll, Covered*
-
 ### REQ-QB-096
 
 A new question's key is derived from its English wording and never reused — *Reqnroll, Covered*
@@ -1064,21 +1052,9 @@ Only a type-ahead grows from reporters' answers — *Reqnroll, Covered*
 
 Editing an answered question's wording carries every choice to the replacement — *Reqnroll, Covered*
 
-### REQ-QB-099
-
-Editing an answered question's choices keeps the question and its version — *Reqnroll, Covered*
-
-### REQ-QB-100
-
-A removed choice is hidden from the form and kept in history — *Reqnroll, Covered*
-
 ### REQ-QB-101
 
 A choice a live question depends on cannot be removed — *Reqnroll, Covered*
-
-### REQ-QB-102
-
-A choice in only one language is offered in the language it has — *Reqnroll, Covered*
 
 ### REQ-QB-103
 
@@ -1156,6 +1132,66 @@ A yes in either language enables a conditional question — *Reqnroll, Covered*
 
 A consent answer means the same in either language — *Reqnroll, Covered*
 
+### REQ-QB-122
+
+An answer names the choice it was given under — *Reqnroll, Planned*
+
+### REQ-QB-123
+
+Fixing a picker option in place corrects every answer that named it — *Reqnroll, Planned*
+
+### REQ-QB-124
+
+Replacing a picker option keeps the old option under every earlier answer — *Reqnroll, Planned*
+
+### REQ-QB-125
+
+A condition follows its choice's replacement — *Reqnroll, Planned*
+
+### REQ-QB-126
+
+A removed choice is no longer offered but still names every answer given under it — *Reqnroll, Planned*
+
+### REQ-QB-127
+
+A fork's choices are new rows, and old answers keep naming the retired question's — *Reqnroll, Planned*
+
+### REQ-QB-128
+
+A reporter's new type-ahead value is flagged for review and offered at once — *Reqnroll, Planned*
+
+### REQ-QB-129
+
+A type-ahead value is corrected in place for every answer that names it — *Reqnroll, Planned*
+
+### REQ-QB-130
+
+A reporter typing a removed type-ahead value names it without reviving it — *Reqnroll, Planned*
+
+### REQ-QB-131
+
+Merging one type-ahead value into another leaves every answer untouched — *Reqnroll, Planned*
+
+### REQ-QB-132
+
+Merges resolve in a chain and never form a cycle — *Reqnroll, Planned*
+
+### REQ-QB-133
+
+Only a type-ahead value can be merged or edited by a Safety Officer — *Reqnroll, Planned*
+
+### REQ-QB-134
+
+The Worker supplies a reporter-added value's other language — *Reqnroll, Planned*
+
+### REQ-QB-135
+
+Reviewing a type-ahead value clears its flag — *Reqnroll, Planned*
+
+### REQ-QB-136
+
+Existing answers are linked to their choices without being rewritten — *Reqnroll, Planned*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -1170,21 +1206,9 @@ A successful submission clears local browser state — *playwright-bdd, Covered*
 
 Expired local state is not restored — *playwright-bdd, Covered*
 
-### REQ-SUB-004
-
-One answer entry per shown answer-producing revision — *Reqnroll, Covered*
-
 ### REQ-SUB-005
 
 A skipped answer is represented by an empty value, not omission — *Reqnroll, Covered*
-
-### REQ-SUB-006
-
-A submitted select value must be one the revision offered — *Reqnroll, Covered*
-
-### REQ-SUB-007
-
-The submission path never calls a translation provider — *Reqnroll, Covered*
 
 ### REQ-SUB-008
 
@@ -1414,14 +1438,6 @@ An expired saved report's uploads are erased — *playwright-bdd, Covered*
 
 The continue dialog shows a saved date or time in the reporter's language — *playwright-bdd, Covered*
 
-### REQ-SUB-069
-
-A picker answer takes its choice's other-language label at submission — *Reqnroll, Covered*
-
-### REQ-SUB-070
-
-A type-ahead answer uses its choice when it names one, and the Worker otherwise — *Reqnroll, Covered*
-
 ### REQ-SUB-071
 
 Only free text marked for translation is machine-translated — *Reqnroll, Covered*
@@ -1449,6 +1465,26 @@ A file refused at submission is marked on its row and nothing else is lost — *
 ### REQ-SUB-077
 
 A yes or no is sent in the language the report is submitted in — *playwright-bdd, Covered*
+
+### REQ-SUB-078
+
+One answer entry per shown answer-producing revision — *Reqnroll, Planned*
+
+### REQ-SUB-079
+
+A submitted choice must be one the question offers — *Reqnroll, Planned*
+
+### REQ-SUB-080
+
+The submission path never calls a translation provider — *Reqnroll, Planned*
+
+### REQ-SUB-081
+
+A choice answer reads both languages from its choice — *Reqnroll, Planned*
+
+### REQ-SUB-082
+
+A type-ahead answer names a value, and the Worker translates only a new one — *Reqnroll, Planned*
 
 ## Claims: typeform-question-import-export
 
@@ -1671,7 +1707,7 @@ data-and-persistence.md — verified by none — managed encryption is an infras
 
 ### CON-DP-004
 
-data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-SUB-009`
+data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-SUB-009`, `REQ-QB-122`, `REQ-QB-124`, `REQ-QB-131`
 
 ### CON-DP-005
 
@@ -1835,7 +1871,7 @@ testing-and-quality.md — verified by none — a delivery rule, enforced by the
 
 ### CON-TQ-004
 
-testing-and-quality.md — verified by `REQ-QB-001`, `REQ-QB-009`, `REQ-QB-016`, `REQ-SUB-004`, `REQ-SUB-005`, `REQ-SUB-009`, `REQ-SUB-013`, `REQ-SUB-017`, `REQ-SUB-018`
+testing-and-quality.md — verified by `REQ-QB-001`, `REQ-QB-009`, `REQ-QB-016`, `REQ-SUB-078`, `REQ-SUB-005`, `REQ-SUB-009`, `REQ-SUB-013`, `REQ-SUB-017`, `REQ-SUB-018`
 
 ### CON-TQ-005
 

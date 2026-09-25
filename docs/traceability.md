@@ -242,7 +242,7 @@ Only allowlisted content types are accepted — *Reqnroll, Covered*
 
 ### REQ-MED-002
 
-Declared content type must agree with detected content type — *Reqnroll, Planned*
+Declared content type must agree with detected content type — *Reqnroll, Covered*
 
 ### REQ-MED-003
 
@@ -524,7 +524,7 @@ Only an Administrator may author a question revision — *Reqnroll, Covered*
 
 ### REQ-MOD-029
 
-Sensitive admin actions are audited without report content — *Reqnroll, Planned*
+Sensitive admin actions are audited without report content — *Reqnroll, Covered*
 
 ### REQ-MOD-030
 
@@ -592,7 +592,7 @@ A failed audit write blocks the action it would have recorded — *Reqnroll, Pla
 
 ### REQ-MOD-048
 
-Sign-out is not an audited event — *Reqnroll, Planned*
+Signing out sends nothing to the API — *playwright-bdd, Covered*
 
 ### REQ-MOD-049
 
@@ -758,35 +758,39 @@ With nothing waiting, the Admin menu shows no count — *playwright-bdd, Covered
 
 A report without publication consent never needs action — *Reqnroll, Covered*
 
+### REQ-MOD-091
+
+Sign-out is not an audited event — *Reqnroll, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
 
-Editing an unanswered question creates a new revision instead of mutating one — *Reqnroll, Planned*
+Editing an unanswered question creates a new revision instead of mutating one — *Reqnroll, Covered*
 
 ### REQ-QB-002
 
-Editing an answered question retires it and creates a new one — *Reqnroll, Planned*
+Editing an answered question retires it and creates a new one — *Reqnroll, Covered*
 
 ### REQ-QB-003
 
-An answer on a deleted report still forces a fork — *Reqnroll, Planned*
+An answer on a deleted report still forces a fork — *Reqnroll, Covered*
 
 ### REQ-QB-004
 
-A retired question can never be brought back — *Reqnroll, Planned*
+A retired question can never be brought back — *Reqnroll, Covered*
 
 ### REQ-QB-005
 
-Only one question per key is live at a time — *Reqnroll, Planned*
+Only one question per key is live at a time — *Reqnroll, Covered*
 
 ### REQ-QB-006
 
-Publication consent revises in place even when answered — *Reqnroll, Planned*
+Publication consent revises in place even when answered — *Reqnroll, Covered*
 
 ### REQ-QB-008
 
-Editing a question copies the latest revision into a new one — *Reqnroll, Planned*
+Editing a question copies the latest revision into a new one — *Reqnroll, Covered*
 
 ### REQ-QB-009
 
@@ -810,7 +814,7 @@ The current form's response includes a question's conditional dependency — *Re
 
 ### REQ-QB-014
 
-consent_publish can never be optional — *Reqnroll, Planned*
+consent_publish can never be optional — *Reqnroll, Covered*
 
 ### REQ-QB-015
 
@@ -818,11 +822,11 @@ An Administrator chooses whether an ordinary question must be answered — *Reqn
 
 ### REQ-QB-016
 
-consent_publish must resolve to an explicit yes or no — *Reqnroll, Planned*
+consent_publish must resolve to an explicit yes or no — *Reqnroll, Covered*
 
 ### REQ-QB-018
 
-An answer to a picker stores the words the reporter saw — *Reqnroll, Planned*
+An answer to a picker stores the words the reporter saw — *Reqnroll, Covered*
 
 ### REQ-QB-019
 
@@ -830,7 +834,7 @@ Every answer is stored in one invariant written form — *Reqnroll, Planned*
 
 ### REQ-QB-025
 
-Only consent is projected onto the report aggregate — *Reqnroll, Planned*
+Only consent is projected onto the report aggregate — *Reqnroll, Covered*
 
 ### REQ-QB-026
 
@@ -1556,7 +1560,7 @@ Editing both languages at once is one correction, not a conflict — *Reqnroll, 
 
 ### REQ-WLD-014
 
-Question content comes from the bilingual database revision — *Reqnroll, Planned*
+Question content comes from the bilingual database revision — *Reqnroll, Covered*
 
 ### REQ-WLD-015
 
@@ -1572,7 +1576,7 @@ The client shows inline validation before submission — *playwright-bdd, Covere
 
 ### REQ-WLD-018
 
-Client validation never replaces server validation — *Reqnroll, Planned*
+Client validation never replaces server validation — *Reqnroll, Covered*
 
 ### REQ-WLD-019
 
@@ -1584,7 +1588,7 @@ Admin pages distinguish private, ordinary, and output content — *playwright-bd
 
 ### REQ-WLD-021
 
-Assets are self-hosted, never loaded from third-party CDNs — *Reqnroll, Planned*
+Assets are self-hosted, never loaded from third-party CDNs — *Reqnroll, Covered*
 
 ### REQ-WLD-022
 

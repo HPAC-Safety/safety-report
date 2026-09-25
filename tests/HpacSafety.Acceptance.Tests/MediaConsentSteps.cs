@@ -15,16 +15,20 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     The media-consent answer as a real submission records it (REQ-QB-114 to
-///     REQ-QB-117, ADR-0117, ADR-0119): an image or document uploaded through
-///     <c>/api/v1/uploads</c>, publication consent yes, and the seeded
+///     The consent answers as a real submission records them. Media consent
+///     (REQ-QB-114 to REQ-QB-117, ADR-0117, ADR-0119): an image or document uploaded
+///     through <c>/api/v1/uploads</c>, publication consent yes, and the seeded
 ///     <c>consent_media</c> system question answered — or not — through the
-///     booted API, against its current wording or a superseded one.
+///     booted API, against its current wording or a superseded one. Publication
+///     consent (REQ-QB-014, REQ-QB-016): never optional, and only an explicit yes
+///     or no.
 /// </summary>
 [Binding]
 [Scope(Feature = "Question bank and form")]
 public sealed class MediaConsentSteps
 {
+#pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
+
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
 	private HttpClient? _reporter;
@@ -33,6 +37,7 @@ public sealed class MediaConsentSteps
 	private string? _mediaRevisionId;
 	private string _fileName = "launch-site.png";
 	private HttpResponseMessage? _response;
+	private readonly List<(string Shape, HttpResponseMessage Response)> _refused = [];
 	private Question? _seeded;
 	private string? _reportId;
 
@@ -178,6 +183,87 @@ public sealed class MediaConsentSteps
 	public void ThenTheApiRejectsTheSubmission()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		foreach (var (shape, response) in _refused)
+		{
+			response.StatusCode.ShouldBe(HttpStatusCode.BadRequest, $"a consent_publish answer that is {shape}");
+		}
+	}
+
+	// --- REQ-QB-014: consent_publish can never be optional ---
+
+	[Given(@"the form is assembled for a reporter")]
+	public async Task GivenTheFormIsAssembled()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await ReportSubmissionEndpointSteps.ConsentRevisionId();
+
+		(await PublicationConsentOnTheForm()).GetProperty("isRequired").GetBoolean().ShouldBeTrue();
+	}
+
+	[When(@"the reporter submits without an answer to consent_publish")]
+	public async Task WhenTheReporterSubmitsWithoutConsent()
+	{
+		_response = await Post([new { questionRevisionId = await ShortTextRevisionId(), value = (object?)"x" }]);
+	}
+
+	[Then(@"an Administrator cannot save a consent_publish revision that is optional")]
+	public void ThenConsentCannotBeSavedOptional()
+	{
+		// Against the domain, not the shared host: revising the one consent
+		// question there would change the revision every parallel scenario
+		// submits against. The admin endpoint saves through this same method.
+		var consent = Question.CreateConsentPublish(
+			"May we publish a de-identified version of your report?",
+			"Pouvons-nous publier une version anonymisée de votre rapport ?",
+			DateTimeOffset.UtcNow);
+		var current = consent.CurrentRevision;
+
+		var live = consent.ApplyEdit(
+			true, current.Type, "May we publish a summary of your report?", current.LabelFr, current.IsPrivate,
+			current.IsActive, current.DisplayOrder, DateTimeOffset.UtcNow, isRequired: false);
+
+		live.ShouldBeSameAs(consent);
+		live.CurrentRevision.RevisionNumber.ShouldBe(2);
+		live.Revisions.ShouldAllBe(revision => revision.IsRequired);
+	}
+
+	// --- REQ-QB-016: consent_publish must resolve to an explicit yes or no ---
+
+	[Given(@"the consent_publish revision has no preselected value")]
+	public async Task GivenConsentHasNoPreselectedValue()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		await ReportSubmissionEndpointSteps.ConsentRevisionId();
+
+		// Nothing on the form's entry for it can carry a default: no choice list,
+		// and no field that names a default or preselected value.
+		var consent = await PublicationConsentOnTheForm();
+		consent.GetProperty("options").GetArrayLength().ShouldBe(0);
+		consent.EnumerateObject()
+			.Select(property => property.Name)
+			.ShouldNotContain(name => name.Contains("default", StringComparison.OrdinalIgnoreCase)
+									  || name.Contains("select", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[When(@"the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no")]
+	public async Task WhenTheConsentValueIsNotAnExplicitYesOrNo()
+	{
+		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
+		var other = await ShortTextRevisionId();
+
+		_refused.Add(("absent", await Post([new { questionRevisionId = other, value = (object?)"x" }])));
+
+		foreach (var (shape, value) in new (string, object?)[] { ("null", null), ("of the wrong type", true), ("neither yes nor no", "maybe") })
+		{
+			_refused.Add((shape, await Post(
+			[
+				new { questionRevisionId = consent, value },
+				new { questionRevisionId = other, value = (object?)"x" },
+			])));
+		}
+
+		_response = _refused[^1].Response;
 	}
 
 	private static async Task<string> UploadImage(HttpClient reporter)
@@ -189,6 +275,38 @@ public sealed class MediaConsentSteps
 		using var response = await reporter.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
+	}
+
+	private async Task<HttpResponseMessage> Post(IReadOnlyList<object> answers)
+	{
+		using var content = new StringContent(
+			JsonSerializer.Serialize(new { language = "en-CA", answers }, JsonOptions), System.Text.Encoding.UTF8, "application/json");
+		return await _reporter!.PostAsync(new Uri("/api/v1/reports", UriKind.Relative), content);
+	}
+
+	private static async Task<JsonElement> PublicationConsentOnTheForm()
+	{
+		using var client = (await BootedApi.Factory()).CreateClient();
+		var form = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions", UriKind.Relative));
+		return form.EnumerateArray().Single(entry => entry.GetProperty("key").GetString() == QuestionKey.ConsentPublish);
+	}
+
+	private static async Task<string> ShortTextRevisionId()
+	{
+		using var admin = await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var response = await admin.PostAsJsonAsync(new Uri("/api/admin/questions", UriKind.Relative), new
+		{
+			key = $"synthetic_{Guid.NewGuid():N}"[..40],
+			type = "short_text",
+			labelEn = "A synthetic question",
+			labelFr = "Une question synthétique",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+			options = Array.Empty<object>(),
+		});
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("revisionId").GetString()!;
 	}
 
 	private static async Task<string> UploadDocument(HttpClient reporter)

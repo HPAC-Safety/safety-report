@@ -152,7 +152,6 @@ Examples:
   | EN      |
 
 @REQ-WLD-014
-@ignore
 Scenario: Question content comes from the bilingual database revision
   Given a question revision has English and French labels, help, and options authored by an Administrator
   When the form renders that question
@@ -184,7 +183,6 @@ Scenario: The client shows inline validation before submission
   Then the client shows inline validation using the same stable type/option rules and localized messages the API uses
 
 @REQ-WLD-018
-@ignore
 Scenario: Client validation never replaces server validation
   Given a submission reaches the API
   When the API independently validates it
@@ -210,7 +208,6 @@ Scenario: Admin pages distinguish private, ordinary, and output content
   And question editing explains that saving always creates a new immutable revision
 
 @REQ-WLD-021
-@ignore
 Scenario: Assets are self-hosted, never loaded from third-party CDNs
   Given the site renders fonts, styles, or imagery
   Then Aleo, Poppins, and other assets are bundled and served from the site's own origin, as committed WOFF2 files

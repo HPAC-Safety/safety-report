@@ -1,5 +1,5 @@
 import { createBdd } from "playwright-bdd"
-import { expect } from "@playwright/test"
+import { expect, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth, type Role } from "./auth"
 
@@ -81,6 +81,32 @@ When("the page reloads", async ({ page }) => {
 
 Then("the header still shows the logout action", async ({ page }) => {
 	await expect(page.locator("header").getByRole("button", { name: "Log out" })).toBeVisible()
+})
+
+// Every request a page sends to the API from the moment its member logs out.
+const apiRequestsSinceLogout = new WeakMap<Page, string[]>()
+
+Given("a signed-in member activates the logout action", async ({ page }) => {
+	await signInAs(page, "user")
+
+	const sent: string[] = []
+	apiRequestsSinceLogout.set(page, sent)
+	page.on("request", (request) => {
+		const { pathname } = new URL(request.url())
+		if (pathname.startsWith("/api/")) sent.push(`${request.method()} ${pathname}`)
+	})
+
+	await page.locator("header").getByRole("button", { name: "Log out" }).click()
+})
+
+When("the client discards its token", async ({ page }) => {
+	await expect(page.locator("header").getByRole("link", { name: "Member login" })).toBeVisible()
+	expect(await page.evaluate(() => sessionStorage.getItem("hpac.session"))).toBeNull()
+})
+
+Then("no request reaches the API for that logout", async ({ page }) => {
+	await page.waitForLoadState("networkidle")
+	expect(apiRequestsSinceLogout.get(page)).toEqual([])
 })
 
 When("the visitor activates the logout action", async ({ page }) => {

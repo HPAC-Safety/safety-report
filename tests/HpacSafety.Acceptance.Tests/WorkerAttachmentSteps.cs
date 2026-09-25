@@ -34,7 +34,7 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 	private long _allocated;
 	private MediaIngestOutcome? _outcome;
 
-	private const long LargeOriginal = 50L * 1024 * 1024;
+	private const long LargeOriginal = 25L * 1024 * 1024;
 
 	public async ValueTask DisposeAsync()
 	{
@@ -180,11 +180,11 @@ public sealed class WorkerAttachmentSteps : IAsyncDisposable
 
 	// --- REQ-MED-024: processing streams ---
 
-	[Given(@"a stored 50 MB document original")]
-	public void GivenAStored50MbDocumentOriginal()
+	[Given(@"a stored 25 MB document original")]
+	public void GivenAStored25MbDocumentOriginal()
 	{
 		// Generated as it is read: a PDF header, then filler. The test itself
-		// never holds 50 MB either.
+		// never holds 25 MB either.
 		_source = new MeteredStream(LargeOriginal);
 	}
 

@@ -91,8 +91,10 @@ REQ-MED-008, REQ-MED-010, REQ-MED-011, REQ-MED-025, REQ-MED-026, REQ-MED-037,
 REQ-MED-039.*
 
 - all allowed image, video, and document formats and declared-type agreement are exercised;
-- configured default count and exact 50 MB boundary are covered with streaming
-  tests that detect accidental whole-file buffering;
+- configured default count and each kind's exact size boundary (250 MB video,
+  25 MB image or document) are covered, the claim's re-check against the
+  detected kind included, with streaming tests that detect accidental
+  whole-file buffering;
 - client filenames are sanitized, stored only on the report file, and reach only a
   reviewer's download link — never keys, errors, captured logs, model input, or
   public DTOs;

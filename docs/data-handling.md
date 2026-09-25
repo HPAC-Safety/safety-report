@@ -62,10 +62,13 @@ Canada. That is the one place report content leaves `ca-central-1`
 
 ## Attachments
 
-The API validates each attachment as it is uploaded — bounded at 50 MB, sniffed,
-checked against the allowlist — and writes only accepted bytes to private
-quarantine under a server-generated upload ID. The final submission may claim
-a configurable count (default 5). The upload carries no filename; the final
+The API mints each upload a server-generated upload ID and a pre-signed PUT to
+private quarantine, signed for the declared type and exact size and refused
+past the kind's cap: 250 MB for a video, 25 MB for an image or a document. The
+bytes never pass through the API. The final submission may claim a configurable
+count (default 5), and validates each upload it claims — sniffed, checked
+against the allowlist and the detected kind's cap — before writing anything
+([ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)). The upload carries no filename; the final
 submission names each file, and that name is kept, sanitized, only as a
 reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)). There is no malware scan (ADR-0089).
 

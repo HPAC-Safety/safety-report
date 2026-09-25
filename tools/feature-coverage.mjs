@@ -13,7 +13,7 @@
 // already states, and naming those claims is both the proof and the work:
 //
 //     No .feature scenario needed: refactor — extracted the ingest loop
-//     Claims preserved: REQ-SUB-012, REQ-SUB-013
+//     Claims preserved: REQ-SUB-013, REQ-SUB-042
 //
 // The ids must exist in the generated matrix, the category must be one of a
 // closed set, and the categories that can be checked against the diff are.

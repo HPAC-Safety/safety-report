@@ -41,13 +41,16 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
   ([ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - **The only write before final submission is an attachment upload.**
 - **Uploads**
-  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)):
-  - upload each file at once via `POST /api/v1/uploads`, one request per file
-    with its own `AbortController`;
+  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+  [ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
+  - upload each file at once: mint it via `POST /api/v1/uploads` (declared
+    type and size, never a filename), then `PUT` it to the returned URL, one
+    request per file with its own `AbortController`;
   - while uploading: an indeterminate indicator and Cancel; once uploaded:
     Remove;
   - hold Next and Submit while any upload is in flight;
-  - submit one JSON request naming the upload IDs.
+  - submit one JSON request naming the upload IDs; mark each upload it
+    refuses as expired or invalid on its own row, and keep everything else.
 
 ## Admin and authentication
 

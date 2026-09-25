@@ -14,7 +14,7 @@ const { Given, Then } = createBdd()
 // The slashes are escaped because a Cucumber Expression reads `/` as
 // alternation, and an empty alternative is an error.
 Given(
-	"a reporter writes a report through POST \\/api\\/v1\\/reports and an attachment through POST \\/api\\/v1\\/uploads",
+	"a reporter writes a report through POST \\/api\\/v1\\/reports and sends each attachment through a pre-signed PUT that POST \\/api\\/v1\\/uploads mints",
 	async () => {},
 )
 

@@ -12,18 +12,25 @@ that doesn't fit Gherkin.
 
 ## Attachment uploads
 
-Each file uploads the moment the reporter attaches it
-([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)):
+Each file uploads the moment the reporter attaches it, straight to private
+quarantine through a pre-signed PUT the API mints
+([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+[ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
 
-- `POST /api/v1/uploads` takes the file itself as the request body, with its
-  declared type in `Content-Type`. The client filename is never sent. The API
-  reads at most one byte past 50 MB into a temporary file, sniffs and validates
-  it, and only then writes it to `quarantine/<upload id>`.
-- `201` returns `{{ "uploadId": "…", "kind": "image" | "video" | "document" }}`.
-  The upload ID is 22 URL-safe characters (128 random bits).
-- `400` returns a problem with a `reason` of `empty`, `too_large`,
-  `unrecognised_content`, `unaccepted_media_type`, or `declared_type_mismatch`,
-  which the form maps to a localized message on that file's row.
+- `POST /api/v1/uploads` takes JSON naming the file's declared content type and
+  its exact size in bytes. The client filename is never sent. A file may be at
+  most 250 MB for a video and 25 MB for an image or a document.
+- `201` returns
+  `{{ "uploadId": "…", "kind": "image" | "video" | "document", "uploadUrl": "…", "expiresAt": "…" }}`.
+  The upload ID is 22 URL-safe characters (128 random bits). The URL is a
+  `PUT` to `quarantine/<upload id>` only, signed for the declared type and
+  exact size, and lives at most 15 minutes.
+- `400` returns a problem with a `reason` of `empty`, `too_large`, or
+  `unaccepted_media_type`, which the form maps to a localized message on that
+  file's row. Nothing is minted.
+- The browser then sends the file itself as the body of that `PUT`, with the
+  declared `Content-Type`. Storage refuses a body that differs from what was
+  signed. Cancel aborts the `PUT`.
 - `DELETE /api/v1/uploads/{{id}}` erases every version of that quarantine object
   and returns `204`, whether or not it existed.
 - The browser keeps each finished upload's ID, the file's name, and its size in
@@ -39,6 +46,14 @@ download name
 If any named upload no longer exists, the API refuses the whole submission
 before writing anything, with a `400` whose `expiredUploadIds` lists exactly
 those IDs.
+
+The API then validates each upload it claims. It reads the stored size and the
+leading bytes, sniffs the content, requires the declared and detected types to
+agree, and checks the real size against the limit of the detected kind. If any
+upload fails, the API refuses the whole submission before writing anything,
+with a `400` naming each refused upload ID and its `reason`
+(`unrecognised_content`, `declared_type_mismatch`, or `too_large`). The form
+marks those files' rows and keeps every other answer and upload.
 
 ### The drop zone (#367)
 

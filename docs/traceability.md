@@ -248,10 +248,6 @@ Declared content type must agree with detected content type — *Reqnroll, Cover
 
 The client filename is kept only as a reviewer's download name — *Reqnroll, Covered*
 
-### REQ-MED-004
-
-An accepted upload waits in a private quarantine compartment — *Reqnroll, Covered*
-
 ### REQ-MED-005
 
 Unclaimed uploads expire automatically — *Reqnroll, Planned*
@@ -407,6 +403,10 @@ A QuickTime video downloads as an MP4 — *Reqnroll, Covered*
 ### REQ-MED-044
 
 A published QuickTime video is served as an MP4 — *Reqnroll, Covered*
+
+### REQ-MED-045
+
+A sent upload waits, unvalidated, in a private quarantine compartment — *Reqnroll, Planned*
 
 ## Claims: moderation-authentication-and-publication
 
@@ -1190,10 +1190,6 @@ A revision that was never shown as answer-producing is rejectable — *Reqnroll,
 
 Reporter-visible errors never echo submitted content — *Reqnroll, Covered*
 
-### REQ-SUB-012
-
-An attachment is validated under a bound before it is stored — *Reqnroll, Covered*
-
 ### REQ-SUB-013
 
 A valid submission is persisted atomically — *Reqnroll, Covered*
@@ -1297,14 +1293,6 @@ Declining a saved report starts a fresh form — *playwright-bdd, Covered*
 ### REQ-SUB-038
 
 A reporter with no saved report is not asked — *playwright-bdd, Covered*
-
-### REQ-SUB-039
-
-An accepted upload returns an opaque upload ID and nothing else — *Reqnroll, Covered*
-
-### REQ-SUB-040
-
-A refused upload is reported on its own and never stored — *Reqnroll, Covered*
 
 ### REQ-SUB-041
 
@@ -1425,6 +1413,26 @@ A type-ahead answer uses its choice when it names one, and the Worker otherwise 
 ### REQ-SUB-071
 
 Only free text marked for translation is machine-translated — *Reqnroll, Covered*
+
+### REQ-SUB-072
+
+Minting an upload returns a pre-signed PUT for one quarantine key and nothing else — *Reqnroll, Planned*
+
+### REQ-SUB-073
+
+A declared file the API will not accept gets no upload URL — *Reqnroll, Planned*
+
+### REQ-SUB-074
+
+Storage accepts only the upload the URL was signed for — *Reqnroll, Planned*
+
+### REQ-SUB-075
+
+A submission validates every upload it claims — *Reqnroll, Planned*
+
+### REQ-SUB-076
+
+A file refused at submission is marked on its row and nothing else is lost — *playwright-bdd, Planned*
 
 ## Claims: typeform-question-import-export
 

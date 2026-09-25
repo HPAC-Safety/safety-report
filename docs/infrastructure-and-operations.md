@@ -154,9 +154,12 @@ How the pieces connect:
     sweeps once a minute, so a lost nudge only delays work.
   - Each run claims due outbox messages, processes them (a summary, an
     attachment, answer or comment translation), and returns.
-- **Attachments** reach S3 only through the API.
-  - `POST /api/v1/uploads` writes each file to `quarantine/`, where a
-    lifecycle rule expires it after 15 days.
+- **Attachments** reach S3 only through a pre-signed PUT the API mints.
+  - `POST /api/v1/uploads` returns a PUT of at most 15 minutes to one
+    `quarantine/` key, signed for the declared type and exact size. A
+    lifecycle rule expires an unclaimed upload after 15 days.
+  - The uploads bucket accepts a cross-origin `PUT` only from the site
+    origins ([ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
   - Submission copies claimed uploads inside the bucket.
   - The Worker writes derivatives.
   - A browser reads a file only through a pre-signed GET of at most 15
@@ -216,8 +219,8 @@ application code.
 
 ## Configuration and secrets
 
-Configuration includes database/storage endpoints, attachment count and 50 MB size
-limit, accepted attachment types, the site origin,
+Configuration includes database/storage endpoints, attachment count and per-kind size
+limits (250 MB video, 25 MB image or document), accepted attachment types, the site origin,
 rate limits, the authentication issuer, audience, and role-claim name,
 model/prompt version, retry bounds, and stuck-work thresholds.
 

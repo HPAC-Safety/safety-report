@@ -145,6 +145,9 @@ same window as the browser's saved report, which is the only thing that names
 it
 ([ADR-0096](../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
 [ADR-0100](../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+The file goes straight to storage through a pre-signed PUT the API mints, and
+the submission validates it
+([ADR-0126](../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
 It has no server-side report drafts, resumable upload protocol,
 deterministic text scrubber, separate PII-audit call, summary-translation
 call, specialized aircraft processing, outbound email, external publication

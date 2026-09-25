@@ -347,6 +347,8 @@ Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md). The
 minimum:
 
 - Every change starts from an issue and reaches `main` through a pull request.
+- **Every new issue gets a milestone and its labels when it is created** — a
+  hard rule; see `deliver-hpac-change` "File a new issue".
 - **Label the issue `in progress` before anything else**; never pick up an
   issue that already carries it.
 - Keep the issue true: record decisions, acceptance criteria, and scope changes

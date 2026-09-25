@@ -27,6 +27,19 @@ description: Deliver HPAC Safety work through its issue, branch, documentation, 
 
 ### File a new issue
 
+**Milestone and labels are mandatory — no exceptions.** Pass both on
+`gh issue create`, never as a follow-up:
+
+- **Milestone**: exactly one open milestone
+  (`gh api repos/{owner}/{repo}/milestones --jq '.[].title'`). An issue carved
+  out of a parent takes the parent's milestone.
+- **Labels**: every relevant one from `gh label list`:
+  - one type — `enhancement`, `bug`, `documentation`, or `tech-debt`;
+  - every `area:*` the change touches;
+  - the `phase:*` matching a phase milestone.
+- **Verify** with `gh issue view <number> --json milestone,labels` before
+  linking or picking the issue up. Missing either? Fix it before anything else.
+
 Check its real relationships to open issues first, and wire them with GitHub's
 native relations (`gh api graphql`; there is no `blocked` label), not only
 prose:
@@ -45,6 +58,9 @@ prose:
   existing one, or, if both must exist, mark the new one `duplicateOf` it.
 - When an issue closes or a design change removes a dependency, remove the
   stale relation (`removeBlockedBy`) in the same pass.
+- **Relates to** — for a soft link between issues that are neither a
+  prerequisite nor a split. It has no API: set it in the issue sidebar,
+  Relationships → "Add relates to".
 
 ### Worktree and branch
 

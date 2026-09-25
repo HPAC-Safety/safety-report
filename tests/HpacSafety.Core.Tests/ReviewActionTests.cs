@@ -301,6 +301,35 @@ public class ReviewActionTests
 	}
 
 	[Fact]
+	public void GivenUnansweredConsent_WhenKeptUnpublished_ThenUnpublishedForGoodAndCannotBePublished()
+	{
+		// Given — an older report with no consent answer: silence is not consent
+		var report = new Report(Locale.EnCa, Now);
+
+		// When
+		report.KeepUnpublished();
+
+		// Then
+		report.IsUnpublishedForGood.ShouldBeTrue();
+		Should.Throw<ReviewTransitionException>(() => report.Publish(Officer, Later));
+	}
+
+	[Theory]
+	[InlineData("publish")]
+	[InlineData("edit")]
+	public void GivenPendingReportWithNoPair_WhenPairActionIsAttempted_ThenRefusedBecauseThereIsNoPair(string action)
+	{
+		// Given — pending with no pair attached, so there is nothing to approve or rewrite
+		var report = Consented("yes");
+		report.BeginSummarizing();
+		report.AwaitReview();
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(Attempt(report, action)).Message.ShouldContain("no summary pair");
+		report.Status.ShouldBe(ReportStatus.Pending);
+	}
+
+	[Fact]
 	public void GivenConsentedReport_WhenKeptUnpublished_ThenRefused()
 	{
 		// Given

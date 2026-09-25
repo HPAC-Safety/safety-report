@@ -15,7 +15,7 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 
 - PostgreSQL is `snake_case`; C# is PascalCase.
 - Store complete immutable question revisions and revision-bound answers. Only
-  consent projects onto the report.
+  the two consents, publication and media, project onto the report (ADR-0117).
 - One summary row per report: English/French text, shared provenance, pair
   approval.
 - Save report, answers, file rows, and typed outbox messages in one
@@ -26,7 +26,9 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 
 - Query purpose-built DTOs holding exactly the fields a use case needs.
 - The summary DTO returns exact revision labels, answers, and privacy flags.
-- The public DTO cannot carry raw answers or attachments.
+- The public DTO cannot carry raw answers or attachment originals. The one
+  file-shaped public read is `public_report_media`: opaque ids and kinds only
+  (ADR-0117).
 
 ## Soft deletion
 
@@ -41,4 +43,3 @@ description: Implement HPAC Safety EF Core records, migrations, transactions, so
 ## Encryption
 
 - AWS-managed encryption at rest and TLS.
-- Remove application AES keys, ciphertext converters, and field-cipher ports.

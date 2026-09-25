@@ -29,8 +29,11 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 ## The report form
 
-- Render the ordered current bilingual question-revision DTO. Only consent is
-  required, and it has no selected default.
+- Render the ordered current bilingual question-revision DTO.
+  - Honor each revision's authored required state (ADR-0061).
+  - Publication consent is always required, and so is media consent when it is
+    asked (ADR-0117).
+  - No consent has a selected default.
 - **Saved report**: answer values, revision IDs, and each finished upload's ID,
   name, and size, only in the same browser, for 15 days from the first save or
   until a successful submit. Never a file's bytes. Abandoning the saved report

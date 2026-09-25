@@ -109,7 +109,8 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 ## Contracts to cover
 
 - **Questions**: complete revisions are immutable; latest-revision selection
-  cannot resurrect an older active revision; only consent is required.
+  cannot resurrect an older active revision. The consents are always required
+  when asked; an administrator may require any other question (ADR-0061).
 - **Before submission**: unfinished answers and revision IDs stay in browser
   storage for 15 days; no report, reserved ID, or database state exists before
   final submission. An upload is validated before it is stored, names no

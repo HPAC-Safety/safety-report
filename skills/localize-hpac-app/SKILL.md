@@ -33,14 +33,21 @@ description: Keep HPAC Safety application chrome, database questions, validation
 
 ## Database questions
 
-- Every immutable revision stores English and French label, help, and option
-  text. Administrators author and review both.
+- Every immutable revision stores English and French label and help text. A
+  question's choices live outside its revisions, one editable list per question
+  (ADR-0095). Administrators author and review both.
 - While authoring, Translate drafts the other language through
   `POST /api/admin/translate`, which calls `ITranslator` server-side. The result
   is an ordinary editable field; Save stays disabled until both languages are
   present (ADR-0062).
-- Nothing translates a question outside that screen, and no reporter content —
-  narrative, answer, or summary — is ever machine-translated.
+- Nothing translates a question outside that screen.
+- Reporter content is machine-translated only off the submission path, in these
+  cases:
+  - an answer that needs a second language, by the Worker (ADR-0112);
+  - a summary language a reviewer asks to draft from the other (ADR-0108);
+  - each revision of a member's comment (ADR-0114).
+- A select answer copies its choice's other label instead, which is a lookup,
+  not a translation.
 
 ## Runtime behavior
 
@@ -56,5 +63,9 @@ description: Keep HPAC Safety application chrome, database questions, validation
 
 ## Never
 
-Automatically translate raw reports, attachments, documents, model input, or
-database questions.
+- Translate anything on the submission path.
+- Translate attachments, documents, or model input.
+- Translate an answer that does not need a second language (ADR-0112).
+- Translate database questions outside the authoring screen.
+- Produce the Worker's summary pair with a translation provider. It comes from
+  the one model call.

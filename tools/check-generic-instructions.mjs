@@ -16,6 +16,7 @@ const ROOT = process.cwd()
 
 export const GENERIC_FILES = [
 	'agents/ai-author.md',
+	'agents/database-administrator.md',
 	'agents/implementer.md',
 	'agents/spec-author.md',
 	'agents/spec-reviewer.md',
@@ -23,7 +24,9 @@ export const GENERIC_FILES = [
 	'skills/clarify-requirements/SKILL.md',
 	'skills/coding-conventions/SKILL.md',
 	'skills/deliver-change/SKILL.md',
+	'skills/design-ef-core-model/SKILL.md',
 	'skills/manage-ef-core-migrations/SKILL.md',
+	'skills/postgres-dba/SKILL.md',
 	'skills/test-from-scenarios/SKILL.md',
 ]
 

@@ -365,6 +365,8 @@ minimum:
   identifier (ADR number, name, slug) only after that rebase
   ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 - PR body: `Closes #<number>` on its own line; squash-ready title.
+- **Enable auto-merge on every pull request you open**, unless it is a draft or
+  the user asked to hold it; see `deliver-hpac-change` "Verify and publish".
 - No `Co-Authored-By` trailer; this is a convention, and nothing checks it.
 - No agent session link: the `commit-msg` hook and `linked-issue.yml`'s
   `no-session-link` job refuse one

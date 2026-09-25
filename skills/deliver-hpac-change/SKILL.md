@@ -278,6 +278,12 @@ issue, not this conversation.
    `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`. Once
    the worktree is gone this label is the only record of which pull request the
    session owns.
+   - **Enable auto-merge at once**: `gh pr merge <pr> --auto --squash`, then
+     confirm `gh pr view <pr> --json autoMergeRequest` is not `null`. The
+     repository squash-merges and deletes the branch once required checks pass.
+   - Skip it only for a draft, or a pull request the user asked to hold.
+   - Auto-merge does not replace step 9: a branch that falls `BEHIND` still
+     needs a rebase and push before it can merge.
 5. **PR body**: `Closes #<number>` on its own line, and the scenarios it
    satisfies. Built something the specification does not describe? Either fix
    the specification or the change exceeded its scope.

@@ -22,16 +22,16 @@ interface StubRow {
 	submittedAt: string
 	status: string
 	language: string
-	consent: "yes" | "no" | "unanswered"
+	consent: boolean | null
 	isStuck: boolean
 }
 
 const ROWS: StubRow[] = [
-	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending", language: "en-CA", consent: "yes", isStuck: false },
-	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: "no", isStuck: false },
-	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: "yes", isStuck: false },
-	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: "yes", isStuck: false },
-	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: "yes", isStuck: true },
+	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending", language: "en-CA", consent: true, isStuck: false },
+	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false },
+	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false },
+	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false },
+	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true },
 ]
 
 const DETAIL = {
@@ -84,7 +84,7 @@ const DETAIL = {
 		sourceFr: "generated",
 	},
 	attachments: [{ id: "fileaaaaaaa", kind: "document", state: "ready", visibility: "private" }],
-	mediaConsent: "unanswered",
+	mediaConsent: null,
 }
 
 const FILTERED: Record<string, (row: StubRow) => boolean> = {
@@ -92,7 +92,7 @@ const FILTERED: Record<string, (row: StubRow) => boolean> = {
 	"needs-action": (row) => row.isStuck || row.status === "pending" || row.status === "summary_failed",
 	published: (row) => row.status === "published",
 	unpublished: (row) => row.status === "unpublished",
-	private: (row) => row.consent === "no",
+	private: (row) => row.consent === false,
 	"summary-failed": (row) => row.status === "summary_failed",
 }
 
@@ -245,7 +245,7 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 	const stub: ReviewStub = {
 		// A report without consent is never summarized and stays unpublished (REQ-DOM-006, REQ-DOM-015).
 		detail: word.startsWith("private-")
-			? { ...detail, consent: "no", summary: null }
+			? { ...detail, consent: false, summary: null }
 			: word === "machine-translated"
 				? { ...detail, summary: { ...detail.summary!, sourceEn: "human", sourceFr: "machine" } }
 				: detail,
@@ -330,7 +330,7 @@ Then("the offered actions are {}", async ({ page }, list: string) => {
 	await expect(group.getByRole("button")).toHaveText(expected)
 
 	// A report without consent was never summarized, so it has no summary panel.
-	if (reviewStubs.get(page)!.detail.consent === "no") {
+	if (reviewStubs.get(page)!.detail.consent === false) {
 		await expect(page.locator("#summary-heading")).toHaveCount(0)
 	}
 })

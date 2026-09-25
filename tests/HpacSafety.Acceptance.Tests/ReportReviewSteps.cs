@@ -101,7 +101,7 @@ public sealed class ReportReviewSteps
 		];
 
 		Mine().ShouldBe([.. expected.Select(name => _seeded[name])]);
-		Row("private").GetProperty("consent").GetString().ShouldBe("no");
+		Row("private").GetProperty("consent").GetBoolean().ShouldBeFalse();
 		Row("private").GetProperty("status").GetString().ShouldBe("unpublished");
 		Row("pending").GetProperty("status").GetString().ShouldBe("pending");
 		Row("published").GetProperty("status").GetString().ShouldBe("published");

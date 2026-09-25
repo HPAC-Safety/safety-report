@@ -4,6 +4,7 @@ import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
 import {
 	attachmentLink,
+	consentKey,
 	setAttachmentHidden,
 	deleteReport,
 	getReport,
@@ -171,10 +172,10 @@ export function ReportDetailPage() {
 						<p className="font-sans text-sm text-ink-muted">
 							{t(`reports.detail.language.${report.language}`)}
 						</p>
-						<p className="font-sans text-sm text-ink-muted">{t(`reports.detail.consent.${report.consent}`)}</p>
+						<p className="font-sans text-sm text-ink-muted">{t(`reports.detail.consent.${consentKey(report.consent)}`)}</p>
 						{report.attachments.length > 0 && (
 							<p className="font-sans text-sm text-ink-muted" data-media-consent>
-								{t(`reports.detail.mediaConsent.${report.mediaConsent}`)}
+								{t(`reports.detail.mediaConsent.${consentKey(report.mediaConsent)}`)}
 							</p>
 						)}
 						{report.unpublishNote && (
@@ -197,7 +198,7 @@ export function ReportDetailPage() {
 					/>
 
 					{/* A report without consent is never summarized, so it has no summary panel (REQ-DOM-006). */}
-					{report.consent === "yes" && (
+					{report.consent === true && (
 					<section aria-labelledby="summary-heading" className="mt-10">
 						<h2 id="summary-heading" className="font-display text-2xl font-bold">
 							{t("reports.detail.summary")}

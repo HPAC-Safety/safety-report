@@ -8,14 +8,14 @@ namespace HpacSafety.Api.Admin;
 /// <param name="SubmittedAt">When it was received.</param>
 /// <param name="Status">Its workflow status, as a lowercase code such as <c>pending_review</c>.</param>
 /// <param name="Language">The locale it was written in.</param>
-/// <param name="Consent">Publication consent: <c>yes</c>, <c>no</c>, or <c>unanswered</c>.</param>
+/// <param name="Consent">Publication consent: <c>true</c>, <c>false</c>, or <c>null</c> when unanswered (ADR-0130).</param>
 /// <param name="IsStuck">Still Submitted or Summarizing more than a day after submission.</param>
 public sealed record ReportListItem(
 	string Id,
 	DateTimeOffset SubmittedAt,
 	string Status,
 	string Language,
-	string Consent,
+	bool? Consent,
 	bool IsStuck);
 
 /// <summary>
@@ -24,14 +24,16 @@ public sealed record ReportListItem(
 ///     its own audited request. <c>Version</c> is the opaque value every review
 ///     command sends back (ADR-0105); <c>UnpublishNote</c> is reviewer-only
 ///     (REQ-MOD-058); <c>PublishedAt</c> is set while the report is public.
+///     <c>Consent</c> and <c>MediaConsent</c> are <c>true</c>, <c>false</c>, or
+///     <c>null</c> when unanswered, never words (ADR-0130, REQ-MOD-096).
 /// </summary>
 public sealed record ReportDetail(
 	string Id,
 	DateTimeOffset SubmittedAt,
 	string Status,
 	string Language,
-	string Consent,
-	string MediaConsent,
+	bool? Consent,
+	bool? MediaConsent,
 	bool IsStuck,
 	string? SummaryError,
 	IReadOnlyList<ReportAnswerView> Answers,

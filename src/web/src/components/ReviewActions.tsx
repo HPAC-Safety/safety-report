@@ -26,7 +26,7 @@ const ACTIONS: Record<ReportStatus, ReviewAction[]> = {
  * summarized, and deleting it is the one thing a reviewer can do (REQ-DOM-015).
  */
 function actionsFor(report: ReportDetail): ReviewAction[] {
-	return report.consent === "yes" ? ACTIONS[report.status] : ["delete"]
+	return report.consent === true ? ACTIONS[report.status] : ["delete"]
 }
 
 const PRIMARY =
@@ -214,7 +214,7 @@ export function ReviewActions({
 	return (
 		<div className="mt-4 flex flex-col gap-2">
 			{actions.includes("publish") && <p className="font-sans text-sm text-ink-muted">{t("reports.publish.hint")}</p>}
-			{report.consent !== "yes" && <p className="font-sans text-sm text-ink-muted">{t("reports.private.hint")}</p>}
+			{report.consent !== true && <p className="font-sans text-sm text-ink-muted">{t("reports.private.hint")}</p>}
 			<div role="group" aria-label={t("reports.action.label")} className="flex flex-wrap gap-3">
 				{actions.includes("edit") && (
 					<button type="button" className={SECONDARY} disabled={busy} onClick={openEditor}>

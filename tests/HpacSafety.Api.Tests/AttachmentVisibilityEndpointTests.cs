@@ -30,7 +30,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenImageHiddenTwice_WhenAudited_ThenOneHideIsRecorded()
 	{
 		// Given
-		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: "yes", MediaType.Jpeg);
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: true, MediaType.Jpeg);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -47,7 +47,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenVisibleImage_WhenShown_ThenNothingIsRecorded()
 	{
 		// Given
-		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: "yes", MediaType.Jpeg);
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: true, MediaType.Jpeg);
 		using var officer = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
@@ -62,7 +62,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDocument_WhenHidden_ThenNoContent()
 	{
 		// Given — a public document is moderated like a photo (ADR-0119)
-		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: "yes", MediaType.Pdf);
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, mediaConsent: true, MediaType.Pdf);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -99,12 +99,12 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Theory]
-	[InlineData(ReportStatus.Published, "yes", "public")]
-	[InlineData(ReportStatus.Pending, "yes", "when_published")]
-	[InlineData(ReportStatus.Published, "no", "no_consent")]
+	[InlineData(ReportStatus.Published, true, "public")]
+	[InlineData(ReportStatus.Pending, true, "when_published")]
+	[InlineData(ReportStatus.Published, false, "no_consent")]
 	[InlineData(ReportStatus.Published, null, "no_consent")]
 	public async Task GivenProcessedImage_WhenAdminReadsReport_ThenVisibilityFollowsConsentAndStatus(ReportStatus status,
-		string? mediaConsent,
+		bool? mediaConsent,
 		string expected)
 	{
 		// Given
@@ -114,7 +114,8 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		var detail = await Detail(reportId);
 
 		// Then
-		detail.GetProperty("mediaConsent").GetString().ShouldBe(mediaConsent ?? "unanswered");
+		var consent = detail.GetProperty("mediaConsent");
+		(consent.ValueKind == JsonValueKind.Null ? (bool?)null : consent.GetBoolean()).ShouldBe(mediaConsent);
 		Visibilities(detail).ShouldBe([expected]);
 	}
 
@@ -122,7 +123,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenHiddenDocumentAndUnprocessedFiles_WhenAdminReadsReport_ThenEachReadsAsNotPublic()
 	{
 		// Given
-		var (reportId, fileIds) = await Seed(ReportStatus.Published, "yes", MediaType.Jpeg, MediaType.Pdf);
+		var (reportId, fileIds) = await Seed(ReportStatus.Published, true, MediaType.Jpeg, MediaType.Pdf);
 		await Unprocessed(reportId);
 		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		using var hid = await officer.PostAsync(Action(reportId, fileIds[0], "hide"), null);
@@ -135,7 +136,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	private async Task<(string ReportId, List<string> FileIds)> Seed(ReportStatus status,
-																	 string? mediaConsent,
+																	 bool? mediaConsent,
 																	 params MediaType[] types)
 	{
 		await using var scope = _factory.Services.CreateAsyncScope();
@@ -156,10 +157,9 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(consent, true, Now);
 
-		// The string is also the consent code the admin view reports.
 		if (mediaConsent is not null)
 		{
-			report.Answer(media, mediaConsent == "yes", Now);
+			report.Answer(media, mediaConsent.Value, Now);
 		}
 
 		var ids = new List<string>();

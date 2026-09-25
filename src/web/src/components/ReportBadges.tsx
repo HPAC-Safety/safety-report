@@ -25,7 +25,7 @@ export function ReportBadges({
 			<span className={`${BADGE} border-rule bg-surface-2 text-ink`} data-badge="status">
 				{t(`reports.status.${status}`)}
 			</span>
-			{consent === "no" && (
+			{consent === false && (
 				<span className={`${BADGE} border-ink bg-surface text-ink`} data-badge="private">
 					{t("reports.badge.private")}
 				</span>

@@ -1,4 +1,5 @@
 using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.QuestionBank.Typeform;
 using HpacSafety.Core.Features.Reporting;
 using Shouldly;
 
@@ -134,6 +135,131 @@ public class PickerReplacementTests
 		// Then
 		answer.Text.ShouldBe("Paraglider");
 		question.OfferedChoiceLabelled("Paraglider", Locale.EnCa).ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenANewOptionMarkedToBeReplaced_WhenSaved_ThenItIsSimplyAdded()
+	{
+		// Given — nothing to replace yet
+		var question = Wing();
+
+		// When
+		question.ReplaceChoices(
+			[
+				new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
+				new QuestionOptionInput("paraglider", "Paraglider", "Parapente"),
+				new QuestionOptionInput("trike", "Trike", "Tricycle", Replace: true),
+			],
+			At);
+
+		// Then
+		question.Choice("trike")!.ReplacedByChoiceId.ShouldBeNull();
+		question.Choices.Count.ShouldBe(3);
+	}
+
+	[Fact]
+	public void GivenAReplacementWithNoEnglishWording_WhenSaved_ThenRefused()
+	{
+		// Given
+		var question = Wing();
+
+		// When
+		var replacing = () => question.ReplaceChoices(
+			[
+				new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
+				new QuestionOptionInput("paraglider", null, "Parapente (solo)", Replace: true),
+			],
+			At);
+
+		// Then — a picker option needs both languages
+		replacing.ShouldThrow<DomainRuleViolationException>();
+	}
+
+	[Theory]
+	[InlineData("two replacements worded alike")]
+	[InlineData("a replacement worded like a new option")]
+	public void GivenReplacementsThatWouldCollide_WhenSaved_ThenRefused(string collision)
+	{
+		// Given
+		var question = Wing();
+		QuestionOptionInput[] options = collision == "two replacements worded alike"
+			?
+			[
+				new QuestionOptionInput("hang_glider", "Solo wing", "Aile solo", Replace: true),
+				new QuestionOptionInput("paraglider", "Solo wing", "Aile solo", Replace: true),
+			]
+			:
+			[
+				new QuestionOptionInput("hang_glider", "Hang glider", "Deltaplane"),
+				new QuestionOptionInput("paraglider", "Trike", "Tricycle", Replace: true),
+				new QuestionOptionInput("trike", "Trike", "Tricycle"),
+			];
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => question.ReplaceChoices(options, At));
+	}
+
+	[Fact]
+	public void GivenAConditionNamingAnotherQuestionsChoice_WhenCheckedWithThatChoice_ThenFalse()
+	{
+		// Given — a dangling condition resolves to nothing on its parent
+		var parent = Wing();
+		var child = Question.Create(
+			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: Wing().Choice("paraglider")!.Id);
+
+		// When / Then
+		child.CurrentRevision.IsEnabledGiven(parent, parent.Choice("paraglider")!.Id).ShouldBeFalse();
+		QuestionDependencies.RequiredChoiceToday([parent, child], child.CurrentRevision).ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenAConditionWhoseParentIsNotLoaded_WhenItsChoiceTodayIsAsked_ThenNone()
+	{
+		// Given
+		var parent = Wing();
+		var child = Question.Create(
+			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("paraglider")!.Id);
+		var unconditional = Question.Create("notes", QuestionType.LongText, "Notes", "Notes", At, isActive: true);
+
+		// When / Then
+		QuestionDependencies.RequiredChoiceToday([child], child.CurrentRevision).ShouldBeNull();
+		QuestionDependencies.RequiredChoiceToday([parent, unconditional], unconditional.CurrentRevision).ShouldBeNull();
+		QuestionDependencies.RequiredChoiceToday([parent, child], child.CurrentRevision)!.Code.ShouldBe("paraglider");
+	}
+
+	[Fact]
+	public void GivenAConditionWhoseParentIsNotExported_WhenExported_ThenItNamesNoOption()
+	{
+		// Given — the parent is not in the exported set
+		var parent = Wing();
+		var child = Question.Create(
+			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("paraglider")!.Id);
+
+		// When
+		var (english, _) = TypeformExportBuilder.Build([child]);
+
+		// Then
+		english.Fields.Single().Properties.Hpac!.DependsOnOptionCode.ShouldBeNull();
+	}
+
+	[Fact]
+	public void GivenAConditionOnAReplacedOption_WhenExported_ThenItNamesTheReplacementsCode()
+	{
+		// Given
+		var parent = Wing();
+		var child = Question.Create(
+			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnChoiceId: parent.Choice("paraglider")!.Id);
+		Replace(parent, "paraglider", "Paraglider (solo)");
+
+		// When
+		var (english, _) = TypeformExportBuilder.Build([parent, child]);
+
+		// Then
+		english.Fields.Single(field => field.Ref == "rating").Properties.Hpac!.DependsOnOptionCode.ShouldBe("paraglider_solo");
 	}
 
 	private static Question Wing()

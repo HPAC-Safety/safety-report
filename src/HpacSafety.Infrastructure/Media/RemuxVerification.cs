@@ -47,10 +47,28 @@ public static class RemuxVerification
 			}
 		}
 
-		return probe.TryGetProperty("format", out var format) && UnexpectedTag(format) is { } inFormat
-			? $"Remux left the tag {inFormat} in place"
-			: null;
+		if (!probe.TryGetProperty("format", out var format))
+		{
+			return "Remux produced no container to read";
+		}
+
+		if (UnexpectedTag(format) is { } inFormat)
+		{
+			return $"Remux left the tag {inFormat} in place";
+		}
+
+		// The brand ffmpeg's MP4 muxer writes. Anything else, a QuickTime `qt  `
+		// above all, is not the MP4 every derivative must be (ADR-0122).
+		return format.TryGetProperty("tags", out var tags)
+			   && tags.ValueKind is JsonValueKind.Object
+			   && tags.TryGetProperty("major_brand", out var brand)
+			   && string.Equals(brand.GetString(), Mp4Brand, StringComparison.Ordinal)
+			? null
+			: "Remux did not produce an MP4 container";
 	}
+
+	/// <summary>The major brand of an MP4 written by ffmpeg's MP4 muxer.</summary>
+	public const string Mp4Brand = "isom";
 
 	private static string? UnexpectedTag(JsonElement element)
 	{

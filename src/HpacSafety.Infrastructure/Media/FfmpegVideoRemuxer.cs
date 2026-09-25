@@ -43,6 +43,11 @@ public sealed partial class FfmpegVideoRemuxer : IVideoRemuxer
 		// verification below allows only what it recognises.
 		"-bitexact",
 		"-movflags", "+faststart",
+		// MP4, named rather than inferred from the output's file name, whatever
+		// container the video arrived in: an iPhone's QuickTime becomes a file
+		// every browser plays inline (ADR-0122). Still packets copied, never
+		// decoded; a stream MP4 cannot hold fails the remux instead.
+		"-f", "mp4",
 		"{output}",
 	];
 

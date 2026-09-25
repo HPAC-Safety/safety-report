@@ -34,6 +34,50 @@ public sealed class RemuxVerificationTests
 		RemuxVerification.Reject(probe).ShouldBeNull();
 	}
 
+	[Theory]
+	[InlineData("qt  ")]
+	[InlineData("mp42")]
+	public void GivenContainerThatIsNotFfmpegsMp4_WhenVerified_ThenRefused(string brand)
+	{
+		// Given — every derivative is an MP4, whatever the upload's container (ADR-0122)
+		var probe = Probe($$"""
+						  {
+						    "streams": [ { "codec_type": "video" } ],
+						    "format": { "tags": { "major_brand": "{{brand}}", "minor_version": "512" } }
+						  }
+						  """);
+
+		// When
+		var refusal = RemuxVerification.Reject(probe);
+
+		// Then
+		refusal.ShouldNotBeNull();
+		refusal.ShouldContain("MP4");
+	}
+
+	[Theory]
+	[InlineData("""{ "streams": [ { "codec_type": "video" } ], "format": { } }""")]
+	[InlineData("""{ "streams": [ { "codec_type": "video" } ], "format": { "tags": null } }""")]
+	[InlineData("""{ "streams": [ { "codec_type": "video" } ], "format": { "tags": { "minor_version": "512" } } }""")]
+	public void GivenContainerThatNamesNoBrand_WhenVerified_ThenRefused(string json)
+	{
+		// Given — a container that does not say it is an MP4 is not proven to be one
+		var probe = Probe(json);
+
+		// When / Then
+		RemuxVerification.Reject(probe).ShouldBe("Remux did not produce an MP4 container");
+	}
+
+	[Fact]
+	public void GivenProbeWithNoContainer_WhenVerified_ThenRefused()
+	{
+		// Given
+		var probe = Probe("""{ "streams": [ { "codec_type": "video" } ] }""");
+
+		// When / Then
+		RemuxVerification.Reject(probe).ShouldNotBeNull();
+	}
+
 	[Fact]
 	public void GivenTimedMetadataTrack_WhenVerified_ThenRefused()
 	{
@@ -123,17 +167,20 @@ public sealed class RemuxVerificationTests
 	}
 
 	[Fact]
-	public void GivenNoStreamsOrTagsAtAll_WhenVerified_ThenAccepted()
+	public void GivenNoStreamsOrTagsAtAll_WhenVerified_ThenRefused()
 	{
-		// Given — nothing to object to
-		RemuxVerification.Reject(Probe("{}")).ShouldBeNull();
+		// Given — nothing to object to, and nothing proving an MP4 either: a
+		// derivative must be one (ADR-0122)
+		RemuxVerification.Reject(Probe("{}")).ShouldNotBeNull();
 	}
 
 	[Fact]
-	public void GivenTagsThatAreNotAnObject_WhenVerified_ThenAccepted()
+	public void GivenStreamTagsThatAreNotAnObject_WhenVerified_ThenAccepted()
 	{
-		// Given — ffprobe omits or empties `tags`; neither is a leak
-		var probe = Probe("""{ "streams": [ { "codec_type": "video", "tags": null } ], "format": { } }""");
+		// Given — ffprobe omits or empties a stream's `tags`; neither is a leak
+		var probe = Probe("""
+						  { "streams": [ { "codec_type": "video", "tags": null } ], "format": { "tags": { "major_brand": "isom" } } }
+						  """);
 
 		// When / Then
 		RemuxVerification.Reject(probe).ShouldBeNull();

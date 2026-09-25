@@ -161,6 +161,19 @@ public sealed class PublicMediaSteps
 		(await Listed()).ShouldBe([_imageId]);
 	}
 
+	[Given(@"a published report shows a processed QuickTime video")]
+	public async Task GivenAPublishedReportShowsAQuickTimeVideo()
+	{
+		await Seed("yes", report =>
+		{
+			var fileId = TinyId.New();
+			var file = report.AddFile(fileId, $"{report.Id}/original/{fileId}", MediaType.QuickTime.ContentType, 4096, "IMG_0412.MOV", DateTimeOffset.UtcNow);
+			file.RecordStripped($"{report.Id}/stripped/{fileId}", DateTimeOffset.UtcNow);
+			_imageId = fileId.Value;
+		});
+		(await Listed()).ShouldBe([_imageId]);
+	}
+
 	[Given(@"a member who is not a reviewer is signed in")]
 	public void GivenAMemberWhoIsNotAReviewer()
 	{
@@ -177,6 +190,7 @@ public sealed class PublicMediaSteps
 
 	[When(@"a visitor asks for that file's public link")]
 	[When(@"an anonymous visitor asks for the image's public link")]
+	[When(@"an anonymous visitor asks for the video's public link")]
 	public async Task WhenAVisitorAsksForTheLink()
 	{
 		using var client = await Anonymous();
@@ -385,6 +399,18 @@ public sealed class PublicMediaSteps
 		(await served.Content.ReadAsByteArrayAsync()).ShouldBe(SyntheticJpeg);
 	}
 
+	[Then(@"the URL serves the derivative inline, as video\/mp4")]
+	public async Task ThenTheUrlServesAnMp4()
+	{
+		var body = await Link();
+		using var storage = new HttpClient();
+		using var served = await storage.GetAsync(new Uri(body.GetProperty("url").GetString()!));
+
+		served.StatusCode.ShouldBe(HttpStatusCode.OK);
+		served.Content.Headers.ContentType?.MediaType.ShouldBe(MediaType.Mp4.ContentType);
+		served.Content.Headers.ContentDisposition?.DispositionType.ShouldBe("inline");
+	}
+
 	[Then(@"the response carries the header X-Content-Type-Options: nosniff")]
 	public void ThenTheResponseCarriesNosniff()
 	{
@@ -458,7 +484,7 @@ public sealed class PublicMediaSteps
 		foreach (var file in files.Where(file => file.StrippedBlobKey is not null))
 		{
 			using var bytes = new MemoryStream(SyntheticJpeg);
-			await store.Write(BlobKey.Parse(file.StrippedBlobKey), bytes, file.Kind is AttachmentKind.Video ? file.ContentType : MediaType.Jpeg.ContentType, CancellationToken.None);
+			await store.Write(BlobKey.Parse(file.StrippedBlobKey), bytes, file.Kind is AttachmentKind.Video ? MediaType.Mp4.ContentType : MediaType.Jpeg.ContentType, CancellationToken.None);
 		}
 
 		// A document is offered as its unchanged original (ADR-0119).

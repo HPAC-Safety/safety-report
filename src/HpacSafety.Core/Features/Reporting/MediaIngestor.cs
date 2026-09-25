@@ -184,9 +184,10 @@ public sealed class MediaIngestor
 				return MediaIngestOutcome.Retained(verdict.Type, byteSize, sha256, originalKey);
 			}
 
+			// Always an MP4, whatever container the video arrived in (ADR-0122).
 			remuxed.Position = 0;
 			await _blobStore
-				.Write(derivativeKey, remuxed, verdict.Type.ContentType, cancellationToken)
+				.Write(derivativeKey, remuxed, MediaType.Mp4.ContentType, cancellationToken)
 				.ConfigureAwait(false);
 
 			return MediaIngestOutcome.Ingested(

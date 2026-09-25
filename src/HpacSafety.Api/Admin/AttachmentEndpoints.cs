@@ -257,7 +257,7 @@ public static class AttachmentEndpoints
 			return $"{file.Id}.bin";
 		}
 
-		var served = derivative && original.StrippedForm is { } stripped ? stripped : original;
+		var served = derivative && original.DerivativeForm is { } derived ? derived : original;
 		return AttachmentFileName.ForDownload(file.OriginalFileName, file.Id, served);
 	}
 

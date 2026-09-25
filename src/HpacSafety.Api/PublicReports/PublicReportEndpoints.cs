@@ -158,8 +158,8 @@ public static class PublicReportEndpoints
 		else
 		{
 			// An image's derivative is its stripped form (a HEIC becomes a JPEG); a
-			// video's is remuxed into the container it arrived in (ADR-0094).
-			var served = original.StrippedForm ?? original;
+			// video's is always an MP4 (ADR-0122).
+			var served = original.DerivativeForm ?? original;
 
 			url = await links.CreateUrl(
 				BlobKey.Parse(file.StrippedBlobKey), served.ContentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);

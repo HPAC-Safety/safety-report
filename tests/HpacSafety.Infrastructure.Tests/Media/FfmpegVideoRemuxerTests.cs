@@ -47,6 +47,23 @@ public sealed class FfmpegVideoRemuxerTests
 	}
 
 	[Fact]
+	public async Task GivenQuickTimeClip_WhenRemuxed_ThenDerivativeIsAnMp4()
+	{
+		// Given — an iPhone records QuickTime; the derivative must be MP4 (ADR-0122)
+		using var workspace = new Workspace();
+		var source = await workspace.SyntheticClip(container: "mov", ("location", "+49.2827-123.1207/"));
+		(await Brand(await File.ReadAllBytesAsync(source))).ShouldBe("qt  ");
+
+		// When
+		var remuxed = await Remux(source, MediaType.QuickTime);
+
+		// Then
+		remuxed.ShouldNotBeNull();
+		(await Brand(remuxed)).ShouldBe(RemuxVerification.Mp4Brand);
+		(await TagNames(remuxed)).ShouldNotContain(name => name.Contains("location", StringComparison.OrdinalIgnoreCase));
+	}
+
+	[Fact]
 	public async Task GivenClipWithADataTrack_WhenRemuxed_ThenOnlyAudioVisualStreamsSurvive()
 	{
 		// Given — an iPhone recording carries `mebx` timed-metadata tracks, which a
@@ -151,13 +168,14 @@ public sealed class FfmpegVideoRemuxerTests
 				.TryRemux(reading, destination, MediaType.Mp4, cancelled.Token));
 	}
 
-	private static async Task<byte[]?> Remux(string path)
+	private static async Task<byte[]?> Remux(string path,
+											 MediaType? type = null)
 	{
 		await using var source = File.OpenRead(path);
 		using var destination = new MemoryStream();
 
 		var produced = await new FfmpegVideoRemuxer(NullLogger<FfmpegVideoRemuxer>.Instance)
-			.TryRemux(source, destination, MediaType.Mp4, CancellationToken.None);
+			.TryRemux(source, destination, type ?? MediaType.Mp4, CancellationToken.None);
 
 		return produced ? destination.ToArray() : null;
 	}
@@ -177,6 +195,17 @@ public sealed class FfmpegVideoRemuxerTests
 		}
 
 		return names;
+	}
+
+	private static async Task<string?> Brand(byte[] content)
+	{
+		var probe = await Probe(content);
+
+		return probe.RootElement.TryGetProperty("format", out var format)
+			   && format.TryGetProperty("tags", out var tags)
+			   && tags.TryGetProperty("major_brand", out var brand)
+			? brand.GetString()
+			: null;
 	}
 
 	private static async Task<IReadOnlyList<string>> StreamKinds(byte[] content)
@@ -263,9 +292,16 @@ public sealed class FfmpegVideoRemuxerTests
 		}
 
 		/// <summary>Two seconds of ffmpeg's own test pattern, tagged as asked.</summary>
-		public async Task<string> SyntheticClip(params (string Key, string Value)[] tags)
+		public Task<string> SyntheticClip(params (string Key, string Value)[] tags)
 		{
-			var path = Path.Combine(_directory.FullName, $"{Guid.NewGuid():N}.mp4");
+			return SyntheticClip("mp4", tags);
+		}
+
+		/// <summary>The same, in the given container: `mp4`, or `mov` for QuickTime.</summary>
+		public async Task<string> SyntheticClip(string container,
+												params (string Key, string Value)[] tags)
+		{
+			var path = Path.Combine(_directory.FullName, $"{Guid.NewGuid():N}.{container}");
 			List<string> arguments =
 			[
 				"-nostdin", "-hide_banner", "-loglevel", "error", "-y",

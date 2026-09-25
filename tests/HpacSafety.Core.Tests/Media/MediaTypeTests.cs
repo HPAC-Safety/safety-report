@@ -79,6 +79,32 @@ public class MediaTypeTests
 	}
 
 	[Theory]
+	[InlineData("video/mp4", "video/mp4")]
+	[InlineData("video/quicktime", "video/mp4")]
+	[InlineData("image/heic", "image/jpeg")]
+	[InlineData("image/png", "image/png")]
+	public void GivenMediaType_WhenDerivativeFormIsRead_ThenItNamesTheDerivativesBytes(string declared,
+																					string expected)
+	{
+		// Given — every video's derivative is an MP4 (ADR-0122); an image's is its stripped form
+		var type = MediaType.Parse(declared);
+
+		// When
+		var derivative = type.DerivativeForm;
+
+		// Then
+		derivative.ShouldNotBeNull();
+		derivative.Value.ContentType.ShouldBe(expected);
+	}
+
+	[Fact]
+	public void GivenDocument_WhenDerivativeFormIsRead_ThenNone()
+	{
+		// Given / When / Then — a document is never transformed
+		MediaType.Pdf.DerivativeForm.ShouldBeNull();
+	}
+
+	[Theory]
 	[InlineData("image/jpeg")]
 	[InlineData("image/png")]
 	[InlineData("image/webp")]

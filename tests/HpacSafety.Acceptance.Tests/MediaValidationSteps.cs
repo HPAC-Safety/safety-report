@@ -124,6 +124,15 @@ public sealed class MediaValidationSteps
 		_store.Read(_outcome.DerivativeKey).ShouldNotBe(_originalBytes);
 	}
 
+	[Then(@"the derivative is an MP4 container, stored as video\/mp4, whatever container the video arrived in")]
+	public void ThenTheDerivativeIsAnMp4()
+	{
+		// The upload was QuickTime. That the remux writes MP4 and its
+		// verification refuses anything else is FfmpegVideoRemuxerTests and
+		// RemuxVerificationTests, against ffmpeg itself (ADR-0122).
+		_store.TypeOf(_outcome.DerivativeKey).ShouldBe(MediaType.Mp4.ContentType);
+	}
+
 	[Then(@"the upload still succeeds and the original is retained")]
 	public void ThenTheUploadStillSucceeds()
 	{
@@ -149,7 +158,8 @@ public sealed class MediaValidationSteps
 	{
 		_store = new RecordingBlobStore();
 		var original = BlobKey.For("dQw4w9WgXcQ", MediaCompartment.Original, TinyId.New().Value);
-		_originalBytes = "pretend-mp4-bytes-with-a-gps-tag"u8.ToArray();
+		// An iPhone's QuickTime, the container the derivative must not keep.
+		_originalBytes = "pretend-quicktime-bytes-with-a-gps-tag"u8.ToArray();
 		_store.Seed(original, _originalBytes);
 
 		_remuxer = new RecordingVideoRemuxer(remuxProduces);
@@ -157,13 +167,13 @@ public sealed class MediaValidationSteps
 
 		var ingestor = new MediaIngestor(
 			_store,
-			new FixedMediaSniffer(MediaType.Mp4),
+			new FixedMediaSniffer(MediaType.QuickTime),
 			_stripper,
 			_remuxer,
 			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
 			new FixedTimeProvider(Now));
 
-		_outcome = await ingestor.Process(original, MediaType.Mp4, CancellationToken.None);
+		_outcome = await ingestor.Process(original, MediaType.QuickTime, CancellationToken.None);
 	}
 
 	[Given(@"an accepted document attachment enters Worker processing")]
@@ -249,6 +259,12 @@ public sealed class MediaValidationSteps
 	private sealed class RecordingBlobStore : IBlobStore
 	{
 		private readonly Dictionary<string, byte[]> _blobs = [];
+		private readonly Dictionary<string, string> _types = [];
+
+		public string TypeOf(BlobKey key)
+		{
+			return _types[key.Value];
+		}
 
 		public void Seed(BlobKey key,
 						 byte[] bytes)
@@ -291,6 +307,7 @@ public sealed class MediaValidationSteps
 			using var buffer = new MemoryStream();
 			await content.CopyToAsync(buffer, cancellationToken);
 			_blobs[key.Value] = buffer.ToArray();
+			_types[key.Value] = contentType;
 		}
 
 		public Task<StoredBlob?> Describe(BlobKey key,

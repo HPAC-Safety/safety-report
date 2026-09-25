@@ -121,6 +121,17 @@ public readonly record struct MediaType
 		: ContentType == Heic.ContentType ? Jpeg
 		: this;
 
+	/// <summary>
+	///     The type of the bytes a derivative of this type holds, whichever way it
+	///     was made: an image's <see cref="StrippedForm" />, and MP4 for every video,
+	///     because the remux always writes an MP4 container whatever the upload's
+	///     (ADR-0122). <see langword="null" /> for a document. The Worker stores a
+	///     derivative under it, a reviewer's download takes its extension, and the
+	///     public link serves it.
+	/// </summary>
+	public MediaType? DerivativeForm =>
+		Kind is MediaKind.Video ? Mp4 : StrippedForm;
+
 	/// <summary>True when ingest can produce a derivative a reviewer may see.</summary>
 	public bool CanBeStripped => StrippedForm is not null;
 

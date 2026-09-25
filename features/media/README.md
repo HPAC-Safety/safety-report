@@ -72,6 +72,15 @@ file, hashed as it goes, and every sniffer and derivative step reads that file
 or writes another, deleted when processing ends. Only decoding an image holds
 its pixels in memory, which re-encoding it requires (#362).
 
+## Every video derivative is an MP4
+
+Whatever container a video arrives in, an iPhone's QuickTime included, the
+remux writes an MP4 and the verification requires one. The derivative is
+stored and served as `video/mp4`, and a reviewer downloads it as `.mp4`
+(REQ-MED-007, REQ-MED-043, REQ-MED-044,
+[ADR-0122](../../docs/decisions/ADR-0122-a-video-derivative-is-always-an-mp4.md)).
+A stream MP4 cannot hold is a remux that fails, never a reason to transcode.
+
 ## A video with no derivative
 
 A video that cannot be remuxed into a verified derivative is retained rather

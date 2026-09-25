@@ -16,8 +16,10 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 ## Data
 
 - AWS-managed encryption at rest and TLS.
-- Run database migrations explicitly before application rollout; keep tested
-  backups.
+- Migrations apply at startup: the API and the Worker each run
+  `EnsureMigrated` (`MigrationRunner`) under an advisory lock, and there is no migrate job or
+  migration deploy step (ADR-0055).
+- Keep tested backups.
 - Quarantine unreferenced uploads with lifecycle expiry; keep report-linked
   objects private.
 
@@ -42,6 +44,6 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 
 ## Remove
 
-SES and email resources, combined-site assumptions, external publication
+SES and email resources, separate public/admin site assumptions (ADR-0048), external publication
 integrations, speculative scaling, and secrets or alarms that exist only for
 retired features.

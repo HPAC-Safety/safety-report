@@ -25,11 +25,14 @@ skill whose architecture conflicts with `/features`.
 
 A skill and an agent are not the same thing. A skill is knowledge, loaded when
 its topic is in play, and it constrains nothing. An agent is a role, and what
-makes it useful is what it refuses: the four declared here — `spec-author`,
-`test-writer`, `implementer`, `spec-reviewer` — are the steps of the
-specification-driven chain, each holding one job and trusting only the artifact
-from the step before it
+makes it useful is what it refuses. Five are declared here. Four of them —
+`spec-author`, `test-writer`, `implementer`, `spec-reviewer` — are the steps of
+the specification-driven chain, each holding one job and trusting only the
+artifact from the step before it
 ([ADR-0086](decisions/ADR-0086-four-role-agents-defined-in-the-repository.md)).
+The fifth, `ai-author`, maintains the agent instructions and sits outside the
+chain
+([ADR-0121](decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
 They are definitions an operator invokes, not a pipeline: the repository's
 gates remain the enforcement.
 

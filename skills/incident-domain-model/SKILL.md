@@ -36,28 +36,33 @@ stateDiagram-v2
 
 | Table | Holds |
 |---|---|
-| `questions` | Stable question identity: key, role, privacy, order, section, active/deleted state. |
-| `question_revisions` | Complete, immutable bilingual revisions — wording, type, required flag. Answers reference a revision, never the question row. |
+| `questions` | Stable question identity: key, role, system flag, deleted state. |
+| `question_revisions` | Complete, immutable bilingual revisions: wording, type, required, private, translatable, active, display order, dependency, grouping. Answers reference a revision, never the question row. |
 | `question_choices` | A question's own editable choices, outside its revisions. Editing never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (ADR-0095). |
-| `reports` | The submission. Only the two consents project onto typed columns (see "The two consents"); every other answer is in `report_answers`. `language` is the locale the reporter wrote in. |
-| `report_answers` | One row per question asked, referencing the exact revision answered. |
-| `report_files` | Blob keys, an `AttachmentKind`, and (once wired up) the file-upload answer they belong to. |
+| `reports` | The submission. Only consent projects onto typed columns (see "The consents"); every other answer is in `report_answers`. `language` is the locale the reporter wrote in. |
+| `report_answers` | One row per answered value (a multi-select writes one row per chosen value), each referencing the exact revision answered. |
+| `report_files` | Blob keys, an `AttachmentKind`, and the file-upload answer they belong to. |
 | `summaries` | **One row per report**: `ai_summary_en`, `ai_summary_fr`, shared model/prompt provenance, one approval for the pair. |
 | `outbox_messages` | Work to do, written in the same transaction as the report. |
-| `audit_log` | Which token subject approved, edited, or rejected what, and when. Append-only; the one table with no `Deleted` column. |
+| `audit_log` | Which token subject approved, edited, or rejected what, and when. Append-only, with no `Deleted` column. |
 
 - **No user table.** Identity and role come from a validated bearer token per
   request and are never persisted
   ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
   An approver or audit actor is an opaque `varchar(256)` subject with no
   foreign key. A report records nothing about the member who filed it.
-- Every table except `audit_log` has `Deleted timestamptz` and a default
-  live-row query filter (ADR-0040).
+- Every table except `audit_log` and `pending_import_logic` (transient Typeform
+  import notes, hard-deleted, ADR-0077) has `Deleted timestamptz` and a
+  default live-row query filter (ADR-0040). `question_choices` has the column
+  but no filter (ADR-0095).
 
 ## Language
 
-- A report is stored in the language it was written in. The raw narrative is
-  never translated: a translated account of a crash is a paraphrased one.
+- A report's answers are stored, immutably, in the language they were written
+  in. The summary is never a translation of them. Free text whose question is
+  marked Auto-translate answer (long text by default) gets a second-language
+  value beside the original, made by the Worker off the submission path
+  (ADR-0080, ADR-0112).
 - `reports.language` is that locale. The Worker makes one model call in it and
   gets both official languages back — no separate translation step, row, or
   per-language approval.
@@ -80,8 +85,9 @@ flowchart LR
   exponentially, and moves a message aside past a poison threshold.
 - Polling is the source of truth. `LISTEN/NOTIFY` may be added later only to
   cut latency, never as the sole delivery.
-- `OutboxMessage.Type` is a typed `OutboxMessageType` (`SummarizeReport`
-  today), stored as an invariant code. `Payload` carries identifiers only,
+- `OutboxMessage.Type` is a typed `OutboxMessageType` (`SummarizeReport`,
+  `ProcessAttachment`, `TranslateAnswers`, `TranslateComment`), stored as an
+  invariant code. `Payload` carries identifiers only,
   never report content.
 
 ## Sensitivity
@@ -89,13 +95,18 @@ flowchart LR
 Three tiers drive access control, logging, and what may reach a model:
 
 1. **Restricted** — reporter and pilot names, phone, email, member number, raw
-   narrative, original uploaded media. Admin-only, never logged, never sent to
-   a translation service.
+   narrative, original uploaded media. Admin-only and never logged.
+   - The one translation service it reaches is the Worker's answer translation
+     (DeepL), for free text marked Auto-translate answer (ADR-0112).
+   - The one original that can become public is a validated document on a
+     published report under `consent_documents`, as a forced download
+     (ADR-0119).
 2. **Internal** — manufacturer, model, precise site. For HPAC's own trend
    analysis; never published.
 3. **Publishable** — the approved summary, publication timestamp, visible
-   comment count, and, with media consent, each public image or video
-   derivative's opaque id and kind (ADR-0117).
+   member comments and their count (ADR-0114), each public image or video
+   derivative's opaque id and kind (ADR-0117), and each public document's
+   opaque id, kind `document`, and download format (ADR-0119).
    - The public DTO is that allowlist and nothing else. No province, severity,
      or aircraft type is ever published: they are ordinary `report_answers`
      rows, not typed columns a public query could select by accident.
@@ -109,10 +120,12 @@ Three tiers drive access control, logging, and what may reach a model:
   - access control on who may query `report_answers`;
   - the public DTO being a positive allowlist.
 
-## The two consents
+## The consents
 
-- The two consents are the only answers a report reads by name. They project
-  onto `reports.consent_publish` and `reports.consent_media` (ADR-0117).
+- The two consent questions are the only answers a report reads by name. They
+  project onto `reports.consent_publish` and `reports.consent_media`
+  (ADR-0117). The media-consent answer also sets `reports.consent_documents`,
+  but only when it answered the question's current wording (ADR-0119).
 - Every other question — province, injury, date, aircraft, any role an
   administrator assigns — is an ordinary `report_answers` row. `Report` has no
   typed projection for them; the admin review DTO reads the exact asked

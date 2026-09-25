@@ -31,10 +31,10 @@ flowchart LR
   validation and the role policies. It does no AI work.
 - `HpacSafety.Worker` consumes typed outbox work for the one-call summary and
   per-file attachment processing.
-- `src/web/public` and `src/web/admin` are separate React/TypeScript
-  applications, each built with Vite and served from its own container
+- `src/web` is one React/TypeScript/Vite application, built once, with the
+  admin review queue as an authenticated `/admin` route
   ([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
-  [ADR-0044](decisions/ADR-0044-containerized-web-hosting.md)).
+  [ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)).
 
 Questions are complete immutable bilingual database revisions. Unfinished
 answers remain only in the browser; no report data is stored server-side until
@@ -43,7 +43,7 @@ when it is attached and is claimed by that request. The Worker produces one bili
 review plus positive consent gates a minimal public DTO.
 
 Keep only useful boundaries. The target has no server drafts, upload-slot API,
-application field cipher, runtime translator, PII auditor, email sender,
+application field cipher, summary-translation stage, PII auditor, email sender,
 external publication channel, or specialized aircraft service. It also has no
 user table, allowlist, session store, or credential handling: an identity
 provider signs a token, the API validates it and reads two claims, and nothing

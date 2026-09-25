@@ -38,9 +38,10 @@ prose.
 
 Prioritize boundaries described in
 [`testing-and-quality.md`](testing-and-quality.md): immutable
-question selection, multipart mapping/atomicity, token validation and rate
-limits, one-call bilingual output, role replacement with no identity fragments,
-attachment derivatives/private documents, the three-role authorization matrix,
+question selection, JSON submission mapping and atomicity with claimed uploads,
+token validation and rate limits, one-call bilingual output, role replacement
+with no identity fragments, attachment derivatives and document publication
+only under media consent, the three-role authorization matrix,
 audit, pair approval, soft deletion, and exact public DTO allowlists.
 
 Authentication fixtures mint a real development-issuer token through the booted
@@ -53,7 +54,7 @@ Common commands:
 dotnet test HpacSafety.slnx
 dotnet test HpacSafety.slnx --filter "Category!=Integration"
 node --test $(find tests/js -name '*.test.mjs')
-npx playwright test
+npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 
 Integration suites require Docker. Coverage retains the repository floor and

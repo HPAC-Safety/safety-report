@@ -114,7 +114,9 @@ with a Fargate migration path if that changes
 ([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)).
 The Worker and the one web container run as ECS Fargate services; CloudFront
 sits in front of the ALB. Runtime data stays in Canada, object storage remains
-private, and migrations run as an explicit deployment step.
+private, and the API and Worker apply pending migrations at startup under an
+advisory lock
+([ADR-0055](docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 ## Getting started
 

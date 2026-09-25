@@ -28,12 +28,21 @@ description: Write, review, and apply an HPAC Safety EF Core migration. Use when
      skips the filter because its aggregate reads removed rows (ADR-0095).
    - A widening cast that loses nothing (`char(11)` → `varchar(256)`) is not
      destructive.
-   - The two carved exceptions (`AGENTS.md` invariant 8): `admin_users`
-     ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)),
-     and the shared-choice-list and per-revision option tables, dropped only
-     after the same migration copies every choice onto its question
-     ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-     Neither generalizes; any other physical delete needs its own ADR.
+   - The carved exceptions (`AGENTS.md` invariant 8), each argued in its own
+     ADR:
+     - the legacy per-language question tables and `report_aircraft`, dropped
+       by `MigrateCanonicalDomainAndPersistence` after folding their data
+       forward
+       ([ADR-0040](../../docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md));
+     - `admin_users`, which never held data in a deployed environment
+       ([ADR-0065](../../docs/decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md));
+     - the shared-choice-list and per-revision option tables, dropped only
+       after the same migration copies every choice onto its question
+       ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md));
+     - `pending_import_logic` rows, transient Typeform import notes with no
+       `deleted` column, hard-deleted when an administrator resolves them
+       ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
+     None generalizes; any other physical delete needs its own ADR.
 4. **Both paths work**: an empty database and one at current `main`. A new
    column is nullable, defaulted, or backfilled by the same migration — never
    `NOT NULL` with no value for existing rows.
@@ -57,9 +66,9 @@ description: Write, review, and apply an HPAC Safety EF Core migration. Use when
 10. **New raw SQL is a `.sql` file** under
     `src/HpacSafety.Infrastructure/Persistence/Sql/`, loaded by the migration,
     never a C# string literal. Views and stored procedures live there too.
-    - Simple queries stay LINQ. A query hard to express or maintain as LINQ
-      (multi-table aggregation, a cross-cutting report) becomes a view or
-      stored procedure instead.
+    - A read query that applies a rule (a filter, a derived flag, a count)
+      becomes a view, mapped read-only under `Persistence/Views/` with
+      `ToView` (ADR-0116). A pure projection stays LINQ.
     - Existing inline SQL in past migrations is not rewritten.
 
 ## Generate
@@ -100,7 +109,8 @@ Never commit a migration unread. Check it:
 ## How it is applied
 
 - Nobody applies it by hand. `HpacSafety.Api` and `HpacSafety.Worker` both call
-  `HpacSafetyDbContext.EnsureMigratedAsync` at startup: take a PostgreSQL
+  `EnsureMigrated` (the `MigrationRunner` extension on `HpacSafetyDbContext`)
+  at startup: take a PostgreSQL
   advisory lock, re-check pending migrations after acquiring it, apply any
   that remain. Whichever starts first does the work, so "Worker before API"
   after a deploy is safe.

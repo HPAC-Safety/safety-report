@@ -48,6 +48,6 @@ missing ID fails there rather than in review.
   consequences.
 - Parking a superseded scenario behind `@ignore`. A decision that supersedes a
   scenario deletes it
-  ([ADR-0047](../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
+  ([ADR-0083](../docs/decisions/ADR-0083-specification-driven-development.md)).
 - Arguing a technology choice in a feature file. That belongs in an ADR.
 - Real report content. Every example is synthetic.

@@ -1735,7 +1735,7 @@ data-and-persistence.md — verified by `REQ-MOD-031`, `REQ-MOD-036`
 
 ### CON-DP-012
 
-data-and-persistence.md — verified by none — a deployment-time property no running scenario observes
+data-and-persistence.md — verified by none — a startup property no running scenario observes; `MigrationRunner` and its tests are its check
 
 ### CON-IF-001
 
@@ -1747,7 +1747,7 @@ interfaces-and-data-flow.md — verified by `REQ-SUB-001`, `REQ-MOD-039`
 
 ### CON-IF-003
 
-interfaces-and-data-flow.md — verified by `REQ-MOD-017`, `REQ-MOD-019`
+interfaces-and-data-flow.md — verified by `REQ-MOD-019`
 
 ### CON-IF-004
 
@@ -1759,7 +1759,7 @@ interfaces-and-data-flow.md — verified by `REQ-MOD-041`
 
 ### CON-IF-006
 
-interfaces-and-data-flow.md — verified by `REQ-SUB-011`
+interfaces-and-data-flow.md — verified by `REQ-MOD-060`
 
 ### CON-IF-007
 
@@ -1823,11 +1823,11 @@ system-overview.md — verified by `REQ-QB-001`, `REQ-QB-002`, `REQ-QB-009`
 
 ### CON-SO-002
 
-system-overview.md — verified by `REQ-QB-014`, `REQ-QB-016`, `REQ-WLD-015`, `REQ-QB-112`, `REQ-QB-113`
+system-overview.md — verified by `REQ-QB-014`, `REQ-QB-016`, `REQ-QB-112`, `REQ-QB-113`
 
 ### CON-SO-003
 
-system-overview.md — verified by `REQ-MOD-036`, `REQ-MED-025`, `REQ-MED-026`
+system-overview.md — verified by `REQ-MOD-036`, `REQ-MED-025`, `REQ-MED-026`, `REQ-MED-037`, `REQ-MED-039`
 
 ### CON-SO-004
 

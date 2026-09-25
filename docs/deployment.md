@@ -12,14 +12,16 @@ The target deployment is a small AWS environment in `ca-central-1`:
 - RDS PostgreSQL with backups;
 - private S3 attachment storage;
 - separate public and admin static S3/CloudFront sites;
-- Secrets Manager, identity-provider configuration, explicit migrations, and focused
-  alerts for failed or stuck Worker work.
+- Secrets Manager, identity-provider configuration, and focused alerts for failed
+  or stuck Worker work.
 
 GitHub Actions assumes AWS roles through OIDC. Do not create long-lived AWS
 access keys. Runtime secret values stay out of source control and Terraform
 state. Use AWS-managed encryption at rest and TLS.
 
-Migrations run as a dedicated step before the new API receives traffic.
+Migrations apply at startup: the API and the Worker each run pending migrations
+under an advisory lock, and there is no dedicated migration step
+([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 Rollback redeploys a previously tested artifact; schema changes must support the
 previous application during staged rollout. Backup restoration must be tested
 before cutover.

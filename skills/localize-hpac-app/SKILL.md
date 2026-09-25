@@ -11,12 +11,17 @@ description: Keep HPAC Safety application chrome, database questions, validation
   CI translation tooling applies only to those catalogues.
 - Add every new string to `locales/en-CA.json` and read it through `t(...)`;
   never a literal in markup (`tools/check-hardcoded-strings.mjs` enforces it).
-- **Never hand-author `fr-CA.json`.** Only CI translates it; `DEEPL_API_KEY`
-  lives only in CI (ADR-0021).
+- **Never add or generate `fr-CA.json` keys by hand.** Only
+  `i18n-translate.yml` runs `translate-locale.mjs --generate` (ADR-0021,
+  ADR-0057). Correcting an existing French value by hand is allowed: it is
+  recorded as a human correction and never machine-translated again
+  (ADR-0070). A developer's `.env` holds a `DEEPL_API_KEY` for the API and
+  Worker (ADR-0109); no local tool uses it to write the catalogue.
 - `npm run dev` / `npm run build` in `src/web` first run
   `tools/stub-missing-translations.mjs`: a key missing from either file gets
   the other's text prefixed `#` (`#Contact`), visibly untranslated instead of
-  silently English, until CI replaces it after merge (ADR-0054).
+  silently English, until CI replaces it: on a same-repo pull request's own
+  branch (ADR-0057), or after merge for a fork's (ADR-0054).
 - A committed `#`-prefixed value fails `translate-locale.mjs --check` and must
   never reach `main`.
 
@@ -33,14 +38,24 @@ description: Keep HPAC Safety application chrome, database questions, validation
 
 ## Database questions
 
-- Every immutable revision stores English and French label, help, and option
-  text. Administrators author and review both.
+- Every immutable revision stores English and French label and help text. A
+  question's choices live outside its revisions, one editable list per question
+  (ADR-0095). Administrators author and review both.
 - While authoring, Translate drafts the other language through
   `POST /api/admin/translate`, which calls `ITranslator` server-side. The result
   is an ordinary editable field; Save stays disabled until both languages are
   present (ADR-0062).
-- Nothing translates a question outside that screen, and no reporter content —
-  narrative, answer, or summary — is ever machine-translated.
+- Nothing translates a question outside that screen.
+- Reporter content is machine-translated only off the submission path, in these
+  cases:
+  - an answer that needs a second language, by the Worker (ADR-0112);
+  - an answer's second language an administrator drafts with Translate in the
+    answer-translation queue, then saves (ADR-0112);
+  - a summary language a reviewer asks to draft from the other (ADR-0108);
+  - each revision of a member's comment (ADR-0114).
+- A select answer naming a choice written in both languages copies that
+  choice's other label instead, which is a lookup, not a translation. One
+  naming a one-language choice is translated by the Worker (ADR-0112).
 
 ## Runtime behavior
 
@@ -56,5 +71,9 @@ description: Keep HPAC Safety application chrome, database questions, validation
 
 ## Never
 
-Automatically translate raw reports, attachments, documents, model input, or
-database questions.
+- Translate anything on the submission path.
+- Translate attachments, documents, or model input.
+- Translate an answer that does not need a second language (ADR-0112).
+- Translate database questions outside the authoring screen.
+- Produce the Worker's summary pair with a translation provider. It comes from
+  the one model call.

@@ -39,7 +39,8 @@ target group; see
 [ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)),
 the Worker and the web site each a separate ECS Fargate service. RDS and
 attachment storage are private. Secrets Manager supplies runtime secrets.
-Terraform owns the topology; explicit migrations own schema changes.
+Terraform owns the topology; EF Core migrations own schema changes, applied at
+startup ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 
 **CON-INF-002** No SES/email resources, messaging integrations, public attachment distribution,
 application encryption key, speculative queueing platform, or autoscaling
@@ -113,13 +114,15 @@ On an approved main deployment:
 
 1. immutable API, Worker, and web images are built and pushed with the
    commit SHA;
-2. a one-off migration task runs the reviewed migration and must succeed;
-3. the API (Lambda function), Worker, and web (ECS services) deploy
+2. the API (Lambda function), Worker, and web (ECS services) deploy
    independently using that image version, and the web deploy invalidates
    the CloudFront distribution; and
-4. health/readiness checks confirm the rollout.
+3. health/readiness checks confirm the rollout.
 
-Services never run migrations on startup. Rollback deploys a known image/static
+There is no migration task or deploy step. The API and the Worker each apply
+pending migrations at startup, under a PostgreSQL advisory lock that re-checks
+after it is taken, so whichever starts first migrates and the other finds
+nothing to do ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)). Rollback deploys a known image/static
 artifact; database migrations follow expand/contract compatibility when a
 release may be rolled back.
 *Verified by: none — an infrastructure property no application scenario can

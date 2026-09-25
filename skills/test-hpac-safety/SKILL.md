@@ -109,7 +109,8 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 ## Contracts to cover
 
 - **Questions**: complete revisions are immutable; latest-revision selection
-  cannot resurrect an older active revision; only consent is required.
+  cannot resurrect an older active revision. The consents are always required
+  when asked; an administrator may require any other question (ADR-0061).
 - **Before submission**: unfinished answers and revision IDs stay in browser
   storage for 15 days; no report, reserved ID, or database state exists before
   final submission. An upload is validated before it is stored, names no
@@ -124,8 +125,10 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   exact role in both languages with no fragment left; eligible safety facts
   survive.
 - **Attachments**: count, size, and type checks stream safely; image and video
-  derivatives remove metadata; documents stay private originals and never reach
-  AI or public output.
+  derivatives remove metadata; documents are kept as unchanged originals and never
+  reach AI. One is public only as a short-lived forced download under a
+  server-minted name, when validated, unhidden, and `consent_documents` is true
+  (ADR-0119).
 - **Publication**: consent, non-deletion, and current pair approval are all
   required; editing clears approval; soft deletion stops every flow.
 - **Logs**: credentials, report content, model payloads, client filenames, and

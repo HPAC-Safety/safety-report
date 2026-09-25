@@ -14,7 +14,7 @@ journeys. Use xUnit, Shouldly, Given/When/Then structure, Testcontainers,
 dotnet test HpacSafety.slnx
 dotnet test HpacSafety.slnx --filter "Category!=Integration"
 node --test $(find tests/js -name '*.test.mjs')
-npx playwright test
+npm --prefix tests/e2e test   # bddgen, then playwright test
 ```
 
 Integration tests require Docker. Use deterministic model fakes and synthetic
@@ -27,7 +27,8 @@ as part of the same `dotnet test HpacSafety.slnx` run. A scenario carries
 step definitions and removing that tag in the same PR.
 
 A scenario tagged `@ui` is the exception: its step definitions are TypeScript
-in [`e2e/steps`](e2e/steps) and it executes under `npx playwright test`, never
+in [`e2e/steps`](e2e/steps) and it executes under `npm --prefix tests/e2e test`, which runs `bddgen` before
+`playwright test`, never
 here ([ADR-0053](../docs/decisions/ADR-0053-ui-scenarios-execute-via-playwright-bdd.md)).
 The acceptance suite skips every `@ui` scenario itself, so the bare
 `dotnet test HpacSafety.slnx` above is the whole command — no category filter

@@ -29,11 +29,15 @@ Each outcome carries a stable constraint ID and names the claims that verify it
 - **CON-SO-002** Only the two consent questions are mandatory by rule:
   publication consent always, and media consent whenever it is shown. Neither
   has a default.
-  *Verified by: REQ-QB-014, REQ-QB-016, REQ-WLD-015, REQ-QB-112, REQ-QB-113.*
-- **CON-SO-003** Raw answers and originals are private and never returned by a
-  public API. The only attachment bytes a visitor can reach are a published
-  report's verified image and video derivatives, when media was consented to.
-  *Verified by: REQ-MOD-036, REQ-MED-025, REQ-MED-026.*
+  *Verified by: REQ-QB-014, REQ-QB-016, REQ-QB-112, REQ-QB-113.*
+- **CON-SO-003** Raw answers and image or video originals are private and never
+  returned by a public API. A visitor can reach only a published report's
+  verified image and video derivatives, when media was consented to, and its
+  validated documents' unchanged originals as forced downloads, when
+  `consent_documents` is true
+  ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+  [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+  *Verified by: REQ-MOD-036, REQ-MED-025, REQ-MED-026, REQ-MED-037, REQ-MED-039.*
 - **CON-SO-004** One Worker-owned prompt and one model call produce both
   official-language summary texts.
   *Verified by: REQ-AI-001, REQ-AI-011.*
@@ -154,7 +158,9 @@ scenario can assert what the system does, not enumerate what it never grew.*
 - Identity-provider-specific authorization rules in domain code
 - Application-managed encryption keys or ciphertext fields
 - Physical record deletion or a restore UI
-- Automated translation of administrator-authored question text
+- Translating administrator-authored question text unless an administrator
+  asks for a draft and saves it
+  ([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md))
 - A standalone PII service or specialized aircraft-processing subsystem
 
 ## Design ownership
@@ -164,6 +170,6 @@ framework middleware configured in the API, not an Infrastructure adapter —
 the API validates a token the provider already signed rather than calling
 anything. Infrastructure implements persistence,
 storage, attachment tooling, and the model client. API and Worker
-compose those pieces into use cases. The web sites consume HTTP DTOs and share
+compose those pieces into use cases. The website consumes HTTP DTOs and share
 only static assets and presentation utilities. See
 [interfaces and data flow](interfaces-and-data-flow.md) for exact boundaries.

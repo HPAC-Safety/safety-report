@@ -37,13 +37,13 @@ constraints permit, but it must preserve these logical records.
 
 | Record | Essential fields and relationships |
 |---|---|
-| `question_revisions` | ID, stable key, revision number, superseded revision ID, EN/FR label and help, type, sort order, section, privacy/active/system/required flags, nullable parent question ID the question is conditional on, created timestamp, Deleted. Unique stable key + revision number. Required state is authored (ADR-0061); only a `yes_no` question may be a parent (ADR-0060). |
+| `question_revisions` | ID, question ID, revision number, type, EN/FR label, help, and placeholder, display order, private/active/system/required/translatable flags, nullable parent question ID and required parent option code the question is conditional on, nullable group question ID it renders under, created timestamp, Deleted. Unique question + revision number. Required state is authored (ADR-0061). A parent is a `yes_no` question, or a `single_select` question naming one of its live choices (ADR-0060, ADR-0074). Grouping is ADR-0076; translatable is ADR-0112. |
 | `question_choices` | ID, question ID, stable choice code, nullable EN/FR label (at least one), sort order, reporter-added marker, the locale a reporter typed it in (null for an administrator's choice), Deleted. Unique question + code, including across a removed choice, so writing a removed choice again revives that row rather than creating a rival — except from a reporter, which never revives a removed choice. **Mutable and outside the revision chain** — editing choices never revises or forks the question, and a fork copies every row to the replacement. Only a reporter-added choice may lack a label, and one that does is waiting for an Administrator to supply it (ADR-0095). |
-| `reports` | ID, language, status, nullable ConsentPublish projection, submitted/published timestamps, safe summary failure state, Deleted. No ordinary typed projections. |
+| `reports` | ID, language, status, nullable consent projections (`consent_publish`, `consent_media`, and `consent_documents`, ADR-0117, ADR-0119), submitted/published timestamps, safe summary failure state, nullable reviewer rejection note, row version (`xmin`), Deleted. No ordinary typed projections. |
 | `questions` | ID, stable key, system marker, role, created timestamp, Deleted. Unique key **among live rows only** — a retired question keeps its key so a fork chain shares one (ADR-0071). |
 | `report_answers` | ID, report ID, question ID, exact question revision ID, privacy snapshot, nullable string value, the locale it was given in, nullable second-language value and its source (`auto`, `human`, or `choice`), the translation mode fixed at submission (`none`, `choice`, or `machine`, ADR-0112), answered/recorded timestamp, Deleted. **Every answer of every type is one string** — a select answer holds the label as shown, a boolean holds `yes` or `no`, a date/time holds ISO 8601 (ADR-0072). Includes skipped shown questions, including file-upload controls. |
-| `report_files` | ID, report ID, file-upload report-answer ID, attachment kind, server-minted original and nullable derivative keys, detected/safe types and sizes, processing status/timestamps, safe error code, Deleted. The answer identifies the exact revision. Documents normally have no derivative. The reporter's sanitized original filename, nullable, used only as a reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)); never in a key. No extracted document text. |
-| `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, generated/updated timestamps, nullable ApprovedBySubject/ApprovedAt, Deleted. One row per report. |
+| `report_files` | ID, report ID, file-upload report-answer ID, attachment kind, server-minted original and nullable derivative keys, detected/safe types and sizes, processing timestamps (derivative written, document validated, ADR-0119), safe error code, nullable reviewer hide timestamp and subject (ADR-0117), Deleted. The answer identifies the exact revision. Documents normally have no derivative. The reporter's sanitized original filename, nullable, used only as a reviewer's download name ([ADR-0097](decisions/ADR-0097-a-reviewer-downloads-an-attachment-under-its-sanitized-original-name.md)); never in a key. No extracted document text. |
+| `summaries` | ID, report ID (unique), `ai_summary_en`, `ai_summary_fr`, model, prompt version, how each language was produced (`source_en`, `source_fr`, ADR-0108), generated/updated timestamps, nullable ApprovedBySubject/ApprovedAt, row version (`xmin`), Deleted. One row per report. |
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
 | `report_comments` | ID, report ID, the author's token subject (opaque, no foreign key), created timestamp, nullable hidden timestamp and hiding reviewer's subject, Deleted. A member's comment on a published report ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | `report_comment_revisions` | ID, comment ID, revision number (unique per comment), text, the locale it was written in, nullable machine translation and its source (`auto`), created timestamp, Deleted. Immutable once written, except that its translation is filled in once. The comment's current text is its highest revision. |
@@ -70,23 +70,18 @@ those rows ever had.
 ([ADR-0067](decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
 *Verified by: REQ-SUB-020, REQ-SUB-021.*
 
-Selected options may instead use immutable child rows when that gives stronger
-constraints. Whichever representation is used must distinguish a skipped
-selection from selected codes and validate codes against the exact revision.
-
 ## Constraints and indexes
 
 **CON-DP-007** Required database protection includes the following.
 *Verified by: REQ-QB-005, REQ-QB-030, REQ-QB-031.*
 
-- unique question stable key + revision number and at most one stable-key
-  revision chain link;
+- unique question + revision number;
 - unique question stable key among live questions only — `UNIQUE (key) WHERE
   deleted IS NULL` — so a fork chain shares one key with one live member
   (ADR-0071);
-- unique option code within a revision;
-- unique answer per report + question revision and, at the application layer,
-  at most one revision of the same stable key per report;
+- unique choice code per question, including a removed choice (ADR-0095);
+- answers indexed by report + question, deliberately not unique: a
+  multi-select writes one row per chosen value (ADR-0072);
 - each report file belongs to exactly one file-upload answer on the same report;
 - exactly one summary row per report;
 - indexes for latest-revision lookup and active/live filtering, the
@@ -137,7 +132,9 @@ positive allowlist rather than an entity projection with fields removed later.
 3. Admin review DTO: exact asked questions and answers, privacy, attachment
    state/authorized links, status, summary pair, and provenance.
 4. Public report DTO: only ID, both summary texts, publication timestamp, and
-   the number of visible comments. A public comment carries its ID, current
+   the number of visible comments. A report's own page also lists each public
+   file's opaque id, kind, and, for a document only, its coarse format, read
+   from `public_report_media` (ADR-0117, ADR-0119). A public comment carries its ID, current
    text, language, machine translation, timestamps, and whether it was edited,
    and never its author.
 
@@ -154,6 +151,13 @@ comments are public exactly while the report is. Its one non-public column,
 `author_subject`, is compared on the server to compute `isMine` and is never
 serialized
 ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+A report's public files are read from `public_report_media`, which also joins
+to `public_reports`. It lists a live, unhidden image or video with a verified
+derivative when `consent_media` is true, and a live, unhidden, validated
+document when `consent_documents` is true. Its key columns are for the server
+to mint a link and are never serialized
+([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+[ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 The admin side reads its rules from views in the same way
 ([ADR-0116](decisions/ADR-0116-a-read-rule-lives-in-a-view.md)):
@@ -162,7 +166,8 @@ The admin side reads its rules from views in the same way
   `needs_action` computed in SQL.
 - `answers_awaiting_translation` is every live answer still waiting for its
   machine-translated second language.
-- `admin_pending_counts` is one row counting both.
+- `admin_pending_counts` is one row counting the reports that need action and
+  the answers awaiting translation.
 
 The report list and its filters, the translation queue, and the Admin menu's
 counts all read these views. So they share one definition of "stuck", "needs
@@ -170,16 +175,22 @@ action", and "awaiting".
 
 ## Migrations and seeding
 
-**CON-DP-012** Schema changes are explicit EF migrations run as a deployment step before new
-API/Worker traffic; services never migrate on startup.
-*Verified by: none — a deployment-time property no running scenario observes.* A migration may seed the
+**CON-DP-012** Schema changes are EF migrations. The API and the Worker each
+apply pending migrations at startup, under a PostgreSQL advisory lock that
+re-checks after it is taken, before serving traffic or polling the outbox.
+There is no migration deploy step
+([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+*Verified by: none — a startup property no running scenario observes;
+`MigrationRunner` and its tests are its check.* A migration may seed the
 initial Typeform-derived bilingual question revisions with deterministic IDs.
-Production admin membership is configuration/data managed through the admin
-flow, not a real identity embedded in a migration. Development may seed one
-obviously synthetic admin under an environment guard.
+Admin access is a role claim on the identity provider's token; no migration
+seeds any person or role
+([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md),
+[ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 
-The migration from the current schema must remove ordinary report projections,
-one-locale summary rows, translation links, and field-encryption converters;
-convert question data to complete revisions without losing references; add
-Deleted consistently; and preserve audit/outbox history. Migration tests must
-exercise both a fresh database and the supported upgrade path.
+The canonical-schema migration removed the ordinary report projections,
+one-locale summary rows, translation links, and field-encryption converters,
+converted question data to complete revisions without losing references, added
+Deleted consistently, and preserved audit and outbox history
+([ADR-0040](decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
+Migration tests exercise both a fresh database and the supported upgrade path.

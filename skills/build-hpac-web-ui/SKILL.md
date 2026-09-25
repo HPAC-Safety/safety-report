@@ -29,8 +29,11 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 ## The report form
 
-- Render the ordered current bilingual question-revision DTO. Only consent is
-  required, and it has no selected default.
+- Render the ordered current bilingual question-revision DTO.
+  - Honor each revision's authored required state (ADR-0061).
+  - Publication consent is always required, and so is media consent when it is
+    asked (ADR-0117).
+  - No consent has a selected default.
 - **Saved report**: answer values, revision IDs, and each finished upload's ID,
   name, and size, only in the same browser, for 15 days from the first save or
   until a successful submit. Never a file's bytes. Abandoning the saved report
@@ -50,8 +53,10 @@ description: Build HPAC Safety's accessible bilingual public and admin React/Typ
 
 - Public and admin are routes in one application, build, and container
   ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
-- **API authorization is the boundary**, not hidden markup. Role-gate the
-  chrome, never the route; no client-side route guards.
+- **API authorization is the boundary**, not hidden markup. Every `/admin/*`
+  route is wrapped in `AdminRouteGuard`: signed out redirects to `/login`, and
+  the wrong role gets a real 403 view (ADR-0092). The guard only decides what
+  to render; the API still answers 401/403 on every request.
   - `User`: no Admin menu. `SafetyOfficer`: review options. `Administrator`:
     authoring too.
 - The browser never parses a JWT. Role and expiry come from the token response

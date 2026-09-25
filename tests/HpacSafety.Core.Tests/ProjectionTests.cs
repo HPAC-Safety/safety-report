@@ -132,10 +132,12 @@ public class ProjectionTests
 	{
 		// Given — the strongest form of the gate: nobody said no, and nobody said yes
 		var report = new Report(Locale.EnCa, Now);
-		report.Approve();
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));
+		report.AwaitReview();
 
 		// When
-		var publishing = () => report.MarkPublished(Now);
+		var publishing = () => report.Publish("subject-officer", Now);
 
 		// Then
 		publishing.ShouldThrow<DomainRuleViolationException>()
@@ -166,10 +168,9 @@ public class ProjectionTests
 		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(consent, ["yes"], Now);
-		report.Approve();
 
 		// When
-		var publishing = () => report.MarkPublished(Now);
+		var publishing = () => report.Publish("subject-officer", Now);
 
 		// Then — there is nothing anonymized to publish yet
 		report.IsPublishable.ShouldBeFalse();
@@ -258,11 +259,10 @@ public class ProjectionTests
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(consent, ["yes"], Now);
 
-		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		summary.Approve("subject-officer", Now);
-		report.AttachSummary(summary);
-		report.Approve();
-		report.MarkPublished(Now);
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));
+		report.AwaitReview();
+		report.Publish("subject-officer", Now);
 
 		// When
 		var publishable = report.IsPublishable;

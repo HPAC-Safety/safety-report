@@ -12,19 +12,20 @@ public class ReportTests
 	private static readonly DateTimeOffset Now = new(2026, 8, 22, 12, 0, 0, TimeSpan.Zero);
 
 	[Fact]
-	public void GivenReportWithoutConsent_WhenApproved_ThenNotPublishable()
+	public void GivenReportWithoutConsent_WhenPublished_ThenRefusedAndNotPublishable()
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(ConsentQuestion(), ["no"], Now);
+		AwaitReviewWithPair(report);
 
 		// When
-		report.Approve();
+		var publishing = () => report.Publish("subject-officer", Now);
 
-		// Then — stored, summarized, and counted internally; never published
+		// Then — kept internally; never published
+		publishing.ShouldThrow<DomainRuleViolationException>();
 		report.ConsentPublish.ShouldBe(false);
 		report.IsPublishable.ShouldBeFalse();
-		Should.Throw<DomainRuleViolationException>(() => report.MarkPublished(Now));
 	}
 
 	[Fact]
@@ -80,36 +81,37 @@ public class ReportTests
 		report.Answer(ConsentQuestion(), ["yes"], Now);
 		var officer = "subject-officer";
 
-		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		summary.Approve(officer, Now);
-		report.AttachSummary(summary);
-		report.Approve();
+		AwaitReviewWithPair(report);
 
 		// When
-		report.MarkPublished(Now);
+		report.Publish(officer, Now);
 
 		// Then
+		report.Summary!.ApprovedBySubject.ShouldBe(officer);
 		report.Status.ShouldBe(ReportStatus.Published);
 		report.PublishedAt.ShouldBe(Now);
 	}
 
 	[Fact]
-	public void GivenSummaryIsNotApproved_WhenPublicationIsAttempted_ThenBlocked()
+	public void GivenPendingPairNobodyPublished_WhenPublishabilityIsChecked_ThenNotPublishable()
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(ConsentQuestion(), ["yes"], Now);
 
-		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		report.AttachSummary(summary);
-		report.Approve();
-
 		// When
-		var publishing = () => report.MarkPublished(Now);
+		AwaitReviewWithPair(report);
 
 		// Then — the human gate covers everything published
+		report.Summary!.IsApproved.ShouldBeFalse();
 		report.IsPublishable.ShouldBeFalse();
-		publishing.ShouldThrow<DomainRuleViolationException>();
+	}
+
+	private static void AwaitReviewWithPair(Report report)
+	{
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));
+		report.AwaitReview();
 	}
 
 	[Fact]

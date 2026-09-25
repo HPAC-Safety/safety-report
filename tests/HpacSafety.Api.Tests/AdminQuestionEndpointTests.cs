@@ -285,6 +285,69 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		saved.GetProperty("options").EnumerateArray().Single().GetProperty("code").GetString().ShouldBe("coopers");
 	}
 
+	[Fact]
+	public async Task GivenSingleSelectWithNoChoice_WhenCreated_ThenApiRejects()
+	{
+		// Given
+		using var client = await SignedIn();
+
+		// When
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("aircraft"), "single_select"));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("needs at least one choice");
+	}
+
+	[Fact]
+	public async Task GivenTypeAheadWithNoChoice_WhenCreated_ThenCreated()
+	{
+		// Given — reporters fill a type-ahead (ADR-0063)
+		using var client = await SignedIn();
+
+		// When
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("site"), "autocomplete"));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+	}
+
+	[Fact]
+	public async Task GivenConsentQuestion_WhenEditedToNonPrivate_ThenApiRejects()
+	{
+		// Given — the seeded system question
+		using var client = await SignedIn();
+		var listed = await List(client);
+		var consent = listed.FirstOrDefault(question => question.GetProperty("isSystem").GetBoolean());
+
+		if (consent.ValueKind == JsonValueKind.Undefined)
+		{
+			return; // No seeded consent question in this database; nothing to assert.
+		}
+
+		// When
+		var id = consent.GetProperty("id").GetString();
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{id}", UriKind.Relative),
+			new
+			{
+				type = "yes_no",
+				labelEn = consent.GetProperty("labelEn").GetString(),
+				labelFr = consent.GetProperty("labelFr").GetString(),
+				isRequired = true,
+				isPrivate = false,
+				isActive = true,
+			});
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("detail").GetString()!.ShouldContain("always private");
+	}
+
 	// -------------------------------------------- statement/group (ADR-0076) --
 
 	private static SaveQuestion NoAnswerDraft(string key,

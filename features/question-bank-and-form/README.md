@@ -34,6 +34,17 @@ never erased
 A reporter-added choice holds only the language it was typed in until an
 Administrator supplies the other, and is offered in the language it has.
 
+A single-select or multi-select question always keeps at least one live
+choice: one with none could not be answered, so saving it, retyping a question
+into it without choices, or removing its last choice is refused. A type-ahead
+may start with none, because reporters add to it. A Typeform field imported
+with no choices opens as a draft the Administrator completes before saving.
+
+The two consent questions are always private. Their answers are left out of
+summary input by their key, not by their privacy
+([REQ-AI-009](../ai-anonymization/ai-anonymization.feature)); privacy is the
+second guard, and an edit cannot remove it.
+
 ## Current form query
 
 The query the API uses to assemble the form is a read DTO; it does not expose

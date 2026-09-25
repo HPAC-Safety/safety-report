@@ -14,8 +14,14 @@ public class ConditionalQuestionTests
 									 QuestionType type,
 									 TinyId? dependsOn = null)
 	{
+		// A single- or multi-select is never saved without a choice.
+		IReadOnlyList<QuestionOptionInput>? options = type is QuestionType.SingleSelect or QuestionType.MultiSelect
+			? [new QuestionOptionInput("first", "First", "Premier")]
+			: null;
+
 		return Question.Create(
-			key, type, $"Question {key}", $"Question {key} (fr)", At, isActive: true, dependsOnQuestionId: dependsOn);
+			key, type, $"Question {key}", $"Question {key} (fr)", At, isActive: true, dependsOnQuestionId: dependsOn,
+			options: options);
 	}
 
 	[Fact]

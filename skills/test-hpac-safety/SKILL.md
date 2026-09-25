@@ -11,6 +11,12 @@ description: Test HPAC Safety privacy, immutable questions, uploads and submissi
   Playwright.
 - Synthetic report and file fixtures only; never real personal data.
 - Deterministic fakes at model and service boundaries.
+- A rule over seeded rows (the consent questions, the seeded question bank) is
+  tested against the rows the migrations seed, loaded from the migrated
+  database, never against a stand-in built with a domain factory. A seeded row
+  can differ from the factory's in key, flags, or wording, and a test on the
+  stand-in proves nothing about the real one
+  ([lesson 0021](../../docs/lessons/0021-a-consent-question-found-by-a-key-it-was-never-seeded-under.md)).
 - Integration tests use the supported PostgreSQL version through
   Testcontainers.
 

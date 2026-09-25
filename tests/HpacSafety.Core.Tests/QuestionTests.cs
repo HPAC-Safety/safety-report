@@ -58,7 +58,9 @@ public class QuestionTests
 	public void GivenAnsweredQuestion_WhenDeletionIsAttempted_ThenRefusedAndKept()
 	{
 		// Given — an answer records what somebody was asked, so the question stays
-		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+		var question = Question.Create(
+			"pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now,
+			options: [new QuestionOptionInput("minor", "Minor", "Mineure")]);
 
 		// When
 		var deleting = () => question.Delete(true, Now.AddHours(1));
@@ -72,7 +74,9 @@ public class QuestionTests
 	public void GivenAnsweredQuestion_WhenDeactivated_ThenLeavesFormAndKeepsHistory()
 	{
 		// Given — deactivating is how an answered question stops being asked
-		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+		var question = Question.Create(
+			"pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now,
+			options: [new QuestionOptionInput("minor", "Minor", "Mineure")]);
 
 		// When
 		question.Deactivate(Now.AddHours(1));
@@ -87,7 +91,9 @@ public class QuestionTests
 	public void GivenAnsweredQuestion_WhenEditedIntoAFork_ThenRetiresWithoutTheDeleteGuard()
 	{
 		// Given — forking retires the original, which the delete guard must not block
-		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+		var question = Question.Create(
+			"pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now,
+			options: [new QuestionOptionInput("minor", "Minor", "Mineure")]);
 
 		// When
 		var live = question.ApplyEdit(
@@ -137,7 +143,9 @@ public class QuestionTests
 	public void GivenOrdinaryQuestion_WhenDeleted_ThenRetiredRatherThanRefused()
 	{
 		// Given — everything except consent is ordinary data
-		var question = Question.Create("pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now);
+		var question = Question.Create(
+			"pilot_injury", QuestionType.SingleSelect, "Pilot injury", "Blessure du pilote", Now,
+			options: [new QuestionOptionInput("minor", "Minor", "Mineure")]);
 
 		// When
 		question.Delete(false, Now);
@@ -354,5 +362,73 @@ public class QuestionTests
 		revision.Label(Locale.FrCa).ShouldBe("Où ?");
 		revision.HelpText(Locale.EnCa).ShouldBe("Tell us where.");
 		revision.HelpText(Locale.FrCa).ShouldBe("Dites-nous où.");
+	}
+
+	[Theory]
+	[InlineData(QuestionType.SingleSelect)]
+	[InlineData(QuestionType.MultiSelect)]
+	public void GivenSelectWithNoChoice_WhenCreated_ThenRefused(QuestionType type)
+	{
+		// Given / When — no reporter could answer it
+		var creating = () => Question.Create("aircraft", type, "Aircraft", "Aéronef", Now);
+
+		// Then
+		creating.ShouldThrow<DomainRuleViolationException>();
+	}
+
+	[Fact]
+	public void GivenTypeAheadWithNoChoice_WhenCreated_ThenAccepted()
+	{
+		// Given / When — reporters fill a type-ahead (ADR-0063)
+		var question = Question.Create("site", QuestionType.Autocomplete, "Site", "Site", Now);
+
+		// Then
+		question.Choices.ShouldBeEmpty();
+	}
+
+	[Fact]
+	public void GivenSelect_WhenItsLastChoiceIsRemoved_ThenRefused()
+	{
+		// Given
+		var question = Question.Create(
+			"aircraft", QuestionType.SingleSelect, "Aircraft", "Aéronef", Now,
+			options: [new QuestionOptionInput("glider", "Glider", "Planeur")]);
+
+		// When
+		var removing = () => question.ReplaceChoices([], Now);
+
+		// Then
+		removing.ShouldThrow<DomainRuleViolationException>();
+	}
+
+	[Fact]
+	public void GivenTextQuestion_WhenRetypedToMultiSelectWithoutChoices_ThenRefused()
+	{
+		// Given
+		var question = Question.Create("aircraft", QuestionType.ShortText, "Aircraft", "Aéronef", Now);
+
+		// When
+		var retyping = () => question.ApplyEdit(false, QuestionType.MultiSelect, "Aircraft", "Aéronef", true, false, 0, Now);
+
+		// Then
+		retyping.ShouldThrow<DomainRuleViolationException>();
+	}
+
+	[Fact]
+	public void GivenConsentQuestion_WhenEditedToNonPrivate_ThenRefused()
+	{
+		// Given
+		var publish = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now);
+		var media = Question.CreateConsentMedia("May we show your files?", "Pouvons-nous montrer vos fichiers ?", Now);
+
+		// When
+		var editingPublish = () => publish.ApplyEdit(true, QuestionType.YesNo, "May we publish?", "Pouvons-nous publier ?", false, true, 0, Now, isRequired: true);
+		var editingMedia = () => media.ApplyEdit(true, QuestionType.YesNo, "May we show your files?", "Pouvons-nous montrer vos fichiers ?", false, true, 0, Now, isRequired: true);
+
+		// Then
+		editingPublish.ShouldThrow<DomainRuleViolationException>();
+		editingMedia.ShouldThrow<DomainRuleViolationException>();
+		publish.IsPrivate.ShouldBeTrue();
+		media.IsPrivate.ShouldBeTrue();
 	}
 }

@@ -26,6 +26,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	private HpacSafetyDbContext? _db;
 	private Report? _report;
 	private FakeSummarizer? _summarizer;
+	private IReadOnlyList<string> _consentKeys = [];
 	private DateTimeOffset _now = At;
 	private bool[]? _concurrentResults;
 	private int _concurrentModelCalls;
@@ -154,7 +155,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 	public async Task GivenMixedFields()
 	{
 		_db = await WorkerDatabase.NewMigratedContext();
-		_report = await SeedWithExclusions(_db);
+		(_report, _consentKeys) = await SeedWithExclusions(_db);
 	}
 
 	[When(@"the Worker claims the message and builds the model input DTO")]
@@ -185,7 +186,9 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 			.ToList();
 
 		keys.ShouldNotContain("weather");
-		keys.ShouldNotContain(QuestionKey.ConsentPublish);
+		// Excluded by role, whatever key the consent question was seeded under.
+		_consentKeys.ShouldNotBeEmpty();
+		keys.ShouldNotContain(key => _consentKeys.Contains(key));
 		keys.ShouldNotContain("photo");
 	}
 
@@ -423,18 +426,24 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		return report;
 	}
 
-	private static async Task<Report> SeedWithExclusions(HpacSafetyDbContext db)
+	private static async Task<(Report Report, IReadOnlyList<string> ConsentKeys)> SeedWithExclusions(HpacSafetyDbContext db)
 	{
-		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+		// The two consent questions the migrations seed, as a real database holds
+		// them: publication consent keeps the key its Typeform import gave it.
+		var consent = await db.Questions.Include(question => question.Revisions).Include(question => question.AllChoices)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish).ConfigureAwait(false);
+		var media = await db.Questions.Include(question => question.Revisions).Include(question => question.AllChoices)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentMedia).ConfigureAwait(false);
 		var pilotName = Question.Create("pilot_name", QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);
 		var narrative = Question.Create("narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", At, isPrivate: false);
 		var weather = Question.Create("weather", QuestionType.ShortText, "Weather", "Météo", At, isPrivate: false, isRequired: false);
 		var photo = Question.Create("photo", QuestionType.FileUpload, "Photo", "Photo", At, isPrivate: false);
-		db.Questions.AddRange(consent, pilotName, narrative, weather, photo);
+		db.Questions.AddRange(pilotName, narrative, weather, photo);
 		await db.SaveChangesAsync().ConfigureAwait(false);
 
 		var report = new Report(Locale.EnCa, At);
 		report.Answer(consent, ["yes"], At);
+		report.Answer(media, ["yes"], At);
 		report.Answer(pilotName, "Ada Lovelace", At);
 		report.Answer(narrative, "Ada Lovelace reported a hard landing.", At);
 		report.Answer(weather, value: null, At);
@@ -445,7 +454,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		db.OutboxMessages.Add(new OutboxMessage(report.Id, OutboxMessageType.SummarizeReport, report.Id.Value, At));
 		await db.SaveChangesAsync().ConfigureAwait(false);
 
-		return report;
+		return (report, [consent.Key, media.Key]);
 	}
 
 	/// <summary>A deterministic, controlled <see cref="ISummarizer" /> double.</summary>

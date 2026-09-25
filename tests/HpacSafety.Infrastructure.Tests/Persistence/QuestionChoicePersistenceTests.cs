@@ -64,7 +64,8 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 	{
 		// Given
 		var connectionString = await postgres.CreateMigratedDatabase();
-		var question = Question.Create("synthetic_pick", QuestionType.SingleSelect, "Pick", "Choisir", At);
+		// A type-ahead, the one choice-taking type that may be saved with no choice yet.
+		var question = Question.Create("synthetic_pick", QuestionType.Autocomplete, "Pick", "Choisir", At);
 
 		await using var context = PostgresFixture.ContextFor(connectionString);
 		context.Questions.Add(question);

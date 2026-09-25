@@ -20,7 +20,9 @@ public class TranslationModeTests
 																		 bool expected)
 	{
 		// Given / When
-		var question = Question.Create("synthetic", type, "A question", "Une question", Now);
+		var question = Question.Create(
+			"synthetic", type, "A question", "Une question", Now,
+			options: type == QuestionType.SingleSelect ? [new QuestionOptionInput("first", "First", "Premier")] : null);
 
 		// Then
 		question.CurrentRevision.IsTranslatable.ShouldBe(expected);

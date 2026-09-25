@@ -44,7 +44,7 @@ public sealed class ReporterChoiceSubmissionSteps
 			language = "fr-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"oui" },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)true },
 				new { questionRevisionId = _typeAhead!.RevisionId, value = (string?)typed },
 			},
 		};

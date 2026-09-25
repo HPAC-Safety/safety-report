@@ -136,7 +136,7 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 						  now)).Entity;
 
 		var report = new Report(Locale.EnCa, now);
-		report.Answer(consent, "yes", now);
+		report.Answer(consent, true, now);
 		report.BeginSummarizing();
 		report.AttachSummary(Summary.Generate(report.Id, "The pilot landed.", "Le pilote s'est posé.", "synthetic-model", "synthetic.v1", now));
 		report.AwaitReview();

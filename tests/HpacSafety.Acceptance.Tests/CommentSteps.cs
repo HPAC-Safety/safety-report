@@ -50,13 +50,13 @@ public sealed class CommentSteps
 	[Given(@"a report is published")]
 	public async Task GivenAReportIsPublished()
 	{
-		_reportId = await BootedReports.Seed(ReportStatus.Published, "yes");
+		_reportId = await BootedReports.Seed(ReportStatus.Published, true);
 	}
 
 	[Given(@"a report is not public")]
 	public async Task GivenAReportIsNotPublic()
 	{
-		_reportId = await BootedReports.Seed(ReportStatus.Pending, "yes");
+		_reportId = await BootedReports.Seed(ReportStatus.Pending, true);
 	}
 
 	[Given(@"a member is signed in")]

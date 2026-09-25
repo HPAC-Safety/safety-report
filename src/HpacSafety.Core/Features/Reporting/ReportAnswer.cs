@@ -288,7 +288,7 @@ public class ReportAnswer
 
 		if (revision.IsBoolean)
 		{
-			throw new DomainRuleViolationException($"'{question.Key}' must be answered with a boolean, not text.");
+			throw new DomainRuleViolationException($"'{question.Key}' must be answered with a boolean, never with words.");
 		}
 
 		var (stored, shape) = revision.Type == QuestionType.Date

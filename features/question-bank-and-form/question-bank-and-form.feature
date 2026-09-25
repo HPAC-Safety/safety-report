@@ -239,7 +239,7 @@ Scenario Outline: A yes or no stored as a word is converted to a boolean once
   Given a <type> answer was stored as the word "<word>" before yes/no answers were booleans
   When the database is migrated
   Then that answer's boolean is <boolean>
-  And it holds no words and no second language in either column, and its translation mode is none
+  And the converted answer carries no words and no second language, and its translation mode is none
   And its locale is unchanged
 
 Examples:

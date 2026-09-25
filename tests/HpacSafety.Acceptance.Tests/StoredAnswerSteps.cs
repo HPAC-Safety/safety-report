@@ -53,6 +53,10 @@ public sealed class StoredAnswerSteps
 
 	private JsonElement _answered;
 	private string? _submitted;
+
+	// The value as JSON puts it on the wire: a string, or for "JSON true",
+	// "JSON false", and "JSON null" that literal (ADR-0130).
+	private object? _submittedValue;
 	private Locale _language = Locale.EnCa;
 	private HttpResponseMessage? _submission;
 
@@ -88,7 +92,7 @@ public sealed class StoredAnswerSteps
 			language = "fr-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"non" },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)false },
 				new { questionRevisionId = RevisionOf("single_select"), value = (string?)"Bleu" },
 				new { questionRevisionId = RevisionOf("autocomplete"), value = (string?)"Rouge" },
 				new { questionRevisionId = RevisionOf("multi_select"), choices = _chosen["multi_select"] },
@@ -161,8 +165,8 @@ public sealed class StoredAnswerSteps
 	public void WhenThoseAnswersArePersisted()
 	{
 		var report = new Report(Locale.EnCa, Noon);
-		report.Answer(Question.CreateConsentPublish("Publish?", "Publier ?", Noon), "yes", Noon);
-		report.Answer(Question.CreateConsentMedia("Show media?", "Montrer les médias ?", Noon), "yes", Noon);
+		report.Answer(Question.CreateConsentPublish("Publish?", "Publier ?", Noon), true, Noon);
+		report.Answer(Question.CreateConsentMedia("Show media?", "Montrer les médias ?", Noon), true, Noon);
 
 		report.Answer(Ordinary("occurrence_date", QuestionType.Date), _ordinary["occurrence_date"], Noon);
 		report.Answer(Ordinary("occurrence_time", QuestionType.Time), _ordinary["occurrence_time"], Noon);
@@ -224,7 +228,17 @@ public sealed class StoredAnswerSteps
 		{
 			"an empty string" => string.Empty,
 			"a line of prose" => Prose,
+			"JSON true" => "true",
+			"JSON false" => "false",
+			"JSON null" => "null",
 			_ => submitted,
+		};
+		_submittedValue = submitted switch
+		{
+			"JSON true" => true,
+			"JSON false" => false,
+			"JSON null" => null,
+			_ => _submitted,
 		};
 	}
 
@@ -244,8 +258,8 @@ public sealed class StoredAnswerSteps
 			language = _language.Code,
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)YesNoAnswer.No(_language) },
-				new { questionRevisionId = _answered.GetProperty("revisionId").GetString(), value = (string?)_submitted },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (object?)false },
+				new { questionRevisionId = _answered.GetProperty("revisionId").GetString(), value = _submittedValue },
 			},
 		});
 	}
@@ -253,25 +267,35 @@ public sealed class StoredAnswerSteps
 	[Then(@"^the stored value is (.+)$")]
 	public async Task ThenTheStoredValueIs(string stored)
 	{
-		var expected = stored switch
-		{
-			"nothing, because the answer was skipped" => null,
-			"that line, as typed" => Prose,
-			_ => stored,
-		};
+		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();
 
-		(await AnswersToTheQuestion()).ShouldHaveSingleItem().Value.ShouldBe(expected);
+		switch (stored)
+		{
+			case "the boolean true" or "the boolean false":
+				answer.BooleanValue.ShouldBe(stored == "the boolean true");
+				answer.Value.ShouldBeNull();
+				break;
+			case "nothing, because the answer was skipped":
+				answer.Value.ShouldBeNull();
+				answer.BooleanValue.ShouldBeNull();
+				break;
+			default:
+				answer.Value.ShouldBe(stored == "that line, as typed" ? Prose : stored);
+				answer.BooleanValue.ShouldBeNull();
+				break;
+		}
 	}
 
-	[Then(@"^its other language is (\w+), recorded as a fixed counterpart$")]
-	public async Task ThenItsOtherLanguageIsTheFixedCounterpart(string counterpart)
+	[Then(@"it holds no words and no second language in either column, and its translation mode is none")]
+	public async Task ThenItHoldsNoWordsAndNoSecondLanguage()
 	{
 		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();
 
-		answer.TranslatedValue.ShouldBe(counterpart);
-		answer.TranslationMode.ShouldBe(TranslationMode.Fixed);
-		answer.TranslationSource.ShouldBe(TranslationSource.Fixed);
-		answer.ValueIn(_language.Counterpart).ShouldBe(counterpart);
+		answer.BooleanValue.ShouldNotBeNull();
+		answer.Value.ShouldBeNull();
+		answer.TranslatedValue.ShouldBeNull();
+		answer.TranslationSource.ShouldBeNull();
+		answer.TranslationMode.ShouldBe(TranslationMode.None);
 	}
 
 	[Then(@"no translation provider was called and nothing waits for the Worker to translate it")]

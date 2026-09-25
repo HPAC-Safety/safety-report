@@ -53,7 +53,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = consentRevisionId, value = "yes" } },
+			answers = new[] { new { questionRevisionId = consentRevisionId, value = true } },
 		});
 
 		// When
@@ -79,7 +79,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[] { new { questionRevisionId = consentRevisionId, value = "no" } },
+			answers = new[] { new { questionRevisionId = consentRevisionId, value = false } },
 		});
 
 		// When
@@ -121,7 +121,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new { questionRevisionId = "not-a-real-id", value = "hello" },
 			},
 		});
@@ -144,8 +144,8 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
-				new { questionRevisionId = consentRevisionId, value = "no" },
+				new { questionRevisionId = consentRevisionId, value = true },
+				new { questionRevisionId = consentRevisionId, value = false },
 			},
 		});
 
@@ -168,9 +168,9 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[]
+			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = (string?)"yes" },
+				new { questionRevisionId = consentRevisionId, value = (bool?)true },
 				new { questionRevisionId = revisionId, value = (string?)null },
 			},
 		});
@@ -196,9 +196,9 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		using var content = ReportPart(new
 		{
 			language = "en-CA",
-			answers = new[]
+			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new { questionRevisionId = revisionId, value = narrative },
 			},
 		});
@@ -230,7 +230,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new { questionRevisionId = revisionId, attachments },
 			},
 		});
@@ -257,7 +257,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new
 				{
 					questionRevisionId = revisionId,
@@ -315,7 +315,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new
 				{
 					questionRevisionId = revisionId,
@@ -352,7 +352,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new { questionRevisionId = revisionId, attachments = new[] { new { uploadId, fileName = "a.png" } } },
 			},
 		});
@@ -378,7 +378,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = consentRevisionId, value = "yes" },
+				new { questionRevisionId = consentRevisionId, value = true },
 				new
 				{
 					questionRevisionId = revisionId,

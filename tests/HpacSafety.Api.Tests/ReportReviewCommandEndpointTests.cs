@@ -49,7 +49,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenUserRole_WhenACommandIsSent_ThenApiForbids(string command)
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
@@ -63,7 +63,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenConsentedPendingReport_WhenPublished_ThenPublishedWithApproverAndOneAuditRow()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -81,7 +81,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenConsentedUnpublishedReport_WhenPublished_ThenPublishedAgain()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Unpublished, "yes");
+		var (id, version) = await Seed(ReportStatus.Unpublished, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
@@ -99,7 +99,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenReportWithoutConsent_WhenAnyReviewCommandIsSent_ThenInvalidTransitionAndNothingChanges(string command)
 	{
 		// Given — the Worker set it Unpublished for good (REQ-DOM-015)
-		var (id, version) = await Seed(ReportStatus.Unpublished, "no");
+		var (id, version) = await Seed(ReportStatus.Unpublished, false);
 		using var client = await SignedInClient.As(_factory, MemberRole.Administrator);
 
 		// When
@@ -117,7 +117,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenReportWithoutConsent_WhenDeleted_ThenDeletedAndAudited()
 	{
 		// Given
-		var (id, _) = await Seed(ReportStatus.Unpublished, "no");
+		var (id, _) = await Seed(ReportStatus.Unpublished, false);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -135,7 +135,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenPublishedReport_WhenPairIsEdited_ThenPendingApprovalClearedAndAudited()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Published, "yes");
+		var (id, version) = await Seed(ReportStatus.Published, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -153,7 +153,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGeneratedPair_WhenEnglishIsEditedAndFrenchTranslationAccepted_ThenSourcesAreHumanAndMachine()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -175,7 +175,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenGeneratedPair_WhenOnlyEnglishChangesWithNoSourcesSent_ThenEnglishHumanAndFrenchStillGenerated()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -192,7 +192,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenSourceAReviewerCannotClaim_WhenPairIsSaved_ThenBadRequest(string source)
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -207,7 +207,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenFailedReport_WhenPairIsSaved_ThenManualPairAndPending()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.SummaryFailed, "yes");
+		var (id, version) = await Seed(ReportStatus.SummaryFailed, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -224,7 +224,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenPendingReport_WhenUnpublishedWithNote_ThenNoteShownAndAuditRowCarriesNoNote()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -244,7 +244,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenPublishedReport_WhenUnpublished_ThenUnpublishedApprovalClearedAndAudited()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Published, "yes");
+		var (id, version) = await Seed(ReportStatus.Published, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -266,7 +266,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenMissingOrMalformedVersion_WhenACommandIsSent_ThenStaleAndNothingChanges(string? version)
 	{
 		// Given
-		var (id, _) = await Seed(ReportStatus.Pending, "yes");
+		var (id, _) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -281,7 +281,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAnotherReviewerSavedFirst_WhenAStaleEditIsSent_ThenConflictAndTheFirstEditStands()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var first = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		using var second = await SignedInClient.As(_factory, MemberRole.Administrator);
 		await Ok(await Send(first, id, "summary", new { version, aiSummaryEn = "First.", aiSummaryFr = "Premier." }));
@@ -299,7 +299,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenAReviewerPublishedFirst_WhenAStaleUnpublishIsSent_ThenConflict()
 	{
 		// Given — publishing changes the report row, not only the summary
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		await Ok(await Send(client, id, "publish", new { version }));
 
@@ -319,7 +319,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 																								  string command)
 	{
 		// Given
-		var (id, version) = await Seed(status, "yes");
+		var (id, version) = await Seed(status, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -335,7 +335,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenBlankText_WhenPairIsSaved_ThenBadRequestAndNothingChanges()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -350,7 +350,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenNoteLongerThanAllowed_WhenUnpublished_ThenBadRequest()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 
 		// When
@@ -379,7 +379,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDeletedReport_WhenACommandIsSent_ThenNotFound()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
 		(await client.DeleteAsync(new Uri($"/api/admin/reports/{id}", UriKind.Relative))).StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
@@ -394,7 +394,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 	public async Task GivenDetailRead_WhenVersionIsReturned_ThenItNamesBothRows()
 	{
 		// Given
-		var (id, version) = await Seed(ReportStatus.Pending, "yes");
+		var (id, version) = await Seed(ReportStatus.Pending, true);
 
 		// When
 		var parts = version.Split('.');
@@ -449,7 +449,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 
 	/// <summary>Seeds a report in <paramref name="status" /> and reads its detail for the version.</summary>
 	private async Task<(string Id, string Version)> Seed(ReportStatus status,
-														 string consent)
+														 bool consent)
 	{
 		var now = DateTimeOffset.UtcNow;
 		string id;
@@ -474,7 +474,7 @@ public class ReportReviewCommandEndpointTests(ApiPostgresFixture fixture)
 			report.Answer(consentQuestion, consent, now);
 			report.BeginSummarizing();
 
-			if (consent == "no")
+			if (!consent)
 			{
 				report.KeepUnpublished();
 			}

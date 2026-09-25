@@ -33,7 +33,8 @@ public sealed class MediaConsentSteps
 
 	private HttpClient? _reporter;
 	private string? _uploadId;
-	private string? _mediaAnswer;
+	// A JSON boolean, or text a yes/no refuses (ADR-0130).
+	private object? _mediaAnswer;
 	private string? _mediaRevisionId;
 	private string _fileName = "launch-site.png";
 	private HttpResponseMessage? _response;
@@ -59,7 +60,7 @@ public sealed class MediaConsentSteps
 	[Given(@"^it answers yes to the consent_media question's (current|earlier, superseded) revision$")]
 	public async Task GivenItAnswersYesToARevision(string revision)
 	{
-		_mediaAnswer = "yes";
+		_mediaAnswer = true;
 		var question = await MediaConsentQuestion();
 		_mediaRevisionId = revision == "current"
 			? question.CurrentRevision.Id.Value
@@ -102,7 +103,12 @@ public sealed class MediaConsentSteps
 	[Given(@"it answers the consent_media question with {word}")]
 	public void GivenItAnswersMediaConsent(string answer)
 	{
-		_mediaAnswer = answer;
+		_mediaAnswer = answer switch
+		{
+			"yes" => true,
+			"no" => false,
+			_ => answer,
+		};
 	}
 
 	[Given(@"it answers the consent_media question with no answer")]
@@ -124,7 +130,7 @@ public sealed class MediaConsentSteps
 	{
 		var answers = new List<object>
 		{
-			new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"yes" },
+			new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)true },
 			new
 			{
 				questionRevisionId = await FileUploadRevisionId(),
@@ -134,7 +140,7 @@ public sealed class MediaConsentSteps
 
 		if (_mediaAnswer is not null)
 		{
-			answers.Add(new { questionRevisionId = _mediaRevisionId ?? await MediaConsentRevisionId(), value = (string?)_mediaAnswer });
+			answers.Add(new { questionRevisionId = _mediaRevisionId ?? await MediaConsentRevisionId(), value = _mediaAnswer });
 		}
 
 		using var content = new StringContent(

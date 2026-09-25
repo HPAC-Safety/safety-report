@@ -14,7 +14,7 @@ public class ReportSoftDeleteTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		var answer = report.Answer(ConsentQuestion(), "yes", Now);
+		var answer = report.Answer(ConsentQuestion(), true, Now);
 		var file = report.AddFile("blob-key", "image/jpeg", 1024, Now);
 		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
 		report.AttachSummary(summary);
@@ -50,7 +50,7 @@ public class ReportSoftDeleteTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(ConsentQuestion(), ["yes"], Now);
+		report.Answer(ConsentQuestion(), true, Now);
 		AwaitReviewWithPair(report);
 
 		// When
@@ -66,7 +66,7 @@ public class ReportSoftDeleteTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(ConsentQuestion(), ["yes"], Now);
+		report.Answer(ConsentQuestion(), true, Now);
 		AwaitReviewWithPair(report);
 		report.Publish("subject-officer", Now);
 		report.IsPublishable.ShouldBeTrue();

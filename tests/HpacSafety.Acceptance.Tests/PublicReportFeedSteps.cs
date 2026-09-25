@@ -53,7 +53,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		// It carries an attachment, so there is something the DTO could leak.
 		seeded.Id = await BootedReports.Seed(
 			ReportStatus.Published,
-			"yes",
+			true,
 			report => report.AddFile($"reports/{Guid.NewGuid():n}.jpg", "image/jpeg", 1024, DateTimeOffset.UtcNow));
 	}
 
@@ -66,30 +66,30 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 
 		for (var index = 0; index <= PublicReportEndpoints.PageSize; index++)
 		{
-			_publishable.Add(await BootedReports.Seed(ReportStatus.Published, "yes", at: instant));
+			_publishable.Add(await BootedReports.Seed(ReportStatus.Published, true, at: instant));
 		}
 
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Pending, "yes", at: instant));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "yes", at: instant));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "no", at: instant));
-		_hidden.Add(await Deleted(await BootedReports.Seed(ReportStatus.Published, "yes", at: instant)));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Pending, true, at: instant));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, true, at: instant));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, false, at: instant));
+		_hidden.Add(await Deleted(await BootedReports.Seed(ReportStatus.Published, true, at: instant)));
 	}
 
 	[Given(@"a report id is unknown, deleted, pending, unpublished, or not consented")]
 	public async Task GivenNonPublicReportIds()
 	{
 		_hidden.Add(TinyId.New().Value);
-		_hidden.Add(await Deleted(await BootedReports.Seed(ReportStatus.Published, "yes")));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Pending, "yes"));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "yes"));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "no"));
+		_hidden.Add(await Deleted(await BootedReports.Seed(ReportStatus.Published, true)));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Pending, true));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, true));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, false));
 	}
 
 	[Given(@"a report and its summary row are not deleted")]
 	[Given(@"a report otherwise satisfies every publication invariant")]
 	public async Task GivenAPublishableReport()
 	{
-		seeded.Id = await BootedReports.Seed(ReportStatus.Published, "yes");
+		seeded.Id = await BootedReports.Seed(ReportStatus.Published, true);
 	}
 
 	[Given(@"ConsentPublish is exactly true")]

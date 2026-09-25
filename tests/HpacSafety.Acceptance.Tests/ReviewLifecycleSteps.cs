@@ -29,7 +29,7 @@ public sealed class ReviewLifecycleSteps
 	public void GivenAReportIsInState(string state)
 	{
 		_from = Enum.Parse<ReportStatus>(state);
-		_report = In(_from, consent: "yes");
+		_report = In(_from, consent: true);
 	}
 
 	[When(@"^(.+) occurs$")]
@@ -41,7 +41,7 @@ public sealed class ReviewLifecycleSteps
 				_report.BeginSummarizing();
 				break;
 			case "Worker claims the summary job and consent is no":
-				_report = In(ReportStatus.Submitted, consent: "no");
+				_report = In(ReportStatus.Submitted, consent: false);
 				_report.KeepUnpublished();
 				break;
 			case "a valid bilingual pair is saved":
@@ -106,7 +106,7 @@ public sealed class ReviewLifecycleSteps
 	public void GivenAnUnconsentedReportIsUnpublished()
 	{
 		_from = ReportStatus.Unpublished;
-		_report = In(ReportStatus.Submitted, consent: "no");
+		_report = In(ReportStatus.Submitted, consent: false);
 		_report.KeepUnpublished();
 	}
 
@@ -129,7 +129,7 @@ public sealed class ReviewLifecycleSteps
 	[Given(@"a report is Published")]
 	public void GivenAReportIsPublished()
 	{
-		_report = In(ReportStatus.Published, consent: "yes");
+		_report = In(ReportStatus.Published, consent: true);
 		_report.IsPublishable.ShouldBeTrue();
 	}
 
@@ -155,12 +155,12 @@ public sealed class ReviewLifecycleSteps
 
 	/// <summary>Builds a report in <paramref name="status" /> through the lifecycle itself, never by setting it.</summary>
 	internal static Report In(ReportStatus status,
-							  string consent)
+							  bool consent)
 	{
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(
 			Question.CreateConsentPublish("May we publish a de-identified version?", "Pouvons-nous publier une version anonymisée ?", Now),
-			[consent],
+			consent,
 			Now);
 
 		if (status == ReportStatus.Submitted)

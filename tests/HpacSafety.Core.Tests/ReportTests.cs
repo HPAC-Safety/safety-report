@@ -16,7 +16,7 @@ public class ReportTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(ConsentQuestion(), ["no"], Now);
+		report.Answer(ConsentQuestion(), false, Now);
 		AwaitReviewWithPair(report);
 
 		// When
@@ -49,7 +49,7 @@ public class ReportTests
 	{
 		// Given — "no" is a complete answer; it only blocks publication
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(ConsentQuestion(), ["no"], Now);
+		report.Answer(ConsentQuestion(), false, Now);
 
 		// When
 		report.EnsureReadyForSubmission();
@@ -78,7 +78,7 @@ public class ReportTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(ConsentQuestion(), ["yes"], Now);
+		report.Answer(ConsentQuestion(), true, Now);
 		var officer = "subject-officer";
 
 		AwaitReviewWithPair(report);
@@ -97,7 +97,7 @@ public class ReportTests
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
-		report.Answer(ConsentQuestion(), ["yes"], Now);
+		report.Answer(ConsentQuestion(), true, Now);
 
 		// When
 		AwaitReviewWithPair(report);

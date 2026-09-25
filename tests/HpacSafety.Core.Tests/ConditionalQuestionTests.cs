@@ -386,18 +386,29 @@ public class ConditionalQuestionTests
 	}
 
 	[Theory]
-	[InlineData("yes", true)]
-	[InlineData("no", false)]
+	[InlineData(true, true)]
+	[InlineData(false, false)]
 	[InlineData(null, false)]
-	public void GivenYesNoParent_WhenEnabledIsChecked_ThenMatchesTheAnswer(string? parentAnswer,
+	public void GivenYesNoParent_WhenEnabledIsChecked_ThenMatchesTheAnswer(bool? parentAnswer,
 																		   bool expected)
 	{
-		// Given
+		// Given — only true enables it (ADR-0130)
 		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
 		var child = Ordinary("injury_detail", QuestionType.LongText, parent.Id);
 
 		// When / Then
-		child.CurrentRevision.IsEnabledGiven(parent, parentAnswer, Locale.EnCa).ShouldBe(expected);
+		child.CurrentRevision.IsEnabledGiven(parent, parentAnswer).ShouldBe(expected);
+	}
+
+	[Fact]
+	public void GivenYesNoParent_WhenEnabledIsCheckedWithAWord_ThenFalse()
+	{
+		// Given — a yes/no answer is a boolean, never a word (ADR-0130)
+		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
+		var child = Ordinary("injury_detail", QuestionType.LongText, parent.Id);
+
+		// When / Then
+		child.CurrentRevision.IsEnabledGiven(parent, "yes", Locale.EnCa).ShouldBeFalse();
 	}
 
 	[Fact]

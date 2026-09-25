@@ -93,7 +93,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consent, ["yes"], At);
+		report.Answer(consent, true, At);
 		report.Answer(narrative, "Rough landing in gusty wind.", At);
 		report.Answer(weather, value: null, At);
 		report.Answer(photo, "s3://irrelevant", At);
@@ -329,7 +329,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		// Given — only a consented report may reach the model (REQ-AI-027)
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
-		var report = await Seed(context, consent: "no");
+		var report = await Seed(context, consent: false);
 		var summarizer = new FakeSummarizer(("en", "fr"));
 		var processor = new SummarizeReportProcessor(context, summarizer, TimeProvider.System);
 
@@ -373,7 +373,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	private static async Task<Report> Seed(HpacSafetyDbContext context,
-										   string consent = "yes")
+										   bool consent = true)
 	{
 		var consentQuestion = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
 		var pilotName = Question.Create("pilot_name", QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);
@@ -382,7 +382,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);
-		report.Answer(consentQuestion, [consent], At);
+		report.Answer(consentQuestion, consent, At);
 		report.Answer(pilotName, "Ada Lovelace", At);
 		report.Answer(narrative, "Ada Lovelace reported a hard landing.", At);
 		report.EnsureReadyForSubmission();

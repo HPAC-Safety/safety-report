@@ -249,7 +249,7 @@ public sealed class AuditSteps
 			language = "en-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"no" },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)false },
 				new { questionRevisionId = revisionId, value = (string?)marker },
 			},
 		});

@@ -99,7 +99,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	{
 		_question = Question.CreateConsentPublish(
 			"May we publish a summary of this report?", "Pouvons-nous publier un résumé de ce rapport ?", Noon);
-		_answer = new Report(Locale.EnCa, Noon).Answer(_question, "yes", Noon);
+		_answer = new Report(Locale.EnCa, Noon).Answer(_question, true, Noon);
 	}
 
 	[Given(@"a question has been answered with one of its choices")]

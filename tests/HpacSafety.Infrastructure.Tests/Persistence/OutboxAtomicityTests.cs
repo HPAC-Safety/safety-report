@@ -36,7 +36,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		// Then
 		await using var reader = PostgresFixture.ContextFor(connectionString);
 		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Id.ShouldBe(report.Id);
-		(await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id)).Value.ShouldBe("yes");
+		(await reader.ReportAnswers.SingleAsync(a => a.ReportId == report.Id)).BooleanValue.ShouldBe(true);
 		(await reader.OutboxMessages.CountAsync(m => m.AggregateId == report.Id)).ShouldBe(1);
 	}
 
@@ -123,7 +123,7 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 		context.Questions.Add(consent);
 		await context.SaveChangesAsync();
 
-		report.Answer(consent, ["yes"], At);
+		report.Answer(consent, true, At);
 		report.EnsureReadyForSubmission();
 		return report;
 	}

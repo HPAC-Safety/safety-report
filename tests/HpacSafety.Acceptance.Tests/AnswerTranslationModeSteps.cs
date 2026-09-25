@@ -101,7 +101,7 @@ public sealed class AnswerTranslationModeSteps
 		_translator.Sent.ShouldNotContain("true");
 	}
 
-	[Then(@"every other answer, the yes/no answer included, keeps no second language")]
+	[Then(@"every other answer, the yes\/no answer included, keeps no second language")]
 	public async Task ThenEveryOtherAnswerKeepsNoSecondLanguage()
 	{
 		var stored = await StoredAnswers();

@@ -71,6 +71,31 @@ public sealed class AiAnonymizationSteps
 		_marked = PrivateValueMarker.Mark(_input);
 	}
 
+	// --- REQ-AI-028: a boolean is never a candidate (ADR-0130) ---
+
+	[Given(@"a private yes\/no answer is true")]
+	public void GivenAPrivateYesNoAnswerIsTrue()
+	{
+		// Completed by the next step, which supplies the report content.
+	}
+
+	[Given(@"a report_content field contains the word ""true""")]
+	public void GivenReportContentContainsTheWordTrue()
+	{
+		_input = SummarizationInput.Partition([
+			new ClassifiedReportField(new SummarizationField("was_injured", "Were you injured?", "true", IsBoolean: true), true),
+			new ClassifiedReportField(new SummarizationField(ReportContentQuestionKey, "Description", "The wind forecast held true all afternoon."), false),
+		]);
+	}
+
+	[Then(@"private_context still carries the yes\/no answer as true")]
+	public void ThenPrivateContextStillCarriesTheBoolean()
+	{
+		var field = _marked.PrivateContext.ShouldHaveSingleItem();
+		field.Value.ShouldBe("true");
+		field.IsBoolean.ShouldBeTrue();
+	}
+
 	[When(@"the Worker builds the marked report_content")]
 	public void WhenTheWorkerBuildsTheMarkedReportContent()
 	{
@@ -101,7 +126,7 @@ public sealed class AiAnonymizationSteps
 	[Then(@"that word is left unmarked")]
 	public void ThenThatWordIsLeftUnmarked()
 	{
-		_marked.ReportContent.Single().Value.ShouldBe("The aircraft flew north before landing.");
+		_marked.ReportContent.Single().Value.ShouldBe(_input.ReportContent.Single().Value);
 	}
 
 	[Then(@"the whole value is replaced with a single marker")]

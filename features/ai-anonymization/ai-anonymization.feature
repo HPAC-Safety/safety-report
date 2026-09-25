@@ -63,7 +63,7 @@ Scenario: A private yes/no answer is never a marking candidate
 @REQ-AI-029
 Scenario Outline: A yes/no answer reaches the model as true or false, never as words
   Given a report written in <language> answers an ordinary yes/no question <answer>
-  When the Worker builds the model input DTO
+  When the Worker claims the message and builds the model input DTO
   Then report_content carries that answer's value as "<answer>"
 
 Examples:

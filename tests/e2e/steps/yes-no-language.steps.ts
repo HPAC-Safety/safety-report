@@ -7,11 +7,11 @@ import { stubCurrentQuestions, stubSubmission, type StubQuestion } from "./repor
 const { Given, When, Then } = createBdd()
 
 /*
- * REQ-SUB-077: a yes or no is sent in the language the report is submitted
- * in (ADR-0127). The form holds a language-free answer while the reporter
- * works, so switching language before submitting changes the word sent, and
- * loses nothing. The API is stubbed at the network boundary; the server's own
- * handling of each word is covered by REQ-QB-019 and REQ-QB-118.
+ * REQ-SUB-077: a yes or no is sent as a JSON boolean whatever language the
+ * report is submitted in (ADR-0130). The form holds a language-free answer
+ * while the reporter works, so switching language before submitting changes
+ * nothing that is sent. The API is stubbed at the network boundary; the
+ * server's own handling of a boolean is covered by REQ-QB-019 and REQ-QB-118.
  */
 
 type Language = "English" | "French"
@@ -109,12 +109,12 @@ When("the reporter submits the report", async ({ page }) => {
 })
 
 Then(
-	/^the yes\/no answer is sent as "(\w+)" and the consent answer as "(\w+)"$/,
-	async ({ page }, no: string, yes: string) => {
-		const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: string | null }[] }
+	/^the yes\/no answer is sent as the JSON boolean false and the consent answer as the JSON boolean true$/,
+	async ({ page }) => {
+		const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string; value: unknown }[] }
 		const valueOf = (revisionId: string) => body.answers.find((answer) => answer.questionRevisionId === revisionId)?.value
 
-		expect(valueOf("rev-injured")).toBe(no)
-		expect(valueOf("rev-consent")).toBe(yes)
+		expect(valueOf("rev-injured")).toBe(false)
+		expect(valueOf("rev-consent")).toBe(true)
 	},
 )

@@ -258,9 +258,10 @@ public sealed class MediaConsentSteps
 		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
 		var other = await ShortTextRevisionId();
 
+		// A consent is a JSON boolean (ADR-0130): a word, even "yes", is the wrong type.
 		_refused.Add(("absent", await Post([new { questionRevisionId = other, value = (object?)"x" }])));
 
-		foreach (var (shape, value) in new (string, object?)[] { ("null", null), ("of the wrong type", true), ("neither yes nor no", "maybe") })
+		foreach (var (shape, value) in new (string, object?)[] { ("null", null), ("of the wrong type", "yes"), ("a number", 1), ("neither yes nor no", "maybe") })
 		{
 			_refused.Add((shape, await Post(
 			[

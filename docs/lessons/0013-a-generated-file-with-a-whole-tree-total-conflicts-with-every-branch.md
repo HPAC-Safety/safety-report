@@ -51,3 +51,7 @@ now says that a committed generated file must merge the way its sources do:
 
 - No line may derive from the whole tree.
 - Independent items must be separated by unchanged lines.
+
+Since #492 the general rule lives in the generic
+[`coding-conventions`](../../skills/coding-conventions/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

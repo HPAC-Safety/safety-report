@@ -47,3 +47,7 @@ system that `features/` describes. The test above proves it.
 [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md) now says
 that a workflow pushing with a token on the remote URL checks out with
 `persist-credentials: false`.
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

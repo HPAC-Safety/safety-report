@@ -11,7 +11,8 @@
 # before it (ADR-0086); ai-author maintains these instruction files (ADR-0121).
 #
 # Search before authoring: `skillfile search "<topic>"`. Prefer maintained
-# upstream guidance only when it matches the repository. Keep local skills for
+# upstream guidance only when it matches the repository. Local skills are
+# generic where the practice transfers, with a project skill holding the
 # HPAC-specific knowledge and repository-specific contracts. `/features` is the
 # product-design authority.
 #
@@ -53,11 +54,21 @@ github  skill  thebushidocollective/han  plugins/tools/cucumber/skills/cucumber-
 # report arrives.
 # Names are explicit: every source file is called SKILL.md, so without a name
 # they would all infer the same one and overwrite each other on install.
+# Generic skills name nothing specific to this repository, so another project
+# can reuse them; tools/check-generic-instructions.mjs enforces it (ADR-0131).
+local  skill  clarify-requirements  skills/clarify-requirements/SKILL.md
+local  skill  coding-conventions  skills/coding-conventions/SKILL.md
+local  skill  deliver-change  skills/deliver-change/SKILL.md
+local  skill  manage-ef-core-migrations  skills/manage-ef-core-migrations/SKILL.md
+local  skill  test-from-scenarios  skills/test-from-scenarios/SKILL.md
+
+# Project skills. One that extends a generic skill names it and keeps its
+# section names; hpac-role-agents extends the five role agents.
 local  skill  anonymize-hpac-reports  skills/anonymize-hpac-reports/SKILL.md
 local  skill  build-hpac-web-ui  skills/build-hpac-web-ui/SKILL.md
-local  skill  clarify-hpac-requirements  skills/clarify-hpac-requirements/SKILL.md
 local  skill  deliver-hpac-change  skills/deliver-hpac-change/SKILL.md
 local  skill  handle-hpac-media  skills/handle-hpac-media/SKILL.md
+local  skill  hpac-role-agents  skills/hpac-role-agents/SKILL.md
 local  skill  hpac-safety-conventions  skills/hpac-safety-conventions/SKILL.md
 local  skill  incident-domain-model  skills/incident-domain-model/SKILL.md
 local  skill  localize-hpac-app  skills/localize-hpac-app/SKILL.md

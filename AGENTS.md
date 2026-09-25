@@ -81,7 +81,7 @@ Claims preserved: REQ-SUB-013, REQ-SUB-042
 ### Missing requirements
 
 - Do not improvise the missing half of a requirement. Ask — see
-  [`clarify-hpac-requirements`](skills/clarify-hpac-requirements/SKILL.md).
+  [`clarify-requirements`](skills/clarify-requirements/SKILL.md).
 - Write the answer back as a scenario or an out-of-scope line.
 
 ### Claim IDs and the matrix
@@ -112,6 +112,9 @@ contributor who never invokes one is unaffected.
   - **spec-reviewer** — judges a diff against those claims and the ADRs.
 - **ai-author** — maintains these instruction files
   ([ADR-0121](docs/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
+- The five agents are generic. This repository's paths, tags, commands, and
+  privacy boundaries for each are in
+  [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).
 
 ### Lessons
 
@@ -119,7 +122,7 @@ contributor who never invokes one is unaffected.
   [`docs/lessons/`](docs/lessons/README.md) in the same pull request
   ([ADR-0085](docs/decisions/ADR-0085-a-lesson-flows-upstream-into-the-specification.md)).
   What it contains and which skill it updates:
-  [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) "Document".
+  [`deliver-change`](skills/deliver-change/SKILL.md) "Lessons".
 - Read lessons on a design pass, alongside `/features` and the ADRs.
 
 ## Product invariants
@@ -325,21 +328,28 @@ contributor who never invokes one is unaffected.
 Read only the skills the task needs. Sources live under `skills/`; copies under
 `.claude/skills/` are generated.
 
-| Work | Guidance |
-|---|---|
-| Any repository change | [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md) |
-| Genuinely ambiguous product behavior | [`clarify-hpac-requirements`](skills/clarify-hpac-requirements/SKILL.md) |
-| Tests and fixtures | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
-| Summary privacy or runtime prompt | [`anonymize-hpac-reports`](skills/anonymize-hpac-reports/SKILL.md) |
-| Questions, reports, lifecycle, review, publication | [`incident-domain-model`](skills/incident-domain-model/SKILL.md) |
-| EF Core or query DTOs | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
-| Writing or applying a migration | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
-| Attachments or private object storage | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
-| English/French behavior | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
-| React/TypeScript web UI and design system | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
-| AWS, Terraform, or deployment | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
-| Issues, docs, worktrees, PRs, or CI | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
-| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md) |
+- A **generic** skill names nothing specific to this repository, so another
+  project can reuse it
+  ([ADR-0131](docs/decisions/ADR-0131-a-generic-skill-names-no-project-and-a-project-skill-extends-it.md)).
+- Where a row names two skills, read both: the generic one, then the project
+  skill that extends it. The project skill wins where they differ.
+
+| Work | Generic | Project |
+|---|---|---|
+| Any repository change | [`coding-conventions`](skills/coding-conventions/SKILL.md) | [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md) |
+| Genuinely ambiguous product behavior | [`clarify-requirements`](skills/clarify-requirements/SKILL.md) | — |
+| Tests and fixtures | [`test-from-scenarios`](skills/test-from-scenarios/SKILL.md) | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
+| Summary privacy or runtime prompt | — | [`anonymize-hpac-reports`](skills/anonymize-hpac-reports/SKILL.md) |
+| Questions, reports, lifecycle, review, publication | — | [`incident-domain-model`](skills/incident-domain-model/SKILL.md) |
+| EF Core or query DTOs | — | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
+| Writing or applying a migration | [`manage-ef-core-migrations`](skills/manage-ef-core-migrations/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
+| Attachments or private object storage | — | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
+| English/French behavior | — | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
+| React/TypeScript web UI and design system | — | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |
+| AWS, Terraform, or deployment | — | [`manage-hpac-infrastructure`](skills/manage-hpac-infrastructure/SKILL.md) |
+| Issues, docs, worktrees, PRs, or CI | [`deliver-change`](skills/deliver-change/SKILL.md) | [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md) |
+| Acting as a role agent | [`agents/`](agents/) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) |
+| Agent instructions, skills, or role agents | [`ai-author`](agents/ai-author.md) | [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md) "ai-author" |
 
 ## Runtime prompt
 
@@ -351,13 +361,13 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 
 ## Delivery
 
-Follow [`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md). The
-minimum:
+Follow [`deliver-change`](skills/deliver-change/SKILL.md) and
+[`deliver-hpac-change`](skills/deliver-hpac-change/SKILL.md). The minimum:
 
 - Every change starts from an issue and reaches `main` through a pull request.
 - **Every new issue gets a milestone, its labels, and its relationships (parent,
   sub-issues, blocked by, relates to) when it is created** — a hard rule; see
-  `deliver-hpac-change` "File a new issue".
+  `deliver-change` "File a new issue".
 - **Label the issue `in progress` before anything else**; never pick up an
   issue that already carries it.
 - Keep the issue true: record decisions, acceptance criteria, and scope changes
@@ -367,16 +377,17 @@ minimum:
   ([ADR-0091](docs/decisions/ADR-0091-an-adr-number-is-verified-not-assumed.md)).
 - PR body: `Closes #<number>` on its own line; squash-ready title.
 - **Enable auto-merge on every pull request you open**, unless it is a draft or
-  the user asked to hold it; see `deliver-hpac-change` "Verify and publish".
+  the user asked to hold it; see `deliver-change` "Verify and publish".
 - No `Co-Authored-By` trailer; this is a convention, and nothing checks it.
 - No agent session link: the `commit-msg` hook and `linked-issue.yml`'s
   `no-session-link` job refuse one
   ([ADR-0107](docs/decisions/ADR-0107-an-agent-session-link-never-reaches-the-public-history.md)).
 - Keep working until required checks are green.
 - Every tracked markdown file declares its frontmatter; see
-  `deliver-hpac-change` "Document"
+  `deliver-hpac-change` "Markdown"
   ([ADR-0087](docs/decisions/ADR-0087-every-markdown-file-declares-itself.md)).
 - Code conventions (naming, dates, tests, diagrams, .NET version): see
+  [`coding-conventions`](skills/coding-conventions/SKILL.md) and
   [`hpac-safety-conventions`](skills/hpac-safety-conventions/SKILL.md).
 
 ## Where to look

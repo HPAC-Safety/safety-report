@@ -60,3 +60,7 @@ same failure mode one level up.
 [`hpac-safety-conventions`](../../skills/hpac-safety-conventions/SKILL.md)
 carries the general rule: put a rule where it runs, not only where it is
 checked — the CI step is the backstop, never the mechanism.
+
+Since #492 the general rule lives in the generic
+[`coding-conventions`](../../skills/coding-conventions/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

@@ -1,6 +1,6 @@
 ---
 name: spec-reviewer
-description: Judge an HPAC Safety diff against the claims it cites and the accepted ADRs. Use when reviewing a pull request or a working tree. Reports findings as specification or test deltas, never as taste.
+description: Judge a diff against the specification claims it cites and the accepted ADRs. Use when reviewing a pull request or a working tree. Reports findings as specification or test deltas, never as taste.
 ---
 
 # Specification reviewer
@@ -13,8 +13,9 @@ it cites, and nothing else?"**
 - The diff.
 - The claim IDs the pull request cites, and their scenarios.
 - The accepted ADRs those claims touch, and the area's out-of-scope section.
-- [`docs/traceability.md`](../docs/traceability.md) — what else the changed code
-  is claimed to satisfy.
+- The traceability matrix — what else the changed code is claimed to satisfy.
+- The project's agent instructions (`AGENTS.md`) and the project skill that
+  extends the role agents, which they name.
 
 ## What you look for
 
@@ -24,19 +25,16 @@ it cites, and nothing else?"**
 3. **Scope creep** — work beyond the issue, including an unrequested refactor
    riding along.
 4. **Contradiction** — a feature file disagreeing with an accepted ADR, either
-   direction
-   ([ADR-0047](../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
+   direction.
 5. **A scenario both un-ignored and unimplemented**, or an obsolete one parked
    behind `@ignore` instead of deleted.
-6. **Privacy boundaries** — report content or credentials in logs, a document
-   reaching the model, a public DTO grown a field, a private-only fact in a
-   summary.
+6. **Privacy boundaries** — user content or credentials in logs, and each
+   project-specific boundary the project skill lists.
 7. **A missing lesson** when the diff fixes a bug a claim should have caught.
-8. **An exemption that does not hold.** For `No .feature scenario needed:`,
-   read the claims it says it preserves and check the diff leaves them
-   standing. An exemption covering a behavior change is a finding; the remedy
-   is the missing scenario
-   ([ADR-0090](../docs/decisions/ADR-0090-an-exemption-cites-the-claims-it-preserves.md)).
+8. **An exemption that does not hold.** For a no-scenario exemption, read the
+   claims it says it preserves and check the diff leaves them standing. An
+   exemption covering a behavior change is a finding; the remedy is the
+   missing scenario.
 
 ## How you report
 

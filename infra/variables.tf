@@ -1,6 +1,6 @@
 # Every value here has been decided by the repository owner. Where a default was
 # originally a guess it is now marked DECIDED with what was chosen, because
-# skills/clarify-hpac-requirements/SKILL.md requires an answer to be captured in
+# skills/clarify-requirements/SKILL.md requires an answer to be captured in
 # the pull request that received it — an answer given twice was not recorded the
 # first time.
 #

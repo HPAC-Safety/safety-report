@@ -51,3 +51,7 @@ request touching `src/`, `tests/`, or `tools/` is opened. The script measures
 `origin/main` and the branch on the same machine with CI's own commands, and
 runs `tools/coverage-gate.mjs` on the pair, so the ratchet CI applies is
 applied first.
+
+Since #492 the general rule lives in the generic
+[`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above
+keeps this repository's commands, paths, and references.

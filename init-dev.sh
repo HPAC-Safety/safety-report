@@ -242,7 +242,7 @@ fi
 # post-rewrite) is distinct from post-checkout/post-commit, so all coexist
 # with no collision. Resolved with `git rev-parse --git-path hooks` rather
 # than a hardcoded `.git/hooks` because this repository is worked in
-# primarily through git worktrees (see skills/deliver-hpac-change/SKILL.md),
+# primarily through git worktrees (see skills/deliver-change/SKILL.md),
 # where `.git` is a file, not a directory, and hooks live in the shared
 # main-checkout gitdir instead. Idempotent by content comparison, so a second
 # run only touches a hook file when its tracked template changed.

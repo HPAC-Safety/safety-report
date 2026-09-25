@@ -50,8 +50,8 @@ need no CSRF protection.
 | Role | Capabilities |
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
-| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports. |
-| Administrator | Every SafetyOfficer capability, plus create question revisions and curate each question's choices. |
+| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports; review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
+| Administrator | Every SafetyOfficer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker option ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
 
 Submission is a membership capability rather than a privileged one, so any of
 the three roles may file a report — and the report records nothing about who

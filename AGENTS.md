@@ -148,22 +148,29 @@ contributor who never invokes one is unaffected.
      forks the question; a fork copies every choice; a removed choice is
      hidden, never erased. No shared choice lists
      ([ADR-0095](docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
-   - A reporter may add a missing choice to a type-ahead — only a type-ahead.
-     It is recorded at submission in the language typed, marked for an
-     administrator to curate in place, and offered in its one language until
-     the other is supplied
-     ([ADR-0063](docs/decisions/ADR-0063-a-reporter-may-add-a-type-ahead-choice.md)).
-   - **Answers**: one immutable string, in the reporter's own words and
-     language.
+   - **An answer names its choice by ID** and copies none of its wording. A
+     choice any answer names is never erased; removed, it only stops being
+     offered ([ADR-0128](docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+   - **Picker options** (single-select, multi-select): changing one's wording,
+     an administrator fixes it in place (every answer reads the fix) or
+     replaces it (the old choice is retired under its earlier answers; a
+     condition follows the replacement) ([ADR-0128](docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+   - **Type-ahead values**: a reporter may add a missing one — only to a
+     type-ahead. It is recorded at submission in the language typed, flagged
+     for review, offered at once, and given its other language by the Worker.
+     A Safety Officer or administrator reviews it: approves, corrects in place
+     for every answer, merges (answers are never rewritten; they read the
+     value merged into), or removes it ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+   - **Answers**: immutable. A choice answer names its choice; every other
+     answer is one string, in the reporter's own words and language.
    - **Second language, only where needed**
      ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)):
-     - free text an administrator marked as needing translation, and a
-       type-ahead value naming no bilingual choice: filled off the submission
-       path, by the Worker through the question-authoring translation port or
-       by an administrator by hand;
-     - a select answer naming a choice written in both languages: copies that
-       choice's other-language label at submission — a lookup, not a
-       translation. One naming a one-language choice is filled by the Worker;
+     - free text an administrator marked as needing translation: filled off
+       the submission path, by the Worker through the question-authoring
+       translation port or by an administrator by hand;
+     - a choice answer: reads its choice's other-language label — a lookup,
+       not a translation. A reporter-added type-ahead value's missing label is
+       filled on the choice by the Worker ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md));
      - a yes/no or checkbox answer: its fixed counterpart (`yes`↔`oui`,
        `no`↔`non`), written at submission — a lookup, not a translation
        ([ADR-0127](docs/decisions/ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md));
@@ -178,8 +185,8 @@ contributor who never invokes one is unaffected.
      [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),
      [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
    - **Conditional questions** depend on a yes/no question, or on a
-     single-select naming one of its live choices — which then cannot be
-     removed
+     single-select naming one of its live choices by ID — which then cannot be
+     removed, only replaced
      ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
      [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
 2. **Nothing reaches the server before final submission — except

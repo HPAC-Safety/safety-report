@@ -58,12 +58,13 @@ Scenario: A signed-in Administrator's Admin menu offers every option
   When the visitor activates the Admin menu
   Then it opens with manage-reports, manage-questions, and manage-answer-translations options
 
-@REQ-MOD-008
+@REQ-MOD-092
+@ignore
 @ui
-Scenario: A signed-in SafetyOfficer's Admin menu offers manage-reports only
+Scenario: A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review
   Given a visitor signs in as a SafetyOfficer
   When the visitor activates the Admin menu
-  Then it opens with a manage-reports option
+  Then it opens with manage-reports and review-type-ahead-values options
   And it offers no manage-questions or manage-answer-translations option
 
 @REQ-MOD-009
@@ -110,14 +111,16 @@ Scenario: An Administrator's Admin menu shows how much work is waiting
   And the manage-answer-translations option shows a count of 2
   And the manage-questions option shows no count
 
-@REQ-MOD-088
+@REQ-MOD-093
+@ignore
 @ui
-Scenario: A SafetyOfficer's Admin menu counts only the reports needing action
-  Given the API counts 4 reports needing action and no answers awaiting translation
+Scenario: A SafetyOfficer's Admin menu counts reports and type-ahead values waiting
+  Given the API counts 4 reports needing action, 3 type-ahead values awaiting review, and no answers awaiting translation
   And a visitor signs in as a SafetyOfficer
-  Then the Admin menu shows a count of 4
+  Then the Admin menu shows a count of 7
   When the visitor activates the Admin menu
   Then the manage-reports option shows a count of 4
+  And the review-type-ahead-values option shows a count of 3
 
 @REQ-MOD-089
 @ui
@@ -233,7 +236,31 @@ Scenario: SafetyOfficer capabilities
 Scenario: Administrator capabilities include everything SafetyOfficer has
   Given a member has the Administrator role
   Then the member has every SafetyOfficer capability
-  And can additionally create question revisions and curate reporter-added choices
+  And can additionally create question revisions and author every question's choices
+
+@REQ-MOD-094
+@ignore
+Scenario Outline: A Safety Officer or an Administrator reviews type-ahead values
+  Given a member has the <role> role
+  When that member approves, corrects, merges, or removes a reporter-added type-ahead value
+  Then the API <outcome> the attempt
+
+Examples:
+  | role          | outcome  |
+  | User          | forbids  |
+  | SafetyOfficer | allows   |
+  | Administrator | allows   |
+
+@REQ-MOD-095
+@ignore
+@ui
+Scenario: A Safety Officer reviews flagged type-ahead values on one page
+  Given a signed-in Safety Officer and two type-ahead questions with values flagged for review
+  When they open the review-type-ahead-values page
+  Then every flagged value is listed with its question, its language, and how many answers name it
+  When they merge "Coopers" into "Cooper's"
+  Then "Coopers" leaves the list
+  And "Cooper's" is no longer flagged
 
 @REQ-MOD-028
 Scenario Outline: Only an Administrator may author a question revision

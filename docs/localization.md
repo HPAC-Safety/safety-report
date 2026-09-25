@@ -33,6 +33,10 @@ Each complete immutable question revision stores its English and French label
 and help text. A question's bilingual choices live on the question itself,
 outside its revisions
 ([ADR-0095](decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+An answer naming a choice reads both languages from it
+([ADR-0128](decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md));
+the Worker supplies a reporter-added type-ahead value's missing language
+([ADR-0129](decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 Administrators provide and review both versions. Question text is not generated
 from UI catalogues and is never translated at render time. While authoring, an
 administrator may ask for a machine-translated draft and saves only what they

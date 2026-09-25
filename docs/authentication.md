@@ -30,8 +30,8 @@ invariant codes:
 | Role | Claim value | Capabilities |
 |---|---|---|
 | User | `user` | Proves HPAC membership. May submit a report, and comment on a published report and edit or delete their own comments ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). Nothing else. |
-| SafetyOfficer | `safety_officer` | Review queue and private report material, safe derivatives and validated documents, summary editing, approve/reject/publish/soft-delete, hiding a member's comment. |
-| Administrator | `administrator` | Every SafetyOfficer capability, plus question revisions and curating each question's choices. |
+| SafetyOfficer | `safety_officer` | Review queue and private report material, safe derivatives and validated documents, summary editing, approve/reject/publish/soft-delete, hiding a member's comment, reviewing type-ahead values (ADR-0129). |
+| Administrator | `administrator` | Every SafetyOfficer capability, plus question revisions and authoring each question's choices. |
 
 A claim may be a string or an array; the highest role present wins. A validated
 token carrying no recognized role authenticates as `User` — membership is

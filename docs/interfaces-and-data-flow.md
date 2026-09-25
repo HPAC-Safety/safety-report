@@ -61,7 +61,8 @@ below, and a write is audited.
 | Hide a member's comment on a published report (`POST /api/admin/comments/{id}/hide`) | SafetyOfficer or Administrator; audited without the comment's text ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | Obtain a short-lived attachment URL | SafetyOfficer or Administrator; safe image/video derivatives or validated private document originals only. |
 | List/create/delete eligible question revisions | Administrator; every write audited. |
-| Edit a question's choices, curate reporter-added choices, and machine-translate question wording | Administrator; every write audited. |
+| Edit a question's choices (fix or replace a picker option) and machine-translate question wording | Administrator; every write audited. |
+| Review a type-ahead value: approve, correct, merge, or remove | SafetyOfficer or Administrator; every write audited (ADR-0129). |
 
 **CON-IF-005** There is no allowlist-management endpoint. Roles come from the token, and
 access is granted or revoked at the identity provider.

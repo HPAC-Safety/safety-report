@@ -19,6 +19,10 @@ removed.
 restriction to a `yes_no` parent. Everything else ADR-0060 decided — where the
 dependency lives, how it is enforced, what a cycle means — still holds.
 
+Amended by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): the required option is named by
+choice ID, not by `depends_on_option_code`, and a condition follows its
+choice's replacement.
+
 ## Context
 
 ADR-0060 named this exact case and rejected it, only as unearned at the time:

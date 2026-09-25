@@ -30,6 +30,11 @@ Amended by
 [ADR-0119](ADR-0119-a-published-report-offers-its-documents-for-download.md):
 that visitor may also be handed a short-lived, forced-download pre-signed GET
 to a public document's unchanged original, under a server-minted name.
+Amended by
+[ADR-0126](ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md):
+a reporter again receives a pre-signed PUT, minted by the API for one opaque
+`quarantine/<upload id>` key and signed for the declared type and exact size,
+reversing ADR-0096's "still never through a pre-signed PUT".
 **Date:** 2026-08-22
 
 ## Context

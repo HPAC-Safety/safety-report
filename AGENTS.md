@@ -67,7 +67,7 @@ reason, and claim IDs that exist in the matrix
 ```
 No .feature scenario needed: refactor — extracted the ingest loop; the endpoint
 still validates, streams, and persists exactly as before
-Claims preserved: REQ-SUB-012, REQ-SUB-013
+Claims preserved: REQ-SUB-013, REQ-SUB-042
 ```
 
 - It is for a change that genuinely alters no behavior.
@@ -180,10 +180,17 @@ contributor who never invokes one is unaffected.
    - Unfinished answers and shown revision IDs stay only in that browser, for
      15 days. No report, draft, reserved ID, or other respondent data is
      written to a server or database.
-   - Each attachment uploads through the API into private quarantine the
-     moment it is attached, under an opaque upload ID with no database row and
-     no member named. It expires by lifecycle rule 15 days after upload unless
-     a submission claims it. Removing the file erases it.
+   - Each attachment uploads into private quarantine the moment it is
+     attached: the API mints an opaque upload ID and a pre-signed PUT of at
+     most 15 minutes, signed for that one key and the declared type and exact
+     size; the bytes never pass through the API. No database row, no member
+     named. Caps: 250 MB video, 25 MB image or document. It expires by
+     lifecycle rule 15 days after upload unless a submission claims it.
+     Removing the file erases it
+     ([ADR-0126](docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
+   - The submission validates every upload it claims — sniffed type, declared
+     type, and real size against the detected kind's cap — and refuses the
+     failures by ID before writing anything.
    - The browser's saved report keeps each upload's ID and name beside the
      answers, so files restore with it. Both share one window: 15 days from
      the report's first save. Abandoning the report erases its uploads

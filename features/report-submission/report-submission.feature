@@ -2,13 +2,14 @@ Feature: Report submission
 A reporter's answers, revision IDs, and locale live only in the browser
 until one final submission request. Before that request, the API and database
 receive no unfinished report state. The one thing that reaches the server
-earlier is an attachment, uploaded into private quarantine as soon as it is
-attached and claimed by that request (ADR-0096). The browser's saved report
+earlier is an attachment, sent straight into private quarantine through a
+pre-signed PUT the API mints as soon as it is attached, and validated and
+claimed by that request (ADR-0096, ADR-0126). The browser's saved report
 names its finished uploads, so they are kept exactly as long as it is
 (ADR-0100).
 
 Background:
-  Given a reporter writes a report through POST /api/v1/reports and an attachment through POST /api/v1/uploads
+  Given a reporter writes a report through POST /api/v1/reports and sends each attachment through a pre-signed PUT that POST /api/v1/uploads mints
   And both require a valid member bearer token
   And the report request is JSON that names each attachment by the upload ID the upload returned
   And the bearer token is transport/security metadata, not persisted report content
@@ -309,15 +310,6 @@ Scenario: Reporter-visible errors never echo submitted content
   And it never echoes an answer, client filename, bearer token, credential, or storage key
   And routine invalid requests are not logged with body content
 
-@REQ-SUB-012
-Scenario: An attachment is validated under a bound before it is stored
-  Given a reporter attaches a file
-  When the API receives the upload
-  Then the API reads at most one byte past 50 MB while counting, then inspects the file's signature and validates it
-  And never buffers the whole file in memory
-  And writes only an accepted file to the quarantine compartment, under an upload ID the API mints
-  And the upload request carries no filename, and none is persisted or logged for it
-
 @REQ-SUB-013
 Scenario: A valid submission is persisted atomically
   Given a submission passes every validation step
@@ -409,26 +401,64 @@ Scenario: The not-tracked notice is shown in the reporter's chosen language
   Given a signed-in member opens the report page in French
   Then the notice is shown in French
 
-@REQ-SUB-039
-Scenario: An accepted upload returns an opaque upload ID and nothing else
-  Given a member uploads an allowlisted file within the size limit
-  When the API accepts the upload
-  Then the response is 201 Created with an opaque upload ID and the attachment's kind
-  And the response never echoes a client filename, storage key, or URL
+@REQ-SUB-072
+@ignore
+Scenario: Minting an upload returns a pre-signed PUT for one quarantine key and nothing else
+  Given a member asks to upload an allowlisted file within its kind's size limit
+  When the API mints the upload
+  Then the response is 201 Created with an opaque upload ID, the attachment's kind, a pre-signed PUT URL, and when that URL expires
+  And the URL writes only the quarantine key named by that upload ID, and lives at most 15 minutes
+  And the URL is signed for the declared content type and the exact declared size
+  And the request carries no filename, and none is persisted or logged for it
+  And the response never echoes a client filename or a report ID
+  And nothing is written to object storage or the database
 
-@REQ-SUB-040
-Scenario Outline: A refused upload is reported on its own and never stored
-  Given a member uploads <file>
-  When the API validates the upload
+@REQ-SUB-073
+@ignore
+Scenario Outline: A declared file the API will not accept gets no upload URL
+  Given a member asks to upload <file>
+  When the API checks the declared type and size
   Then the API rejects it with a safe rejection reason of "<reason>"
-  And nothing is written to object storage
+  And no upload URL is minted
 
 Examples:
-  | file                                            | reason                   |
-  | an empty file                                   | empty                    |
-  | a file one byte larger than 50 MB               | too_large                |
-  | a file whose bytes match no known format        | unrecognised_content     |
-  | a file declared as one allowlisted type but containing another | declared_type_mismatch |
+  | file                                                  | reason                |
+  | a file of zero bytes                                  | empty                 |
+  | a video one byte larger than 250 MB                   | too_large             |
+  | an image one byte larger than 25 MB                   | too_large             |
+  | a document one byte larger than 25 MB                 | too_large             |
+  | a file whose declared type is not on the allowlist    | unaccepted_media_type |
+
+@REQ-SUB-074
+@ignore
+Scenario Outline: Storage accepts only the upload the URL was signed for
+  Given the API minted an upload URL
+  When the browser sends <request>
+  Then storage refuses it
+  And nothing is stored under that upload's quarantine key
+
+Examples:
+  | request                                              |
+  | a body larger or smaller than the declared size      |
+  | a content type other than the declared one           |
+  | the PUT after the URL has expired                    |
+  | the PUT to any key other than the one it was minted for |
+
+@REQ-SUB-075
+@ignore
+Scenario Outline: A submission validates every upload it claims
+  Given a submission claims an upload whose stored file is <file>
+  When the API validates the submission
+  Then the API rejects the submission with 400
+  And the response names that upload ID with a safe rejection reason of "<reason>"
+  And no report, answer, file, or outbox row is created
+  And the API read only the upload's size and leading bytes, never the whole file into memory
+
+Examples:
+  | file                                                            | reason                 |
+  | bytes that match no known format                                | unrecognised_content   |
+  | declared as one allowlisted type but containing another         | declared_type_mismatch |
+  | declared as a video but detected as a 30 MB image               | too_large              |
 
 @REQ-SUB-041
 Scenario: A submission naming an expired or unknown upload is refused by name
@@ -504,6 +534,14 @@ Scenario: A refused upload is explained on that file's row
   Given the API refuses an uploaded file
   Then that file's row shows a localized reason matching the refusal
   And the file is not named by the submission
+
+@REQ-SUB-076
+@ignore
+@ui
+Scenario: A file refused at submission is marked on its row and nothing else is lost
+  Given the API refuses a submission because some of its uploads failed validation
+  Then each refused file's row shows a localized reason matching its refusal
+  And every other answer and upload is kept
 
 @REQ-SUB-051
 @ui

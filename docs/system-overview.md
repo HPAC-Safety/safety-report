@@ -77,9 +77,11 @@ flowchart LR
   ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). It renders
   the form and keeps unfinished answers only in that browser. No report data
   reaches the API or database until it submits one finalized request; the one
-  exception is an attachment, uploaded through the API to private quarantine
-  when it is attached and claimed by that request
-  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)). It also renders public
+  exception is an attachment, sent straight to private quarantine through a
+  pre-signed PUT the API mints when it is attached, and validated and claimed
+  by that request
+  ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+  [ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)). It also renders public
   summaries.
 - The `/admin` route manages questions and their choices, reviews reports
   and derivatives, edits summaries, and records approval. It appears only for a

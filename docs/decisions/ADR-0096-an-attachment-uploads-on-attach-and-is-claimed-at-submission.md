@@ -2,7 +2,7 @@
 title: An attachment uploads on attach and is claimed at submission
 description: Each file a reporter attaches is uploaded through the API into private quarantine at once, under an opaque upload ID that the one final submission claims; unclaimed uploads expire by lifecycle rule.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-23
 decision-makers: Chase Florell
 keywords: attachments, uploads, quarantine, S3, MinIO, lifecycle, submission, privacy, anonymity
@@ -17,7 +17,13 @@ Accepted; amended by
 which restores uploads with the saved report and keeps unclaimed uploads for
 fifteen days, and by
 [ADR-0110](ADR-0110-rustfs-replaces-minio-as-the-development-s3-server.md),
-under which development and the tests run RustFS where this record says MinIO. This ADR:
+under which development and the tests run RustFS where this record says MinIO,
+and by [ADR-0126](ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md):
+the browser now sends each file straight to `quarantine/<upload id>` through a
+pre-signed PUT the API mints, the submission validates what it claims, and the
+single 50 MB limit becomes 250 MB for video and 25 MB for an image or document.
+The upload ID, the lack of any row or member link, `DELETE`, expiry, and the
+claim stand. This ADR:
 
 - **amends** AGENTS.md invariant 2 and the guardrail list in
   [`features/README.md`](../../features/README.md): a reporter's attachment is

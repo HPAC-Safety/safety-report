@@ -6,8 +6,9 @@ description: HPAC Safety's migration conventions, paths, and commands — extend
 # Manage an HPAC Safety migration
 
 Extends [`manage-ef-core-migrations`](../manage-ef-core-migrations/SKILL.md);
-read that first. This skill holds only what is specific to this repository,
-under the same section names.
+read that first. Its schema conventions (keys, types, enums, deletion) also
+extend [`postgres-dba`](../postgres-dba/SKILL.md) and win over it. This skill
+holds only what is specific to this repository, under the same section names.
 
 - Read
   [`Persistence/Migrations/README.md`](../../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md)
@@ -106,6 +107,31 @@ plus:
 - There is no `migrate` deploy job. Adding one reintroduces the ordering
   dependency this replaced
   ([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+
+## Squash to one baseline
+
+Not yet sanctioned here. Before squashing:
+
+- An ADR must supersede the generic rule 2 for this repository and say what
+  happens to rule 1 above and to the migrations that `AGENTS.md` invariant 8
+  and ADR-0040, ADR-0065, and ADR-0095 cite as carved exceptions — the
+  baseline never creates those tables, so it drops nothing.
+- Every deployed environment's database is recreated, or proven identical and
+  given the baseline's history row.
+
+Carry forward, in their final form:
+
+- the `.sql` files under `Persistence/Sql/` that define views and functions
+  (not the ones that transformed rows), merged into one set loaded by the
+  baseline;
+- the seed from `Persistence/Seeding/` (`QuestionBankSeed`, `SeedIds`). Not
+  `DevelopmentAdminSeed`: it seeds `admin_users`, which the baseline never
+  creates;
+- the `CHECK` constraints and the default soft-delete filters, which the model
+  regenerates — verify them in the schema diff.
+
+Then replace the migration table in `Persistence/Migrations/README.md` with
+the one baseline.
 
 ## Before the pull request
 

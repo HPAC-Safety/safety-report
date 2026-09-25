@@ -112,7 +112,8 @@ contributor who never invokes one is unaffected.
   - **spec-reviewer** — judges a diff against those claims and the ADRs.
 - **ai-author** — maintains these instruction files
   ([ADR-0121](docs/decisions/ADR-0121-a-fifth-role-maintains-the-agent-instructions.md)).
-- The five agents are generic. This repository's paths, tags, commands, and
+- **database-administrator** — designs, audits, and migrates the schema.
+- The six agents are generic. This repository's paths, tags, commands, and
   privacy boundaries for each are in
   [`hpac-role-agents`](skills/hpac-role-agents/SKILL.md).
 
@@ -341,8 +342,9 @@ Read only the skills the task needs. Sources live under `skills/`; copies under
 | Tests and fixtures | [`test-from-scenarios`](skills/test-from-scenarios/SKILL.md) | [`test-hpac-safety`](skills/test-hpac-safety/SKILL.md) |
 | Summary privacy or runtime prompt | — | [`anonymize-hpac-reports`](skills/anonymize-hpac-reports/SKILL.md) |
 | Questions, reports, lifecycle, review, publication | — | [`incident-domain-model`](skills/incident-domain-model/SKILL.md) |
-| EF Core or query DTOs | — | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
-| Writing or applying a migration | [`manage-ef-core-migrations`](skills/manage-ef-core-migrations/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
+| Schema design, audit, data types, or query performance | [`postgres-dba`](skills/postgres-dba/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
+| EF Core model or query DTOs | [`design-ef-core-model`](skills/design-ef-core-model/SKILL.md) | [`persist-hpac-data`](skills/persist-hpac-data/SKILL.md) |
+| Writing, applying, seeding, or squashing a migration | [`manage-ef-core-migrations`](skills/manage-ef-core-migrations/SKILL.md) | [`manage-hpac-migrations`](skills/manage-hpac-migrations/SKILL.md) |
 | Attachments or private object storage | — | [`handle-hpac-media`](skills/handle-hpac-media/SKILL.md) |
 | English/French behavior | — | [`localize-hpac-app`](skills/localize-hpac-app/SKILL.md) |
 | React/TypeScript web UI and design system | — | [`build-hpac-web-ui`](skills/build-hpac-web-ui/SKILL.md) |

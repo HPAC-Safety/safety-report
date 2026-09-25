@@ -778,6 +778,10 @@ A Safety Officer or an Administrator reviews type-ahead values — *Reqnroll, Pl
 
 A Safety Officer reviews flagged type-ahead values on one page — *playwright-bdd, Planned*
 
+### REQ-MOD-096
+
+A report's consent reaches the admin view as true, false, or null — *Reqnroll, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

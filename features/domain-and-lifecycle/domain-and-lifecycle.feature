@@ -10,19 +10,19 @@ Scenario Outline: A report follows the defined lifecycle transitions
   Then the report moves to state <to>
 
 Examples:
-  | from          | event                                           | to            |
-  | Submitted     | Worker claims the summary job                   | Summarizing   |
-  | Summarizing   | a valid bilingual pair is saved                 | PendingReview |
-  | Summarizing   | bounded retries are exhausted                   | SummaryFailed |
-  | SummaryFailed | an officer writes both texts                    | PendingReview |
-  | PendingReview | either summary text is edited                   | PendingReview |
-  | PendingReview | an officer approves the pair and consent is yes | Published     |
-  | PendingReview | an officer approves the pair and consent is no  | Approved      |
-  | PendingReview | an officer rejects the report                   | Rejected      |
-  | Approved      | either summary text is edited                   | PendingReview |
-  | Published     | either summary text is edited                   | PendingReview |
-  | Published     | an officer unpublishes the report               | PendingReview |
-  | Rejected      | an officer reopens the report                   | PendingReview |
+  | from          | event                                            | to            |
+  | Submitted     | Worker claims the summary job and consent is yes | Summarizing   |
+  | Submitted     | Worker claims the summary job and consent is no  | Unpublished   |
+  | Summarizing   | a valid bilingual pair is saved                  | Pending       |
+  | Summarizing   | bounded retries are exhausted                    | SummaryFailed |
+  | SummaryFailed | an officer writes both texts                     | Pending       |
+  | Pending       | either summary text is edited                    | Pending       |
+  | Pending       | an officer publishes the pair                    | Published     |
+  | Pending       | an officer unpublishes the report                | Unpublished   |
+  | Published     | either summary text is edited                    | Pending       |
+  | Published     | an officer unpublishes the report                | Unpublished   |
+  | Unpublished   | an officer publishes the pair                    | Published     |
+  | Unpublished   | either summary text is edited                    | Pending       |
 
 @REQ-DOM-014
 Scenario Outline: A review action outside its states is refused and changes nothing
@@ -33,14 +33,28 @@ Scenario Outline: A review action outside its states is refused and changes noth
 
 Examples:
   | from          | action               |
-  | Submitted     | approve the pair     |
-  | SummaryFailed | approve the pair     |
-  | Rejected      | approve the pair     |
-  | Rejected      | edit a summary text  |
-  | Published     | reject the report    |
-  | PendingReview | reopen the report    |
-  | PendingReview | unpublish the report |
-  | PendingReview | write a manual pair  |
+  | Submitted     | publish the pair     |
+  | Summarizing   | unpublish the report |
+  | SummaryFailed | publish the pair     |
+  | Published     | publish the pair     |
+  | Unpublished   | unpublish the report |
+  | Pending       | write a manual pair  |
+  | Published     | write a manual pair  |
+
+@REQ-DOM-015
+Scenario Outline: A report without publication consent is unpublished for good
+  Given a report whose reporter did not consent to publication is Unpublished
+  When an officer tries to <action>
+  Then the action is refused
+  And the report stays Unpublished with nothing changed
+  And soft deletion is still the one thing an officer can do to it (REQ-DOM-007)
+
+Examples:
+  | action               |
+  | publish the pair     |
+  | edit a summary text  |
+  | write a manual pair  |
+  | unpublish the report |
 
 @REQ-DOM-003
 Scenario: A report is publishable only when every invariant holds
@@ -48,7 +62,7 @@ Scenario: A report is publishable only when every invariant holds
   And ConsentPublish is exactly true
   And both English and French summary texts are nonblank
   And the pair has a current human approval
-  And the report has not been rejected
+  And the report is Published
   When the public query evaluates the report
   Then the report is publishable
 
@@ -65,7 +79,7 @@ Examples:
   | ConsentPublish is not exactly true          |
   | the English or French summary text is blank |
   | the pair has no current human approval      |
-  | the report has been rejected                |
+  | the report is not Published                 |
 
 @REQ-DOM-005
 Scenario: Editing a summary text unpublishes the report
@@ -79,7 +93,7 @@ Scenario: A report without publication consent is never summarized
   Given a report whose reporter did not consent to publication is due for summarization
   When the Worker processes its summarization attempt
   Then no model call is made
-  And the report goes to Pending review with no summary
+  And the report goes to Unpublished with no summary
   And the report can never satisfy the public query
 
 @REQ-DOM-007
@@ -147,5 +161,5 @@ Examples:
   | summary generation fails                                  |
   | a summary is manually edited                              |
   | a summary pair is approved                                |
-  | a report is rejected                                      |
+  | a report is unpublished                                   |
   | a report is published                                     |

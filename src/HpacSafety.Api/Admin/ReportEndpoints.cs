@@ -29,7 +29,7 @@ public static class ReportEndpoints
 			["needs-action"] = item => item.NeedsAction,
 			["published"] = item => item.Status == ReportStatus.Published,
 			["private"] = item => item.ConsentPublish == false,
-			["rejected"] = item => item.Status == ReportStatus.Rejected,
+			["unpublished"] = item => item.Status == ReportStatus.Unpublished,
 			["summary-failed"] = item => item.Status == ReportStatus.SummaryFailed,
 		};
 
@@ -45,9 +45,7 @@ public static class ReportEndpoints
 		group.MapGet("/", List);
 		group.MapGet("/{id}", Detail);
 		group.MapPut("/{id}/summary", SaveSummary);
-		group.MapPost("/{id}/approve", Approve);
-		group.MapPost("/{id}/reject", Reject);
-		group.MapPost("/{id}/reopen", Reopen);
+		group.MapPost("/{id}/publish", Publish);
 		group.MapPost("/{id}/unpublish", Unpublish);
 		group.MapDelete("/{id}", Delete);
 
@@ -168,8 +166,8 @@ public static class ReportEndpoints
 		return EnumCode.TryParse(code, out source) && source is SummaryTextSource.Human or SummaryTextSource.Machine;
 	}
 
-	/// <summary>Approves the pair, publishing it when the reporter consented (REQ-MOD-055, ADR-0105).</summary>
-	private static Task<IResult> Approve(string id,
+	/// <summary>Approves the pair and publishes the report in one action (REQ-MOD-055, ADR-0125).</summary>
+	private static Task<IResult> Publish(string id,
 										 ReviewCommand request,
 										 HpacSafetyDbContext database,
 										 TimeProvider clock,
@@ -180,48 +178,17 @@ public static class ReportEndpoints
 
 		return Act(id, request.Version, database, clock, context, (report, subject, at) =>
 		{
-			report.ApprovePair(subject, at);
-			return AuditAction.ApprovedReport;
+			report.Publish(subject, at);
+			return AuditAction.PublishedReport;
 		}, cancellationToken);
 	}
 
-	/// <summary>Rejects the report, with an optional reviewer-only note (REQ-MOD-034, REQ-MOD-058).</summary>
-	private static Task<IResult> Reject(string id,
-										RejectReportRequest request,
-										HpacSafetyDbContext database,
-										TimeProvider clock,
-										HttpContext context,
-										CancellationToken cancellationToken)
-	{
-		ArgumentNullException.ThrowIfNull(request);
-
-		return Act(id, request.Version, database, clock, context, (report, _, _) =>
-		{
-			report.RejectReview(request.Note);
-			return AuditAction.RejectedReport;
-		}, cancellationToken);
-	}
-
-	/// <summary>Returns a rejected report to review (REQ-MOD-056).</summary>
-	private static Task<IResult> Reopen(string id,
-										ReviewCommand request,
-										HpacSafetyDbContext database,
-										TimeProvider clock,
-										HttpContext context,
-										CancellationToken cancellationToken)
-	{
-		ArgumentNullException.ThrowIfNull(request);
-
-		return Act(id, request.Version, database, clock, context, (report, _, _) =>
-		{
-			report.Reopen();
-			return AuditAction.ReopenedReport;
-		}, cancellationToken);
-	}
-
-	/// <summary>Takes a published report off the public feed and back to review (REQ-MOD-057).</summary>
+	/// <summary>
+	///     Takes a report off the public feed, or declines a pending one, with an
+	///     optional reviewer-only note (REQ-MOD-057, REQ-MOD-058).
+	/// </summary>
 	private static Task<IResult> Unpublish(string id,
-										   ReviewCommand request,
+										   UnpublishReportRequest request,
 										   HpacSafetyDbContext database,
 										   TimeProvider clock,
 										   HttpContext context,
@@ -231,7 +198,7 @@ public static class ReportEndpoints
 
 		return Act(id, request.Version, database, clock, context, (report, _, _) =>
 		{
-			report.Unpublish();
+			report.Unpublish(request.Note);
 			return AuditAction.UnpublishedReport;
 		}, cancellationToken);
 	}
@@ -379,7 +346,7 @@ public static class ReportEndpoints
 				: null,
 			[.. report.Files.Select(file => new ReportAttachmentView(file.Id.Value, EnumCode.Of(file.Kind), AttachmentState(file), Visibility(report, file)))],
 			ConcurrencyToken.Of(database, report),
-			report.RejectionNote,
+			report.UnpublishNote,
 			report.PublishedAt);
 	}
 

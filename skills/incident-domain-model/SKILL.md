@@ -10,24 +10,26 @@ description: The HPAC occurrence-reporting domain — report lifecycle states, t
 ```mermaid
 stateDiagram-v2
     [*] --> Submitted
-    Submitted --> Summarizing
-    Summarizing --> PendingReview: valid pair saved
-    Submitted --> PendingReview: no consent, never summarized
+    Submitted --> Summarizing: consent yes
+    Submitted --> Unpublished: consent not yes, never summarized
+    Summarizing --> Pending: valid pair saved
     Summarizing --> SummaryFailed: worker error / poison message
-    SummaryFailed --> PendingReview: officer writes the summary by hand
-    PendingReview --> Published: officer approves, consent yes
-    PendingReview --> Approved: officer approves, consent not yes
-    PendingReview --> Rejected: optional reviewer-only note
-    Approved --> PendingReview: pair edited
-    Published --> PendingReview: pair edited, or unpublished
-    Rejected --> PendingReview: reopened
+    SummaryFailed --> Pending: officer writes the summary by hand
+    Pending --> Published: officer publishes the pair
+    Pending --> Unpublished: officer unpublishes, optional note
+    Published --> Pending: pair edited
+    Published --> Unpublished: officer unpublishes
+    Unpublished --> Published: officer publishes, consent yes
+    Unpublished --> Pending: pair edited, consent yes
 ```
 
-- Approval and publication are one officer action (ADR-0105).
-- Review commands live on `Report` — `ApprovePair`, `RejectReview`, `Reopen`,
-  `Unpublish`, `EditSummary`, `WriteManualSummary`, and the Worker's
-  `ReviewWithoutSummary` — and refuse any transition
-  the diagram does not allow.
+- Publishing approves the pair; there is no Approved or Rejected status
+  (ADR-0125).
+- A no-consent report is Unpublished for good: every command except soft
+  delete is refused.
+- Review commands live on `Report` — `Publish`, `Unpublish`, `EditSummary`,
+  `WriteManualSummary`, and the Worker's `KeepUnpublished` — and refuse any
+  transition the diagram does not allow.
 - Report and summary use PostgreSQL `xmin` as row version; a command from a
   stale view gets `409`.
 - **`SummaryFailed` keeps a report visible.** Model down, wrong API key, or a

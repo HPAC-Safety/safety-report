@@ -34,7 +34,7 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 		builder.Property(report => report.SummaryError).HasMaxLength(2000);
 
 		// Reviewer-authored, reviewer-only (REQ-MOD-058).
-		builder.Property(report => report.RejectionNote).HasMaxLength(Report.RejectionNoteMaxLength);
+		builder.Property(report => report.UnpublishNote).HasMaxLength(Report.UnpublishNoteMaxLength);
 
 		// PostgreSQL's own row version: a stale review command is refused rather
 		// than overwriting another reviewer's work (ADR-0105, CON-IF-006).
@@ -49,7 +49,7 @@ public sealed class ReportConfiguration : IEntityTypeConfiguration<Report>
 
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_reports_status",
-			"status IN ('submitted', 'summarizing', 'pending_review', 'summary_failed', 'approved', 'rejected', 'published')"));
+			"status IN ('submitted', 'summarizing', 'summary_failed', 'pending', 'published', 'unpublished')"));
 
 		builder.HasMany(report => report.Answers)
 			.WithOne()

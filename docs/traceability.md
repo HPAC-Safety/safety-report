@@ -230,6 +230,10 @@ An audited action is recorded in the immutable audit log — *Reqnroll, Planned*
 
 A review action outside its states is refused and changes nothing — *Reqnroll, Covered*
 
+### REQ-DOM-015
+
+A report without publication consent is unpublished for good — *Reqnroll, Covered*
+
 ## Claims: media
 
 ### REQ-MED-001
@@ -532,15 +536,11 @@ A report detail view exposes only what the reviewer needs — *Reqnroll, Covered
 
 ### REQ-MOD-032
 
-Editing a summary clears approval and unpublishes — *Reqnroll, Covered*
+Editing a summary clears approval and returns the report to Pending — *Reqnroll, Covered*
 
 ### REQ-MOD-033
 
-Approval applies once to the current bilingual pair — *Reqnroll, Covered*
-
-### REQ-MOD-034
-
-Rejection blocks publication but keeps the report for learning — *Reqnroll, Covered*
+Publishing approves the current bilingual pair once — *Reqnroll, Covered*
 
 ### REQ-MOD-035
 
@@ -596,7 +596,7 @@ Sign-out is not an audited event — *Reqnroll, Planned*
 
 ### REQ-MOD-049
 
-The Needs action filter shows pending review, failed, and stuck reports — *Reqnroll, Covered*
+The Needs action filter shows pending, failed, and stuck reports — *Reqnroll, Covered*
 
 ### REQ-MOD-050
 
@@ -620,19 +620,15 @@ Opening a report shows its answers with private answers marked, and its summary 
 
 ### REQ-MOD-055
 
-Approving the pair publishes it only when the reporter consented — *Reqnroll, Covered*
-
-### REQ-MOD-056
-
-A rejected report can be reopened for review — *Reqnroll, Covered*
+Publishing a consented report's pair makes it public — *Reqnroll, Covered*
 
 ### REQ-MOD-057
 
-Unpublishing takes a report off the public feed and back to review — *Reqnroll, Covered*
+Unpublishing takes a report off the public feed and keeps it for learning — *Reqnroll, Covered*
 
 ### REQ-MOD-058
 
-A rejection may carry a note that only reviewers see — *Reqnroll, Covered*
+Unpublishing may carry a note that only reviewers see — *Reqnroll, Covered*
 
 ### REQ-MOD-059
 
@@ -656,11 +652,11 @@ Editing the summary pair saves both texts and clears approval — *playwright-bd
 
 ### REQ-MOD-064
 
-Approving a consented report publishes it — *playwright-bdd, Covered*
+Publishing a consented report shows it Published — *playwright-bdd, Covered*
 
 ### REQ-MOD-065
 
-Rejecting with a note shows the note on the report — *playwright-bdd, Covered*
+Unpublishing with a note shows the note on the report — *playwright-bdd, Covered*
 
 ### REQ-MOD-066
 
@@ -757,6 +753,10 @@ A SafetyOfficer's Admin menu counts only the reports needing action — *playwri
 ### REQ-MOD-089
 
 With nothing waiting, the Admin menu shows no count — *playwright-bdd, Covered*
+
+### REQ-MOD-090
+
+A report without publication consent never needs action — *Reqnroll, Covered*
 
 ## Claims: question-bank-and-form
 

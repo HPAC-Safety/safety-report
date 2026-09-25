@@ -35,6 +35,7 @@ import {
 	type FormStep,
 } from "./steps"
 import { useStrayFileDropGuard } from "./useStrayFileDropGuard"
+import { isYesNoType, yesNoWord } from "./yesNo"
 
 type LoadState =
 	| { status: "loading" }
@@ -370,9 +371,12 @@ export function ReportForm() {
 					continue
 				}
 
+				const value = answer?.kind === "value" ? answer.value : null
+
 				submitAnswers.push({
 					questionRevisionId: question.revisionId,
-					value: answer?.kind === "value" ? answer.value : null,
+					// Written in the language the report is sent in (ADR-0127).
+					value: value !== null && isYesNoType(question.type) ? yesNoWord(value, locale) : value,
 					choices: null,
 					attachments: null,
 				})

@@ -91,12 +91,23 @@ public sealed class AnswerTranslationModeSteps
 		_translator.Sent.ShouldBe(["The wind picked up on final."]);
 	}
 
+	[Then(@"^the yes/no answer has only its fixed counterpart, written at submission$")]
+	public async Task ThenTheYesNoAnswerHasItsFixedCounterpart()
+	{
+		var answer = (await StoredAnswers()).Single(answer => answer.QuestionRevisionId == TinyId.Parse(_answers["yes_no"].RevisionId));
+
+		answer.TranslatedValue.ShouldBe("oui");
+		answer.TranslationMode.ShouldBe(TranslationMode.Fixed);
+		answer.TranslationSource.ShouldBe(TranslationSource.Fixed);
+	}
+
 	[Then(@"every other answer keeps no second language")]
 	public async Task ThenEveryOtherAnswerKeepsNoSecondLanguage()
 	{
 		var stored = await StoredAnswers();
 
 		foreach (var answer in stored.Where(answer => answer.QuestionRevisionId != TinyId.Parse(_answers["long_text"].RevisionId)
+													  && answer.QuestionRevisionId != TinyId.Parse(_answers["yes_no"].RevisionId)
 													  && answer.QuestionKey != QuestionKey.ConsentPublish))
 		{
 			answer.TranslatedValue.ShouldBeNull(answer.QuestionKey);

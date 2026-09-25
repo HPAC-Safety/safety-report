@@ -199,34 +199,45 @@ public class StringAnswerTests
 	}
 
 	[Theory]
-	[InlineData("yes")]
-	[InlineData("no")]
-	public void GivenBooleanAnswer_WhenRecorded_ThenStoredFormIsInvariant(string given)
+	[InlineData("fr-CA", "oui", "yes")]
+	[InlineData("fr-CA", "non", "no")]
+	[InlineData("en-CA", "yes", "oui")]
+	[InlineData("en-CA", "no", "non")]
+	public void GivenBooleanAnswer_WhenRecorded_ThenStoredInReportersLanguageWithFixedCounterpart(string language,
+																								  string given,
+																								  string counterpart)
 	{
-		// Given — a French reporter's yes is still "yes" in the database
-		var report = new Report(Locale.FrCa, Now);
+		// Given — a French reporter's yes is "oui" in the database (ADR-0127)
+		var locale = Locale.Parse(language);
+		var report = new Report(locale, Now);
 
 		// When
 		var answer = report.Answer(Injury(), given, Now);
 
 		// Then
 		answer.Value.ShouldBe(given);
-		answer.ValueIn(Locale.EnCa).ShouldBe(given);
+		answer.ValueIn(locale.Counterpart).ShouldBe(counterpart);
+		answer.TranslationMode.ShouldBe(TranslationMode.Fixed);
+		answer.TranslationSource.ShouldBe(TranslationSource.Fixed);
+		answer.NeedsTranslation.ShouldBeFalse();
 	}
 
 	[Theory]
-	[InlineData("oui")]
-	[InlineData("non")]
-	[InlineData("True")]
-	public void GivenLocalizedOrTypedBoolean_WhenRecorded_ThenRefused(string given)
+	[InlineData("fr-CA", "yes")]
+	[InlineData("fr-CA", "no")]
+	[InlineData("en-CA", "oui")]
+	[InlineData("en-CA", "non")]
+	[InlineData("fr-CA", "True")]
+	public void GivenBooleanNotInReportsLanguage_WhenRecorded_ThenRefused(string language,
+																		  string given)
 	{
 		// Given
-		var report = new Report(Locale.FrCa, Now);
+		var report = new Report(Locale.Parse(language), Now);
 
 		// When
 		var answering = () => report.Answer(Injury(), given, Now);
 
-		// Then — a stored "oui" is a bug, not an alternative spelling
+		// Then — the stored word is the reporter's own
 		answering.ShouldThrow<DomainRuleViolationException>();
 	}
 
@@ -388,9 +399,9 @@ public class StringAnswerTests
 	}
 
 	[Theory]
-	[InlineData("yes")]
-	[InlineData("no")]
-	public void GivenCheckboxAnswer_WhenRecorded_ThenStoredAsYesOrNo(string given)
+	[InlineData("oui")]
+	[InlineData("non")]
+	public void GivenCheckboxAnswer_WhenRecorded_ThenStoredInReportersLanguage(string given)
 	{
 		// Given
 		var question = Question.Create(

@@ -9,7 +9,8 @@ namespace HpacSafety.Core.Features.Reporting;
 /// <remarks>
 ///     <para>
 ///         The value is the words the reporter saw — the label they picked, the text
-///         they typed, <c>yes</c> or <c>no</c>, or an ISO 8601 date or time. It is not
+///         they typed, yes or no in their language (<c>yes</c>/<c>no</c> or
+///         <c>oui</c>/<c>non</c>, ADR-0127), or an ISO 8601 date or time. It is not
 ///         an option code and it resolves through nothing, so relabelling or removing a
 ///         choice tomorrow cannot change what this answer says (ADR-0072).
 ///     </para>
@@ -19,7 +20,8 @@ namespace HpacSafety.Core.Features.Reporting;
 ///         overwrites <see cref="Value" /> or <see cref="Locale" />. Whether it has a
 ///         second language at all is decided when it is recorded
 ///         (<see cref="TranslationMode" />, ADR-0112): a select answer copies its
-///         choice's other label then (<see cref="TranslationSource.Choice" />);
+///         choice's other label then (<see cref="TranslationSource.Choice" />), and a
+///         yes or no its fixed counterpart (<see cref="TranslationSource.Fixed" />);
 ///         free text marked for translation is filled later, off the submission
 ///         path, mechanically by the Worker (<see cref="TranslationSource.Auto" />) or
 ///         by an administrator (<see cref="TranslationSource.Human" />); and anything
@@ -187,7 +189,7 @@ public class ReportAnswer
 			throw new DomainRuleViolationException("That revision does not belong to this question.");
 		}
 
-		value = InStoredForm(question, revision, value);
+		value = InStoredForm(question, revision, value, locale);
 
 		if (revision.IsRequired
 			&& string.IsNullOrWhiteSpace(value))
@@ -208,21 +210,25 @@ public class ReportAnswer
 			throw new DomainRuleViolationException($"'{question.Key}' did not offer that answer.");
 		}
 
-		var (mode, fromChoice) = SecondLanguageOf(question, revision, value, locale);
+		var (mode, other) = SecondLanguageOf(question, revision, value, locale);
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
 		{
 			Value = value,
 			TranslationMode = mode,
-			TranslatedValue = fromChoice,
-			TranslationSource = fromChoice is null ? null : Reporting.TranslationSource.Choice,
+			TranslatedValue = other,
+			TranslationSource = other is null
+				? null
+				: mode == TranslationMode.Fixed
+					? Reporting.TranslationSource.Fixed
+					: Reporting.TranslationSource.Choice,
 		};
 	}
 
 	/// <summary>
 	///     A date, time, or checkbox answer exactly as ADR-0072 stores it — a
-	///     <c>YYYY-MM-DD</c> calendar day, an <c>HH:mm</c> wall-clock time, or
-	///     <c>yes</c>/<c>no</c> — or a refusal. Nothing is converted: the form's own
+	///     <c>YYYY-MM-DD</c> calendar day, an <c>HH:mm</c> wall-clock time, or yes or
+	///     no in the report's language (ADR-0127) — or a refusal. Nothing is converted: the form's own
 	///     inputs already send these, so any other shape came from somewhere else
 	///     (REQ-QB-118). A blank one is a skip. Every other type passes through.
 	/// </summary>
@@ -232,7 +238,8 @@ public class ReportAnswer
 	/// </remarks>
 	private static string? InStoredForm(Question question,
 										QuestionRevision revision,
-										string? value)
+										string? value,
+										Locale locale)
 	{
 		if (revision.Type is not (QuestionType.Date or QuestionType.Time or QuestionType.Checkbox))
 		{
@@ -252,7 +259,7 @@ public class ReportAnswer
 			QuestionType.Time => (
 				TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
 				"a time written HH:mm"),
-			_ => (QuestionRevision.YesNoCodes.Contains(value, StringComparer.Ordinal), "yes or no"),
+			_ => (YesNoAnswer.IsWordIn(value, locale), $"{YesNoAnswer.Yes(locale)} or {YesNoAnswer.No(locale)}"),
 		};
 
 		return stored
@@ -262,9 +269,10 @@ public class ReportAnswer
 
 	/// <summary>
 	///     How this answer gets its second language, and — for a value naming a
-	///     choice written in both languages — that choice's other label, copied now.
-	///     A lookup in the question's own choices, never a translation provider, so
-	///     the submission path stays provider-free. See ADR-0112.
+	///     choice written in both languages — that choice's other label, or for a yes
+	///     or no its fixed counterpart, copied now. A lookup, never a translation
+	///     provider, so the submission path stays provider-free. See ADR-0112,
+	///     ADR-0127.
 	/// </summary>
 	private static (TranslationMode Mode, string? FromChoice) SecondLanguageOf(
 		Question question,
@@ -272,6 +280,11 @@ public class ReportAnswer
 		string? value,
 		Locale locale)
 	{
+		if (revision.Type is QuestionType.YesNo or QuestionType.Checkbox)
+		{
+			return (TranslationMode.Fixed, YesNoAnswer.Counterpart(value));
+		}
+
 		if (!revision.StoresLocalizedValue)
 		{
 			return (revision.IsTranslatable ? TranslationMode.Machine : TranslationMode.None, null);

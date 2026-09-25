@@ -164,11 +164,15 @@ contributor who never invokes one is unaffected.
      - a select answer naming a choice written in both languages: copies that
        choice's other-language label at submission — a lookup, not a
        translation. One naming a one-language choice is filled by the Worker;
-     - everything else (unmarked text, email, phone, date, time, number,
-       yes/no): never has one;
-     - the source is recorded: `auto`, `human`, or `choice`.
-   - **Storage forms**: a boolean is `yes`/`no`; a date, time, or date-and-time
-     is ISO 8601 in the fitting shape. The domain still uses `DateOnly`,
+     - a yes/no or checkbox answer: its fixed counterpart (`yes`↔`oui`,
+       `no`↔`non`), written at submission — a lookup, not a translation
+       ([ADR-0127](docs/decisions/ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md));
+     - everything else (unmarked text, email, phone, date, time, number):
+       never has one;
+     - the source is recorded: `auto`, `human`, `choice`, or `fixed`.
+   - **Storage forms**: a boolean is the reporter's own word, `yes`/`no` or
+     `oui`/`non`, and every reader accepts all four (ADR-0127); a date, time,
+     or date-and-time is ISO 8601 in the fitting shape. The domain still uses `DateOnly`,
      `TimeOnly`, and `DateTimeOffset`
      ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
      [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),

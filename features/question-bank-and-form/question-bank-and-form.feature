@@ -156,38 +156,89 @@ Scenario: An answer to a picker stores the words the reporter saw
   And relabelling or removing that option afterwards leaves the stored answer unchanged
 
 @REQ-QB-019
-Scenario Outline: Every answer is stored in one invariant written form
-  Given a reporter submits <submitted> as the answer to a <type> question
+Scenario Outline: Every answer is stored in its written form
+  Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
   When the answer is persisted
   Then the stored value is <stored>
 
 Examples:
-  | type       | submitted       | stored                                   |
-  | yes_no     | yes             | yes                                      |
-  | yes_no     | no              | no                                       |
-  | checkbox   | yes             | yes                                      |
-  | date       | 2026-09-21      | 2026-09-21                               |
-  | time       | 14:30           | 14:30                                    |
-  | date       | an empty string | nothing, because the answer was skipped  |
-  | short_text | a line of prose | that line, as typed                      |
+  | language | type       | submitted       | stored                                  |
+  | English  | yes_no     | yes             | yes                                     |
+  | English  | yes_no     | no              | no                                      |
+  | French   | yes_no     | oui             | oui                                     |
+  | French   | yes_no     | non             | non                                     |
+  | English  | checkbox   | yes             | yes                                     |
+  | French   | checkbox   | oui             | oui                                     |
+  | English  | date       | 2026-09-21      | 2026-09-21                              |
+  | French   | date       | 2026-09-21      | 2026-09-21                              |
+  | English  | time       | 14:30           | 14:30                                   |
+  | English  | date       | an empty string | nothing, because the answer was skipped |
+  | English  | short_text | a line of prose | that line, as typed                     |
 
 @REQ-QB-118
-Scenario Outline: An answer not in its invariant written form is rejected
-  Given a reporter submits <submitted> as the answer to a <type> question
+Scenario Outline: An answer not in its written form is rejected
+  Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
   When the submission is made
   Then the submission is rejected
   And no stored answer carries that value
 
 Examples:
-  | type     | submitted                  |
-  | date     | the 21st of September 2026 |
-  | date     | 21/09/2026                 |
-  | date     | 2026-9-21                  |
-  | date     | 2026-02-30                 |
-  | time     | 2:30 PM                    |
-  | time     | 25:00                      |
-  | time     | 14:30:00                   |
-  | checkbox | checked                    |
+  | language | type     | submitted                  |
+  | English  | date     | the 21st of September 2026 |
+  | English  | date     | 21/09/2026                 |
+  | English  | date     | 2026-9-21                  |
+  | English  | date     | 2026-02-30                 |
+  | English  | time     | 2:30 PM                    |
+  | English  | time     | 25:00                      |
+  | English  | time     | 14:30:00                   |
+  | English  | checkbox | checked                    |
+  | English  | checkbox | oui                        |
+  | French   | checkbox | yes                        |
+  | English  | yes_no   | oui                        |
+  | French   | yes_no   | yes                        |
+
+@REQ-QB-119
+Scenario Outline: A yes or no answer takes its fixed counterpart at submission
+  Given a reporter writing in <language> submits <submitted> as the answer to a <type> question
+  When the answer is persisted
+  Then its other language is <counterpart>, recorded as a fixed counterpart
+  And no translation provider was called and nothing waits for the Worker to translate it
+
+Examples:
+  | language | type     | submitted | counterpart |
+  | English  | yes_no   | yes       | oui         |
+  | English  | yes_no   | no        | non         |
+  | French   | yes_no   | oui       | yes         |
+  | French   | yes_no   | non       | no          |
+  | French   | checkbox | oui       | yes         |
+
+@REQ-QB-120
+Scenario Outline: A yes in either language enables a conditional question
+  Given a question depends on a yes/no question
+  When a reporter writing in <language> answers the yes/no question <answer>
+  Then the conditional question is <asked>
+
+Examples:
+  | language | answer | asked     |
+  | English  | yes    | asked     |
+  | English  | no     | not asked |
+  | French   | oui    | asked     |
+  | French   | non    | not asked |
+
+@REQ-QB-121
+Scenario Outline: A consent answer means the same in either language
+  Given a reporter's answer to <consent> is stored as <stored>
+  When the answer is projected onto the report
+  Then the report records <consent> as <recorded>
+
+Examples:
+  | consent         | stored | recorded |
+  | consent_publish | yes    | given    |
+  | consent_publish | oui    | given    |
+  | consent_publish | no     | refused  |
+  | consent_publish | non    | refused  |
+  | consent_media   | oui    | given    |
+  | consent_media   | non    | refused  |
 
 @REQ-QB-025
 Scenario: Only consent is projected onto the report aggregate

@@ -136,14 +136,15 @@ in the same transaction.
 
 ## Reading a date, time, or yes/no answer (#403)
 
-An answer is stored in a language-neutral form — a date as ISO 8601
-`YYYY-MM-DD`, a time as `HH:mm`, a yes/no as `yes` or `no`
-([ADR-0072](../../docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md)).
+A date is stored as ISO 8601 `YYYY-MM-DD` and a time as `HH:mm`
+([ADR-0072](../../docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md)),
+and a yes/no as `yes`/`no` or `oui`/`non` in the reporter's language
+([ADR-0127](../../docs/decisions/ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md)).
 That form is for storage only. The report view shows such an answer in the
 interface language the reviewer chose, not the language the reporter
 answered in: `2026-09-13` reads "September 13, 2026" in English and
 "13 septembre 2026" in French, `14:30` reads "2:30 p.m." or "14 h 30", and
-`yes` reads "Yes" or "Oui". The detail view names each question's type so
+`yes` or `oui` reads "Yes" or "Oui". The detail view names each question's type so
 the page can tell these answers from free text. Because the formatted value
 already reads in the reviewer's language, the view shows no second-language
 translation beside it. A stored value that is not a real date or time is
@@ -228,11 +229,12 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   [`features/media`](../media/README.md)'s rule (ADR-0117, ADR-0119).
 - Translating a summary automatically on save, or with the summarization
   model. Translation is a draft the reviewer asks for and accepts.
-- Changing how a date, time, or yes/no answer is stored, sent by the API, or
-  sent to the Worker or the model. It stays in its ISO 8601 or `yes`/`no`
-  form; only what a person reads is localized. Such an answer never gets a
-  second language
+- Changing how a date or time answer is stored, sent by the API, or sent to
+  the Worker or the model. It stays in its ISO 8601 form; only what a person
+  reads is localized, and it never gets a second language
   ([ADR-0112](../../docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+  A yes/no answer is stored in the reporter's word and has only its fixed
+  counterpart (ADR-0127), which the view does not show beside it.
 - Converting a date or time between time zones. A date is a calendar date and
   a time is the wall-clock time the reporter entered; neither is shifted to
   the reviewer's zone.

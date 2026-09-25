@@ -7,8 +7,8 @@ namespace HpacSafety.Core.Features.Reporting;
 public enum TranslationMode
 {
 	/// <summary>
-	///     Never has one: unmarked text, email, phone, date, time, number, yes/no,
-	///     checkbox, file. Nothing is sent, queued, or shown for it.
+	///     Never has one: unmarked text, email, phone, date, time, number, file.
+	///     Nothing is sent, queued, or shown for it.
 	/// </summary>
 	None = 0,
 
@@ -23,4 +23,11 @@ public enum TranslationMode
 	///     by an administrator by hand.
 	/// </summary>
 	Machine = 2,
+
+	/// <summary>
+	///     A yes/no or checkbox answer's fixed counterpart (<c>yes</c>↔<c>oui</c>,
+	///     <c>no</c>↔<c>non</c>), written at submission
+	///     (<see cref="TranslationSource.Fixed" />). See ADR-0127.
+	/// </summary>
+	Fixed = 3,
 }

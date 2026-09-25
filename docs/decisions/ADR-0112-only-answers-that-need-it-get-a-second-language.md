@@ -2,7 +2,7 @@
 title: Only answers that need it get a second language; a picker's comes from its choice
 description: Machine translation is limited to free text an administrator marked as needing it; select answers copy their choice's other-language label at submission; every other answer type never gets a second language.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-24
 decision-makers: Chase Florell
 keywords: translation, answers, DeepL, ITranslator, worker, choices, question bank, ADR-0080, ADR-0072
@@ -10,7 +10,10 @@ keywords: translation, answers, DeepL, ITranslator, worker, choices, question ba
 
 # ADR-0112 — Only answers that need it get a second language; a picker's comes from its choice
 
-**Status:** Accepted. Amends
+**Status:** Accepted; partially superseded by
+[ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md),
+under which a yes/no or checkbox answer takes its fixed counterpart at
+submission (`fixed`) instead of never having a second language. Amends
 [ADR-0080](ADR-0080-every-answer-gets-a-worker-translated-second-language.md):
 not every answer is machine-translated, and a select answer's second language
 is no longer machine-made. Amends the product invariant that "there is no

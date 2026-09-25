@@ -497,15 +497,15 @@ public class Report
 	private static bool ReadConsent(ReportAnswer answer,
 									string consent)
 	{
-		// "yes" and "no" are the invariant stored forms of every boolean answer
-		// (ADR-0072), so this reads the same two tokens whichever language the
-		// reporter used.
-		if (string.Equals(answer.Value, "yes", StringComparison.Ordinal))
+		// A consent answer is stored in the reporter's language (ADR-0127), and one
+		// given before that is stored as yes or no whatever the language, so this
+		// reads all four words.
+		if (YesNoAnswer.IsYes(answer.Value))
 		{
 			return true;
 		}
 
-		if (string.Equals(answer.Value, "no", StringComparison.Ordinal))
+		if (YesNoAnswer.IsNo(answer.Value))
 		{
 			return false;
 		}

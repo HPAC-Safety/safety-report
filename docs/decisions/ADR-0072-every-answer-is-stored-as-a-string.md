@@ -2,13 +2,21 @@
 title: "Every answer is stored as a string, in the reporter's language"
 description: One column, one string, for every answer of every type.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: answers, option codes, string values, ISO 8601, locale, translation, question bank
 ---
 
 # ADR-0072 — Every answer is stored as a string, in the reporter's language
+
+## Status
+
+Accepted; partially superseded by
+[ADR-0127](ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md):
+a yes or no answer is stored in the reporter's language (`oui`/`non` for a
+French reporter), and a stored `oui` is no longer a bug. The date, time, and
+date-and-time forms below stand.
 
 ## Context
 

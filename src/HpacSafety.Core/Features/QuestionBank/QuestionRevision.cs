@@ -150,7 +150,7 @@ public class QuestionRevision
 	/// <summary>
 	///     The question this one is conditional on, if any. The form enables this
 	///     question only when that question's answer satisfies the condition:
-	///     "yes" for a yes/no parent, or the option named by
+	///     yes, in either language, for a yes/no parent, or the option named by
 	///     <see cref="DependsOnOptionCode" /> for a single-select parent.
 	/// </summary>
 	/// <remarks>
@@ -169,7 +169,7 @@ public class QuestionRevision
 	///     parent must be answered with to enable this question. Always
 	///     <c>null</c> when <see cref="DependsOnQuestionId" /> is null or names a
 	///     <see cref="QuestionType.YesNo" /> parent, whose condition is the
-	///     invariant "yes" instead. See ADR-0074.
+	///     yes, in either language, instead. See ADR-0074, ADR-0127.
 	/// </summary>
 	public string? DependsOnOptionCode { get; private init; }
 
@@ -259,13 +259,6 @@ public class QuestionRevision
 	/// <summary>True when this type takes at most one answer.</summary>
 	public bool TakesOneAnswer =>
 		Type is QuestionType.SingleSelect or QuestionType.YesNo or QuestionType.Autocomplete;
-
-	/// <summary>
-	///     The two codes a <see cref="QuestionType.YesNo" /> question accepts. Fixed,
-	///     unorderable, and with no third state — a yes/no question has no default
-	///     and the reporter must choose one.
-	/// </summary>
-	public static IReadOnlyList<string> YesNoCodes { get; } = ["yes", "no"];
 
 	/// <summary>The wording in one locale.</summary>
 	public string Label(Locale locale)
@@ -439,7 +432,7 @@ public class QuestionRevision
 		var parentRevision = parent.CurrentRevision;
 
 		return parentRevision.Type == QuestionType.YesNo
-			? string.Equals(parentAnswerValue, "yes", StringComparison.Ordinal)
+			? YesNoAnswer.IsYes(parentAnswerValue)
 			: DependsOnOptionCode is { } requiredOptionCode
 			  && string.Equals(
 				  parent.Choice(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);

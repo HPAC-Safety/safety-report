@@ -35,7 +35,7 @@ public static class QuestionDependencies
 	/// <param name="requiredOptionCode">
 	///     The option code the parent must be answered with, when the parent is
 	///     single-select. Must be null for a yes/no parent, whose condition is
-	///     the invariant "yes". See ADR-0074.
+	///     yes, in either language. See ADR-0074, ADR-0127.
 	/// </param>
 	/// <exception cref="DomainRuleViolationException">When the dependency is not allowed.</exception>
 	public static void EnsureDependencyAllowed(

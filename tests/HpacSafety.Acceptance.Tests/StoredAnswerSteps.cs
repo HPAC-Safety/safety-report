@@ -53,6 +53,7 @@ public sealed class StoredAnswerSteps
 
 	private JsonElement _answered;
 	private string? _submitted;
+	private Locale _language = Locale.EnCa;
 	private HttpResponseMessage? _submission;
 
 	private readonly Dictionary<string, string> _ordinary = [];
@@ -87,7 +88,7 @@ public sealed class StoredAnswerSteps
 			language = "fr-CA",
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"no" },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"non" },
 				new { questionRevisionId = RevisionOf("single_select"), value = (string?)"Bleu" },
 				new { questionRevisionId = RevisionOf("autocomplete"), value = (string?)"Rouge" },
 				new { questionRevisionId = RevisionOf("multi_select"), choices = _chosen["multi_select"] },
@@ -206,12 +207,14 @@ public sealed class StoredAnswerSteps
 		}
 	}
 
-	// --- REQ-QB-019 and REQ-QB-118: one invariant written form, or a refusal ---
+	// --- REQ-QB-019, REQ-QB-118, REQ-QB-119: the written form, or a refusal ---
 
-	[Given(@"^a reporter submits (.+) as the answer to a (\w+) question$")]
-	public async Task GivenAReporterSubmitsAnAnswer(string submitted,
+	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to a (\w+) question$")]
+	public async Task GivenAReporterSubmitsAnAnswer(string language,
+													string submitted,
 													string type)
 	{
+		_language = language == "French" ? Locale.FrCa : Locale.EnCa;
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, []));
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
@@ -238,10 +241,10 @@ public sealed class StoredAnswerSteps
 		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
 		_submission = await reporter.PostAsJsonAsync(Submit, new
 		{
-			language = "en-CA",
+			language = _language.Code,
 			answers = new object[]
 			{
-				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"no" },
+				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)YesNoAnswer.No(_language) },
 				new { questionRevisionId = _answered.GetProperty("revisionId").GetString(), value = (string?)_submitted },
 			},
 		});
@@ -260,13 +263,35 @@ public sealed class StoredAnswerSteps
 		(await AnswersToTheQuestion()).ShouldHaveSingleItem().Value.ShouldBe(expected);
 	}
 
+	[Then(@"^its other language is (\w+), recorded as a fixed counterpart$")]
+	public async Task ThenItsOtherLanguageIsTheFixedCounterpart(string counterpart)
+	{
+		var answer = (await AnswersToTheQuestion()).ShouldHaveSingleItem();
+
+		answer.TranslatedValue.ShouldBe(counterpart);
+		answer.TranslationMode.ShouldBe(TranslationMode.Fixed);
+		answer.TranslationSource.ShouldBe(TranslationSource.Fixed);
+		answer.ValueIn(_language.Counterpart).ShouldBe(counterpart);
+	}
+
+	[Then(@"no translation provider was called and nothing waits for the Worker to translate it")]
+	public async Task ThenNothingWaitsForTranslation()
+	{
+		// Written in the submission's own transaction, so there is nothing left
+		// for the Worker's translator to pick up.
+		(await AnswersToTheQuestion()).ShouldHaveSingleItem().NeedsTranslation.ShouldBeFalse();
+	}
+
 	[Then(@"the submission is rejected")]
 	public async Task ThenTheSubmissionIsRejected()
 	{
 		_submission!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
-		// A refusal names the question, never the reporter's words.
-		(await _submission.Content.ReadAsStringAsync()).ShouldNotContain(_submitted!);
+		// A refusal names the question, never the reporter's words. The key is
+		// taken out first: a derived one can hold a word such as "yes".
+		var problem = (await _submission.Content.ReadAsStringAsync())
+			.Replace(_answered.GetProperty("key").GetString()!, string.Empty, StringComparison.Ordinal);
+		problem.ShouldNotContain(_submitted!);
 	}
 
 	[Then(@"no stored answer carries that value")]

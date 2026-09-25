@@ -9,5 +9,15 @@
     "fr-CA": "télécharger",
     "forbidden": ["téléverse"],
     "note": "The other direction of upload: a visitor or reviewer saving a file. The translator once rendered Download as Téléverser (#428)."
+  },
+  "reporter": {
+    "fr-CA": "personne déclarante",
+    "forbidden": ["journalist"],
+    "note": "The person who files a safety report, gender-neutral so UI copy needs no gendered agreement: la personne déclarante. The translator rendered it as journaliste, a news journalist (#436)."
+  },
+  "report": {
+    "fr-CA": "signalement",
+    "forbidden": ["rapport", "article", "reportage"],
+    "note": "A safety report is un signalement, the word the seeded consent questions already use. Never rapport, and never article or reportage, which read as the press (#436). The stem also covers reports, reported, and reporter."
   }
 }

@@ -18,15 +18,15 @@
   },
   "nav": {
     "primaryLabel": "Primaire",
-    "viewReports": "Consulter les rapports de sécurité",
-    "submitReport": "Soumettre un rapport de sécurité",
+    "viewReports": "Consulter les signalements de sécurité",
+    "submitReport": "Soumettre un signalement de sécurité",
     "contact": "Contact",
     "memberLogin": "Connexion des membres",
     "memberLogout": "Se déconnecter",
     "openMenuLabel": "Ouvrir le menu",
     "closeMenuLabel": "Fermer le menu",
     "admin": "Admin",
-    "manageReports": "Gérer les rapports",
+    "manageReports": "Gérer les signalements",
     "manageQuestions": "Gérer les questions",
     "manageAnswerTranslations": "Réponses en attente de traduction",
     "pendingCount": "{count} en attente"
@@ -42,7 +42,7 @@
   "home": {
     "heroTitle": "Ensemble, pour des vols plus sécuritaires",
     "heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol.",
-    "heroCta": "Soumettre un rapport de sécurité",
+    "heroCta": "Soumettre un signalement de sécurité",
     "sectionWhy": {
       "title": "Pourquoi signaler?",
       "body": "Chaque signalement, aussi mineur soit-il, contribue à repérer des tendances avant qu’elles ne prennent une ampleur préoccupante. Les signalements peuvent être soumis de manière anonyme — le fait de vous connecter ne fait que confirmer que vous êtes membre de HPAC, et votre signalement n’est jamais associé à votre compte — et sont examinés avant toute publication."
@@ -69,10 +69,10 @@
     },
     "report": {
       "signInRequiredTitle": "Connectez-vous pour faire un signalement",
-      "signInRequiredBody": "Pour remplir un rapport d’incident, vous devez vous connecter en tant que membre de la HPAC. La connexion sert uniquement à confirmer que vous êtes membre; votre rapport n’est pas lié à votre compte.",
+      "signInRequiredBody": "Pour remplir un signalement d’incident, vous devez vous connecter en tant que membre de la HPAC. La connexion sert uniquement à confirmer que vous êtes membre; votre signalement n’est pas lié à votre compte.",
       "signInAction": "Ouvrez une session",
-      "notTrackedTitle": "Votre rapport n'est pas associé à votre profil",
-      "notTrackedBody": "Le fait de vous connecter ne sert qu’à confirmer que vous êtes membre de la HPAC. Nous n’enregistrons ni votre nom, ni votre statut de membre, ni aucune information permettant d’identifier l’auteur de ce rapport."
+      "notTrackedTitle": "Votre signalement n'est pas associé à votre profil",
+      "notTrackedBody": "Le fait de vous connecter ne sert qu’à confirmer que vous êtes membre de la HPAC. Nous n’enregistrons ni votre nom, ni votre statut de membre, ni aucune information permettant d’identifier la personne qui a soumis ce signalement."
     },
     "login": {
       "title": "Connexion des membres",
@@ -97,8 +97,8 @@
     }
   },
   "report": {
-    "loading": "Chargement du formulaire de rapport…",
-    "loadError": "Le formulaire de rapport n'a pas pu être chargé. Veuillez actualiser la page.",
+    "loading": "Chargement du formulaire de signalement…",
+    "loadError": "Le formulaire de signalement n'a pas pu être chargé. Veuillez actualiser la page.",
     "progress": "Étape n°{current}, tirée de {total}",
     "privacy": {
       "localStorage": "Vos réponses sont conservées uniquement dans ce navigateur, pendant une période maximale de 15 jours à compter du moment où vous commencez, jusqu’à ce que vous les soumettiez. Les photos, les vidéos et les documents sont téléversés au fur et à mesure que vous les joignez et sont conservés pendant ces mêmes 15 jours, puis supprimés si vous ne les avez pas soumis."
@@ -106,7 +106,7 @@
     "nav": {
       "next": "Suivant",
       "back": "Retour",
-      "submit": "Soumettre un rapport",
+      "submit": "Soumettre un signalement",
       "submitting": "Envoi en cours…"
     },
     "required": {
@@ -125,7 +125,7 @@
     "attachments": {
       "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléversé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",
-      "keptWithReport": "Les fichiers joints sont conservés avec votre rapport enregistré pendant un maximum de 15 jours; vous les retrouverez donc si vous quittez la page et y revenez.",
+      "keptWithReport": "Les fichiers joints sont conservés avec votre signalement enregistré pendant un maximum de 15 jours; vous les retrouverez donc si vous quittez la page et y revenez.",
       "listLabel": "Fichiers joints",
       "uploading": "Téléversement en cours…",
       "uploadingNamed": "Téléversement de {name}",
@@ -141,22 +141,22 @@
         "unrecognised_content": "Le contenu de ce fichier n'est pas dans un format que nous acceptons.",
         "unaccepted_media_type": "Ce type de fichier n'est pas accepté.",
         "declared_type_mismatch": "Le contenu de ce fichier ne correspond pas à son type.",
-        "limit": "Il n'est plus possible de joindre des fichiers à ce rapport.",
+        "limit": "Il n'est plus possible de joindre des fichiers à ce signalement.",
         "network": "Le téléversement de ce fichier a échoué. Vérifiez votre connexion, supprimez le fichier, puis réessayez.",
         "unknown": "Ce fichier n'a pas pu être téléversé."
       }
     },
     "error": {
-      "network": "Votre rapport n'a pas pu être envoyé. Vos réponses sont toujours enregistrées dans ce navigateur — veuillez vérifier votre connexion et réessayer.",
-      "submitFailed": "Nous n'avons pas pu transmettre votre rapport. Veuillez réessayer."
+      "network": "Votre signalement n'a pas pu être envoyé. Vos réponses sont toujours enregistrées dans ce navigateur — veuillez vérifier votre connexion et réessayer.",
+      "submitFailed": "Nous n'avons pas pu transmettre votre signalement. Veuillez réessayer."
     },
     "submitted": {
-      "title": "Rapport présenté",
-      "body": "Merci. Nous avons bien reçu votre rapport."
+      "title": "Signalement envoyé",
+      "body": "Merci. Nous avons bien reçu votre signalement."
     },
     "resume": {
       "title": "Souhaitez-vous reprendre là où vous vous êtes arrêté?",
-      "body": "Ce navigateur a enregistré les réponses d’un rapport que vous n’avez pas encore soumis. Souhaitez-vous poursuivre avec ces réponses ou commencer un nouveau rapport? Si vous recommencez, ces réponses seront supprimées de ce navigateur et tous les fichiers que vous y avez joints seront effacés.",
+      "body": "Ce navigateur a enregistré les réponses d’un signalement que vous n’avez pas encore soumis. Souhaitez-vous poursuivre avec ces réponses ou commencer un nouveau signalement? Si vous recommencez, ces réponses seront supprimées de ce navigateur et tous les fichiers que vous y avez joints seront effacés.",
       "yes": "Oui, continuez",
       "no": "Non, recommencez",
       "tableCaption": "Vos réponses enregistrées",
@@ -164,8 +164,8 @@
       "answerHeader": "Réponse enregistrée"
     },
     "discard": {
-      "open": "Rejeter le rapport",
-      "title": "Souhaitez-vous supprimer ce rapport?",
+      "open": "Rejeter le signalement",
+      "title": "Souhaitez-vous supprimer ce signalement?",
       "body": "Cette opération supprimera vos réponses de ce navigateur et effacera les fichiers que vous avez joints. Elle ne peut pas être annulée.",
       "confirm": "Oui, jetez-le",
       "keep": "Non, gardez-le"
@@ -181,7 +181,7 @@
   },
   "questions": {
     "title": "Gérer les questions",
-    "intro": "Le formulaire de signalement se compose de ces questions. Lorsque vous modifiez l’une d’entre elles, vous créez une nouvelle version; si vous modifiez une question à laquelle une réponse a déjà été donnée, celle-ci est remplacée par une nouvelle question. Ainsi, un rapport déjà soumis conserve exactement le contenu initial de la question posée.",
+    "intro": "Le formulaire de signalement se compose de ces questions. Lorsque vous modifiez l’une d’entre elles, vous créez une nouvelle version; si vous modifiez une question à laquelle une réponse a déjà été donnée, celle-ci est remplacée par une nouvelle question. Ainsi, un signalement déjà soumis conserve exactement le contenu initial de la question posée.",
     "listTitle": "Questions figurant sur le formulaire",
     "loading": "Chargement des questions…",
     "empty": "Il n'y a pas encore de questions. Ajoutez la première.",
@@ -201,7 +201,7 @@
     "dependsOnSummary": "Cette question n’est posée que si la réponse à «{question} » est « oui »",
     "dependsOnOptionSummary": "Cette question n’est posée que lorsque la réponse à «{question} » est «{option} ».",
     "groupedUnderSummary": "Affiché sous la rubrique «{question} »",
-    "reporterChoicesAwaiting": "Choix ajoutés par les journalistes en attente de révision : {count}",
+    "reporterChoicesAwaiting": "Choix ajoutés par les personnes déclarantes en attente de révision : {count}",
     "editorTitleNew": "Nouvelle question",
     "editorTitleEdit": "Modifier la question",
     "error": {
@@ -214,7 +214,7 @@
       "helpEn": "Texte d'aide (anglais)",
       "helpFr": "Texte d'aide (français)",
       "behaviour": "Comportement",
-      "required": "Les journalistes doivent répondre",
+      "required": "Les personnes déclarantes doivent répondre",
       "private": "Privé",
       "active": "Posez cette question",
       "privateHelp": "Les réponses à une question privée permettent de reconnaître des détails permettant d’identifier la personne et n’apparaissent jamais dans un résumé publié.",
@@ -225,7 +225,7 @@
       "dependsOnHelp": "Seule une question de type « oui/non » ou à choix unique peut en déclencher une autre.",
       "dependsOnOption": "Réponse obligatoire",
       "dependsOnOptionNone": "Choisissez l'option souhaitée",
-      "dependsOnOptionHelp": "Le journaliste doit choisir cette option pour la question ci-dessus avant que celle-ci ne soit posée.",
+      "dependsOnOptionHelp": "La personne déclarante doit choisir cette option à la question ci-dessus avant que celle-ci ne soit posée.",
       "groupedUnder": "Afficher ensemble sous un titre de section",
       "groupedUnderNone": "Non regroupés",
       "groupedUnderHelp": "Seule une question de groupe peut comporter d'autres questions affichées en dessous.",
@@ -237,7 +237,7 @@
       "removeOption": "Supprimer ce choix"
     },
     "choice": {
-      "reporterAdded": "Ajouté par un journaliste",
+      "reporterAdded": "Ajouté par une personne déclarante",
       "awaitingEnglish": "En attente de la version anglaise",
       "awaitingFrench": "En attente de la version française"
     },
@@ -295,7 +295,7 @@
   },
   "answerTranslations": {
     "title": "Réponses en attente de traduction",
-    "intro": "Un journaliste répond à une suggestion de saisie ou à une suggestion automatique dans une langue officielle, et rien n’est traduit lors de la saisie. Indiquez ici l’autre langue; ce que le journaliste a écrit n’est jamais modifié.",
+    "intro": "Une personne déclarante répond à une liste de choix ou à une saisie semi-automatique dans une langue officielle, et rien n’est traduit lors de la saisie. Indiquez ici l’autre langue; ce que la personne déclarante a écrit n’est jamais modifié.",
     "loading": "Chargement des réponses…",
     "empty": "Aucune réponse n’attend une deuxième langue.",
     "waitingCount": "En attendant une deuxième langue : {count}.",
@@ -308,9 +308,9 @@
     }
   },
   "reports": {
-    "intro": "Tous les rapports reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",
+    "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",
     "filter": {
-      "label": "Filtrer les rapports",
+      "label": "Filtrer les signalements",
       "all": "Tout",
       "needs-action": "À traiter",
       "published": "Publié",
@@ -318,11 +318,11 @@
       "rejected": "Rejeté",
       "summary-failed": "Échec de la synthèse"
     },
-    "listLabel": "Rapports",
-    "loading": "Chargement des rapports…",
-    "empty": "Aucun rapport ne correspond à ce filtre.",
+    "listLabel": "Signalements",
+    "loading": "Chargement des signalements…",
+    "empty": "Aucun signalement ne correspond à ce filtre.",
     "error": {
-      "unexpected": "Les rapports n'ont pas pu être chargés. Veuillez réessayer."
+      "unexpected": "Les signalements n'ont pas pu être chargés. Veuillez réessayer."
     },
     "submittedAt": "Soumis par {at}",
     "status": {
@@ -339,22 +339,22 @@
       "stuck": "Coincé"
     },
     "detail": {
-      "back": "Retour aux rapports",
-      "title": "Rapport",
-      "notFound": "Ce rapport n'existe pas ou a été supprimé.",
+      "back": "Retour aux signalements",
+      "title": "Signalement",
+      "notFound": "Ce signalement n'existe pas ou a été supprimé.",
       "language": {
         "en-CA": "Rédigé en anglais",
         "fr-CA": "Rédigé en français"
       },
       "consent": {
-        "yes": "Le journaliste a donné son accord pour la publication.",
-        "no": "Le journaliste n’a pas donné son accord pour la publication. Ce reportage n’a jamais été publié.",
-        "unanswered": "Le journaliste n'a pas répondu à la question concernant la publication."
+        "yes": "La personne déclarante a consenti à la publication.",
+        "no": "La personne déclarante n’a pas consenti à la publication. Ce signalement n’est jamais publié.",
+        "unanswered": "La personne déclarante n’a pas répondu à la question sur la publication."
       },
       "mediaConsent": {
-        "yes": "Le journaliste a accepté de partager les fichiers joints à son rapport publié.",
-        "no": "Le journaliste n'a pas accepté de partager ses fichiers joints. Aucun n'est jamais rendu public.",
-        "unanswered": "On n’a pas demandé au journaliste de partager ses fichiers joints; par conséquent, aucun n’est jamais rendu public."
+        "yes": "La personne déclarante a accepté de partager ses fichiers joints dans le signalement publié.",
+        "no": "La personne déclarante n’a pas accepté de partager ses fichiers joints. Aucun n’est jamais rendu public.",
+        "unanswered": "On n’a pas demandé à la personne déclarante de partager ses fichiers joints; par conséquent, aucun n’est jamais rendu public."
       },
       "summary": "Résumé",
       "summaryEn": "Anglais",
@@ -371,7 +371,7 @@
       "attachments": "Pièces jointes",
       "attachment": "{kind} — {state}",
       "rejectionNote": "Avis de rejet : {note}",
-      "notSummarized": "Non résumé : le journaliste n'ayant pas donné son consentement à la publication, ce rapport n'a jamais été transmis à AI.",
+      "notSummarized": "Non résumé : la personne déclarante n’a pas consenti à la publication, ce signalement n’a donc jamais été transmis à l’IA.",
       "source": {
         "generated": "Généré par l'IA",
         "human": "Rédigé par un critique",
@@ -393,14 +393,14 @@
       "view": "Afficher",
       "download": "Télécharger",
       "visibility": {
-        "public": "Figurant dans le rapport public",
-        "when_published": "Affiché une fois le rapport publié",
+        "public": "Figurant dans le signalement public",
+        "when_published": "Affiché une fois le signalement publié",
         "hidden": "À l’abri des regards du public",
-        "no_consent": "Non accessible au public : le journaliste n'a pas accepté de partager ce fichier",
+        "no_consent": "Non public : la personne déclarante n’a pas accepté de partager ce fichier",
         "private": "Non public"
       },
       "hide": "Se cacher du public",
-      "show": "Afficher dans le rapport public"
+      "show": "Afficher dans le signalement public"
     },
     "action": {
       "label": "Examiner les mesures",
@@ -414,30 +414,30 @@
       "cancel": "Annuler"
     },
     "approve": {
-      "publishes": "Le journaliste a donné son accord; « Approving » publie donc cet article sans délai.",
-      "private": "Le journaliste n’ayant pas donné son consentement, la validation de ce rapport garantit la confidentialité de celui-ci."
+      "publishes": "La personne déclarante a consenti; l’approbation publie donc ce signalement immédiatement.",
+      "private": "La personne déclarante n’a pas consenti; l’approbation garde donc ce signalement privé."
     },
     "edit": {
       "label": "Modifier la paire de résumés",
       "en": "Résumé en anglais",
       "fr": "Résumé en français",
-      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le rapport revient à l’état « En attente de révision » et est retiré du fil d’actualité s’il a été publié.",
+      "clearsApproval": "Lorsque vous cliquez sur « Enregistrer », le signalement revient à l’état « En attente de révision » et est retiré du fil d’actualité s’il a été publié.",
       "save": "Enregistrer le résumé"
     },
     "reject": {
-      "label": "Rejeter le rapport",
+      "label": "Rejeter le signalement",
       "note": "Remarque à l'intention des autres évaluateurs (facultatif)",
-      "confirm": "Rejeter le rapport"
+      "confirm": "Rejeter le signalement"
     },
     "stale": {
-      "message": "Un autre réviseur a modifié ce rapport depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",
-      "reload": "Recharger le rapport"
+      "message": "Un autre réviseur a modifié ce signalement depuis que vous l’avez ouvert. Aucune des modifications que vous venez d’apporter n’a été enregistrée.",
+      "reload": "Recharger le signalement"
     },
     "delete": {
-      "title": "Souhaitez-vous supprimer ce rapport?",
-      "body": "Le rapport, ses réponses, son résumé et ses pièces jointes sont supprimés de toutes les listes et ne peuvent pas être restaurés.",
-      "confirm": "Supprimer le rapport",
-      "keep": "Conserver le rapport"
+      "title": "Souhaitez-vous supprimer ce signalement?",
+      "body": "Le signalement, ses réponses, son résumé et ses pièces jointes sont supprimés de toutes les listes et ne peuvent pas être restaurés.",
+      "confirm": "Supprimer le signalement",
+      "keep": "Conserver le signalement"
     },
     "translate": {
       "label": "Traduire",
@@ -459,23 +459,23 @@
   },
   "feed": {
     "intro": "Leçons tirées des incidents signalés par les membres du HPAC et qu’ils ont accepté de partager. Chaque résumé a été anonymisé et approuvé par un responsable de la sécurité.",
-    "listLabel": "Rapports de sécurité publiés",
-    "loading": "Chargement des rapports…",
-    "empty": "Aucun rapport de sécurité n'a encore été publié.",
-    "error": "Les rapports publiés n'ont pas pu être chargés. Veuillez réessayer.",
+    "listLabel": "Signalements de sécurité publiés",
+    "loading": "Chargement des signalements…",
+    "empty": "Aucun signalement de sécurité n'a encore été publié.",
+    "error": "Les signalements publiés n'ont pas pu être chargés. Veuillez réessayer.",
     "publishedAt": "Publié le {at}",
-    "read": "Lisez le rapport complet",
-    "pagesLabel": "D'autres rapports",
-    "next": "Anciens rapports",
-    "newest": "Derniers rapports",
-    "back": "Retour aux rapports de sécurité",
-    "loadingOne": "Chargement du rapport…",
-    "errorOne": "Le rapport n'a pas pu être chargé. Veuillez réessayer.",
+    "read": "Lisez le signalement complet",
+    "pagesLabel": "D'autres signalements",
+    "next": "Anciens signalements",
+    "newest": "Derniers signalements",
+    "back": "Retour aux signalements de sécurité",
+    "loadingOne": "Chargement du signalement…",
+    "errorOne": "Le signalement n'a pas pu être chargé. Veuillez réessayer.",
     "notFound": {
-      "title": "Rapport introuvable",
-      "body": "Il n'existe aucun rapport de sécurité publié à cette adresse."
+      "title": "Signalement introuvable",
+      "body": "Il n'existe aucun signalement de sécurité publié à cette adresse."
     },
-    "reportTitle": "Rapport de sécurité",
+    "reportTitle": "Signalement de sécurité",
     "comments": {
       "one": "1 commentaire",
       "other": "{count} commentaires"
@@ -498,7 +498,7 @@
   },
   "comments": {
     "title": "Commentaires",
-    "listLabel": "Commentaires sur ce rapport",
+    "listLabel": "Commentaires sur ce signalement",
     "loading": "Chargement des commentaires…",
     "empty": "Aucun commentaire pour l'instant.",
     "error": {

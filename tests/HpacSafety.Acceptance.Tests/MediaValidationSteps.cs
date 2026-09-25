@@ -40,7 +40,7 @@ public sealed class MediaValidationSteps
 		megabytes.ShouldBe(50);
 	}
 
-	[Given(@"an attachment part has detected content type (.+)")]
+	[Given(@"an uploaded file has detected content type (.+)")]
 	public void GivenAnAttachmentPartHasDetectedContentType(string mime)
 	{
 		_detected = MediaType.Parse(mime);
@@ -221,7 +221,7 @@ public sealed class MediaValidationSteps
 		_outcome.AwaitsStripping.ShouldBeTrue();
 	}
 
-	[Then(@"the document remains the reporter-supplied original, available for download, and the review UI labels it as unredacted evidence")]
+	[Then(@"the document remains the reporter-supplied original, available for download")]
 	public void ThenTheDocumentRemainsTheOriginal()
 	{
 		_outcome.IsAccepted.ShouldBeTrue();

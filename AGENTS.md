@@ -18,13 +18,18 @@ privacy-sensitive.
 ## Design authority
 
 - [`features/README.md`](features/README.md) is the canonical target design.
-- Source and tests show current state; issues and ADRs are history. Neither
-  overrides the specification.
+- Source and tests show current state; issues are history.
 - A requested change that conflicts with `/features`: call out the conflict and
   update the specification pages first.
-- A feature file never contradicts an accepted ADR, in either direction. An ADR
-  that changes what a feature file asserts updates it in the same pull request
-  ([ADR-0047](docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
+- A feature file and an accepted ADR never contradict each other, in either
+  direction
+  ([ADR-0047](docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)):
+  - an ADR that changes what a feature file asserts updates it in the same pull
+    request, and marks any ADR it reverses as superseded;
+  - a contradiction found later is fixed at once by correcting whichever is
+    wrong: the feature file, or the ADR, through a new ADR that supersedes it;
+  - "the specification wins" settles only drift inherited from ADRs older than
+    the specification. It never licenses new drift.
 
 ## Specification-driven development
 

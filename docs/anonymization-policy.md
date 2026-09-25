@@ -40,14 +40,17 @@ kept; a club, school, or company becomes “the club”, “the school”, or �
 company”; an aircraft becomes its category. The full table is in the
 [AI anonymization supporting detail](../features/ai-anonymization/README.md).
 
-There is no independent PII-audit call, runtime translation call, specialized
-aircraft processing, or repair call, and no general-purpose deterministic
+Summarization makes no independent PII-audit call, translation call,
+specialized aircraft processing, or repair call, and no general-purpose deterministic
 scrubber beyond the narrow private-value marking pass above. Invalid output
 retries the same one-call operation within a bounded budget and then moves to
 manual bilingual authoring.
 
-Documents are validated private evidence. They are not transformed,
-anonymized, parsed, sent to AI, inline-rendered, or published.
+Documents are validated evidence. They are not transformed, anonymized,
+parsed, sent to AI, or rendered inline. On a published report whose reporter
+consented to media under wording that names documents, the unchanged original
+is offered as a forced download
+([ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 A safety officer reviews and approves the current pair. Editing either language
 clears approval. Positive publication consent and a live report remain required

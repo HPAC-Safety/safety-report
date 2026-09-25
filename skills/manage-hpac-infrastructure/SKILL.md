@@ -7,9 +7,13 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
 
 ## Target
 
-- In `ca-central-1`: one small API service, one small Worker service, RDS
-  PostgreSQL, private S3 attachment storage, and one website serving admin as a
-  route ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md)).
+- In `ca-central-1`: the API and the Worker as Lambda functions (ADR-0042,
+  ADR-0123), RDS PostgreSQL, private S3 attachment storage, and one website,
+  with admin as a route, served from a private S3 bucket through CloudFront
+  ([ADR-0048](../../docs/decisions/ADR-0048-one-website-admin-as-a-route.md),
+  [ADR-0123](../../docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
+  The topology and today's Terraform differences are in
+  [`infrastructure-and-operations.md`](../../docs/infrastructure-and-operations.md).
 - Terraform and GitHub OIDC. Never create long-lived AWS keys.
 - Preserve least privilege.
 

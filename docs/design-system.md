@@ -1,6 +1,6 @@
 ---
 title: Design system
-description: The tokens, type, and visual language the two front ends share.
+description: The tokens, type, and visual language of the one web front end.
 type: guide
 ---
 
@@ -82,7 +82,8 @@ This is a form somebody fills out after a crash — sometimes a fatal one,
 sometimes about themselves. It is not a marketing page.
 
 - Single-column measure around 65ch, generous vertical rhythm. The Typeform's
-  one-question-at-a-time pacing becomes grouped sections with a progress rail.
+  one-question-at-a-time pacing stays: one question, or one group and its
+  children, per page, with a "Step n of m" count.
 - **Red is reserved for primary action and error state.** Never decoration.
   That is what lets "Serious injury" and "Fatality" read as urgent instead of
   competing with the brand. The one addition is the Admin menu's pending-work
@@ -136,7 +137,7 @@ either surface.
 take them from. They are a neutral ramp mirroring the light one step for step
 and clearing AA for body text. They are the only part of the palette without
 provenance, and replacing them is an edit to two adjacent blocks in
-`tailwind.css` and nothing else — **an open item for a designer**.
+`src/web/src/index.css` and nothing else — **an open item for a designer**.
 
 ## Fonts are self-hosted
 

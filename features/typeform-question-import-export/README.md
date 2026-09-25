@@ -29,8 +29,11 @@ order (which breaks the moment the two language forms diverge).
 - Never persists a `Question`/`QuestionRevision` row by itself. It produces
   drafts an Administrator reviews and saves through the ordinary authoring
   screen (`QuestionEditor`), one at a time.
-- Never fabricates a missing translation. A field present in only one file
-  is a hard import error, not a partial import.
+- Never fabricates a translation. The English file leads; a field or choice
+  with no French counterpart by `ref` defaults its French side to the English
+  text and is flagged for an administrator to author, and a French-only field
+  is not imported
+  ([ADR-0078](../../docs/decisions/ADR-0078-typeform-import-is-english-led-and-defers-all-branching-logic.md)).
 - Never silently drops content it cannot fully represent. An unsupported
   field type is listed as not imported; unsupported branching logic still
   imports the question, unconditionally, with a pending logic note recorded
@@ -38,7 +41,7 @@ order (which breaks the moment the two language forms diverge).
 
 ## Current implementation status
 
-Not yet built — every scenario above carries `@ignore`. See
+Built: every scenario above is bound and runs. See
 [implementation status](../../docs/implementation-status.md).
 
 ## Out of scope

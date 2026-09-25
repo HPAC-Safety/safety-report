@@ -46,12 +46,14 @@ through issue #82. The audited implementation baseline is main at
 1. This specification defines the target design.
 2. Source and tests show what is implemented today; they do not silently
    override this target.
-3. Issues and ADRs preserve history and rationale. A contradictory issue, ADR,
+3. Issues and ADRs preserve history and rationale. A contradictory issue,
    README, prompt, skill, test, or implementation is superseded until it is
-   aligned with this specification. This resolves *inherited* drift; it is not
-   license to introduce new drift — a feature file must never contradict an
-   accepted ADR, and a change to one that affects the other updates both in
-   the same pull request
+   aligned with this specification. An accepted ADR is different: a feature
+   file and an accepted ADR never contradict each other, and a contradiction
+   is fixed by correcting whichever one is wrong — the feature file, or the
+   ADR through a new ADR that supersedes it. "This specification wins" settles
+   only drift inherited from ADRs older than it, never new drift. A change to
+   one that affects the other updates both in the same pull request
    ([ADR-0047](../docs/decisions/ADR-0047-feature-files-must-not-contradict-adrs.md)).
 4. [Implementation status](../docs/implementation-status.md) records gaps explicitly.
    A documented target feature must not be described as already working merely
@@ -92,7 +94,7 @@ specification rather than preserving competing designs.
 | Purpose, boundaries, and components | [System overview](../docs/system-overview.md) |
 | Immutable bilingual questions and form assembly | [Question bank and form](question-bank-and-form/question-bank-and-form.feature) |
 | Importing/exporting the question bank as Typeform JSON | [Typeform question import and export](typeform-question-import-export/typeform-question-import-export.feature) |
-| Browser continuity, multipart API, DTOs, and validation | [Report submission](report-submission/report-submission.feature) |
+| Browser continuity, uploads and the JSON submission, DTOs, and validation | [Report submission](report-submission/report-submission.feature) |
 | Report states, invariants, deletion, and retention | [Domain and lifecycle](domain-and-lifecycle/domain-and-lifecycle.feature) |
 | One-call bilingual summarization and anonymization | [AI anonymization](ai-anonymization/ai-anonymization.feature) |
 | Images, videos, documents, quarantine, and derivatives | [Attachments](media/media.feature) |
@@ -112,9 +114,11 @@ specification rather than preserving competing designs.
 
 A reporter signs in as an HPAC member — which proves membership and is never
 recorded against the report — sees the latest active immutable revision of each
-bilingual database question in its configured order, may skip every ordinary
-question, must make an explicit publication-consent choice — and a media-consent choice
-when they attached an image or video — and submits the
+bilingual database question in its configured order, may skip every question
+an administrator has not made required
+([ADR-0061](../docs/decisions/ADR-0061-administrators-may-require-any-question.md)),
+must make an explicit publication-consent choice — and, when they consented and
+attached any file, a media-consent choice — and submits the
 answers once. Each optional attachment uploads as soon as it is attached, into
 private quarantine, and the submission claims it. Every answer is stored as one string —
 the words the reporter saw, in the language they saw them. The API saves the
@@ -127,6 +131,9 @@ with a human-approved pair can appear in the public feed. When the reporter
 also consented to sharing media, its page embeds the verified image and video
 derivatives, never an original, and a reviewer may hide any of them
 ([ADR-0117](../docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md)).
+When that consent's wording named documents, the page also offers each
+validated document, unchanged, as a short-lived forced download
+([ADR-0119](../docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
 ## Simplicity guardrails
 
@@ -139,7 +146,7 @@ it
 ([ADR-0096](../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
 [ADR-0100](../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 It has no server-side report drafts, resumable upload protocol,
-deterministic text scrubber, separate PII-audit call, translation
+deterministic text scrubber, separate PII-audit call, summary-translation
 call, specialized aircraft processing, outbound email, external publication
 channels, application-layer field encryption, restore workflow, or automated
 raw-report purge. New abstractions are justified by a real boundary or a second

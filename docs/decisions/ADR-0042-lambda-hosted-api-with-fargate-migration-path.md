@@ -2,7 +2,7 @@
 title: Host the API on Lambda, built for a later Fargate migration
 description: The API is hosted on Lambda, written so a later move to Fargate needs no application change.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-18
 decision-makers: Chase Florell
 keywords: AWS, Lambda, API, hosting, Docker, ALB, Fargate migration
@@ -12,7 +12,8 @@ keywords: AWS, Lambda, API, hosting, Docker, ALB, Fargate migration
 
 **Status:** Accepted. Supersedes the API row of
 [ADR-0009](ADR-0009-hosting-on-aws.md) ("ECS Fargate service behind an ALB").
-The Worker row of ADR-0009 is unchanged — the Worker stays ECS Fargate.
+The Worker row of ADR-0009 was unchanged here. **Partially superseded by
+[ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md):** the Worker now runs on Lambda too. The API decision stands.
 
 ## Context
 

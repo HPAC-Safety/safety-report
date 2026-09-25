@@ -19,8 +19,8 @@ English is the source of truth and `fr-CA.json` is generated. Editing the
 French by hand is not the intended path, but it is possible, so it is
 recorded rather than absorbed: an edit whose English is unchanged becomes a
 **human correction**, stamped as human-authored and never machine-translated
-again. Changing both languages of one key at once fails and names it, because
-no machine should choose between two deliberate edits
+again. An edit to both languages of one key at once is recorded the same way:
+whoever edited both edited both on purpose
 ([ADR-0070](decisions/ADR-0070-a-hand-edited-french-value-is-a-recorded-correction.md)).
 
 Resolve locale in this order: explicit user selection, browser preference,
@@ -29,14 +29,23 @@ form answers/revision IDs when switching language.
 
 ## Database questions
 
-Each complete immutable question revision stores its English and French label,
-help text, and option labels. Administrators provide and review both versions.
-Question text is not generated from UI catalogues and is never automatically
-translated at authoring or render time.
+Each complete immutable question revision stores its English and French label
+and help text. A question's bilingual choices live on the question itself,
+outside its revisions
+([ADR-0095](decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+Administrators provide and review both versions. Question text is not generated
+from UI catalogues and is never translated at render time. While authoring, an
+administrator may ask for a machine-translated draft and saves only what they
+reviewed
+([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md)).
 
 ## Reports and summaries
 
-Raw report answers and attachments are never translated. The Worker's one model
+A submitted answer is never changed. An answer that needs a second language
+gets one beside it, made by the Worker's machine translation off the
+submission path
+([ADR-0112](decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)).
+Attachments are never translated. The Worker's one model
 call returns both `AiSummaryEn` and `AiSummaryFr` for the same eligible facts.
 There is no source-summary translation stage or per-language approval; a safety
 officer reviews and approves the pair.

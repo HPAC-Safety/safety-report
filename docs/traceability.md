@@ -54,29 +54,9 @@ Concurrent workers cannot claim the same summarization outbox item twice — *Re
 
 Only eligible, labeled fields reach the model — *Reqnroll, Covered*
 
-### REQ-AI-010
-
-A fact appearing only in private context is never summarized — *Reqnroll, Planned*
-
 ### REQ-AI-011
 
 The Worker accepts only the exact two-field JSON response — *Reqnroll, Covered*
-
-### REQ-AI-012
-
-A private person's identity is replaced with their role — *Reqnroll, Planned*
-
-### REQ-AI-013
-
-Both summaries preserve safety-relevant content while anonymizing — *Reqnroll, Planned*
-
-### REQ-AI-014
-
-An identifying category is never disclosed in a summary — *Reqnroll, Planned*
-
-### REQ-AI-015
-
-A private-only fact is never added merely for completeness — *Reqnroll, Planned*
 
 ### REQ-AI-016
 
@@ -85,10 +65,6 @@ Documents never reach the model — *Reqnroll, Covered*
 ### REQ-AI-017
 
 A valid response is persisted as one pair-level summary row — *Reqnroll, Covered*
-
-### REQ-AI-018
-
-The reviewer may correct either text before approval — *Reqnroll, Planned*
 
 ### REQ-AI-019
 
@@ -113,14 +89,6 @@ A Worker holding a key refuses to start with an unusable provider configuration 
 ### REQ-AI-024
 
 The current prompt carries every anonymization and accuracy rule — *Reqnroll, Covered*
-
-### REQ-AI-025
-
-An exact date generalizes to its month or season while the time of day is kept — *Reqnroll, Planned*
-
-### REQ-AI-026
-
-A place becomes a generic phrase that fits its role, never an invented name — *Reqnroll, Planned*
 
 ### REQ-AI-027
 
@@ -213,10 +181,6 @@ A reviewer hides a comment from the report page — *playwright-bdd, Covered*
 ### REQ-DOM-001
 
 A report follows the defined lifecycle transitions — *Reqnroll, Covered*
-
-### REQ-DOM-002
-
-SummaryFailed remains visible to safety officers — *Reqnroll, Planned*
 
 ### REQ-DOM-003
 
@@ -366,7 +330,7 @@ A published report lists its verified photos and video when media was consented 
 
 ### REQ-MED-026
 
-A file that is not a verified derivative is never public — *Reqnroll, Covered*
+A file that is neither a verified derivative nor a validated document is never public — *Reqnroll, Covered*
 
 ### REQ-MED-027
 
@@ -598,10 +562,6 @@ An unknown or non-public report id returns 404 — *Reqnroll, Covered*
 
 There is no publication channel besides the HPAC public feed — *Reqnroll, Planned*
 
-### REQ-MOD-040
-
-Soft-deleting a report stops it everywhere immediately — *Reqnroll, Planned*
-
 ### REQ-MOD-041
 
 Revoking a member's access is the identity provider's decision — *Reqnroll, Planned*
@@ -824,10 +784,6 @@ Only one question per key is live at a time — *Reqnroll, Planned*
 
 Publication consent revises in place even when answered — *Reqnroll, Planned*
 
-### REQ-QB-007
-
-Only an Administrator may create a revision — *Reqnroll, Planned*
-
 ### REQ-QB-008
 
 Editing a question copies the latest revision into a new one — *Reqnroll, Planned*
@@ -864,10 +820,6 @@ An Administrator chooses whether an ordinary question must be answered — *Reqn
 
 consent_publish must resolve to an explicit yes or no — *Reqnroll, Planned*
 
-### REQ-QB-017
-
-Skipping an ordinary question still records that it was shown — *Reqnroll, Planned*
-
 ### REQ-QB-018
 
 An answer to a picker stores the words the reporter saw — *Reqnroll, Planned*
@@ -875,14 +827,6 @@ An answer to a picker stores the words the reporter saw — *Reqnroll, Planned*
 ### REQ-QB-019
 
 Every answer is stored in one invariant written form — *Reqnroll, Planned*
-
-### REQ-QB-022
-
-An Administrator supplies the second language of an answer — *Reqnroll, Planned*
-
-### REQ-QB-024
-
-A skipped file-upload question produces an answer with no attachment — *Reqnroll, Planned*
 
 ### REQ-QB-025
 
@@ -895,14 +839,6 @@ Privacy is a property of the revision, not the answer — *Reqnroll, Planned*
 ### REQ-QB-027
 
 Creating a revision preserves the question bank invariants — *Reqnroll, Planned*
-
-### REQ-QB-028
-
-A report may answer a known superseded revision — *Reqnroll, Planned*
-
-### REQ-QB-029
-
-Unknown or deleted revisions are rejected at submission — *Reqnroll, Planned*
 
 ### REQ-QB-030
 
@@ -1006,7 +942,7 @@ Publication consent can never be deleted or deactivated — *Reqnroll, Covered*
 
 ### REQ-QB-066
 
-Translation is offered for question wording and for a select answer's second language — *Reqnroll, Covered*
+A translation draft comes from the API and is saved only by a person — *Reqnroll, Covered*
 
 ### REQ-QB-067
 
@@ -1624,7 +1560,7 @@ Question content comes from the bilingual database revision — *Reqnroll, Plann
 
 ### REQ-WLD-015
 
-Only publication consent is marked required on the form — *playwright-bdd, Covered*
+Required questions, and only those, are marked required on the form — *playwright-bdd, Covered*
 
 ### REQ-WLD-016
 
@@ -1703,7 +1639,7 @@ data-and-persistence.md — verified by none — managed encryption is an infras
 
 ### CON-DP-004
 
-data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-QB-028`
+data-and-persistence.md — verified by `REQ-QB-019`, `REQ-QB-026`, `REQ-SUB-009`
 
 ### CON-DP-005
 
@@ -1767,7 +1703,7 @@ interfaces-and-data-flow.md — verified by none — an internal structural rule
 
 ### CON-IF-008
 
-interfaces-and-data-flow.md — verified by `REQ-AI-008`, `REQ-MED-009`, `REQ-MOD-040`
+interfaces-and-data-flow.md — verified by `REQ-AI-008`, `REQ-MED-009`, `REQ-DOM-007`
 
 ### CON-IF-009
 
@@ -1835,7 +1771,7 @@ system-overview.md — verified by `REQ-AI-001`, `REQ-AI-011`
 
 ### CON-SO-005
 
-system-overview.md — verified by `REQ-AI-007`, `REQ-AI-010`, `REQ-AI-015`
+system-overview.md — verified by `REQ-AI-007`, `REQ-AI-024`
 
 ### CON-SO-006
 
@@ -1847,7 +1783,7 @@ system-overview.md — verified by `REQ-DOM-003`, `REQ-MOD-035`
 
 ### CON-SO-008
 
-system-overview.md — verified by `REQ-DOM-007`, `REQ-MOD-040`
+system-overview.md — verified by `REQ-DOM-007`
 
 ### CON-SO-009
 
@@ -1871,7 +1807,7 @@ testing-and-quality.md — verified by `REQ-QB-001`, `REQ-QB-009`, `REQ-QB-016`,
 
 ### CON-TQ-005
 
-testing-and-quality.md — verified by `REQ-AI-001`, `REQ-AI-009`, `REQ-AI-010`, `REQ-AI-011`, `REQ-AI-012`, `REQ-AI-013`, `REQ-AI-020`, `REQ-AI-021`
+testing-and-quality.md — verified by `REQ-AI-001`, `REQ-AI-009`, `REQ-AI-011`, `REQ-AI-020`, `REQ-AI-021`, `REQ-AI-024`
 
 ### CON-TQ-006
 
@@ -1879,7 +1815,7 @@ testing-and-quality.md — verified by `REQ-MED-001`, `REQ-MED-002`, `REQ-MED-00
 
 ### CON-TQ-007
 
-testing-and-quality.md — verified by `REQ-MOD-024`, `REQ-MOD-029`, `REQ-MOD-032`, `REQ-MOD-033`, `REQ-MOD-035`, `REQ-MOD-036`, `REQ-MOD-040`, `REQ-DOM-007`
+testing-and-quality.md — verified by `REQ-MOD-024`, `REQ-MOD-029`, `REQ-MOD-032`, `REQ-MOD-033`, `REQ-MOD-035`, `REQ-MOD-036`, `REQ-DOM-007`
 
 ### CON-TQ-008
 

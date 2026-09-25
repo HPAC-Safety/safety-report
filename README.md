@@ -73,8 +73,10 @@ flowchart LR
     review -->|"consent + approval"| public["Public feed"]
 ```
 
-- Questions are complete immutable English/French database revisions. Every
-  question is optional except explicit publication consent.
+- Questions are complete immutable English/French database revisions. An
+  administrator may make any question required; publication consent can never
+  be optional
+  ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
 - An unfinished report exists only in the respondent's browser for 15 days.
   Nothing is written to the API or database until the one final submission.
   Each attachment uploads to private quarantine when it is attached, and
@@ -82,15 +84,25 @@ flowchart LR
 - Private answers help the one model call recognize identifying text; they are
   never facts for publication. A repeated private name becomes a role such as
   “the pilot” / “le pilote,” with no name fragment left behind.
-- Images and videos receive safe reviewer derivatives. Documents are validated
-  private originals and are never anonymized, parsed, sent to AI, or published.
-- Public output contains only the report ID, both approved summary texts, and
-  publication time.
+- Images and videos receive metadata-free derivatives. Documents are validated
+  and kept unchanged; they are never anonymized, parsed, or sent to AI.
+- Public output is the report ID, both approved summary texts, publication
+  time, and member comments
+  ([ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+  With media consent, a published report also shows its image and video
+  derivatives and offers its documents as forced downloads
+  ([ADR-0117](docs/decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+  [ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
-The system has no separate PII-audit or translation call, deterministic text
-scrubber, specialized aircraft processing, application-managed field
+Summarization makes one model call, with no second call, PII-audit call, or
+translation call. A deterministic marking pass runs before it
+([ADR-0082](docs/decisions/ADR-0082-a-deterministic-marking-pass-precedes-the-one-model-call.md)).
+Answer and comment translation is a separate DeepL step in the Worker
+([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md),
+[ADR-0114](docs/decisions/ADR-0114-members-may-comment-on-a-published-report.md)).
+The system has no specialized aircraft processing, application-managed field
 encryption, email-notification pipeline, server-side draft, or external
-publication channels.
+publication channel.
 
 ## Technology
 
@@ -103,18 +115,21 @@ publication channels.
 | Summarization model | Google Gemini `gemini-3.7-flash` at reasoning `low`, paid key, behind a provider strategy chosen by the Worker's `AiChatClient:Provider` setting ([ADR-0104](docs/decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
 | Attachment processing | Magick.NET re-encodes images ([ADR-0025](docs/decisions/ADR-0025-magick-net-for-exif-stripping.md)); ffmpeg remuxes video as a child process, installed from Ubuntu's archive in the Worker's Dockerfile-built image ([ADR-0094](docs/decisions/ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md), [ADR-0118](docs/decisions/ADR-0118-the-worker-image-installs-ubuntus-ffmpeg.md)) |
 | Tests | xUnit, Shouldly, Testcontainers, `node:test`, Playwright |
-| Hosting target | AWS `ca-central-1`, deployed through GitHub OIDC |
+| Hosting target | AWS `ca-central-1`. API and Worker on Lambda, website on S3 + CloudFront ([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)); deployed through GitHub OIDC |
 
 One Vite/React app serves the report form as its default route and the
 review queue at `/admin`; the API's role-claim authorization is the security
 boundary, not the delivery path
 ([ADR-0048](docs/decisions/ADR-0048-one-website-admin-as-a-route.md)). The API
-runs as a container image on Lambda behind the ALB, sized for sparse traffic
-with a Fargate migration path if that changes
+and the Worker run as container images on Lambda. The API sits behind the ALB
 ([ADR-0042](docs/decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)).
-The Worker and the one web container run as ECS Fargate services; CloudFront
-sits in front of the ALB. Runtime data stays in Canada, object storage remains
-private, and the API and Worker apply pending migrations at startup under an
+The Worker is nudged by the API after each commit and swept every minute by
+EventBridge. The website is static files in a private S3 bucket behind
+CloudFront
+([ADR-0123](docs/decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
+The AWS topology, with a diagram of how every service connects, is in
+[infrastructure and operations](docs/infrastructure-and-operations.md#production-topology).
+Runtime data stays in Canada, object storage remains private, and the API and Worker apply pending migrations at startup under an
 advisory lock
 ([ADR-0055](docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 

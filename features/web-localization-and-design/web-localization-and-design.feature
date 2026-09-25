@@ -161,10 +161,10 @@ Scenario: Question content comes from the bilingual database revision
 
 @REQ-WLD-015
 @ui
-Scenario: Only publication consent is marked required on the form
+Scenario: Required questions, and only those, are marked required on the form
   Given the form renders its questions in database order
   When a reporter views the form
-  Then only the consent_publish question displays required treatment
+  Then only the questions made required display required treatment, and consent_publish is always one of them
   And every optional question offers a natural blank/skipped state with no coerced answer
   And consent_publish has no selected default and requires an explicit yes or no
 
@@ -213,7 +213,7 @@ Scenario: Admin pages distinguish private, ordinary, and output content
 @ignore
 Scenario: Assets are self-hosted, never loaded from third-party CDNs
   Given the site renders fonts, styles, or imagery
-  Then Aleo, Poppins, and other assets are bundled and served from the site's own origin, WOFF2 vendored via a committed npm lockfile
+  Then Aleo, Poppins, and other assets are bundled and served from the site's own origin, as committed WOFF2 files
   And no asset is loaded from a third-party CDN
   And the logo is the approved HPAC mark, as light/dark SVG variants
 

@@ -176,7 +176,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		_summarizer!.LastInput!.PrivateContext.Select(field => field.QuestionKey).ShouldBe(["pilot_name"]);
 	}
 
-	[Then(@"skipped\/null answers, the system consent answer, and file-upload answers are excluded from both arrays")]
+	[Then(@"skipped\/null answers, both system consent answers, and file-upload answers are excluded from both arrays")]
 	public void ThenExcludedFromBoth()
 	{
 		var input = _summarizer!.LastInput!;

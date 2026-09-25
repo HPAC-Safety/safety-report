@@ -64,13 +64,6 @@ Scenario: Publication consent revises in place even when answered
   And the question keeps its identifier
   And it is never stamped as deleted
 
-@REQ-QB-007
-@ignore
-Scenario: Only an Administrator may create a revision
-  Given a member does not have the Administrator role
-  When that member attempts to save a question revision
-  Then the API rejects the attempt
-
 @REQ-QB-008
 @ignore
 Scenario: Editing a question copies the latest revision into a new one
@@ -163,14 +156,6 @@ Scenario: consent_publish must resolve to an explicit yes or no
   When the submitted value is absent, null, of the wrong type, or does not resolve to an explicit yes or no
   Then the API rejects the submission
 
-@REQ-QB-017
-@ignore
-Scenario: Skipping an ordinary question still records that it was shown
-  Given a reporter is shown an optional answer-producing revision
-  When the reporter leaves it blank
-  Then the submission DTO records an answer entry for that revision with a null value
-  And no value is synthesized
-
 @REQ-QB-018
 @ignore
 Scenario: An answer to a picker stores the words the reporter saw
@@ -196,28 +181,12 @@ Examples:
   | time       | half past two in the afternoon | 14:30               |
   | short_text | a line of prose                | that line, as typed |
 
-@REQ-QB-022
-@ignore
-Scenario: An Administrator supplies the second language of an answer
-  Given a stored answer is flagged for translation
-  When an Administrator types the other language, or presses Translate and saves
-  Then the answer holds both languages
-  And it is no longer flagged
-  And the value the reporter gave is unchanged
-
-@REQ-QB-024
-@ignore
-Scenario: A skipped file-upload question produces an answer with no attachment
-  Given a file-upload question revision is shown and left empty
-  When the reporter submits the form
-  Then an answer entry exists for that revision with no associated attachment parts
-
 @REQ-QB-025
 @ignore
 Scenario: Only consent is projected onto the report aggregate
   Given a submitted report has answers to several ordinary questions
   When those answers are persisted
-  Then only the consent_publish answer is projected onto the report aggregate as a publication invariant
+  Then only the consent_publish and consent_media answers are projected onto the report aggregate, with consent_documents derived from consent_media
   And every other answer, including dates, times, provinces, injury severities, and aircraft details, remains a stored string read through its question key
 
 @REQ-QB-026
@@ -236,24 +205,8 @@ Scenario: Creating a revision preserves the question bank invariants
   Then the stable key is a non-empty, unique, non-localized identifier
   And both English and French labels are present for an answer-producing question
   And an option-requiring type has at least one live choice and every other type has none
-  And only consent_publish may be marked system
+  And only consent_publish and consent_media may be marked system
   And the consent_publish revision is active, yes/no, private, and excluded from summary input despite being stored as an answer
-
-@REQ-QB-028
-@ignore
-Scenario: A report may answer a known superseded revision
-  Given a reporter's browser session began before an Administrator edited the form
-  And the browser still references the previously shown, non-deleted revision
-  When the reporter submits the form
-  Then the API validates the answer against that superseded revision's historical type and privacy and the question's live choices
-  And accepts the submission
-
-@REQ-QB-029
-@ignore
-Scenario: Unknown or deleted revisions are rejected at submission
-  Given a submitted answer references a revision ID that is unknown or has been deleted
-  When the API validates the submission
-  Then the API rejects the submission
 
 @REQ-QB-030
 Scenario: A revision can be soft-deleted only when no answer references it
@@ -459,14 +412,14 @@ Scenario: Publication consent can never be deleted or deactivated
   And an ordinary edit that clears its active flag is rejected the same way
 
 @REQ-QB-066
-Scenario: Translation is offered for question wording and for a select answer's second language
+Scenario: A translation draft comes from the API and is saved only by a person
   Given an Administrator is authoring a question in one official language
   When they ask for the other language to be translated
   Then the request goes to the application's own API rather than to a provider from the browser
   And the translated text is returned as a draft that is not saved anywhere
   And the same action is available for the second language of an answer awaiting translation
-  And no narrative, free-text answer, or summary is ever translated this way
-  And nothing is translated unless an Administrator asked for it
+  And the reviewer-gated translate endpoint is the only API code that calls a translator
+  And no domain code a reporter's submission runs calls a translator
 
 @REQ-QB-067
 Scenario: A server with no translation credential still authors questions

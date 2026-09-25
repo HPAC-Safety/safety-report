@@ -1,74 +1,29 @@
 ---
 title: Issue traceability
-description: Every audited GitHub issue and how it relates to the target specification.
+description: Every open GitHub issue and how it relates to the target specification.
 type: guide
 ---
 
 # Issue traceability
 
-This audit covers every GitHub issue visible in the repository through issue
-#82 on 2026-08-23: 45 issues total, 18 open and 27 closed. Open product issues
-were reconciled to this specification; #47 remains bot-managed. Closed
-historical issues are not reopened merely because their implementation will be
-replaced.
+This page lists every open issue and how it stands against the
+[specification](../features/README.md), as of 2026-09-25 (#437). Closed issues
+are not listed: their history is in GitHub, and what they decided lives in the
+ADRs and `/features`. Issue #444 adds the check that fails when an open issue
+has no row here, or a row names a closed one.
 
-## All issues
-
-| Issue | State at audit | Specification disposition |
+| Issue | Area | Disposition |
 |---|---|---|
-| [#2 — CI pipeline and deployment scaffolding](https://github.com/HPAC-Safety/safety-report/issues/2) | Closed | Historical foundation; CI/deploy separation remains, while target gates are in [testing](testing-and-quality.md). |
-| [#3 — Solution scaffold and Testcontainers/Shouldly](https://github.com/HPAC-Safety/safety-report/issues/3) | Closed | Implemented foundation and retained convention. |
-| [#4 — Docker Compose development environment](https://github.com/HPAC-Safety/safety-report/issues/4) | Closed | Implemented local-development support; no target conflict. |
-| [#5 — Coverage gate and ratchet](https://github.com/HPAC-Safety/safety-report/issues/5) | Closed | Implemented quality gate; retained. |
-| [#6 — Domain model and enums](https://github.com/HPAC-Safety/safety-report/issues/6) | Closed | Historical implementation is partially superseded; replacement domain/schema work is tracked by #79. |
-| [#7 — EF Core context and initial migration](https://github.com/HPAC-Safety/safety-report/issues/7) | Closed | Historical current schema; canonical upgrade/fresh migration is tracked by #79. |
-| [#8 — Bilingual UI plumbing](https://github.com/HPAC-Safety/safety-report/issues/8) | Open | Aligned for UI catalogues; question revisions are manually bilingual and summaries come from one model call. |
-| [#9 — Hardcoded-string lint and locale parity](https://github.com/HPAC-Safety/safety-report/issues/9) | Closed | Implemented and retained for application chrome. |
-| [#10 — CI translation for fr-CA](https://github.com/HPAC-Safety/safety-report/issues/10) | Closed | Retained only for stable UI catalogues; it must not translate database questions or runtime summaries. |
-| [#11 — Tailwind HPAC theme](https://github.com/HPAC-Safety/safety-report/issues/11) | Closed | Implemented scaffold and retained. |
-| [#12 — Public occurrence report form](https://github.com/HPAC-Safety/safety-report/issues/12) | Closed | Historical requirements exist, but main has no form page; the canonical implementation is tracked by #80. |
-| [#14 — Submit reports with DTO and worker handoff](https://github.com/HPAC-Safety/safety-report/issues/14) | Open | Aligned: one final multipart request, known superseded revisions, streaming quarantine, and atomic report/answer/file/outbox persistence. |
-| [#15 — Rate limits](https://github.com/HPAC-Safety/safety-report/issues/15) | Open | Realigned: a required member bearer token plus trusted-IP submission throttling. Turnstile is dropped, and there is no per-reporter throttle because that would mean identifying the reporter (ADR-0067, ADR-0068). |
-| [#16 — Blob storage, pre-signed uploads, and EXIF stripping](https://github.com/HPAC-Safety/safety-report/issues/16) | Closed | Keep useful private storage/type/image work, supersede pre-submit URLs, and complete video/document processing in #81. |
-| [#17 — Worker claim and summary DTO](https://github.com/HPAC-Safety/safety-report/issues/17) | Open | Aligned: exact revision-bound summary DTO, one pair result, bounded retries, and no attachments/consent/deleted content. |
-| [#18 — Deterministic PII scrub](https://github.com/HPAC-Safety/safety-report/issues/18) | Closed | Superseded and irrelevant to target runtime. Remove scrub code/tests/guidance rather than add another anonymization stage. |
-| [#19 — Retired: aircraft answers use the standard question flow](https://github.com/HPAC-Safety/safety-report/issues/19) | Closed | Retired with no replacement. Aircraft-related responses are ordinary database-driven answers and receive no specialized processing. |
-| [#20 — One runtime prompt and one AI summary call](https://github.com/HPAC-Safety/safety-report/issues/20) | Open | Aligned: real-person text removed; one strict EN/FR response, one pair row, and no extra processing stage. |
-| [#24 — Safety-officer access and audit](https://github.com/HPAC-Safety/safety-report/issues/24) | Open | Realigned: a validated bearer JWT from an external OAuth/OIDC provider, three roles read from a claim, no user records, and audits by opaque token subject (ADR-0064, ADR-0065). The hardcoded-TLS adapter this issue assumed is superseded and will not be built. |
-| [#25 — Review summaries](https://github.com/HPAC-Safety/safety-report/issues/25) | Open | Aligned to one bilingual row, pair-level edit/approval, manual recovery, deletion, and safe attachment access. |
-| [#27 — Bilingual end-to-end journey](https://github.com/HPAC-Safety/safety-report/issues/27) | Open | Aligned to final multipart submission, one-call pair, private documents, approval invalidation, deletion, and public DTO boundaries. |
-| [#28 — Public feed](https://github.com/HPAC-Safety/safety-report/issues/28) | Open | Aligned: exact four-field DTO containing ID, both texts, and publication time. |
-| [#30 — Minimal AWS deployment](https://github.com/HPAC-Safety/safety-report/issues/30) | Open | Aligned: separate static sites, no SES/email, managed encryption, explicit migrations, OIDC, and focused Worker alerts. |
-| [#31 — Replace Typeform](https://github.com/HPAC-Safety/safety-report/issues/31) | Open | Aligned to cut over only after every canonical flow and operational check works. |
-| [#32 — AWS bootstrap and Terraform](https://github.com/HPAC-Safety/safety-report/issues/32) | Closed | Useful implemented foundation; prune resources that exist only for superseded email/combined-site design. |
-| [#33 — Turnstile Terraform](https://github.com/HPAC-Safety/safety-report/issues/33) | Closed | Superseded: Turnstile is not part of the design. The widget and its configuration are removed rather than connected to submission (ADR-0068). |
-| [#35 — Renovate automerge](https://github.com/HPAC-Safety/safety-report/issues/35) | Closed | Repository operations only; no product-design effect. |
-| [#36 — require-config action failure](https://github.com/HPAC-Safety/safety-report/issues/36) | Closed | Historical CI fix; no product-design effect. |
-| [#40 — One-command development setup](https://github.com/HPAC-Safety/safety-report/issues/40) | Closed | Implemented contributor tooling; retain. |
-| [#47 — Dependency Dashboard](https://github.com/HPAC-Safety/safety-report/issues/47) | Open | Bot-managed operational issue; intentionally not rewritten or treated as product scope. |
-| [#49 — Admin immutable question editor](https://github.com/HPAC-Safety/safety-report/issues/49) | Open | Aligned: complete revisions, no-resurrection current selection, manual bilingual copy, consent invariants, and answer-aware deletion. |
-| [#53 — Coverage ratchet first-feature fix](https://github.com/HPAC-Safety/safety-report/issues/53) | Closed | Historical quality-gate correction; retained. |
-| [#61 — Typed partitioned summarizer input](https://github.com/HPAC-Safety/safety-report/issues/61) | Closed | Concept aligns; adjust output to bilingual pair and exclude all attachment/document content. |
-| [#63 — Third-party libraries behind abstractions](https://github.com/HPAC-Safety/safety-report/issues/63) | Closed | Narrowed: keep owned ports at real external boundaries, not one abstraction per library or removed feature. |
-| [#66 — Date/time value types](https://github.com/HPAC-Safety/safety-report/issues/66) | Closed | Aligned and retained: DateOnly/TimeOnly/DateTimeOffset, never unspecified DateTime. |
-| [#69 — Retired: no aircraft-specific input or processing](https://github.com/HPAC-Safety/safety-report/issues/69) | Closed | Historical discussion is retired. Aircraft-related responses use the ordinary question/answer path with no specialized service, typed projection, or special UI. |
-| [#70 — Agent skill extraction](https://github.com/HPAC-Safety/safety-report/issues/70) | Closed | Initial skill work is present; the audited pruning/alignment in [implementation status](implementation-status.md) is still required. |
-| [#72 — Private context and LLM anonymization](https://github.com/HPAC-Safety/safety-report/issues/72) | Closed | Core privacy partition and role-replacement intent align. Separate auditors/translators/legacy prompts remain superseded. |
-| [#74 — Simplify flow and prune guidance](https://github.com/HPAC-Safety/safety-report/issues/74) | Closed (declined) | The associated implementation was not based on current main. Its valid simplicity intent is incorporated here; its branch is preserved as history, not merged. |
-| [#76 — Complete system specification](https://github.com/HPAC-Safety/safety-report/issues/76) | Closed | Completed by merged specification pull request #77. |
-| [#78 — Align repository guidance and backlog](https://github.com/HPAC-Safety/safety-report/issues/78) | Open | Owns this README/skill/prompt/ADR/backlog reconciliation and is closed by its pull request. |
-| [#79 — Canonical domain and persistence migration](https://github.com/HPAC-Safety/safety-report/issues/79) | Open | Added foundational slice for complete revisions, consent-only answers, pair summaries, deletion columns, managed encryption, and removal of retired types. |
-| [#80 — Database-driven report form and browser continuity](https://github.com/HPAC-Safety/safety-report/issues/80) | Open | Added because the historical form issue is closed while current main has no page; covers current questions, bilingual rendering, browser-only 15-day answers with no pre-submit server state, and final multipart assembly. |
-| [#81 — Image, video, and private document processing](https://github.com/HPAC-Safety/safety-report/issues/81) | Open | Added for metadata-safe derivatives and validated forced-download documents that never enter AI/public output. |
-| [#82 — Irreversible soft deletion and retention](https://github.com/HPAC-Safety/safety-report/issues/82) | Open | Added for transactional cascade stamping, live-flow exclusion, answer-aware question deletion, append-only audit, and private retained bytes. |
-| [#221 — Statement/Group/SectionKey have no governing rationale](https://github.com/HPAC-Safety/safety-report/issues/221) | Closed | Closed by #222's removal. Reopened in spirit, not in GitHub, by #235/ADR-0076, which supplies the rationale #222 found missing and re-adds both types with a new `GroupedUnderQuestionId` mechanism. |
-| [#235 — Statement/Group question types, Typeform import/export ADRs, ADR-0063 amendment](https://github.com/HPAC-Safety/safety-report/issues/235) | Open | Post-audit addition (2026-09-21), beyond the #82 baseline this page otherwise covers. Docs-only: ADR-0076 (Statement/Group), ADR-0077 (Typeform JSON import/export, replacing an earlier "QSF" framing that turned out not to match the organization's actual export format), and amendments to ADR-0063 (reporter-addition widened to `MultiSelect`) and ADR-0020 (seed source moves from `docs/form-spec.md` transcription to the Typeform importer). |
-
-## Audit actions
-
-The initial specification pass created #76 and declined the non-main work in
-#74/#75. This alignment pass created #78, corrected open product issues #14,
-#15, #17, #20, #24, #25, #27, #28, #30, #31, and #49, and added focused missing
-work as #79–#82. Issue #8 already matched the target; bot-managed #47 was left
-untouched. No useful product issue was deleted or closed. Closed issues remain
-historical evidence and do not override this specification.
+| [#27 — End-to-end report and review journey in both UI languages](https://github.com/HPAC-Safety/safety-report/issues/27) | CI | Open, unblocked. The capstone journey test. Its body predates the JSON submission of claimed uploads (ADR-0096), authored required questions (ADR-0061), and published media and documents (ADR-0117, ADR-0119); those parts are corrected when it is picked up. It blocks #30. |
+| [#30 — Deploy the minimal application to AWS](https://github.com/HPAC-Safety/safety-report/issues/30) | Infrastructure | Open, blocked by #27. Deploys the topology in [infrastructure and operations](infrastructure-and-operations.md). #441 and #443 bring the Terraform to it first. |
+| [#31 — Replace the Typeform with the new report form](https://github.com/HPAC-Safety/safety-report/issues/31) | Infrastructure | Open, phase 2. The cut-over after deployment. |
+| [#47 — Dependency Dashboard](https://github.com/HPAC-Safety/safety-report/issues/47) | — | Renovate's standing dashboard, not a task. |
+| [#387 — Evaluate AWS Bedrock as the summarization provider](https://github.com/HPAC-Safety/safety-report/issues/387) | AI | Open research spike. Summaries use Gemini today ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)); the provider is configuration behind `IAiChatClient`. |
+| [#413 — Identify commenters by name and HPAC number once OIDC lands](https://github.com/HPAC-Safety/safety-report/issues/413) | Security | Open, waiting on the real identity provider ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)). Comments show "Member" until then ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
+| [#427 — Show report attachments as a thumbnail strip with a lightbox, and a viewer-scoped count](https://github.com/HPAC-Safety/safety-report/issues/427) | Web, API | Open, unblocked; the owner's decisions are recorded on the issue. Builds on ADR-0117 and ADR-0119. |
+| [#437 — Reconcile skill statements that contradict accepted ADRs](https://github.com/HPAC-Safety/safety-report/issues/437) | Documentation | In progress. The full audit of instructions and documentation against the ADRs; its decisions are recorded on the issue. |
+| [#441 — Remove Terraform that contradicts the ADRs](https://github.com/HPAC-Safety/safety-report/issues/441) | Infrastructure | Open. The unused migrate task (ADR-0055) and the SES leftovers (CON-INF-002). |
+| [#443 — Run the API and the Worker on Lambda](https://github.com/HPAC-Safety/safety-report/issues/443) | Infrastructure | Open. The Terraform, the deploy workflows, and the Worker's drain-once Lambda host ([ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md), [ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)). |
+| [#444 — Check that the source inventory and issue traceability stay current](https://github.com/HPAC-Safety/safety-report/issues/444) | Documentation | Open. The CI check for this page and the [source inventory](source-inventory.md). |
+| [#445 — Let a reviewer mark a no-consent report reviewed](https://github.com/HPAC-Safety/safety-report/issues/445) | Moderation | Open; the owner decided it during #437. A no-consent report is never summarized (REQ-DOM-006), so today it closes only by Reject or Delete. This adds a way to move it to Approved without a summary, amending [ADR-0105](decisions/ADR-0105-approving-a-consented-pair-publishes-it.md). |
+| [#446 — Bind the @ignore scenarios whose behavior is already built](https://github.com/HPAC-Safety/safety-report/issues/446) | CI | Open. Scenarios the #437 audit found built but still tagged `@ignore`, so the matrix reports them as uncovered. |

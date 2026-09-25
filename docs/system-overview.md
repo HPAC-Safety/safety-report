@@ -43,7 +43,8 @@ Each outcome carries a stable constraint ID and names the claims that verify it
   *Verified by: REQ-AI-001, REQ-AI-011.*
 - **CON-SO-005** Private answers help the model recognize identifying material
   but may not contribute facts to a summary.
-  *Verified by: REQ-AI-007, REQ-AI-010, REQ-AI-015.*
+  *Verified by: REQ-AI-007, REQ-AI-024, and the reviewer checklist in the
+  [AI anonymization detail](../features/ai-anonymization/README.md#reviewer-checklist).*
 - **CON-SO-006** Both summary texts are one reviewable unit with one human
   approval.
   *Verified by: REQ-AI-017, REQ-MOD-033.*
@@ -52,7 +53,7 @@ Each outcome carries a stable constraint ID and names the claims that verify it
   *Verified by: REQ-DOM-003, REQ-MOD-035.*
 - **CON-SO-008** Deletion immediately hides a report while preserving the audit
   trail and retained records.
-  *Verified by: REQ-DOM-007, REQ-MOD-040.*
+  *Verified by: REQ-DOM-007.*
 
 ## Components
 

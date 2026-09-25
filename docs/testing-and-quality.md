@@ -39,27 +39,32 @@ relies on API behavior, a server-side test covering that behavior
 *Verified by: REQ-QB-001, REQ-QB-009, REQ-QB-016, REQ-SUB-004, REQ-SUB-005,
 REQ-SUB-009, REQ-SUB-013, REQ-SUB-017, REQ-SUB-018.*
 
-- every display-affecting edit creates a complete immutable revision;
+- every display-affecting edit to an unanswered question creates a complete
+  immutable revision, an edit to an answered one forks it (ADR-0071), and an
+  edit to choices alone changes them in place (ADR-0095);
 - current-form query examines the latest revision per key, does not resurrect an
   older active revision, and orders included active/live revisions deterministically;
 - locale toggle preserves answers and revision IDs;
-- unfinished answers/revision IDs remain browser-only for 15 days, no file is
-  restored, and no report/API/database/object-storage write occurs before final
-  submission;
-- only consent is required and it has no default;
-- skips are persisted for all shown answer-producing revisions, and multipart
-  file indexes map exactly once to their file-upload answers;
+- unfinished answers/revision IDs remain browser-only for 15 days, finished
+  uploads are restored with the saved report, and nothing but an attach-time
+  upload to quarantine is written before final submission (ADR-0096,
+  ADR-0100);
+- consent is always required and has no default, and any other question is
+  required only when its revision says so (ADR-0061);
+- skips are persisted for all shown answer-producing revisions, and each upload
+  ID a submission names maps exactly once to its file-upload answer;
 - known superseded revisions are accepted, while unknown/deleted revisions and
   invalid historical options are rejected;
-- bearer-token validation, trusted-IP extraction, throttling, multipart
-  count/size bounds, and safe localized errors fail closed; and
+- bearer-token validation, trusted-IP extraction, throttling, attachment
+  count and size bounds, and safe localized errors fail closed; and
 - report, answers, files, and all outbox work commit or roll back together.
 
 ### AI and privacy
 
 **CON-TQ-005** These contracts are covered by test.
-*Verified by: REQ-AI-001, REQ-AI-009, REQ-AI-010, REQ-AI-011, REQ-AI-012,
-REQ-AI-013, REQ-AI-020, REQ-AI-021.*
+*Verified by: REQ-AI-001, REQ-AI-009, REQ-AI-011, REQ-AI-020, REQ-AI-021,
+REQ-AI-024. What the model writes is the reviewer's checklist in the
+[AI anonymization detail](../features/ai-anonymization/README.md#reviewer-checklist).*
 
 - partitioning never puts a private field in `report_content` and never treats
   private-only facts as summary facts;
@@ -93,7 +98,7 @@ REQ-MED-039.*
   public DTOs;
 - image fixtures prove GPS/EXIF/profile removal after decode/re-encode;
 - synthetic video fixtures prove container/device/location/timestamp metadata
-  removal after remux/transcode;
+  removal after remux into MP4 (ADR-0094, ADR-0122);
 - only verified image/video derivative keys yield preview URLs; validated
   document originals yield forced-download URLs only to authorized reviewers,
   or to anyone once the document is public, under a server-minted name;
@@ -107,7 +112,7 @@ REQ-MED-039.*
 
 **CON-TQ-007** These contracts are covered by test.
 *Verified by: REQ-MOD-024, REQ-MOD-029, REQ-MOD-032, REQ-MOD-033,
-REQ-MOD-035, REQ-MOD-036, REQ-MOD-040, REQ-DOM-007.*
+REQ-MOD-035, REQ-MOD-036, REQ-DOM-007.*
 
 - a token that is unsigned, signed by an unknown key, tampered with, expired,
   or issued for another audience is refused, and `alg: none` is refused;
@@ -135,7 +140,7 @@ and no `deleted` on `audit_log`.
 Terraform CI runs formatting, validation, static/security checks, and a plan
 without AWS credentials where possible. Assertions cover Canadian region,
 private/encrypted attachments, RDS backups, one website with the admin surface
-as a route, deploy OIDC roles, least privilege, migration task, identity
+as a route, deploy OIDC roles, least privilege, identity
 provider configuration, and absence of SES or long-lived keys.
 *Verified by: none — a rule about the tests themselves, enforced by the suites
 and the CI gates rather than by a scenario.*
@@ -154,13 +159,14 @@ and a committed [traceability matrix](traceability.md) that no longer matches
 the claims and constraints it summarizes fails the same way a stale generated
 file does
 ([ADR-0083](decisions/ADR-0083-specification-driven-development.md),
-[ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)). `DateTime` and assertion libraries other than Shouldly stay
-banned through syntax-aware tests rather than fragile source grep.
+[ADR-0084](decisions/ADR-0084-stable-claim-ids-and-a-generated-traceability-matrix.md)). `System.DateTime` and `Xunit.Assert` stay
+banned through the BannedApiAnalyzers analyzer and `tests/BannedSymbols.txt`,
+not through source grep (ADR-0013, ADR-0035).
 
-Documentation changes run a local-link check, verify every tracked `src` path
-is represented in [source inventory](source-inventory.md), and verify every
-GitHub issue through #82 is represented in
-[issue traceability](issue-traceability.md). No test fixture or specification
+[Source inventory](source-inventory.md) maps every `src/` project and
+directory, and [issue traceability](issue-traceability.md) lists every open
+issue. No check enforces either yet: a CI check that fails when they drift is
+issue #444. No test fixture or specification
 may contain a real reporter's personal information.
 *Verified by: none — a rule about the tests themselves, enforced by the suites
 and the CI gates rather than by a scenario.*

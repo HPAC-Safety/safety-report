@@ -2,7 +2,7 @@
 title: The web front end is a Docker container, not S3 + CloudFront
 description: ADR-0043 moves the web front end to a React/TypeScript/Vite build.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-18
 decision-makers: Chase Florell
 keywords: AWS, Docker, Nginx, ECS Fargate, ALB, CloudFront, hosting
@@ -10,7 +10,9 @@ keywords: AWS, Docker, Nginx, ECS Fargate, ALB, CloudFront, hosting
 
 # ADR-0044 — The web front end is a Docker container, not S3 + CloudFront
 
-**Status:** Accepted, partially superseded by
+**Status:** Superseded. [ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md) moves the website back to static
+files in a private S3 bucket behind CloudFront, so this record's container
+hosting no longer holds. It was earlier partially superseded by
 [ADR-0048](ADR-0048-one-website-admin-as-a-route.md). Supersedes the
 static-site hosting portion of [ADR-0009](ADR-0009-hosting-on-aws.md) (S3 +
 CloudFront): a container origin, not a bucket, is still correct. The

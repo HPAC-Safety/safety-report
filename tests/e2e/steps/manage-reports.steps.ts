@@ -318,7 +318,7 @@ Given("another reviewer has changed that report since it was opened", async ({ p
 
 When("the safety officer opens that report", async ({ page }) => {
 	await page.goto("/admin/reports/reviewaaaaa")
-	await expect(page.getByRole("heading", { level: 1, name: /^(Report|Rapport)$/ })).toBeVisible()
+	await expect(page.getByRole("heading", { level: 1, name: /^(Report|Signalement)$/ })).toBeVisible()
 	await expect(page.locator('[data-badge="status"]')).toBeVisible()
 })
 

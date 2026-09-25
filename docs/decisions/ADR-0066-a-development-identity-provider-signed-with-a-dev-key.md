@@ -2,7 +2,7 @@
 title: A development identity provider, signed with a dev key
 description: In Development, the API issues its own tokens.
 type: adr
-status: superseded by ADR-0079
+status: partially-superseded
 date: 2026-09-21
 decision-makers: Chase Florell
 keywords: development, mock authentication, JWT, signing key, environment configuration
@@ -10,7 +10,7 @@ keywords: development, mock authentication, JWT, signing key, environment config
 
 # ADR-0066 — A development identity provider, signed with a dev key
 
-**Status:** Superseded by [ADR-0079](ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)
+**Status:** Accepted, and partially superseded by [ADR-0079](ADR-0079-a-development-login-may-verify-against-the-live-members-site.md)
 for the "no external dependency" alternative below — a fourth,
 members-site-verified development login now exists alongside the three
 fixed accounts described here, which remain unchanged.

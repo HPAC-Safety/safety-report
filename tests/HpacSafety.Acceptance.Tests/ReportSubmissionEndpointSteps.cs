@@ -892,7 +892,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_response.Content.Headers.ContentType?.MediaType.ShouldBe("application/problem+json");
 	}
 
-	[Then(@"the client IP used for rate limiting comes only from explicitly trusted proxy headers and is never stored on the report")]
+	[Then(@"the client IP used for rate limiting comes from X-Forwarded-For, trusted because only the load balancer can reach the API, and is never stored on the report")]
 	public async Task ThenTheClientIpComesOnlyFromTrustedHeadersAndIsNeverStored()
 	{
 		var body = await _response!.Content.ReadAsStringAsync();

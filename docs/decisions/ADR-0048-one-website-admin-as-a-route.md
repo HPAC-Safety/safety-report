@@ -2,7 +2,7 @@
 title: One website again; the admin review queue is a route, not a separate site
 description: "One Vite/React application, one build output, served by one Nginx container (one ECS Fargate service, one CloudFront distribution, one hostname: safety.hpac.ca)."
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-19
 decision-makers: Chase Florell
 keywords: React, Vite, Nginx, ECS Fargate, topology, admin route
@@ -10,7 +10,9 @@ keywords: React, Vite, Nginx, ECS Fargate, topology, admin route
 
 # ADR-0048 — One website again; the admin review queue is a route, not a separate site
 
-**Status:** Accepted. Partially supersedes
+**Status:** Accepted, and partially superseded by [ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md): the one
+website with admin as a route stands, but it is served from S3 and CloudFront,
+not an Nginx container. Partially supersedes
 [ADR-0044](ADR-0044-containerized-web-hosting.md): the *container-per-site*
 count and the *two ECS Fargate services / two CloudFront distributions*
 topology are reversed back to one, reinstating

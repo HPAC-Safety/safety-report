@@ -66,7 +66,7 @@ local  skill  postgres-dba  skills/postgres-dba/SKILL.md
 local  skill  test-from-scenarios  skills/test-from-scenarios/SKILL.md
 
 # Project skills. One that extends a generic skill names it and keeps its
-# section names; hpac-role-agents extends the five role agents.
+# section names; hpac-role-agents extends the six role agents.
 local  skill  anonymize-hpac-reports  skills/anonymize-hpac-reports/SKILL.md
 local  skill  build-hpac-web-ui  skills/build-hpac-web-ui/SKILL.md
 local  skill  deliver-hpac-change  skills/deliver-hpac-change/SKILL.md

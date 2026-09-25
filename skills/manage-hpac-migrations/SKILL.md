@@ -6,8 +6,9 @@ description: HPAC Safety's migration conventions, paths, and commands — extend
 # Manage an HPAC Safety migration
 
 Extends [`manage-ef-core-migrations`](../manage-ef-core-migrations/SKILL.md);
-read that first. This skill holds only what is specific to this repository,
-under the same section names.
+read that first. Its schema conventions (keys, types, enums, deletion) also
+extend [`postgres-dba`](../postgres-dba/SKILL.md) and win over it. This skill
+holds only what is specific to this repository, under the same section names.
 
 - Read
   [`Persistence/Migrations/README.md`](../../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md)

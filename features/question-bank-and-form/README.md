@@ -129,11 +129,15 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Saving a question in one language.
 - Accepting a date, time, yes/no, or checkbox answer in any shape but its
   stored form, then converting it. The API refuses it instead (`REQ-QB-118`):
-  no seconds on a time, no locale date format, no prose, and no `oui` on an
-  English report or `yes` on a French one. The form's own inputs already send
-  the stored form (ADR-0072, ADR-0127).
-- Rewriting a yes/no answer stored as `yes`/`no` before ADR-0127 on a French
-  report. It stays as it was; every reader accepts all four words.
+  no seconds on a time, no locale date format, no prose, and no string —
+  `yes`, `oui`, or `true` — for a yes/no or checkbox, which is a JSON boolean.
+  The form's own inputs already send the stored form (ADR-0072, ADR-0130).
+- Storing a yes/no or checkbox answer as words, or giving it a second
+  language. It is `true` or `false` in `value_boolean`; only the interface
+  turns it into Yes / Oui or No / Non
+  ([ADR-0130]../../docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
+- Rewriting any other answer. Converting the stored yes/no words to booleans
+  (`REQ-QB-137`) was a one-time migration, not a precedent.
 - Shared choice lists, or reusing one question's choices on another in any
   form ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 - A reporter editing, curating, or removing a choice. A reporter may add a

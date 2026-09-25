@@ -94,6 +94,14 @@ The current prompt carries every anonymization and accuracy rule — *Reqnroll, 
 
 Only a report with publication consent reaches the model — *Reqnroll, Covered*
 
+### REQ-AI-028
+
+A private yes/no answer is never a marking candidate — *Reqnroll, Covered*
+
+### REQ-AI-029
+
+A yes/no answer reaches the model as true or false, never as words — *Reqnroll, Covered*
+
 ## Claims: comments
 
 ### REQ-COM-001
@@ -1122,15 +1130,15 @@ An answer not in its written form is rejected — *Reqnroll, Covered*
 
 ### REQ-QB-119
 
-A yes or no answer takes its fixed counterpart at submission — *Reqnroll, Covered*
+A yes or no answer has no second language — *Reqnroll, Covered*
 
 ### REQ-QB-120
 
-A yes in either language enables a conditional question — *Reqnroll, Covered*
+Only true enables a conditional question, in either language — *Reqnroll, Covered*
 
 ### REQ-QB-121
 
-A consent answer means the same in either language — *Reqnroll, Covered*
+Only true is consent, in either language — *Reqnroll, Covered*
 
 ### REQ-QB-122
 
@@ -1191,6 +1199,14 @@ Reviewing a type-ahead value clears its flag — *Reqnroll, Planned*
 ### REQ-QB-136
 
 Existing answers are linked to their choices without being rewritten — *Reqnroll, Planned*
+
+### REQ-QB-137
+
+A yes or no stored as a word is converted to a boolean once — *Reqnroll, Covered*
+
+### REQ-QB-138
+
+A yes or no stored as anything but the four words stops the conversion — *Reqnroll, Covered*
 
 ## Claims: report-submission
 
@@ -1464,7 +1480,7 @@ A file refused at submission is marked on its row and nothing else is lost — *
 
 ### REQ-SUB-077
 
-A yes or no is sent in the language the report is submitted in — *playwright-bdd, Covered*
+A yes or no is sent as a JSON boolean whatever language the report is submitted in — *playwright-bdd, Covered*
 
 ### REQ-SUB-078
 

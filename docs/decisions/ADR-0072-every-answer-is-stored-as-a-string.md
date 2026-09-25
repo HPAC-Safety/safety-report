@@ -18,6 +18,10 @@ a yes or no answer is stored in the reporter's language (`oui`/`non` for a
 French reporter), and a stored `oui` is no longer a bug. The date, time, and
 date-and-time forms below stand.
 
+That boolean row is in turn superseded by
+[ADR-0130](ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md): a yes
+or no answer is stored as a boolean in `value_boolean`, not as a string.
+
 Partially superseded by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): a single-select,
 multi-select, or type-ahead answer references its choice by ID and stores no
 label. The select rows and the rejection of "keep option codes" below no

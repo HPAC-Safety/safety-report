@@ -114,15 +114,16 @@ talking about the concept, not literal JSON.
 
 Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
 clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
-A yes/no or checkbox answer is the report language's word: `yes`/`no` for
-`en-CA`, `oui`/`non` for `fr-CA` (ADR-0127). The form holds a language-free
-answer while the reporter works and writes the word when it submits, so
+A yes/no or checkbox answer is a JSON `true` or `false`, whatever the report
+language, and a string for one is refused
+([ADR-0130]../../docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)). The form holds a language-free
+answer while the reporter works and sends the boolean when it submits, so
 switching language mid-form loses nothing. The report language is exactly
 `en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080, ADR-0112, ADR-0127, ADR-0128, ADR-0129)
+## Bilingual answers (ADR-0080, ADR-0112, ADR-0128, ADR-0129, ADR-0130)
 
-`value` and `locale` are written once, here, and never again — no endpoint
+`value`, `value_boolean`, and `locale` are written once, here, and never again — no endpoint
 ever updates either column after this one inserts them. How an answer gets
 its second language depends on its question:
 
@@ -131,14 +132,14 @@ its second language depends on its question:
 | Long or short text marked **Auto-translate answer** | The Worker, mechanically, via `ITranslator` |
 | Single-select, multi-select | The named choice's other label, read from the choice whenever the answer is read (`choice`); nothing is copied onto the answer |
 | Type-ahead | As a picker. A new reporter-added value gets its other label from the Worker, on the value itself, not on the answer |
-| Yes/no, checkbox | The fixed counterpart, written here at submission (`fixed`): `yes`↔`oui`, `no`↔`non` |
+| Yes/no, checkbox | None, ever: a boolean holds no words; the interface renders it in the reader's language |
 | Text not marked, email, phone, date, time, number, file | None, ever |
 
 Each answer records which of these applies (`translation_mode`), so the admin
 report view never shows a "translation" of an answer that has none. This
 endpoint enqueues one answer-translation outbox message and never calls a
-translation provider itself; reading a choice's label or writing a yes/no
-counterpart is a lookup, not a translation.
+translation provider itself; reading a choice's label is a lookup, not a
+translation.
 
 Out of scope: detecting which language a reporter actually typed, and
 translating the invariant types above.

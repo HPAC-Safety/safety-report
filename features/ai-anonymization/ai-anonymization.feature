@@ -52,6 +52,25 @@ Scenario: private_context is still supplied alongside the marking pass
   Then private_context still contains every private answered field, unchanged
   And the model receives both the marked report_content and the unmarked private_context
 
+@REQ-AI-028
+Scenario: A private yes/no answer is never a marking candidate
+  Given a private yes/no answer is true
+  And a report_content field contains the word "true"
+  When the Worker builds the marked report_content
+  Then that word is left unmarked
+  And private_context still carries the yes/no answer as true
+
+@REQ-AI-029
+Scenario Outline: A yes/no answer reaches the model as true or false, never as words
+  Given a report written in <language> answers an ordinary yes/no question <answer>
+  When the Worker builds the model input DTO
+  Then report_content carries that answer's value as "<answer>"
+
+Examples:
+  | language | answer |
+  | English  | true   |
+  | French   | false  |
+
 @REQ-AI-008
 Scenario: Concurrent workers cannot claim the same summarization outbox item twice
   Given a summarization outbox item is pending

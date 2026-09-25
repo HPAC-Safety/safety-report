@@ -161,8 +161,9 @@ contributor who never invokes one is unaffected.
      A Safety Officer or administrator reviews it: approves, corrects in place
      for every answer, merges (answers are never rewritten; they read the
      value merged into), or removes it ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
-   - **Answers**: immutable. A choice answer names its choice; every other
-     answer is one string, in the reporter's own words and language.
+   - **Answers**: immutable. A choice answer names its choice; a yes/no or
+     checkbox answer is a boolean; every other answer is one string, in the
+     reporter's own words and language.
    - **Second language, only where needed**
      ([ADR-0112](docs/decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md)):
      - free text an administrator marked as needing translation: filled off
@@ -171,14 +172,14 @@ contributor who never invokes one is unaffected.
      - a choice answer: reads its choice's other-language label — a lookup,
        not a translation. A reporter-added type-ahead value's missing label is
        filled on the choice by the Worker ([ADR-0129](docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md));
-     - a yes/no or checkbox answer: its fixed counterpart (`yes`↔`oui`,
-       `no`↔`non`), written at submission — a lookup, not a translation
-       ([ADR-0127](docs/decisions/ADR-0127-a-yes-or-no-answer-is-stored-in-the-reporters-language.md));
-     - everything else (unmarked text, email, phone, date, time, number):
-       never has one;
-     - the source is recorded: `auto`, `human`, `choice`, or `fixed`.
-   - **Storage forms**: a boolean is the reporter's own word, `yes`/`no` or
-     `oui`/`non`, and every reader accepts all four (ADR-0127); a date, time,
+     - everything else (unmarked text, email, phone, date, time, number,
+       yes/no, checkbox): never has one;
+     - the source is recorded: `auto`, `human`, or `choice`.
+   - **Storage forms**: a yes/no or checkbox answer is `true`/`false` in
+     `value_boolean`, a JSON boolean on the wire, and never words in the
+     database; the interface renders it in the reader's language
+     ([ADR-0130](docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
+     A date, time,
      or date-and-time is ISO 8601 in the fitting shape. The domain still uses `DateOnly`,
      `TimeOnly`, and `DateTimeOffset`
      ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),

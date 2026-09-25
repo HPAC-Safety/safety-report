@@ -522,10 +522,10 @@ Examples:
   | date   | 2026-09-13 | French   | 13 septembre 2026  |
   | time   | 14:30      | English  | 2:30 p.m.          |
   | time   | 14:30      | French   | 14 h 30            |
-  | yes/no | yes        | English  | Yes                |
-  | yes/no | no         | French   | Non                |
-  | yes/no | oui        | English  | Yes                |
-  | yes/no | non        | French   | Non                |
+  | yes/no | true       | English  | Yes                |
+  | yes/no | true       | French   | Oui                |
+  | yes/no | false      | English  | No                 |
+  | yes/no | false      | French   | Non                |
 
 @REQ-MOD-076
 @ui

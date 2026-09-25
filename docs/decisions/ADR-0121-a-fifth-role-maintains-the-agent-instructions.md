@@ -11,7 +11,10 @@ keywords: agents, skills, AGENTS.md, ai-author, instructions, style, skillfile, 
 # ADR-0121 — A fifth role maintains the agent instructions
 
 **Status:** Accepted. Extends
-[ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md).
+[ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amended by
+[ADR-0124](ADR-0124-the-ai-author-role-may-register-its-files-and-mend-links.md):
+the role may also edit a skill's `agents/*.yaml` and its `Skillfile` entries,
+and mend a link its own move broke.
 
 ## Context
 

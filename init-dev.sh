@@ -232,7 +232,9 @@ fi
 # drift that otherwise only surface after a push, in CI's "i18n" and "build"
 # jobs. .githooks/post-merge and .githooks/post-rewrite regenerate
 # docs/traceability.md after a merge or rebase finishes — see those files and
-# the .gitattributes note below for why.
+# the .gitattributes note below for why. post-rewrite also runs dotnet format
+# on the C# files a rebase rewrote, because a rebase commits without running
+# pre-commit.
 #
 # Installed by copying each into the real hooks directory rather than by
 # setting core.hooksPath: that directory is where graphify's own `graphify

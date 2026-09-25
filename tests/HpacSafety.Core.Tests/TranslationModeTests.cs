@@ -96,7 +96,6 @@ public class TranslationModeTests
 	[InlineData(QuestionType.ShortText, "Avery")]
 	[InlineData(QuestionType.Email, "avery@example.test")]
 	[InlineData(QuestionType.Date, "2026-09-21")]
-	[InlineData(QuestionType.YesNo, "yes")]
 	public void GivenAnswerThatNeverHasASecondLanguage_WhenRecorded_ThenModeIsNone(QuestionType type,
 																				 string value)
 	{

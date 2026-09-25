@@ -110,9 +110,13 @@ talking about the concept, not literal JSON.
 
 Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
 clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
-The report language is exactly `en-CA` or `fr-CA`.
+A yes/no or checkbox answer is the report language's word: `yes`/`no` for
+`en-CA`, `oui`/`non` for `fr-CA` (ADR-0127). The form holds a language-free
+answer while the reporter works and writes the word when it submits, so
+switching language mid-form loses nothing. The report language is exactly
+`en-CA` or `fr-CA`.
 
-## Bilingual answers (ADR-0080, ADR-0112)
+## Bilingual answers (ADR-0080, ADR-0112, ADR-0127)
 
 `value` and `locale` are written once, here, and never again — no endpoint
 ever updates either column after this one inserts them. How an answer gets
@@ -123,13 +127,14 @@ its second language depends on its question:
 | Long or short text marked **Auto-translate answer** | The Worker, mechanically, via `ITranslator` |
 | Single-select, multi-select | The chosen choice's other label, copied here at submission (`choice`); the Worker, when that choice has only one language |
 | Type-ahead | As a picker when it names a choice written in both languages; otherwise the Worker |
-| Text not marked, email, phone, date, time, number, yes/no, checkbox, file | None, ever |
+| Yes/no, checkbox | The fixed counterpart, written here at submission (`fixed`): `yes`↔`oui`, `no`↔`non` |
+| Text not marked, email, phone, date, time, number, file | None, ever |
 
 Each answer records which of these applies (`translation_mode`), so the admin
 report view never shows a "translation" of an answer that has none. This
 endpoint enqueues one answer-translation outbox message and never calls a
-translation provider itself; copying a choice's label is a lookup, not a
-translation.
+translation provider itself; copying a choice's label or a yes/no counterpart
+is a lookup, not a translation.
 
 Out of scope: detecting which language a reporter actually typed, and
 translating the invariant types above.

@@ -1,9 +1,9 @@
 import type { Locale } from "../i18n/locales"
 
 /*
- * An answer is stored in a language-neutral form — a date as ISO 8601
- * `YYYY-MM-DD`, a time as `HH:mm`, a yes/no as `yes` or `no` (ADR-0072). That
- * form is for storage only; a person reads it in the interface language
+ * A date is stored as ISO 8601 `YYYY-MM-DD` and a time as `HH:mm` (ADR-0072),
+ * and a yes/no in the reporter's language: `yes`/`no` or `oui`/`non`
+ * (ADR-0127). Each reads in the interface language
  * (REQ-MOD-075, REQ-SUB-068). A stored value that does not parse is shown as
  * stored rather than as "Invalid Date" (REQ-MOD-076).
  */
@@ -28,8 +28,8 @@ export function formatAnswer(type: string, value: string, locale: Locale, t: (ke
 			return formatTime(value, locale) ?? value
 		case "yes_no":
 		case "checkbox":
-			if (value === "yes") return t("report.booleanYes")
-			if (value === "no") return t("report.booleanNo")
+			if (value === "yes" || value === "oui") return t("report.booleanYes")
+			if (value === "no" || value === "non") return t("report.booleanNo")
 			return value
 		default:
 			return value

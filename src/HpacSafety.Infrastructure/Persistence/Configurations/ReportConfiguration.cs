@@ -94,7 +94,7 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 		builder.Property(answer => answer.TranslationMode).IsRequired();
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_report_answers_translation_mode",
-			"translation_mode IN ('none', 'choice', 'machine')"));
+			"translation_mode IN ('none', 'choice', 'machine', 'fixed')"));
 
 		// Not unique on (report, question): a multi-select records one row per
 		// chosen value, so a report legitimately holds several answers to one

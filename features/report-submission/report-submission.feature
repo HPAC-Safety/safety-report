@@ -198,6 +198,21 @@ Scenario: One answer entry per shown answer-producing revision
   And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
   And fields for the other answer shapes are null
 
+@REQ-SUB-077
+@ui
+Scenario Outline: A yes or no is sent in the language the report is submitted in
+  Given a signed-in reporter answers a yes/no question and publication consent in <answered in>
+  And the reporter switches the form to <submitted in> before submitting
+  When the reporter submits the report
+  Then the yes/no answer is sent as "<no>" and the consent answer as "<yes>"
+
+Examples:
+  | answered in | submitted in | no  | yes |
+  | English     | English      | no  | yes |
+  | French      | French       | non | oui |
+  | English     | French       | non | oui |
+  | French      | English      | no  | yes |
+
 @REQ-SUB-005
 Scenario: A skipped answer is represented by an empty value, not omission
   Given a reporter skips an answer-producing question
@@ -242,6 +257,7 @@ Scenario: Only free text marked for translation is machine-translated
   And it answers an email, a phone number, a date, a time, a number, and a yes/no question
   When the Worker translates that report's answers
   Then only the long-text answer is sent to the translator
+  And the yes/no answer has only its fixed counterpart, written at submission
   And every other answer keeps no second language
 
 @REQ-SUB-069

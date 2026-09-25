@@ -112,10 +112,13 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Mutating a revision, reviving a retired question, or any edit that loses the
   wording an answer was given against.
 - Saving a question in one language.
-- Accepting a date, time, or checkbox answer in any shape but its one stored
-  form, then converting it. The API refuses it instead (`REQ-QB-118`): no
-  seconds on a time, no locale date format, no prose. The form's own inputs
-  already send the stored form (ADR-0072).
+- Accepting a date, time, yes/no, or checkbox answer in any shape but its
+  stored form, then converting it. The API refuses it instead (`REQ-QB-118`):
+  no seconds on a time, no locale date format, no prose, and no `oui` on an
+  English report or `yes` on a French one. The form's own inputs already send
+  the stored form (ADR-0072, ADR-0127).
+- Rewriting a yes/no answer stored as `yes`/`no` before ADR-0127 on a French
+  report. It stays as it was; every reader accepts all four words.
 - Shared choice lists, or reusing one question's choices on another in any
   form ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 - A reporter editing, curating, or removing a choice. A reporter may add a

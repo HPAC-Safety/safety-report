@@ -497,6 +497,8 @@ Examples:
   | time   | 14:30      | French   | 14 h 30            |
   | yes/no | yes        | English  | Yes                |
   | yes/no | no         | French   | Non                |
+  | yes/no | oui        | English  | Yes                |
+  | yes/no | non        | French   | Non                |
 
 @REQ-MOD-076
 @ui

@@ -830,7 +830,7 @@ An answer to a picker stores the words the reporter saw — *Reqnroll, Covered*
 
 ### REQ-QB-019
 
-Every answer is stored in one invariant written form — *Reqnroll, Covered*
+Every answer is stored in its written form — *Reqnroll, Covered*
 
 ### REQ-QB-025
 
@@ -1142,7 +1142,19 @@ Media consent names documents and says they are published as uploaded — *Reqnr
 
 ### REQ-QB-118
 
-An answer not in its invariant written form is rejected — *Reqnroll, Covered*
+An answer not in its written form is rejected — *Reqnroll, Covered*
+
+### REQ-QB-119
+
+A yes or no answer takes its fixed counterpart at submission — *Reqnroll, Covered*
+
+### REQ-QB-120
+
+A yes in either language enables a conditional question — *Reqnroll, Covered*
+
+### REQ-QB-121
+
+A consent answer means the same in either language — *Reqnroll, Covered*
 
 ## Claims: report-submission
 
@@ -1433,6 +1445,10 @@ A submission validates every upload it claims — *Reqnroll, Planned*
 ### REQ-SUB-076
 
 A file refused at submission is marked on its row and nothing else is lost — *playwright-bdd, Planned*
+
+### REQ-SUB-077
+
+A yes or no is sent in the language the report is submitted in — *playwright-bdd, Covered*
 
 ## Claims: typeform-question-import-export
 

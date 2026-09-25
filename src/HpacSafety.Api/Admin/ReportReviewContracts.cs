@@ -73,9 +73,10 @@ public sealed record ReportAnswerView(
 	bool IsPrivate,
 	IReadOnlyList<ReportAnswerValueView> Values);
 
-/// <summary>One stored answer and its second-language counterpart, when one exists.</summary>
+/// <summary>One answer as read and its second-language counterpart, when one exists.</summary>
 /// <param name="Value">
-///     The reporter's own words, in <paramref name="Locale" /> — a JSON string — or,
+///     The reporter's own words, in <paramref name="Locale" /> — a JSON string, and
+///     for a choice answer its choice's label in that language (ADR-0128) — or,
 ///     for a yes/no or checkbox question, a JSON <c>true</c> or <c>false</c> that
 ///     the interface renders in the reader's language (ADR-0130).
 /// </param>

@@ -118,7 +118,7 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 		// ADR-0112). Ordered by when it was answered, so the queue reads oldest
 		// first without a sort at query time.
 		builder.HasIndex(answer => answer.AnsweredAt)
-			.HasFilter("value IS NOT NULL AND translated_value IS NULL AND translation_mode = 'machine'");
+			.HasFilter("value IS NOT NULL AND translated_value IS NULL AND translation_mode = 'machine' AND choice_id IS NULL");
 
 		// Lets a report_files row enforce, at the database level, that the
 		// answer it links to belongs to the same report — see
@@ -136,6 +136,15 @@ public sealed class ReportAnswerConfiguration : IEntityTypeConfiguration<ReportA
 			.WithMany()
 			.HasForeignKey(answer => answer.QuestionId)
 			.OnDelete(DeleteBehavior.Restrict);
+
+		// A choice answer names its choice, which is never erased while an answer
+		// names it (ADR-0128). The choice is loaded with the answer wherever its
+		// wording is read.
+		builder.HasOne(answer => answer.Choice)
+			.WithMany()
+			.HasForeignKey(answer => answer.ChoiceId)
+			.OnDelete(DeleteBehavior.Restrict);
+		builder.HasIndex(answer => answer.ChoiceId);
 	}
 }
 

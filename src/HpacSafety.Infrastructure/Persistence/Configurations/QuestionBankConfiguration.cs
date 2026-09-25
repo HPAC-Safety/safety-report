@@ -163,9 +163,11 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 		// has exactly one row on its question for life.
 		builder.HasIndex(choice => new { choice.QuestionId, choice.Code }).IsUnique();
 
-		// Only a reporter-added choice may lack a language, and never both.
+		// Only a reporter-added choice, or a removed one the choice-reference
+		// migration made so an old answer resolves (ADR-0128), may lack a
+		// language, and never both.
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_question_choices_label",
-			"label_en IS NOT NULL AND label_fr IS NOT NULL OR added_by_reporter AND (label_en IS NOT NULL OR label_fr IS NOT NULL)"));
+			"label_en IS NOT NULL AND label_fr IS NOT NULL OR (added_by_reporter OR deleted IS NOT NULL) AND (label_en IS NOT NULL OR label_fr IS NOT NULL)"));
 	}
 }

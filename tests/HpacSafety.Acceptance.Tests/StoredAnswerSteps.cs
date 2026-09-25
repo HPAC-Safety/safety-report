@@ -14,13 +14,13 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     What a stored answer holds — REQ-QB-018, a picker's answer is the words the
-///     reporter saw; REQ-QB-019 and REQ-QB-118, every answer in its one invariant
+///     What a stored answer holds — REQ-QB-122, a choice answer names its choice
+///     (ADR-0128); REQ-QB-019 and REQ-QB-118, every answer in its one invariant
 ///     written form or refused; and REQ-QB-025, only consent is projected onto the
 ///     report (ADR-0072, ADR-0095, ADR-0117, ADR-0119).
 /// </summary>
 /// <remarks>
-///     REQ-QB-018, REQ-QB-019, and REQ-QB-118 go through the booted API, because
+///     REQ-QB-122, REQ-QB-019, and REQ-QB-118 go through the booted API, because
 ///     each is a claim about what the submission endpoint persists. REQ-QB-025 is a rule
 ///     of the <see cref="Report" /> aggregate and runs against it directly. Every
 ///     question, choice, and answer here is synthetic.
@@ -45,7 +45,7 @@ public sealed class StoredAnswerSteps
 	// Parallel scenarios derive keys from wording; this keeps each one's own.
 	private readonly string _run = Guid.NewGuid().ToString("N");
 	private readonly Dictionary<string, JsonElement> _pickers = [];
-	private readonly Dictionary<string, string[]> _chosen = [];
+	private string? _chosenId;
 	private HttpClient? _admin;
 	private string? _reportId;
 
@@ -63,39 +63,32 @@ public sealed class StoredAnswerSteps
 	private readonly Dictionary<string, string> _ordinary = [];
 	private Report? _report;
 
-	// --- REQ-QB-018: an answer to a picker stores the words the reporter saw ---
+	// --- REQ-QB-122: an answer names the choice it was given under ---
 
-	[Given(@"a reporter is shown a picker, type-ahead, or multi-select question")]
-	public async Task GivenAPickerQuestion()
+	[Given(@"^a reporter answering in English is shown an? (single_select|multi_select|autocomplete) question whose choices are written in both official languages$")]
+	public async Task GivenAChoiceQuestion(string type)
 	{
 		_admin = await BootedApi.SignedInAs(MemberRole.Administrator);
 
-		foreach (var type in new[] { "single_select", "autocomplete", "multi_select" })
-		{
-			using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, Colours));
-			response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-			_pickers[type] = await response.Content.ReadFromJsonAsync<JsonElement>();
-		}
+		using var response = await _admin.PostAsJsonAsync(AdminQuestions, Request(type, Colours));
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		_pickers[type] = await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
-	[When(@"the reporter chooses a value and submits")]
+	[When(@"the reporter chooses one of its choices and submits")]
 	public async Task WhenTheReporterChoosesAndSubmits()
 	{
-		// In French, as a reporter using the French form sees each choice.
-		_chosen["single_select"] = ["Bleu"];
-		_chosen["autocomplete"] = ["Rouge"];
-		_chosen["multi_select"] = ["Bleu", "Rouge"];
+		var (type, picker) = _pickers.Single();
+		_chosenId = await ChoiceIdOf(picker, "Blue");
 
 		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
 		using var response = await reporter.PostAsJsonAsync(Submit, new
 		{
-			language = "fr-CA",
+			language = "en-CA",
 			answers = new object[]
 			{
 				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (bool?)false },
-				new { questionRevisionId = RevisionOf("single_select"), value = (string?)"Bleu" },
-				new { questionRevisionId = RevisionOf("autocomplete"), value = (string?)"Rouge" },
-				new { questionRevisionId = RevisionOf("multi_select"), choices = _chosen["multi_select"] },
+				new { questionRevisionId = RevisionOf(type), choices = new[] { _chosenId } },
 			},
 		});
 
@@ -103,50 +96,32 @@ public sealed class StoredAnswerSteps
 		_reportId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
 	}
 
-	[Then(@"the stored answer holds that value's label exactly as it was shown")]
-	public async Task ThenTheStoredAnswerIsTheLabel()
+	[Then(@"the stored answer references that choice by its identifier")]
+	public async Task ThenTheStoredAnswerReferencesTheChoice()
 	{
-		foreach (var (type, values) in await StoredValues())
-		{
-			values.ShouldBe(_chosen[type], ignoreOrder: true);
-		}
+		(await StoredChoiceAnswer()).ChoiceId.ShouldBe(TinyId.Parse(_chosenId));
 	}
 
-	[Then(@"it holds no option code and no reference to an option row")]
-	public async Task ThenItHoldsNoOptionCode()
+	[Then(@"it stores no copy of the choice's wording")]
+	public async Task ThenItStoresNoCopyOfTheWording()
 	{
-		(await StoredValues()).Values.SelectMany(values => values)
-			.ShouldNotContain(value => value == "blue" || value == "red");
-
-		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
-		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var answer = database.Model.FindEntityType(typeof(ReportAnswer))!;
-
-		answer.GetForeignKeys().ShouldNotContain(key => key.PrincipalEntityType.ClrType == typeof(QuestionChoice));
-		answer.GetProperties().Select(property => property.Name)
-			.ShouldNotContain(name => name.Contains("Option", StringComparison.Ordinal)
-									  || name.Contains("Choice", StringComparison.Ordinal));
+		var stored = await StoredChoiceAnswer();
+		stored.Value.ShouldBeNull();
+		stored.TranslatedValue.ShouldBeNull();
 	}
 
-	[Then(@"relabelling or removing that option afterwards leaves the stored answer unchanged")]
-	public async Task ThenRelabellingLeavesTheAnswer()
+	[Then(@"the answer reads as the choice's English label, with its French label as the second language")]
+	public async Task ThenTheAnswerReadsAsTheChoice()
 	{
-		// Blue is relabelled and Red removed, in place: a choices-only edit
-		// revises nothing and forks nothing (ADR-0095).
-		object[] edited = [new { code = "blue", labelEn = "Navy", labelFr = "Marine" }];
+		using var reviewer = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var detail = await reviewer.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
+		var key = _pickers.Single().Value.GetProperty("key").GetString();
+		var shown = detail.GetProperty("answers").EnumerateArray()
+			.Single(answer => answer.GetProperty("questionKey").GetString() == key)
+			.GetProperty("values").EnumerateArray().Single();
 
-		foreach (var (type, view) in _pickers)
-		{
-			using var response = await _admin!.PutAsJsonAsync(
-				new Uri($"/api/admin/questions/{view.GetProperty("id").GetString()}", UriKind.Relative),
-				Request(type, edited));
-			response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
-		}
-
-		foreach (var (type, values) in await StoredValues())
-		{
-			values.ShouldBe(_chosen[type], ignoreOrder: true);
-		}
+		shown.GetProperty("value").GetString().ShouldBe("Blue");
+		shown.GetProperty("translatedValue").GetString().ShouldBe("Bleu");
 	}
 
 	// --- REQ-QB-025: only consent is projected onto the report aggregate ---
@@ -207,7 +182,7 @@ public sealed class StoredAnswerSteps
 
 		foreach (var (key, value) in _ordinary)
 		{
-			_report!.Answers.Single(answer => answer.QuestionKey == key).Value.ShouldBe(value);
+			_report!.Answers.Single(answer => answer.QuestionKey == key).Text.ShouldBe(value);
 		}
 	}
 
@@ -345,20 +320,29 @@ public sealed class StoredAnswerSteps
 		return _pickers[type].GetProperty("revisionId").GetString()!;
 	}
 
-	/// <summary>The stored values of this scenario's report, by question type.</summary>
-	private async Task<Dictionary<string, string[]>> StoredValues()
+	/// <summary>This scenario's one choice answer, as stored.</summary>
+	private async Task<ReportAnswer> StoredChoiceAnswer()
 	{
 		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 		var reportId = TinyId.Parse(_reportId);
-		var answers = await database.ReportAnswers.AsNoTracking().Where(answer => answer.ReportId == reportId).ToListAsync();
+		var questionId = TinyId.Parse(_pickers.Single().Value.GetProperty("id").GetString());
 
-		return _pickers.ToDictionary(
-			pair => pair.Key,
-			pair => answers
-				.Where(answer => answer.QuestionId.Value == pair.Value.GetProperty("id").GetString())
-				.Select(answer => answer.Value!)
-				.ToArray());
+		return await database.ReportAnswers.AsNoTracking()
+			.SingleAsync(answer => answer.ReportId == reportId && answer.QuestionId == questionId);
+	}
+
+	/// <summary>A choice's identifier, as the public form offers it.</summary>
+	private static async Task<string> ChoiceIdOf(JsonElement question,
+												 string labelEn)
+	{
+		using var client = (await BootedApi.Factory()).CreateClient();
+		var questions = await client.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative));
+		return questions.EnumerateArray()
+			.Single(candidate => candidate.GetProperty("id").GetString() == question.GetProperty("id").GetString())
+			.GetProperty("options").EnumerateArray()
+			.Single(option => option.GetProperty("labelEn").GetString() == labelEn)
+			.GetProperty("id").GetString()!;
 	}
 
 	private object Request(string type,

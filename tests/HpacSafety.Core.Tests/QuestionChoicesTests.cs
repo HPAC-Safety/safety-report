@@ -118,7 +118,7 @@ public class QuestionChoicesTests
 
 		Codes(question).ShouldBe(["coopers"]);
 		question.AllChoices.Count.ShouldBe(2);
-		question.Offers("Woodside", Locale.EnCa).ShouldBeFalse();
+		question.OfferedChoiceLabelled("Woodside", Locale.EnCa).ShouldBeNull();
 	}
 
 	[Fact]
@@ -214,7 +214,7 @@ public class QuestionChoicesTests
 		var added = question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 
 		added.Label(Locale.FrCa).ShouldBe("Mount 7");
-		question.Offers("Mount 7", Locale.FrCa).ShouldBeTrue();
+		question.OfferedChoiceLabelled("Mount 7", Locale.FrCa).ShouldNotBeNull();
 	}
 
 	[Fact]

@@ -58,13 +58,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 	}
 
-	[Given(@"an Administrator removed a reporter-added choice from a type-ahead question")]
-	public void GivenAnAdministratorRemovedAReporterChoice()
-	{
-		GivenAReporterAlreadyAddedASite();
-		_question.ReplaceChoices(Written, Noon.AddHours(1));
-	}
-
 	[Given(@"a type-ahead question has a reporter-added choice typed only in English")]
 	public void GivenAnEnglishOnlyReporterChoice()
 	{
@@ -102,10 +95,11 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_answer = new Report(Locale.EnCa, Noon).Answer(_question, true, Noon);
 	}
 
-	[Given(@"a question has been answered with one of its choices")]
-	public void GivenAQuestionAnsweredWithAChoice()
+	[Given(@"^an? (single_select|multi_select|autocomplete|single-select) question has been answered with one of its choices$")]
+	public void GivenAQuestionAnsweredWithAChoice(string type)
 	{
-		GivenAnAnsweredQuestion("single_select");
+		ArgumentNullException.ThrowIfNull(type);
+		GivenAnAnsweredQuestion(type.Replace('-', '_'));
 	}
 
 	[Given(@"it offers choices an Administrator wrote and a reporter-added choice")]
@@ -149,12 +143,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_added = _question.AddChoiceFromReporter("mount 7", Locale.EnCa);
 	}
 
-	[When(@"a reporter submits that same value again")]
-	public void WhenAReporterRetypesARemovedValue()
-	{
-		_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
-	}
-
 	[When(@"a reporter submits a value the question does not offer")]
 	public void WhenAReporterSubmitsAnUnofferedValue()
 	{
@@ -192,45 +180,11 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		outcome.Answer = _answer;
 	}
 
-	[When(@"^an Administrator (adds a choice to|rewords one of|reorders|supplies the missing language of one of) its choices$")]
-	public void WhenAnAdministratorEditsItsChoices(string edit)
-	{
-		var reporterChoice = _added is null ? [] : new QuestionOptionInput[] { new("mount_7", "Mount 7", null) };
-
-		_edited = edit switch
-		{
-			"adds a choice to" => [.. Written, new("mara", "Mara", "Mara")],
-			"rewords one of" => [new("coopers", "Cooper's Hill", "Colline Cooper"), Written[1]],
-			"reorders" => [.. reporterChoice, Written[1], Written[0]],
-			_ => [.. Written, new("mount_7", "Mount 7", "Mont 7")],
-		};
-
-		Save(_edited);
-	}
-
-	[When(@"an Administrator removes that choice")]
-	public void WhenAnAdministratorRemovesTheChoice()
-	{
-		Save([Written[1]]);
-	}
-
 	[When(@"an Administrator saves the single-select question without that choice")]
 	public void WhenTheParentIsSavedWithoutTheChoice()
 	{
 		_refusal = Should.Throw<DomainRuleViolationException>(() =>
 			QuestionDependencies.EnsureChoicesRemovable([_question, _dependent!], _question, ["hang_glider"]));
-	}
-
-	[When(@"a reporter using French opens the form")]
-	public void WhenAFrenchReporterOpensTheForm()
-	{
-		// The form reads the question's live choices in the reporter's locale.
-	}
-
-	[When(@"an Administrator supplies the choice's French wording")]
-	public void WhenAnAdministratorSuppliesTheFrench()
-	{
-		Save([.. Written, new("mount_7", "Mount 7", "Mont 7")]);
 	}
 
 	[Then(@"the question gains the site as a reporter-added choice")]
@@ -240,27 +194,10 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.Choices.ShouldContain(_added);
 	}
 
-	[Then(@"it carries the language the reporter typed it in")]
-	public void ThenItCarriesTheTypedLanguage()
-	{
-		_added!.LabelEn.ShouldBe("Mount 7");
-		_added.ReporterLocale.ShouldBe(Locale.EnCa);
-	}
-
-	[Then(@"it is marked for an Administrator to supply the other language")]
-	public void ThenItIsMarkedForTranslation()
-	{
-		// Nothing on the submission path translates (ADR-0072): the other
-		// language is simply missing until an Administrator supplies it.
-		_added!.LabelFr.ShouldBeNull();
-		_added.NeedsTranslation.ShouldBeTrue();
-		_question.ReporterChoicesAwaitingReview.ShouldBe(1);
-	}
-
 	[Then(@"the next reporter is offered it")]
 	public void ThenTheNextReporterIsOfferedIt()
 	{
-		_question.Offers("Mount 7", Locale.EnCa).ShouldBeTrue();
+		_question.OfferedChoiceLabelled("Mount 7", Locale.EnCa).ShouldNotBeNull();
 	}
 
 	[Then(@"the question gains a reporter-added choice whose French wording is ""(.*)""")]
@@ -269,25 +206,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_added!.AddedByReporter.ShouldBeTrue();
 		_added.LabelFr.ShouldBe(typed);
 		_question.Choices.ShouldContain(_added);
-	}
-
-	[Then(@"the choice has no English wording until an Administrator supplies it")]
-	public void ThenTheChoiceHasNoEnglish()
-	{
-		_added!.LabelEn.ShouldBeNull();
-	}
-
-	[Then(@"the choice records that it was typed in French")]
-	public void ThenItRecordsFrench()
-	{
-		_added!.ReporterLocale.ShouldBe(Locale.FrCa);
-		_added.NeedsTranslation.ShouldBeTrue();
-	}
-
-	[Then(@"its code is ""(.*)"", derived from the French wording")]
-	public void ThenItsCodeIsDerivedFromTheFrench(string code)
-	{
-		_added!.Code.ShouldBe(code);
 	}
 
 	[Then(@"the existing choice is reused rather than duplicated")]
@@ -309,18 +227,11 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_added!.Deleted.ShouldNotBeNull();
 	}
 
-	[Then(@"the reporter's answer still records the value they typed")]
-	public void ThenTheAnswerRecordsTheTypedValue()
-	{
-		// A type-ahead takes the reporter's words as given, offered or not.
-		new Report(Locale.EnCa, Noon).Answer(_question, "Mount 7", Noon).Value.ShouldBe("Mount 7");
-	}
-
 	[Then(@"the report is accepted and the question gains the value")]
 	public void ThenAcceptedAndGained()
 	{
 		_refusal.ShouldBeNull();
-		_answer!.Value.ShouldBe("Mount 7");
+		_answer!.Text.ShouldBe("Mount 7");
 		_question.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
 	}
 
@@ -366,17 +277,45 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question.CurrentRevision.Id.ShouldBe(_revisionId);
 	}
 
-	[Then(@"the answers already given still record the reporter's own words")]
-	[Then(@"the answer that named it still records the reporter's own words")]
-	public void ThenTheAnswersKeepTheirWords()
+	[When(@"that choice is removed")]
+	public void WhenThatChoiceIsRemoved()
 	{
-		_answer!.Value.ShouldBe("Cooper's");
+		Save([Written[1]]);
+	}
+
+	[When(@"an Administrator changes the question's wording")]
+	public void WhenAnAdministratorChangesTheQuestionsWording()
+	{
+		WhenAnAdministratorRewordsIt();
+	}
+
+	[Then(@"the earlier answer still names it and reads its wording")]
+	public void ThenTheEarlierAnswerStillNamesIt()
+	{
+		var removed = _question.AllChoices.Single(choice => choice.Code == "coopers");
+		_answer!.ChoiceId.ShouldBe(removed.Id);
+		_answer.Text.ShouldBe("Cooper's");
+	}
+
+	[Then(@"the replacement question offers a copy of every choice, each with its own identifier")]
+	public void ThenTheReplacementOffersACopyOfEveryChoice()
+	{
+		_live.ShouldNotBeSameAs(_question);
+		_live.AllChoices.Select(choice => choice.Code).ShouldBe(_question.AllChoices.Select(choice => choice.Code), ignoreOrder: true);
+		_live.AllChoices.Select(choice => choice.Id).Intersect(_question.AllChoices.Select(choice => choice.Id)).ShouldBeEmpty();
+	}
+
+	[Then(@"the earlier answer still names the retired question's choice")]
+	public void ThenTheEarlierAnswerNamesTheRetiredQuestionsChoice()
+	{
+		_answer!.ChoiceId.ShouldBe(_question.AllChoices.Single(choice => choice.Code == "coopers").Id);
+		_answer.Text.ShouldBe("Cooper's");
 	}
 
 	[Then(@"the form stops offering it")]
 	public void ThenTheFormStopsOfferingIt()
 	{
-		_question.Offers("Cooper's", Locale.EnCa).ShouldBeFalse();
+		_question.OfferedChoiceLabelled("Cooper's", Locale.EnCa).ShouldBeNull();
 	}
 
 	[Then(@"the choice is retired rather than erased")]
@@ -401,20 +340,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenOfferedInEnglishToAFrenchReporter()
 	{
 		_question.Choice("mount_7")!.Label(Locale.FrCa).ShouldBe("Mount 7");
-		_question.Offers("Mount 7", Locale.FrCa).ShouldBeTrue();
-	}
-
-	[Then(@"a reporter using French is offered the French wording")]
-	public void ThenOfferedInFrench()
-	{
-		_question.Choice("mount_7")!.Label(Locale.FrCa).ShouldBe("Mont 7");
-	}
-
-	[Then(@"the choice is no longer waiting to be reviewed")]
-	public void ThenNoLongerAwaitingReview()
-	{
-		_question.Choice("mount_7")!.NeedsTranslation.ShouldBeFalse();
-		_question.ReporterChoicesAwaitingReview.ShouldBe(0);
+		_question.OfferedChoiceLabelled("Mount 7", Locale.FrCa).ShouldNotBeNull();
 	}
 
 	/// <summary>An Administrator's save of the whole question, choices included, as the editor sends it.</summary>

@@ -8,7 +8,7 @@ type: guide
 
 | Term | Meaning |
 |---|---|
-| Answer | One immutable string, in the reporter's own words and language, for one exact answer-producing question revision; a multi-select stores one row per chosen value. A stored null records a skip (ADR-0072). |
+| Answer | Immutable, for one exact answer-producing question revision: a single-select, multi-select, or type-ahead answer names its choice and reads both labels from it (ADR-0128); every other answer is one string, in the reporter's own words and language (ADR-0072). A multi-select stores one row per chosen choice. An answer with neither records a skip. |
 | Attachment | An optional image, video, or document submitted with a report. Stored privately. With media consent, a published report shows its verified image and video derivatives and offers its validated documents as forced downloads (ADR-0117, ADR-0119). |
 | Complete revision | One immutable question record containing every value needed to render, validate, order, classify, and localize that revision, except its choices, which belong to the question (ADR-0095). |
 | Group | A question type that collects no answer and acts as a section heading; other questions may be grouped under it so the form renders them together. |

@@ -130,10 +130,12 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 		// A consent answer is never an occurrence fact. It is left out by its
 		// question's role, not its key: a question seeded from the Typeform form
 		// keeps the key the import gave it, and a key is an Administrator's to
-		// choose. Privacy is the second guard (ADR-0082), never the first.
+		// choose. Privacy is the second guard (ADR-0082), never the first. A
+		// choice answer's words are its choice's (ADR-0128), in the report's
+		// language — which a private choice's marking then matches too.
 		var rows = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
-							 && (answer.Value != null || answer.BooleanValue != null)
+							 && (answer.Value != null || answer.BooleanValue != null || answer.ChoiceId != null)
 							 && !database.Questions.IgnoreQueryFilters()
 								 .Any(question => question.Id == answer.QuestionId && question.Role != QuestionRole.None))
 			.Join(
@@ -146,6 +148,9 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 					 answer.QuestionKey,
 					 answer.Value,
 					 answer.BooleanValue,
+					 ChoiceEn = answer.Choice!.LabelEn,
+					 ChoiceFr = answer.Choice.LabelFr,
+					 HasChoice = answer.ChoiceId != null,
 					 answer.IsPrivate,
 					 revision.Type,
 					 revision.LabelEn,
@@ -162,7 +167,11 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 				new SummarizationField(
 					row.QuestionKey,
 					language == Locale.FrCa ? row.LabelFr : row.LabelEn,
-					row.BooleanValue is { } boolean ? (boolean ? "true" : "false") : row.Value!,
+					row.BooleanValue is { } boolean
+						? (boolean ? "true" : "false")
+						: row.HasChoice
+							? (language == Locale.FrCa ? row.ChoiceFr ?? row.ChoiceEn : row.ChoiceEn ?? row.ChoiceFr)!
+							: row.Value!,
 					row.BooleanValue is not null),
 				row.IsPrivate))
 			.ToList();

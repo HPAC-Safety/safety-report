@@ -193,9 +193,8 @@ public class Report
 
 	/// <summary>
 	///     Records a multi-select answer against the question's current revision, as
-	///     one row per chosen value, so each value is a string in its own right and
-	///     is translated on its own (ADR-0072). An empty list records one skipped
-	///     answer rather than nothing at all.
+	///     one row per chosen label, each naming its choice (ADR-0128). An empty list
+	///     records one skipped answer rather than nothing at all.
 	/// </summary>
 	public IReadOnlyList<ReportAnswer> Answer(
 		Question question,
@@ -236,6 +235,50 @@ public class Report
 		}
 
 		return [.. values.Select(value => Answer(question, revision, value, at))];
+	}
+
+	/// <summary>
+	///     Records a single-select, multi-select, or type-ahead answer naming the
+	///     question's live choices by identifier — one row per choice — against an
+	///     exact revision (ADR-0128). An empty list records one skipped answer; only a
+	///     multi-select names more than one.
+	/// </summary>
+	public IReadOnlyList<ReportAnswer> AnswerChoices(
+		Question question,
+		QuestionRevision revision,
+		IReadOnlyList<TinyId> choiceIds,
+		DateTimeOffset at)
+	{
+		ArgumentNullException.ThrowIfNull(question);
+		ArgumentNullException.ThrowIfNull(revision);
+		ArgumentNullException.ThrowIfNull(choiceIds);
+
+		if (choiceIds.Count == 0)
+		{
+			return [Answer(question, revision, value: null, at)];
+		}
+
+		if (choiceIds.Count > 1
+			&& revision.Type != QuestionType.MultiSelect)
+		{
+			throw new DomainRuleViolationException(
+				$"'{question.Key}' takes one answer, not {choiceIds.Count}.");
+		}
+
+		if (choiceIds.Distinct().Count() != choiceIds.Count)
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' named the same choice more than once.");
+		}
+
+		return
+		[
+			.. choiceIds.Select(choiceId =>
+			{
+				var answer = ReportAnswer.ForChoice(Id, question, revision, choiceId, Language, at);
+				_answers.Add(answer);
+				return answer;
+			}),
+		];
 	}
 
 	/// <summary>Adds an uploaded file.</summary>

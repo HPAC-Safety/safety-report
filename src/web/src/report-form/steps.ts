@@ -38,6 +38,30 @@ export function optionLabel(option: PublicOptionView, locale: Locale): string {
 }
 
 /**
+ * The choice a stored select answer names: by its ID, which is what the form
+ * keeps and submits (ADR-0128) — or, in a draft saved before answers named
+ * choices, by its label in either language.
+ */
+export function optionFor(question: PublicQuestionView, stored: string): PublicOptionView | undefined {
+	return (
+		question.options.find((option) => option.id === stored) ??
+		question.options.find((option) => option.labelEn === stored || option.labelFr === stored)
+	)
+}
+
+/**
+ * The choice a type-ahead's typed text names, ignoring case, in either
+ * language — or none, when the reporter typed a value the question does not
+ * offer yet (ADR-0129).
+ */
+export function optionTyped(question: PublicQuestionView, typed: string): PublicOptionView | undefined {
+	const wanted = typed.trim().toLocaleLowerCase()
+	return question.options.find(
+		(option) => option.labelEn.toLocaleLowerCase() === wanted || option.labelFr.toLocaleLowerCase() === wanted,
+	)
+}
+
+/**
  * Every question and group child, flattened, keyed by its (question, not
  * revision) ID — what `dependsOnQuestionId` names.
  */
@@ -98,7 +122,6 @@ export function isConditionMet(
 	question: PublicQuestionView,
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
-	locale: Locale,
 	hasAttachment = false,
 ): boolean {
 	if (question.role === "consent_media") return isMediaConsentAsked(answers, questionsById, hasAttachment)
@@ -115,13 +138,12 @@ export function isConditionMet(
 		return parentAnswer.value === "yes"
 	}
 
-	// Single-select parent (ADR-0074): compare against the option's label in
-	// the language the reporter is currently viewing, because that is what
-	// the stored answer literally is (ADR-0072).
+	// Single-select parent (ADR-0074): the answer names a choice (ADR-0128), so
+	// the condition compares choices, whatever language the form is in.
 	const requiredOption = parent.options.find((option) => option.code === question.dependsOnOptionCode)
 	if (!requiredOption) return false
 
-	return parentAnswer.value === optionLabel(requiredOption, locale)
+	return optionFor(parent, parentAnswer.value)?.id === requiredOption.id
 }
 
 /** The steps currently on the path, in order, with a group's hidden children already filtered out for rendering. */
@@ -129,17 +151,16 @@ export function visibleSteps(
 	steps: FormStep[],
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
-	locale: Locale,
 	hasAttachment = false,
 ): FormStep[] {
 	return steps.filter((step) => {
 		if (step.kind === "intro") return true
-		if (step.kind === "question") return isConditionMet(step.question, answers, questionsById, locale, hasAttachment)
+		if (step.kind === "question") return isConditionMet(step.question, answers, questionsById, hasAttachment)
 
 		// A group page stays visible while at least one child is visible;
 		// grouping and conditional dependency are independent (ADR-0076), so a
 		// child can be conditional even though the group itself never is.
-		return step.question.children.some((child) => isConditionMet(child, answers, questionsById, locale, hasAttachment))
+		return step.question.children.some((child) => isConditionMet(child, answers, questionsById, hasAttachment))
 	})
 }
 
@@ -147,10 +168,9 @@ export function visibleChildren(
 	question: PublicQuestionView,
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
-	locale: Locale,
 	hasAttachment = false,
 ): PublicQuestionView[] {
-	return question.children.filter((child) => isConditionMet(child, answers, questionsById, locale, hasAttachment))
+	return question.children.filter((child) => isConditionMet(child, answers, questionsById, hasAttachment))
 }
 
 function isAnswered(question: PublicQuestionView, answers: AnswerMap): boolean {
@@ -165,7 +185,6 @@ export function unansweredRequired(
 	step: FormStep,
 	answers: AnswerMap,
 	questionsById: Map<string, PublicQuestionView>,
-	locale: Locale,
 	hasAttachment = false,
 ): PublicQuestionView[] {
 	if (step.kind === "intro") return []
@@ -175,7 +194,7 @@ export function unansweredRequired(
 		return step.question.isRequired && !isAnswered(step.question, answers) ? [step.question] : []
 	}
 
-	return visibleChildren(step.question, answers, questionsById, locale, hasAttachment).filter(
+	return visibleChildren(step.question, answers, questionsById, hasAttachment).filter(
 		(child) => child.isRequired && !isAnswered(child, answers),
 	)
 }

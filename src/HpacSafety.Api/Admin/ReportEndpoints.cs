@@ -294,7 +294,7 @@ public static class ReportEndpoints
 		}
 
 		return await database.Reports
-			.Include(candidate => candidate.Answers)
+			.Include(candidate => candidate.Answers).ThenInclude(answer => answer.Choice)
 			.Include(candidate => candidate.Files)
 			.Include(candidate => candidate.Summary)
 			.SingleOrDefaultAsync(candidate => candidate.Id == reportId, cancellationToken)
@@ -368,9 +368,9 @@ public static class ReportEndpoints
 				entry.Answers[0].IsPrivate,
 				[
 					.. entry.Answers
-						.Where(answer => answer.Value is not null || answer.BooleanValue is not null)
+						.Where(answer => answer.IsAnswered)
 						.Select(answer => new ReportAnswerValueView(
-							(object?)answer.BooleanValue ?? answer.Value!,
+							(object?)answer.BooleanValue ?? answer.Text!,
 							answer.Locale.Code,
 							answer.DisplayedTranslation,
 							answer.DisplayedTranslation is not null && answer.TranslationSource is { } source

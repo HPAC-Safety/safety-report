@@ -1142,7 +1142,7 @@ Only true is consent, in either language — *Reqnroll, Covered*
 
 ### REQ-QB-122
 
-An answer names the choice it was given under — *Reqnroll, Planned*
+An answer names the choice it was given under — *Reqnroll, Covered*
 
 ### REQ-QB-123
 
@@ -1158,11 +1158,11 @@ A condition follows its choice's replacement — *Reqnroll, Planned*
 
 ### REQ-QB-126
 
-A removed choice is no longer offered but still names every answer given under it — *Reqnroll, Planned*
+A removed choice is no longer offered but still names every answer given under it — *Reqnroll, Covered*
 
 ### REQ-QB-127
 
-A fork's choices are new rows, and old answers keep naming the retired question's — *Reqnroll, Planned*
+A fork's choices are new rows, and old answers keep naming the retired question's — *Reqnroll, Covered*
 
 ### REQ-QB-128
 
@@ -1198,7 +1198,7 @@ Reviewing a type-ahead value clears its flag — *Reqnroll, Planned*
 
 ### REQ-QB-136
 
-Existing answers are linked to their choices without being rewritten — *Reqnroll, Planned*
+Existing answers are linked to their choices without being rewritten — *Reqnroll, Covered*
 
 ### REQ-QB-137
 
@@ -1484,11 +1484,11 @@ A yes or no is sent as a JSON boolean whatever language the report is submitted 
 
 ### REQ-SUB-078
 
-One answer entry per shown answer-producing revision — *Reqnroll, Planned*
+One answer entry per shown answer-producing revision — *Reqnroll, Covered*
 
 ### REQ-SUB-079
 
-A submitted choice must be one the question offers — *Reqnroll, Planned*
+A submitted choice must be one the question offers — *Reqnroll, Covered*
 
 ### REQ-SUB-080
 
@@ -1496,7 +1496,7 @@ The submission path never calls a translation provider — *Reqnroll, Planned*
 
 ### REQ-SUB-081
 
-A choice answer reads both languages from its choice — *Reqnroll, Planned*
+A choice answer reads both languages from its choice — *Reqnroll, Covered*
 
 ### REQ-SUB-082
 

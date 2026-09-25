@@ -7,11 +7,11 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </summary>
 /// <remarks>
 ///     <para>
-///         Editing a choice never revises or forks its question: an answer stores the
-///         reporter's own words (ADR-0072), so nothing an answer records depends on
-///         this row staying as it was. A removed choice is stamped
-///         <see cref="Deleted" />, never erased, and a fork copies every row —
-///         removed ones included — onto the replacement.
+///         Editing a choice never revises or forks its question. An answer names its
+///         choice by <see cref="Id" /> and reads its wording from here (ADR-0128), so
+///         a choice any answer names is stamped <see cref="Deleted" /> when removed,
+///         never erased, and a fork copies every row — removed ones included — onto
+///         the replacement as new rows.
 ///     </para>
 ///     <para>
 ///         A choice an Administrator writes has both official languages. A choice a
@@ -100,6 +100,16 @@ public class QuestionChoice
 	public string Label(Locale locale)
 	{
 		return (locale == Locale.FrCa ? LabelFr ?? LabelEn : LabelEn ?? LabelFr)!;
+	}
+
+	/// <summary>
+	///     This choice's wording in the language other than <paramref name="locale" />,
+	///     or null while it has only one language. What a choice answer shows as its
+	///     second language (ADR-0112, ADR-0128).
+	/// </summary>
+	public string? OtherLabel(Locale locale)
+	{
+		return LabelEn is not null && LabelFr is not null ? Label(locale.Counterpart) : null;
 	}
 
 	internal static QuestionChoice Written(TinyId questionId,

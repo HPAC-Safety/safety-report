@@ -86,11 +86,12 @@ public sealed record PublicQuestionView(
 ///     <see cref="OnlyIn" /> names its language so the form can mark it
 ///     (ADR-0095).
 /// </summary>
-/// <param name="Code">The invariant code.</param>
+/// <param name="Id">The choice's identifier, which a submitted answer names (ADR-0128).</param>
+/// <param name="Code">The invariant code a conditional question names (ADR-0074).</param>
 /// <param name="LabelEn">The English wording, or the French when there is no English yet.</param>
 /// <param name="LabelFr">The French wording, or the English when there is no French yet.</param>
 /// <param name="OnlyIn">The one locale this choice is worded in, or null when it has both.</param>
-public sealed record PublicOptionView(string Code, string LabelEn, string LabelFr, string? OnlyIn)
+public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn)
 {
 	/// <summary>Flattens one choice for the public form.</summary>
 	public static PublicOptionView Of(QuestionChoice choice)
@@ -98,6 +99,7 @@ public sealed record PublicOptionView(string Code, string LabelEn, string LabelF
 		ArgumentNullException.ThrowIfNull(choice);
 
 		return new PublicOptionView(
+			choice.Id.Value,
 			choice.Code,
 			choice.Label(Locale.EnCa),
 			choice.Label(Locale.FrCa),

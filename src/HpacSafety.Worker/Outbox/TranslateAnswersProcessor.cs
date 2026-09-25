@@ -30,6 +30,7 @@ public sealed class TranslateAnswersProcessor(HpacSafetyDbContext database, ITra
 
 		var untranslated = await database.ReportAnswers
 			.Where(answer => answer.ReportId == reportId
+							 && answer.ChoiceId == null
 							 && answer.Value != null
 							 && answer.TranslatedValue == null
 							 && answer.TranslationMode == TranslationMode.Machine)

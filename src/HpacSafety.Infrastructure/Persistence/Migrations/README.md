@@ -60,6 +60,7 @@ erDiagram
     reports ||--o{ report_files : "attachments"
     reports ||--|| summaries : "one summary"
     question_revisions ||--o{ report_answers : "answered under"
+    question_choices |o--o{ report_answers : "named by"
     report_answers ||--o{ report_files : "uploaded for"
 
     questions {
@@ -97,8 +98,8 @@ erDiagram
         char(11) question_id FK
         varchar(128) code UK "unique per question, removed rows included"
         int display_order
-        text label_en "null only on a reporter choice typed in French"
-        text label_fr "null only on a reporter choice typed in English"
+        text label_en "null only on a reporter choice typed in French, or a removed one made for an old answer"
+        text label_fr "null only on a reporter choice typed in English, or a removed one made for an old answer"
         boolean added_by_reporter "typed into a type-ahead, awaiting curation"
         varchar(8) reporter_locale "the language a reporter typed it in"
         timestamptz deleted "removed; hidden from the form, never erased"
@@ -119,7 +120,8 @@ erDiagram
         char(11) report_id FK
         char(11) question_revision_id FK "the exact revision shown"
         boolean is_private "privacy as it was at the time"
-        text value "null for yes/no and checkbox"
+        char(11) choice_id FK "the choice a select or type-ahead answer names (ADR-0128)"
+        text value "null for a choice, yes/no, or checkbox answer; a select answer from before ADR-0128 keeps its label"
         boolean value_boolean "yes/no and checkbox (ADR-0130)"
         text translated_value "the other language, when it has one"
         varchar(64) translation_mode "none, choice, or machine (ADR-0112)"
@@ -179,11 +181,13 @@ a report filed two years ago still renders exactly what it asked ([ADR-0016](../
 
 **Choices belong to the question, not to a revision.** `question_choices` is
 edited in place: adding, rewording, reordering, or removing a choice creates no
-revision and never forks the question, because an answer stores the reporter's
-own words rather than a reference to a choice. A removed choice keeps its row
-with `deleted` stamped, and is loaded with its question — the one table without
-the live-row filter — because a fork copies it and a reporter must not revive
-it. A type-ahead's reporter-added choice may hold one language until an
+revision and never forks the question. A single-select, multi-select, or
+type-ahead answer names its choice through `report_answers.choice_id` and reads
+both labels there, so a choice an answer names is never erased
+([ADR-0128](../../../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+A removed choice keeps its row with `deleted` stamped, and is loaded with its
+question — the one table without the live-row filter — because a fork copies
+it, an old answer still names it, and a reporter must not revive it. A type-ahead's reporter-added choice may hold one language until an
 administrator supplies the other ([ADR-0095](../../../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
 
 **One rule is deliberately not in the database.** "A conditional question's
@@ -247,6 +251,7 @@ this.
 | `20260925212255_KeepSystemQuestionsPrivate`           | No schema change. Gives each live system question whose current revision is not private a new, private revision (`Sql/20260925212255_KeepSystemQuestionsPrivate.sql`). The seeded publication consent was not private; the domain now refuses that (#450). |
 | `20260925213420_StoreYesOrNoInTheReportersLanguage` | Recreated `ck_report_answers_translation_mode` to allow `fixed`: a yes/no or checkbox answer's counterpart (`yes`↔`oui`, `no`↔`non`), written at submission (ADR-0127). Existing answers are unchanged. |
 | `20260925223046_StoreYesOrNoAsABoolean` | Added `report_answers.value_boolean`, and converted every stored yes/no and checkbox answer to it once: `yes`/`oui` → `true`, `no`/`non` → `false`, clearing `value`, `translated_value`, and `translation_source`, with mode `none`. Any other stored value stops the migration (ADR-0130). Dropped `fixed` from `ck_report_answers_translation_mode`, and added `ck_report_answers_text_or_boolean` and `ck_report_answers_boolean_has_no_words`. |
+| `20260925230357_NameEachAnswersChoice` | Added `report_answers.choice_id` (a restricted foreign key to `question_choices`) and linked every existing select and type-ahead answer to the choice its stored label names; a label no choice carries any more gets a removed choice holding it, in the answer's language, so every old answer resolves. No answer's text is rewritten. `ck_question_choices_label` now also lets such a removed choice hold one language, and the translation queue (its index and `answers_awaiting_translation`) leaves choice answers out (ADR-0128). The backfill is `Sql/20260925230357_NameEachAnswersChoice.sql`. |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

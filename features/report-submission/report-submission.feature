@@ -189,7 +189,6 @@ Scenario: A multi-select question is a picker dropdown, not a flat list
   Then the picker closes, returns focus to itself, and names both chosen options
 
 @REQ-SUB-078
-@ignore
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
   When the reporter submits the form
@@ -215,6 +214,14 @@ Examples:
   | English     | French       |
   | French      | English      |
 
+@REQ-SUB-083
+@ui
+Scenario: The form names each chosen choice by its identifier
+  Given a signed-in reporter picks a wing type, checks two conditions, and types a launch site the form does not offer
+  When the reporter sends the report
+  Then the wing type and both conditions are sent as their choices' identifiers
+  And the launch site is sent as the words typed
+
 @REQ-SUB-005
 Scenario: A skipped answer is represented by an empty value, not omission
   Given a reporter skips an answer-producing question
@@ -223,7 +230,6 @@ Scenario: A skipped answer is represented by an empty value, not omission
   And a skipped file upload has an empty attachments list
 
 @REQ-SUB-079
-@ignore
 Scenario: A submitted choice must be one the question offers
   Given a reporter submits a single-select, multi-select, or type-ahead answer naming choices by identifier
   When the API validates the submission
@@ -241,7 +247,6 @@ Scenario: The submission path never calls a translation provider
   And a new type-ahead value is queued for the Worker to translate, on the value itself
 
 @REQ-SUB-081
-@ignore
 Scenario: A choice answer reads both languages from its choice
   Given a single-select and a multi-select question offer choices written in both official languages
   When a reporter answering in English picks one choice from each and submits

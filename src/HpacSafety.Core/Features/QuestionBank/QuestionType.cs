@@ -22,10 +22,10 @@ public enum QuestionType
 	Time = 11,
 
 	/// <summary>
-	///     A type-ahead over a known list. Domain-identical to
-	///     <see cref="SingleSelect" /> — it stores one option code, and the
-	///     difference is only how many choices are practical to show at once. A
-	///     province list is a picker; an aerodrome list is an autocomplete.
+	///     A type-ahead over a list that grows. Like <see cref="SingleSelect" />, its
+	///     answer names one of the question's choices (ADR-0128); unlike it, a
+	///     reporter may type a value it does not offer yet, which becomes a new
+	///     choice (ADR-0129). An aerodrome list is an autocomplete.
 	/// </summary>
 	Autocomplete = 12,
 

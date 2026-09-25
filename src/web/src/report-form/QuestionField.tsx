@@ -3,7 +3,7 @@ import type { PublicQuestionView } from "../api/publicQuestions"
 import { AttachmentField, type Attachment } from "./AttachmentField"
 import type { DraftAnswer } from "./draft"
 import { MultiSelectPicker } from "./MultiSelectPicker"
-import { optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
+import { optionFor, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
 
 const fieldClassName =
 	"mt-1 w-full rounded border border-rule bg-surface px-3 py-2 font-sans text-ink placeholder:text-ink-muted"
@@ -122,7 +122,7 @@ export function QuestionField({
 							{question.options.map((option) => (
 								// A reporter-added choice may exist in one language only; it is
 								// offered in that language, and says so to assistive technology.
-								<option key={option.code} value={optionLabel(option, locale)} lang={option.onlyIn ?? undefined} />
+								<option key={option.id} value={optionLabel(option, locale)} lang={option.onlyIn ?? undefined} />
 							))}
 						</datalist>
 					</>
@@ -130,13 +130,13 @@ export function QuestionField({
 					<select
 						id={fieldId}
 						className={fieldClassName}
-						value={value}
+						value={value ? (optionFor(question, value)?.id ?? "") : ""}
 						aria-describedby={describedBy}
 						onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
 					>
 						<option value="">{t("report.select.placeholder")}</option>
 						{question.options.map((option) => (
-							<option key={option.code} value={optionLabel(option, locale)}>
+							<option key={option.id} value={option.id}>
 								{optionLabel(option, locale)}
 							</option>
 						))}
@@ -149,9 +149,10 @@ export function QuestionField({
 	}
 
 	if (question.type === "multi_select") {
-		const values = answer?.kind === "options" ? answer.values : []
-		const toggle = (label: string) => {
-			const next = values.includes(label) ? values.filter((entry) => entry !== label) : [...values, label]
+		// The chosen choices' IDs; a draft saved before answers named choices holds labels.
+		const values = (answer?.kind === "options" ? answer.values : []).map((stored) => optionFor(question, stored)?.id ?? stored)
+		const toggle = (id: string) => {
+			const next = values.includes(id) ? values.filter((entry) => entry !== id) : [...values, id]
 			onChange(next.length > 0 ? { kind: "options", values: next } : undefined)
 		}
 		return (
@@ -166,7 +167,7 @@ export function QuestionField({
 							)}
 						</>
 					}
-					options={question.options.map((option) => ({ key: option.code, label: optionLabel(option, locale) }))}
+					options={question.options.map((option) => ({ key: option.id, label: optionLabel(option, locale) }))}
 					values={values}
 					placeholder={t("report.multiSelect.placeholder")}
 					describedBy={describedBy}

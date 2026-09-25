@@ -1,5 +1,6 @@
 using HpacSafety.Core;
 using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.Reporting;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 
@@ -77,5 +78,36 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 
 		// Then
 		await inserting.ShouldThrowAsync<Exception>();
+	}
+
+	[Fact]
+	public async Task GivenChoiceAnswer_WhenReloaded_ThenItsWordingIsReadThroughTheChoiceLoadedWithIt()
+	{
+		// Given — ADR-0128: the answer stores the choice, not its words
+		var connectionString = await postgres.CreateMigratedDatabase();
+		var question = Question.Create(
+			"synthetic_wing", QuestionType.SingleSelect, "Wing", "Aile", At, isActive: true,
+			options: [new QuestionOptionInput("paraglider", "Paraglider", "Parapente")]);
+		var report = new Report(Locale.EnCa, At);
+		var answer = report.AnswerChoices(question, question.CurrentRevision, [question.Choices.Single().Id], At).Single();
+
+		await using (var context = PostgresFixture.ContextFor(connectionString))
+		{
+			context.Questions.Add(question);
+			context.Reports.Add(report);
+			await context.SaveChangesAsync();
+		}
+
+		// When
+		await using var reader = PostgresFixture.ContextFor(connectionString);
+		var withChoice = await reader.ReportAnswers.AsNoTracking().Include(a => a.Choice).SingleAsync(a => a.Id == answer.Id);
+		var withoutChoice = await reader.ReportAnswers.AsNoTracking().SingleAsync(a => a.Id == answer.Id);
+
+		// Then — read through its choice, or refused rather than shown as skipped
+		withChoice.Value.ShouldBeNull();
+		withChoice.Text.ShouldBe("Paraglider");
+		withChoice.DisplayedTranslation.ShouldBe("Parapente");
+		withoutChoice.IsAnswered.ShouldBeTrue();
+		Should.Throw<InvalidOperationException>(() => withoutChoice.Text);
 	}
 }

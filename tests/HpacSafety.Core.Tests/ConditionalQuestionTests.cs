@@ -462,4 +462,38 @@ public class ConditionalQuestionTests
 		// When / Then — caller has not loaded the parent
 		child.CurrentRevision.IsEnabledGiven(null, "Hang glider", Locale.EnCa).ShouldBeFalse();
 	}
+
+	[Fact]
+	public void GivenUnconditionalQuestion_WhenEnabledIsCheckedWithABoolean_ThenAlwaysTrue()
+	{
+		// Given
+		var question = Ordinary("occurrence_notes", QuestionType.LongText);
+
+		// When / Then
+		question.CurrentRevision.IsEnabledGiven(null, (bool?)null).ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenYesNoCondition_WhenParentNotSupplied_ThenFalse()
+	{
+		// Given
+		var parent = Ordinary("were_you_injured", QuestionType.YesNo);
+		var child = Ordinary("injury_detail", QuestionType.LongText, parent.Id);
+
+		// When / Then — caller has not loaded the parent
+		child.CurrentRevision.IsEnabledGiven(null, true).ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenSingleSelectParent_WhenEnabledIsCheckedWithABoolean_ThenFalse()
+	{
+		// Given — only a yes/no parent is answered with a boolean (ADR-0130)
+		var parent = PilotType();
+		var child = Question.Create(
+			"rating", QuestionType.ShortText, "Rating", "Qualification", At, isActive: true,
+			dependsOnQuestionId: parent.Id, dependsOnOptionCode: "hang_glider");
+
+		// When / Then
+		child.CurrentRevision.IsEnabledGiven(parent, true).ShouldBeFalse();
+	}
 }

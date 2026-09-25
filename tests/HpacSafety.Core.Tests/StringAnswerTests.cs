@@ -258,6 +258,21 @@ public class StringAnswerTests
 	}
 
 	[Fact]
+	public void GivenAnotherQuestionsRevision_WhenBooleanRecorded_ThenRefused()
+	{
+		// Given — a yes/no revision that belongs to a different question
+		var report = new Report(Locale.EnCa, Now);
+		var other = Injury();
+
+		// When
+		var answering = () => report.Answer(Injury(), other.CurrentRevision, true, Now);
+
+		// Then
+		answering.ShouldThrow<DomainRuleViolationException>();
+		report.Answers.ShouldBeEmpty();
+	}
+
+	[Fact]
 	public void GivenBooleanAnswer_WhenTranslationSupplied_ThenRefused()
 	{
 		// Given

@@ -79,7 +79,7 @@ public sealed class ModelTests
 		// Then
 		converter.ShouldBeOfType<EnumCodeConverter<ReportStatus>>();
 		converter!.ConvertToProvider(ReportStatus.Published).ShouldBe("published");
-		converter.ConvertFromProvider("approved").ShouldBe(ReportStatus.Approved);
+		converter.ConvertFromProvider("unpublished").ShouldBe(ReportStatus.Unpublished);
 	}
 
 	[Fact]

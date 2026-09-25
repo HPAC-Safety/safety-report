@@ -50,7 +50,7 @@ need no CSRF protection.
 | Role | Capabilities |
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
-| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; approve, reject, publish, and soft-delete reports. |
+| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports. |
 | Administrator | Every SafetyOfficer capability, plus create question revisions and curate each question's choices. |
 
 Submission is a membership capability rather than a privileged one, so any of
@@ -66,16 +66,16 @@ worker, or direct API caller can bypass a publication guard.
 submission time, a badge for its workflow status, a separate **Private (no
 consent)** badge when the reporter refused publication, and a **Stuck** badge
 when it has waited in Submitted or Summarizing for more than 24 hours. Private
-is about consent and Rejected is a reviewer's decision, so the two are never
-merged into one badge.
+is about consent and Unpublished is a status, so the two are never merged into
+one badge: a report without consent shows both.
 
 | Filter | Shows |
 |---|---|
 | All (default) | every live report |
-| Needs action | Pending review, Summary failed, and stuck reports |
+| Needs action | Pending, Summary failed, and stuck reports |
 | Published | Published |
 | Private | reports whose reporter refused consent, whatever their status |
-| Rejected | Rejected |
+| Unpublished | Unpublished |
 | Summary failed | Summary failed |
 
 The chosen filter is kept in the address bar. The list carries status and
@@ -109,24 +109,25 @@ The report view offers only what the report's state allows:
 
 | Status | Actions |
 |---|---|
-| Pending review | Edit summary, Approve, Reject, Delete |
-| Pending review without consent (never summarized) | Reject, Delete |
-| Approved (no consent) | Edit summary, Delete |
+| Pending | Edit summary, Publish, Unpublish, Delete |
 | Published | Edit summary, Unpublish, Delete |
-| Rejected | Reopen, Delete |
+| Unpublished (consented) | Edit summary, Publish, Delete |
+| Unpublished (no consent) | Delete |
 | Summary failed | Write summary, Delete |
 | Submitted, Summarizing | Delete |
 
-A report without consent never has a summary pair, so today nothing reaches
-Approved (no consent): such a report closes only by Reject or Delete. #445 adds
-**Mark reviewed**, which moves it to Approved without a summary.
+Review exists only to check a summary
+([ADR-0125](../../docs/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
+A report without consent is never summarized: the Worker sets it Unpublished,
+and it stays there for good. It never needs action, is never counted on the
+Admin menu, and can only be deleted (REQ-DOM-015, REQ-MOD-090).
 
-**Approve** publishes at once when the reporter said yes, and otherwise only
-approves ([ADR-0105](../../docs/decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)).
-**Edit summary** saves both texts together and returns the report to Pending
-review, taking it off the public feed if it was there. **Reject** takes an
-optional note that only reviewers see. A hand-written pair after a failed
-summarization carries `manual` as its model and prompt version.
+**Publish** approves the current pair and makes the report public at once.
+**Unpublish** takes a report off the public feed, or declines a pending one,
+and takes an optional note that only reviewers see; **Publish** brings it back.
+**Edit summary** saves both texts together and returns the report to Pending,
+taking it off the public feed if it was there. A hand-written pair after a
+failed summarization carries `manual` as its model and prompt version.
 
 Every action carries the version of the report the reviewer loaded. If another
 reviewer changed it since, the API answers `409` and nothing is saved; the page
@@ -217,7 +218,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   written by hand.
 - Editing one language without the other in separate saves: the pair is
   saved together.
-- Showing a rejection note anywhere but the admin report view.
+- Showing an unpublishing note anywhere but the admin report view.
+- An Approve step separate from Publish, or a Reject or Reopen action
+  ([ADR-0125](../../docs/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
 - Search, filtering, or sorting of the public feed other than newest
   published first, and a page-count or jump-to-page control.
 - Any attachment metadata on the public report page beyond each public file's

@@ -9,17 +9,24 @@ type Language = "en" | "fr"
 const LOCALE: Record<Language, string> = { en: "en-CA", fr: "fr-CA" }
 const OTHER: Record<Language, Language> = { en: "fr", fr: "en" }
 
-/** What a reviewer may do in each state (REQ-MOD-062, ADR-0105). Delete is always offered. */
-export type ReviewAction = "edit" | "write" | "approve" | "reject" | "reopen" | "unpublish" | "delete"
+/** What a reviewer may do in each state (REQ-MOD-062, ADR-0125). Delete is always offered. */
+export type ReviewAction = "edit" | "write" | "publish" | "unpublish" | "delete"
 
 const ACTIONS: Record<ReportStatus, ReviewAction[]> = {
-	pending_review: ["edit", "approve", "reject", "delete"],
-	approved: ["edit", "delete"],
+	pending: ["edit", "publish", "unpublish", "delete"],
 	published: ["edit", "unpublish", "delete"],
-	rejected: ["reopen", "delete"],
+	unpublished: ["edit", "publish", "delete"],
 	summary_failed: ["write", "delete"],
 	submitted: ["delete"],
 	summarizing: ["delete"],
+}
+
+/**
+ * A report whose reporter did not consent is unpublished for good: it is never
+ * summarized, and deleting it is the one thing a reviewer can do (REQ-DOM-015).
+ */
+function actionsFor(report: ReportDetail): ReviewAction[] {
+	return report.consent === "yes" ? ACTIONS[report.status] : ["delete"]
 }
 
 const PRIMARY =
@@ -30,16 +37,14 @@ const FIELD = "mt-1 w-full rounded border border-rule bg-surface-2 px-3 py-2 fon
 
 /*
  * The action bar and the two inline forms it opens: the summary-pair editor
- * (both languages saved together) and the rejection note. The parent owns the
+ * (both languages saved together) and the unpublishing note. The parent owns the
  * requests; this component owns only what the reviewer is typing.
  */
 export function ReviewActions({
 	report,
 	busy,
 	onSave,
-	onApprove,
-	onReject,
-	onReopen,
+	onPublish,
 	onUnpublish,
 	onDelete,
 }: {
@@ -47,15 +52,13 @@ export function ReviewActions({
 	busy: boolean
 	onSave: (aiSummaryEn: string, aiSummaryFr: string, sourceEn: SummarySource, sourceFr: SummarySource) =>
 		Promise<boolean>
-	onApprove: () => void
-	onReject: (note: string) =>
+	onPublish: () => void
+	onUnpublish: (note: string) =>
 		Promise<boolean>
-	onReopen: () => void
-	onUnpublish: () => void
 	onDelete: () => void
 }) {
 	const { t } = useLocale()
-	const [mode, setMode] = useState<"view" | "edit" | "reject">("view")
+	const [mode, setMode] = useState<"view" | "edit" | "unpublish">("view")
 	const [original, setOriginal] = useState<Record<Language, string>>({ en: "", fr: "" })
 	const [draft, setDraft] = useState<Record<Language, string>>({ en: "", fr: "" })
 	// How each draft got its current text: typed by the reviewer, filled by an
@@ -114,8 +117,8 @@ export function ReviewActions({
 		if (await onSave(draft.en, draft.fr, savedSource("en"), savedSource("fr"))) setMode("view")
 	}
 
-	async function reject() {
-		if (await onReject(note)) {
+	async function unpublish() {
+		if (await onUnpublish(note)) {
 			setNote("")
 			setMode("view")
 		}
@@ -180,23 +183,23 @@ export function ReviewActions({
 		)
 	}
 
-	if (mode === "reject") {
+	if (mode === "unpublish") {
 		return (
 			<form
-				aria-label={t("reports.reject.label")}
+				aria-label={t("reports.unpublish.label")}
 				className="mt-4 flex flex-col gap-4 rounded border border-rule bg-surface p-4"
 				onSubmit={(event) => {
 					event.preventDefault()
-					void reject()
+					void unpublish()
 				}}
 			>
 				<label className="block font-sans text-sm text-ink">
-					{t("reports.reject.note")}
+					{t("reports.unpublish.note")}
 					<textarea rows={3} maxLength={2000} className={FIELD} value={note} onChange={(e) => setNote(e.target.value)} />
 				</label>
 				<div className="flex flex-wrap gap-3">
 					<button type="submit" className={PRIMARY} disabled={busy}>
-						{t("reports.reject.confirm")}
+						{t("reports.unpublish.confirm")}
 					</button>
 					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("view")}>
 						{t("reports.action.cancel")}
@@ -206,20 +209,12 @@ export function ReviewActions({
 		)
 	}
 
-	// A report without consent is never summarized (REQ-DOM-006): there is no
-	// pair to edit or approve, only a decision to reject or delete it.
-	const actions =
-		report.status === "pending_review" && !report.summary
-			? ACTIONS.pending_review.filter((action) => action === "reject" || action === "delete")
-			: ACTIONS[report.status]
+	const actions = actionsFor(report)
 
 	return (
 		<div className="mt-4 flex flex-col gap-2">
-			{actions.includes("approve") && (
-				<p className="font-sans text-sm text-ink-muted">
-					{t(report.consent === "yes" ? "reports.approve.publishes" : "reports.approve.private")}
-				</p>
-			)}
+			{actions.includes("publish") && <p className="font-sans text-sm text-ink-muted">{t("reports.publish.hint")}</p>}
+			{report.consent !== "yes" && <p className="font-sans text-sm text-ink-muted">{t("reports.private.hint")}</p>}
 			<div role="group" aria-label={t("reports.action.label")} className="flex flex-wrap gap-3">
 				{actions.includes("edit") && (
 					<button type="button" className={SECONDARY} disabled={busy} onClick={openEditor}>
@@ -231,23 +226,13 @@ export function ReviewActions({
 						{t("reports.action.write")}
 					</button>
 				)}
-				{actions.includes("approve") && (
-					<button type="button" className={PRIMARY} disabled={busy} onClick={onApprove}>
-						{t("reports.action.approve")}
-					</button>
-				)}
-				{actions.includes("reject") && (
-					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("reject")}>
-						{t("reports.action.reject")}
-					</button>
-				)}
-				{actions.includes("reopen") && (
-					<button type="button" className={PRIMARY} disabled={busy} onClick={onReopen}>
-						{t("reports.action.reopen")}
+				{actions.includes("publish") && (
+					<button type="button" className={PRIMARY} disabled={busy} onClick={onPublish}>
+						{t("reports.action.publish")}
 					</button>
 				)}
 				{actions.includes("unpublish") && (
-					<button type="button" className={SECONDARY} disabled={busy} onClick={onUnpublish}>
+					<button type="button" className={SECONDARY} disabled={busy} onClick={() => setMode("unpublish")}>
 						{t("reports.action.unpublish")}
 					</button>
 				)}

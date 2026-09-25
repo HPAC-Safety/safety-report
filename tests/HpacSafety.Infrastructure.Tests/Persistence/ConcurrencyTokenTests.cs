@@ -151,7 +151,7 @@ public sealed class ConcurrencyTokenTests(PostgresFixture postgres)
 		}
 		else
 		{
-			report.ReviewWithoutSummary();
+			report.KeepUnpublished();
 		}
 
 		context.Reports.Add(report);

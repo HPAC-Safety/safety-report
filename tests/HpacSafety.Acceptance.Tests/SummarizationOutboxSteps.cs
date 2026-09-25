@@ -68,11 +68,11 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		_summarizer!.CallCount.ShouldBe(calls);
 	}
 
-	[Then(@"the report goes to Pending review with no summary")]
-	public async Task ThenPendingReviewWithNoSummary()
+	[Then(@"the report goes to Unpublished with no summary")]
+	public async Task ThenUnpublishedWithNoSummary()
 	{
 		_db!.ChangeTracker.Clear();
-		(await _db.Reports.SingleAsync(r => r.Id == _report!.Id)).Status.ShouldBe(ReportStatus.PendingReview);
+		(await _db.Reports.SingleAsync(r => r.Id == _report!.Id)).Status.ShouldBe(ReportStatus.Unpublished);
 		(await _db.Summaries.AnyAsync(s => s.ReportId == _report!.Id)).ShouldBeFalse();
 	}
 
@@ -82,7 +82,7 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		_db!.ChangeTracker.Clear();
 		var stored = await _db.Reports.Include(r => r.Summary).SingleAsync(r => r.Id == _report!.Id);
 		stored.IsPublishable.ShouldBeFalse();
-		Should.Throw<DomainRuleViolationException>(() => stored.ApprovePair("synthetic-officer", At));
+		Should.Throw<DomainRuleViolationException>(() => stored.Publish("synthetic-officer", At));
 	}
 
 	[When(@"the Worker processes the summarization attempt")]

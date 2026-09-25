@@ -27,10 +27,10 @@ interface StubRow {
 }
 
 const ROWS: StubRow[] = [
-	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending_review", language: "en-CA", consent: "yes", isStuck: false },
-	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "pending_review", language: "fr-CA", consent: "no", isStuck: false },
+	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending", language: "en-CA", consent: "yes", isStuck: false },
+	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: "no", isStuck: false },
 	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: "yes", isStuck: false },
-	{ id: "rejectedaaa", submittedAt: "2026-09-17T15:30:00Z", status: "rejected", language: "en-CA", consent: "yes", isStuck: false },
+	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: "yes", isStuck: false },
 	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: "yes", isStuck: true },
 ]
 
@@ -89,10 +89,10 @@ const DETAIL = {
 
 const FILTERED: Record<string, (row: StubRow) => boolean> = {
 	all: () => true,
-	"needs-action": (row) => row.isStuck || row.status === "pending_review" || row.status === "summary_failed",
+	"needs-action": (row) => row.isStuck || row.status === "pending" || row.status === "summary_failed",
 	published: (row) => row.status === "published",
+	unpublished: (row) => row.status === "unpublished",
 	private: (row) => row.consent === "no",
-	rejected: (row) => row.status === "rejected",
 	"summary-failed": (row) => row.status === "summary_failed",
 }
 
@@ -122,10 +122,10 @@ When("the safety officer opens Manage reports", async ({ page }) => {
 })
 
 When("the safety officer chooses the {string} filter", async ({ page }, filter: string) => {
-	await page.getByRole("navigation", { name: "Filter reports" }).getByRole("link", { name: filter }).click()
+	await page.getByRole("navigation", { name: "Filter reports" }).getByRole("link", { name: filter, exact: true }).click()
 })
 
-When("the safety officer opens a pending-review report", async ({ page }) => {
+When("the safety officer opens a pending report", async ({ page }) => {
 	await page.locator(`[data-report-id="${ROWS[0].id}"] a`).click()
 	await expect(page.getByRole("heading", { level: 1, name: "Report" })).toBeVisible()
 })
@@ -139,12 +139,12 @@ Then("each report shows its submission time and a badge for its workflow status"
 	}
 
 	await expect(page.locator(`[data-report-id="publishedaa"] [data-badge="status"]`)).toHaveText("Published")
-	await expect(page.locator(`[data-report-id="pendingaaaa"] [data-badge="status"]`)).toHaveText("Pending review")
+	await expect(page.locator(`[data-report-id="pendingaaaa"] [data-badge="status"]`)).toHaveText("Pending")
 })
 
 Then('a report whose reporter refused consent also shows a "Private \\(no consent)" badge', async ({ page }) => {
 	await expect(page.locator(`[data-report-id="privateaaaa"] [data-badge="private"]`)).toHaveText("Private (no consent)")
-	await expect(page.locator(`[data-report-id="privateaaaa"] [data-badge="status"]`)).toHaveText("Pending review")
+	await expect(page.locator(`[data-report-id="privateaaaa"] [data-badge="status"]`)).toHaveText("Unpublished")
 	await expect(page.locator(`[data-report-id="pendingaaaa"] [data-badge="private"]`)).toHaveCount(0)
 })
 
@@ -161,7 +161,7 @@ Then("only published reports are listed", async ({ page }) => {
 Then("the chosen filter stays in the address bar", async ({ page }) => {
 	await expect(page).toHaveURL(/\/admin\/reports\?filter=published$/)
 	await expect(
-		page.getByRole("navigation", { name: "Filter reports" }).getByRole("link", { name: "Published" }),
+		page.getByRole("navigation", { name: "Filter reports" }).getByRole("link", { name: "Published", exact: true }),
 	).toHaveAttribute("aria-current", "page")
 
 	// A reload keeps it: the filter is read from the address, not from memory.
@@ -200,14 +200,14 @@ Then("no action to edit, approve, reject, or publish is offered", async ({ page 
  * asserted is what the page does with the answer.
  */
 
-type StubStatus = "pending_review" | "published" | "rejected" | "summary_failed"
+type StubStatus = "pending" | "published" | "unpublished" | "summary_failed"
 
 const STATUS_BY_WORD: Record<string, StubStatus> = {
-	"pending-review": "pending_review",
-	"private-pending-review": "pending_review",
-	"machine-translated": "pending_review",
+	pending: "pending",
+	"machine-translated": "pending",
 	published: "published",
-	rejected: "rejected",
+	unpublished: "unpublished",
+	"private-unpublished": "unpublished",
 	"summary-failed": "summary_failed",
 }
 
@@ -218,7 +218,7 @@ interface ReviewStub {
 		summaryError: string | null
 		summary: typeof DETAIL.summary | null
 		version: string
-		rejectionNote: string | null
+		unpublishNote: string | null
 		publishedAt: string | null
 	}
 	stale: boolean
@@ -233,7 +233,7 @@ function detailIn(status: StubStatus) {
 		id: "reviewaaaaa",
 		status,
 		version: "1.1",
-		rejectionNote: null,
+		unpublishNote: null,
 		publishedAt: status === "published" ? "2026-09-21T12:00:00Z" : null,
 		summaryError: status === "summary_failed" ? "The AI chat provider was unavailable." : null,
 		summary: status === "summary_failed" ? null : { ...DETAIL.summary },
@@ -243,7 +243,7 @@ function detailIn(status: StubStatus) {
 async function stubReview(page: Page, status: StubStatus, word = "") {
 	const detail = detailIn(status)
 	const stub: ReviewStub = {
-		// A report without consent is never summarized (REQ-DOM-006).
+		// A report without consent is never summarized and stays unpublished (REQ-DOM-006, REQ-DOM-015).
 		detail: word.startsWith("private-")
 			? { ...detail, consent: "no", summary: null }
 			: word === "machine-translated"
@@ -290,14 +290,16 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 		const body = request.postDataJSON() ?? {}
 		const next = { ...stub.detail, version: "1.2" }
 
-		if (path.endsWith("/approve")) {
+		if (path.endsWith("/unpublish")) {
+			next.status = "unpublished"
+			next.publishedAt = null
+			next.unpublishNote = body.note || null
+		} else if (path.endsWith("/publish")) {
 			next.status = "published"
 			next.publishedAt = "2026-09-23T12:00:00Z"
-		} else if (path.endsWith("/reject")) {
-			next.status = "rejected"
-			next.rejectionNote = body.note || null
+			next.unpublishNote = null
 		} else if (path.endsWith("/summary")) {
-			next.status = "pending_review"
+			next.status = "pending"
 			next.publishedAt = null
 			next.summary = { ...DETAIL.summary, aiSummaryEn: body.aiSummaryEn, aiSummaryFr: body.aiSummaryFr }
 		}
@@ -326,6 +328,11 @@ Then("the offered actions are {}", async ({ page }, list: string) => {
 	const expected = list.split(",").map((name) => name.trim())
 	const group = page.getByRole("group", { name: "Review actions" })
 	await expect(group.getByRole("button")).toHaveText(expected)
+
+	// A report without consent was never summarized, so it has no summary panel.
+	if (reviewStubs.get(page)!.detail.consent === "no") {
+		await expect(page.locator("#summary-heading")).toHaveCount(0)
+	}
 })
 
 When("the safety officer edits the English summary and saves", async ({ page }) => {
@@ -334,14 +341,14 @@ When("the safety officer edits the English summary and saves", async ({ page }) 
 	await page.getByRole("button", { name: "Save summary" }).click()
 })
 
-When("the safety officer approves it", async ({ page }) => {
-	await page.getByRole("button", { name: "Approve" }).click()
+When("the safety officer publishes it", async ({ page }) => {
+	await page.getByRole("button", { name: "Publish", exact: true }).click()
 })
 
-When("the safety officer rejects it with the note {string}", async ({ page }, note: string) => {
-	await page.getByRole("button", { name: "Reject" }).click()
+When("the safety officer unpublishes it with the note {string}", async ({ page }, note: string) => {
+	await page.getByRole("button", { name: "Unpublish", exact: true }).click()
 	await page.getByLabel("Note for other reviewers (optional)").fill(note)
-	await page.getByRole("button", { name: "Reject report" }).click()
+	await page.getByRole("button", { name: "Unpublish report" }).click()
 })
 
 When("the safety officer chooses Delete", async ({ page }) => {
@@ -368,13 +375,13 @@ Then("the saved English text is shown", async ({ page }) => {
 })
 
 Then("the note {string} is shown", async ({ page }, note: string) => {
-	await expect(page.locator("[data-rejection-note]")).toContainText(note)
+	await expect(page.locator("[data-unpublish-note]")).toContainText(note)
 })
 
 Then("a message says the report changed and offers to reload it", async ({ page }) => {
 	await expect(page.getByRole("alert")).toContainText("Another reviewer changed this report")
 	await expect(page.getByRole("button", { name: "Reload report" })).toBeVisible()
-	await expect(page.locator('[data-badge="status"]')).toHaveText("Pending review")
+	await expect(page.locator('[data-badge="status"]')).toHaveText("Pending")
 })
 
 Then("a confirmation asks whether to delete the report", async ({ page }) => {
@@ -409,7 +416,7 @@ async function stubTranslate(page: Page) {
 }
 
 Given("a safety officer is signed in and a report whose French text was machine-translated exists", async ({ page }) => {
-	await stubReview(page, "pending_review", "machine-translated")
+	await stubReview(page, "pending", "machine-translated")
 	await signInAs(page, "safety_officer")
 })
 
@@ -548,8 +555,8 @@ Then("the report view links to the report's public address", async ({ page }) =>
 })
 
 Then("a report that is not published shows no such link", async ({ page }) => {
-	// The later route wins, so the same report now reads back as pending review.
-	await stubReview(page, "pending_review", "pending-review")
+	// The later route wins, so the same report now reads back as pending.
+	await stubReview(page, "pending", "pending")
 	await page.reload()
 	await expect(page.locator('[data-badge="status"]')).toBeVisible()
 	await expect(page.locator("[data-public-link]")).toHaveCount(0)

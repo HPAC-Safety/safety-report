@@ -31,7 +31,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	[Fact]
-	public async Task GivenADueMessage_WhenClaimedAndProcessed_ThenTheReportMovesToPendingReviewWithOnePairRow()
+	public async Task GivenADueMessage_WhenClaimedAndProcessed_ThenTheReportMovesToPendingWithOnePairRow()
 	{
 		// Given
 		var connectionString = await postgres.CreateMigratedDatabase();
@@ -49,7 +49,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
 		var persistedReport = await reader.Reports.SingleAsync(r => r.Id == report.Id);
-		persistedReport.Status.ShouldBe(ReportStatus.PendingReview);
+		persistedReport.Status.ShouldBe(ReportStatus.Pending);
 
 		var summary = await reader.Summaries.SingleAsync(s => s.ReportId == report.Id);
 		summary.AiSummaryEn.ShouldBe("The pilot reported a hard landing.");
@@ -324,7 +324,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 	}
 
 	[Fact]
-	public async Task GivenReporterDidNotConsent_WhenTheMessageIsProcessed_ThenNoModelCallAndPendingReviewWithNoSummary()
+	public async Task GivenReporterDidNotConsent_WhenTheMessageIsProcessed_ThenNoModelCallAndUnpublishedWithNoSummary()
 	{
 		// Given — only a consented report may reach the model (REQ-AI-027)
 		var connectionString = await postgres.CreateMigratedDatabase();
@@ -341,7 +341,7 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		summarizer.CallCount.ShouldBe(0);
 
 		await using var reader = WorkerPostgresFixture.ContextFor(connectionString);
-		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Status.ShouldBe(ReportStatus.PendingReview);
+		(await reader.Reports.SingleAsync(r => r.Id == report.Id)).Status.ShouldBe(ReportStatus.Unpublished);
 		(await reader.Summaries.AnyAsync(s => s.ReportId == report.Id)).ShouldBeFalse();
 		(await reader.OutboxMessages.SingleAsync(m => m.AggregateId == report.Id)).IsProcessed.ShouldBeTrue();
 	}

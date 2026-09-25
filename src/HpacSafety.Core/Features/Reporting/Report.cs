@@ -89,11 +89,11 @@ public class Report
 	public string? SummaryError { get; private set; }
 
 	/// <summary>
-	///     A reviewer's optional note on why the report was rejected. Shown only in
-	///     the admin report view — never public, audited, or logged (REQ-MOD-058).
-	///     Cleared when the report is reopened.
+	///     A reviewer's optional note on why the report was unpublished. Shown only
+	///     in the admin report view — never public, audited, or logged (REQ-MOD-058).
+	///     Cleared when the report is published again.
 	/// </summary>
-	public string? RejectionNote { get; private set; }
+	public string? UnpublishNote { get; private set; }
 
 	/// <summary>When this report was soft-deleted, if it was.</summary>
 	public DateTimeOffset? Deleted { get; private set; }
@@ -108,16 +108,23 @@ public class Report
 	public Summary? Summary { get; private set; }
 
 	/// <summary>
-	///     True only when a reporter consented, a safety officer approved the report,
-	///     the summary pair was approved, and neither the report nor its summary has
-	///     been soft-deleted. Every clause is load bearing: nothing reaches the
-	///     public without all of them (REQ-DOM-003/004).
+	///     True only when a reporter consented, a safety officer published the
+	///     report, the summary pair is approved, and neither the report nor its
+	///     summary has been soft-deleted. Every clause is load bearing: nothing
+	///     reaches the public without all of them (REQ-DOM-003/004).
 	/// </summary>
 	public bool IsPublishable =>
 		Deleted is null
 		&& ConsentPublish is true
-		&& Status is ReportStatus.Approved or ReportStatus.Published
+		&& Status is ReportStatus.Published
 		&& Summary is { IsApproved: true, Deleted: null };
+
+	/// <summary>
+	///     A report whose reporter did not consent to publication, once the Worker
+	///     has set it Unpublished. Nothing but soft deletion may change it
+	///     (REQ-DOM-015, ADR-0125).
+	/// </summary>
+	public bool IsUnpublishedForGood => Status is ReportStatus.Unpublished && ConsentPublish is not true;
 
 	/// <summary>
 	///     Records one answer against the question's current revision, in the
@@ -264,7 +271,7 @@ public class Report
 	public void AwaitReview()
 	{
 		SummaryError = null;
-		Status = ReportStatus.PendingReview;
+		Status = ReportStatus.Pending;
 	}
 
 	/// <summary>
@@ -279,139 +286,85 @@ public class Report
 
 	/// <summary>
 	///     The reporter did not consent to publication, so the Worker never sends
-	///     the report to the model: it goes to review with no summary and can never
-	///     be published (REQ-DOM-006, REQ-AI-027).
+	///     the report to the model: it is Unpublished with no summary, for good
+	///     (REQ-DOM-006, REQ-DOM-015, REQ-AI-027).
 	/// </summary>
-	public void ReviewWithoutSummary()
+	public void KeepUnpublished()
 	{
 		EnsureLive();
-		EnsureIn("go to review without a summary", ReportStatus.Submitted, ReportStatus.Summarizing);
+		EnsureIn("be kept unpublished", ReportStatus.Submitted, ReportStatus.Summarizing);
 
 		if (ConsentPublish is true)
 		{
 			throw new DomainRuleViolationException("A report with publication consent is summarized before review.");
 		}
 
-		Status = ReportStatus.PendingReview;
+		Status = ReportStatus.Unpublished;
 	}
 
-	/// <summary>A safety officer approved the report.</summary>
-	public void Approve()
-	{
-		Status = ReportStatus.Approved;
-	}
-
-	/// <summary>A safety officer rejected the report.</summary>
-	public void Reject()
-	{
-		Status = ReportStatus.Rejected;
-	}
-
-	/// <summary>
-	///     Marks the report published. Refused unless <see cref="IsPublishable" /> —
-	///     the consent gate and the human gate are checked here, not by the caller.
-	/// </summary>
-	public void MarkPublished(DateTimeOffset at)
-	{
-		if (ConsentPublish is not true)
-		{
-			throw new DomainRuleViolationException(
-				ConsentPublish is null
-					? "This report has no answer to the publication-consent question. An unanswered consent is not a consent."
-					: "This reporter did not consent to publication. The report is stored, summarized, and counted internally, and never published.");
-		}
-
-		if (!IsPublishable)
-		{
-			throw new DomainRuleViolationException(
-				"A report is published only once a safety officer has approved it and its summary pair.");
-		}
-
-		Status = ReportStatus.Published;
-		PublishedAt = at;
-	}
-
-	/// <summary>The longest rejection note a reviewer may write.</summary>
-	public const int RejectionNoteMaxLength = 2000;
+	/// <summary>The longest unpublishing note a reviewer may write.</summary>
+	public const int UnpublishNoteMaxLength = 2000;
 
 	/// <summary>The provenance a hand-written summary pair carries as its model and prompt version.</summary>
 	public const string ManualProvenance = "manual";
 
 	/// <summary>
-	///     A reviewer approves the current pair (REQ-MOD-033). When the reporter
-	///     consented, the report is published in the same action; otherwise it is
-	///     Approved and never public (ADR-0105). Every publication guard still runs.
+	///     A reviewer publishes the current pair: it is approved and the report is
+	///     public in the same action (REQ-MOD-033, REQ-MOD-035, ADR-0125). Every
+	///     publication guard still runs.
 	/// </summary>
-	/// <returns>True when the approval also published the report.</returns>
-	public bool ApprovePair(string approverSubject,
-							DateTimeOffset at)
+	public void Publish(string approverSubject,
+						DateTimeOffset at)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(approverSubject);
 		EnsureLive();
-		EnsureIn("approve the pair", ReportStatus.PendingReview);
-
-		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to approve.");
-		summary.Approve(approverSubject, at);
-		Status = ReportStatus.Approved;
+		EnsureChangeable("publish the pair");
+		EnsureIn("publish the pair", ReportStatus.Pending, ReportStatus.Unpublished);
 
 		if (ConsentPublish is not true)
 		{
-			return false;
+			throw new DomainRuleViolationException(
+				ConsentPublish is null
+					? "This report has no answer to the publication-consent question. An unanswered consent is not a consent."
+					: "This reporter did not consent to publication. The report is kept internally and never published.");
 		}
 
-		MarkPublished(at);
-		return true;
+		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to publish.");
+		summary.Approve(approverSubject, at);
+		UnpublishNote = null;
+		Status = ReportStatus.Published;
+		PublishedAt = at;
 	}
 
 	/// <summary>
-	///     A reviewer rejects the report, optionally saying why. It stays for internal
-	///     learning and can never be published while rejected (REQ-MOD-034, REQ-MOD-058).
+	///     A reviewer takes a report off the public feed, or declines a pending
+	///     one, optionally saying why. Approval is cleared, and the report stays for
+	///     internal learning until it is published again (REQ-MOD-057, REQ-MOD-058).
 	/// </summary>
-	public void RejectReview(string? note)
+	public void Unpublish(string? note = null)
 	{
 		EnsureLive();
-		EnsureIn("reject the report", ReportStatus.PendingReview);
+		EnsureChangeable("unpublish the report");
+		EnsureIn("unpublish the report", ReportStatus.Pending, ReportStatus.Published);
 
 		note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
 
-		if (note is { Length: > RejectionNoteMaxLength })
+		if (note is { Length: > UnpublishNoteMaxLength })
 		{
 			throw new DomainRuleViolationException(
-				$"A rejection note is at most {RejectionNoteMaxLength} characters.");
+				$"An unpublishing note is at most {UnpublishNoteMaxLength} characters.");
 		}
 
-		RejectionNote = note;
-		Status = ReportStatus.Rejected;
-	}
-
-	/// <summary>A reviewer changes their mind: a rejected report returns to review (REQ-MOD-056).</summary>
-	public void Reopen()
-	{
-		EnsureLive();
-		EnsureIn("reopen the report", ReportStatus.Rejected);
-
-		RejectionNote = null;
-		Status = ReportStatus.PendingReview;
-	}
-
-	/// <summary>
-	///     A reviewer takes a published report down without editing it. Approval is
-	///     cleared and the report returns to review (REQ-MOD-057).
-	/// </summary>
-	public void Unpublish()
-	{
-		EnsureLive();
-		EnsureIn("unpublish the report", ReportStatus.Published);
-
-		// A published report always has an approved pair; publication requires it.
+		// A pending report has a pair; publication requires one.
 		Summary!.ClearApproval();
+		UnpublishNote = note;
 		PublishedAt = null;
-		Status = ReportStatus.PendingReview;
+		Status = ReportStatus.Unpublished;
 	}
 
 	/// <summary>
 	///     A reviewer saves both texts of the pair together. Approval is cleared and
-	///     the report returns to review, off the public feed if it was on it
+	///     the report returns to Pending, off the public feed if it was on it
 	///     (REQ-MOD-032, REQ-DOM-005). A language whose text did not change keeps how
 	///     it was produced; a changed one records <paramref name="sourceEn" /> or
 	///     <paramref name="sourceFr" /> (ADR-0108).
@@ -423,7 +376,8 @@ public class Report
 							SummaryTextSource sourceFr = SummaryTextSource.Human)
 	{
 		EnsureLive();
-		EnsureIn("edit a summary text", ReportStatus.PendingReview, ReportStatus.Approved, ReportStatus.Published);
+		EnsureChangeable("edit a summary text");
+		EnsureIn("edit a summary text", ReportStatus.Pending, ReportStatus.Published, ReportStatus.Unpublished);
 
 		var summary = Summary ?? throw new DomainRuleViolationException("There is no summary pair to edit.");
 
@@ -438,10 +392,11 @@ public class Report
 		}
 
 		// Saving is a review decision even when nothing changed: approval always
-		// clears and the report always returns to review.
+		// clears and the report always returns to Pending.
 		summary.ClearApproval();
+		UnpublishNote = null;
 		PublishedAt = null;
-		Status = ReportStatus.PendingReview;
+		Status = ReportStatus.Pending;
 	}
 
 	/// <summary>
@@ -471,6 +426,14 @@ public class Report
 		if (Deleted is not null)
 		{
 			throw new DomainRuleViolationException("This report was deleted.");
+		}
+	}
+
+	private void EnsureChangeable(string action)
+	{
+		if (IsUnpublishedForGood)
+		{
+			throw new ReviewTransitionException(action, Status);
 		}
 	}
 

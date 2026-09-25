@@ -3,13 +3,11 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
 import {
-	approveReport,
 	attachmentLink,
 	setAttachmentHidden,
 	deleteReport,
 	getReport,
-	rejectReport,
-	reopenReport,
+	publishReport,
 	saveSummaryPair,
 	STALE_REPORT,
 	unpublishReport,
@@ -179,9 +177,9 @@ export function ReportDetailPage() {
 								{t(`reports.detail.mediaConsent.${report.mediaConsent}`)}
 							</p>
 						)}
-						{report.rejectionNote && (
-							<p className="font-sans text-sm text-ink" data-rejection-note>
-								{t("reports.detail.rejectionNote", { note: report.rejectionNote })}
+						{report.unpublishNote && (
+							<p className="font-sans text-sm text-ink" data-unpublish-note>
+								{t("reports.detail.unpublishNote", { note: report.unpublishNote })}
 							</p>
 						)}
 					</div>
@@ -193,13 +191,13 @@ export function ReportDetailPage() {
 						onSave={(en, fr, sourceEn, sourceFr) =>
 							run((current) => saveSummaryPair(current.id, current.version, en, fr, sourceEn, sourceFr))
 						}
-						onApprove={() => void run((current) => approveReport(current.id, current.version))}
-						onReject={(note) => run((current) => rejectReport(current.id, current.version, note))}
-						onReopen={() => void run((current) => reopenReport(current.id, current.version))}
-						onUnpublish={() => void run((current) => unpublishReport(current.id, current.version))}
+						onPublish={() => void run((current) => publishReport(current.id, current.version))}
+						onUnpublish={(note) => run((current) => unpublishReport(current.id, current.version, note))}
 						onDelete={() => setConfirmingDelete(true)}
 					/>
 
+					{/* A report without consent is never summarized, so it has no summary panel (REQ-DOM-006). */}
+					{report.consent === "yes" && (
 					<section aria-labelledby="summary-heading" className="mt-10">
 						<h2 id="summary-heading" className="font-display text-2xl font-bold">
 							{t("reports.detail.summary")}
@@ -251,11 +249,12 @@ export function ReportDetailPage() {
 						) : (
 							!report.summaryError && (
 								<p className="mt-4 font-sans text-ink-muted" data-no-summary>
-									{t(report.consent === "yes" ? "reports.detail.noSummary" : "reports.detail.notSummarized")}
+									{t("reports.detail.noSummary")}
 								</p>
 							)
 						)}
 					</section>
+					)}
 
 					<section aria-labelledby="answers-heading" className="mt-10">
 						<h2 id="answers-heading" className="font-display text-2xl font-bold">

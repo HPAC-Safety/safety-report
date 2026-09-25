@@ -21,9 +21,10 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     The review commands through the booted API: edit, approve-and-publish,
-///     reject with a note, reopen, unpublish, a manual pair, stale-view refusal, and
-///     their audit rows (REQ-MOD-032..035, REQ-MOD-055..061, ADR-0105).
+///     The review commands through the booted API: edit, publish, unpublish with a
+///     note, a manual pair, stale-view refusal, their audit rows, and a report
+///     without consent that never needs action (REQ-MOD-032..035, REQ-MOD-055..061,
+///     REQ-MOD-090, ADR-0105, ADR-0125).
 /// </summary>
 [Binding]
 [Scope(Feature = "Moderation, authentication, and publication")]
@@ -44,6 +45,8 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	private MemberRole _role;
 	private string _situation = string.Empty;
 	private Report? _sourcesReport;
+	private List<string> _needsAction = [];
+	private int _needsActionCount;
 
 	// ── Given ───────────────────────────────────────────────────────────────
 
@@ -55,30 +58,24 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		await SeedAndLoad(ReportStatus.Published, "yes", mediaConsent: "yes", arrange: report => BootedReports.AddProcessedImage(report));
 	}
 
-	[Given(@"^a reviewer approves the current English/French summary pair$")]
-	[Given(@"a report is non-deleted, has explicit positive consent, has two nonblank summary texts, and a reviewer approves the pair")]
+	[Given(@"^a reviewer publishes the current English/French summary pair$")]
+	[Given(@"a report is non-deleted, has explicit positive consent, has two nonblank summary texts, and a reviewer publishes it")]
+	[Given(@"a reviewer unpublishes a report with a note")]
 	public async Task GivenAConsentedPendingReport()
 	{
-		await SeedAndLoad(ReportStatus.PendingReview, "yes");
+		await SeedAndLoad(ReportStatus.Pending, "yes");
 	}
 
-	[Given(@"^a pending-review report whose reporter answered (yes|no) to publication$")]
-	public async Task GivenAPendingReportWithConsent(string consent)
+	[Given(@"^an? (Pending|Published|Unpublished) report whose reporter consented to publication$")]
+	public async Task GivenAConsentedReportIn(string status)
 	{
-		await SeedAndLoad(ReportStatus.PendingReview, consent);
+		await SeedAndLoad(Enum.Parse<ReportStatus>(status), "yes");
 	}
 
-	[Given(@"a reviewer rejects a report")]
-	[Given(@"a reviewer rejects a report with a note")]
-	public async Task GivenAReviewerRejectsAReport()
+	[Given(@"^a report whose reporter did not consent to publication is Unpublished$")]
+	public async Task GivenAnUnconsentedReport()
 	{
-		await SeedAndLoad(ReportStatus.PendingReview, "yes");
-	}
-
-	[Given(@"a reviewer rejected a report")]
-	public async Task GivenARejectedReport()
-	{
-		await SeedAndLoad(ReportStatus.Rejected, "yes");
+		await SeedAndLoad(ReportStatus.Unpublished, "no");
 	}
 
 	[Given(@"a report is SummaryFailed")]
@@ -90,7 +87,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[Given(@"two reviewers opened the same report")]
 	public async Task GivenTwoReviewersOpenedTheReport()
 	{
-		await SeedAndLoad(ReportStatus.PendingReview, "yes");
+		await SeedAndLoad(ReportStatus.Pending, "yes");
 	}
 
 	[Given(@"the first reviewer has saved a change to it")]
@@ -109,10 +106,9 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		_requestedAction = action;
 		var status = action switch
 		{
-			"reopen the report" => ReportStatus.Rejected,
 			"unpublish the report" => ReportStatus.Published,
 			"write a manual pair" => ReportStatus.SummaryFailed,
-			_ => ReportStatus.PendingReview,
+			_ => ReportStatus.Pending,
 		};
 
 		await SeedAndLoad(status, "yes");
@@ -126,27 +122,44 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		await Send("summary", new { version = _version, aiSummaryEn = "The pilot landed firmly.", aiSummaryFr = "Le pilote s'est posé fermement." });
 	}
 
-	[When(@"the approval is recorded")]
-	[When(@"a reviewer approves the pair")]
-	public async Task WhenApproved()
+	[When(@"the publication is recorded")]
+	[When(@"a reviewer publishes the pair")]
+	public async Task WhenPublished()
 	{
-		await Send("approve", new { version = _version });
+		await Send("publish", new { version = _version });
 	}
 
-	[When(@"the rejection is recorded")]
-	public async Task WhenRejected()
+	[When(@"^a SafetyOfficer lists reports needing action and reads the pending counts$")]
+	public async Task WhenNeedsActionAndCountsAreRead()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		_needsAction = [.. (await client.GetFromJsonAsync<JsonElement[]>(new Uri("/api/admin/reports?filter=needs-action", UriKind.Relative)))!
+			.Select(item => item.GetProperty("id").GetString()!)];
+		_needsActionCount = (await client.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/counts", UriKind.Relative)))
+			.GetProperty("reportsNeedingAction").GetInt32();
+	}
+
+	[Then(@"that report is not listed")]
+	public void ThenThatReportIsNotListed()
+	{
+		_needsAction.ShouldNotContain(_reportId);
+	}
+
+	[Then(@"the reports count does not include it")]
+	public void ThenTheCountDoesNotIncludeIt()
+	{
+		// The count is the Needs action list's length, and that list leaves it out.
+		_needsActionCount.ShouldBe(_needsAction.Count);
+	}
+
+	[When(@"the unpublishing is recorded")]
+	public async Task WhenUnpublishedWithNote()
 	{
 		_logs = new CapturingLoggerProvider();
 		_host = (await BootedApi.Factory()).WithWebHostBuilder(builder =>
 			builder.ConfigureLogging(logging => logging.AddProvider(_logs)));
 
-		await Send("reject", new { version = _version, note = Note }, _host);
-	}
-
-	[When(@"a reviewer reopens it")]
-	public async Task WhenReopened()
-	{
-		await Send("reopen", new { version = _version });
+		await Send("unpublish", new { version = _version, note = Note }, _host);
 	}
 
 	[When(@"a reviewer unpublishes it")]
@@ -176,17 +189,11 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 			case "write a manual pair":
 				await Send("summary", new { version = _version, aiSummaryEn = "The pilot landed.", aiSummaryFr = "Le pilote s'est posé." });
 				break;
-			case "approve the pair":
-				await Send("approve", new { version = _version });
-				break;
-			case "reject the report":
-				await Send("reject", new { version = _version, note = Note });
-				break;
-			case "reopen the report":
-				await Send("reopen", new { version = _version });
+			case "publish the pair":
+				await Send("publish", new { version = _version });
 				break;
 			case "unpublish the report":
-				await Send("unpublish", new { version = _version });
+				await Send("unpublish", new { version = _version, note = Note });
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(_requestedAction), _requestedAction, "No such review action.");
@@ -204,10 +211,10 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		_result.GetProperty("summary").GetProperty("approvedBySubject").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
-	[Then(@"a previously published report is unpublished")]
-	public void ThenUnpublished()
+	[Then(@"a previously published report returns to Pending and leaves the public feed")]
+	public void ThenBackToPending()
 	{
-		_result.GetProperty("status").GetString().ShouldBe("pending_review");
+		_result.GetProperty("status").GetString().ShouldBe("pending");
 		_result.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
@@ -226,15 +233,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	{
 		var approver = _result.GetProperty("summary").GetProperty("approvedBySubject").GetString();
 		approver.ShouldNotBeNullOrWhiteSpace();
-		(await AuditEntries(AuditAction.ApprovedReport)).Single().ActorSubject.ShouldBe(approver);
-	}
-
-	[Then(@"the report can never satisfy the publication invariant")]
-	public async Task ThenARejectedReportCannotBePublished()
-	{
-		_result.GetProperty("status").GetString().ShouldBe("rejected");
-		await Send("approve", new { version = _result.GetProperty("version").GetString() });
-		_response!.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+		(await AuditEntries(AuditAction.PublishedReport)).Single().ActorSubject.ShouldBe(approver);
 	}
 
 	[Then(@"the report remains available for internal learning")]
@@ -245,58 +244,53 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 	}
 
-	[Then(@"the report is published in the same action")]
+	[Then(@"the pair is approved and the report is Published in the same action")]
 	public async Task ThenPublishedInTheSameAction()
 	{
 		_result.GetProperty("status").GetString().ShouldBe("published");
 		_result.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.String);
-		(await AuditEntries(AuditAction.ApprovedReport)).Count.ShouldBe(1);
+		_result.GetProperty("summary").GetProperty("approvedAt").ValueKind.ShouldBe(JsonValueKind.String);
+		(await AuditEntries(AuditAction.PublishedReport)).Count.ShouldBe(1);
 	}
 
 	[Then(@"no Administrator, migration, background worker, or direct API caller can bypass any of these guards")]
 	public async Task ThenNoCallerCanBypassTheGuards()
 	{
-		// An administrator approving an unconsented report gets Approved, never Published.
-		var unconsented = await BootedReports.Seed(ReportStatus.PendingReview, "no");
+		// An administrator publishing a report without consent is refused.
+		var unconsented = await BootedReports.Seed(ReportStatus.Unpublished, "no");
 		using var admin = await BootedApi.SignedInAs(MemberRole.Administrator);
 		var loaded = await admin.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{unconsented}", UriKind.Relative));
-		using var approved = await admin.PostAsJsonAsync($"/api/admin/reports/{unconsented}/approve", new { version = loaded.GetProperty("version").GetString() });
-		(await approved.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("status").GetString().ShouldBe("approved");
+		using var refused = await admin.PostAsJsonAsync($"/api/admin/reports/{unconsented}/publish", new { version = loaded.GetProperty("version").GetString() });
+		refused.StatusCode.ShouldBe(HttpStatusCode.Conflict);
 
-		// No endpoint publishes directly, and nothing outside the review commands changes a status.
+		// The review command is the only endpoint that publishes; nothing else changes a status.
 		var factory = await BootedApi.Factory();
 		var routes = factory.Services.GetRequiredService<EndpointDataSource>().Endpoints
 			.OfType<RouteEndpoint>()
 			.Select(endpoint => endpoint.RoutePattern.RawText ?? string.Empty)
 			.ToList();
-		routes.ShouldNotContain(route => route.Contains("publish", StringComparison.OrdinalIgnoreCase) && !route.EndsWith("/unpublish", StringComparison.Ordinal));
+		routes.Where(route => route.EndsWith("/publish", StringComparison.OrdinalIgnoreCase))
+			.ShouldBe(["/api/admin/reports/{id}/publish"]);
 	}
 
-	[Then(@"^the report becomes (Published|Approved)$")]
-	public void ThenTheReportBecomes(string status)
+	[Then(@"^the report becomes Published$")]
+	public void ThenTheReportBecomesPublished()
 	{
-		ArgumentNullException.ThrowIfNull(status);
-		_result.GetProperty("status").GetString().ShouldBe(status.ToLowerInvariant());
+		_result.GetProperty("status").GetString().ShouldBe("published");
 	}
 
-	[Then(@"the approval and any publication are recorded in one audited action")]
+	[Then(@"the approval and the publication are recorded in one audited action")]
 	public async Task ThenOneAuditedAction()
 	{
-		(await AuditEntries(AuditAction.ApprovedReport)).Count.ShouldBe(1);
-		(await AuditEntries(AuditAction.PublishedReport)).ShouldBeEmpty();
+		(await AuditEntries(AuditAction.PublishedReport)).Count.ShouldBe(1);
+		(await AuditEntries(AuditAction.ApprovedReport)).ShouldBeEmpty();
 	}
 
-	[Then(@"the report returns to Pending review")]
-	public void ThenPendingReview()
+	[Then(@"the report goes to Pending")]
+	public void ThenPending()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
-		_result.GetProperty("status").GetString().ShouldBe("pending_review");
-	}
-
-	[Then(@"the reopening is audited")]
-	public async Task ThenReopeningIsAudited()
-	{
-		(await AuditEntries(AuditAction.ReopenedReport)).Count.ShouldBe(1);
+		_result.GetProperty("status").GetString().ShouldBe("pending");
 	}
 
 	[Then(@"it is no longer publishable")]
@@ -306,11 +300,12 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		_result.GetProperty("publishedAt").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
-	[Then(@"the pair's approval is cleared and the report returns to Pending review")]
-	public void ThenApprovalClearedAndPending()
+	[Then(@"the pair's approval is cleared and the report is Unpublished")]
+	public void ThenApprovalClearedAndUnpublished()
 	{
 		ThenApprovalIsCleared();
-		ThenPendingReview();
+		_response!.StatusCode.ShouldBe(HttpStatusCode.OK);
+		_result.GetProperty("status").GetString().ShouldBe("unpublished");
 	}
 
 	[Then(@"the unpublishing is audited")]
@@ -322,17 +317,17 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	[Then(@"the detail view shows the note to reviewers")]
 	public async Task ThenTheDetailShowsTheNote()
 	{
-		_result.GetProperty("rejectionNote").GetString().ShouldBe(Note);
+		_result.GetProperty("unpublishNote").GetString().ShouldBe(Note);
 
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_reportId}", UriKind.Relative));
-		detail.GetProperty("rejectionNote").GetString().ShouldBe(Note);
+		detail.GetProperty("unpublishNote").GetString().ShouldBe(Note);
 	}
 
 	[Then(@"the note never reaches the public API, the audit log, or the application logs")]
 	public async Task ThenTheNoteStaysReviewerOnly()
 	{
-		foreach (var entry in await AuditEntries(AuditAction.RejectedReport))
+		foreach (var entry in await AuditEntries(AuditAction.UnpublishedReport))
 		{
 			(entry.Detail ?? string.Empty).ShouldNotContain(Note);
 		}
@@ -340,7 +335,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		_logs!.Messages.ShouldNotContain(message => message.Contains(Note, StringComparison.Ordinal));
 
 		// The public API reads only the public_reports view, which carries no note
-		// column and no rejected report (#28): the report is not found, and the
+		// column and no unpublished report (#28): the report is not found, and the
 		// note is in no page of the feed.
 		using var visitor = (await BootedApi.Factory()).CreateClient();
 		using var detail = await visitor.GetAsync(new Uri($"/api/v1/public/reports/{_reportId}", UriKind.Relative));
@@ -358,17 +353,17 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		while (after is not null);
 	}
 
-	[Then(@"rejecting without a note also succeeds")]
-	public async Task ThenRejectingWithoutANoteSucceeds()
+	[Then(@"unpublishing without a note also succeeds")]
+	public async Task ThenUnpublishingWithoutANoteSucceeds()
 	{
-		var other = await BootedReports.Seed(ReportStatus.PendingReview, "yes");
+		var other = await BootedReports.Seed(ReportStatus.Pending, "yes");
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var loaded = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{other}", UriKind.Relative));
-		using var rejected = await client.PostAsJsonAsync($"/api/admin/reports/{other}/reject", new { version = loaded.GetProperty("version").GetString() });
-		rejected.StatusCode.ShouldBe(HttpStatusCode.OK);
-		var body = await rejected.Content.ReadFromJsonAsync<JsonElement>();
-		body.GetProperty("status").GetString().ShouldBe("rejected");
-		body.GetProperty("rejectionNote").ValueKind.ShouldBe(JsonValueKind.Null);
+		using var unpublished = await client.PostAsJsonAsync($"/api/admin/reports/{other}/unpublish", new { version = loaded.GetProperty("version").GetString() });
+		unpublished.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var body = await unpublished.Content.ReadFromJsonAsync<JsonElement>();
+		body.GetProperty("status").GetString().ShouldBe("unpublished");
+		body.GetProperty("unpublishNote").ValueKind.ShouldBe(JsonValueKind.Null);
 	}
 
 	[Then(@"the report has one summary pair with ""manual"" as its model and prompt version")]
@@ -413,7 +408,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		entry.OccurredAt.ShouldBeGreaterThan(DateTimeOffset.UtcNow.AddMinutes(-5));
 	}
 
-	[Then(@"the entry records no summary text, answer, or rejection note")]
+	[Then(@"the entry records no summary text, answer, or unpublishing note")]
 	public async Task ThenTheEntryRecordsNoContent()
 	{
 		foreach (var entry in await AuditEntries(null))
@@ -477,7 +472,7 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 		var at = DateTimeOffset.UtcNow;
 		_sourcesReport = _situation.Contains("failed", StringComparison.Ordinal) || _situation.Contains("French text by hand", StringComparison.Ordinal)
 			? ReviewLifecycleSteps.In(ReportStatus.SummaryFailed, "yes")
-			: ReviewLifecycleSteps.In(ReportStatus.PendingReview, "yes");
+			: ReviewLifecycleSteps.In(ReportStatus.Pending, "yes");
 
 		switch (_situation)
 		{
@@ -695,7 +690,11 @@ internal static class BootedReports
 		arrange?.Invoke(report);
 		report.BeginSummarizing();
 
-		if (status == ReportStatus.SummaryFailed)
+		if (consent != "yes")
+		{
+			report.KeepUnpublished();
+		}
+		else if (status == ReportStatus.SummaryFailed)
 		{
 			report.FailSummarization("The AI chat provider was unavailable for this summarization attempt.");
 		}
@@ -706,14 +705,13 @@ internal static class BootedReports
 
 			switch (status)
 			{
-				case ReportStatus.PendingReview:
+				case ReportStatus.Pending:
 					break;
 				case ReportStatus.Published:
-				case ReportStatus.Approved:
-					report.ApprovePair("synthetic-approver", now);
+					report.Publish("synthetic-approver", now);
 					break;
-				case ReportStatus.Rejected:
-					report.RejectReview(null);
+				case ReportStatus.Unpublished:
+					report.Unpublish();
 					break;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(status), status, "Not a review state this helper seeds.");

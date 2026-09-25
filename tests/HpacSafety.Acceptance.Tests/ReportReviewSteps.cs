@@ -96,15 +96,16 @@ public sealed class ReportReviewSteps
 	{
 		string[] expected =
 		[
-			"pending", "pendingPrivate", "failed", "approved", "published", "rejected", "freshSummarizing",
+			"pending", "private", "failed", "unpublished", "published", "freshSummarizing",
 			"stuckSubmitted", "stuckSummarizing",
 		];
 
 		Mine().ShouldBe([.. expected.Select(name => _seeded[name])]);
-		Row("pendingPrivate").GetProperty("consent").GetString().ShouldBe("no");
-		Row("pending").GetProperty("status").GetString().ShouldBe("pending_review");
+		Row("private").GetProperty("consent").GetString().ShouldBe("no");
+		Row("private").GetProperty("status").GetString().ShouldBe("unpublished");
+		Row("pending").GetProperty("status").GetString().ShouldBe("pending");
 		Row("published").GetProperty("status").GetString().ShouldBe("published");
-		Row("rejected").GetProperty("status").GetString().ShouldBe("rejected");
+		Row("unpublished").GetProperty("status").GetString().ShouldBe("unpublished");
 	}
 
 	[Then(@"the soft-deleted report does not appear")]
@@ -120,11 +121,11 @@ public sealed class ReportReviewSteps
 		_listBody.ShouldNotContain(SummaryEn);
 	}
 
-	[Then(@"the list holds the pending-review, summary-failed, and two stuck reports")]
+	[Then(@"the list holds the pending, summary-failed, and two stuck reports")]
 	public void ThenTheNeedsActionListHoldsTheRightReports()
 	{
 		Mine().ShouldBe(
-			[.. new[] { "pending", "pendingPrivate", "failed", "stuckSubmitted", "stuckSummarizing" }.Select(name => _seeded[name])],
+			[.. new[] { "pending", "failed", "stuckSubmitted", "stuckSummarizing" }.Select(name => _seeded[name])],
 			ignoreOrder: true);
 	}
 
@@ -144,16 +145,16 @@ public sealed class ReportReviewSteps
 	[Then(@"the list holds only (.+)")]
 	public void ThenTheListHoldsOnly(string reports)
 	{
-		var expected = reports switch
+		string[] expected = reports switch
 		{
-			"published reports" => "published",
-			"live reports whose reporter refused consent" => "pendingPrivate",
-			"rejected reports" => "rejected",
-			"reports whose summarization failed" => "failed",
+			"published reports" => ["published"],
+			"live reports whose reporter refused consent" => ["private"],
+			"unpublished reports" => ["private", "unpublished"],
+			"reports whose summarization failed" => ["failed"],
 			_ => throw new ArgumentOutOfRangeException(nameof(reports), reports, "No seeded report matches."),
 		};
 
-		Mine().ShouldBe([_seeded[expected]]);
+		Mine().ShouldBe([.. expected.Select(name => _seeded[name])]);
 	}
 
 	// ── Then: the detail view ───────────────────────────────────────────────
@@ -162,7 +163,7 @@ public sealed class ReportReviewSteps
 	public void ThenTheDetailSuppliesWhatTheReviewerNeeds()
 	{
 		_detail.GetProperty("language").GetString().ShouldBe("en-CA");
-		_detail.GetProperty("status").GetString().ShouldBe("pending_review");
+		_detail.GetProperty("status").GetString().ShouldBe("pending");
 
 		var pilot = _detail.GetProperty("answers").EnumerateArray()
 			.Single(answer => answer.GetProperty("labelEn").GetString() == "Pilot name");
@@ -300,26 +301,21 @@ public sealed class ReportReviewSteps
 		Summarize(pending);
 		pending.AddFile(TinyId.New(), $"{pending.Id}/original/doc", "application/pdf", 10, "synthetic.pdf", now);
 
-		Summarize(Add("pendingPrivate", "no"));
+		var unconsented = Add("private", "no");
+		unconsented.BeginSummarizing();
+		unconsented.KeepUnpublished();
 
 		var failed = Add("failed", "yes");
 		failed.BeginSummarizing();
 		failed.FailSummarization("The AI chat provider was unavailable for this summarization attempt.");
 
-		var approved = Add("approved", "yes");
-		Summarize(approved);
-		approved.Summary!.Approve("synthetic-approver", now);
-		approved.Approve();
+		var unpublished = Add("unpublished", "yes");
+		Summarize(unpublished);
+		unpublished.Unpublish();
 
 		var published = Add("published", "yes");
 		Summarize(published);
-		published.Summary!.Approve("synthetic-approver", now);
-		published.Approve();
-		published.MarkPublished(now);
-
-		var rejected = Add("rejected", "yes");
-		Summarize(rejected);
-		rejected.Reject();
+		published.Publish("synthetic-approver", now);
 
 		Add("freshSummarizing", "yes").BeginSummarizing();
 		Add("deleted", "yes").SoftDelete(now);

@@ -140,7 +140,7 @@ public class CommentEndpointTests(ApiPostgresFixture fixture)
 		report.BeginSummarizing();
 		report.AttachSummary(Summary.Generate(report.Id, "The pilot landed.", "Le pilote s'est posé.", "synthetic-model", "synthetic.v1", now));
 		report.AwaitReview();
-		report.ApprovePair("synthetic-approver", now);
+		report.Publish("synthetic-approver", now);
 		database.Reports.Add(report);
 		await database.SaveChangesAsync();
 		return report.Id.Value;

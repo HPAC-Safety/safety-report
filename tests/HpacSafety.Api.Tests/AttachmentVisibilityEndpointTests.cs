@@ -100,7 +100,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 
 	[Theory]
 	[InlineData(ReportStatus.Published, "yes", "public")]
-	[InlineData(ReportStatus.PendingReview, "yes", "when_published")]
+	[InlineData(ReportStatus.Pending, "yes", "when_published")]
 	[InlineData(ReportStatus.Published, "no", "no_consent")]
 	[InlineData(ReportStatus.Published, null, "no_consent")]
 	public async Task GivenProcessedImage_WhenAdminReadsReport_ThenVisibilityFollowsConsentAndStatus(ReportStatus status,
@@ -182,7 +182,7 @@ public class AttachmentVisibilityEndpointTests(ApiPostgresFixture fixture)
 
 		if (status is ReportStatus.Published)
 		{
-			report.ApprovePair("synthetic-approver", Now);
+			report.Publish("synthetic-approver", Now);
 		}
 
 		database.Reports.Add(report);

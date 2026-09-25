@@ -33,7 +33,8 @@ public class LocaleTests
 
 	[Theory]
 	[InlineData(ReportStatus.SummaryFailed, "summary_failed")]
-	[InlineData(ReportStatus.PendingReview, "pending_review")]
+	[InlineData(ReportStatus.Pending, "pending")]
+	[InlineData(ReportStatus.Unpublished, "unpublished")]
 	[InlineData(QuestionRole.ConsentPublish, "consent_publish")]
 	public void GivenDomainValue_WhenWrittenAsCode_ThenRoundTrips(Enum value,
 																  string expected)

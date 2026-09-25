@@ -293,7 +293,7 @@ const ADMIN_REPORT = {
 		sourceFr: "generated",
 	},
 	version: "1",
-	rejectionNote: null,
+	unpublishNote: null,
 	publishedAt: "2026-09-20T16:00:00Z",
 }
 

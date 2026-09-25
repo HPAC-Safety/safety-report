@@ -69,20 +69,20 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			_publishable.Add(await BootedReports.Seed(ReportStatus.Published, "yes", at: instant));
 		}
 
-		_hidden.Add(await BootedReports.Seed(ReportStatus.PendingReview, "yes", at: instant));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Rejected, "yes", at: instant));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Approved, "no", at: instant));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Pending, "yes", at: instant));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "yes", at: instant));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "no", at: instant));
 		_hidden.Add(await Deleted(await BootedReports.Seed(ReportStatus.Published, "yes", at: instant)));
 	}
 
-	[Given(@"a report id is unknown, deleted, unapproved, rejected, or not consented")]
+	[Given(@"a report id is unknown, deleted, pending, unpublished, or not consented")]
 	public async Task GivenNonPublicReportIds()
 	{
 		_hidden.Add(TinyId.New().Value);
 		_hidden.Add(await Deleted(await BootedReports.Seed(ReportStatus.Published, "yes")));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.PendingReview, "yes"));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Rejected, "yes"));
-		_hidden.Add(await BootedReports.Seed(ReportStatus.Approved, "no"));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Pending, "yes"));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "yes"));
+		_hidden.Add(await BootedReports.Seed(ReportStatus.Unpublished, "no"));
 	}
 
 	[Given(@"a report and its summary row are not deleted")]
@@ -95,7 +95,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	[Given(@"ConsentPublish is exactly true")]
 	[Given(@"both English and French summary texts are nonblank")]
 	[Given(@"the pair has a current human approval")]
-	[Given(@"the report has not been rejected")]
+	[Given(@"the report is Published")]
 	public void GivenTheRestOfTheInvariantHolds()
 	{
 		// Contextual — the report seeded above was published through the domain's
@@ -126,10 +126,10 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		await Violate($"UPDATE summaries SET approved_at = NULL, approved_by_subject = NULL WHERE report_id = {seeded.Id}");
 	}
 
-	[Given(@"the report has been rejected")]
-	public async Task GivenTheReportHasBeenRejected()
+	[Given(@"the report is not Published")]
+	public async Task GivenTheReportIsNotPublished()
 	{
-		await Violate($"UPDATE reports SET status = 'rejected' WHERE id = {seeded.Id}");
+		await Violate($"UPDATE reports SET status = 'unpublished' WHERE id = {seeded.Id}");
 	}
 
 	// ── When ────────────────────────────────────────────────────────────────

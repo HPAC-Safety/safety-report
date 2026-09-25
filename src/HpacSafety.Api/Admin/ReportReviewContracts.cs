@@ -22,7 +22,7 @@ public sealed record ReportListItem(
 ///     Everything a reviewer needs to judge one report, and nothing more
 ///     (REQ-MOD-031). No storage key or link: an attachment is opened only through
 ///     its own audited request. <c>Version</c> is the opaque value every review
-///     command sends back (ADR-0105); <c>RejectionNote</c> is reviewer-only
+///     command sends back (ADR-0105); <c>UnpublishNote</c> is reviewer-only
 ///     (REQ-MOD-058); <c>PublishedAt</c> is set while the report is public.
 /// </summary>
 public sealed record ReportDetail(
@@ -38,7 +38,7 @@ public sealed record ReportDetail(
 	ReportSummaryView? Summary,
 	IReadOnlyList<ReportAttachmentView> Attachments,
 	string Version,
-	string? RejectionNote,
+	string? UnpublishNote,
 	DateTimeOffset? PublishedAt);
 
 /// <summary>A review command that carries nothing but the version the reviewer loaded.</summary>
@@ -56,8 +56,8 @@ public sealed record SaveSummaryPairRequest(
 	string? SourceEn = null,
 	string? SourceFr = null);
 
-/// <summary>A rejection, with an optional reviewer-only note.</summary>
-public sealed record RejectReportRequest(string? Version, string? Note);
+/// <summary>An unpublishing, with an optional reviewer-only note.</summary>
+public sealed record UnpublishReportRequest(string? Version, string? Note);
 
 /// <summary>
 ///     One question as it was asked, with every value the reporter gave for it — one

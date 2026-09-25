@@ -27,6 +27,12 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 		"reports (status)",
 		"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr2', 'en-CA', 'not_a_status', @at)")]
 	[InlineData(
+		"reports (retired approved status)",
+		"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr6', 'en-CA', 'approved', @at)")]
+	[InlineData(
+		"reports (retired rejected status)",
+		"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr7', 'en-CA', 'rejected', @at)")]
+	[InlineData(
 		"outbox_messages",
 		"INSERT INTO outbox_messages (id, aggregate_id, type, payload, occurred_at, next_attempt_at, attempts) " +
 		"VALUES ('oooooooooo1', 'rrrrrrrrrr1', 'not_a_type', '{}', @at, @at, 0)")]
@@ -54,7 +60,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await Execute(
 			connectionString,
-			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr3', 'en-CA', 'pending_review', @at)");
+			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr3', 'en-CA', 'pending', @at)");
 
 		// When
 		Task inserting()
@@ -77,7 +83,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await Execute(
 			connectionString,
-			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr4', 'en-CA', 'pending_review', @at)");
+			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr4', 'en-CA', 'pending', @at)");
 
 		// When
 		Task inserting()
@@ -100,7 +106,7 @@ public sealed class SchemaCheckConstraintTests(PostgresFixture postgres)
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await Execute(
 			connectionString,
-			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr5', 'en-CA', 'pending_review', @at)");
+			"INSERT INTO reports (id, language, status, submitted_at) VALUES ('rrrrrrrrrr5', 'en-CA', 'pending', @at)");
 
 		// When
 		Task inserting()

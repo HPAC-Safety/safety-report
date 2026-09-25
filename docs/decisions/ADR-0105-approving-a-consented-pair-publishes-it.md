@@ -2,7 +2,7 @@
 title: Approving a consented pair publishes it
 description: A safety officer's approval of the bilingual pair publishes the report in the same action when the reporter consented; review adds reopen, unpublish, an optional rejection note, manual pairs, and optimistic concurrency on PostgreSQL xmin.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-23
 decision-makers: Chase Florell
 keywords: review, approval, publication, consent, reopen, unpublish, rejection note, concurrency, xmin, ADR-0004
@@ -10,8 +10,12 @@ keywords: review, approval, publication, consent, reopen, unpublish, rejection n
 
 # ADR-0105 — Approving a consented pair publishes it
 
-**Status:** Accepted. Keeps [ADR-0004](ADR-0004-human-review-required.md):
-nothing reaches the public without a human approving the current pair.
+**Status:** Partially superseded by
+[ADR-0125](ADR-0125-a-report-is-pending-published-or-unpublished.md): the
+Approved status, Reject, and Reopen are gone; a reviewer publishes or
+unpublishes. The `manual` provenance and `xmin` concurrency stand. Keeps
+[ADR-0004](ADR-0004-human-review-required.md): nothing reaches the public
+without a human approving the current pair.
 
 ## Context
 

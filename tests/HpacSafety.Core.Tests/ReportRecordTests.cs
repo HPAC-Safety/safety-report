@@ -168,23 +168,26 @@ public class ReportRecordTests
 		report.AwaitReview();
 
 		// Then
-		report.Status.ShouldBe(ReportStatus.PendingReview);
+		report.Status.ShouldBe(ReportStatus.Pending);
 		report.SummaryError.ShouldBeNull();
 	}
 
 	[Fact]
-	public void GivenRejectedReport_WhenPublicationIsAttempted_ThenRefused()
+	public void GivenUnpublishedReport_WhenPublishabilityIsChecked_ThenNotPublishable()
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", Now), ["yes"], Now);
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));
+		report.AwaitReview();
 
 		// When
-		report.Reject();
+		report.Unpublish();
 
 		// Then
-		report.Status.ShouldBe(ReportStatus.Rejected);
-		Should.Throw<DomainRuleViolationException>(() => report.MarkPublished(Now));
+		report.Status.ShouldBe(ReportStatus.Unpublished);
+		report.IsPublishable.ShouldBeFalse();
 	}
 
 	[Theory]

@@ -46,23 +46,19 @@ public class ReportSoftDeleteTests
 	}
 
 	[Fact]
-	public void GivenAnOtherwisePublishableReport_WhenSoftDeleted_ThenItIsNeverPublishable()
+	public void GivenPendingReport_WhenSoftDeleted_ThenItCanNeverBePublished()
 	{
 		// Given
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(ConsentQuestion(), ["yes"], Now);
-		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		summary.Approve("subject-officer", Now);
-		report.AttachSummary(summary);
-		report.Approve();
-		report.IsPublishable.ShouldBeTrue();
+		AwaitReviewWithPair(report);
 
 		// When
 		report.SoftDelete(Now);
 
 		// Then
 		report.IsPublishable.ShouldBeFalse();
-		Should.Throw<DomainRuleViolationException>(() => report.MarkPublished(Now));
+		Should.Throw<DomainRuleViolationException>(() => report.Publish("subject-officer", Now));
 	}
 
 	[Fact]
@@ -71,17 +67,22 @@ public class ReportSoftDeleteTests
 		// Given
 		var report = new Report(Locale.EnCa, Now);
 		report.Answer(ConsentQuestion(), ["yes"], Now);
-		var summary = Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now);
-		summary.Approve("subject-officer", Now);
-		report.AttachSummary(summary);
-		report.Approve();
-		report.MarkPublished(Now);
+		AwaitReviewWithPair(report);
+		report.Publish("subject-officer", Now);
+		report.IsPublishable.ShouldBeTrue();
 
 		// When
 		report.SoftDelete(Now.AddMinutes(1));
 
 		// Then — the public query re-evaluates IsPublishable; Status alone never gates it
 		report.IsPublishable.ShouldBeFalse();
+	}
+
+	private static void AwaitReviewWithPair(Report report)
+	{
+		report.BeginSummarizing();
+		report.AttachSummary(Summary.Generate(report.Id, "A pilot landed hard.", "Un pilote a atterri durement.", "model", "v1", Now));
+		report.AwaitReview();
 	}
 
 	private static Question ConsentQuestion()

@@ -16,28 +16,33 @@ fit Gherkin.
 ```mermaid
 stateDiagram-v2
     [*] --> Submitted
-    Submitted --> Summarizing: Worker claims summary job
-    Submitted --> PendingReview: no consent, never summarized
-    Summarizing --> PendingReview: valid bilingual pair saved
+    Submitted --> Summarizing: Worker claims summary job, consent yes
+    Submitted --> Unpublished: Worker claims summary job, consent not yes
+    Summarizing --> Pending: valid bilingual pair saved
     Summarizing --> SummaryFailed: bounded retries exhausted
-    SummaryFailed --> PendingReview: officer writes both texts
-    PendingReview --> PendingReview: either text edited; approval cleared
-    PendingReview --> Published: officer approves pair, consent yes
-    PendingReview --> Approved: officer approves pair, consent not yes
-    PendingReview --> Rejected: officer rejects report (optional note)
-    Approved --> PendingReview: either text edited
-    Published --> PendingReview: either text edited, or officer unpublishes
-    Rejected --> PendingReview: officer reopens report
+    SummaryFailed --> Pending: officer writes both texts
+    Pending --> Pending: either text edited; approval cleared
+    Pending --> Published: officer publishes the pair
+    Pending --> Unpublished: officer unpublishes (optional note)
+    Published --> Pending: either text edited
+    Published --> Unpublished: officer unpublishes
+    Unpublished --> Published: officer publishes, consent yes
+    Unpublished --> Pending: either text edited, consent yes
 ```
 
-Approving and publishing are one action: approval publishes the pair
-immediately when the reporter consented, and otherwise leaves the report
-Approved and never public
-([ADR-0105](../../docs/decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)).
-A report whose reporter did not consent is never sent to the model: it goes
-to Pending review with no summary, can be rejected or deleted, and can never be
-published (REQ-DOM-006). An action from a state the diagram does not allow is refused and changes
-nothing (REQ-DOM-014).
+A report is Pending, Published, or Unpublished once the Worker is done with
+it; there is no Approved or Rejected status
+([ADR-0125](../../docs/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
+Review exists only to check a summary. Publishing approves the current pair
+and makes the report public at once, and unpublishing takes it off the public
+feed without deleting it; either can be done again later.
+
+A report whose reporter did not consent is never sent to the model: the Worker
+sets it Unpublished with no summary, and it stays that way for good. Nobody
+can publish it, edit a summary for it, or move it to any other state; the one
+thing an officer can do is delete it (REQ-DOM-006, REQ-DOM-015). An action from
+a state the diagram does not allow is refused and changes nothing
+(REQ-DOM-014).
 
 Soft deletion may occur from any state and is a terminal application state
 even though retained rows still contain their prior status.
@@ -85,3 +90,7 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   move between them.
 - Ownership of a report by a member. A report belongs to no one
   ([ADR-0067](../../docs/decisions/ADR-0067-a-reporter-must-be-a-member-and-is-not-recorded.md)).
+- A way to publish, summarize, or acknowledge a report whose reporter did not
+  consent, or to change that consent after submission.
+- An Approved, Rejected, or Reopened status; Publish and Unpublish cover them
+  ([ADR-0125](../../docs/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).

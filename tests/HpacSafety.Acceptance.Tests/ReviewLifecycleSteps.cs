@@ -8,7 +8,8 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The report lifecycle as the domain enforces it: REQ-DOM-001's transitions,
-///     REQ-DOM-014's refusals, and REQ-DOM-005's unpublish-on-edit. These are rules
+///     REQ-DOM-014's refusals, REQ-DOM-015's unconsented report that stays
+///     unpublished, and REQ-DOM-005's unpublish-on-edit. These are rules
 ///     of the <see cref="Report" /> aggregate, so they run against it directly.
 /// </summary>
 [Binding]
@@ -36,16 +37,16 @@ public sealed class ReviewLifecycleSteps
 	{
 		switch (lifecycleEvent)
 		{
-			case "Worker claims the summary job":
+			case "Worker claims the summary job and consent is yes":
 				_report.BeginSummarizing();
+				break;
+			case "Worker claims the summary job and consent is no":
+				_report = In(ReportStatus.Submitted, consent: "no");
+				_report.KeepUnpublished();
 				break;
 			case "a valid bilingual pair is saved":
 				_report.AttachSummary(Summary.Generate(_report.Id, "The pilot landed.", "Le pilote s'est posé.", "gemini-3.7-flash", "summarize-anonymize.v3", Now));
 				_report.AwaitReview();
-				break;
-			case "the reporter did not consent to publication":
-				_report = In(ReportStatus.Summarizing, consent: "no");
-				_report.ReviewWithoutSummary();
 				break;
 			case "bounded retries are exhausted":
 				_report.FailSummarization("The provider was unavailable.");
@@ -56,21 +57,11 @@ public sealed class ReviewLifecycleSteps
 			case "either summary text is edited":
 				_report.EditSummary("The pilot landed firmly.", "Le pilote s'est posé fermement.", Now);
 				break;
-			case "an officer approves the pair and consent is yes":
-				_report.ApprovePair(Officer, Now).ShouldBeTrue();
-				break;
-			case "an officer approves the pair and consent is no":
-				_report = In(ReportStatus.PendingReview, consent: "no");
-				_report.ApprovePair(Officer, Now).ShouldBeFalse();
-				break;
-			case "an officer rejects the report":
-				_report.RejectReview(null);
+			case "an officer publishes the pair":
+				_report.Publish(Officer, Now);
 				break;
 			case "an officer unpublishes the report":
 				_report.Unpublish();
-				break;
-			case "an officer reopens the report":
-				_report.Reopen();
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(lifecycleEvent), lifecycleEvent, "No such lifecycle event.");
@@ -88,11 +79,9 @@ public sealed class ReviewLifecycleSteps
 	{
 		Action attempt = action switch
 		{
-			"approve the pair" => () => _report.ApprovePair(Officer, Now),
+			"publish the pair" => () => _report.Publish(Officer, Now),
 			"edit a summary text" => () => _report.EditSummary("en", "fr", Now),
-			"reject the report" => () => _report.RejectReview(null),
-			"reopen the report" => _report.Reopen,
-			"unpublish the report" => _report.Unpublish,
+			"unpublish the report" => () => _report.Unpublish(),
 			"write a manual pair" => () => _report.WriteManualSummary("en", "fr", Now),
 			_ => throw new ArgumentOutOfRangeException(nameof(action), action, "No such review action."),
 		};
@@ -111,6 +100,30 @@ public sealed class ReviewLifecycleSteps
 	{
 		_report.Status.ShouldBe(Enum.Parse<ReportStatus>(state));
 		_report.Status.ShouldBe(_from);
+	}
+
+	[Given(@"^a report whose reporter did not consent to publication is Unpublished$")]
+	public void GivenAnUnconsentedReportIsUnpublished()
+	{
+		_from = ReportStatus.Unpublished;
+		_report = In(ReportStatus.Submitted, consent: "no");
+		_report.KeepUnpublished();
+	}
+
+	[Then(@"^the report stays Unpublished with nothing changed$")]
+	public void ThenTheReportStaysUnpublishedUnchanged()
+	{
+		_report.Status.ShouldBe(ReportStatus.Unpublished);
+		_report.Summary.ShouldBeNull();
+		_report.PublishedAt.ShouldBeNull();
+		_report.UnpublishNote.ShouldBeNull();
+	}
+
+	[Then(@"^soft deletion is still the one thing an officer can do to it \(REQ-DOM-007\)$")]
+	public void ThenSoftDeletionStillWorks()
+	{
+		_report.SoftDelete(Now);
+		_report.Deleted.ShouldBe(Now);
 	}
 
 	[Given(@"a report is Published")]
@@ -171,17 +184,13 @@ public sealed class ReviewLifecycleSteps
 
 		switch (status)
 		{
-			case ReportStatus.PendingReview:
-				break;
-			case ReportStatus.Approved:
-				report = In(ReportStatus.PendingReview, consent: "no");
-				report.ApprovePair(Officer, Now);
+			case ReportStatus.Pending:
 				break;
 			case ReportStatus.Published:
-				report.ApprovePair(Officer, Now);
+				report.Publish(Officer, Now);
 				break;
-			case ReportStatus.Rejected:
-				report.RejectReview(null);
+			case ReportStatus.Unpublished:
+				report.Unpublish();
 				break;
 			default:
 				throw new ArgumentOutOfRangeException(nameof(status), status, "No such status.");

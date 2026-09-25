@@ -13,34 +13,182 @@ area: infrastructure-and-operations
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 
+The whole system runs in AWS. Everything that holds data is in `ca-central-1`;
+the only global pieces are CloudFront, which serves the static website bundle,
+and its `us-east-1` certificate. Hosting is set by
+[ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)
+(the API on Lambda) and
+[ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)
+(the Worker on Lambda, the website on S3 and CloudFront).
+
+### 1. How requests reach the system
+
 ```mermaid
-flowchart TD
-    internet[Internet] --> cdn[CDN]
-    officers[Safety officers] --> cdn
-    cdn --> alb[HTTPS load balancer]
-    alb --> web[ECS/Fargate<br/>Web container]
-    alb --> api[Lambda API]
-    worker[ECS/Fargate Worker] --> llm[Configured LLM provider]
-    api --> rds[(RDS PostgreSQL)]
-    worker --> rds
-    api --> media[(Private attachment S3)]
-    worker --> media
+flowchart LR
+    browser["Browser<br/>reporter · visitor · reviewer · administrator"]
+    idp["Identity provider<br/>OIDC, outside AWS<br/>(choice deferred, ADR-0064)"]
+
+    subgraph global["AWS global"]
+        cf["CloudFront<br/>safety.hpac.ca<br/>clean URLs · /admin no-store"]
+    end
+
+    subgraph region["AWS ca-central-1"]
+        site[("S3 site bucket<br/>private · one Vite build")]
+        subgraph vpc["VPC"]
+            alb["ALB<br/>HTTPS only · API hostname"]
+            api["API<br/>Lambda"]
+        end
+        uploads[("S3 uploads bucket<br/>private")]
+    end
+
+    browser -->|"1 · load the website"| cf
+    cf -->|"origin access control"| site
+    browser -->|"2 · sign in"| idp
+    browser -->|"3 · /api calls, bearer token"| alb
+    alb -->|"Lambda target group"| api
+    browser -->|"4 · open a file: pre-signed GET, 15 min max"| uploads
 ```
 
-The public form and the admin review queue are routes within one
-React/TypeScript/Vite build, served by one Nginx ECS Fargate container behind
-one CloudFront distribution
-([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
-[ADR-0044](decisions/ADR-0044-containerized-web-hosting.md),
-[ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)). The API,
-Worker, and the web site run from container images, on different primitives —
-the API is a Lambda function (container image, behind the ALB via a Lambda
-target group; see
-[ADR-0042](decisions/ADR-0042-lambda-hosted-api-with-fargate-migration-path.md)),
-the Worker and the web site each a separate ECS Fargate service. RDS and
-attachment storage are private. Secrets Manager supplies runtime secrets.
-Terraform owns the topology; EF Core migrations own schema changes, applied at
-startup ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+### 2. How work is processed
+
+```mermaid
+flowchart LR
+    bridge["EventBridge<br/>every minute"]
+
+    subgraph private["VPC · private subnets"]
+        api["API<br/>Lambda"]
+        worker["Worker<br/>Lambda · Ubuntu ffmpeg"]
+        rds[("RDS PostgreSQL<br/>reports · answers · outbox · audit")]
+    end
+
+    subgraph aws["AWS ca-central-1 services"]
+        secrets["Secrets Manager<br/>connection string"]
+        s3ep["S3 gateway endpoint"]
+        uploads[("S3 uploads bucket<br/>quarantine/ · original · stripped")]
+        nat["NAT gateway"]
+    end
+
+    outside["Outside AWS<br/>identity provider · Google Gemini · DeepL"]
+
+    api -->|"report + outbox, one transaction"| rds
+    api -->|"async nudge"| worker
+    bridge -->|"sweep"| worker
+    worker -->|"claim due messages"| rds
+    api -->|"store uploads, copy claims"| s3ep
+    worker -->|"read originals, write derivatives"| s3ep
+    s3ep --> uploads
+    api -.->|"cold start"| secrets
+    worker -.->|"cold start"| secrets
+    api -->|"outbound"| nat
+    worker -->|"outbound"| nat
+    nat -->|"HTTPS"| outside
+```
+
+The outbound calls, all over HTTPS through the NAT gateway:
+
+| Caller | Calls | For |
+|---|---|---|
+| API | the identity provider's published signing keys | validating a member's token ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)) |
+| API | DeepL | an administrator's or reviewer's Translate draft ([ADR-0062](decisions/ADR-0062-administrators-may-machine-translate-question-text.md), [ADR-0108](decisions/ADR-0108-a-reviewer-may-machine-translate-a-summary-language.md)) |
+| Worker | Google Gemini | the one summarization call per attempt ([ADR-0104](decisions/ADR-0104-summaries-are-generated-by-gemini-through-a-paid-key.md)) |
+| Worker | DeepL | an answer's or a comment's second language ([ADR-0112](decisions/ADR-0112-only-answers-that-need-it-get-a-second-language.md), [ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)) |
+
+### 3. How it is deployed and operated
+
+```mermaid
+flowchart LR
+    gha["GitHub Actions<br/>OIDC role, no stored keys"]
+    dns["hpac.ca DNS<br/>HPAC's zone"]
+
+    subgraph global["AWS global"]
+        cf["CloudFront"]
+        acmglobal["ACM certificate<br/>us-east-1"]
+    end
+
+    subgraph region["AWS ca-central-1"]
+        ecr["ECR<br/>API and Worker images"]
+        api["API<br/>Lambda"]
+        worker["Worker<br/>Lambda"]
+        site[("S3 site bucket")]
+        alb["ALB"]
+        acm["ACM certificate"]
+        watch["CloudWatch<br/>logs · alarms"]
+        sns["SNS<br/>alarm e-mail to operators"]
+    end
+
+    gha -->|"push images"| ecr
+    ecr -->|"new image"| api
+    ecr -->|"new image"| worker
+    gha -->|"update functions"| api
+    gha -->|"update functions"| worker
+    gha -->|"sync build"| site
+    gha -->|"invalidate"| cf
+    dns -->|"CNAME"| cf
+    dns -->|"CNAME"| alb
+    dns -.->|"validation records"| acm
+    dns -.->|"validation records"| acmglobal
+    acmglobal --> cf
+    acm --> alb
+    api --> watch
+    worker --> watch
+    alb --> watch
+    watch -->|"alarm"| sns
+```
+
+How the pieces connect:
+
+- **Two public entry points.**
+  - CloudFront serves the static website from a private bucket that only it
+    can read.
+  - The HTTPS ALB fronts the API and nothing else, reached on its own
+    hostname, not through CloudFront
+    ([ADR-0081](decisions/ADR-0081-trust-forwarded-headers-from-the-security-group-boundary.md)).
+  - The website bundle holds no report data. The API authorizes every data
+    request, so the delivery path is not the security boundary
+    ([ADR-0048](decisions/ADR-0048-one-website-admin-as-a-route.md)).
+- **The API** is a Lambda function behind an ALB Lambda target group. It
+  validates the member's token, writes a report with its outbox messages in
+  one transaction, and nudges the Worker.
+- **The Worker** is a Lambda function.
+  - The API's nudge starts it after each commit, and an EventBridge schedule
+    sweeps once a minute, so a lost nudge only delays work.
+  - Each run claims due outbox messages, processes them (a summary, an
+    attachment, answer or comment translation), and returns.
+- **Attachments** reach S3 only through the API.
+  - `POST /api/v1/uploads` writes each file to `quarantine/`, where a
+    lifecycle rule expires it after 15 days.
+  - Submission copies claimed uploads inside the bucket.
+  - The Worker writes derivatives.
+  - A browser reads a file only through a pre-signed GET of at most 15
+    minutes, never a public object URL
+    ([ADR-0096](decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+    [ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
+    [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
+- **Outbound calls** leave through the NAT gateway: the identity provider's
+  signing keys, Gemini, and DeepL. S3 traffic stays in the VPC through the
+  gateway endpoint.
+- **Migrations** apply at each function's cold start under a PostgreSQL
+  advisory lock. There is no migration task
+  ([ADR-0055](decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
+- **Deployment** is GitHub Actions assuming AWS roles through OIDC. It pushes
+  images to ECR, updates both functions, syncs the website build to its
+  bucket, and invalidates CloudFront.
+- **DNS** for `hpac.ca` is HPAC's own zone. Its records point at CloudFront and
+  the ALB, and it publishes the ACM validation records.
+
+### Where today's Terraform differs
+
+`infra/` predates ADR-0123 and does not match this target yet. These are the
+known differences:
+
+- The API and the Worker run as ECS Fargate services, not Lambda functions
+  (#443).
+- An unused `migrate` ECS task definition remains (#441).
+- SES resources, the Worker's `ses:SendEmail` grant, and a `notifications-to`
+  secret remain for an email flow that no longer exists (#441).
+
+The website's S3 bucket, CloudFront distribution, certificates, network, RDS,
+uploads bucket, alarms, and ECR already match.
 
 **CON-INF-002** No SES/email resources, messaging integrations, public attachment distribution,
 application encryption key, speculative queueing platform, or autoscaling
@@ -52,8 +200,7 @@ features should be pruned when implementation aligns.
 ## Network and data protection
 
 **CON-INF-003** Only the CloudFront distribution and the HTTPS ALB are public. The API
-Lambda function, the web container, and Worker tasks are attached to private
-subnets; security groups narrowly allow API/Worker to RDS and necessary
+and Worker Lambda functions are attached to private subnets; security groups narrowly allow API/Worker to RDS and necessary
 egress. S3 public access is blocked. Managed encryption is
 enabled for RDS, snapshots/backups, logs, secrets, and every bucket. TLS is
 required for browsers, the identity provider, AWS service access, database

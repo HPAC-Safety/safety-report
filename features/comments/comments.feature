@@ -114,7 +114,7 @@ Scenario: Unpublishing a report hides its comments, and publishing it again brin
   When a reviewer unpublishes the report
   Then the public API lists no comments for it and the report is not in the feed
   And the comment is kept in the database
-  When a reviewer approves the report again
+  When a reviewer publishes the report again
   Then the comment is listed again
 
 @REQ-COM-014

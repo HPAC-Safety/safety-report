@@ -56,7 +56,7 @@ public sealed class CommentSteps
 	[Given(@"a report is not public")]
 	public async Task GivenAReportIsNotPublic()
 	{
-		_reportId = await BootedReports.Seed(ReportStatus.PendingReview, "yes");
+		_reportId = await BootedReports.Seed(ReportStatus.Pending, "yes");
 	}
 
 	[Given(@"a member is signed in")]
@@ -203,10 +203,10 @@ public sealed class CommentSteps
 		await Review("unpublish");
 	}
 
-	[When(@"a reviewer approves the report again")]
-	public async Task WhenAReviewerApprovesAgain()
+	[When(@"a reviewer publishes the report again")]
+	public async Task WhenAReviewerPublishesAgain()
 	{
-		await Review("approve");
+		await Review("publish");
 	}
 
 	[When(@"the public feed is read")]

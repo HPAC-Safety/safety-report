@@ -47,6 +47,8 @@ public class QuestionChoice
 		DisplayOrder = displayOrder;
 		LabelEn = labelEn;
 		LabelFr = labelFr;
+		LabelEnSource = labelEn is null ? null : LabelSource.Human;
+		LabelFrSource = labelFr is null ? null : LabelSource.Human;
 		AddedByReporter = addedByReporter;
 		ReporterLocale = reporterLocale;
 		Deleted = deleted;
@@ -73,6 +75,12 @@ public class QuestionChoice
 
 	/// <summary>The French wording. Null only on a reporter-added choice typed in English.</summary>
 	public string? LabelFr { get; private set; }
+
+	/// <summary>How <see cref="LabelEn" /> was produced; null while there is none. See ADR-0129.</summary>
+	public LabelSource? LabelEnSource { get; private set; }
+
+	/// <summary>How <see cref="LabelFr" /> was produced; null while there is none. See ADR-0129.</summary>
+	public LabelSource? LabelFrSource { get; private set; }
 
 	/// <summary>
 	///     True when a reporter typed this choice into a type-ahead rather than an
@@ -140,7 +148,44 @@ public class QuestionChoice
 	/// <summary>This row, removal and marks included, as a choice of another question — the replacement a fork creates.</summary>
 	internal QuestionChoice CopyTo(TinyId questionId)
 	{
-		return new QuestionChoice(questionId, Code, DisplayOrder, LabelEn, LabelFr, AddedByReporter, ReporterLocale, Deleted);
+		return new QuestionChoice(questionId, Code, DisplayOrder, LabelEn, LabelFr, AddedByReporter, ReporterLocale, Deleted)
+		{
+			LabelEnSource = LabelEnSource,
+			LabelFrSource = LabelFrSource,
+		};
+	}
+
+	/// <summary>
+	///     Supplies the one language this choice is missing, mechanically — the
+	///     Worker translating a value a reporter typed (ADR-0129). The wording the
+	///     reporter typed is never touched, and a choice that already has both
+	///     languages is left as it is: a person got there first.
+	/// </summary>
+	/// <returns>Whether a language was supplied.</returns>
+	public bool SupplyAutoTranslation(string translated)
+	{
+		if (string.IsNullOrWhiteSpace(translated))
+		{
+			throw new DomainRuleViolationException("A supplied translation cannot be blank.");
+		}
+
+		// A choice always has at least one language, so the one missing, if any,
+		// is the one to fill.
+		if (LabelEn is null)
+		{
+			LabelEn = translated;
+			LabelEnSource = LabelSource.Auto;
+			return true;
+		}
+
+		if (LabelFr is null)
+		{
+			LabelFr = translated;
+			LabelFrSource = LabelSource.Auto;
+			return true;
+		}
+
+		return false;
 	}
 
 	/// <summary>
@@ -165,6 +210,11 @@ public class QuestionChoice
 			throw new DomainRuleViolationException("A choice needs wording in at least one official language.");
 		}
 
+		// A language a person rewrites is theirs; one left as it was keeps how it
+		// was produced, so resaving the editor never passes a machine
+		// translation off as written.
+		LabelEnSource = en is null ? null : en == LabelEn ? LabelEnSource : LabelSource.Human;
+		LabelFrSource = fr is null ? null : fr == LabelFr ? LabelFrSource : LabelSource.Human;
 		LabelEn = en;
 		LabelFr = fr;
 	}

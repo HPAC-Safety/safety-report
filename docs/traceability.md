@@ -1496,7 +1496,7 @@ A submitted choice must be one the question offers — *Reqnroll, Covered*
 
 ### REQ-SUB-080
 
-The submission path never calls a translation provider — *Reqnroll, Planned*
+The submission path never calls a translation provider — *Reqnroll, Covered*
 
 ### REQ-SUB-081
 
@@ -1504,7 +1504,7 @@ A choice answer reads both languages from its choice — *Reqnroll, Covered*
 
 ### REQ-SUB-082
 
-A type-ahead answer names a value, and the Worker translates only a new one — *Reqnroll, Planned*
+A type-ahead answer names a value, and the Worker translates only a new one — *Reqnroll, Covered*
 
 ### REQ-SUB-083
 

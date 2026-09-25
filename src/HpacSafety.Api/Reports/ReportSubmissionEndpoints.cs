@@ -139,6 +139,17 @@ public static partial class ReportSubmissionEndpoints
 			database.OutboxMessages.Add(new OutboxMessage(report.Id, OutboxMessageType.ProcessAttachment, file.Id.Value, at));
 		}
 
+		// A type-ahead value a reporter added holds only the language it was typed
+		// in. The Worker supplies the other, on the value itself; nothing here calls
+		// a translation provider (ADR-0129).
+		foreach (var added in database.ChangeTracker.Entries<QuestionChoice>()
+					 .Where(entry => entry.State == EntityState.Added && entry.Entity.NeedsTranslation)
+					 .Select(entry => entry.Entity)
+					 .ToList())
+		{
+			database.OutboxMessages.Add(new OutboxMessage(added.QuestionId, OutboxMessageType.TranslateChoice, added.Id.Value, at));
+		}
+
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 		await ReleaseClaimedUploads(claimedUploads, blobStore, loggerFactory.CreateLogger(nameof(ReportSubmissionEndpoints)))

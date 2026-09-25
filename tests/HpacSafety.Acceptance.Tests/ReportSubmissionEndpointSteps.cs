@@ -8,6 +8,7 @@ using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
@@ -280,9 +281,41 @@ public sealed class ReportSubmissionEndpointSteps
 
 	// --- The submission path never calls a translation provider ---
 
+	[Given(@"a submission contains choice answers and a value typed into a type-ahead")]
+	public async Task GivenASubmissionWithChoiceAnswersAndATypedValue()
+	{
+		// A host whose translator fails if it is ever reached: the submission
+		// succeeding is the proof that nothing on its path called one.
+		var host = (await BootedApi.Factory()).WithWebHostBuilder(builder =>
+			builder.ConfigureTestServices(services => services.AddSingleton<ITranslator, UnreachableTranslator>()));
+		_reporter = await BootedApi.SignedInAs(MemberRole.User, host);
+		await EnsureConsentQuestion();
+
+		var key = await CreateSelectQuestion();
+		_selectRevisionId = await RevisionIdFor(key);
+		_selectedChoiceId = await ChoiceIdFor(key, "Blue");
+		_typeAheadRevisionId = await ReporterChoiceSubmissionSteps.CreateTypeAhead(
+			_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator));
+	}
+
 	[When(@"the API commits the submission")]
 	public async Task WhenTheApiCommitsTheSubmission()
 	{
+		if (_typeAheadRevisionId is not null)
+		{
+			_response = await Post(new
+			{
+				language = "en-CA",
+				answers = new object[]
+				{
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true, choices = (string[]?)null },
+					new { questionRevisionId = _selectRevisionId, value = (bool?)null, choices = new[] { _selectedChoiceId } },
+					new { questionRevisionId = _typeAheadRevisionId, value = (string?)_marker, choices = (string[]?)null },
+				},
+			});
+			return;
+		}
+
 		_response = await Post(new
 		{
 			language = "en-CA",
@@ -295,9 +328,53 @@ public sealed class ReportSubmissionEndpointSteps
 	}
 
 	[Then(@"no translation provider is called")]
-	public void ThenNoTranslationProviderIsCalled()
+	public async Task ThenNoTranslationProviderIsCalled()
 	{
-		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+	}
+
+	[Then(@"no choice answer stores a copy of either of its choice's labels")]
+	public async Task ThenNoChoiceAnswerStoresALabel()
+	{
+		var choiceAnswers = (await StoredAnswersOfThisReport())
+			.Where(answer => answer.QuestionRevisionId == TinyId.Parse(_selectRevisionId!)
+							 || answer.QuestionRevisionId == TinyId.Parse(_typeAheadRevisionId!))
+			.ToList();
+
+		choiceAnswers.Count.ShouldBe(2);
+		choiceAnswers.ShouldAllBe(answer => answer.ChoiceId != null && answer.Value == null && answer.TranslatedValue == null);
+	}
+
+	[Then(@"a new type-ahead value is queued for the Worker to translate, on the value itself")]
+	public async Task ThenTheNewValueIsQueuedForTheWorker()
+	{
+		var added = (await StoredAnswersOfThisReport(includeChoices: true))
+			.Single(answer => answer.QuestionRevisionId == TinyId.Parse(_typeAheadRevisionId!))
+			.Choice!;
+		added.LabelEn.ShouldBe(_marker);
+		added.LabelFr.ShouldBeNull();
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var queued = await database.OutboxMessages.AsNoTracking()
+			.Where(message => message.Type == OutboxMessageType.TranslateChoice && message.Payload == added.Id.Value)
+			.ToListAsync();
+
+		queued.ShouldHaveSingleItem().AggregateId.ShouldBe(added.QuestionId);
+	}
+
+	/// <summary>A translator that is never reachable: anything that calls it fails.</summary>
+	private sealed class UnreachableTranslator : ITranslator
+	{
+		public bool IsConfigured => true;
+
+		public Task<IReadOnlyList<string>> Translate(IReadOnlyList<string> texts,
+													 Locale source,
+													 Locale target,
+													 CancellationToken cancellationToken)
+		{
+			throw new TranslationUnavailableException("Synthetic: no provider may be called on the submission path.");
+		}
 	}
 
 	// --- Every answer's value and locale are immutable once submitted ---

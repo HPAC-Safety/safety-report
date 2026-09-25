@@ -10,7 +10,7 @@ reviewer may hide any of them (ADR-0117, ADR-0119).
 
 Background:
   Given the maximum attachment count is configurable and defaults to five across all attachment kinds
-  And each file is limited to 50 MB
+  And each file is limited to 250 MB for a video and 25 MB for an image or a document
 
 @REQ-MED-001
 Scenario Outline: Only allowlisted content types are accepted
@@ -50,13 +50,14 @@ Scenario: The client filename is kept only as a reviewer's download name
   And it is not logged, placed in an exception, used in a key, sent to the model, or included in any public DTO
   And the object key encodes only an opaque upload, report, or file identity and a managed compartment
 
-@REQ-MED-004
-Scenario: An accepted upload waits in a private quarantine compartment
-  Given a reporter's upload passes the size bound and validation
-  When the API stores it
-  Then its bytes are written to a private quarantine key named only by a minted upload ID
+@REQ-MED-045
+@ignore
+Scenario: A sent upload waits, unvalidated, in a private quarantine compartment
+  Given a reporter's browser has sent a file through the pre-signed PUT the API minted for it
+  Then its bytes sit at a private quarantine key named only by the minted upload ID
   And no database row, report, or member is linked to it
   And no reviewer link can be issued for it
+  And it is not validated until a submission claims it
 
 @REQ-MED-005
 @ignore
@@ -205,7 +206,7 @@ Scenario: The Worker skips an attachment whose report was deleted
 
 @REQ-MED-024
 Scenario: Processing never holds a whole attachment in memory
-  Given a stored 50 MB document original
+  Given a stored 25 MB document original
   When the Worker processes that original
   Then the original is read in bounded chunks into temporary storage while it is hashed
   And no buffer the size of the file is ever allocated

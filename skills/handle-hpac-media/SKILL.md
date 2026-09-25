@@ -7,14 +7,19 @@ description: Handle HPAC Safety attachment uploads, private storage, safe image/
 
 ## Upload
 
-Each file uploads alone, the moment it is attached, through
-`POST /api/v1/uploads`
-([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)):
+Each file uploads alone, the moment it is attached, straight to storage
+([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
+[ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)):
 
-1. Read the raw body into a temporary file, stopping one byte past 50 MB.
-2. Sniff and validate it.
-3. Only then write it to `quarantine/<upload id>` under a server-minted 128-bit
-   upload ID.
+1. `POST /api/v1/uploads` takes the declared content type and exact byte size,
+   never a filename.
+2. Refuse, minting nothing, an unallowlisted type, zero bytes, or a size past
+   the kind's cap: 250 MB video, 25 MB image or document (one setting per
+   kind).
+3. Mint a 128-bit upload ID and a pre-signed PUT to `quarantine/<upload id>`
+   only, signed for that type and exact `Content-Length`, living at most
+   `BlobUrlLifetime.Maximum`. Only one chokepoint mints an upload URL.
+4. The browser PUTs the file; the API never holds its bytes.
 
 - An upload has no database row and never names the member who made it.
 - `DELETE` erases every version of it.
@@ -26,6 +31,10 @@ The final `POST /api/v1/reports`:
 - names uploads per file-upload answer;
 - enforces the configurable total count (default 5);
 - refuses missing uploads by ID before writing anything;
+- validates each claimed upload from its stored size and leading bytes, never
+  the whole file in memory: sniff, require declared and detected types to
+  agree, check the real size against the **detected** kind's cap. Refuse the
+  failures by ID, with a reason, before writing anything;
 - claims the rest by server-side copy into the report's original compartment,
   named by the report file's own id;
 - carries each file's name. Sanitize it — last path segment; no control,
@@ -43,7 +52,9 @@ derivative
 
 - `S3BlobStore` is the only adapter: S3 through the task role in AWS, RustFS in
   docker-compose for development (ADR-0110).
-- No filesystem adapter; no pre-signed PUT for reporters.
+- No filesystem adapter. A reporter's only pre-signed PUT is the one minted for
+  their upload's quarantine key; no multipart or resumable upload.
+- The uploads bucket allows cross-origin `PUT` only from the site origins.
 - Never copy an attachment to the CDN or a public prefix.
 
 ## Formats and validation

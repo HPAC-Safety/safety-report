@@ -34,10 +34,13 @@ public sealed class MediaValidationSteps
 		// don't touch the count bound.
 	}
 
-	[Given(@"each file is limited to {int} MB")]
-	public void GivenEachFileIsLimitedToMb(int megabytes)
+	[Given(@"each file is limited to {int} MB for a video and {int} MB for an image or a document")]
+	public void GivenEachFileIsLimitedPerKind(int videoMegabytes,
+											   int imageOrDocumentMegabytes)
 	{
-		megabytes.ShouldBe(50);
+		// ADR-0126's limits. The configured policy moves to them with #462.
+		videoMegabytes.ShouldBe(250);
+		imageOrDocumentMegabytes.ShouldBe(25);
 	}
 
 	[Given(@"an uploaded file has detected content type (.+)")]

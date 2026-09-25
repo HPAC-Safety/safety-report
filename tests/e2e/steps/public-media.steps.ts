@@ -145,7 +145,7 @@ function video(page: Page) {
 // The Attachments feature's Background, which states limits the API enforces
 // (REQ-MED-001 and the upload scenarios prove them); nothing for a browser to set.
 Given("the maximum attachment count is configurable and defaults to five across all attachment kinds", async () => {})
-Given("each file is limited to 50 MB", async () => {})
+Given("each file is limited to 250 MB for a video and 25 MB for an image or a document", async () => {})
 
 // --- REQ-MED-032: embedded photos and video with a generic label ---
 

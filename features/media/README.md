@@ -27,13 +27,15 @@ the private download label, never security handling or rendering.
 
 ## Storage compartments
 
-- Quarantine contains an accepted upload, under `quarantine/<upload id>`,
+- Quarantine contains an upload the browser sent, not yet validated, under
+  `quarantine/<upload id>`,
   until a submission claims it or the lifecycle rule expires it fifteen days
   after it was written, the same window as the saved report that names it. A
   reporter removing the file, or abandoning the report, erases every version
   of it
   ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md),
-  [ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
+  [ADR-0100](../../docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md),
+  [ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
 - Private original is the retained canonical input after validation.
 - Derivative contains the safe reviewer copy.
 
@@ -172,10 +174,13 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   exactly as it arrived.
 - Client-side processing, resizing, or stripping before upload. Validation and
   metadata removal happen server-side, where they can be trusted.
-- A resumable or chunked upload protocol, or a pre-signed PUT for a reporter.
-  A file reaches quarantine only through `POST /api/v1/uploads`, after the API
-  has validated it
-  ([ADR-0096](../../docs/decisions/ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md)).
+- A resumable, chunked, or multipart upload protocol. A file reaches quarantine
+  only through the one pre-signed `PUT` the API minted for its upload ID,
+  signed for its declared type and exact size, and is validated when a
+  submission claims it
+  ([ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
+- A pre-signed URL that writes anywhere but `quarantine/<upload id>`, or that
+  names a report or a member.
 - An upload table, or any record linking an upload to the member who made it.
 - A filesystem storage adapter. Development runs an S3-compatible server
   (RustFS, ADR-0110) behind the same `S3BlobStore` production uses.

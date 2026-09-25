@@ -192,7 +192,8 @@ Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
   When the reporter submits the form
   Then the submission DTO contains exactly one answer entry for each of those revisions
-  And every answer of every type uses "value", a single string, alongside the locale it was given in
+  And a multi-select answer carries its chosen labels, as the form offered them, in "choices" and never a choice code
+  And every other answer uses "value", a single string, alongside the locale it was given in
   And file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name
   And fields for the other answer shapes are null
 

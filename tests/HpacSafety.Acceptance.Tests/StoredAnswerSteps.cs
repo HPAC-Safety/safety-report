@@ -90,7 +90,7 @@ public sealed class StoredAnswerSteps
 				new { questionRevisionId = await ReportSubmissionEndpointSteps.ConsentRevisionId(), value = (string?)"no" },
 				new { questionRevisionId = RevisionOf("single_select"), value = (string?)"Bleu" },
 				new { questionRevisionId = RevisionOf("autocomplete"), value = (string?)"Rouge" },
-				new { questionRevisionId = RevisionOf("multi_select"), optionCodes = _chosen["multi_select"] },
+				new { questionRevisionId = RevisionOf("multi_select"), choices = _chosen["multi_select"] },
 			},
 		});
 

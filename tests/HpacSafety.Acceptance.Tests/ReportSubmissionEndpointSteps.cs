@@ -47,6 +47,7 @@ public sealed class ReportSubmissionEndpointSteps
 	private HttpResponseMessage? _response;
 	private string? _consentRevisionId;
 	private string? _extraRevisionId;
+	private string? _multiSelectRevisionId;
 	private string? _fileRevisionId;
 	private string? _selectRevisionId;
 	private string? _selectedLabel;
@@ -82,6 +83,7 @@ public sealed class ReportSubmissionEndpointSteps
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		await EnsureConsentQuestion();
 		_extraRevisionId = await CreateSyntheticQuestion("short_text");
+		_multiSelectRevisionId = await RevisionIdFor(await CreateSelectQuestion("multi_select"));
 	}
 
 	[When(@"the reporter submits the form")]
@@ -94,17 +96,35 @@ public sealed class ReportSubmissionEndpointSteps
 			{
 				new { questionRevisionId = _consentRevisionId, value = (string?)"yes" },
 				new { questionRevisionId = _extraRevisionId, value = (string?)"a synthetic answer" },
+				new { questionRevisionId = _multiSelectRevisionId, choices = new[] { "Blue", "Red" } },
 			},
 		});
 	}
 
 	[Then(@"the submission DTO contains exactly one answer entry for each of those revisions")]
-	[Then(@"every answer of every type uses ""value"", a single string, alongside the locale it was given in")]
+	[Then(@"every other answer uses ""value"", a single string, alongside the locale it was given in")]
 	[Then(@"file-upload answers additionally carry one attachment entry per file attached to that question, each an upload ID and the file's name")]
 	[Then(@"fields for the other answer shapes are null")]
 	public void ThenTheDtoShapeIsHonored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, "the API accepts a DTO built exactly this way");
+	}
+
+	[Then(@"a multi-select answer carries its chosen labels, as the form offered them, in ""choices"" and never a choice code")]
+	public async Task ThenAMultiSelectAnswerCarriesItsLabelsInChoices()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+		var reportId = TinyId.Parse((await _response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!);
+		var revisionId = TinyId.Parse(_multiSelectRevisionId!);
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var stored = await database.ReportAnswers.AsNoTracking()
+			.Where(answer => answer.ReportId == reportId && answer.QuestionRevisionId == revisionId)
+			.Select(answer => answer.Value)
+			.ToListAsync();
+
+		stored.ShouldBe(["Blue", "Red"], ignoreOrder: true);
 	}
 
 	// --- A skipped answer is represented by an empty value, not omission ---
@@ -1087,7 +1107,7 @@ public sealed class ReportSubmissionEndpointSteps
 					new
 					{
 						questionRevisionId = (string?)await CreateSyntheticQuestion("short_text"),
-						optionCodes = new[] { "x" },
+						choices = new[] { "x" },
 					},
 				},
 			}),
@@ -1181,7 +1201,7 @@ public sealed class ReportSubmissionEndpointSteps
 		return revisionId;
 	}
 
-	private async Task<string> CreateSelectQuestion()
+	private async Task<string> CreateSelectQuestion(string type = "single_select")
 	{
 		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
 		var key = $"synthetic_{Guid.NewGuid():N}"[..40];
@@ -1189,7 +1209,7 @@ public sealed class ReportSubmissionEndpointSteps
 		var request = new
 		{
 			key,
-			type = "single_select",
+			type,
 			labelEn = "A synthetic question",
 			labelFr = "Une question synthétique",
 			helpTextEn = (string?)null,

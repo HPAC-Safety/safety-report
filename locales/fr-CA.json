@@ -136,10 +136,10 @@
       "removeNamed": "Supprimer {name}",
       "expired": "Ce fichier n'est plus disponible. Supprimez-le et joignez-le à nouveau.",
       "expiredSummary": "Certains fichiers joints ne sont plus disponibles. Veuillez joindre à nouveau les fichiers indiqués, puis soumettez votre réponse — vos autres réponses seront conservées.",
-      "refusedSummary": "#Some attached files were not accepted. The marked files will not be sent; submit again to send the rest — your other answers are kept.",
+      "refusedSummary": "Certains fichiers joints n'ont pas été acceptés. Les fichiers signalés ne seront pas envoyés; veuillez soumettre à nouveau votre réponse pour envoyer le reste — vos autres réponses sont conservées.",
       "rejected": {
         "empty": "Ce fichier est vide.",
-        "too_large": "Ce fichier dépasse 50 Mo.",
+        "too_large": "Ce fichier est trop volumineux. Une vidéo peut atteindre {videoSize} Mo, et une photo ou un document, {size} Mo.",
         "unrecognised_content": "Le contenu de ce fichier n'est pas dans un format que nous acceptons.",
         "unaccepted_media_type": "Ce type de fichier n'est pas accepté.",
         "declared_type_mismatch": "Le contenu de ce fichier ne correspond pas à son type.",

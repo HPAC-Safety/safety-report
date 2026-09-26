@@ -1500,8 +1500,8 @@
     "reviewed": false
   },
   "report.attachments.guidance": {
-    "source_hash": "7904a8dd6588918957e01539e304040f3eb5cc312de539c897e247cf8b291479",
-    "target_hash": "ea0ef861fa7eea513f348385ce617965f3c0041041c5ed47214480b03f411c57",
+    "source_hash": "6c86fda2915de156fb7579fe84e8fe39c69077eb517bb6374a75d884be937129",
+    "target_hash": "cabe3c7ac74f0c3856d8bfcbeff366fc72f70fb181ea1798e2fcceec3cbdacee",
     "provider": "human",
     "reviewed": true
   },
@@ -1514,6 +1514,12 @@
   "report.attachments.listLabel": {
     "source_hash": "ecc5a28d1f5e894a429b15516ce6c8014f35c79ad154857f6b80c254feac0f2a",
     "target_hash": "0cb2492afc478b147fa70a56e5dd2b550855c7bc8f81b81aaea82dd21bcc2a19",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.attachments.refusedSummary": {
+    "source_hash": "a3597f30614cdc47675c5c5a900d1c47d7937774b13e2372e2bb35136155d4ad",
+    "target_hash": "631b6c6cbfdb339e2916371f34f477b0e8e8ba37ef72ce43799964c8fe3ed8bc",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
@@ -1542,8 +1548,8 @@
     "reviewed": true
   },
   "report.attachments.rejected.too_large": {
-    "source_hash": "dc7fd145749326ba444718a803deee784811b9556248aa386ddc5ae594161d69",
-    "target_hash": "b14e11370e254e5209047eb8a9acad67c52bbee19d6dc5071cff169189d3bf83",
+    "source_hash": "4474aa3211aa5bf86a5e6f2d34f05556a74244f0d7d42d0403f6a483a5f4ec0a",
+    "target_hash": "0e6ae04162a1881e19d666cb6765020014b41dfc8ec78c8ad4cf6acabb8ba3b9",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

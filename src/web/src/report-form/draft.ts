@@ -13,8 +13,11 @@
 const STORAGE_KEY = "hpac.report.draft"
 const MAX_AGE_MS = 15 * 24 * 60 * 60 * 1000
 
-/** One answer as the draft holds it — never a file. */
-export type DraftAnswer = { kind: "value"; value: string } | { kind: "options"; values: string[] }
+/**
+ * One answer as the draft holds it — never a file. A phone answer holds the
+ * number as the field shows it, with the country it was typed for (ADR-0137).
+ */
+export type DraftAnswer = { kind: "value"; value: string; country?: string } | { kind: "options"; values: string[] }
 
 /** One finished upload, as the draft names it; the bytes stay in quarantine. */
 export interface DraftAttachment {

@@ -16,7 +16,8 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     What a stored answer holds — REQ-QB-122, a choice answer names its choice
 ///     (ADR-0128); REQ-QB-019 and REQ-QB-118, every answer in its one invariant
-///     written form or refused; and REQ-QB-025, only consent is projected onto the
+///     written form or refused, as are REQ-SUB-096 and REQ-SUB-097 for an email
+///     or phone answer (ADR-0137); and REQ-QB-025, only consent is projected onto the
 ///     report (ADR-0072, ADR-0095, ADR-0117, ADR-0119).
 /// </summary>
 /// <remarks>
@@ -186,9 +187,9 @@ public sealed class StoredAnswerSteps
 		}
 	}
 
-	// --- REQ-QB-019, REQ-QB-118, REQ-QB-119: the written form, or a refusal ---
+	// --- REQ-QB-019, REQ-QB-118, REQ-QB-119, REQ-SUB-096, REQ-SUB-097: the written form, or a refusal ---
 
-	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to a (\w+) question$")]
+	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to an? (\w+) question$")]
 	public async Task GivenAReporterSubmitsAnAnswer(string language,
 													string submitted,
 													string type)
@@ -291,6 +292,14 @@ public sealed class StoredAnswerSteps
 		var problem = (await _submission.Content.ReadAsStringAsync())
 			.Replace(_answered.GetProperty("key").GetString()!, string.Empty, StringComparison.Ordinal);
 		problem.ShouldNotContain(_submitted!);
+	}
+
+	[Then(@"the refusal names the question by its key")]
+	public async Task ThenTheRefusalNamesTheQuestion()
+	{
+		var problem = await _submission!.Content.ReadFromJsonAsync<JsonElement>();
+
+		problem.GetProperty("detail").GetString()!.ShouldContain($"'{_answered.GetProperty("key").GetString()}'");
 	}
 
 	[Then(@"no stored answer carries that value")]

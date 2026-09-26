@@ -371,7 +371,9 @@ public class ReportAnswer
 	///     refusal. A yes/no or checkbox answer is a boolean, never text, so any text
 	///     for one is refused (ADR-0130). Nothing is converted: the form's own
 	///     inputs already send these, so any other shape came from somewhere else
-	///     (REQ-QB-118). A blank one is a skip. Every other type passes through.
+	///     (REQ-QB-118). An email answer is one address and a phone answer E.164
+	///     (ADR-0137, REQ-SUB-097). A blank one is a skip. Every other type passes
+	///     through.
 	/// </summary>
 	/// <remarks>
 	///     The refusal names the question, never the value: it reaches the reporter
@@ -381,7 +383,8 @@ public class ReportAnswer
 										QuestionRevision revision,
 										string? value)
 	{
-		if (revision.Type is not (QuestionType.Date or QuestionType.Time) && !revision.IsBoolean)
+		if (revision.Type is not (QuestionType.Date or QuestionType.Time or QuestionType.Email or QuestionType.Phone)
+			&& !revision.IsBoolean)
 		{
 			return value;
 		}
@@ -396,11 +399,17 @@ public class ReportAnswer
 			throw new DomainRuleViolationException($"'{question.Key}' must be answered with a boolean, never with words.");
 		}
 
-		var (stored, shape) = revision.Type == QuestionType.Date
-			? (DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-				"a date written YYYY-MM-DD")
-			: (TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
-				"a time written HH:mm");
+		var (stored, shape) = revision.Type switch
+		{
+			QuestionType.Date => (
+				DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				"a date written YYYY-MM-DD"),
+			QuestionType.Time => (
+				TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				"a time written HH:mm"),
+			QuestionType.Email => (ContactAnswer.IsEmailAddress(value), "one email address"),
+			_ => (ContactAnswer.IsE164(value), "a phone number written in E.164, such as +16045551234"),
+		};
 
 		return stored
 			? value

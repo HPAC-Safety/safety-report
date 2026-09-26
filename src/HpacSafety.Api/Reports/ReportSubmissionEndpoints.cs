@@ -275,7 +275,19 @@ public static partial class ReportSubmissionEndpoints
 					report.Answer(question, revision, entry.Value.Value.GetBoolean(), at);
 					break;
 				case JsonValueKind.String:
-					report.Answer(question, revision, entry.Value.Value.GetString(), at);
+					var text = entry.Value.Value.GetString();
+
+					// Core holds a phone answer to E.164; whether the number is real
+					// for its country is libphonenumber's call (ADR-0137). The refusal
+					// names the question, never the number.
+					if (revision.Type == QuestionType.Phone
+						&& !string.IsNullOrWhiteSpace(text)
+						&& !PhoneAnswer.IsValid(text))
+					{
+						return Problem($"'{question.Key}' must be answered with a phone number valid for its country, written in E.164.");
+					}
+
+					report.Answer(question, revision, text, at);
 					break;
 				default:
 					return Problem("An answer's value must be a string or a boolean.");

@@ -1,12 +1,15 @@
 import type { Locale } from "../i18n/locales"
+import { formatStoredPhone } from "./phoneNumber"
 
 /*
  * A date is stored as ISO 8601 `YYYY-MM-DD` and a time as `HH:mm` (ADR-0072),
  * and a yes/no as a boolean with no words at all (ADR-0130); a report saved in
  * the browser holds the form's `yes`/`no` token instead. Each reads in the
  * interface language
- * (REQ-MOD-075, REQ-SUB-068). A stored value that does not parse is shown as
- * stored rather than as "Invalid Date" (REQ-MOD-076).
+ * (REQ-MOD-075, REQ-SUB-068). A phone answer is stored in E.164 and reads
+ * grouped as its country writes it (ADR-0137, REQ-MOD-118). A stored value
+ * that does not parse is shown as stored rather than as "Invalid Date"
+ * (REQ-MOD-076).
  */
 
 const DATE = /^(\d{4})-(\d{2})-(\d{2})$/
@@ -17,7 +20,7 @@ const TIME = /^(\d{2}):(\d{2})(?::(\d{2}))?$/
  * formatted, so a second-language translation of it has nothing to add.
  */
 export function isLanguageNeutral(type: string): boolean {
-	return type === "date" || type === "time" || type === "yes_no" || type === "checkbox"
+	return type === "date" || type === "time" || type === "yes_no" || type === "checkbox" || type === "phone"
 }
 
 /** The stored answer as a person reads it in `locale`. */
@@ -28,6 +31,8 @@ export function formatAnswer(type: string, value: string | boolean, locale: Loca
 			return formatDate(value, locale) ?? value
 		case "time":
 			return formatTime(value, locale) ?? value
+		case "phone":
+			return formatStoredPhone(value)
 		case "yes_no":
 		case "checkbox":
 			if (value === "yes") return t("report.booleanYes")

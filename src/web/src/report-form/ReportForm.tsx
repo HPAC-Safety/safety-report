@@ -24,15 +24,17 @@ import {
 } from "./draft"
 import { QuestionField } from "./QuestionField"
 import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
+import { DEFAULT_PHONE_COUNTRY, toE164 } from "../lib/phoneNumber"
 import {
+	blockingQuestions,
 	buildSteps,
 	collectsNoAnswer,
 	indexQuestionsById,
+	isMalformed,
 	optionFor,
 	optionTyped,
 	questionHelp,
 	questionLabel,
-	unansweredRequired,
 	visibleChildren,
 	visibleSteps,
 	type AnswerMap,
@@ -191,10 +193,10 @@ export function ReportForm() {
 			return
 		}
 		// Browser Forward obeys the same rule as Next: no page past an
-		// unanswered required question (REQ-SUB-054).
+		// unanswered required question (REQ-SUB-054) or a malformed answer.
 		const blocked = visible
 			.slice(0, currentIndex)
-			.find((step) => unansweredRequired(step, answers, questionsById, hasAttachment).length > 0)
+			.find((step) => blockingQuestions(step, answers, questionsById, hasAttachment).length > 0)
 		if (blocked) {
 			setAttemptedAdvance(true)
 			navigate(stepPath(blocked), { replace: true })
@@ -313,7 +315,7 @@ export function ReportForm() {
 
 	function blockingRequirements(): PublicQuestionView[] {
 		if (!currentStep) return []
-		return unansweredRequired(currentStep, answers, questionsById, hasAttachment)
+		return blockingQuestions(currentStep, answers, questionsById, hasAttachment)
 	}
 
 	function handleNext() {
@@ -383,7 +385,7 @@ export function ReportForm() {
 					continue
 				}
 
-				const value = answer?.kind === "value" ? answer.value : null
+				const value = answer?.kind === "value" ? submittedText(question, answer) : null
 
 				submitAnswers.push({
 					questionRevisionId: question.revisionId,
@@ -478,7 +480,15 @@ export function ReportForm() {
 	const blocking = attemptedAdvance ? blockingRequirements() : []
 	const hasSomethingToDiscard =
 		Object.keys(answers).length > 0 || Object.values(attachments).some((rows) => rows.length > 0) || anyUploading
-	const blockingIds = new Set(blocking.map((question) => question.revisionId))
+	// Each blocking question's message: a malformed email or phone answer says
+	// what it needs (REQ-SUB-087, REQ-SUB-088); anything else is unanswered.
+	const blockingMessages = new Map(
+		blocking.map((question) => [
+			question.revisionId,
+			t(isMalformed(question, answers[question.revisionId]) ? `report.${question.type}.invalid` : "report.required.error"),
+		]),
+	)
+	const anyUnanswered = blocking.some((question) => !isMalformed(question, answers[question.revisionId]))
 
 	return (
 		<div className={COLUMN}>
@@ -502,7 +512,9 @@ export function ReportForm() {
 
 			{blocking.length > 0 && (
 				<div role="alert" className="mt-4 rounded border border-brand-700 bg-surface p-4">
-					<p className="font-sans text-sm font-semibold text-brand-700">{t("report.required.summary")}</p>
+					<p className="font-sans text-sm font-semibold text-brand-700">
+						{t(anyUnanswered ? "report.required.summary" : "report.invalid.summary")}
+					</p>
 					<ul className="mt-1 list-disc pl-5 font-sans text-sm text-brand-700">
 						{blocking.map((question) => (
 							<li key={question.revisionId}>
@@ -529,7 +541,7 @@ export function ReportForm() {
 					onUploading={setQuestionUploading}
 					attachmentRoom={attachmentRoom}
 					onAnswer={setAnswer}
-					blockingIds={blockingIds}
+					blockingMessages={blockingMessages}
 					questionsById={questionsById}
 					t={t}
 				/>
@@ -593,7 +605,7 @@ interface StepContentProps {
 	onUploading: (revisionId: string, uploading: boolean) => void
 	attachmentRoom: number
 	onAnswer: (revisionId: string, answer: DraftAnswer | undefined) => void
-	blockingIds: Set<string>
+	blockingMessages: Map<string, string>
 	questionsById: Map<string, PublicQuestionView>
 	t: (key: string, params?: Record<string, string | number>) => string
 }
@@ -617,7 +629,7 @@ function StepContent({
 	onUploading,
 	attachmentRoom,
 	onAnswer,
-	blockingIds,
+	blockingMessages,
 	questionsById,
 	t,
 }: StepContentProps) {
@@ -655,7 +667,7 @@ function StepContent({
 								onAttachmentsChange={(update) => onAttachments(child.revisionId, update)}
 								onUploadingChange={(busy) => onUploading(child.revisionId, busy)}
 								attachmentRoom={attachmentRoom}
-								errorText={blockingIds.has(child.revisionId) ? t("report.required.error") : null}
+								errorText={blockingMessages.get(child.revisionId) ?? null}
 								t={t}
 							/>
 						),
@@ -684,8 +696,22 @@ function StepContent({
 			onAttachmentsChange={(update) => onAttachments(step.question.revisionId, update)}
 			onUploadingChange={(busy) => onUploading(step.question.revisionId, busy)}
 			attachmentRoom={attachmentRoom}
-			errorText={blockingIds.has(step.question.revisionId) ? t("report.required.error") : null}
+			errorText={blockingMessages.get(step.question.revisionId) ?? null}
 			t={t}
 		/>
 	)
+}
+
+/**
+ * An entered text answer as it is sent: an email address trimmed, and a phone
+ * number in E.164 for the country it was typed for (ADR-0137); a blank one of
+ * either as no answer (REQ-SUB-086). The form has already refused a malformed
+ * one.
+ */
+function submittedText(question: PublicQuestionView, answer: { value: string; country?: string }): string | null {
+	if (question.type !== "email" && question.type !== "phone") return answer.value
+	const entered = answer.value.trim()
+	if (!entered) return null
+	if (question.type === "email") return entered
+	return toE164(answer.country ?? DEFAULT_PHONE_COUNTRY, entered) ?? entered
 }

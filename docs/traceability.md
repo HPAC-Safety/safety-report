@@ -894,6 +894,10 @@ A private note refers to a private attachment on the report page — *playwright
 
 A safety officer cancels a private attachment while it uploads — *playwright-bdd, Covered*
 
+### REQ-MOD-118
+
+A phone answer reads formatted, and one stored before phone numbers were validated reads as stored — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001
@@ -1645,6 +1649,58 @@ The form names each chosen choice by its identifier — *playwright-bdd, Covered
 ### REQ-SUB-084
 
 A file larger than its kind allows is refused on its row before it is sent — *playwright-bdd, Covered*
+
+### REQ-SUB-085
+
+An email or phone question opens the matching keyboard — *playwright-bdd, Covered*
+
+### REQ-SUB-086
+
+An optional email or phone question may be left blank — *playwright-bdd, Covered*
+
+### REQ-SUB-087
+
+A malformed email address holds the reporter on its page — *playwright-bdd, Covered*
+
+### REQ-SUB-088
+
+A phone number that is not valid for its country holds the reporter on its page — *playwright-bdd, Covered*
+
+### REQ-SUB-089
+
+The phone country picker starts on Canada — *playwright-bdd, Covered*
+
+### REQ-SUB-090
+
+A phone number takes its chosen country's mask as it is typed — *playwright-bdd, Covered*
+
+### REQ-SUB-091
+
+A phone answer is sent in E.164 — *playwright-bdd, Covered*
+
+### REQ-SUB-092
+
+Before "@" is typed, every suggested domain is offered for what has been typed — *playwright-bdd, Covered*
+
+### REQ-SUB-093
+
+After "@", the suggestions narrow to the domains beginning with what follows it — *playwright-bdd, Covered*
+
+### REQ-SUB-094
+
+Choosing a suggestion fills the field — *playwright-bdd, Covered*
+
+### REQ-SUB-095
+
+An address at a domain outside the suggestions is accepted — *playwright-bdd, Covered*
+
+### REQ-SUB-096
+
+A well-formed email or phone answer is stored as written — *Reqnroll, Covered*
+
+### REQ-SUB-097
+
+A malformed email or phone answer is refused by its question key — *Reqnroll, Covered*
 
 ## Claims: typeform-question-import-export
 

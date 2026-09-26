@@ -75,7 +75,7 @@ public sealed class AnswerTranslationModeSteps
 	public async Task GivenTheInvariantTypes()
 	{
 		_answers["email"] = (await CreateQuestion("email"), "avery@example.test", null);
-		_answers["phone"] = (await CreateQuestion("phone"), "555-0100", null);
+		_answers["phone"] = (await CreateQuestion("phone"), "+16045550100", null);
 		_answers["date"] = (await CreateQuestion("date"), "2026-09-21", null);
 		_answers["time"] = (await CreateQuestion("time"), "14:30", null);
 		_answers["number"] = (await CreateQuestion("number"), "3", null);

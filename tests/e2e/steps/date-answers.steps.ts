@@ -223,14 +223,14 @@ When("the reporter presses ArrowDown and then Escape", async ({ page }) => {
 
 When(
 	/^the reporter chooses (\w+) in the calendar's month picker and (\d{4}) in its year picker$/,
-	async ({ page }, month: string, year: string) => {
+	async ({ page }, month: string, year: string | number) => {
 		await calendar(page).getByRole("combobox", { name: "Month" }).selectOption({ label: month })
-		await calendar(page).getByRole("combobox", { name: "Year" }).selectOption(year)
+		await calendar(page).getByRole("combobox", { name: "Year" }).selectOption(String(year))
 	},
 )
 
-When(/^the reporter chooses the (\d+)(?:st|nd|rd|th)$/, async ({ page }, day: string) => {
-	await calendar(page).locator(`button[data-day$="-${day.padStart(2, "0")}"]`).click()
+When(/^the reporter chooses the (\d+)(?:st|nd|rd|th)$/, async ({ page }, day: string | number) => {
+	await calendar(page).locator(`button[data-day$="-${String(day).padStart(2, "0")}"]`).click()
 })
 
 When(
@@ -377,7 +377,8 @@ Then("focus is on the date field", async ({ page }) => {
 	await expect(page.locator(DATE_FIELD)).toBeFocused()
 })
 
-Then(/^the calendar shows (\w+) (\d{4})$/, async ({ page }, month: string, year: string) => {
+Then(/^the calendar shows (\w+) (\d{4})$/, async ({ page }, month: string, shownYear: string | number) => {
+	const year = String(shownYear)
 	await expect(calendar(page).getByRole("combobox", { name: "Month" }).locator("option:checked")).toHaveText(month)
 	await expect(calendar(page).getByRole("combobox", { name: "Year" }).locator("option:checked")).toHaveText(year)
 	await expect(calendar(page).getByRole("grid", { name: `${month} ${year}` })).toBeVisible()

@@ -61,17 +61,9 @@ carries `@ignore`.
 feature, boundary, DTO, lifecycle rule, and implementation gap. Older ADRs and
 GitHub issues are historical context when they disagree with `/features`.
 
-The target flow is deliberately small:
-
-```mermaid
-flowchart LR
-    form["Public bilingual form"] -->|"attachment uploads, then one submission"| api["API"]
-    api -->|"report + answers + files + outbox\none transaction"| db[("PostgreSQL")]
-    db --> worker["Worker"]
-    worker -->|"one prompt · one call"| pair["Anonymized EN/FR pair"]
-    pair --> review["Human review"]
-    review -->|"consent + approval"| public["Public feed"]
-```
+The target flow is deliberately small.
+[`docs/architecture.md`](docs/architecture.md) draws it, in the repository's
+one report-flow diagram.
 
 - Questions are complete immutable English/French database revisions. An
   administrator may make any question required; publication consent can never
@@ -80,7 +72,9 @@ flowchart LR
 - An unfinished report exists only in the respondent's browser for 15 days.
   Nothing is written to the API or database until the one final submission.
   Each attachment uploads to private quarantine when it is attached, and
-  expires unless that submission claims it.
+  expires unless that submission claims it. A continued saved report restores
+  its attached files too, within the same 15 days
+  ([ADR-0100](docs/decisions/ADR-0100-an-attachment-is-kept-as-long-as-the-saved-report.md)).
 - Private answers help the one model call recognize identifying text; they are
   never facts for publication. A repeated private name becomes a role such as
   “the pilot” / “le pilote,” with no name fragment left behind.

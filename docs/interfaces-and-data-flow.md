@@ -108,6 +108,9 @@ when no domain boundary or second adapter exists.
 
 ## Submission-to-review data flow
 
+The data each interface carries. The report's flow through the components is
+drawn once, in [`architecture.md`](architecture.md).
+
 ```mermaid
 flowchart TD
     qdb[(Question revisions)] --> fq[Current-form query DTO]
@@ -121,6 +124,9 @@ flowchart TD
     outbox --> media[Attachment work]
     outbox --> summary[Summary work]
     media --> derivative[(Safe derivatives / private documents)]
+    summary --> consent{Publication consent exactly yes?}
+    consent -->|no| unpublished[Unpublished, no model call]
+    consent -->|yes| partition
     reports --> partition[Summary query/partition]
     partition --> model[One LLM call]
     model --> pair[(Bilingual summary row)]

@@ -66,7 +66,8 @@ flowchart LR
     web -->|bearer token| api[ASP.NET Core API]
     api --> db[(PostgreSQL)]
     api --> media[(Private attachment storage)]
-    db --> worker[.NET Worker]
+    api -->|nudge after commit| worker[.NET Worker]
+    sweep[EventBridge sweep] --> worker
     worker --> llm[LLM]
     worker --> media
     worker --> db
@@ -119,14 +120,19 @@ sequenceDiagram
     A->>S: Claim uploads into the report's compartments
     A->>D: Report + answers + files + outbox (one transaction)
     A-->>B: 202 Accepted
+    A-)W: Nudge after commit (a sweep every minute guarantees delivery)
     W->>D: Claim report and attachment work
     W->>S: Produce safe image/video derivatives
-    W->>D: Query labeled public content + private context
-    W->>M: One versioned bilingual summary request
-    M-->>W: Strict EN/FR JSON
-    W->>D: Persist one summary pair
-    H->>A: Review, edit if needed, approve pair
-    A->>D: Audit action and publication state
+    alt Publication consent is not exactly yes
+        W->>D: Mark the report Unpublished, with no model call
+    else Publication consent is yes
+        W->>D: Query labeled public content + private context
+        W->>M: One versioned bilingual summary request
+        M-->>W: Strict EN/FR JSON
+        W->>D: Persist one summary pair (Pending)
+        H->>A: Review, edit if needed, Publish
+        A->>D: Approve the pair, publish, and audit in one action
+    end
 ```
 
 ## Supported scope

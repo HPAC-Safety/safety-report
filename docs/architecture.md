@@ -11,16 +11,36 @@ The complete target is specified in
 [`interfaces-and-data-flow.md`](interfaces-and-data-flow.md). This
 page is a short orientation only.
 
+This is the one diagram of how a report flows through the system. Other pages
+link here rather than drawing their own.
+
 ```mermaid
-flowchart LR
+flowchart TD
     idp["Identity provider"] -->|"signed token"| web["React/TS website"]
-    web -->|"questions, attachment uploads, final report, bearer token"| api["API"]
+    web -->|"each attachment, as attached: pre-signed PUT"| private[("Private attachments")]
+    web -->|"one final report naming upload IDs, bearer token"| api["API"]
     web -->|"authenticated review at /admin"| api
-    api -->|"atomic report + outbox"| db[("PostgreSQL")]
-    api --> private[("Private attachments")]
-    db --> worker["Worker"]
-    worker -->|"one bilingual summary call"| db
-    worker --> private
+    api -->|"report + answers + files + outbox, one transaction"| db[("PostgreSQL")]
+    api -->|"async nudge after each commit"| worker
+    sweep["EventBridge sweep, every minute:<br/>the delivery guarantee"] --> worker
+    worker -->|"claims due outbox work, writes results"| db
+
+    subgraph worker["Worker"]
+        summary["Summary"]
+        attachment["Attachment"]
+        answerTr["Answer translation"]
+        commentTr["Comment translation"]
+    end
+
+    attachment -->|"safe image and video derivatives"| private
+    answerTr --> translator["Translation provider"]
+    commentTr --> translator
+    summary --> consent{"Publication consent<br/>exactly yes?"}
+    consent -->|"no"| unpublished["Unpublished, with no model call;<br/>it can only be deleted"]
+    consent -->|"yes"| model["One model call"]
+    model --> pair["EN/FR summary pair, Pending"]
+    pair --> publish["Publish: approves the current pair<br/>and publishes it in one action"]
+    publish --> feed["Public feed: summary pair, comments, and,<br/>with media consent, media and documents"]
 ```
 
 - `HpacSafety.Core` owns small domain rules and ports for genuine external
@@ -29,8 +49,12 @@ flowchart LR
   processing, and the model adapter.
 - `HpacSafety.Api` exposes public and admin HTTP DTOs, and owns token
   validation and the role policies. It does no AI work.
-- `HpacSafety.Worker` consumes typed outbox work for the one-call summary and
-  per-file attachment processing.
+- `HpacSafety.Worker` consumes four kinds of typed outbox work: the one-call
+  summary, per-file attachment processing, answer translation, and comment
+  translation
+  ([ADR-0123](decisions/ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)).
+  The API nudges it after each commit, and a sweep every minute guarantees
+  delivery.
 - `src/web` is one React/TypeScript/Vite application, built once, with the
   admin review queue as an authenticated `/admin` route
   ([ADR-0043](decisions/ADR-0043-react-typescript-vite-web-front-end.md),
@@ -39,8 +63,16 @@ flowchart LR
 Questions are complete immutable bilingual database revisions. Unfinished
 answers remain only in the browser; no report data is stored server-side until
 one final request, except each attachment, which uploads to private quarantine
-when it is attached and is claimed by that request. The Worker produces one bilingual row, and human
-review plus positive consent gates a minimal public DTO.
+when it is attached and is claimed by that request. A report without
+publication consent never reaches the model: the Worker marks it Unpublished
+([ADR-0125](decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
+For a consented report, the Worker produces one bilingual row, and a reviewer's
+Publish approves it and makes it public in one action
+([ADR-0105](decisions/ADR-0105-approving-a-consented-pair-publishes-it.md),
+[ADR-0125](decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
+What the public sees is the
+[public DTO](interfaces-and-data-flow.md#publicreporting-api) and
+[the public feed and report page](../features/moderation-authentication-and-publication/README.md#the-public-feed-and-report-page-329).
 
 Keep only useful boundaries. The target has no server drafts, upload-slot API,
 application field cipher, summary-translation stage, PII auditor, email sender,

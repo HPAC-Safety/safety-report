@@ -229,6 +229,12 @@ public sealed class StoredAnswerSteps
 
 	// --- REQ-SUB-108, REQ-SUB-109: a future date, against the question's setting ---
 
+	[AfterScenario]
+	public void DisposeClockedHost()
+	{
+		_clockedHost?.Dispose();
+	}
+
 	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to a date question that (allows|does not allow) future dates$")]
 	public async Task GivenAReporterSubmitsADate(string language,
 												 string date,
@@ -253,8 +259,11 @@ public sealed class StoredAnswerSteps
 		_answered = await response.Content.ReadFromJsonAsync<JsonElement>();
 
 		// One instant for both sides: the date is named from it, and the API
-		// judges today by it.
-		var now = DateTimeOffset.UtcNow;
+		// judges today by it. Thirty seconds before 10:00 UTC is 23:59:30 at
+		// UTC+14, the last moment a date is still today there, so the boundary
+		// is crossed on purpose rather than by chance (ADR-0138).
+		var utc = DateTimeOffset.UtcNow;
+		var now = new DateTimeOffset(utc.Year, utc.Month, utc.Day, 9, 59, 30, TimeSpan.Zero);
 		_clockedHost = await BootedApi.AtTime(now);
 		_submitted = DateNamed(date, now);
 		_submittedValue = _submitted;
@@ -299,7 +308,9 @@ public sealed class StoredAnswerSteps
 	{
 		using var reporter = _clockedHost is null
 			? await BootedApi.SignedInAs(MemberRole.User)
-			: await BootedApi.SignedInAs(MemberRole.User, _clockedHost);
+			// Its token is minted on the real clock, which is what validates it;
+			// only "today" is judged at the stopped instant.
+			: BootedApi.SignedInAsMember(_clockedHost, $"acceptance:{_run}");
 		_submission = await reporter.PostAsJsonAsync(Submit, new
 		{
 			language = _language.Code,

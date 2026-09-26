@@ -95,6 +95,28 @@ public class QuestionChoice
 	public DateTimeOffset? Deleted { get; private set; }
 
 	/// <summary>
+	///     When a reporter added this value. Null for a choice an Administrator
+	///     wrote, and for one added before this was recorded.
+	/// </summary>
+	public DateTimeOffset? CreatedAt { get; private init; }
+
+	/// <summary>
+	///     True while a Safety Officer or Administrator has yet to review this
+	///     type-ahead value: set when a reporter adds it, and again when a reporter
+	///     types it after it was removed. See ADR-0129.
+	/// </summary>
+	public bool NeedsReview { get; private set; }
+
+	/// <summary>When this value was last reviewed: approved, corrected, or removed.</summary>
+	public DateTimeOffset? ReviewedAt { get; private set; }
+
+	/// <summary>
+	///     Who last reviewed it, as the subject of their validated token — opaque,
+	///     and joined to nothing (ADR-0065).
+	/// </summary>
+	public string? ReviewedBy { get; private set; }
+
+	/// <summary>
 	///     True while one language is missing — a reporter-added choice waiting for
 	///     an Administrator to supply the other wording.
 	/// </summary>
@@ -134,7 +156,8 @@ public class QuestionChoice
 												string code,
 												int displayOrder,
 												string typed,
-												Locale locale)
+												Locale locale,
+												DateTimeOffset? at)
 	{
 		var label = NotBlank(typed);
 
@@ -142,7 +165,11 @@ public class QuestionChoice
 			questionId, code, displayOrder,
 			locale == Locale.FrCa ? null : label,
 			locale == Locale.FrCa ? label : null,
-			true, locale, null);
+			true, locale, null)
+		{
+			CreatedAt = at,
+			NeedsReview = true,
+		};
 	}
 
 	/// <summary>This row, removal and marks included, as a choice of another question — the replacement a fork creates.</summary>
@@ -152,6 +179,10 @@ public class QuestionChoice
 		{
 			LabelEnSource = LabelEnSource,
 			LabelFrSource = LabelFrSource,
+			CreatedAt = CreatedAt,
+			NeedsReview = NeedsReview,
+			ReviewedAt = ReviewedAt,
+			ReviewedBy = ReviewedBy,
 		};
 	}
 
@@ -186,6 +217,26 @@ public class QuestionChoice
 		}
 
 		return false;
+	}
+
+	/// <summary>A reporter used this value again after it was removed: a reviewer should see it is still in use (ADR-0129).</summary>
+	internal void FlagForReview()
+	{
+		NeedsReview = true;
+	}
+
+	/// <summary>Records a review — an approval, a correction, or a removal — and clears the flag.</summary>
+	internal void MarkReviewed(string reviewer,
+							   DateTimeOffset at)
+	{
+		if (string.IsNullOrWhiteSpace(reviewer))
+		{
+			throw new DomainRuleViolationException("A review needs the reviewer's token subject.");
+		}
+
+		NeedsReview = false;
+		ReviewedAt = at;
+		ReviewedBy = reviewer;
 	}
 
 	/// <summary>

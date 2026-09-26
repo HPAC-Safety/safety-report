@@ -65,7 +65,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	[Theory]
 	[InlineData("admin_report_queue", "id,submitted_at,status,language,consent_publish,is_stuck,needs_action")]
 	[InlineData("answers_awaiting_translation", "id,question_key,value,locale,answered_at")]
-	[InlineData("admin_pending_counts", "reports_needing_action,answers_awaiting_translation")]
+	[InlineData("admin_pending_counts", "reports_needing_action,answers_awaiting_translation,type_ahead_values_awaiting_review")]
 	[InlineData("public_report_media", "id,report_id,kind,content_type,stripped_blob_key,document_blob_key,uploaded_at")]
 	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenAdminViewCarriesOnlyItsColumns(string view,
 		string expected)

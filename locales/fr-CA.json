@@ -29,6 +29,7 @@
     "manageReports": "Gérer les signalements",
     "manageQuestions": "Gérer les questions",
     "manageAnswerTranslations": "Réponses en attente de traduction",
+    "reviewTypeAheadValues": "Valeurs de saisie semi-automatique à vérifier",
     "pendingCount": "{count} en attente"
   },
   "language": {
@@ -306,6 +307,26 @@
     "error": {
       "unexpected": "Une erreur s'est produite. Veuillez réessayer."
     }
+  },
+  "typeAheadValues": {
+    "title": "Valeurs de saisie semi-automatique à examiner",
+    "intro": "Les personnes déclarantes ajoutent une valeur à la suggestion automatique lorsque celle-ci ne correspond pas à ce dont elles ont besoin, et la suggestion suivante leur est immédiatement proposée. Approuvez-la, corrigez sa formulation pour chaque réponse qui la mentionne, ou retirez-la du formulaire; les réponses qui la mentionnent la conservent.",
+    "loading": "Chargement des valeurs…",
+    "empty": "Aucune valeur de saisie semi-automatique n'est en attente de révision.",
+    "error": {
+      "unexpected": "Une erreur s'est produite. Veuillez réessayer."
+    },
+    "typedIn": "Saisi sur {locale}",
+    "written": "Rédigé par un administrateur",
+    "answerCount": "Réponses mentionnant ce nom : {count}",
+    "removedBadge": "Supprimé, retapé",
+    "labelEn": "Texte en anglais",
+    "labelFr": "Texte en français",
+    "approve": "Approuver",
+    "correct": "Correct",
+    "saveCorrection": "Enregistrer la correction",
+    "cancel": "Annuler",
+    "remove": "Supprimer"
   },
   "reports": {
     "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",

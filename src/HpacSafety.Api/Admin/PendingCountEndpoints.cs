@@ -22,9 +22,10 @@ public static class PendingCountEndpoints
 	}
 
 	/// <summary>
-	///     The reports needing action for any reviewer, and the answers awaiting
-	///     translation only for someone the Administrator policy admits — the queue
-	///     itself is theirs alone (REQ-MOD-085).
+	///     The reports needing action and the type-ahead values awaiting review for
+	///     any reviewer (ADR-0129), and the answers awaiting translation only for
+	///     someone the Administrator policy admits — the queue itself is theirs alone
+	///     (REQ-MOD-085).
 	/// </summary>
 	private static async Task<IResult> Counts(
 		HpacSafetyDbContext database,
@@ -43,11 +44,13 @@ public static class PendingCountEndpoints
 
 		return Results.Ok(new PendingCountsResponse(
 			counts.ReportsNeedingAction,
-			isAdministrator ? counts.AnswersAwaitingTranslation : null));
+			isAdministrator ? counts.AnswersAwaitingTranslation : null,
+			counts.TypeAheadValuesAwaitingReview));
 	}
 }
 
 /// <summary>How much admin work is waiting.</summary>
 /// <param name="ReportsNeedingAction">Live reports the Needs action filter would list.</param>
 /// <param name="AnswersAwaitingTranslation">Answers waiting for a second language; null unless the caller is an Administrator.</param>
-public sealed record PendingCountsResponse(int ReportsNeedingAction, int? AnswersAwaitingTranslation);
+/// <param name="TypeAheadValuesAwaitingReview">Type-ahead values waiting for a Safety Officer or Administrator to review (ADR-0129).</param>
+public sealed record PendingCountsResponse(int ReportsNeedingAction, int? AnswersAwaitingTranslation, int TypeAheadValuesAwaitingReview);

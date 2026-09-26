@@ -56,10 +56,9 @@ Scenario: A signed-in Administrator's Admin menu offers every option
   Given a visitor signs in as an Administrator
   Then the header shows an Admin menu and no other header nav change
   When the visitor activates the Admin menu
-  Then it opens with manage-reports, manage-questions, and manage-answer-translations options
+  Then it opens with manage-reports, review-type-ahead-values, manage-questions, and manage-answer-translations options
 
 @REQ-MOD-092
-@ignore
 @ui
 Scenario: A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review
   Given a visitor signs in as a SafetyOfficer
@@ -112,7 +111,6 @@ Scenario: An Administrator's Admin menu shows how much work is waiting
   And the manage-questions option shows no count
 
 @REQ-MOD-093
-@ignore
 @ui
 Scenario: A SafetyOfficer's Admin menu counts reports and type-ahead values waiting
   Given the API counts 4 reports needing action, 3 type-ahead values awaiting review, and no answers awaiting translation
@@ -250,6 +248,16 @@ Examples:
   | User          | forbids  |
   | SafetyOfficer | allows   |
   | Administrator | allows   |
+
+@REQ-MOD-097
+@ui
+Scenario: A Safety Officer approves, corrects, and removes type-ahead values on the review page
+  Given a signed-in Safety Officer and three type-ahead values flagged for review
+  When they open the review-type-ahead-values page
+  Then each value is listed with its question, the language it was typed in, and how many answers name it
+  When they approve "Mount 7", correct "coopers" to "Cooper's", and remove "Test site"
+  Then the API is asked to approve, correct, and remove exactly those values
+  And the page lists no value left to review
 
 @REQ-MOD-095
 @ignore

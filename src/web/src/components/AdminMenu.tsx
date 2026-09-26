@@ -65,6 +65,7 @@ export function AdminMenu({
 
 	const reports = counts?.reportsNeedingAction ?? 0
 	const translations = role === "administrator" ? (counts?.answersAwaitingTranslation ?? 0) : 0
+	const typeAheadValues = counts?.typeAheadValuesAwaitingReview ?? 0
 
 	function selectItem() {
 		setOpen(false)
@@ -82,7 +83,7 @@ export function AdminMenu({
 				className={stacked ? stackedLinkClassName : "group touch-target inline-flex items-center rounded px-2 font-sans text-sm font-medium text-ink"}
 			>
 				<Label>{t("nav.admin")}</Label>
-				<CountBadge count={reports + translations} />
+				<CountBadge count={reports + translations + typeAheadValues} />
 			</button>
 
 			{open && (
@@ -98,6 +99,10 @@ export function AdminMenu({
 					<Link role="menuitem" to="/admin/reports" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
 						<Label>{t("nav.manageReports")}</Label>
 						<CountBadge count={reports} />
+					</Link>
+					<Link role="menuitem" to="/admin/type-ahead-values" onClick={selectItem} className={stacked ? stackedLinkClassName : rowLinkClassName}>
+						<Label>{t("nav.reviewTypeAheadValues")}</Label>
+						<CountBadge count={typeAheadValues} />
 					</Link>
 					{role === "administrator" && (
 						<>

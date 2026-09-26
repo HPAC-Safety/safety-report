@@ -156,6 +156,11 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 		builder.Property(choice => choice.DisplayOrder).IsRequired();
 		builder.Property(choice => choice.AddedByReporter).IsRequired().HasDefaultValue(false);
 		builder.Property(choice => choice.ReporterLocale);
+
+		// The review a reporter-added type-ahead value waits for (ADR-0129). A
+		// reviewer is a token subject, never a key: there is no user table.
+		builder.Property(choice => choice.NeedsReview).IsRequired().HasDefaultValue(false);
+		builder.Property(choice => choice.ReviewedBy).HasMaxLength(256);
 		builder.Ignore(choice => choice.NeedsTranslation);
 
 		// How each language was produced: written by a person, or supplied by the

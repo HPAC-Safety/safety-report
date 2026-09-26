@@ -11,4 +11,7 @@ public sealed class AdminPendingCounts
 
 	/// <summary>Answers waiting for a second language.</summary>
 	public int AnswersAwaitingTranslation { get; private init; }
+
+	/// <summary>Type-ahead values on live questions waiting for a Safety Officer or Administrator to review (ADR-0129).</summary>
+	public int TypeAheadValuesAwaitingReview { get; private init; }
 }

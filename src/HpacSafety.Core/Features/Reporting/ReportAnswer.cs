@@ -248,7 +248,7 @@ public class ReportAnswer
 
 		if (revision.StoresLocalizedValue)
 		{
-			return Naming(reportId, question, revision, ChoiceWorded(question, revision, value, locale), locale, at);
+			return Naming(reportId, question, revision, ChoiceWorded(question, revision, value, locale, at), locale, at);
 		}
 
 		return new ReportAnswer(reportId, question, revision, locale, at)
@@ -326,7 +326,8 @@ public class ReportAnswer
 	private static QuestionChoice? ChoiceWorded(Question question,
 												QuestionRevision revision,
 												string? value,
-												Locale locale)
+												Locale locale,
+												DateTimeOffset at)
 	{
 		if (string.IsNullOrWhiteSpace(value))
 		{
@@ -335,7 +336,7 @@ public class ReportAnswer
 
 		if (revision.TakesReporterAdditions)
 		{
-			return question.AddChoiceFromReporter(value, locale);
+			return question.AddChoiceFromReporter(value, locale, at);
 		}
 
 		return question.OfferedChoiceLabelled(value, locale)

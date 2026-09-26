@@ -100,10 +100,14 @@ erDiagram
         int display_order
         text label_en "null only on a reporter choice typed in French, or a removed one made for an old answer"
         text label_fr "null only on a reporter choice typed in English, or a removed one made for an old answer"
-        boolean added_by_reporter "typed into a type-ahead, awaiting curation"
+        boolean added_by_reporter "typed into a type-ahead"
         varchar(8) reporter_locale "the language a reporter typed it in"
         varchar(16) label_en_source "human or auto; null while label_en is (ADR-0129)"
         varchar(16) label_fr_source "human or auto; null while label_fr is (ADR-0129)"
+        boolean needs_review "a type-ahead value awaiting a reviewer (ADR-0129)"
+        timestamptz reviewed_at "last approved, corrected, or removed"
+        varchar(256) reviewed_by "the reviewer's token subject; joins to nothing"
+        timestamptz created_at "when a reporter added it; null before this was recorded"
         timestamptz deleted "removed; hidden from the form, never erased"
     }
 
@@ -255,6 +259,7 @@ this.
 | `20260925223046_StoreYesOrNoAsABoolean` | Added `report_answers.value_boolean`, and converted every stored yes/no and checkbox answer to it once: `yes`/`oui` → `true`, `no`/`non` → `false`, clearing `value`, `translated_value`, and `translation_source`, with mode `none`. Any other stored value stops the migration (ADR-0130). Dropped `fixed` from `ck_report_answers_translation_mode`, and added `ck_report_answers_text_or_boolean` and `ck_report_answers_boolean_has_no_words`. |
 | `20260925230357_NameEachAnswersChoice` | Added `report_answers.choice_id` (a restricted foreign key to `question_choices`) and linked every existing select and type-ahead answer to the choice its stored label names; a label no choice carries any more gets a removed choice holding it, in the answer's language, so every old answer resolves. No answer's text is rewritten. `ck_question_choices_label` now also lets such a removed choice hold one language, and the translation queue (its index and `answers_awaiting_translation`) leaves choice answers out (ADR-0128). The backfill is `Sql/20260925230357_NameEachAnswersChoice.sql`. |
 | `20260925233040_TranslateReporterAddedValues` | Added `question_choices.label_en_source` and `label_fr_source` (`human` or `auto`, present exactly when their label is; every existing label backfilled `human`), and allowed the outbox type `translate_choice`: the Worker supplies a reporter-added type-ahead value's missing language on the value itself (ADR-0129). The backfill is `Sql/20260925233040_TranslateReporterAddedValues.sql`. |
+| `20260925235946_ReviewTypeAheadValues` | Added `question_choices.needs_review`, `reviewed_at`, `reviewed_by`, and `created_at`, and flagged every live reporter-added value still missing a language (what "awaiting review" meant before). `admin_pending_counts` gains `type_ahead_values_awaiting_review`, counted on live questions; its Down script drops and recreates the view without it (ADR-0129). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

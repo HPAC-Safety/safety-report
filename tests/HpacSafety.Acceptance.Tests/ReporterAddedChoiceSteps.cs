@@ -131,10 +131,160 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa);
 	}
 
-	[When(@"a reporter answering in French submits ""(.*)"", which the question does not offer")]
-	public void WhenAFrenchReporterNamesANewSite(string typed)
+	[When(@"^a reporter answering in (English|French) submits ""(.*)"", which the question does not offer$")]
+	public void WhenAReporterNamesANewSite(string language,
+										  string typed)
 	{
-		_added = _question.AddChoiceFromReporter(typed, Locale.FrCa);
+		var locale = LocaleOf(language);
+		_answer = new Report(locale, Noon).Answer(_question, typed, Noon);
+		_added = _question.AllChoices.Single(choice => choice.Id == _answer.ChoiceId);
+	}
+
+	// --- REQ-QB-128..130, REQ-QB-135: a reviewer's hand on type-ahead values (ADR-0129) ---
+
+	private const string Reviewer = "synthetic-safety-officer";
+	private readonly List<ReportAnswer> _answers = [];
+	private TinyId _valueId;
+
+	[Then(@"^the question gains a reporter-added value whose (English|French) wording is ""(.*)""$")]
+	public void ThenTheQuestionGainsAValue(string language,
+										   string typed)
+	{
+		_added!.AddedByReporter.ShouldBeTrue();
+		_added.Label(LocaleOf(language)).ShouldBe(typed);
+		(LocaleOf(language) == Locale.FrCa ? _added.LabelFr : _added.LabelEn).ShouldBe(typed);
+		_question.Choices.ShouldContain(_added);
+	}
+
+	[Then(@"the value is flagged for review")]
+	public void ThenTheValueIsFlagged()
+	{
+		_added!.NeedsReview.ShouldBeTrue();
+		_added.CreatedAt.ShouldBe(Noon);
+	}
+
+	[Then(@"the reporter's answer names that value")]
+	public void ThenTheAnswerNamesTheValue()
+	{
+		_answer!.ChoiceId.ShouldBe(_added!.Id);
+	}
+
+	[Then(@"^the next reporter is offered it, in (English|French) until its other language is supplied$")]
+	public void ThenOfferedInItsLanguage(string language)
+	{
+		var typedIn = LocaleOf(language);
+		var typed = _added!.Label(typedIn);
+
+		_question.OfferedChoiceLabelled(typed, typedIn).ShouldBe(_added);
+		_question.OfferedChoiceLabelled(typed, typedIn.Counterpart).ShouldBe(_added);
+		_added.OtherLabel(typedIn).ShouldBeNull();
+	}
+
+	[Given(@"two reports answered a type-ahead question with the value ""(.*)""")]
+	public void GivenTwoReportsAnsweredWith(string typed)
+	{
+		// No written values: the reporters' spelling is the value itself.
+		_question = Question.Create(
+			"where_did_this_happen", QuestionType.Autocomplete, "Where did this happen?", "Où cela s'est-il produit ?", Noon,
+			isActive: true);
+		_answers.Add(new Report(Locale.EnCa, Noon).Answer(_question, typed, Noon));
+		_answers.Add(new Report(Locale.EnCa, Noon).Answer(_question, typed, Noon));
+		_answers.Select(answer => answer.ChoiceId).Distinct().ShouldHaveSingleItem();
+		_valueId = _answers[0].ChoiceId!.Value;
+	}
+
+	[When(@"a Safety Officer corrects that value's wording to ""(.*)""")]
+	public void WhenASafetyOfficerCorrects(string corrected)
+	{
+		_question.CorrectValue(_valueId, corrected, null, Reviewer, Noon.AddHours(1));
+	}
+
+	[Then(@"the value keeps its identifier")]
+	public void ThenTheValueKeepsItsIdentifier()
+	{
+		_question.AllChoices.ShouldContain(choice => choice.Id == _valueId);
+		_answers.ShouldAllBe(answer => answer.ChoiceId == _valueId);
+	}
+
+	[Then(@"both answers now read ""(.*)""")]
+	public void ThenBothAnswersRead(string corrected)
+	{
+		_answers.Select(answer => answer.Text).ShouldBe([corrected, corrected]);
+	}
+
+	[Then(@"the next reporter is offered ""(.*)""")]
+	public void ThenTheNextReporterIsOffered(string corrected)
+	{
+		_question.OfferedChoiceLabelled(corrected, Locale.EnCa)!.Id.ShouldBe(_valueId);
+	}
+
+	[Given(@"a Safety Officer removed the type-ahead value ""(.*)""")]
+	public void GivenASafetyOfficerRemoved(string typed)
+	{
+		_question = QuestionOfType(QuestionType.Autocomplete);
+		_added = _question.AddChoiceFromReporter(typed, Locale.EnCa, Noon);
+		_question.RemoveValue(_added.Id, Reviewer, Noon.AddHours(1));
+		_added.NeedsReview.ShouldBeFalse();
+	}
+
+	[When(@"a reporter submits ""(.*)"" for that question")]
+	public void WhenAReporterSubmitsForThatQuestion(string typed)
+	{
+		_answer = new Report(Locale.EnCa, Noon).Answer(_question, typed, Noon.AddHours(2));
+	}
+
+	[Then(@"the reporter's answer names the removed value")]
+	public void ThenTheAnswerNamesTheRemovedValue()
+	{
+		_answer!.ChoiceId.ShouldBe(_added!.Id);
+		_question.AllChoices.Count(choice => choice.AddedByReporter).ShouldBe(1);
+	}
+
+	[Then(@"the value stays removed and is not offered")]
+	public void ThenTheValueStaysRemoved()
+	{
+		_added!.Deleted.ShouldNotBeNull();
+		_question.Choices.ShouldNotContain(_added);
+	}
+
+	[Then(@"the value is flagged for review again")]
+	public void ThenTheValueIsFlaggedAgain()
+	{
+		_added!.NeedsReview.ShouldBeTrue();
+		_question.ReporterChoicesAwaitingReview.ShouldBe(1);
+	}
+
+	[Given(@"a type-ahead question has a reporter-added value flagged for review")]
+	public void GivenAFlaggedValue()
+	{
+		_question = QuestionOfType(QuestionType.Autocomplete);
+		_added = _question.AddChoiceFromReporter("Mount 7", Locale.EnCa, Noon);
+		_added.NeedsReview.ShouldBeTrue();
+	}
+
+	[When(@"a Safety Officer approves it")]
+	public void WhenASafetyOfficerApproves()
+	{
+		_question.ApproveValue(_added!.Id, Reviewer, Noon.AddHours(1));
+	}
+
+	[Then(@"the value is no longer flagged for review")]
+	public void ThenNoLongerFlagged()
+	{
+		_added!.NeedsReview.ShouldBeFalse();
+		_question.ReporterChoicesAwaitingReview.ShouldBe(0);
+	}
+
+	[Then(@"the review records the Safety Officer's token subject and the time")]
+	public void ThenTheReviewIsRecorded()
+	{
+		_added!.ReviewedBy.ShouldBe(Reviewer);
+		_added.ReviewedAt.ShouldBe(Noon.AddHours(1));
+	}
+
+	private static Locale LocaleOf(string language)
+	{
+		return language == "French" ? Locale.FrCa : Locale.EnCa;
 	}
 
 	[When(@"another reporter submits the same site name")]
@@ -198,14 +348,6 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheNextReporterIsOfferedIt()
 	{
 		_question.OfferedChoiceLabelled("Mount 7", Locale.EnCa).ShouldNotBeNull();
-	}
-
-	[Then(@"the question gains a reporter-added choice whose French wording is ""(.*)""")]
-	public void ThenTheQuestionGainsAFrenchChoice(string typed)
-	{
-		_added!.AddedByReporter.ShouldBeTrue();
-		_added.LabelFr.ShouldBe(typed);
-		_question.Choices.ShouldContain(_added);
 	}
 
 	[Then(@"the existing choice is reused rather than duplicated")]

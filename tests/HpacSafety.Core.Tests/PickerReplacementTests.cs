@@ -230,6 +230,20 @@ public class PickerReplacementTests
 	}
 
 	[Fact]
+	public void GivenAConditionOnAYesNoParent_WhenItsChoiceTodayIsAskedOrExported_ThenNone()
+	{
+		// Given — a yes/no condition names no choice
+		var parent = Question.Create("injured", QuestionType.YesNo, "Injured?", "Blessé ?", At, isActive: true);
+		var child = Question.Create(
+			"injury", QuestionType.LongText, "Injury", "Blessure", At, isActive: true, dependsOnQuestionId: parent.Id);
+
+		// When / Then
+		QuestionDependencies.RequiredChoiceToday([parent, child], child.CurrentRevision).ShouldBeNull();
+		var (english, _) = TypeformExportBuilder.Build([parent, child]);
+		english.Fields.Single(field => field.Ref == "injury").Properties.Hpac!.DependsOnOptionCode.ShouldBeNull();
+	}
+
+	[Fact]
 	public void GivenAConditionWhoseParentIsNotExported_WhenExported_ThenItNamesNoOption()
 	{
 		// Given — the parent is not in the exported set

@@ -518,13 +518,14 @@ public static class QuestionEndpoints
 		// replacement. Saving it back is not a change of condition, so the stored
 		// choice is kept — otherwise an untouched condition would revise, or
 		// fork, the question (ADR-0128).
-		if (child is { DependsOnQuestionId: { } storedParent, DependsOnChoiceId: { } stored }
-			&& storedParent == parentId
-			&& choiceId is { } chosen
-			&& questions.Find(question => question.Id == parentId) is { } parent
-			&& parent.CurrentChoice(stored)?.Id == parent.CurrentChoice(chosen)?.Id)
+		// EnsureDependencyAllowed has just found the parent among the live
+		// questions, and a choice it accepted stands for something on it.
+		if (child?.DependsOnChoiceId is { } stored
+			&& child.DependsOnQuestionId == parentId
+			&& choiceId is { } chosen)
 		{
-			choiceId = stored;
+			var parent = questions.Single(question => question.Id == parentId);
+			choiceId = parent.CurrentChoice(stored) == parent.CurrentChoice(chosen) ? stored : chosen;
 		}
 
 		return (parentId, choiceId);

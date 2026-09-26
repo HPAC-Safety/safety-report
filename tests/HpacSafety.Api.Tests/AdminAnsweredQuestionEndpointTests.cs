@@ -109,6 +109,45 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAConditionOnAParentThatForked_WhenListed_ThenItStillNamesTheChoiceItWasGiven()
+	{
+		// Given — a condition on a single-select, whose parent is then answered and reworded (ADR-0071)
+		using var client = await SignedIn();
+		var parent = await Create(client, UniqueKey("answered_parent"), "single_select");
+		var parentId = parent.GetProperty("id").GetString()!;
+		var coopers = parent.GetProperty("options").EnumerateArray().Single().GetProperty("id").GetString()!;
+		using var createdChild = await client.PostAsJsonAsync(Questions, new
+		{
+			key = UniqueKey("conditional_child"),
+			type = "short_text",
+			labelEn = "A conditional question",
+			labelFr = "Une question conditionnelle",
+			isRequired = false,
+			isPrivate = true,
+			isActive = true,
+			dependsOnQuestionId = parentId,
+			dependsOnChoiceId = coopers,
+			options = Array.Empty<object>(),
+		});
+		createdChild.StatusCode.ShouldBe(HttpStatusCode.Created, await createdChild.Content.ReadAsStringAsync());
+		var childId = (await createdChild.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
+		await Answer(parentId, "Cooper's Hill");
+		await SaveChoices(client, parentId, "Reworded after an answer",
+			new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" });
+
+		// When — the parent the condition names is retired, so not among the live questions
+		var admin = (await client.GetFromJsonAsync<JsonElement>(Questions)).EnumerateArray()
+			.Single(question => question.GetProperty("id").GetString() == childId);
+		using var reader = _factory.CreateClient();
+		var shown = (await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative))).EnumerateArray()
+			.Single(question => question.GetProperty("id").GetString() == childId);
+
+		// Then — the condition still names the choice it was given, unresolved
+		admin.GetProperty("dependsOnChoiceId").GetString().ShouldBe(coopers);
+		shown.GetProperty("dependsOnChoiceId").GetString().ShouldBe(coopers);
+	}
+
+	[Fact]
 	public async Task GivenAnsweredQuestion_WhenDeleted_ThenRefusedAndKept()
 	{
 		// Given — REQ-QB-031: an answer records what somebody was asked

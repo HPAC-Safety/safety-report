@@ -269,6 +269,10 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then — the screen shows the condition on the replacement
 		var shown = (await List(client)).Single(question => question.GetProperty("id").GetString() == childId);
 		shown.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(afterReplace, "paraglider_solo"));
+		using var reader = _factory.CreateClient();
+		(await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative))).EnumerateArray()
+			.Single(question => question.GetProperty("id").GetString() == childId)
+			.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(afterReplace, "paraglider_solo"));
 
 		// When — the condition is saved back as the screen shows it
 		using var resaved = await client.PutAsJsonAsync(
@@ -278,6 +282,49 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then — nothing about the question changed, so nothing is revised
 		resaved.StatusCode.ShouldBe(HttpStatusCode.OK, await resaved.Content.ReadAsStringAsync());
 		(await resaved.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("revisionNumber").GetInt32().ShouldBe(1);
+	}
+
+	[Fact]
+	public async Task GivenAConditionNamingAMalformedChoiceId_WhenSaved_ThenApiRefuses()
+	{
+		// Given
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
+
+		// When
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("rating"), "short_text") with
+		{
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
+			DependsOnChoiceId = "not-a-choice-id",
+		});
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenACondition_WhenSavedNamingAnotherChoice_ThenTheConditionChanges()
+	{
+		// Given
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
+		var draft = Draft(UniqueKey("rating"), "short_text") with
+		{
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
+			DependsOnChoiceId = ChoiceIdOf(parent, "hang_glider"),
+		};
+		var child = await Create(client, draft);
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{child.GetProperty("id").GetString()}", UriKind.Relative),
+			draft with { DependsOnChoiceId = ChoiceIdOf(parent, "paraglider") });
+
+		// Then — a different condition is a new revision
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		saved.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(parent, "paraglider"));
+		saved.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
 	}
 
 	[Fact]

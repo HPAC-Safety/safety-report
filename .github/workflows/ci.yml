@@ -397,10 +397,9 @@ jobs:
       # Only present when the e2e job actually ran (needs.e2e.result ==
       # 'success'); a dotnet-only PR has nothing to download here, and the
       # merge step below tolerates that with its own "not run" line.
-      # act's artifact server rejects upload-artifact@v7 and
-      # download-artifact@v8 (nektos/act#6022), so the artifact steps skip under
-      # act; "Coverage for tools/ci-local.sh" below prints what they carry.
-      # ADR-0145.
+      # Temporary: act's artifact server rejects download-artifact@v8
+      # (nektos/act#6022), so this skips under act. Remove `&& !env.ACT` when
+      # act ships the fix. ADR-0145.
       - name: Download the Playwright test count
         if: needs.e2e.result == 'success' && !env.ACT
         uses: actions/download-artifact@v8
@@ -442,9 +441,11 @@ jobs:
           gh pr comment "${{ github.event.pull_request.number }}" \
             --body-file comment.md --edit-last --create-if-none
 
-      # act keeps no job summary and no artifact, so a local run prints the
-      # gate, the test counts, the per-assembly detail, and the report's
-      # totals to the log, where tools/ci-local.sh finds them. ADR-0145.
+      # Temporary: act keeps no job summary, and its artifact server rejects
+      # upload-artifact@v7 (nektos/act#6022), so a local run prints the gate,
+      # the test counts, the per-assembly detail, and the report's totals to
+      # the log, where tools/ci-local.sh finds them. Remove this step when act
+      # ships the fix. ADR-0145.
       - name: Coverage for tools/ci-local.sh
         if: always() && env.ACT
         run: |
@@ -457,6 +458,8 @@ jobs:
           grep -o '<coverage [^>]*>' ./artifacts/report/Cobertura.xml 2>/dev/null || true
           echo "ci-local:coverage:end"
 
+      # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
+      # act ships the fix. ADR-0145.
       - uses: actions/upload-artifact@v7
         if: always() && !env.ACT
         with:
@@ -577,6 +580,8 @@ jobs:
           mkdir -p ./artifacts/test-count
           node tools/test-count.mjs --section e2e > ./artifacts/test-count/e2e.md
 
+      # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when
+      # act ships the fix. ADR-0145.
       - uses: actions/upload-artifact@v7
         if: always() && !env.ACT
         with:

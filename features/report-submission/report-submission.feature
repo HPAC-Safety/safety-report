@@ -316,6 +316,136 @@ Scenario: An address at a domain outside the suggestions is accepted
   When the reporter types "pilot@example.ca" into it and presses Next
   Then the next page shows
 
+@REQ-SUB-098
+@ui
+Scenario Outline: On a desktop, clicking or focusing a date field opens a one-month calendar under it
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter <opens> the date field
+  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  And today is marked in it
+  And it has "Previous month" and "Next month" buttons
+
+Examples:
+  | opens     |
+  | clicks    |
+  | tabs into |
+
+@REQ-SUB-099
+@ui
+Scenario: Choosing a day fills the field as yyyy-mm-dd and closes the calendar
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter clicks the date field and chooses the 1st of today's month
+  Then the date field reads the 1st of today's month as yyyy-mm-dd
+  And the calendar closes
+  And the chosen day is announced in words
+
+@REQ-SUB-100
+@ui
+Scenario Outline: The calendar disables the days after today unless the question allows future dates
+  Given the current page shows a date question that <allows> future dates, on a desktop
+  When the reporter clicks the date field
+  Then the calendar shows today's month
+  And every day after today is <state>
+
+Examples:
+  | allows         | state    |
+  | does not allow | disabled |
+  | allows         | offered  |
+
+@REQ-SUB-101
+@ui
+Scenario Outline: A typed date that is malformed, or in the future where not allowed, holds the reporter on its page
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter types "<typed>" into the date field and presses Next
+  Then the reporter stays on the date page
+  And an inline message says "<message>"
+
+Examples:
+  | typed       | message                                        |
+  | 2026/9/21   | Enter a date as yyyy-mm-dd, such as 2026-09-21. |
+  | Sep 21 2026 | Enter a date as yyyy-mm-dd, such as 2026-09-21. |
+  | 2026-9-21   | Enter a date as yyyy-mm-dd, such as 2026-09-21. |
+  | 2026-02-30  | Enter a date as yyyy-mm-dd, such as 2026-09-21. |
+  | 9999-12-31  | Choose a date that is not in the future.        |
+
+@REQ-SUB-102
+@ui
+Scenario: A date typed as yyyy-mm-dd is sent as typed
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter types "2024-02-29" into the date field and presses Next
+  And the reporter submits the report from the next page
+  Then the date answer is sent as "2024-02-29"
+
+@REQ-SUB-103
+@ui
+Scenario Outline: The calendar is in the reader's language
+  Given the current page shows a date question in <language>, on a desktop
+  When the reporter clicks the date field
+  Then the calendar names today's month in <language>
+  And its weekday headings start on <first day>
+  And its buttons and pickers are labelled from the <language> catalogue
+
+Examples:
+  | language | first day |
+  | English  | Sunday    |
+  | French   | Monday    |
+
+@REQ-SUB-104
+@ui
+Scenario: The calendar works from the keyboard
+  Given the current page shows a date question that allows future dates, on a desktop
+  When the reporter tabs into the date field and presses ArrowDown
+  Then today has focus in the calendar
+  When the reporter presses ArrowLeft
+  Then the day 1 day before today has focus
+  When the reporter presses ArrowUp
+  Then the day 8 days before today has focus
+  When the reporter presses ArrowDown
+  Then the day 1 day before today has focus
+  When the reporter presses ArrowRight
+  Then today has focus in the calendar
+  When the reporter presses PageUp
+  Then the same day of the previous month has focus
+  When the reporter presses PageDown
+  Then today has focus in the calendar
+  When the reporter presses Enter
+  Then the date field reads today as yyyy-mm-dd
+  And the calendar closes
+  And focus is on the date field
+  When the reporter presses ArrowDown and then Escape
+  Then the calendar closes
+  And focus is on the date field
+
+@REQ-SUB-105
+@ui
+Scenario: The reporter jumps to a month and year a few years back
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter clicks the date field
+  And the reporter chooses March in the calendar's month picker and 2023 in its year picker
+  Then the calendar shows March 2023
+  When the reporter chooses the 14th
+  Then the date field reads "2023-03-14"
+
+@REQ-SUB-106
+@ui
+Scenario Outline: On a touch device, a date question uses the device's own date picker
+  Given the current page shows a date question that <allows> future dates, on a touch device
+  Then the date field is a native date input <limit>
+  And tapping it opens no calendar of the form's own
+
+Examples:
+  | allows         | limit                      |
+  | does not allow | whose latest date is today |
+  | allows         | with no latest date        |
+
+@REQ-SUB-107
+@ui
+Scenario: On a touch device, a future date the device's picker lets through still holds the reporter on its page
+  Given the current page shows a date question that does not allow future dates, on a touch device
+  When the device's picker sets the date field to "9999-12-31" and the reporter presses Next
+  Then the reporter stays on the date page
+  And an inline message says "Choose a date that is not in the future."
+
 @REQ-SUB-078
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
@@ -476,6 +606,38 @@ Examples:
   | phone | +1 604 555 1234    |
   | phone | +1604555123        |
   | phone | +15555551234       |
+
+@REQ-SUB-108
+Scenario Outline: A future date is refused by its question key unless the question allows future dates
+  Given a reporter writing in English submits <date> as the answer to a date question that does not allow future dates
+  When the submission is made
+  Then the submission is rejected
+  And the refusal names the question by its key
+  And no stored answer carries that value
+
+Examples:
+  | date                                        |
+  | the day after today in the latest time zone |
+  | 9999-12-31                                  |
+
+@REQ-SUB-109
+Scenario Outline: A date that is today somewhere is accepted, and a question that allows future dates accepts any date
+  Given a reporter writing in English submits <date> as the answer to a date question that <allows> future dates
+  When the answer is persisted
+  Then the date is stored as sent
+
+Examples:
+  | date                                        | allows         |
+  | today in the latest time zone               | does not allow |
+  | 2020-02-29                                  | does not allow |
+  | the day after today in the latest time zone | allows         |
+  | 9999-12-31                                  | allows         |
+
+@REQ-SUB-110
+Scenario: The form's question list says whether each date question allows future dates
+  Given a live date question that allows future dates and one that does not
+  When the reporter's form reads the current questions
+  Then each carries allowFutureDates as the JSON boolean matching its setting
 
 @REQ-SUB-009
 Scenario: A submission may answer a known superseded revision

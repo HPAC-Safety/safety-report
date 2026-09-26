@@ -6,15 +6,27 @@ name: CI
 #
 # No job below reads a secret. Anything that needs one (the Gemini client,
 # for instance) runs against recorded fixtures instead. Keep it that way.
+#
+# merge_group: the merge queue tests each queued pull request on top of main
+# and the pull requests ahead of it, on a gh-readonly-queue/main/* branch, and
+# waits for every required context there (ADR-0147). Every job below runs on
+# it exactly as on a pull request; only the pull request comment is skipped.
 on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Only a newer push to the same pull request cancels a run, and that newer
+# run reports every context again: each job is always scheduled (see
+# `changes`). A merge group's ref is its own gh-readonly-queue/main/* branch,
+# so queue runs never share a group and never cancel each other (ADR-0147).
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -39,16 +51,24 @@ jobs:
   # always gets scheduled; it just completes as "skipped" rather than running
   # its real steps when the paths it cares about did not change. GitHub treats
   # a skipped job as passing for required-status-check purposes. See ADR-0039.
+  #
+  # On merge_group the filter diffs the event's merge_group.base_sha against
+  # its head_sha with git (paths-filter's own merge_group support): every pull
+  # request in the group, and those ahead of it, on top of main. If the filter
+  # cannot decide - it fails for any reason - every gated job runs, because a
+  # job skipped by a filter that broke is a check that silently passed
+  # (ADR-0147).
   changes:
     runs-on: ubuntu-latest
     outputs:
-      dotnet: ${{ steps.filter.outputs.dotnet }}
-      web: ${{ steps.filter.outputs.web }}
-      e2e: ${{ steps.filter.outputs.e2e }}
+      dotnet: ${{ steps.filter.outcome == 'success' && steps.filter.outputs.dotnet || 'true' }}
+      web: ${{ steps.filter.outcome == 'success' && steps.filter.outputs.web || 'true' }}
+      e2e: ${{ steps.filter.outcome == 'success' && steps.filter.outputs.e2e || 'true' }}
     steps:
       - uses: actions/checkout@v7
       - uses: dorny/paths-filter@v4
         id: filter
+        continue-on-error: true
         with:
           filters: |
             dotnet:
@@ -329,14 +349,19 @@ jobs:
       # The ratchet compares against main's last green run rather than
       # recomputing it, which would double this job's time and re-run the
       # Testcontainers suite for a number that is already known. See ADR-0014.
+      # A merge group is ratcheted too: it is the tree that will become main.
+      # The baseline is only ever a push run on main. `--event push` keeps a
+      # merge group's own coverage-report artifact (its branch is
+      # gh-readonly-queue/main/*, never main) and any pull request run out of
+      # it, so nothing but a merged commit sets the bar (ADR-0147).
       - name: Fetch the main baseline
         id: baseline
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
-          run_id=$(gh run list --workflow CI --branch main --status success \
+          run_id=$(gh run list --workflow CI --branch main --event push --status success \
             --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
 
           if [ -z "${run_id:-}" ]; then
@@ -413,9 +438,10 @@ jobs:
             fi
           } >> comment.md
 
-      # Skipped on fork pull requests, whose token cannot write. The job summary
-      # above carries the same information, so nothing is lost - a failing gate
-      # is still fully diagnosable from the run page.
+      # Skipped on fork pull requests, whose token cannot write, and on a merge
+      # group, which has no pull request to comment on. The job summary above
+      # carries the same information, so nothing is lost - a failing gate is
+      # still fully diagnosable from the run page.
       - name: Comment on the pull request
         if: >-
           always() &&

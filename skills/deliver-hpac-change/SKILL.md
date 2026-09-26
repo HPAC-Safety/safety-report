@@ -128,8 +128,11 @@ names and step numbers.
    machine with CI's commands and ratchet
    ([lesson 0010](../../docs/lessons/0010-a-coverage-gate-found-in-ci-not-before-the-pull-request.md)).
 4. Relabel: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
-   The repository squash-merges and deletes the branch once required checks
-   pass.
+   `main` has a merge queue
+   ([ADR-0147](../../docs/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)):
+   auto-merge queues the pull request once required checks pass, and the queue
+   squash-merges it and deletes the branch. The squash message is the pull
+   request body, so the body is final when the pull request is queued.
 6. Screenshots, for a user-visible `src/web` change:
    - browser tools: Playwright or Claude in Chrome;
    - set the locale to English first — a French shot reads as broken;
@@ -170,6 +173,15 @@ names and step numbers.
    ([lesson 0008](../../docs/lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
 9. Why green is not enough:
    [lesson 0011](../../docs/lessons/0011-a-branch-rebased-before-its-push-is-behind-by-the-time-it-is-green.md).
+   With the merge queue, `BEHIND` alone needs no rebase.
+   - Queue state: `gh pr view <pr> --json state,mergeStateStatus,autoMergeRequest`,
+     or `https://github.com/HPAC-Safety/safety-report/queue/main`.
+   - Removed from the queue: the merge group's failing check is on the
+     `gh-readonly-queue/main/*` run, linked from the pull request's timeline.
+     The usual cause is a collision with a pull request that merged first:
+     `docs` (a duplicate ADR, lesson, or `REQ` number, or a stale matrix),
+     `feature-coverage` (an exemption citing a claim that is gone), or
+     `coverage`.
    Finish with `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
 ## Path filters

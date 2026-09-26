@@ -17,16 +17,30 @@ name: Feature coverage
 # tools/feature-coverage.mjs already exits 0 when no behavior-bearing file
 # changed, and a gate that decides for itself whether it applies cannot be
 # skipped by a filter that disagrees.
+#
+# merge_group: the merge queue runs this on the tree that will become main
+# (ADR-0147). A merge group has no pull request body, but each pull request in
+# it is one squash commit whose message is that body (PR_BODY), so the check
+# runs once per queued commit: that commit's own diff, its own message, and the
+# merged tree's matrix. That is where a claim one pull request removes and
+# another's exemption cites is caught.
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
 
 permissions:
   contents: read
 
+# Queued, never cancelled in progress: a cancelled older run can finish after
+# the newer one and leave "cancelled" as the required context's latest result
+# (#547). This job takes seconds. A merge group's ref is its own queue branch,
+# so queue runs never share a group (ADR-0147).
 concurrency:
   group: feature-coverage-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   feature-coverage:
@@ -41,8 +55,9 @@ jobs:
 
       - name: Behavior changes are covered by a .feature scenario
         env:
+          EVENT_NAME: ${{ github.event_name }}
           PR_BODY: ${{ github.event.pull_request.body }}
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: |
           set -euo pipefail
 
@@ -54,11 +69,31 @@ jobs:
           # the execution half of a scenario (ADR-0053), not a second place
           # requiring one; .features-gen is generated; a README documents a
           # component and cannot change its behavior.
-          CHANGED_BEHAVIOR=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
-            | grep -v '/\.features-gen/' \
-            | grep -v '^tests/e2e/steps/' \
-            | grep -v '/README\.md$' || true)
-          CHANGED_FEATURES=$(git diff --name-only "$BASE_SHA"...HEAD -- ':(glob)features/**/*.feature' || true)
-          export CHANGED_BEHAVIOR CHANGED_FEATURES
+          #
+          # $1 is a git diff range: the pull request's, or one queued commit's.
+          check() {
+            CHANGED_BEHAVIOR=$(git diff --name-only "$1" -- ':(glob)src/**' ':(glob)tests/e2e/**/*.ts' \
+              | grep -v '/\.features-gen/' \
+              | grep -v '^tests/e2e/steps/' \
+              | grep -v '/README\.md$' || true)
+            CHANGED_FEATURES=$(git diff --name-only "$1" -- ':(glob)features/**/*.feature' || true)
+            export CHANGED_BEHAVIOR CHANGED_FEATURES
+            node tools/feature-coverage.mjs
+          }
 
-          node tools/feature-coverage.mjs
+          if [ "$EVENT_NAME" != 'merge_group' ]; then
+            check "$BASE_SHA...HEAD"
+            exit 0
+          fi
+
+          # One squash commit per queued pull request, oldest first; its
+          # message is the pull request's body as it lands on main.
+          fail=0
+          for commit in $(git rev-list --reverse "$BASE_SHA..HEAD"); do
+            echo "::group::$(git log -1 --format=%s "$commit")"
+            PR_BODY=$(git log -1 --format=%B "$commit")
+            export PR_BODY
+            check "$commit^..$commit" || fail=1
+            echo "::endgroup::"
+          done
+          exit "$fail"

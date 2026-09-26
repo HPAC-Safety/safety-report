@@ -23,6 +23,11 @@ name: Translate locales
 #   * The push-to-main path is unchanged: it runs on code that is already
 #     merged and reviewed, or on manual dispatch.
 #
+# It never runs on, or pushes to, the merge queue's gh-readonly-queue/*
+# branches: pull_request_target does not fire for a merge group, and `push`
+# is filtered to main. ci.yml's `i18n` job checks the French on the merged
+# tree instead (ADR-0147).
+#
 # Nothing here ever sees report data. Its input is a JSON file of UI labels that
 # ships in the repository. Invariant 4 in AGENTS.md — raw reports are never
 # translated and never leave the system — is untouched by this job.

@@ -23,10 +23,17 @@ name: Terraform
 # path filter would do exactly that to every pull request that does not touch
 # infra/. This is the trap ADR-0011 was written about. The job is under a
 # minute; that is the price of the check being requirable at all.
+#
+# merge_group: `infra` is required, so it reports on the merge queue's
+# gh-readonly-queue/main/* branch too. `plan` and `apply` never run there:
+# their `if:` names pull_request and push/workflow_dispatch only (ADR-0147).
 on:
   push:
     branches: [main]
   pull_request:
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
   workflow_dispatch:
 
 permissions:
@@ -34,7 +41,8 @@ permissions:
 
 concurrency:
   # Never two applies at once. The state lock would catch it, but a queued run is
-  # a better outcome than a failed one.
+  # a better outcome than a failed one. A merge group's ref is its own queue
+  # branch and never cancels (ADR-0147).
   group: terraform-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 

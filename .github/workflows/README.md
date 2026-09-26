@@ -38,6 +38,27 @@ infrastructure. Align them with issue #30 and
 [`../../docs/infrastructure-and-operations.md`](../../docs/infrastructure-and-operations.md)
 before production use.
 
+## Merge queue
+
+Pull requests merge through GitHub's merge queue, which tests each one on a
+`gh-readonly-queue/main/*` branch holding `main` and the pull requests ahead of
+it ([ADR-0147](../../docs/decisions/ADR-0147-pull-requests-merge-through-a-merge-queue.md)).
+
+- A workflow that reports a required context triggers on `merge_group`:
+  `ci.yml`, `linked-issue.yml`, `feature-coverage.yml`, and `terraform.yml`.
+  A new required context needs `merge_group` too, or the queue stalls.
+- Each required job reports there under its own id. A job with nothing to
+  check on a merge group runs a notice step and passes; it is never left out.
+- The body checks (`linked-issue`, `no-session-link`, `screenshots`) pass
+  through: a merge group has no pull request body.
+- `feature-coverage` checks each queued squash commit, whose message is its
+  pull request's body, against the merged matrix.
+- Nothing comments, pushes, or deploys on a merge group. The coverage
+  baseline is only a `push` run on `main`.
+- A required-check workflow never lets a cancelled run be a context's latest
+  result: `linked-issue.yml` and `feature-coverage.yml` queue runs instead of
+  cancelling them.
+
 Run `actionlint` after workflow edits. If a required job ID changes, update the
 repository ruleset in the same PR. Every PR body must contain an actual closing
 keyword such as `Closes #78`.

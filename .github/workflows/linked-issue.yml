@@ -15,22 +15,42 @@ name: Linked issue
 # This lives in its own workflow rather than in ci.yml so it can subscribe to
 # `edited`. Fixing the body must re-run the check; re-running the whole build to
 # do it would be absurd.
+#
+# merge_group: the merge queue waits for every required context on its
+# gh-readonly-queue/main/* branch, and a merge group has no pull request body.
+# Each job reports there under its own id, and passes through with a notice:
+# the body was already checked on the pull request, and it becomes the squash
+# commit message unchanged (ADR-0147).
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
+  merge_group:
+    types: [checks_requested]
+    branches: [main]
 
 permissions:
   contents: read
 
+# Queued, never cancelled in progress. A body edit and a push land on the same
+# commit within seconds; cancelling the older run left its "cancelled" result
+# as the latest one for a required context, and the pull request blocked until
+# someone re-ran it (#547). These jobs take seconds, so the newer run simply
+# waits, and it always finishes last. A merge group's ref is its own queue
+# branch, so queue runs never share a group (ADR-0147).
 concurrency:
   group: linked-issue-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   linked-issue:
     runs-on: ubuntu-latest
     steps:
+      - name: Merge group - the pull request's body was checked before it queued
+        if: github.event_name == 'merge_group'
+        run: echo "::notice::Checked on the pull request; a merge group has no body (ADR-0147)."
+
       - name: Body closes an issue
+        if: github.event_name != 'merge_group'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_ACTOR: ${{ github.event.pull_request.user.login }}
@@ -88,14 +108,21 @@ jobs:
   no-session-link:
     runs-on: ubuntu-latest
     steps:
+      - name: Merge group - the pull request's body was checked before it queued
+        if: github.event_name == 'merge_group'
+        run: echo "::notice::Checked on the pull request; a merge group has no body (ADR-0147)."
+
       - uses: actions/checkout@v7
+        if: github.event_name != 'merge_group'
         with:
           persist-credentials: false
       - uses: actions/setup-node@v7
+        if: github.event_name != 'merge_group'
         with:
           node-version: 24
 
       - name: Body carries no agent session link
+        if: github.event_name != 'merge_group'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node tools/agent-session-links.mjs
@@ -108,15 +135,22 @@ jobs:
   screenshots:
     runs-on: ubuntu-latest
     steps:
+      - name: Merge group - the pull request's body was checked before it queued
+        if: github.event_name == 'merge_group'
+        run: echo "::notice::Checked on the pull request; a merge group has no body (ADR-0147)."
+
       - uses: actions/checkout@v7
+        if: github.event_name != 'merge_group'
         with:
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-node@v7
+        if: github.event_name != 'merge_group'
         with:
           node-version: 24
 
       - name: A rendered web change shows its screenshots
+        if: github.event_name != 'merge_group'
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

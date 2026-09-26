@@ -112,7 +112,7 @@ public static class TypeAheadValueEndpoints
 						parent.CurrentRevision.LabelEn,
 						parent.CurrentRevision.LabelFr,
 						entry.Choice.ParentChoiceId?.Value,
-						[.. parent.Choices.Select(choice => new TypeAheadMergeTarget(choice.Id.Value, choice.LabelEn, choice.LabelFr, EnumCode.Of(choice.Pin)))]));
+						[.. parent.Choices.Select(choice => new TypeAheadParentChoice(choice.Id.Value, choice.LabelEn, choice.LabelFr, EnumCode.Of(choice.Pin)))]));
 			})
 			.ToList();
 
@@ -326,7 +326,14 @@ public sealed record TypeAheadParentView(
 	string QuestionLabelEn,
 	string QuestionLabelFr,
 	string? ParentChoiceId,
-	IReadOnlyList<TypeAheadMergeTarget> Choices);
+	IReadOnlyList<TypeAheadParentChoice> Choices);
+
+/// <summary>A live choice of a dependent value's parent question, which the value may be offered under (ADR-0146).</summary>
+/// <param name="Id">Its identifier.</param>
+/// <param name="LabelEn">Its English wording, or null while it has none.</param>
+/// <param name="LabelFr">Its French wording, or null while it has none.</param>
+/// <param name="Pin"><c>first</c>, <c>last</c>, or <c>none</c>, so the page lists them as the form does (ADR-0136).</param>
+public sealed record TypeAheadParentChoice(string Id, string? LabelEn, string? LabelFr, string Pin);
 
 /// <summary>A live value of the same question a flagged value may be merged into.</summary>
 /// <param name="Id">Its identifier.</param>

@@ -113,6 +113,15 @@ reporter-added value. No answer carries a choice's wording or code
 ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md),
 [ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 
+When a question's choices depend on another question on the form, the API
+checks each against the other's answer before writing anything:
+- a named choice must be offered under that answer;
+- the question may be answered only once its parent is;
+- typed text matches, or becomes, a value offered under that answer.
+
+Either refusal names both questions by key (`REQ-SUB-113`,
+[ADR-0146](../../docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
+
 Field names are camelCase on the wire (ASP.NET's default JSON casing), not
 the snake_case the Gherkin prose uses when it names them — the scenarios are
 talking about the concept, not literal JSON.

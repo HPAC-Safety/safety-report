@@ -197,8 +197,9 @@ sufficient.
 It passes act one secret, `GITHUB_TOKEN`, read from `HPAC_ACT_TOKEN`. Create a
 [fine-grained token](https://github.com/settings/personal-access-tokens/new)
 for this repository only, with **Actions**, **Contents**, and **Metadata** set
-to read. Without one it falls back to `gh auth token`, which can write, and
-says so.
+to read. Without it the script stops. `--allow-gh-token` uses your `gh` login
+instead, which can write; act hands it to every job and action, so it is
+opt-in.
 
 ## Repository map
 

@@ -10,11 +10,13 @@ keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontai
 
 # ADR-0145 — A pull request's checks run locally under act, against CI's own baseline
 
-**Status:** Accepted. Amends
-[ADR-0014](ADR-0014-coverage-gate.md) (where the pre-pull-request ratchet
-runs) and
-[ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md) (a rule
-enforced by a CI flag now also runs, flag and all, before the pull request).
+**Status:** Accepted. Relates to [ADR-0014](ADR-0014-coverage-gate.md) and
+[ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md);
+supersedes the script
+[lesson 0010](../lessons/0010-a-coverage-gate-found-in-ci-not-before-the-pull-request.md)
+added. ADR-0014's gate is unchanged: this runs it before the pull request, as
+CI does. ADR-0073 still holds: running CI's flags locally does not make a
+guard that lives only in a CI flag a real guard.
 
 ## Context
 
@@ -45,17 +47,30 @@ and is the pre-pull-request gate.**
   `head.repo.full_name = "local/act"`. Every write guarded by "same
   repository" (the coverage comment) takes its fork branch.
 - **The token**: only `GITHUB_TOKEN`, from the environment, never argv. It is
-  `HPAC_ACT_TOKEN`, ideally a fine-grained read-only token for this
-  repository (Actions, Contents, Metadata: read), else `gh auth token` with a
-  warning. `.actrc` points act's secret, variable, and env files at
-  `/dev/null`; `.secrets`, `.vars`, and `.actrc.local` are gitignored.
+  `HPAC_ACT_TOKEN`, a fine-grained read-only token for this repository
+  (Actions, Contents, Metadata: read). act does not enforce a workflow's
+  `permissions:`, so every job and third-party action receives the token as
+  is. Without `HPAC_ACT_TOKEN` the wrapper exits 2; the developer's
+  full-scope `gh auth token` is used only on an explicit `--allow-gh-token`
+  (or `HPAC_ACT_ALLOW_GH_TOKEN=1`), with a warning.
+- **Other inputs**: the wrapper passes `--secret-file`, `--var-file`, and
+  `--env-file /dev/null` on act's command line, over `.actrc` and any
+  user-level actrc (`~/.actrc`, `$XDG_CONFIG_HOME/act/actrc`), and warns when
+  a user-level actrc exists, because act still merges its other flags.
+  `.secrets`, `.vars`, and `.actrc.local` are gitignored.
 - **The image**: `tools/act/Dockerfile`, built locally and never pushed.
   - Base: `catthehacker/ubuntu:act-24.04`, pinned by digest. It lacks `gh`
     (without it the coverage job's baseline step silently skips the ratchet)
     and `shellcheck`.
-  - Added: `gh` 2.45.0 and `shellcheck` 0.9.0 from Ubuntu 24.04's archive, at
-    pinned package versions, and, on arm64, the x86-64 loader, libc, and
-    libgcc_s copied from a digest-pinned `ubuntu:24.04`.
+  - `gh`: GitHub's release tarball, pinned by version (2.101.0) and SHA-256
+    per architecture. Ubuntu's `gh` 2.45.0 lacks the `gh run download`
+    path-traversal fix (CVE-2024-54132, fixed in 2.63.1), which matters
+    because the coverage job runs that command; and an exact pin in the
+    -updates pocket stops resolving after the next update.
+  - `shellcheck` 0.9.0-1 from noble's release pocket, which never changes,
+    and is the version GitHub's runner ships.
+  - On arm64, the x86-64 loader, libc, and libgcc_s, copied from a
+    digest-pinned `ubuntu:24.04`.
   - Tagged `hpac-safety-act:<hash of the Dockerfile>`, so a changed Dockerfile
     builds a new image rather than reusing a stale one; the wrapper maps
     `ubuntu-latest` to that tag.
@@ -63,11 +78,22 @@ and is the pre-pull-request gate.**
     .NET jobs. Docker Desktop runs the workflows' linux-amd64 downloads
     (terraform, tflint, skillfile) through Rosetta.
 - **The checkout**: act runs in a throwaway clone of `HEAD`, because a
-  worktree's `.git` is a file that points outside the copy act makes.
+  worktree's `.git` is a file that points outside the copy act makes. The
+  clone is made from a bundle of `HEAD` alone, so no other branch's refs come
+  along (CI's checkout has none; a tool whose tests read the repository's
+  refs measured differently with them), and its `origin/main` and
+  `origin/<branch>` refs are set to the fetched base and `HEAD`.
 - **Coverage parity**: the `coverage` job runs as on GitHub, on Ubuntu 24.04
   with the exact SDK, and downloads the same artifact from main's last green
   run. Lesson 0010's same-machine baseline is dropped: it existed only because
-  the branch was measured on macOS.
+  the branch was measured on macOS. The act-only coverage step lists each
+  per-project Cobertura report and the assemblies it carries, and the wrapper
+  fails a run whose report count is not the number of test projects: a lost
+  report can move the verdict either way.
+- **Exit codes**: 0 passed, 1 a job failed, 2 a precondition or setup step
+  failed, 3 the lock timed out. The lock records its holder's pid and start
+  time, reports whether that pid is alive, and is never cleared by another
+  run.
 - **Testcontainers** keep Ryuk on
   ([lesson 0008](../lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
   act puts each job on the Docker VM's host network. Under Docker Desktop a

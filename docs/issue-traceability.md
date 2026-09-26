@@ -34,6 +34,6 @@ issue open while an open issue has no row here or a row names a closed one
 | [#466 — Deploy by release: build once, deploy to staging, promote to production on approval](https://github.com/HPAC-Safety/safety-report/issues/466) | Infrastructure, CI | Open, phase 2. |
 | [#467 — Emit the operational metrics, alarm on them, and write the runbooks](https://github.com/HPAC-Safety/safety-report/issues/467) | Worker, infrastructure | Open, phase 2. |
 | [#520 — Let a picker or type-ahead's choices depend on another picker or type-ahead's answer](https://github.com/HPAC-Safety/safety-report/issues/520) | API, web, localization | Open, phase 1. |
-| [#522 — Translate stays disabled after editing a bilingual question's wording, and has no direction switch](https://github.com/HPAC-Safety/safety-report/issues/522) | Web, localization | Open bug, phase 1. |
 | [#540 — Run the pull request workflow suite locally under act, with coverage matching CI](https://github.com/HPAC-Safety/safety-report/issues/540) | CI | In progress. |
 | [#546 — Confirm local-CI coverage parity over three PRs, and a read-only-token run](https://github.com/HPAC-Safety/safety-report/issues/546) | CI | Open. Follows #540's local workflow suite. |
+| [#547 — Merge pull requests through a merge queue instead of rebasing each one by hand](https://github.com/HPAC-Safety/safety-report/issues/547) | CI | Open. |

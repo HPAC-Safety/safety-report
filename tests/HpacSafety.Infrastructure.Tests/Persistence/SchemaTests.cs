@@ -24,6 +24,8 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		"report_comment_revisions",
 		"report_comments",
 		"report_files",
+		"report_private_note_revisions",
+		"report_private_notes",
 		"reports",
 		"summaries",
 	];

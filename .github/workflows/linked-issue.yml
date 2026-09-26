@@ -1,5 +1,12 @@
 name: Linked issue
 
+# The pull-request body checks, one job each:
+#
+# - linked-issue: the body closes an issue;
+# - no-session-link: the body carries no agent session link (ADR-0107);
+# - screenshots: a rendered web change links its screenshots, or says why it
+#   needs none (ADR-0142).
+#
 # Nothing in GitHub's settings can force a pull request to close its issue. The
 # only mechanism is a closing keyword in the pull request body, which becomes the
 # squash commit message because the repository is configured with
@@ -96,7 +103,8 @@ jobs:
   # A pull request that changes a rendered web file links its screenshots, or
   # says why it has none (ADR-0142). The rule lives in the tool, which reads
   # only the body and the changed-file list; it decides for itself whether the
-  # pull request touches a rendered file, so the job runs on every one.
+  # pull request touches a rendered file, so the job runs on every one. Actions
+  # sets GITHUB_REPOSITORY, which pins the screenshot links to this repository.
   screenshots:
     runs-on: ubuntu-latest
     steps:
@@ -111,7 +119,6 @@ jobs:
       - name: A rendered web change shows its screenshots
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
         run: |
           set -euo pipefail

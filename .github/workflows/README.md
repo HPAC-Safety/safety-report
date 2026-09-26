@@ -9,7 +9,7 @@ type: readme
 | Workflow | Responsibility |
 |---|---|
 | `ci.yml` | Build, tests, coverage, web, localization, skill/agent validation |
-| `linked-issue.yml` | Require a closing issue reference in each PR |
+| `linked-issue.yml` | Check each PR body: a closing issue reference (`linked-issue`), no agent session link (`no-session-link`), and screenshots or a reason for none on a rendered web change (`screenshots`) |
 | `feature-coverage.yml` | Require a scenario for a behavior change, or a citation of the claims it preserves |
 | `i18n-translate.yml` | Prepare French application-catalogue changes only, and report each run that calls the provider to open `verify:translation-run` issues (ADR-0103) |
 | `traceability.yml` | Commit the regenerated `docs/traceability.md` onto a same-repo PR's branch |

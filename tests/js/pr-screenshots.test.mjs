@@ -2,7 +2,7 @@ import { describe, it } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-import { FIRST_PR, judge, main, renderedFiles } from '../../tools/pr-screenshots.mjs'
+import { judge, main, readInput, renderedFiles } from '../../tools/pr-screenshots.mjs'
 
 const SHOT = 'https://raw.githubusercontent.com/owner/repo/0123456789abcdef0123456789abcdef01234567/docs/screenshots/form/after-form.png'
 const COMPONENT = 'src/web/src/components/Form.tsx'
@@ -91,9 +91,63 @@ describe('judge', () => {
 		assert.equal(judge({ changed: [COMPONENT], body }).ok, false)
 	})
 
-	it('passes a pull request opened before the rule, and applies it from the first one after', () => {
-		assert.equal(judge({ changed: [COMPONENT], body: '', number: FIRST_PR - 1 }).ok, true)
-		assert.equal(judge({ changed: [COMPONENT], body: '', number: FIRST_PR }).ok, false)
+	it('does not count a screenshot URL that is not shown as an image', () => {
+		assert.equal(judge({ changed: [COMPONENT], body: `See ${SHOT}\n[after](${SHOT})\n` }).ok, false)
+	})
+
+	it('counts a screenshot shown by an img tag', () => {
+		assert.equal(judge({ changed: [COMPONENT], body: `<img src="${SHOT}" width="400">` }).ok, true)
+	})
+
+	it('accepts only this repository when it is known', () => {
+		assert.equal(judge({ changed: [COMPONENT], body: `![after](${SHOT})`, repository: 'owner/repo' }).ok, true)
+		assert.equal(judge({ changed: [COMPONENT], body: `![after](${SHOT})`, repository: 'other/repo' }).ok, false)
+	})
+
+	it('refuses the template placeholder copied as the reason', () => {
+		const verdict = judge({ changed: [COMPONENT], body: 'No screenshot needed: <what changed, and why nothing on screen did>\n' })
+
+		assert.equal(verdict.ok, false)
+		assert.match(verdict.problems[0], /placeholder/)
+	})
+
+	it('ignores a screenshot or an exemption inside a fenced code block', () => {
+		const body = `\`\`\`md\n![after](${SHOT})\nNo screenshot needed: renamed a prop, nothing on screen moved\n\`\`\`\n`
+
+		assert.equal(judge({ changed: [COMPONENT], body }).ok, false)
+	})
+
+	it('counts what follows a closed code block', () => {
+		const body = `\`\`\`\nexample\n\`\`\`\n\n![after](${SHOT})\n`
+
+		assert.equal(judge({ changed: [COMPONENT], body }).ok, true)
+	})
+
+	it('treats an unclosed comment as hiding the rest of the body', () => {
+		const body = `<!-- guidance left open\n\n![after](${SHOT})\n`
+
+		assert.equal(judge({ changed: [COMPONENT], body }).ok, false)
+	})
+})
+
+describe('readInput', () => {
+	it('fails with usage when there is no body to check', () => {
+		const input = readInput({}, () => assert.fail('no diff is needed'))
+
+		assert.match(input.error, /PR_BODY is not set/)
+		assert.match(input.error, /Usage:/)
+	})
+
+	it('takes the changed files from the branch when none are given', () => {
+		const input = readInput({ PR_BODY: 'body' }, () => `${COMPONENT}\nREADME.md\n`)
+
+		assert.deepEqual(input, { changed: [COMPONENT, 'README.md'], body: 'body', repository: undefined })
+	})
+
+	it('takes the changed files and the repository from the environment when given', () => {
+		const input = readInput({ PR_BODY: '', CHANGED_FILES: 'a.tsx\n', GITHUB_REPOSITORY: 'owner/repo' }, () => assert.fail('no diff is needed'))
+
+		assert.deepEqual(input, { changed: ['a.tsx'], body: '', repository: 'owner/repo' })
 	})
 })
 
@@ -113,6 +167,13 @@ describe('main', () => {
 		assert.match(errors, /::error::This pull request changes a rendered web file and shows no screenshot/)
 		assert.match(errors, /src\/web\/src\/components\/Form\.tsx/)
 		assert.match(errors, /No screenshot needed: </)
+	})
+
+	it('fails a run with no input, with its usage', () => {
+		const { code, output } = runMain({ error: 'PR_BODY is not set' })
+
+		assert.equal(code, 1)
+		assert.match(output.error.join('\n'), /::error::PR_BODY is not set/)
 	})
 
 	it('annotates why an exemption was refused', () => {

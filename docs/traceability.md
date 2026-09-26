@@ -1588,6 +1588,22 @@ The type-ahead review page shows a dependent value's link and changes it — *pl
 
 A parent the form does not ask filters nothing — *Reqnroll, Covered*
 
+### REQ-QB-204
+
+A picker child with nothing under the parent's answer says so and does not hold the reporter back — *playwright-bdd, Covered*
+
+### REQ-QB-205
+
+The manage-questions page shows why a question cannot move above its parent — *playwright-bdd, Covered*
+
+### REQ-QB-206
+
+The parent comes before the child wherever grouping places them — *Reqnroll, Covered*
+
+### REQ-QB-207
+
+A parent merge that would offer one wording twice under one parent choice is refused — *Reqnroll, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -2005,6 +2021,10 @@ A date question with a placeholder of its own still names the yyyy-mm-dd format 
 ### REQ-SUB-113
 
 A choice of a dependent question must be offered under the parent's answer — *Reqnroll, Covered*
+
+### REQ-SUB-114
+
+A required dependent question that cannot be answered yet does not block a submission — *Reqnroll, Covered*
 
 ## Claims: typeform-question-import-export
 

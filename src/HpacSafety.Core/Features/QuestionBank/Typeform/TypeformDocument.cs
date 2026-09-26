@@ -81,7 +81,9 @@ public sealed record TypeformFieldProperties(
 ///     for, namespaced so an export otherwise validates as a plain Typeform
 ///     file without it. References another field by its own <see cref="TypeformField.Ref" />
 ///     — the only identifier stable across a round trip — never by an internal
-///     database id. See ADR-0077.
+///     database id. See ADR-0077. <see cref="AllowFutureDates" /> is absent from
+///     a file exported before the setting existed, and then reads false
+///     (ADR-0138).
 /// </summary>
 public sealed record TypeformHpacExtension(
 	string Type,
@@ -89,7 +91,8 @@ public sealed record TypeformHpacExtension(
 	bool IsRequired,
 	string? DependsOnKey,
 	string? DependsOnOptionCode,
-	string? GroupedUnderKey);
+	string? GroupedUnderKey,
+	bool AllowFutureDates = false);
 
 /// <summary>
 ///     One choice on a <c>multiple_choice</c> or <c>dropdown</c> field.

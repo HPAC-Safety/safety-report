@@ -272,6 +272,8 @@ public static class TypeformQuestionMapper
 			DependsOnKey = hpac.DependsOnKey,
 			DependsOnOptionCode = hpac.DependsOnOptionCode,
 			GroupedUnderKey = hpac.GroupedUnderKey ?? groupedUnderKey,
+			// Only a date question can allow a future date (ADR-0138).
+			AllowFutureDates = type == QuestionType.Date && hpac.AllowFutureDates,
 		};
 	}
 

@@ -1866,6 +1866,14 @@ A date that is today somewhere is accepted, and a question that allows future da
 
 The form's question list says whether each date question allows future dates — *Reqnroll, Covered*
 
+### REQ-SUB-111
+
+Tabbing past a date field skips its calendar — *playwright-bdd, Covered*
+
+### REQ-SUB-112
+
+A date question with a placeholder of its own still names the yyyy-mm-dd format — *playwright-bdd, Covered*
+
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001
@@ -1947,6 +1955,10 @@ Exporting and reimporting reproduces the same drafts — *Reqnroll, Covered*
 ### REQ-TF-021
 
 Only an Administrator may import or export — *Reqnroll, Covered*
+
+### REQ-TF-022
+
+A date question's Allow future dates setting survives an export and reimport — *Reqnroll, Covered*
 
 ## Claims: web-localization-and-design
 

@@ -133,6 +133,17 @@ public static class BootedApi
 		});
 	}
 
+	/// <summary>
+	///     A host whose clock stands still at <paramref name="now" />, otherwise
+	///     identical to <see cref="Factory" />, so a scenario judges "today" at the
+	///     same instant the API does (REQ-SUB-108, REQ-SUB-109, ADR-0138).
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> AtTime(DateTimeOffset now)
+	{
+		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
+			builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(new FixedClock(now))));
+	}
+
 	private static WebApplicationFactory<Program>? recordingReads;
 
 	/// <summary>

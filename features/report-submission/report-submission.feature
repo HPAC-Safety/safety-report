@@ -338,6 +338,15 @@ Scenario: Choosing a day fills the field as yyyy-mm-dd and closes the calendar
   Then the date field reads the 1st of today's month as yyyy-mm-dd
   And the calendar closes
   And the chosen day is announced in words
+  When the reporter clicks the date field and chooses the 1st of today's month again
+  Then the announcement is cleared and the chosen day is announced again
+
+@REQ-SUB-112
+@ui
+Scenario: A date question with a placeholder of its own still names the yyyy-mm-dd format
+  Given the current page shows a date question whose placeholder is "When did it happen?", on a desktop
+  Then the date field's placeholder is "When did it happen?"
+  And the date field is described by the format "yyyy-mm-dd"
 
 @REQ-SUB-100
 @ui
@@ -415,6 +424,15 @@ Scenario: The calendar works from the keyboard
   When the reporter presses ArrowDown and then Escape
   Then the calendar closes
   And focus is on the date field
+
+@REQ-SUB-111
+@ui
+Scenario: Tabbing past a date field skips its calendar
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter tabs into the date field
+  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  When the reporter presses Tab
+  Then focus skips the calendar to the Next button, and the calendar closes
 
 @REQ-SUB-105
 @ui
@@ -613,6 +631,7 @@ Scenario Outline: A future date is refused by its question key unless the questi
   When the submission is made
   Then the submission is rejected
   And the refusal names the question by its key
+  And the refusal says the question does not allow a date after today
   And no stored answer carries that value
 
 Examples:

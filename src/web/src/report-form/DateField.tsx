@@ -72,6 +72,7 @@ function CalendarDateField({
 	t,
 }: DateFieldProps) {
 	const dialogId = `${fieldId}-calendar`
+	const formatId = `${fieldId}-format`
 	const headingId = useId()
 	const inputRef = useRef<HTMLInputElement>(null)
 	const gridRef = useRef<HTMLTableElement>(null)
@@ -84,6 +85,12 @@ function CalendarDateField({
 	const [view, setView] = useState(() => viewOf(value, today))
 	const [focusedDay, setFocusedDay] = useState<string | null>(null)
 	const [announcement, setAnnouncement] = useState("")
+	// Whether focus has gone into the calendar. Until it has, none of its controls
+	// is in the Tab order, so a reporter typing a date tabs straight past it;
+	// ArrowDown from the field goes in.
+	const [entered, setEntered] = useState(false)
+	const announceTimer = useRef<number | undefined>(undefined)
+	useEffect(() => () => window.clearTimeout(announceTimer.current), [])
 
 	// Moves real focus onto the roving day once it is rendered.
 	useEffect(() => {
@@ -104,12 +111,14 @@ function CalendarDateField({
 		if (open) return
 		setView(viewOf(value, today))
 		setFocusedDay(null)
+		setEntered(false)
 		setOpen(true)
 	}
 
 	function close(returnFocus: boolean) {
 		setOpen(false)
 		setFocusedDay(null)
+		setEntered(false)
 		if (returnFocus) {
 			quietFocus.current = true
 			inputRef.current?.focus()
@@ -119,7 +128,11 @@ function CalendarDateField({
 	function choose(iso: string) {
 		if (isAfterToday(iso)) return
 		onChange(iso)
-		setAnnouncement(t("report.date.chosen", { date: longFormat.format(toLocalDate(iso)) }))
+		// Cleared first, so choosing the same day again is announced again.
+		const words = t("report.date.chosen", { date: longFormat.format(toLocalDate(iso)) })
+		setAnnouncement("")
+		window.clearTimeout(announceTimer.current)
+		announceTimer.current = window.setTimeout(() => setAnnouncement(words), 50)
 		close(true)
 	}
 
@@ -132,6 +145,8 @@ function CalendarDateField({
 	}
 
 	function onFieldFocus() {
+		// Focus is back on the field, so Tab from here skips the calendar again.
+		setEntered(false)
 		if (quietFocus.current) {
 			quietFocus.current = false
 			return
@@ -238,13 +253,17 @@ function CalendarDateField({
 				aria-controls={dialogId}
 				className={className}
 				value={value}
-				aria-describedby={describedBy}
+				aria-describedby={[formatId, describedBy].filter(Boolean).join(" ")}
 				placeholder={placeholder ?? t("report.date.placeholder")}
 				onFocus={onFieldFocus}
 				onClick={openCalendar}
 				onKeyDown={onFieldKeyDown}
 				onChange={(event) => onChange(event.target.value)}
 			/>
+			{/* The format, even when the question's own placeholder replaces it. */}
+			<span id={formatId} className="sr-only">
+				{t("report.date.placeholder")}
+			</span>
 			<p role="status" className="sr-only">
 				{announcement}
 			</p>
@@ -253,9 +272,10 @@ function CalendarDateField({
 				role="dialog"
 				aria-label={t("report.date.calendar")}
 				hidden={!open}
-				className="absolute left-0 top-full z-10 mt-1 w-80 max-w-full rounded border border-rule bg-surface p-3 font-sans text-ink shadow-lg"
+				className="absolute left-0 top-full z-40 mt-1 w-80 max-w-full rounded border border-rule bg-surface p-3 font-sans text-ink shadow-lg"
 				onKeyDown={onDialogKeyDown}
 				onMouseDown={onDialogMouseDown}
+				onFocus={() => setEntered(true)}
 			>
 				{open && (
 					<>
@@ -263,6 +283,7 @@ function CalendarDateField({
 							<button
 								type="button"
 								className="touch-target rounded px-2 hover:bg-surface-2"
+								tabIndex={entered ? 0 : -1}
 								aria-label={t("report.date.previousMonth")}
 								onClick={() => stepMonth(-1)}
 							>
@@ -270,6 +291,7 @@ function CalendarDateField({
 							</button>
 							<select
 								aria-label={t("report.date.month")}
+								tabIndex={entered ? 0 : -1}
 								className="min-w-0 flex-1 rounded border border-rule bg-surface px-1 py-1"
 								value={view.month}
 								onChange={(event) => showMonth(view.year, Number(event.target.value))}
@@ -282,6 +304,7 @@ function CalendarDateField({
 							</select>
 							<select
 								aria-label={t("report.date.year")}
+								tabIndex={entered ? 0 : -1}
 								className="rounded border border-rule bg-surface px-1 py-1"
 								value={view.year}
 								onChange={(event) => {
@@ -301,6 +324,7 @@ function CalendarDateField({
 								type="button"
 								className="touch-target rounded px-2 hover:bg-surface-2 disabled:opacity-40"
 								aria-label={t("report.date.nextMonth")}
+								tabIndex={entered ? 0 : -1}
 								disabled={nextMonthBlocked}
 								onClick={() => stepMonth(1)}
 							>
@@ -331,7 +355,7 @@ function CalendarDateField({
 													<button
 														type="button"
 														data-day={day}
-														tabIndex={day === tabStop ? 0 : -1}
+														tabIndex={entered && day === tabStop ? 0 : -1}
 														aria-label={longFormat.format(toLocalDate(day))}
 														aria-current={day === today ? "date" : undefined}
 														aria-disabled={isAfterToday(day) || undefined}

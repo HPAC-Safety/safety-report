@@ -285,6 +285,24 @@ public class TypeformQuestionMapperTests
 		draft.IsRequired.ShouldBeTrue();
 	}
 
+	[Theory]
+	[InlineData("date", true)]
+	[InlineData("short_text", false)]
+	public void GivenHpacAllowingFutureDates_WhenMapped_ThenOnlyDateDraftAllowsThem(string type,
+																					bool expected)
+	{
+		// Given — ADR-0138: only a date question can allow a future date
+		var hpac = new TypeformHpacExtension(type, false, false, null, null, null, AllowFutureDates: true);
+		var english = Document(Field("field-ref", "Field", type, hpac));
+		var french = Document(Field("field-ref", "Champ", type, hpac));
+
+		// When
+		var draft = DraftFor(TypeformQuestionMapper.Map(english, french), "field-ref");
+
+		// Then
+		draft.AllowFutureDates.ShouldBe(expected);
+	}
+
 	[Fact]
 	public void GivenAnHpacExtensionNamingADependencyAndAGroup_WhenMapped_ThenTheyAreSetByKeyEvenThoughTheExportIsFlat()
 	{

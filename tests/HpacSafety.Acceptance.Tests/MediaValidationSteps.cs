@@ -201,7 +201,7 @@ public sealed class MediaValidationSteps
 			_stripper,
 			_remuxer,
 			new MediaPolicyOptions().ToPolicy(),
-			new FixedTimeProvider(Now));
+			new FixedClock(Now));
 
 		_outcome = await ingestor.Process(original, MediaType.QuickTime, CancellationToken.None);
 	}
@@ -220,7 +220,7 @@ public sealed class MediaValidationSteps
 			new UnreachableExifStripper(),
 			new RecordingVideoRemuxer(),
 			new MediaPolicyOptions().ToPolicy(),
-			new FixedTimeProvider(Now));
+			new FixedClock(Now));
 
 		_outcome = await ingestor.Process(original, MediaType.Pdf, CancellationToken.None);
 	}
@@ -278,13 +278,6 @@ public sealed class MediaValidationSteps
 		}
 	}
 
-	private sealed class FixedTimeProvider(DateTimeOffset now) : TimeProvider
-	{
-		public override DateTimeOffset GetUtcNow()
-		{
-			return now;
-		}
-	}
 
 	private sealed class RecordingBlobStore : IBlobStore
 	{

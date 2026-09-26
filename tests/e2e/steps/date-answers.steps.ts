@@ -16,9 +16,13 @@ const { Given, When, Then, After } = createBdd()
  * boundary; its own refusal of a future date is REQ-SUB-108, through the booted
  * host. Every question is synthetic.
  *
- * "Today" is the reporter's local date, the browser's; this process shares its
- * clock and time zone, so the expected dates are computed here.
+ * "Today" is the reporter's local date, the browser's. Its clock is pinned to
+ * the middle of a month, so a scenario that steps a week or a month from today
+ * reads the same on every calendar day, month-ends included (#535).
  */
+
+/** The browser's "now": noon on 15 September 2026, local time. */
+const PINNED_NOW = new Date(2026, 8, 15, 12, 0, 0)
 
 const DATE_FIELD = "#question-rev-occurred_on"
 
@@ -37,7 +41,7 @@ function label(language: string, key: string): string {
 	return key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], entries) as string
 }
 
-function dateForm(allowFutureDates: boolean): StubQuestion[] {
+function dateForm(allowFutureDates: boolean, placeholder: string | null = null): StubQuestion[] {
 	const base = {
 		isRequired: false,
 		isPrivate: false,
@@ -64,6 +68,8 @@ function dateForm(allowFutureDates: boolean): StubQuestion[] {
 			labelFr: "À quelle date est-ce arrivé?",
 			displayOrder: 0,
 			allowFutureDates,
+			placeholderEn: placeholder,
+			placeholderFr: placeholder,
 		},
 		{
 			...base,
@@ -95,9 +101,10 @@ After(async ({ $testInfo }) => {
 	await touch?.context.close()
 })
 
-async function openDateForm(page: Page, allowFutureDates: boolean, language = "English") {
+async function openDateForm(page: Page, allowFutureDates: boolean, language = "English", placeholder: string | null = null) {
+	await page.clock.setFixedTime(PINNED_NOW)
 	await stubAuth(page)
-	await stubCurrentQuestions(page, dateForm(allowFutureDates))
+	await stubCurrentQuestions(page, dateForm(allowFutureDates, placeholder))
 	await stubSubmission(page)
 	await signInAs(page, "user")
 	await page.goto("/report")
@@ -117,8 +124,7 @@ function iso(date: Date): string {
 }
 
 function today(): Date {
-	const now = new Date()
-	return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	return new Date(PINNED_NOW.getFullYear(), PINNED_NOW.getMonth(), PINNED_NOW.getDate())
 }
 
 function daysBefore(days: number): Date {
@@ -177,6 +183,13 @@ Given(/^the current page shows a date question in (English|French), on a desktop
 	await openDateForm(page, false, language)
 })
 
+Given(
+	"the current page shows a date question whose placeholder is {string}, on a desktop",
+	async ({ page }, placeholder: string) => {
+		await openDateForm(page, false, "English", placeholder)
+	},
+)
+
 // -------------------------------------------------------------------- When --
 
 When(/^the reporter (clicks|tabs into) the date field$/, async ({ page }, how: string) => {
@@ -185,6 +198,21 @@ When(/^the reporter (clicks|tabs into) the date field$/, async ({ page }, how: s
 })
 
 When("the reporter clicks the date field and chooses the 1st of today's month", async ({ page }) => {
+	await page.locator(DATE_FIELD).click()
+	const first = today()
+	first.setDate(1)
+	await dayButton(page, first).click()
+})
+
+When("the reporter clicks the date field and chooses the 1st of today's month again", async ({ page }) => {
+	// Every text the status region holds from here on, in order, so a clear
+	// before the second announcement shows up.
+	await page.evaluate((selector) => {
+		const status = document.querySelector(selector)!.parentElement!.querySelector('[role="status"]')!
+		const seen: string[] = []
+		;(window as unknown as { seenAnnouncements: string[] }).seenAnnouncements = seen
+		new MutationObserver(() => seen.push(status.textContent ?? "")).observe(status, { childList: true, characterData: true, subtree: true })
+	}, DATE_FIELD)
 	await page.locator(DATE_FIELD).click()
 	const first = today()
 	first.setDate(1)
@@ -214,6 +242,15 @@ When("the reporter tabs into the date field and presses ArrowDown", async ({ pag
 
 When(/^the reporter presses (ArrowLeft|ArrowRight|ArrowUp|ArrowDown|PageUp|PageDown|Enter)$/, async ({ page }, key: string) => {
 	await page.keyboard.press(key)
+})
+
+When("the reporter presses Tab", async ({ page }) => {
+	await page.keyboard.press("Tab")
+})
+
+Then("focus skips the calendar to the Next button, and the calendar closes", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Next", exact: true })).toBeFocused()
+	await expect(calendar(page)).toBeHidden()
 })
 
 When("the reporter presses ArrowDown and then Escape", async ({ page }) => {
@@ -287,6 +324,25 @@ Then("the chosen day is announced in words", async ({ page }) => {
 	first.setDate(1)
 	const words = new Intl.DateTimeFormat("en-CA", { dateStyle: "full" }).format(first)
 	await expect(page.locator(DATE_FIELD).locator("xpath=following-sibling::*[@role='status']")).toHaveText(`Selected: ${words}`)
+})
+
+Then("the announcement is cleared and the chosen day is announced again", async ({ page }) => {
+	const first = today()
+	first.setDate(1)
+	const words = `Selected: ${new Intl.DateTimeFormat("en-CA", { dateStyle: "full" }).format(first)}`
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { seenAnnouncements: string[] }).seenAnnouncements))
+		.toEqual(["", words])
+})
+
+Then("the date field's placeholder is {string}", async ({ page }, placeholder: string) => {
+	await expect(page.locator(DATE_FIELD)).toHaveAttribute("placeholder", placeholder)
+})
+
+Then("the date field is described by the format {string}", async ({ page }, format: string) => {
+	const ids = ((await page.locator(DATE_FIELD).getAttribute("aria-describedby")) ?? "").split(/\s+/).filter(Boolean)
+	const texts = await Promise.all(ids.map((id) => page.locator(`[id="${id}"]`).textContent()))
+	expect(texts.map((text) => text?.trim())).toContain(format)
 })
 
 Then("the calendar shows today's month", async ({ page }) => {

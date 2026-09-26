@@ -31,6 +31,8 @@ export interface ImportedQuestionDraftView {
 	isRequired: boolean
 	dependsOnKey: string | null
 	dependsOnOptionCode: string | null
+	/** Carried in the export's `hpac` object; false for a plain Typeform file (ADR-0138). */
+	allowFutureDates: boolean
 }
 
 export interface RejectedTypeformFieldView {

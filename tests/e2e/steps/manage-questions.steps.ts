@@ -31,11 +31,13 @@ interface StubOption {
 	addedByReporter: boolean
 	needsTranslation: boolean
 	reporterLocale: string | null
+	/** `first`, `last`, or `none` (ADR-0136). */
+	pin: string
 }
 
 /** A choice an administrator wrote, complete in both languages. */
-function written(code: string, labelEn: string, labelFr: string): StubOption {
-	return { id: `choice-${code}`, code, labelEn, labelFr, addedByReporter: false, needsTranslation: false, reporterLocale: null }
+function written(code: string, labelEn: string, labelFr: string, pin = "none"): StubOption {
+	return { id: `choice-${code}`, code, labelEn, labelFr, addedByReporter: false, needsTranslation: false, reporterLocale: null, pin }
 }
 
 interface StubQuestion {
@@ -119,9 +121,12 @@ async function stubAdminApi(page: Page) {
 	const questions: StubQuestion[] = [
 		question("aaaaaaaaaaa", "were_you_injured", "Were you injured?", "yes_no", 0),
 		question("bbbbbbbbbbb", "occurrence_notes", "What happened?", "long_text", 1),
+		// In the server's order — pinned last at the end, the rest by ID — which
+		// is not alphabetical (ADR-0136).
 		question("ddddddddddd", "aircraft_type", "Hang glider or paraglider?", "single_select", 2, [
-			written("hang_glider", "Hang glider", "Deltaplane"),
 			written("paraglider", "Paraglider", "Parapente"),
+			written("hang_glider", "Hang glider", "Deltaplane"),
+			written("other", "Other", "Autre", "last"),
 		]),
 		// A type-ahead a reporter has added a site to, still missing its French.
 		question("eeeeeeeeeee", "launch_site", "Where did you launch?", "autocomplete", 3, [
@@ -134,6 +139,7 @@ async function stubAdminApi(page: Page) {
 				addedByReporter: true,
 				needsTranslation: true,
 				reporterLocale: "en-CA",
+				pin: "none",
 			},
 		]),
 	]
@@ -222,19 +228,22 @@ async function stubAdminApi(page: Page) {
 		// (ADR-0095).
 		const current = questions[index]
 		const saved = JSON.parse(route.request().postData() ?? "{}") as Partial<StubQuestion> & {
-			options?: { code: string | null; labelEn: string; labelFr: string }[]
+			options?: { code: string | null; labelEn: string; labelFr: string; pin?: string }[]
 		}
 		const options = (saved.options ?? []).map((option): StubOption => {
 			const existing = current.options.find((candidate) => candidate.code === option.code)
 			const labelEn = option.labelEn.trim() || null
 			const labelFr = option.labelFr.trim() || null
+			const code = option.code ?? codeOf(option.labelEn)
 			return {
-				code: option.code ?? codeOf(option.labelEn),
+				id: existing?.id ?? `choice-${code}`,
+				code,
 				labelEn,
 				labelFr,
 				addedByReporter: existing?.addedByReporter ?? false,
 				needsTranslation: labelEn === null || labelFr === null,
 				reporterLocale: existing?.reporterLocale ?? null,
+				pin: option.pin ?? "none",
 			}
 		})
 		const fields: Partial<StubQuestion> = { ...saved, options: undefined }
@@ -374,7 +383,7 @@ Then("a required-option control offers that question's live options", async ({ p
 	const offered = await picker.locator("option").allTextContents()
 
 	await expect(picker).toBeVisible()
-	expect(offered).toEqual(["Choose the required option", "Hang glider", "Paraglider"])
+	expect(offered).toEqual(["Choose the required option", "Hang glider", "Paraglider", "Other"])
 })
 
 When("they move the second question up using its move-up control", async ({ page }) => {
@@ -836,3 +845,94 @@ Then("each description takes several lines", async ({ page }) => {
 Then("its wording is asked for as a question and help text in each language", async ({ page }) => {
 	await expectWordingLabels(page, wordingFields.question, wordingFields.statement)
 })
+
+// ------------------------ each option's position, listed as the form lists it (ADR-0136) --
+
+const pinnedBodies = new WeakMap<Page, { options: { code: string | null; labelEn: string; pin?: string }[] }>()
+
+function aircraftRow(page: Page) {
+	return questionRow(page, "Hang glider or paraglider?")
+}
+
+/** The English wording of each option, in the order the editor lists them. */
+async function editorOptions(page: Page): Promise<string[]> {
+	await expect(page.getByTestId("question-choice").first()).toBeVisible()
+	return page.getByTestId("question-choice").getByLabel("Choice (English)").evaluateAll((inputs) =>
+		(inputs as HTMLInputElement[]).map((input) => input.value),
+	)
+}
+
+function stubbedWording(page: Page, quoted: string[]) {
+	// The stub's single-select question is the one the scenario describes.
+	expect(quoted.sort()).toEqual(["Hang glider", "Other", "Paraglider"])
+	return aircraftRow(page)
+}
+
+When(
+	"they open a single-select question offering {string} pinned last, and {string} and {string} not pinned",
+	async ({ page }, last: string, first: string, second: string) => {
+		await stubbedWording(page, [last, first, second]).getByRole("button", { name: "Edit" }).click()
+	},
+)
+
+Then("its options are listed {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+	expect(await editorOptions(page)).toEqual([first, second, third])
+})
+
+Then("each option offers the positions {string}, {string}, and {string}", async ({ page }, none: string, top: string, bottom: string) => {
+	const choices = page.getByTestId("question-choice")
+	const count = await choices.count()
+	expect(count).toBeGreaterThan(0)
+
+	for (let index = 0; index < count; index++) {
+		expect(await choices.nth(index).getByLabel("Position").locator("option").allTextContents()).toEqual([none, top, bottom])
+	}
+	await expect(choices.nth(count - 1).getByLabel("Position")).toHaveValue("last")
+	await expect(choices.nth(0).getByLabel("Position")).toHaveValue("none")
+})
+
+When(
+	"they reword {string} to {string} and set {string} to {string}",
+	async ({ page }, before: string, after: string, pinned: string, position: string) => {
+		const choices = page.getByTestId("question-choice")
+		const options = await editorOptions(page)
+
+		await choices.nth(options.indexOf(before)).getByLabel("Choice (English)").fill(after)
+		await choices.nth(options.indexOf(pinned)).getByLabel("Position").selectOption({ label: position })
+	},
+)
+
+Then("the options stay where they were while the Administrator edits", async ({ page }) => {
+	expect(await editorOptions(page)).toEqual(["Speed wing", "Paraglider", "Other"])
+})
+
+Then(
+	"the save sends {string} pinned first, {string} pinned last, and {string} not pinned",
+	async ({ page }, first: string, last: string, none: string) => {
+		const saving = page.waitForRequest(
+			(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/ddddddddddd"),
+		)
+		await page.getByRole("button", { name: "Save" }).click()
+		pinnedBodies.set(page, JSON.parse((await saving).postData() ?? "{}"))
+
+		const pins = Object.fromEntries((pinnedBodies.get(page)?.options ?? []).map((option) => [option.labelEn, option.pin]))
+		expect(pins).toEqual({ [first]: "first", [last]: "last", [none]: "none" })
+	},
+)
+
+When(
+	"they make a question conditional on a single-select question offering {string} pinned last, and {string} and {string} not pinned",
+	async ({ page }, last: string, first: string, second: string) => {
+		stubbedWording(page, [last, first, second])
+		await page.getByRole("button", { name: "Add a question" }).click()
+		await page.getByLabel("Only ask when another question is answered a certain way").selectOption("ddddddddddd")
+	},
+)
+
+Then("the required-option control lists {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+	const picker = page.getByLabel("Required answer")
+
+	await expect(picker).toBeVisible()
+	expect(await picker.locator("option").allTextContents()).toEqual(["Choose the required option", first, second, third])
+})
+

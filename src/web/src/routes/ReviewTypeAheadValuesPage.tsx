@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
+import { sortChoices } from "../lib/sortChoices"
 import {
 	ApiError,
 	approveTypeAheadValue,
@@ -204,7 +205,7 @@ export function ReviewTypeAheadValuesPage() {
 															}
 														>
 															<option value="">{t("typeAheadValues.mergeInto")}</option>
-															{value.mergeTargets.map((target) => (
+															{sortChoices(value.mergeTargets, locale, wording).map((target) => (
 																<option key={target.id} value={target.id}>
 																	{wording(target)}
 																</option>

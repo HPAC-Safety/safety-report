@@ -5,7 +5,7 @@ import { formatAnswer } from "../lib/formatAnswer"
 import { DEFAULT_PHONE_COUNTRY, callingCodeOf } from "../lib/phoneNumber"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import type { DraftAnswer, DraftAttachment } from "./draft"
-import { collectsNoAnswer, optionFor, optionLabel, questionLabel } from "./steps"
+import { collectsNoAnswer, optionFor, optionGroups, optionLabel, questionLabel } from "./steps"
 
 /*
  * Asks a returning reporter whether to continue the report this browser saved
@@ -57,7 +57,18 @@ function displayValue(question: PublicQuestionView, answer: DraftAnswer, locale:
 		const option = optionFor(question, stored)
 		return option ? optionLabel(option, locale) : stored
 	}
-	if (answer.kind === "options") return answer.values.map(labelOf).join(", ")
+	if (answer.kind === "options") {
+		// Listed as the form lists the choices (ADR-0136); a value no choice carries goes last, as stored.
+		const listed = optionGroups(question, locale).flat()
+		const rank = (stored: string) => {
+			const index = listed.findIndex((option) => option.id === optionFor(question, stored)?.id)
+			return index < 0 ? listed.length : index
+		}
+		return [...answer.values]
+			.sort((left, right) => rank(left) - rank(right))
+			.map(labelOf)
+			.join(", ")
+	}
 	if (question.type === "single_select") return labelOf(answer.value)
 	if (question.type === "phone") return `+${callingCodeOf(answer.country ?? DEFAULT_PHONE_COUNTRY)} ${answer.value}`
 	return formatAnswer(question.type, answer.value, locale, t)

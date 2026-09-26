@@ -258,6 +258,12 @@
       "awaitingEnglish": "En attente de la version anglaise",
       "awaitingFrench": "En attente de la version française",
       "replace": "Remplacer par une nouvelle option",
+      "position": "#Position",
+      "pin": {
+        "none": "#Alphabetical",
+        "first": "#Pin to top",
+        "last": "#Pin to bottom"
+      },
       "replaceHelp": "Une option modifiée est verrouillée : toutes les réponses antérieures affichent la nouvelle formulation. Cochez la case « Remplacer » lorsque l'option a désormais une signification différente; les réponses antérieures conservent l'ancienne option et sa formulation."
     },
     "type": {

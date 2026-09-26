@@ -3,6 +3,7 @@ import { expect, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import {
+	choiceFormQuestions,
 	dateTimeFormQuestions,
 	defaultFormQuestions,
 	multiSelectFormQuestions,
@@ -14,6 +15,7 @@ import {
 	writeSavedDateTimeDraftToBrowser,
 	writeSavedDraftToBrowser,
 	writeStaleDraftToBrowser,
+	type StubOption,
 	type StubQuestion,
 } from "./report-form-fixture"
 
@@ -635,9 +637,9 @@ Given("a type-ahead question has a reporter-added choice typed only in English",
 	await openForm(page, typeAheadFormQuestions())
 })
 
-When("a reporter using French opens that question", async ({ page }) => {
-	await goNext(page) // intro -> the type-ahead page
-	await page.getByRole("button", { name: "Français" }).click()
+When("a reporter using {word} opens that question", async ({ page }, language: string) => {
+	await goNext(page) // intro -> the question's page
+	if (language === "French") await page.getByRole("button", { name: "Français" }).click()
 })
 
 Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
@@ -744,3 +746,88 @@ Then("the continue dialog lists the date as {string} and the time as {string}", 
 	await expect(table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^On what date\?/ }) }).getByRole("cell")).toHaveText(date)
 	await expect(table.getByRole("row").filter({ has: page.getByRole("rowheader", { name: /^At what time\?/ }) }).getByRole("cell")).toHaveText(time)
 })
+
+// ------------------ choices listed alphabetically, pinned first or last (ADR-0136) --
+
+/*
+ * REQ-QB-145, REQ-QB-146, REQ-QB-148. Each stub sends its choices in an order
+ * that is not alphabetical, as the server does (grouped by pin, by ID within a
+ * group), so the order on screen is the browser's own.
+ */
+
+function stubChoice(labelEn: string, labelFr = labelEn, pin = "none", onlyIn: string | null = null): StubOption {
+	const code = labelEn.toLowerCase().replace(/[^a-z0-9]+/g, "_")
+	return { id: `choice-${code}`, code, labelEn, labelFr, onlyIn, pin }
+}
+
+Given(
+	"a {word} question offers {string} \\/ {string}, {string} \\/ {string}, {string} \\/ {string}, and {string} \\/ {string}, none pinned",
+	async ({ page }, type: string, en1: string, fr1: string, en2: string, fr2: string, en3: string, fr3: string, en4: string, fr4: string) => {
+		const options = [stubChoice(en1, fr1), stubChoice(en2, fr2), stubChoice(en3, fr3), stubChoice(en4, fr4)]
+		await openForm(page, choiceFormQuestions(type, options))
+	},
+)
+
+Given(
+	"a {word} question offers {string} and {string} pinned first, {string} pinned last, and {string}, {string}, and {string} not pinned",
+	async ({ page }, type: string, firstA: string, firstB: string, last: string, noneA: string, noneB: string, noneC: string) => {
+		// The server's order: pinned first, unpinned, pinned last, each by ID — not alphabetical.
+		const options = [
+			stubChoice(firstA, firstA, "first"),
+			stubChoice(firstB, firstB, "first"),
+			...[noneA, noneB, noneC].map((label) => stubChoice(label)),
+			stubChoice(last, last, "last"),
+		]
+		await openForm(page, choiceFormQuestions(type, options))
+	},
+)
+
+Given(
+	"a type-ahead question offers {string} and {string}, and a reporter has since added {string}",
+	async ({ page }, first: string, second: string, added: string) => {
+		const options = [stubChoice(first), stubChoice(second), stubChoice(added, added, "none", "en-CA")]
+		await openForm(page, choiceFormQuestions("autocomplete", options))
+	},
+)
+
+/** What the question's control lists, in order, with "|" where a separator is drawn. */
+async function listedChoices(page: Page): Promise<string[]> {
+	const main = page.getByRole("main")
+	await expect(main.getByText("Which one applies?").first()).toBeVisible()
+
+	if ((await main.locator("select").count()) > 0) {
+		return main
+			.locator("select option")
+			.evaluateAll((options) =>
+				(options as HTMLOptionElement[])
+					.filter((option) => option.value !== "" || option.hasAttribute("data-separator"))
+					.map((option) => (option.hasAttribute("data-separator") ? "|" : (option.textContent ?? "").trim())),
+			)
+	}
+
+	if ((await main.locator("datalist").count()) > 0) {
+		return main.locator("datalist option").evaluateAll((options) => (options as HTMLOptionElement[]).map((option) => option.value))
+	}
+
+	const trigger = main.getByRole("button", { name: /Which one applies\?/ })
+	if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
+	return main
+		.locator('[id$="-options"] label, [id$="-options"] hr')
+		.evaluateAll((entries) => entries.map((entry) => (entry.tagName === "HR" ? "|" : (entry.textContent ?? "").trim())))
+}
+
+Then(/^its choices are listed (".*")$/, async ({ page }, quoted: string) => {
+	const expected = [...quoted.matchAll(/"([^"]*)"/g)].map((match) => match[1])
+	expect((await listedChoices(page)).filter((entry) => entry !== "|")).toEqual(expected)
+})
+
+Then("a separator is drawn after {string} and after {string}", async ({ page }, first: string, second: string) => {
+	const listed = await listedChoices(page)
+	const separators = listed.flatMap((entry, index) => (entry === "|" ? [listed[index - 1]] : []))
+	expect(separators).toEqual([first, second])
+})
+
+Then("no separator is drawn, because a type-ahead's suggestions cannot show one", async ({ page }) => {
+	expect(await listedChoices(page)).not.toContain("|")
+})
+

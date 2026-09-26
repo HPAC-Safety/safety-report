@@ -18,6 +18,8 @@ export interface StubOption {
 	labelFr: string
 	/** The one locale a reporter-added choice is worded in, or null when it has both (ADR-0095). */
 	onlyIn: string | null
+	/** `first`, `last`, or `none`; the API always sends it, and a stub leaving it out means `none` (ADR-0136). */
+	pin?: string
 }
 
 export interface StubQuestion {
@@ -178,6 +180,29 @@ export function typeAheadFormQuestions(): StubQuestion[] {
 				{ id: "choice-coopers", code: "coopers", labelEn: "Cooper's Hill", labelFr: "Colline Cooper", onlyIn: null },
 				{ id: "choice-mount_7", code: "mount_7", labelEn: "Mount 7", labelFr: "Mount 7", onlyIn: "en-CA" },
 			],
+		}),
+	)
+	return questions
+}
+
+/**
+ * The default form with one choice question of `type` as its first
+ * answer-producing page, offering `options` in the order given — the server's
+ * order, which is not alphabetical (ADR-0136).
+ */
+export function choiceFormQuestions(type: string, options: StubOption[]): StubQuestion[] {
+	const questions = defaultFormQuestions()
+	questions.splice(
+		1,
+		0,
+		question({
+			id: "choice_question",
+			key: "choice_question",
+			labelEn: "Which one applies?",
+			type,
+			displayOrder: 1,
+			allowsReporterAdditions: type === "autocomplete",
+			options,
 		}),
 	)
 	return questions

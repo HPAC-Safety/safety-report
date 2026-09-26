@@ -1,11 +1,14 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { Fragment, useEffect, useRef, useState, type ReactNode } from "react"
 
 export interface MultiSelectPickerProps {
 	fieldId: string
 	/** The question's label content (text plus any required badge). */
 	label: ReactNode
-	/** The option labels in the reporter's locale, in display order. */
-	options: { key: string; label: string }[]
+	/**
+	 * The option labels in the reporter's locale, in display order: pinned
+	 * first, unpinned, pinned last, with a divider drawn between groups (ADR-0136).
+	 */
+	groups: { key: string; label: string }[][]
 	values: string[]
 	placeholder: string
 	describedBy: string | undefined
@@ -18,7 +21,7 @@ export interface MultiSelectPickerProps {
  * stays open while several are checked. Escape closes it and returns focus to
  * the trigger; pressing outside or tabbing away closes it too.
  */
-export function MultiSelectPicker({ fieldId, label, options, values, placeholder, describedBy, onToggle }: MultiSelectPickerProps) {
+export function MultiSelectPicker({ fieldId, label, groups, values, placeholder, describedBy, onToggle }: MultiSelectPickerProps) {
 	const [open, setOpen] = useState(false)
 	const containerRef = useRef<HTMLDivElement>(null)
 	const triggerRef = useRef<HTMLButtonElement>(null)
@@ -50,7 +53,10 @@ export function MultiSelectPicker({ fieldId, label, options, values, placeholder
 		}
 	}, [open])
 
-	const chosen = options.filter((option) => values.includes(option.key)).map((option) => option.label)
+	const chosen = groups
+		.flat()
+		.filter((option) => values.includes(option.key))
+		.map((option) => option.label)
 
 	return (
 		<div
@@ -90,11 +96,16 @@ export function MultiSelectPicker({ fieldId, label, options, values, placeholder
 						aria-labelledby={labelId}
 						className="absolute left-0 right-0 top-full z-40 mt-1 flex max-h-72 flex-col gap-1 overflow-y-auto rounded border border-rule bg-surface py-2 shadow-lg"
 					>
-						{options.map((option) => (
-							<label key={option.key} className="touch-target flex items-center gap-2 px-3 font-sans text-ink">
-								<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
-								{option.label}
-							</label>
+						{groups.map((group, index) => (
+							<Fragment key={group[0].key}>
+								{index > 0 && <hr className="mx-3 border-rule" data-separator />}
+								{group.map((option) => (
+									<label key={option.key} className="touch-target flex items-center gap-2 px-3 font-sans text-ink">
+										<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
+										{option.label}
+									</label>
+								))}
+							</Fragment>
 						))}
 					</div>
 				)}

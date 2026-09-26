@@ -55,8 +55,13 @@ and is the pre-pull-request gate.**
   (or `HPAC_ACT_ALLOW_GH_TOKEN=1`), with a warning.
 - **Other inputs**: the wrapper passes `--secret-file`, `--var-file`, and
   `--env-file /dev/null` on act's command line, over `.actrc` and any
-  user-level actrc (`~/.actrc`, `$XDG_CONFIG_HOME/act/actrc`), and warns when
-  a user-level actrc exists, because act still merges its other flags.
+  user-level actrc (`~/.actrc`, `$XDG_CONFIG_HOME/act/actrc`,
+  `~/Library/Application Support/act/actrc`), and warns when one exists,
+  because act still merges its other flags.
+- **Action cache**: `--use-new-action-cache`. With act's default cache,
+  parallel jobs using the same action re-checked-out one shared working tree,
+  and a job intermittently found `setup-node@v7`'s `dist/cache-save/index.js`
+  missing.
   `.secrets`, `.vars`, and `.actrc.local` are gitignored.
 - **The image**: `tools/act/Dockerfile`, built locally and never pushed.
   - Base: `catthehacker/ubuntu:act-24.04`, pinned by digest. It lacks `gh`

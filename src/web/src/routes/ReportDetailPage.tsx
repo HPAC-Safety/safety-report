@@ -20,6 +20,7 @@ import { ReportBadges } from "../components/ReportBadges"
 import { ReviewActions } from "../components/ReviewActions"
 import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
+import { PrivateNotes } from "../components/PrivateNotes"
 
 /*
  * One report as a reviewer judges it: every question as it was asked, with
@@ -354,6 +355,8 @@ export function ReportDetailPage() {
 							</ul>
 						</section>
 					)}
+
+					<PrivateNotes reportId={report.id} />
 				</>
 			)}
 		</main>

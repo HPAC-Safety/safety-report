@@ -549,5 +549,36 @@
     "keep": "Conserver",
     "confirmDelete": "Souhaitez-vous supprimer votre commentaire?",
     "confirmHide": "Voulez-vous cacher ce commentaire à tout le monde?"
+  },
+  "privateNotes": {
+    "title": "#Private notes",
+    "explanation": "#Only safety officers and administrators see these notes. They are never published, summarized, or translated.",
+    "listLabel": "#Private notes on this report",
+    "loading": "#Loading private notes…",
+    "empty": "#No private notes yet.",
+    "error": {
+      "load": "#The private notes could not be loaded. Reload the page to try again.",
+      "save": "#That note could not be saved. Try again.",
+      "stale": "#Another reviewer edited this note. The latest text is shown; make your change again.",
+      "history": "#The history could not be loaded. Try again."
+    },
+    "author": {
+      "you": "#You"
+    },
+    "edited": "#Edited",
+    "newLabel": "#Add a private note",
+    "editLabel": "#Edit this note",
+    "length": "#{count} of {max} characters",
+    "add": "#Add note",
+    "save": "#Save",
+    "cancel": "#Cancel",
+    "edit": "#Edit",
+    "history": "#History",
+    "hideHistory": "#Hide history",
+    "historyLabel": "#Every version of this note",
+    "revision": "#Version {number} — {writer}, {at}",
+    "remove": "#Remove",
+    "keep": "#Keep",
+    "confirmRemove": "#Remove this note? It cannot be restored."
   }
 }

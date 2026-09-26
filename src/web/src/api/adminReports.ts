@@ -214,3 +214,57 @@ export interface PendingCounts {
 export function getPendingCounts(): Promise<PendingCounts> {
 	return get("/api/admin/counts")
 }
+
+/** The longest private note the API accepts (ADR-0133). */
+export const PRIVATE_NOTE_MAX_LENGTH = 4000
+
+/** The problem type the API sends when a note edit was based on an older revision. */
+export const STALE_PRIVATE_NOTE = "https://hpac.ca/problems/stale-private-note"
+
+/** A staff-only note as it reads now (ADR-0133). */
+export interface PrivateNote {
+	id: string
+	text: string
+	/** The current revision number, sent back with an edit. */
+	revision: number
+	/** The current text's writer, as an opaque token subject. */
+	writtenBy: string
+	writtenAt: string
+	createdAt: string
+	edited: boolean
+	isMine: boolean
+}
+
+/** One revision in a note's history. */
+export interface PrivateNoteRevision {
+	number: number
+	text: string
+	writtenBy: string
+	writtenAt: string
+	isMine: boolean
+}
+
+const notesPath = (reportId: string) => `${reportPath(reportId)}/private-notes`
+
+export function listPrivateNotes(reportId: string): Promise<PrivateNote[]> {
+	return get(notesPath(reportId))
+}
+
+export function addPrivateNote(reportId: string, text: string): Promise<PrivateNote> {
+	return post(notesPath(reportId), { text })
+}
+
+export function editPrivateNote(reportId: string, note: PrivateNote, text: string): Promise<PrivateNote> {
+	return call(`${notesPath(reportId)}/${encodeURIComponent(note.id)}`, {
+		method: "PUT",
+		body: JSON.stringify({ text, revision: note.revision }),
+	})
+}
+
+export function removePrivateNote(reportId: string, noteId: string): Promise<void> {
+	return call(`${notesPath(reportId)}/${encodeURIComponent(noteId)}`, { method: "DELETE" })
+}
+
+export function privateNoteHistory(reportId: string, noteId: string): Promise<PrivateNoteRevision[]> {
+	return get(`${notesPath(reportId)}/${encodeURIComponent(noteId)}/revisions`)
+}

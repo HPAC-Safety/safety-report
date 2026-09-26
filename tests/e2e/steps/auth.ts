@@ -48,6 +48,12 @@ export async function stubAuth(page: Page, options?: { thirdPartySignIn?: boolea
 		)
 	}
 
+	// The report view reads its private notes (ADR-0133); none exist unless a
+	// scenario stubs them after signing in, which Playwright then tries first.
+	await page.route(/\/api\/admin\/reports\/[^/]+\/private-notes$/, (route) =>
+		route.request().method() === "GET" ? route.fulfill({ json: [] }) : route.fallback(),
+	)
+
 	await page.route("**/api/auth/config", (route) => {
 		const thirdPartySignIn = configured.get(page) ?? false
 

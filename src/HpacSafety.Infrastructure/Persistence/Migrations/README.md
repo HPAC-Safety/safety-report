@@ -54,6 +54,8 @@ Dates and times follow
 erDiagram
     questions ||--o{ question_revisions : "versions"
     questions ||--o{ question_choices : "its own choices"
+    questions |o--o{ questions : "choices depend on"
+    question_choices |o--o{ question_choices : "offered under"
     question_choices |o--o{ question_choices : "merged into"
     question_revisions }o--o| questions : "conditional on"
     question_revisions }o--o| question_choices : "requires"
@@ -75,6 +77,7 @@ erDiagram
         varchar(128) key UK "stable, invariant, never changes"
         varchar(64) role "none | consent_publish"
         boolean is_system "true only for publication consent"
+        char(11) choices_depend_on_question_id FK "nullable; the question whose answer filters this one's choices (ADR-0145)"
         timestamptz created_at
         timestamptz deleted
     }
@@ -119,6 +122,7 @@ erDiagram
         timestamptz created_at "when a reporter added it; null before this was recorded"
         char(11) replaced_by_choice_id FK "nullable; the picker option that replaced this one"
         char(11) merged_into_choice_id FK "the value a merged one reads as; set only on a removed value (ADR-0129)"
+        char(11) parent_choice_id FK "nullable; the parent question's choice this one is offered under (ADR-0145)"
         timestamptz deleted "removed; hidden from the form, never erased"
     }
 
@@ -342,6 +346,7 @@ defines it, under [`Sql/`](../Sql/).
 | `20260926162317_AddReportPrivateAttachments` | Added `report_private_attachments` (report, blob key, sanitized file name, content type, byte size above zero, optional description, the adder's and remover's opaque token subjects, `deleted`) and a nullable `report_private_note_revisions.attachment_id`, a restricted foreign key to it. Staff-only files: no view reads them (ADR-0135). |
 | `20260926180740_PinChoicesFirstOrLast` | Added `question_choices.pin` (`none`, `first`, or `last`; default `none`, so every existing choice is unpinned) with `ck_question_choices_pin`. Choices are listed pinned first, then alphabetically in the reader's language, then pinned last; `display_order` stays and is no longer read (ADR-0136). |
 | `20260926190248_AllowFutureDatesOnDateQuestions` | Added `question_revisions.allow_future_dates` (`boolean not null default false`, so every existing date question, the seeded occurrence date included, refuses future dates) with `ck_question_revisions_future_dates_date`: only a date question may allow them. No wording changes and no revision is created (ADR-0138). |
+| `20260926213704_LinkChoicesToParentChoices` | Added nullable `questions.choices_depend_on_question_id` and `question_choices.parent_choice_id`, each a restricted self-referencing foreign key with a `CHECK` refusing a self-reference (`ck_questions_choices_depend_on_other`, `ck_question_choices_parent_other`). Every existing question depends on nothing and every choice is unlinked; no revision is created. Types, depth, ownership, and linking are checked by `ChoiceDependencies` (ADR-0145). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

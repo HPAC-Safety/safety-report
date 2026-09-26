@@ -32,6 +32,7 @@ public sealed record PublicQuestionView(
 	int DisplayOrder,
 	string? DependsOnQuestionId,
 	string? DependsOnChoiceId,
+	string? ChoicesDependOnQuestionId,
 	bool AllowsReporterAdditions,
 	string LabelEn,
 	string LabelFr,
@@ -77,6 +78,7 @@ public sealed record PublicQuestionView(
 				? QuestionDependencies.ParentToday(bank, parentId)?.Id ?? parentId
 				: revision.DependsOnQuestionId)?.Value,
 			(QuestionDependencies.RequiredChoiceToday(bank, revision)?.Id ?? revision.DependsOnChoiceId)?.Value,
+			ChoiceParentOnForm(question, bank)?.Value,
 			revision.TakesReporterAdditions,
 			revision.LabelEn,
 			revision.LabelFr,
@@ -86,6 +88,20 @@ public sealed record PublicQuestionView(
 			revision.PlaceholderFr,
 			[.. question.Choices.Select(PublicOptionView.Of)],
 			children);
+	}
+
+	/// <summary>
+	///     The question whose answer filters this one's choices, when it is on the
+	///     form. A parent the form does not ask — deactivated, or deleted — filters
+	///     nothing, as a condition whose parent is missing hides nothing (ADR-0145).
+	/// </summary>
+	private static TinyId? ChoiceParentOnForm(Question question,
+											  IReadOnlyCollection<Question> bank)
+	{
+		return question.ChoicesDependOnQuestionId is { } parentId
+			   && bank.Any(candidate => candidate.Id == parentId && candidate.IsActive)
+			? parentId
+			: null;
 	}
 }
 
@@ -104,7 +120,11 @@ public sealed record PublicQuestionView(
 ///     <c>first</c>, <c>last</c>, or <c>none</c>: whether the form lists this choice
 ///     before or after the alphabetical rest, or among them (ADR-0136).
 /// </param>
-public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin)
+/// <param name="ParentChoiceId">
+///     The parent question's choice the form offers this one under, when its
+///     question's choices depend on another's (ADR-0145).
+/// </param>
+public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin, string? ParentChoiceId)
 {
 	/// <summary>Flattens one choice for the public form.</summary>
 	public static PublicOptionView Of(QuestionChoice choice)
@@ -117,6 +137,7 @@ public sealed record PublicOptionView(string Id, string Code, string LabelEn, st
 			choice.Label(Locale.EnCa),
 			choice.Label(Locale.FrCa),
 			choice.NeedsTranslation ? (choice.LabelEn is null ? Locale.FrCa : Locale.EnCa).Code : null,
-			EnumCode.Of(choice.Pin));
+			EnumCode.Of(choice.Pin),
+			choice.ParentChoiceId?.Value);
 	}
 }

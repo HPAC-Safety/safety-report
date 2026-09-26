@@ -91,7 +91,10 @@ public static partial class ReportSubmissionEndpoints
 		var claimedUploads = new HashSet<UploadId>();
 		var fileAnswers = new List<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)>();
 
-		foreach (var entry in dto.Answers)
+		// A question whose choices depend on another's is checked against the
+		// parent's answer, so every parent is answered first — its new type-ahead
+		// value included, which a new child value is offered under (ADR-0145).
+		foreach (var entry in dto.Answers.OrderBy(entry => IsDependent(entry, revisionLookup) ? 1 : 0))
 		{
 			var outcome = TryApplyAnswer(
 				report, entry, revisionLookup, seenRevisionIds, claimedUploads, clock, fileAnswers);
@@ -212,7 +215,7 @@ public static partial class ReportSubmissionEndpoints
 
 		if (revision.StoresLocalizedValue)
 		{
-			return TryApplyChoiceAnswer(report, entry, question, revision, at);
+			return TryApplyChoiceAnswer(report, entry, question, revision, at, revisionLookup);
 		}
 
 		if (revision.Type == QuestionType.FileUpload)
@@ -312,7 +315,8 @@ public static partial class ReportSubmissionEndpoints
 		SubmitAnswerRequest entry,
 		Question question,
 		QuestionRevision revision,
-		DateTimeOffset at)
+		DateTimeOffset at,
+		Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
 	{
 		if (entry.Attachments is { Count: > 0 })
 		{
@@ -348,11 +352,33 @@ public static partial class ReportSubmissionEndpoints
 			choiceIds.Add(choiceId);
 		}
 
+		TinyId? parentChoiceId = null;
+
+		if ((typed || choiceIds.Count > 0)
+			&& FilteringParent(question, revisionLookup) is { } parent)
+		{
+			// The form offers a child's choices only under the parent's answer, and
+			// only once the parent is answered; the API holds a submission to the
+			// same, whatever the form did (ADR-0145). The refusal names the
+			// questions by key, never an answer.
+			parentChoiceId = report.Answers.FirstOrDefault(answer => answer.QuestionId == parent.Id)?.ChoiceId;
+
+			if (parentChoiceId is null)
+			{
+				return Problem($"'{question.Key}' can be answered only once '{parent.Key}' is.");
+			}
+
+			if (choiceIds.Exists(choiceId => question.OfferedChoice(choiceId) is { } choice && choice.ParentChoiceId != parentChoiceId))
+			{
+				return Problem($"'{question.Key}' named a choice that is not offered for the answer to '{parent.Key}'.");
+			}
+		}
+
 		try
 		{
 			if (typed)
 			{
-				report.Answer(question, revision, text, at);
+				report.Answer(question, revision, text, at, parentChoiceId);
 			}
 			else
 			{
@@ -365,6 +391,27 @@ public static partial class ReportSubmissionEndpoints
 		}
 
 		return null;
+	}
+
+	/// <summary>
+	///     The question whose answer filters <paramref name="question" />'s choices,
+	///     when it is on the form. A parent the form does not ask filters nothing,
+	///     so it is not checked (ADR-0145).
+	/// </summary>
+	private static Question? FilteringParent(Question question,
+											 Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
+	{
+		return question.ChoicesDependOnQuestionId is { } parentId
+			? revisionLookup.Values.Select(pair => pair.Question).FirstOrDefault(candidate => candidate.Id == parentId && candidate.IsActive)
+			: null;
+	}
+
+	private static bool IsDependent(SubmitAnswerRequest entry,
+									Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)
+	{
+		return TinyId.TryParse(entry.QuestionRevisionId, out var revisionId)
+			   && revisionLookup.TryGetValue(revisionId, out var found)
+			   && found.Question.ChoicesDependOnQuestionId is not null;
 	}
 
 	/// <summary>

@@ -28,6 +28,7 @@ public sealed record QuestionView(
 	string? DependsOnQuestionId,
 	string? DependsOnChoiceId,
 	string? GroupedUnderQuestionId,
+	string? ChoicesDependOnQuestionId,
 	string LabelEn,
 	string LabelFr,
 	string? HelpTextEn,
@@ -76,7 +77,14 @@ public sealed record QuestionView(
 				: revision.DependsOnQuestionId)?.Value,
 			((bank is null ? null : QuestionDependencies.RequiredChoiceToday(bank, revision)?.Id) ?? revision.DependsOnChoiceId)?.Value,
 			revision.GroupedUnderQuestionId?.Value,
+			// A parent deleted rather than forked names nothing any more: the editor
+			// shows no parent, and saving clears it, keeping the links (ADR-0145).
+			(question.ChoicesDependOnQuestionId is { } choiceParentId
+			 && (bank is null || bank.Any(candidate => candidate.Id == choiceParentId && candidate.Deleted is null))
+				? choiceParentId
+				: (TinyId?)null)?.Value,
 			revision.LabelEn,
+
 			revision.LabelFr,
 			revision.HelpTextEn,
 			revision.HelpTextFr,
@@ -103,6 +111,10 @@ public sealed record QuestionView(
 ///     <c>first</c>, <c>last</c>, or <c>none</c>: whether this choice is listed
 ///     before or after the alphabetical rest, or among them (ADR-0136).
 /// </param>
+/// <param name="ParentChoiceId">
+///     The parent question's choice this one is offered under, when the question's
+///     choices depend on another's, or kept from when they did (ADR-0145).
+/// </param>
 public sealed record OptionView(
 	string Id,
 	string Code,
@@ -111,7 +123,8 @@ public sealed record OptionView(
 	bool AddedByReporter,
 	bool NeedsTranslation,
 	string? ReporterLocale,
-	string Pin)
+	string Pin,
+	string? ParentChoiceId)
 {
 	/// <summary>Flattens one choice.</summary>
 	public static OptionView Of(QuestionChoice choice)
@@ -122,7 +135,8 @@ public sealed record OptionView(
 			choice.Id.Value,
 			choice.Code, choice.LabelEn, choice.LabelFr, choice.AddedByReporter, choice.NeedsTranslation,
 			choice.ReporterLocale?.Code,
-			EnumCode.Of(choice.Pin));
+			EnumCode.Of(choice.Pin),
+			choice.ParentChoiceId?.Value);
 	}
 }
 
@@ -135,6 +149,10 @@ public sealed record OptionView(
 ///     the type keeps the current setting (ADR-0112). So may
 ///     <see cref="AllowFutureDates" />: a new question then does not allow future
 ///     dates, and an edit to a date question keeps its setting (ADR-0138).
+///     <see cref="ChoicesDependOnQuestionId" /> names the single-select or type-ahead
+///     whose answer decides which of this question's choices are offered, or null
+///     for none; each option then names its parent choice. It is set in place and
+///     never revises (ADR-0145).
 /// </summary>
 public sealed record SaveQuestionRequest(
 	string? Key,
@@ -153,7 +171,8 @@ public sealed record SaveQuestionRequest(
 	string? GroupedUnderQuestionId,
 	IReadOnlyList<OptionInput>? Options,
 	bool? IsTranslatable = null,
-	bool? AllowFutureDates = null);
+	bool? AllowFutureDates = null,
+	string? ChoicesDependOnQuestionId = null);
 
 /// <summary>
 ///     One option as authored. An administrator names a choice by its wording
@@ -179,8 +198,21 @@ public sealed record SaveQuestionRequest(
 ///     <c>first</c> or <c>last</c> to list the choice before or after the
 ///     alphabetical rest; <c>none</c>, or nothing, to list it among them (ADR-0136).
 /// </param>
-public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false, string? Pin = null)
+/// <param name="ParentChoiceId">
+///     The parent question's choice this one is offered under, when the question's
+///     choices depend on another's. Null leaves an existing choice's link as it is
+///     (ADR-0145).
+/// </param>
+public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false, string? Pin = null, string? ParentChoiceId = null)
 {
+	/// <summary>The parent choice this choice is saved under, or null. A malformed identifier is refused, never guessed.</summary>
+	public TinyId? ResolvedParentChoiceId =>
+		string.IsNullOrWhiteSpace(ParentChoiceId)
+			? null
+			: TinyId.TryParse(ParentChoiceId, out var parsed)
+				? parsed
+				: throw new DomainRuleViolationException("That parent choice is not one the parent question offers.");
+
 	/// <summary>The pin this choice is saved with. An unknown code is refused, never guessed.</summary>
 	public ChoicePin ResolvedPin =>
 		string.IsNullOrWhiteSpace(Pin)

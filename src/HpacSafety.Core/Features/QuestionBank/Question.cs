@@ -105,6 +105,19 @@ public class Question
 	/// <summary>The group question this one renders together with today, if any. See ADR-0076.</summary>
 	public TinyId? GroupedUnderQuestionId => CurrentRevision.GroupedUnderQuestionId;
 
+	/// <summary>
+	///     The question whose answer decides which of this question's choices the form
+	///     offers, if any: each choice names one of that question's choices
+	///     (<see cref="QuestionChoice.ParentChoiceId" />). Distinct from
+	///     <see cref="DependsOnQuestionId" />, which decides whether this question is
+	///     shown at all. It lives on the question, not a revision, so setting,
+	///     changing, or clearing it never revises or forks either question. Whether
+	///     the named question may be a parent is checked by
+	///     <see cref="ChoiceDependencies" />, which can see the rest of the bank
+	///     (ADR-0145).
+	/// </summary>
+	public TinyId? ChoicesDependOnQuestionId { get; private set; }
+
 	/// <summary>Whether a reporter's value this question does not offer is added as a new choice. See ADR-0063, ADR-0095.</summary>
 	public bool TakesReporterAdditions => CurrentRevision.TakesReporterAdditions;
 
@@ -184,13 +197,14 @@ public class Question
 		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null,
 		bool? isTranslatable = null,
-		bool? allowFutureDates = null)
+		bool? allowFutureDates = null,
+		TinyId? choicesDependOnQuestionId = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
 			groupedUnderQuestionId, options, isTranslatable ?? QuestionRevision.TranslatableByDefault(type),
-			allowFutureDates ?? false);
+			allowFutureDates ?? false, choicesDependOnQuestionId);
 	}
 
 	/// <summary>
@@ -256,7 +270,8 @@ public class Question
 			null,
 			null,
 			false,
-			false);
+			false,
+			null);
 	}
 
 	private static Question Create(
@@ -280,7 +295,8 @@ public class Question
 		TinyId? groupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput>? options,
 		bool isTranslatable,
-		bool allowFutureDates)
+		bool allowFutureDates,
+		TinyId? choicesDependOnQuestionId)
 	{
 		var question = new Question(key, isSystem, role, at);
 		question._revisions.Add(
@@ -288,6 +304,7 @@ public class Question
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
 				groupedUnderQuestionId, isTranslatable, allowFutureDates, at));
+		question.DependChoicesOn(choicesDependOnQuestionId);
 		question.ReplaceChoices(options ?? [], at);
 		question.EnsureChoicesFitType();
 		return question;
@@ -438,6 +455,7 @@ public class Question
 		}
 
 		live.EnsureChoicesFitType();
+		live.EnsureChoicesLinked();
 		return live;
 	}
 
@@ -492,6 +510,36 @@ public class Question
 									   DateTimeOffset at)
 	{
 		return ReviseInternal(CurrentDraft() with { GroupedUnderQuestionId = groupedUnderQuestionId }, at);
+	}
+
+	/// <summary>
+	///     Makes this question's choices depend on another question's answer, or on
+	///     nothing. No revision: the dependency lives on the question (ADR-0145).
+	///     Every live choice must then name one of the parent's choices, which the
+	///     save that sets it checks once the choices are applied
+	///     (<see cref="ApplyEdit" />, <see cref="ReplaceChoices" />). Clearing it keeps
+	///     every choice's link; the links just stop filtering.
+	/// </summary>
+	public void DependChoicesOn(TinyId? parentQuestionId)
+	{
+		EnsureNotDeleted();
+
+		if (parentQuestionId == Id)
+		{
+			throw new DomainRuleViolationException("A question's choices cannot depend on the question itself.");
+		}
+
+		ChoicesDependOnQuestionId = parentQuestionId;
+	}
+
+	/// <summary>
+	///     Points the dependency at the question that replaced its parent when the
+	///     parent forked. Called by <see cref="ChoiceDependencies.Follow" />, which
+	///     re-points each choice's link in the same pass (ADR-0145).
+	/// </summary>
+	internal void FollowParent(TinyId parentQuestionId)
+	{
+		ChoicesDependOnQuestionId = parentQuestionId;
 	}
 
 	/// <summary>A live choice by its invariant code, or null when this question does not offer it.</summary>
@@ -597,30 +645,93 @@ public class Question
 		{
 			var option = options[i];
 
+			QuestionChoice saved;
+
 			if (replacements[i] is { } replacementCode)
 			{
 				var retired = _choices.Find(choice => choice.Code == codes[i])!;
-				var replacement = QuestionChoice.Written(Id, replacementCode, i, option.LabelEn!, option.LabelFr!, option.Pin);
-				_choices.Add(replacement);
-				retired.ReplaceWith(replacement, at);
+				saved = QuestionChoice.Written(Id, replacementCode, i, option.LabelEn!, option.LabelFr!, option.Pin);
+				_choices.Add(saved);
+				retired.ReplaceWith(saved, at);
+
+				// A replacement stands for the choice it retires, so it is offered
+				// under the same parent choice unless the save says otherwise.
+				if (retired.ParentChoiceId is { } inherited)
+				{
+					saved.LinkTo(inherited);
+				}
 			}
 			else if (_choices.Find(choice => choice.Code == codes[i]) is not { } existing)
 			{
-				_choices.Add(QuestionChoice.Written(Id, codes[i], i, option.LabelEn!, option.LabelFr!, option.Pin));
+				saved = QuestionChoice.Written(Id, codes[i], i, option.LabelEn!, option.LabelFr!, option.Pin);
+				_choices.Add(saved);
 			}
 			else if (existing.Deleted is not null)
 			{
 				existing.Restore(i, option.LabelEn, option.LabelFr, option.Pin);
+				saved = existing;
 			}
 			else
 			{
 				existing.Relabel(option.LabelEn, option.LabelFr);
 				existing.MoveTo(i);
 				existing.PinTo(option.Pin);
+				saved = existing;
+			}
+
+			if (option.ParentChoiceId is { } parentChoiceId)
+			{
+				saved.LinkTo(parentChoiceId);
 			}
 		}
 
 		EnsureChoicesFitType();
+		EnsureChoicesLinked();
+	}
+
+	/// <summary>
+	///     Refuses a question whose choices depend on another's while any of its live
+	///     choices names no parent choice, naming each such choice — and one offering
+	///     the same wording twice under one parent choice, which a reporter could not
+	///     tell apart. The same wording under two parent choices is two choices: a
+	///     model sold under two makes is entered twice (ADR-0145). Whether each link
+	///     names a live choice of the parent is checked by
+	///     <see cref="ChoiceDependencies" />, which can see the parent.
+	/// </summary>
+	private void EnsureChoicesLinked()
+	{
+		if (ChoicesDependOnQuestionId is null)
+		{
+			return;
+		}
+
+		var unlinked = Choices.Where(choice => choice.ParentChoiceId is null).ToList();
+
+		if (unlinked.Count > 0)
+		{
+			var wording = string.Join(", ", unlinked.Select(choice => $"'{choice.LabelEn ?? choice.LabelFr}'"));
+			throw new DomainRuleViolationException(
+				$"Every choice of '{Key}' needs the choice of its parent question it is offered under. Pick one for {wording}.");
+		}
+
+		foreach (var siblings in Choices.GroupBy(choice => choice.ParentChoiceId))
+		{
+			if ((RepeatedLabel(siblings.Select(choice => choice.LabelEn))
+				 ?? RepeatedLabel(siblings.Select(choice => choice.LabelFr))) is { } repeated)
+
+			{
+				throw new DomainRuleViolationException(
+					$"'{repeated}' is offered twice under the same parent choice. A reporter could not tell them apart.");
+			}
+		}
+	}
+
+	private static string? RepeatedLabel(IEnumerable<string?> labels)
+	{
+		return labels
+			.OfType<string>()
+			.GroupBy(label => label.Trim(), StringComparer.OrdinalIgnoreCase)
+			.FirstOrDefault(group => group.Count() > 1)?.Key;
 	}
 
 	/// <summary>
@@ -692,9 +803,19 @@ public class Question
 	///         </item>
 	///     </list>
 	/// </remarks>
+	/// <param name="value">The words the reporter typed.</param>
+	/// <param name="locale">The language they typed them in.</param>
+	/// <param name="at">When the report was submitted.</param>
+	/// <param name="parentChoiceId">
+	///     The choice the parent question was answered with, when this question's
+	///     choices depend on another's. Only the values offered under it are
+	///     matched, and a new value is offered under it: a value typed under Ozone
+	///     is an Ozone model, even where a Niviuk model reads the same (ADR-0145).
+	/// </param>
 	public QuestionChoice AddChoiceFromReporter(string value,
 												Locale locale,
-												DateTimeOffset? at = null)
+												DateTimeOffset? at = null,
+												TinyId? parentChoiceId = null)
 	{
 		ArgumentNullException.ThrowIfNull(value);
 		EnsureNotDeleted();
@@ -706,17 +827,18 @@ public class Question
 		}
 
 		var typed = value.Trim();
+		var scope = parentChoiceId is null ? _choices : _choices.FindAll(choice => choice.ParentChoiceId == parentChoiceId);
 
-		if (_choices.Find(choice => choice.Deleted is null && ReadsAs(choice, typed)) is { } worded)
+		if (scope.Find(choice => choice.Deleted is null && ReadsAs(choice, typed)) is { } worded)
 		{
 			return worded;
 		}
 
 		var code = QuestionKey.Normalize(typed);
 
-		if ((_choices.Find(choice => choice.MergedIntoChoiceId is not null && ReadsAs(choice, typed))
-			 ?? _choices.Find(choice => choice.Deleted is not null && ReadsAs(choice, typed))
-			 ?? _choices.Find(choice => choice.Code == code)) is { } existing)
+		if ((scope.Find(choice => choice.MergedIntoChoiceId is not null && ReadsAs(choice, typed))
+			 ?? scope.Find(choice => choice.Deleted is not null && ReadsAs(choice, typed))
+			 ?? scope.Find(choice => choice.Code == code)) is { } existing)
 		{
 			if (existing.MergedIntoChoiceId is not null)
 			{
@@ -731,9 +853,30 @@ public class Question
 			return existing;
 		}
 
-		var added = QuestionChoice.FromReporter(Id, code, NextChoiceOrder(), typed, locale, at);
+		var added = QuestionChoice.FromReporter(Id, UnusedCode(code), NextChoiceOrder(), typed, locale, at, parentChoiceId);
 		_choices.Add(added);
 		return added;
+	}
+
+	/// <summary>
+	///     <paramref name="code" />, or — when this question already has a choice
+	///     recorded under it, removed ones included — the first of <c>code_2</c>,
+	///     <c>code_3</c>, … it has not. Only a dependent question offers one wording
+	///     twice, once under each parent choice (ADR-0145).
+	/// </summary>
+	public string UnusedCode(string code, IReadOnlyCollection<string>? alsoTaken = null)
+	{
+		var stem = QuestionKey.Normalize(code);
+		var candidate = stem;
+
+		for (var suffix = 2;
+			 _choices.Exists(choice => choice.Code == candidate) || alsoTaken?.Contains(candidate) == true;
+			 suffix++)
+		{
+			candidate = $"{stem}_{suffix}";
+		}
+
+		return candidate;
 	}
 
 	/// <summary>
@@ -764,7 +907,11 @@ public class Question
 
 		foreach (var label in new[] { labelEn, labelFr }.Where(label => !string.IsNullOrWhiteSpace(label)))
 		{
-			if (_choices.Exists(other => other.Id != value.Id && other.Deleted is null && ReadsAs(other, label!.Trim())))
+			// Under a parent, one wording may be offered once per parent choice (ADR-0145).
+			if (_choices.Exists(other => other.Id != value.Id
+										 && other.Deleted is null
+										 && (ChoicesDependOnQuestionId is null || other.ParentChoiceId == value.ParentChoiceId)
+										 && ReadsAs(other, label!.Trim())))
 			{
 				throw new DomainRuleViolationException(
 					$"'{Key}' already offers a value reading '{label!.Trim()}'. Merge the two instead.");
@@ -823,6 +970,15 @@ public class Question
 			throw new DomainRuleViolationException("A value can only be merged into one the form still offers.");
 		}
 
+		// Every answer naming the source would read a value offered under another
+		// parent choice — a Niviuk model's answers reading an Ozone model (ADR-0145).
+		if (ChoicesDependOnQuestionId is not null
+			&& source.ParentChoiceId != target.ParentChoiceId)
+		{
+			throw new DomainRuleViolationException(
+				"Those values are offered under different choices of the parent question. Link them to the same one first.");
+		}
+
 		source.MergeInto(target, at);
 
 		foreach (var earlier in _choices.Where(choice => choice.MergedIntoChoiceId == source.Id))
@@ -832,6 +988,38 @@ public class Question
 
 		source.MarkReviewed(reviewer, at);
 		target.MarkReviewed(reviewer, at);
+	}
+
+	/// <summary>
+	///     A reviewer offers a dependent type-ahead's value under another choice of its
+	///     parent question. The link is changed, never cleared, and every answer
+	///     naming the value still names it. Whether the new parent choice is a live
+	///     choice of the parent is checked by <see cref="ChoiceDependencies" /> (ADR-0145).
+	/// </summary>
+	public void RelinkValue(TinyId choiceId,
+							TinyId parentChoiceId,
+							string reviewer,
+							DateTimeOffset at)
+	{
+		var value = ReviewedValue(choiceId);
+
+		if (ChoicesDependOnQuestionId is null)
+		{
+			throw new DomainRuleViolationException($"'{Key}' does not depend on another question, so its values have no parent choice.");
+		}
+
+		if (value.Deleted is null
+			&& _choices.Exists(other => other.Id != value.Id
+										&& other.Deleted is null
+										&& other.ParentChoiceId == parentChoiceId
+										&& (ReadsAs(other, value.LabelEn ?? string.Empty) || ReadsAs(other, value.LabelFr ?? string.Empty))))
+		{
+			throw new DomainRuleViolationException(
+				$"'{Key}' already offers that wording under that parent choice. Merge the two instead.");
+		}
+
+		value.LinkTo(parentChoiceId);
+		value.MarkReviewed(reviewer, at);
 	}
 
 	private QuestionChoice MergeTargetOf(QuestionChoice merged)
@@ -1060,7 +1248,11 @@ public class Question
 	{
 		EnsureNotDeleted();
 
-		var replacement = new Question(Key, false, Role, at);
+		var replacement = new Question(Key, false, Role, at)
+		{
+			ChoicesDependOnQuestionId = ChoicesDependOnQuestionId,
+		};
+
 		replacement._revisions.Add(
 			QuestionRevision.Create(
 				replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,

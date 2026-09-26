@@ -154,15 +154,26 @@ public class Report
 	///     revision's historical type and privacy, and the question's live choices; a submission never has
 	///     to equal the latest form.
 	/// </summary>
+	/// <param name="question">The question answered.</param>
+	/// <param name="revision">The exact revision answered.</param>
+	/// <param name="value">The answer as given.</param>
+	/// <param name="at">When the report was submitted.</param>
+	/// <param name="parentChoiceId">
+	///     For a type-ahead whose choices depend on another question's, the choice the
+	///     parent was answered with: typed words match, or become, a value offered
+	///     under it (ADR-0145).
+	/// </param>
 	public ReportAnswer Answer(Question question,
 							   QuestionRevision revision,
 							   string? value,
-							   DateTimeOffset at)
+							   DateTimeOffset at,
+							   TinyId? parentChoiceId = null)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 		ArgumentNullException.ThrowIfNull(revision);
 
-		var answer = ReportAnswer.For(Id, question, revision, value, Language, at);
+		var answer = ReportAnswer.For(Id, question, revision, value, Language, at, parentChoiceId);
+
 		_answers.Add(answer);
 		Project(question, answer);
 		return answer;

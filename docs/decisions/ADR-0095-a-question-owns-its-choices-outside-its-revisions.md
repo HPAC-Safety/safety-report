@@ -28,7 +28,10 @@ reporter-added value), and by
 [ADR-0136](ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)
 (the list has no order of its own: choices are listed alphabetically in the
 reader's language, apart from those an Administrator pins first or last, so
-"reordering" a choice below means pinning it).
+"reordering" a choice below means pinning it), and by
+[ADR-0145](ADR-0145-a-choice-list-may-depend-on-another-questions-answer.md)
+(a choice may name one choice of a parent question it is offered under; the
+link sits outside revisions too, and a fork copies it).
 
 It carries the second argued exception to AGENTS.md invariant 8's ban on
 `DROP TABLE`, after

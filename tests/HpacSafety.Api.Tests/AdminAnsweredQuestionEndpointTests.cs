@@ -109,7 +109,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
-	public async Task GivenAConditionOnAParentThatForked_WhenListed_ThenItStillNamesTheChoiceItWasGiven()
+	public async Task GivenAConditionOnAParentThatForked_WhenListed_ThenItNamesTheReplacementAndItsCopy()
 	{
 		// Given — a condition on a single-select, whose parent is then answered and reworded (ADR-0071)
 		using var client = await SignedIn();
@@ -132,8 +132,10 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		createdChild.StatusCode.ShouldBe(HttpStatusCode.Created, await createdChild.Content.ReadAsStringAsync());
 		var childId = (await createdChild.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
 		await Answer(parentId, "Cooper's Hill");
-		await SaveChoices(client, parentId, "Reworded after an answer",
+		var replacement = await SaveChoices(client, parentId, "Reworded after an answer",
 			new { code = "coopers", labelEn = "Cooper's Hill", labelFr = "Colline Cooper" });
+		var replacementId = replacement.GetProperty("id").GetString();
+		var copy = replacement.GetProperty("options").EnumerateArray().Single().GetProperty("id").GetString();
 
 		// When — the parent the condition names is retired, so not among the live questions
 		var admin = (await client.GetFromJsonAsync<JsonElement>(Questions)).EnumerateArray()
@@ -142,9 +144,13 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		var shown = (await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative))).EnumerateArray()
 			.Single(question => question.GetProperty("id").GetString() == childId);
 
-		// Then — the condition still names the choice it was given, unresolved
-		admin.GetProperty("dependsOnChoiceId").GetString().ShouldBe(coopers);
-		shown.GetProperty("dependsOnChoiceId").GetString().ShouldBe(coopers);
+		// Then — the condition follows its parent through the fork (ADR-0132)
+		replacementId.ShouldNotBe(parentId);
+		copy.ShouldNotBe(coopers);
+		admin.GetProperty("dependsOnQuestionId").GetString().ShouldBe(replacementId);
+		admin.GetProperty("dependsOnChoiceId").GetString().ShouldBe(copy);
+		shown.GetProperty("dependsOnQuestionId").GetString().ShouldBe(replacementId);
+		shown.GetProperty("dependsOnChoiceId").GetString().ShouldBe(copy);
 	}
 
 	[Fact]

@@ -61,7 +61,8 @@ public static class TypeformImportEndpoints
 			.OrderBy(question => question.DisplayOrder)
 			.ThenBy(question => question.Key, StringComparer.Ordinal)
 			.ToList();
-		var (english, french) = TypeformExportBuilder.Build(ordered);
+		var bank = await QuestionEndpoints.WithRetiredParents(database, questions, cancellationToken).ConfigureAwait(false);
+		var (english, french) = TypeformExportBuilder.Build(ordered, bank);
 
 		using var zipStream = new MemoryStream();
 

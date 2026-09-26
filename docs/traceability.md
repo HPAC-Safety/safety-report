@@ -1220,6 +1220,10 @@ A yes or no stored as anything but the four words stops the conversion — *Reqn
 
 An Administrator chooses to replace a picker option rather than fix it — *playwright-bdd, Covered*
 
+### REQ-QB-140
+
+A condition follows its parent question when the parent forks — *Reqnroll, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

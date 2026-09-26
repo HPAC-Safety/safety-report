@@ -49,6 +49,8 @@ public static class QuestionEndpoints
 		var questions = await HpacSafety.Api.Admin.QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
+		var bank = await HpacSafety.Api.Admin.QuestionEndpoints.WithRetiredParents(database, questions, cancellationToken)
+			.ConfigureAwait(false);
 
 		var live = questions
 			.Where(question => question.IsActive)
@@ -63,7 +65,7 @@ public static class QuestionEndpoints
 		return Results.Ok(
 			live
 				.Where(question => question.GroupedUnderQuestionId is null)
-				.Select(question => ToView(question, childrenByGroup, questions))
+				.Select(question => ToView(question, childrenByGroup, bank))
 				.ToList());
 	}
 

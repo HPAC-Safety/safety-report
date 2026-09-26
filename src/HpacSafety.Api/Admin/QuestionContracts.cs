@@ -69,7 +69,9 @@ public sealed record QuestionView(
 			revision.IsTranslatable,
 			revision.IsActive,
 			revision.DisplayOrder,
-			revision.DependsOnQuestionId?.Value,
+			(revision.DependsOnQuestionId is { } parentId && bank is not null
+				? QuestionDependencies.ParentToday(bank, parentId)?.Id ?? parentId
+				: revision.DependsOnQuestionId)?.Value,
 			((bank is null ? null : QuestionDependencies.RequiredChoiceToday(bank, revision)?.Id) ?? revision.DependsOnChoiceId)?.Value,
 			revision.GroupedUnderQuestionId?.Value,
 			revision.LabelEn,

@@ -157,7 +157,7 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			isPrivate: imported.isPrivate,
 			isTranslatable: translatableByDefault(imported.type),
 			// Carried in the export's hpac object; a plain Typeform file has none (ADR-0138).
-			allowFutureDates: imported.allowFutureDates ?? false,
+			allowFutureDates: imported.allowFutureDates,
 			isActive: true,
 			dependsOnQuestionId: dependsOn?.id ?? null,
 			// The Typeform file names the required option by code; the editor names

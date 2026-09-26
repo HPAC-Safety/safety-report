@@ -338,6 +338,15 @@ Scenario: Choosing a day fills the field as yyyy-mm-dd and closes the calendar
   Then the date field reads the 1st of today's month as yyyy-mm-dd
   And the calendar closes
   And the chosen day is announced in words
+  When the reporter clicks the date field and chooses the 1st of today's month again
+  Then the announcement is cleared and the chosen day is announced again
+
+@REQ-SUB-112
+@ui
+Scenario: A date question with a placeholder of its own still names the yyyy-mm-dd format
+  Given the current page shows a date question whose placeholder is "When did it happen?", on a desktop
+  Then the date field's placeholder is "When did it happen?"
+  And the date field is described by the format "yyyy-mm-dd"
 
 @REQ-SUB-100
 @ui

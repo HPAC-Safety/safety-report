@@ -41,7 +41,7 @@ function label(language: string, key: string): string {
 	return key.split(".").reduce<unknown>((node, part) => (node as Record<string, unknown>)?.[part], entries) as string
 }
 
-function dateForm(allowFutureDates: boolean): StubQuestion[] {
+function dateForm(allowFutureDates: boolean, placeholder: string | null = null): StubQuestion[] {
 	const base = {
 		isRequired: false,
 		isPrivate: false,
@@ -68,6 +68,8 @@ function dateForm(allowFutureDates: boolean): StubQuestion[] {
 			labelFr: "À quelle date est-ce arrivé?",
 			displayOrder: 0,
 			allowFutureDates,
+			placeholderEn: placeholder,
+			placeholderFr: placeholder,
 		},
 		{
 			...base,
@@ -99,10 +101,10 @@ After(async ({ $testInfo }) => {
 	await touch?.context.close()
 })
 
-async function openDateForm(page: Page, allowFutureDates: boolean, language = "English") {
+async function openDateForm(page: Page, allowFutureDates: boolean, language = "English", placeholder: string | null = null) {
 	await page.clock.setFixedTime(PINNED_NOW)
 	await stubAuth(page)
-	await stubCurrentQuestions(page, dateForm(allowFutureDates))
+	await stubCurrentQuestions(page, dateForm(allowFutureDates, placeholder))
 	await stubSubmission(page)
 	await signInAs(page, "user")
 	await page.goto("/report")
@@ -181,6 +183,13 @@ Given(/^the current page shows a date question in (English|French), on a desktop
 	await openDateForm(page, false, language)
 })
 
+Given(
+	"the current page shows a date question whose placeholder is {string}, on a desktop",
+	async ({ page }, placeholder: string) => {
+		await openDateForm(page, false, "English", placeholder)
+	},
+)
+
 // -------------------------------------------------------------------- When --
 
 When(/^the reporter (clicks|tabs into) the date field$/, async ({ page }, how: string) => {
@@ -189,6 +198,21 @@ When(/^the reporter (clicks|tabs into) the date field$/, async ({ page }, how: s
 })
 
 When("the reporter clicks the date field and chooses the 1st of today's month", async ({ page }) => {
+	await page.locator(DATE_FIELD).click()
+	const first = today()
+	first.setDate(1)
+	await dayButton(page, first).click()
+})
+
+When("the reporter clicks the date field and chooses the 1st of today's month again", async ({ page }) => {
+	// Every text the status region holds from here on, in order, so a clear
+	// before the second announcement shows up.
+	await page.evaluate((selector) => {
+		const status = document.querySelector(selector)!.parentElement!.querySelector('[role="status"]')!
+		const seen: string[] = []
+		;(window as unknown as { seenAnnouncements: string[] }).seenAnnouncements = seen
+		new MutationObserver(() => seen.push(status.textContent ?? "")).observe(status, { childList: true, characterData: true, subtree: true })
+	}, DATE_FIELD)
 	await page.locator(DATE_FIELD).click()
 	const first = today()
 	first.setDate(1)
@@ -300,6 +324,25 @@ Then("the chosen day is announced in words", async ({ page }) => {
 	first.setDate(1)
 	const words = new Intl.DateTimeFormat("en-CA", { dateStyle: "full" }).format(first)
 	await expect(page.locator(DATE_FIELD).locator("xpath=following-sibling::*[@role='status']")).toHaveText(`Selected: ${words}`)
+})
+
+Then("the announcement is cleared and the chosen day is announced again", async ({ page }) => {
+	const first = today()
+	first.setDate(1)
+	const words = `Selected: ${new Intl.DateTimeFormat("en-CA", { dateStyle: "full" }).format(first)}`
+	await expect
+		.poll(() => page.evaluate(() => (window as unknown as { seenAnnouncements: string[] }).seenAnnouncements))
+		.toEqual(["", words])
+})
+
+Then("the date field's placeholder is {string}", async ({ page }, placeholder: string) => {
+	await expect(page.locator(DATE_FIELD)).toHaveAttribute("placeholder", placeholder)
+})
+
+Then("the date field is described by the format {string}", async ({ page }, format: string) => {
+	const ids = ((await page.locator(DATE_FIELD).getAttribute("aria-describedby")) ?? "").split(/\s+/).filter(Boolean)
+	const texts = await Promise.all(ids.map((id) => page.locator(`[id="${id}"]`).textContent()))
+	expect(texts.map((text) => text?.trim())).toContain(format)
 })
 
 Then("the calendar shows today's month", async ({ page }) => {

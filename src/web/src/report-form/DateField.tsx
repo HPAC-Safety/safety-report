@@ -145,6 +145,8 @@ function CalendarDateField({
 	}
 
 	function onFieldFocus() {
+		// Focus is back on the field, so Tab from here skips the calendar again.
+		setEntered(false)
 		if (quietFocus.current) {
 			quietFocus.current = false
 			return

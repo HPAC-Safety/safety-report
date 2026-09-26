@@ -141,15 +141,7 @@ public static class BootedApi
 	public static async Task<WebApplicationFactory<Program>> AtTime(DateTimeOffset now)
 	{
 		return (await Factory().ConfigureAwait(false)).WithWebHostBuilder(builder =>
-			builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(new StoppedClock(now))));
-	}
-
-	private sealed class StoppedClock(DateTimeOffset now) : TimeProvider
-	{
-		public override DateTimeOffset GetUtcNow()
-		{
-			return now;
-		}
+			builder.ConfigureTestServices(services => services.AddSingleton<TimeProvider>(new FixedClock(now))));
 	}
 
 	private static WebApplicationFactory<Program>? recordingReads;

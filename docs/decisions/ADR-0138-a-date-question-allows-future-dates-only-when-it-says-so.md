@@ -18,6 +18,8 @@ still stored as `yyyy-mm-dd`, and is now also checked against its revision's
 `allow_future_dates`. It adds a revision field under
 [ADR-0071](ADR-0071-an-answered-question-forks-instead-of-revising.md)'s
 revise-or-fork rule.
+Amended by #535: the Typeform export carries the setting in each field's
+`hpac` object and a reimport reads it back, where it first left it out.
 
 ## Context
 

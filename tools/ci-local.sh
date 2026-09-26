@@ -124,7 +124,8 @@ command -v node >/dev/null 2>&1 || die "node is required to write the event"
 # act also merges a user-level actrc into every run. The secret, variable, and
 # env files are forced to /dev/null on the command line below; anything else
 # in one (a -s, a --bind) still applies, so say so.
-for rc in "$HOME/.actrc" "${XDG_CONFIG_HOME:-$HOME/.config}/act/actrc"; do
+for rc in "$HOME/.actrc" "${XDG_CONFIG_HOME:-$HOME/.config}/act/actrc" \
+	"$HOME/Library/Application Support/act/actrc"; do
 	[ ! -s "$rc" ] || warn "$rc exists and act merges it into this run; check it holds no secret or --bind"
 done
 
@@ -275,10 +276,13 @@ run_act() {
 		cd "$WORK/repo" || exit 1
 		# EXTRA is empty or one flag and its value, so it must split. -P and the
 		# /dev/null files here override .actrc and any user-level actrc, since
-		# act reads those first.
+		# act reads those first. The new action cache extracts each action from
+		# a bare clone per job; the default one re-checks-out a shared working
+		# tree, and parallel jobs using one action (setup-node) raced on it:
+		# "Cannot find module .../setup-node@v7/dist/cache-save/index.js".
 		# shellcheck disable=SC2086
 		if act pull_request -W ".github/workflows/$1" ${2:+-j "$2"} \
-			-P "ubuntu-latest=$IMAGE" \
+			-P "ubuntu-latest=$IMAGE" --use-new-action-cache \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
 			-e "$EVENT" -s GITHUB_TOKEN $EXTRA; then
 			echo 0 > "$STATUS"

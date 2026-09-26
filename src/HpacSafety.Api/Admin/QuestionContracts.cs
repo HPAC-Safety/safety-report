@@ -78,7 +78,7 @@ public sealed record QuestionView(
 			((bank is null ? null : QuestionDependencies.RequiredChoiceToday(bank, revision)?.Id) ?? revision.DependsOnChoiceId)?.Value,
 			revision.GroupedUnderQuestionId?.Value,
 			// A parent deleted rather than forked names nothing any more: the editor
-			// shows no parent, and saving clears it, keeping the links (ADR-0145).
+			// shows no parent, and saving clears it, keeping the links (ADR-0146).
 			(question.ChoicesDependOnQuestionId is { } choiceParentId
 			 && (bank is null || bank.Any(candidate => candidate.Id == choiceParentId && candidate.Deleted is null))
 				? choiceParentId
@@ -113,7 +113,7 @@ public sealed record QuestionView(
 /// </param>
 /// <param name="ParentChoiceId">
 ///     The parent question's choice this one is offered under, when the question's
-///     choices depend on another's, or kept from when they did (ADR-0145).
+///     choices depend on another's, or kept from when they did (ADR-0146).
 /// </param>
 public sealed record OptionView(
 	string Id,
@@ -152,7 +152,7 @@ public sealed record OptionView(
 ///     <see cref="ChoicesDependOnQuestionId" /> names the single-select or type-ahead
 ///     whose answer decides which of this question's choices are offered, or null
 ///     for none; each option then names its parent choice. It is set in place and
-///     never revises (ADR-0145).
+///     never revises (ADR-0146).
 /// </summary>
 public sealed record SaveQuestionRequest(
 	string? Key,
@@ -201,7 +201,7 @@ public sealed record SaveQuestionRequest(
 /// <param name="ParentChoiceId">
 ///     The parent question's choice this one is offered under, when the question's
 ///     choices depend on another's. Null leaves an existing choice's link as it is
-///     (ADR-0145).
+///     (ADR-0146).
 /// </param>
 public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false, string? Pin = null, string? ParentChoiceId = null)
 {

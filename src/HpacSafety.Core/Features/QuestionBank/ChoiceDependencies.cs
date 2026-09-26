@@ -5,7 +5,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     that no single question can check on its own, because they are about two
 ///     questions at once: the <i>parent</i>, whose answer decides what is offered,
 ///     and the <i>child</i>, each of whose choices names one parent choice
-///     (ADR-0145).
+///     (ADR-0146).
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -28,7 +28,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         references and refuses a self-reference; which types may take part, that
 ///         the dependency is one level deep, and that a link names a choice of the
 ///         parent read the parent's current revision and choices, so they are checked
-///         here rather than by a trigger (ADR-0060, ADR-0074, ADR-0145).
+///         here rather than by a trigger (ADR-0060, ADR-0074, ADR-0146).
 ///     </para>
 /// </remarks>
 public static class ChoiceDependencies
@@ -156,7 +156,7 @@ public static class ChoiceDependencies
 	///     question is offered under. Removing one would leave that choice offered
 	///     under nothing, so the save is refused naming the dependent; a replaced
 	///     option keeps its code in the list and passes its links on instead
-	///     (ADR-0145).
+	///     (ADR-0146).
 	/// </summary>
 	public static void EnsureParentChoicesRemovable(IReadOnlyCollection<Question> questions,
 													Question parent,
@@ -175,7 +175,7 @@ public static class ChoiceDependencies
 	/// <summary>
 	///     Checks that a reviewer may remove a type-ahead parent's value: no live
 	///     choice of a dependent question is offered under it. Merging it instead
-	///     passes its links to the value it is merged into (ADR-0145).
+	///     passes its links to the value it is merged into (ADR-0146).
 	/// </summary>
 	public static void EnsureValueRemovable(IReadOnlyCollection<Question> questions,
 											Question parent,
@@ -229,7 +229,7 @@ public static class ChoiceDependencies
 	///     choice standing today for the one it named: that choice, or its copy on the
 	///     replacement after a fork, followed through any replacement (ADR-0128) and
 	///     merge (ADR-0129). Neither question is revised: the dependency and the links
-	///     live outside revisions (ADR-0145). Call it after anything that retires a
+	///     live outside revisions (ADR-0146). Call it after anything that retires a
 	///     parent choice or the parent itself.
 	/// </summary>
 	/// <param name="questions">

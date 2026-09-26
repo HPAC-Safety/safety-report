@@ -146,7 +146,7 @@ public class QuestionChoice
 	///     parent is answered with that choice. Part of the choice, outside every
 	///     revision, so linking never revises or forks either question. Changed,
 	///     never cleared; it stays when the question stops depending on a parent,
-	///     and simply stops filtering (ADR-0145).
+	///     and simply stops filtering (ADR-0146).
 	/// </summary>
 	public TinyId? ParentChoiceId { get; private set; }
 
@@ -318,7 +318,7 @@ public class QuestionChoice
 	/// <summary>
 	///     Offers this choice under <paramref name="parentChoiceId" /> of its question's
 	///     parent. Which question that choice belongs to is checked by
-	///     <see cref="ChoiceDependencies" />, which can see both (ADR-0145).
+	///     <see cref="ChoiceDependencies" />, which can see both (ADR-0146).
 	/// </summary>
 	internal void LinkTo(TinyId parentChoiceId)
 	{

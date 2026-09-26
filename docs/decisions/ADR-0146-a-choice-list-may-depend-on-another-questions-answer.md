@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: choices, dependent choices, parent choice, type-ahead, single-select, question bank, revisions, fork, replace, merge, ADR-0095, ADR-0128, ADR-0129, ADR-0132
 ---
 
-# ADR-0145 — A question's choices may depend on another question's answer
+# ADR-0146 — A question's choices may depend on another question's answer
 
 ## Status
 

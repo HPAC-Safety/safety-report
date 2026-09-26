@@ -22,7 +22,7 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </param>
 /// <param name="ParentChoiceId">
 ///     The parent question's choice this one is offered under, when the question's
-///     choices depend on another question's (ADR-0145). Null leaves the choice's
+///     choices depend on another question's (ADR-0146). Null leaves the choice's
 ///     link as it is: a link is changed, never cleared.
 /// </param>
 public sealed record QuestionOptionInput(

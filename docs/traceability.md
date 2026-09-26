@@ -786,6 +786,42 @@ A report's consent reaches the admin view as true, false, or null — *Reqnroll,
 
 A Safety Officer approves, corrects, and removes type-ahead values on the review page — *playwright-bdd, Covered*
 
+### REQ-MOD-098
+
+Only a Safety Officer or an Administrator may keep private notes — *Reqnroll, Covered*
+
+### REQ-MOD-099
+
+Staff add any number of private notes to a report in any status — *Reqnroll, Covered*
+
+### REQ-MOD-100
+
+Editing a private note adds a revision and keeps every earlier one — *Reqnroll, Covered*
+
+### REQ-MOD-101
+
+Removing a private note soft-deletes it — *Reqnroll, Covered*
+
+### REQ-MOD-102
+
+A private note is plain text of 1 to 4000 characters — *Reqnroll, Covered*
+
+### REQ-MOD-103
+
+A deleted report's private notes go with it — *Reqnroll, Covered*
+
+### REQ-MOD-104
+
+No public or member read ever returns a private note, not even a count — *Reqnroll, Covered*
+
+### REQ-MOD-105
+
+A private note never reaches the model or a translation provider — *Reqnroll, Covered*
+
+### REQ-MOD-106
+
+A safety officer keeps private notes on the report page — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

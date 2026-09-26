@@ -177,17 +177,28 @@ npm --prefix src/web ci && npm --prefix src/web run build
 Integration tests require Docker. See [`tests/README.md`](tests/README.md) and
 [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-Before pushing, run the same coverage gate CI runs, so a regression is caught
-locally rather than in the PR:
+Before opening a pull request, run its checks locally. Commit first, write
+the draft pull request body to a file, then:
 
 ```bash
-./check-coverage.sh
+tools/ci-local.sh --body pr-body.md
 ```
 
-It collects coverage, fetches main's last successful run as the ratchet
-baseline (via `gh`), and runs `tools/coverage-gate.mjs` — the same floor
-(80%/70%) and ratchet CI enforces. `./check-coverage.sh --no-baseline` skips
-the `gh` fetch and enforces only the floor.
+It runs the pull request workflows themselves — `linked-issue.yml`,
+`feature-coverage.yml`, terraform `infra`, and every `ci.yml` job, including
+the coverage ratchet against main's last green run — under
+[act](https://github.com/nektos/act), in an Ubuntu 24.04 container
+([ADR-0145](docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)).
+It needs Docker and act at the version in `.act-version`
+(`./init-dev.sh --check` reports it; `brew install act` on macOS). `--job <id>`
+runs one job. GitHub stays the authority: a local pass is necessary, not
+sufficient.
+
+It passes act one secret, `GITHUB_TOKEN`, read from `HPAC_ACT_TOKEN`. Create a
+[fine-grained token](https://github.com/settings/personal-access-tokens/new)
+for this repository only, with **Actions**, **Contents**, and **Metadata** set
+to read. Without one it falls back to `gh auth token`, which can write, and
+says so.
 
 ## Repository map
 

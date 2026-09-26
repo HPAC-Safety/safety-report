@@ -50,6 +50,11 @@ jobs:
       - uses: dorny/paths-filter@v4
         id: filter
         with:
+          # Under act (tools/ci-local.sh) no pull request exists for the API to
+          # list, so an empty token makes the filter diff the event's base SHA
+          # with git instead. On GitHub env.ACT is empty and this is the
+          # action's own default, github.token. ADR-0145.
+          token: ${{ !env.ACT && github.token || '' }}
           filters: |
             dotnet:
               - 'src/**'
@@ -60,6 +65,7 @@ jobs:
               - 'Directory.Packages.props'
               - 'coverlet.runsettings'
               - 'init-dev.sh'
+              - 'tools/ci-local.sh'
               - 'tools/build-worker-image.sh'
               - '.github/workflows/ci.yml'
             # The web bundle loads its catalogues from locales/ at the repository
@@ -87,8 +93,10 @@ jobs:
       # The hook is POSIX sh for the same reason, and it grew real branching
       # when its two checks were made independent (#207) — a bashism or an
       # unguarded cd there breaks committing, not CI, so it is worth linting.
-      - name: shellcheck init-dev.sh and the pre-commit hook
-        run: shellcheck -s sh init-dev.sh .githooks/pre-commit
+      # tools/ci-local.sh is POSIX sh too (ADR-0145): it is the pre-pull-request
+      # gate, so a bashism there stops every pull request before it opens.
+      - name: shellcheck init-dev.sh, the pre-commit hook, and ci-local.sh
+        run: shellcheck -s sh init-dev.sh .githooks/pre-commit tools/ci-local.sh
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -389,8 +397,12 @@ jobs:
       # Only present when the e2e job actually ran (needs.e2e.result ==
       # 'success'); a dotnet-only PR has nothing to download here, and the
       # merge step below tolerates that with its own "not run" line.
+      # act's artifact server rejects upload-artifact@v7 and
+      # download-artifact@v8 (nektos/act#6022), so the artifact steps skip under
+      # act; "Coverage for tools/ci-local.sh" below prints what they carry.
+      # ADR-0145.
       - name: Download the Playwright test count
-        if: needs.e2e.result == 'success'
+        if: needs.e2e.result == 'success' && !env.ACT
         uses: actions/download-artifact@v8
         with:
           name: test-count-e2e
@@ -430,8 +442,23 @@ jobs:
           gh pr comment "${{ github.event.pull_request.number }}" \
             --body-file comment.md --edit-last --create-if-none
 
+      # act keeps no job summary and no artifact, so a local run prints the
+      # gate, the test counts, the per-assembly detail, and the report's
+      # totals to the log, where tools/ci-local.sh finds them. ADR-0145.
+      - name: Coverage for tools/ci-local.sh
+        if: always() && env.ACT
+        run: |
+          echo "ci-local:coverage:begin"
+          cat comment.md 2>/dev/null || true
+          echo ""
+          cat ./artifacts/report/SummaryGithub.md 2>/dev/null || true
+          echo ""
+          echo "Cobertura totals:"
+          grep -o '<coverage [^>]*>' ./artifacts/report/Cobertura.xml 2>/dev/null || true
+          echo "ci-local:coverage:end"
+
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && !env.ACT
         with:
           name: coverage-report
           path: |
@@ -551,7 +578,7 @@ jobs:
           node tools/test-count.mjs --section e2e > ./artifacts/test-count/e2e.md
 
       - uses: actions/upload-artifact@v7
-        if: always()
+        if: always() && !env.ACT
         with:
           name: test-count-e2e
           path: ./artifacts/test-count/e2e.md

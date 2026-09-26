@@ -1,0 +1,7 @@
+-P ubuntu-latest=hpac-safety-act:local
+--pull=false
+--secret-file /dev/null
+--var-file /dev/null
+--env-file /dev/null
+--log-prefix-job-id
+--rm

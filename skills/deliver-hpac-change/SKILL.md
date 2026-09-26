@@ -58,13 +58,8 @@ names and step numbers.
 - The closed category list is in `.github/pull_request_template.md`
   ("Specification delta"); a test keeps the template's list equal to the
   tool's ([lesson 0022](../../docs/lessons/0022-a-closed-list-kept-where-the-author-never-looks.md)).
-- Run the check locally — a bare run checks nothing:
-
-  ```sh
-  CHANGED_BEHAVIOR="$(git diff --name-only origin/main...HEAD -- 'src/**' 'tests/e2e/**/*.ts')" \
-  CHANGED_FEATURES="$(git diff --name-only origin/main...HEAD -- 'features/**/*.feature')" \
-  PR_BODY="$(cat pr-body.md)" node tools/feature-coverage.mjs
-  ```
+- Run the check locally with the body: "Verify and publish" step 1 runs it;
+  alone, `tools/ci-local.sh --body pr-body.md --job feature-coverage`.
 - Renovate writes its own `dependency` exemption for `src/web` bumps from
   `renovate.json`
   ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
@@ -123,10 +118,24 @@ names and step numbers.
 
 ## Verify and publish
 
-1. The gate is `tools/coverage-check.sh`, for any pull request touching `src/`,
-   `tests/`, or `tools/`. It measures `origin/main` and this branch on one
-   machine with CI's commands and ratchet
-   ([lesson 0010](../../docs/lessons/0010-a-coverage-gate-found-in-ci-not-before-the-pull-request.md)).
+1. The gate is `tools/ci-local.sh --body pr-body.md`, for every pull request
+   ([ADR-0145](../../docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md),
+   [lesson 0025](../../docs/lessons/0025-a-local-gate-that-re-implemented-ci-disagreed-with-it.md)).
+   - It runs the workflow files themselves under act (version in
+     `.act-version`): `linked-issue.yml`, `feature-coverage.yml`, terraform
+     `infra`, and every `ci.yml` job, coverage against main's last green
+     artifact included. It stops at the first failure.
+   - It runs committed `HEAD`: commit first. It refuses a dirty tree or a
+     `HEAD` without a fresh `origin/main`, and waits while another run holds
+     the machine's lock.
+   - Token: `HPAC_ACT_TOKEN`, a fine-grained read-only token for this
+     repository (Actions, Contents, Metadata: read). Without it the script
+     uses `gh auth token` and warns.
+   - One job: `--job <id>`, repeatable (a body edit: `--job linked-issue
+     --job feature-coverage`).
+   - Exit 0 passed, 1 a job failed, 2 a precondition failed, 3 the lock timed
+     out. Full logs: `artifacts/ci-local/`.
+   - Local green is necessary, not sufficient; step 9 still applies.
 4. Relabel: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
    The repository squash-merges and deletes the branch once required checks
    pass.
@@ -157,12 +166,8 @@ names and step numbers.
      does not judge whether the pair is complete; review does
      ([ADR-0142](../../docs/decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md),
      [lesson 0023](../../docs/lessons/0023-a-rule-the-template-never-asks-for.md)).
-     Run it locally with the body; it diffs the branch against `origin/main`
-     itself, and fails without a body:
-
-     ```sh
-     PR_BODY="$(cat pr-body.md)" node tools/pr-screenshots.mjs
-     ```
+     Step 1 runs it; alone,
+     `tools/ci-local.sh --body pr-body.md --job screenshots`.
 7. `./dev-up.sh` from the worktree. It takes the dev ports from any other
    checkout, starts containers detached, waits until the API and dev server
    answer, prints their URLs, and returns.
@@ -176,9 +181,9 @@ names and step numbers.
 
 - The web bundle loads `locales/` from the repository root, so the `web` and
   `e2e` jobs in `ci.yml` both list it.
-- A change to `locales/` runs the browser suite locally
-  (`npm --prefix tests/e2e test`) before the pull request, because a step may
-  match the copy you changed
+- A change to `locales/` runs the browser suite before the pull request,
+  because a step may match the copy you changed: step 1 runs `e2e`, whose
+  filter lists `locales/`
   ([lesson 0020](../../docs/lessons/0020-a-copy-change-that-ran-no-browser-test.md)).
 
 ## Workflows that push

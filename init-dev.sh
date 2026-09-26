@@ -502,6 +502,35 @@ else
 	fi
 fi
 
+# ----------------------------------------------------------------------- act --
+#
+# tools/ci-local.sh runs the pull request workflows under act before a pull
+# request is opened (ADR-0145). The version is pinned in .act-version and read
+# from there, like every other version here. Optional: CI does not need it, so
+# a missing or different act is a note, never a failure — `--check` runs in CI.
+
+heading "act (optional, for tools/ci-local.sh)"
+ACT_VERSION=$(tr -d '[:space:]' < .act-version 2>/dev/null || true)
+act_version() { act --version 2>/dev/null | awk '{print $NF}'; }
+
+if [ -z "$ACT_VERSION" ]; then
+	note ".act-version not found; skipping"
+elif have act && [ "$(act_version)" = "$ACT_VERSION" ]; then
+	ok "act $ACT_VERSION (.act-version)"
+elif have act; then
+	note "act $(act_version) is installed; .act-version pins $ACT_VERSION — tools/ci-local.sh refuses to run until they match"
+elif [ "$CHECK_ONLY" -eq 1 ]; then
+	note "act is not installed — tools/ci-local.sh will not run (https://github.com/nektos/act/releases/tag/v$ACT_VERSION)"
+elif [ "$PKG" = brew ] && install_pkg "act" - - - - - && have act; then
+	if [ "$(act_version)" = "$ACT_VERSION" ]; then
+		added "act $ACT_VERSION"
+	else
+		note "Homebrew installed act $(act_version), not $ACT_VERSION — install the pinned release from https://github.com/nektos/act/releases/tag/v$ACT_VERSION"
+	fi
+else
+	note "install act $ACT_VERSION from https://github.com/nektos/act/releases/tag/v$ACT_VERSION to run tools/ci-local.sh"
+fi
+
 # ----------------------------------------------------------------- skillfile --
 #
 # Optional, and only for agent tooling: it materialises skills/ and agents/ into

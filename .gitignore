@@ -37,6 +37,12 @@ tests/e2e/.features-gen/
 # Secrets and local config
 .env
 .env.local
+# act's default secret, variable, and personal-flag files. .actrc points act
+# at /dev/null for the first two; tools/ci-local.sh passes GITHUB_TOKEN alone
+# (ADR-0145).
+.secrets
+.vars
+.actrc.local
 appsettings.Development.local.json
 
 # OS

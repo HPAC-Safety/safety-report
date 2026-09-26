@@ -120,10 +120,69 @@ public sealed class S3BlobStore : IBlobStore
 	}
 
 	/// <inheritdoc />
+	public async Task<Uri> CreateUploadUrl(BlobKey key,
+										   string contentType,
+										   long byteSize,
+										   TimeSpan lifetime,
+										   CancellationToken cancellationToken)
+	{
+		ArgumentException.ThrowIfNullOrWhiteSpace(contentType);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(byteSize);
+
+		// The one URL a browser may write with, fenced to the compartments that
+		// take direct uploads - today, quarantine alone (ADR-0126).
+		if (!key.AcceptsDirectUpload)
+		{
+			throw new DomainRuleViolationException("A browser may only be handed an upload URL for a key that takes direct uploads.");
+		}
+
+		var request = new GetPreSignedUrlRequest
+		{
+			BucketName = _bucketName,
+			Key = key.Value,
+			Verb = HttpVerb.PUT,
+			Expires = ExpiryFor(lifetime),
+			Protocol = ConfiguredProtocol,
+			ContentType = contentType,
+		};
+
+		// Signed, not merely expected: SigV4 puts Content-Type and Content-Length
+		// in the signed headers, so storage refuses a PUT whose type or length
+		// differs from what was judged here. That is what caps an upload at its
+		// kind's limit without the bytes ever passing through this process.
+		request.Headers.ContentLength = byteSize;
+
+		var url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+
+		return new Uri(url);
+	}
+
+	/// <inheritdoc />
 	public async Task<Stream> OpenRead(BlobKey key,
 									   CancellationToken cancellationToken)
 	{
 		var response = await _s3.GetObjectAsync(_bucketName, key.Value, cancellationToken).ConfigureAwait(false);
+		return response.ResponseStream;
+	}
+
+	/// <inheritdoc />
+	public async Task<Stream> OpenReadRange(BlobKey key,
+											long offset,
+											long length,
+											CancellationToken cancellationToken)
+	{
+		ArgumentOutOfRangeException.ThrowIfNegative(offset);
+		ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
+
+		var response = await _s3.GetObjectAsync(
+			new GetObjectRequest
+			{
+				BucketName = _bucketName,
+				Key = key.Value,
+				ByteRange = new ByteRange(offset, offset + length - 1),
+			},
+			cancellationToken).ConfigureAwait(false);
+
 		return response.ResponseStream;
 	}
 
@@ -248,8 +307,15 @@ public sealed class S3BlobStore : IBlobStore
 	// GetPreSignedUrlRequest.Expires is a local DateTime, and the SDK converts it
 	// to UTC itself. BlobUrlLifetime.Validate is what stops a caller asking for a
 	// URL that outlives the review session it was issued for.
+	//
+	// Measured from the start of the current second: the SDK signs the whole
+	// seconds between now and the expiry, rounding a fraction up, so an expiry
+	// fifteen minutes from a moment partway through a second would be signed
+	// as 901 seconds - one past the cap.
 	private DateTime ExpiryFor(TimeSpan lifetime)
 	{
-		return _clock.GetUtcNow().Add(BlobUrlLifetime.Validate(lifetime)).UtcDateTime;
+		var now = _clock.GetUtcNow();
+		var wholeSecond = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerSecond));
+		return wholeSecond.Add(BlobUrlLifetime.Validate(lifetime)).UtcDateTime;
 	}
 }

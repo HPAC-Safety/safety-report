@@ -1,11 +1,10 @@
 using System.Net;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
-using Amazon.S3;
 using Amazon.S3.Model;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Testing;
 using ImageMagick;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -14,9 +13,10 @@ using Shouldly;
 namespace HpacSafety.Api.Tests;
 
 /// <summary>
-///     A reporter's attachment uploads the moment it is attached, is validated before
-///     anything is stored, and waits in quarantine under an opaque id until a
-///     submission claims it (ADR-0096). Against real PostgreSQL and S3-compatible containers;
+///     A reporter's attachment is minted the moment it is attached: the API judges the
+///     declared type and size, and returns an opaque id and a pre-signed PUT the
+///     browser sends the file to, straight into quarantine, until a submission claims
+///     it (ADR-0096, ADR-0126). Against real PostgreSQL and S3-compatible containers;
 ///     every file here is synthetic.
 /// </summary>
 [Trait("Category", "Integration")]
@@ -28,101 +28,151 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;
 
 	[Fact]
-	public async Task GivenAllowlistedImage_WhenUploaded_ThenCreatedWithOpaqueIdAndStoredInQuarantine()
+	public async Task GivenAllowlistedImage_WhenMinted_ThenCreatedWithOpaqueIdAndPutUrlAndNothingStored()
 	{
 		// Given
 		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
-		using var body = Png();
 
 		// When
-		using var response = await reporter.PostAsync(Uploads, body);
+		using var response = await DirectUpload.Mint(reporter, "image/png", 1234);
 
 		// Then
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 		var text = await response.Content.ReadAsStringAsync();
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, text);
 		var upload = JsonSerializer.Deserialize<JsonElement>(text);
 		var uploadId = upload.GetProperty("uploadId").GetString()!;
 		uploadId.Length.ShouldBe(22);
 		upload.GetProperty("kind").GetString().ShouldBe("image");
+		upload.EnumerateObject().Select(property => property.Name)
+			.ShouldBe(["uploadId", "kind", "uploadUrl", "expiresAt"], ignoreOrder: true);
 
-		// Nothing but the id and the kind: no key, no URL (REQ-SUB-039).
-		upload.EnumerateObject().Select(property => property.Name).ShouldBe(["uploadId", "kind"], ignoreOrder: true);
-		text.ShouldNotContain("quarantine");
+		var url = new Uri(upload.GetProperty("uploadUrl").GetString()!);
+		url.AbsolutePath.ShouldEndWith($"/quarantine/{uploadId}");
+		url.Query.ShouldContain("X-Amz-Expires=900");
+		url.Query.ShouldContain("content-length");
+		url.Query.ShouldContain("content-type");
+		upload.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow.AddMinutes(15).AddSeconds(5));
 
-		var stored = await fixture.Storage.GetObjectMetadataAsync(ApiPostgresFixture.BucketName, $"quarantine/{uploadId}");
-		stored.Headers.ContentType.ShouldBe("image/png");
+		(await QuarantineHolds(uploadId)).ShouldBeFalse();
 	}
 
 	[Fact]
-	public async Task GivenEmptyBody_WhenUploaded_ThenRefusedAsEmptyAndNothingIsStored()
+	public async Task GivenMintedUpload_WhenBrowserPutsTheFile_ThenItWaitsInQuarantineUnderDeclaredType()
 	{
-		await AssertRefused([], "image/png", "empty");
-	}
-
-	[Fact]
-	public async Task GivenBytesNoSnifferRecognises_WhenUploaded_ThenRefusedAsUnrecognised()
-	{
-		await AssertRefused([0x00, 0x13, 0x37, 0x42, 0xFF, 0xFE, 0x01, 0x02], "image/png", "unrecognised_content");
-	}
-
-	[Fact]
-	public async Task GivenPngDeclaredAsJpeg_WhenUploaded_ThenRefusedAsMismatch()
-	{
-		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
-		await AssertRefused(image.ToByteArray(), "image/jpeg", "declared_type_mismatch");
-	}
-
-	[Fact]
-	public async Task GivenFileOneByteOverLimit_WhenUploaded_ThenRefusedAsTooLarge()
-	{
-		// Given — a 1 KB limit, so "one byte past 50 MB" is proven without 50 MB
-		await using var small = _factory.WithWebHostBuilder(builder =>
-			builder.UseSetting("HpacSafety:Media:Policy:MaxByteSize", "1024"));
-		using var reporter = await SignedInClient.As(small, MemberRole.User);
-		var before = await QuarantineCount();
+		// Given
+		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
+		var png = PngBytes();
 
 		// When
-		using var exact = new ByteArrayContent(new byte[1025]);
-		exact.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
-		using var response = await reporter.PostAsync(Uploads, exact);
+		var uploadId = await DirectUpload.Send(reporter, png, "image/png");
+
+		// Then
+		var stored = await fixture.Storage.GetObjectMetadataAsync(ApiPostgresFixture.BucketName, $"quarantine/{uploadId}");
+		stored.Headers.ContentType.ShouldBe("image/png");
+		stored.ContentLength.ShouldBe(png.Length);
+		stored.Metadata.Keys.ShouldBeEmpty();
+	}
+
+	[Theory]
+	[InlineData("image/png", 0, "empty")]
+	[InlineData("application/x-msdownload", 10, "unaccepted_media_type")]
+	[InlineData("video/mp4", (250L * 1024 * 1024) + 1, "too_large")]
+	[InlineData("image/jpeg", (25L * 1024 * 1024) + 1, "too_large")]
+	[InlineData("application/pdf", (25L * 1024 * 1024) + 1, "too_large")]
+	public async Task GivenDeclarationPolicyRefuses_WhenMinted_ThenRefusedWithReasonAndNoUrl(string contentType,
+																							 long byteSize,
+																							 string reason)
+	{
+		// Given
+		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
+
+		// When
+		using var response = await DirectUpload.Mint(reporter, contentType, byteSize);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await Reason(response)).ShouldBe("too_large");
-		(await QuarantineCount()).ShouldBe(before);
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("reason").GetString().ShouldBe(reason);
+		problem.TryGetProperty("uploadUrl", out _).ShouldBeFalse();
 	}
 
-	[Fact]
-	public async Task GivenFileExactlyAtLimit_WhenUploaded_ThenAccepted()
+	[Theory]
+	[InlineData("video/mp4", 250L * 1024 * 1024)]
+	[InlineData("image/heic", 25L * 1024 * 1024)]
+	[InlineData("text/markdown", 25L * 1024 * 1024)]
+	public async Task GivenDeclarationExactlyAtItsKindsLimit_WhenMinted_ThenCreated(string contentType,
+																				   long byteSize)
 	{
 		// Given
-		await using var small = _factory.WithWebHostBuilder(builder =>
-			builder.UseSetting("HpacSafety:Media:Policy:MaxByteSize", "1024"));
-		using var reporter = await SignedInClient.As(small, MemberRole.User);
-		using var body = new ByteArrayContent(Encoding.ASCII.GetBytes(new string('a', 1024)));
-		body.Headers.ContentType = new MediaTypeHeaderValue("text/plain");
+		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
 
 		// When
-		using var response = await reporter.PostAsync(Uploads, body);
+		using var response = await DirectUpload.Mint(reporter, contentType, byteSize);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 	}
 
 	[Fact]
-	public async Task GivenNoBearerToken_WhenUploaded_ThenRejectedBeforeAnythingIsStored()
+	public async Task GivenConfiguredPerKindLimit_WhenDeclarationPassesIt_ThenRefusedAsTooLarge()
+	{
+		// Given — the limits are configuration, one per kind (ADR-0126)
+		await using var small = _factory.WithWebHostBuilder(builder =>
+			builder.UseSetting("HpacSafety:Media:Policy:MaxDocumentByteSize", "1024"));
+		using var reporter = await SignedInClient.As(small, MemberRole.User);
+
+		// When
+		using var atLimit = await DirectUpload.Mint(reporter, "text/plain", 1024);
+		using var past = await DirectUpload.Mint(reporter, "text/plain", 1025);
+		using var image = await DirectUpload.Mint(reporter, "image/png", 1025);
+
+		// Then
+		atLimit.StatusCode.ShouldBe(HttpStatusCode.Created);
+		past.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		image.StatusCode.ShouldBe(HttpStatusCode.Created);
+	}
+
+	[Fact]
+	public async Task GivenRetiredSingleSizeSetting_WhenHostStarts_ThenItRefusesToStart()
+	{
+		// Given
+		await using var retired = _factory.WithWebHostBuilder(builder =>
+			builder.UseSetting("HpacSafety:Media:Policy:MaxByteSize", "1024"));
+
+		// When / Then
+		Should.Throw<InvalidOperationException>(() => retired.CreateClient())
+			.Message.ShouldContain("MaxByteSize is retired");
+	}
+
+	[Theory]
+	[InlineData("text/plain", "not json")]
+	[InlineData("application/json", "{\"contentType\":\"image/png\"}")]
+	[InlineData("application/json", "{\"contentType\":")]
+	public async Task GivenMalformedDeclaration_WhenMinted_ThenRejected(string mediaType,
+																		string body)
+	{
+		// Given
+		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
+		using var content = new StringContent(body, Encoding.UTF8, mediaType);
+
+		// When
+		using var response = await reporter.PostAsync(Uploads, content);
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenNoBearerToken_WhenMinted_ThenRejected()
 	{
 		// Given
 		using var anonymous = _factory.CreateClient();
-		using var body = Png();
-		var before = await QuarantineCount();
 
 		// When
-		using var response = await anonymous.PostAsync(Uploads, body);
+		using var response = await DirectUpload.Mint(anonymous, "image/png", 10);
 
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-		(await QuarantineCount()).ShouldBe(before);
 	}
 
 	[Fact]
@@ -130,7 +180,7 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 	{
 		// Given
 		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
-		var uploadId = await Upload(reporter);
+		var uploadId = await DirectUpload.Send(reporter, PngBytes(), "image/png");
 
 		// When
 		using var first = await reporter.DeleteAsync(new Uri($"/api/v1/uploads/{uploadId}", UriKind.Relative));
@@ -173,56 +223,19 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
 	}
 
-	private async Task AssertRefused(byte[] bytes,
-									 string declaredType,
-									 string reason)
-	{
-		// Given
-		using var reporter = await SignedInClient.As(_factory, MemberRole.User);
-		using var body = new ByteArrayContent(bytes);
-		body.Headers.ContentType = new MediaTypeHeaderValue(declaredType);
-		var before = await QuarantineCount();
-
-		// When
-		using var response = await reporter.PostAsync(Uploads, body);
-
-		// Then — refused with a safe reason, and nothing reached the bucket
-		// (REQ-SUB-040).
-		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		(await Reason(response)).ShouldBe(reason);
-		(await QuarantineCount()).ShouldBe(before);
-	}
-
-	private static async Task<string?> Reason(HttpResponseMessage response)
-	{
-		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return problem.GetProperty("reason").GetString();
-	}
-
-	private async Task<int> QuarantineCount()
+	private async Task<bool> QuarantineHolds(string uploadId)
 	{
 		var listing = await fixture.Storage.ListObjectsV2Async(new ListObjectsV2Request
 		{
 			BucketName = ApiPostgresFixture.BucketName,
-			Prefix = "quarantine/",
+			Prefix = $"quarantine/{uploadId}",
 		});
-		return listing.S3Objects?.Count ?? 0;
+		return (listing.S3Objects?.Count ?? 0) > 0;
 	}
 
-	private static async Task<string> Upload(HttpClient reporter)
-	{
-		using var body = Png();
-		using var response = await reporter.PostAsync(Uploads, body);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created);
-		var upload = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return upload.GetProperty("uploadId").GetString()!;
-	}
-
-	private static ByteArrayContent Png()
+	private static byte[] PngBytes()
 	{
 		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
-		var body = new ByteArrayContent(image.ToByteArray());
-		body.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-		return body;
+		return image.ToByteArray();
 	}
 }

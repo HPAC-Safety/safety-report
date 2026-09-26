@@ -104,4 +104,73 @@ public sealed class EmulatedS3BlobStoreContractTests : BlobStoreContractTests, I
 		disposition.DispositionType.ShouldBe("attachment");
 		disposition.FileNameStar.ShouldBe("Rapport d'accident é.pdf");
 	}
+
+	[Fact]
+	public async Task GivenUploadUrl_WhenBrowserPutsExactlyWhatWasSigned_ThenStoredUnderThatKeyWithThatType()
+	{
+		// Given
+		var key = BlobKey.ForUpload(UploadId.New());
+		byte[] content = [1, 2, 3, 4, 5];
+		var url = await Store.CreateUploadUrl(key, "application/pdf", content.Length, TimeSpan.FromMinutes(5), CancellationToken.None);
+
+		// When
+		using var response = await Put(url, content, "application/pdf");
+
+		// Then
+		response.IsSuccessStatusCode.ShouldBeTrue(await response.Content.ReadAsStringAsync());
+		(await Store.Describe(key, CancellationToken.None)).ShouldBe(new StoredBlob("application/pdf", content.Length));
+	}
+
+	[Theory]
+	[InlineData("longer")]
+	[InlineData("shorter")]
+	[InlineData("type")]
+	[InlineData("key")]
+	public async Task GivenUploadUrl_WhenPutDiffersFromWhatWasSigned_ThenStorageRefusesAndStoresNothing(string difference)
+	{
+		// Given
+		var key = BlobKey.ForUpload(UploadId.New());
+		var elsewhere = BlobKey.ForUpload(UploadId.New());
+		var url = await Store.CreateUploadUrl(key, "application/pdf", 5, TimeSpan.FromMinutes(5), CancellationToken.None);
+
+		// When
+		using var response = difference switch
+		{
+			"longer" => await Put(url, [1, 2, 3, 4, 5, 6], "application/pdf"),
+			"shorter" => await Put(url, [1, 2, 3, 4], "application/pdf"),
+			"type" => await Put(url, [1, 2, 3, 4, 5], "image/png"),
+			_ => await Put(RetargetToKey(url, elsewhere), [1, 2, 3, 4, 5], "application/pdf"),
+		};
+
+		// Then
+		response.IsSuccessStatusCode.ShouldBeFalse();
+		(await Store.Describe(key, CancellationToken.None)).ShouldBeNull();
+		(await Store.Describe(elsewhere, CancellationToken.None)).ShouldBeNull();
+	}
+
+	[Fact]
+	public async Task GivenExpiredUploadUrl_WhenPut_ThenStorageRefusesAndStoresNothing()
+	{
+		// Given
+		var key = BlobKey.ForUpload(UploadId.New());
+		var url = await Store.CreateUploadUrl(key, "application/pdf", 3, TimeSpan.FromSeconds(1), CancellationToken.None);
+		await Task.Delay(TimeSpan.FromSeconds(2.5));
+
+		// When
+		using var response = await Put(url, [1, 2, 3], "application/pdf");
+
+		// Then
+		response.IsSuccessStatusCode.ShouldBeFalse();
+		(await Store.Describe(key, CancellationToken.None)).ShouldBeNull();
+	}
+
+	private async Task<HttpResponseMessage> Put(Uri url,
+												byte[] content,
+												string contentType)
+	{
+		var body = new ByteArrayContent(content);
+		body.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
+		using var request = new HttpRequestMessage(HttpMethod.Put, url) { Content = body };
+		return await _http.SendAsync(request, CancellationToken.None);
+	}
 }

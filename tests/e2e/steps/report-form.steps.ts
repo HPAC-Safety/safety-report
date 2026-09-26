@@ -528,7 +528,7 @@ Then("attachment selection appears last with type\\/count\\/size guidance and a 
 	await expect(page.getByLabel("Photos or videos")).toBeAttached()
 	await expect(page.getByRole("button", { name: "Drag files here, or choose files" })).toBeVisible()
 	await expect(page.getByText(/JPEG, PNG, WebP, HEIC/)).toBeVisible()
-	await expect(page.getByText(/up to 5 files in all, 50 MB each/)).toBeVisible()
+	await expect(page.getByText(/up to 5 files in all\. Each video may be up to 250 MB, and each photo or document up to 25 MB\./)).toBeVisible()
 	await expect(page.getByText(/kept with your saved report for up to 15 days/i)).toBeVisible()
 	// "Appears last": only the required consent question follows it.
 	await goNext(page)

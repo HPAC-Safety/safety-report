@@ -30,6 +30,39 @@ internal sealed class InMemoryBlobStore : IBlobStore
 		return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=inline&ct={Uri.EscapeDataString(contentType)}&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
 	}
 
+	public Task<Uri> CreateUploadUrl(BlobKey key,
+								   string contentType,
+								   long byteSize,
+								   TimeSpan lifetime,
+								   CancellationToken cancellationToken)
+	{
+		if (!key.AcceptsDirectUpload)
+		{
+			throw new DomainRuleViolationException("Only a key that takes direct uploads may be handed a PUT.");
+		}
+
+		return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=put&ct={Uri.EscapeDataString(contentType)}&len={byteSize}&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
+	}
+
+	/// <summary>Every range any caller asked for, in order.</summary>
+	public List<(string Key, long Offset, long Length)> RangesRead { get; } = [];
+
+	public Task<Stream> OpenReadRange(BlobKey key,
+									  long offset,
+									  long length,
+									  CancellationToken cancellationToken)
+	{
+		var content = _blobs.TryGetValue(key.Value, out var stored) ? stored : throw new KeyNotFoundException(key.Value);
+		lock (RangesRead)
+		{
+			RangesRead.Add((key.Value, offset, length));
+		}
+
+		var start = (int)Math.Min(offset, content.Length);
+		var count = (int)Math.Min(length, content.Length - start);
+		return Task.FromResult<Stream>(new MemoryStream(content, start, count, false));
+	}
+
 	public Task<Stream> OpenRead(BlobKey key,
 								 CancellationToken cancellationToken)
 	{
@@ -78,9 +111,14 @@ internal sealed class InMemoryBlobStore : IBlobStore
 	}
 
 	public void Seed(BlobKey key,
-					 byte[] content)
+					 byte[] content,
+					 string? contentType = null)
 	{
 		_blobs[key.Value] = content;
+		if (contentType is not null)
+		{
+			_types[key.Value] = contentType;
+		}
 	}
 
 	public byte[] Read(BlobKey key)

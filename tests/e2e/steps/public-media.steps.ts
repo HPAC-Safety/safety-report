@@ -361,7 +361,19 @@ Given("a reporter is filling in the form", async ({ page }) => {
 		(route) =>
 			route.request().method() === "DELETE"
 				? route.fulfill({ status: 204 })
-				: route.fulfill({ status: 201, json: { uploadId: "synthetic-upload-media01", kind: "image" } }),
+				: route.fulfill({
+						status: 201,
+						json: {
+							uploadId: "synthetic-upload-media01",
+							kind: "image",
+							uploadUrl: "https://storage.hpac-safety.test/hpac-safety-uploads/quarantine/synthetic-upload-media01",
+							expiresAt: "2026-09-26T12:15:00Z",
+						},
+					}),
+	)
+	// The file itself goes straight to storage, another origin (ADR-0126).
+	await page.route("https://storage.hpac-safety.test/**", (route) =>
+		route.fulfill({ status: 200, headers: { "access-control-allow-origin": "*" }, body: "" }),
 	)
 	await page.route("**/api/v1/reports/", async (route) => {
 		form.submissions.push(JSON.parse(route.request().postData() ?? "{}"))

@@ -14,6 +14,10 @@
 # api_domain        = "api.hpac.ca"
 # admin_path_prefix = "admin"
 
+# Origins that may PUT an attachment to the uploads bucket (ADR-0126). Empty
+# means https://<site_domain> alone.
+# site_origins = ["https://safety.hpac.ca"]
+
 # Database. ADR-0009 says the smallest viable sizes are correct here.
 # db_instance_class        = "db.t4g.micro"
 # db_backup_retention_days = 7

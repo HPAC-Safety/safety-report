@@ -41,7 +41,8 @@ services:
       retries: 15
 
   # One-shot: the bucket, versioned like production, with the same quarantine/
-  # expiry infra/storage.tf gives S3. Plain AWS CLI, so nothing here depends on
+  # expiry and the same PUT-only CORS rule infra/storage.tf gives S3 — here for
+  # the dev server's origin, which the browser PUTs attachments from (ADR-0126). Plain AWS CLI, so nothing here depends on
   # the server's own tooling. Idempotent, so it runs on every ./dev-up.sh and
   # exits 0.
   s3-init:
@@ -60,6 +61,7 @@ services:
         set -e
         aws s3api head-bucket --bucket hpac-safety-uploads 2>/dev/null || aws s3api create-bucket --bucket hpac-safety-uploads
         aws s3api put-bucket-versioning --bucket hpac-safety-uploads --versioning-configuration Status=Enabled
+        aws s3api put-bucket-cors --bucket hpac-safety-uploads --cors-configuration '{"CORSRules":[{"AllowedMethods":["PUT"],"AllowedOrigins":["http://localhost:5173"],"AllowedHeaders":["content-type"],"MaxAgeSeconds":600}]}'
         aws s3api put-bucket-lifecycle-configuration --bucket hpac-safety-uploads --lifecycle-configuration '{"Rules":[{"ID":"expire-quarantine","Status":"Enabled","Filter":{"Prefix":"quarantine/"},"Expiration":{"Days":15},"NoncurrentVersionExpiration":{"NoncurrentDays":1},"AbortIncompleteMultipartUpload":{"DaysAfterInitiation":1}}]}'
     restart: "no"
 

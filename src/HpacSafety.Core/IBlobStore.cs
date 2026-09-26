@@ -35,9 +35,38 @@ public interface IBlobStore
 								  TimeSpan lifetime,
 								  CancellationToken cancellationToken);
 
+	/// <summary>
+	///     A short-lived URL a browser may PUT exactly one file to: <paramref name="key" />
+	///     and no other, carrying exactly <paramref name="contentType" /> and exactly
+	///     <paramref name="byteSize" /> bytes. All three are part of the signature, so
+	///     storage refuses a PUT that differs in any of them, and no file can land
+	///     larger than the size the caller already judged (ADR-0126).
+	///     <para>
+	///         The one way bytes reach storage without passing through this process.
+	///         Only a key whose compartment <see cref="BlobKey.AcceptsDirectUpload" />
+	///         may be named; any other is refused before anything is signed.
+	///     </para>
+	/// </summary>
+	Task<Uri> CreateUploadUrl(BlobKey key,
+							  string contentType,
+							  long byteSize,
+							  TimeSpan lifetime,
+							  CancellationToken cancellationToken);
+
 	/// <summary>Opens stored bytes for server-side work such as EXIF stripping.</summary>
 	Task<Stream> OpenRead(BlobKey key,
 						  CancellationToken cancellationToken);
+
+	/// <summary>
+	///     Reads at most <paramref name="length" /> stored bytes starting at
+	///     <paramref name="offset" />, and nothing else of the object — how a claim
+	///     sniffs an upload without fetching all of it (ADR-0126). Fewer bytes come back
+	///     when the object ends first.
+	/// </summary>
+	Task<Stream> OpenReadRange(BlobKey key,
+							   long offset,
+							   long length,
+							   CancellationToken cancellationToken);
 
 	/// <summary>Writes bytes, such as the EXIF-stripped derivative.</summary>
 	Task Write(BlobKey key,

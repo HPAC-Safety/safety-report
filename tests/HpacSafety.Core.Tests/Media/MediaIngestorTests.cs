@@ -34,7 +34,7 @@ public class MediaIngestorTests
 			new StubMediaSniffer(sniffed),
 			stripper,
 			remuxer ?? new RecordingVideoRemuxer(),
-			new MediaPolicy(maxByteSize, MediaType.All),
+			new MediaPolicy(MediaSizeLimits.Uniform(maxByteSize), MediaType.All),
 			new FixedClock(Now));
 	}
 
@@ -398,7 +398,7 @@ public class MediaIngestorTests
 			store,
 			new StubMediaSniffer(MediaType.Jpeg),
 			new RecordingExifStripper(), new RecordingVideoRemuxer(),
-			new MediaPolicy(maxByteSize, MediaType.All),
+			new MediaPolicy(MediaSizeLimits.Uniform(maxByteSize), MediaType.All),
 			new FixedClock(Now));
 
 		// When

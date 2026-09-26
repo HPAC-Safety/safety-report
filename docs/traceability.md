@@ -414,7 +414,7 @@ A published QuickTime video is served as an MP4 — *Reqnroll, Covered*
 
 ### REQ-MED-045
 
-A sent upload waits, unvalidated, in a private quarantine compartment — *Reqnroll, Planned*
+A sent upload waits, unvalidated, in a private quarantine compartment — *Reqnroll, Covered*
 
 ## Claims: moderation-authentication-and-publication
 
@@ -1512,23 +1512,23 @@ Only free text marked for translation is machine-translated — *Reqnroll, Cover
 
 ### REQ-SUB-072
 
-Minting an upload returns a pre-signed PUT for one quarantine key and nothing else — *Reqnroll, Planned*
+Minting an upload returns a pre-signed PUT for one quarantine key and nothing else — *Reqnroll, Covered*
 
 ### REQ-SUB-073
 
-A declared file the API will not accept gets no upload URL — *Reqnroll, Planned*
+A declared file the API will not accept gets no upload URL — *Reqnroll, Covered*
 
 ### REQ-SUB-074
 
-Storage accepts only the upload the URL was signed for — *Reqnroll, Planned*
+Storage accepts only the upload the URL was signed for — *Reqnroll, Covered*
 
 ### REQ-SUB-075
 
-A submission validates every upload it claims — *Reqnroll, Planned*
+A submission validates every upload it claims — *Reqnroll, Covered*
 
 ### REQ-SUB-076
 
-A file refused at submission is marked on its row and nothing else is lost — *playwright-bdd, Planned*
+A file refused at submission is marked on its row and nothing else is lost — *playwright-bdd, Covered*
 
 ### REQ-SUB-077
 
@@ -1557,6 +1557,10 @@ A type-ahead answer names a value, and the Worker translates only a new one — 
 ### REQ-SUB-083
 
 The form names each chosen choice by its identifier — *playwright-bdd, Covered*
+
+### REQ-SUB-084
+
+A file larger than its kind allows is refused on its row before it is sent — *playwright-bdd, Covered*
 
 ## Claims: typeform-question-import-export
 

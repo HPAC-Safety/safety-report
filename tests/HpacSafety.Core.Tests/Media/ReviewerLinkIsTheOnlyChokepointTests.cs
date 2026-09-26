@@ -26,6 +26,8 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 	// original (ADR-0119).
 	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs,PublicMediaLink.cs")]
 	[InlineData("CreateInlineReadUrl", "PublicMediaLink.cs")]
+	// A reporter's one pre-signed PUT, to their upload's quarantine key (ADR-0126).
+	[InlineData("CreateUploadUrl", "UploadLink.cs")]
 	public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
 		string method,
 		string chokepointFiles)
@@ -82,6 +84,19 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 
 		// Then
 		source.ShouldContain("CreateInlineReadUrl(");
+	}
+
+	[Fact]
+	public void GivenUploadChokepoint_WhenSourceIsScanned_ThenScanIsFindingRealCallSites()
+	{
+		// Given
+		var uploadLink = Path.Combine(RepositoryRoot(), "src", "HpacSafety.Core", "Features", "Reporting", "UploadLink.cs");
+
+		// When
+		var source = File.ReadAllText(uploadLink);
+
+		// Then
+		source.ShouldContain("CreateUploadUrl(");
 	}
 
 	internal static string RepositoryRoot()

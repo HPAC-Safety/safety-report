@@ -1,5 +1,7 @@
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Infrastructure.Media;
+using Microsoft.Extensions.Configuration;
 using Reqnroll;
 using Shouldly;
 
@@ -38,9 +40,34 @@ public sealed class MediaValidationSteps
 	public void GivenEachFileIsLimitedPerKind(int videoMegabytes,
 											   int imageOrDocumentMegabytes)
 	{
-		// ADR-0126's limits. The configured policy moves to them with #462.
-		videoMegabytes.ShouldBe(250);
-		imageOrDocumentMegabytes.ShouldBe(25);
+		// The policy the API is configured with, read from the settings it ships
+		// with, and the defaults a host without them falls back to (ADR-0126).
+		const long megabyte = 1024 * 1024;
+		var configured = new MediaPolicyOptions();
+		new ConfigurationBuilder()
+			.AddJsonFile(Path.Combine(RepositoryRoot(), "src", "HpacSafety.Api", "appsettings.json"))
+			.Build()
+			.GetSection(MediaPolicyOptions.SectionName)
+			.Bind(configured);
+
+		foreach (var policy in new[] { configured.ToPolicy(), new MediaPolicyOptions().ToPolicy() })
+		{
+			policy.Limits.Video.ShouldBe(videoMegabytes * megabyte);
+			policy.Limits.Image.ShouldBe(imageOrDocumentMegabytes * megabyte);
+			policy.Limits.Document.ShouldBe(imageOrDocumentMegabytes * megabyte);
+		}
+	}
+
+	private static string RepositoryRoot()
+	{
+		var directory = new DirectoryInfo(AppContext.BaseDirectory);
+		while (directory is not null
+			   && !File.Exists(Path.Combine(directory.FullName, "HpacSafety.slnx")))
+		{
+			directory = directory.Parent;
+		}
+
+		return directory?.FullName ?? throw new InvalidOperationException("The repository root was not found.");
 	}
 
 	[Given(@"an uploaded file has detected content type (.+)")]
@@ -52,7 +79,7 @@ public sealed class MediaValidationSteps
 	[When(@"the API validates the attachment's content type")]
 	public void WhenTheApiValidatesTheAttachmentsContentType()
 	{
-		var policy = new MediaPolicy(50 * 1024 * 1024, MediaType.All);
+		var policy = new MediaPolicyOptions().ToPolicy();
 		_validation = policy.Validate(_detected!.Value.ContentType, _detected, byteSize: 1);
 	}
 
@@ -173,7 +200,7 @@ public sealed class MediaValidationSteps
 			new FixedMediaSniffer(MediaType.QuickTime),
 			_stripper,
 			_remuxer,
-			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
+			new MediaPolicyOptions().ToPolicy(),
 			new FixedTimeProvider(Now));
 
 		_outcome = await ingestor.Process(original, MediaType.QuickTime, CancellationToken.None);
@@ -192,7 +219,7 @@ public sealed class MediaValidationSteps
 			new FixedMediaSniffer(MediaType.Pdf),
 			new UnreachableExifStripper(),
 			new RecordingVideoRemuxer(),
-			new MediaPolicy(50 * 1024 * 1024, MediaType.All),
+			new MediaPolicyOptions().ToPolicy(),
 			new FixedTimeProvider(Now));
 
 		_outcome = await ingestor.Process(original, MediaType.Pdf, CancellationToken.None);
@@ -294,6 +321,23 @@ public sealed class MediaValidationSteps
 												 CancellationToken cancellationToken)
 		{
 			return Task.FromResult(new Uri($"https://example.invalid/{key.Value}?op=inline&ct={Uri.EscapeDataString(contentType)}&ttl={BlobUrlLifetime.Validate(lifetime).TotalSeconds}"));
+		}
+
+		public Task<Uri> CreateUploadUrl(BlobKey key,
+									   string contentType,
+									   long byteSize,
+									   TimeSpan lifetime,
+									   CancellationToken cancellationToken)
+		{
+			throw new NotSupportedException();
+		}
+
+		public Task<Stream> OpenReadRange(BlobKey key,
+										  long offset,
+										  long length,
+										  CancellationToken cancellationToken)
+		{
+			throw new NotSupportedException();
 		}
 
 		public Task<Stream> OpenRead(BlobKey key,

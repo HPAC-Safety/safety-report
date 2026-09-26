@@ -557,6 +557,14 @@ Scenario: A refused upload is explained on that file's row
   Then that file's row shows a localized reason matching the refusal
   And the file is not named by the submission
 
+@REQ-SUB-084
+@ui
+Scenario: A file larger than its kind allows is refused on its row before it is sent
+  Given the current page shows a file-upload question
+  When the reporter attaches a video larger than 250 MB
+  Then that file's row shows a localized message stating the limit for each kind
+  And nothing is sent to the API or to storage for it
+
 @REQ-SUB-076
 @ui
 Scenario: A file refused at submission is marked on its row and nothing else is lost

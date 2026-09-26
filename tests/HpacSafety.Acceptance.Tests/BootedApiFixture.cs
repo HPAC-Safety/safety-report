@@ -5,6 +5,7 @@ using System.Text;
 using Amazon.S3;
 using DotNet.Testcontainers.Containers;
 using HpacSafety.Api.Authentication;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Testing;
 using Microsoft.AspNetCore.Hosting;
@@ -130,6 +131,34 @@ public static class BootedApi
 			builder.UseEnvironment("Production");
 			builder.UseSetting("HpacSafety:Authentication:Authority", "https://provider.example.test");
 		});
+	}
+
+	private static WebApplicationFactory<Program>? recordingReads;
+
+	/// <summary>
+	///     A host whose blob store records how much of each object it reads, otherwise
+	///     identical to <see cref="Factory" /> (REQ-SUB-075). Built once and shared.
+	/// </summary>
+	public static async Task<WebApplicationFactory<Program>> RecordingReads()
+	{
+		var booted = await Factory().ConfigureAwait(false);
+
+		await Gate.WaitAsync().ConfigureAwait(false);
+		try
+		{
+			return recordingReads ??= booted.WithWebHostBuilder(builder =>
+				builder.ConfigureTestServices(services =>
+				{
+					var original = services.Last(descriptor => descriptor.ServiceType == typeof(IBlobStore));
+					services.Remove(original);
+					services.AddSingleton<IBlobStore>(provider =>
+						new ReadRecordingBlobStore((IBlobStore)original.ImplementationFactory!(provider)));
+				}));
+		}
+		finally
+		{
+			Gate.Release();
+		}
 	}
 
 	/// <summary>

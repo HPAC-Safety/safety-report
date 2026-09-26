@@ -8,6 +8,7 @@ using HpacSafety.Core.Features.Outbox;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -66,6 +67,8 @@ public sealed class ReportSubmissionEndpointSteps
 	private string? _problem;
 	private string? _uploadId;
 	private string? _expiredUploadId;
+	private string? _refusedUploadId;
+	private long _refusedUploadSize;
 	private JsonElement? _responseBody;
 	private readonly List<(string Submission, HttpResponseMessage Response)> _refused = [];
 	// A value only this scenario submits. Other scenarios submit reports into the
@@ -238,6 +241,26 @@ public sealed class ReportSubmissionEndpointSteps
 		if (_choiceValidation)
 		{
 			await SubmitEachChoiceAnswer();
+			return;
+		}
+
+		if (_refusedUploadId is not null)
+		{
+			_response = await Post(new
+			{
+				language = "en-CA",
+				answers = new object[]
+				{
+					new { questionRevisionId = _consentRevisionId, value = (bool?)true },
+					new { questionRevisionId = _extraRevisionId, value = (string?)_marker },
+					new
+					{
+						questionRevisionId = _fileRevisionId,
+						attachments = new[] { new { uploadId = _refusedUploadId, fileName = "refused.bin" } },
+					},
+				},
+			});
+
 			return;
 		}
 
@@ -704,47 +727,6 @@ public sealed class ReportSubmissionEndpointSteps
 		// harness exists in this suite to assert the negative at runtime.
 	}
 
-	// --- An attachment is validated under a bound before it is stored ---
-
-	[Given(@"a reporter attaches a file")]
-	public async Task GivenAReporterAttachesAFile()
-	{
-		_reporter = await BootedApi.SignedInAs(MemberRole.User);
-	}
-
-	[When(@"the API receives the upload")]
-	public async Task WhenTheApiReceivesTheUpload()
-	{
-		_uploadId = await UploadSyntheticPdf();
-	}
-
-	[Then(@"the API reads at most one byte past 50 MB while counting, then inspects the file's signature and validates it")]
-	[Then(@"never buffers the whole file in memory")]
-	public void ThenTheUploadIsBoundedAndInspected()
-	{
-		// The bound itself is proven in HpacSafety.Api.Tests at a 1 KB limit,
-		// where "one byte past" costs nothing to send; here the running host
-		// accepts a real file through that same path.
-		_uploadId.ShouldNotBeNull();
-	}
-
-	[Then(@"writes only an accepted file to the quarantine compartment, under an upload ID the API mints")]
-	public async Task ThenOnlyAnAcceptedFileIsWrittenToQuarantine()
-	{
-		(await QuarantineHolds(_uploadId!)).ShouldBeTrue();
-		UploadId.TryParse(_uploadId, out _).ShouldBeTrue();
-	}
-
-	[Then(@"the upload request carries no filename, and none is persisted or logged for it")]
-	public async Task ThenTheUploadCarriesNoFilename()
-	{
-		// The request body is the file alone — UploadSyntheticPdf sends no
-		// Content-Disposition — and the stored object carries only its type.
-		var metadata = await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, $"quarantine/{_uploadId}");
-		metadata.Metadata.Keys.ShouldBeEmpty();
-		metadata.Headers.ContentDisposition.ShouldBeNullOrEmpty();
-	}
-
 	// --- A submission naming an expired or unknown upload is refused by name ---
 
 	[Given(@"a submission names an upload ID that no longer exists in quarantine")]
@@ -759,6 +741,52 @@ public sealed class ReportSubmissionEndpointSteps
 		// Expired is indistinguishable from never-existed once the lifecycle rule
 		// has run: the key does not resolve.
 		_expiredUploadId = UploadId.New().Value;
+	}
+
+	// --- A submission validates every upload it claims ---
+
+	[Given(@"a submission claims an upload whose stored file is (.*)")]
+	public async Task GivenASubmissionClaimsAnUploadWhoseStoredFileIs(string file)
+	{
+		// A host that counts what storage is asked for, so the claim can be held
+		// to reading only what sniffing needs (ADR-0126, ADR-0134).
+		var host = await BootedApi.RecordingReads();
+		_reporter = await BootedApi.SignedInAs(MemberRole.User, host);
+		await EnsureConsentQuestion();
+		_extraRevisionId = await CreateSyntheticQuestion("short_text");
+		_fileRevisionId = await CreateSyntheticQuestion("file_upload");
+
+		const int megabyte = 1024 * 1024;
+		var (bytes, declared) = file switch
+		{
+			"bytes that match no known format" => (Unrecognisable(megabyte), "application/pdf"),
+			"declared as one allowlisted type but containing another" => (PaddedPng(megabyte), "application/pdf"),
+			"declared as a video but detected as a 30 MB image" => (PaddedPng(30 * megabyte), "video/mp4"),
+			_ => throw new NotSupportedException($"Unmapped stored file: '{file}'."),
+		};
+
+		_refusedUploadSize = bytes.Length;
+		_refusedUploadId = await DirectUpload.Send(_reporter, bytes, declared);
+		_uploadId = _refusedUploadId;
+	}
+
+	[Then(@"the response names that upload ID with a safe rejection reason of ""(.*)""")]
+	public async Task ThenTheResponseNamesThatUploadWithReason(string reason)
+	{
+		var problem = await ResponseBody();
+		var refused = problem.GetProperty("refusedUploads").EnumerateArray().Single();
+		refused.GetProperty("uploadId").GetString().ShouldBe(_refusedUploadId);
+		refused.GetProperty("reason").GetString().ShouldBe(reason);
+		problem.GetRawText().ShouldNotContain("refused.bin");
+	}
+
+	[Then(@"the API read only the upload's size and the bytes sniffing needs, never the whole file into memory")]
+	public void ThenTheApiReadOnlyWhatSniffingNeeds()
+	{
+		var key = $"quarantine/{_refusedUploadId}";
+		ReadRecordingBlobStore.WholeReadsOf(key).ShouldBe(0);
+		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThanOrEqualTo(2 * BlobRangeStream.DefaultWindowSize);
+		ReadRecordingBlobStore.RangeBytesRead(key).ShouldBeLessThan(_refusedUploadSize);
 	}
 
 	[Then(@"the API rejects the submission with 400")]
@@ -1011,9 +1039,7 @@ public sealed class ReportSubmissionEndpointSteps
 	[When(@"the per-IP upload rate limit is exceeded")]
 	public async Task WhenThePerIpUploadRateLimitIsExceeded()
 	{
-		using var body = new ByteArrayContent("%PDF-1.7\n%%EOF\n"u8.ToArray());
-		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-		_response = await _reporter!.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
+		_response = await DirectUpload.Mint(_reporter!, "application/pdf", 15);
 	}
 
 	[Then(@"the API rejects the request with 429 and a safe retry signal")]
@@ -1224,14 +1250,32 @@ public sealed class ReportSubmissionEndpointSteps
 		});
 	}
 
+	/// <summary>A real PNG, followed by zeros up to <paramref name="length" /> bytes.</summary>
+	private static byte[] PaddedPng(int length)
+	{
+		using var image = new ImageMagick.MagickImage(ImageMagick.MagickColors.SkyBlue, 8, 8) { Format = ImageMagick.MagickFormat.Png };
+		var png = image.ToByteArray();
+		var padded = new byte[length];
+		png.CopyTo(padded, 0);
+		return padded;
+	}
+
+	/// <summary>Random bytes no signature begins with.</summary>
+	private static byte[] Unrecognisable(int length)
+	{
+		var bytes = new byte[length];
+		Random.Shared.NextBytes(bytes);
+		bytes[0] = 0x00;
+		bytes[1] = 0x13;
+		return bytes;
+	}
+
 	private async Task<string> UploadSyntheticPdf()
 	{
-		using var body = new ByteArrayContent("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray());
-		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-		using var response = await _reporter!.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-		var upload = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return upload.GetProperty("uploadId").GetString()!;
+		return await DirectUpload.Send(
+			_reporter!,
+			"%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray(),
+			"application/pdf");
 	}
 
 	private static async Task<bool> QuarantineHolds(string uploadId)

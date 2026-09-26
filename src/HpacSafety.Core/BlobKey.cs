@@ -66,6 +66,15 @@ public readonly record struct BlobKey
 	/// <summary>The final path segment. For a quarantined upload, its upload id.</summary>
 	public string FileName { get; }
 
+	/// <summary>
+	///     Whether a browser may be handed a pre-signed PUT to this key. Only a
+	///     quarantined upload, named by nothing but its minted upload id, may be
+	///     (ADR-0126): a report's own compartments are written by this system alone.
+	///     A compartment that one day takes direct uploads is added here, in the one
+	///     place every adapter asks.
+	/// </summary>
+	public bool AcceptsDirectUpload => Compartment == MediaCompartment.Quarantine;
+
 	/// <summary>The key as stored.</summary>
 	public string Value =>
 		Compartment == MediaCompartment.Quarantine

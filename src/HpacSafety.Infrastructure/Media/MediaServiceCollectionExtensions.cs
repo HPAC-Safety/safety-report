@@ -33,7 +33,18 @@ public static class MediaServiceCollectionExtensions
 		ArgumentNullException.ThrowIfNull(services);
 		ArgumentNullException.ThrowIfNull(configuration);
 
-		services.Configure<MediaPolicyOptions>(configuration.GetSection("HpacSafety:Media:Policy"));
+		var policySection = configuration.GetSection(MediaPolicyOptions.SectionName);
+
+		// The single MaxByteSize became one limit per kind (ADR-0126). Left set, it
+		// would bind to nothing and the deployment would run on limits nobody there
+		// chose, so it is refused here rather than in a checklist.
+		if (policySection[MediaPolicyOptions.RetiredMaxByteSizeKey] is not null)
+		{
+			throw new InvalidOperationException(
+				$"{MediaPolicyOptions.SectionName}:{MediaPolicyOptions.RetiredMaxByteSizeKey} is retired; set MaxVideoByteSize, MaxImageByteSize, and MaxDocumentByteSize instead (ADR-0126).");
+		}
+
+		services.Configure<MediaPolicyOptions>(policySection);
 		services.AddSingleton(provider => provider.GetRequiredService<IOptions<MediaPolicyOptions>>().Value.ToPolicy());
 
 		services.AddSingleton(MediaSnifferChain.Default());
@@ -61,6 +72,7 @@ public static class MediaServiceCollectionExtensions
 		});
 
 		services.AddScoped<MediaIngestor>();
+		services.AddScoped<UploadLink>();
 		services.AddScoped<ReviewerMediaLink>();
 		services.AddScoped<PublicMediaLink>();
 

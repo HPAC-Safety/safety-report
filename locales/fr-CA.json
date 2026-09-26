@@ -124,7 +124,7 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
-      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléversé dès que vous le sélectionnez.",
+      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total. Chaque vidéo peut atteindre {videoSize} Mo, et chaque photo ou document, {size} Mo. Chaque fichier est téléversé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",
       "keptWithReport": "Les fichiers joints sont conservés avec votre signalement enregistré pendant un maximum de 15 jours; vous les retrouverez donc si vous quittez la page et y revenez.",
       "listLabel": "Fichiers joints",
@@ -136,6 +136,7 @@
       "removeNamed": "Supprimer {name}",
       "expired": "Ce fichier n'est plus disponible. Supprimez-le et joignez-le à nouveau.",
       "expiredSummary": "Certains fichiers joints ne sont plus disponibles. Veuillez joindre à nouveau les fichiers indiqués, puis soumettez votre réponse — vos autres réponses seront conservées.",
+      "refusedSummary": "#Some attached files were not accepted. The marked files will not be sent; submit again to send the rest — your other answers are kept.",
       "rejected": {
         "empty": "Ce fichier est vide.",
         "too_large": "Ce fichier dépasse 50 Mo.",

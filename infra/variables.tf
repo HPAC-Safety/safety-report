@@ -69,6 +69,17 @@ variable "api_domain" {
   default     = "api.hpac.ca"
 }
 
+variable "site_origins" {
+  description = "Origins a browser may PUT an attachment to the uploads bucket from, through the pre-signed URL the API mints (ADR-0126). Scheme and host, no path. Empty means only https://<site_domain>."
+  type        = list(string)
+  default     = []
+
+  validation {
+    condition     = alltrue([for origin in var.site_origins : can(regex("^https://[a-z0-9.-]+(:[0-9]+)?$", origin))])
+    error_message = "Each site origin is https://host or https://host:port, with no path and no trailing slash."
+  }
+}
+
 variable "admin_path_prefix" {
   description = "Path prefix the admin review queue is served under, without slashes. Drives the CloudFront cache behavior, the response headers policy, and the URL-rewrite function, so it is defined once here rather than written into three places."
   type        = string

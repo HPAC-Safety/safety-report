@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react"
 import {
 	ACCEPTED_FILE_TYPES,
 	MAX_ATTACHMENTS,
-	MAX_ATTACHMENT_BYTES,
+	SIZE_LIMIT_PARAMS,
 	UploadRejectedError,
 	deleteUpload,
+	exceedsKindLimit,
 	uploadAttachment,
 	type UploadRejectionReason,
 } from "../api/uploads"
@@ -58,7 +59,8 @@ export function carriesFiles(event: { dataTransfer: DataTransfer | null }): bool
  * it, or picked through its one large button — and uploaded the moment they
  * are chosen,
  * each with its own indeterminate activity indicator and Cancel control while it
- * uploads, and a Remove control once it has (ADR-0096). Everything about an
+ * uploads, and a Remove control once it has (ADR-0096). Each goes straight to
+ * storage through the pre-signed PUT the API mints for it (ADR-0126). Everything about an
  * upload in progress is encapsulated here — the form only learns which files
  * finished and whether anything is still in flight.
  */
@@ -107,7 +109,9 @@ export function AttachmentField({
 		const key = `attachment-${nextKey++}`
 		const base = { key, name: file.name, size: file.size }
 
-		if (file.size > MAX_ATTACHMENT_BYTES) {
+		// Refused at once, without minting anything: the API would refuse the
+		// same declaration (ADR-0126).
+		if (exceedsKindLimit(file)) {
 			onAttachmentsChange((current) => [...current, { ...base, status: "rejected", reason: "too_large" }])
 			return
 		}
@@ -208,10 +212,7 @@ export function AttachmentField({
 					<span className="text-sm font-medium">{t("report.attachments.dropPrompt")}</span>
 				</button>
 				<p id={guidanceId} className="font-sans text-xs text-ink-muted">
-					{t("report.attachments.guidance", {
-						count: MAX_ATTACHMENTS,
-						size: MAX_ATTACHMENT_BYTES / (1024 * 1024),
-					})}
+					{t("report.attachments.guidance", { count: MAX_ATTACHMENTS, ...SIZE_LIMIT_PARAMS })}
 				</p>
 				{/* Kept in the page and labelled by the question, so assistive
 				    technology and tests still find it; the button above is the
@@ -242,7 +243,9 @@ export function AttachmentField({
 								<p className="font-sans text-xs text-ink-muted">{formatSize(row.size)}</p>
 								{row.status !== "uploaded" && (
 									<p role="alert" className="font-sans text-xs text-brand-700">
-										{row.status === "expired" ? t("report.attachments.expired") : t(`report.attachments.rejected.${row.reason ?? "unknown"}`)}
+										{row.status === "expired"
+											? t("report.attachments.expired")
+											: t(`report.attachments.rejected.${row.reason ?? "unknown"}`, SIZE_LIMIT_PARAMS)}
 									</p>
 								)}
 							</div>

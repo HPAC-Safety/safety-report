@@ -7,12 +7,13 @@ namespace HpacSafety.Core.Features.Reporting;
 ///     system is willing to keep — and, where it can, into something a reviewer may
 ///     safely be shown.
 ///     <para>
-///         The order is the point. <see cref="Inspect" /> sniffs and validates an upload
-///         before it is ever stored, so a refused file never reaches quarantine at all.
-///         A submission copies a claimed upload into the report's original compartment
-///         without decoding it, and <see cref="Process" /> runs later, in the Worker: it
-///         judges the original again and writes the stripped derivative beside it
-///         (ADR-0096, ADR-0098).
+///         The order is the point. A browser sends an upload straight to quarantine,
+///         and <see cref="Inspect" /> sniffs and validates it when a submission claims
+///         it, reading only what sniffing needs, so a refused file never reaches a
+///         report. The submission copies an accepted upload into the report's original
+///         compartment without decoding it, and <see cref="Process" /> runs later, in
+///         the Worker: it judges the original again and writes the stripped derivative
+///         beside it (ADR-0098, ADR-0126).
 ///     </para>
 ///     <para>
 ///         A format this system cannot strip is still kept, because the original is
@@ -65,12 +66,14 @@ public sealed class MediaIngestor
 	}
 
 	/// <summary>
-	///     Judges an upload before it is stored: its size, its sniffed format, and
-	///     whether that format is what the browser declared.
+	///     Judges an upload a submission claims: its size, its sniffed format, and
+	///     whether that format is what the browser declared. The size is held to the
+	///     limit of the kind the bytes really are.
 	/// </summary>
 	/// <param name="content">
-	///     The whole upload, already bounded by the caller and seekable, positioned
-	///     anywhere.
+	///     The whole upload, seekable, positioned anywhere. Only what sniffing asks for
+	///     is read, so a stream that fetches on demand (<see cref="BlobRangeStream" />)
+	///     never pulls the whole file.
 	/// </param>
 	/// <param name="declaredContentType">The browser's <c>Content-Type</c> — evidence, never authority.</param>
 	/// <param name="cancellationToken">Cancels the sniff.</param>
@@ -92,7 +95,7 @@ public sealed class MediaIngestor
 			return MediaValidation.Rejected(MediaRejectionReason.Empty);
 		}
 
-		if (byteSize > _policy.MaxByteSize)
+		if (byteSize > _policy.Limits.Largest)
 		{
 			return MediaValidation.Rejected(MediaRejectionReason.TooLarge);
 		}
@@ -126,8 +129,8 @@ public sealed class MediaIngestor
 		}
 
 		// Spooled to a temporary file, not memory: the bytes are read several
-		// times - to sniff, to strip or remux - and a 50 MB video must not become a
-		// 50 MB buffer (#362, REQ-MED-024). They are hashed on the way in, in the
+		// times - to sniff, to strip or remux - and a 250 MB video must not become a
+		// 250 MB buffer (#362, REQ-MED-024). They are hashed on the way in, in the
 		// same bounded chunks, and CopyBounded stops the moment the limit is
 		// exceeded, so an oversized object is never read in full.
 		await using var original = TemporaryFile.Create();
@@ -136,7 +139,7 @@ public sealed class MediaIngestor
 
 		await using (var source = await _blobStore.OpenRead(originalKey, cancellationToken).ConfigureAwait(false))
 		{
-			exceedsLimit = await CopyBounded(source, original, _policy.MaxByteSize, cancellationToken, digest)
+			exceedsLimit = await CopyBounded(source, original, _policy.Limits.Largest, cancellationToken, digest)
 				.ConfigureAwait(false);
 		}
 

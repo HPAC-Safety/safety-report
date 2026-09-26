@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate, useParams } from "react-router-dom"
 
+import type { Locale } from "../i18n/locales"
 import { useLocale } from "../i18n/useLocale"
 import { fetchCurrentQuestions, type PublicQuestionView } from "../api/publicQuestions"
 import {
@@ -29,6 +30,7 @@ import {
 	indexQuestionsById,
 	optionFor,
 	optionTyped,
+	questionHelp,
 	questionLabel,
 	unansweredRequired,
 	visibleChildren,
@@ -596,6 +598,16 @@ interface StepContentProps {
 	t: (key: string, params?: Record<string, string | number>) => string
 }
 
+/**
+ * A statement's description, in the reader's language, keeping the line breaks
+ * it was written with so its paragraphs stay apart (REQ-QB-143).
+ */
+function StatementDescription({ question, locale }: { question: PublicQuestionView; locale: Locale }) {
+	const description = questionHelp(question, locale)
+	if (!description) return null
+	return <p className="mt-3 whitespace-pre-line font-sans text-ink-muted">{description}</p>
+}
+
 function StepContent({
 	step,
 	locale,
@@ -613,11 +625,7 @@ function StepContent({
 		return (
 			<div>
 				<h1 className="font-display text-2xl font-bold text-ink">{questionLabel(step.question, locale)}</h1>
-				{step.question.helpTextEn && (
-					<p className="mt-3 font-sans text-ink-muted">
-						{locale === "fr-CA" ? step.question.helpTextFr : step.question.helpTextEn}
-					</p>
-				)}
+				<StatementDescription question={step.question} locale={locale} />
 			</div>
 		)
 	}
@@ -628,21 +636,30 @@ function StepContent({
 			<fieldset>
 				<legend className="font-display text-lg font-semibold text-ink">{questionLabel(step.question, locale)}</legend>
 				<div className="mt-4">
-					{children.map((child) => (
-						<QuestionField
-							key={child.revisionId}
-							question={child}
-							locale={locale}
-							answer={answers[child.revisionId]}
-							onChange={(answer) => onAnswer(child.revisionId, answer)}
-							attachments={attachments[child.revisionId] ?? []}
-							onAttachmentsChange={(update) => onAttachments(child.revisionId, update)}
-							onUploadingChange={(busy) => onUploading(child.revisionId, busy)}
-							attachmentRoom={attachmentRoom}
-							errorText={blockingIds.has(child.revisionId) ? t("report.required.error") : null}
-							t={t}
-						/>
-					))}
+					{children.map((child) =>
+						// A statement under a group is a sub-heading with its
+						// description, never an input (REQ-QB-143).
+						collectsNoAnswer(child) ? (
+							<div key={child.revisionId} className="mb-6">
+								<h3 className="font-display text-base font-semibold text-ink">{questionLabel(child, locale)}</h3>
+								<StatementDescription question={child} locale={locale} />
+							</div>
+						) : (
+							<QuestionField
+								key={child.revisionId}
+								question={child}
+								locale={locale}
+								answer={answers[child.revisionId]}
+								onChange={(answer) => onAnswer(child.revisionId, answer)}
+								attachments={attachments[child.revisionId] ?? []}
+								onAttachmentsChange={(update) => onAttachments(child.revisionId, update)}
+								onUploadingChange={(busy) => onUploading(child.revisionId, busy)}
+								attachmentRoom={attachmentRoom}
+								errorText={blockingIds.has(child.revisionId) ? t("report.required.error") : null}
+								t={t}
+							/>
+						),
+					)}
 				</div>
 			</fieldset>
 		)
@@ -652,6 +669,7 @@ function StepContent({
 		return (
 			<div>
 				<h2 className="font-display text-xl font-bold text-ink">{questionLabel(step.question, locale)}</h2>
+				<StatementDescription question={step.question} locale={locale} />
 			</div>
 		)
 	}

@@ -269,6 +269,90 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.PrivateNotes.PrivateNote", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("Deleted")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted");
+
+                    b.Property<string>("ReportId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("report_id")
+                        .IsFixedLength();
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_private_notes");
+
+                    b.HasIndex("ReportId", "CreatedAt")
+                        .HasDatabaseName("ix_report_private_notes_report_id_created_at");
+
+                    b.ToTable("report_private_notes", (string)null);
+                });
+
+            modelBuilder.Entity("HpacSafety.Core.Features.PrivateNotes.PrivateNoteRevision", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<string>("AuthorSubject")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("author_subject");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset?>("Deleted")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted");
+
+                    b.Property<string>("NoteId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("note_id")
+                        .IsFixedLength();
+
+                    b.Property<int>("Number")
+                        .HasColumnType("integer")
+                        .HasColumnName("number");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("character varying(4000)")
+                        .HasColumnName("text");
+
+                    b.HasKey("Id")
+                        .HasName("pk_report_private_note_revisions");
+
+                    b.HasIndex("NoteId", "Number")
+                        .IsUnique()
+                        .HasDatabaseName("ix_report_private_note_revisions_note_id_number");
+
+                    b.ToTable("report_private_note_revisions", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_report_private_note_revisions_number", "number >= 1");
+                        });
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
                 {
                     b.Property<string>("Id")
@@ -1242,6 +1326,26 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_report_comment_revisions_report_comments_comment_id");
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.PrivateNotes.PrivateNote", b =>
+                {
+                    b.HasOne("HpacSafety.Core.Features.Reporting.Report", null)
+                        .WithMany()
+                        .HasForeignKey("ReportId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_private_notes_reports_report_id");
+                });
+
+            modelBuilder.Entity("HpacSafety.Core.Features.PrivateNotes.PrivateNoteRevision", b =>
+                {
+                    b.HasOne("HpacSafety.Core.Features.PrivateNotes.PrivateNote", null)
+                        .WithMany("Revisions")
+                        .HasForeignKey("NoteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_report_private_note_revisions_report_private_notes_note_id");
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionChoice", b =>
                 {
                     b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionChoice", "MergedInto")
@@ -1354,6 +1458,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Comments.ReportComment", b =>
+                {
+                    b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("HpacSafety.Core.Features.PrivateNotes.PrivateNote", b =>
                 {
                     b.Navigation("Revisions");
                 });

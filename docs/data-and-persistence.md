@@ -48,13 +48,16 @@ REQ-QB-131.*
 | `outbox_messages` | ID, aggregate/report ID, work type, identifier-only payload, occurrence/claim/retry/processed/poison metadata, Deleted. |
 | `report_comments` | ID, report ID, the author's token subject (opaque, no foreign key), created timestamp, nullable hidden timestamp and hiding reviewer's subject, Deleted. A member's comment on a published report ([ADR-0114](decisions/ADR-0114-members-may-comment-on-a-published-report.md)). |
 | `report_comment_revisions` | ID, comment ID, revision number (unique per comment), text, the locale it was written in, nullable machine translation and its source (`auto`), created timestamp, Deleted. Immutable once written, except that its translation is filled in once. The comment's current text is its highest revision. |
+| `report_private_notes` | ID, report ID, created timestamp, Deleted. A safety officer's or administrator's note on a report; no view, public query, or Worker reads it ([ADR-0133](decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)). |
+| `report_private_note_revisions` | ID, note ID, revision number (unique per note), plain text of at most 4000 characters, the writer's token subject (opaque, no foreign key), created timestamp, Deleted. Immutable once written; the note's current text is its highest revision. |
 | `audit_log` | ID, acting token subject where applicable, action, target type/ID, timestamp, safe structured detail. Append-only; no Deleted column. |
 
 **CON-DP-005** **There is no user table.** Identity and role come from claims on a validated
 token, per request, and are never written down
 ([ADR-0065](decisions/ADR-0065-no-user-records-identity-is-the-token-subject.md)).
 `summaries.approved_by_subject`, `report_comments.author_subject`,
-`report_comments.hidden_by_subject`, and `audit_log.actor_subject` hold the token's
+`report_comments.hidden_by_subject`, `report_private_note_revisions.author_subject`,
+and `audit_log.actor_subject` hold the token's
 `sub` claim as an opaque `varchar(256)` string with **no foreign key** — there
 is nothing to reference.
 *Verified by: REQ-MOD-018.*

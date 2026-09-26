@@ -1,5 +1,7 @@
+using System.Text.Json;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
+using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
@@ -189,6 +191,45 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 		var field = _summarizer!.LastInput!.ReportContent.Single(candidate => candidate.QuestionKey == "was_injured");
 		field.Value.ShouldBe(value);
 		field.IsBoolean.ShouldBeTrue();
+	}
+
+	// --- REQ-MOD-105: a private note never reaches the model (ADR-0133) ---
+
+	private const string PrivateNoteText = "Synthetic staff note: investigator Quill Marrow phoned back.";
+	private PrivateNote? _note;
+
+	[Given(@"a consented report carrying one private note is due for summarization")]
+	public async Task GivenAConsentedReportWithAPrivateNote()
+	{
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
+		_note = PrivateNote.Write(_report.Id, "officer:synthetic", PrivateNoteText, At);
+		_db.PrivateNotes.Add(_note);
+		await _db.SaveChangesAsync();
+	}
+
+	[Then(@"the model input carries nothing from the private note")]
+	public void ThenTheModelInputCarriesNothingFromTheNote()
+	{
+		_summarizer!.CallCount.ShouldBe(1);
+		var input = JsonSerializer.Serialize(_summarizer.LastInput);
+
+		input.ShouldContain("hard landing");
+		input.ShouldNotContain("Quill Marrow");
+		input.ShouldNotContain("investigator", Case.Insensitive);
+		input.ShouldNotContain(_note!.Id.Value);
+		input.ShouldNotContain("officer:synthetic");
+	}
+
+	[Then(@"no outbox message names the private note or its revision")]
+	public async Task ThenNoOutboxMessageNamesTheNote()
+	{
+		var named = new[] { _note!.Id, _note.Current.Id };
+		var payloads = named.Select(id => id.Value).ToList();
+
+		(await _db!.OutboxMessages.IgnoreQueryFilters()
+			.CountAsync(message => named.Contains(message.AggregateId) || payloads.Contains(message.Payload)))
+			.ShouldBe(0);
 	}
 
 	[When(@"the Worker claims the message and builds the model input DTO")]

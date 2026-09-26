@@ -12,7 +12,11 @@ keywords: agents, skills, AGENTS.md, ai-author, Skillfile, reuse, generic, instr
 
 **Status:** Accepted. **Extends**
 [ADR-0121](ADR-0121-a-fifth-role-maintains-the-agent-instructions.md) and
-[ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md).
+[ADR-0086](ADR-0086-four-role-agents-defined-in-the-repository.md). Amended by
+[ADR-0139](ADR-0139-the-database-skills-and-agent-join-the-generic-classification.md):
+`postgres-dba`, `design-ef-core-model`, and the `database-administrator` agent
+are generic, and `persist-hpac-data` is now the project half of a split. The
+classification table below predates them; ADR-0139 holds the current one.
 
 ## Context
 

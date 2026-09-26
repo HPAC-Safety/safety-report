@@ -241,11 +241,17 @@ issue, not this conversation.
 The step numbers are stable; the project skill adds its commands under the
 same numbers.
 
-1. **Test, then pass the coverage gate.** Run focused tests, then repository
-   checks in proportion to risk. A pull request touching code, tests, or tools
-   is not opened until the project's local coverage gate passes. A green test
-   run is not a passing gate. On failure, test each uncovered branch the change
-   added; delete a branch that can never run.
+1. **Test, then pass the local CI gate.** Run focused tests, then the
+   project's local CI runner with the draft pull request body. No pull request
+   is opened until it passes.
+   - It runs the pull request's own workflow files, not a copy of their
+     commands: a re-implemented check drifts from the one CI runs.
+   - A green test run is not a passing gate; the coverage ratchet and the
+     body checks are separate checks.
+   - On a coverage failure, test each uncovered branch the change added;
+     delete a branch that can never run.
+   - Local green is necessary, not sufficient: required checks still decide
+     (step 9).
 2. **Inspect** `git diff --check`, links, generated artifacts, and
    `git status`.
 3. **Commit the last unit** — concise imperative message, no co-author

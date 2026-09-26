@@ -115,6 +115,17 @@
       "error": "Cette question est obligatoire.",
       "summary": "Veuillez répondre aux questions suivantes avant de poursuivre :"
     },
+    "invalid": {
+      "summary": "#Please correct the following before continuing:"
+    },
+    "email": {
+      "invalid": "#Enter an email address like name@example.com.",
+      "suggestions": "#Suggested email addresses"
+    },
+    "phone": {
+      "invalid": "#Enter a phone number that is valid for the country you chose.",
+      "country": "#Country"
+    },
     "booleanYes": "Oui",
     "booleanNo": "Non",
     "select": {

@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react"
 
 import type { Locale } from "../i18n/locales"
 import { formatAnswer } from "../lib/formatAnswer"
+import { DEFAULT_PHONE_COUNTRY, callingCodeOf } from "../lib/phoneNumber"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import type { DraftAnswer, DraftAttachment } from "./draft"
 import { collectsNoAnswer, optionFor, optionLabel, questionLabel } from "./steps"
@@ -44,7 +45,8 @@ export function savedAnswerRows(
 			continue
 		}
 		const answer = answers[question.revisionId]
-		if (!answer) continue
+		// A phone answer can hold only a chosen country, with no number yet.
+		if (!answer || (answer.kind === "value" && answer.value.length === 0)) continue
 		rows.push({ revisionId: question.revisionId, kind: "answer", label, value: displayValue(question, answer, locale, t) })
 	}
 	return rows
@@ -57,6 +59,7 @@ function displayValue(question: PublicQuestionView, answer: DraftAnswer, locale:
 	}
 	if (answer.kind === "options") return answer.values.map(labelOf).join(", ")
 	if (question.type === "single_select") return labelOf(answer.value)
+	if (question.type === "phone") return `+${callingCodeOf(answer.country ?? DEFAULT_PHONE_COUNTRY)} ${answer.value}`
 	return formatAnswer(question.type, answer.value, locale, t)
 }
 

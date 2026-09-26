@@ -497,7 +497,7 @@ Then("the French text is labelled as machine-translated", async ({ page }) => {
 
 // ── A date, time, or yes/no answer in the reviewer's language (REQ-MOD-075, REQ-MOD-076) ──
 
-const STORED_TYPE: Record<string, string> = { date: "date", time: "time", "yes/no": "yes_no" }
+const STORED_TYPE: Record<string, string> = { date: "date", time: "time", "yes/no": "yes_no", phone: "phone" }
 
 Given(
 	"a safety officer is signed in and a report with a {} answer stored as {string} exists",

@@ -2,7 +2,9 @@ import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import { AttachmentField, type Attachment } from "./AttachmentField"
 import type { DraftAnswer } from "./draft"
+import { EmailField } from "./EmailField"
 import { MultiSelectPicker } from "./MultiSelectPicker"
+import { PhoneField } from "./PhoneField"
 import { optionFor, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
 
 const fieldClassName =
@@ -11,8 +13,6 @@ const fieldClassName =
 const labelClassName = "block font-sans text-sm font-medium text-ink"
 
 const INPUT_TYPE_BY_QUESTION_TYPE: Record<string, string> = {
-	email: "email",
-	phone: "tel",
 	number: "number",
 	date: "date",
 	time: "time",
@@ -199,8 +199,38 @@ export function QuestionField({
 		)
 	}
 
-	// Every remaining type stores one plain string: short/long text, email,
-	// phone, number, date, time (ADR-0072).
+	if (question.type === "phone") {
+		return (
+			<div className="mb-6">
+				{label}
+				<PhoneField fieldId={fieldId} describedBy={describedBy} answer={answer} onChange={onChange} locale={locale} t={t} />
+				{helpNode}
+				{errorNode}
+			</div>
+		)
+	}
+
+	if (question.type === "email") {
+		return (
+			<div className="mb-6">
+				{label}
+				<EmailField
+					fieldId={fieldId}
+					className={fieldClassName}
+					describedBy={describedBy}
+					placeholder={questionPlaceholder(question, locale) ?? undefined}
+					value={answer?.kind === "value" ? answer.value : ""}
+					onChange={(value) => onChange(value ? { kind: "value", value } : undefined)}
+					t={t}
+				/>
+				{helpNode}
+				{errorNode}
+			</div>
+		)
+	}
+
+	// Every remaining type stores one plain string: short/long text, number,
+	// date, time (ADR-0072).
 	const value = answer?.kind === "value" ? answer.value : ""
 	const inputType = INPUT_TYPE_BY_QUESTION_TYPE[question.type] ?? "text"
 

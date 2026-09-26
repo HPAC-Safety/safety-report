@@ -217,7 +217,7 @@ Examples:
 Scenario: A malformed email address holds the reporter on its page
   Given the current page shows an optional email question
   When the reporter types "chase.florell@example" into it and presses Next
-  Then the page does not advance
+  Then the reporter stays on that page
   And an inline, localized message asks for an email address like name@example.com
 
 @REQ-SUB-088
@@ -225,7 +225,7 @@ Scenario: A malformed email address holds the reporter on its page
 Scenario: A phone number that is not valid for its country holds the reporter on its page
   Given the current page shows an optional phone question
   When the reporter types "5551234" into it and presses Next
-  Then the page does not advance
+  Then the reporter stays on that page
   And an inline, localized message asks for a phone number valid for the chosen country
 
 @REQ-SUB-089
@@ -257,7 +257,7 @@ Scenario Outline: A phone answer is sent in E.164
   Given the current page shows an optional phone question
   When the reporter chooses <country> in its country picker
   And the reporter types "<digits>" into it
-  And the reporter submits the report
+  And the reporter goes on to submit the report
   Then the phone answer is sent as "<sent>"
 
 Examples:

@@ -72,8 +72,9 @@ are neither rewritten nor revalidated.
   separate cadences. A number assigned between their releases may be accepted
   by one and refused by the other until both update; Renovate keeps each
   current.
-- The browser bundle grows by the `max` metadata. It buys agreement with the
-  API: the `min` build would accept numbers the API refuses.
+- The browser bundle grows by the `max` metadata, about 240 KB minified and
+  60 KB compressed. It buys agreement with the API: the `min` build would
+  accept numbers the API refuses.
 - Numbers compare equal as strings, and a reader in either language sees the
   same formatted number, so a phone answer needs no second language
   ([ADR-0112](ADR-0112-only-answers-that-need-it-get-a-second-language.md)).

@@ -7,6 +7,8 @@
 
 import type { Locale } from "../i18n/locales"
 import type { PublicOptionView, PublicQuestionView } from "../api/publicQuestions"
+import { isValidEmail } from "../lib/emailAddress"
+import { DEFAULT_PHONE_COUNTRY, isValidPhone } from "../lib/phoneNumber"
 import type { DraftAnswer } from "./draft"
 
 export type AnswerMap = Record<string, DraftAnswer>
@@ -196,4 +198,37 @@ export function unansweredRequired(
 	return visibleChildren(step.question, answers, questionsById, hasAttachment).filter(
 		(child) => child.isRequired && !isAnswered(child, answers),
 	)
+}
+
+/**
+ * Whether an entered email or phone answer is malformed (ADR-0137). A blank one
+ * is not: an optional question may be left empty (REQ-SUB-086).
+ */
+export function isMalformed(question: PublicQuestionView, answer: DraftAnswer | undefined): boolean {
+	if (answer?.kind !== "value" || answer.value.trim().length === 0) return false
+	if (question.type === "email") return !isValidEmail(answer.value.trim())
+	if (question.type === "phone") return !isValidPhone(answer.country ?? DEFAULT_PHONE_COUNTRY, answer.value)
+	return false
+}
+
+/** The visible questions on `step` whose entered answer is malformed (REQ-SUB-087, REQ-SUB-088). */
+export function malformedAnswers(
+	step: FormStep,
+	answers: AnswerMap,
+	questionsById: Map<string, PublicQuestionView>,
+	hasAttachment = false,
+): PublicQuestionView[] {
+	if (step.kind === "intro") return []
+	const questions = step.kind === "group" ? visibleChildren(step.question, answers, questionsById, hasAttachment) : [step.question]
+	return questions.filter((question) => isMalformed(question, answers[question.revisionId]))
+}
+
+/** Everything on `step` that stops the reporter leaving it: an unanswered required question, or a malformed answer. */
+export function blockingQuestions(
+	step: FormStep,
+	answers: AnswerMap,
+	questionsById: Map<string, PublicQuestionView>,
+	hasAttachment = false,
+): PublicQuestionView[] {
+	return [...unansweredRequired(step, answers, questionsById, hasAttachment), ...malformedAnswers(step, answers, questionsById, hasAttachment)]
 }

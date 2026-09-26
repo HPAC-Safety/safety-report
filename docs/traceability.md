@@ -1388,6 +1388,26 @@ The type-ahead review page offers merge targets as the form lists them — *play
 
 A multi-select answer on the report page is listed as the form lists its choices — *playwright-bdd, Covered*
 
+### REQ-QB-154
+
+A date question allows future dates only when an Administrator says so — *Reqnroll, Covered*
+
+### REQ-QB-155
+
+Only a date question can allow future dates — *Reqnroll, Covered*
+
+### REQ-QB-156
+
+Whether a date question allows future dates is a revision field — *Reqnroll, Covered*
+
+### REQ-QB-157
+
+The migration leaves the occurrence date refusing future dates, with no new revision — *Reqnroll, Covered*
+
+### REQ-QB-158
+
+The editor offers Allow future dates only for a date question, unchecked — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -1741,6 +1761,58 @@ A well-formed email or phone answer is stored as written — *Reqnroll, Covered*
 ### REQ-SUB-097
 
 A malformed email or phone answer is refused by its question key — *Reqnroll, Covered*
+
+### REQ-SUB-098
+
+On a desktop, clicking or focusing a date field opens a one-month calendar under it — *playwright-bdd, Covered*
+
+### REQ-SUB-099
+
+Choosing a day fills the field as yyyy-mm-dd and closes the calendar — *playwright-bdd, Covered*
+
+### REQ-SUB-100
+
+The calendar disables the days after today unless the question allows future dates — *playwright-bdd, Covered*
+
+### REQ-SUB-101
+
+A typed date that is malformed, or in the future where not allowed, holds the reporter on its page — *playwright-bdd, Covered*
+
+### REQ-SUB-102
+
+A date typed as yyyy-mm-dd is sent as typed — *playwright-bdd, Covered*
+
+### REQ-SUB-103
+
+The calendar is in the reader's language — *playwright-bdd, Covered*
+
+### REQ-SUB-104
+
+The calendar works from the keyboard — *playwright-bdd, Covered*
+
+### REQ-SUB-105
+
+The reporter jumps to a month and year a few years back — *playwright-bdd, Covered*
+
+### REQ-SUB-106
+
+On a touch device, a date question uses the device's own date picker — *playwright-bdd, Covered*
+
+### REQ-SUB-107
+
+On a touch device, a future date the device's picker lets through still holds the reporter on its page — *playwright-bdd, Covered*
+
+### REQ-SUB-108
+
+A future date is refused by its question key unless the question allows future dates — *Reqnroll, Covered*
+
+### REQ-SUB-109
+
+A date that is today somewhere is accepted, and a question that allows future dates accepts any date — *Reqnroll, Covered*
+
+### REQ-SUB-110
+
+The form's question list says whether each date question allows future dates — *Reqnroll, Covered*
 
 ## Claims: typeform-question-import-export
 

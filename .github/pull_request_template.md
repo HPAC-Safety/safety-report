@@ -49,8 +49,8 @@ otherwise (ADR-0142).
 
 A changed page or component: a before shot, taken from a build of origin/main,
 and an after shot. A new one: an after shot. Commit them under
-docs/screenshots/<dir>/, named before-* and after-*, and link each by a raw URL
-pinned to the commit that added it:
+docs/screenshots/<dir>/, named before-* and after-*, and show each as an image
+linked by a raw URL pinned to the commit that added it:
 
     ![after](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/docs/screenshots/<dir>/after-<name>.png)
 

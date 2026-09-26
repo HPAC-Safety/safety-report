@@ -278,7 +278,7 @@ same numbers.
    - referenced by a `raw.githubusercontent.com` URL pinned to the adding
      commit. A relative path or `github.com/…/blob/…` URL renders broken;
    - before reporting, check each URL answers `image/png`:
-     `curl -sI <url> | grep -i content-type`.
+     `curl -sI <url> | grep -i content-type`;
    - a web change with nothing visible says why in the body instead, in the
      project's exemption form.
 7. **Prove it starts.** After pushing, start the app from the worktree and wait

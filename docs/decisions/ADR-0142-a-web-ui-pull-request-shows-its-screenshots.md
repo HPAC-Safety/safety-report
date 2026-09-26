@@ -52,15 +52,19 @@ the body, or says why it needs none.**
   checkbox under "Repository checks".
 - **The check** is `tools/pr-screenshots.mjs`, run by a `screenshots` job in
   `linked-issue.yml`, which re-runs on `edited` so fixing the body clears it.
-  It reads only the body and the changed-file list. Text inside an HTML
-  comment does not count, so the template's guidance left in a body satisfies
-  nothing. It passes a pull request that touches no rendered file.
+  It reads only the body and the changed-file list. A screenshot counts only
+  shown as an image (`![…](…)` or `<img src=…>`), linked to this repository
+  when `GITHUB_REPOSITORY` is set. Text inside an HTML comment (an unclosed one
+  runs to the end) or a fenced code block does not count, so the template's
+  guidance left in a body satisfies nothing, and an exemption whose reason is
+  the template's `<…>` placeholder is refused. It passes a pull request that
+  touches no rendered file.
+- **A local run checks something**: with no changed-file list the tool diffs
+  the branch against `origin/main`, and with no body it fails with its usage
+  ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)).
 - **Review judges the content**: whether the pair is complete, the before shot
   comes from `origin/main`, a native popup was captured at OS level, and light
   and dark were both shot when the issue asks. The skills say how.
-- **From now on**: the tool passes every pull request numbered below its
-  `FIRST_PR`, the first opened under the rule, so a pull request written
-  before it is not failed for it.
 - `screenshots` joins the required status checks in
   `docs/github-ruleset.json`.
 

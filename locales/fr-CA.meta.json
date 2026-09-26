@@ -1841,6 +1841,18 @@
     "provider": "human",
     "reviewed": true
   },
+  "report.email.invalid": {
+    "source_hash": "ad660a6bd0afa40748ad41f19d046e5ab8768d7367e09704e482598f84679c4e",
+    "target_hash": "f2297508b3f834d0321b7e756887fcfa8cee4b3f8987f95299ca065162d5615a",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.email.suggestions": {
+    "source_hash": "5b8d1fe750e1d55413a663c0f7f59102995b254ba811d8e8b8e9b49140be140b",
+    "target_hash": "cda13b042a40fd4c997e10226040b0569b058234067b72d153641b2e9d51d88b",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "report.error.network": {
     "source_hash": "1fdfd9bf77819867e2e40cf3136b85ff908ea611b46f4c152f74cde27f2d7999",
     "target_hash": "cbf9f11acaad59a0030c80885517f90954c50c999ec4a32b424c88c9e85d2fa1",
@@ -1852,6 +1864,12 @@
     "target_hash": "a3be21e24ecdc5b066d5fa3362a63204a818047d955221fe5a52bfa63270090d",
     "provider": "human",
     "reviewed": true
+  },
+  "report.invalid.summary": {
+    "source_hash": "821bfd971e226ce082fab8201c19938ec18d75b469abd33753fdd9556d48d133",
+    "target_hash": "b59e331eaa2aec2c403f822d1c6f12a735e48e5b8f6d7ab4eb069d84b7f217b7",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
   },
   "report.loadError": {
     "source_hash": "7e4b3e63e54574e34ec0136a7a60cbf9359b6dd30c69d0d072c316deb3abf0dd",
@@ -1892,6 +1910,18 @@
   "report.nav.submitting": {
     "source_hash": "49195f559e4a9f5b08de63a11b91827883385c819ddd46b0d6f0ec9df8b5e4b0",
     "target_hash": "33131e9caf96165465bb3c7e27d0d343d41d522e63aa2efc82387168381ce4da",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.phone.country": {
+    "source_hash": "701d021d08c54579f23343581e45b65ffb1150b2c99f94352fdac4b7036dbbd5",
+    "target_hash": "fe753ffb9bbaf6eb736828ce74d95da0f5e91f2fba4984f55e164dcfeddcd3f6",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.phone.invalid": {
+    "source_hash": "b95ac1ee205e01b2df894bcdd769287d6dd28eb1b823c015fde0f7da3631c64f",
+    "target_hash": "2b116f69a3948aa61bdd87dd4747795ee17a3d10d2c1b35dc3432213b31f613a",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

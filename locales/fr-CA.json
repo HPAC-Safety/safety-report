@@ -116,15 +116,15 @@
       "summary": "Veuillez répondre aux questions suivantes avant de poursuivre :"
     },
     "invalid": {
-      "summary": "#Please correct the following before continuing:"
+      "summary": "Veuillez corriger ce qui suit avant de continuer :"
     },
     "email": {
-      "invalid": "#Enter an email address like name@example.com.",
-      "suggestions": "#Suggested email addresses"
+      "invalid": "Entrez une adresse courriel telle que name@example.com.",
+      "suggestions": "Adresses courriel suggérées"
     },
     "phone": {
-      "invalid": "#Enter a phone number that is valid for the country you chose.",
-      "country": "#Country"
+      "invalid": "Veuillez entrer un numéro de téléphone valide pour le pays que vous avez choisi.",
+      "country": "Pays"
     },
     "booleanYes": "Oui",
     "booleanNo": "Non",

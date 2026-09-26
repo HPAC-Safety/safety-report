@@ -607,7 +607,7 @@ public static class QuestionEndpoints
 
 		return request.Options is null
 			? null
-			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace))];
+			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace, pair.Option.ResolvedPin))];
 	}
 
 	/// <summary>

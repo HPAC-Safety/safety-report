@@ -1,3 +1,4 @@
+import { Fragment } from "react"
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import { AttachmentField, type Attachment } from "./AttachmentField"
@@ -5,7 +6,7 @@ import type { DraftAnswer } from "./draft"
 import { EmailField } from "./EmailField"
 import { MultiSelectPicker } from "./MultiSelectPicker"
 import { PhoneField } from "./PhoneField"
-import { optionFor, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
+import { optionFor, optionGroups, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
 
 const fieldClassName =
 	"mt-1 w-full rounded border border-rule bg-surface px-3 py-2 font-sans text-ink placeholder:text-ink-muted"
@@ -104,6 +105,7 @@ export function QuestionField({
 	if (question.type === "single_select" || question.type === "autocomplete") {
 		const value = answer?.kind === "value" ? answer.value : ""
 		const listId = `${fieldId}-list`
+		const groups = optionGroups(question, locale)
 		return (
 			<div className="mb-6">
 				{label}
@@ -118,8 +120,9 @@ export function QuestionField({
 							placeholder={questionPlaceholder(question, locale) ?? undefined}
 							onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
 						/>
+						{/* A datalist cannot draw a separator; it keeps the group order (ADR-0136). */}
 						<datalist id={listId}>
-							{question.options.map((option) => (
+							{groups.flat().map((option) => (
 								// A reporter-added choice may exist in one language only; it is
 								// offered in that language, and says so to assistive technology.
 								<option key={option.id} value={optionLabel(option, locale)} lang={option.onlyIn ?? undefined} />
@@ -135,10 +138,20 @@ export function QuestionField({
 						onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
 					>
 						<option value="">{t("report.select.placeholder")}</option>
-						{question.options.map((option) => (
-							<option key={option.id} value={option.id}>
-								{optionLabel(option, locale)}
-							</option>
+						{groups.map((group, index) => (
+							<Fragment key={group[0].id}>
+								{/* React 18 allows no hr element in a select, so a separator is a disabled option (ADR-0136). */}
+								{index > 0 && (
+									<option disabled aria-hidden="true" value="" data-separator>
+										──────────
+									</option>
+								)}
+								{group.map((option) => (
+									<option key={option.id} value={option.id}>
+										{optionLabel(option, locale)}
+									</option>
+								))}
+							</Fragment>
 						))}
 					</select>
 				)}
@@ -167,7 +180,9 @@ export function QuestionField({
 							)}
 						</>
 					}
-					options={question.options.map((option) => ({ key: option.id, label: optionLabel(option, locale) }))}
+					groups={optionGroups(question, locale).map((group) =>
+						group.map((option) => ({ key: option.id, label: optionLabel(option, locale) })),
+					)}
 					values={values}
 					placeholder={t("report.multiSelect.placeholder")}
 					describedBy={describedBy}

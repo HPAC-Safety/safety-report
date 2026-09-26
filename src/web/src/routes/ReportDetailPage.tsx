@@ -13,12 +13,15 @@ import {
 	STALE_REPORT,
 	unpublishReport,
 	type ReportAnswer,
+	type ReportAnswerValue,
 	type ReportAttachment,
 	type ReportDetail,
 } from "../api/adminReports"
 import { ReportBadges } from "../components/ReportBadges"
 import { ReviewActions } from "../components/ReviewActions"
 import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
+import { sortChoices } from "../lib/sortChoices"
+import type { Locale } from "../i18n/locales"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
 import { PrivateNotes } from "../components/PrivateNotes"
 import { PrivateAttachments, usePrivateAttachments } from "../components/PrivateAttachments"
@@ -285,7 +288,7 @@ export function ReportDetailPage() {
 									{answer.values.length === 0 ? (
 										<dd className="mt-1 font-sans text-ink-muted">{t("reports.detail.notAnswered")}</dd>
 									) : (
-										answer.values.map((value, index) => (
+										listedValues(answer, locale).map((value, index) => (
 											<dd key={index} className="mt-1 font-sans text-ink">
 												{isLanguageNeutral(answer.type) ? (
 													<span className="whitespace-pre-line">{formatAnswer(answer.type, value.value, locale, t)}</span>
@@ -363,5 +366,22 @@ export function ReportDetailPage() {
 				</>
 			)}
 		</main>
+	)
+}
+
+/**
+ * An answer's values as the page lists them. A multi-select answer's are listed
+ * as the form lists its choices: pinned first, then alphabetically in the
+ * reader's language, then pinned last (ADR-0136). Any other answer's are kept
+ * as stored.
+ */
+function listedValues(answer: ReportAnswer, locale: Locale): ReportAnswerValue[] {
+	if (answer.type !== "multi_select") return answer.values
+	const inReadersLanguage = (value: ReportAnswerValue) =>
+		String(value.locale === locale ? value.value : (value.translatedValue ?? value.value))
+	return sortChoices(
+		answer.values.map((value, index) => ({ ...value, id: String(index).padStart(4, "0") })),
+		locale,
+		inReadersLanguage,
 	)
 }

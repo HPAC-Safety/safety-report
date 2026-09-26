@@ -9,6 +9,7 @@ import type { Locale } from "../i18n/locales"
 import type { PublicOptionView, PublicQuestionView } from "../api/publicQuestions"
 import { isValidEmail } from "../lib/emailAddress"
 import { DEFAULT_PHONE_COUNTRY, isValidPhone } from "../lib/phoneNumber"
+import { choiceGroups } from "../lib/sortChoices"
 import type { DraftAnswer } from "./draft"
 
 export type AnswerMap = Record<string, DraftAnswer>
@@ -37,6 +38,14 @@ export function questionPlaceholder(question: PublicQuestionView, locale: Locale
 
 export function optionLabel(option: PublicOptionView, locale: Locale): string {
 	return locale === "fr-CA" ? option.labelFr : option.labelEn
+}
+
+/**
+ * A question's choices as a reader in `locale` sees them: pinned first,
+ * unpinned, pinned last, each group alphabetical in their language (ADR-0136).
+ */
+export function optionGroups(question: PublicQuestionView, locale: Locale): PublicOptionView[][] {
+	return choiceGroups(question.options, locale, (option) => optionLabel(option, locale))
 }
 
 /**

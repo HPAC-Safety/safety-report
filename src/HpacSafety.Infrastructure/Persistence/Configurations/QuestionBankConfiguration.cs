@@ -157,6 +157,11 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 
 		builder.Property(choice => choice.Code).HasMaxLength(128).IsRequired();
 		builder.Property(choice => choice.DisplayOrder).IsRequired();
+
+		// Listed before or after the alphabetical rest, or among them (ADR-0136).
+		// Every choice that existed before pinning is among them.
+		builder.Property(choice => choice.Pin).IsRequired().HasDefaultValue(ChoicePin.None);
+		builder.ToTable(t => t.HasCheckConstraint("ck_question_choices_pin", "pin IN ('none', 'first', 'last')"));
 		builder.Property(choice => choice.AddedByReporter).IsRequired().HasDefaultValue(false);
 		builder.Property(choice => choice.ReporterLocale);
 

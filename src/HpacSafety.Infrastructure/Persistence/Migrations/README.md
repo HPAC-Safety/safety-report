@@ -104,7 +104,8 @@ erDiagram
         char(11) id PK
         char(11) question_id FK
         varchar(128) code UK "unique per question, removed rows included"
-        int display_order
+        int display_order "written, read by no screen (ADR-0136)"
+        varchar(16) pin "none, first, or last (ADR-0136)"
         text label_en "null only on a reporter choice typed in French, or a removed one made for an old answer"
         text label_fr "null only on a reporter choice typed in English, or a removed one made for an old answer"
         boolean added_by_reporter "typed into a type-ahead"
@@ -227,8 +228,12 @@ old. `report_answers` points at a revision, never at a question, so
 a report filed two years ago still renders exactly what it asked ([ADR-0016](../../../../docs/decisions/ADR-0016-data-driven-question-bank.md)).
 
 **Choices belong to the question, not to a revision.** `question_choices` is
-edited in place: adding, rewording, reordering, or removing a choice creates no
-revision and never forks the question. A single-select, multi-select, or
+edited in place: adding, rewording, pinning, or removing a choice creates no
+revision and never forks the question. It has no order of its own: `pin` puts a
+choice before or after the rest, and the reader's browser lists each group
+alphabetically in their language
+([ADR-0136](../../../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
+`display_order` is still written but no screen reads it. A single-select, multi-select, or
 type-ahead answer names its choice through `report_answers.choice_id` and reads
 both labels there, so a choice an answer names is never erased
 ([ADR-0128](../../../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
@@ -305,6 +310,7 @@ this.
 | `20260926004803_MergeTypeAheadValues` | Added `question_choices.merged_into_choice_id`, a restricted self-reference, with `ck_question_choices_merged_is_removed`: a merged value is removed and never names itself. Answers are not touched; they read the value merged into (ADR-0129). |
 | `20260926145501_AddReportPrivateNotes` | Added `report_private_notes` (report, created time, `deleted`) and `report_private_note_revisions` (text up to 4000 characters, the writer's opaque token subject, created time, `deleted`; unique per note and number). Staff-only notes: no view reads them (ADR-0133). |
 | `20260926162317_AddReportPrivateAttachments` | Added `report_private_attachments` (report, blob key, sanitized file name, content type, byte size above zero, optional description, the adder's and remover's opaque token subjects, `deleted`) and a nullable `report_private_note_revisions.attachment_id`, a restricted foreign key to it. Staff-only files: no view reads them (ADR-0135). |
+| `20260926180740_PinChoicesFirstOrLast` | Added `question_choices.pin` (`none`, `first`, or `last`; default `none`, so every existing choice is unpinned) with `ck_question_choices_pin`. Choices are listed pinned first, then alphabetically in the reader's language, then pinned last; `display_order` stays and is no longer read (ADR-0136). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

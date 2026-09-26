@@ -88,7 +88,7 @@ public static class TypeAheadValueEndpoints
 				[
 					.. entry.Question.Choices
 						.Where(target => target.Id != entry.Choice.Id)
-						.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr)),
+						.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr, EnumCode.Of(target.Pin))),
 				]))
 			.ToList();
 
@@ -244,7 +244,11 @@ public sealed record TypeAheadValueView(
 /// <param name="Id">Its identifier.</param>
 /// <param name="LabelEn">Its English wording, or null while it has none.</param>
 /// <param name="LabelFr">Its French wording, or null while it has none.</param>
-public sealed record TypeAheadMergeTarget(string Id, string? LabelEn, string? LabelFr);
+/// <param name="Pin">
+///     <c>first</c>, <c>last</c>, or <c>none</c>, so the page lists the targets as
+///     the form lists the choices (ADR-0136).
+/// </param>
+public sealed record TypeAheadMergeTarget(string Id, string? LabelEn, string? LabelFr, string Pin);
 
 /// <summary>A reviewer's merge of one type-ahead value into another of the same question.</summary>
 /// <param name="IntoId">The value it is merged into: every answer naming the merged value reads this one.</param>

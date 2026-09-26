@@ -19,6 +19,8 @@ export interface PublicOptionView {
 	labelEn: string
 	labelFr: string
 	onlyIn: string | null
+	/** Listed before (`first`) or after (`last`) the alphabetical rest, or among them (`none`) — ADR-0136. */
+	pin: string
 }
 
 /**

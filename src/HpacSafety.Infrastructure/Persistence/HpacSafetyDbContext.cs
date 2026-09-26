@@ -223,6 +223,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		configurationBuilder.Properties<TranslationSource>().HaveConversion<EnumCodeConverter<TranslationSource>>().HaveMaxLength(64);
 		configurationBuilder.Properties<TranslationMode>().HaveConversion<EnumCodeConverter<TranslationMode>>().HaveMaxLength(64);
 		configurationBuilder.Properties<LabelSource>().HaveConversion<EnumCodeConverter<LabelSource>>().HaveMaxLength(16);
+		configurationBuilder.Properties<ChoicePin>().HaveConversion<EnumCodeConverter<ChoicePin>>().HaveMaxLength(16);
 		configurationBuilder.Properties<SummaryTextSource>().HaveConversion<EnumCodeConverter<SummaryTextSource>>().HaveMaxLength(64);
 	}
 

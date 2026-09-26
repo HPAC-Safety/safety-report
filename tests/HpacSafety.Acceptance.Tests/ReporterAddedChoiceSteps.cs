@@ -106,7 +106,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	[Given(@"it offers choices an Administrator wrote and a reporter-added choice")]
 	public void GivenWrittenAndReporterChoices()
 	{
-		_question.Choices.Select(choice => choice.AddedByReporter).ShouldBe([false, false, true]);
+		_question.Choices.Select(choice => choice.AddedByReporter).ShouldBe([false, false, true], ignoreOrder: true);
 	}
 
 	[Given(@"an Administrator removed one of its choices")]
@@ -134,7 +134,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question = Picker(label, "Mara");
 		_answer = new Report(Locale.EnCa, Noon).Answer(_question, label, Noon);
 		_revisionId = _question.CurrentRevision.Id;
-		_named = _question.Choices[0];
+		_named = _question.Choices.Single(choice => choice.LabelEn == label);
 	}
 
 	[Given(@"a single-select question offering ""(.*)"", ""(.*)"", and ""(.*)"" has been answered with ""(.*)""")]
@@ -187,7 +187,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 								  string second,
 								  string third)
 	{
-		_question.Choices.Select(choice => choice.LabelEn).ShouldBe([first, second, third]);
+		_question.Choices.Select(choice => choice.LabelEn).ShouldBe([first, second, third], ignoreOrder: true);
 	}
 
 	[Then(@"""(.*)"" is retired, not erased, and records that ""(.*)"" replaced it")]
@@ -613,14 +613,14 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenRejectedAndUnchanged()
 	{
 		_refusal.ShouldNotBeNull();
-		_question.Choices.Select(choice => choice.Code).ShouldBe(["coopers", "woodside"]);
+		_question.Choices.Select(choice => choice.Code).ShouldBe(["coopers", "woodside"], ignoreOrder: true);
 	}
 
 	[Then(@"the replacement question offers every choice the retired one offered")]
 	public void ThenTheReplacementOffersEveryChoice()
 	{
 		_live.ShouldNotBeSameAs(_question);
-		_live.Choices.Select(choice => choice.Code).ShouldBe(_question.Choices.Select(choice => choice.Code));
+		_live.Choices.Select(choice => choice.Code).ShouldBe(_question.Choices.Select(choice => choice.Code), ignoreOrder: true);
 	}
 
 	[Then(@"the reporter-added choice is still marked as reporter-added")]
@@ -638,9 +638,9 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	[Then(@"the question offers the edited choices")]
 	public void ThenItOffersTheEditedChoices()
 	{
-		_question.Choices.Select(choice => choice.Code).ShouldBe(_edited.Select(option => option.Code));
+		_question.Choices.Select(choice => choice.Code).ShouldBe(_edited.Select(option => option.Code), ignoreOrder: true);
 		_question.Choices.Select(choice => choice.LabelEn)
-			.ShouldBe(_edited.Select(option => option.LabelEn));
+			.ShouldBe(_edited.Select(option => option.LabelEn), ignoreOrder: true);
 	}
 
 	[Then(@"the question keeps its identifier and its current revision")]

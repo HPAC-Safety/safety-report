@@ -66,6 +66,8 @@ export interface OptionView {
 	needsTranslation: boolean
 	/** The language a reporter typed it in, or null. */
 	reporterLocale: string | null
+	/** Listed before (`first`) or after (`last`) the alphabetical rest, or among them (`none`) — ADR-0136. */
+	pin: string
 }
 
 export interface QuestionView {
@@ -124,6 +126,8 @@ export interface OptionInput {
 	 * one; false or absent fixes its wording in place for every answer (ADR-0128).
 	 */
 	replace?: boolean
+	/** `first` or `last` pins the choice to the top or bottom of its list; `none` or absent lists it alphabetically (ADR-0136). */
+	pin?: string
 }
 
 export interface SaveQuestionRequest {
@@ -305,7 +309,7 @@ export interface TypeAheadValueView {
 	answerCount: number
 	addedAt: string | null
 	/** The question's other live values, any of which this one may be merged into. */
-	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null }[]
+	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null; pin: string }[]
 }
 
 export function listTypeAheadValuesAwaitingReview(): Promise<{

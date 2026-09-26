@@ -98,7 +98,11 @@ public sealed record PublicQuestionView(
 /// <param name="LabelEn">The English wording, or the French when there is no English yet.</param>
 /// <param name="LabelFr">The French wording, or the English when there is no French yet.</param>
 /// <param name="OnlyIn">The one locale this choice is worded in, or null when it has both.</param>
-public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn)
+/// <param name="Pin">
+///     <c>first</c>, <c>last</c>, or <c>none</c>: whether the form lists this choice
+///     before or after the alphabetical rest, or among them (ADR-0136).
+/// </param>
+public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin)
 {
 	/// <summary>Flattens one choice for the public form.</summary>
 	public static PublicOptionView Of(QuestionChoice choice)
@@ -110,6 +114,7 @@ public sealed record PublicOptionView(string Id, string Code, string LabelEn, st
 			choice.Code,
 			choice.Label(Locale.EnCa),
 			choice.Label(Locale.FrCa),
-			choice.NeedsTranslation ? (choice.LabelEn is null ? Locale.FrCa : Locale.EnCa).Code : null);
+			choice.NeedsTranslation ? (choice.LabelEn is null ? Locale.FrCa : Locale.EnCa).Code : null,
+			EnumCode.Of(choice.Pin));
 	}
 }

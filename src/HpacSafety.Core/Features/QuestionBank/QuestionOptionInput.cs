@@ -1,8 +1,8 @@
 namespace HpacSafety.Core.Features.QuestionBank;
 
 /// <summary>
-///     One choice in the complete ordered list an Administrator saves for a
-///     question. See <see cref="Question.ReplaceChoices" /> and ADR-0095.
+///     One choice in the complete list an Administrator saves for a question. See
+///     <see cref="Question.ReplaceChoices" />, ADR-0095, and ADR-0136.
 /// </summary>
 /// <param name="Code">The invariant code the choice is recorded under. Never display text.</param>
 /// <param name="LabelEn">
@@ -16,4 +16,13 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     the old option; false fixes its wording in place, for every answer
 ///     (ADR-0128). Ignored for a new option.
 /// </param>
-public sealed record QuestionOptionInput(string Code, string? LabelEn, string? LabelFr, bool Replace = false);
+/// <param name="Pin">
+///     Whether the choice is listed before or after the alphabetical rest, or among
+///     them — the default (ADR-0136).
+/// </param>
+public sealed record QuestionOptionInput(
+	string Code,
+	string? LabelEn,
+	string? LabelFr,
+	bool Replace = false,
+	ChoicePin Pin = ChoicePin.None);

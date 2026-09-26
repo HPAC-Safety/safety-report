@@ -565,3 +565,35 @@ Then("a report that is not published shows no such link", async ({ page }) => {
 	await expect(page.locator('[data-badge="status"]')).toBeVisible()
 	await expect(page.locator("[data-public-link]")).toHaveCount(0)
 })
+
+// ── A multi-select answer listed as the form lists its choices (REQ-QB-153, ADR-0136) ──
+
+Given(
+	"a signed-in Safety Officer opens a report whose multi-select answer names {string}, {string} pinned last, and {string}",
+	async ({ page }, first: string, last: string, second: string) => {
+		const choice = (value: string, pin: string) => ({ value, locale: "en-CA", translatedValue: `${value} (fr)`, translationSource: "choice", pin })
+		const detail = {
+			...DETAIL,
+			id: "choicesaaaa",
+			answers: [
+				{
+					questionKey: "conditions",
+					labelEn: "Which conditions applied?",
+					labelFr: "Quelles conditions?",
+					type: "multi_select",
+					isPrivate: false,
+					// In the order the reporter ticked them, which is not the form's order.
+					values: [choice(first, "none"), choice(last, "last"), choice(second, "none")],
+				},
+			],
+		}
+		await page.route(/\/api\/admin\/reports\/[^/?]+$/, (route) => route.fulfill({ json: detail }))
+		await signInAs(page, "safety_officer")
+		await page.goto("/admin/reports/choicesaaaa")
+	},
+)
+
+Then("the answer is listed {string}, {string}, {string}", async ({ page }, first: string, second: string, third: string) => {
+	await expect(page.locator('[data-question-key="conditions"] dd > span:first-child')).toHaveText([first, second, third])
+})
+

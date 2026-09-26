@@ -69,7 +69,7 @@ public class ChoiceAnswerTests
 
 		// Then
 		answers.Select(answer => answer.ChoiceId!.Value).ShouldBe(chosen);
-		answers.Select(answer => answer.Text).ShouldBe(["Rafales", "Thermique"]);
+		answers.Select(answer => answer.Text).ShouldBe(["Rafales", "Thermique"], ignoreOrder: true);
 	}
 
 	[Fact]
@@ -118,7 +118,7 @@ public class ChoiceAnswerTests
 	public void GivenAChoiceWithBothLanguages_WhenAMachineTranslationArrives_ThenNothingChanges()
 	{
 		// Given — ADR-0129: a person's wording is never overwritten by the Worker
-		var choice = Conditions().Choices[0];
+		var choice = Conditions().Choice("gusty")!;
 
 		// When
 		var supplied = choice.SupplyAutoTranslation("Venteux");

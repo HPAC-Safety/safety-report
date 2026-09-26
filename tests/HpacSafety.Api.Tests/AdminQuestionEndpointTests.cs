@@ -388,7 +388,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		saved.GetProperty("id").GetString().ShouldBe(id);
 		saved.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
 		saved.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())
-			.ShouldBe(["woodside", "mara"]);
+			.ShouldBe(["woodside", "mara"], ignoreOrder: true);
 	}
 
 	[Fact]
@@ -1089,7 +1089,8 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 
 	private static List<string?> Codes(JsonElement question)
 	{
-		return [.. question.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())];
+		// By code: the list has no order of its own (ADR-0136).
+		return [.. question.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString()).Order(StringComparer.Ordinal)];
 	}
 
 	private Task<HttpClient> SignedIn(MemberRole role = MemberRole.Administrator)

@@ -24,7 +24,11 @@ Amended by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is
 Administrator fixes a picker option in place or replaces it) and
 [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md) (a type-ahead value is edited in place, merged, and
 reviewed by a Safety Officer or Administrator; the Worker translates a
-reporter-added value).
+reporter-added value), and by
+[ADR-0136](ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)
+(the list has no order of its own: choices are listed alphabetically in the
+reader's language, apart from those an Administrator pins first or last, so
+"reordering" a choice below means pinning it).
 
 It carries the second argued exception to AGENTS.md invariant 8's ban on
 `DROP TABLE`, after

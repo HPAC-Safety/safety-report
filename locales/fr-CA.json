@@ -247,7 +247,7 @@
       "groupedUnderNone": "Non regroupés",
       "groupedUnderHelp": "Seule une question de groupe peut comporter d'autres questions affichées en dessous.",
       "options": "Choix",
-      "optionsHelp": "L'ajout, la reformulation, le réordonnancement ou la suppression d'un choix modifie cette question sur place et ne crée jamais de nouvelle version. Un choix supprimé disparaît du formulaire; les réponses déjà fournies continuent toutefois de le mentionner.",
+      "optionsHelp": "Le fait d'ajouter, de reformuler, de mettre en évidence ou de supprimer un choix modifie cette question sur place et ne crée jamais de nouvelle version. Les choix sont classés par ordre alphabétique dans la langue du lecteur; l’option « Position » permet d’en placer un en haut ou en bas de la liste. Un choix supprimé disparaît du formulaire; les réponses déjà données continuent toutefois de le mentionner.",
       "optionLabelEn": "Choix (anglais)",
       "optionLabelFr": "Choix (français)",
       "addOption": "Ajouter une option",
@@ -258,6 +258,12 @@
       "awaitingEnglish": "En attente de la version anglaise",
       "awaitingFrench": "En attente de la version française",
       "replace": "Remplacer par une nouvelle option",
+      "position": "Poste",
+      "pin": {
+        "none": "Par ordre alphabétique",
+        "first": "Épingler en haut de la page",
+        "last": "Épingler en bas de page"
+      },
       "replaceHelp": "Une option modifiée est verrouillée : toutes les réponses antérieures affichent la nouvelle formulation. Cochez la case « Remplacer » lorsque l'option a désormais une signification différente; les réponses antérieures conservent l'ancienne option et sa formulation."
     },
     "type": {

@@ -23,7 +23,7 @@ interface StubValue {
 	isRemoved: boolean
 	answerCount: number
 	addedAt: string | null
-	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null }[]
+	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null; pin?: string }[]
 }
 
 const WHERE = { questionId: "q-where", questionLabelEn: "Where did this happen?", questionLabelFr: "Où cela s'est-il produit ?" }
@@ -155,3 +155,34 @@ Then("the API is asked to approve, correct, and remove exactly those values", as
 Then("the page lists no value left to review", async ({ page }) => {
 	await expect(page.getByText("No type-ahead values are waiting for review.")).toBeVisible()
 })
+
+// ------------------------ merge targets listed as the form lists them (ADR-0136) --
+
+Given(
+	"a signed-in Safety Officer reviews a type-ahead value whose question offers {string} pinned last, and {string} and {string} not pinned",
+	async ({ page }, last: string, first: string, second: string) => {
+		// The server's order: unpinned by ID, then pinned last — not alphabetical.
+		const mergeTargets = [
+			{ id: "value-a", labelEn: first, labelFr: null, pin: "none" },
+			{ id: "value-b", labelEn: second, labelFr: null, pin: "none" },
+			{ id: "value-c", labelEn: last, labelFr: null, pin: "last" },
+		]
+		await reviewPage(page, [
+			{ ...WHERE, id: "value-new", labelEn: "Mount Seven", labelFr: null, typedIn: "en-CA", isRemoved: false, answerCount: 1, addedAt: "2026-09-20T12:00:00Z", mergeTargets },
+		])
+		await page.goto("/admin/type-ahead-values")
+	},
+)
+
+Then(
+	"the value can be merged into {string}, {string}, or {string}, in that order",
+	async ({ page }, first: string, second: string, third: string) => {
+		await expect(valueRow(page, "Mount Seven").getByLabel("Merge into…").locator("option")).toHaveText([
+			"Merge into…",
+			first,
+			second,
+			third,
+		])
+	},
+)
+

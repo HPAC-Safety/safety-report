@@ -108,9 +108,14 @@ public class Question
 	/// <summary>Whether a reporter's value this question does not offer is added as a new choice. See ADR-0063, ADR-0095.</summary>
 	public bool TakesReporterAdditions => CurrentRevision.TakesReporterAdditions;
 
-	/// <summary>The choices the form offers today, in order. Removed ones are left out.</summary>
+	/// <summary>
+	///     The choices the form offers today: pinned first, then unpinned, then pinned
+	///     last, each group by identifier — a stable order, not an alphabetical one.
+	///     The reader's browser sorts each group in their language (ADR-0136). Removed
+	///     ones are left out.
+	/// </summary>
 	public IReadOnlyList<QuestionChoice> Choices =>
-		[.. _choices.Where(choice => choice.Deleted is null).OrderBy(choice => choice.DisplayOrder)];
+		[.. InListOrder(_choices.Where(choice => choice.Deleted is null))];
 
 	/// <summary>Every choice this question has ever had, removed ones included. A fork copies all of them.</summary>
 	public IReadOnlyCollection<QuestionChoice> AllChoices => _choices;
@@ -533,9 +538,9 @@ public class Question
 	}
 
 	/// <summary>
-	///     Replaces this question's choices with the complete ordered list an
-	///     Administrator saved, in place — no revision, no fork, however many answers
-	///     the question has (ADR-0095).
+	///     Replaces this question's choices with the complete list an Administrator
+	///     saved, in place — wording, pins, and all — with no revision and no fork,
+	///     however many answers the question has (ADR-0095, ADR-0136).
 	/// </summary>
 	/// <remarks>
 	///     <para>
@@ -587,22 +592,23 @@ public class Question
 			if (replacements[i] is { } replacementCode)
 			{
 				var retired = _choices.Find(choice => choice.Code == codes[i])!;
-				var replacement = QuestionChoice.Written(Id, replacementCode, i, option.LabelEn!, option.LabelFr!);
+				var replacement = QuestionChoice.Written(Id, replacementCode, i, option.LabelEn!, option.LabelFr!, option.Pin);
 				_choices.Add(replacement);
 				retired.ReplaceWith(replacement, at);
 			}
 			else if (_choices.Find(choice => choice.Code == codes[i]) is not { } existing)
 			{
-				_choices.Add(QuestionChoice.Written(Id, codes[i], i, option.LabelEn!, option.LabelFr!));
+				_choices.Add(QuestionChoice.Written(Id, codes[i], i, option.LabelEn!, option.LabelFr!, option.Pin));
 			}
 			else if (existing.Deleted is not null)
 			{
-				existing.Restore(i, option.LabelEn, option.LabelFr);
+				existing.Restore(i, option.LabelEn, option.LabelFr, option.Pin);
 			}
 			else
 			{
 				existing.Relabel(option.LabelEn, option.LabelFr);
 				existing.MoveTo(i);
+				existing.PinTo(option.Pin);
 			}
 		}
 
@@ -879,6 +885,19 @@ public class Question
 		{
 			throw new DomainRuleViolationException($"A {type} question does not have options.");
 		}
+	}
+
+	/// <summary>
+	///     Choices in the order every reader receives them: pinned first, unpinned,
+	///     pinned last, and by identifier within a group (ADR-0136).
+	/// </summary>
+	public static IEnumerable<QuestionChoice> InListOrder(IEnumerable<QuestionChoice> choices)
+	{
+		ArgumentNullException.ThrowIfNull(choices);
+
+		return choices
+			.OrderBy(choice => choice.Pin.Group())
+			.ThenBy(choice => choice.Id.Value, StringComparer.Ordinal);
 	}
 
 	private int NextChoiceOrder()

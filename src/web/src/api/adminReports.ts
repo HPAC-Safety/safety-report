@@ -45,6 +45,8 @@ export interface ReportAnswerValue {
 	locale: string
 	translatedValue: string | null
 	translationSource: string | null
+	/** For a choice answer, its choice's pin — `first`, `last`, or `none` (ADR-0136); null otherwise. */
+	pin: string | null
 }
 
 export interface ReportAnswer {

@@ -41,9 +41,9 @@ public class QuestionChoicesTests
 	}
 
 	[Fact]
-	public void GivenNewQuestion_WhenCreatedWithChoices_ThenOffersThemInOrder()
+	public void GivenNewQuestion_WhenCreatedWithChoices_ThenOffersThem()
 	{
-		Codes(Sites()).ShouldBe(["coopers", "woodside"]);
+		Codes(Sites()).ShouldBe(["coopers", "woodside"], ignoreOrder: true);
 	}
 
 	[Theory]
@@ -64,7 +64,7 @@ public class QuestionChoicesTests
 		live.ShouldBeSameAs(question);
 		question.Deleted.ShouldBeNull();
 		question.CurrentRevision.Id.ShouldBe(revision);
-		Codes(question).ShouldBe(["woodside", "coopers", "mara"]);
+		Codes(question).ShouldBe(["woodside", "coopers", "mara"], ignoreOrder: true);
 		question.Choice("coopers")!.LabelEn.ShouldBe("Cooper's Hill");
 	}
 
@@ -92,10 +92,10 @@ public class QuestionChoicesTests
 		// Then
 		replacement.ShouldNotBeSameAs(question);
 		question.Deleted.ShouldNotBeNull();
-		Codes(replacement).ShouldBe(["coopers", "mount_7"]);
+		Codes(replacement).ShouldBe(["coopers", "mount_7"], ignoreOrder: true);
 		replacement.Choice("mount_7")!.AddedByReporter.ShouldBeTrue();
 		replacement.AllChoices.Single(choice => choice.Code == "woodside").Deleted.ShouldNotBeNull();
-		Codes(question).ShouldBe(["coopers", "mount_7"]);
+		Codes(question).ShouldBe(["coopers", "mount_7"], ignoreOrder: true);
 	}
 
 	[Fact]
@@ -105,8 +105,8 @@ public class QuestionChoicesTests
 
 		var replacement = Edit(question, answered: true, labelEn: "Which site?", options: [new("mara", "Mara", "Mara")]);
 
-		Codes(replacement).ShouldBe(["mara"]);
-		Codes(question).ShouldBe(["coopers", "woodside"]);
+		Codes(replacement).ShouldBe(["mara"], ignoreOrder: true);
+		Codes(question).ShouldBe(["coopers", "woodside"], ignoreOrder: true);
 	}
 
 	[Fact]
@@ -116,7 +116,7 @@ public class QuestionChoicesTests
 
 		question.ReplaceChoices([SiteOptions[0]], At);
 
-		Codes(question).ShouldBe(["coopers"]);
+		Codes(question).ShouldBe(["coopers"], ignoreOrder: true);
 		question.AllChoices.Count.ShouldBe(2);
 		question.OfferedChoiceLabelled("Woodside", Locale.EnCa).ShouldBeNull();
 	}
@@ -129,8 +129,73 @@ public class QuestionChoicesTests
 
 		question.ReplaceChoices(SiteOptions, At);
 
-		Codes(question).ShouldBe(["coopers", "woodside"]);
+		Codes(question).ShouldBe(["coopers", "woodside"], ignoreOrder: true);
 		question.AllChoices.Count.ShouldBe(2);
+	}
+
+	[Fact]
+	public void GivenPinnedChoices_WhenListed_ThenPinnedFirstThenUnpinnedThenPinnedLast()
+	{
+		// Given
+		var question = Question.Create(
+			"country", QuestionType.SingleSelect, "Country", "Pays", At, isActive: true,
+			options:
+			[
+				new QuestionOptionInput("other", "Other", "Autre", Pin: ChoicePin.Last),
+				new QuestionOptionInput("mexico", "Mexico", "Mexique"),
+				new QuestionOptionInput("canada", "Canada", "Canada", Pin: ChoicePin.First),
+			]);
+
+		// When
+		var listed = question.Choices;
+
+		// Then
+		listed.Select(choice => choice.Code).ShouldBe(["canada", "mexico", "other"]);
+	}
+
+	[Fact]
+	public void GivenPinnedChoice_WhenAnsweredQuestionForks_ThenReplacementKeepsThePin()
+	{
+		// Given
+		var question = Sites(QuestionType.SingleSelect);
+		question.ReplaceChoices([SiteOptions[0], SiteOptions[1] with { Pin = ChoicePin.Last }], At);
+
+		// When
+		var replacement = Edit(question, answered: true, labelEn: "Where did it happen?");
+
+		// Then
+		replacement.ShouldNotBeSameAs(question);
+		replacement.Choice("woodside")!.Pin.ShouldBe(ChoicePin.Last);
+		replacement.Choice("coopers")!.Pin.ShouldBe(ChoicePin.None);
+	}
+
+	[Fact]
+	public void GivenRemovedChoice_WhenWrittenAgainPinned_ThenRevivedWithThePin()
+	{
+		// Given
+		var question = Sites(QuestionType.SingleSelect);
+		question.ReplaceChoices([SiteOptions[0]], At);
+
+		// When
+		question.ReplaceChoices([SiteOptions[0], SiteOptions[1] with { Pin = ChoicePin.First }], At);
+
+		// Then
+		question.Choice("woodside")!.Pin.ShouldBe(ChoicePin.First);
+	}
+
+	[Fact]
+	public void GivenPinnedOption_WhenReplaced_ThenReplacementTakesThePinSaved()
+	{
+		// Given
+		var question = Sites(QuestionType.SingleSelect);
+
+		// When
+		question.ReplaceChoices(
+			[SiteOptions[0], new QuestionOptionInput("woodside", "Woodside Ridge", "Crête Woodside", Replace: true, Pin: ChoicePin.Last)],
+			At);
+
+		// Then
+		question.Choices.Single(choice => choice.LabelEn == "Woodside Ridge").Pin.ShouldBe(ChoicePin.Last);
 	}
 
 	[Fact]
@@ -193,7 +258,7 @@ public class QuestionChoicesTests
 		added.ReporterLocale.ShouldBe(Locale.EnCa);
 		added.NeedsTranslation.ShouldBeTrue();
 		question.ReporterChoicesAwaitingReview.ShouldBe(1);
-		Codes(question).ShouldBe(["coopers", "woodside", "mount_7"]);
+		Codes(question).ShouldBe(["coopers", "woodside", "mount_7"], ignoreOrder: true);
 	}
 
 	[Fact]
@@ -247,7 +312,7 @@ public class QuestionChoicesTests
 
 		question.ReplaceChoices([new("mount_7", "Mount 7", null), .. SiteOptions], At);
 
-		Codes(question).ShouldBe(["mount_7", "coopers", "woodside"]);
+		Codes(question).ShouldBe(["mount_7", "coopers", "woodside"], ignoreOrder: true);
 		question.Choice("mount_7")!.NeedsTranslation.ShouldBeTrue();
 	}
 
@@ -283,7 +348,7 @@ public class QuestionChoicesTests
 
 		question.AddChoiceFromReporter("Woodside", Locale.EnCa);
 
-		Codes(question).ShouldBe(["coopers"]);
+		Codes(question).ShouldBe(["coopers"], ignoreOrder: true);
 	}
 
 	[Theory]

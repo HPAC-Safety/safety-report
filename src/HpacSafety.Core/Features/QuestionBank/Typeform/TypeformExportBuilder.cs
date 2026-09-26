@@ -1,3 +1,4 @@
+using System.Globalization;
 using HpacSafety.Core;
 
 namespace HpacSafety.Core.Features.QuestionBank.Typeform;
@@ -27,6 +28,12 @@ namespace HpacSafety.Core.Features.QuestionBank.Typeform;
 /// </remarks>
 public static class TypeformExportBuilder
 {
+	// English, ignoring accents and case, with numbers in numeric order — the
+	// order the English form lists them in (ADR-0136).
+	private static readonly StringComparer EnglishOrder = StringComparer.Create(
+		CultureInfo.GetCultureInfo("en-CA"),
+		CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace | CompareOptions.NumericOrdering);
+
 	/// <summary>Builds the English and French documents for the given live questions.</summary>
 	/// <param name="questions">Every live question, in display order, with its choices loaded.</param>
 	/// <param name="bank">
@@ -49,7 +56,7 @@ public static class TypeformExportBuilder
 		foreach (var question in questions)
 		{
 			var revision = question.CurrentRevision;
-			var choices = question.Choices;
+			var choices = InEnglishOrder(question.Choices);
 
 			var hpac = new TypeformHpacExtension(
 				EnumCode.Of(revision.Type),
@@ -66,6 +73,22 @@ public static class TypeformExportBuilder
 		return (new TypeformDocument(englishFields, []), new TypeformDocument(frenchFields, []));
 	}
 
+	/// <summary>
+	///     Choices as the English form lists them: pinned first, unpinned, pinned
+	///     last, each group alphabetical in English, ties by identifier. Both files
+	///     use this one order, so a choice sits at the same place in each. The import
+	///     pairs choices by ref, never by place (ADR-0136).
+	/// </summary>
+	private static List<QuestionChoice> InEnglishOrder(IReadOnlyList<QuestionChoice> choices)
+	{
+		return [
+			.. choices
+				.OrderBy(choice => choice.Pin.Group())
+				.ThenBy(choice => choice.Label(Locale.EnCa), EnglishOrder)
+				.ThenBy(choice => choice.Id.Value, StringComparer.Ordinal),
+		];
+	}
+
 	private static string? NameOf(TinyId? questionId,
 								  Dictionary<TinyId, string> keysByQuestionId)
 	{
@@ -77,7 +100,7 @@ public static class TypeformExportBuilder
 		string label,
 		string? helpText,
 		QuestionType type,
-		IReadOnlyList<QuestionChoice> choices,
+		List<QuestionChoice> choices,
 		TypeformHpacExtension hpac,
 		bool english)
 	{

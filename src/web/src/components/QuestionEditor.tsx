@@ -14,6 +14,8 @@ import {
 	type SaveQuestionRequest,
 } from "../api/adminQuestions"
 import type { ImportedQuestionDraftView } from "../api/adminTypeformImport"
+import type { Locale } from "../i18n/locales"
+import { sortChoices } from "../lib/sortChoices"
 
 /*
  * The authoring form for one question.
@@ -66,7 +68,21 @@ export function blankDraft(): QuestionDraft {
 	}
 }
 
-export function draftOf(question: QuestionView): QuestionDraft {
+/** The wording a reader in `locale` sees for a choice: their language, or the one it has. */
+function choiceLabel(option: { labelEn: string | null; labelFr: string | null }, locale: Locale): string {
+	return (locale === "fr-CA" ? (option.labelFr || option.labelEn) : (option.labelEn || option.labelFr)) ?? ""
+}
+
+/** The positions an option can take (ADR-0136). */
+const PINS = ["none", "first", "last"] as const
+
+/**
+ * The editor's draft of a question. Its options are listed as the form lists
+ * them — pinned first, then alphabetically in `locale`, then pinned last — once,
+ * here, when the question is opened, and never re-sorted while the
+ * administrator edits (ADR-0136).
+ */
+export function draftOf(question: QuestionView, locale: Locale): QuestionDraft {
 	return {
 		request: {
 			type: question.type,
@@ -83,13 +99,14 @@ export function draftOf(question: QuestionView): QuestionDraft {
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			dependsOnChoiceId: question.dependsOnChoiceId,
 			groupedUnderQuestionId: question.groupedUnderQuestionId,
-			options: question.options.map((option) => ({
+			options: sortChoices(question.options, locale, (option) => choiceLabel(option, locale)).map((option) => ({
 				code: option.code,
 				// A reporter-added choice may be missing one language; the field
 				// shows empty and the server keeps it missing until it is filled.
 				labelEn: option.labelEn ?? "",
 				labelFr: option.labelFr ?? "",
 				addedByReporter: option.addedByReporter,
+				pin: option.pin,
 			})),
 		},
 	}
@@ -174,7 +191,7 @@ export function QuestionEditor({
 	onCancel: () => void
 	onSave: (draft: QuestionDraft) => void
 }) {
-	const { t } = useLocale()
+	const { t, locale } = useLocale()
 	const request = draft.request
 	const takesOptions = OPTION_TYPES.includes(request.type)
 	// Only a picker option is replaced; a type-ahead value is corrected in place
@@ -256,7 +273,7 @@ export function QuestionEditor({
 		}
 	}
 
-	function updateOption(index: number, changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace">>) {
+	function updateOption(index: number, changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace" | "pin">>) {
 		const options = request.options.map((option, current) => (current === index ? { ...option, ...changes } : option))
 		update({ options })
 	}
@@ -502,7 +519,7 @@ export function QuestionEditor({
 								onChange={(event) => update({ dependsOnChoiceId: event.target.value || null })}
 							>
 								<option value="">{t("questions.field.dependsOnOptionNone")}</option>
-								{dependsOnParent.options.map((option) => (
+								{sortChoices(dependsOnParent.options, locale, (option) => option.labelEn ?? option.labelFr ?? "").map((option) => (
 									<option key={option.id} value={option.id}>
 										{option.labelEn}
 									</option>
@@ -591,6 +608,20 @@ export function QuestionEditor({
 										</button>
 									</div>
 								</div>
+								<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
+									{t("questions.choice.position")}
+									<select
+										className="rounded border border-rule bg-surface px-2 py-1 font-sans text-sm text-ink"
+										value={option.pin ?? "none"}
+										onChange={(event) => updateOption(index, { pin: event.target.value })}
+									>
+										{PINS.map((pin) => (
+											<option key={pin} value={pin}>
+												{t(`questions.choice.pin.${pin}`)}
+											</option>
+										))}
+									</select>
+								</label>
 								{canReplace && option.code !== null && (
 									<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
 										<input

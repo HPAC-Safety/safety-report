@@ -88,11 +88,17 @@ public sealed record ReportAnswerView(
 ///     never has one, such as a name, an email, or a date (ADR-0112).
 /// </param>
 /// <param name="TranslationSource"><c>auto</c>, <c>human</c>, or <c>choice</c>, once supplied.</param>
+/// <param name="Pin">
+///     For a choice answer, its choice's pin — <c>first</c>, <c>last</c>, or
+///     <c>none</c> — so a multi-select answer's values are listed as the form lists
+///     its choices (ADR-0136). Null for any other answer.
+/// </param>
 public sealed record ReportAnswerValueView(
 	object Value,
 	string Locale,
 	string? TranslatedValue,
-	string? TranslationSource);
+	string? TranslationSource,
+	string? Pin = null);
 
 /// <summary>The bilingual summary pair with its shared provenance and approval.</summary>
 /// <remarks>

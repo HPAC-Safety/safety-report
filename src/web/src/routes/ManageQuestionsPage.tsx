@@ -31,7 +31,7 @@ import { exportTypeform } from "../api/adminTypeformImport"
  */
 
 export function ManageQuestionsPage() {
-	const { t } = useLocale()
+	const { t, locale } = useLocale()
 	const [questions, setQuestions] = useState<QuestionView[]>([])
 	const [canTranslate, setCanTranslate] = useState(false)
 	const [draft, setDraft] = useState<QuestionDraft | null>(null)
@@ -239,7 +239,7 @@ export function ManageQuestionsPage() {
 									onEdit={() => {
 										setImporting(false)
 										setEditing(question.id)
-										setDraft(draftOf(question))
+										setDraft(draftOf(question, locale))
 									}}
 									onDelete={() => void remove(question)}
 								/>

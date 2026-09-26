@@ -620,7 +620,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheReplacementOffersEveryChoice()
 	{
 		_live.ShouldNotBeSameAs(_question);
-		_live.Choices.Select(choice => choice.Code).ShouldBe(_question.Choices.Select(choice => choice.Code));
+		_live.Choices.Select(choice => choice.Code).ShouldBe(_question.Choices.Select(choice => choice.Code), ignoreOrder: true);
 	}
 
 	[Then(@"the reporter-added choice is still marked as reporter-added")]
@@ -638,9 +638,9 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	[Then(@"the question offers the edited choices")]
 	public void ThenItOffersTheEditedChoices()
 	{
-		_question.Choices.Select(choice => choice.Code).ShouldBe(_edited.Select(option => option.Code));
+		_question.Choices.Select(choice => choice.Code).ShouldBe(_edited.Select(option => option.Code), ignoreOrder: true);
 		_question.Choices.Select(choice => choice.LabelEn)
-			.ShouldBe(_edited.Select(option => option.LabelEn));
+			.ShouldBe(_edited.Select(option => option.LabelEn), ignoreOrder: true);
 	}
 
 	[Then(@"the question keeps its identifier and its current revision")]

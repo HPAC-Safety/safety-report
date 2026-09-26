@@ -456,6 +456,12 @@ jobs:
           echo ""
           echo "Cobertura totals:"
           grep -o '<coverage [^>]*>' ./artifacts/report/Cobertura.xml 2>/dev/null || true
+          echo ""
+          echo "Per-project reports (packages each one carries):"
+          for f in $(find ./artifacts/coverage -name coverage.cobertura.xml | sort); do
+            echo "$f: $(grep -o '<package name="[^"]*"' "$f" | sed 's/.*name="//; s/"$//' | sort | tr '\n' ' ')"
+          done
+          echo "ci-local:reports=$(find ./artifacts/coverage -name coverage.cobertura.xml | wc -l)"
           echo "ci-local:coverage:end"
 
       # Temporary: skips under act (nektos/act#6022). Remove `&& !env.ACT` when

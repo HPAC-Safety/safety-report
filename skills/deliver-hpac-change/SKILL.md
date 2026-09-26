@@ -130,11 +130,12 @@ names and step numbers.
      the machine's lock.
    - Token: `HPAC_ACT_TOKEN`, a fine-grained read-only token for this
      repository (Actions, Contents, Metadata: read). Without it the script
-     uses `gh auth token` and warns.
+     exits 2; `--allow-gh-token` opts in to the `gh` login, which can write.
    - One job: `--job <id>`, repeatable (a body edit: `--job linked-issue
      --job feature-coverage`).
-   - Exit 0 passed, 1 a job failed, 2 a precondition failed, 3 the lock timed
-     out. Full logs: `artifacts/ci-local/`.
+   - Exit 0 passed, 1 a job failed (or coverage lost a per-project report),
+     2 a precondition or setup step failed, 3 the lock timed out. Full logs:
+     `artifacts/ci-local/`.
    - Local green is necessary, not sufficient; step 9 still applies.
 4. Relabel: `tools/session-label.sh "#<number> · PR #<pr> <short-description>"`.
    The repository squash-merges and deletes the branch once required checks

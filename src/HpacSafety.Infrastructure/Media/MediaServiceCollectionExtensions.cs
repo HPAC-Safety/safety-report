@@ -1,6 +1,7 @@
 using Amazon.Runtime;
 using Amazon.S3;
 using HpacSafety.Core;
+using HpacSafety.Core.Features.PrivateAttachments;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Storage;
 using Microsoft.Extensions.Configuration;
@@ -47,6 +48,10 @@ public static class MediaServiceCollectionExtensions
 		services.Configure<MediaPolicyOptions>(policySection);
 		services.AddSingleton(provider => provider.GetRequiredService<IOptions<MediaPolicyOptions>>().Value.ToPolicy());
 
+		// A staff private attachment's cap, separate from the reporter caps (ADR-0135).
+		services.Configure<PrivateAttachmentOptions>(configuration.GetSection(PrivateAttachmentOptions.SectionName));
+		services.AddSingleton(provider => provider.GetRequiredService<IOptions<PrivateAttachmentOptions>>().Value.ToPolicy());
+
 		services.AddSingleton(MediaSnifferChain.Default());
 		services.AddSingleton<IMediaSniffer>(provider => provider.GetRequiredService<MediaSnifferChain>());
 		services.AddSingleton(provider =>
@@ -75,6 +80,7 @@ public static class MediaServiceCollectionExtensions
 		services.AddScoped<UploadLink>();
 		services.AddScoped<ReviewerMediaLink>();
 		services.AddScoped<PublicMediaLink>();
+		services.AddScoped<PrivateAttachmentLink>();
 
 		return services;
 	}

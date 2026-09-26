@@ -1,6 +1,7 @@
 using System.Text.Json;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Outbox;
+using HpacSafety.Core.Features.PrivateAttachments;
 using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
@@ -229,6 +230,56 @@ public sealed class SummarizationOutboxSteps : IAsyncDisposable
 
 		(await _db!.OutboxMessages.IgnoreQueryFilters()
 			.CountAsync(message => named.Contains(message.AggregateId) || payloads.Contains(message.Payload)))
+			.ShouldBe(0);
+	}
+
+	// --- REQ-MOD-113: a private attachment never reaches the model (ADR-0135) ---
+
+	private const string PrivateAttachmentName = "Synthetic coroner report for Quill Marrow.zip";
+	private const string PrivateAttachmentDescription = "Synthetic: sent by the coroner's office.";
+	private PrivateAttachment? _attachment;
+
+	[Given(@"a consented report carrying one private attachment is due for summarization")]
+	public async Task GivenAConsentedReportWithAPrivateAttachment()
+	{
+		_db = await WorkerDatabase.NewMigratedContext();
+		_report = await Seed(_db);
+		var id = TinyId.New();
+		_attachment = PrivateAttachment.Add(
+			id,
+			_report.Id,
+			BlobKey.For(_report.Id.Value, MediaCompartment.Private, id.Value),
+			PrivateAttachmentName,
+			"application/zip",
+			2048,
+			PrivateAttachmentDescription,
+			"officer:synthetic",
+			At);
+		_db.PrivateAttachments.Add(_attachment);
+		await _db.SaveChangesAsync();
+	}
+
+	[Then(@"the model input carries nothing from the private attachment")]
+	public void ThenTheModelInputCarriesNothingFromTheAttachment()
+	{
+		_summarizer!.CallCount.ShouldBe(1);
+		var input = JsonSerializer.Serialize(_summarizer.LastInput);
+
+		input.ShouldContain("hard landing");
+		input.ShouldNotContain("Quill Marrow");
+		input.ShouldNotContain("coroner", Case.Insensitive);
+		input.ShouldNotContain(_attachment!.Id.Value);
+		input.ShouldNotContain("officer:synthetic");
+		input.ShouldNotContain("private/");
+	}
+
+	[Then(@"no outbox message names the private attachment")]
+	public async Task ThenNoOutboxMessageNamesTheAttachment()
+	{
+		var id = _attachment!.Id;
+
+		(await _db!.OutboxMessages.IgnoreQueryFilters()
+			.CountAsync(message => message.AggregateId == id || message.Payload == id.Value))
 			.ShouldBe(0);
 	}
 

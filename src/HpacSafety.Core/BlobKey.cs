@@ -1,11 +1,12 @@
 namespace HpacSafety.Core;
 
 /// <summary>
-///     The name of one object in private storage, in one of exactly three shapes:
+///     The name of one object in private storage, in one of exactly four shapes:
 ///     <code>
 /// quarantine/&lt;upload id&gt;              an unclaimed upload, expired by lifecycle rule
 /// &lt;report id&gt;/original/&lt;file&gt;     the private source record
 /// &lt;report id&gt;/stripped/&lt;file&gt;     what a reviewer is shown
+/// &lt;report id&gt;/private/&lt;file&gt;      a staff-only private attachment (ADR-0135)
 /// </code>
 ///     <para>
 ///         All of a report's media lives in a directory named with that report's id, so
@@ -34,6 +35,9 @@ public readonly record struct BlobKey
 
 	/// <summary>The path segment the stripped derivative lives under.</summary>
 	public const string StrippedSegment = "stripped";
+
+	/// <summary>The path segment a staff-only private attachment lives under (ADR-0135).</summary>
+	public const string PrivateSegment = "private";
 
 	/// <summary>
 	///     Length of a report id. Identifiers in this system are "tiny ids": 11
@@ -70,8 +74,10 @@ public readonly record struct BlobKey
 	///     Whether a browser may be handed a pre-signed PUT to this key. Only a
 	///     quarantined upload, named by nothing but its minted upload id, may be
 	///     (ADR-0126): a report's own compartments are written by this system alone.
-	///     A compartment that one day takes direct uploads is added here, in the one
-	///     place every adapter asks.
+	///     A staff private attachment is uploaded to quarantine too, and only then
+	///     copied into its report's private compartment (ADR-0135). A compartment
+	///     that one day takes direct uploads is added here, in the one place every
+	///     adapter asks.
 	/// </summary>
 	public bool AcceptsDirectUpload => Compartment == MediaCompartment.Quarantine;
 
@@ -92,7 +98,7 @@ public readonly record struct BlobKey
 		return new BlobKey(null, MediaCompartment.Quarantine, uploadId.Value);
 	}
 
-	/// <summary>Builds a key for one report's media in its original or stripped compartment.</summary>
+	/// <summary>Builds a key for one report's media in its original, stripped, or private compartment.</summary>
 	public static BlobKey For(string reportId,
 							  MediaCompartment compartment,
 							  string fileName)
@@ -126,7 +132,7 @@ public readonly record struct BlobKey
 		return new BlobKey(reportId, compartment, fileName);
 	}
 
-	/// <summary>Parses a stored key, throwing when it is not one of the three shapes.</summary>
+	/// <summary>Parses a stored key, throwing when it is not one of the four shapes.</summary>
 	public static BlobKey Parse(string? candidate)
 	{
 		return TryParse(candidate, out var key)
@@ -172,6 +178,7 @@ public readonly record struct BlobKey
 		{
 			OriginalSegment => (MediaCompartment?)MediaCompartment.Original,
 			StrippedSegment => MediaCompartment.Stripped,
+			PrivateSegment => MediaCompartment.Private,
 			_ => null,
 		};
 
@@ -216,7 +223,12 @@ public readonly record struct BlobKey
 	{
 		// Only a report's compartments reach here: For refuses quarantine and
 		// any undefined value, and Value writes a quarantine key itself.
-		return compartment == MediaCompartment.Original ? OriginalSegment : StrippedSegment;
+		return compartment switch
+		{
+			MediaCompartment.Original => OriginalSegment,
+			MediaCompartment.Stripped => StrippedSegment,
+			_ => PrivateSegment,
+		};
 	}
 
 	// TEMPORARY: the shape is duplicated here only because the shared TinyId

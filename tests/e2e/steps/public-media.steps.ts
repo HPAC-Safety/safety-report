@@ -317,7 +317,7 @@ Given("a published report has a public {word} and a hidden {word}", async ({ pag
 
 When("a safety officer opens the report in the admin area", async ({ page }) => {
 	await page.goto(`/admin/reports/${ADMIN_REPORT.id}`)
-	await expect(page.getByRole("heading", { level: 2, name: "Attachments" })).toBeVisible()
+	await expect(page.getByRole("heading", { level: 2, name: "Attachments", exact: true })).toBeVisible()
 })
 
 Then("the public {word} reads as shown publicly and offers to hide it", async ({ page }, _kind: string) => {

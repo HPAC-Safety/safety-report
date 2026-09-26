@@ -116,6 +116,7 @@ app.MapAdminTypeAheadValues();
 
 // Staff-only notes on a report; nothing else reads them (ADR-0133).
 app.MapAdminPrivateNotes();
+app.MapAdminPrivateAttachments();
 
 // A safety officer or administrator's only two ways to see an uploaded file.
 app.MapAdminAttachments();

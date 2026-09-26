@@ -395,3 +395,69 @@ Scenario: A published QuickTime video is served as an MP4
   Given a published report shows a processed QuickTime video
   When an anonymous visitor asks for the video's public link
   Then the URL serves the derivative inline, as video/mp4
+
+@REQ-MED-046
+Scenario Outline: Staff mint a private upload for a file of any type
+  Given a pending report that staff add private attachments to
+  When a safety officer declares a <declared> file of <size> for that report's private attachments
+  Then the API mints a pre-signed PUT to a quarantine key named only by a new upload ID
+  And the PUT is signed for the content type <signed> and exactly <size>
+  And nothing about the upload is written to the database
+
+Examples:
+  | declared                 | size   | signed                   |
+  | application/zip          | 1 GB   | application/zip          |
+  | video/x-matroska         | 300 MB | video/x-matroska         |
+  | application/x-msdownload | 10 KB  | application/x-msdownload |
+  | typeless                 | 10 KB  | application/octet-stream |
+  | malformed-type           | 10 KB  | application/octet-stream |
+
+@REQ-MED-047
+Scenario Outline: A private upload larger than the configured cap is refused before anything is minted
+  Given the private attachment cap is configured as <cap>
+  And a pending report that staff add private attachments to
+  When a safety officer declares a file of <size> for that report's private attachments
+  Then the API answers 400 with the reason <reason> and mints nothing
+  And a file of exactly <cap> is minted
+
+Examples:
+  | cap  | size               | reason    |
+  | 1 GB | 1 GB plus one byte | too_large |
+  | 1 MB | 1 MB plus one byte | too_large |
+  | 1 GB | zero bytes         | empty     |
+
+@REQ-MED-048
+Scenario: Adding a private attachment stores its bytes unchanged in the report's private compartment
+  Given a safety officer's browser has sent a zip archive through a private upload minted for a report
+  When the safety officer adds that upload to the report as "Coroner report.zip"
+  Then its bytes sit, byte for byte and nowhere else on the report, at the report's private key named by the attachment's id
+  And the upload no longer sits in quarantine
+  And no reporter attachment, derivative, or outbox message was created for it
+
+@REQ-MED-049
+Scenario: A private attachment downloads unchanged under its sanitized name, and each download is audited
+  Given a report carries the private attachment "Coroner: report?.zip"
+  When a safety officer asks for its download link twice
+  Then each link is a pre-signed GET that lives at most 15 minutes and forces a download named "Coroner report.zip"
+  And the bytes each link serves are identical to those uploaded
+  And two DownloadedPrivateAttachment audit entries record the safety officer's token subject and the attachment
+
+@REQ-MED-050
+Scenario: An unclaimed private upload waits in quarantine and expires with every other upload
+  Given a safety officer's browser has sent a file through a private upload minted for a report
+  Then its bytes wait under the quarantine key named by the minted upload ID, with no row or report linked to them
+  And that key falls under the storage lifecycle rule that expires every unclaimed quarantine upload
+
+@REQ-MED-051
+Scenario: Only the private attachment link signs a URL for the private compartment
+  Given a report carries the private attachment "Coroner: report?.zip"
+  Then the reviewer media link and the public media link both refuse the private attachment's key
+  And the private attachment link refuses every key outside the private compartment
+  And the reviewer attachment endpoints answer 404 for the private attachment's id
+
+@REQ-MED-052
+Scenario: Nothing anonymizes a private attachment
+  Given a safety officer adds a JPEG photo carrying its camera's location metadata as a private attachment
+  When the safety officer downloads it
+  Then the stored bytes and the downloaded bytes are identical to those uploaded, location metadata included
+  And no derivative of it exists and no outbox message asks for one

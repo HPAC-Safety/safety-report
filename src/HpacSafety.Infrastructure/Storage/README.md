@@ -22,6 +22,16 @@ every version
 Unclaimed uploads, and those left behind by a failed submission, expire by
 lifecycle rule.
 
+A staff private attachment uploads the same way, to the same quarantine,
+through `POST /api/admin/reports/{reportId}/private-attachments/uploads`; its
+claim copies it to `<report id>/private/<attachment id>`, unchanged. Only
+`PrivateAttachmentLink` signs a GET for that compartment, and only for it
+([ADR-0135](../../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
+
+Every pre-signed URL lives at most fifteen minutes by the URL's own
+`X-Amz-Expires`: the SDK signs from its clock-skew-corrected time, so a URL it
+signed a second past the cap is signed again that much earlier.
+
 Reviewer access is limited to verified image/video derivatives and validated
 document originals. Documents are forced downloads; originals are never used as
 a fallback preview. Report-linked objects remain private after soft deletion.

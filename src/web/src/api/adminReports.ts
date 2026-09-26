@@ -1,5 +1,6 @@
 import { clearSession } from "../auth/session"
 import { ApiError, authorization } from "./adminQuestions"
+import { deleteUpload } from "./uploads"
 
 /** A report's workflow status, as the API's lowercase code. */
 export type ReportStatus =
@@ -233,6 +234,15 @@ export interface PrivateNote {
 	createdAt: string
 	edited: boolean
 	isMine: boolean
+	/** The private attachment the current text refers to, if any (ADR-0135). */
+	attachment: PrivateNoteAttachment | null
+}
+
+/** The private attachment a note's revision refers to, marked when it was removed since. */
+export interface PrivateNoteAttachment {
+	id: string
+	fileName: string
+	removed: boolean
 }
 
 /** One revision in a note's history. */
@@ -242,6 +252,7 @@ export interface PrivateNoteRevision {
 	writtenBy: string
 	writtenAt: string
 	isMine: boolean
+	attachment: PrivateNoteAttachment | null
 }
 
 const notesPath = (reportId: string) => `${reportPath(reportId)}/private-notes`
@@ -250,14 +261,19 @@ export function listPrivateNotes(reportId: string): Promise<PrivateNote[]> {
 	return get(notesPath(reportId))
 }
 
-export function addPrivateNote(reportId: string, text: string): Promise<PrivateNote> {
-	return post(notesPath(reportId), { text })
+export function addPrivateNote(reportId: string, text: string, attachmentId: string | null = null): Promise<PrivateNote> {
+	return post(notesPath(reportId), { text, attachmentId })
 }
 
-export function editPrivateNote(reportId: string, note: PrivateNote, text: string): Promise<PrivateNote> {
+export function editPrivateNote(
+	reportId: string,
+	note: PrivateNote,
+	text: string,
+	attachmentId: string | null = null,
+): Promise<PrivateNote> {
 	return call(`${notesPath(reportId)}/${encodeURIComponent(note.id)}`, {
 		method: "PUT",
-		body: JSON.stringify({ text, revision: note.revision }),
+		body: JSON.stringify({ text, revision: note.revision, attachmentId }),
 	})
 }
 
@@ -267,4 +283,119 @@ export function removePrivateNote(reportId: string, noteId: string): Promise<voi
 
 export function privateNoteHistory(reportId: string, noteId: string): Promise<PrivateNoteRevision[]> {
 	return get(`${notesPath(reportId)}/${encodeURIComponent(noteId)}/revisions`)
+}
+
+/** The longest private-attachment description the API accepts (ADR-0135). */
+export const PRIVATE_ATTACHMENT_DESCRIPTION_MAX_LENGTH = 500
+
+/** The largest private attachment the API accepts by default (HpacSafety:Media:PrivateAttachments:MaxByteSize). */
+export const PRIVATE_ATTACHMENT_MAX_BYTES = 1024 * 1024 * 1024
+
+/** A staff-only file on a report (ADR-0135). */
+export interface PrivateAttachment {
+	id: string
+	fileName: string
+	contentType: string
+	byteSize: number
+	description: string | null
+	/** The adder, as an opaque token subject. */
+	addedBy: string
+	addedAt: string
+	isMine: boolean
+}
+
+interface MintedPrivateUpload {
+	uploadId: string
+	contentType: string
+	uploadUrl: string
+}
+
+/** Why a private upload failed, for the section's message. */
+export class PrivateUploadError extends Error {
+	constructor(readonly reason: "too_large" | "empty" | "storage" | "network" | "claim") {
+		super(reason)
+		this.name = "PrivateUploadError"
+	}
+}
+
+const privateAttachmentsPath = (reportId: string) => `${reportPath(reportId)}/private-attachments`
+
+export function listPrivateAttachments(reportId: string): Promise<PrivateAttachment[]> {
+	return get(privateAttachmentsPath(reportId))
+}
+
+export function removePrivateAttachment(reportId: string, attachmentId: string): Promise<void> {
+	return call(`${privateAttachmentsPath(reportId)}/${encodeURIComponent(attachmentId)}`, { method: "DELETE" })
+}
+
+/** A short-lived link that downloads the file, unchanged, under its name. Each one is audited. */
+export function privateAttachmentLink(reportId: string, attachmentId: string): Promise<AttachmentLink> {
+	return get(`${privateAttachmentsPath(reportId)}/${encodeURIComponent(attachmentId)}/download`)
+}
+
+/**
+ * Adds one file: mints a pre-signed PUT to quarantine, sends the file straight
+ * to storage with progress, then claims it onto the report (ADR-0135). The API
+ * never holds the bytes. Aborting `signal` cancels the send, and an upload that
+ * was minted but never claimed is erased; the lifecycle rule is the backstop.
+ */
+export async function uploadPrivateAttachment(
+	reportId: string,
+	file: File,
+	description: string,
+	onProgress: (fraction: number) => void,
+	signal: AbortSignal,
+): Promise<PrivateAttachment> {
+	let minted: MintedPrivateUpload
+	try {
+		minted = await post<MintedPrivateUpload>(`${privateAttachmentsPath(reportId)}/uploads`, {
+			contentType: file.type,
+			byteSize: file.size,
+		})
+	} catch (cause) {
+		if (cause instanceof ApiError && cause.status === 400) {
+			throw new PrivateUploadError(file.size === 0 ? "empty" : "too_large")
+		}
+		throw cause
+	}
+
+	try {
+		await put(minted, file, onProgress, signal)
+	} catch (cause) {
+		void deleteUpload(minted.uploadId)
+		throw cause
+	}
+
+	try {
+		return await post<PrivateAttachment>(privateAttachmentsPath(reportId), {
+			uploadId: minted.uploadId,
+			fileName: file.name,
+			description: description.trim() || null,
+		})
+	} catch {
+		void deleteUpload(minted.uploadId)
+		throw new PrivateUploadError("claim")
+	}
+}
+
+/**
+ * PUTs the file with XMLHttpRequest rather than fetch, because only XHR reports
+ * upload progress. No Authorization header: the signature in the URL is the
+ * only credential storage takes.
+ */
+function put(minted: MintedPrivateUpload, file: File, onProgress: (fraction: number) => void, signal: AbortSignal) {
+	return new Promise<void>((resolve, reject) => {
+		const request = new XMLHttpRequest()
+		request.open("PUT", minted.uploadUrl)
+		request.setRequestHeader("Content-Type", minted.contentType)
+		request.upload.onprogress = (event) => {
+			if (event.lengthComputable) onProgress(event.loaded / event.total)
+		}
+		request.onload = () =>
+			Math.floor(request.status / 100) === 2 ? resolve() : reject(new PrivateUploadError("storage"))
+		request.onerror = () => reject(new PrivateUploadError("network"))
+		request.onabort = () => reject(new DOMException("Aborted", "AbortError"))
+		signal.addEventListener("abort", () => request.abort(), { once: true })
+		request.send(file)
+	})
 }

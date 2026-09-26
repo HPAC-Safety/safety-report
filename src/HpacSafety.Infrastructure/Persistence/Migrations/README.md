@@ -67,6 +67,8 @@ erDiagram
     report_answers ||--o{ report_files : "uploaded for"
     reports ||--o{ report_private_notes : "staff-only notes (ADR-0133)"
     report_private_notes ||--|{ report_private_note_revisions : "every edit"
+    reports ||--o{ report_private_attachments : "staff-only files (ADR-0135)"
+    report_private_attachments |o--o{ report_private_note_revisions : "referred to by"
 
     questions {
         char(11) id PK
@@ -141,8 +143,23 @@ erDiagram
         int number UK "unique per note, from 1"
         varchar(4000) text
         varchar(256) author_subject "opaque token subject (ADR-0065)"
+        char(11) attachment_id FK "nullable, same report"
         timestamptz created_at
         timestamptz deleted
+    }
+
+    report_private_attachments {
+        char(11) id PK
+        char(11) report_id FK
+        varchar(512) blob_key UK "report_id/private/id"
+        varchar(255) original_file_name "sanitized"
+        varchar(128) content_type "as uploaded, never sniffed"
+        bigint byte_size "above zero"
+        varchar(500) description "nullable"
+        varchar(256) added_by_subject "opaque token subject"
+        timestamptz added_at
+        varchar(256) deleted_by_subject "nullable"
+        timestamptz deleted "removed, or its report deleted"
     }
 
     report_answers {
@@ -287,6 +304,7 @@ this.
 | `20260926001923_ReplacePickerOptionsAndNameConditionsByChoice` | Added `question_choices.replaced_by_choice_id` (a replaced picker option names its replacement) and `question_revisions.depends_on_choice_id`, backfilled from `depends_on_option_code` by the parent's choice with that code; the script stops the migration if any code resolves to no choice, and only then is `depends_on_option_code` dropped — nothing it held is lost. Both new columns are restricted foreign keys to `question_choices` (ADR-0128). The backfill is `Sql/20260926001923_ReplacePickerOptionsAndNameConditionsByChoice.sql`; `Down` puts the codes back first. |
 | `20260926004803_MergeTypeAheadValues` | Added `question_choices.merged_into_choice_id`, a restricted self-reference, with `ck_question_choices_merged_is_removed`: a merged value is removed and never names itself. Answers are not touched; they read the value merged into (ADR-0129). |
 | `20260926145501_AddReportPrivateNotes` | Added `report_private_notes` (report, created time, `deleted`) and `report_private_note_revisions` (text up to 4000 characters, the writer's opaque token subject, created time, `deleted`; unique per note and number). Staff-only notes: no view reads them (ADR-0133). |
+| `20260926162317_AddReportPrivateAttachments` | Added `report_private_attachments` (report, blob key, sanitized file name, content type, byte size above zero, optional description, the adder's and remover's opaque token subjects, `deleted`) and a nullable `report_private_note_revisions.attachment_id`, a restricted foreign key to it. Staff-only files: no view reads them (ADR-0135). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

@@ -580,6 +580,42 @@
     "revision": "Version {number} — {writer}, {at}",
     "remove": "Supprimer",
     "keep": "Conserver",
-    "confirmRemove": "Souhaitez-vous supprimer cette note? Elle ne pourra pas être récupérée."
+    "confirmRemove": "Souhaitez-vous supprimer cette note? Elle ne pourra pas être récupérée.",
+    "refersTo": "Fait référence à",
+    "attachmentRemoved": "{name} (supprimé)",
+    "attachmentLabel": "Fait référence à une pièce jointe privée (facultative)",
+    "noAttachment": "Aucune pièce jointe"
+  },
+  "privateAttachments": {
+    "title": "Pièces jointes privées",
+    "explanation": "Documents réservés exclusivement aux agents de sécurité et aux administrateurs, tels que les signalements du coroner ou de la police. Ils ne sont jamais publiés, résumés ni modifiés de quelque manière que ce soit.",
+    "listLabel": "Pièces jointes privées jointes au présent signalement",
+    "loading": "Chargement des pièces jointes privées…",
+    "empty": "Il n'y a pas encore de pièces jointes privées.",
+    "fileLabel": "Ajouter une pièce jointe privée",
+    "limit": "Tout type de fichier, jusqu’à {max}.",
+    "descriptionLabel": "Description (facultative)",
+    "descriptionLength": "{count} {max}s caractères",
+    "add": "Ajouter une pièce jointe",
+    "progressLabel": "Progression du téléversement",
+    "progress": "Téléversement en cours… {percent}%",
+    "cancel": "Annuler le téléversement",
+    "cancelled": "Le téléversement a été annulé.",
+    "added": "Ajouté par {adder}, {at}",
+    "author": {
+      "you": "Vous"
+    },
+    "download": "Télécharger",
+    "remove": "Supprimer",
+    "keep": "Conserver",
+    "confirmRemove": "Souhaitez-vous supprimer cette pièce jointe? Elle ne pourra pas être récupérée.",
+    "error": {
+      "load": "Les pièces jointes privées n'ont pas pu être chargées. Veuillez actualiser la page pour réessayer.",
+      "upload": "Ce fichier n'a pas pu être ajouté. Veuillez réessayer.",
+      "too_large": "Ce fichier est plus volumineux que {max}.",
+      "empty": "Ce fichier est vide.",
+      "download": "Le téléchargement n'a pas pu être lancé. Veuillez réessayer.",
+      "remove": "Il n'a pas été possible de supprimer cette pièce jointe. Veuillez réessayer."
+    }
   }
 }

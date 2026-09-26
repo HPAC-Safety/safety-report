@@ -1,7 +1,7 @@
 namespace HpacSafety.Core;
 
 /// <summary>
-///     Which of a report's three media compartments a blob lives in. The
+///     Which of a report's media compartments a blob lives in. The
 ///     compartment is part of the key, so "is this safe to show a reviewer?" is
 ///     answerable from the key alone rather than from a database lookup that a
 ///     caller might forget. See ADR-0026.
@@ -29,4 +29,13 @@ public enum MediaCompartment
 	///     <see cref="Features.Reporting.ReviewerMediaLink" /> will issue a URL for.
 	/// </summary>
 	Stripped = 2,
+
+	/// <summary>
+	///     A staff-only private attachment on a report:
+	///     <c>&lt;report id&gt;/private/&lt;attachment id&gt;</c> (ADR-0135). Stored
+	///     exactly as a safety officer or administrator uploaded it, and signed a
+	///     URL for only by <see cref="Features.PrivateAttachments.PrivateAttachmentLink" />.
+	///     No reporter or public code path names it.
+	/// </summary>
+	Private = 3,
 }

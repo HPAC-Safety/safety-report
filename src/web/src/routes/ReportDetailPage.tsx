@@ -21,6 +21,7 @@ import { ReviewActions } from "../components/ReviewActions"
 import { formatAnswer, isLanguageNeutral } from "../lib/formatAnswer"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
 import { PrivateNotes } from "../components/PrivateNotes"
+import { PrivateAttachments, usePrivateAttachments } from "../components/PrivateAttachments"
 
 /*
  * One report as a reviewer judges it: every question as it was asked, with
@@ -40,6 +41,7 @@ export function ReportDetailPage() {
 	const [busy, setBusy] = useState(false)
 	const [confirmingDelete, setConfirmingDelete] = useState(false)
 	const [reloads, setReloads] = useState(0)
+	const privateAttachments = usePrivateAttachments(reportId)
 
 	const reload = useCallback(() => {
 		setStale(false)
@@ -356,7 +358,8 @@ export function ReportDetailPage() {
 						</section>
 					)}
 
-					<PrivateNotes reportId={report.id} />
+					<PrivateAttachments reportId={report.id} state={privateAttachments} />
+					<PrivateNotes reportId={report.id} attachments={privateAttachments.attachments ?? []} />
 				</>
 			)}
 		</main>

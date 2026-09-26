@@ -76,7 +76,6 @@ public sealed class S3BlobStore : IBlobStore
 			BucketName = _bucketName,
 			Key = key.Value,
 			Verb = HttpVerb.GET,
-			Expires = ExpiryFor(lifetime),
 			Protocol = ConfiguredProtocol,
 		};
 
@@ -86,7 +85,7 @@ public sealed class S3BlobStore : IBlobStore
 		// storage layer rather than relying on every caller to remember it.
 		request.ResponseHeaderOverrides.ContentDisposition = AttachmentDisposition.For(downloadFileName);
 
-		var url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+		var url = await Presign(request, lifetime).ConfigureAwait(false);
 
 		return new Uri(url);
 	}
@@ -104,7 +103,6 @@ public sealed class S3BlobStore : IBlobStore
 			BucketName = _bucketName,
 			Key = key.Value,
 			Verb = HttpVerb.GET,
-			Expires = ExpiryFor(lifetime),
 			Protocol = ConfiguredProtocol,
 		};
 
@@ -114,7 +112,7 @@ public sealed class S3BlobStore : IBlobStore
 		request.ResponseHeaderOverrides.ContentDisposition = "inline";
 		request.ResponseHeaderOverrides.ContentType = contentType;
 
-		var url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+		var url = await Presign(request, lifetime).ConfigureAwait(false);
 
 		return new Uri(url);
 	}
@@ -141,7 +139,6 @@ public sealed class S3BlobStore : IBlobStore
 			BucketName = _bucketName,
 			Key = key.Value,
 			Verb = HttpVerb.PUT,
-			Expires = ExpiryFor(lifetime),
 			Protocol = ConfiguredProtocol,
 			ContentType = contentType,
 		};
@@ -152,7 +149,7 @@ public sealed class S3BlobStore : IBlobStore
 		// kind's limit without the bytes ever passing through this process.
 		request.Headers.ContentLength = byteSize;
 
-		var url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+		var url = await Presign(request, lifetime).ConfigureAwait(false);
 
 		return new Uri(url);
 	}
@@ -304,6 +301,45 @@ public sealed class S3BlobStore : IBlobStore
 			cancellationToken).ConfigureAwait(false);
 	}
 
+	/// <summary>
+	///     Signs <paramref name="request" /> to live at most <paramref name="lifetime" />.
+	///     <para>
+	///         The SDK signs the seconds between the expiry and its own clock, and that
+	///         clock is corrected by whatever skew it learned from the server's
+	///         responses. A server whose clock runs behind this one therefore turns a
+	///         900-second expiry into 901 — one second past the cap (ADR-0026). The
+	///         signed lifetime is read back from the URL, and a URL signed past the cap
+	///         is signed again, earlier by exactly the excess.
+	///     </para>
+	/// </summary>
+	private async Task<string> Presign(GetPreSignedUrlRequest request,
+									   TimeSpan lifetime)
+	{
+		var cap = (long)BlobUrlLifetime.Validate(lifetime).TotalSeconds;
+		request.Expires = ExpiryFor(lifetime);
+
+		var url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+		var excess = SignedSeconds(url) - cap;
+
+		if (excess > 0)
+		{
+			request.Expires = ExpiryFor(lifetime, TimeSpan.FromSeconds(excess));
+			url = await _signer.GetPreSignedURLAsync(request).ConfigureAwait(false);
+		}
+
+		return url;
+	}
+
+	/// <summary>
+	///     The lifetime a pre-signed URL was signed for, in seconds: its
+	///     <c>X-Amz-Expires</c>, which every SigV4 pre-signed URL carries.
+	/// </summary>
+	private static long SignedSeconds(string url)
+	{
+		var expires = System.Web.HttpUtility.ParseQueryString(new Uri(url).Query)["X-Amz-Expires"];
+		return long.Parse(expires!, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture);
+	}
+
 	// GetPreSignedUrlRequest.Expires is a local DateTime, and the SDK converts it
 	// to UTC itself. BlobUrlLifetime.Validate is what stops a caller asking for a
 	// URL that outlives the review session it was issued for.
@@ -312,10 +348,11 @@ public sealed class S3BlobStore : IBlobStore
 	// seconds between now and the expiry, rounding a fraction up, so an expiry
 	// fifteen minutes from a moment partway through a second would be signed
 	// as 901 seconds - one past the cap.
-	private DateTime ExpiryFor(TimeSpan lifetime)
+	private DateTime ExpiryFor(TimeSpan lifetime,
+							   TimeSpan earlierBy = default)
 	{
 		var now = _clock.GetUtcNow();
 		var wholeSecond = now.AddTicks(-(now.Ticks % TimeSpan.TicksPerSecond));
-		return wholeSecond.Add(BlobUrlLifetime.Validate(lifetime)).UtcDateTime;
+		return wholeSecond.Add(BlobUrlLifetime.Validate(lifetime)).Subtract(earlierBy).UtcDateTime;
 	}
 }

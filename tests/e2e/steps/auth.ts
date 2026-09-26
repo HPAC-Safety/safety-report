@@ -54,6 +54,11 @@ export async function stubAuth(page: Page, options?: { thirdPartySignIn?: boolea
 		route.request().method() === "GET" ? route.fulfill({ json: [] }) : route.fallback(),
 	)
 
+	// And its private attachments (ADR-0135), on the same terms.
+	await page.route(/\/api\/admin\/reports\/[^/]+\/private-attachments$/, (route) =>
+		route.request().method() === "GET" ? route.fulfill({ json: [] }) : route.fallback(),
+	)
+
 	await page.route("**/api/auth/config", (route) => {
 		const thirdPartySignIn = configured.get(page) ?? false
 

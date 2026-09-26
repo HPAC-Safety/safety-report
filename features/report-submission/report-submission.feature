@@ -188,6 +188,134 @@ Scenario: A multi-select question is a picker dropdown, not a flat list
   When the reporter presses Escape
   Then the picker closes, returns focus to itself, and names both chosen options
 
+@REQ-SUB-085
+@ui
+Scenario Outline: An email or phone question opens the matching keyboard
+  Given the current page shows an optional <type> question
+  Then its field has type "<input type>", input mode "<input mode>", and autocomplete "<autocomplete>"
+
+Examples:
+  | type  | input type | input mode | autocomplete |
+  | email | email      | email      | email        |
+  | phone | tel        | tel        | tel          |
+
+@REQ-SUB-086
+@ui
+Scenario Outline: An optional email or phone question may be left blank
+  Given the current page shows an optional <type> question
+  When the reporter leaves it blank and presses Next
+  Then the next page shows
+  And the <type> answer is sent as null when the report is submitted
+
+Examples:
+  | type  |
+  | email |
+  | phone |
+
+@REQ-SUB-087
+@ui
+Scenario: A malformed email address holds the reporter on its page
+  Given the current page shows an optional email question
+  When the reporter types "chase.florell@example" into it and presses Next
+  Then the page does not advance
+  And an inline, localized message asks for an email address like name@example.com
+
+@REQ-SUB-088
+@ui
+Scenario: A phone number that is not valid for its country holds the reporter on its page
+  Given the current page shows an optional phone question
+  When the reporter types "5551234" into it and presses Next
+  Then the page does not advance
+  And an inline, localized message asks for a phone number valid for the chosen country
+
+@REQ-SUB-089
+@ui
+Scenario: The phone country picker starts on Canada
+  Given the current page shows an optional phone question
+  Then its country picker shows "🇨🇦 +1"
+  And the phone field's placeholder is "(555) 555-5555"
+
+@REQ-SUB-090
+@ui
+Scenario Outline: A phone number takes its chosen country's mask as it is typed
+  Given the current page shows an optional phone question
+  When the reporter chooses <country> in its country picker
+  Then its country picker shows "<shown>"
+  And the phone field's placeholder is "<placeholder>"
+  When the reporter types "<digits>" into it
+  Then the phone field reads "<masked>"
+
+Examples:
+  | country        | shown   | placeholder    | digits     | masked         |
+  | Canada         | 🇨🇦 +1  | (555) 555-5555 | 6045551234 | (604) 555-1234 |
+  | United Kingdom | 🇬🇧 +44 | 5555 555555    | 2079460018 | 20 7946 0018   |
+  | France         | 🇫🇷 +33 | 5 55 55 55 55  | 612345678  | 6 12 34 56 78  |
+
+@REQ-SUB-091
+@ui
+Scenario Outline: A phone answer is sent in E.164
+  Given the current page shows an optional phone question
+  When the reporter chooses <country> in its country picker
+  And the reporter types "<digits>" into it
+  And the reporter submits the report
+  Then the phone answer is sent as "<sent>"
+
+Examples:
+  | country        | digits     | sent          |
+  | Canada         | 6045551234 | +16045551234  |
+  | United Kingdom | 2079460018 | +442079460018 |
+
+@REQ-SUB-092
+@ui
+Scenario: Before "@" is typed, every suggested domain is offered for what has been typed
+  Given the current page shows an optional email question
+  When the reporter types "chas" into it
+  Then the field is a combobox whose suggestion list is labelled "Suggested email addresses"
+  And the suggestions below it are, in order:
+    | chas@gmail.com   |
+    | chas@yahoo.com   |
+    | chas@hotmail.com |
+    | chas@outlook.com |
+    | chas@icloud.com  |
+    | chas@mail.com    |
+  When the reporter types "e" into it
+  Then the suggestions below it are, in order:
+    | chase@gmail.com   |
+    | chase@yahoo.com   |
+    | chase@hotmail.com |
+    | chase@outlook.com |
+    | chase@icloud.com  |
+    | chase@mail.com    |
+
+@REQ-SUB-093
+@ui
+Scenario: After "@", the suggestions narrow to the domains beginning with what follows it
+  Given the current page shows an optional email question
+  When the reporter types "chase.florell@g" into it
+  Then the suggestions below it are, in order:
+    | chase.florell@gmail.com |
+
+@REQ-SUB-094
+@ui
+Scenario Outline: Choosing a suggestion fills the field
+  Given the current page shows an optional email question
+  When the reporter types "chase.florell@h" into it
+  And the reporter chooses "chase.florell@hotmail.com" <how>
+  Then the email field reads "chase.florell@hotmail.com"
+  And no suggestions are shown
+
+Examples:
+  | how               |
+  | with the keyboard |
+  | with the pointer  |
+
+@REQ-SUB-095
+@ui
+Scenario: An address at a domain outside the suggestions is accepted
+  Given the current page shows an optional email question
+  When the reporter types "pilot@example.ca" into it and presses Next
+  Then the next page shows
+
 @REQ-SUB-078
 Scenario: One answer entry per shown answer-producing revision
   Given the client says it showed the reporter a set of answer-producing revisions
@@ -312,6 +440,42 @@ Examples:
   | an unknown question_revision_id                     |
   | a question_revision_id for a deleted revision       |
   | no explicit answer to the consent_publish revision  |
+
+@REQ-SUB-096
+Scenario Outline: A well-formed email or phone answer is stored as written
+  Given a reporter writing in <language> submits <submitted> as the answer to an <type> question
+  When the answer is persisted
+  Then the stored value is <stored>
+
+Examples:
+  | language | type  | submitted              | stored                                  |
+  | English  | email | pilot@example.com      | pilot@example.com                       |
+  | French   | email | pilote@exemple.qc.ca   | pilote@exemple.qc.ca                    |
+  | English  | phone | +16045551234           | +16045551234                            |
+  | French   | phone | +33612345678           | +33612345678                            |
+  | English  | email | an empty string        | nothing, because the answer was skipped |
+  | English  | phone | an empty string        | nothing, because the answer was skipped |
+
+@REQ-SUB-097
+Scenario Outline: A malformed email or phone answer is refused by its question key
+  Given a reporter writing in English submits <submitted> as the answer to an <type> question
+  When the submission is made
+  Then the submission is rejected
+  And the refusal names the question by its key
+  And no stored answer carries that value
+
+Examples:
+  | type  | submitted          |
+  | email | pilot.example.com  |
+  | email | pilot@             |
+  | email | @example.com       |
+  | email | pilot@example      |
+  | email | pilot @example.com |
+  | phone | 604-555-1234       |
+  | phone | 6045551234         |
+  | phone | +1 604 555 1234    |
+  | phone | +1604555123        |
+  | phone | +15555551234       |
 
 @REQ-SUB-009
 Scenario: A submission may answer a known superseded revision

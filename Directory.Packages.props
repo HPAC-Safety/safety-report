@@ -36,6 +36,12 @@
 		<PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
 		<PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
 	</ItemGroup>
+	<ItemGroup Label="libphonenumber">
+		<!-- Validates a phone answer for its country at submission, with the same
+		     Google metadata the form's libphonenumber-js uses. API only; Core
+		     checks just the E.164 shape. See ADR-0137. -->
+		<PackageVersion Include="libphonenumber-csharp" Version="9.0.40" />
+	</ItemGroup>
 	<ItemGroup Label="Magick.NET">
 		<!-- EXIF stripping and content-type sniffing for uploaded media. Apache-2.0
 		     with no revenue threshold, and it strips metadata rather than

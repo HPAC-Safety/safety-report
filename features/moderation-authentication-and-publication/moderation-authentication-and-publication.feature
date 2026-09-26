@@ -555,6 +555,22 @@ Scenario: A stored date that is not a real date is shown as stored
   When the safety officer opens that report
   Then the answer reads "2026-13-45"
 
+@REQ-MOD-118
+@ui
+Scenario Outline: A phone answer reads formatted, and one stored before phone numbers were validated reads as stored
+  Given a safety officer is signed in and a report with a phone answer stored as "<stored>" exists
+  And the interface language is <language>
+  When the safety officer opens that report
+  Then the answer reads "<shown>"
+  And no translation is shown beside it
+
+Examples:
+  | stored        | language | shown            |
+  | +16045551234  | English  | +1 604 555 1234  |
+  | +16045551234  | French   | +1 604 555 1234  |
+  | +442079460018 | English  | +44 20 7946 0018 |
+  | 604-555-1234  | English  | 604-555-1234     |
+
 @REQ-MOD-055
 Scenario Outline: Publishing a consented report's pair makes it public
   Given a <from> report whose reporter consented to publication

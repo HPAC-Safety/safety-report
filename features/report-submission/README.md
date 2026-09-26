@@ -118,7 +118,8 @@ the snake_case the Gherkin prose uses when it names them — the scenarios are
 talking about the concept, not literal JSON.
 
 Dates use ISO `YYYY-MM-DD`; times, if a question requests one, use local wall
-clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers.
+clock `HH:mm` without inventing an offset; numbers use invariant JSON numbers;
+phone numbers use E.164 (`+16045551234`).
 A yes/no or checkbox answer is a JSON `true` or `false`, whatever the report
 language, and a string for one is refused
 ([ADR-0130]../../docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)). The form holds a language-free
@@ -230,6 +231,61 @@ when a saved report exists, and the answer decides the page. With no saved
 report, the form opens at its introduction. An address naming a page the form
 does not have, or a conditional page not currently shown, becomes `/report`.
 
+## Email and phone answers (#513)
+
+An email or phone question may be left blank unless an administrator made it
+required; a blank one is sent as `null` and stored as no answer. Once a value
+is entered it must be well formed, in the form and in the API
+([ADR-0137](../../docs/decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md)).
+
+**Storage forms.** A phone answer is stored in E.164 — `+`, the country
+calling code, then the national number, with no spaces or punctuation
+(`+16045551234`) — and must be a valid number for the country its calling code
+names. An email answer is one address: a local part and a domain, joined by
+one `@`, with no whitespace, a domain of at least two non-empty
+dot-separated labels whose last is at least two characters long, and at most
+254 characters in all. A reader's view
+formats a phone answer (`+1 604 555 1234`); an answer stored before this
+validation existed reads exactly as stored, and is never rewritten or
+revalidated.
+
+**Refusal.** The API refuses a malformed email or phone answer with `400`,
+naming the question by its key and never echoing the value, before anything
+is written.
+
+**The phone field.**
+
+- It opens the telephone keypad (`type="tel"`, `inputmode="tel"`,
+  `autocomplete="tel"`).
+- A country picker sits before it, showing the chosen country's flag and
+  calling code, and defaulting to Canada (🇨🇦 `+1`). Each country is listed by
+  its flag, its name in the interface language, and its calling code.
+- The number is formatted as it is typed, by the chosen country's own
+  convention: `(604) 555-1234` for +1, `20 7946 0018` for +44. The field's
+  placeholder is that country's pattern, every digit shown as `5`.
+- The number is validated against the chosen country's rules, and sent in
+  E.164.
+- The saved report keeps the chosen country beside the typed number.
+
+**The email field.**
+
+- It opens the email keyboard (`type="email"`, `inputmode="email"`,
+  `autocomplete="email"`).
+- Below it, a list of suggested addresses, from these domains in this order:
+  `gmail.com`, `yahoo.com`, `hotmail.com`, `outlook.com`, `icloud.com`,
+  `mail.com`.
+  - Before `@` is typed, all six are offered, each completing what has been
+    typed so far: `chas` offers `chas@gmail.com` through `chas@mail.com`.
+  - After `@`, only the domains beginning with what follows it are offered:
+    `chase.florell@g` offers only `chase.florell@gmail.com`.
+  - Nothing is offered for an empty field, for more than one `@`, or once the
+    field already holds a suggestion.
+  - Choosing a suggestion, by pointer or by arrow keys and Enter, fills the
+    field. Escape closes the list.
+  - A suggestion never blocks an address at any other domain.
+- The field is a combobox (`role="combobox"`) controlling a labelled listbox,
+  with the highlighted suggestion named by `aria-activedescendant`.
+
 ## Validation order
 
 The API performs, in order:
@@ -239,7 +295,8 @@ The API performs, in order:
 2. DTO syntax, locale, duplicate, and count checks;
 3. revision lookup including soft-deleted rows;
 4. rejection of unknown or deleted revisions and validation against each exact
-   historical type and the question's live choices;
+   historical type and the question's live choices, including the written
+   form of a date, time, email, or phone answer;
 5. enforcement of an explicit answer to the `consent_publish` revision;
 6. upload-ID shape, duplicate, and count checks;
 7. existence of every named upload, refusing with the missing IDs before
@@ -346,3 +403,11 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   drop.
 - Searching or filtering inside the multi-select picker, or a third-party
   select widget to provide one.
+- Checking that an email address or phone number exists, or sending it a
+  confirmation message.
+- Suggesting any email domain beyond the six listed, reordering them, or
+  learning from past input.
+- Email or phone validation for any question type other than `email` and
+  `phone`, or rewriting or revalidating an answer stored before it existed.
+- Guessing the phone country from the reporter's language or location; the
+  picker starts on Canada.

@@ -184,7 +184,10 @@ contributor who never invokes one is unaffected.
      database; the interface renders it in the reader's language
      ([ADR-0130](docs/decisions/ADR-0130-a-yes-or-no-answer-is-stored-as-a-boolean.md)).
      A date, time,
-     or date-and-time is ISO 8601 in the fitting shape. The domain still uses `DateOnly`,
+     or date-and-time is ISO 8601 in the fitting shape. A phone answer is
+     E.164 (`+16045551234`), and an email answer one well-formed address;
+     either is refused malformed, and one stored earlier is left as stored
+     ([ADR-0137](docs/decisions/ADR-0137-a-phone-answer-is-stored-in-e164.md)). The domain still uses `DateOnly`,
      `TimeOnly`, and `DateTimeOffset`
      ([ADR-0072](docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md),
      [ADR-0080](docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md),

@@ -1408,6 +1408,26 @@ The migration leaves the occurrence date refusing future dates, with no new revi
 
 The editor offers Allow future dates only for a date question, unchecked — *playwright-bdd, Covered*
 
+### REQ-QB-159
+
+A type-ahead question is a picker the form draws, not the browser's suggestion list — *playwright-bdd, Covered*
+
+### REQ-QB-160
+
+Typing into a type-ahead filters its list, ignoring case and accents — *playwright-bdd, Covered*
+
+### REQ-QB-161
+
+A reporter picks a type-ahead choice from the keyboard — *playwright-bdd, Covered*
+
+### REQ-QB-162
+
+A reporter types a type-ahead value its list does not offer — *playwright-bdd, Covered*
+
+### REQ-QB-163
+
+A type-ahead's list fits a phone screen and scrolls when long — *playwright-bdd, Covered*
+
 ### REQ-QB-164
 
 A choice written in both languages offers Translate only once it is edited — *playwright-bdd, Covered*
@@ -1435,6 +1455,10 @@ No choice's Translate is offered when the server has no provider — *playwright
 ### REQ-QB-170
 
 A choice written in one language can be translated without being edited — *playwright-bdd, Covered*
+
+### REQ-QB-171
+
+A type-ahead choice picked from the list is sent as that choice, not matched by its wording — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 

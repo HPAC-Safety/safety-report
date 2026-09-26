@@ -140,7 +140,13 @@ export function ManageQuestionsPage() {
 			isEditing={editing !== null}
 			hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 			translationAvailable={canTranslate}
-			onChange={setDraft}
+			// A choice's translation lands as a function of the current draft, so a
+			// result arriving after other edits keeps them.
+			onChange={(change) =>
+				typeof change === "function"
+					? setDraft((current) => (current === null ? current : change(current)))
+					: setDraft(change)
+			}
 			onCancel={() => {
 				setDraft(null)
 				setEditing(null)

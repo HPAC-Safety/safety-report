@@ -1408,6 +1408,34 @@ The migration leaves the occurrence date refusing future dates, with no new revi
 
 The editor offers Allow future dates only for a date question, unchecked — *playwright-bdd, Covered*
 
+### REQ-QB-164
+
+A choice written in both languages offers Translate only once it is edited — *playwright-bdd, Covered*
+
+### REQ-QB-165
+
+A choice's English is translated into its French as a draft — *playwright-bdd, Covered*
+
+### REQ-QB-166
+
+Flipping the direction translates a choice's French into its English — *playwright-bdd, Covered*
+
+### REQ-QB-167
+
+Translating one choice changes no other choice — *playwright-bdd, Covered*
+
+### REQ-QB-168
+
+A choice's Translate is unavailable after it translates, until its source is edited again — *playwright-bdd, Covered*
+
+### REQ-QB-169
+
+No choice's Translate is offered when the server has no provider — *playwright-bdd, Covered*
+
+### REQ-QB-170
+
+A choice written in one language can be translated without being edited — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

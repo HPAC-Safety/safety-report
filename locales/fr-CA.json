@@ -40,6 +40,12 @@
   "theme": {
     "toggleLabel": "Thème"
   },
+  "translationDirection": {
+    "toFrench": "Traduire de l'anglais vers le français",
+    "toEnglish": "Traduire du français vers l'anglais",
+    "english": "EN",
+    "french": "FR"
+  },
   "home": {
     "heroTitle": "Ensemble, pour des vols plus sécuritaires",
     "heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol.",
@@ -271,6 +277,7 @@
       "awaitingFrench": "En attente de la version française",
       "replace": "Remplacer par une nouvelle option",
       "position": "Poste",
+      "translate": "Traduire ce choix",
       "pin": {
         "none": "Par ordre alphabétique",
         "first": "Épingler en haut de la page",

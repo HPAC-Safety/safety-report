@@ -648,7 +648,6 @@ Then("the choice is sent without a code", async ({ page }) => {
 	expect(body?.options).toEqual([{ code: null, labelEn: "King Eddy", labelFr: "King Eddy" }])
 })
 
-
 When("they open the second question for editing", async ({ page }) => {
 	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
 
@@ -978,3 +977,230 @@ Then("the required-option control lists {string}, {string}, {string}", async ({ 
 	expect(await picker.locator("option").allTextContents()).toEqual(["Choose the required option", first, second, third])
 })
 
+// ----------------------------------- translating one choice at a time (ADR-0141) --
+
+// Every translate request and question save each page makes, so a scenario can
+// say what was sent to be translated and that nothing was saved.
+const choiceTraffic = new WeakMap<Page, { translated: string[]; saves: number }>()
+
+function watchChoiceTraffic(page: Page) {
+	const traffic = { translated: [] as string[], saves: 0 }
+	choiceTraffic.set(page, traffic)
+	page.on("request", (request) => {
+		const url = request.url()
+		if (request.method() === "POST" && url.endsWith("/api/admin/translate")) {
+			traffic.translated.push(...(JSON.parse(request.postData() ?? "{}") as { texts: string[] }).texts)
+		} else if (["POST", "PUT"].includes(request.method()) && /\/api\/admin\/questions(\/[^/]+)?$/.test(url)) {
+			traffic.saves += 1
+		}
+	})
+}
+
+// The choice a scenario calls "that choice": the one it last edited or added.
+const thatChoiceIndex = new WeakMap<Page, number>()
+// Each choice's wording as the scenario found it, before it translated one.
+const choicesBefore = new WeakMap<Page, { en: string; fr: string }[]>()
+
+const choiceTypes: Record<string, string> = {
+	"single-select": "single_select",
+	"multi-select": "multi_select",
+	"type-ahead": "autocomplete",
+}
+
+const choices = (page: Page) => page.getByTestId("question-choice")
+const thatChoice = (page: Page) => choices(page).nth(thatChoiceIndex.get(page) ?? 0)
+const choiceTranslate = (choice: ReturnType<Page["getByTestId"]>) =>
+	choice.getByRole("button", { name: "Translate this choice", exact: true })
+const directionSwitch = (page: Page) => page.getByRole("button", { name: /^Translate (English to French|French to English)$/ })
+
+async function wordingOfChoices(page: Page) {
+	const count = await choices(page).count()
+	const wording: { en: string; fr: string }[] = []
+	for (let index = 0; index < count; index++) {
+		wording.push({
+			en: await choices(page).nth(index).getByLabel("Choice (English)").inputValue(),
+			fr: await choices(page).nth(index).getByLabel("Choice (French)").inputValue(),
+		})
+	}
+	return wording
+}
+
+async function addChoice(page: Page, { en = "", fr = "" }: { en?: string; fr?: string }) {
+	await page.getByRole("button", { name: "Add a choice" }).click()
+	const index = (await choices(page).count()) - 1
+	thatChoiceIndex.set(page, index)
+	if (en) await choices(page).nth(index).getByLabel("Choice (English)").fill(en)
+	if (fr) await choices(page).nth(index).getByLabel("Choice (French)").fill(fr)
+}
+
+Given("a signed-in Administrator is authoring a new {word} question worded in both languages", async ({ page }, type: string) => {
+	await signInAndOpenQuestions(page)
+	watchChoiceTraffic(page)
+	await page.getByRole("button", { name: "Add a question" }).click()
+	await page.getByLabel("Type").selectOption(choiceTypes[type])
+	await page.getByLabel("Question (English)").fill("Who made your wing?")
+	await page.getByLabel("Question (French)").fill("Qui a fabriqué votre aile?")
+})
+
+Given("a signed-in Administrator is editing a single-select question whose choices are written in both languages", async ({ page }) => {
+	await signInAndOpenQuestions(page)
+	watchChoiceTraffic(page)
+	await aircraftRow(page).getByRole("button", { name: "Edit" }).click()
+	await expect(choices(page)).toHaveCount(3)
+})
+
+Then("no choice's Translate action is available", async ({ page }) => {
+	for (let index = 0; index < 3; index++) {
+		await expect(choiceTranslate(choices(page).nth(index))).toBeDisabled()
+	}
+})
+
+When("they edit the English wording of one choice", async ({ page }) => {
+	thatChoiceIndex.set(page, 1)
+	await thatChoice(page).getByLabel("Choice (English)").fill("Speed wing")
+})
+
+Then("that choice's Translate action becomes available", async ({ page }) => {
+	await expect(choiceTranslate(thatChoice(page))).toBeEnabled()
+})
+
+Then("every other choice's Translate action stays unavailable", async ({ page }) => {
+	const that = thatChoiceIndex.get(page)
+	const count = await choices(page).count()
+	for (let index = 0; index < count; index++) {
+		if (index !== that) await expect(choiceTranslate(choices(page).nth(index))).toBeDisabled()
+	}
+})
+
+When("they add a choice written in English and press its Translate action", async ({ page }) => {
+	await addChoice(page, { en: "Niviuk" })
+	await choiceTranslate(thatChoice(page)).click()
+})
+
+Then("that choice's French field is filled with the translation", async ({ page }) => {
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] Niviuk")
+})
+
+Then("that choice's French field remains editable", async ({ page }) => {
+	const french = thatChoice(page).getByLabel("Choice (French)")
+
+	await expect(french).not.toHaveAttribute("readonly", "")
+	await french.fill("Niviuk")
+	await expect(french).toHaveValue("Niviuk")
+})
+
+Then("nothing is saved until they press Save", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.saves).toBe(0)
+
+	const saving = page.waitForRequest(
+		(request) => request.method() === "POST" && request.url().endsWith("/api/admin/questions"),
+	)
+	await page.getByRole("button", { name: "Save" }).click()
+	const body = JSON.parse((await saving).postData() ?? "{}") as { options: { labelEn: string; labelFr: string }[] }
+
+	expect(body.options.map(({ labelEn, labelFr }) => ({ labelEn, labelFr }))).toEqual([{ labelEn: "Niviuk", labelFr: "Niviuk" }])
+})
+
+Then("the direction switch translates English to French", async ({ page }) => {
+	await expect(directionSwitch(page)).toHaveAccessibleName("Translate English to French")
+})
+
+When("they flip the direction switch", async ({ page }) => {
+	await directionSwitch(page).click()
+})
+
+Then("the direction switch translates French to English, and says so", async ({ page }) => {
+	await expect(directionSwitch(page)).toHaveAccessibleName("Translate French to English")
+	await expect(page.locator("[aria-live=polite]").filter({ hasText: "Translate French to English" })).toHaveCount(1)
+})
+
+When("they add a choice written in French and press its Translate action", async ({ page }) => {
+	await addChoice(page, { fr: "Voile de secours" })
+	await choiceTranslate(thatChoice(page)).click()
+})
+
+Then("that choice's English field is filled with the translation", async ({ page }) => {
+	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("[en-CA] Voile de secours")
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("Voile de secours")
+})
+
+When("they edit the English wording of one choice and press its Translate action", async ({ page }) => {
+	choicesBefore.set(page, await wordingOfChoices(page))
+	thatChoiceIndex.set(page, 1)
+	await thatChoice(page).getByLabel("Choice (English)").fill("Speed wing")
+	await choiceTranslate(thatChoice(page)).click()
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] Speed wing")
+})
+
+Then("only that choice's wording is sent to be translated", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.translated).toEqual(["Speed wing"])
+})
+
+Then("only that choice's French field changes", async ({ page }) => {
+	const before = choicesBefore.get(page) ?? []
+	const expected = before.map((wording, index) => (index === 1 ? { en: "Speed wing", fr: "[fr-CA] Speed wing" } : wording))
+
+	expect(await wordingOfChoices(page)).toEqual(expected)
+})
+
+Then("that choice's Translate action is unavailable", async ({ page }) => {
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] Niviuk")
+	await expect(choiceTranslate(thatChoice(page))).toBeDisabled()
+})
+
+When("they edit that choice's English wording again", async ({ page }) => {
+	await thatChoice(page).getByLabel("Choice (English)").fill("Niviuk Hook")
+})
+
+When("they add a choice written in English", async ({ page }) => {
+	await addChoice(page, { en: "Niviuk" })
+})
+
+Given(
+	"a signed-in Administrator is editing a type-ahead question with choices on a server with no translation provider",
+	async ({ page }) => {
+		await signInAndOpenQuestions(page, { translation: false })
+		await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+		await expect(choices(page)).toHaveCount(2)
+	},
+)
+
+Then("every choice's Translate action is unavailable and says why", async ({ page }) => {
+	const count = await choices(page).count()
+	expect(count).toBe(3)
+
+	for (let index = 0; index < count; index++) {
+		const button = choiceTranslate(choices(page).nth(index))
+		await expect(button).toBeDisabled()
+		await expect(button).toHaveAccessibleDescription("Translation is not available on this server.")
+	}
+})
+
+// The stub's type-ahead offers "Cooper's" in both languages and "mount 7",
+// a reporter's value, in English only; the editor lists them in that order.
+Given("a signed-in Administrator is editing a type-ahead question with a choice written only in English", async ({ page }) => {
+	await signInAndOpenQuestions(page)
+	watchChoiceTraffic(page)
+	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+	await expect(choices(page)).toHaveCount(2)
+	thatChoiceIndex.set(page, 1)
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("")
+})
+
+Then("that choice's Translate action is available", async ({ page }) => {
+	await expect(choiceTranslate(thatChoice(page))).toBeEnabled()
+})
+
+Then("the choice written in both languages offers no Translate action", async ({ page }) => {
+	await expect(choiceTranslate(choices(page).nth(0))).toBeDisabled()
+})
+
+When("they press that choice's Translate action", async ({ page }) => {
+	await choiceTranslate(thatChoice(page)).click()
+})
+
+Then("that choice's French field is filled with the translation of its English", async ({ page }) => {
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] mount 7")
+	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("mount 7")
+	expect(choiceTraffic.get(page)?.translated).toEqual(["mount 7"])
+})

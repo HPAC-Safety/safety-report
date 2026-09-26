@@ -233,4 +233,20 @@ public class BlobKeyTests
 		mine.Value.ShouldStartWith(ReportId + "/");
 		theirs.Value.ShouldStartWith("kJQP7kiw5Fk/");
 	}
+
+	[Fact]
+	public void GivenQuarantineKey_WhenAskedWhetherItTakesDirectUpload_ThenItDoes()
+	{
+		// Given / When / Then
+		BlobKey.ForUpload(UploadId.New()).AcceptsDirectUpload.ShouldBeTrue();
+	}
+
+	[Theory]
+	[InlineData(MediaCompartment.Original)]
+	[InlineData(MediaCompartment.Stripped)]
+	public void GivenReportsOwnCompartment_WhenAskedWhetherItTakesDirectUpload_ThenItDoesNot(MediaCompartment compartment)
+	{
+		// Given / When / Then — only this system writes a report's media (ADR-0126).
+		BlobKey.For(ReportId, compartment, "photo.jpg").AcceptsDirectUpload.ShouldBeFalse();
+	}
 }

@@ -428,7 +428,6 @@ Scenario: The not-tracked notice is shown in the reporter's chosen language
   Then the notice is shown in French
 
 @REQ-SUB-072
-@ignore
 Scenario: Minting an upload returns a pre-signed PUT for one quarantine key and nothing else
   Given a member asks to upload an allowlisted file within its kind's size limit
   When the API mints the upload
@@ -440,7 +439,6 @@ Scenario: Minting an upload returns a pre-signed PUT for one quarantine key and 
   And nothing is written to object storage or the database
 
 @REQ-SUB-073
-@ignore
 Scenario Outline: A declared file the API will not accept gets no upload URL
   Given a member asks to upload <file>
   When the API checks the declared type and size
@@ -456,7 +454,6 @@ Examples:
   | a file whose declared type is not on the allowlist    | unaccepted_media_type |
 
 @REQ-SUB-074
-@ignore
 Scenario Outline: Storage accepts only the upload the URL was signed for
   Given the API minted an upload URL
   When the browser sends <request>
@@ -471,14 +468,13 @@ Examples:
   | the PUT to any key other than the one it was minted for |
 
 @REQ-SUB-075
-@ignore
 Scenario Outline: A submission validates every upload it claims
   Given a submission claims an upload whose stored file is <file>
   When the API validates the submission
   Then the API rejects the submission with 400
   And the response names that upload ID with a safe rejection reason of "<reason>"
   And no report, answer, file, or outbox row is created
-  And the API read only the upload's size and leading bytes, never the whole file into memory
+  And the API read only the upload's size and the bytes sniffing needs, never the whole file into memory
 
 Examples:
   | file                                                            | reason                 |
@@ -561,8 +557,15 @@ Scenario: A refused upload is explained on that file's row
   Then that file's row shows a localized reason matching the refusal
   And the file is not named by the submission
 
+@REQ-SUB-084
+@ui
+Scenario: A file larger than its kind allows is refused on its row before it is sent
+  Given the current page shows a file-upload question
+  When the reporter attaches a video larger than 250 MB
+  Then that file's row shows a localized message stating the limit for each kind
+  And nothing is sent to the API or to storage for it
+
 @REQ-SUB-076
-@ignore
 @ui
 Scenario: A file refused at submission is marked on its row and nothing else is lost
   Given the API refuses a submission because some of its uploads failed validation

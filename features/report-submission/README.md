@@ -47,13 +47,18 @@ If any named upload no longer exists, the API refuses the whole submission
 before writing anything, with a `400` whose `expiredUploadIds` lists exactly
 those IDs.
 
-The API then validates each upload it claims. It reads the stored size and the
-leading bytes, sniffs the content, requires the declared and detected types to
-agree, and checks the real size against the limit of the detected kind. If any
-upload fails, the API refuses the whole submission before writing anything,
-with a `400` naming each refused upload ID and its `reason`
-(`unrecognised_content`, `declared_type_mismatch`, or `too_large`). The form
-marks those files' rows and keeps every other answer and upload.
+The API then validates each upload it claims. It reads the stored size and
+only the bytes sniffing needs — the leading bytes, and a DOCX or ODT's zip
+directory at its end
+([ADR-0134](../../docs/decisions/ADR-0134-a-claim-reads-a-zip-packages-directory-as-well-as-its-leading-bytes.md))
+— sniffs the content, requires the declared and detected types to agree, and
+checks the real size against the limit of the detected kind. If any upload
+fails, the API refuses the whole submission before writing anything, with a
+`400` whose `refusedUploads` lists each refused upload's `uploadId` and
+`reason` (`unrecognised_content`, `declared_type_mismatch`, or `too_large`).
+One response carries both lists when some uploads expired and others were
+refused. The form marks those files' rows and keeps every other answer and
+upload.
 
 ### The drop zone (#367)
 
@@ -307,9 +312,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 
 - A server-side draft, an autosave, or a reserved report ID. Nothing but an
   attachment reaches the server before the one final request.
-- A resumable or chunked upload protocol, a pre-signed upload URL handed to the
-  browser, or a percentage progress bar. An upload is one request with an
-  indeterminate indicator.
+- A resumable or chunked upload protocol, a pre-signed upload URL for any key
+  but the one upload's quarantine key, or a percentage progress bar. An upload
+  is one `PUT` with an indeterminate indicator (ADR-0126).
 - Keeping a file's bytes in browser storage, restoring an attachment on another
   browser or device, or a server endpoint that lists, reads, previews, or
   renews an unsubmitted upload. The saved report's upload IDs and names are

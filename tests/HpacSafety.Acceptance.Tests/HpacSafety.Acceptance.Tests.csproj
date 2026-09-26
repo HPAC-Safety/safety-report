@@ -40,6 +40,7 @@
     <ItemGroup>
         <!-- One pinned S3-compatible server for every suite that needs one (ADR-0110). -->
         <Compile Include="..\Shared\S3Emulator.cs" Link="Shared\S3Emulator.cs" />
+        <Compile Include="..\Shared\DirectUpload.cs" Link="Shared\DirectUpload.cs" />
     </ItemGroup>
 
     <PropertyGroup>

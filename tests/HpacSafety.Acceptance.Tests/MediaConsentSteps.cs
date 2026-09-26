@@ -6,6 +6,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Testing;
 using ImageMagick;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,7 +18,7 @@ namespace HpacSafety.Acceptance.Tests;
 /// <summary>
 ///     The consent answers as a real submission records them. Media consent
 ///     (REQ-QB-114 to REQ-QB-117, ADR-0117, ADR-0119): an image or document uploaded
-///     through <c>/api/v1/uploads</c>, publication consent yes, and the seeded
+///     through <c>/api/v1/uploads</c> and a pre-signed PUT, publication consent yes, and the seeded
 ///     <c>consent_media</c> system question answered — or not — through the
 ///     booted API, against its current wording or a superseded one. Publication
 ///     consent (REQ-QB-014, REQ-QB-016): never optional, and only an explicit yes
@@ -276,12 +277,7 @@ public sealed class MediaConsentSteps
 	private static async Task<string> UploadImage(HttpClient reporter)
 	{
 		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
-		using var body = new ByteArrayContent(image.ToByteArray());
-		body.Headers.ContentType = new MediaTypeHeaderValue("image/png");
-
-		using var response = await reporter.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
+		return await DirectUpload.Send(reporter, image.ToByteArray(), "image/png");
 	}
 
 	private async Task<HttpResponseMessage> Post(IReadOnlyList<object> answers)
@@ -318,12 +314,10 @@ public sealed class MediaConsentSteps
 
 	private static async Task<string> UploadDocument(HttpClient reporter)
 	{
-		using var body = new ByteArrayContent("%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray());
-		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-
-		using var response = await reporter.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
+		return await DirectUpload.Send(
+			reporter,
+			"%PDF-1.7\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n"u8.ToArray(),
+			"application/pdf");
 	}
 
 	private static async Task<string> MediaConsentRevisionId()

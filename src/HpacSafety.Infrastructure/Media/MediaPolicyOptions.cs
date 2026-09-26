@@ -3,28 +3,48 @@ using HpacSafety.Core.Features.Reporting;
 namespace HpacSafety.Infrastructure.Media;
 
 /// <summary>
-///     The configured upload limits for a deployment.
+///     The configured upload limits for a deployment, bound from
+///     <c>HpacSafety:Media:Policy</c>.
 ///     <para>
-///         <see cref="MediaPolicy" /> itself takes its maximum as a constructor argument
+///         <see cref="MediaPolicy" /> itself takes its limits as a constructor argument
 ///         with no default, deliberately: a size limit nobody chose is a size limit
-///         nobody owns. This is where the number HPAC chose lives.
+///         nobody owns. This is where the numbers HPAC chose live — one per kind
+///         (ADR-0126).
 ///     </para>
 /// </summary>
 public sealed class MediaPolicyOptions
 {
+	/// <summary>The configuration section these options bind from.</summary>
+	public const string SectionName = "HpacSafety:Media:Policy";
+
 	/// <summary>
-	///     The configurable 50 MB default applied independently to every accepted
-	///     attachment format.
+	///     The single limit ADR-0126 replaced. A deployment still setting it would
+	///     believe it had a limit it no longer has, so it refuses to start instead.
 	/// </summary>
-	public const long DefaultMaxByteSize = 50L * 1024 * 1024;
+	public const string RetiredMaxByteSizeKey = "MaxByteSize";
+
+	/// <summary>The default largest video: 250 MB.</summary>
+	public const long DefaultMaxVideoByteSize = 250L * 1024 * 1024;
+
+	/// <summary>The default largest image: 25 MB.</summary>
+	public const long DefaultMaxImageByteSize = 25L * 1024 * 1024;
+
+	/// <summary>The default largest document: 25 MB.</summary>
+	public const long DefaultMaxDocumentByteSize = 25L * 1024 * 1024;
 
 	/// <summary>
 	///     The configurable default count of attachments a single report may carry.
 	/// </summary>
 	public const int DefaultMaxAttachmentCount = 5;
 
-	/// <summary>The largest upload this deployment accepts, in bytes.</summary>
-	public long MaxByteSize { get; set; } = DefaultMaxByteSize;
+	/// <summary>The largest video this deployment accepts, in bytes.</summary>
+	public long MaxVideoByteSize { get; set; } = DefaultMaxVideoByteSize;
+
+	/// <summary>The largest image this deployment accepts, in bytes.</summary>
+	public long MaxImageByteSize { get; set; } = DefaultMaxImageByteSize;
+
+	/// <summary>The largest document this deployment accepts, in bytes.</summary>
+	public long MaxDocumentByteSize { get; set; } = DefaultMaxDocumentByteSize;
 
 	/// <summary>
 	///     The most attachments one submission may carry. A request-level bound —
@@ -36,6 +56,8 @@ public sealed class MediaPolicyOptions
 	/// <summary>Builds the domain policy this deployment runs with.</summary>
 	public MediaPolicy ToPolicy()
 	{
-		return new MediaPolicy(MaxByteSize, MediaType.All);
+		return new MediaPolicy(
+			new MediaSizeLimits(MaxImageByteSize, MaxVideoByteSize, MaxDocumentByteSize),
+			MediaType.All);
 	}
 }

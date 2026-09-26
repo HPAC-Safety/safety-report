@@ -31,8 +31,8 @@ public sealed record SubmitReportRequest(string? Language, IReadOnlyList<SubmitA
 /// </param>
 /// <param name="Attachments">
 ///     This question's files, for a file-upload answer only: each the upload id
-///     <c>POST /api/v1/uploads</c> returned and the file's name (ADR-0096,
-///     ADR-0097).
+///     <c>POST /api/v1/uploads</c> minted and the file's name (ADR-0096,
+///     ADR-0097, ADR-0126).
 /// </param>
 public sealed record SubmitAnswerRequest(
 	string? QuestionRevisionId,
@@ -47,6 +47,14 @@ public sealed record SubmitAnswerRequest(
 ///     download name (ADR-0097); optional.
 /// </param>
 public sealed record SubmitAttachmentRequest(string? UploadId, string? FileName);
+
+/// <summary>
+///     One upload a submission refused after sniffing it, as the refused
+///     submission's problem names it (ADR-0126). Never the file's name.
+/// </summary>
+/// <param name="UploadId">The refused upload's id.</param>
+/// <param name="Reason">The safe rejection code, such as <c>too_large</c>.</param>
+public sealed record RefusedUpload(string UploadId, string Reason);
 
 /// <summary>The opaque receipt a successful submission returns. Nothing else.</summary>
 /// <param name="Id">The report's opaque identifier.</param>

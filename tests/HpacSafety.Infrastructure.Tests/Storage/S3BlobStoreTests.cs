@@ -54,7 +54,9 @@ public sealed class S3BlobStoreTests : IDisposable
 		// derivative was verified as, both pinned by the signature.
 		url.Query.ShouldContain("response-content-disposition=inline");
 		url.Query.ShouldContain("response-content-type=image%2Fjpeg");
-		url.Query.ShouldContain("X-Amz-Expires=900");
+		// Fifteen minutes from the start of the current second, signed in whole
+		// seconds: never past the cap, and short of it by less than one.
+		ExpirySeconds(url).ShouldBeInRange(899, 900);
 	}
 
 	[Fact]
@@ -100,5 +102,13 @@ public sealed class S3BlobStoreTests : IDisposable
 		// Nothing listens on localhost:9000 here, so reaching the network would
 		// fail differently: the refusal comes first.
 		await Should.ThrowAsync<DomainRuleViolationException>(() => store.Delete(Key, CancellationToken.None));
+	}
+
+	private static int ExpirySeconds(Uri url)
+	{
+		var value = url.Query.TrimStart('?').Split('&')
+			.Select(pair => pair.Split('=', 2))
+			.Single(pair => pair[0] == "X-Amz-Expires")[1];
+		return int.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
 	}
 }

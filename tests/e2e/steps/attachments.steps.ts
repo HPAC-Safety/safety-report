@@ -15,23 +15,32 @@ const { Given, When, Then } = createBdd()
 
 /*
  * The @ui scenarios for uploading attachments as they are attached (ADR-0096,
- * REQ-SUB-045..051), for the drop zone that chooses them (REQ-SUB-058..062),
- * and for keeping them as long as the saved report (ADR-0100,
- * REQ-SUB-063..067). The API is stubbed at the network boundary: an upload is
- * held open until a step releases it, so "still uploading" is a state a step
- * can observe rather than a race. The server side of the same contract is
- * HpacSafety.Api.Tests' UploadEndpointTests and the acceptance steps. Every
- * file here is synthetic.
+ * ADR-0126, REQ-SUB-045..051, REQ-SUB-076), for the drop zone that chooses them
+ * (REQ-SUB-058..062), and for keeping them as long as the saved report
+ * (ADR-0100, REQ-SUB-063..067). The API and storage are stubbed at the network
+ * boundary: the API mints an upload and a pre-signed PUT to a storage host of
+ * its own, and that PUT is held open until a step releases it, so "still
+ * uploading" is a state a step can observe rather than a race. The server side
+ * of the same contract is HpacSafety.Api.Tests' UploadEndpointTests and the
+ * acceptance steps. Every file here is synthetic.
  */
+
+/** Where the stubbed API sends each file: another origin, as S3 is in production. */
+const STORAGE_ORIGIN = "https://storage.hpac-safety.test"
+
 
 interface UploadStub {
 	/** Upload ids handed out, in order. */
 	issued: string[]
 	/** Ids the browser asked to delete. */
 	deleted: string[]
-	/** How many upload requests reached the stub. */
+	/** How many mint requests reached the stub. */
 	requests: number
-	/** Upload requests the browser aborted. */
+	/** What each mint request declared. */
+	declarations: { contentType: string; byteSize: number }[]
+	/** Each PUT that reached storage: its key, declared type, and body size. */
+	puts: { key: string; contentType: string; byteSize: number; authorization: string | null }[]
+	/** PUTs to storage the browser aborted. */
 	aborted: number
 	/** Submission bodies, parsed. */
 	submissions: { answers: { questionRevisionId: string; attachments: { uploadId: string; fileName: string }[] | null }[] }[]
@@ -43,6 +52,8 @@ interface UploadStub {
 	refuseNext: string | null
 	/** Upload ids the next submission reports as expired, once. */
 	expireNext: string[]
+	/** Uploads the next submission refuses after sniffing them, once. */
+	refuseAtSubmitNext: { uploadId: string; reason: string }[]
 	/** The uploads the saved report names, which abandoning it must delete. */
 	saved: string[]
 }
@@ -55,11 +66,14 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 		issued: [],
 		deleted: [],
 		requests: 0,
+		declarations: [],
+		puts: [],
 		aborted: 0,
 		submissions: [],
 		hold: false,
 		refuseNext: null,
 		expireNext: [],
+		refuseAtSubmitNext: [],
 		saved: [],
 		release: () => {
 			for (const resume of waiting.splice(0)) resume()
@@ -68,7 +82,31 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 	stubs.set(page, stub)
 
 	page.on("requestfailed", (request) => {
-		if (request.url().includes("/api/v1/uploads/") && request.method() === "POST") stub.aborted += 1
+		if (request.url().startsWith(STORAGE_ORIGIN) && request.method() === "PUT") stub.aborted += 1
+	})
+
+	// Storage: the one PUT each upload URL was signed for. A browser-to-storage
+	// request is cross-origin, so the answer carries the CORS header the
+	// uploads bucket gives the site origins.
+	await page.route(`${STORAGE_ORIGIN}/**`, async (route: Route) => {
+		const request = route.request()
+		if (request.method() !== "PUT") {
+			await route.fulfill({ status: 405 })
+			return
+		}
+
+		stub.puts.push({
+			key: new URL(request.url()).pathname.replace(/^\/hpac-safety-uploads\//, ""),
+			contentType: (await request.allHeaders())["content-type"] ?? "",
+			byteSize: request.postDataBuffer()?.length ?? 0,
+			authorization: (await request.allHeaders())["authorization"] ?? null,
+		})
+
+		if (stub.hold) await new Promise<void>((resume) => waiting.push(resume))
+
+		await route
+			.fulfill({ status: 200, headers: { "access-control-allow-origin": "*" }, body: "" })
+			.catch(() => {}) // The browser may already have cancelled it.
 	})
 
 	await page.route(
@@ -83,6 +121,7 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 			}
 
 			stub.requests += 1
+			stub.declarations.push(JSON.parse(request.postData() ?? "{}"))
 
 			if (stub.refuseNext) {
 				const reason = stub.refuseNext
@@ -91,12 +130,15 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 				return
 			}
 
-			if (stub.hold) await new Promise<void>((resume) => waiting.push(resume))
-
 			const uploadId = `synthetic-upload-${String(stub.issued.length).padStart(4, "0")}xxxxxx`.slice(0, 22)
 			stub.issued.push(uploadId)
+			const uploadUrl = `${STORAGE_ORIGIN}/hpac-safety-uploads/quarantine/${uploadId}?X-Amz-Signature=synthetic`
 			await route
-				.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ uploadId, kind: "image" }) })
+				.fulfill({
+					status: 201,
+					contentType: "application/json",
+					body: JSON.stringify({ uploadId, kind: "image", uploadUrl, expiresAt: "2026-09-26T12:15:00Z" }),
+				})
 				.catch(() => {}) // The browser may already have cancelled it.
 		},
 	)
@@ -104,6 +146,17 @@ async function stubUploads(page: Page): Promise<UploadStub> {
 	await page.route("**/api/v1/reports/", async (route) => {
 		const body = JSON.parse(route.request().postData() ?? "{}")
 		stub.submissions.push(body)
+
+		if (stub.refuseAtSubmitNext.length > 0) {
+			const refusedUploads = stub.refuseAtSubmitNext
+			stub.refuseAtSubmitNext = []
+			await route.fulfill({
+				status: 400,
+				contentType: "application/problem+json",
+				body: JSON.stringify({ title: "That submission was not accepted.", expiredUploadIds: [], refusedUploads }),
+			})
+			return
+		}
 
 		if (stub.expireNext.length > 0) {
 			const expiredUploadIds = stub.expireNext
@@ -134,6 +187,11 @@ function stubFor(page: Page): UploadStub {
 
 function photo(name: string) {
 	return { name, mimeType: "image/png", buffer: Buffer.from(`synthetic ${name}`) }
+}
+
+/** A synthetic file of a given size and type, generated rather than read from disk. */
+function sized(name: string, mimeType: string, byteSize: number) {
+	return { name, mimeType, buffer: Buffer.alloc(byteSize) }
 }
 
 function attachmentList(page: Page) {
@@ -201,7 +259,15 @@ Then("an indeterminate activity indicator shows on that file's row while it uplo
 })
 
 Then("once the upload finishes the indicator is replaced by a Remove control", async ({ page }) => {
-	stubFor(page).release()
+	const stub = stubFor(page)
+	// The file goes straight to storage, to the one key its upload was minted
+	// for, under the type it declared, with no member credential (ADR-0126).
+	await expect.poll(() => stub.puts.length).toBe(1)
+	expect(stub.declarations).toEqual([{ contentType: "image/png", byteSize: "synthetic launch-site.png".length }])
+	expect(stub.puts).toEqual([
+		{ key: `quarantine/${stub.issued[0]}`, contentType: "image/png", byteSize: "synthetic launch-site.png".length, authorization: null },
+	])
+	stub.release()
 	await expect(page.getByRole("button", { name: "Remove launch-site.png" })).toBeVisible()
 	await expect(page.getByRole("progressbar")).toHaveCount(0)
 })
@@ -282,6 +348,7 @@ When("the reporter attaches one more", async ({ page }) => {
 
 Then("that file is not uploaded", async ({ page }) => {
 	expect(stubFor(page).requests).toBe(5)
+	expect(stubFor(page).puts).toHaveLength(5)
 })
 
 Then("an inline, localized message states the limit", async ({ page }) => {
@@ -293,18 +360,71 @@ Then("an inline, localized message states the limit", async ({ page }) => {
 Given("the API refuses an uploaded file", async ({ page }) => {
 	const stub = await stubUploads(page)
 	await reachAttachmentsPage(page)
-	stub.refuseNext = "declared_type_mismatch"
+	stub.refuseNext = "unaccepted_media_type"
 	await attach(page, "not-really.png")
 })
 
 Then("that file's row shows a localized reason matching the refusal", async ({ page }) => {
-	await expect(attachmentList(page).getByText("This file's contents do not match its type.")).toBeVisible()
+	await expect(attachmentList(page).getByText("This type of file is not accepted.")).toBeVisible()
+	// Refused when minted, so nothing was sent to storage.
+	expect(stubFor(page).puts).toHaveLength(0)
 })
 
 Then("the file is not named by the submission", async ({ page }) => {
 	await submitFromAttachments(page)
 	await expect(page.getByRole("heading", { name: "Report submitted" })).toBeVisible()
 	expect(namedAttachments(stubFor(page))).toEqual([])
+})
+
+// --- REQ-SUB-084: a file past its kind's limit is refused on its row, minting nothing ---
+
+When("the reporter attaches a video larger than 250 MB", async ({ page }) => {
+	// A real 250 MB buffer would only slow the browser down to prove the same
+	// thing: the form judges the declared size before asking the API anything.
+	await page.getByLabel("Photos or videos").evaluate((input: HTMLInputElement) => {
+		const file = new File(["synthetic"], "long-flight.mp4", { type: "video/mp4" })
+		Object.defineProperty(file, "size", { value: 250 * 1024 * 1024 + 1 })
+		const transfer = new DataTransfer()
+		transfer.items.add(file)
+		input.files = transfer.files
+		input.dispatchEvent(new Event("change", { bubbles: true }))
+	})
+})
+
+Then("that file's row shows a localized message stating the limit for each kind", async ({ page }) => {
+	const row = attachmentList(page).getByRole("listitem").filter({ hasText: "long-flight.mp4" })
+	await expect(
+		row.getByText("This file is too large. A video may be up to 250 MB, and a photo or document up to 25 MB."),
+	).toBeVisible()
+})
+
+Then("nothing is sent to the API or to storage for it", async ({ page }) => {
+	expect(stubFor(page).requests).toBe(0)
+	expect(stubFor(page).puts).toHaveLength(0)
+})
+
+// --- REQ-SUB-076: a file refused at submission ---
+
+Given("the API refuses a submission because some of its uploads failed validation", async ({ page }) => {
+	const stub = await stubUploads(page)
+	await reachAttachmentsPage(page)
+	await page.getByLabel("Photos or videos").setInputFiles([photo("kept.png"), sized("mislabelled.mp4", "video/mp4", 4096)])
+	await expect(page.getByRole("button", { name: /^Remove / })).toHaveCount(2)
+	const mislabelled = stub.issued[stub.declarations.findIndex((declared) => declared.contentType === "video/mp4")]!
+	stub.refuseAtSubmitNext = [{ uploadId: mislabelled, reason: "too_large" }]
+	await submitFromAttachments(page)
+	await expect(page.getByRole("alert").filter({ hasText: "Some attached files were not accepted" })).toBeVisible()
+})
+
+Then("each refused file's row shows a localized reason matching its refusal", async ({ page }) => {
+	await page.getByRole("button", { name: "Back" }).click() // consent -> attachments
+	const refusedRow = attachmentList(page).getByRole("listitem").filter({ hasText: "mislabelled.mp4" })
+	await expect(
+		refusedRow.getByText("This file is too large. A video may be up to 250 MB, and a photo or document up to 25 MB."),
+	).toBeVisible()
+	const stub = stubFor(page)
+	const refused = stub.issued[stub.declarations.findIndex((declared) => declared.contentType === "video/mp4")]!
+	await expect.poll(() => stub.deleted).toContain(refused)
 })
 
 // --- REQ-SUB-051: expired uploads ---
@@ -471,7 +591,9 @@ Then(
 )
 
 Then("the type, count, and size guidance sits inside the drop zone", async ({ page }) => {
-	await expect(dropZone(page).getByText(/up to 5 files in all, 50 MB each/)).toBeVisible()
+	await expect(
+		dropZone(page).getByText(/up to 5 files in all\. Each video may be up to 250 MB, and each photo or document up to 25 MB\./),
+	).toBeVisible()
 })
 
 When("the reporter activates the drop zone's choose-files control by pointer or keyboard", async ({ page }) => {

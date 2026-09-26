@@ -6,6 +6,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Testing;
 using ImageMagick;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -337,6 +338,55 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 		(await ObjectExists($"quarantine/{live}")).ShouldBeTrue();
 	}
 
+	[Fact]
+	public async Task GivenUploadWhoseBytesAreNotWhatWasDeclared_WhenSubmitted_ThenRefusedNamingItAndNothingIsStored()
+	{
+		// Given — a PNG sent as a PDF, beside an expired upload and a good one
+		using var admin = await SignedIn(MemberRole.Administrator);
+		var revisionId = await RevisionIdFor(await CreateSyntheticQuestion(admin, type: "file_upload"));
+		var consentRevisionId = await ConsentRevisionId();
+		using var reporter = await SignedIn();
+		var live = await UploadPng(reporter);
+		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
+		var mislabelled = await DirectUpload.Send(reporter, image.ToByteArray(), "application/pdf");
+		var expired = UploadId.New().Value;
+		var reportsBefore = await ReportCount();
+
+		using var content = ReportPart(new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consentRevisionId, value = true },
+				new
+				{
+					questionRevisionId = revisionId,
+					attachments = new[]
+					{
+						new { uploadId = live, fileName = "a.png" },
+						new { uploadId = mislabelled, fileName = "b.pdf" },
+						new { uploadId = expired, fileName = "c.png" },
+					},
+				},
+			},
+		});
+
+		// When
+		using var response = await reporter.PostAsync(Submit, content);
+
+		// Then — both lists in one answer, and nothing written (REQ-SUB-075)
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+		problem.GetProperty("expiredUploadIds").EnumerateArray().Select(id => id.GetString()).ShouldBe([expired]);
+		var refused = problem.GetProperty("refusedUploads").EnumerateArray().ToList();
+		refused.Count.ShouldBe(1);
+		refused[0].GetProperty("uploadId").GetString().ShouldBe(mislabelled);
+		refused[0].GetProperty("reason").GetString().ShouldBe("declared_type_mismatch");
+		problem.GetRawText().ShouldNotContain("b.pdf");
+		(await ReportCount()).ShouldBe(reportsBefore);
+		(await ObjectExists($"quarantine/{live}")).ShouldBeTrue();
+	}
+
 	[Theory]
 	[InlineData("not-an-upload-id")]
 	[InlineData("")]
@@ -411,14 +461,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	private static async Task<string> UploadPng(HttpClient reporter)
 	{
 		using var image = new MagickImage(MagickColors.SkyBlue, 8, 8) { Format = MagickFormat.Png };
-		using var body = new ByteArrayContent(image.ToByteArray());
-		body.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png");
-
-		using var response = await reporter.PostAsync(new Uri("/api/v1/uploads", UriKind.Relative), body);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-
-		var upload = await response.Content.ReadFromJsonAsync<JsonElement>();
-		return upload.GetProperty("uploadId").GetString()!;
+		return await DirectUpload.Send(reporter, image.ToByteArray(), "image/png");
 	}
 
 	private async Task<bool> ObjectExists(string key)

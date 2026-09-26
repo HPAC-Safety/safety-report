@@ -46,7 +46,8 @@ flowchart LR
     browser -->|"2 · sign in"| idp
     browser -->|"3 · /api calls, bearer token"| alb
     alb -->|"Lambda target group"| api
-    browser -->|"4 · open a file: pre-signed GET, 15 min max"| uploads
+    browser -->|"4 · attach a file: pre-signed PUT, 15 min max"| uploads
+    browser -->|"5 · open a file: pre-signed GET, 15 min max"| uploads
 ```
 
 ### 2. How work is processed
@@ -74,7 +75,7 @@ flowchart LR
     api -->|"async nudge"| worker
     bridge -->|"sweep"| worker
     worker -->|"claim due messages"| rds
-    api -->|"store uploads, copy claims"| s3ep
+    api -->|"sniff and copy claims"| s3ep
     worker -->|"read originals, write derivatives"| s3ep
     s3ep --> uploads
     api -.->|"cold start"| secrets
@@ -160,7 +161,8 @@ How the pieces connect:
     lifecycle rule expires an unclaimed upload after 15 days.
   - The uploads bucket accepts a cross-origin `PUT` only from the site
     origins ([ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
-  - Submission copies claimed uploads inside the bucket.
+  - Submission sniffs each claimed upload with ranged reads, then copies it
+    inside the bucket.
   - The Worker writes derivatives.
   - A browser reads a file only through a pre-signed GET of at most 15
     minutes, never a public object URL
@@ -220,7 +222,8 @@ application code.
 ## Configuration and secrets
 
 Configuration includes database/storage endpoints, attachment count and per-kind size
-limits (250 MB video, 25 MB image or document), accepted attachment types, the site origin,
+limits (250 MB video, 25 MB image or document), accepted attachment types, the site origins (`site_origins`, which the
+uploads bucket's CORS rule allows to `PUT`),
 rate limits, the authentication issuer, audience, and role-claim name,
 model/prompt version, retry bounds, and stuck-work thresholds.
 

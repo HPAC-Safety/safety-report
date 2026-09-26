@@ -16,6 +16,9 @@ locals {
   bucket_suffix = data.aws_caller_identity.current.account_id
 
   site_bucket = "${local.name}-site-${local.bucket_suffix}"
+
+  # The website is the one place a reporter attaches a file from (ADR-0126).
+  site_origins = length(var.site_origins) > 0 ? var.site_origins : ["https://${var.site_domain}"]
 }
 
 # --------------------------------------------------------------------------
@@ -68,12 +71,31 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "uploads" {
   }
 }
 
+# A reporter's browser sends each attachment straight here, through a pre-signed
+# PUT the API mints for one quarantine key, signed for the declared type and
+# exact length (ADR-0126). That is a cross-origin request from the website, so
+# the bucket answers CORS for PUT only, only from the site origins, and only
+# with the one header the browser sets itself. Nothing is readable
+# cross-origin: reviewer and public reads are top-level navigations or media
+# elements, which need no CORS.
+resource "aws_s3_bucket_cors_configuration" "uploads" {
+  bucket = aws_s3_bucket.uploads.id
+
+  cors_rule {
+    allowed_methods = ["PUT"]
+    allowed_origins = local.site_origins
+    allowed_headers = ["content-type"]
+    max_age_seconds = 600
+  }
+}
+
 resource "aws_s3_bucket_lifecycle_configuration" "uploads" {
   bucket = aws_s3_bucket.uploads.id
 
   # EVERY upload lands under quarantine/<upload id> the moment a reporter
-  # attaches it, after the API has validated it, and is PROMOTED out only when
-  # a submission claims it (ADR-0096). So this rule is what removes an upload
+  # attaches it, sent by the browser through a pre-signed PUT and not yet
+  # validated, and is PROMOTED out only when a submission validates and claims
+  # it (ADR-0096, ADR-0126). So this rule is what removes an upload
   # nobody claimed: a file on a report the pilot never submitted, a failed
   # submission, a claim whose tidy-up delete failed. Those are bytes of a crash
   # photograph that belong to no report, and nothing else deletes them.

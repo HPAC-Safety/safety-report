@@ -14,8 +14,9 @@ namespace HpacSafety.Api.Reports;
 
 /// <summary>
 ///     The reporter's one report write: a final JSON request naming the
-///     attachments already uploaded to quarantine, persisted atomically, with no
-///     report state created before it. See issue #14, ADR-0096, and
+///     attachments already sent to quarantine, validating each, and persisting
+///     the report atomically, with no report state created before it. See issue
+///     #14, ADR-0096, ADR-0126, and
 ///     <c>features/report-submission/report-submission.feature</c>.
 /// </summary>
 /// <remarks>
@@ -48,12 +49,14 @@ public static partial class ReportSubmissionEndpoints
 		HttpRequest request,
 		HpacSafetyDbContext database,
 		IBlobStore blobStore,
+		MediaIngestor ingestor,
 		IOptions<MediaPolicyOptions> mediaOptions,
 		TimeProvider clock,
 		ILoggerFactory loggerFactory,
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(request);
+		ArgumentNullException.ThrowIfNull(ingestor);
 		ArgumentNullException.ThrowIfNull(loggerFactory);
 		ArgumentNullException.ThrowIfNull(database);
 		ArgumentNullException.ThrowIfNull(blobStore);
@@ -113,21 +116,29 @@ public static partial class ReportSubmissionEndpoints
 			return Problem(cause.Message);
 		}
 
-		// Every named upload must still be waiting in quarantine before a single
-		// byte is copied, so an expired one refuses the submission cleanly and
-		// the form can say exactly which files to attach again (ADR-0096).
+		// Every named upload must still be waiting in quarantine, and must be what
+		// it was declared as, before a single byte is copied. An expired or
+		// refused one refuses the submission cleanly, and the form can say
+		// exactly which files to attach again or why (ADR-0096, ADR-0126).
 		var (stored, expired) = await DescribeUploads(claimedUploads, blobStore, cancellationToken).ConfigureAwait(false);
-		if (expired.Count > 0)
+		var (accepted, refused) = await ValidateUploads(stored, blobStore, ingestor, cancellationToken).ConfigureAwait(false);
+		if (expired.Count > 0 || refused.Count > 0)
 		{
 			return Results.Problem(
 				title: "That submission was not accepted.",
-				detail: "Some attachments are no longer available and must be attached again.",
+				detail: expired.Count > 0
+					? "Some attachments are no longer available and must be attached again."
+					: "Some attachments were not accepted.",
 				statusCode: StatusCodes.Status400BadRequest,
 				type: "https://hpac.ca/problems/report-submission",
-				extensions: new Dictionary<string, object?> { ["expiredUploadIds"] = expired });
+				extensions: new Dictionary<string, object?>
+				{
+					["expiredUploadIds"] = expired,
+					["refusedUploads"] = refused,
+				});
 		}
 
-		await ClaimFiles(report, fileAnswers, stored, blobStore, clock, cancellationToken).ConfigureAwait(false);
+		await ClaimFiles(report, fileAnswers, accepted, blobStore, clock, cancellationToken).ConfigureAwait(false);
 
 		var at = clock.GetUtcNow();
 		database.Reports.Add(report);
@@ -373,16 +384,57 @@ public static partial class ReportSubmissionEndpoints
 	}
 
 	/// <summary>
+	///     Sniffs and validates every stored upload a submission claims (ADR-0126).
+	///     Each is read through a <see cref="BlobRangeStream" />, so only its stored
+	///     size and the bytes sniffing asks for are fetched — never the whole file,
+	///     never into memory. The size is held to the limit of the kind the bytes
+	///     really are.
+	/// </summary>
+	/// <returns>
+	///     The type each accepted upload was validated as, and each refused upload's
+	///     id with its safe reason, in the order they were named.
+	/// </returns>
+	private static async Task<(Dictionary<UploadId, (MediaType Type, long ByteSize)> Accepted, List<RefusedUpload> Refused)> ValidateUploads(
+		Dictionary<UploadId, StoredBlob> stored,
+		IBlobStore blobStore,
+		MediaIngestor ingestor,
+		CancellationToken cancellationToken)
+	{
+		var accepted = new Dictionary<UploadId, (MediaType Type, long ByteSize)>();
+		var refused = new List<RefusedUpload>();
+
+		foreach (var (upload, blob) in stored)
+		{
+			await using var content = new BlobRangeStream(blobStore, BlobKey.ForUpload(upload), blob.ByteSize);
+
+			// The stored type is the one the upload URL was signed for: what the
+			// browser declared, and nothing else could have been sent.
+			var verdict = await ingestor.Inspect(content, blob.ContentType, cancellationToken).ConfigureAwait(false);
+
+			if (verdict.IsAccepted)
+			{
+				accepted[upload] = (verdict.Type, blob.ByteSize);
+			}
+			else
+			{
+				refused.Add(new RefusedUpload(upload.Value, EnumCode.Of(verdict.RejectionReason)));
+			}
+		}
+
+		return (accepted, refused);
+	}
+
+	/// <summary>
 	///     Claims every file-upload answer's uploads: each is copied, unchanged and
 	///     inside storage, to the report's original compartment under the report
-	///     file's own id, and recorded with the type and size it was validated as
-	///     when it was uploaded. Nothing is decoded here — the Worker processes each
+	///     file's own id, and recorded with the type its bytes were validated as and
+	///     its stored size. Nothing is decoded here — the Worker processes each
 	///     file from its outbox message (ADR-0098).
 	/// </summary>
 	private static async Task ClaimFiles(
 		Report report,
 		IReadOnlyList<(ReportAnswer Answer, IReadOnlyList<(UploadId Upload, string? FileName)> Uploads)> fileAnswers,
-		Dictionary<UploadId, StoredBlob> stored,
+		Dictionary<UploadId, (MediaType Type, long ByteSize)> accepted,
 		IBlobStore blobStore,
 		TimeProvider clock,
 		CancellationToken cancellationToken)
@@ -393,11 +445,11 @@ public static partial class ReportSubmissionEndpoints
 			{
 				var fileId = TinyId.New();
 				var originalKey = BlobKey.For(report.Id.Value, MediaCompartment.Original, fileId.Value);
-				var blob = stored[upload];
+				var (type, byteSize) = accepted[upload];
 
 				await blobStore.Copy(BlobKey.ForUpload(upload), originalKey, cancellationToken).ConfigureAwait(false);
 
-				var file = report.AddFile(fileId, originalKey.Value, blob.ContentType, blob.ByteSize, fileName, clock.GetUtcNow());
+				var file = report.AddFile(fileId, originalKey.Value, type.ContentType, byteSize, fileName, clock.GetUtcNow());
 				file.LinkToAnswer(answer.Id);
 			}
 		}

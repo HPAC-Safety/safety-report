@@ -3,10 +3,12 @@
  * ReportSubmissionEndpoints.cs, issue #14). Nothing on this module's path runs
  * before the reporter presses Submit — see report-form/draft.ts for the
  * browser-only state that exists until then. Attachments were already uploaded
- * as they were attached (api/uploads.ts, ADR-0096); this names them.
+ * as they were attached (api/uploads.ts, ADR-0096, ADR-0126); this names
+ * them, and the API validates each before it claims it.
  */
 
 import { authorization } from "./adminQuestions"
+import type { UploadRejectionReason } from "./uploads"
 
 /** One uploaded file a file-upload answer claims, with the reporter's name for it (ADR-0097). */
 export interface SubmitAttachment {
@@ -29,12 +31,20 @@ export interface SubmitReportResult {
 	status: string
 }
 
+/** One upload the API refused at submission, after sniffing it (ADR-0126). */
+export interface RefusedUpload {
+	uploadId: string
+	reason: UploadRejectionReason
+}
+
 /** A submission the API rejected, carrying its safe, localized detail text. */
 export class SubmissionRejectedError extends Error {
 	constructor(
 		readonly detail: string,
 		/** Uploads the API could not find — expired, and to be attached again. */
 		readonly expiredUploadIds: string[] = [],
+		/** Uploads the API found but refused, each with its reason. */
+		readonly refusedUploads: RefusedUpload[] = [],
 	) {
 		super(detail)
 		this.name = "SubmissionRejectedError"
@@ -70,5 +80,6 @@ export async function submitReport(locale: string, answers: SubmitAnswer[]): Pro
 	throw new SubmissionRejectedError(
 		problem?.detail ?? problem?.title ?? "That submission was not accepted.",
 		Array.isArray(problem?.expiredUploadIds) ? (problem.expiredUploadIds as string[]) : [],
+		Array.isArray(problem?.refusedUploads) ? (problem.refusedUploads as RefusedUpload[]) : [],
 	)
 }

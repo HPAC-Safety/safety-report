@@ -124,7 +124,7 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "attachments": {
-      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total, {size} Mo chacun. Chaque fichier est téléversé dès que vous le sélectionnez.",
+      "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total. Chaque vidéo peut atteindre {videoSize} Mo, et chaque photo ou document, {size} Mo. Chaque fichier est téléversé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",
       "keptWithReport": "Les fichiers joints sont conservés avec votre signalement enregistré pendant un maximum de 15 jours; vous les retrouverez donc si vous quittez la page et y revenez.",
       "listLabel": "Fichiers joints",
@@ -136,9 +136,10 @@
       "removeNamed": "Supprimer {name}",
       "expired": "Ce fichier n'est plus disponible. Supprimez-le et joignez-le à nouveau.",
       "expiredSummary": "Certains fichiers joints ne sont plus disponibles. Veuillez joindre à nouveau les fichiers indiqués, puis soumettez votre réponse — vos autres réponses seront conservées.",
+      "refusedSummary": "Certains fichiers joints n'ont pas été acceptés. Les fichiers signalés ne seront pas envoyés; veuillez soumettre à nouveau votre réponse pour envoyer le reste — vos autres réponses sont conservées.",
       "rejected": {
         "empty": "Ce fichier est vide.",
-        "too_large": "Ce fichier dépasse 50 Mo.",
+        "too_large": "Ce fichier est trop volumineux. Une vidéo peut atteindre {videoSize} Mo, et une photo ou un document, {size} Mo.",
         "unrecognised_content": "Le contenu de ce fichier n'est pas dans un format que nous acceptons.",
         "unaccepted_media_type": "Ce type de fichier n'est pas accepté.",
         "declared_type_mismatch": "Le contenu de ce fichier ne correspond pas à son type.",

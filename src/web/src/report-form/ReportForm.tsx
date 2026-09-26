@@ -400,19 +400,36 @@ export function ReportForm() {
 		} catch (error) {
 			if (error instanceof SubmissionNetworkError) {
 				setSubmit({ status: "failed", message: t("report.error.network"), keepsLocalState: true })
-			} else if (error instanceof SubmissionRejectedError && error.expiredUploadIds.length > 0) {
-				// Only those files need attaching again; every other answer and
-				// upload stays exactly as it was (REQ-SUB-051).
+			} else if (
+				error instanceof SubmissionRejectedError &&
+				(error.expiredUploadIds.length > 0 || error.refusedUploads.length > 0)
+			) {
+				// Only those files are marked — expired ones to attach again,
+				// refused ones with the reason sniffing gave; every other answer and
+				// upload stays exactly as it was (REQ-SUB-051, REQ-SUB-076).
 				const expired = new Set(error.expiredUploadIds)
+				const refused = new Map(error.refusedUploads.map((upload) => [upload.uploadId, upload.reason]))
+				// A refused upload is never claimed; it is erased now rather than
+				// left for the lifecycle rule.
+				deleteUploads([...refused.keys()])
 				setAttachments((prev) =>
 					Object.fromEntries(
 						Object.entries(prev).map(([revisionId, rows]) => [
 							revisionId,
-							rows.map((row) => (row.uploadId && expired.has(row.uploadId) ? { ...row, status: "expired" as const } : row)),
+							rows.map((row) => {
+								if (!row.uploadId) return row
+								if (expired.has(row.uploadId)) return { ...row, status: "expired" as const }
+								const reason = refused.get(row.uploadId)
+								return reason ? { ...row, status: "rejected" as const, reason } : row
+							}),
 						]),
 					),
 				)
-				setSubmit({ status: "failed", message: t("report.attachments.expiredSummary"), keepsLocalState: true })
+				setSubmit({
+					status: "failed",
+					message: t(expired.size > 0 ? "report.attachments.expiredSummary" : "report.attachments.refusedSummary"),
+					keepsLocalState: true,
+				})
 			} else if (error instanceof SubmissionRejectedError) {
 				setSubmit({ status: "failed", message: error.detail, keepsLocalState: true })
 			} else {

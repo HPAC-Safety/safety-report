@@ -1,21 +1,23 @@
+using System.Text.Json;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Api.RateLimiting;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Reporting;
-using Microsoft.AspNetCore.Http.Features;
 
 namespace HpacSafety.Api.Reports;
 
 /// <summary>
-///     A reporter's attachment, uploaded the moment it is attached and held in private
-///     quarantine until the final submission claims it (ADR-0096).
+///     A reporter's attachment, minted the moment it is attached and sent by the
+///     browser straight to private quarantine, where it waits until the final
+///     submission claims it (ADR-0096, ADR-0126).
 /// </summary>
 /// <remarks>
 ///     <para>
-///         An upload is validated before anything is stored: the body is read into a
-///         temporary file, stopping one byte past the size limit, then sniffed and
-///         judged. Only an accepted file reaches the bucket, and a cancelled request
-///         reaches nothing, because the write happens last.
+///         The API never holds an attachment's bytes. It judges what the browser
+///         declares — type and exact size — and mints an opaque upload id and a
+///         short-lived pre-signed PUT signed for exactly that. Storage refuses any
+///         other type or length. The bytes are sniffed and validated when a
+///         submission claims them.
 ///     </para>
 ///     <para>
 ///         Nothing here records who uploaded. The member token is checked and then
@@ -25,7 +27,7 @@ namespace HpacSafety.Api.Reports;
 /// </remarks>
 public static class UploadEndpoints
 {
-	private const int ReadBufferSize = 81920;
+	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
 	/// <summary>Maps the upload and delete endpoints.</summary>
 	/// <param name="app">The route builder.</param>
@@ -38,62 +40,40 @@ public static class UploadEndpoints
 			.RequireAuthorization(HpacPolicies.Member)
 			.RequireRateLimiting(RateLimitPolicies.AttachmentUpload);
 
-		group.MapPost("/", Upload);
+		group.MapPost("/", Mint);
 		group.MapDelete("/{uploadId}", Delete);
 
 		return group;
 	}
 
-	private static async Task<IResult> Upload(
-		HttpContext context,
-		MediaIngestor ingestor,
-		MediaPolicy policy,
-		IBlobStore blobStore,
+	private static async Task<IResult> Mint(
+		HttpRequest request,
+		UploadLink uploadLink,
 		CancellationToken cancellationToken)
 	{
-		ArgumentNullException.ThrowIfNull(context);
-		ArgumentNullException.ThrowIfNull(ingestor);
-		ArgumentNullException.ThrowIfNull(policy);
-		ArgumentNullException.ThrowIfNull(blobStore);
+		ArgumentNullException.ThrowIfNull(request);
+		ArgumentNullException.ThrowIfNull(uploadLink);
 
-		var request = context.Request;
-
-		if (request.ContentLength > policy.MaxByteSize)
+		if (!request.HasJsonContentType())
 		{
-			return Refused(MediaRejectionReason.TooLarge);
+			return Malformed();
 		}
 
-		// Kestrel's default body limit is below the attachment limit. Raised to
-		// exactly one byte past it, which is all the bounded copy below ever reads.
-		if (context.Features.Get<IHttpMaxRequestBodySizeFeature>() is { IsReadOnly: false } bodySize)
+		var declaration = await ReadDeclaration(request, cancellationToken).ConfigureAwait(false);
+		if (declaration is not { ByteSize: { } byteSize })
 		{
-			bodySize.MaxRequestBodySize = policy.MaxByteSize + 1;
+			return Malformed();
 		}
 
-		// The temporary copy disappears when this request ends, whether it was
-		// accepted, refused, or aborted by the browser.
-		await using var copy = TemporaryFile.Create();
-
-		if (await CopyBounded(request.Body, copy, policy.MaxByteSize, cancellationToken).ConfigureAwait(false))
+		var minted = await uploadLink.Mint(declaration.ContentType, byteSize, cancellationToken).ConfigureAwait(false);
+		if (!minted.IsMinted)
 		{
-			return Refused(MediaRejectionReason.TooLarge);
+			return Refused(minted.RejectionReason);
 		}
-
-		var verdict = await ingestor.Inspect(copy, request.ContentType, cancellationToken).ConfigureAwait(false);
-		if (!verdict.IsAccepted)
-		{
-			return Refused(verdict.RejectionReason);
-		}
-
-		var uploadId = UploadId.New();
-		copy.Position = 0;
-		await blobStore
-			.Write(BlobKey.ForUpload(uploadId), copy, verdict.Type.ContentType, cancellationToken)
-			.ConfigureAwait(false);
 
 		return Results.Created(
 			(string?)null,
-			new UploadResponse(uploadId.Value, EnumCode.Of(verdict.Type.Kind)));
+			new UploadResponse(minted.UploadId.Value, EnumCode.Of(minted.Kind), minted.Url!.ToString(), minted.ExpiresAt));
 	}
 
 	private static async Task<IResult> Delete(
@@ -117,45 +97,33 @@ public static class UploadEndpoints
 		return Results.NoContent();
 	}
 
-	/// <summary>
-	///     Copies at most <paramref name="maxByteSize" /> + 1 bytes, so that a file of
-	///     exactly the limit succeeds and one byte more is enough to know it failed.
-	/// </summary>
-	/// <returns><see langword="true" /> when the body exceeded the limit.</returns>
-	private static async Task<bool> CopyBounded(
-		Stream source,
-		Stream destination,
-		long maxByteSize,
-		CancellationToken cancellationToken)
+	private static async Task<UploadRequest?> ReadDeclaration(HttpRequest request,
+															  CancellationToken cancellationToken)
 	{
-		var buffer = new byte[ReadBufferSize];
-		long total = 0;
-
-		while (true)
+		try
 		{
-			var toRead = (int)Math.Min(buffer.Length, maxByteSize + 1 - total);
-
-			if (toRead <= 0)
-			{
-				return true;
-			}
-
-			var read = await source.ReadAsync(buffer.AsMemory(0, toRead), cancellationToken).ConfigureAwait(false);
-
-			if (read == 0)
-			{
-				await destination.FlushAsync(cancellationToken).ConfigureAwait(false);
-				return false;
-			}
-
-			total += read;
-			await destination.WriteAsync(buffer.AsMemory(0, read), cancellationToken).ConfigureAwait(false);
+			return await JsonSerializer
+				.DeserializeAsync<UploadRequest>(request.Body, JsonOptions, cancellationToken)
+				.ConfigureAwait(false);
 		}
+		catch (JsonException)
+		{
+			return null;
+		}
+	}
+
+	private static IResult Malformed()
+	{
+		return Results.Problem(
+			title: "That attachment was not accepted.",
+			detail: "An upload is declared as JSON with its content type and exact byte size.",
+			statusCode: StatusCodes.Status400BadRequest,
+			type: "https://hpac.ca/problems/attachment-upload");
 	}
 
 	/// <summary>
 	///     A safe 400 naming only which rule refused the file. Never the file's name,
-	///     bytes, or declared type.
+	///     size, or declared type.
 	/// </summary>
 	private static IResult Refused(MediaRejectionReason reason)
 	{
@@ -167,7 +135,20 @@ public static class UploadEndpoints
 	}
 }
 
-/// <summary>What a successful upload returns. Nothing else — no name, key, or URL.</summary>
+/// <summary>
+///     What the browser declares about a file it is about to send. Never its name:
+///     that travels only with the final submission (ADR-0097).
+/// </summary>
+/// <param name="ContentType">The type the browser read from the file.</param>
+/// <param name="ByteSize">The file's exact size in bytes.</param>
+public sealed record UploadRequest(string? ContentType, long? ByteSize);
+
+/// <summary>What a minted upload returns. No name, key, or report id.</summary>
 /// <param name="UploadId">The opaque id the final submission names this file by.</param>
-/// <param name="Kind"><c>image</c>, <c>video</c>, or <c>document</c>.</param>
-public sealed record UploadResponse(string UploadId, string Kind);
+/// <param name="Kind"><c>image</c>, <c>video</c>, or <c>document</c>, as declared.</param>
+/// <param name="UploadUrl">
+///     A pre-signed PUT to this upload's quarantine key, signed for the declared
+///     <c>Content-Type</c> and exact <c>Content-Length</c>.
+/// </param>
+/// <param name="ExpiresAt">When <paramref name="UploadUrl" /> stops working.</param>
+public sealed record UploadResponse(string UploadId, string Kind, string UploadUrl, DateTimeOffset ExpiresAt);

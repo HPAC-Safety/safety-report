@@ -365,6 +365,95 @@ public abstract class BlobStoreContractTests : IAsyncLifetime
 		second.DerivativeKey.ShouldBe(first.DerivativeKey);
 	}
 
+	[Fact]
+	public async Task GivenStoredObject_WhenRangeIsRead_ThenOnlyThoseBytesArrive()
+	{
+		// Given
+		await SeedQuarantine(Quarantined, [0, 1, 2, 3, 4, 5, 6, 7, 8, 9], MediaType.Pdf);
+
+		// When
+		await using var range = await Store.OpenReadRange(Quarantined, 3, 4, CancellationToken.None);
+		using var buffer = new MemoryStream();
+		await range.CopyToAsync(buffer);
+
+		// Then
+		buffer.ToArray().ShouldBe([3, 4, 5, 6]);
+	}
+
+	[Fact]
+	public async Task GivenLargeDocxInQuarantine_WhenInspectedThroughRanges_ThenAcceptedWithoutFetchingWholeFile()
+	{
+		// Given — a package whose zip directory sits a megabyte past its start (ADR-0134).
+		var docx = LargeDocx();
+		await SeedQuarantine(Quarantined, docx, MediaType.Docx);
+		await using var content = new BlobRangeStream(Store, Quarantined, docx.Length);
+
+		// When
+		var verdict = await Ingestor().Inspect(content, MediaType.Docx.ContentType, CancellationToken.None);
+
+		// Then
+		verdict.IsAccepted.ShouldBeTrue();
+		verdict.Type.ShouldBe(MediaType.Docx);
+		content.BytesFetched.ShouldBeLessThan(docx.Length / 4);
+	}
+
+	[Fact]
+	public async Task GivenLargePngInQuarantine_WhenInspectedThroughRanges_ThenAcceptedWithoutFetchingWholeFile()
+	{
+		// Given — a real PNG header, then a megabyte past its end.
+		var png = ExifFixtures.Png().Concat(new byte[1024 * 1024]).ToArray();
+		await SeedQuarantine(Quarantined, png, MediaType.Png);
+		await using var content = new BlobRangeStream(Store, Quarantined, png.Length);
+
+		// When
+		var verdict = await Ingestor().Inspect(content, MediaType.Png.ContentType, CancellationToken.None);
+
+		// Then
+		verdict.Type.ShouldBe(MediaType.Png);
+		content.BytesFetched.ShouldBeLessThan(png.Length / 4);
+	}
+
+	[Fact]
+	public async Task GivenReportsOwnCompartment_WhenUploadUrlIsRequested_ThenRefused()
+	{
+		// Given / When / Then — a browser writes only where direct uploads go (ADR-0126).
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			Store.CreateUploadUrl(Original, MediaType.Jpeg.ContentType, 10, TimeSpan.FromMinutes(5), CancellationToken.None));
+	}
+
+	[Fact]
+	public async Task GivenLifetimeBeyondCap_WhenUploadUrlIsRequested_ThenRefused()
+	{
+		// Given
+		var lifetime = BlobUrlLifetime.Maximum + TimeSpan.FromMinutes(1);
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			Store.CreateUploadUrl(Quarantined, MediaType.Jpeg.ContentType, 10, lifetime, CancellationToken.None));
+	}
+
+	/// <summary>A DOCX whose only recognisable part, its directory, is a megabyte in.</summary>
+	private static byte[] LargeDocx()
+	{
+		using var buffered = new MemoryStream();
+		using (var archive = new System.IO.Compression.ZipArchive(buffered, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+		{
+			var filler = archive.CreateEntry("word/media/image1.bin", System.IO.Compression.CompressionLevel.NoCompression);
+			using (var stream = filler.Open())
+			{
+				var noise = new byte[1024 * 1024];
+				Random.Shared.NextBytes(noise);
+				stream.Write(noise);
+			}
+
+			var types = archive.CreateEntry("[Content_Types].xml");
+			using var writer = new StreamWriter(types.Open());
+			writer.Write("<?xml version=\"1.0\"?><Types/>");
+		}
+
+		return buffered.ToArray();
+	}
+
 	private MediaIngestor Ingestor(bool remuxProduces = false)
 	{
 		return new MediaIngestor(Store,

@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
@@ -8,6 +9,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using HpacSafety.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
@@ -16,22 +18,21 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     The attachment scenarios that describe <c>POST</c> and
-///     <c>DELETE /api/v1/uploads</c> and the claim a submission makes, against the
-///     booted API and its S3-compatible bucket (ADR-0096, ADR-0097). Every file here is
-///     synthetic.
+///     The attachment scenarios that describe minting an upload through
+///     <c>POST /api/v1/uploads</c>, the pre-signed PUT straight to storage,
+///     <c>DELETE /api/v1/uploads</c>, and the claim a submission makes, against the
+///     booted API and its S3-compatible bucket (ADR-0096, ADR-0097, ADR-0126). Every
+///     file here is synthetic.
 /// </summary>
 /// <remarks>
 ///     Scenarios run in parallel against one bucket, so nothing here counts objects.
-///     An assertion names the key its own scenario produced, or — where a refusal
-///     leaves no key — looks for an object of a length only that scenario sent.
+///     An assertion names the key its own scenario minted.
 /// </remarks>
 [Binding]
 public sealed class AttachmentUploadSteps
 {
 #pragma warning disable CA1822 // Reqnroll step bindings must be instance methods to be discovered.
 
-	private static readonly Uri Uploads = new("/api/v1/uploads", UriKind.Relative);
 	private static readonly Uri Submit = new("/api/v1/reports", UriKind.Relative);
 	private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -44,102 +45,224 @@ public sealed class AttachmentUploadSteps
 	private HttpResponseMessage? _response;
 	private byte[] _bytes = SyntheticPdf;
 	private string _declaredType = "application/pdf";
+	private long _declaredSize;
 	private string? _uploadId;
+	private Uri? _uploadUrl;
 	private string? _fileName;
 	private string? _reportId;
 	private int _abortedAfterBytes;
-	private bool _oversized;
+	private string? _mintedKey;
 
-	// --- An accepted upload returns an opaque upload ID; a refused one is never stored ---
+	// --- REQ-SUB-072: minting returns a pre-signed PUT for one quarantine key ---
 
-	[Given(@"a member uploads (.*)")]
-	public async Task GivenAMemberUploads(string file)
+	[Given(@"a member asks to upload an allowlisted file within its kind's size limit")]
+	public async Task GivenAMemberAsksToUploadAnAllowlistedFile()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
-		_oversized = file == "a file one byte larger than 50 MB";
-		(_bytes, _declaredType) = file switch
-		{
-			"an allowlisted file within the size limit" => (SyntheticPdf, "application/pdf"),
-			"an empty file" => ([], "application/pdf"),
-			// Unique bytes, so "nothing was stored" can look for exactly them.
-			"a file whose bytes match no known format" => (Unrecognisable(), "application/pdf"),
-			"a file declared as one allowlisted type but containing another" => (UniquePdf(), "image/png"),
-			// Sent as a generated stream, not an array: this suite also measures
-			// allocation (REQ-MED-024), and a 50 MB array here would skew it.
-			"a file one byte larger than 50 MB" => ([], "application/pdf"),
-			_ => throw new NotSupportedException($"Unmapped upload example: '{file}'."),
-		};
+		_declaredType = "application/pdf";
+		_declaredSize = SyntheticPdf.Length;
 	}
 
-	[When(@"the API accepts the upload")]
-	[When(@"the API validates the upload")]
-	public async Task WhenTheApiReceivesIt()
+	[When(@"the API mints the upload")]
+	[When(@"the API checks the declared type and size")]
+	public async Task WhenTheApiMintsTheUpload()
 	{
-		HttpContent body = _bytes.Length == 0 && _declaredType == "application/pdf" && _oversized
-			? new StreamContent(new GeneratedStream((50L * 1024 * 1024) + 1))
-			: new ByteArrayContent(_bytes);
-		body.Headers.ContentType = new MediaTypeHeaderValue(_declaredType);
-		_response = await _reporter!.PostAsync(Uploads, body);
+		// The declaration is all the request carries: no filename, no bytes.
+		_response = await DirectUpload.Mint(_reporter!, _declaredType, _declaredSize);
 		await _response.Content.LoadIntoBufferAsync();
 	}
 
-	[Then(@"the response is 201 Created with an opaque upload ID and the attachment's kind")]
-	public async Task ThenTheResponseIs201WithAnOpaqueUploadId()
+	[Then(@"the response is 201 Created with an opaque upload ID, the attachment's kind, a pre-signed PUT URL, and when that URL expires")]
+	public async Task ThenTheResponseIs201WithAnUploadIdKindUrlAndExpiry()
 	{
 		var text = await _response!.Content.ReadAsStringAsync();
 		_response.StatusCode.ShouldBe(HttpStatusCode.Created, text);
 		var upload = JsonSerializer.Deserialize<JsonElement>(text);
-		UploadId.TryParse(upload.GetProperty("uploadId").GetString(), out _).ShouldBeTrue();
+		_uploadId = upload.GetProperty("uploadId").GetString();
+		UploadId.TryParse(_uploadId, out _).ShouldBeTrue();
 		upload.GetProperty("kind").GetString().ShouldBe("document");
+		_uploadUrl = new Uri(upload.GetProperty("uploadUrl").GetString()!);
+		upload.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeGreaterThan(DateTimeOffset.UtcNow);
+		upload.EnumerateObject().Select(property => property.Name)
+			.ShouldBe(["uploadId", "kind", "uploadUrl", "expiresAt"], ignoreOrder: true);
 	}
 
-	[Then(@"the response never echoes a client filename, storage key, or URL")]
-	public async Task ThenTheResponseNeverEchoesAFilenameKeyOrUrl()
+	[Then(@"the URL writes only the quarantine key named by that upload ID, and lives at most 15 minutes")]
+	public void ThenTheUrlWritesOnlyThatQuarantineKey()
 	{
-		var upload = JsonSerializer.Deserialize<JsonElement>(await _response!.Content.ReadAsStringAsync());
-		upload.EnumerateObject().Select(property => property.Name).ShouldBe(["uploadId", "kind"], ignoreOrder: true);
+		_uploadUrl!.AbsolutePath.ShouldBe($"/{BootedApi.BucketName}/quarantine/{_uploadId}");
+		QueryValue(_uploadUrl, "X-Amz-Expires").ShouldNotBeNull();
+		int.Parse(QueryValue(_uploadUrl, "X-Amz-Expires")!, CultureInfo.InvariantCulture)
+			.ShouldBeLessThanOrEqualTo((int)BlobUrlLifetime.Maximum.TotalSeconds);
+	}
+
+	[Then(@"the URL is signed for the declared content type and the exact declared size")]
+	public async Task ThenTheUrlIsSignedForTypeAndSize()
+	{
+		QueryValue(_uploadUrl!, "X-Amz-SignedHeaders")!.Split(';').ShouldContain("content-length");
+		QueryValue(_uploadUrl!, "X-Amz-SignedHeaders")!.Split(';').ShouldContain("content-type");
+
+		// And storage holds it to both: exactly what was declared is accepted.
+		using var put = await DirectUpload.Put(_uploadUrl!, new ByteArrayContent(SyntheticPdf), _declaredType);
+		put.IsSuccessStatusCode.ShouldBeTrue();
+		(await StoredLength($"quarantine/{_uploadId}")).ShouldBe(SyntheticPdf.Length);
+	}
+
+	[Then(@"the request carries no filename, and none is persisted or logged for it")]
+	public async Task ThenTheRequestCarriesNoFilename()
+	{
+		// The request is the declaration alone (DirectUpload.Mint): a type and a
+		// size. The stored object carries only its type — no metadata, no
+		// disposition — so there is nothing a filename could have gone into.
+		var metadata = await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, $"quarantine/{_uploadId}");
+		metadata.Metadata.Keys.ShouldBeEmpty();
+		metadata.Headers.ContentDisposition.ShouldBeNullOrEmpty();
+	}
+
+	[Then(@"the response never echoes a client filename or a report ID")]
+	public async Task ThenTheResponseNeverEchoesAFilenameOrReportId()
+	{
+		var text = await _response!.Content.ReadAsStringAsync();
+		text.ShouldNotContain("fileName", Case.Insensitive);
+		text.ShouldNotContain("reportId", Case.Insensitive);
 		_response.Headers.Location.ShouldBeNull();
+	}
+
+	[Then(@"nothing is written to object storage or the database")]
+	public async Task ThenNothingIsWrittenToStorageOrTheDatabase()
+	{
+		// Checked against a second mint, whose URL nobody uses: minting alone
+		// writes nothing.
+		var (untouched, _) = await DirectUpload.MintOrThrow(_reporter!, _declaredType, _declaredSize);
+		(await StoredLength($"quarantine/{untouched}")).ShouldBeNull();
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		(await database.ReportFiles.IgnoreQueryFilters().AnyAsync(file => file.BlobKey.Contains(untouched))).ShouldBeFalse();
+	}
+
+	// --- REQ-SUB-073: a declaration the API will not accept gets no URL ---
+
+	[Given(@"^a member asks to upload (a file of zero bytes|a video one byte larger than 250 MB|an image one byte larger than 25 MB|a document one byte larger than 25 MB|a file whose declared type is not on the allowlist)$")]
+	public async Task GivenAMemberAsksToUpload(string file)
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		const long megabyte = 1024 * 1024;
+		(_declaredType, _declaredSize) = file switch
+		{
+			"a file of zero bytes" => ("application/pdf", 0L),
+			"a video one byte larger than 250 MB" => ("video/mp4", (250 * megabyte) + 1),
+			"an image one byte larger than 25 MB" => ("image/jpeg", (25 * megabyte) + 1),
+			"a document one byte larger than 25 MB" => ("application/pdf", (25 * megabyte) + 1),
+			_ => ("application/x-msdownload", 10L),
+		};
 	}
 
 	[Then(@"the API rejects it with a safe rejection reason of ""(.*)""")]
 	public async Task ThenTheApiRejectsItWithReason(string reason)
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-		var problem = await _response.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = JsonSerializer.Deserialize<JsonElement>(await _response.Content.ReadAsStringAsync());
 		problem.GetProperty("reason").GetString().ShouldBe(reason);
 	}
 
-	[Then(@"nothing is written to object storage")]
-	public async Task ThenNothingIsWrittenToObjectStorage()
+	[Then(@"no upload URL is minted")]
+	public async Task ThenNoUploadUrlIsMinted()
 	{
-		// The endpoint writes only after it has accepted a file, so a refusal
-		// carries no id to look up. What can be checked is that no object of
-		// exactly these bytes' length reached quarantine.
-		(await QuarantineHoldsObjectOfSize(_oversized ? (50L * 1024 * 1024) + 1 : _bytes.Length)).ShouldBeFalse();
+		var problem = JsonSerializer.Deserialize<JsonElement>(await _response!.Content.ReadAsStringAsync());
+		problem.TryGetProperty("uploadUrl", out _).ShouldBeFalse();
+		problem.TryGetProperty("uploadId", out _).ShouldBeFalse();
 	}
 
-	// --- An unauthenticated upload is rejected ---
+	// --- REQ-SUB-074: storage accepts only the upload the URL was signed for ---
+
+	[Given(@"the API minted an upload URL")]
+	public async Task GivenTheApiMintedAnUploadUrl()
+	{
+		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_declaredType = "application/pdf";
+		_declaredSize = SyntheticPdf.Length;
+		(_uploadId, _uploadUrl) = await DirectUpload.MintOrThrow(_reporter, _declaredType, _declaredSize);
+		_mintedKey = $"quarantine/{_uploadId}";
+	}
+
+	[When(@"the browser sends (.*)")]
+	public async Task WhenTheBrowserSends(string request)
+	{
+		switch (request)
+		{
+			case "a body larger or smaller than the declared size":
+				using (var longer = await DirectUpload.Put(_uploadUrl!, new ByteArrayContent([.. SyntheticPdf, 0x20]), _declaredType))
+				{
+					longer.IsSuccessStatusCode.ShouldBeFalse();
+				}
+
+				_response = await DirectUpload.Put(_uploadUrl!, new ByteArrayContent(SyntheticPdf[..^1]), _declaredType);
+
+				break;
+			case "a content type other than the declared one":
+				_response = await DirectUpload.Put(_uploadUrl!, new ByteArrayContent(SyntheticPdf), "image/png");
+				break;
+			case "the PUT after the URL has expired":
+				// A URL minted by the same chokepoint the API uses, living one
+				// second, so its expiry is real rather than simulated.
+				await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
+				{
+					var store = scope.ServiceProvider.GetRequiredService<IBlobStore>();
+					var uploadId = UploadId.New();
+					_mintedKey = BlobKey.ForUpload(uploadId).Value;
+					var shortLived = await store.CreateUploadUrl(
+						BlobKey.ForUpload(uploadId), _declaredType, SyntheticPdf.Length, TimeSpan.FromSeconds(1), CancellationToken.None);
+					await Task.Delay(TimeSpan.FromSeconds(2.5));
+					_response = await DirectUpload.Put(shortLived, new ByteArrayContent(SyntheticPdf), _declaredType);
+				}
+
+				break;
+			case "the PUT to any key other than the one it was minted for":
+				var elsewhere = $"quarantine/{UploadId.New().Value}";
+				var retargeted = new UriBuilder(_uploadUrl!) { Path = $"/{BootedApi.BucketName}/{elsewhere}" }.Uri;
+				_response = await DirectUpload.Put(retargeted, new ByteArrayContent(SyntheticPdf), _declaredType);
+				(await StoredLength(elsewhere)).ShouldBeNull();
+				break;
+			default:
+				throw new NotSupportedException($"Unmapped request: '{request}'.");
+		}
+	}
+
+	[Then(@"storage refuses it")]
+	public void ThenStorageRefusesIt()
+	{
+		_response!.IsSuccessStatusCode.ShouldBeFalse();
+		((int)_response.StatusCode).ShouldBeInRange(400, 499);
+	}
+
+	[Then(@"nothing is stored under that upload's quarantine key")]
+	public async Task ThenNothingIsStoredUnderThatKey()
+	{
+		(await StoredLength(_mintedKey!)).ShouldBeNull();
+	}
+
+	// --- REQ-SUB-043: an unauthenticated upload is rejected ---
 
 	[Given(@"an upload request carries no bearer token")]
 	public void GivenAnUploadRequestCarriesNoBearerToken()
 	{
-		_bytes = Unrecognisable();
+		_declaredType = "application/pdf";
+		_declaredSize = SyntheticPdf.Length;
 	}
 
 	[When(@"the API receives it")]
 	public async Task WhenTheApiReceivesAnAnonymousUpload()
 	{
 		using var anonymous = (await BootedApi.Factory()).CreateClient();
-		using var body = new ByteArrayContent(_bytes);
-		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
-		_response = await anonymous.PostAsync(Uploads, body);
+		_response = await DirectUpload.Mint(anonymous, _declaredType, _declaredSize);
 	}
 
 	[Then(@"the API rejects it before anything is written to object storage")]
 	public async Task ThenTheApiRejectsItBeforeAnythingIsStored()
 	{
 		_response!.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
-		(await QuarantineHoldsObjectOfSize(_bytes.Length)).ShouldBeFalse();
+		(await _response.Content.ReadAsStringAsync()).ShouldNotContain("uploadUrl");
 	}
 
 	// --- REQ-MED-002: declared content type must agree with detected content type ---
@@ -151,22 +274,24 @@ public sealed class AttachmentUploadSteps
 
 		// A PDF declared as a PNG, under a name whose extension agrees with the
 		// declaration — so only the bytes say what it really is.
-		_bytes = UniquePdf();
-		_declaredType = "image/png";
+		_uploadId = await DirectUpload.Send(_reporter, UniquePdf(), "image/png");
+		_fileName = "photo.png";
 	}
 
 	[When(@"the API validates the attachment")]
 	public async Task WhenTheApiValidatesTheAttachment()
 	{
-		_response = await UploadNamed(_bytes, _declaredType, "photo.png");
+		_response = await SubmitClaiming(_uploadId!, _fileName);
 		await _response.Content.LoadIntoBufferAsync();
 	}
 
 	[Then(@"the API rejects the attachment")]
 	public async Task ThenTheApiRejectsTheAttachment()
 	{
-		await ThenTheApiRejectsItWithReason("declared_type_mismatch");
-		await ThenNothingIsWrittenToObjectStorage();
+		_response!.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var refused = (await _response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("refusedUploads").EnumerateArray().Single();
+		refused.GetProperty("uploadId").GetString().ShouldBe(_uploadId);
+		refused.GetProperty("reason").GetString().ShouldBe("declared_type_mismatch");
 	}
 
 	[Then(@"the file extension and client filename are never trusted as the basis for acceptance")]
@@ -174,31 +299,28 @@ public sealed class AttachmentUploadSteps
 	{
 		// The same kind of file, declared truthfully under the same misleading
 		// name, is accepted as what its bytes are: the name decided neither.
-		using var truthful = await UploadNamed(UniquePdf(), "application/pdf", "photo.png");
-
-		truthful.StatusCode.ShouldBe(HttpStatusCode.Created, await truthful.Content.ReadAsStringAsync());
-		(await truthful.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("kind").GetString().ShouldBe("document");
+		var truthful = await DirectUpload.Send(_reporter!, UniquePdf(), "application/pdf");
+		using var response = await SubmitClaiming(truthful, "photo.png");
+		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
 	}
 
-	// --- An accepted upload waits in a private quarantine compartment ---
+	// --- REQ-MED-045: a sent upload waits, unvalidated, in quarantine ---
 
-	[Given(@"a reporter's upload passes the size bound and validation")]
-	public async Task GivenAReportersUploadPassesValidation()
+	[Given(@"a reporter's browser has sent a file through the pre-signed PUT the API minted for it")]
+	public async Task GivenAReportersBrowserHasSentAFile()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+
+		// Bytes no sniffer recognises, declared as a PDF: storage takes them,
+		// because nothing has judged them yet.
+		_bytes = Unrecognisable();
+		_uploadId = await DirectUpload.Send(_reporter, _bytes, "application/pdf");
 	}
 
-	[When(@"the API stores it")]
-	public async Task WhenTheApiStoresIt()
+	[Then(@"its bytes sit at a private quarantine key named only by the minted upload ID")]
+	public async Task ThenItsBytesSitInQuarantine()
 	{
-		_uploadId = await Upload(SyntheticPdf, "application/pdf");
-	}
-
-	[Then(@"its bytes are written to a private quarantine key named only by a minted upload ID")]
-	public async Task ThenItsBytesAreWrittenToQuarantine()
-	{
-		var stored = await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, $"quarantine/{_uploadId}");
-		stored.ContentLength.ShouldBe(SyntheticPdf.Length);
+		(await StoredLength($"quarantine/{_uploadId}")).ShouldBe(_bytes.Length);
 		BlobKey.Parse($"quarantine/{_uploadId}").ReportId.ShouldBeNull();
 	}
 
@@ -220,13 +342,23 @@ public sealed class AttachmentUploadSteps
 		ReviewerMediaLink.IsViewable(BlobKey.Parse($"quarantine/{_uploadId}")).ShouldBeFalse();
 	}
 
-	// --- Removing an upload erases every version of it ---
+	[Then(@"it is not validated until a submission claims it")]
+	public async Task ThenItIsNotValidatedUntilClaimed()
+	{
+		// Stored as sent, though no sniffer recognises it; the claim is what refuses it.
+		using var response = await SubmitClaiming(_uploadId!, null);
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		var refused = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("refusedUploads").EnumerateArray().Single();
+		refused.GetProperty("reason").GetString().ShouldBe("unrecognised_content");
+	}
+
+	// --- REQ-MED-016: removing an upload erases every version of it ---
 
 	[Given(@"an unclaimed upload exists in quarantine")]
 	public async Task GivenAnUnclaimedUploadExistsInQuarantine()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
-		_uploadId = await Upload(SyntheticPdf, "application/pdf");
+		_uploadId = await DirectUpload.Send(_reporter, SyntheticPdf, "application/pdf");
 	}
 
 	[When(@"the reporter's browser deletes it")]
@@ -254,33 +386,37 @@ public sealed class AttachmentUploadSteps
 		again.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 	}
 
-	// --- A cancelled upload leaves nothing in storage ---
+	// --- REQ-MED-017: a cancelled upload leaves nothing in storage ---
 
 	[Given(@"a reporter's upload is still being received")]
 	public async Task GivenAReportersUploadIsStillBeingReceived()
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
+		_bytes = UniquePdf();
+		(_uploadId, _uploadUrl) = await DirectUpload.MintOrThrow(_reporter, "application/pdf", _bytes.Length);
 	}
 
 	[When(@"the browser aborts the request")]
 	public async Task WhenTheBrowserAbortsTheRequest()
 	{
-		var prefix = UniquePdf();
+		// Half the file, then Cancel: the PUT to storage is aborted mid-body.
+		var half = _bytes[..(_bytes.Length / 2)];
 		using var abort = new CancellationTokenSource();
-		using var body = new StallingContent(prefix, abort);
-		body.Headers.ContentType = new MediaTypeHeaderValue("application/pdf");
+		using var body = new StallingContent(half, _bytes.Length, abort);
 
-		await Should.ThrowAsync<OperationCanceledException>(() => _reporter!.PostAsync(Uploads, body, abort.Token));
-		_abortedAfterBytes = prefix.Length;
+		await Should.ThrowAsync<OperationCanceledException>(() =>
+			DirectUpload.Put(_uploadUrl!, body, "application/pdf", abort.Token));
+		_abortedAfterBytes = half.Length;
 
-		// Give the server a moment to observe the abort and unwind.
+		// Give storage a moment to observe the abort and unwind.
 		await Task.Delay(TimeSpan.FromMilliseconds(250));
 	}
 
 	[Then(@"nothing is written to object storage for it")]
 	public async Task ThenNothingIsWrittenToObjectStorageForIt()
 	{
-		(await QuarantineHoldsObjectOfSize(_abortedAfterBytes)).ShouldBeFalse();
+		_abortedAfterBytes.ShouldBeGreaterThan(0);
+		(await StoredLength($"quarantine/{_uploadId}")).ShouldBeNull();
 	}
 
 	// --- The client filename is kept only as a reviewer's download name ---
@@ -290,7 +426,7 @@ public sealed class AttachmentUploadSteps
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		_fileName = "pilot-smith-launch.pdf";
-		_uploadId = await Upload(SyntheticPdf, "application/pdf");
+		_uploadId = await DirectUpload.Send(_reporter, SyntheticPdf, "application/pdf");
 	}
 
 	[Given(@"a submission names an attachment with the filename (.*)")]
@@ -298,7 +434,7 @@ public sealed class AttachmentUploadSteps
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		_fileName = fileName == "(blank)" ? "   " : fileName;
-		_uploadId = await Upload(SyntheticPdf, "application/pdf");
+		_uploadId = await DirectUpload.Send(_reporter, SyntheticPdf, "application/pdf");
 	}
 
 	[Given(@"a submission claims an accepted upload")]
@@ -306,32 +442,14 @@ public sealed class AttachmentUploadSteps
 	{
 		_reporter = await BootedApi.SignedInAs(MemberRole.User);
 		_fileName = "launch-site.pdf";
-		_uploadId = await Upload(SyntheticPdf, "application/pdf");
+		_uploadId = await DirectUpload.Send(_reporter, SyntheticPdf, "application/pdf");
 	}
 
 	[When(@"the API claims the attachment")]
 	[When(@"the API ingests it")]
 	public async Task WhenTheApiClaimsTheAttachment()
 	{
-		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
-		var fileRevision = await FileUploadRevisionId();
-
-		var dto = new
-		{
-			language = "en-CA",
-			answers = new object[]
-			{
-				new { questionRevisionId = consent, value = (bool?)true },
-				new
-				{
-					questionRevisionId = fileRevision,
-					attachments = new[] { new { uploadId = _uploadId!, fileName = _fileName } },
-				},
-			},
-		};
-
-		using var content = new StringContent(JsonSerializer.Serialize(dto, JsonOptions), System.Text.Encoding.UTF8, "application/json");
-		using var response = await _reporter!.PostAsync(Submit, content);
+		using var response = await SubmitClaiming(_uploadId!, _fileName);
 		response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await response.Content.ReadAsStringAsync());
 		_reportId = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString();
 	}
@@ -404,25 +522,46 @@ public sealed class AttachmentUploadSteps
 		(listing.S3Objects ?? []).ShouldBeEmpty();
 	}
 
-	private async Task<string> Upload(byte[] bytes,
-									  string declaredType)
+	/// <summary>Submits a report whose one file-upload answer claims <paramref name="uploadId" />.</summary>
+	private async Task<HttpResponseMessage> SubmitClaiming(string uploadId,
+														   string? fileName)
 	{
-		using var body = new ByteArrayContent(bytes);
-		body.Headers.ContentType = new MediaTypeHeaderValue(declaredType);
-		using var response = await _reporter!.PostAsync(Uploads, body);
-		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
-		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("uploadId").GetString()!;
+		var consent = await ReportSubmissionEndpointSteps.ConsentRevisionId();
+		var fileRevision = await FileUploadRevisionId();
+		var dto = new
+		{
+			language = "en-CA",
+			answers = new object[]
+			{
+				new { questionRevisionId = consent, value = (bool?)true },
+				new { questionRevisionId = fileRevision, attachments = new[] { new { uploadId, fileName } } },
+			},
+		};
+
+		using var content = new StringContent(JsonSerializer.Serialize(dto, JsonOptions), System.Text.Encoding.UTF8, "application/json");
+		return await _reporter!.PostAsync(Submit, content);
 	}
 
-	/// <summary>Posts an upload carrying a client filename, which the API has no reason to read.</summary>
-	private async Task<HttpResponseMessage> UploadNamed(byte[] bytes,
-														string declaredType,
-														string fileName)
+	private static async Task<long?> StoredLength(string key)
 	{
-		using var body = new ByteArrayContent(bytes);
-		body.Headers.ContentType = new MediaTypeHeaderValue(declaredType);
-		body.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment") { FileName = fileName };
-		return await _reporter!.PostAsync(Uploads, body);
+		try
+		{
+			return (await BootedApi.Storage.GetObjectMetadataAsync(BootedApi.BucketName, key)).ContentLength;
+		}
+		catch (AmazonS3Exception missing) when (missing.StatusCode == HttpStatusCode.NotFound)
+		{
+			return null;
+		}
+	}
+
+	private static string? QueryValue(Uri url,
+									  string name)
+	{
+		return url.Query.TrimStart('?').Split('&')
+			.Select(pair => pair.Split('=', 2))
+			.Where(pair => string.Equals(pair[0], name, StringComparison.Ordinal))
+			.Select(pair => Uri.UnescapeDataString(pair[1]))
+			.SingleOrDefault();
 	}
 
 	private async Task<ReportFile> ClaimedFile()
@@ -451,26 +590,6 @@ public sealed class AttachmentUploadSteps
 		return (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("revisionId").GetString()!;
 	}
 
-	private static async Task<bool> QuarantineHoldsObjectOfSize(long size)
-	{
-		var request = new ListObjectsV2Request { BucketName = BootedApi.BucketName, Prefix = "quarantine/" };
-		ListObjectsV2Response page;
-
-		do
-		{
-			page = await BootedApi.Storage.ListObjectsV2Async(request);
-			if ((page.S3Objects ?? []).Any(entry => entry.Size == size))
-			{
-				return true;
-			}
-
-			request.ContinuationToken = page.NextContinuationToken;
-		}
-		while (page.IsTruncated == true);
-
-		return false;
-	}
-
 	// A valid PDF of a length no other scenario is likely to upload, so "no
 	// object of this size" is a check on this scenario alone.
 	private static byte[] UniquePdf()
@@ -491,10 +610,11 @@ public sealed class AttachmentUploadSteps
 	}
 
 	/// <summary>
-	///     A body that sends its bytes, then stalls and cancels — a browser whose
-	///     reporter pressed Cancel partway through.
+	///     A body that promises its full length, sends part of it, then stalls and
+	///     cancels — a browser whose reporter pressed Cancel partway through.
 	/// </summary>
 	private sealed class StallingContent(byte[] prefix,
+										 long declaredLength,
 										 CancellationTokenSource abort) : HttpContent
 	{
 		protected override async Task SerializeToStreamAsync(Stream stream,
@@ -508,60 +628,8 @@ public sealed class AttachmentUploadSteps
 
 		protected override bool TryComputeLength(out long length)
 		{
-			length = -1;
-			return false;
-		}
-	}
-
-	/// <summary>A readable stream of a given length that holds none of its bytes.</summary>
-	private sealed class GeneratedStream(long length) : Stream
-	{
-		private long _position;
-
-		public override bool CanRead => true;
-
-		public override bool CanSeek => false;
-
-		public override bool CanWrite => false;
-
-		public override long Length => length;
-
-		public override long Position
-		{
-			get => _position;
-			set => throw new NotSupportedException();
-		}
-
-		public override int Read(byte[] buffer,
-								 int offset,
-								 int count)
-		{
-			var served = (int)Math.Min(count, length - _position);
-			Array.Clear(buffer, offset, served);
-			_position += served;
-			return served;
-		}
-
-		public override void Flush()
-		{
-		}
-
-		public override long Seek(long offset,
-								  SeekOrigin origin)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override void SetLength(long value)
-		{
-			throw new NotSupportedException();
-		}
-
-		public override void Write(byte[] buffer,
-								   int offset,
-								   int count)
-		{
-			throw new NotSupportedException();
+			length = declaredLength;
+			return true;
 		}
 	}
 }

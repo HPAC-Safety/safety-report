@@ -1,17 +1,20 @@
 ---
 title: Attachment processing
-description: How files streamed from the final multipart submission are detected and safely processed.
+description: How claimed attachments are detected, validated, and safely processed.
 type: readme
 ---
 
 # Attachment processing
 
-This slice detects and safely processes files streamed from the final multipart
-report submission. The normative matrix is in [`features/media/media.feature`](../../../features/media/media.feature).
+This slice detects and safely processes the attachments a submission claims
+from quarantine, where the browser sent them by pre-signed PUT (ADR-0126). The normative matrix is in [`features/media/media.feature`](../../../features/media/media.feature).
 
 Accepted images are JPEG, PNG, WebP, and HEIC; videos are MP4 and QuickTime;
 documents are PDF, DOC, DOCX, RTF, MD, TXT, and ODT. Sniff actual format,
-require declared/actual agreement, and enforce 50 MB while streaming. There is
+require declared/actual agreement, and hold each file to its detected kind's
+limit: 250 MB for a video, 25 MB for an image or document
+(`HpacSafety:Media:Policy:MaxVideoByteSize`, `MaxImageByteSize`,
+`MaxDocumentByteSize`). There is
 no malware scan (ADR-0089) — the format allowlist and sniffing are the gate.
 
 - Decode/re-encode images to remove metadata; HEIC may produce a safe JPEG.

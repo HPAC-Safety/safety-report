@@ -124,6 +124,30 @@ public class QuestionChoice
 	public TinyId? ReplacedByChoiceId { get; private set; }
 
 	/// <summary>
+	///     The value this one was merged into, if it was: this one is removed, and
+	///     every answer naming it reads that value instead. Merges are flattened
+	///     when made, so this never names a value that is itself merged (ADR-0129).
+	/// </summary>
+	public TinyId? MergedIntoChoiceId { get; private set; }
+
+	/// <summary>
+	///     The value <see cref="MergedIntoChoiceId" /> names, when the reader loaded
+	///     it. Read through <see cref="Resolved" />.
+	/// </summary>
+	public QuestionChoice? MergedInto { get; private set; }
+
+	/// <summary>
+	///     The value an answer naming this one reads: the one it was merged into,
+	///     or itself. Reading a merged value without the one it was merged into
+	///     loaded throws rather than showing the old wording.
+	/// </summary>
+	public QuestionChoice Resolved =>
+		MergedIntoChoiceId is null
+			? this
+			: MergedInto ?? throw new InvalidOperationException(
+				"This value was merged into another that was not loaded with it. Include the merged-into value to read it.");
+
+	/// <summary>
 	///     True while one language is missing — a reporter-added choice waiting for
 	///     an Administrator to supply the other wording.
 	/// </summary>
@@ -237,6 +261,19 @@ public class QuestionChoice
 	}
 
 	/// <summary>Records a review — an approval, a correction, or a removal — and clears the flag.</summary>
+	/// <summary>
+	///     Retires this value into <paramref name="target" />: removed, if it was not
+	///     already, and every answer naming it reads the target from now on. The
+	///     answers themselves are never rewritten (ADR-0129).
+	/// </summary>
+	internal void MergeInto(QuestionChoice target,
+							DateTimeOffset at)
+	{
+		Deleted ??= at;
+		MergedIntoChoiceId = target.Id;
+		MergedInto = target;
+	}
+
 	internal void MarkReviewed(string reviewer,
 							   DateTimeOffset at)
 	{

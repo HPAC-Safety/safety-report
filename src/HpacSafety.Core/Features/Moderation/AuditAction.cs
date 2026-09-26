@@ -31,4 +31,5 @@ public enum AuditAction
 	ApprovedTypeAheadValue = 40,
 	CorrectedTypeAheadValue = 41,
 	RemovedTypeAheadValue = 42,
+	MergedTypeAheadValue = 43,
 }

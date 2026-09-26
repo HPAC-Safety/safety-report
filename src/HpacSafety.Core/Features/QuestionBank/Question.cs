@@ -700,9 +700,15 @@ public class Question
 
 		var code = QuestionKey.Normalize(typed);
 
-		if ((_choices.Find(choice => choice.Deleted is not null && ReadsAs(choice, typed))
+		if ((_choices.Find(choice => choice.MergedIntoChoiceId is not null && ReadsAs(choice, typed))
+			 ?? _choices.Find(choice => choice.Deleted is not null && ReadsAs(choice, typed))
 			 ?? _choices.Find(choice => choice.Code == code)) is { } existing)
 		{
+			if (existing.MergedIntoChoiceId is not null)
+			{
+				return MergeTargetOf(existing);
+			}
+
 			if (existing.Deleted is not null)
 			{
 				existing.FlagForReview();
@@ -771,6 +777,52 @@ public class Question
 		}
 
 		value.MarkReviewed(reviewer, at);
+	}
+
+	/// <summary>
+	///     A reviewer merges one type-ahead value into another of the same question:
+	///     the source is removed and every answer naming it reads the target, without
+	///     any answer being rewritten. A value already merged into the source follows
+	///     it to the target, so a merge never forms a chain or a cycle. Both are
+	///     reviewed (ADR-0129).
+	/// </summary>
+	public void MergeValue(TinyId sourceId,
+						   TinyId targetId,
+						   string reviewer,
+						   DateTimeOffset at)
+	{
+		var source = ReviewedValue(sourceId);
+		var target = ReviewedValue(targetId);
+
+		if (source.Id == target.Id)
+		{
+			throw new DomainRuleViolationException("A value cannot be merged into itself.");
+		}
+
+		if (source.MergedIntoChoiceId is not null)
+		{
+			throw new DomainRuleViolationException("That value was already merged into another.");
+		}
+
+		if (target.Deleted is not null)
+		{
+			throw new DomainRuleViolationException("A value can only be merged into one the form still offers.");
+		}
+
+		source.MergeInto(target, at);
+
+		foreach (var earlier in _choices.Where(choice => choice.MergedIntoChoiceId == source.Id))
+		{
+			earlier.MergeInto(target, earlier.Deleted!.Value);
+		}
+
+		source.MarkReviewed(reviewer, at);
+		target.MarkReviewed(reviewer, at);
+	}
+
+	private QuestionChoice MergeTargetOf(QuestionChoice merged)
+	{
+		return _choices.Single(choice => choice.Id == merged.MergedIntoChoiceId);
 	}
 
 	/// <summary>This type-ahead's value by identifier, removed ones included; any other question type refuses review.</summary>
@@ -999,6 +1051,13 @@ public class Question
 		{
 			var original = _choices.Single(choice => choice.Id == originalId);
 			copy.RelinkReplacement(original.ReplacedByChoiceId is { } next && copies.TryGetValue(next, out var nextCopy) ? nextCopy.Id : null);
+		}
+
+		// A merged value's copy is merged into the copy of its target: the copies
+		// have new identifiers (ADR-0129).
+		foreach (var merged in _choices.Where(choice => choice.MergedIntoChoiceId is not null))
+		{
+			copies[merged.Id].MergeInto(copies[merged.MergedIntoChoiceId!.Value], merged.Deleted!.Value);
 		}
 
 		replacement._choices.AddRange(copies.Values);

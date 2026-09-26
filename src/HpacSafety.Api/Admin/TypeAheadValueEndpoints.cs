@@ -10,7 +10,8 @@ namespace HpacSafety.Api.Admin;
 /// <summary>
 ///     The type-ahead values waiting for review, and the review itself: a Safety
 ///     Officer or an Administrator approves a value, corrects its wording in place
-///     for every answer that names it, or removes it (ADR-0129). Every write is
+///     for every answer that names it, merges it into another, or removes it
+///     (ADR-0129). Every write is
 ///     audited in the same transaction as the change.
 /// </summary>
 public static class TypeAheadValueEndpoints
@@ -28,6 +29,7 @@ public static class TypeAheadValueEndpoints
 		group.MapPost("/{id}/approval", Approve);
 		group.MapPut("/{id}", Correct);
 		group.MapDelete("/{id}", Remove);
+		group.MapPost("/{id}/merge", Merge);
 
 		return group;
 	}
@@ -53,14 +55,21 @@ public static class TypeAheadValueEndpoints
 				.Select(choice => (Question: question, Choice: choice)))
 			.ToList();
 
-		var ids = flagged.Select(entry => (TinyId?)entry.Choice.Id).ToList();
-		var answerCounts = await database.ReportAnswers
+		// An answer naming a value merged into a flagged one names it too (ADR-0129).
+		var readAs = questions
+			.SelectMany(question => question.AllChoices)
+			.ToDictionary(choice => choice.Id, choice => choice.MergedIntoChoiceId ?? choice.Id);
+		var ids = readAs.Keys.Select(id => (TinyId?)id).ToList();
+		var named = await database.ReportAnswers
 			.AsNoTracking()
 			.Where(answer => ids.Contains(answer.ChoiceId))
 			.GroupBy(answer => answer.ChoiceId)
 			.Select(group => new { ChoiceId = group.Key, Count = group.Count() })
-			.ToDictionaryAsync(entry => entry.ChoiceId!.Value, entry => entry.Count, cancellationToken)
+			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
+		var answerCounts = named
+			.GroupBy(entry => readAs[entry.ChoiceId!.Value])
+			.ToDictionary(group => group.Key, group => group.Sum(entry => entry.Count));
 
 		var values = flagged
 			.OrderBy(entry => entry.Choice.CreatedAt ?? DateTimeOffset.MinValue)
@@ -75,7 +84,12 @@ public static class TypeAheadValueEndpoints
 				entry.Choice.ReporterLocale?.Code,
 				entry.Choice.Deleted is not null,
 				answerCounts.GetValueOrDefault(entry.Choice.Id),
-				entry.Choice.CreatedAt))
+				entry.Choice.CreatedAt,
+				[
+					.. entry.Question.Choices
+						.Where(target => target.Id != entry.Choice.Id)
+						.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr)),
+				]))
 			.ToList();
 
 		return Results.Ok(new TypeAheadValuesResponse(values, values.Count));
@@ -104,6 +118,29 @@ public static class TypeAheadValueEndpoints
 
 		return Review(id, database, clock, context, AuditAction.CorrectedTypeAheadValue,
 			(question, choiceId, reviewer, at) => question.CorrectValue(choiceId, request.LabelEn, request.LabelFr, reviewer, at), cancellationToken);
+	}
+
+	private static Task<IResult> Merge(
+		string id,
+		MergeTypeAheadValueRequest request,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		HttpContext context,
+		CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		if (!TinyId.TryParse(request.IntoId, out var targetId))
+		{
+			return Task.FromResult(Results.Problem(
+				title: "That review was not accepted.",
+				detail: "Name the value to merge into.",
+				statusCode: StatusCodes.Status400BadRequest,
+				type: "https://hpac.ca/problems/type-ahead-review"));
+		}
+
+		return Review(id, database, clock, context, AuditAction.MergedTypeAheadValue,
+			(question, choiceId, reviewer, at) => question.MergeValue(choiceId, targetId, reviewer, at), cancellationToken);
 	}
 
 	private static Task<IResult> Remove(
@@ -189,6 +226,7 @@ public sealed record TypeAheadValuesResponse(IReadOnlyList<TypeAheadValueView> V
 /// <param name="IsRemoved">True for a removed value a reporter typed again.</param>
 /// <param name="AnswerCount">How many live answers name it.</param>
 /// <param name="AddedAt">When a reporter added it, when that was recorded.</param>
+/// <param name="MergeTargets">The question's other live values, any of which this one may be merged into.</param>
 public sealed record TypeAheadValueView(
 	string Id,
 	string QuestionId,
@@ -199,7 +237,18 @@ public sealed record TypeAheadValueView(
 	string? TypedIn,
 	bool IsRemoved,
 	int AnswerCount,
-	DateTimeOffset? AddedAt);
+	DateTimeOffset? AddedAt,
+	IReadOnlyList<TypeAheadMergeTarget> MergeTargets);
+
+/// <summary>A live value of the same question a flagged value may be merged into.</summary>
+/// <param name="Id">Its identifier.</param>
+/// <param name="LabelEn">Its English wording, or null while it has none.</param>
+/// <param name="LabelFr">Its French wording, or null while it has none.</param>
+public sealed record TypeAheadMergeTarget(string Id, string? LabelEn, string? LabelFr);
+
+/// <summary>A reviewer's merge of one type-ahead value into another of the same question.</summary>
+/// <param name="IntoId">The value it is merged into: every answer naming the merged value reads this one.</param>
+public sealed record MergeTypeAheadValueRequest(string? IntoId);
 
 /// <summary>A reviewer's correction of a type-ahead value's wording, in place.</summary>
 /// <param name="LabelEn">The English wording; blank leaves a reporter-added value without one.</param>

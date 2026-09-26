@@ -148,8 +148,9 @@ public sealed class SummarizeReportProcessor(HpacSafetyDbContext database, ISumm
 					 answer.QuestionKey,
 					 answer.Value,
 					 answer.BooleanValue,
-					 ChoiceEn = answer.Choice!.LabelEn,
-					 ChoiceFr = answer.Choice.LabelFr,
+					 // A merged value reads as the one it was merged into (ADR-0129).
+					 ChoiceEn = answer.Choice!.MergedInto != null ? answer.Choice.MergedInto.LabelEn : answer.Choice.LabelEn,
+					 ChoiceFr = answer.Choice.MergedInto != null ? answer.Choice.MergedInto.LabelFr : answer.Choice.LabelFr,
 					 HasChoice = answer.ChoiceId != null,
 					 answer.IsPrivate,
 					 revision.Type,

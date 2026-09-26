@@ -1,6 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
+using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.QuestionBank;
+using HpacSafety.Core.Features.Reporting;
+using HpacSafety.Infrastructure.Persistence;
+using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
 using Shouldly;
 
@@ -29,6 +34,7 @@ public sealed class AuthorizationSteps
 	private bool _productionShaped;
 	private HttpResponseMessage? _response;
 	private MemberRole _role;
+	private readonly List<HttpResponseMessage> _reviews = [];
 
 	[Given(@"the API is not running in development")]
 	public async Task GivenProductionShapedHost()
@@ -102,6 +108,32 @@ public sealed class AuthorizationSteps
 			});
 	}
 
+	[When(@"that member approves, corrects, merges, or removes a reporter-added type-ahead value")]
+	public async Task WhenMemberReviewsTypeAheadValues()
+	{
+		// Four reporter-added values on one synthetic type-ahead, one per review
+		// action, so each call is judged on its own (ADR-0129).
+		TinyId[] values;
+		await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var question = Question.Create(
+				$"acceptance_site_{Guid.NewGuid():n}"[..28], QuestionType.Autocomplete, "Where?", "Où ?",
+				DateTimeOffset.UtcNow, isActive: true);
+			values = [.. new[] { "Approve me", "Correct me", "Merge me", "Remove me" }
+				.Select(typed => question.AddChoiceFromReporter(typed, Locale.EnCa, DateTimeOffset.UtcNow).Id)];
+			database.Questions.Add(question);
+			await database.SaveChangesAsync();
+		}
+
+		Uri Value(TinyId id, string suffix = "") => new($"/api/admin/type-ahead-values/{id}{suffix}", UriKind.Relative);
+
+		_reviews.Add(await _client!.PostAsync(Value(values[0], "/approval"), null));
+		_reviews.Add(await _client.PutAsJsonAsync(Value(values[1]), new { labelEn = "Corrected", labelFr = "Corrigé" }));
+		_reviews.Add(await _client.PostAsJsonAsync(Value(values[2], "/merge"), new { intoId = values[0].Value }));
+		_reviews.Add(await _client.DeleteAsync(Value(values[3])));
+	}
+
 	[Then(@"the route does not exist")]
 	public void ThenRouteDoesNotExist()
 	{
@@ -131,6 +163,23 @@ public sealed class AuthorizationSteps
 	[Then(@"the API {word} the attempt")]
 	public void ThenApiOutcome(string outcome)
 	{
+		if (_reviews.Count > 0)
+		{
+			foreach (var review in _reviews)
+			{
+				if (outcome == "allows")
+				{
+					review.IsSuccessStatusCode.ShouldBeTrue($"an {_role} should be able to review a type-ahead value, but the API answered {review.StatusCode}.");
+				}
+				else
+				{
+					review.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+				}
+			}
+
+			return;
+		}
+
 		if (outcome == "accepts")
 		{
 			_response!.IsSuccessStatusCode.ShouldBeTrue(

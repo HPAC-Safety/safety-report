@@ -332,7 +332,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_added.NeedsReview.ShouldBeFalse();
 	}
 
-	[When(@"a reporter submits ""(.*)"" for that question")]
+	[When(@"^a reporter (?:later )?submits ""(.*)"" for that question$")]
 	public void WhenAReporterSubmitsForThatQuestion(string typed)
 	{
 		_answer = new Report(Locale.EnCa, Noon).Answer(_question, typed, Noon.AddHours(2));
@@ -385,6 +385,133 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	{
 		_added!.ReviewedBy.ShouldBe(Reviewer);
 		_added.ReviewedAt.ShouldBe(Noon.AddHours(1));
+	}
+
+	// --- REQ-QB-131..133: merging type-ahead values (ADR-0129) ---
+
+	private readonly Dictionary<string, ReportAnswer> _named = [];
+	private Exception? _attemptRefusal;
+
+	private QuestionChoice ValueReading(string words)
+	{
+		return _question.AllChoices.Single(choice => choice.Label(Locale.EnCa) == words);
+	}
+
+	[Given(@"reports answered a type-ahead question with ""(.*)"" and with ""(.*)"", two separate values")]
+	public void GivenTwoSeparateValues(string first,
+									   string second)
+	{
+		_question = Question.Create(
+			"where_did_this_happen", QuestionType.Autocomplete, "Where did this happen?", "Où cela s'est-il produit ?", Noon,
+			isActive: true);
+		_named[first] = new Report(Locale.EnCa, Noon).Answer(_question, first, Noon);
+		_named[second] = new Report(Locale.EnCa, Noon).Answer(_question, second, Noon);
+		_named[first].ChoiceId.ShouldNotBe(_named[second].ChoiceId);
+	}
+
+	[When(@"a Safety Officer merges ""(.*)"" into ""(.*)""")]
+	public void WhenASafetyOfficerMerges(string source,
+										 string target)
+	{
+		_question.MergeValue(ValueReading(source).Id, ValueReading(target).Id, Reviewer, Noon.AddHours(1));
+	}
+
+	[Then(@"""(.*)"" is removed and records that it was merged into ""(.*)""")]
+	public void ThenTheSourceIsMerged(string source,
+									  string target)
+	{
+		var merged = _question.AllChoices.Single(choice => choice.Id == _named[source].ChoiceId);
+		merged.Deleted.ShouldNotBeNull();
+		merged.MergedIntoChoiceId.ShouldBe(ValueReading(target).Id);
+	}
+
+	[Then(@"the answers that named ""(.*)"" still name it, and read ""(.*)""")]
+	public void ThenTheAnswersStillNameIt(string source,
+										  string target)
+	{
+		var answer = _named[source];
+		answer.ChoiceId.ShouldBe(_question.AllChoices.Single(choice => choice.MergedIntoChoiceId is not null).Id);
+		answer.Text.ShouldBe(target);
+	}
+
+	[Then(@"the form offers ""(.*)"" only")]
+	public void ThenTheFormOffersOnly(string target)
+	{
+		_question.Choices.Select(choice => choice.Label(Locale.EnCa)).ShouldBe([target]);
+	}
+
+	[Then(@"the new answer names ""(.*)""")]
+	public void ThenTheNewAnswerNames(string target)
+	{
+		_answer!.ChoiceId.ShouldBe(ValueReading(target).Id);
+		_answer.Text.ShouldBe(target);
+	}
+
+	[Given(@"the type-ahead value ""(.*)"" was merged into ""(.*)""")]
+	public void GivenAValueWasMerged(string source,
+									 string target)
+	{
+		_question = Question.Create(
+			"where_did_this_happen", QuestionType.Autocomplete, "Where did this happen?", "Où cela s'est-il produit ?", Noon,
+			isActive: true);
+		_named[source] = new Report(Locale.EnCa, Noon).Answer(_question, source, Noon);
+		_named[target] = new Report(Locale.EnCa, Noon).Answer(_question, target, Noon);
+		_question.AddChoiceFromReporter("C", Locale.EnCa, Noon);
+		_question.MergeValue(ValueReading(source).Id, ValueReading(target).Id, Reviewer, Noon);
+	}
+
+	[Then(@"an answer naming ""(.*)"" reads ""(.*)""")]
+	public void ThenAnAnswerNamingReads(string source,
+										string target)
+	{
+		_named[source].Text.ShouldBe(target);
+		_question.AllChoices.Single(choice => choice.Id == _named[source].ChoiceId).MergedIntoChoiceId
+			.ShouldBe(ValueReading(target).Id);
+	}
+
+	[Then(@"merging ""(.*)"" into ""(.*)"" is refused")]
+	public void ThenMergingIsRefused(string source,
+									 string target)
+	{
+		Should.Throw<DomainRuleViolationException>(() =>
+			_question.MergeValue(ValueReading(source).Id, ValueReading(target).Id, Reviewer, Noon.AddHours(2)));
+	}
+
+	[Given(@"^an? (autocomplete|single_select|multi_select) question has two choices$")]
+	public void GivenAQuestionWithTwoChoices(string type)
+	{
+		EnumCode.TryParse(type, out QuestionType parsed).ShouldBeTrue();
+		_question = QuestionOfType(parsed);
+	}
+
+	[When(@"^a Safety Officer tries to (merge it into the other|correct its wording) one of them$")]
+	public void WhenASafetyOfficerTries(string action)
+	{
+		var (first, second) = (_question.Choices[0], _question.Choices[1]);
+		_attemptRefusal = Record.Exception(() =>
+		{
+			if (action.StartsWith("merge", StringComparison.Ordinal))
+			{
+				_question.MergeValue(first.Id, second.Id, Reviewer, Noon);
+			}
+			else
+			{
+				_question.CorrectValue(first.Id, "Cooper's Hill", "Colline Cooper", Reviewer, Noon);
+			}
+		});
+	}
+
+	[Then(@"^the attempt is (accepted|refused)$")]
+	public void ThenTheAttemptIs(string outcome)
+	{
+		if (outcome == "accepted")
+		{
+			_attemptRefusal.ShouldBeNull();
+		}
+		else
+		{
+			_attemptRefusal.ShouldBeOfType<DomainRuleViolationException>();
+		}
 	}
 
 	private static Locale LocaleOf(string language)

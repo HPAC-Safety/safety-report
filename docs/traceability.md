@@ -1870,6 +1870,10 @@ The form's question list says whether each date question allows future dates —
 
 Tabbing past a date field skips its calendar — *playwright-bdd, Covered*
 
+### REQ-SUB-112
+
+A date question with a placeholder of its own still names the yyyy-mm-dd format — *playwright-bdd, Covered*
+
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001

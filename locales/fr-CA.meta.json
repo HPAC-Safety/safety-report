@@ -828,8 +828,8 @@
     "reviewed": false
   },
   "privateAttachments.explanation": {
-    "source_hash": "ceedebb565b7c5fdeb49f8b39d1dc8c12fb7dfb042bfa26cbf1141dfe1ca06d0",
-    "target_hash": "73829a59c4de198109e677ed7d850e96c46d9271635f537c8cc4be7360ffd14b",
+    "source_hash": "d39a0ec2d755745714c015b719ae4516e2968100f06e7eeae918ecc15a477f0c",
+    "target_hash": "8503ba433dba91854fa20f579178680ba9a41083b730ba6313cc40affe958741",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

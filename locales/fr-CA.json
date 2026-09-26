@@ -588,7 +588,7 @@
   },
   "privateAttachments": {
     "title": "Pièces jointes privées",
-    "explanation": "Fichiers réservés aux agents de sécurité et aux administrateurs, tels que les signalements du médecin légiste ou de la police. Ils ne sont jamais publiés, résumés ou modifiés, et sont téléchargés exactement tels qu’ils ont été téléversés.",
+    "explanation": "Documents réservés exclusivement aux agents de sécurité et aux administrateurs, tels que les signalements du coroner ou de la police. Ils ne sont jamais publiés, résumés ni modifiés de quelque manière que ce soit.",
     "listLabel": "Pièces jointes privées jointes au présent signalement",
     "loading": "Chargement des pièces jointes privées…",
     "empty": "Il n'y a pas encore de pièces jointes privées.",

@@ -565,9 +565,11 @@ fi
 # All three are idempotent, so it is safe to run every time. The chosen
 # platform is cached in .graphify-agent (clone-local, gitignored) so a second
 # run re-registers silently instead of asking again. Extraction also needs
-# tree-sitter-hcl for this repository's Terraform files, an optional extra
-# graphify does not install by default — installed the same way as graphify
-# itself (uv tool, falling back to pip), into graphify's own environment.
+# tree-sitter-hcl for this repository's Terraform files and tree-sitter-sql for
+# its SQL migration scripts, optional extras graphify does not install by
+# default — installed the same way as graphify itself (uv tool, falling back to
+# pip), into graphify's own environment. .graphifyignore keeps PR screenshots
+# out of the graph.
 
 heading "graphify (optional)"
 
@@ -580,29 +582,35 @@ if have graphify; then
 	if [ "$CHECK_ONLY" -eq 1 ]; then
 		note "skipped: --check does not build the graph, hydrate an Obsidian vault, install a git hook, install extraction extras, or register an agent"
 	else
-		# This repository has Terraform (see manage-hpac-infrastructure), and
-		# extracting .tf/.hcl/.tfvars needs tree-sitter-hcl, an optional extra
-		# graphify does not pull in by default. Probed inside graphify's own
-		# uv-tool environment so this stays a no-op once installed, instead of
-		# an `--upgrade` network check on every run.
-		if have uv && uv tool run --from graphifyy python3 -c 'import tree_sitter_hcl' >/dev/null 2>&1; then
-			ok "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+		# This repository has Terraform (see manage-hpac-infrastructure) and SQL
+		# migration scripts whose views hold the read rules (ADR-0055, ADR-0116).
+		# Extracting .tf/.hcl/.tfvars needs tree-sitter-hcl and extracting .sql
+		# needs tree-sitter-sql, optional extras graphify does not pull in by
+		# default. Both are probed inside graphify's own uv-tool environment so this
+		# stays a no-op once installed, instead of an `--upgrade` network check on
+		# every run. Both extras are named in one install, because `uv tool
+		# install` replaces the tool's extras rather than adding to them.
+		GRAPHIFY_EXTRAS='graphifyy[terraform,sql]'
+		GRAPHIFY_EXTRAS_NAME='graphify Terraform/HCL and SQL extraction support (tree-sitter-hcl, tree-sitter-sql)'
+		GRAPHIFY_EXTRAS_PROBE='import tree_sitter_hcl, tree_sitter_sql'
+		if have uv && uv tool run --from graphifyy python3 -c "$GRAPHIFY_EXTRAS_PROBE" >/dev/null 2>&1; then
+			ok "$GRAPHIFY_EXTRAS_NAME"
 		elif have uv; then
-			if uv tool install --upgrade "graphifyy[terraform]" -q; then
-				added "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+			if uv tool install --upgrade "$GRAPHIFY_EXTRAS" -q; then
+				added "$GRAPHIFY_EXTRAS_NAME"
 			else
-				note "could not install tree-sitter-hcl — .tf/.hcl/.tfvars files will not be indexed"
+				note "could not install tree-sitter-hcl and tree-sitter-sql — .tf/.hcl/.tfvars and .sql files may not be indexed"
 			fi
-		elif python3 -c 'import tree_sitter_hcl' >/dev/null 2>&1; then
-			ok "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+		elif python3 -c "$GRAPHIFY_EXTRAS_PROBE" >/dev/null 2>&1; then
+			ok "$GRAPHIFY_EXTRAS_NAME"
 		elif have python3; then
-			if python3 -m pip install --quiet "graphifyy[terraform]"; then
-				added "graphify terraform/HCL extraction support (tree-sitter-hcl)"
+			if python3 -m pip install --quiet "$GRAPHIFY_EXTRAS"; then
+				added "$GRAPHIFY_EXTRAS_NAME"
 			else
-				note "could not install tree-sitter-hcl — .tf/.hcl/.tfvars files will not be indexed"
+				note "could not install tree-sitter-hcl and tree-sitter-sql — .tf/.hcl/.tfvars and .sql files may not be indexed"
 			fi
 		else
-			note "graphify terraform/HCL extraction support needs uv or python3 — neither is installed"
+			note "graphify Terraform/HCL and SQL extraction support needs uv or python3 — neither is installed"
 		fi
 
 		GRAPHIFY_HAD_GRAPH=0

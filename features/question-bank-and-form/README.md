@@ -109,6 +109,60 @@ under a group (`REQ-QB-143`).
 The Typeform-derived question set is seed/import input, not hardcoded form
 logic. The database remains authoritative after initial seeding.
 
+## Choices that depend on another question
+
+A single-select or type-ahead question's choices may **depend on** another
+single-select or type-ahead question, its *parent*: a paraglider's model
+depends on its make. Every live choice of the *child* then names exactly one
+parent choice, and the form offers only the choices named under the parent's
+answer (`REQ-QB-176`–`REQ-QB-200`,
+[ADR-0145](../../docs/decisions/ADR-0145-a-choice-list-may-depend-on-another-questions-answer.md)).
+It is not a condition: a condition decides whether a question is shown, a
+dependency decides which of its choices are offered, and a question may be
+both.
+
+- **Shape.** One level only: a child is nobody's parent, and a parent depends
+  on nothing. The parent comes before the child on the form, on every save and
+  every reorder (`REQ-QB-177`, `REQ-QB-178`).
+- **Links sit outside revisions.** The dependency is on the question and each
+  link on its choice, so setting, changing, or clearing either never revises or
+  forks a question (`REQ-QB-181`). A model sold under two makes is entered
+  twice, and a catch-all such as "Other" once under each make it applies to;
+  the same wording twice under one parent choice is refused (`REQ-QB-180`).
+- **The editor.** With a parent set, every choice row, a new one included, asks
+  for its parent choice, listed as the form lists the parent's choices. A save
+  with any choice unlinked is refused, naming the choices (`REQ-QB-179`,
+  `REQ-QB-193`). Clearing the parent keeps every link; they stop filtering
+  (`REQ-QB-182`).
+- **Following the parent.** A replaced picker parent choice, a merged
+  type-ahead parent value, and a forked parent question each pass their links
+  on at once, without revising the child (`REQ-QB-184`–`REQ-QB-187`). A parent
+  choice any live child choice is offered under cannot be removed; it is
+  replaced or merged instead (`REQ-QB-183`).
+- **The form.** The child is disabled until the parent is answered, then offers
+  only the choices under that answer. Changing the parent clears a child
+  answer naming a choice no longer offered; words typed that name no choice
+  stay (`REQ-QB-194`, `REQ-QB-195`). A disabled child never holds the reporter
+  back, even when required; nor does a single-select child with nothing under
+  the parent's answer, which says so (`REQ-QB-198`). A parent answered with a
+  new typed value leaves a type-ahead child nothing to pick and a value to type
+  (`REQ-QB-196`). A saved report restores both answers, dropping a child answer
+  no longer under the parent's (`REQ-QB-197`).
+- **A parent the form does not ask** — deactivated, or deleted rather than
+  forked — filters nothing, as a condition whose parent is missing hides
+  nothing, and the API does not check the link (`REQ-QB-200`).
+- **Reporter-added values.** A value typed into a dependent type-ahead is
+  matched only among the values under the parent's answer, and a new one is
+  offered under it, even when the parent's answer is itself a new value
+  (`REQ-QB-189`, `REQ-QB-190`). A Safety Officer or an Administrator changes a
+  value's link on the type-ahead review page, never clears it, and merges only
+  values under the same parent choice (`REQ-QB-191`, `REQ-QB-199`).
+- **The API.** A submission naming a child choice not offered under the
+  parent's answer, or answering the child while the parent is unanswered, is
+  refused by question key before anything is written (`REQ-SUB-112`). An
+  answer still names only its own choice; nothing about the parent is copied
+  into it.
+
 ## The type-ahead field
 
 A type-ahead question looks like the form's other pickers: one field with a
@@ -186,6 +240,18 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   a single-select question naming a required option, and that is the whole of
   it ([ADR-0060](../../docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
   [ADR-0074](../../docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
+- For choices that depend on another question
+  ([ADR-0145](../../docs/decisions/ADR-0145-a-choice-list-may-depend-on-another-questions-answer.md)):
+  - a multi-select parent or child;
+  - chains deeper than one level (make → model → size);
+  - a child choice under more than one parent choice, or under none, shown
+    whatever the parent's answer. The one unlinked choice is a value a reporter
+    typed while the parent was off the form; it waits for a reviewer to link it;
+  - bulk linking: pasting a list, or linking many choices at once. An
+    Administrator links choices one at a time;
+  - Typeform import or export of a dependency
+    ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md));
+  - copying the parent's answer, or anything about it, into a child answer.
 - Machine translation on the submission path. Translation is administrator-
   initiated while authoring, or Worker-run off the submission path
   ([ADR-0080](../../docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).

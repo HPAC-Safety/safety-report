@@ -513,6 +513,17 @@ Scenario: A submitted choice must be one the question offers
   And a removed choice, or another question's choice, is rejected
   And only a type-ahead also accepts typed text naming a value it does not yet offer
 
+@REQ-SUB-112
+Scenario Outline: A choice of a dependent question must be offered under the parent's answer
+  Given the "Model" question's choices depend on the "Make" question, and "Mentor 7" is offered under "Niviuk"
+  When a reporter submits "Model" answered with "Mentor 7" and "Make" <make>
+  Then the API refuses the submission, naming "model" and "make" by key
+  And no report, answer, or choice is written
+
+Examples:
+  | make                   |
+  | answered with "Ozone"  |
+  | left unanswered        |
 @REQ-SUB-080
 Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead

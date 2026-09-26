@@ -32,6 +32,7 @@ public enum AuditAction
 	CorrectedTypeAheadValue = 41,
 	RemovedTypeAheadValue = 42,
 	MergedTypeAheadValue = 43,
+	RelinkedTypeAheadValue = 44,
 	RemovedPrivateNote = 50,
 	DownloadedPrivateAttachment = 51,
 	RemovedPrivateAttachment = 52,

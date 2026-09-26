@@ -38,6 +38,13 @@ It builds on
 [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md):
 an answer names its choice by ID.
 
+Amended by
+[ADR-0145](ADR-0145-a-choice-list-may-depend-on-another-questions-answer.md):
+on a type-ahead whose values depend on another question's answer, typed words
+are matched only among the values under that answer, a new value is offered
+under it, a reviewer may change a value's link, and two values merge only
+under the same parent choice.
+
 ## Context
 
 A type-ahead is where reporters name things the form cannot list in advance:

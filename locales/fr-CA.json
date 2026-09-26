@@ -303,6 +303,10 @@
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue."
     },
+    "translateChoices": {
+      "action": "#Translate choices",
+      "hint": "#Write a choice in one language, then translate it into the other."
+    },
     "forkWarning": "Cette question a déjà reçu une réponse. Si vous modifiez son libellé, son type ou ses paramètres, elle est retirée et une nouvelle question est créée à sa place; les réponses déjà fournies conservent donc le libellé sous lequel elles ont été données. Ce n’est pas le cas si vous ne modifiez que ses choix.",
     "import": {
       "openDialog": "Importer depuis Typeform",

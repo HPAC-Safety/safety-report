@@ -31,6 +31,10 @@ import { sortChoices } from "../lib/sortChoices"
  * wording either way (ADR-0062). The call goes to our own API — the credential
  * never reaches this page.
  *
+ * Translate choices does the same for the choices, each on its own: a choice
+ * written in one language only gets a draft of the other, whatever state the
+ * question's wording is in, and a written side is never overwritten.
+ *
  * The choices are the question's own and are saved in place: editing them never
  * creates a new version, and a choice a reporter typed into a type-ahead is
  * marked here, where an administrator curates it (ADR-0095). Such a choice may
@@ -225,6 +229,10 @@ export function QuestionEditor({
 		hasEnglish && hasFrench && (dependsOnParent?.type !== "single_select" || request.dependsOnChoiceId !== null)
 	const translationDirection = hasEnglish && !hasFrench ? "toFrench" : !hasEnglish && hasFrench ? "toEnglish" : null
 
+	function translationFailure(cause: unknown) {
+		return cause instanceof ApiError ? cause.detail : t("questions.translate.failed")
+	}
+
 	function update(changes: Partial<SaveQuestionRequest>) {
 		onChange({ request: { ...request, ...changes } })
 	}
@@ -271,9 +279,50 @@ export function QuestionEditor({
 						},
 			)
 		} catch (cause) {
-			setTranslationError(cause instanceof ApiError ? cause.detail : t("questions.translate.failed"))
+			setTranslationError(translationFailure(cause))
 		} finally {
 			setTranslating(false)
+		}
+	}
+
+	// A choice written in one language only. Translate choices fills its other
+	// side; a choice in both languages or in neither is left alone.
+	const oneLanguageChoices = request.options.filter((option) => !option.labelEn.trim() !== !option.labelFr.trim())
+	const [translatingChoices, setTranslatingChoices] = useState(false)
+	const [choiceTranslationError, setChoiceTranslationError] = useState<string | null>(null)
+
+	async function translateOneLanguageChoices() {
+		const englishOnly = request.options.filter((option) => option.labelEn.trim() && !option.labelFr.trim())
+		const frenchOnly = request.options.filter((option) => !option.labelEn.trim() && option.labelFr.trim())
+		if (englishOnly.length + frenchOnly.length === 0) return
+
+		setTranslatingChoices(true)
+		setChoiceTranslationError(null)
+
+		try {
+			// The endpoint takes one direction per request, so each direction's
+			// choices go together in one request, the two sent at once.
+			const [toFrench, toEnglish] = await Promise.all([
+				englishOnly.length ? translate(englishOnly.map((o) => o.labelEn), "en-CA", "fr-CA") : { texts: [] },
+				frenchOnly.length ? translate(frenchOnly.map((o) => o.labelFr), "fr-CA", "en-CA") : { texts: [] },
+			])
+
+			// Only the empty side is filled: a written side is never overwritten,
+			// and the result is a draft the administrator saves deliberately
+			// (ADR-0062). Editing choices never revises the question (ADR-0095).
+			const options = request.options.map((option) => {
+				const english = englishOnly.indexOf(option)
+				if (english >= 0) return { ...option, labelFr: toFrench.texts[english] ?? option.labelFr }
+				const french = frenchOnly.indexOf(option)
+				if (french >= 0) return { ...option, labelEn: toEnglish.texts[french] ?? option.labelEn }
+				return option
+			})
+
+			update({ options })
+		} catch (cause) {
+			setChoiceTranslationError(translationFailure(cause))
+		} finally {
+			setTranslatingChoices(false)
 		}
 	}
 
@@ -656,13 +705,36 @@ export function QuestionEditor({
 						<p className="font-sans text-xs text-ink-muted">{t("questions.choice.replaceHelp")}</p>
 					)}
 
-					<button
-						type="button"
-						className="touch-target self-start rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
-						onClick={() => update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })}
-					>
-						{t("questions.field.addOption")}
-					</button>
+					<div className="flex flex-wrap items-center gap-3">
+						<button
+							type="button"
+							className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
+							onClick={() => update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })}
+						>
+							{t("questions.field.addOption")}
+						</button>
+						<button
+							type="button"
+							className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2 disabled:opacity-40"
+							disabled={!translationAvailable || oneLanguageChoices.length === 0 || translatingChoices}
+							onClick={() => void translateOneLanguageChoices()}
+						>
+							{translatingChoices ? t("questions.translate.working") : t("questions.translateChoices.action")}
+						</button>
+						<p className="font-sans text-xs text-ink-muted">
+							{!translationAvailable
+								? t("questions.translate.unavailable")
+								: oneLanguageChoices.length === 0
+									? t("questions.translateChoices.hint")
+									: t("questions.translate.draftWarning")}
+						</p>
+					</div>
+
+					{choiceTranslationError && (
+						<p role="alert" className="font-sans text-sm text-ink">
+							{choiceTranslationError}
+						</p>
+					)}
 				</div>
 			)}
 

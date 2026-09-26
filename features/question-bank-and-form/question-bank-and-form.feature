@@ -577,6 +577,56 @@ Scenario: Translation is not offered when the server has no provider
   Given a signed-in Administrator is authoring a question on a server with no translation provider
   Then the Translate action is unavailable and says so
 
+@REQ-QB-154
+@ui
+Scenario Outline: An Administrator drafts the French of choices written only in English
+  Given a signed-in Administrator is authoring a new <type> question worded in both languages
+  When they add two choices written only in English and press Translate choices
+  Then each of those choices' French field is filled with its translation
+  And the question's own Translate action stays unavailable
+  And the filled French fields remain editable
+  And nothing is saved until they press Save
+
+  Examples:
+    | type          |
+    | single-select |
+    | multi-select  |
+    | type-ahead    |
+
+@REQ-QB-155
+@ui
+Scenario: English-only and French-only choices are each translated into the other language in one press
+  Given a signed-in Administrator is authoring a new type-ahead question worded in both languages
+  When they add a choice written only in English and a choice written only in French and press Translate choices
+  Then the English-only choice's French field is filled with its translation
+  And the French-only choice's English field is filled with its translation
+
+@REQ-QB-156
+@ui
+Scenario: Translating choices never overwrites a written choice
+  Given a signed-in Administrator is authoring a new type-ahead question worded in both languages
+  When they add a choice written in both languages, an empty choice, and a choice written only in English
+  And they press Translate choices
+  Then only the English-only choice is sent to be translated
+  And the choice written in both languages keeps its wording
+  And the empty choice stays empty
+
+@REQ-QB-157
+@ui
+Scenario: Translating choices is offered only while a choice is missing a language
+  Given a signed-in Administrator is editing a single-select question whose choices are all in both languages
+  Then the Translate choices action is unavailable
+  When they add a choice written only in French
+  Then the Translate choices action becomes available
+
+@REQ-QB-158
+@ui
+Scenario: Translating choices is not offered when the server has no provider
+  Given a signed-in Administrator is authoring a question on a server with no translation provider
+  When they choose the type-ahead list type
+  And they add a choice written only in English
+  Then the Translate choices action is unavailable and says so
+
 @REQ-QB-074
 @ui
 Scenario: An Administrator sees which choices reporters added

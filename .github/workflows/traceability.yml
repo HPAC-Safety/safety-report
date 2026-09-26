@@ -26,9 +26,11 @@ name: Traceability matrix
 # replayed on top and pushed again (ADR-0113). tools/push-to-pr-branch.mjs
 # decides which.
 #
-# The main ruleset already requires branches to be up to date; with ci.yml's
-# "docs" job required too, a PR that falls behind is updated, this job re-runs
-# on the combined tree, and it can't merge with a stale matrix (ADR-0101).
+# A pull request merges through the merge queue (ADR-0147), where ci.yml's
+# required "docs" job regenerates the matrix on the tree that will become main
+# and fails a stale one, so nothing merges with a stale matrix (ADR-0101).
+# This workflow never runs there: pull_request_target does not fire for a
+# merge group, and it never pushes to a gh-readonly-queue/* branch.
 
 on:
   pull_request_target:

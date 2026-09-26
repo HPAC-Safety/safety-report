@@ -10,7 +10,11 @@ keywords: GitHub workflow, branch protection, rulesets, CI
 
 # ADR-0008 — Rulesets, and no CODEOWNERS
 
-**Status:** Accepted
+**Status:** Accepted. The required approval count narrowed by
+[ADR-0147](ADR-0147-pull-requests-merge-through-a-merge-queue.md): the
+`main` ruleset requires 0 approvals, as it has live, because the sole
+maintainer cannot approve their own pull request. Review stays required by
+convention, and conversation resolution stays required by the ruleset.
 
 ## Context
 

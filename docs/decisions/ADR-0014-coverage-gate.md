@@ -10,7 +10,10 @@ keywords: code coverage, coverage gate, CI
 
 # ADR-0014 — Coverage: an absolute floor plus a ratchet, from main's last artifact
 
-**Status:** Accepted
+**Status:** Accepted. Decision 3 narrowed by
+[ADR-0147](ADR-0147-pull-requests-merge-through-a-merge-queue.md): the
+baseline is `main`'s last successful `push` run only, never a merge queue
+run, and the ratchet also runs on each merge group.
 
 ## Context
 

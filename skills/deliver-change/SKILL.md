@@ -257,8 +257,12 @@ same numbers.
    - **Enable auto-merge at once**: `gh pr merge <pr> --auto --squash`, then
      confirm `gh pr view <pr> --json autoMergeRequest` is not `null`.
    - Skip it only for a draft, or a pull request the user asked to hold.
-   - Auto-merge does not replace step 9: a branch that falls `BEHIND` still
-     needs a rebase and push before it can merge.
+   - **Merge queue**: auto-merge enters the queue once required checks pass.
+     The queue tests the pull request on top of the base branch and the pull
+     requests ahead of it, then merges it; a branch that is only `BEHIND`
+     needs no rebase.
+   - **No merge queue**: auto-merge does not replace step 9. A branch that
+     falls `BEHIND` still needs a rebase and push before it can merge.
 5. **PR body**: `Closes #<number>` on its own line, and the scenarios it
    satisfies. Built something the specification does not describe? Either fix
    the specification or the change exceeded its scope.
@@ -292,11 +296,20 @@ same numbers.
    - A check fails: recreate the worktree on the same branch (no `-b`):
      `git fetch origin issue-<number>/<short-description> && git worktree add .claude/worktrees/issue-<number>/<short-description> issue-<number>/<short-description>`.
      Fix, commit, rebase, push each fix, and repeat steps 7 and 8.
-   - Green: fetch and confirm `gh pr view <pr> --json mergeStateStatus` is not
-     `BEHIND` — `main` moves while checks run. Behind? Rebase, push, watch
-     again.
-   - Finish only when checks are green on a current branch and no worktree
-     remains, then relabel the session `✓ #<number> · PR #<pr> green`.
+   - Green, without a merge queue: fetch and confirm
+     `gh pr view <pr> --json mergeStateStatus` is not `BEHIND` — `main` moves
+     while checks run. Behind? Rebase, push, watch again.
+   - Green, with a merge queue: confirm the pull request is queued or merged.
+     Rebase only for a real conflict (`DIRTY`), never because it is `BEHIND`.
+   - **Removed from the queue?** The pull request's timeline says why.
+     - A required check failed on the merge group: the pull request collides
+       with something ahead of it or already merged (a duplicate number, a
+       stale generated file, a coverage drop). Rebase onto fresh `main`,
+       reproduce the failure, fix it, and push.
+     - Timed out: re-queue it once; a second timeout is a hung check to fix.
+     - Confirm auto-merge is still enabled, and enable it again if not.
+   - Finish only when checks are green on a current (or queued) branch and no
+     worktree remains, then relabel the session `✓ #<number> · PR #<pr> green`.
 
 ## Path filters
 

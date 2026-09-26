@@ -182,6 +182,10 @@ names and step numbers.
      `docs` (a duplicate ADR, lesson, or `REQ` number, or a stale matrix),
      `feature-coverage` (an exemption citing a claim that is gone), or
      `coverage`.
+   - Two queued pull requests that both change the specification: the second
+     is usually ejected, because its `docs/traceability.md` is stale on the
+     merged tree. That is expected. Rebase onto `main` and push;
+     `traceability.yml` regenerates the matrix, and auto-merge queues it again.
    Finish with `tools/session-label.sh "✓ #<number> · PR #<pr> green"`.
 
 ## Path filters

@@ -55,9 +55,12 @@ jobs:
   # On merge_group the filter diffs the event's merge_group.base_sha against
   # its head_sha with git (paths-filter's own merge_group support): every pull
   # request in the group, and those ahead of it, on top of main. If the filter
-  # cannot decide - it fails for any reason - every gated job runs, because a
-  # job skipped by a filter that broke is a check that silently passed
-  # (ADR-0147).
+  # cannot decide, every gated job runs, because a job skipped by a filter
+  # that broke is a check that silently passed (ADR-0147):
+  # - the filter step fails: continue-on-error, and every output is 'true';
+  # - the whole job fails (checkout, runner): each gated job's `if:` runs it
+  #   when needs.changes.result is not 'success'. `!cancelled()` is what lets
+  #   it run at all after a failed need.
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -96,7 +99,7 @@ jobs:
 
   build:
     needs: changes
-    if: needs.changes.outputs.dotnet == 'true'
+    if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.dotnet == 'true')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -140,7 +143,7 @@ jobs:
 
   test:
     needs: changes
-    if: needs.changes.outputs.dotnet == 'true'
+    if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.dotnet == 'true')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -251,9 +254,13 @@ jobs:
       # claim that does not exist fails here. Regenerating and diffing also
       # catches a committed matrix that no longer matches the artifacts it
       # summarizes - the same shape as "No drift from installing skills" and
-      # dotnet format --verify-no-changes. ADR-0084. The backstop, not the
-      # fixer: traceability.yml regenerates the matrix onto a same-repo PR's
-      # branch, so this only fails for a fork or a changed generator (ADR-0101).
+      # dotnet format --verify-no-changes. ADR-0084. On a pull request it is
+      # the backstop, not the fixer: traceability.yml regenerates the matrix
+      # onto a same-repo PR's branch, so this fails only for a fork or a changed
+      # generator (ADR-0101). On a merge group it is the gate: when two queued
+      # pull requests both change the specification, the second one's matrix
+      # is stale on the merged tree, so it fails here and leaves the queue to be
+      # rebased (ADR-0147).
       - name: The traceability matrix matches the specification
         run: |
           set -euo pipefail
@@ -273,7 +280,7 @@ jobs:
     needs: [changes, e2e]
     if: >-
       always() &&
-      (needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') &&
+      (needs.changes.result != 'success' || needs.changes.outputs.dotnet == 'true' || needs.changes.outputs.e2e == 'true') &&
       (needs.e2e.result == 'success' || needs.e2e.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
@@ -284,7 +291,16 @@ jobs:
       # so the comment step is skipped for them - see the step's condition.
       pull-requests: write
     steps:
+      # This job runs the repository's tests with a token that can write pull
+      # request comments. On pull_request a fork's token is read-only, but a
+      # merge group runs in this repository's own context whoever wrote the
+      # queued code: a maintainer's review and queuing is the trust boundary
+      # there (ADR-0147). So the token is never persisted into .git/config,
+      # where the code under test could read it; only the steps that need it
+      # get it, as GH_TOKEN.
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
@@ -470,7 +486,7 @@ jobs:
   # ADR-0043 (supersedes ADR-0006's no-Node standalone-CLI build).
   web:
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.web == 'true')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -547,7 +563,7 @@ jobs:
 
   e2e:
     needs: changes
-    if: needs.changes.outputs.e2e == 'true'
+    if: "!cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.e2e == 'true')"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

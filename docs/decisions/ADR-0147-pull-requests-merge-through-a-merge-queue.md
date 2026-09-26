@@ -10,7 +10,13 @@ keywords: merge queue, merge_group, ruleset, required status checks, up to date,
 
 # ADR-0147 — Pull requests merge through a merge queue
 
-**Status:** Accepted.
+**Status:** Accepted. Narrows
+[ADR-0101](ADR-0101-ci-regenerates-the-traceability-matrix.md) (decision 4
+and its rejected "merge queue on its own"),
+[ADR-0014](ADR-0014-coverage-gate.md) (decision 3: the baseline is a `push`
+run on `main` only), and
+[ADR-0008](ADR-0008-github-workflow.md) (the required approval count, see
+"The ruleset").
 
 ## Context
 
@@ -64,8 +70,8 @@ These are GitHub's documented facts that this decision relies on:
   required checks pass ([Merging a pull request with a merge queue][merging]).
 - The queue's squash commit uses the repository's default squash message,
   which here is the pull request body (`squash_merge_commit_message: PR_BODY`)
-  ([community discussion #111224][squash]; confirmed on the first queued
-  merge, #547).
+  ([community discussion #111224][squash]; to be confirmed on the first
+  queued merge, #547).
 - The ruleset's `merge_queue` rule takes `merge_method`, `grouping_strategy`
   (`ALLGREEN` or `HEADGREEN`), `max_entries_to_build`,
   `min_entries_to_merge`, `max_entries_to_merge`,
@@ -92,17 +98,24 @@ date.
   `apply` requires `push` or `workflow_dispatch`, so neither runs on a merge
   group.
 
-### The pull request body checks pass through
+### Two pull request body checks pass through
 
-`linked-issue`, `no-session-link`, and `screenshots` read only the pull
-request body. On `merge_group` each runs a notice step and passes. This is
-safe for three reasons:
+`linked-issue` and `screenshots` read only the pull request body. On
+`merge_group` each runs a notice step and passes. This is safe for two
+reasons:
 
 - each one already passed against the body on the pull request, and
   auto-merge queues a pull request only after its required checks pass;
-- the body becomes the squash commit message unchanged;
-- no body check depends on another pull request, so no collision can show up
-  only on the merged tree.
+- neither depends on another pull request, so no collision can show up only
+  on the merged tree.
+
+### `no-session-link` checks what reaches public history
+
+`no-session-link` does not pass through. ADR-0107 protects the squash commit
+message, and the queue fixes that message when it builds the group: a body
+edited after queuing does not eject the entry, and no `commit-msg` hook runs
+on a server-side squash. On `merge_group` it checks each queued commit's
+message in `base_sha..HEAD` with `tools/agent-session-links.mjs`.
 
 ### Collision-sensitive checks really run on the merged tree
 
@@ -112,7 +125,9 @@ safe for three reasons:
 - `feature-coverage` runs once per queued squash commit. Each run uses that
   commit's own diff, its message (the pull request body), and the merged
   tree's matrix. That catches an exemption citing a claim that a pull request
-  ahead in the queue removed.
+  ahead in the queue removed. An empty commit range fails rather than
+  checking nothing, and a failure names the pull request and the
+  `squash_merge_commit_message` setting it relies on.
 - **Two pull requests claiming the same ADR number:** the first merges. The
   second's merge group holds both records, so `adr-numbers.mjs` fails in
   `docs`, the second pull request leaves the queue, and `main` never sees the
@@ -121,9 +136,12 @@ safe for three reasons:
 
 ### `changes` decides on the merge group, or runs everything
 
-`changes` runs paths-filter on `merge_group` as it does on a pull request. If
-the filter step fails, every gated job runs: a job skipped by a broken filter
-would be a check that silently passed.
+`changes` runs paths-filter on `merge_group` as it does on a pull request. A
+job skipped by a broken filter would be a check that silently passed, so:
+
+- if the filter step fails, every output is `true`;
+- if the whole `changes` job fails (checkout, runner), each gated job runs
+  anyway, because its `if:` also accepts `needs.changes.result != 'success'`.
 
 ### Coverage
 
@@ -142,6 +160,16 @@ would be a check that silently passed.
 - The deploy workflows run on `workflow_dispatch`, and their re-enabled path
   requires a `push` run on `main`.
 - Terraform `plan` comments and `apply` never run on a merge group.
+
+### A merge group runs with this repository's trust
+
+A merge group runs in this repository's own context, with its token and
+secrets, whoever wrote the queued code; a fork pull request's merge group is
+no exception. A maintainer's review and queuing is the trust boundary there.
+No job on it reads a secret, and the one job with a write-scoped token,
+`coverage` (`pull-requests: write`, for the pull request comment), checks out
+with `persist-credentials: false`, so the code under test cannot read that
+token from `.git/config`.
 
 ### A cancelled run is never a required context's latest result
 
@@ -170,6 +198,9 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
 | `check_response_timeout_minutes` | 60 | CI's slowest path is under 15 minutes; an hour leaves room for runner queuing and ejects only a run that has truly hung |
 
 - `strict_required_status_checks_policy` stays `true`.
+- `required_approving_review_count` is 0 in `docs/github-ruleset.json`, which
+  now records the live value. The sole maintainer cannot approve their own
+  pull request, so 1 would block every merge that does not use the bypass.
 - **Rollout:** the workflow changes merge first. An administrator applies the
   rule only after `main` carries them; otherwise the first queued pull request
   stalls on checks that never report.
@@ -191,9 +222,10 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
 - **Run the body checks on the merge group by reading each pull request
   through the API.** Rejected: the queue ref names only the last pull request
   in a group, and these checks cannot collide, so the extra machinery would
-  buy nothing. `feature-coverage` is the exception, because its exemption
-  cites claims that another pull request can remove, and it reads the squash
-  commit message, which is already on the queue branch.
+  buy nothing. `feature-coverage` and `no-session-link` are the exceptions:
+  the exemption cites claims that another pull request can remove, and the
+  session-link rule protects the commit message itself. Both read the squash
+  commit messages, which are already on the queue branch.
 - **Pass `feature-coverage` through as well.** Rejected: that would leave the
   exemption's citations unchecked against the tree that becomes `main`, which
   is exactly where they can break.
@@ -216,6 +248,10 @@ The `main` ruleset gains a `merge_queue` rule, recorded in
   merge group.
 - A collision between two pull requests ejects the later one from the queue
   instead of breaking `main`.
+- Two queued pull requests that both change the specification usually see
+  the second ejected: its `docs/traceability.md` is stale on the merged tree,
+  so `docs` fails. That is the expected case. Its author rebases onto `main`,
+  and `traceability.yml` commits the regenerated matrix.
 - The `feature-coverage` check on a merge group relies on the queue's squash
   message being the pull request body. If GitHub ever changes that, the check
   fails loudly and ejects the pull request, and nothing merges silently.

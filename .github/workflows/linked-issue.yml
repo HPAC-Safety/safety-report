@@ -18,9 +18,11 @@ name: Linked issue
 #
 # merge_group: the merge queue waits for every required context on its
 # gh-readonly-queue/main/* branch, and a merge group has no pull request body.
-# Each job reports there under its own id, and passes through with a notice:
-# the body was already checked on the pull request, and it becomes the squash
-# commit message unchanged (ADR-0147).
+# Each job reports there under its own id. linked-issue and screenshots pass
+# through with a notice: they already passed on the pull request, and neither
+# can collide with another pull request. no-session-link checks each queued
+# squash commit's message instead, because that is what reaches public
+# history (ADR-0147).
 on:
   pull_request:
     types: [opened, reopened, synchronize, edited]
@@ -105,19 +107,19 @@ jobs:
   # coding agent's session link in it would publish that session. The agents
   # whose links are refused are a collection in the tool (ADR-0107). No bot
   # exemption: no author may publish one.
+  #
+  # On merge_group it checks what will actually reach main: each queued squash
+  # commit's message, fixed when the queue built the group. A body edited
+  # after queuing does not eject the entry, and no commit-msg hook runs on a
+  # server-side squash, so this is the last place to catch it (ADR-0147).
   no-session-link:
     runs-on: ubuntu-latest
     steps:
-      - name: Merge group - the pull request's body was checked before it queued
-        if: github.event_name == 'merge_group'
-        run: echo "::notice::Checked on the pull request; a merge group has no body (ADR-0147)."
-
       - uses: actions/checkout@v7
-        if: github.event_name != 'merge_group'
         with:
+          fetch-depth: ${{ github.event_name == 'merge_group' && '0' || '1' }}
           persist-credentials: false
       - uses: actions/setup-node@v7
-        if: github.event_name != 'merge_group'
         with:
           node-version: 24
 
@@ -126,6 +128,26 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node tools/agent-session-links.mjs
+
+      - name: Each queued commit message carries no agent session link
+        if: github.event_name == 'merge_group'
+        env:
+          BASE_SHA: ${{ github.event.merge_group.base_sha }}
+        run: |
+          set -euo pipefail
+          commits=$(git rev-list --reverse "$BASE_SHA..HEAD")
+          if [ -z "$commits" ]; then
+            echo "::error::The merge group holds no commit between $BASE_SHA and HEAD, so nothing was checked."
+            exit 1
+          fi
+          fail=0
+          for commit in $commits; do
+            echo "::group::$(git log -1 --format=%s "$commit")"
+            git log -1 --format=%B "$commit" > "$RUNNER_TEMP/message"
+            node tools/agent-session-links.mjs "$RUNNER_TEMP/message" || fail=1
+            echo "::endgroup::"
+          done
+          exit "$fail"
 
   # A pull request that changes a rendered web file links its screenshots, or
   # says why it has none (ADR-0142). The rule lives in the tool, which reads

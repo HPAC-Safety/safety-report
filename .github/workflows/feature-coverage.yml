@@ -87,13 +87,24 @@ jobs:
           fi
 
           # One squash commit per queued pull request, oldest first; its
-          # message is the pull request's body as it lands on main.
+          # message is the pull request's body as it lands on main. An empty
+          # range would check nothing, so it fails rather than passes.
+          commits=$(git rev-list --reverse "$BASE_SHA..HEAD")
+          if [ -z "$commits" ]; then
+            echo "::error::The merge group holds no commit between $BASE_SHA and HEAD, so nothing was checked."
+            exit 1
+          fi
           fail=0
-          for commit in $(git rev-list --reverse "$BASE_SHA..HEAD"); do
-            echo "::group::$(git log -1 --format=%s "$commit")"
+          for commit in $commits; do
+            subject=$(git log -1 --format=%s "$commit")
+            echo "::group::$subject"
             PR_BODY=$(git log -1 --format=%B "$commit")
             export PR_BODY
-            check "$commit^..$commit" || fail=1
+            if ! check "$commit^..$commit"; then
+              pr=$(printf '%s' "$subject" | sed -nE 's/.*\(#([0-9]+)\)$/\1/p')
+              echo "::error::Queued commit $commit (pull request #${pr:-unknown}) fails the check above. Its message is the pull request body only while the repository's squash_merge_commit_message is PR_BODY; if the message above is not the body, check that setting (ADR-0147)."
+              fail=1
+            fi
             echo "::endgroup::"
           done
           exit "$fail"

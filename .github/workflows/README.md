@@ -49,10 +49,11 @@ it ([ADR-0147](../../docs/decisions/ADR-0147-pull-requests-merge-through-a-merge
   A new required context needs `merge_group` too, or the queue stalls.
 - Each required job reports there under its own id. A job with nothing to
   check on a merge group runs a notice step and passes; it is never left out.
-- The body checks (`linked-issue`, `no-session-link`, `screenshots`) pass
-  through: a merge group has no pull request body.
-- `feature-coverage` checks each queued squash commit, whose message is its
-  pull request's body, against the merged matrix.
+- `linked-issue` and `screenshots` pass through: a merge group has no pull
+  request body, and both already passed on the pull request.
+- `no-session-link` and `feature-coverage` check each queued squash commit,
+  whose message is its pull request's body; `feature-coverage` checks it
+  against the merged matrix.
 - Nothing comments, pushes, or deploys on a merge group. The coverage
   baseline is only a `push` run on `main`.
 - A required-check workflow never lets a cancelled run be a context's latest

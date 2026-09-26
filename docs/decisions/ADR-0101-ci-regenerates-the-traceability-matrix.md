@@ -21,6 +21,12 @@ Amended by
 [ADR-0113](ADR-0113-a-bot-pushing-onto-a-pull-request-replays-past-another-bot.md):
 a push rejected because the translation bot pushed first is replayed on top
 of it.
+Narrowed by
+[ADR-0147](ADR-0147-pull-requests-merge-through-a-merge-queue.md): pull
+requests now merge through a merge queue. Decision 4's guarantee holds on the
+queue's merged tree, where `docs` must pass, instead of on a branch the author
+updates by hand. The rejected "merge queue on its own" is adopted alongside
+this workflow, not in place of it.
 
 ## Context
 
@@ -105,7 +111,9 @@ A person should never open a pull request to regenerate a generated file.
   the drift, but it doesn't fix the file. It would still need this workflow,
   and requiring branches to be up to date, which the ruleset already does,
   with `docs` required gets the same guarantee on a
-  repository of this size without the queue.
+  repository of this size without the queue. (Later adopted alongside this
+  workflow, not instead of it:
+  [ADR-0147](ADR-0147-pull-requests-merge-through-a-merge-queue.md).)
 - **Running the head branch's generator.** It would follow a PR that changes
   the matrix format. It would also run PR-authored code with a write token,
   which is the risk `pull_request_target` exists to fence off.

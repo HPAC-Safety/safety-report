@@ -384,19 +384,19 @@ fi
 # again — so a green tick here would be a lie in three common situations.
 
 heading "Docker"
-DOCKER_MEM_RECOMMENDED_GB=8
+DOCKER_MEM_RECOMMENDED_GB=7
 docker_running() { have docker && docker info >/dev/null 2>&1; }
 
 if docker_running; then
 	ok "Docker $(docker version --format '{{.Server.Version}}' 2>/dev/null || echo '') is running"
-	# A full tools/ci-local.sh run peaks near DOCKER_MEM_PEAK_GB (ADR-0145):
-	# the .NET, Testcontainers, and browser jobs run side by side.
-	DOCKER_MEM=$(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0)
-	DOCKER_MEM_GB=$((DOCKER_MEM / 1073741824))
-	if [ "$DOCKER_MEM_GB" -lt "$DOCKER_MEM_RECOMMENDED_GB" ]; then
-		note "Docker has ${DOCKER_MEM_GB} GB of memory; tools/ci-local.sh recommends ${DOCKER_MEM_RECOMMENDED_GB} GB (Docker Desktop: Settings → Resources)"
+	# A full tools/ci-local.sh run peaked at about 5 GiB of container memory,
+	# with the .NET, Testcontainers, and browser jobs side by side, so the VM
+	# wants DOCKER_MEM_RECOMMENDED_GB (ADR-0145).
+	DOCKER_MEM_MIB=$(( $(docker info --format '{{.MemTotal}}' 2>/dev/null || echo 0) / 1048576 ))
+	if [ "$DOCKER_MEM_MIB" -lt $((DOCKER_MEM_RECOMMENDED_GB * 1024)) ]; then
+		note "Docker has ${DOCKER_MEM_MIB} MiB of memory; tools/ci-local.sh recommends ${DOCKER_MEM_RECOMMENDED_GB} GB (Docker Desktop: Settings → Resources)"
 	else
-		ok "Docker has ${DOCKER_MEM_GB} GB of memory (tools/ci-local.sh recommends ${DOCKER_MEM_RECOMMENDED_GB} GB)"
+		ok "Docker has ${DOCKER_MEM_MIB} MiB of memory (tools/ci-local.sh recommends ${DOCKER_MEM_RECOMMENDED_GB} GB)"
 	fi
 	if docker compose version >/dev/null 2>&1; then
 		ok "docker compose plugin"

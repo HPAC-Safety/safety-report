@@ -189,8 +189,9 @@ It runs the pull request workflows themselves — `linked-issue.yml`,
 the coverage ratchet against main's last green run — under
 [act](https://github.com/nektos/act), in an Ubuntu 24.04 container
 ([ADR-0145](docs/decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md)).
-It needs Docker and act at the version in `.act-version`
-(`./init-dev.sh --check` reports it; `brew install act` on macOS). `--job <id>`
+It needs Docker with at least 7 GB of memory (a full run peaks at about
+5 GiB) and act at the version in `.act-version`, which `./init-dev.sh`
+installs from the release, checked against `.act-checksums`. `--job <id>`
 runs one job. GitHub stays the authority: a local pass is necessary, not
 sufficient.
 

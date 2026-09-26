@@ -90,6 +90,15 @@ and is the pre-pull-request gate.**
   per-project Cobertura report and the assemblies it carries, and the wrapper
   fails a run whose report count is not the number of test projects: a lost
   report can move the verdict either way.
+- **Memory**: a full run peaked at about 5 GiB of container memory
+  (`docker stats` summed every 5 s over a 694 s run, Docker Desktop VM of
+  7.75 GB), because `build`, `test`, `e2e`, and then `coverage` run side by
+  side with their Testcontainers. The recommendation is at least 7 GB for
+  Docker; `init-dev.sh` reports the VM's size against it.
+- **Installing act**: `init-dev.sh` downloads the release asset for the OS
+  and architecture at `.act-version`, checks its SHA-256 against
+  `.act-checksums`, and installs it to `~/.local/bin`, again whenever the act
+  on `PATH` is another version. No package manager installs an exact act.
 - **Exit codes**: 0 passed, 1 a job failed, 2 a precondition or setup step
   failed, 3 the lock timed out. The lock records its holder's pid and start
   time, reports whether that pid is alive, and is never cleared by another

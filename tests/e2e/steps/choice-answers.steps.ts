@@ -106,7 +106,7 @@ Given(
 		await page.keyboard.press("Escape") // closes the picker over the page's buttons
 		await page.getByRole("button", { name: "Next" }).click()
 
-		await page.getByLabel("Where did you launch?").fill("A ridge nobody listed")
+		await page.getByRole("combobox", { name: "Where did you launch?" }).fill("A ridge nobody listed")
 		await page.getByRole("button", { name: "Next" }).click()
 
 		await page.getByRole("radio", { name: "Yes" }).click()

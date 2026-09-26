@@ -1861,9 +1861,9 @@
   },
   "report.date.invalid": {
     "source_hash": "47d4d98453be9a8a892aeea68a82252d9a6d33a5507a7f2533276141449d2b0e",
-    "target_hash": "d7ab41d4220b714939b493b9dfeca66c3223a3afc55c83ea01d0539ad3ed57bb",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "675f4897f2b5f760411112edd50d5014e3ff4b37379dc3fa9eeee863c4c80ec2",
+    "provider": "human",
+    "reviewed": true
   },
   "report.date.month": {
     "source_hash": "310ca503ef36f177ddbc760463fcaec1edc6eca12bfd590ad7bb244b31e59543",
@@ -1873,9 +1873,9 @@
   },
   "report.date.nextMonth": {
     "source_hash": "74e53211fef4b4d4d93f0cf221d0920174e216cb7e9343ff37dafa3278c1b034",
-    "target_hash": "2b03324e1918f43b8d0d9c4790e305bb056c9b4427e14c75dfb8e867aa2edfb9",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "2e82fa5d91f406faa8799719042f9f60c3a142522c9f954b2ba53cf790dd453d",
+    "provider": "human",
+    "reviewed": true
   },
   "report.date.placeholder": {
     "source_hash": "51a498bc1a85fc9cac722f1b584abf362268fe345fb6de881d293a09935fab43",

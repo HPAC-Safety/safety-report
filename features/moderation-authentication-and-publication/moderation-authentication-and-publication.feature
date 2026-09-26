@@ -818,3 +818,99 @@ Scenario: A reviewer can open a published report's public page
   When the safety officer opens that report
   Then the report view links to the report's public address
   And a report that is not published shows no such link
+
+# Private notes (ADR-0133). Staff-only plain text on a report: never
+# summarized, translated, or published.
+
+@REQ-MOD-098
+Scenario Outline: Only a Safety Officer or an Administrator may keep private notes
+  Given a report carrying one private note
+  When <who> adds, lists, edits, reads the history of, and removes private notes on it
+  Then the API answers <outcome> to every one of those requests
+
+Examples:
+  | who                  | outcome            |
+  | an anonymous visitor | 401                |
+  | a User               | 403                |
+  | a SafetyOfficer      | with success       |
+  | an Administrator     | with success       |
+
+@REQ-MOD-099
+Scenario Outline: Staff add any number of private notes to a report in any status
+  Given a <status> report that staff keep private notes on
+  When a safety officer adds two private notes and an administrator adds a third
+  Then all three private notes are listed, newest first
+  And each lists its text, its writer's token subject, and when it was written
+  And writing them queued no work for the Worker
+
+Examples:
+  | status         |
+  | pending        |
+  | published      |
+  | unpublished    |
+  | summary-failed |
+  | no-consent     |
+
+@REQ-MOD-100
+Scenario: Editing a private note adds a revision and keeps every earlier one
+  Given a safety officer wrote a private note on a report
+  When an administrator edits that private note twice
+  Then the private note lists the latest text, written by the administrator, marked as edited
+  And its history lists all three revisions oldest first, each unchanged with its own text, writer, and time
+  And an edit based on an earlier revision is refused with 409 and saves nothing
+
+@REQ-MOD-101
+Scenario: Removing a private note soft-deletes it
+  Given a safety officer wrote a private note on a report and edited it once
+  When an administrator removes that private note
+  Then the private note is no longer listed, and editing it or reading its history answers 404
+  And the private note and both its revisions are stamped deleted at one time, and nothing is erased
+  And one audit entry records the administrator's token subject, RemovedPrivateNote, the note, and the time, without its text
+
+@REQ-MOD-102
+Scenario Outline: A private note is plain text of 1 to 4000 characters
+  Given a pending report that staff keep private notes on
+  When a safety officer adds a private note whose text is <text>
+  Then the API answers 400 and no private note is stored
+
+Examples:
+  | text                 |
+  | empty                |
+  | only whitespace      |
+  | 4001 characters long |
+
+@REQ-MOD-103
+Scenario: A deleted report's private notes go with it
+  Given a report carrying one private note
+  When a safety officer deletes that report
+  Then the private note and its revision are stamped deleted at the report's deletion time
+  And adding, listing, or editing private notes on that report answers 404
+
+@REQ-MOD-104
+Scenario: No public or member read ever returns a private note, not even a count
+  Given a published report whose reporter consented to publication and media carries one private note
+  When an anonymous visitor and a User read the public feed, that report's public page, and its comments
+  Then no response carries the private note's text or identifier, or any count of private notes
+  And no database view reads a private-note table
+
+@REQ-MOD-105
+Scenario: A private note never reaches the model or a translation provider
+  Given a consented report carrying one private note is due for summarization
+  When the Worker claims the message and builds the model input DTO
+  Then the model input carries nothing from the private note
+  And no outbox message names the private note or its revision
+
+@REQ-MOD-106
+@ui
+Scenario: A safety officer keeps private notes on the report page
+  Given a safety officer is signed in and a pending report exists
+  And another reviewer left the private note "Called the pilot; follow up Monday."
+  When the safety officer opens that report
+  Then the private notes section lists "Called the pilot; follow up Monday." with its writer and time
+  When the safety officer adds the private note "Investigator report requested."
+  Then "Investigator report requested." is listed first, marked as theirs
+  When the safety officer edits that private note to "Investigator report received."
+  Then that private note reads "Investigator report received." and is marked as edited
+  And its history shows both revisions
+  When the safety officer removes that private note and confirms
+  Then "Investigator report received." is no longer listed

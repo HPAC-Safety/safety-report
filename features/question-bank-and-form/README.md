@@ -24,12 +24,26 @@ Each revision contains:
 - a nullable `deleted` timestamp.
 
 A question's choices are not part of any revision. A single-select,
-multi-select, or type-ahead question owns one ordered list of choices, edited
-in place: adding, changing, reordering, or removing one never creates a
-revision and never retires the question, even once it has been answered. A
-fork carries a copy of the whole list, removed choices and reporter-added
-marks included, to the replacement
+multi-select, or type-ahead question owns one list of choices, edited in
+place: adding, changing, pinning, or removing one never creates a revision and
+never retires the question, even once it has been answered. A fork carries a
+copy of the whole list, removed choices, pins, and reporter-added marks
+included, to the replacement
 ([ADR-0095](../../docs/decisions/ADR-0095-a-question-owns-its-choices-outside-its-revisions.md)).
+
+The list has no order of its own. Wherever choices are shown — the report
+form's single-select, multi-select, and type-ahead, the question editor's
+options, the required-option control, the type-ahead review page, and a
+multi-select answer on a report — they are listed alphabetically in the
+reader's language, ignoring accents and case, so the English and French lists
+may differ in order. An Administrator may pin a choice **first** or **last**;
+by default it is not pinned. The list shows three groups in turn — pinned
+first, not pinned, pinned last — each alphabetical, with a separator between
+groups wherever the control can draw one. A type-ahead's suggestions cannot,
+so they only keep the group order. A value a reporter adds is not pinned and
+takes its alphabetical place at once. The editor re-sorts its options when it
+opens, never while the Administrator is typing
+([ADR-0136](../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
 
 An answer names its choice by identifier and copies none of its wording; both
 languages are read from the choice. A removed choice is hidden from the form,
@@ -167,6 +181,13 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   ever corrected in place ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - Rewriting an answer to name a different choice, on merge, replacement, or
   migration. Readers follow the link instead.
+- Ordering choices by hand: dragging them, moving them up or down, or letting
+  a question choose between the order they were written in and alphabetical
+  order. Choices are alphabetical, apart from pinning
+  ([ADR-0136](../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
+- Sorting choices on the server by language. The server returns each group in
+  a stable order and the reader's browser collates it, because only the reader
+  knows their language.
 - Copying a choice's wording onto an answer, in either language.
 - An administrator authoring, seeing, or recoding an option code. A new
   choice's code is derived from its English wording, and a choice fixed in

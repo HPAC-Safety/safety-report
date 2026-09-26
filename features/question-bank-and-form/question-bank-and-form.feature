@@ -907,6 +907,92 @@ Scenario: Existing answers are linked to their choices without being rewritten
   And the second answer names a removed choice carrying the label it stored, in its language
   And neither answer's stored text changes
 
+@REQ-QB-144
+Scenario: The API sends each choice's pin, pinned-first choices first and pinned-last choices last
+  Given an Administrator saves a single-select question with "Other" pinned last, "United States" and "Canada" pinned first, and "Mexico" and "Brazil" not pinned
+  When the report form's questions and the editor's questions are read
+  Then each lists that question's pinned-first choices, then its unpinned choices, then its pinned-last choices
+  And each choice carries its pin as "first", "none", or "last"
+
+@REQ-QB-145
+@ui
+Scenario Outline: A question's choices are listed alphabetically in the reader's language
+  Given a <type> question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
+  When a reporter using <language> opens that question
+  Then its choices are listed <order>
+
+Examples:
+  | type          | language | order                                        |
+  | single_select | English  | "Eagle", "Emu", "Hawk", "Kestrel"            |
+  | single_select | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
+  | multi_select  | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
+  | autocomplete  | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
+
+@REQ-QB-146
+@ui
+Scenario Outline: Pinned choices come first or last, each group alphabetical
+  Given a <type> question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
+  When a reporter using English opens that question
+  Then its choices are listed "Canada", "United States", "Brazil", "France", "Mexico", "Other"
+  And <separators>
+
+Examples:
+  | type          | separators                                                        |
+  | single_select | a separator is drawn after "United States" and after "Mexico"     |
+  | multi_select  | a separator is drawn after "United States" and after "Mexico"     |
+  | autocomplete  | no separator is drawn, because a type-ahead's suggestions cannot show one |
+
+@REQ-QB-147
+Scenario: A value a reporter adds to a type-ahead is not pinned
+  Given a type-ahead question offers "Woodside" pinned last and "Cooper's" not pinned
+  When a reporter answering in English submits "Mount 7" for it, which the question does not offer
+  Then the new value is not pinned
+  And the question offers it after "Cooper's" and before "Woodside"
+
+@REQ-QB-148
+@ui
+Scenario: A value a reporter adds to a type-ahead takes its alphabetical place
+  Given a type-ahead question offers "Woodside" and "Cooper's", and a reporter has since added "Mount 7"
+  When a reporter using English opens that question
+  Then its choices are listed "Cooper's", "Mount 7", "Woodside"
+
+@REQ-QB-149
+Scenario: Pinning a choice never revises or forks its question
+  Given an answered single-select question offers "Canada", "Mexico", and "Other", none pinned
+  When an Administrator pins "Canada" first and "Other" last
+  Then "Canada" is pinned first, "Other" is pinned last, and "Mexico" is not pinned
+  And the pinned question keeps its identifier and its current revision
+
+@REQ-QB-150
+@ui
+Scenario: An Administrator sets each option's position, and the editor lists options as the form does
+  Given a signed-in Administrator opens the manage-questions page
+  When they open a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
+  Then its options are listed "Hang glider", "Paraglider", "Other"
+  And each option offers the positions "Alphabetical", "Pin to top", and "Pin to bottom"
+  When they reword "Hang glider" to "Speed wing" and set "Paraglider" to "Pin to top"
+  Then the options stay where they were while the Administrator edits
+  And the save sends "Paraglider" pinned first, "Other" pinned last, and "Speed wing" not pinned
+
+@REQ-QB-151
+@ui
+Scenario: The required-option control lists the parent's choices as the form does
+  Given a signed-in Administrator opens the manage-questions page
+  When they make a question conditional on a single-select question offering "Other" pinned last, and "Paraglider" and "Hang glider" not pinned
+  Then the required-option control lists "Hang glider", "Paraglider", "Other"
+
+@REQ-QB-152
+@ui
+Scenario: The type-ahead review page offers merge targets as the form lists them
+  Given a signed-in Safety Officer reviews a type-ahead value whose question offers "Woodside" pinned last, and "Mount 7" and "Cooper's" not pinned
+  Then the value can be merged into "Cooper's", "Mount 7", or "Woodside", in that order
+
+@REQ-QB-153
+@ui
+Scenario: A multi-select answer on the report page is listed as the form lists its choices
+  Given a signed-in Safety Officer opens a report whose multi-select answer names "Turbulent", "Other" pinned last, and "Gusty"
+  Then the answer is listed "Gusty", "Turbulent", "Other"
+
 @REQ-QB-104
 Scenario: A new installation asks for several attachments
   Given a new, empty database

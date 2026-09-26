@@ -3,8 +3,9 @@
 # ADR-0009 specified two distributions — one public, one admin — "so the admin
 # surface can take network controls the public form must not have". That is
 # superseded: the admin review queue is a ROUTE on the website, at
-# https://safety.hpac.ca/admin/. ADR-0031 records the decision, what was given
-# up, and the assessment of whether it is safe.
+# https://safety.hpac.ca/admin/. ADR-0048 reinstated that shape and ADR-0123
+# confirms it, serving the site from S3 behind this distribution. ADR-0031,
+# which first made it, records what was given up and whether it is safe.
 #
 # The short version, because it belongs next to the code: WAF, geo restriction,
 # and IP allowlisting are DISTRIBUTION-level in CloudFront, so collapsing two

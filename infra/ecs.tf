@@ -8,7 +8,9 @@
 # updates the service. If Terraform also asserted the revision, every deploy
 # would show up as drift on the next plan and every apply would roll the service
 # back to `latest`. So the services below ignore `task_definition`, and the
-# `image` here is only ever the shape of a first boot. See ADR-0031.
+# `image` here is only ever the shape of a first boot. See ADR-0031, whose
+# task-definition split still governs this file; ADR-0123 moves the Worker off
+# Fargate to Lambda.
 
 locals {
   # The container images the FIRST apply points at. Nothing has been pushed at

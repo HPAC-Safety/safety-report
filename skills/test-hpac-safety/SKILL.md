@@ -90,8 +90,9 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
   when asked; an administrator may require any other question (ADR-0061).
 - **Before submission**: unfinished answers and revision IDs stay in browser
   storage for 15 days; no report, reserved ID, or database state exists before
-  final submission. An upload is validated before it is stored, names no
-  member, and is erased by its delete.
+  final submission. An upload is minted with a PUT signed for its declared
+  type and exact size, is sniffed and validated when claimed, names no member,
+  and is erased by its delete.
 - **Submission**: maps answers and upload IDs exactly; refuses missing uploads
   by ID; accepts known superseded revisions; rejects unknown or deleted ones;
   commits report, answers, files, and outbox work atomically.
@@ -101,8 +102,8 @@ Given_a_migrated_database_When_the_actor_column_is_read_Then_it_is_a_widened_str
 - **Anonymity**: a synthetic private identity repeated in narrative becomes the
   exact role in both languages with no fragment left; eligible safety facts
   survive.
-- **Attachments**: count, size, and type checks stream safely; image and video
-  derivatives remove metadata; documents are kept as unchanged originals and
+- **Attachments**: count, per-kind size, and type checks read only what they
+  need; image and video derivatives remove metadata; documents are kept as unchanged originals and
   never reach AI. One is public only as a short-lived forced download under a
   server-minted name, when validated, unhidden, and `consent_documents` is true
   (ADR-0119).

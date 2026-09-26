@@ -307,6 +307,11 @@ that outlives the reason it was minted is a public object URL with extra steps.
   with no default — a size limit nobody chose is a size limit nobody owns. The
   configured value is **50 MB** (`MediaPolicyOptions`), which is generous for a
   photo and tight for video; see `docs/data-handling.md`.
+  *(Amended by
+  [ADR-0126](ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md):
+  the single limit became one per kind — 250 MB for a video, 25 MB for an image
+  or document — and a pre-signed PUT signed for the exact size now enforces it at
+  storage.)*
 - **The limit is enforced while the object streams in, not after it has been
   fully downloaded.** An earlier version of `MediaIngestor` read the whole
   quarantined object into memory with `CopyToAsync` and checked its length

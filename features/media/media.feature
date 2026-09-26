@@ -51,7 +51,6 @@ Scenario: The client filename is kept only as a reviewer's download name
   And the object key encodes only an opaque upload, report, or file identity and a managed compartment
 
 @REQ-MED-045
-@ignore
 Scenario: A sent upload waits, unvalidated, in a private quarantine compartment
   Given a reporter's browser has sent a file through the pre-signed PUT the API minted for it
   Then its bytes sit at a private quarantine key named only by the minted upload ID

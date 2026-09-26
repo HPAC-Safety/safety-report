@@ -2,7 +2,7 @@
 title: An attachment uploads straight to quarantine by pre-signed PUT
 description: The API mints an opaque upload ID and a short-lived pre-signed PUT signed for the declared type and exact size, the browser sends the file straight to quarantine, and the submission validates what it claims; caps become 250 MB for video and 25 MB for an image or document.
 type: adr
-status: accepted
+status: partially-superseded
 date: 2026-09-25
 decision-makers: Chase Florell
 keywords: attachments, uploads, quarantine, pre-signed PUT, S3, Lambda, size limit, validation, privacy
@@ -12,7 +12,10 @@ keywords: attachments, uploads, quarantine, pre-signed PUT, S3, Lambda, size lim
 
 ## Status
 
-Accepted. This ADR:
+Accepted; partially superseded by
+[ADR-0134](ADR-0134-a-claim-reads-a-zip-packages-directory-as-well-as-its-leading-bytes.md),
+which reads a DOCX or ODT's zip directory as well as its leading bytes at claim.
+This ADR:
 
 - **amends**
   [ADR-0096](ADR-0096-an-attachment-uploads-on-attach-and-is-claimed-at-submission.md):

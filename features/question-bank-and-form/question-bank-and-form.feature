@@ -846,7 +846,6 @@ Examples:
   | multi_select  | merge it into the other    | refused  |
 
 @REQ-QB-134
-@ignore
 Scenario: The Worker supplies a reporter-added value's other language
   Given a reporter answering in French added the type-ahead value "Élévation Sainte-Anne"
   When the Worker processes its translation work

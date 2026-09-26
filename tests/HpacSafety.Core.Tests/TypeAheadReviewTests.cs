@@ -144,6 +144,23 @@ public class TypeAheadReviewTests
 		copy.CreatedAt.ShouldBe(Now);
 	}
 
+	[Fact]
+	public void GivenAFlaggedValue_WhenTheWorkerSuppliesItsOtherLanguage_ThenItStaysFlagged()
+	{
+		// Given
+		var question = TypeAhead();
+		var value = question.AddChoiceFromReporter("Élévation Sainte-Anne", Locale.FrCa, Now);
+
+		// When — translation is mechanical; review is a person's (ADR-0129)
+		value.SupplyAutoTranslation("Sainte-Anne Rise").ShouldBeTrue();
+
+		// Then
+		value.LabelEnSource.ShouldBe(LabelSource.Auto);
+		value.NeedsReview.ShouldBeTrue();
+		value.ReviewedAt.ShouldBeNull();
+		question.ReporterChoicesAwaitingReview.ShouldBe(1);
+	}
+
 	private static Question TypeAhead()
 	{
 		return Question.Create("site", QuestionType.Autocomplete, "Where?", "Où ?", Now, isActive: true);

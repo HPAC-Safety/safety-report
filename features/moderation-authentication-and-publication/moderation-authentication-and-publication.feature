@@ -249,7 +249,7 @@ Examples:
   | SafetyOfficer | allows   |
   | Administrator | allows   |
 
-@REQ-MOD-096
+@REQ-MOD-097
 @ui
 Scenario: A Safety Officer approves, corrects, and removes type-ahead values on the review page
   Given a signed-in Safety Officer and three type-ahead values flagged for review

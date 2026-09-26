@@ -6,7 +6,7 @@ import { signInAs, stubAuth } from "./auth"
 const { Given, When, Then } = createBdd()
 
 /*
- * REQ-MOD-096: a Safety Officer reviews reporter-added type-ahead values on
+ * REQ-MOD-097: a Safety Officer reviews reporter-added type-ahead values on
  * one page (ADR-0129). The API is stubbed at the network boundary: what each
  * review does to the value, and who may do it, is REQ-QB-128..135 and the
  * API tests. Every value here is synthetic.

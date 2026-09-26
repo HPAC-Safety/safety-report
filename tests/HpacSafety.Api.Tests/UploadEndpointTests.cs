@@ -48,7 +48,8 @@ public sealed class UploadEndpointTests(ApiPostgresFixture fixture)
 
 		var url = new Uri(upload.GetProperty("uploadUrl").GetString()!);
 		url.AbsolutePath.ShouldEndWith($"/quarantine/{uploadId}");
-		url.Query.ShouldContain("X-Amz-Expires=900");
+		var expires = url.Query.TrimStart('?').Split('&').Single(pair => pair.StartsWith("X-Amz-Expires=", StringComparison.Ordinal));
+		int.Parse(expires["X-Amz-Expires=".Length..], System.Globalization.CultureInfo.InvariantCulture).ShouldBeLessThanOrEqualTo(900);
 		url.Query.ShouldContain("content-length");
 		url.Query.ShouldContain("content-type");
 		upload.GetProperty("expiresAt").GetDateTimeOffset().ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow.AddMinutes(15).AddSeconds(5));

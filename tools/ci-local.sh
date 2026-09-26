@@ -298,8 +298,8 @@ run_act() {
 # The coverage job prints its gate output, per-assembly summary, Cobertura
 # totals, and per-project reports between markers, because act keeps no job
 # summary and no artifact (see ci.yml's "Coverage for tools/ci-local.sh"
-# step). A report count that is not the test-project count means a suite's
-# coverage was lost, and the verdict is not CI's.
+# step). A distinct-report count that is not the test-project count means a
+# suite's coverage was lost, and the verdict is not CI's.
 check_coverage() {
 	grep -aq 'ci-local:coverage:begin' "$LOGS"/ci*.log 2>/dev/null || return 0
 	say ""
@@ -309,7 +309,7 @@ check_coverage() {
 	reports=$(cat "$LOGS"/ci*.log | sed -n 's/.*ci-local:reports= *\([0-9][0-9]*\).*/\1/p' | tail -n 1)
 	projects=$(find "$WORK/repo/tests" -name '*.Tests.csproj' | wc -l | tr -d ' ')
 	if [ "$reports" != "$projects" ]; then
-		say "✗ coverage merged ${reports:-no} per-project reports for $projects test projects; the local verdict is not CI's"
+		say "✗ coverage kept ${reports:-no} distinct per-project reports for $projects test projects; one was lost, so the local verdict is not CI's"
 		return 1
 	fi
 }

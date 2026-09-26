@@ -447,6 +447,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnName("id")
                         .IsFixedLength();
 
+                    b.Property<string>("ChoicesDependOnQuestionId")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("choices_depend_on_question_id")
+                        .IsFixedLength();
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -474,6 +480,9 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.HasKey("Id")
                         .HasName("pk_questions");
 
+                    b.HasIndex("ChoicesDependOnQuestionId")
+                        .HasDatabaseName("ix_questions_choices_depend_on_question_id");
+
                     b.HasIndex("Key")
                         .IsUnique()
                         .HasDatabaseName("ix_questions_key")
@@ -481,6 +490,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
                     b.ToTable("questions", null, t =>
                         {
+                            t.HasCheckConstraint("ck_questions_choices_depend_on_other", "choices_depend_on_question_id IS NULL OR choices_depend_on_question_id <> id");
+
                             t.HasCheckConstraint("ck_questions_role", "role IN ('none', 'consent_publish', 'consent_media')");
                         });
                 });
@@ -547,6 +558,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("needs_review");
 
+                    b.Property<string>("ParentChoiceId")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("parent_choice_id")
+                        .IsFixedLength();
+
                     b.Property<string>("Pin")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -588,6 +605,9 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.HasIndex("MergedIntoChoiceId")
                         .HasDatabaseName("ix_question_choices_merged_into_choice_id");
 
+                    b.HasIndex("ParentChoiceId")
+                        .HasDatabaseName("ix_question_choices_parent_choice_id");
+
                     b.HasIndex("ReplacedByChoiceId")
                         .HasDatabaseName("ix_question_choices_replaced_by_choice_id");
 
@@ -602,6 +622,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_question_choices_label_source", "(label_en_source IS NULL OR label_en_source IN ('human', 'auto')) AND (label_fr_source IS NULL OR label_fr_source IN ('human', 'auto')) AND (label_en IS NULL) = (label_en_source IS NULL) AND (label_fr IS NULL) = (label_fr_source IS NULL)");
 
                             t.HasCheckConstraint("ck_question_choices_merged_is_removed", "merged_into_choice_id IS NULL OR (deleted IS NOT NULL AND merged_into_choice_id <> id)");
+
+                            t.HasCheckConstraint("ck_question_choices_parent_other", "parent_choice_id IS NULL OR parent_choice_id <> id");
 
                             t.HasCheckConstraint("ck_question_choices_pin", "pin IN ('none', 'first', 'last')");
                         });
@@ -1464,6 +1486,15 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_report_private_note_revisions_report_private_notes_note_id");
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
+                {
+                    b.HasOne("HpacSafety.Core.Features.QuestionBank.Question", null)
+                        .WithMany()
+                        .HasForeignKey("ChoicesDependOnQuestionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_questions_questions_choices_depend_on_question_id");
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionChoice", b =>
                 {
                     b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionChoice", "MergedInto")
@@ -1471,6 +1502,12 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MergedIntoChoiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_question_choices_question_choices_merged_into_choice_id");
+
+                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionChoice", null)
+                        .WithMany()
+                        .HasForeignKey("ParentChoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_question_choices_question_choices_parent_choice_id");
 
                     b.HasOne("HpacSafety.Core.Features.QuestionBank.Question", null)
                         .WithMany("AllChoices")

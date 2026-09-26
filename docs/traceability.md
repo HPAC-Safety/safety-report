@@ -1488,6 +1488,122 @@ A translation that arrives after the direction was flipped changes nothing — *
 
 French typed while a translation is on its way is kept — *playwright-bdd, Covered*
 
+### REQ-QB-179
+
+A picker or type-ahead's choices may depend on another picker or type-ahead — *Reqnroll, Covered*
+
+### REQ-QB-180
+
+A dependency is one level deep — *Reqnroll, Covered*
+
+### REQ-QB-181
+
+The parent comes before the child on the form — *Reqnroll, Covered*
+
+### REQ-QB-182
+
+Every choice of a dependent question names one parent choice — *Reqnroll, Covered*
+
+### REQ-QB-183
+
+The same wording is entered once for each parent choice it applies to — *Reqnroll, Covered*
+
+### REQ-QB-184
+
+A dependency and its links sit outside revisions — *Reqnroll, Covered*
+
+### REQ-QB-185
+
+Removing a question's parent keeps the links and stops filtering — *Reqnroll, Covered*
+
+### REQ-QB-186
+
+A parent choice that live child choices link to cannot be removed — *Reqnroll, Covered*
+
+### REQ-QB-187
+
+A replaced picker parent choice passes its child links to the replacement — *Reqnroll, Covered*
+
+### REQ-QB-188
+
+A merged type-ahead parent value passes its child links to the value it was merged into — *Reqnroll, Covered*
+
+### REQ-QB-189
+
+A dependency follows its parent when the parent forks — *Reqnroll, Covered*
+
+### REQ-QB-190
+
+A forked dependent question copies every choice with its link — *Reqnroll, Covered*
+
+### REQ-QB-191
+
+The report form's questions name each dependency and each link — *Reqnroll, Covered*
+
+### REQ-QB-192
+
+A reporter's new value in a dependent type-ahead is linked to the parent's answer — *Reqnroll, Covered*
+
+### REQ-QB-193
+
+A reporter's typed value in a dependent type-ahead matches only values under the parent's answer — *Reqnroll, Covered*
+
+### REQ-QB-194
+
+A reviewer changes a dependent type-ahead value's link, never clears it — *Reqnroll, Covered*
+
+### REQ-QB-195
+
+An Administrator picks the question a question's choices depend on, and clears it — *playwright-bdd, Covered*
+
+### REQ-QB-196
+
+Each choice of a dependent question asks for its parent choice — *playwright-bdd, Covered*
+
+### REQ-QB-197
+
+A dependent question offers only the choices linked to the parent's answer — *playwright-bdd, Covered*
+
+### REQ-QB-198
+
+Changing the parent's answer clears a child answer it no longer offers — *playwright-bdd, Covered*
+
+### REQ-QB-199
+
+A parent answered with a new value leaves the child nothing to pick, but a value to type — *playwright-bdd, Covered*
+
+### REQ-QB-200
+
+A saved report restores the parent and child answers together — *playwright-bdd, Covered*
+
+### REQ-QB-201
+
+A dependent child that cannot be answered yet does not hold the reporter back — *playwright-bdd, Covered*
+
+### REQ-QB-202
+
+The type-ahead review page shows a dependent value's link and changes it — *playwright-bdd, Covered*
+
+### REQ-QB-203
+
+A parent the form does not ask filters nothing — *Reqnroll, Covered*
+
+### REQ-QB-204
+
+A picker child with nothing under the parent's answer says so and does not hold the reporter back — *playwright-bdd, Covered*
+
+### REQ-QB-205
+
+The manage-questions page shows why a question cannot move above its parent — *playwright-bdd, Covered*
+
+### REQ-QB-206
+
+The parent comes before the child wherever grouping places them — *Reqnroll, Covered*
+
+### REQ-QB-207
+
+A parent merge that would offer one wording twice under one parent choice is refused — *Reqnroll, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001
@@ -1901,6 +2017,14 @@ Tabbing past a date field skips its calendar — *playwright-bdd, Covered*
 ### REQ-SUB-112
 
 A date question with a placeholder of its own still names the yyyy-mm-dd format — *playwright-bdd, Covered*
+
+### REQ-SUB-113
+
+A choice of a dependent question must be offered under the parent's answer — *Reqnroll, Covered*
+
+### REQ-SUB-114
+
+A required dependent question that cannot be answered yet does not block a submission — *Reqnroll, Covered*
 
 ## Claims: typeform-question-import-export
 

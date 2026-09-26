@@ -74,6 +74,109 @@ export function optionTyped(question: PublicQuestionView, typed: string): Public
 }
 
 /**
+ * The choice a picker or type-ahead's answer names: a single-select's by its ID,
+ * a type-ahead's picked choice, or the one its typed words read as. Undefined
+ * for typed words naming no choice — a value the question does not offer yet.
+ */
+export function answeredChoiceId(question: PublicQuestionView, answer: DraftAnswer | undefined): string | undefined {
+	if (answer?.kind !== "value" || !answer.value.trim()) return undefined
+	if (question.type !== "autocomplete") return optionFor(question, answer.value)?.id
+	if (answer.choice && question.options.some((option) => option.id === answer.choice)) return answer.choice
+	return optionTyped(question, answer.value)?.id
+}
+
+/**
+ * Which of a question's choices its parent's answer lets the form offer
+ * (ADR-0146):
+ * - `all`: its choices depend on no question on the form;
+ * - `waiting`: the parent is unanswered, so the question is disabled;
+ * - `under`: only the choices under the parent's answer — none when the
+ *   parent was answered with a value it does not offer yet.
+ */
+export type ChoiceScope =
+	| { kind: "all" }
+	| { kind: "waiting"; parent: PublicQuestionView }
+	| { kind: "under"; parent: PublicQuestionView; options: PublicOptionView[] }
+
+export function choiceScope(
+	question: PublicQuestionView,
+	answers: AnswerMap,
+	questionsById: Map<string, PublicQuestionView>,
+): ChoiceScope {
+	// A parent the form does not ask filters nothing, as a condition whose
+	// parent is missing hides nothing.
+	const parent = question.choicesDependOnQuestionId ? questionsById.get(question.choicesDependOnQuestionId) : undefined
+	if (!parent) return { kind: "all" }
+
+	const answer = answers[parent.revisionId]
+	if (answer?.kind !== "value" || !answer.value.trim()) return { kind: "waiting", parent }
+
+	const chosen = answeredChoiceId(parent, answer)
+	return { kind: "under", parent, options: chosen ? question.options.filter((option) => option.parentChoiceId === chosen) : [] }
+}
+
+/** The question as the form offers it now: with only the choices its parent's answer allows. */
+export function scopedQuestion(
+	question: PublicQuestionView,
+	answers: AnswerMap,
+	questionsById: Map<string, PublicQuestionView>,
+): PublicQuestionView {
+	const scope = choiceScope(question, answers, questionsById)
+	if (scope.kind === "all") return question
+	return { ...question, options: scope.kind === "under" ? scope.options : [] }
+}
+
+/**
+ * Whether a question cannot be answered yet, and so never holds the reporter
+ * back, even when required: its parent is unanswered, or it is a picker with
+ * nothing under the parent's answer. A type-ahead always takes a typed value.
+ */
+export function cannotBeAnswered(
+	question: PublicQuestionView,
+	answers: AnswerMap,
+	questionsById: Map<string, PublicQuestionView>,
+): boolean {
+	const scope = choiceScope(question, answers, questionsById)
+	if (scope.kind === "waiting") return true
+	return scope.kind === "under" && question.type !== "autocomplete" && scope.options.length === 0
+}
+
+/**
+ * The answers with every child answer its parent's answer no longer allows
+ * removed: a choice not offered under it, typed words reading as such a
+ * choice, or anything at all while the parent is unanswered. Words typed that
+ * name no choice stay (ADR-0146).
+ */
+export function consistentAnswers(answers: AnswerMap, questionsById: Map<string, PublicQuestionView>): AnswerMap {
+	let consistent = answers
+
+	for (const question of questionsById.values()) {
+		const answer = consistent[question.revisionId]
+		if (answer?.kind !== "value") continue
+
+		const scope = choiceScope(question, consistent, questionsById)
+		if (scope.kind === "all") continue
+
+		const offered = scope.kind === "under" ? scope.options : []
+		const offers = (id: string | undefined) => id !== undefined && offered.some((option) => option.id === id)
+		const keep =
+			scope.kind === "under" &&
+			(question.type !== "autocomplete"
+				? offers(optionFor(question, answer.value)?.id)
+				: answer.choice
+					? offers(answer.choice)
+					: offers(optionTyped({ ...question, options: offered }, answer.value)?.id) || !optionTyped(question, answer.value))
+
+		if (!keep) {
+			consistent = { ...consistent }
+			delete consistent[question.revisionId]
+		}
+	}
+
+	return consistent
+}
+
+/**
  * Every question and group child, flattened, keyed by its (question, not
  * revision) ID — what `dependsOnQuestionId` names.
  */
@@ -200,14 +303,16 @@ export function unansweredRequired(
 ): PublicQuestionView[] {
 	if (step.kind === "intro") return []
 
+	// A question that cannot be answered yet never holds the reporter back (ADR-0146).
+	const outstanding = (question: PublicQuestionView) =>
+		question.isRequired && !isAnswered(question, answers) && !cannotBeAnswered(question, answers, questionsById)
+
 	if (step.kind === "question") {
 		if (collectsNoAnswer(step.question)) return []
-		return step.question.isRequired && !isAnswered(step.question, answers) ? [step.question] : []
+		return outstanding(step.question) ? [step.question] : []
 	}
 
-	return visibleChildren(step.question, answers, questionsById, hasAttachment).filter(
-		(child) => child.isRequired && !isAnswered(child, answers),
-	)
+	return visibleChildren(step.question, answers, questionsById, hasAttachment).filter(outstanding)
 }
 
 /**

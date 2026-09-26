@@ -199,6 +199,13 @@ contributor who never invokes one is unaffected.
      ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
      [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
      [ADR-0132](docs/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
+   - **Dependent choices**: a single-select or type-ahead's choices may depend
+     on an earlier single-select or type-ahead, one level deep. Each choice
+     names one parent choice, and the form offers only those under the
+     parent's answer. The dependency and the links sit outside revisions. A
+     replace, merge, or fork re-points them when it happens. A parent choice a
+     live choice is linked to is replaced or merged, never removed
+     ([ADR-0146](docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
 2. **Nothing reaches the server before final submission — except
    attachments.**
    - Unfinished answers and shown revision IDs stay only in that browser, for

@@ -116,8 +116,10 @@ export function ManageQuestionsPage() {
 		try {
 			setQuestions(await reorderQuestions(idsInOrder))
 		} catch (cause) {
-			report(cause)
+			// Reloaded first, so the refusal stays on screen: a parent must stay
+			// above the questions whose choices depend on it (ADR-0146).
 			await load()
+			report(cause)
 		}
 	}
 
@@ -132,11 +134,35 @@ export function ManageQuestionsPage() {
 	// group cannot itself be grouped under another one (ADR-0076).
 	const groupQuestions = questions.filter((question) => question.type === "group" && question.id !== editing)
 
+	// A single-select's or type-ahead's choices may depend on an earlier
+	// single-select or type-ahead that depends on nothing itself, one level deep —
+	// so none, for a question other questions' choices already depend on (ADR-0146).
+	const editingQuestion = questions.find((question) => question.id === editing)
+	// Where a question is asked: on its group's page when it has one (ADR-0076).
+	const formPosition = (question: QuestionView): [number, number] => {
+		const group = questions.find((candidate) => candidate.id === question.groupedUnderQuestionId)
+		return group ? [group.displayOrder, question.displayOrder] : [question.displayOrder, -Infinity]
+	}
+	const asksBefore = (first: QuestionView, second: QuestionView) => {
+		const [a, b] = [formPosition(first), formPosition(second)]
+		return a[0] < b[0] || (a[0] === b[0] && a[1] < b[1])
+	}
+	const choiceParentQuestions = questions.some((question) => question.choicesDependOnQuestionId === editing && editing)
+		? []
+		: questions.filter(
+				(question) =>
+					(question.type === "single_select" || question.type === "autocomplete") &&
+					question.id !== editing &&
+					question.choicesDependOnQuestionId === null &&
+					(!editingQuestion || asksBefore(question, editingQuestion)),
+			)
+
 	const editor = draft && (
 		<QuestionEditor
 			draft={draft}
 			conditionQuestions={conditionQuestions}
 			groupQuestions={groupQuestions}
+			choiceParentQuestions={choiceParentQuestions}
 			isEditing={editing !== null}
 			hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 			translationAvailable={canTranslate}

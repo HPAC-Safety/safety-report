@@ -68,6 +68,8 @@ export interface OptionView {
 	reporterLocale: string | null
 	/** Listed before (`first`) or after (`last`) the alphabetical rest, or among them (`none`) — ADR-0136. */
 	pin: string
+	/** The parent question's choice this one is offered under, when the question's choices depend on another's (ADR-0146). */
+	parentChoiceId: string | null
 }
 
 export interface QuestionView {
@@ -90,6 +92,8 @@ export interface QuestionView {
 	dependsOnChoiceId: string | null
 	/** The group question this one renders together with, if any. Distinct from a conditional dependency (ADR-0076). */
 	groupedUnderQuestionId: string | null
+	/** The single-select or type-ahead whose answer decides which of this question's choices are offered (ADR-0146). */
+	choicesDependOnQuestionId: string | null
 	labelEn: string
 	labelFr: string
 	helpTextEn: string | null
@@ -130,6 +134,8 @@ export interface OptionInput {
 	replace?: boolean
 	/** `first` or `last` pins the choice to the top or bottom of its list; `none` or absent lists it alphabetically (ADR-0136). */
 	pin?: string
+	/** The parent question's choice this one is offered under; required while the question has a parent, never cleared (ADR-0146). */
+	parentChoiceId?: string | null
 }
 
 export interface SaveQuestionRequest {
@@ -150,6 +156,8 @@ export interface SaveQuestionRequest {
 	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */
 	dependsOnChoiceId: string | null
 	groupedUnderQuestionId: string | null
+	/** The question whose answer decides which choices are offered; set in place, never a new version (ADR-0146). */
+	choicesDependOnQuestionId: string | null
 	/** The complete list of the question's choices, applied in place — never a new version (ADR-0095). */
 	options: OptionInput[]
 }
@@ -311,8 +319,16 @@ export interface TypeAheadValueView {
 	isRemoved: boolean
 	answerCount: number
 	addedAt: string | null
-	/** The question's other live values, any of which this one may be merged into. */
+	/** The question's other live values, any of which this one may be merged into — under the same parent choice, for a dependent one. */
 	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null; pin: string }[]
+	/** For a value whose question's choices depend on another's: that question, the choice it is offered under, and the choices it may be (ADR-0146). */
+	parent: {
+		questionId: string
+		questionLabelEn: string
+		questionLabelFr: string
+		parentChoiceId: string | null
+		choices: { id: string; labelEn: string | null; labelFr: string | null; pin: string }[]
+	} | null
 }
 
 export function listTypeAheadValuesAwaitingReview(): Promise<{
@@ -339,6 +355,14 @@ export function mergeTypeAheadValue(id: string, intoId: string): Promise<void> {
 	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/merge`, {
 		method: "POST",
 		body: JSON.stringify({ intoId }),
+	})
+}
+
+/** Offers the value under another choice of its question's parent: changed, never cleared (ADR-0146). */
+export function relinkTypeAheadValue(id: string, parentChoiceId: string): Promise<void> {
+	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/parent`, {
+		method: "PUT",
+		body: JSON.stringify({ parentChoiceId }),
 	})
 }
 

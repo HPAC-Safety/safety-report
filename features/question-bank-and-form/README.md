@@ -80,6 +80,15 @@ statement and a group are display-only and produce no answer.
 Dropdowns versus radio buttons are presentation choices for the same
 single-select domain type.
 
+A statement is shown to administrators as **Instructional text**. It is a
+title and a description, not a question and help text, so the editor labels
+its wording that way and gives each description several lines (`REQ-QB-141`).
+Both still live in the revision's label and help-text fields; only the editor's
+labels differ by type. The description is stored exactly as typed, line breaks
+included (`REQ-QB-142`), and the reporter's form shows it with its paragraphs
+wherever the statement appears: as the introduction, on a page of its own, or
+under a group (`REQ-QB-143`).
+
 The Typeform-derived question set is seed/import input, not hardcoded form
 logic. The database remains authoritative after initial seeding.
 
@@ -167,6 +176,10 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   question holds, retired ones included (`REQ-QB-096`). Only an imported
   Typeform draft carries a key of its own, and the editor does not show it.
   Renaming an existing key is not built.
+- Formatting in a statement's description: no Markdown, rich text, or links.
+  Line breaks are the only structure it keeps (`REQ-QB-143`).
+- Renaming a statement's "Ask this question" behaviour checkbox, or relabelling
+  a group's fields. Only a statement's wording labels differ (`REQ-QB-141`).
 - Correcting any other seeded question's wording by migration. Once a database
   is seeded, an Administrator owns its wording, and the attachment question's
   correction (`REQ-QB-105`) is not a pattern for re-seeding.

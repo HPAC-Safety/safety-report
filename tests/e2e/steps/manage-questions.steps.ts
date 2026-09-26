@@ -804,3 +804,35 @@ Then("a type-ahead question's values offer no replace choice", async ({ page }) 
 	await expect(page.getByTestId("question-choice").first()).toBeVisible()
 	await expect(page.getByLabel("Replace with a new option")).toHaveCount(0)
 })
+
+// --------------------------- instructional text is a title and a description (REQ-QB-141) --
+
+const wordingFields = {
+	statement: ["Title (English)", "Title (French)", "Description (English)", "Description (French)"],
+	question: ["Question (English)", "Question (French)", "Help text (English)", "Help text (French)"],
+}
+
+async function expectWordingLabels(page: Page, shown: string[], hidden: string[]) {
+	for (const label of shown) await expect(page.getByLabel(label, { exact: true })).toBeVisible()
+	for (const label of hidden) await expect(page.getByLabel(label, { exact: true })).toHaveCount(0)
+}
+
+When("they choose instructional text", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("statement")
+})
+
+Then("its wording is asked for as a title and a description in each language", async ({ page }) => {
+	await expectWordingLabels(page, wordingFields.statement, wordingFields.question)
+})
+
+Then("each description takes several lines", async ({ page }) => {
+	for (const label of ["Description (English)", "Description (French)"]) {
+		const description = page.getByLabel(label, { exact: true })
+		await description.fill("First paragraph.\n\nSecond paragraph.")
+		await expect(description).toHaveValue("First paragraph.\n\nSecond paragraph.")
+	}
+})
+
+Then("its wording is asked for as a question and help text in each language", async ({ page }) => {
+	await expectWordingLabels(page, wordingFields.question, wordingFields.statement)
+})

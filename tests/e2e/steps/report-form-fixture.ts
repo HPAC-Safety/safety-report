@@ -195,6 +195,55 @@ export function dateTimeFormQuestions(): StubQuestion[] {
 	return questions
 }
 
+/** Where REQ-QB-143 places its instructional text on the form. */
+export type StatementPlacement = "the form's introduction" | "a page of its own" | "grouped under a group"
+
+export const STATEMENT_TITLE = "Before you start"
+export const STATEMENT_PARAGRAPHS = ["Take your time with each answer.", "You can come back to a saved report for 15 days."]
+
+/**
+ * The default form with a two-paragraph instructional text at `placement`:
+ * as the leading statement, as the first page after it, or as the first
+ * child of a group that is that page (REQ-QB-143).
+ */
+export function statementFormQuestions(placement: StatementPlacement): StubQuestion[] {
+	const description = STATEMENT_PARAGRAPHS.join("\n\n")
+	const statement = (displayOrder: number) =>
+		question({
+			id: "before_you_start",
+			key: "before_you_start",
+			labelEn: STATEMENT_TITLE,
+			type: "statement",
+			displayOrder,
+			helpTextEn: description,
+			helpTextFr: description,
+		})
+	const questions = defaultFormQuestions()
+
+	if (placement === "the form's introduction") {
+		questions[0] = { ...questions[0], labelEn: STATEMENT_TITLE, helpTextEn: description, helpTextFr: description }
+	} else if (placement === "a page of its own") {
+		questions.splice(1, 0, statement(1))
+	} else {
+		questions.splice(
+			1,
+			0,
+			question({
+				id: "pilot",
+				key: "pilot",
+				labelEn: "About the pilot:",
+				type: "group",
+				displayOrder: 1,
+				children: [
+					statement(0),
+					question({ id: "pilot_rating", key: "pilot_rating", labelEn: "Pilot rating", type: "short_text", displayOrder: 1 }),
+				],
+			}),
+		)
+	}
+	return questions
+}
+
 export async function stubCurrentQuestions(page: Page, questions: StubQuestion[] = defaultFormQuestions()) {
 	await page.route("**/api/v1/questions/", (route) =>
 		route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(questions) }),

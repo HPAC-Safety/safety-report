@@ -340,6 +340,35 @@ Examples:
   | statement |
   | group     |
 
+@REQ-QB-141
+@ui
+Scenario: An Administrator writes instructional text as a title and a description
+  Given a signed-in Administrator is authoring a new question
+  When they choose instructional text
+  Then its wording is asked for as a title and a description in each language
+  And each description takes several lines
+  When they choose short text
+  Then its wording is asked for as a question and help text in each language
+
+@REQ-QB-142
+Scenario: Instructional text keeps the line breaks its description was written with
+  Given an Administrator saves instructional text whose description spans several lines
+  When the API assembles the current form
+  Then the description is served with its line breaks unchanged
+
+@REQ-QB-143
+@ui
+Scenario Outline: A reporter reads instructional text with its description's paragraphs
+  Given instructional text whose description has two paragraphs is <placement>
+  When a reporter reaches it on the form
+  Then its title and both paragraphs of its description are shown, one after the other
+
+Examples:
+  | placement               |
+  | the form's introduction |
+  | a page of its own       |
+  | grouped under a group   |
+
 @REQ-QB-046
 Scenario: A question may be grouped under a group question
   Given a group question exists as a section heading

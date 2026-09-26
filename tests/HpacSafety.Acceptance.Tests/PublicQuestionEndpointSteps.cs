@@ -37,6 +37,10 @@ public sealed class PublicQuestionEndpointSteps
 	private string? _groupId;
 	private string? _childKey;
 	private string? _parentId;
+	private string? _statementKey;
+
+	private const string ParagraphedDescriptionEn = "First, what happened.\n\nThen, who was involved.\nLast, the weather.";
+	private const string ParagraphedDescriptionFr = "D'abord, ce qui s'est passé.\n\nEnsuite, qui était impliqué.\nEnfin, la météo.";
 
 	[Given(@"a stable key has multiple revisions")]
 	public async Task GivenAStableKeyHasMultipleRevisions()
@@ -97,6 +101,19 @@ public sealed class PublicQuestionEndpointSteps
 		_parentId = parent.GetProperty("id").GetString();
 		_childKey = UniqueKey("injury_detail");
 		await Create(Draft(_childKey, "long_text") with { DependsOnQuestionId = _parentId });
+	}
+
+	[Given(@"an Administrator saves instructional text whose description spans several lines")]
+	public async Task GivenAnAdministratorSavesInstructionalTextWithSeveralLines()
+	{
+		_adminClient ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		_statementKey = UniqueKey("before_you_start");
+		await Create(Draft(_statementKey, "statement") with
+		{
+			IsPrivate = false,
+			HelpTextEn = ParagraphedDescriptionEn,
+			HelpTextFr = ParagraphedDescriptionFr,
+		});
 	}
 
 	[Given(@"no bearer token is presented")]
@@ -180,6 +197,14 @@ public sealed class PublicQuestionEndpointSteps
 	{
 		var child = _form.EnumerateArray().Single(candidate => candidate.GetProperty("key").GetString() == _childKey);
 		child.GetProperty("dependsOnQuestionId").GetString().ShouldBe(_parentId);
+	}
+
+	[Then(@"the description is served with its line breaks unchanged")]
+	public void ThenTheDescriptionIsServedWithItsLineBreaksUnchanged()
+	{
+		var statement = _form.EnumerateArray().Single(candidate => candidate.GetProperty("key").GetString() == _statementKey);
+		statement.GetProperty("helpTextEn").GetString().ShouldBe(ParagraphedDescriptionEn);
+		statement.GetProperty("helpTextFr").GetString().ShouldBe(ParagraphedDescriptionFr);
 	}
 
 	private static string UniqueKey(string prefix)

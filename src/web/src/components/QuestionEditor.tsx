@@ -142,6 +142,17 @@ const fieldClassName =
 
 const labelClassName = "block font-sans text-sm font-medium text-ink"
 
+/**
+ * The wording fields' labels for a type. A statement is instructional text: a
+ * title and a description, not a question and help text. Both still save to
+ * the revision's label and help-text fields (REQ-QB-141).
+ */
+function wordingLabels(type: QuestionType) {
+	return type === "statement"
+		? { labelEn: "titleEn", labelFr: "titleFr", helpEn: "descriptionEn", helpFr: "descriptionFr" }
+		: { labelEn: "labelEn", labelFr: "labelFr", helpEn: "helpEn", helpFr: "helpFr" }
+}
+
 export function QuestionEditor({
 	draft,
 	conditionQuestions,
@@ -172,6 +183,10 @@ export function QuestionEditor({
 	// A statement or a group collects no answer, so it can be neither required,
 	// private, a conditional child, nor a conditional parent (ADR-0076).
 	const collectsNoAnswer = NO_ANSWER_TYPES.includes(request.type)
+	const wording = wordingLabels(request.type)
+	// A statement's description is often several paragraphs, so it gets room
+	// for them; every other type's help text is one line.
+	const helpTakesLines = request.type === "statement"
 	const dependsOnParent = conditionQuestions.find((question) => question.id === request.dependsOnQuestionId)
 
 	const [translating, setTranslating] = useState(false)
@@ -306,7 +321,7 @@ export function QuestionEditor({
 
 				<div>
 					<label className={labelClassName} htmlFor="question-label-en">
-						{t("questions.field.labelEn")}
+						{t(`questions.field.${wording.labelEn}`)}
 					</label>
 					<input
 						id="question-label-en"
@@ -319,7 +334,7 @@ export function QuestionEditor({
 
 				<div>
 					<label className={labelClassName} htmlFor="question-label-fr">
-						{t("questions.field.labelFr")}
+						{t(`questions.field.${wording.labelFr}`)}
 					</label>
 					<input
 						id="question-label-fr"
@@ -332,26 +347,46 @@ export function QuestionEditor({
 
 				<div>
 					<label className={labelClassName} htmlFor="question-help-en">
-						{t("questions.field.helpEn")}
+						{t(`questions.field.${wording.helpEn}`)}
 					</label>
-					<input
-						id="question-help-en"
-						className={fieldClassName}
-						value={request.helpTextEn ?? ""}
-						onChange={(event) => update({ helpTextEn: event.target.value || null })}
-					/>
+					{helpTakesLines ? (
+						<textarea
+							id="question-help-en"
+							className={`${fieldClassName} resize-y`}
+							rows={6}
+							value={request.helpTextEn ?? ""}
+							onChange={(event) => update({ helpTextEn: event.target.value || null })}
+						/>
+					) : (
+						<input
+							id="question-help-en"
+							className={fieldClassName}
+							value={request.helpTextEn ?? ""}
+							onChange={(event) => update({ helpTextEn: event.target.value || null })}
+						/>
+					)}
 				</div>
 
 				<div>
 					<label className={labelClassName} htmlFor="question-help-fr">
-						{t("questions.field.helpFr")}
+						{t(`questions.field.${wording.helpFr}`)}
 					</label>
-					<input
-						id="question-help-fr"
-						className={fieldClassName}
-						value={request.helpTextFr ?? ""}
-						onChange={(event) => update({ helpTextFr: event.target.value || null })}
-					/>
+					{helpTakesLines ? (
+						<textarea
+							id="question-help-fr"
+							className={`${fieldClassName} resize-y`}
+							rows={6}
+							value={request.helpTextFr ?? ""}
+							onChange={(event) => update({ helpTextFr: event.target.value || null })}
+						/>
+					) : (
+						<input
+							id="question-help-fr"
+							className={fieldClassName}
+							value={request.helpTextFr ?? ""}
+							onChange={(event) => update({ helpTextFr: event.target.value || null })}
+						/>
+					)}
 				</div>
 			</div>
 

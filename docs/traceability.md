@@ -1332,6 +1332,18 @@ An Administrator chooses to replace a picker option rather than fix it — *play
 
 A condition follows its parent question when the parent forks — *Reqnroll, Covered*
 
+### REQ-QB-141
+
+An Administrator writes instructional text as a title and a description — *playwright-bdd, Covered*
+
+### REQ-QB-142
+
+Instructional text keeps the line breaks its description was written with — *Reqnroll, Covered*
+
+### REQ-QB-143
+
+A reporter reads instructional text with its description's paragraphs — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

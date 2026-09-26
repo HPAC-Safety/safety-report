@@ -21,6 +21,10 @@ extends this one to it (#522). The rest of ADR-0062 stands: translation happens
 on the server behind `ITranslator`, the database holds only what an
 administrator saved, and Save stays disabled until both languages are present.
 
+[ADR-0144](ADR-0144-the-wording-is-translated-on-request-in-a-chosen-direction.md)
+extends these rules to the question wording's Translate, which no longer
+translates choices.
+
 It builds on
 [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):
 translating a choice edits the question's choices, never its revision.
@@ -96,8 +100,8 @@ step to every press and protect nothing that is not already on screen.
 - The editor keeps a baseline of each choice's wording beside the draft, and
   the draft sent to the API is unchanged.
 - REQ-QB-164 to REQ-QB-170 specify the per-choice Translate and the direction
-  switch. REQ-QB-069 to REQ-QB-072 still specify the wording's Translate under
-  ADR-0062.
+  switch. The wording's Translate is specified by REQ-QB-069 to REQ-QB-072 and
+  REQ-QB-172 to REQ-QB-175, under ADR-0144.
 
 ## Alternatives rejected
 

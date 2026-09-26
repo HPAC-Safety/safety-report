@@ -30,9 +30,10 @@ import {
  * born complete — there is no partially translated question in the database,
  * and Save stays disabled until both languages are present.
  *
- * Translate fills the empty side from the filled one. It is a drafting aid, not
- * a pipeline: the result lands in an ordinary editable field, the administrator
- * corrects it, and what they save is theirs. Nothing records that a machine
+ * Translate drafts the other language of the wording, in the direction its
+ * switch shows (ADR-0144). It is a drafting aid, not a pipeline: the result
+ * lands in an ordinary editable field, the administrator corrects it, and what
+ * they save is theirs. Nothing records that a machine
  * suggested it, because the person who pressed Save is accountable for the
  * wording either way (ADR-0062). The call goes to our own API — the credential
  * never reaches this page.
@@ -43,8 +44,8 @@ import {
  * is offered when its other language is empty, or once its source wording has
  * been edited since the editor opened or since that choice was last translated.
  * It replaces the other language with an editable draft, and nothing is saved
- * until Save (ADR-0141). The wording's own Translate above still fills the
- * empty side (ADR-0062).
+ * until Save (ADR-0141). The wording's Translate follows the same rules for the
+ * question, help text, and placeholder, and never touches a choice (ADR-0144).
  *
  * The choices are the question's own and are saved in place: editing them never
  * creates a new version, and a choice a reporter typed into a type-ahead is
@@ -216,6 +217,40 @@ function canTranslateChoice(option: OptionInput, row: ChoiceRow, direction: Tran
 	return source.trim().length > 0 && (target.trim().length === 0 || source !== baseline)
 }
 
+/** The wording fields Translate works on, as the request names them without their language. */
+const WORDING_FIELDS = ["label", "helpText", "placeholder"] as const
+type WordingField = (typeof WORDING_FIELDS)[number]
+type Wording = Record<`${WordingField}${"En" | "Fr"}`, string>
+
+function wordingOf(request: SaveQuestionRequest): Wording {
+	return {
+		labelEn: request.labelEn,
+		labelFr: request.labelFr,
+		helpTextEn: request.helpTextEn ?? "",
+		helpTextFr: request.helpTextFr ?? "",
+		placeholderEn: request.placeholderEn ?? "",
+		placeholderFr: request.placeholderFr ?? "",
+	}
+}
+
+function wordingSides(direction: TranslationDirection) {
+	return direction === "toFrench" ? ({ source: "En", target: "Fr" } as const) : ({ source: "Fr", target: "En" } as const)
+}
+
+/**
+ * The wording's Translate is offered on the same rule as a choice's: some
+ * source field has text, and either its target is empty or it differs from what
+ * it was when the editor opened or when the wording was last translated
+ * (ADR-0144).
+ */
+function canTranslateWording(wording: Wording, baseline: Wording, direction: TranslationDirection): boolean {
+	const { source, target } = wordingSides(direction)
+	return WORDING_FIELDS.some((field) => {
+		const text = wording[`${field}${source}`]
+		return text.trim().length > 0 && (wording[`${field}${target}`].trim().length === 0 || text !== baseline[`${field}${source}`])
+	})
+}
+
 function TranslateIcon() {
 	return (
 		<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
@@ -275,6 +310,9 @@ export function QuestionEditor({
 	const [translating, setTranslating] = useState(false)
 	const [translationError, setTranslationError] = useState<string | null>(null)
 	const [direction, setDirection] = useState<TranslationDirection>(DEFAULT_TRANSLATION_DIRECTION)
+	const [wordingDirection, setWordingDirection] = useState<TranslationDirection>(DEFAULT_TRANSLATION_DIRECTION)
+	const [wordingBaseline, setWordingBaseline] = useState<Wording>(() => wordingOf(request))
+	const [wordingTranslated, setWordingTranslated] = useState(false)
 	const lastRowKey = useRef(0)
 	const newRow = (option: Pick<OptionInput, "labelEn" | "labelFr">) => choiceRow(option, ++lastRowKey.current)
 	const [rows, setRows] = useState<ChoiceRow[]>(() => request.options.map(newRow))
@@ -284,9 +322,9 @@ export function QuestionEditor({
 
 	// Read when a choice's translation comes back, to drop a result the
 	// administrator has since made stale.
-	const latest = useRef({ request, rows, direction })
+	const latest = useRef({ request, rows, direction, wordingDirection })
 	useLayoutEffect(() => {
-		latest.current = { request, rows, direction }
+		latest.current = { request, rows, direction, wordingDirection }
 	})
 
 	// The rows follow the draft's options one for one. A draft replaced from
@@ -308,13 +346,16 @@ export function QuestionEditor({
 	const hasFrench = request.labelFr.trim().length > 0
 
 	// A question is stored as one complete bilingual revision, so a half-written
-	// one cannot be saved at all. Translate fills the empty side; the
-	// administrator still edits and saves it deliberately (ADR-0062). A
+	// one cannot be saved at all. Translate drafts the other side; the
+	// administrator still edits and saves it deliberately (ADR-0062, ADR-0144). A
 	// single-select condition additionally needs its required option named,
 	// or the API rejects the save (ADR-0074).
 	const canSave =
 		hasEnglish && hasFrench && (dependsOnParent?.type !== "single_select" || request.dependsOnChoiceId !== null)
-	const translationDirection = hasEnglish && !hasFrench ? "toFrench" : !hasEnglish && hasFrench ? "toEnglish" : null
+	const wordingOffered = canTranslateWording(wordingOf(request), wordingBaseline, wordingDirection)
+	// The side the wording is translated from is marked, as a choice's is.
+	const englishFieldClassName = wordingDirection === "toFrench" ? sourceFieldClassName : fieldClassName
+	const frenchFieldClassName = wordingDirection === "toEnglish" ? sourceFieldClassName : fieldClassName
 
 	function translationFailure(cause: unknown) {
 		return cause instanceof ApiError ? cause.detail : t("questions.translate.failed")
@@ -324,46 +365,55 @@ export function QuestionEditor({
 		onChange({ request: { ...request, ...changes } })
 	}
 
-	async function translateMissingLanguage() {
-		if (!translationDirection) return
+	/**
+	 * Translates the wording's source fields that have text, in the chosen
+	 * direction, and replaces their targets with drafts. Choices are not
+	 * touched; each is translated from the Choices panel (ADR-0144). A field is
+	 * left alone if its source or target changed while the request was out, and
+	 * the whole result is dropped if the direction flipped.
+	 */
+	async function translateWording() {
+		const asked = wordingDirection
+		const { source, target } = wordingSides(asked)
+		const sent = wordingOf(request)
+		const fields = WORDING_FIELDS.filter((field) => sent[`${field}${source}`].trim().length > 0)
+		if (fields.length === 0) return
 
-		const toFrench = translationDirection === "toFrench"
-		const from = toFrench ? "en-CA" : "fr-CA"
-		const to = toFrench ? "fr-CA" : "en-CA"
-
+		const { from, to } = translationLocales(asked)
 		setTranslating(true)
 		setTranslationError(null)
 
 		try {
-			// Label, help text, placeholder, and every option label in one
-			// request rather than one per field.
-			const sentOptions = request.options.map((o) => sourceOf(o, translationDirection))
-			const source = toFrench
-				? [request.labelEn, request.helpTextEn ?? "", request.placeholderEn ?? "", ...sentOptions]
-				: [request.labelFr, request.helpTextFr ?? "", request.placeholderFr ?? "", ...sentOptions]
+			// Every field in one request rather than one per field.
+			const { texts } = await translate(
+				fields.map((field) => sent[`${field}${source}`]),
+				from,
+				to,
+			)
+			if (latest.current.wordingDirection !== asked) return
 
-			const { texts } = await translate(source, from, to)
-			const [label, help, placeholder, ...optionLabels] = texts
-
-			// Applied to the draft as it is now: a choice added, edited, or
-			// translated on its own while this request was out keeps that change.
 			onChange((current) => {
-				const options = current.request.options.map((option, index) => {
-					const translated = optionLabels[index]
-					if (translated === undefined || sourceOf(option, translationDirection) !== sentOptions[index]) return option
-					return toFrench ? { ...option, labelFr: translated } : { ...option, labelEn: translated }
+				const now = wordingOf(current.request)
+				const changes: Partial<SaveQuestionRequest> = {}
+				fields.forEach((field, index) => {
+					const unchanged =
+						now[`${field}${source}`] === sent[`${field}${source}`] &&
+						now[`${field}${target}`] === sent[`${field}${target}`]
+					if (!unchanged) return
+					const drafted = texts[index] ?? ""
+					if (field === "label") changes[`label${target}`] = drafted
+					else changes[`${field}${target}`] = drafted || null
 				})
-
-				return {
-					request: {
-						...current.request,
-						...(toFrench
-							? { labelFr: label, helpTextFr: help || null, placeholderFr: placeholder || null }
-							: { labelEn: label, helpTextEn: help || null, placeholderEn: placeholder || null }),
-						options,
-					},
-				}
+				return { request: { ...current.request, ...changes } }
 			})
+
+			// Clean again until a source field is edited.
+			const baseline = { ...sent }
+			fields.forEach((field, index) => {
+				baseline[`${field}${target}`] = texts[index] ?? ""
+			})
+			setWordingBaseline(baseline)
+			setWordingTranslated(true)
 		} catch (cause) {
 			setTranslationError(translationFailure(cause))
 		} finally {
@@ -495,7 +545,7 @@ export function QuestionEditor({
 					</label>
 					<input
 						id="question-label-en"
-						className={fieldClassName}
+						className={englishFieldClassName}
 						value={request.labelEn}
 						required
 						onChange={(event) => update({ labelEn: event.target.value })}
@@ -508,7 +558,7 @@ export function QuestionEditor({
 					</label>
 					<input
 						id="question-label-fr"
-						className={fieldClassName}
+						className={frenchFieldClassName}
 						value={request.labelFr}
 						required
 						onChange={(event) => update({ labelFr: event.target.value })}
@@ -522,7 +572,7 @@ export function QuestionEditor({
 					{helpTakesLines ? (
 						<textarea
 							id="question-help-en"
-							className={`${fieldClassName} resize-y`}
+							className={`${englishFieldClassName} resize-y`}
 							rows={6}
 							value={request.helpTextEn ?? ""}
 							onChange={(event) => update({ helpTextEn: event.target.value || null })}
@@ -530,7 +580,7 @@ export function QuestionEditor({
 					) : (
 						<input
 							id="question-help-en"
-							className={fieldClassName}
+							className={englishFieldClassName}
 							value={request.helpTextEn ?? ""}
 							onChange={(event) => update({ helpTextEn: event.target.value || null })}
 						/>
@@ -544,7 +594,7 @@ export function QuestionEditor({
 					{helpTakesLines ? (
 						<textarea
 							id="question-help-fr"
-							className={`${fieldClassName} resize-y`}
+							className={`${frenchFieldClassName} resize-y`}
 							rows={6}
 							value={request.helpTextFr ?? ""}
 							onChange={(event) => update({ helpTextFr: event.target.value || null })}
@@ -552,7 +602,7 @@ export function QuestionEditor({
 					) : (
 						<input
 							id="question-help-fr"
-							className={fieldClassName}
+							className={frenchFieldClassName}
 							value={request.helpTextFr ?? ""}
 							onChange={(event) => update({ helpTextFr: event.target.value || null })}
 						/>
@@ -561,11 +611,12 @@ export function QuestionEditor({
 			</div>
 
 			<div className="flex flex-wrap items-center gap-3">
+				<TranslationDirectionSwitch direction={wordingDirection} onChange={setWordingDirection} />
 				<button
 					type="button"
 					className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface disabled:opacity-40"
-					disabled={!translationAvailable || translationDirection === null || translating}
-					onClick={() => void translateMissingLanguage()}
+					disabled={!translationAvailable || !wordingOffered || translating}
+					onClick={() => void translateWording()}
 				>
 					{translating ? t("questions.translate.working") : t("questions.translate.action")}
 				</button>
@@ -573,9 +624,9 @@ export function QuestionEditor({
 				<p className="font-sans text-xs text-ink-muted">
 					{!translationAvailable
 						? t("questions.translate.unavailable")
-						: translationDirection === null
-							? t("questions.translate.hint")
-							: t("questions.translate.draftWarning")}
+						: wordingOffered || wordingTranslated
+							? t("questions.translate.draftWarning")
+							: t("questions.translate.hint")}
 				</p>
 			</div>
 

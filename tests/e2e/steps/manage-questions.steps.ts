@@ -1011,7 +1011,10 @@ const choices = (page: Page) => page.getByTestId("question-choice")
 const thatChoice = (page: Page) => choices(page).nth(thatChoiceIndex.get(page) ?? 0)
 const choiceTranslate = (choice: ReturnType<Page["getByTestId"]>) =>
 	choice.getByRole("button", { name: "Translate this choice", exact: true })
-const directionSwitch = (page: Page) => page.getByRole("button", { name: /^Translate (English to French|French to English)$/ })
+// Two switches share one component: the wording's comes first, the Choices panel's last.
+const directionSwitches = (page: Page) => page.getByRole("button", { name: /^Translate (English to French|French to English)$/ })
+const directionSwitch = (page: Page) => directionSwitches(page).last()
+const wordingDirectionSwitch = (page: Page) => directionSwitches(page).first()
 
 async function wordingOfChoices(page: Page) {
 	const count = await choices(page).count()
@@ -1203,4 +1206,84 @@ Then("that choice's French field is filled with the translation of its English",
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] mount 7")
 	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("mount 7")
 	expect(choiceTraffic.get(page)?.translated).toEqual(["mount 7"])
+})
+
+// ------------------------------------ translating the wording on request (ADR-0144) --
+
+Then("the wording's direction switch translates English to French", async ({ page }) => {
+	await expect(wordingDirectionSwitch(page)).toHaveAccessibleName("Translate English to French")
+})
+
+When("they flip the wording's direction switch to French to English", async ({ page }) => {
+	await wordingDirectionSwitch(page).click()
+	await expect(wordingDirectionSwitch(page)).toHaveAccessibleName("Translate French to English")
+})
+
+// The stub's first question, "Were you injured?", is worded in both languages
+// and has no help text in either.
+Given("a signed-in Administrator is editing a question whose wording is in both languages", async ({ page }) => {
+	await signInAndOpenQuestions(page)
+	watchChoiceTraffic(page)
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
+	await expect(page.getByLabel("Question (French)")).toHaveValue("Were you injured? (fr)")
+})
+
+Then("the wording's Translate action is unavailable", async ({ page }) => {
+	await expect(translateButton(page)).toBeDisabled()
+})
+
+Then("the wording's Translate action becomes available", async ({ page }) => {
+	await expect(translateButton(page)).toBeEnabled()
+})
+
+When("they edit its English help text", async ({ page }) => {
+	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
+})
+
+When("they edit its English help text and press Translate", async ({ page }) => {
+	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
+	await translateButton(page).click()
+	await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
+})
+
+When("they edit its English question and help text and press Translate", async ({ page }) => {
+	await page.getByLabel("Question (English)").fill("Were you hurt?")
+	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
+	await translateButton(page).click()
+})
+
+Then("the French question and help text are replaced with their translations", async ({ page }) => {
+	await expect(page.getByLabel("Question (French)")).toHaveValue("[fr-CA] Were you hurt?")
+	await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
+})
+
+Then("the drafts are saved only when they press Save", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.saves).toBe(0)
+
+	const saving = page.waitForRequest(
+		(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/aaaaaaaaaaa"),
+	)
+	await page.getByRole("button", { name: "Save" }).click()
+	const body = JSON.parse((await saving).postData() ?? "{}") as { labelFr: string; helpTextFr: string | null }
+
+	expect({ labelFr: body.labelFr, helpTextFr: body.helpTextFr }).toEqual({
+		labelFr: "[fr-CA] Were you hurt?",
+		helpTextFr: "[fr-CA] Any injury, however small.",
+	})
+})
+
+When("they edit its English question", async ({ page }) => {
+	await page.getByLabel("Question (English)").fill("Were you hurt?")
+})
+
+Then("only the wording is sent to be translated", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.translated).toEqual(["Where did you launch?", "Any injury, however small."])
+})
+
+Then("every choice keeps its wording", async ({ page }) => {
+	expect(await wordingOfChoices(page)).toEqual([
+		{ en: "Cooper's", fr: "Cooper's" },
+		{ en: "mount 7", fr: "" },
+	])
 })

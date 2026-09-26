@@ -15,14 +15,14 @@ no credential is configured" is superseded by
 [ADR-0109](ADR-0109-no-translation-stand-in-in-any-environment.md): there is
 no stand-in in any environment.
 
-For a question's **choices** in the Choices panel, the framing of Translate
-as "a draft in the empty box", with its direction inferred from the empty side,
-is superseded by
-[ADR-0141](ADR-0141-a-choice-is-translated-on-request-in-a-chosen-direction.md).
-There, each choice is translated on request, in a direction the administrator
-chooses, and the result replaces the other language as a draft. The wording's
-own Translate, and the choices it fills, still work as this record describes.
-The rest of this record stands.
+The framing of Translate as "a draft in the empty box", with its direction
+inferred from the empty side, is superseded: for choices by
+[ADR-0141](ADR-0141-a-choice-is-translated-on-request-in-a-chosen-direction.md),
+and for the question wording by
+[ADR-0144](ADR-0144-the-wording-is-translated-on-request-in-a-chosen-direction.md).
+Translate is now offered for an edited source or an empty target, goes in a
+direction the administrator chooses, and replaces the other language with a
+draft. The rest of this record stands.
 
 ## Context
 

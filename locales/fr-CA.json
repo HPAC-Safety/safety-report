@@ -157,8 +157,8 @@
     },
     "dependent": {
       "answerFirst": "Répondez d’abord à la question «{question} ».",
-      "nothingUnder": "Il n’y a pas d’autre choix que de répondre «{question} ».",
-      "ready": "#“{question}” now lists the choices for your answer to “{parent}”.",
+      "nothingUnder": "Aucune option n'est proposée pour votre réponse à la question «{question} ».",
+      "ready": "«{question} » présente désormais les choix de réponse à la question «{parent} ».",
       "typeOne": "Aucune réponse n’est proposée pour votre réponse à «{question} ». Entrez la vôtre."
     },
     "attachments": {

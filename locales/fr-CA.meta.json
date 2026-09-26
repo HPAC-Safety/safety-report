@@ -1962,8 +1962,14 @@
     "reviewed": false
   },
   "report.dependent.nothingUnder": {
-    "source_hash": "2cb797ee0d7635fd4834b503d20420f1a611cbde7224d8ee7cef5ca7e10dbee3",
-    "target_hash": "7ec94642dcf9081eda612ce83f0f6f63cfc22b7bd1602d9d2cdbe5a10b2dbb1c",
+    "source_hash": "382feff349d7a132f390b3bcde82f3c0a9d84238095116036e1c8cfd6f5e5a3d",
+    "target_hash": "5643da93ac5b2a2f40dd1453238def934c11c5d5217cf277a6662b4aa42e5db0",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "report.dependent.ready": {
+    "source_hash": "0200fc8a3ceac472ef1431cec0c4ec6771dfbfec15789a11a4ad4e865e67f4bb",
+    "target_hash": "d818e3980f1c062c0744390771a133a50bee1cfac1c7ceb05821a7d2ae9b0f3d",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

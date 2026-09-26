@@ -428,3 +428,11 @@ A knowledge graph lives at `graphify-out/`.
 - **Markdown lags one step**: `graphify update .` re-extracts code only; a
   document needs the semantic pass. A newly tagged scenario is in the matrix
   immediately and in the graph at the next semantic extraction.
+- **SQL views are indexed**: `init-dev.sh` installs graphify's SQL extra, so
+  the `Persistence/Sql/*.sql` scripts and the views that hold the read rules
+  are in the graph. Ask by the view's own name, e.g.
+  `graphify query "public_report_media"`.
+- **PR screenshots are excluded**: `.graphifyignore` leaves out
+  `docs/screenshots/`. They show screens as they were when each pull request
+  merged, not current UI. The files stay, because merged pull requests link to
+  them.

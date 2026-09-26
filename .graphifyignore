@@ -1,0 +1,7 @@
+# Paths graphify leaves out of the knowledge graph, on top of .gitignore (#460).
+#
+# Before/after screenshots from merged pull requests. They show copy and
+# screens as they were when each PR merged, and many have since changed, so
+# graphify would index them as current UI. The files stay: merged PR bodies
+# link to them by SHA-pinned raw URLs (lesson 0017).
+docs/screenshots/

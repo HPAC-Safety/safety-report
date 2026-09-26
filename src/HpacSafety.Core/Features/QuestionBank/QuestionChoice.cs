@@ -67,8 +67,18 @@ public class QuestionChoice
 	/// </summary>
 	public string Code { get; private init; }
 
-	/// <summary>Where this choice sits among the question's choices.</summary>
+	/// <summary>
+	///     Where this choice sat in the list an Administrator saved. Still written, but
+	///     no screen reads it: choices are listed by <see cref="Pin" />, then
+	///     alphabetically in the reader's language (ADR-0136).
+	/// </summary>
 	public int DisplayOrder { get; private set; }
+
+	/// <summary>
+	///     Whether this choice is listed before or after the alphabetical rest. Part of
+	///     the choice, so setting it never revises or forks the question (ADR-0136).
+	/// </summary>
+	public ChoicePin Pin { get; private set; }
 
 	/// <summary>The English wording. Null only on a reporter-added choice typed in French.</summary>
 	public string? LabelEn { get; private set; }
@@ -177,10 +187,14 @@ public class QuestionChoice
 										   string code,
 										   int displayOrder,
 										   string labelEn,
-										   string labelFr)
+										   string labelFr,
+										   ChoicePin pin = ChoicePin.None)
 	{
 		return new QuestionChoice(
-			questionId, code, displayOrder, NotBlank(labelEn), NotBlank(labelFr), false, null, null);
+			questionId, code, displayOrder, NotBlank(labelEn), NotBlank(labelFr), false, null, null)
+		{
+			Pin = pin,
+		};
 	}
 
 	internal static QuestionChoice FromReporter(TinyId questionId,
@@ -212,6 +226,7 @@ public class QuestionChoice
 	{
 		return new QuestionChoice(questionId, Code, DisplayOrder, LabelEn, LabelFr, AddedByReporter, ReporterLocale, Deleted)
 		{
+			Pin = Pin,
 			LabelEnSource = LabelEnSource,
 			LabelFrSource = LabelFrSource,
 			CreatedAt = CreatedAt,
@@ -337,6 +352,12 @@ public class QuestionChoice
 		DisplayOrder = displayOrder;
 	}
 
+	/// <summary>Pins this choice first or last, or unpins it (ADR-0136).</summary>
+	internal void PinTo(ChoicePin pin)
+	{
+		Pin = pin;
+	}
+
 	/// <summary>Removes this choice. Only a live choice is ever removed — see <see cref="Question.ReplaceChoices" />.</summary>
 	internal void Delete(DateTimeOffset at)
 	{
@@ -350,12 +371,14 @@ public class QuestionChoice
 	/// </summary>
 	internal void Restore(int displayOrder,
 						  string? labelEn,
-						  string? labelFr)
+						  string? labelFr,
+						  ChoicePin pin)
 	{
 		Relabel(labelEn, labelFr);
 		Deleted = null;
 		ReplacedByChoiceId = null;
 		DisplayOrder = displayOrder;
+		Pin = pin;
 	}
 
 	private static bool Blank(string? label)

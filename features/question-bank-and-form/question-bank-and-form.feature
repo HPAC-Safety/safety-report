@@ -947,7 +947,7 @@ Scenario: A value a reporter adds to a type-ahead is not pinned
   Given a type-ahead question offers "Woodside" pinned last and "Cooper's" not pinned
   When a reporter answering in English submits "Mount 7" for it, which the question does not offer
   Then the new value is not pinned
-  And the question offers it after "Cooper's" and before "Woodside"
+  And the question offers it among its unpinned choices, before "Woodside"
 
 @REQ-QB-148
 @ui

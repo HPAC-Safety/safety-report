@@ -49,7 +49,7 @@ public sealed class QuestionChoicePersistenceTests(PostgresFixture postgres)
 				.SingleAsync(q => q.Id == question.Id);
 
 			reloaded.Revisions.Count.ShouldBe(1);
-			reloaded.Choices.Select(choice => choice.Code).ShouldBe(["coopers", "elevation"]);
+			reloaded.Choices.Select(choice => choice.Code).ShouldBe(["coopers", "elevation"], ignoreOrder: true);
 			reloaded.AllChoices.Single(choice => choice.Code == "woodside").Deleted.ShouldNotBeNull();
 
 			var elevation = reloaded.Choice("elevation")!;

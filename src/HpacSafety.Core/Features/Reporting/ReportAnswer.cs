@@ -198,6 +198,13 @@ public class ReportAnswer
 				: DisplayedTranslation ?? Value;
 	}
 
+	/// <summary>
+	///     The pin of the choice this answer names, as it stands today — the one it
+	///     was merged into, for a merged value — or null for an answer that names no
+	///     choice. A reader lists a multi-select answer's values by it (ADR-0136).
+	/// </summary>
+	public ChoicePin? ChoicePin => ChoiceId is not null ? NamedChoice.Pin : null;
+
 	// A merged value reads as the one it was merged into (ADR-0129).
 	private QuestionChoice NamedChoice =>
 		(Choice ?? throw new InvalidOperationException(

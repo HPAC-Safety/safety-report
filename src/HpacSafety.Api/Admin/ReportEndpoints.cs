@@ -375,7 +375,8 @@ public static class ReportEndpoints
 							answer.DisplayedTranslation,
 							answer.DisplayedTranslation is not null && answer.TranslationSource is { } source
 								? EnumCode.Of(source)
-								: null)),
+								: null,
+							answer.ChoicePin is { } pin ? EnumCode.Of(pin) : null)),
 				]))
 			.ToList();
 	}

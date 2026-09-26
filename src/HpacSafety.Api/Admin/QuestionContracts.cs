@@ -97,6 +97,10 @@ public sealed record QuestionView(
 /// </param>
 /// <param name="NeedsTranslation">True while one language is missing, waiting for an administrator.</param>
 /// <param name="ReporterLocale">The language a reporter typed it in, or null.</param>
+/// <param name="Pin">
+///     <c>first</c>, <c>last</c>, or <c>none</c>: whether this choice is listed
+///     before or after the alphabetical rest, or among them (ADR-0136).
+/// </param>
 public sealed record OptionView(
 	string Id,
 	string Code,
@@ -104,7 +108,8 @@ public sealed record OptionView(
 	string? LabelFr,
 	bool AddedByReporter,
 	bool NeedsTranslation,
-	string? ReporterLocale)
+	string? ReporterLocale,
+	string Pin)
 {
 	/// <summary>Flattens one choice.</summary>
 	public static OptionView Of(QuestionChoice choice)
@@ -114,7 +119,8 @@ public sealed record OptionView(
 		return new OptionView(
 			choice.Id.Value,
 			choice.Code, choice.LabelEn, choice.LabelFr, choice.AddedByReporter, choice.NeedsTranslation,
-			choice.ReporterLocale?.Code);
+			choice.ReporterLocale?.Code,
+			EnumCode.Of(choice.Pin));
 	}
 }
 
@@ -164,8 +170,20 @@ public sealed record SaveQuestionRequest(
 ///     option with this wording in its place, so earlier answers keep the old one;
 ///     false, the default, fixes its wording in place for every answer (ADR-0128).
 /// </param>
-public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false)
+/// <param name="Pin">
+///     <c>first</c> or <c>last</c> to list the choice before or after the
+///     alphabetical rest; <c>none</c>, or nothing, to list it among them (ADR-0136).
+/// </param>
+public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false, string? Pin = null)
 {
+	/// <summary>The pin this choice is saved with. An unknown code is refused, never guessed.</summary>
+	public ChoicePin ResolvedPin =>
+		string.IsNullOrWhiteSpace(Pin)
+			? ChoicePin.None
+			: EnumCode.TryParse(Pin, out ChoicePin pin)
+				? pin
+				: throw new DomainRuleViolationException($"'{Pin}' is not a choice position. Use first, last, or none.");
+
 	/// <summary>The normalized code this choice is recorded under.</summary>
 	public string ResolvedCode => QuestionKey.Normalize(
 		!string.IsNullOrWhiteSpace(Code) ? Code : !string.IsNullOrWhiteSpace(LabelEn) ? LabelEn : LabelFr ?? string.Empty);

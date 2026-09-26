@@ -256,4 +256,30 @@ public class TypeformExportBuilderTests
 		field.GetProperty("title").GetString().ShouldBe("Model");
 		field.GetProperty("type").GetString().ShouldBe("short_text");
 	}
+
+	[Fact]
+	public void GivenPinnedAndAccentedChoices_WhenBuilt_ThenBothFilesListThemInEnglishOrder()
+	{
+		// Given — ADR-0136: pinned first, then English A-Z ignoring accents and case, then pinned last
+		var question = Question.Create(
+			"bird", QuestionType.SingleSelect, "Bird", "Oiseau", At, isPrivate: false,
+			options:
+			[
+				new QuestionOptionInput("other", "Other", "Autre", Pin: ChoicePin.Last),
+				new QuestionOptionInput("hawk", "Hawk", "Faucon"),
+				new QuestionOptionInput("emu", "émeu", "Émeu"),
+				new QuestionOptionInput("eagle", "Eagle", "Aigle"),
+				new QuestionOptionInput("site_10", "Site 10", "Site 10"),
+				new QuestionOptionInput("site_9", "Site 9", "Site 9"),
+				new QuestionOptionInput("owl", "Owl", "Hibou", Pin: ChoicePin.First),
+			]);
+
+		// When
+		var (english, french) = TypeformExportBuilder.Build([question]);
+
+		// Then
+		string[] order = ["owl", "eagle", "emu", "hawk", "site_9", "site_10", "other"];
+		english.Fields.Single().Properties.Choices!.Select(choice => choice.Ref).ShouldBe(order);
+		french.Fields.Single().Properties.Choices!.Select(choice => choice.Ref).ShouldBe(order);
+	}
 }

@@ -44,7 +44,7 @@ public sealed class ChoiceCodeEndpointSteps
 	public void ThenTheChoicesAreRecordedUnder(string first,
 											   string second)
 	{
-		Codes().ShouldBe([first, second]);
+		Codes().ShouldBe([first, second], ignoreOrder: true);
 	}
 
 	[When(@"they reword ""(.*)"" to ""(.*)"" and save again")]

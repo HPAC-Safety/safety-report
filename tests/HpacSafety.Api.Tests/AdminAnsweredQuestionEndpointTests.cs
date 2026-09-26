@@ -87,7 +87,7 @@ public class AdminAnsweredQuestionEndpointTests(ApiPostgresFixture fixture)
 		edited.GetProperty("id").GetString().ShouldBe(id);
 		edited.GetProperty("revisionNumber").GetInt32().ShouldBe(1);
 		edited.GetProperty("options").EnumerateArray().Select(option => option.GetProperty("code").GetString())
-			.ShouldBe(["coopers", "mara"]);
+			.ShouldBe(["coopers", "mara"], ignoreOrder: true);
 	}
 
 	[Fact]

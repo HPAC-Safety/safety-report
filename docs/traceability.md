@@ -1460,6 +1460,34 @@ A choice written in one language can be translated without being edited — *pla
 
 A type-ahead choice picked from the list is sent as that choice, not matched by its wording — *playwright-bdd, Covered*
 
+### REQ-QB-172
+
+Editing a bilingual question's wording offers Translate — *playwright-bdd, Covered*
+
+### REQ-QB-173
+
+Translate replaces the French wording with drafts — *playwright-bdd, Covered*
+
+### REQ-QB-174
+
+The wording's Translate is unavailable after it translates, until a source field is edited again — *playwright-bdd, Covered*
+
+### REQ-QB-175
+
+Translating the wording changes no choice — *playwright-bdd, Covered*
+
+### REQ-QB-176
+
+Translate leaves an unedited field written in both languages as it is — *playwright-bdd, Covered*
+
+### REQ-QB-177
+
+A translation that arrives after the direction was flipped changes nothing — *playwright-bdd, Covered*
+
+### REQ-QB-178
+
+French typed while a translation is on its way is kept — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

@@ -103,26 +103,36 @@ public sealed class PendingCountSteps
 	}
 
 	/// <summary>
-	///     Reads the count, the thing it counts, and the count again; when the two
-	///     counts agree nothing changed in between, so the middle read must match.
+	///     Reads the count, the thing it counts, and the count again, and accepts
+	///     only when all three agree. A parallel scenario may add a queue entry and
+	///     remove it again between the reads, leaving the two counts equal while
+	///     the middle read differs, so any disagreement retries after a short
+	///     delay until the attempts run out.
 	/// </summary>
 	private async Task ShouldAgree(string property,
 								   Uri source,
 								   Func<JsonElement, int> size)
 	{
+		const int attempts = 10;
+		var delay = TimeSpan.FromMilliseconds(200);
 		var client = _client.ShouldNotBeNull();
+		var (before, counted, after) = (0, 0, 0);
 
-		for (var attempt = 1; ; attempt++)
+		for (var attempt = 1; attempt <= attempts; attempt++)
 		{
-			var before = (await client.GetFromJsonAsync<JsonElement>(Counts)).GetProperty(property).GetInt32();
-			var counted = size(await client.GetFromJsonAsync<JsonElement>(source));
-			var after = (await client.GetFromJsonAsync<JsonElement>(Counts)).GetProperty(property).GetInt32();
+			before = (await client.GetFromJsonAsync<JsonElement>(Counts)).GetProperty(property).GetInt32();
+			counted = size(await client.GetFromJsonAsync<JsonElement>(source));
+			after = (await client.GetFromJsonAsync<JsonElement>(Counts)).GetProperty(property).GetInt32();
 
-			if (before == after || attempt == 5)
+			if (before == counted && counted == after)
 			{
-				counted.ShouldBe(after);
 				return;
 			}
+
+			await Task.Delay(delay);
 		}
+
+		throw new ShouldAssertException(
+			$"{property} never agreed with {source} across {attempts} attempts; last reads: count before {before}, listed {counted}, count after {after}");
 	}
 }

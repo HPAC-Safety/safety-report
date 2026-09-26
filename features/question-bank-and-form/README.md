@@ -155,10 +155,14 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Machine translation on the submission path. Translation is administrator-
   initiated while authoring, or Worker-run off the submission path
   ([ADR-0080](../../docs/decisions/ADR-0080-every-answer-gets-a-worker-translated-second-language.md)).
-- A translate button on each choice, or keeping a brand name untranslated.
-  Translate choices fills every one-language choice's missing side in one
-  press, never overwrites a written side, and the administrator corrects the
-  draft before saving (`REQ-QB-154`–`REQ-QB-158`).
+- Translating every choice at once, or automatically. An administrator
+  translates one edited choice at a time, in the direction the switch shows,
+  and the result is a draft saved only on Save (`REQ-QB-164`–`REQ-QB-169`,
+  [ADR-0141](../../docs/decisions/ADR-0141-translate-is-asked-for-an-edited-source-in-a-chosen-direction.md)).
+- Translating a choice on the submission path. A reporter-added type-ahead
+  value gets its other language from the Worker
+  ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+- Keeping a brand name untranslated. The administrator corrects the draft.
 - Mutating a revision, reviving a retired question, or any edit that loses the
   wording an answer was given against.
 - Saving a question in one language.

@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import {
 	ApiError,
@@ -16,6 +16,12 @@ import {
 import type { ImportedQuestionDraftView } from "../api/adminTypeformImport"
 import type { Locale } from "../i18n/locales"
 import { sortChoices } from "../lib/sortChoices"
+import {
+	DEFAULT_TRANSLATION_DIRECTION,
+	TranslationDirectionSwitch,
+	translationLocales,
+	type TranslationDirection,
+} from "./TranslationDirectionSwitch"
 
 /*
  * The authoring form for one question.
@@ -31,9 +37,12 @@ import { sortChoices } from "../lib/sortChoices"
  * wording either way (ADR-0062). The call goes to our own API — the credential
  * never reaches this page.
  *
- * Translate choices does the same for the choices, each on its own: a choice
- * written in one language only gets a draft of the other, whatever state the
- * question's wording is in, and a written side is never overwritten.
+ * Each choice is translated on its own, when the administrator asks. The
+ * direction switch at the top of the Choices panel says which way every
+ * choice's Translate goes, English to French by default. A choice's Translate
+ * is offered only once its source wording has been edited — since the editor
+ * opened, or since that choice was last translated — and it replaces the other
+ * language with an editable draft. Nothing is saved until Save (ADR-0141).
  *
  * The choices are the question's own and are saved in place: editing them never
  * creates a new version, and a choice a reporter typed into a type-ahead is
@@ -167,6 +176,53 @@ const fieldClassName =
 
 const labelClassName = "block font-sans text-sm font-medium text-ink"
 
+// The field a choice is translated from: marked just enough that the direction
+// reads at a glance.
+const sourceFieldClassName = fieldClassName.replace("border-rule", "border-ink-muted")
+
+/**
+ * What the editor remembers about one choice row, beside the draft: a stable
+ * identity (a new choice has no code until it is saved), the wording its
+ * Translate compares against, and that row's own request state.
+ */
+interface ChoiceRow {
+	key: number
+	baselineEn: string
+	baselineFr: string
+	pending: boolean
+	error: string | null
+}
+
+let nextChoiceRowKey = 0
+
+function choiceRow(option: Pick<OptionInput, "labelEn" | "labelFr">): ChoiceRow {
+	nextChoiceRowKey += 1
+	return { key: nextChoiceRowKey, baselineEn: option.labelEn, baselineFr: option.labelFr, pending: false, error: null }
+}
+
+function sourceOf(option: Pick<OptionInput, "labelEn" | "labelFr">, direction: TranslationDirection): string {
+	return direction === "toFrench" ? option.labelEn : option.labelFr
+}
+
+/**
+ * A choice's Translate is offered once its source wording has text and differs
+ * from what it was when the editor opened, or when the choice was last
+ * translated. A new choice starts blank, so it is dirty as soon as it is typed in.
+ */
+function isDirty(option: OptionInput, row: ChoiceRow, direction: TranslationDirection): boolean {
+	const source = sourceOf(option, direction)
+	const baseline = direction === "toFrench" ? row.baselineEn : row.baselineFr
+	return source.trim().length > 0 && source !== baseline
+}
+
+function TranslateIcon() {
+	return (
+		<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true">
+			<path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0 0 14.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z" />
+		</svg>
+	)
+}
+
 /**
  * The wording fields' labels for a type. A statement is instructional text: a
  * title and a description, not a question and help text. Both still save to
@@ -195,7 +251,8 @@ export function QuestionEditor({
 	isEditing: boolean
 	hasBeenAnswered: boolean
 	translationAvailable: boolean
-	onChange: (draft: QuestionDraft) => void
+	/** A new draft, or a function of the current one for a change that lands after a request. */
+	onChange: (change: QuestionDraft | ((current: QuestionDraft) => QuestionDraft)) => void
 	onCancel: () => void
 	onSave: (draft: QuestionDraft) => void
 }) {
@@ -216,6 +273,31 @@ export function QuestionEditor({
 
 	const [translating, setTranslating] = useState(false)
 	const [translationError, setTranslationError] = useState<string | null>(null)
+	const [direction, setDirection] = useState<TranslationDirection>(DEFAULT_TRANSLATION_DIRECTION)
+	const [rows, setRows] = useState<ChoiceRow[]>(() => request.options.map(choiceRow))
+	const unavailableId = useId()
+	const choicesRef = useRef<HTMLDivElement>(null)
+	const focusNewChoice = useRef(false)
+
+	// Read when a choice's translation comes back, to drop a result the
+	// administrator has since made stale.
+	const latest = useRef({ request, rows, direction })
+	latest.current = { request, rows, direction }
+
+	// The rows follow the draft's options one for one. A draft replaced from
+	// outside with a different number of choices starts its rows afresh.
+	useEffect(() => {
+		if (rows.length !== request.options.length) setRows(request.options.map(choiceRow))
+	}, [rows.length, request.options])
+
+	// A choice added from the panel header takes focus, so it is on screen
+	// however long the list is.
+	useEffect(() => {
+		if (!focusNewChoice.current) return
+		focusNewChoice.current = false
+		const choices = choicesRef.current?.querySelectorAll<HTMLElement>('[data-testid="question-choice"]')
+		choices?.[choices.length - 1]?.querySelector("input")?.focus()
+	}, [request.options.length])
 
 	const hasEnglish = request.labelEn.trim().length > 0
 	const hasFrench = request.labelFr.trim().length > 0
@@ -285,44 +367,55 @@ export function QuestionEditor({
 		}
 	}
 
-	// A choice written in one language only. Translate choices fills its other
-	// side; a choice in both languages or in neither is left alone.
-	const oneLanguageChoices = request.options.filter((option) => !option.labelEn.trim() !== !option.labelFr.trim())
-	const [translatingChoices, setTranslatingChoices] = useState(false)
-	const [choiceTranslationError, setChoiceTranslationError] = useState<string | null>(null)
+	function patchRow(key: number, changes: Partial<ChoiceRow>) {
+		setRows((current) => current.map((row) => (row.key === key ? { ...row, ...changes } : row)))
+	}
 
-	async function translateOneLanguageChoices() {
-		const englishOnly = request.options.filter((option) => option.labelEn.trim() && !option.labelFr.trim())
-		const frenchOnly = request.options.filter((option) => !option.labelEn.trim() && option.labelFr.trim())
-		if (englishOnly.length + frenchOnly.length === 0) return
+	/**
+	 * Translates one choice in the chosen direction and replaces its other
+	 * language with the result, as a draft. The result lands through a function
+	 * of the current draft, on the row it was asked for, and is dropped if that
+	 * row was removed, its source edited, or the direction flipped meanwhile.
+	 */
+	async function translateChoice(index: number) {
+		const row = rows[index]
+		const option = request.options[index]
+		if (!row || !option) return
 
-		setTranslatingChoices(true)
-		setChoiceTranslationError(null)
+		const asked = direction
+		const source = sourceOf(option, asked)
+		const { from, to } = translationLocales(asked)
+		patchRow(row.key, { pending: true, error: null })
 
 		try {
-			// The endpoint takes one direction per request, so each direction's
-			// choices go together in one request, the two sent at once.
-			const [toFrench, toEnglish] = await Promise.all([
-				englishOnly.length ? translate(englishOnly.map((o) => o.labelEn), "en-CA", "fr-CA") : { texts: [] },
-				frenchOnly.length ? translate(frenchOnly.map((o) => o.labelFr), "fr-CA", "en-CA") : { texts: [] },
-			])
+			const { texts } = await translate([source], from, to)
+			const drafted = texts[0] ?? ""
+			const now = latest.current
+			const at = now.rows.findIndex((candidate) => candidate.key === row.key)
+			const current = now.request.options[at]
+			if (at < 0 || !current || now.direction !== asked || sourceOf(current, asked) !== source) return
 
-			// Only the empty side is filled: a written side is never overwritten,
-			// and the result is a draft the administrator saves deliberately
-			// (ADR-0062). Editing choices never revises the question (ADR-0095).
-			const options = request.options.map((option) => {
-				const english = englishOnly.indexOf(option)
-				if (english >= 0) return { ...option, labelFr: toFrench.texts[english] ?? option.labelFr }
-				const french = frenchOnly.indexOf(option)
-				if (french >= 0) return { ...option, labelEn: toEnglish.texts[french] ?? option.labelEn }
-				return option
-			})
-
-			update({ options })
+			onChange((draft) => ({
+				request: {
+					...draft.request,
+					options: draft.request.options.map((candidate, position) =>
+						position !== at || sourceOf(candidate, asked) !== source
+							? candidate
+							: asked === "toFrench"
+								? { ...candidate, labelFr: drafted }
+								: { ...candidate, labelEn: drafted },
+					),
+				},
+			}))
+			// Clean again until the source is edited.
+			patchRow(
+				row.key,
+				asked === "toFrench" ? { baselineEn: source, baselineFr: drafted } : { baselineEn: drafted, baselineFr: source },
+			)
 		} catch (cause) {
-			setChoiceTranslationError(translationFailure(cause))
+			patchRow(row.key, { error: translationFailure(cause) })
 		} finally {
-			setTranslatingChoices(false)
+			patchRow(row.key, { pending: false })
 		}
 	}
 
@@ -365,6 +458,7 @@ export function QuestionEditor({
 							// them; carrying them across a retype would save choices
 							// the question no longer offers.
 							const clearedOptions = OPTION_TYPES.includes(type) ? {} : { options: [] }
+							if (!OPTION_TYPES.includes(type)) setRows([])
 							// A statement or a group collects no answer, so it cannot
 							// be required, private, or conditional on anything
 							// (ADR-0076).
@@ -620,14 +714,37 @@ export function QuestionEditor({
 			)}
 
 			{takesOptions && (
-				<div className="flex flex-col gap-3 rounded border border-rule bg-surface p-4">
-					<h3 className="font-sans text-sm font-medium text-ink">{t("questions.field.options")}</h3>
+				<div ref={choicesRef} className="flex flex-col gap-3 rounded border border-rule bg-surface p-4">
+					<div className="flex flex-wrap items-center justify-between gap-3">
+						<h3 className="font-sans text-sm font-medium text-ink">{t("questions.field.options")}</h3>
+						<div className="flex items-center gap-2">
+							<TranslationDirectionSwitch direction={direction} onChange={setDirection} />
+							<button
+								type="button"
+								className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
+								onClick={() => {
+									focusNewChoice.current = true
+									setRows((current) => [...current, choiceRow({ labelEn: "", labelFr: "" })])
+									update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })
+								}}
+							>
+								{t("questions.field.addOption")}
+							</button>
+						</div>
+					</div>
 					<p className="font-sans text-xs text-ink-muted">{t("questions.field.optionsHelp")}</p>
+					{!translationAvailable && (
+						<p id={unavailableId} className="font-sans text-xs text-ink-muted">
+							{t("questions.translate.unavailable")}
+						</p>
+					)}
 
 					{request.options.map((option, index) => {
 						// Only a reporter-added choice may be saved missing a
 						// language; an administrator's own choice needs both.
 						const reporterAdded = option.addedByReporter === true
+						const row = rows[index]
+						const dirty = row !== undefined && isDirty(option, row, direction)
 						const awaiting = !option.labelEn.trim()
 							? t("questions.choice.awaitingEnglish")
 							: !option.labelFr.trim()
@@ -635,7 +752,7 @@ export function QuestionEditor({
 								: null
 
 						return (
-							<div key={index} className="flex flex-col gap-1" data-testid="question-choice">
+							<div key={row?.key ?? `new-${index}`} className="flex flex-col gap-1" data-testid="question-choice">
 								{reporterAdded && (
 									<p className="font-sans text-xs text-ink-muted">
 										<span className="rounded border border-rule px-2 py-0.5 font-medium text-ink">
@@ -646,7 +763,7 @@ export function QuestionEditor({
 								)}
 								<div className="grid gap-2 sm:grid-cols-2">
 									<input
-										className={fieldClassName}
+										className={direction === "toFrench" ? sourceFieldClassName : fieldClassName}
 										value={option.labelEn}
 										required={!reporterAdded}
 										aria-label={t("questions.field.optionLabelEn")}
@@ -655,7 +772,7 @@ export function QuestionEditor({
 									/>
 									<div className="flex gap-2">
 										<input
-											className={fieldClassName}
+											className={direction === "toEnglish" ? sourceFieldClassName : fieldClassName}
 											value={option.labelFr}
 											required={!reporterAdded}
 											aria-label={t("questions.field.optionLabelFr")}
@@ -664,16 +781,33 @@ export function QuestionEditor({
 										/>
 										<button
 											type="button"
+											className="touch-target inline-flex items-center justify-center rounded border border-rule px-3 text-ink hover:bg-surface-2 disabled:opacity-40"
+											aria-label={t("questions.choice.translate")}
+											title={t("questions.choice.translate")}
+											aria-describedby={translationAvailable ? undefined : unavailableId}
+											disabled={!translationAvailable || !dirty || row?.pending === true}
+											onClick={() => void translateChoice(index)}
+										>
+											<TranslateIcon />
+										</button>
+										<button
+											type="button"
 											className="touch-target rounded border border-rule px-3 font-sans text-sm text-ink hover:bg-surface-2"
 											aria-label={t("questions.field.removeOption")}
-											onClick={() =>
+											onClick={() => {
+												setRows((current) => current.filter((_, position) => position !== index))
 												update({ options: request.options.filter((_, current) => current !== index) })
-											}
+											}}
 										>
 											×
 										</button>
 									</div>
 								</div>
+								{row?.error && (
+									<p role="alert" className="font-sans text-xs text-ink">
+										{row.error}
+									</p>
+								)}
 								<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
 									{t("questions.choice.position")}
 									<select
@@ -703,37 +837,6 @@ export function QuestionEditor({
 					})}
 					{canReplace && request.options.some((option) => option.code !== null) && (
 						<p className="font-sans text-xs text-ink-muted">{t("questions.choice.replaceHelp")}</p>
-					)}
-
-					<div className="flex flex-wrap items-center gap-3">
-						<button
-							type="button"
-							className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
-							onClick={() => update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })}
-						>
-							{t("questions.field.addOption")}
-						</button>
-						<button
-							type="button"
-							className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2 disabled:opacity-40"
-							disabled={!translationAvailable || oneLanguageChoices.length === 0 || translatingChoices}
-							onClick={() => void translateOneLanguageChoices()}
-						>
-							{translatingChoices ? t("questions.translate.working") : t("questions.translateChoices.action")}
-						</button>
-						<p className="font-sans text-xs text-ink-muted">
-							{!translationAvailable
-								? t("questions.translate.unavailable")
-								: oneLanguageChoices.length === 0
-									? t("questions.translateChoices.hint")
-									: t("questions.translate.draftWarning")}
-						</p>
-					</div>
-
-					{choiceTranslationError && (
-						<p role="alert" className="font-sans text-sm text-ink">
-							{choiceTranslationError}
-						</p>
 					)}
 				</div>
 			)}

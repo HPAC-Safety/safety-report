@@ -1613,18 +1613,6 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
-  "questions.translateChoices.action": {
-    "source_hash": "b4f9ce0dcc3023634e2649e91e28cd39c0dc92e003295ea935023f3586ccee63",
-    "target_hash": "52cf0bd828dfa81f1fbee365aa9f1a0790fe46aa38f2d15343af204fa5d7850d",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
-  "questions.translateChoices.hint": {
-    "source_hash": "748d214ff5fd586c0f8da9381032488ffbdce12bccd7794041e2995c9a6d17fb",
-    "target_hash": "323294cbd756eefb95545b7a8cb4d7771ab4b9caa46a7b5b2e4ce55fe3d703b1",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
-  },
   "questions.type.autocomplete": {
     "source_hash": "c59fc600bf3b781ae9b727fbf90059e63f8b9e405bdb78d45aa2999e2785246f",
     "target_hash": "ffaabbf1097f538f7aed2603cf75f3257a5d5204db5468c574201947f67cb9de",

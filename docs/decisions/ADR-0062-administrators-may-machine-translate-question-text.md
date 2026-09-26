@@ -13,7 +13,14 @@ keywords: translation, DeepL, question bank, authoring, ITranslator, API key
 **Status:** The Development stand-in (`EchoTranslator`) described under "When
 no credential is configured" is superseded by
 [ADR-0109](ADR-0109-no-translation-stand-in-in-any-environment.md): there is
-no stand-in in any environment. The rest of this record stands.
+no stand-in in any environment.
+
+The framing of Translate as "a draft in the empty box", with its direction
+inferred from the empty side, is superseded by
+[ADR-0141](ADR-0141-translate-is-asked-for-an-edited-source-in-a-chosen-direction.md).
+Translate is now offered for an edited source, goes in a direction the
+administrator chooses, and replaces the other language with a draft. The rest
+of this record stands.
 
 ## Context
 

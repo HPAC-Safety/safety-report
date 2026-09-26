@@ -40,6 +40,12 @@
   "theme": {
     "toggleLabel": "Thème"
   },
+  "translationDirection": {
+    "toFrench": "#Translate English to French",
+    "toEnglish": "#Translate French to English",
+    "english": "#EN",
+    "french": "#FR"
+  },
   "home": {
     "heroTitle": "Ensemble, pour des vols plus sécuritaires",
     "heroSubtitle": "ACVL Sécurité recueille et partage des comptes rendus d'événements pour que la communauté du vol libre (deltaplane et parapente) puisse apprendre de ce qui se passe en vol.",
@@ -271,6 +277,7 @@
       "awaitingFrench": "En attente de la version française",
       "replace": "Remplacer par une nouvelle option",
       "position": "Poste",
+      "translate": "#Translate this choice",
       "pin": {
         "none": "Par ordre alphabétique",
         "first": "Épingler en haut de la page",
@@ -302,10 +309,6 @@
       "draftWarning": "Une traduction n’est qu’un premier jet. Lisez-la et corrigez-la avant de l’enregistrer.",
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue."
-    },
-    "translateChoices": {
-      "action": "Choix de traduction",
-      "hint": "Rédigez une phrase dans une langue, puis traduisez-la dans l’autre."
     },
     "forkWarning": "Cette question a déjà reçu une réponse. Si vous modifiez son libellé, son type ou ses paramètres, elle est retirée et une nouvelle question est créée à sa place; les réponses déjà fournies conservent donc le libellé sous lequel elles ont été données. Ce n’est pas le cas si vous ne modifiez que ses choix.",
     "import": {

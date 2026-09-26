@@ -127,12 +127,12 @@
       "country": "Pays"
     },
     "date": {
-      "invalid": "Entrez une date au format aaa-mm-jj, par exemple 2026-09-21.",
+      "invalid": "Entrez une date au format aaaa-mm-jj, par exemple 2026-09-21.",
       "future": "Choisissez une date qui ne se situe pas dans le futur.",
       "placeholder": "aaaa-mm-jj",
       "calendar": "Choisissez une date",
       "previousMonth": "Mois précédent",
-      "nextMonth": "Le mois prochain",
+      "nextMonth": "Mois suivant",
       "month": "Mois",
       "year": "Année",
       "chosen": "Sélectionné : {date}"

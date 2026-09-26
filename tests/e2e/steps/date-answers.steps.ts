@@ -127,8 +127,10 @@ function daysBefore(days: number): Date {
 	return day
 }
 
+// The field's own calendar, in whichever language; its English name is
+// asserted where a scenario says what it is called.
 function calendar(page: Page) {
-	return page.getByRole("dialog", { name: "Choose a date" })
+	return page.locator(`${DATE_FIELD}-calendar[role="dialog"]`)
 }
 
 function dayButton(page: Page, date: Date) {

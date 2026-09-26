@@ -214,6 +214,11 @@ jobs:
       - name: Decision records are numbered without collision
         run: node tools/adr-numbers.mjs
 
+      # The source inventory is kept at directory level, so a new directory
+      # under src/ needs a row and a removed one loses its row. ADR-0143.
+      - name: The source inventory lists every directory under src/
+        run: node tools/check-inventories.mjs
+
       # The .NET major lives in global.json, the target framework, the Worker's
       # base image, and Renovate's allowedVersions. Here, not behind the dotnet
       # path filter, because a renovate.json-only change must run it too.

@@ -116,7 +116,7 @@ caret, whose list opens directly beneath it, as wide as the field and drawn in
 the form's own surface, font, border, and focus ring. The form draws that list
 itself; the browser's own suggestion list (`<datalist>`) is not used, so it
 looks the same in every browser (`REQ-QB-159`,
-[ADR-0138](../../docs/decisions/ADR-0138-a-type-ahead-is-a-combobox-the-form-draws.md)).
+[ADR-0140](../../docs/decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
 
 - **Opening.** Pressing the caret, clicking the field, pressing Alt and the
   down arrow, or typing opens the list.
@@ -229,7 +229,7 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   form already holds every live choice, and filters them in the browser.
 - A combobox library, or the browser's `<datalist>`, for the type-ahead. The
   form draws its own list, as it does the multi-select picker
-  ([ADR-0138](../../docs/decisions/ADR-0138-a-type-ahead-is-a-combobox-the-form-draws.md)).
+  ([ADR-0140](../../docs/decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
 - Sorting choices on the server by language. The server returns each group in
   a stable order and the reader's browser collates it, because only the reader
   knows their language.

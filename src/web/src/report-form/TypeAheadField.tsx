@@ -28,7 +28,7 @@ function folded(text: string, locale: string): string {
 }
 
 /**
- * A type-ahead question as a picker the form draws (REQ-QB-159, ADR-0138): a
+ * A type-ahead question as a picker the form draws (REQ-QB-159, ADR-0140): a
  * text field with a caret, and a list directly beneath it that typing narrows.
  * The WAI-ARIA 1.2 combobox pattern with list autocomplete: focus stays in the
  * field, and the arrow keys move the active option. Any text may be typed; a

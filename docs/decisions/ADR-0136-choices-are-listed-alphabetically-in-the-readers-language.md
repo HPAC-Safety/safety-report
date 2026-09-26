@@ -18,7 +18,7 @@ a question's list of choices has no order of its own, so "reordering" a choice
 is replaced by pinning it. Everything else in ADR-0095 stands, including that
 editing choices never revises or forks the question.
 
-Amended by [ADR-0138](ADR-0138-a-type-ahead-is-a-combobox-the-form-draws.md)
+Amended by [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)
 (a type-ahead is a combobox the form draws, so it draws the separators too).
 
 ## Context

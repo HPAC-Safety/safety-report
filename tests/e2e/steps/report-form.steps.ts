@@ -831,7 +831,7 @@ Then("a separator is drawn after {string} and after {string}", async ({ page }, 
 	expect(separators).toEqual([first, second])
 })
 
-// ------------------------------ the type-ahead as a picker the form draws (ADR-0138) --
+// ------------------------------ the type-ahead as a picker the form draws (ADR-0140) --
 
 /*
  * REQ-QB-159 to REQ-QB-163. The type-ahead is a WAI-ARIA combobox: focus stays

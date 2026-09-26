@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: type-ahead, autocomplete, combobox, datalist, WAI-ARIA, report form, separators, ADR-0136, ADR-0129
 ---
 
-# ADR-0138 — A type-ahead is a combobox the form draws
+# ADR-0140 — A type-ahead is a combobox the form draws
 
 ## Status
 

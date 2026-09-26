@@ -26,6 +26,7 @@ import { QuestionField } from "./QuestionField"
 import { ResumeDraftDialog, savedAnswerRows, type SavedAnswerRow } from "./ResumeDraftDialog"
 import { DEFAULT_PHONE_COUNTRY, toE164 } from "../lib/phoneNumber"
 import {
+	answerProblem,
 	blockingQuestions,
 	buildSteps,
 	collectsNoAnswer,
@@ -480,12 +481,13 @@ export function ReportForm() {
 	const blocking = attemptedAdvance ? blockingRequirements() : []
 	const hasSomethingToDiscard =
 		Object.keys(answers).length > 0 || Object.values(attachments).some((rows) => rows.length > 0) || anyUploading
-	// Each blocking question's message: a malformed email or phone answer says
-	// what it needs (REQ-SUB-087, REQ-SUB-088); anything else is unanswered.
+	// Each blocking question's message: a malformed email, phone, or date answer
+	// says what it needs (REQ-SUB-087, REQ-SUB-088, REQ-SUB-101); anything else
+	// is unanswered.
 	const blockingMessages = new Map(
 		blocking.map((question) => [
 			question.revisionId,
-			t(isMalformed(question, answers[question.revisionId]) ? `report.${question.type}.invalid` : "report.required.error"),
+			t(answerProblem(question, answers[question.revisionId]) ?? "report.required.error"),
 		]),
 	)
 	const anyUnanswered = blocking.some((question) => !isMalformed(question, answers[question.revisionId]))

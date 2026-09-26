@@ -7,6 +7,7 @@
 
 import type { Locale } from "../i18n/locales"
 import type { PublicOptionView, PublicQuestionView } from "../api/publicQuestions"
+import { localToday, parseIsoDate } from "../lib/calendarDate"
 import { isValidEmail } from "../lib/emailAddress"
 import { DEFAULT_PHONE_COUNTRY, isValidPhone } from "../lib/phoneNumber"
 import { choiceGroups } from "../lib/sortChoices"
@@ -210,17 +211,31 @@ export function unansweredRequired(
 }
 
 /**
- * Whether an entered email or phone answer is malformed (ADR-0137). A blank one
- * is not: an optional question may be left empty (REQ-SUB-086).
+ * What is wrong with an entered answer, as the catalogue key of its message, or
+ * null when nothing is. An email or phone answer must be well formed
+ * (ADR-0137); a date must be a real `yyyy-mm-dd` day, and not after the
+ * reporter's own today unless the question allows it (ADR-0138). A blank one is
+ * never wrong: an optional question may be left empty (REQ-SUB-086).
  */
-export function isMalformed(question: PublicQuestionView, answer: DraftAnswer | undefined): boolean {
-	if (answer?.kind !== "value" || answer.value.trim().length === 0) return false
-	if (question.type === "email") return !isValidEmail(answer.value.trim())
-	if (question.type === "phone") return !isValidPhone(answer.country ?? DEFAULT_PHONE_COUNTRY, answer.value)
-	return false
+export function answerProblem(question: PublicQuestionView, answer: DraftAnswer | undefined): string | null {
+	if (answer?.kind !== "value" || answer.value.trim().length === 0) return null
+	if (question.type === "email") return isValidEmail(answer.value.trim()) ? null : "report.email.invalid"
+	if (question.type === "phone") {
+		return isValidPhone(answer.country ?? DEFAULT_PHONE_COUNTRY, answer.value) ? null : "report.phone.invalid"
+	}
+	if (question.type === "date") {
+		if (!parseIsoDate(answer.value)) return "report.date.invalid"
+		return !question.allowFutureDates && answer.value > localToday() ? "report.date.future" : null
+	}
+	return null
 }
 
-/** The visible questions on `step` whose entered answer is malformed (REQ-SUB-087, REQ-SUB-088). */
+/** Whether an entered answer is malformed; see `answerProblem`. */
+export function isMalformed(question: PublicQuestionView, answer: DraftAnswer | undefined): boolean {
+	return answerProblem(question, answer) !== null
+}
+
+/** The visible questions on `step` whose entered answer is malformed (REQ-SUB-087, REQ-SUB-088, REQ-SUB-101). */
 export function malformedAnswers(
 	step: FormStep,
 	answers: AnswerMap,

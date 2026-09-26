@@ -2,6 +2,7 @@ import { Fragment } from "react"
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import { AttachmentField, type Attachment } from "./AttachmentField"
+import { DateField } from "./DateField"
 import type { DraftAnswer } from "./draft"
 import { EmailField } from "./EmailField"
 import { MultiSelectPicker } from "./MultiSelectPicker"
@@ -15,7 +16,6 @@ const labelClassName = "block font-sans text-sm font-medium text-ink"
 
 const INPUT_TYPE_BY_QUESTION_TYPE: Record<string, string> = {
 	number: "number",
-	date: "date",
 	time: "time",
 }
 
@@ -244,8 +244,29 @@ export function QuestionField({
 		)
 	}
 
+	if (question.type === "date") {
+		return (
+			<div className="mb-6">
+				{label}
+				<DateField
+					fieldId={fieldId}
+					className={fieldClassName}
+					describedBy={describedBy}
+					placeholder={questionPlaceholder(question, locale) ?? undefined}
+					value={answer?.kind === "value" ? answer.value : ""}
+					allowFutureDates={question.allowFutureDates}
+					locale={locale}
+					onChange={(value) => onChange(value ? { kind: "value", value } : undefined)}
+					t={t}
+				/>
+				{helpNode}
+				{errorNode}
+			</div>
+		)
+	}
+
 	// Every remaining type stores one plain string: short/long text, number,
-	// date, time (ADR-0072).
+	// time (ADR-0072).
 	const value = answer?.kind === "value" ? answer.value : ""
 	const inputType = INPUT_TYPE_BY_QUESTION_TYPE[question.type] ?? "text"
 

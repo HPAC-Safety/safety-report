@@ -59,6 +59,7 @@ export function blankDraft(): QuestionDraft {
 			// deliberately. See ADR-0038.
 			isPrivate: true,
 			isTranslatable: translatableByDefault("short_text"),
+			allowFutureDates: false,
 			isActive: true,
 			dependsOnQuestionId: null,
 			dependsOnChoiceId: null,
@@ -95,6 +96,7 @@ export function draftOf(question: QuestionView, locale: Locale): QuestionDraft {
 			isRequired: question.isRequired,
 			isPrivate: question.isPrivate,
 			isTranslatable: question.isTranslatable,
+			allowFutureDates: question.allowFutureDates,
 			isActive: question.isActive,
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			dependsOnChoiceId: question.dependsOnChoiceId,
@@ -139,6 +141,8 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			isRequired: imported.isRequired,
 			isPrivate: imported.isPrivate,
 			isTranslatable: translatableByDefault(imported.type),
+			// Typeform cannot express it, so an import never carries it (ADR-0138).
+			allowFutureDates: false,
 			isActive: true,
 			dependsOnQuestionId: dependsOn?.id ?? null,
 			// The Typeform file names the required option by code; the editor names
@@ -325,6 +329,8 @@ export function QuestionEditor({
 								...clearedOptions,
 								...clearedForNoAnswer,
 								isTranslatable: translatableByDefault(type),
+								// Only a date question may allow a future date (ADR-0138).
+								allowFutureDates: false,
 							})
 						}}
 					>
@@ -465,6 +471,17 @@ export function QuestionEditor({
 							onChange={(event) => update({ isTranslatable: event.target.checked })}
 						/>
 						{t("questions.field.translatable")}
+					</label>
+				)}
+
+				{request.type === "date" && (
+					<label className="flex items-center gap-2 font-sans text-sm text-ink">
+						<input
+							type="checkbox"
+							checked={request.allowFutureDates}
+							onChange={(event) => update({ allowFutureDates: event.target.checked })}
+						/>
+						{t("questions.field.allowFutureDates")}
 					</label>
 				)}
 

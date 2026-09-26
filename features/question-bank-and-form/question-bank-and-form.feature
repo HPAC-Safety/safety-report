@@ -612,6 +612,34 @@ Scenario: Translating the wording changes no choice
   Then only the wording is sent to be translated
   And every choice keeps its wording
 
+@REQ-QB-176
+@ui
+Scenario: Translate leaves an unedited field written in both languages as it is
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  When they edit its English help text and press Translate
+  Then only the English help text is sent to be translated
+  And the French question keeps its wording
+
+@REQ-QB-177
+@ui
+Scenario: A translation that arrives after the direction was flipped changes nothing
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  And the translation provider is slow to answer
+  When they edit its English help text and press Translate
+  And they flip the wording's direction switch before the translation arrives
+  And the translation arrives
+  Then the French help text keeps its wording
+
+@REQ-QB-178
+@ui
+Scenario: French typed while a translation is on its way is kept
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  And the translation provider is slow to answer
+  When they edit its English help text and press Translate
+  And they type the French help text themselves before the translation arrives
+  And the translation arrives
+  Then the French help text is what they typed
+
 @REQ-QB-164
 @ui
 Scenario: A choice written in both languages offers Translate only once it is edited

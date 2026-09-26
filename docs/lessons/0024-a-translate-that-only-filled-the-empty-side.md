@@ -48,7 +48,9 @@ the edit case, nothing failed when it was missing.
 
 REQ-QB-172 (editing a bilingual question's help text offers Translate) and
 REQ-QB-173 (Translate replaces the French with drafts) now prove the case this
-lesson is about. REQ-QB-164 and REQ-QB-170 prove it for choices.
+lesson is about. Their question has help text in both languages, so the edit
+changes a written field rather than filling an empty one: the edited-source
+branch the old code never had. REQ-QB-164 and REQ-QB-170 prove it for choices.
 
 ## Skill
 

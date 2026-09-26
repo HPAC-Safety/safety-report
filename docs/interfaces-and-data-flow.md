@@ -83,8 +83,10 @@ it is enforced in review and by the conventions skill.*
 
 - a model summarizer accepting the partitioned DTO and returning the strict
   bilingual draft plus provenance;
-- a private blob store supporting bounded stream write/read and short-lived
-  derivative read access;
+- a private blob store supporting bounded stream write/read, short-lived
+  derivative read access, and a short-lived pre-signed PUT for one quarantine
+  key
+  ([ADR-0126](decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md));
 - an attachment detector/processor for controlled image/video derivatives and
   document validation;
 - a machine translator (`ITranslator`, DeepL) for drafting question wording,
@@ -102,7 +104,7 @@ crossed at request time
 ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 
 Do not keep ports whose only reason was a removed feature: field cipher,
-PII auditor, publication channel, email sender, upload-URL slot,
+PII auditor, publication channel, email sender,
 member authenticator, Turnstile verifier, or specialized aircraft processing. A concrete implementation may be used directly
 when no domain boundary or second adapter exists.
 
@@ -115,7 +117,7 @@ drawn once, in [`architecture.md`](architecture.md).
 flowchart TD
     qdb[(Question revisions)] --> fq[Current-form query DTO]
     fq --> browser[Reporter browser]
-    browser -->|each file, as attached: POST /uploads| quarantine[(Private quarantine)]
+    browser -->|each file, as attached: pre-signed PUT| quarantine[(Private quarantine)]
     browser -->|final JSON naming upload IDs| validate[API validation]
     quarantine -->|claimed: copied to the report's original| tx
     validate --> tx[One DB transaction]

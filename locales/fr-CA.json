@@ -151,6 +151,10 @@
     "multiSelect": {
       "placeholder": "Choisissez n’importe lequel"
     },
+    "typeAhead": {
+      "showChoices": "#Show choices",
+      "noMatches": "#No choice matches. What you typed will be sent as written."
+    },
     "attachments": {
       "guidance": "Joignez des photos (JPEG, PNG, WebP, HEIC), des vidéos (MP4, MOV) ou des documents (PDF, Word, RTF, Markdown, texte, ODT) liés à cet incident, si vous en disposez — jusqu’à {count} fichiers au total. Chaque vidéo peut atteindre {videoSize} Mo, et chaque photo ou document, {size} Mo. Chaque fichier est téléversé dès que vous le sélectionnez.",
       "dropPrompt": "Faites glisser les fichiers ici ou sélectionnez-les",

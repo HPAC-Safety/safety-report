@@ -192,7 +192,7 @@ export function typeAheadFormQuestions(): StubQuestion[] {
  * answer-producing page, offering `options` in the order given — the server's
  * order, which is not alphabetical (ADR-0136).
  */
-export function choiceFormQuestions(type: string, options: StubOption[]): StubQuestion[] {
+export function choiceFormQuestions(type: string, options: StubOption[], extra: Partial<StubQuestion> = {}): StubQuestion[] {
 	const questions = defaultFormQuestions()
 	questions.splice(
 		1,
@@ -205,6 +205,7 @@ export function choiceFormQuestions(type: string, options: StubOption[]): StubQu
 			displayOrder: 1,
 			allowsReporterAdditions: type === "autocomplete",
 			options,
+			...extra,
 		}),
 	)
 	return questions

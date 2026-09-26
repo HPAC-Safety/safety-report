@@ -30,6 +30,7 @@ public static class TypeAheadValueEndpoints
 		group.MapPut("/{id}", Correct);
 		group.MapDelete("/{id}", Remove);
 		group.MapPost("/{id}/merge", Merge);
+		group.MapPut("/{id}/parent", Relink);
 
 		return group;
 	}
@@ -71,25 +72,48 @@ public static class TypeAheadValueEndpoints
 			.GroupBy(entry => readAs[entry.ChoiceId!.Value])
 			.ToDictionary(group => group.Key, group => group.Sum(entry => entry.Count));
 
+		// A dependent value's parent choices come from its parent question, which
+		// need not have a value awaiting review itself (ADR-0146).
+		var parentIds = questions.Select(question => question.ChoicesDependOnQuestionId).OfType<TinyId>().Distinct().ToList();
+		var parents = await QuestionEndpoints.LiveQuestions(database)
+			.AsNoTracking()
+			.Where(question => parentIds.Contains(question.Id))
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
 		var values = flagged
 			.OrderBy(entry => entry.Choice.CreatedAt ?? DateTimeOffset.MinValue)
 			.ThenBy(entry => entry.Question.Key, StringComparer.Ordinal)
-			.Select(entry => new TypeAheadValueView(
-				entry.Choice.Id.Value,
-				entry.Question.Id.Value,
-				entry.Question.CurrentRevision.LabelEn,
-				entry.Question.CurrentRevision.LabelFr,
-				entry.Choice.LabelEn,
-				entry.Choice.LabelFr,
-				entry.Choice.ReporterLocale?.Code,
-				entry.Choice.Deleted is not null,
-				answerCounts.GetValueOrDefault(entry.Choice.Id),
-				entry.Choice.CreatedAt,
-				[
-					.. entry.Question.Choices
-						.Where(target => target.Id != entry.Choice.Id)
-						.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr, EnumCode.Of(target.Pin))),
-				]))
+			.Select(entry =>
+			{
+				var parent = parents.Find(question => question.Id == entry.Question.ChoicesDependOnQuestionId);
+
+				return new TypeAheadValueView(
+					entry.Choice.Id.Value,
+					entry.Question.Id.Value,
+					entry.Question.CurrentRevision.LabelEn,
+					entry.Question.CurrentRevision.LabelFr,
+					entry.Choice.LabelEn,
+					entry.Choice.LabelFr,
+					entry.Choice.ReporterLocale?.Code,
+					entry.Choice.Deleted is not null,
+					answerCounts.GetValueOrDefault(entry.Choice.Id),
+					entry.Choice.CreatedAt,
+					[
+						// A dependent value merges only into one offered under the same
+						// parent choice (ADR-0146).
+						.. entry.Question.Choices
+							.Where(target => target.Id != entry.Choice.Id
+											 && (parent is null || target.ParentChoiceId == entry.Choice.ParentChoiceId))
+							.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr, EnumCode.Of(target.Pin))),
+					],
+					parent is null ? null : new TypeAheadParentView(
+						parent.Id.Value,
+						parent.CurrentRevision.LabelEn,
+						parent.CurrentRevision.LabelFr,
+						entry.Choice.ParentChoiceId?.Value,
+						[.. parent.Choices.Select(choice => new TypeAheadParentChoice(choice.Id.Value, choice.LabelEn, choice.LabelFr, EnumCode.Of(choice.Pin)))]));
+			})
 			.ToList();
 
 		return Results.Ok(new TypeAheadValuesResponse(values, values.Count));
@@ -103,7 +127,7 @@ public static class TypeAheadValueEndpoints
 		CancellationToken cancellationToken)
 	{
 		return Review(id, database, clock, context, AuditAction.ApprovedTypeAheadValue,
-			(question, choiceId, reviewer, at) => question.ApproveValue(choiceId, reviewer, at), cancellationToken);
+			(question, choiceId, reviewer, at, _) => question.ApproveValue(choiceId, reviewer, at), cancellationToken);
 	}
 
 	private static Task<IResult> Correct(
@@ -117,7 +141,7 @@ public static class TypeAheadValueEndpoints
 		ArgumentNullException.ThrowIfNull(request);
 
 		return Review(id, database, clock, context, AuditAction.CorrectedTypeAheadValue,
-			(question, choiceId, reviewer, at) => question.CorrectValue(choiceId, request.LabelEn, request.LabelFr, reviewer, at), cancellationToken);
+			(question, choiceId, reviewer, at, _) => question.CorrectValue(choiceId, request.LabelEn, request.LabelFr, reviewer, at), cancellationToken);
 	}
 
 	private static Task<IResult> Merge(
@@ -132,15 +156,18 @@ public static class TypeAheadValueEndpoints
 
 		if (!TinyId.TryParse(request.IntoId, out var targetId))
 		{
-			return Task.FromResult(Results.Problem(
-				title: "That review was not accepted.",
-				detail: "Name the value to merge into.",
-				statusCode: StatusCodes.Status400BadRequest,
-				type: "https://hpac.ca/problems/type-ahead-review"));
+			return Task.FromResult(Refused("Name the value to merge into."));
 		}
 
 		return Review(id, database, clock, context, AuditAction.MergedTypeAheadValue,
-			(question, choiceId, reviewer, at) => question.MergeValue(choiceId, targetId, reviewer, at), cancellationToken);
+			(question, choiceId, reviewer, at, bank) =>
+			{
+				question.MergeValue(choiceId, targetId, reviewer, at);
+
+				// Values offered under the merged one are offered under its target
+				// from now on (ADR-0146).
+				ChoiceDependencies.Follow(bank, question);
+			}, cancellationToken);
 	}
 
 	private static Task<IResult> Remove(
@@ -151,7 +178,49 @@ public static class TypeAheadValueEndpoints
 		CancellationToken cancellationToken)
 	{
 		return Review(id, database, clock, context, AuditAction.RemovedTypeAheadValue,
-			(question, choiceId, reviewer, at) => question.RemoveValue(choiceId, reviewer, at), cancellationToken);
+			(question, choiceId, reviewer, at, bank) =>
+			{
+				// A value another question's values are offered under is merged, not
+				// removed (ADR-0146).
+				ChoiceDependencies.EnsureValueRemovable(bank, question, choiceId);
+				question.RemoveValue(choiceId, reviewer, at);
+			}, cancellationToken);
+	}
+
+	/// <summary>
+	///     A reviewer offers a dependent type-ahead's value under another choice of its
+	///     parent question: changed, never cleared (ADR-0146).
+	/// </summary>
+	private static Task<IResult> Relink(
+		string id,
+		RelinkTypeAheadValueRequest request,
+		HpacSafetyDbContext database,
+		TimeProvider clock,
+		HttpContext context,
+		CancellationToken cancellationToken)
+	{
+		ArgumentNullException.ThrowIfNull(request);
+
+		if (!TinyId.TryParse(request.ParentChoiceId, out var parentChoiceId))
+		{
+			return Task.FromResult(Refused("Name the parent choice to offer the value under. A link is changed, never cleared."));
+		}
+
+		return Review(id, database, clock, context, AuditAction.RelinkedTypeAheadValue,
+			(question, choiceId, reviewer, at, bank) =>
+			{
+				question.RelinkValue(choiceId, parentChoiceId, reviewer, at);
+				ChoiceDependencies.EnsureLinksAllowed(bank, question);
+			}, cancellationToken);
+	}
+
+	private static IResult Refused(string detail)
+	{
+		return Results.Problem(
+			title: "That review was not accepted.",
+			detail: detail,
+			statusCode: StatusCodes.Status400BadRequest,
+			type: "https://hpac.ca/problems/type-ahead-review");
 	}
 
 	/// <summary>
@@ -165,7 +234,7 @@ public static class TypeAheadValueEndpoints
 		TimeProvider clock,
 		HttpContext context,
 		AuditAction action,
-		Action<Question, TinyId, string, DateTimeOffset> apply,
+		Action<Question, TinyId, string, DateTimeOffset, IReadOnlyCollection<Question>> apply,
 		CancellationToken cancellationToken)
 	{
 		ArgumentNullException.ThrowIfNull(database);
@@ -177,10 +246,11 @@ public static class TypeAheadValueEndpoints
 			return Results.NotFound();
 		}
 
-		var question = await QuestionEndpoints.LiveQuestions(database)
-			.Where(candidate => candidate.Deleted == null && candidate.AllChoices.Any(choice => choice.Id == choiceId))
-			.SingleOrDefaultAsync(cancellationToken)
+		// The whole bank: a value's parent and its dependents are other questions (ADR-0146).
+		var bank = await QuestionEndpoints.LiveQuestions(database)
+			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
+		var question = bank.Find(candidate => candidate.Deleted == null && candidate.AllChoices.Any(choice => choice.Id == choiceId));
 
 		if (question is null)
 		{
@@ -192,15 +262,11 @@ public static class TypeAheadValueEndpoints
 
 		try
 		{
-			apply(question, choiceId, reviewer, at);
+			apply(question, choiceId, reviewer, at, bank);
 		}
 		catch (DomainRuleViolationException cause)
 		{
-			return Results.Problem(
-				title: "That review was not accepted.",
-				detail: cause.Message,
-				statusCode: StatusCodes.Status400BadRequest,
-				type: "https://hpac.ca/problems/type-ahead-review");
+			return Refused(cause.Message);
 		}
 
 		database.AuditLog.Add(new AuditLogEntry(reviewer, action, "QuestionChoice", choiceId, at, question.Id.Value));
@@ -226,7 +292,15 @@ public sealed record TypeAheadValuesResponse(IReadOnlyList<TypeAheadValueView> V
 /// <param name="IsRemoved">True for a removed value a reporter typed again.</param>
 /// <param name="AnswerCount">How many live answers name it.</param>
 /// <param name="AddedAt">When a reporter added it, when that was recorded.</param>
-/// <param name="MergeTargets">The question's other live values, any of which this one may be merged into.</param>
+/// <param name="MergeTargets">
+///     The question's other live values, any of which this one may be merged into:
+///     for a dependent question, only those under the same parent choice (ADR-0146).
+/// </param>
+/// <param name="Parent">
+///     For a type-ahead whose values depend on another question's answer, that
+///     question, the choice this value is offered under, and the choices it may be
+///     offered under instead; null otherwise (ADR-0146).
+/// </param>
 public sealed record TypeAheadValueView(
 	string Id,
 	string QuestionId,
@@ -238,7 +312,28 @@ public sealed record TypeAheadValueView(
 	bool IsRemoved,
 	int AnswerCount,
 	DateTimeOffset? AddedAt,
-	IReadOnlyList<TypeAheadMergeTarget> MergeTargets);
+	IReadOnlyList<TypeAheadMergeTarget> MergeTargets,
+	TypeAheadParentView? Parent);
+
+/// <summary>The parent question a dependent type-ahead value is offered under a choice of (ADR-0146).</summary>
+/// <param name="QuestionId">The parent question.</param>
+/// <param name="QuestionLabelEn">Its English wording.</param>
+/// <param name="QuestionLabelFr">Its French wording.</param>
+/// <param name="ParentChoiceId">The parent choice the value is offered under, or null for one added while the parent was off the form.</param>
+/// <param name="Choices">The parent's live choices, any of which the value may be offered under instead.</param>
+public sealed record TypeAheadParentView(
+	string QuestionId,
+	string QuestionLabelEn,
+	string QuestionLabelFr,
+	string? ParentChoiceId,
+	IReadOnlyList<TypeAheadParentChoice> Choices);
+
+/// <summary>A live choice of a dependent value's parent question, which the value may be offered under (ADR-0146).</summary>
+/// <param name="Id">Its identifier.</param>
+/// <param name="LabelEn">Its English wording, or null while it has none.</param>
+/// <param name="LabelFr">Its French wording, or null while it has none.</param>
+/// <param name="Pin"><c>first</c>, <c>last</c>, or <c>none</c>, so the page lists them as the form does (ADR-0136).</param>
+public sealed record TypeAheadParentChoice(string Id, string? LabelEn, string? LabelFr, string Pin);
 
 /// <summary>A live value of the same question a flagged value may be merged into.</summary>
 /// <param name="Id">Its identifier.</param>
@@ -249,6 +344,10 @@ public sealed record TypeAheadValueView(
 ///     the form lists the choices (ADR-0136).
 /// </param>
 public sealed record TypeAheadMergeTarget(string Id, string? LabelEn, string? LabelFr, string Pin);
+
+/// <summary>A reviewer's change of the parent choice a dependent type-ahead value is offered under (ADR-0146).</summary>
+/// <param name="ParentChoiceId">The parent question's choice to offer it under. Required: a link is changed, never cleared.</param>
+public sealed record RelinkTypeAheadValueRequest(string? ParentChoiceId);
 
 /// <summary>A reviewer's merge of one type-ahead value into another of the same question.</summary>
 /// <param name="IntoId">The value it is merged into: every answer naming the merged value reads this one.</param>

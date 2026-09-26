@@ -63,6 +63,19 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 		builder.Navigation(question => question.AllChoices)
 			.HasField("_choices")
 			.UsePropertyAccessMode(PropertyAccessMode.Field);
+
+		// The question whose answer decides which of this one's choices are
+		// offered (ADR-0146). On the question, not a revision, so setting it never
+		// revises or forks. Restrict: a question is retired by a stamp, never
+		// erased. Which types, one level only, and form order are checked by
+		// ChoiceDependencies against the current revisions.
+		builder.HasOne<Question>()
+			.WithMany()
+			.HasForeignKey(question => question.ChoicesDependOnQuestionId)
+			.OnDelete(DeleteBehavior.Restrict);
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_questions_choices_depend_on_other",
+			"choices_depend_on_question_id IS NULL OR choices_depend_on_question_id <> id"));
 	}
 }
 
@@ -201,7 +214,19 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 			.HasForeignKey(choice => choice.ReplacedByChoiceId)
 			.OnDelete(DeleteBehavior.Restrict);
 
+		// The parent question's choice this one is offered under, when its
+		// question's choices depend on another's (ADR-0146). Changed, never
+		// cleared; which question it belongs to is checked by ChoiceDependencies.
+		builder.HasOne<QuestionChoice>()
+			.WithMany()
+			.HasForeignKey(choice => choice.ParentChoiceId)
+			.OnDelete(DeleteBehavior.Restrict);
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_choices_parent_other",
+			"parent_choice_id IS NULL OR parent_choice_id <> id"));
+
 		// Unique across removed rows too: an Administrator writing a removed
+
 		// choice again revives that row, and a reporter never does, so a code
 		// has exactly one row on its question for life.
 		builder.HasIndex(choice => new { choice.QuestionId, choice.Code }).IsUnique();

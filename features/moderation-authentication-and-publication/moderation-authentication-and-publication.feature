@@ -239,7 +239,7 @@ Scenario: Administrator capabilities include everything SafetyOfficer has
 @REQ-MOD-094
 Scenario Outline: A Safety Officer or an Administrator reviews type-ahead values
   Given a member has the <role> role
-  When that member approves, corrects, merges, or removes a reporter-added type-ahead value
+  When that member approves, corrects, merges, relinks, or removes a reporter-added type-ahead value
   Then the API <outcome> the attempt
 
 Examples:

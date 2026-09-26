@@ -7,6 +7,7 @@ import {
 	correctTypeAheadValue,
 	listTypeAheadValuesAwaitingReview,
 	mergeTypeAheadValue,
+	relinkTypeAheadValue,
 	removeTypeAheadValue,
 	type TypeAheadValueView,
 } from "../api/adminQuestions"
@@ -34,6 +35,7 @@ export function ReviewTypeAheadValuesPage() {
 	const [values, setValues] = useState<TypeAheadValueView[]>([])
 	const [drafts, setDrafts] = useState<Record<string, Draft>>({})
 	const [mergeInto, setMergeInto] = useState<Record<string, string>>({})
+	const [relinkTo, setRelinkTo] = useState<Record<string, string>>({})
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 
@@ -115,6 +117,16 @@ export function ReviewTypeAheadValuesPage() {
 									{t("typeAheadValues.answerCount", { count: String(value.answerCount) })}
 									{value.isRemoved && ` · ${t("typeAheadValues.removedBadge")}`}
 								</p>
+
+								{value.parent && (
+									<ParentLink
+										parent={value.parent}
+										chosen={relinkTo[value.id] ?? value.parent.parentChoiceId ?? ""}
+										onChoose={(choiceId) => setRelinkTo((current) => ({ ...current, [value.id]: choiceId }))}
+										onRelink={(choiceId) => void act(() => relinkTypeAheadValue(value.id, choiceId), value.id)}
+										wording={wording}
+									/>
+								)}
 
 								{draft ? (
 									<div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -231,5 +243,64 @@ export function ReviewTypeAheadValuesPage() {
 				</ul>
 			)}
 		</main>
+	)
+}
+
+/**
+ * The parent choice a dependent type-ahead's value is offered under, and a
+ * control to offer it under another. A link is changed, never cleared, so the
+ * control has no empty choice unless the value has no link yet (ADR-0146).
+ */
+function ParentLink({
+	parent,
+	chosen,
+	onChoose,
+	onRelink,
+	wording,
+}: {
+	parent: NonNullable<TypeAheadValueView["parent"]>
+	chosen: string
+	onChoose: (choiceId: string) => void
+	onRelink: (choiceId: string) => void
+	wording: (choice: { labelEn: string | null; labelFr: string | null }) => string
+}) {
+	const { t, locale } = useLocale()
+	const question = locale === "fr-CA" ? parent.questionLabelFr : parent.questionLabelEn
+	const current = parent.choices.find((choice) => choice.id === parent.parentChoiceId)
+
+	return (
+		<div className="mt-3 flex flex-wrap items-center gap-2">
+			<p data-testid="type-ahead-value-parent" className="font-sans text-sm text-ink">
+				{current
+					? t("typeAheadValues.offeredUnder", { question, choice: wording(current) })
+					: t("typeAheadValues.offeredUnderNothing", { question })}
+			</p>
+			<select
+				aria-label={t("typeAheadValues.relinkTo", { question })}
+				data-testid="type-ahead-value-parent-choice"
+				className="touch-target rounded border border-rule bg-surface-2 px-3 font-sans text-ink"
+				value={chosen}
+				onChange={(event) => onChoose(event.target.value)}
+			>
+				{!current && (
+					<option value="" disabled>
+						{t("typeAheadValues.relinkTo", { question })}
+					</option>
+				)}
+				{sortChoices(parent.choices, locale, wording).map((choice) => (
+					<option key={choice.id} value={choice.id}>
+						{wording(choice)}
+					</option>
+				))}
+			</select>
+			<button
+				type="button"
+				disabled={!chosen || chosen === parent.parentChoiceId}
+				className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-ink disabled:opacity-50"
+				onClick={() => onRelink(chosen)}
+			>
+				{t("typeAheadValues.relink")}
+			</button>
+		</div>
 	)
 }

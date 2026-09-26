@@ -107,7 +107,9 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, bank, null);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
-			var options = OptionsFor(request, type);
+			var displayOrder = NextDisplayOrder(questions);
+			var choiceParentId = ResolvedChoiceParent(request, type, questions, null, displayOrder);
+			var options = OptionsFor(request, type, null, choiceParentId);
 
 			var question = Question.Create(
 				key,
@@ -123,13 +125,16 @@ public static class QuestionEndpoints
 				request.IsRequired,
 				request.IsPrivate,
 				request.IsActive,
-				NextDisplayOrder(questions),
+				displayOrder,
 				dependsOn.ParentId,
 				dependsOn.ChoiceId,
 				groupedUnderQuestionId,
 				options,
 				request.IsTranslatable,
-				request.AllowFutureDates);
+				request.AllowFutureDates,
+				choiceParentId);
+
+			ChoiceDependencies.EnsureLinksAllowed(questions, question);
 
 			database.Questions.Add(question);
 			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
@@ -181,12 +186,19 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, bank, question);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
-			var options = OptionsFor(request, type);
+			var choiceParentId = ResolvedChoiceParent(request, type, questions, question, question.DisplayOrder);
+			var options = OptionsFor(request, type, question, choiceParentId);
+
+			ChoiceDependencies.EnsureParentKeepsType(questions, question, type);
 
 			if (options is not null)
 			{
 				QuestionDependencies.EnsureChoicesRemovable(bank, question, [.. options.Select(option => option.Code)]);
+				ChoiceDependencies.EnsureParentChoicesRemovable(questions, question, [.. options.Select(option => option.Code)]);
 			}
+
+			// Outside the revision (ADR-0146): set in place, and carried by a fork.
+			question.DependChoicesOn(choiceParentId);
 
 			var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
 				.ConfigureAwait(false);
@@ -221,6 +233,12 @@ public static class QuestionEndpoints
 			{
 				database.Questions.Add(live);
 			}
+
+			// A replaced, merged, or forked parent choice passes its links on, and a
+			// forked parent its dependents, without revising them (ADR-0146).
+			List<Question> touched = [.. questions, .. forked ? [live] : Array.Empty<Question>()];
+			ChoiceDependencies.EnsureLinksAllowed(touched, live);
+			ChoiceDependencies.Follow(touched, live);
 
 			var action = wasActive && !request.IsActive ? AuditAction.DeactivatedQuestion : AuditAction.RevisedQuestion;
 			Audit(database, context, action, live.Id, at, forked ? "forked" : null);
@@ -268,6 +286,17 @@ public static class QuestionEndpoints
 				"incomplete-order",
 				"Every question has to be listed.",
 				"A partial arrangement would leave the questions it omits in an arbitrary position.");
+		}
+
+		try
+		{
+			// A parent is answered first, so it stays above every question whose
+			// choices depend on it (ADR-0146).
+			ChoiceDependencies.EnsureOrder(ordered);
+		}
+		catch (DomainRuleViolationException cause)
+		{
+			return Problem("question-rule", "That change is not allowed.", cause.Message);
 		}
 
 		var at = clock.GetUtcNow();
@@ -574,6 +603,33 @@ public static class QuestionEndpoints
 	}
 
 	/// <summary>
+	///     The question whose answer decides which of this one's choices are offered,
+	///     checking what needs the rest of the bank: it is another live single-select
+	///     or type-ahead, depends on nothing itself, is nobody's child when this one
+	///     is somebody's parent, and comes first on the form (ADR-0146). Null, for a
+	///     type that takes no choices, clears it — a retype must not leave one behind.
+	/// </summary>
+	private static TinyId? ResolvedChoiceParent(SaveQuestionRequest request,
+												QuestionType type,
+												List<Question> questions,
+												Question? child,
+												int displayOrder)
+	{
+		if (string.IsNullOrWhiteSpace(request.ChoicesDependOnQuestionId))
+		{
+			return null;
+		}
+
+		if (!TinyId.TryParse(request.ChoicesDependOnQuestionId, out var parentId))
+		{
+			throw new DomainRuleViolationException("That question no longer exists, so no question's choices can depend on it.");
+		}
+
+		ChoiceDependencies.EnsureDependencyAllowed(questions, child?.Id, request.LabelEn, type, displayOrder, parentId);
+		return parentId;
+	}
+
+	/// <summary>
 	///     Resolves the group question this one renders under, checking the
 	///     part of the rule that needs to see the rest of the bank: the group
 	///     exists, is live, is currently a group question, and does not lead
@@ -600,16 +656,62 @@ public static class QuestionEndpoints
 	///     when the request sends none, which leaves the choices as they are.
 	/// </summary>
 	private static IReadOnlyList<QuestionOptionInput>? OptionsFor(SaveQuestionRequest request,
-																  QuestionType type)
+																  QuestionType type,
+																  Question? existing,
+																  TinyId? choiceParentId)
 	{
 		if (type is not (QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete))
 		{
 			return [];
 		}
 
-		return request.Options is null
-			? null
-			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace, pair.Option.ResolvedPin))];
+		if (request.Options is null)
+		{
+			return null;
+		}
+
+		var options = choiceParentId is null ? request.Options : CodedUnderParents(request.Options, existing);
+
+		return [.. OptionInput.Resolve(options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace, pair.Option.ResolvedPin, pair.Option.ResolvedParentChoiceId))];
+	}
+
+	/// <summary>
+	///     Gives each new choice of a dependent question a code of its own. The same
+	///     wording is entered once under each parent choice it applies to — "Other"
+	///     under every make — so a new choice whose wording reduces to a code the
+	///     question already holds takes the next free <c>_2</c>, <c>_3</c>, … instead
+	///     of reviving or relabelling that choice (ADR-0146). Wording repeated under
+	///     one parent choice is still refused, by the question.
+	/// </summary>
+	private static List<OptionInput> CodedUnderParents(IReadOnlyList<OptionInput> options,
+														Question? existing)
+	{
+		var taken = options
+			.Where(option => !string.IsNullOrWhiteSpace(option.Code))
+			.Select(option => QuestionKey.Normalize(option.Code!))
+			.ToHashSet(StringComparer.Ordinal);
+
+		return
+		[
+			.. options.Select(option =>
+			{
+				if (!string.IsNullOrWhiteSpace(option.Code))
+				{
+					return option;
+				}
+
+				var stem = option.ResolvedCode;
+				var code = existing?.UnusedCode(stem, taken) ?? stem;
+
+				for (var suffix = 2; existing is null && taken.Contains(code); suffix++)
+				{
+					code = $"{stem}_{suffix}";
+				}
+
+				taken.Add(code);
+				return option with { Code = code };
+			}),
+		];
 	}
 
 	/// <summary>

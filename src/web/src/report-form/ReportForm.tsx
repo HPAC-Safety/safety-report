@@ -29,13 +29,16 @@ import {
 	answerProblem,
 	blockingQuestions,
 	buildSteps,
+	choiceScope,
 	collectsNoAnswer,
+	consistentAnswers,
 	indexQuestionsById,
 	isMalformed,
 	optionFor,
 	optionTyped,
 	questionHelp,
 	questionLabel,
+	scopedQuestion,
 	visibleChildren,
 	visibleSteps,
 	type AnswerMap,
@@ -252,7 +255,8 @@ export function ReportForm() {
 		// Uploads saved for a question this form no longer shows have nowhere to go.
 		const kept = new Set(Object.values(restoredFiles).flat().map((row) => row.uploadId))
 		deleteUploads(draftUploadIds(draft).filter((uploadId) => !kept.has(uploadId)))
-		setAnswers(restored)
+		// A saved child answer its saved parent's answer no longer allows is dropped (ADR-0146).
+		setAnswers(consistentAnswers(restored, questionsById))
 		setAttachments(restoredFiles)
 		const savedStep = steps.find((step) =>
 			draft.stepKey ? step.question.key === draft.stepKey : step.question.revisionId === draft.stepRevisionId,
@@ -292,7 +296,8 @@ export function ReportForm() {
 			const next = { ...prev }
 			if (answer) next[revisionId] = answer
 			else delete next[revisionId]
-			return next
+			// A changed parent answer clears a child answer it no longer allows (ADR-0146).
+			return consistentAnswers(next, questionsById)
 		})
 	}
 
@@ -359,18 +364,20 @@ export function ReportForm() {
 				// A choice answer names its choices by ID (ADR-0128); a type-ahead
 				// value no choice carries yet goes as the typed text (ADR-0129).
 				if (question.type === "multi_select" || question.type === "single_select" || question.type === "autocomplete") {
+					// Only what the parent's answer lets it offer is matched (ADR-0146).
+					const offered = scopedQuestion(question, answers, questionsById)
 					const stored = answer?.kind === "options" ? answer.values : answer?.kind === "value" ? [answer.value] : []
 					// A type-ahead choice picked from its list names itself by ID; only
 					// typed text is matched to a choice by its wording.
 					const picked =
 						question.type === "autocomplete" && answer?.kind === "value" && answer.choice
-							? question.options.find((option) => option.id === answer.choice)
+							? offered.options.find((option) => option.id === answer.choice)
 							: undefined
 					const named = picked
 						? [picked]
 						: question.type === "autocomplete"
-							? stored.map((typed) => optionTyped(question, typed))
-							: stored.map((value) => optionFor(question, value))
+							? stored.map((typed) => optionTyped(offered, typed))
+							: stored.map((value) => optionFor(offered, value))
 					const typed = question.type === "autocomplete" && stored.length > 0 && !named[0] ? stored[0].trim() : null
 					submitAnswers.push({
 						questionRevisionId: question.revisionId,
@@ -642,6 +649,27 @@ function StepContent({
 	questionsById,
 	t,
 }: StepContentProps) {
+	// A picker or type-ahead whose choices depend on another question offers only
+	// what that question's answer allows, and waits, disabled, until it is
+	// answered (ADR-0146).
+	function dependent(question: PublicQuestionView) {
+		const scope = choiceScope(question, answers, questionsById)
+		if (scope.kind === "all") return { question, disabled: false, note: null }
+
+		const parent = questionLabel(scope.parent, locale)
+		if (scope.kind === "waiting") {
+			return { question: { ...question, options: [] }, disabled: true, note: t("report.dependent.answerFirst", { question: parent }) }
+		}
+
+		const picker = question.type !== "autocomplete"
+		const empty = scope.options.length === 0
+		return {
+			question: { ...question, options: scope.options },
+			disabled: picker && empty,
+			note: empty ? t(picker ? "report.dependent.nothingUnder" : "report.dependent.typeOne", { question: parent }) : null,
+		}
+	}
+
 	if (step.kind === "intro") {
 		return (
 			<div>
@@ -668,7 +696,7 @@ function StepContent({
 						) : (
 							<QuestionField
 								key={child.revisionId}
-								question={child}
+								{...dependent(child)}
 								locale={locale}
 								answer={answers[child.revisionId]}
 								onChange={(answer) => onAnswer(child.revisionId, answer)}
@@ -697,7 +725,7 @@ function StepContent({
 
 	return (
 		<QuestionField
-			question={step.question}
+			{...dependent(step.question)}
 			locale={locale}
 			answer={answers[step.question.revisionId]}
 			onChange={(answer) => onAnswer(step.question.revisionId, answer)}

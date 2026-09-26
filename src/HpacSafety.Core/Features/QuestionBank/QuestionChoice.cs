@@ -141,6 +141,16 @@ public class QuestionChoice
 	public TinyId? MergedIntoChoiceId { get; private set; }
 
 	/// <summary>
+	///     The parent question's choice this one is offered under, when its question's
+	///     choices depend on another question's: the form offers it only while the
+	///     parent is answered with that choice. Part of the choice, outside every
+	///     revision, so linking never revises or forks either question. Changed,
+	///     never cleared; it stays when the question stops depending on a parent,
+	///     and simply stops filtering (ADR-0146).
+	/// </summary>
+	public TinyId? ParentChoiceId { get; private set; }
+
+	/// <summary>
 	///     The value <see cref="MergedIntoChoiceId" /> names, when the reader loaded
 	///     it. Read through <see cref="Resolved" />.
 	/// </summary>
@@ -202,7 +212,8 @@ public class QuestionChoice
 												int displayOrder,
 												string typed,
 												Locale locale,
-												DateTimeOffset? at)
+												DateTimeOffset? at,
+												TinyId? parentChoiceId = null)
 	{
 		var label = NotBlank(typed);
 
@@ -214,6 +225,7 @@ public class QuestionChoice
 		{
 			CreatedAt = at,
 			NeedsReview = true,
+			ParentChoiceId = parentChoiceId,
 		};
 	}
 
@@ -233,6 +245,7 @@ public class QuestionChoice
 			NeedsReview = NeedsReview,
 			ReviewedAt = ReviewedAt,
 			ReviewedBy = ReviewedBy,
+			ParentChoiceId = ParentChoiceId,
 		};
 	}
 
@@ -300,6 +313,21 @@ public class QuestionChoice
 		NeedsReview = false;
 		ReviewedAt = at;
 		ReviewedBy = reviewer;
+	}
+
+	/// <summary>
+	///     Offers this choice under <paramref name="parentChoiceId" /> of its question's
+	///     parent. Which question that choice belongs to is checked by
+	///     <see cref="ChoiceDependencies" />, which can see both (ADR-0146).
+	/// </summary>
+	internal void LinkTo(TinyId parentChoiceId)
+	{
+		if (parentChoiceId == Id)
+		{
+			throw new DomainRuleViolationException("A choice cannot be offered under itself.");
+		}
+
+		ParentChoiceId = parentChoiceId;
 	}
 
 	/// <summary>Points this copy's replaced-by link at the copy of the choice that replaced the original.</summary>

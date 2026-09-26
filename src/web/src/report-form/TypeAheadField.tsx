@@ -26,6 +26,8 @@ export interface TypeAheadFieldProps {
 	 */
 	onChange: (value: string, choiceKey?: string) => void
 	t: (key: string) => string
+	/** True while the field cannot be answered yet: its parent question is unanswered (ADR-0146). */
+	disabled?: boolean
 }
 
 /** Text folded for matching: accents and case do not count. */
@@ -51,6 +53,7 @@ export function TypeAheadField({
 	locale,
 	onChange,
 	t,
+	disabled = false,
 }: TypeAheadFieldProps) {
 	const [open, setOpen] = useState(false)
 	// What narrows the list: the text typed since it opened, or null for every choice.
@@ -159,9 +162,10 @@ export function TypeAheadField({
 				aria-controls={listId}
 				aria-activedescendant={activeId}
 				aria-describedby={describedBy}
-				className="w-full rounded border border-rule bg-surface py-2 pl-3 pr-11 font-sans text-ink placeholder:text-ink-muted"
+				className="w-full rounded border border-rule bg-surface py-2 pl-3 pr-11 font-sans text-ink placeholder:text-ink-muted disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted"
 				value={value}
 				placeholder={placeholder}
+				disabled={disabled}
 				onClick={() => {
 					if (!open) openAll()
 				}}
@@ -180,7 +184,8 @@ export function TypeAheadField({
 				aria-controls={listId}
 				aria-expanded={expanded}
 				data-caret
-				className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink"
+				disabled={disabled}
+				className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink disabled:opacity-40"
 				onClick={() => {
 					if (open) close()
 					else openAll()

@@ -56,6 +56,14 @@ public class NoBlobIsServedDirectlyTests(ApiPostgresFixture fixture)
 		// Hide and show change a flag and return 204; they never touch bytes (ADR-0117).
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/hide",
 		"/api/admin/reports/{reportId}/attachments/{attachmentId}/show",
+		// A staff private attachment (ADR-0135): minting answers a pre-signed PUT
+		// to quarantine, adding and listing answer JSON, download answers a JSON
+		// envelope naming a pre-signed GET from PrivateAttachmentLink, and removal
+		// answers 204. None reads or writes the file's bytes.
+		"/api/admin/reports/{reportId}/private-attachments/uploads",
+		"/api/admin/reports/{reportId}/private-attachments/",
+		"/api/admin/reports/{reportId}/private-attachments/{attachmentId}/download",
+		"/api/admin/reports/{reportId}/private-attachments/{attachmentId}",
 	];
 
 	private readonly WebApplicationFactory<Program> _factory = fixture.Factory;

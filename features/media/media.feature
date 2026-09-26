@@ -454,3 +454,10 @@ Scenario: Only the private attachment link signs a URL for the private compartme
   Then the reviewer media link and the public media link both refuse the private attachment's key
   And the private attachment link refuses every key outside the private compartment
   And the reviewer attachment endpoints answer 404 for the private attachment's id
+
+@REQ-MED-052
+Scenario: Nothing anonymizes a private attachment
+  Given a safety officer adds a JPEG photo carrying its camera's location metadata as a private attachment
+  When the safety officer downloads it
+  Then the stored bytes and the downloaded bytes are identical to those uploaded, location metadata included
+  And no derivative of it exists and no outbox message asks for one

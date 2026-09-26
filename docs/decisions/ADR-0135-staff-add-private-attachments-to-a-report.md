@@ -64,6 +64,11 @@ that table would be all that keeps a coroner's report out of each of them.
    previewed, transformed, or scanned (ADR-0089). The bytes are stored and
    served exactly as sent. A single PUT carries up to 5 GB, so 1 GB needs no
    multipart upload.
+   **A private attachment is never anonymized** (owner, 2026-09-26). The
+   reporter-media pipeline does not apply to it: no EXIF or other metadata
+   stripping, no derivative, no redaction, and no marking pass. A photo keeps
+   its location data and a document its author. Only the two reviewer roles
+   ever reach it, so there is no audience to anonymize it for.
 5. **Downloaded under the staff member's own file name.** The claim carries
    the file name; it is sanitized as ADR-0097 sanitizes a reporter's, and a
    name that sanitizes to nothing is refused. Unlike ADR-0097, the extension is
@@ -123,6 +128,9 @@ erDiagram
   report's compartment writable from a browser, which ADR-0126 rules out for
   every compartment but quarantine, and an abandoned upload there would never
   expire.
+- **Anonymizing it as reporter media.** Stripping a photo's metadata or
+  deriving a copy would destroy evidence staff added it for, and nobody outside
+  the two reviewer roles ever sees it.
 - **The reporter allowlist and sniffing.** Staff need zip archives and formats
   nobody can list in advance, and nothing downstream reads the bytes, so a
   sniff would refuse legitimate files and protect nothing.

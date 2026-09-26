@@ -153,6 +153,9 @@ staff only: a coroner's report, a police report, an investigation archive
 ([ADR-0135](../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
 They are not the reporter's attachments, and none of the rules above about
 formats, sniffing, derivatives, consent, or publication applies to them.
+**A private attachment is never anonymized**: no metadata stripping, no
+derivative, no redaction, and no marking pass. It is stored and downloaded
+byte for byte as the staff member uploaded it (REQ-MED-052).
 
 - **Upload.** The browser asks
   `POST /api/admin/reports/{reportId}/private-attachments/uploads` with the
@@ -217,7 +220,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - An upload table, or any record linking an upload to the member who made it.
   A private attachment records the staff member who added it only once it is
   claimed onto a report (ADR-0135).
-- For private attachments: previews, thumbnails, derivatives, unpacking a zip,
+- For private attachments: anonymizing them in any way — EXIF or other
+  metadata stripping, a derivative, redaction, or the marking pass — previews,
+  thumbnails, unpacking a zip,
   sniffing or an allowlist, a malware scan (ADR-0089), a multipart or
   resumable upload, editing or replacing a file (remove it and add it again),
   restoring a removed one, a per-report count cap, and any sharing or

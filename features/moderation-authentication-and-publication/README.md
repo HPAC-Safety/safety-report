@@ -313,6 +313,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   a count of notes anywhere outside the note list, and restoring a removed
   note (ADR-0133). A note may refer to a private attachment, but never holds a
   file of its own (ADR-0135).
-- For private attachments: any count of them outside their own list, a
-  preview or inline view, and anything the media area rules out for them
+- For private attachments: anonymizing them (no metadata stripping,
+  derivative, redaction, or marking pass; ADR-0135), any count of them outside
+  their own list, a preview or inline view, and anything the media area rules
+  out for them
   ([`features/media`](../media/README.md)).

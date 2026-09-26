@@ -1602,8 +1602,8 @@
     "reviewed": false
   },
   "questions.translate.hint": {
-    "source_hash": "c7e64b4c7c8b5c79ac4d6ce48420801cbc792d71d082a4082b893b68af1089ed",
-    "target_hash": "f9c6b1ed8637d4361e1b50566a69b34c20159c111e29733262970386b62a97f3",
+    "source_hash": "28770e1a35aab90f610bae8c435085b23a917113712ff5ff3176daa029c8841c",
+    "target_hash": "845b69b7825afb94e15ddcb84b223bbaf2a75617908342faaec4760450912748",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

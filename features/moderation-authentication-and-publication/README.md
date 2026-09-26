@@ -182,7 +182,8 @@ The report view has a **Private attachments** section, newest first. Each
 lists its file name, size, optional description, who added it (**You**, or
 the adder's opaque token subject), and when. Adding a file shows its progress
 and can be cancelled; any reviewer may download any attachment, or remove one
-after confirming.
+after confirming (REQ-MOD-115, REQ-MOD-117). A note may refer to one
+(REQ-MOD-116).
 
 - Any report that is not deleted, in any status, including a report without
   publication consent (REQ-MOD-108). Any file type, up to the configured cap;

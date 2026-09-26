@@ -9,9 +9,12 @@ import {
 	privateNoteHistory,
 	removePrivateNote,
 	STALE_PRIVATE_NOTE,
+	type PrivateAttachment,
 	type PrivateNote,
+	type PrivateNoteAttachment,
 	type PrivateNoteRevision,
 } from "../api/adminReports"
+import { downloadPrivateAttachment } from "./PrivateAttachments"
 
 /*
  * Staff-only notes on one report (ADR-0133, REQ-MOD-106). Only a safety
@@ -24,7 +27,7 @@ import {
 // scanner, and `=> Promise<…>` on one line reads to it as JSX text.
 type Task = () =>
 	Promise<unknown>
-type Save = (text: string) =>
+type Save = (text: string, attachmentId: string | null) =>
 	Promise<boolean>
 type Attempt = () =>
 	Promise<boolean>
@@ -33,7 +36,11 @@ const SECONDARY = "touch-target inline-flex items-center rounded border border-r
 const PRIMARY =
 	"touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-medium text-ink-inverse disabled:opacity-60"
 
-export function PrivateNotes({ reportId }: { reportId: string }) {
+/*
+ * A note may refer to one of the report's private attachments (ADR-0135). The
+ * reference belongs to the revision: an edit may keep, change, or drop it.
+ */
+export function PrivateNotes({ reportId, attachments = [] }: { reportId: string; attachments?: PrivateAttachment[] }) {
 	const { t, locale } = useLocale()
 	const [notes, setNotes] = useState<PrivateNote[] | null>(null)
 	const [failed, setFailed] = useState(false)
@@ -84,7 +91,7 @@ export function PrivateNotes({ reportId }: { reportId: string }) {
 				</p>
 			)}
 
-			<Composer onSave={(text) => run(() => addPrivateNote(reportId, text))} />
+			<Composer attachments={attachments} onSave={(text, attachmentId) => run(() => addPrivateNote(reportId, text, attachmentId))} />
 
 			{failed ? (
 				<p className="mt-6 font-sans text-ink-muted" data-private-notes-failed>
@@ -101,8 +108,9 @@ export function PrivateNotes({ reportId }: { reportId: string }) {
 							key={note.id}
 							reportId={reportId}
 							note={note}
+							attachments={attachments}
 							format={(value) => at.format(new Date(value))}
-							onEdit={(text) => run(() => editPrivateNote(reportId, note, text))}
+							onEdit={(text, attachmentId) => run(() => editPrivateNote(reportId, note, text, attachmentId))}
 							onRemove={() => run(() => removePrivateNote(reportId, note.id))}
 						/>
 					))}
@@ -115,12 +123,14 @@ export function PrivateNotes({ reportId }: { reportId: string }) {
 function NoteItem({
 	reportId,
 	note,
+	attachments,
 	format,
 	onEdit,
 	onRemove,
 }: {
 	reportId: string
 	note: PrivateNote
+	attachments: PrivateAttachment[]
 	format: (value: string) => string
 	onEdit: Save
 	onRemove: Attempt
@@ -157,11 +167,13 @@ function NoteItem({
 			{editing ? (
 				<Composer
 					initial={note.text}
+					initialAttachment={note.attachment && !note.attachment.removed ? note.attachment.id : null}
+					attachments={attachments}
 					label={t("privateNotes.editLabel")}
 					submitLabel={t("privateNotes.save")}
 					onCancel={() => setEditing(false)}
-					onSave={async (text) => {
-						const saved = await onEdit(text)
+					onSave={async (text, attachmentId) => {
+						const saved = await onEdit(text, attachmentId)
 						if (saved) {
 							setEditing(false)
 							setHistory(null)
@@ -170,9 +182,12 @@ function NoteItem({
 					}}
 				/>
 			) : (
-				<p data-private-note-text className="mt-2 whitespace-pre-line break-words font-sans text-ink">
-					{note.text}
-				</p>
+				<>
+					<p data-private-note-text className="mt-2 whitespace-pre-line break-words font-sans text-ink">
+						{note.text}
+					</p>
+					<Reference reportId={reportId} attachment={note.attachment} />
+				</>
 			)}
 
 			{!editing && (
@@ -228,6 +243,7 @@ function NoteItem({
 								})}
 							</p>
 							<p className="mt-1 whitespace-pre-line break-words font-sans text-sm text-ink">{revision.text}</p>
+							<Reference reportId={reportId} attachment={revision.attachment} />
 						</li>
 					))}
 				</ol>
@@ -236,14 +252,47 @@ function NoteItem({
 	)
 }
 
+/** The private attachment a note or revision refers to: a download, or its name marked removed. */
+function Reference({ reportId, attachment }: { reportId: string; attachment: PrivateNoteAttachment | null }) {
+	const { t } = useLocale()
+	const [failed, setFailed] = useState(false)
+
+	if (!attachment) return null
+
+	return (
+		<p className="mt-2 flex flex-wrap items-center gap-2 font-sans text-sm text-ink-muted" data-private-note-attachment>
+			<span>{t("privateNotes.refersTo")}</span>
+			{attachment.removed ? (
+				<span className="text-ink">{t("privateNotes.attachmentRemoved", { name: attachment.fileName })}</span>
+			) : (
+				<button
+					type="button"
+					className="touch-target inline-flex items-center font-medium text-brand-700 underline"
+					onClick={() => {
+						setFailed(false)
+						downloadPrivateAttachment(reportId, attachment.id).catch(() => setFailed(true))
+					}}
+				>
+					{attachment.fileName}
+				</button>
+			)}
+			{failed && <span role="alert">{t("privateAttachments.error.download")}</span>}
+		</p>
+	)
+}
+
 function Composer({
 	initial = "",
+	initialAttachment = null,
+	attachments,
 	label,
 	submitLabel,
 	onSave,
 	onCancel,
 }: {
 	initial?: string
+	initialAttachment?: string | null
+	attachments: PrivateAttachment[]
 	label?: string
 	submitLabel?: string
 	onSave: Save
@@ -251,6 +300,7 @@ function Composer({
 }) {
 	const { t } = useLocale()
 	const [text, setText] = useState(initial)
+	const [attachmentId, setAttachmentId] = useState<string | null>(initialAttachment)
 	const [saving, setSaving] = useState(false)
 	const length = text.trim().length
 	const blank = length === 0
@@ -260,9 +310,12 @@ function Composer({
 		event.preventDefault()
 		if (blank || tooLong) return
 		setSaving(true)
-		const saved = await onSave(text)
+		const saved = await onSave(text, attachmentId)
 		setSaving(false)
-		if (saved && !onCancel) setText("")
+		if (saved && !onCancel) {
+			setText("")
+			setAttachmentId(null)
+		}
 	}
 
 	return (
@@ -279,6 +332,23 @@ function Composer({
 			<p className={`font-sans text-sm ${tooLong ? "text-brand-700" : "text-ink-muted"}`} aria-live="polite">
 				{t("privateNotes.length", { count: String(length), max: String(PRIVATE_NOTE_MAX_LENGTH) })}
 			</p>
+			{attachments.length > 0 && (
+				<label className="font-sans text-sm font-medium text-ink">
+					{t("privateNotes.attachmentLabel")}
+					<select
+						value={attachmentId ?? ""}
+						onChange={(event) => setAttachmentId(event.target.value || null)}
+						className="touch-target mt-2 block w-full rounded border border-rule bg-surface px-3 font-sans text-base font-normal text-ink"
+					>
+						<option value="">{t("privateNotes.noAttachment")}</option>
+						{attachments.map((attachment) => (
+							<option key={attachment.id} value={attachment.id}>
+								{attachment.fileName}
+							</option>
+						))}
+					</select>
+				</label>
+			)}
 			<div className="flex flex-wrap gap-3">
 				<button type="submit" disabled={blank || tooLong || saving} className={PRIMARY}>
 					{submitLabel ?? t("privateNotes.add")}

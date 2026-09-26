@@ -416,6 +416,34 @@ A published QuickTime video is served as an MP4 — *Reqnroll, Covered*
 
 A sent upload waits, unvalidated, in a private quarantine compartment — *Reqnroll, Covered*
 
+### REQ-MED-046
+
+Staff mint a private upload for a file of any type — *Reqnroll, Covered*
+
+### REQ-MED-047
+
+A private upload larger than the configured cap is refused before anything is minted — *Reqnroll, Covered*
+
+### REQ-MED-048
+
+Adding a private attachment stores its bytes unchanged in the report's private compartment — *Reqnroll, Covered*
+
+### REQ-MED-049
+
+A private attachment downloads unchanged under its sanitized name, and each download is audited — *Reqnroll, Covered*
+
+### REQ-MED-050
+
+An unclaimed private upload waits in quarantine and expires with every other upload — *Reqnroll, Covered*
+
+### REQ-MED-051
+
+Only the private attachment link signs a URL for the private compartment — *Reqnroll, Covered*
+
+### REQ-MED-052
+
+Nothing anonymizes a private attachment — *Reqnroll, Covered*
+
 ## Claims: moderation-authentication-and-publication
 
 ### REQ-MOD-001
@@ -821,6 +849,50 @@ A private note never reaches the model or a translation provider — *Reqnroll, 
 ### REQ-MOD-106
 
 A safety officer keeps private notes on the report page — *playwright-bdd, Covered*
+
+### REQ-MOD-107
+
+Only a Safety Officer or an Administrator may reach private attachments — *Reqnroll, Covered*
+
+### REQ-MOD-108
+
+Staff add private attachments to a report in any status — *Reqnroll, Covered*
+
+### REQ-MOD-109
+
+Removing a private attachment soft-deletes it and keeps its bytes — *Reqnroll, Covered*
+
+### REQ-MOD-110
+
+A private attachment needs a usable name, a short description, and a sent upload — *Reqnroll, Covered*
+
+### REQ-MOD-111
+
+A deleted report's private attachments go with it — *Reqnroll, Covered*
+
+### REQ-MOD-112
+
+No public or member read ever returns a private attachment, not even a count — *Reqnroll, Covered*
+
+### REQ-MOD-113
+
+A private attachment never reaches the model — *Reqnroll, Covered*
+
+### REQ-MOD-114
+
+A private note may refer to a private attachment on its own report only — *Reqnroll, Covered*
+
+### REQ-MOD-115
+
+A safety officer adds, downloads, and removes a private attachment on the report page — *playwright-bdd, Covered*
+
+### REQ-MOD-116
+
+A private note refers to a private attachment on the report page — *playwright-bdd, Covered*
+
+### REQ-MOD-117
+
+A safety officer cancels a private attachment while it uploads — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 

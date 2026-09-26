@@ -1018,3 +1018,15 @@ Scenario: A private note refers to a private attachment on the report page
   When the safety officer opens that report
   And the safety officer adds the private note "See the police report." referring to "police-report.pdf"
   Then that private note shows that it refers to "police-report.pdf"
+
+@REQ-MOD-117
+@ui
+Scenario: A safety officer cancels a private attachment while it uploads
+  Given a safety officer is signed in and a pending report exists
+  And storage is slow to accept a private attachment
+  When the safety officer opens that report
+  And the safety officer adds the private attachment "investigation-archive.zip" with the description "Synthetic archive"
+  Then the private attachments section shows the upload's progress and offers to cancel it
+  When the safety officer cancels the upload
+  Then the private attachments section says the upload was cancelled and lists no attachments
+  And the cancelled upload is erased

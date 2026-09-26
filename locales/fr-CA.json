@@ -580,6 +580,42 @@
     "revision": "Version {number} — {writer}, {at}",
     "remove": "Supprimer",
     "keep": "Conserver",
-    "confirmRemove": "Souhaitez-vous supprimer cette note? Elle ne pourra pas être récupérée."
+    "confirmRemove": "Souhaitez-vous supprimer cette note? Elle ne pourra pas être récupérée.",
+    "refersTo": "#Refers to",
+    "attachmentRemoved": "#{name} (removed)",
+    "attachmentLabel": "#Refers to a private attachment (optional)",
+    "noAttachment": "#No attachment"
+  },
+  "privateAttachments": {
+    "title": "#Private attachments",
+    "explanation": "#Files for safety officers and administrators only, such as a coroner's or police report. They are never published, summarized, or changed, and download exactly as uploaded.",
+    "listLabel": "#Private attachments on this report",
+    "loading": "#Loading private attachments…",
+    "empty": "#No private attachments yet.",
+    "fileLabel": "#Add a private attachment",
+    "limit": "#Any file type, up to {max}.",
+    "descriptionLabel": "#Description (optional)",
+    "descriptionLength": "#{count} of {max} characters",
+    "add": "#Add attachment",
+    "progressLabel": "#Upload progress",
+    "progress": "#Uploading… {percent}%",
+    "cancel": "#Cancel upload",
+    "cancelled": "#The upload was cancelled.",
+    "added": "#Added by {adder}, {at}",
+    "author": {
+      "you": "#You"
+    },
+    "download": "#Download",
+    "remove": "#Remove",
+    "keep": "#Keep",
+    "confirmRemove": "#Remove this attachment? It cannot be restored.",
+    "error": {
+      "load": "#The private attachments could not be loaded. Reload the page to try again.",
+      "upload": "#That file could not be added. Try again.",
+      "too_large": "#That file is larger than {max}.",
+      "empty": "#That file is empty.",
+      "download": "#The download could not be started. Try again.",
+      "remove": "#That attachment could not be removed. Try again."
+    }
   }
 }

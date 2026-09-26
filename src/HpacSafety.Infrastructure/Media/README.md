@@ -17,6 +17,10 @@ limit: 250 MB for a video, 25 MB for an image or document
 `MaxDocumentByteSize`). There is
 no malware scan (ADR-0089) — the format allowlist and sniffing are the gate.
 
+None of this applies to a staff private attachment (ADR-0135): any type, one
+cap (`HpacSafety:Media:PrivateAttachments:MaxByteSize`, 1 GB by default), never
+sniffed, stripped, derived, or otherwise anonymized, and stored byte for byte.
+
 - Decode/re-encode images to remove metadata; HEIC may produce a safe JPEG.
 - Safely remux/transcode video and expose only a verified derivative.
 - Preserve a validated document original unchanged. Never parse, transform,

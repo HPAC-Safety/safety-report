@@ -4,10 +4,17 @@ description: A pull request opened with every test green failed CI's branch-cove
 type: lesson
 date: 2026-09-22
 issue: 352
-status: accepted
+status: superseded
 ---
 
 # Lesson 0010 — A coverage gate found in CI, not before the pull request
+
+**Status:** Superseded by
+[lesson 0025](0025-a-local-gate-that-re-implemented-ci-disagreed-with-it.md)
+and [ADR-0145](../decisions/ADR-0145-a-pull-requests-checks-run-locally-under-act.md).
+The rule stands — pass the coverage gate before the pull request — but the
+script this lesson added is gone: `tools/ci-local.sh` runs CI's own coverage
+job under act, against CI's own baseline.
 
 ## Symptom
 
@@ -46,11 +53,10 @@ and cite the claims they serve (REQ-QB-099, REQ-QB-102).
 ## Skill
 
 [`deliver-hpac-change`](../../skills/deliver-hpac-change/SKILL.md) "Verify and
-publish" step 1 now requires `tools/coverage-check.sh` to pass before a pull
-request touching `src/`, `tests/`, or `tools/` is opened. The script measures
+publish" step 1 required a local coverage script to pass before a pull
+request touching `src/`, `tests/`, or `tools/` was opened. The script measured
 `origin/main` and the branch on the same machine with CI's own commands, and
-runs `tools/coverage-gate.mjs` on the pair, so the ratchet CI applies is
-applied first.
+ran `tools/coverage-gate.mjs` on the pair. Lesson 0025 replaced it.
 
 Since #492 the general rule lives in the generic
 [`deliver-change`](../../skills/deliver-change/SKILL.md) skill; the project skill named above

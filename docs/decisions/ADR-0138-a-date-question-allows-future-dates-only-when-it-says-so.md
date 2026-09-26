@@ -77,8 +77,10 @@ native `<input type="date">`, whose value is `yyyy-mm-dd` on every platform,
 with `max` set to the local today when future dates are not allowed.
 
 **Typeform.** Typeform's date field cannot express the setting, so the export
-leaves it out and an import starts every date question without it
-([ADR-0077](ADR-0077-typeform-json-import-and-export.md)).
+carries it in each field's `hpac` object, as it does everything else Typeform
+has no slot for, and a reimport reads it back
+([ADR-0077](ADR-0077-typeform-json-import-and-export.md)). A plain Typeform
+file has no `hpac` object, so it imports every date question without it.
 
 ## Consequences
 

@@ -7,6 +7,7 @@ using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Reqnroll;
@@ -63,6 +64,11 @@ public sealed class StoredAnswerSteps
 	private object? _submittedValue;
 	private Locale _language = Locale.EnCa;
 	private HttpResponseMessage? _submission;
+	private string _submissionBody = string.Empty;
+
+	// A date scenario's host, whose clock stands at the instant its dates were
+	// named from; null for every other scenario (ADR-0138).
+	private WebApplicationFactory<Program>? _clockedHost;
 
 	private readonly Dictionary<string, string> _ordinary = [];
 	private Report? _report;
@@ -245,7 +251,12 @@ public sealed class StoredAnswerSteps
 		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
 
 		_answered = await response.Content.ReadFromJsonAsync<JsonElement>();
-		_submitted = DateNamed(date);
+
+		// One instant for both sides: the date is named from it, and the API
+		// judges today by it.
+		var now = DateTimeOffset.UtcNow;
+		_clockedHost = await BootedApi.AtTime(now);
+		_submitted = DateNamed(date, now);
 		_submittedValue = _submitted;
 	}
 
@@ -260,9 +271,10 @@ public sealed class StoredAnswerSteps
 	///     zone" is today at UTC+14, the last place on Earth a date is still
 	///     today (ADR-0138).
 	/// </summary>
-	private static string DateNamed(string date)
+	private static string DateNamed(string date,
+									DateTimeOffset now)
 	{
-		var there = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(14));
+		var there = now.ToOffset(TimeSpan.FromHours(14));
 		var today = new DateOnly(there.Year, there.Month, there.Day);
 
 		return date switch
@@ -279,13 +291,15 @@ public sealed class StoredAnswerSteps
 	public async Task WhenTheAnswerIsPersisted()
 	{
 		await WhenTheSubmissionIsMade();
-		_submission!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _submission.Content.ReadAsStringAsync());
+		_submission!.StatusCode.ShouldBe(HttpStatusCode.Accepted, _submissionBody);
 	}
 
 	[When(@"the submission is made")]
 	public async Task WhenTheSubmissionIsMade()
 	{
-		using var reporter = await BootedApi.SignedInAs(MemberRole.User);
+		using var reporter = _clockedHost is null
+			? await BootedApi.SignedInAs(MemberRole.User)
+			: await BootedApi.SignedInAs(MemberRole.User, _clockedHost);
 		_submission = await reporter.PostAsJsonAsync(Submit, new
 		{
 			language = _language.Code,
@@ -295,6 +309,9 @@ public sealed class StoredAnswerSteps
 				new { questionRevisionId = _answered.GetProperty("revisionId").GetString(), value = _submittedValue },
 			},
 		});
+
+		// Several Then steps read the refusal; its stream reads only once.
+		_submissionBody = await _submission.Content.ReadAsStringAsync();
 	}
 
 	[Then(@"^the stored value is (.+)$")]
@@ -346,17 +363,25 @@ public sealed class StoredAnswerSteps
 
 		// A refusal names the question, never the reporter's words. The key is
 		// taken out first: a derived one can hold a word such as "yes".
-		var problem = (await _submission.Content.ReadAsStringAsync())
+		var problem = _submissionBody
 			.Replace(_answered.GetProperty("key").GetString()!, string.Empty, StringComparison.Ordinal);
 		problem.ShouldNotContain(_submitted!);
 	}
 
 	[Then(@"the refusal names the question by its key")]
-	public async Task ThenTheRefusalNamesTheQuestion()
+	public void ThenTheRefusalNamesTheQuestion()
 	{
-		var problem = await _submission!.Content.ReadFromJsonAsync<JsonElement>();
+		var problem = JsonSerializer.Deserialize<JsonElement>(_submissionBody);
 
 		problem.GetProperty("detail").GetString()!.ShouldContain($"'{_answered.GetProperty("key").GetString()}'");
+	}
+
+	[Then(@"the refusal says the question does not allow a date after today")]
+	public void ThenTheRefusalIsTheFutureDateRule()
+	{
+		var problem = JsonSerializer.Deserialize<JsonElement>(_submissionBody);
+
+		problem.GetProperty("detail").GetString()!.ShouldContain("does not allow a date after today");
 	}
 
 	[Then(@"no stored answer carries that value")]

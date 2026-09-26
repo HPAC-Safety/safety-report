@@ -83,7 +83,11 @@ present, it wins over the Typeform type and the defaults above. It sets:
 - private and required;
 - the condition: the question it depends on, by key, and the parent's choice
   code;
-- the group it sits under, by key.
+- the group it sits under, by key;
+- whether a date question allows future dates. Typeform's own date field
+  cannot say, so a plain Typeform file, with no `hpac` object, imports every
+  date question without it
+  ([ADR-0138](../../docs/decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md)).
 
 ## Correlation key
 
@@ -128,7 +132,3 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
 - Machine-translating an imported question. The import carries what the two
   files say; an administrator authors the rest.
-- Carrying a date question's **Allow future dates** setting. Typeform's date
-  field cannot express it, so the export leaves it out, and an imported date
-  question starts without it, like any new one
-  ([ADR-0138](../../docs/decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md)).

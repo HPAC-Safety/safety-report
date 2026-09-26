@@ -143,6 +143,13 @@ Scenario: Exporting and reimporting reproduces the same drafts
   When an Administrator exports it and imports the result back in
   Then the resulting drafts match the original questions' key, type, wording, and options
 
+@REQ-TF-022
+Scenario: A date question's Allow future dates setting survives an export and reimport
+  Given a live date question that allows future dates and another that does not
+  When an Administrator exports it and imports the result back in
+  Then each date question's draft allows future dates exactly as the original did
+  And a date field in a plain Typeform file, with no hpac object, imports without allowing future dates
+
 @REQ-TF-021
 Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role

@@ -286,7 +286,7 @@ is written.
 - The field is a combobox (`role="combobox"`) controlling a labelled listbox,
   with the highlighted suggestion named by `aria-activedescendant`.
 
-## Date answers (#517)
+## Date answers
 
 A date answer is stored as `yyyy-mm-dd` whichever way it was entered
 ([ADR-0072](../../docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md)).
@@ -311,7 +311,8 @@ value, before anything is written. `GET /api/v1/questions/` carries each
 question's `allowFutureDates` so the form can apply the same rule.
 
 **On a desktop** (a fine pointer), the field is a text box that takes
-`yyyy-mm-dd` only. Clicking or focusing it opens a calendar popover under it:
+`yyyy-mm-dd` only, and says so to assistive technology even when the question
+has a placeholder of its own. Clicking or focusing it opens a calendar popover under it:
 
 - one month at a time, with Previous month and Next month buttons, a month
   picker and a year picker for reaching a date a few years back, and today
@@ -324,7 +325,9 @@ question's `allowFutureDates` so the form can apply the same rule.
 - month and weekday names follow the reader's language, and the week starts
   on Sunday in English and Monday in French. Every button and picker is
   labelled from the locale catalogues;
-- the popover is a labelled dialog. From the field, ArrowDown moves into it.
+- the popover is a labelled dialog. None of its controls is in the Tab
+  order until focus is inside it, so Tab from the field goes on past it and
+  closes it. From the field, ArrowDown moves into it.
   Inside it, the arrow keys move by a day or a week, Page Up and Page Down by a
   month, Enter chooses the focused day, and Escape closes it and returns focus
   to the field.

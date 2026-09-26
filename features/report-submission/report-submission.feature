@@ -416,6 +416,15 @@ Scenario: The calendar works from the keyboard
   Then the calendar closes
   And focus is on the date field
 
+@REQ-SUB-111
+@ui
+Scenario: Tabbing past a date field skips its calendar
+  Given the current page shows a date question that does not allow future dates, on a desktop
+  When the reporter tabs into the date field
+  Then a calendar labelled "Choose a date" opens under the field, showing today's month
+  When the reporter presses Tab
+  Then focus skips the calendar to the Next button, and the calendar closes
+
 @REQ-SUB-105
 @ui
 Scenario: The reporter jumps to a month and year a few years back
@@ -613,6 +622,7 @@ Scenario Outline: A future date is refused by its question key unless the questi
   When the submission is made
   Then the submission is rejected
   And the refusal names the question by its key
+  And the refusal says the question does not allow a date after today
   And no stored answer carries that value
 
 Examples:

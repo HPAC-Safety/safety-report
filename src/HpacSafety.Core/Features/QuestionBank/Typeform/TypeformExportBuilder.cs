@@ -64,7 +64,8 @@ public static class TypeformExportBuilder
 				revision.IsRequired,
 				NameOf(revision.DependsOnQuestionId is { } parentId ? QuestionDependencies.ParentToday(bank, parentId)?.Id : null, keysByQuestionId),
 				QuestionDependencies.RequiredChoiceToday(bank, revision)?.Code,
-				NameOf(revision.GroupedUnderQuestionId, keysByQuestionId));
+				NameOf(revision.GroupedUnderQuestionId, keysByQuestionId),
+				revision.AllowFutureDates);
 
 			englishFields.Add(Field(question.Key, revision.LabelEn, revision.HelpTextEn, revision.Type, choices, hpac, english: true));
 			frenchFields.Add(Field(question.Key, revision.LabelFr, revision.HelpTextFr, revision.Type, choices, hpac, english: false));

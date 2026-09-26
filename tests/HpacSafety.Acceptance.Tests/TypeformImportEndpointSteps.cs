@@ -42,6 +42,7 @@ public sealed class TypeformImportEndpointSteps
 	private byte[]? _exportedZipBytes;
 	private string[] _originalKeys = [];
 	private JsonElement _reimportedPreview;
+	private readonly Dictionary<string, bool> _futureDatesByKey = [];
 
 	[When(@"an Administrator submits only one of the two files")]
 	public async Task WhenOnlyOneFileIsSubmitted()
@@ -224,6 +225,51 @@ public sealed class TypeformImportEndpointSteps
 		}
 	}
 
+	// --- REQ-TF-022: Allow future dates round-trips through the hpac object (ADR-0138) ---
+
+	[Given(@"a live date question that allows future dates and another that does not")]
+	public async Task GivenTwoLiveDateQuestions()
+	{
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
+
+		foreach (var allows in new[] { true, false })
+		{
+			var key = UniqueKey(allows ? "acceptance_export_future" : "acceptance_export_past");
+			await CreateQuestion(_client, key, type: "date", allowFutureDates: allows);
+			_futureDatesByKey[key] = allows;
+		}
+	}
+
+	[Then(@"each date question's draft allows future dates exactly as the original did")]
+	public void ThenEachDateDraftAllowsFutureDatesAsTheOriginal()
+	{
+		var drafts = _reimportedPreview.GetProperty("drafts").EnumerateArray().ToList();
+
+		foreach (var (key, allows) in _futureDatesByKey)
+		{
+			var draft = drafts.Single(candidate => candidate.GetProperty("key").GetString() == key);
+			draft.GetProperty("type").GetString().ShouldBe("date");
+			draft.GetProperty("allowFutureDates").ValueKind.ShouldBe(allows ? JsonValueKind.True : JsonValueKind.False);
+		}
+	}
+
+	[Then(@"a date field in a plain Typeform file, with no hpac object, imports without allowing future dates")]
+	public async Task ThenAPlainDateFieldImportsWithoutFutureDates()
+	{
+		const string english = """{"fields":[{"id":"1","ref":"acceptance-plain-date","title":"When?","type":"date","properties":{}}],"logic":[]}""";
+		const string french = """{"fields":[{"id":"2","ref":"acceptance-plain-date","title":"Quand?","type":"date","properties":{}}],"logic":[]}""";
+		using var content = new MultipartFormDataContent
+		{
+			{ JsonContent(english), "english", "form-en.json" }, { JsonContent(french), "french", "form-fr.json" },
+		};
+		using var response = await _client!.PostAsync(Import, content);
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+
+		var draft = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("drafts").EnumerateArray().ShouldHaveSingleItem();
+		draft.GetProperty("type").GetString().ShouldBe("date");
+		draft.GetProperty("allowFutureDates").GetBoolean().ShouldBeFalse();
+	}
+
 	[Given(@"a member does not have the Administrator role")]
 	public async Task GivenAMemberDoesNotHaveTheAdministratorRole()
 	{
@@ -250,7 +296,8 @@ public sealed class TypeformImportEndpointSteps
 		string type = "short_text",
 		bool isPrivate = true,
 		string? dependsOnQuestionId = null,
-		string? groupedUnderQuestionId = null)
+		string? groupedUnderQuestionId = null,
+		bool allowFutureDates = false)
 	{
 		var request = new
 		{
@@ -271,6 +318,7 @@ public sealed class TypeformImportEndpointSteps
 			GroupedUnderQuestionId = groupedUnderQuestionId,
 			AllowsReporterAdditions = false,
 			Options = Array.Empty<object>(),
+			AllowFutureDates = allowFutureDates,
 		};
 
 		using var response = await client.PostAsJsonAsync(Questions, request);

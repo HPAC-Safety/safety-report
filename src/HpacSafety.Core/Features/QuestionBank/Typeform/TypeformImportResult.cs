@@ -31,7 +31,8 @@ public sealed record ImportedQuestionDraft(
 	bool IsPrivate = true,
 	bool IsRequired = false,
 	string? DependsOnKey = null,
-	string? DependsOnOptionCode = null);
+	string? DependsOnOptionCode = null,
+	bool AllowFutureDates = false);
 
 /// <summary>One choice on an imported draft.</summary>
 public sealed record ImportedOption(string Code, string LabelEn, string LabelFr, bool FrenchDefaultedToEnglish);

@@ -16,9 +16,13 @@ const { Given, When, Then, After } = createBdd()
  * boundary; its own refusal of a future date is REQ-SUB-108, through the booted
  * host. Every question is synthetic.
  *
- * "Today" is the reporter's local date, the browser's; this process shares its
- * clock and time zone, so the expected dates are computed here.
+ * "Today" is the reporter's local date, the browser's. Its clock is pinned to
+ * the middle of a month, so a scenario that steps a week or a month from today
+ * reads the same on every calendar day, month-ends included (#535).
  */
+
+/** The browser's "now": noon on 15 September 2026, local time. */
+const PINNED_NOW = new Date(2026, 8, 15, 12, 0, 0)
 
 const DATE_FIELD = "#question-rev-occurred_on"
 
@@ -96,6 +100,7 @@ After(async ({ $testInfo }) => {
 })
 
 async function openDateForm(page: Page, allowFutureDates: boolean, language = "English") {
+	await page.clock.setFixedTime(PINNED_NOW)
 	await stubAuth(page)
 	await stubCurrentQuestions(page, dateForm(allowFutureDates))
 	await stubSubmission(page)
@@ -117,8 +122,7 @@ function iso(date: Date): string {
 }
 
 function today(): Date {
-	const now = new Date()
-	return new Date(now.getFullYear(), now.getMonth(), now.getDate())
+	return new Date(PINNED_NOW.getFullYear(), PINNED_NOW.getMonth(), PINNED_NOW.getDate())
 }
 
 function daysBefore(days: number): Date {
@@ -214,6 +218,15 @@ When("the reporter tabs into the date field and presses ArrowDown", async ({ pag
 
 When(/^the reporter presses (ArrowLeft|ArrowRight|ArrowUp|ArrowDown|PageUp|PageDown|Enter)$/, async ({ page }, key: string) => {
 	await page.keyboard.press(key)
+})
+
+When("the reporter presses Tab", async ({ page }) => {
+	await page.keyboard.press("Tab")
+})
+
+Then("focus skips the calendar to the Next button, and the calendar closes", async ({ page }) => {
+	await expect(page.getByRole("button", { name: "Next", exact: true })).toBeFocused()
+	await expect(calendar(page)).toBeHidden()
 })
 
 When("the reporter presses ArrowDown and then Escape", async ({ page }) => {

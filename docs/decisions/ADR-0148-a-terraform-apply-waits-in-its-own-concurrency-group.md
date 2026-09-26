@@ -56,5 +56,7 @@ without a job, and never reported `infra`. That was 198 of the last 200.
 - `infra` reports on every `main` commit.
 - A run whose queued `apply` is replaced shows as cancelled overall, while its
   `infra` context stays green.
-- Run 35673762842 still holds `terraform-apply` until a reviewer approves or
-  rejects it. That run is stale, so a maintainer should reject it.
+- Run 35673762842 was queued under the old workflow-level group
+  `terraform-refs/heads/main`. No run uses that group after this change, so
+  it blocks nothing. It is still waiting and would apply the stale 40bd748a if
+  approved, so a maintainer should reject it.

@@ -30,6 +30,8 @@ export interface StubQuestion {
 	type: string
 	isRequired: boolean
 	isPrivate: boolean
+	/** Whether a date answer may lie after today; the API sends it on every question (ADR-0138). */
+	allowFutureDates?: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
 	dependsOnChoiceId: string | null

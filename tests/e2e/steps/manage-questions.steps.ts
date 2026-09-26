@@ -50,6 +50,7 @@ interface StubQuestion {
 	isRequired: boolean
 	isPrivate: boolean
 	isTranslatable: boolean
+	allowFutureDates: boolean
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
@@ -83,6 +84,7 @@ function question(
 		isRequired: false,
 		isPrivate: true,
 		isTranslatable: type === "long_text",
+		allowFutureDates: false,
 		isActive: true,
 		displayOrder,
 		dependsOnQuestionId: null,
@@ -769,6 +771,46 @@ Then("Auto-translate answer is offered and unchecked", async ({ page }) => {
 
 Then("Auto-translate answer is not offered", async ({ page }) => {
 	await expect(needsTranslation(page)).toHaveCount(0)
+})
+
+// REQ-QB-158: Allow future dates is offered only for a date question, unchecked (ADR-0138).
+
+const allowFutureDates = (page: Page) => page.getByRole("checkbox", { name: "Allow future dates" })
+
+const sentQuestions = new WeakMap<Page, { allowFutureDates?: unknown }>()
+
+When("they choose date", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("date")
+})
+
+When("they choose time", async ({ page }) => {
+	await page.getByLabel("Type").selectOption("time")
+})
+
+Then("Allow future dates is offered and unchecked", async ({ page }) => {
+	await expect(allowFutureDates(page)).toBeVisible()
+	await expect(allowFutureDates(page)).not.toBeChecked()
+})
+
+Then("Allow future dates is not offered", async ({ page }) => {
+	await expect(allowFutureDates(page)).toHaveCount(0)
+})
+
+When(
+	"they choose date, check Allow future dates, write the question in both languages, and save",
+	async ({ page }) => {
+		await page.getByLabel("Type").selectOption("date")
+		await allowFutureDates(page).check()
+		await page.getByLabel("Question (English)").fill("When does the rating expire?")
+		await page.getByLabel("Question (French)").fill("Quand la qualification expire-t-elle?")
+		const request = page.waitForRequest((candidate) => candidate.url().endsWith("/api/admin/questions") && candidate.method() === "POST")
+		await page.getByRole("button", { name: "Save" }).click()
+		sentQuestions.set(page, (await request).postDataJSON() as { allowFutureDates?: unknown })
+	},
+)
+
+Then("the saved question is sent with allowFutureDates true", async ({ page }) => {
+	expect(sentQuestions.get(page)?.allowFutureDates).toBe(true)
 })
 
 // ---------------------------------------- fix or replace a picker option (ADR-0128) --

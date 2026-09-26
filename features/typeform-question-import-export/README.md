@@ -128,3 +128,7 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md)).
 - Machine-translating an imported question. The import carries what the two
   files say; an administrator authors the rest.
+- Carrying a date question's **Allow future dates** setting. Typeform's date
+  field cannot express it, so the export leaves it out, and an imported date
+  question starts without it, like any new one
+  ([ADR-0138](../../docs/decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md)).

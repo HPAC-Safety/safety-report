@@ -246,7 +246,7 @@ public class ReportAnswer
 			throw new DomainRuleViolationException("That revision does not belong to this question.");
 		}
 
-		value = InStoredForm(question, revision, value);
+		value = InStoredForm(question, revision, value, at);
 
 		if (revision.IsRequired
 			&& string.IsNullOrWhiteSpace(value))
@@ -379,8 +379,9 @@ public class ReportAnswer
 	///     for one is refused (ADR-0130). Nothing is converted: the form's own
 	///     inputs already send these, so any other shape came from somewhere else
 	///     (REQ-QB-118). An email answer is one address and a phone answer E.164
-	///     (ADR-0137, REQ-SUB-097). A blank one is a skip. Every other type passes
-	///     through.
+	///     (ADR-0137, REQ-SUB-097). A date after today in the latest time zone is
+	///     refused unless the revision allows future dates (ADR-0138,
+	///     REQ-SUB-108). A blank one is a skip. Every other type passes through.
 	/// </summary>
 	/// <remarks>
 	///     The refusal names the question, never the value: it reaches the reporter
@@ -388,7 +389,8 @@ public class ReportAnswer
 	/// </remarks>
 	private static string? InStoredForm(Question question,
 										QuestionRevision revision,
-										string? value)
+										string? value,
+										DateTimeOffset at)
 	{
 		if (revision.Type is not (QuestionType.Date or QuestionType.Time or QuestionType.Email or QuestionType.Phone)
 			&& !revision.IsBoolean)
@@ -406,10 +408,11 @@ public class ReportAnswer
 			throw new DomainRuleViolationException($"'{question.Key}' must be answered with a boolean, never with words.");
 		}
 
+		var date = default(DateOnly);
 		var (stored, shape) = revision.Type switch
 		{
 			QuestionType.Date => (
-				DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
+				DateOnly.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out date),
 				"a date written YYYY-MM-DD"),
 			QuestionType.Time => (
 				TimeOnly.TryParseExact(value, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out _),
@@ -418,9 +421,19 @@ public class ReportAnswer
 			_ => (ContactAnswer.IsE164(value), "a phone number written in E.164, such as +16045551234"),
 		};
 
-		return stored
-			? value
-			: throw new DomainRuleViolationException($"'{question.Key}' must be answered with {shape}.");
+		if (!stored)
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' must be answered with {shape}.");
+		}
+
+		if (revision.Type == QuestionType.Date
+			&& !revision.AllowFutureDates
+			&& QuestionRevision.IsInTheFuture(date, at))
+		{
+			throw new DomainRuleViolationException($"'{question.Key}' does not allow a date after today.");
+		}
+
+		return value;
 	}
 
 	/// <summary>

@@ -27,6 +27,12 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public class QuestionRevision
 {
+	/// <summary>
+	///     The latest time zone in use. A date is not in the future while it is
+	///     today, or earlier, anywhere (ADR-0138).
+	/// </summary>
+	private static readonly TimeSpan LatestZone = TimeSpan.FromHours(14);
+
 	// EF Core materializes an entity by calling this constructor and then
 	// setting every mapped property and backing field directly. It exists for
 	// the ORM and for nothing else — domain code still has to go through the
@@ -57,6 +63,7 @@ public class QuestionRevision
 		TinyId? dependsOnChoiceId,
 		TinyId? groupedUnderQuestionId,
 		bool isTranslatable,
+		bool allowFutureDates,
 		DateTimeOffset at)
 	{
 		Id = TinyId.New();
@@ -82,10 +89,18 @@ public class QuestionRevision
 				$"Only a short- or long-text question can need translation; a {type} answer never has a second language. See ADR-0112.");
 		}
 
+		if (allowFutureDates
+			&& type != QuestionType.Date)
+		{
+			throw new DomainRuleViolationException(
+				$"Only a date question can allow future dates; a {type} answer is not a date. See ADR-0138.");
+		}
+
 		IsSystem = isSystem;
 		IsRequired = isSystem || isRequired;
 		IsPrivate = isPrivate;
 		IsTranslatable = isTranslatable;
+		AllowFutureDates = allowFutureDates;
 		IsActive = isActive;
 		DisplayOrder = displayOrder;
 		DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
@@ -140,6 +155,13 @@ public class QuestionRevision
 	///     administrator decides, and long text starts out true. See ADR-0112.
 	/// </summary>
 	public bool IsTranslatable { get; private init; }
+
+	/// <summary>
+	///     Whether a date answer to this revision may lie after today. Only ever
+	///     true for a date question, and false unless an administrator says so
+	///     (ADR-0138). See <see cref="IsInTheFuture" /> for which today.
+	/// </summary>
+	public bool AllowFutureDates { get; private init; }
 
 	/// <summary>Whether this revision is the one the form asks.</summary>
 	public bool IsActive { get; private init; }
@@ -311,12 +333,26 @@ public class QuestionRevision
 		TinyId? dependsOnChoiceId,
 		TinyId? groupedUnderQuestionId,
 		bool isTranslatable,
+		bool allowFutureDates,
 		DateTimeOffset at)
 	{
 		return new QuestionRevision(
 			questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
-			groupedUnderQuestionId, isTranslatable, at);
+			groupedUnderQuestionId, isTranslatable, allowFutureDates, at);
+	}
+
+	/// <summary>
+	///     Whether <paramref name="date" /> lies after today in the latest time zone,
+	///     UTC+14, at the instant <paramref name="at" />. The form holds a reporter
+	///     to their own local today; the API never refuses a date that is already
+	///     today somewhere (ADR-0138).
+	/// </summary>
+	public static bool IsInTheFuture(DateOnly date,
+									 DateTimeOffset at)
+	{
+		var there = at.ToOffset(LatestZone);
+		return date > new DateOnly(there.Year, there.Month, there.Day);
 	}
 
 	/// <summary>

@@ -81,6 +81,8 @@ export interface QuestionView {
 	isPrivate: boolean
 	/** Whether answers are machine-translated. Only ever true for short or long text (ADR-0112). */
 	isTranslatable: boolean
+	/** Whether a date answer may lie after today. Only ever true for a date question (ADR-0138). */
+	allowFutureDates: boolean
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
@@ -142,6 +144,7 @@ export interface SaveQuestionRequest {
 	isRequired: boolean
 	isPrivate: boolean
 	isTranslatable: boolean
+	allowFutureDates: boolean
 	isActive: boolean
 	dependsOnQuestionId: string | null
 	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */

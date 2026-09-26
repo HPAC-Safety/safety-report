@@ -328,7 +328,9 @@
     "correct": "Correct",
     "saveCorrection": "Enregistrer la correction",
     "cancel": "Annuler",
-    "remove": "Supprimer"
+    "remove": "Supprimer",
+    "mergeInto": "#Merge into…",
+    "merge": "#Merge"
   },
   "reports": {
     "intro": "Tous les signalements reçus, classés par ordre chronologique décroissant. Ouvrez-en un pour consulter les réponses et le résumé.",

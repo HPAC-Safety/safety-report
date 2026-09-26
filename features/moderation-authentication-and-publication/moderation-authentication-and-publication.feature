@@ -259,7 +259,6 @@ Scenario: A Safety Officer approves, corrects, and removes type-ahead values on 
   And the page lists no value left to review
 
 @REQ-MOD-095
-@ignore
 @ui
 Scenario: A Safety Officer reviews flagged type-ahead values on one page
   Given a signed-in Safety Officer and two type-ahead questions with values flagged for review

@@ -304,6 +304,8 @@ export interface TypeAheadValueView {
 	isRemoved: boolean
 	answerCount: number
 	addedAt: string | null
+	/** The question's other live values, any of which this one may be merged into. */
+	mergeTargets: { id: string; labelEn: string | null; labelFr: string | null }[]
 }
 
 export function listTypeAheadValuesAwaitingReview(): Promise<{
@@ -322,6 +324,14 @@ export function correctTypeAheadValue(id: string, labelEn: string, labelFr: stri
 	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}`, {
 		method: "PUT",
 		body: JSON.stringify({ labelEn, labelFr }),
+	})
+}
+
+/** Merges the value into another of its question: answers naming it read that one from now on. */
+export function mergeTypeAheadValue(id: string, intoId: string): Promise<void> {
+	return call<void>(`/api/admin/type-ahead-values/${encodeURIComponent(id)}/merge`, {
+		method: "POST",
+		body: JSON.stringify({ intoId }),
 	})
 }
 

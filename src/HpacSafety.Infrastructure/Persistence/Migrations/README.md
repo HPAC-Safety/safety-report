@@ -54,6 +54,7 @@ Dates and times follow
 erDiagram
     questions ||--o{ question_revisions : "versions"
     questions ||--o{ question_choices : "its own choices"
+    question_choices |o--o{ question_choices : "merged into"
     question_revisions }o--o| questions : "conditional on"
     question_revisions }o--o| question_choices : "requires"
     question_choices |o--o| question_choices : "replaced by"
@@ -111,6 +112,7 @@ erDiagram
         varchar(256) reviewed_by "the reviewer's token subject; joins to nothing"
         timestamptz created_at "when a reporter added it; null before this was recorded"
         char(11) replaced_by_choice_id FK "nullable; the picker option that replaced this one"
+        char(11) merged_into_choice_id FK "the value a merged one reads as; set only on a removed value (ADR-0129)"
         timestamptz deleted "removed; hidden from the form, never erased"
     }
 
@@ -264,6 +266,7 @@ this.
 | `20260925233040_TranslateReporterAddedValues` | Added `question_choices.label_en_source` and `label_fr_source` (`human` or `auto`, present exactly when their label is; every existing label backfilled `human`), and allowed the outbox type `translate_choice`: the Worker supplies a reporter-added type-ahead value's missing language on the value itself (ADR-0129). The backfill is `Sql/20260925233040_TranslateReporterAddedValues.sql`. |
 | `20260925235946_ReviewTypeAheadValues` | Added `question_choices.needs_review`, `reviewed_at`, `reviewed_by`, and `created_at`, and flagged every live reporter-added value still missing a language (what "awaiting review" meant before). `admin_pending_counts` gains `type_ahead_values_awaiting_review`, counted on live questions; its Down script drops and recreates the view without it (ADR-0129). |
 | `20260926001923_ReplacePickerOptionsAndNameConditionsByChoice` | Added `question_choices.replaced_by_choice_id` (a replaced picker option names its replacement) and `question_revisions.depends_on_choice_id`, backfilled from `depends_on_option_code` by the parent's choice with that code; the script stops the migration if any code resolves to no choice, and only then is `depends_on_option_code` dropped — nothing it held is lost. Both new columns are restricted foreign keys to `question_choices` (ADR-0128). The backfill is `Sql/20260926001923_ReplacePickerOptionsAndNameConditionsByChoice.sql`; `Down` puts the codes back first. |
+| `20260926004803_MergeTypeAheadValues` | Added `question_choices.merged_into_choice_id`, a restricted self-reference, with `ck_question_choices_merged_is_removed`: a merged value is removed and never names itself. Answers are not touched; they read the value merged into (ADR-0129). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

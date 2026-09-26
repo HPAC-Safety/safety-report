@@ -210,6 +210,8 @@
   "typeAheadValues.saveCorrection": "Save correction",
   "typeAheadValues.cancel": "Cancel",
   "typeAheadValues.remove": "Remove",
+  "typeAheadValues.mergeInto": "Merge into…",
+  "typeAheadValues.merge": "Merge",
   "questions.forkWarning": "This question has been answered. Changing its wording, type, or settings retires it and creates a new question in its place, so the answers already given keep the wording they were given under. Editing only its choices does not.",
   "questions.import.openDialog": "Import from Typeform",
   "questions.import.title": "Import from Typeform",

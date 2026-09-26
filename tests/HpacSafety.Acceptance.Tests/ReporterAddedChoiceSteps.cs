@@ -389,7 +389,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 
 	// --- REQ-QB-131..133: merging type-ahead values (ADR-0129) ---
 
-	private readonly Dictionary<string, ReportAnswer> _named = [];
+	private readonly Dictionary<string, ReportAnswer> _answersByValue = [];
 	private Exception? _attemptRefusal;
 
 	private QuestionChoice ValueReading(string words)
@@ -404,9 +404,9 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question = Question.Create(
 			"where_did_this_happen", QuestionType.Autocomplete, "Where did this happen?", "Où cela s'est-il produit ?", Noon,
 			isActive: true);
-		_named[first] = new Report(Locale.EnCa, Noon).Answer(_question, first, Noon);
-		_named[second] = new Report(Locale.EnCa, Noon).Answer(_question, second, Noon);
-		_named[first].ChoiceId.ShouldNotBe(_named[second].ChoiceId);
+		_answersByValue[first] = new Report(Locale.EnCa, Noon).Answer(_question, first, Noon);
+		_answersByValue[second] = new Report(Locale.EnCa, Noon).Answer(_question, second, Noon);
+		_answersByValue[first].ChoiceId.ShouldNotBe(_answersByValue[second].ChoiceId);
 	}
 
 	[When(@"a Safety Officer merges ""(.*)"" into ""(.*)""")]
@@ -420,7 +420,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheSourceIsMerged(string source,
 									  string target)
 	{
-		var merged = _question.AllChoices.Single(choice => choice.Id == _named[source].ChoiceId);
+		var merged = _question.AllChoices.Single(choice => choice.Id == _answersByValue[source].ChoiceId);
 		merged.Deleted.ShouldNotBeNull();
 		merged.MergedIntoChoiceId.ShouldBe(ValueReading(target).Id);
 	}
@@ -429,7 +429,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenTheAnswersStillNameIt(string source,
 										  string target)
 	{
-		var answer = _named[source];
+		var answer = _answersByValue[source];
 		answer.ChoiceId.ShouldBe(_question.AllChoices.Single(choice => choice.MergedIntoChoiceId is not null).Id);
 		answer.Text.ShouldBe(target);
 	}
@@ -454,8 +454,8 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_question = Question.Create(
 			"where_did_this_happen", QuestionType.Autocomplete, "Where did this happen?", "Où cela s'est-il produit ?", Noon,
 			isActive: true);
-		_named[source] = new Report(Locale.EnCa, Noon).Answer(_question, source, Noon);
-		_named[target] = new Report(Locale.EnCa, Noon).Answer(_question, target, Noon);
+		_answersByValue[source] = new Report(Locale.EnCa, Noon).Answer(_question, source, Noon);
+		_answersByValue[target] = new Report(Locale.EnCa, Noon).Answer(_question, target, Noon);
 		_question.AddChoiceFromReporter("C", Locale.EnCa, Noon);
 		_question.MergeValue(ValueReading(source).Id, ValueReading(target).Id, Reviewer, Noon);
 	}
@@ -464,8 +464,8 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	public void ThenAnAnswerNamingReads(string source,
 										string target)
 	{
-		_named[source].Text.ShouldBe(target);
-		_question.AllChoices.Single(choice => choice.Id == _named[source].ChoiceId).MergedIntoChoiceId
+		_answersByValue[source].Text.ShouldBe(target);
+		_question.AllChoices.Single(choice => choice.Id == _answersByValue[source].ChoiceId).MergedIntoChoiceId
 			.ShouldBe(ValueReading(target).Id);
 	}
 

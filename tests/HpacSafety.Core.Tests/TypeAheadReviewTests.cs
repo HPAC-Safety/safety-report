@@ -161,6 +161,86 @@ public class TypeAheadReviewTests
 		question.ReporterChoicesAwaitingReview.ShouldBe(1);
 	}
 
+	[Theory]
+	[InlineData("itself")]
+	[InlineData("a removed value")]
+	[InlineData("from a merged value")]
+	public void GivenAnImpossibleMerge_WhenAttempted_ThenRefused(string merge)
+	{
+		// Given
+		var question = TypeAhead();
+		var a = question.AddChoiceFromReporter("A", Locale.EnCa, Now);
+		var b = question.AddChoiceFromReporter("B", Locale.EnCa, Now);
+		var c = question.AddChoiceFromReporter("C", Locale.EnCa, Now);
+		question.RemoveValue(c.Id, Reviewer, Now);
+		question.MergeValue(b.Id, a.Id, Reviewer, Now);
+
+		// When
+		Action merging = merge switch
+		{
+			"itself" => () => question.MergeValue(a.Id, a.Id, Reviewer, Now),
+			"a removed value" => () => question.MergeValue(a.Id, c.Id, Reviewer, Now),
+			_ => () => question.MergeValue(b.Id, a.Id, Reviewer, Now),
+		};
+
+		// Then
+		merging.ShouldThrow<DomainRuleViolationException>();
+	}
+
+	[Fact]
+	public void GivenAMergedValue_WhenAReporterTypesAWordingReducingToItsCode_ThenTheAnswerNamesTheTarget()
+	{
+		// Given — "Coopers!" reads as nothing, but reduces to the merged value's code
+		var question = TypeAhead();
+		var coopers = question.AddChoiceFromReporter("Coopers", Locale.EnCa, Now);
+		var target = question.AddChoiceFromReporter("Cooper's Hill", Locale.EnCa, Now);
+		question.MergeValue(coopers.Id, target.Id, Reviewer, Now);
+
+		// When
+		var named = question.AddChoiceFromReporter("Coopers!", Locale.EnCa, Now);
+
+		// Then
+		named.ShouldBeSameAs(target);
+		coopers.NeedsReview.ShouldBeFalse();
+	}
+
+	[Fact]
+	public void GivenAMergedValue_WhenTheQuestionForks_ThenTheCopyIsMergedIntoTheCopyOfItsTarget()
+	{
+		// Given
+		var question = TypeAhead();
+		var coopers = question.AddChoiceFromReporter("Coopers", Locale.EnCa, Now);
+		var target = question.AddChoiceFromReporter("Cooper's", Locale.EnCa, Now);
+		question.MergeValue(coopers.Id, target.Id, Reviewer, Now);
+		new Features.Reporting.Report(Locale.EnCa, Now).Answer(question, "Cooper's", Now);
+
+		// When
+		var current = question.CurrentRevision;
+		var live = question.ApplyEdit(
+			true, current.Type, "Where were you flying?", current.LabelFr, current.IsPrivate, current.IsActive,
+			current.DisplayOrder, Now.AddDays(1));
+
+		// Then
+		var copiedTarget = live.AllChoices.Single(choice => choice.Code == target.Code);
+		var copiedSource = live.AllChoices.Single(choice => choice.Code == coopers.Code);
+		copiedSource.MergedIntoChoiceId.ShouldBe(copiedTarget.Id);
+		copiedSource.Resolved.ShouldBeSameAs(copiedTarget);
+		copiedSource.Deleted.ShouldBe(coopers.Deleted);
+	}
+
+	[Fact]
+	public void GivenAMergedValueWithoutItsTarget_WhenResolved_ThenItRefusesToShowTheOldWording()
+	{
+		// Given — what a reader that forgot to load the target would hold
+		var loaded = TypeAhead();
+		var coopers = loaded.AddChoiceFromReporter("Coopers", Locale.EnCa, Now);
+		loaded.MergeValue(coopers.Id, loaded.AddChoiceFromReporter("Cooper's", Locale.EnCa, Now).Id, Reviewer, Now);
+		typeof(QuestionChoice).GetProperty(nameof(QuestionChoice.MergedInto))!.SetValue(coopers, null);
+
+		// When / Then
+		Should.Throw<InvalidOperationException>(() => coopers.Resolved);
+	}
+
 	private static Question TypeAhead()
 	{
 		return Question.Create("site", QuestionType.Autocomplete, "Where?", "Où ?", Now, isActive: true);

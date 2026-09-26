@@ -866,6 +866,23 @@ public sealed class DependentChoiceSteps
 			(child, new { value = (string?)null, choices = Array.Empty<string>() }));
 	}
 
+	[When(@"a reporter submits a report answering {string} with {string}, after every {string} choice under {string} was removed, with {string} sent with no choice")]
+	public async Task WhenTheRequiredChildIsSentEmptyUnderARemovedChoice(string parent,
+																		 string parentChoice,
+																		 string child,
+																		 string _,
+																		 string __)
+	{
+		// Removed choices are kept, stamped; they no longer count as offered (ADR-0095).
+		var model = await View(child);
+		var removed = ChoiceId(await View(parent), parentChoice);
+		var kept = Options(model).Where(option => option["parentChoiceId"]?.GetValue<string>() != removed).ToArray();
+		var saved = await Put(child, RequestFrom(model, options: kept));
+		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+
+		await WhenTheRequiredChildIsSentEmptyUnderAnEmptyParentChoice(parent, parentChoice, child);
+	}
+
 	[Then(@"the API accepts the report and records no answer to {string}")]
 	public async Task ThenAcceptedWithoutTheChild(string child)
 	{

@@ -364,7 +364,8 @@ public static partial class ReportSubmissionEndpoints
 
 			// A child that cannot be answered yet — its parent unanswered, or a
 			// picker with nothing under the parent's answer — was never asked, so a
-			// skip records nothing, even when it is required (ADR-0146).
+			// skip records nothing, even when it is required (ADR-0146). Choices is the
+			// live list: a removed or merged choice is not offered, so it does not count.
 			if (!typed
 				&& choiceIds.Count == 0
 				&& (parentChoiceId is null

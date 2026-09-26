@@ -535,6 +535,7 @@ Examples:
   | make                          |
   | leaving "Make" unanswered     |
   | answering "Make" with "Gin"   |
+  | answering "Make" with "Ozone", after every "Model" choice under "Ozone" was removed |
 @REQ-SUB-080
 Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead

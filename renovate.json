@@ -113,6 +113,16 @@
 			"allowedVersions": "/^10\\./"
 		},
 		{
+			"description": "tools/act/Dockerfile's amd64 stage supplies the x86-64 loader and glibc for the act image, whose base is catthehacker's act-24.04 (ADR-0145). It stays on that release, so a local run loads amd64 downloads against the runner's glibc; #551 moved it to 26.04 alone (#552). Digest updates within 24.04 still flow. The next release moves both FROM lines by hand in one pull request.",
+			"matchFileNames": [
+				"tools/act/Dockerfile"
+			],
+			"matchPackageNames": [
+				"ubuntu"
+			],
+			"allowedVersions": "/^24\\./"
+		},
+		{
 			"description": "A Worker base-image bump changes src/HpacSafety.Worker/Dockerfile, and feature-coverage counts src/** as behavior-bearing. The PR cites the video claims the image carries. The required build check re-proves them by building the image and running ffmpeg and ffprobe inside it. The dependency category fails if anything but a manifest, lock file, or Dockerfile changed (ADR-0090, ADR-0111, ADR-0120).",
 			"matchFileNames": [
 				"src/HpacSafety.Worker/Dockerfile"

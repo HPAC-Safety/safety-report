@@ -15,6 +15,10 @@
 //     and nothing else will ever redo this one's work. The commit is
 //     cherry-picked onto the newer head and pushed again. The files that
 //     changed are not this workflow's inputs, so its output is still correct.
+//   * No such file changed, and the branch gained a commit with this one's
+//     subject — an earlier run of this same workflow, over the same inputs,
+//     already landed its output. Replaying would conflict with it, so this run
+//     stands down and exits 0 (ADR-0149, #552).
 //
 // Usage (in a checkout whose HEAD is the bot's commit on top of the event SHA):
 //   node tools/push-to-pr-branch.mjs --branch <ref> --event-sha <sha> --paths <pattern,...>
@@ -42,10 +46,14 @@ export function matchesAny(file, patterns) {
 	})
 }
 
-/** What a rejected push means, given the files the branch gained since the event. */
-export function afterRejection({ branchSha, eventSha, changed, patterns }) {
+/**
+ * What a rejected push means, given the files the branch gained since the event
+ * and the subjects of the commits that brought them.
+ */
+export function afterRejection({ branchSha, eventSha, changed, patterns, subject, gainedSubjects = [] }) {
 	if (branchSha === eventSha) return 'failed'
-	return changed.some((file) => matchesAny(file, patterns)) ? 'superseded' : 'retry'
+	if (changed.some((file) => matchesAny(file, patterns))) return 'superseded'
+	return gainedSubjects.includes(subject) ? 'landed' : 'retry'
 }
 
 function git(cwd, ...args) {
@@ -77,6 +85,7 @@ export function main(argv = [], cwd = process.cwd()) {
 	}
 	const patterns = paths.split(',').map((pattern) => pattern.trim()).filter(Boolean)
 	const commit = git(cwd, 'rev-parse', 'HEAD')
+	const subject = git(cwd, 'log', '-1', '--format=%s', commit)
 
 	for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
 		const push = tryGit(cwd, 'push', 'origin', `HEAD:refs/heads/${branch}`)
@@ -86,20 +95,27 @@ export function main(argv = [], cwd = process.cwd()) {
 		}
 		console.log(push.output)
 
-		const fetch = tryGit(cwd, 'fetch', '--depth=1', 'origin', `refs/heads/${branch}`)
+		// No --depth: the checkout holds the event SHA, so the fetch stops there
+		// and brings exactly the commits the branch gained, whose subjects
+		// afterRejection reads.
+		const fetch = tryGit(cwd, 'fetch', 'origin', `refs/heads/${branch}`)
 		if (!fetch.ok) {
 			console.error(`::error::Could not fetch ${branch} after a rejected push.\n${fetch.output}`)
 			return 1
 		}
 		const branchSha = git(cwd, 'rev-parse', 'FETCH_HEAD')
 		const changed = git(cwd, 'diff', '--name-only', eventSha, branchSha).split('\n').filter(Boolean)
+		const gainedSubjects = git(cwd, 'log', '--format=%s', `${eventSha}..${branchSha}`).split('\n').filter(Boolean)
 
-		switch (afterRejection({ branchSha, eventSha, changed, patterns })) {
+		switch (afterRejection({ branchSha, eventSha, changed, patterns, subject, gainedSubjects })) {
 			case 'failed':
 				console.error(`::error::Could not push onto ${branch}, and the branch has not moved.`)
 				return 1
 			case 'superseded':
 				console.log(`::notice::${branch} moved to ${branchSha} with a change this workflow is triggered by. The run for that push does this work; nothing to do here.`)
+				return 0
+			case 'landed':
+				console.log(`::notice::${branch} moved to ${branchSha}, which already carries "${subject}" from an earlier run of this workflow over the same inputs; nothing to do here.`)
 				return 0
 		}
 

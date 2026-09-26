@@ -39,11 +39,15 @@ on:
 permissions:
   contents: read
 
+# Only a pull request's runs share a group, so a newer push to it cancels the
+# older run (ADR-0147). Every other run gets a group of its own: `infra`
+# reports on every main push and every merge group whatever `apply` is doing.
+# Serialising applies is `apply`'s own job-level group below. A workflow-level
+# group on main held every later push behind one apply waiting on its
+# reviewers, and each newer push cancelled the one queued before it, so `infra`
+# reported on no main commit for four days (#552, ADR-0148).
 concurrency:
-  # Never two applies at once. The state lock would catch it, but a queued run is
-  # a better outcome than a failed one. A merge group's ref is its own queue
-  # branch and never cancels (ADR-0147).
-  group: terraform-${{ github.ref }}
+  group: terraform-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
@@ -260,6 +264,15 @@ jobs:
     # merging. Same environment the three deploy workflows use — see
     # docs/deployment.md.
     environment: production
+    # Never two applies at once. The state lock would catch it, but a queued
+    # apply is a better outcome than a failed one. One group for every ref:
+    # a workflow_dispatch from a branch changes the same AWS account. An apply
+    # waiting on its reviewers holds the group; a newer one queues behind it
+    # and replaces any older one still queued, so the newest commit applies
+    # next (ADR-0148).
+    concurrency:
+      group: terraform-apply
+      cancel-in-progress: false
     permissions:
       contents: read
       id-token: write

@@ -211,3 +211,12 @@ names and step numbers.
   [lesson 0016](../../docs/lessons/0016-a-push-filtered-by-paths-starts-no-run-to-supersede-yours.md)).
 - **With a token on the remote URL**:
   [lesson 0018](../../docs/lessons/0018-a-persisted-checkout-token-outranks-the-pat-on-the-remote.md).
+
+## Concurrency and quotas
+
+- `terraform.yml` serialises `apply` alone, in the job-level group
+  `terraform-apply`
+  ([ADR-0148](../../docs/decisions/ADR-0148-a-terraform-apply-waits-in-its-own-concurrency-group.md),
+  [lesson 0026](../../docs/lessons/0026-a-run-waiting-on-reviewers-held-every-later-run.md)).
+- `skillfile` reads `GITHUB_TOKEN`, then `GH_TOKEN`. `agent-config` passes it
+  `github.token`.

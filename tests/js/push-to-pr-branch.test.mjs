@@ -108,6 +108,12 @@ describe('afterRejection', () => {
 	it('retries when the newer push changed only files outside its triggers', () => {
 		assert.equal(afterRejection({ ...base, branchSha: 'b', changed: ['locales/fr-CA.json'] }), 'retry')
 	})
+
+	it('has landed when the branch gained a commit with its own subject and no trigger change', () => {
+		const landed = { ...base, branchSha: 'b', changed: ['locales/fr-CA.json'], subject: 'Translate', gainedSubjects: ['Translate'] }
+		assert.equal(afterRejection(landed), 'landed')
+		assert.equal(afterRejection({ ...landed, changed: ['features/a.feature'] }), 'superseded')
+	})
 })
 
 describe('push-to-pr-branch', () => {
@@ -139,6 +145,22 @@ describe('push-to-pr-branch', () => {
 		assert.equal(code, 0, output)
 		assert.match(output, /::notice::/)
 		assert.equal(branchFiles()[0], 'Author again')
+	})
+
+	it('stands down when an earlier run of the same workflow already landed its output', () => {
+		// #552: two runs for back-to-back pushes; the first replayed its commit
+		// onto the second push's head, and the second's replay then conflicted
+		// with it. The matrix is not a trigger here, as fr-CA.json is not one
+		// for the translation.
+		const { author, run, branchFiles } = scenario({ paths: 'features/**' })
+		commitFile(author, 'docs/traceability.md', 'earlier run matrix\n', 'Regenerate the traceability matrix')
+		git(author, 'push', '--quiet', 'origin', BRANCH)
+
+		const { code, output } = run()
+
+		assert.equal(code, 0, output)
+		assert.match(output, /::notice::.*already carries/)
+		assert.equal(branchFiles().filter((subject) => subject === 'Regenerate the traceability matrix').length, 1)
 	})
 
 	it('fails when its commit does not apply on top of the newer head', () => {

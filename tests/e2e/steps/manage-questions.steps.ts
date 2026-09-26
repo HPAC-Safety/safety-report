@@ -121,7 +121,13 @@ function codeOf(wording: string) {
  */
 async function stubAdminApi(page: Page) {
 	const questions: StubQuestion[] = [
-		question("aaaaaaaaaaa", "were_you_injured", "Were you injured?", "yes_no", 0),
+		// Worded in both languages, help text included, so an edit to it is a
+		// change to a written field rather than the filling of an empty one.
+		{
+			...question("aaaaaaaaaaa", "were_you_injured", "Were you injured?", "yes_no", 0),
+			helpTextEn: "Include any injury, however small.",
+			helpTextFr: "Incluez toute blessure, même légère.",
+		},
 		question("bbbbbbbbbbb", "occurrence_notes", "What happened?", "long_text", 1),
 		// In the server's order — pinned last at the end, the rest by ID — which
 		// is not alphabetical (ADR-0136).
@@ -494,7 +500,11 @@ Given(
 
 // One button, labelled "Translate", whichever way it is about to go: the
 // direction is decided by which language has been written, not by the caller.
-const translateButton = (page: Page) => page.getByRole("button", { name: "Translate", exact: true })
+// The wording's switch and Translate sit in a group named for the wording; the
+// Choices panel is a group of its own.
+const wordingGroup = (page: Page) => page.getByRole("group", { name: "Question wording", exact: true })
+const choicesGroup = (page: Page) => page.getByRole("group", { name: "Choices", exact: true })
+const translateButton = (page: Page) => wordingGroup(page).getByRole("button", { name: "Translate", exact: true })
 
 When("they write the English wording and press Translate", async ({ page }) => {
 	await page.getByLabel("Question (English)").fill("Were you injured?")
@@ -1011,7 +1021,10 @@ const choices = (page: Page) => page.getByTestId("question-choice")
 const thatChoice = (page: Page) => choices(page).nth(thatChoiceIndex.get(page) ?? 0)
 const choiceTranslate = (choice: ReturnType<Page["getByTestId"]>) =>
 	choice.getByRole("button", { name: "Translate this choice", exact: true })
-const directionSwitch = (page: Page) => page.getByRole("button", { name: /^Translate (English to French|French to English)$/ })
+// Two switches share one component, each scoped by its group.
+const switchName = /^Translate (English to French|French to English)$/
+const directionSwitch = (page: Page) => choicesGroup(page).getByRole("button", { name: switchName })
+const wordingDirectionSwitch = (page: Page) => wordingGroup(page).getByRole("button", { name: switchName })
 
 async function wordingOfChoices(page: Page) {
 	const count = await choices(page).count()
@@ -1203,4 +1216,141 @@ Then("that choice's French field is filled with the translation of its English",
 	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] mount 7")
 	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("mount 7")
 	expect(choiceTraffic.get(page)?.translated).toEqual(["mount 7"])
+})
+
+// ------------------------------------ translating the wording on request (ADR-0144) --
+
+Then("the wording's direction switch translates English to French", async ({ page }) => {
+	await expect(wordingDirectionSwitch(page)).toHaveAccessibleName("Translate English to French")
+})
+
+When("they flip the wording's direction switch to French to English", async ({ page }) => {
+	await wordingDirectionSwitch(page).click()
+	await expect(wordingDirectionSwitch(page)).toHaveAccessibleName("Translate French to English")
+})
+
+// The stub's first question, "Were you injured?", is worded in both languages
+// and has no help text in either.
+Given("a signed-in Administrator is editing a question whose wording is in both languages", async ({ page }) => {
+	await signInAndOpenQuestions(page)
+	watchChoiceTraffic(page)
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+	await rows.nth(0).getByRole("button", { name: "Edit" }).click()
+	await expect(page.getByLabel("Question (French)")).toHaveValue("Were you injured? (fr)")
+	await expect(page.getByLabel("Help text (French)")).toHaveValue("Incluez toute blessure, même légère.")
+})
+
+Then("the wording's Translate action is unavailable", async ({ page }) => {
+	await expect(translateButton(page)).toBeDisabled()
+})
+
+Then("the wording's Translate action becomes available", async ({ page }) => {
+	await expect(translateButton(page)).toBeEnabled()
+})
+
+When("they edit its English help text", async ({ page }) => {
+	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
+})
+
+When("they edit its English question and help text and press Translate", async ({ page }) => {
+	await page.getByLabel("Question (English)").fill("Were you hurt?")
+	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
+	await translateButton(page).click()
+})
+
+Then("the French question and help text are replaced with their translations", async ({ page }) => {
+	await expect(page.getByLabel("Question (French)")).toHaveValue("[fr-CA] Were you hurt?")
+	await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
+})
+
+Then("the drafts are saved only when they press Save", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.saves).toBe(0)
+
+	const saving = page.waitForRequest(
+		(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/aaaaaaaaaaa"),
+	)
+	await page.getByRole("button", { name: "Save" }).click()
+	const body = JSON.parse((await saving).postData() ?? "{}") as { labelFr: string; helpTextFr: string | null }
+
+	expect({ labelFr: body.labelFr, helpTextFr: body.helpTextFr }).toEqual({
+		labelFr: "[fr-CA] Were you hurt?",
+		helpTextFr: "[fr-CA] Any injury, however small.",
+	})
+})
+
+When("they edit its English question", async ({ page }) => {
+	await page.getByLabel("Question (English)").fill("Were you hurt?")
+})
+
+Then("only the wording is sent to be translated", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.translated).toEqual(["Any injury, however small."])
+})
+
+Then("every choice keeps its wording", async ({ page }) => {
+	expect(await wordingOfChoices(page)).toEqual([
+		{ en: "Cooper's", fr: "Cooper's" },
+		{ en: "mount 7", fr: "" },
+	])
+})
+
+Then("only the English help text is sent to be translated", async ({ page }) => {
+	expect(choiceTraffic.get(page)?.translated).toEqual(["Any injury, however small."])
+})
+
+Then("the French question keeps its wording", async ({ page }) => {
+	await expect(page.getByLabel("Question (French)")).toHaveValue("Were you injured? (fr)")
+})
+
+// Holds each translation until the scenario lets it through, so the page can
+// be changed while a request is out.
+const heldTranslations = new WeakMap<Page, () => void>()
+
+Given("the translation provider is slow to answer", async ({ page }) => {
+	let release = () => {}
+	const gate = new Promise<void>((resolve) => {
+		release = resolve
+	})
+	heldTranslations.set(page, () => release())
+	await page.route("**/api/admin/translate", async (route) => {
+		if (route.request().method() !== "POST") {
+			await route.fallback()
+			return
+		}
+		await gate
+		await route.fallback()
+	})
+})
+
+When("they edit its English help text and press Translate", async ({ page }) => {
+	await page.getByLabel("Help text (English)").fill("Any injury, however small.")
+	await translateButton(page).click()
+	if (!heldTranslations.has(page)) {
+		await expect(page.getByLabel("Help text (French)")).toHaveValue("[fr-CA] Any injury, however small.")
+	}
+})
+
+When("they flip the wording's direction switch before the translation arrives", async ({ page }) => {
+	await expect(wordingGroup(page).getByRole("button", { name: "Translating…" })).toBeVisible()
+	await wordingDirectionSwitch(page).click()
+})
+
+When("they type the French help text themselves before the translation arrives", async ({ page }) => {
+	await expect(wordingGroup(page).getByRole("button", { name: "Translating…" })).toBeVisible()
+	await page.getByLabel("Help text (French)").fill("Toute blessure, même petite.")
+})
+
+When("the translation arrives", async ({ page }) => {
+	const answered = page.waitForResponse((response) => response.url().endsWith("/api/admin/translate") && response.request().method() === "POST")
+	heldTranslations.get(page)?.()
+	await answered
+	// The button is labelled Translate again once the result has been handled.
+	await expect(translateButton(page)).toBeVisible()
+})
+
+Then("the French help text keeps its wording", async ({ page }) => {
+	await expect(page.getByLabel("Help text (French)")).toHaveValue("Incluez toute blessure, même légère.")
+})
+
+Then("the French help text is what they typed", async ({ page }) => {
+	await expect(page.getByLabel("Help text (French)")).toHaveValue("Toute blessure, même petite.")
 })

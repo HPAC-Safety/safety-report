@@ -15,11 +15,14 @@ keywords: translation, question bank, authoring, choices, direction switch, draf
 Accepted. For **choices**, this ADR **partially supersedes**
 [ADR-0062](ADR-0062-administrators-may-machine-translate-question-text.md),
 replacing its framing of Translate as "a draft in the empty box" with the rules
-below. The question wording's Translate, including the choices it fills when
-the wording has one empty side, stays under ADR-0062 until a later decision
-extends this one to it (#522). The rest of ADR-0062 stands: translation happens
-on the server behind `ITranslator`, the database holds only what an
-administrator saved, and Save stays disabled until both languages are present.
+below. When this record was accepted, the question wording's Translate,
+including the choices it filled when the wording had one empty side, stayed
+under ADR-0062.
+[ADR-0144](ADR-0144-the-wording-is-translated-on-request-in-a-chosen-direction.md)
+has since extended these rules to the wording's Translate, which no longer
+translates choices (#522). The rest of ADR-0062 stands: translation happens on
+the server behind `ITranslator`, the database holds only what an administrator
+saved, and Save stays disabled until both languages are present.
 
 It builds on
 [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):
@@ -96,8 +99,8 @@ step to every press and protect nothing that is not already on screen.
 - The editor keeps a baseline of each choice's wording beside the draft, and
   the draft sent to the API is unchanged.
 - REQ-QB-164 to REQ-QB-170 specify the per-choice Translate and the direction
-  switch. REQ-QB-069 to REQ-QB-072 still specify the wording's Translate under
-  ADR-0062.
+  switch. The wording's Translate is specified by REQ-QB-069 to REQ-QB-072 and
+  REQ-QB-172 to REQ-QB-175, under ADR-0144.
 
 ## Alternatives rejected
 

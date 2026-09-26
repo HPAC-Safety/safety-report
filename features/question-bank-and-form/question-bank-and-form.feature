@@ -551,6 +551,7 @@ Scenario: A server with no translation credential still authors questions
 @ui
 Scenario: An Administrator drafts the French from the English
   Given a signed-in Administrator is authoring a new question
+  Then the wording's direction switch translates English to French
   When they write the English wording and press Translate
   Then the French field is filled with the translation
   And the French field remains editable
@@ -559,7 +560,8 @@ Scenario: An Administrator drafts the French from the English
 @ui
 Scenario: An Administrator drafts the English from the French
   Given a signed-in Administrator is authoring a new question
-  When they write the French wording and press Translate
+  When they flip the wording's direction switch to French to English
+  And they write the French wording and press Translate
   Then the English field is filled with the translation
 
 @REQ-QB-071
@@ -576,6 +578,67 @@ Scenario: A question cannot be saved in one language
 Scenario: Translation is not offered when the server has no provider
   Given a signed-in Administrator is authoring a question on a server with no translation provider
   Then the Translate action is unavailable and says so
+
+@REQ-QB-172
+@ui
+Scenario: Editing a bilingual question's wording offers Translate
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  Then the wording's Translate action is unavailable
+  When they edit its English help text
+  Then the wording's Translate action becomes available
+
+@REQ-QB-173
+@ui
+Scenario: Translate replaces the French wording with drafts
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  When they edit its English question and help text and press Translate
+  Then the French question and help text are replaced with their translations
+  And the drafts are saved only when they press Save
+
+@REQ-QB-174
+@ui
+Scenario: The wording's Translate is unavailable after it translates, until a source field is edited again
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  When they edit its English help text and press Translate
+  Then the wording's Translate action is unavailable
+  When they edit its English question
+  Then the wording's Translate action becomes available
+
+@REQ-QB-175
+@ui
+Scenario: Translating the wording changes no choice
+  Given a signed-in Administrator is editing a type-ahead question with a choice written only in English
+  When they edit its English help text and press Translate
+  Then only the wording is sent to be translated
+  And every choice keeps its wording
+
+@REQ-QB-176
+@ui
+Scenario: Translate leaves an unedited field written in both languages as it is
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  When they edit its English help text and press Translate
+  Then only the English help text is sent to be translated
+  And the French question keeps its wording
+
+@REQ-QB-177
+@ui
+Scenario: A translation that arrives after the direction was flipped changes nothing
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  And the translation provider is slow to answer
+  When they edit its English help text and press Translate
+  And they flip the wording's direction switch before the translation arrives
+  And the translation arrives
+  Then the French help text keeps its wording
+
+@REQ-QB-178
+@ui
+Scenario: French typed while a translation is on its way is kept
+  Given a signed-in Administrator is editing a question whose wording is in both languages
+  And the translation provider is slow to answer
+  When they edit its English help text and press Translate
+  And they type the French help text themselves before the translation arrives
+  And the translation arrives
+  Then the French help text is what they typed
 
 @REQ-QB-164
 @ui

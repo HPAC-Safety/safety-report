@@ -309,7 +309,8 @@
     "translate": {
       "action": "Traduire",
       "working": "Traduction en cours…",
-      "hint": "Écrivez dans une langue, puis traduisez-le dans l’autre.",
+      "hint": "Modifiez le texte, puis traduisez-le.",
+      "wordingGroup": "Libellé de la question",
       "draftWarning": "Une traduction n’est qu’un premier jet. Lisez-la et corrigez-la avant de l’enregistrer.",
       "unavailable": "La traduction n'est pas disponible sur ce serveur.",
       "failed": "La traduction n'a pas pu être effectuée. Veuillez réessayer ou saisir vous-même le texte dans l'autre langue."

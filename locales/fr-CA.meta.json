@@ -1602,14 +1602,20 @@
     "reviewed": false
   },
   "questions.translate.hint": {
-    "source_hash": "c7e64b4c7c8b5c79ac4d6ce48420801cbc792d71d082a4082b893b68af1089ed",
-    "target_hash": "f9c6b1ed8637d4361e1b50566a69b34c20159c111e29733262970386b62a97f3",
+    "source_hash": "28770e1a35aab90f610bae8c435085b23a917113712ff5ff3176daa029c8841c",
+    "target_hash": "845b69b7825afb94e15ddcb84b223bbaf2a75617908342faaec4760450912748",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
   "questions.translate.unavailable": {
     "source_hash": "82ed2298688c1840af6049800cf7ae109ab3b4d3d678d91512177c2807207e14",
     "target_hash": "8d56201c0b6fb334743db22e233c8767484f29e36c1ceedabe565185e0870ef5",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "questions.translate.wordingGroup": {
+    "source_hash": "da92bf3dfc22539dbdb4bed2f3d2402e862284064f2678556887800c699c10f3",
+    "target_hash": "343f5755d95149134065f36599c50a42edfbcd78d7b49776ede47272d9f5e33d",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

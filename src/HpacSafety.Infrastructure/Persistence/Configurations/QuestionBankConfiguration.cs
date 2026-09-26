@@ -226,7 +226,6 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 			"parent_choice_id IS NULL OR parent_choice_id <> id"));
 
 		// Unique across removed rows too: an Administrator writing a removed
-
 		// choice again revives that row, and a reporter never does, so a code
 		// has exactly one row on its question for life.
 		builder.HasIndex(choice => new { choice.QuestionId, choice.Code }).IsUnique();

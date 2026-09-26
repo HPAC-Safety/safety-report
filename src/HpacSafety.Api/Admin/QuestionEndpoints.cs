@@ -108,7 +108,7 @@ public static class QuestionEndpoints
 			var dependsOn = ResolvedDependency(request, bank, null);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
 			var displayOrder = NextDisplayOrder(questions);
-			var choiceParentId = ResolvedChoiceParent(request, type, questions, null, displayOrder);
+			var choiceParentId = ResolvedChoiceParent(request, type, questions, null, displayOrder, groupedUnderQuestionId);
 			var options = OptionsFor(request, type, null, choiceParentId);
 
 			var question = Question.Create(
@@ -186,10 +186,11 @@ public static class QuestionEndpoints
 		{
 			var dependsOn = ResolvedDependency(request, bank, question);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
-			var choiceParentId = ResolvedChoiceParent(request, type, questions, question, question.DisplayOrder);
+			var choiceParentId = ResolvedChoiceParent(request, type, questions, question, question.DisplayOrder, groupedUnderQuestionId);
 			var options = OptionsFor(request, type, question, choiceParentId);
 
 			ChoiceDependencies.EnsureParentKeepsType(questions, question, type);
+			ChoiceDependencies.EnsureDependentsFollow(questions, question, groupedUnderQuestionId);
 
 			if (options is not null)
 			{
@@ -613,7 +614,8 @@ public static class QuestionEndpoints
 												QuestionType type,
 												List<Question> questions,
 												Question? child,
-												int displayOrder)
+												int displayOrder,
+												TinyId? groupedUnderQuestionId)
 	{
 		if (string.IsNullOrWhiteSpace(request.ChoicesDependOnQuestionId))
 		{
@@ -625,7 +627,7 @@ public static class QuestionEndpoints
 			throw new DomainRuleViolationException("That question no longer exists, so no question's choices can depend on it.");
 		}
 
-		ChoiceDependencies.EnsureDependencyAllowed(questions, child?.Id, request.LabelEn, type, displayOrder, parentId);
+		ChoiceDependencies.EnsureDependencyAllowed(questions, child?.Id, request.LabelEn, type, displayOrder, parentId, groupedUnderQuestionId);
 		return parentId;
 	}
 

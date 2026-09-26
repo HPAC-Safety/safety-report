@@ -718,7 +718,6 @@ public class Question
 		{
 			if ((RepeatedLabel(siblings.Select(choice => choice.LabelEn))
 				 ?? RepeatedLabel(siblings.Select(choice => choice.LabelFr))) is { } repeated)
-
 			{
 				throw new DomainRuleViolationException(
 					$"'{repeated}' is offered twice under the same parent choice. A reporter could not tell them apart.");
@@ -1006,6 +1005,13 @@ public class Question
 		if (ChoicesDependOnQuestionId is null)
 		{
 			throw new DomainRuleViolationException($"'{Key}' does not depend on another question, so its values have no parent choice.");
+		}
+
+		// A merged value reads as its target and sits under the target's parent
+		// choice. A removed one may still be relinked: its answers keep naming it.
+		if (value.MergedIntoChoiceId is not null)
+		{
+			throw new DomainRuleViolationException("That value was merged into another. Relink the value it was merged into instead.");
 		}
 
 		if (value.Deleted is null

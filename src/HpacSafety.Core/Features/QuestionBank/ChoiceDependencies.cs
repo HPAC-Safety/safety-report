@@ -51,6 +51,7 @@ public static class ChoiceDependencies
 	/// <param name="childType">The type the child is being saved as.</param>
 	/// <param name="childDisplayOrder">Where the child sits on the form.</param>
 	/// <param name="parentId">The question it is to depend on.</param>
+	/// <param name="childGroupedUnderId">The group the child renders under, if any: it is asked where its group is.</param>
 	/// <exception cref="DomainRuleViolationException">When the dependency is not allowed.</exception>
 	public static void EnsureDependencyAllowed(
 		IReadOnlyCollection<Question> questions,
@@ -58,7 +59,8 @@ public static class ChoiceDependencies
 		string childLabel,
 		QuestionType childType,
 		int childDisplayOrder,
-		TinyId parentId)
+		TinyId parentId,
+		TinyId? childGroupedUnderId = null)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
@@ -96,11 +98,49 @@ public static class ChoiceDependencies
 				$"The choices of '{dependent.CurrentRevision.LabelEn}' already depend on this question. A dependency is one level deep.");
 		}
 
-		if (parent.DisplayOrder >= childDisplayOrder)
+		if (FormPosition(questions, parent.GroupedUnderQuestionId, parent.DisplayOrder)
+			.CompareTo(FormPosition(questions, childGroupedUnderId, childDisplayOrder)) >= 0)
 		{
 			throw new DomainRuleViolationException(
 				$"'{parent.CurrentRevision.LabelEn}' must come before '{childLabel}' on the form, so it is answered first.");
 		}
+	}
+
+	/// <summary>
+	///     Checks that a parent saved with <paramref name="groupedUnderId" /> still comes
+	///     before every question whose choices depend on it, wherever grouping places
+	///     them on the form (ADR-0146).
+	/// </summary>
+	public static void EnsureDependentsFollow(IReadOnlyCollection<Question> questions,
+											  Question parent,
+											  TinyId? groupedUnderId)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(parent);
+
+		var at = FormPosition(questions, groupedUnderId, parent.DisplayOrder);
+
+		if (DependentsOf(questions, parent)
+				.FirstOrDefault(child => at.CompareTo(FormPosition(questions, child.GroupedUnderQuestionId, child.DisplayOrder)) >= 0) is { } before)
+		{
+			throw new DomainRuleViolationException(
+				$"'{parent.CurrentRevision.LabelEn}' must come before '{before.CurrentRevision.LabelEn}' on the form, because the choices of '{before.CurrentRevision.LabelEn}' depend on it.");
+		}
+	}
+
+	/// <summary>
+	///     Where a question is asked: the position of its group's page when it renders
+	///     under a group, then its own order within that page; a question on a page of
+	///     its own comes before anything grouped under the same position.
+	/// </summary>
+	private static (int Page, int Within) FormPosition(IReadOnlyCollection<Question> questions,
+													   TinyId? groupedUnderId,
+													   int displayOrder)
+	{
+		return groupedUnderId is { } groupId
+			   && questions.FirstOrDefault(question => question.Id == groupId && question.Deleted is null) is { } group
+			? (group.DisplayOrder, displayOrder)
+			: (displayOrder, int.MinValue);
 	}
 
 	/// <summary>
@@ -151,6 +191,29 @@ public static class ChoiceDependencies
 	}
 
 	/// <summary>
+	///     Checks one value a reviewer relinked: it names a live choice of its
+	///     question's parent. Other values are not judged by it (ADR-0146).
+	/// </summary>
+	public static void EnsureLinkAllowed(IReadOnlyCollection<Question> questions,
+										 Question child,
+										 TinyId choiceId)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(child);
+
+		var parent = questions.FirstOrDefault(question => question.Id == child.ChoicesDependOnQuestionId && question.Deleted is null)
+					 ?? throw new DomainRuleViolationException(
+						 "That question no longer exists, so no question's choices can depend on it.");
+		var value = child.AllChoices.First(choice => choice.Id == choiceId);
+
+		if (value.ParentChoiceId is not { } linked || parent.OfferedChoice(linked) is null)
+		{
+			throw new DomainRuleViolationException(
+				$"'{value.LabelEn ?? value.LabelFr}' must be offered under a choice '{parent.CurrentRevision.LabelEn}' offers.");
+		}
+	}
+
+	/// <summary>
 	///     Checks that saving <paramref name="parent" />'s choices as
 	///     <paramref name="remainingCodes" /> removes none a live choice of a dependent
 	///     question is offered under. Removing one would leave that choice offered
@@ -188,6 +251,38 @@ public static class ChoiceDependencies
 	}
 
 	/// <summary>
+	///     Checks that merging parent value <paramref name="sourceId" /> into
+	///     <paramref name="targetId" /> leaves no dependent question offering one
+	///     wording twice under the target, which a reporter could not tell apart. The
+	///     reviewer merges or removes one of the pair first (ADR-0146).
+	/// </summary>
+	public static void EnsureMergeKeepsChildrenApart(IReadOnlyCollection<Question> questions,
+													 Question parent,
+													 TinyId sourceId,
+													 TinyId targetId)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(parent);
+
+		static IEnumerable<string> Wording(QuestionChoice choice)
+		{
+			return new[] { choice.LabelEn, choice.LabelFr }.OfType<string>().Select(label => label.Trim());
+		}
+
+		foreach (var child in DependentsOf(questions, parent))
+		{
+			var underTarget = child.Choices.Where(choice => choice.ParentChoiceId == targetId).SelectMany(Wording)
+				.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+			if (child.Choices.FirstOrDefault(choice => choice.ParentChoiceId == sourceId && Wording(choice).Any(underTarget.Contains)) is { } clash)
+			{
+				throw new DomainRuleViolationException(
+					$"'{child.CurrentRevision.LabelEn}' offers '{clash.LabelEn ?? clash.LabelFr}' under both values. Merge or remove one of those first.");
+			}
+		}
+	}
+
+	/// <summary>
 	///     Checks an arrangement of the form: every parent comes before each question
 	///     whose choices depend on it, so the reporter answers it first.
 	/// </summary>
@@ -196,13 +291,21 @@ public static class ChoiceDependencies
 	{
 		ArgumentNullException.ThrowIfNull(ordered);
 
-		var position = ordered.Select((question, index) => (question.Id, index)).ToDictionary(pair => pair.Id, pair => pair.index);
+		var index = ordered.Select((question, at) => (question.Id, at)).ToDictionary(pair => pair.Id, pair => pair.at);
+
+		// A grouped question is asked on its group's page, wherever the group is.
+		(int Page, int Within) Position(Question question)
+		{
+			return question.GroupedUnderQuestionId is { } groupId && index.TryGetValue(groupId, out var groupAt)
+				? (groupAt, index[question.Id])
+				: (index[question.Id], int.MinValue);
+		}
 
 		foreach (var child in ordered)
 		{
 			if (child.ChoicesDependOnQuestionId is { } parentId
-				&& position.TryGetValue(parentId, out var parentAt)
-				&& parentAt >= position[child.Id])
+				&& index.TryGetValue(parentId, out var parentAt)
+				&& Position(ordered[parentAt]).CompareTo(Position(child)) >= 0)
 			{
 				var parent = ordered[parentAt];
 				throw new DomainRuleViolationException(

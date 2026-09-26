@@ -1390,6 +1390,7 @@ Scenario: A reviewer changes a dependent type-ahead value's link, never clears i
   And clearing its link is refused
   And linking it to a choice of any question other than "Make" is refused
   And merging "Zeno 2" into a "Model" value linked to another "Make" choice is refused
+  And relinking a "Model" value that was merged into another is refused
 
 @REQ-QB-195
 @ui
@@ -1461,13 +1462,53 @@ Scenario: A dependent child that cannot be answered yet does not hold the report
   Given a required "Model" question's choices depend on an optional "Make" question
   When a reporter leaves "Make" unanswered and presses Next
   Then the form moves on, because "Model" cannot be answered until "Make" is
+  When they consent and send the report
+  Then the report is sent with no answer to "Model"
+
+@REQ-QB-204
+@ui
+Scenario: A picker child with nothing under the parent's answer says so and does not hold the reporter back
+  Given a required single-select "Model" question's choices depend on the single-select "Make" question, and nothing is offered under "Gin"
+  When a reporter answers "Make" with "Gin"
+  Then "Model" is disabled, and says no choice is listed for that answer
+  And pressing Next moves on
+
+@REQ-QB-205
+@ui
+Scenario: The manage-questions page shows why a question cannot move above its parent
+  Given a signed-in Administrator opens the manage-questions page
+  When they move a question whose choices depend on the question above it up, and the API refuses the new order
+  Then the page shows the refusal, naming both questions
+  And the list keeps its order
+
+@REQ-QB-206
+Scenario: The parent comes before the child wherever grouping places them
+  Given a group question comes before the "Make" question on the form
+  When an Administrator makes a question grouped under that group depend on "Make"
+  Then the dependency is refused, naming both questions
+  Given the "Model" question's choices depend on the "Make" question, which comes before it
+  When an Administrator groups "Make" under a group question placed after "Model"
+  Then the change is refused, naming both questions
+
+@REQ-QB-207
+Scenario: A parent merge that would offer one wording twice under one parent choice is refused
+  Given the "Model" question's choices depend on a type-ahead "Make" question
+  And "Model" offers "Other" under "Nivuik" and "Other" under "Niviuk"
+  When a Safety Officer tries to merge the parent value "Nivuik" into "Niviuk"
+  Then the merge is refused, naming "Model" and "Other"
+  And "Nivuik" is still offered
 
 @REQ-QB-203
-Scenario: A parent the form does not ask filters nothing
+Scenario Outline: A parent the form does not ask filters nothing
   Given the "Model" question's choices depend on the "Make" question
-  When an Administrator deactivates "Make"
+  When an Administrator <removes> "Make"
   Then the report form names no parent for "Model" and offers every "Model" choice
   And a report answering "Model" with any of its choices, and not answering "Make", is accepted
+
+Examples:
+  | removes     |
+  | deactivates |
+  | deletes     |
 
 @REQ-QB-202
 @ui

@@ -524,6 +524,17 @@ Examples:
   | make                   |
   | answered with "Ozone"  |
   | left unanswered        |
+
+@REQ-SUB-114
+Scenario Outline: A required dependent question that cannot be answered yet does not block a submission
+  Given a required single-select "Model" question's choices depend on the "Make" question, and nothing is offered under "Gin"
+  When a reporter submits a report <make>, with "Model" sent with no choice
+  Then the API accepts the report and records no answer to "Model"
+
+Examples:
+  | make                          |
+  | leaving "Make" unanswered     |
+  | answering "Make" with "Gin"   |
 @REQ-SUB-080
 Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead

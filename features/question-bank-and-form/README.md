@@ -122,8 +122,10 @@ dependency decides which of its choices are offered, and a question may be
 both.
 
 - **Shape.** One level only: a child is nobody's parent, and a parent depends
-  on nothing. The parent comes before the child on the form, on every save and
-  every reorder (`REQ-QB-180`, `REQ-QB-181`).
+  on nothing. The parent is asked before the child, on every save and every
+  reorder, judged by where each is asked: a grouped question on its group's
+  page (`REQ-QB-180`, `REQ-QB-181`, `REQ-QB-206`). The manage page shows a
+  refused reorder (`REQ-QB-205`).
 - **Links sit outside revisions.** The dependency is on the question and each
   link on its choice, so setting, changing, or clearing either never revises or
   forks a question (`REQ-QB-184`). A model sold under two makes is entered
@@ -138,13 +140,17 @@ both.
   type-ahead parent value, and a forked parent question each pass their links
   on at once, without revising the child (`REQ-QB-187`–`REQ-QB-190`). A parent
   choice any live child choice is offered under cannot be removed; it is
-  replaced or merged instead (`REQ-QB-186`).
+  replaced or merged instead (`REQ-QB-186`). A parent merge that would offer
+  one wording twice under one parent choice is refused (`REQ-QB-207`).
 - **The form.** The child is disabled until the parent is answered, then offers
   only the choices under that answer. Changing the parent clears a child
   answer naming a choice no longer offered; words typed that name no choice
   stay (`REQ-QB-197`, `REQ-QB-198`). A disabled child never holds the reporter
   back, even when required; nor does a single-select child with nothing under
-  the parent's answer, which says so (`REQ-QB-201`). A parent answered with a
+  the parent's answer, which says so. The form leaves such a child out of the
+  submission, and the API records nothing for it (`REQ-QB-201`, `REQ-QB-204`,
+  `REQ-SUB-114`). A polite live region tells a screen reader when the parent's
+  answer opens the child. A parent answered with a
   new typed value leaves a type-ahead child nothing to pick and a value to type
   (`REQ-QB-199`). A saved report restores both answers, dropping a child answer
   no longer under the parent's (`REQ-QB-200`).
@@ -156,7 +162,8 @@ both.
   offered under it, even when the parent's answer is itself a new value
   (`REQ-QB-192`, `REQ-QB-193`). A Safety Officer or an Administrator changes a
   value's link on the type-ahead review page, never clears it, and merges only
-  values under the same parent choice (`REQ-QB-194`, `REQ-QB-202`).
+  values under the same parent choice. A merged value is not relinked: it
+  reads as its target (`REQ-QB-194`, `REQ-QB-202`).
 - **The API.** A submission naming a child choice not offered under the
   parent's answer, or answering the child while the parent is unanswered, is
   refused by question key before anything is written (`REQ-SUB-113`). An

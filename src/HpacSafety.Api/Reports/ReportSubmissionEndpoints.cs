@@ -354,14 +354,25 @@ public static partial class ReportSubmissionEndpoints
 
 		TinyId? parentChoiceId = null;
 
-		if ((typed || choiceIds.Count > 0)
-			&& FilteringParent(question, revisionLookup) is { } parent)
+		if (FilteringParent(question, revisionLookup) is { } parent)
 		{
 			// The form offers a child's choices only under the parent's answer, and
 			// only once the parent is answered; the API holds a submission to the
 			// same, whatever the form did (ADR-0146). The refusal names the
 			// questions by key, never an answer.
 			parentChoiceId = report.Answers.FirstOrDefault(answer => answer.QuestionId == parent.Id)?.ChoiceId;
+
+			// A child that cannot be answered yet — its parent unanswered, or a
+			// picker with nothing under the parent's answer — was never asked, so a
+			// skip records nothing, even when it is required (ADR-0146).
+			if (!typed
+				&& choiceIds.Count == 0
+				&& (parentChoiceId is null
+					|| (!revision.TakesReporterAdditions
+						&& !question.Choices.Any(choice => choice.ParentChoiceId == parentChoiceId))))
+			{
+				return null;
+			}
 
 			if (parentChoiceId is null)
 			{

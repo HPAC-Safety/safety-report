@@ -36,6 +36,12 @@ export interface QuestionFieldProps {
 	disabled?: boolean
 	/** Why it cannot be answered, or that its parent's answer leaves nothing to pick; null when there is nothing to say. */
 	note?: string | null
+	/**
+	 * For a question whose choices depend on another's: what a screen reader is
+	 * told, politely, when the parent's answer changes what it offers. Undefined
+	 * for any other question (ADR-0146).
+	 */
+	announcement?: string
 }
 
 /** One answerable question, in whichever shape its type needs. Not used for `statement`/`group`, which collect no answer. */
@@ -52,6 +58,7 @@ export function QuestionField({
 	t,
 	disabled = false,
 	note = null,
+	announcement,
 }: QuestionFieldProps) {
 	const fieldId = `question-${question.revisionId}`
 	const errorId = `${fieldId}-error`
@@ -75,11 +82,22 @@ export function QuestionField({
 		</p>
 	) : null
 
-	const noteNode = note ? (
-		<p id={noteId} data-testid="question-note" className="mt-1 font-sans text-sm text-ink-muted">
-			{note}
-		</p>
-	) : null
+	// The live region is in the page before its text changes, so the change is
+	// announced when the parent is answered and the field opens.
+	const noteNode = (
+		<>
+			{note ? (
+				<p id={noteId} data-testid="question-note" className="mt-1 font-sans text-sm text-ink-muted">
+					{note}
+				</p>
+			) : null}
+			{announcement !== undefined && (
+				<p role="status" className="sr-only" data-testid="question-announcement">
+					{announcement}
+				</p>
+			)}
+		</>
+	)
 
 	const helpNode = help ? (
 		<p id={helpId} className="mt-1 font-sans text-xs text-ink-muted">

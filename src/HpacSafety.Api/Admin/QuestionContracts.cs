@@ -84,7 +84,6 @@ public sealed record QuestionView(
 				? choiceParentId
 				: (TinyId?)null)?.Value,
 			revision.LabelEn,
-
 			revision.LabelFr,
 			revision.HelpTextEn,
 			revision.HelpTextFr,

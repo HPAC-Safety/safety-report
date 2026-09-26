@@ -241,7 +241,7 @@ const MODELS = [
 ]
 
 /** One page asking the make and the model together, then publication consent. */
-function wingForm(makeType: string, modelType: string, { modelRequired = false } = {}): StubQuestion[] {
+function wingForm(makeType: string, modelType: string, { modelRequired = false, makes = ["Niviuk", "Ozone"] } = {}): StubQuestion[] {
 	return [
 		formQuestion({
 			id: "wing",
@@ -249,7 +249,7 @@ function wingForm(makeType: string, modelType: string, { modelRequired = false }
 			type: "group",
 			displayOrder: 0,
 			children: [
-				formQuestion({ id: "make", labelEn: "Make", type: makeType, displayOrder: 1, options: [formChoice("niviuk", "Niviuk"), formChoice("ozone", "Ozone")] }),
+				formQuestion({ id: "make", labelEn: "Make", type: makeType, displayOrder: 1, options: makes.map((make) => formChoice(make.toLowerCase(), make)) }),
 				{
 					...formQuestion({ id: "model", labelEn: "Model", type: modelType, displayOrder: 2, options: MODELS, isRequired: modelRequired }),
 					choicesDependOnQuestionId: "make",
@@ -264,7 +264,8 @@ const forms = new WeakMap<Page, StubQuestion[]>()
 
 function modelField(page: Page) {
 	const type = forms.get(page)?.[0]?.children[1]?.type
-	return type === "autocomplete" ? page.getByRole("combobox", { name: "Model" }) : page.getByLabel("Model", { exact: true })
+	// By its id: a required question's label also carries the Required badge.
+	return type === "autocomplete" ? page.getByRole("combobox", { name: "Model" }) : page.locator("#question-rev-model")
 }
 
 async function modelOffers(page: Page): Promise<string[]> {
@@ -304,9 +305,19 @@ Given(
 	},
 )
 
-Given("{string} offers {string} and {string} linked to {string}, and {string} linked to {string}", async ({}, _child: string, _first: string, _second: string, _niviuk: string, _third: string, _ozone: string) => {
-	// The form above already offers exactly these, linked this way.
-})
+Given(
+	"{string} offers {string} and {string} linked to {string}, and {string} linked to {string}",
+	async ({ page }, _child: string, first: string, second: string, parent: string, third: string, otherParent: string) => {
+		const make = forms.get(page)![0]!.children[0]!
+		const idOf = (label: string) => make.options.find((option) => option.labelEn === label)!.id
+		const model = forms.get(page)![0]!.children[1]!
+		model.options = [
+			formChoice(`${idOf(parent)}-${first}`, first, idOf(parent)),
+			formChoice(`${idOf(parent)}-${second}`, second, idOf(parent)),
+			formChoice(`${idOf(otherParent)}-${third}`, third, idOf(otherParent)),
+		]
+	},
+)
 
 When("a reporter using {word} opens the page asking both", async ({ page }, language: string) => {
 	await openForm(page, forms.get(page)!, language)
@@ -515,4 +526,73 @@ When("they link it to {string}", async ({ page }, parentChoice: string) => {
 Then("the page sends the new link", async ({ page }) => {
 	await expect.poll(() => relinks.get(page)?.length ?? 0).toBe(1)
 	expect(relinks.get(page)![0]).toEqual({ id: "value-zeno", body: { parentChoiceId: "niviuk" } })
+})
+
+// ---- A child that cannot be answered yet, at submission (REQ-QB-201) ----
+
+When("they consent and send the report", async ({ page }) => {
+	await page.getByRole("radio", { name: "Yes" }).click()
+	const request = page.waitForRequest((candidate) => candidate.url().includes("/api/v1/reports/") && candidate.method() === "POST")
+	await page.getByRole("button", { name: "Submit report" }).click()
+	sent.set(page, await request)
+})
+
+Then("the report is sent with no answer to {string}", async ({ page }, _child: string) => {
+	const body = sent.get(page)!.postDataJSON() as { answers: { questionRevisionId: string }[] }
+	expect(body.answers.map((answer) => answer.questionRevisionId)).not.toContain("rev-model")
+	expect(body.answers.map((answer) => answer.questionRevisionId)).toContain("rev-consent")
+})
+
+// ---- A picker child with nothing under the parent's answer (REQ-QB-204) ----
+
+Given(
+	"a required single-select {string} question's choices depend on the single-select {string} question, and nothing is offered under {string}",
+	async ({ page }, _child: string, _parent: string, empty: string) => {
+		await openForm(page, wingForm("single_select", "single_select", { modelRequired: true, makes: ["Niviuk", "Ozone", empty] }))
+	},
+)
+
+When("a reporter answers {string} with {string}", async ({ page }, _parent: string, make: string) => {
+	await answerMake(page, make)
+})
+
+Then("{string} is disabled, and says no choice is listed for that answer", async ({ page }, _child: string) => {
+	await expect(modelField(page)).toBeDisabled()
+	await expect(page.getByTestId("question-note")).toContainText("No choice is listed for your answer to")
+})
+
+Then("pressing Next moves on", async ({ page }) => {
+	await page.getByRole("button", { name: "Next" }).click()
+	await expect(page.getByRole("radio", { name: "Yes" })).toBeVisible()
+})
+
+// ---- A reorder the API refuses (REQ-QB-205) ----
+
+When("they move a question whose choices depend on the question above it up, and the API refuses the new order", async ({ page }) => {
+	await stubQuestionBank(page, [
+		adminQuestion("make", "Make", "single_select", 0, MAKE),
+		adminQuestion("model", "Model", "autocomplete", 1, [adminChoice("mentor_7", "Mentor 7", "niviuk")], "make"),
+	])
+	await page.route("**/api/admin/questions/order", (route) =>
+		route.fulfill({
+			status: 400,
+			contentType: "application/problem+json",
+			body: JSON.stringify({
+				title: "That change is not allowed.",
+				detail: "'Make' must come before 'Model' on the form, because the choices of 'Model' depend on it.",
+			}),
+		}),
+	)
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+	await rows.nth(1).getByRole("button", { name: "Move up" }).click()
+})
+
+Then("the page shows the refusal, naming both questions", async ({ page }) => {
+	await expect(page.getByRole("alert")).toContainText("'Make' must come before 'Model'")
+})
+
+Then("the list keeps its order", async ({ page }) => {
+	const rows = page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem")
+	await expect(rows.nth(0)).toContainText("Make")
+	await expect(rows.nth(1)).toContainText("Model")
 })

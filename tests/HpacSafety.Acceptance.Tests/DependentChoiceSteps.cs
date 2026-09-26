@@ -195,6 +195,7 @@ public sealed class DependentChoiceSteps
 
 	[Then(@"the dependency is refused, naming both questions")]
 	[Then(@"the new order is refused, naming both questions")]
+	[Then(@"the change is refused, naming both questions")]
 	public async Task ThenRefusedNamingBoth()
 	{
 		var detail = await Refused();
@@ -752,6 +753,130 @@ public sealed class DependentChoiceSteps
 		(await Refused()).ShouldContain("different choices of the parent question");
 	}
 
+	[Then(@"relinking a {string} value that was merged into another is refused")]
+	public async Task ThenRelinkingAMergedValueIsRefused(string child)
+	{
+		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var model = await View(child);
+		var merged = await _officer.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{ChoiceId(model, "Ikuma")}/merge", UriKind.Relative),
+			new { intoId = ChoiceId(model, "Mentor 7") });
+		merged.StatusCode.ShouldBe(HttpStatusCode.NoContent, await merged.Content.ReadAsStringAsync());
+
+		_response = await _officer.PutAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{ChoiceId(model, "Ikuma")}/parent", UriKind.Relative),
+			new { parentChoiceId = ChoiceId(await View("Make"), "Ozone") });
+		(await Refused()).ShouldContain("merged");
+	}
+
+	// ---- REQ-QB-206: grouping and form order ----
+
+	[Given(@"a group question comes before the {string} question on the form")]
+	public async Task GivenAGroupBeforeTheParent(string parent)
+	{
+		await Create("Section", "group", []);
+		await Create(parent, "single_select", [("Niviuk", null), ("Ozone", null)]);
+	}
+
+	[When(@"an Administrator makes a question grouped under that group depend on {string}")]
+	public async Task WhenAGroupedQuestionDependsOnALaterParent(string parent)
+	{
+		var request = Request("Model", "autocomplete", [Option("Mentor 7", ChoiceId(await View(parent), "Niviuk"))], _ids[parent]);
+		request["groupedUnderQuestionId"] = _ids["Section"];
+		_response = await Post(request);
+	}
+
+	[When(@"an Administrator groups {string} under a group question placed after {string}")]
+	public async Task WhenTheParentIsGroupedAfterTheChild(string parent,
+														  string _)
+	{
+		await Create("Later", "group", []);
+		var make = await View(parent);
+		var request = RequestFrom(make, options: Options(make));
+		request["groupedUnderQuestionId"] = _ids["Later"];
+		_response = await Put(parent, request);
+	}
+
+	// ---- REQ-QB-207: a parent merge that would duplicate a child's wording ----
+
+	[Given(@"{string} offers {string} under {string} and {string} under {string}")]
+	public async Task GivenTheSameWordingUnderTwoParentValues(string child,
+															  string first,
+															  string firstParent,
+															  string second,
+															  string secondParent)
+	{
+		await WhenAddingTwoOthers(first, firstParent, second, secondParent);
+		_response = null;
+		await Remember("Make", child);
+	}
+
+	[When(@"a Safety Officer tries to merge the parent value {string} into {string}")]
+	public async Task WhenASafetyOfficerTriesToMergeTheParentValue(string source,
+																   string target)
+	{
+		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var make = await View("Make");
+		_response = await _officer.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{ChoiceId(make, source)}/merge", UriKind.Relative),
+			new { intoId = ChoiceId(make, target) });
+	}
+
+	[Then(@"the merge is refused, naming {string} and {string}")]
+	public async Task ThenTheMergeIsRefused(string child,
+										   string wording)
+	{
+		var detail = await Refused();
+		detail.ShouldContain(Label(child));
+		detail.ShouldContain(wording);
+	}
+
+	// ---- REQ-SUB-114: a required child that cannot be answered yet ----
+
+	[Given(@"a required single-select {string} question's choices depend on the {string} question, and nothing is offered under {string}")]
+	public async Task GivenARequiredPickerChild(string child,
+												string parent,
+												string empty)
+	{
+		await Create(parent, "single_select", [("Niviuk", null), ("Ozone", null), (empty, null)]);
+		var make = await View(parent);
+		var request = Request(child, "single_select",
+			[Option("Mentor 7", ChoiceId(make, "Niviuk")), Option("Rush 6", ChoiceId(make, "Ozone"))], _ids[parent]);
+		request["isRequired"] = true;
+		var created = await Post(request);
+		created.StatusCode.ShouldBe(HttpStatusCode.Created, await created.Content.ReadAsStringAsync());
+		_ids[child] = (await created.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetString()!;
+		_childName = child;
+	}
+
+	[When(@"a reporter submits a report leaving {string} unanswered, with {string} sent with no choice")]
+	public async Task WhenTheRequiredChildIsSentEmptyWithoutParent(string _,
+																   string child)
+	{
+		_response = await SubmitRaw((child, new { value = (string?)null, choices = Array.Empty<string>() }));
+	}
+
+	[When(@"a reporter submits a report answering {string} with {string}, with {string} sent with no choice")]
+	public async Task WhenTheRequiredChildIsSentEmptyUnderAnEmptyParentChoice(string parent,
+																			  string parentChoice,
+																			  string child)
+	{
+		_response = await SubmitRaw(
+			Picked(parent, ChoiceId(await View(parent), parentChoice)),
+			(child, new { value = (string?)null, choices = Array.Empty<string>() }));
+	}
+
+	[Then(@"the API accepts the report and records no answer to {string}")]
+	public async Task ThenAcceptedWithoutTheChild(string child)
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var id = TinyId.Parse(_ids[child]);
+		(await database.ReportAnswers.IgnoreQueryFilters().CountAsync(answer => answer.QuestionId == id)).ShouldBe(0);
+	}
+
 	// ---- REQ-QB-203: a parent off the form ----
 
 	[When(@"an Administrator deactivates {string}")]
@@ -778,6 +903,14 @@ public sealed class DependentChoiceSteps
 													   string _)
 	{
 		(await SubmitAnswers((child, ChoiceId(await View(child), "Rush 6")))).StatusCode.ShouldBe(HttpStatusCode.Accepted);
+	}
+
+	[When(@"an Administrator deletes {string}")]
+	public async Task WhenTheParentIsDeleted(string parent)
+	{
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		_response = await _admin.DeleteAsync(new Uri($"/api/admin/questions/{_ids[parent]}", UriKind.Relative));
+		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await _response.Content.ReadAsStringAsync());
 	}
 
 	// ---- REQ-SUB-113: the API holds a submission to the links ----

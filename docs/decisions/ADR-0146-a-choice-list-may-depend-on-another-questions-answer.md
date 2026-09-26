@@ -58,11 +58,14 @@ shown, and there is one model question, not one per make.
 - The form offers only the child choices under the parent's answer. The child
   is disabled until the parent is answered. A disabled child never blocks Next
   or Submit, even when it is required, and neither does a single-select child
-  with nothing under the parent's answer.
+  with nothing under the parent's answer. The form leaves such a child out of
+  the submission, and the API records nothing for it.
 - **One level only.** A child is nobody's parent, and a parent depends on
   nothing. Multi-select takes no part on either side.
-- **The parent comes first** on the form. This is checked when the dependency
-  is saved and on every reorder.
+- **The parent comes first** on the form. This is judged by where each
+  question is asked, so a grouped question counts at its group's page. It is
+  checked when the dependency is saved, when either question's grouping
+  changes, and on every reorder.
 - A question may be both conditional and dependent. The two are independent.
 
 ### Outside revisions
@@ -97,6 +100,10 @@ every reader the resolution (the form, the submission check, the editor, the
 review page, and the removal check). It also keeps the database's references
 naming live rows.
 
+A parent merge that would put one wording twice under one parent choice is
+refused. The reviewer merges or removes one of the pair first, as the form
+could not tell them apart.
+
 A parent choice that a live child choice is offered under cannot be removed.
 It is replaced (picker) or merged (type-ahead) instead, as ADR-0095 holds for
 the required choice of a condition.
@@ -112,7 +119,8 @@ no link until a reviewer gives it one.
 A Safety Officer or an Administrator may change a value's link on the
 type-ahead review page, but never clear it. Merging two values under different
 parent choices is refused: answers naming a Niviuk model would otherwise read
-an Ozone one. The reviewer changes the link first.
+an Ozone one. The reviewer changes the link first. A merged value is not
+relinked, because it reads as its target. A removed one may be.
 
 ### Answers and the submission
 

@@ -565,4 +565,142 @@ public class ChoiceDependencyTests
 		// Then
 		typo.MergedIntoChoiceId.ShouldBe(model.Choice("rush_6")!.Id);
 	}
+
+	private static Question Group(string key,
+								  int displayOrder)
+	{
+		return Question.Create(key, QuestionType.Group, key, key, At, isActive: true, isPrivate: false, displayOrder: displayOrder);
+	}
+
+	[Fact]
+	public void GivenChildGroupedUnderEarlierGroup_WhenDependencyChecked_ThenRefusedAsAskedFirst()
+	{
+		// Given — the group's page comes before the make, whatever the child's own order
+		var section = Group("section", 0);
+		var make = Make(displayOrder: 1);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() =>
+				ChoiceDependencies.EnsureDependencyAllowed([section, make], null, "Model", QuestionType.Autocomplete, 9, make.Id, section.Id))
+			.Message.ShouldContain("'Make' must come before 'Model'");
+	}
+
+	[Fact]
+	public void GivenChildGroupedUnderLaterGroup_WhenDependencyChecked_ThenAllowed()
+	{
+		// Given
+		var make = Make(displayOrder: 1);
+		var section = Group("section", 2);
+
+		// When / Then
+		Should.NotThrow(() =>
+			ChoiceDependencies.EnsureDependencyAllowed([section, make], null, "Model", QuestionType.Autocomplete, 0, make.Id, section.Id));
+	}
+
+	[Fact]
+	public void GivenParentGroupedAfterItsChild_WhenSaved_ThenRefusedNamingBoth()
+	{
+		// Given
+		var make = Make(displayOrder: 0);
+		var model = Model(make, displayOrder: 1);
+		var later = Group("later", 2);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureDependentsFollow([make, model, later], make, later.Id))
+			.Message.ShouldContain("'Make' must come before 'Model'");
+		Should.NotThrow(() => ChoiceDependencies.EnsureDependentsFollow([make, model, later], make, null));
+	}
+
+	[Fact]
+	public void GivenOrderPuttingParentsGroupAfterChild_WhenChecked_ThenRefused()
+	{
+		// Given — the make renders on a group's page that now comes after the model
+		var later = Group("later", 5);
+		var make = Question.Create(
+			"make", QuestionType.SingleSelect, "Make", "Marque", At, isActive: true, displayOrder: 0, groupedUnderQuestionId: later.Id,
+			options: [new QuestionOptionInput("niviuk", "Niviuk", "Niviuk"), new QuestionOptionInput("ozone", "Ozone", "Ozone")]);
+		var model = Model(make);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureOrder([make, model, later]));
+		Should.NotThrow(() => ChoiceDependencies.EnsureOrder([later, make, model]));
+	}
+
+	[Fact]
+	public void GivenSameWordingUnderBothParentValues_WhenParentMergeChecked_ThenRefusedNamingIt()
+	{
+		// Given
+		var make = Make(QuestionType.Autocomplete);
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		model.ReplaceChoices(
+			[
+				.. Kept(model),
+				new QuestionOptionInput("other", "Other", "Autre", ParentChoiceId: niviuk),
+				new QuestionOptionInput("other_2", "Other", "Autre", ParentChoiceId: ozone),
+			], At);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureMergeKeepsChildrenApart([make, model], make, niviuk, ozone))
+			.Message.ShouldContain("'Other'");
+	}
+
+	[Fact]
+	public void GivenDistinctWordingUnderBothParentValues_WhenParentMergeChecked_ThenAllowed()
+	{
+		// Given
+		var make = Make(QuestionType.Autocomplete);
+		var model = Model(make);
+
+		// When / Then
+		Should.NotThrow(() => ChoiceDependencies.EnsureMergeKeepsChildrenApart(
+			[make, model], make, make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id));
+	}
+
+	[Fact]
+	public void GivenMergedValue_WhenRelinked_ThenRefused()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+		var niviuk = make.Choice("niviuk")!.Id;
+		var typo = model.AddChoiceFromReporter("Mentor7", Locale.EnCa, At, niviuk);
+		model.MergeValue(typo.Id, model.Choice("mentor_7")!.Id, Reviewer, At);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => model.RelinkValue(typo.Id, make.Choice("ozone")!.Id, Reviewer, At))
+			.Message.ShouldContain("merged");
+	}
+
+	[Fact]
+	public void GivenOtherValueUnlinked_WhenOneValueRelinkChecked_ThenOnlyThatValueIsJudged()
+	{
+		// Given — a value typed while the make was off the form has no link yet
+		var make = Make();
+		var model = Model(make);
+		model.AddChoiceFromReporter("Zeno 2", Locale.EnCa, At);
+		var rush = model.Choice("rush_6")!;
+		model.RelinkValue(rush.Id, make.Choice("niviuk")!.Id, Reviewer, At);
+
+		// When / Then
+		Should.NotThrow(() => ChoiceDependencies.EnsureLinkAllowed([make, model], model, rush.Id));
+	}
+
+	[Fact]
+	public void GivenValueLinkedToAnotherQuestion_WhenRelinkChecked_ThenRefused()
+	{
+		// Given
+		var make = Make();
+		var elsewhere = Question.Create(
+			"elsewhere", QuestionType.SingleSelect, "Elsewhere", "Ailleurs", At, isActive: true,
+			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
+		var model = Model(make);
+		var rush = model.Choice("rush_6")!;
+		model.RelinkValue(rush.Id, elsewhere.Choice("gin")!.Id, Reviewer, At);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinkAllowed([make, elsewhere, model], model, rush.Id));
+		make.Delete(false, At);
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinkAllowed([make, model], model, rush.Id));
+	}
 }

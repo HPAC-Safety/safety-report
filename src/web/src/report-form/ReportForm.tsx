@@ -29,6 +29,7 @@ import {
 	answerProblem,
 	blockingQuestions,
 	buildSteps,
+	cannotBeAnswered,
 	choiceScope,
 	collectsNoAnswer,
 	consistentAnswers,
@@ -358,6 +359,8 @@ export function ReportForm() {
 
 			for (const question of questions) {
 				if (collectsNoAnswer(question)) continue
+				// A question that cannot be answered yet was never asked (ADR-0146).
+				if (cannotBeAnswered(question, answers, questionsById)) continue
 
 				const answer = answers[question.revisionId]
 
@@ -658,15 +661,18 @@ function StepContent({
 
 		const parent = questionLabel(scope.parent, locale)
 		if (scope.kind === "waiting") {
-			return { question: { ...question, options: [] }, disabled: true, note: t("report.dependent.answerFirst", { question: parent }) }
+			const note = t("report.dependent.answerFirst", { question: parent })
+			return { question: { ...question, options: [] }, disabled: true, note, announcement: "" }
 		}
 
 		const picker = question.type !== "autocomplete"
 		const empty = scope.options.length === 0
+		const note = empty ? t(picker ? "report.dependent.nothingUnder" : "report.dependent.typeOne", { question: parent }) : null
 		return {
 			question: { ...question, options: scope.options },
 			disabled: picker && empty,
-			note: empty ? t(picker ? "report.dependent.nothingUnder" : "report.dependent.typeOne", { question: parent }) : null,
+			note,
+			announcement: note ?? t("report.dependent.ready", { question: questionLabel(question, locale), parent }),
 		}
 	}
 

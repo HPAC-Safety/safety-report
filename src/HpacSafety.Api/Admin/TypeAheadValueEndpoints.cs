@@ -162,6 +162,8 @@ public static class TypeAheadValueEndpoints
 		return Review(id, database, clock, context, AuditAction.MergedTypeAheadValue,
 			(question, choiceId, reviewer, at, bank) =>
 			{
+				// Values offered under both would be offered twice under one (ADR-0146).
+				ChoiceDependencies.EnsureMergeKeepsChildrenApart(bank, question, choiceId, targetId);
 				question.MergeValue(choiceId, targetId, reviewer, at);
 
 				// Values offered under the merged one are offered under its target
@@ -210,7 +212,7 @@ public static class TypeAheadValueEndpoints
 			(question, choiceId, reviewer, at, bank) =>
 			{
 				question.RelinkValue(choiceId, parentChoiceId, reviewer, at);
-				ChoiceDependencies.EnsureLinksAllowed(bank, question);
+				ChoiceDependencies.EnsureLinkAllowed(bank, question, choiceId);
 			}, cancellationToken);
 	}
 

@@ -64,8 +64,9 @@ flowchart LR
     web --> idp[Identity provider]
     idp -->|signed token| web
     web -->|bearer token| api[ASP.NET Core API]
+    web -->|each attachment: pre-signed PUT| media[(Private attachment storage)]
     api --> db[(PostgreSQL)]
-    api --> media[(Private attachment storage)]
+    api --> media
     api -->|nudge after commit| worker[.NET Worker]
     sweep[EventBridge sweep] --> worker
     worker --> llm[LLM]
@@ -113,10 +114,12 @@ sequenceDiagram
     B->>A: GET current question revisions
     A-->>B: Ordered bilingual form DTO
     B->>B: Keep unfinished answers locally for up to 15 days
-    B->>A: POST each attachment as it is attached
-    A->>S: Validate, then write to quarantine
-    A-->>B: Opaque upload ID
+    B->>A: POST an upload as each file is attached (declared type and exact size)
+    A-->>B: Opaque upload ID + pre-signed PUT for one key, type, and exact size, at most 15 min
+    B->>S: PUT the file's bytes straight to quarantine
     B->>A: POST report DTO naming upload IDs
+    A->>S: Read each upload's size and leading bytes
+    A->>A: Sniff, match the declared type, check size against the kind's cap
     A->>S: Claim uploads into the report's compartments
     A->>D: Report + answers + files + outbox (one transaction)
     A-->>B: 202 Accepted
@@ -152,8 +155,7 @@ implementation that adds one has exceeded its scope.
 scenario can assert what the system does, not enumerate what it never grew.*
 
 - General-purpose form branching, surveys, scoring, or form templates
-- Server-side drafts, a resumable or chunked upload protocol, or a pre-signed
-  upload URL handed to a reporter
+- Server-side drafts, or a resumable or chunked upload protocol
 - Direct messages, email notifications, WhatsApp, Telegram, or social posting
 - Public raw reports, questions, answers, attachment originals, or audit
   history. A published report's verified image and video derivatives, and its

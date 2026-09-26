@@ -30,7 +30,7 @@ migrations at startup, and does no AI work.
 | [`PublicQuestions/`](../src/HpacSafety.Api/PublicQuestions/) | `GET /api/v1/questions`: the anonymous current form. |
 | [`PublicReports/`](../src/HpacSafety.Api/PublicReports/) | The public feed, a report's page, its media links (ADR-0117, ADR-0119), and member comments (ADR-0114). |
 | [`RateLimiting/`](../src/HpacSafety.Api/RateLimiting/) | Per-IP policies for submission and sign-in (ADR-0081). |
-| [`Reports/`](../src/HpacSafety.Api/Reports/) | `POST /api/v1/uploads` into quarantine and the JSON report submission that claims them (ADR-0096, ADR-0098). |
+| [`Reports/`](../src/HpacSafety.Api/Reports/) | `POST /api/v1/uploads`, which mints a pre-signed PUT to quarantine, and the JSON report submission that validates and claims each upload (ADR-0096, ADR-0098, ADR-0126). |
 
 ## HpacSafety.Core — domain rules and small ports
 

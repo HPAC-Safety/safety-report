@@ -71,6 +71,9 @@
             "context": "linked-issue"
           },
           {
+            "context": "screenshots"
+          },
+          {
             "context": "infra"
           },
           {

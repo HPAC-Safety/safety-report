@@ -125,6 +125,25 @@ names and step numbers.
    - URL:
      `https://raw.githubusercontent.com/HPAC-Safety/safety-report/<sha>/docs/screenshots/<dir>/<file>.png`
      ([lesson 0017](../../docs/lessons/0017-a-screenshot-linked-by-a-page-url-renders-broken.md)).
+   - OS-level capture on macOS: `screencapture -l <windowid>` against a headed
+     browser, for a native `<datalist>`, `<select>` popup, or date input.
+   - The body's `## Screenshots` section in
+     `.github/pull_request_template.md` holds the links, or the line
+     `No screenshot needed: <reason>` for a `src/web` change with nothing
+     visible.
+   - The `screenshots` job in `linked-issue.yml` runs
+     `tools/pr-screenshots.mjs`: it fails a change to a `.tsx` or `.css` under
+     `src/web/src/` (not a test) whose body has neither a pinned
+     `raw.githubusercontent.com/…/docs/screenshots/…` image nor that line. It
+     does not judge whether the pair is complete; review does
+     ([ADR-0142](../../docs/decisions/ADR-0142-a-web-ui-pull-request-shows-its-screenshots.md),
+     [lesson 0023](../../docs/lessons/0023-a-rule-the-template-never-asks-for.md)).
+     Run it locally — a bare run checks nothing:
+
+     ```sh
+     CHANGED_FILES="$(git diff --name-only origin/main...HEAD)" \
+     PR_BODY="$(cat pr-body.md)" node tools/pr-screenshots.mjs
+     ```
 7. `./dev-up.sh` from the worktree. It takes the dev ports from any other
    checkout, starts containers detached, waits until the API and dev server
    answer, prints their URLs, and returns.

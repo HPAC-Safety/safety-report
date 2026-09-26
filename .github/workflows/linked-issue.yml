@@ -92,3 +92,29 @@ jobs:
         env:
           PR_BODY: ${{ github.event.pull_request.body }}
         run: node tools/agent-session-links.mjs
+
+  # A pull request that changes a rendered web file links its screenshots, or
+  # says why it has none (ADR-0142). The rule lives in the tool, which reads
+  # only the body and the changed-file list; it decides for itself whether the
+  # pull request touches a rendered file, so the job runs on every one.
+  screenshots:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: A rendered web change shows its screenshots
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          set -euo pipefail
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA"...HEAD)
+          export CHANGED_FILES
+          node tools/pr-screenshots.mjs

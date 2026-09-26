@@ -551,34 +551,34 @@
     "confirmHide": "Voulez-vous cacher ce commentaire à tout le monde?"
   },
   "privateNotes": {
-    "title": "#Private notes",
-    "explanation": "#Only safety officers and administrators see these notes. They are never published, summarized, or translated.",
-    "listLabel": "#Private notes on this report",
-    "loading": "#Loading private notes…",
-    "empty": "#No private notes yet.",
+    "title": "Notes personnelles",
+    "explanation": "Seuls les agents de sécurité et les administrateurs ont accès à ces notes. Elles ne sont jamais publiées, résumées ni traduites.",
+    "listLabel": "Notes personnelles concernant ce signalement",
+    "loading": "Chargement des notes privées…",
+    "empty": "Aucune note privée pour l'instant.",
     "error": {
-      "load": "#The private notes could not be loaded. Reload the page to try again.",
-      "save": "#That note could not be saved. Try again.",
-      "stale": "#Another reviewer edited this note. The latest text is shown; make your change again.",
-      "history": "#The history could not be loaded. Try again."
+      "load": "Les notes privées n'ont pas pu être chargées. Veuillez actualiser la page pour réessayer.",
+      "save": "Cette note n'a pas pu être enregistrée. Veuillez réessayer.",
+      "stale": "Un autre réviseur a modifié cette note. Le texte le plus récent s'affiche; veuillez effectuer à nouveau votre modification.",
+      "history": "L’historique n’a pas pu être chargé. Veuillez réessayer."
     },
     "author": {
-      "you": "#You"
+      "you": "Vous"
     },
-    "edited": "#Edited",
-    "newLabel": "#Add a private note",
-    "editLabel": "#Edit this note",
-    "length": "#{count} of {max} characters",
-    "add": "#Add note",
-    "save": "#Save",
-    "cancel": "#Cancel",
-    "edit": "#Edit",
-    "history": "#History",
-    "hideHistory": "#Hide history",
-    "historyLabel": "#Every version of this note",
-    "revision": "#Version {number} — {writer}, {at}",
-    "remove": "#Remove",
-    "keep": "#Keep",
-    "confirmRemove": "#Remove this note? It cannot be restored."
+    "edited": "Modifié",
+    "newLabel": "Ajouter une note privée",
+    "editLabel": "Modifier cette note",
+    "length": "{count} {max}s caractères",
+    "add": "Ajouter une note",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "edit": "Modifier",
+    "history": "Histoire",
+    "hideHistory": "Masquer l'historique",
+    "historyLabel": "Toutes les versions de cette note",
+    "revision": "Version {number} — {writer}, {at}",
+    "remove": "Supprimer",
+    "keep": "Conserver",
+    "confirmRemove": "Souhaitez-vous supprimer cette note? Elle ne pourra pas être récupérée."
   }
 }

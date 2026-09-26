@@ -133,17 +133,16 @@ export function isConditionMet(
 	const parentAnswer = answers[parent.revisionId]
 	if (!parentAnswer || parentAnswer.kind !== "value") return false
 
-	if (!question.dependsOnOptionCode) {
+	if (!question.dependsOnChoiceId) {
 		// Boolean parent (ADR-0060): the canonical token, never the localized word.
 		return parentAnswer.value === "yes"
 	}
 
-	// Single-select parent (ADR-0074): the answer names a choice (ADR-0128), so
-	// the condition compares choices, whatever language the form is in.
-	const requiredOption = parent.options.find((option) => option.code === question.dependsOnOptionCode)
-	if (!requiredOption) return false
-
-	return optionFor(parent, parentAnswer.value)?.id === requiredOption.id
+	// Single-select parent (ADR-0074): the answer names a choice, and the server
+	// names the required choice as it stands today — a replaced option's
+	// replacement (ADR-0128) — so the condition compares choices, whatever
+	// language the form is in.
+	return optionFor(parent, parentAnswer.value)?.id === question.dependsOnChoiceId
 }
 
 /** The steps currently on the path, in order, with a group's hidden children already filtered out for rendering. */

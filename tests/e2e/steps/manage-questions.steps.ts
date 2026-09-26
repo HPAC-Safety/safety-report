@@ -24,6 +24,7 @@ const savedBodies = new WeakMap<Page, { options: { code: string | null }[] }>()
  */
 
 interface StubOption {
+	id: string
 	code: string
 	labelEn: string | null
 	labelFr: string | null
@@ -34,7 +35,7 @@ interface StubOption {
 
 /** A choice an administrator wrote, complete in both languages. */
 function written(code: string, labelEn: string, labelFr: string): StubOption {
-	return { code, labelEn, labelFr, addedByReporter: false, needsTranslation: false, reporterLocale: null }
+	return { id: `choice-${code}`, code, labelEn, labelFr, addedByReporter: false, needsTranslation: false, reporterLocale: null }
 }
 
 interface StubQuestion {
@@ -50,7 +51,7 @@ interface StubQuestion {
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
-	dependsOnOptionCode: string | null
+	dependsOnChoiceId: string | null
 	labelEn: string
 	labelFr: string
 	helpTextEn: string | null
@@ -83,7 +84,7 @@ function question(
 		isActive: true,
 		displayOrder,
 		dependsOnQuestionId: null,
-		dependsOnOptionCode: null,
+		dependsOnChoiceId: null,
 		labelEn,
 		labelFr: `${labelEn} (fr)`,
 		helpTextEn: null,
@@ -126,6 +127,7 @@ async function stubAdminApi(page: Page) {
 		question("eeeeeeeeeee", "launch_site", "Where did you launch?", "autocomplete", 3, [
 			written("coopers", "Cooper's", "Cooper's"),
 			{
+				id: "choice-mount_7",
 				code: "mount_7",
 				labelEn: "mount 7",
 				labelFr: null,
@@ -758,4 +760,47 @@ Then("Auto-translate answer is offered and unchecked", async ({ page }) => {
 
 Then("Auto-translate answer is not offered", async ({ page }) => {
 	await expect(needsTranslation(page)).toHaveCount(0)
+})
+
+// ---------------------------------------- fix or replace a picker option (ADR-0128) --
+
+const replacedBodies = new WeakMap<Page, { options: { code: string | null; labelEn: string; replace?: boolean }[] }>()
+
+function questionRow(page: Page, label: string) {
+	return page.getByRole("list", { name: "Questions on the form" }).getByRole("listitem").filter({ hasText: label })
+}
+
+When(
+	'they reword the "Paraglider" option of a single-select question and mark it to be replaced',
+	async ({ page }) => {
+		await questionRow(page, "Hang glider or paraglider?").getByRole("button", { name: "Edit" }).click()
+		const choice = page.getByTestId("question-choice").nth(1)
+
+		await choice.getByLabel("Choice (English)").fill("Paraglider (solo)")
+		await choice.getByLabel("Choice (French)").fill("Parapente (solo)")
+		await choice.getByLabel("Replace with a new option").check()
+
+		const saving = page.waitForRequest(
+			(request) => request.method() === "PUT" && request.url().endsWith("/api/admin/questions/ddddddddddd"),
+		)
+		await page.getByRole("button", { name: "Save" }).click()
+		replacedBodies.set(page, JSON.parse((await saving).postData() ?? "{}"))
+	},
+)
+
+Then("the save sends that option to be replaced, under its old code with its new wording", async ({ page }) => {
+	const options = replacedBodies.get(page)?.options ?? []
+
+	expect(options.find((option) => option.code === "paraglider")).toMatchObject({
+		labelEn: "Paraglider (solo)",
+		replace: true,
+	})
+	expect(options.find((option) => option.code === "hang_glider")?.replace).toBeFalsy()
+})
+
+Then("a type-ahead question's values offer no replace choice", async ({ page }) => {
+	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+
+	await expect(page.getByTestId("question-choice").first()).toBeVisible()
+	await expect(page.getByLabel("Replace with a new option")).toHaveCount(0)
 })

@@ -732,7 +732,6 @@ Examples:
   | autocomplete  |
 
 @REQ-QB-123
-@ignore
 Scenario: Fixing a picker option in place corrects every answer that named it
   Given a single-select question has been answered with its option "Cooprs"
   When an Administrator fixes that option's wording in place to "Coopers"
@@ -741,7 +740,6 @@ Scenario: Fixing a picker option in place corrects every answer that named it
   And the question keeps its identifier and its current revision
 
 @REQ-QB-124
-@ignore
 Scenario: Replacing a picker option keeps the old option under every earlier answer
   Given a single-select question offering "foo", "bar", and "baz" has been answered with "baz"
   When an Administrator replaces "baz" with "fizz"
@@ -752,12 +750,19 @@ Scenario: Replacing a picker option keeps the old option under every earlier ans
   And the question keeps its identifier and its current revision
 
 @REQ-QB-125
-@ignore
 Scenario: A condition follows its choice's replacement
   Given a question depends on the "paraglider" choice of a single-select question
   When an Administrator replaces "paraglider" with "paraglider (solo)"
   Then the dependent question is enabled by an answer naming "paraglider (solo)"
   And the dependent question keeps its current revision
+
+@REQ-QB-139
+@ui
+Scenario: An Administrator chooses to replace a picker option rather than fix it
+  Given a signed-in Administrator opens the manage-questions page
+  When they reword the "Paraglider" option of a single-select question and mark it to be replaced
+  Then the save sends that option to be replaced, under its old code with its new wording
+  And a type-ahead question's values offer no replace choice
 
 @REQ-QB-126
 Scenario Outline: A removed choice is no longer offered but still names every answer given under it

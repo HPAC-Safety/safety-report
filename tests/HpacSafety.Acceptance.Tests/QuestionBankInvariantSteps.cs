@@ -166,7 +166,7 @@ public sealed partial class QuestionBankInvariantSteps
 		bool IsPrivate,
 		bool IsActive,
 		string? DependsOnQuestionId,
-		string? DependsOnOptionCode,
+		string? DependsOnChoiceId,
 		string? GroupedUnderQuestionId,
 		IReadOnlyList<Option> Options);
 

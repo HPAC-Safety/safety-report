@@ -1154,15 +1154,15 @@ An answer names the choice it was given under — *Reqnroll, Covered*
 
 ### REQ-QB-123
 
-Fixing a picker option in place corrects every answer that named it — *Reqnroll, Planned*
+Fixing a picker option in place corrects every answer that named it — *Reqnroll, Covered*
 
 ### REQ-QB-124
 
-Replacing a picker option keeps the old option under every earlier answer — *Reqnroll, Planned*
+Replacing a picker option keeps the old option under every earlier answer — *Reqnroll, Covered*
 
 ### REQ-QB-125
 
-A condition follows its choice's replacement — *Reqnroll, Planned*
+A condition follows its choice's replacement — *Reqnroll, Covered*
 
 ### REQ-QB-126
 
@@ -1215,6 +1215,10 @@ A yes or no stored as a word is converted to a boolean once — *Reqnroll, Cover
 ### REQ-QB-138
 
 A yes or no stored as anything but the four words stops the conversion — *Reqnroll, Covered*
+
+### REQ-QB-139
+
+An Administrator chooses to replace a picker option rather than fix it — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 

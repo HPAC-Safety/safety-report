@@ -535,7 +535,7 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 			isPrivate = false,
 			isActive = true,
 			dependsOnQuestionId = (string?)null,
-			dependsOnOptionCode = (string?)null,
+			dependsOnChoiceId = (string?)null,
 			optionSetId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			allowsReporterAdditions = false,

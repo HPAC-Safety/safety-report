@@ -53,6 +53,8 @@ export function translatableByDefault(type: QuestionType): boolean {
 
 /** One of a question's own choices (ADR-0095). */
 export interface OptionView {
+	/** The choice's identifier: what answers and conditions name (ADR-0128). */
+	id: string
 	code: string
 	/** Null only on a reporter-added choice typed in French, until an administrator supplies it. */
 	labelEn: string | null
@@ -80,7 +82,8 @@ export interface QuestionView {
 	isActive: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
-	dependsOnOptionCode: string | null
+	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */
+	dependsOnChoiceId: string | null
 	/** The group question this one renders together with, if any. Distinct from a conditional dependency (ADR-0076). */
 	groupedUnderQuestionId: string | null
 	labelEn: string
@@ -115,6 +118,12 @@ export interface OptionInput {
 	labelFr: string
 	/** Carried for the editor's marker only; the server keeps its own record of who added a choice. */
 	addedByReporter?: boolean
+	/**
+	 * For a picker option that already exists: true retires it and adds a new
+	 * option with this wording in its place, so earlier answers keep the old
+	 * one; false or absent fixes its wording in place for every answer (ADR-0128).
+	 */
+	replace?: boolean
 }
 
 export interface SaveQuestionRequest {
@@ -131,7 +140,8 @@ export interface SaveQuestionRequest {
 	isTranslatable: boolean
 	isActive: boolean
 	dependsOnQuestionId: string | null
-	dependsOnOptionCode: string | null
+	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */
+	dependsOnChoiceId: string | null
 	groupedUnderQuestionId: string | null
 	/** The complete list of the question's choices, applied in place — never a new version (ADR-0095). */
 	options: OptionInput[]

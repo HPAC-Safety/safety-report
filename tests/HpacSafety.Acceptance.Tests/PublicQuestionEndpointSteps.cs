@@ -229,7 +229,7 @@ public sealed class PublicQuestionEndpointSteps
 		bool IsPrivate,
 		bool IsActive,
 		string? DependsOnQuestionId,
-		string? DependsOnOptionCode,
+		string? DependsOnChoiceId,
 		string? OptionSetId,
 		string? GroupedUnderQuestionId,
 		bool AllowsReporterAdditions,

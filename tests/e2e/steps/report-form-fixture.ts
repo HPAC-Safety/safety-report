@@ -30,7 +30,7 @@ export interface StubQuestion {
 	isPrivate: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
-	dependsOnOptionCode: string | null
+	dependsOnChoiceId: string | null
 	allowsReporterAdditions: boolean
 	labelEn: string
 	labelFr: string
@@ -49,7 +49,7 @@ function question(overrides: Partial<StubQuestion> & { id: string; key: string; 
 		isRequired: false,
 		isPrivate: false,
 		dependsOnQuestionId: null,
-		dependsOnOptionCode: null,
+		dependsOnChoiceId: null,
 		allowsReporterAdditions: false,
 		labelFr: `${overrides.labelEn} (fr)`,
 		helpTextEn: null,

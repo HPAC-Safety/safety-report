@@ -25,7 +25,7 @@ public sealed record QuestionView(
 	bool IsActive,
 	int DisplayOrder,
 	string? DependsOnQuestionId,
-	string? DependsOnOptionCode,
+	string? DependsOnChoiceId,
 	string? GroupedUnderQuestionId,
 	string LabelEn,
 	string LabelFr,
@@ -45,8 +45,13 @@ public sealed record QuestionView(
 	///     creates a new one in its place (ADR-0071) — though a choices-only edit
 	///     never does (ADR-0095).
 	/// </param>
+	/// <param name="bank">
+	///     The live questions, so a condition naming a replaced option shows the
+	///     option that replaced it — the one the screen offers (ADR-0128).
+	/// </param>
 	public static QuestionView Of(Question question,
-								  bool hasBeenAnswered = false)
+								  bool hasBeenAnswered = false,
+								  IReadOnlyCollection<Question>? bank = null)
 	{
 		ArgumentNullException.ThrowIfNull(question);
 
@@ -65,7 +70,7 @@ public sealed record QuestionView(
 			revision.IsActive,
 			revision.DisplayOrder,
 			revision.DependsOnQuestionId?.Value,
-			revision.DependsOnOptionCode,
+			((bank is null ? null : QuestionDependencies.RequiredChoiceToday(bank, revision)?.Id) ?? revision.DependsOnChoiceId)?.Value,
 			revision.GroupedUnderQuestionId?.Value,
 			revision.LabelEn,
 			revision.LabelFr,
@@ -80,6 +85,7 @@ public sealed record QuestionView(
 }
 
 /// <summary>One of a question's choices, as the authoring screen edits it.</summary>
+/// <param name="Id">The choice's identifier, which answers and conditions name (ADR-0128).</param>
 /// <param name="Code">The invariant code the choice is recorded under.</param>
 /// <param name="LabelEn">The English wording. Null only on a reporter-added choice typed in French.</param>
 /// <param name="LabelFr">The French wording. Null only on a reporter-added choice typed in English.</param>
@@ -90,6 +96,7 @@ public sealed record QuestionView(
 /// <param name="NeedsTranslation">True while one language is missing, waiting for an administrator.</param>
 /// <param name="ReporterLocale">The language a reporter typed it in, or null.</param>
 public sealed record OptionView(
+	string Id,
 	string Code,
 	string? LabelEn,
 	string? LabelFr,
@@ -103,6 +110,7 @@ public sealed record OptionView(
 		ArgumentNullException.ThrowIfNull(choice);
 
 		return new OptionView(
+			choice.Id.Value,
 			choice.Code, choice.LabelEn, choice.LabelFr, choice.AddedByReporter, choice.NeedsTranslation,
 			choice.ReporterLocale?.Code);
 	}
@@ -129,7 +137,7 @@ public sealed record SaveQuestionRequest(
 	bool IsPrivate,
 	bool IsActive,
 	string? DependsOnQuestionId,
-	string? DependsOnOptionCode,
+	string? DependsOnChoiceId,
 	string? GroupedUnderQuestionId,
 	IReadOnlyList<OptionInput>? Options,
 	bool? IsTranslatable = null);
@@ -149,7 +157,12 @@ public sealed record SaveQuestionRequest(
 ///     one may keep a missing language until an administrator supplies it.
 /// </param>
 /// <param name="LabelFr">The French wording, under the same rule.</param>
-public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr)
+/// <param name="Replace">
+///     For a picker option that already exists: true retires it and adds a new
+///     option with this wording in its place, so earlier answers keep the old one;
+///     false, the default, fixes its wording in place for every answer (ADR-0128).
+/// </param>
+public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false)
 {
 	/// <summary>The normalized code this choice is recorded under.</summary>
 	public string ResolvedCode => QuestionKey.Normalize(

@@ -283,12 +283,12 @@ function QuestionRow({
 				</p>
 				{parent && (
 					<p className="mt-1 font-sans text-xs text-ink-muted">
-						{question.dependsOnOptionCode
+						{question.dependsOnChoiceId
 							? t("questions.dependsOnOptionSummary", {
 									question: parent.labelEn,
 									option:
-										parent.options.find((option) => option.code === question.dependsOnOptionCode)?.labelEn ??
-										question.dependsOnOptionCode,
+										parent.options.find((option) => option.id === question.dependsOnChoiceId)?.labelEn ??
+										question.dependsOnChoiceId,
 								})
 							: t("questions.dependsOnSummary", { question: parent.labelEn })}
 					</p>

@@ -211,7 +211,7 @@ public sealed class QuestionBankSteps
 		_questions.Add(parent);
 
 		Should.NotThrow(() =>
-			QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id, "hang_glider"));
+			QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id, parent.Choice("hang_glider")!.Id));
 	}
 
 	[Given(@"a single-select question asking whether the pilot flies hang gliders or paragliders")]
@@ -233,11 +233,13 @@ public sealed class QuestionBankSteps
 		var parent = _questions.Single(question => question.Key == "pilot_type");
 		var code = optionLabel == "hang glider" ? "hang_glider" : "paraglider";
 
-		QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id, code);
+		var choice = parent.Choice(code)!.Id;
+
+		QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id, choice);
 
 		var child = Question.Create(
 			$"rating_{code}", QuestionType.SingleSelect, $"Rating ({optionLabel})", $"Qualification ({optionLabel})",
-			Noon, isActive: true, dependsOnQuestionId: parent.Id, dependsOnOptionCode: code,
+			Noon, isActive: true, dependsOnQuestionId: parent.Id, dependsOnChoiceId: choice,
 			options: [new QuestionOptionInput("h1", "H1", "H1")]);
 
 		_questions.Add(child);
@@ -246,10 +248,12 @@ public sealed class QuestionBankSteps
 	[Then(@"each rating question's saved dependency names its own required option")]
 	public void ThenEachRatingQuestionNamesItsOwnOption()
 	{
+		var parent = _questions.Single(question => question.Key == "pilot_type");
+
 		_questions.Single(question => question.Key == "rating_hang_glider")
-			.DependsOnOptionCode.ShouldBe("hang_glider");
+			.DependsOnChoiceId.ShouldBe(parent.Choice("hang_glider")!.Id);
 		_questions.Single(question => question.Key == "rating_paraglider")
-			.DependsOnOptionCode.ShouldBe("paraglider");
+			.DependsOnChoiceId.ShouldBe(parent.Choice("paraglider")!.Id);
 	}
 
 	[When(@"an Administrator tries to make another question depend on a choice the parent does not offer")]
@@ -258,7 +262,7 @@ public sealed class QuestionBankSteps
 		var parent = _questions.Single(question => question.Key == "pilot_type");
 
 		_rejection = Record(() =>
-			QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id, "trike"));
+			QuestionDependencies.EnsureDependencyAllowed(_questions, null, parent.Id, PilotType().Choice("hang_glider")!.Id));
 	}
 
 	[Given(@"a yes\/no question")]
@@ -283,7 +287,7 @@ public sealed class QuestionBankSteps
 	[Then(@"the dependency needs no required option, because the condition is always ""answered yes""")]
 	public void ThenTheDependencyNeedsNoOption()
 	{
-		_question!.DependsOnOptionCode.ShouldBeNull();
+		_question!.DependsOnChoiceId.ShouldBeNull();
 	}
 
 	// --------------------------------------------------- statement and group --

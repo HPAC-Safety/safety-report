@@ -26,23 +26,23 @@ public static class QuestionDependencies
 	/// <summary>
 	///     Checks that a question may depend on the one it names: the parent
 	///     exists, is live, is a type that can enable another question, currently
-	///     offers <paramref name="requiredOptionCode" /> when it needs one, and
-	///     does not lead back to the child.
+	///     offers <paramref name="requiredChoiceId" /> — or the choice that replaced
+	///     it — when it needs one, and does not lead back to the child.
 	/// </summary>
 	/// <param name="questions">Every live question, including the child if it already exists.</param>
 	/// <param name="childId">The question being made conditional, or null when it is being created.</param>
 	/// <param name="parentId">The question it is to depend on.</param>
-	/// <param name="requiredOptionCode">
-	///     The option code the parent must be answered with, when the parent is
-	///     single-select. Must be null for a yes/no parent, whose condition is
-	///     yes, in either language. See ADR-0074, ADR-0127.
+	/// <param name="requiredChoiceId">
+	///     The parent's choice it must be answered with, when the parent is
+	///     single-select. Must be null for a yes/no parent, whose condition is a
+	///     yes. See ADR-0074, ADR-0128.
 	/// </param>
 	/// <exception cref="DomainRuleViolationException">When the dependency is not allowed.</exception>
 	public static void EnsureDependencyAllowed(
 		IReadOnlyCollection<Question> questions,
 		TinyId? childId,
 		TinyId parentId,
-		string? requiredOptionCode = null)
+		TinyId? requiredChoiceId = null)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
@@ -57,20 +57,20 @@ public static class QuestionDependencies
 
 		switch (parent.Type)
 		{
-			case QuestionType.YesNo when requiredOptionCode is not null:
+			case QuestionType.YesNo when requiredChoiceId is not null:
 				throw new DomainRuleViolationException(
 					$"'{parent.Key}' is a yes/no question. Its condition is always 'answered yes' and cannot also name a required option.");
 
 			case QuestionType.YesNo:
 				break;
 
-			case QuestionType.SingleSelect when requiredOptionCode is null:
+			case QuestionType.SingleSelect when requiredChoiceId is null:
 				throw new DomainRuleViolationException(
 					$"'{parent.Key}' is a single-select question and needs a required option to enable another one.");
 
-			case QuestionType.SingleSelect when parent.Choice(requiredOptionCode) is null:
+			case QuestionType.SingleSelect when parent.CurrentChoice(requiredChoiceId.Value) is not { Deleted: null }:
 				throw new DomainRuleViolationException(
-					$"'{parent.Key}' does not currently offer the option '{requiredOptionCode}'.");
+					$"'{parent.Key}' does not currently offer that option.");
 
 			case QuestionType.SingleSelect:
 				break;
@@ -109,17 +109,38 @@ public static class QuestionDependencies
 
 		var kept = remainingCodes.Select(QuestionKey.Normalize).ToHashSet(StringComparer.Ordinal);
 
+		// A dependency names a choice, and follows it through any replacement
+		// (ADR-0128): what matters is the choice that stands for it today.
 		var dependent = questions.FirstOrDefault(question => question.Deleted is null
 															 && question.DependsOnQuestionId == parent.Id
-															 && question.DependsOnOptionCode is { } code
-															 && !kept.Contains(code));
+															 && question.DependsOnChoiceId is { } required
+															 && parent.CurrentChoice(required) is { Deleted: null } current
+															 && !kept.Contains(current.Code));
 
 		if (dependent is not null)
 		{
-			var wording = parent.Choice(dependent.DependsOnOptionCode!)?.Label(Locale.EnCa) ?? dependent.DependsOnOptionCode;
+			var wording = parent.CurrentChoice(dependent.DependsOnChoiceId!.Value)!.Label(Locale.EnCa);
 			throw new DomainRuleViolationException(
 				$"'{dependent.CurrentRevision.LabelEn}' is shown only when '{wording}' is chosen. Change that question first, then remove the choice.");
 		}
+	}
+
+	/// <summary>
+	///     The parent's choice that stands today for the one <paramref name="revision" />
+	///     requires — that choice, or the one that replaced it (ADR-0128). Null when the
+	///     revision requires no choice or its parent is not among
+	///     <paramref name="questions" />.
+	/// </summary>
+	public static QuestionChoice? RequiredChoiceToday(IReadOnlyCollection<Question> questions,
+													  QuestionRevision revision)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+		ArgumentNullException.ThrowIfNull(revision);
+
+		return revision is { DependsOnQuestionId: { } parentId, DependsOnChoiceId: { } choiceId }
+			   && questions.FirstOrDefault(question => question.Id == parentId) is { } parent
+			? parent.CurrentChoice(choiceId)
+			: null;
 	}
 
 	/// <summary>

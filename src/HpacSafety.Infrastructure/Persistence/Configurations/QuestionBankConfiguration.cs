@@ -113,10 +113,13 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 
 		builder.HasIndex(revision => revision.GroupedUnderQuestionId);
 
-		// The required option code on a single-select parent — never a
-		// localized label, matching every other invariant option code in
-		// this schema. See ADR-0074.
-		builder.Property(revision => revision.DependsOnOptionCode).HasMaxLength(128);
+		// The single-select parent's required choice, by identifier. A condition
+		// follows that choice through any replacement, so this row is never
+		// rewritten when the parent's option is replaced. See ADR-0074, ADR-0128.
+		builder.HasOne<QuestionChoice>()
+			.WithMany()
+			.HasForeignKey(revision => revision.DependsOnChoiceId)
+			.OnDelete(DeleteBehavior.Restrict);
 
 		// Unique stable key + revision number.
 		builder.HasIndex(revision => new { revision.QuestionId, revision.RevisionNumber }).IsUnique();
@@ -168,6 +171,13 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_question_choices_label_source",
 			"(label_en_source IS NULL OR label_en_source IN ('human', 'auto')) AND (label_fr_source IS NULL OR label_fr_source IN ('human', 'auto')) AND (label_en IS NULL) = (label_en_source IS NULL) AND (label_fr IS NULL) = (label_fr_source IS NULL)"));
+
+		// A replaced picker option names the option that replaced it, on the same
+		// question. Both rows are kept for good (ADR-0128).
+		builder.HasOne<QuestionChoice>()
+			.WithMany()
+			.HasForeignKey(choice => choice.ReplacedByChoiceId)
+			.OnDelete(DeleteBehavior.Restrict);
 
 		// Unique across removed rows too: an Administrator writing a removed
 		// choice again revives that row, and a reporter never does, so a code

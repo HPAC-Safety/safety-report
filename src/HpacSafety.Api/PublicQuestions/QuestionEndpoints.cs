@@ -63,21 +63,22 @@ public static class QuestionEndpoints
 		return Results.Ok(
 			live
 				.Where(question => question.GroupedUnderQuestionId is null)
-				.Select(question => ToView(question, childrenByGroup))
+				.Select(question => ToView(question, childrenByGroup, questions))
 				.ToList());
 	}
 
 	private static PublicQuestionView ToView(Question question,
-											 ILookup<TinyId, Question> childrenByGroup)
+											 ILookup<TinyId, Question> childrenByGroup,
+											 IReadOnlyCollection<Question> bank)
 	{
 		var children = question.Type == QuestionType.Group
 			? childrenByGroup[question.Id]
 				.OrderBy(child => child.DisplayOrder)
 				.ThenBy(child => child.Key, StringComparer.Ordinal)
-				.Select(child => ToView(child, childrenByGroup))
+				.Select(child => ToView(child, childrenByGroup, bank))
 				.ToList()
 			: [];
 
-		return PublicQuestionView.Of(question, children);
+		return PublicQuestionView.Of(question, children, bank);
 	}
 }

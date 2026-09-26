@@ -55,7 +55,7 @@ public static class QuestionEndpoints
 			questions
 				.OrderBy(question => question.DisplayOrder)
 				.ThenBy(question => question.Key, StringComparer.Ordinal)
-				.Select(question => QuestionView.Of(question, answered.Contains(question.Id)))
+				.Select(question => QuestionView.Of(question, answered.Contains(question.Id), questions))
 				.ToList());
 	}
 
@@ -123,7 +123,7 @@ public static class QuestionEndpoints
 				request.IsActive,
 				NextDisplayOrder(questions),
 				dependsOn.ParentId,
-				dependsOn.OptionCode,
+				dependsOn.ChoiceId,
 				groupedUnderQuestionId,
 				options,
 				request.IsTranslatable);
@@ -132,7 +132,7 @@ public static class QuestionEndpoints
 			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-			return Results.Created($"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question));
+			return Results.Created($"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question, bank: questions));
 		}).ConfigureAwait(false);
 	}
 
@@ -175,7 +175,7 @@ public static class QuestionEndpoints
 
 		return await Save(async () =>
 		{
-			var dependsOn = ResolvedDependency(request, questions, question.Id);
+			var dependsOn = ResolvedDependency(request, questions, question);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
 			var options = OptionsFor(request, type);
 
@@ -205,7 +205,7 @@ public static class QuestionEndpoints
 				request.PlaceholderFr,
 				request.IsRequired,
 				dependsOn.ParentId,
-				dependsOn.OptionCode,
+				dependsOn.ChoiceId,
 				groupedUnderQuestionId,
 				options,
 				request.IsTranslatable);
@@ -222,7 +222,7 @@ public static class QuestionEndpoints
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			// The replacement is new, so nothing has answered it yet.
-			return Results.Ok(QuestionView.Of(live, hasBeenAnswered && !forked));
+			return Results.Ok(QuestionView.Of(live, hasBeenAnswered && !forked, questions));
 		}).ConfigureAwait(false);
 	}
 
@@ -284,7 +284,7 @@ public static class QuestionEndpoints
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-		return Results.Ok(ordered.Select(question => QuestionView.Of(question)).ToList());
+		return Results.Ok(ordered.Select(question => QuestionView.Of(question, bank: ordered)).ToList());
 	}
 
 	/// <summary>
@@ -493,21 +493,42 @@ public static class QuestionEndpoints
 	///     required option when it needs one, and does not lead back here. See
 	///     ADR-0060, ADR-0074.
 	/// </summary>
-	private static (TinyId? ParentId, string? OptionCode) ResolvedDependency(
+	private static (TinyId? ParentId, TinyId? ChoiceId) ResolvedDependency(
 		SaveQuestionRequest request,
 		List<Question> questions,
-		TinyId? childId)
+		Question? child)
 	{
 		if (!TinyId.TryParse(request.DependsOnQuestionId, out var parentId))
 		{
 			return (null, null);
 		}
 
-		var optionCode = string.IsNullOrWhiteSpace(request.DependsOnOptionCode) ? null : request.DependsOnOptionCode;
+		TinyId? choiceId = null;
 
-		QuestionDependencies.EnsureDependencyAllowed(questions, childId, parentId, optionCode);
+		if (!string.IsNullOrWhiteSpace(request.DependsOnChoiceId))
+		{
+			choiceId = TinyId.TryParse(request.DependsOnChoiceId, out var parsed)
+				? parsed
+				: throw new DomainRuleViolationException("That required option is not one the parent question offers.");
+		}
 
-		return (parentId, optionCode);
+		QuestionDependencies.EnsureDependencyAllowed(questions, child?.Id, parentId, choiceId);
+
+		// The screen shows a condition naming a replaced option as its
+		// replacement. Saving it back is not a change of condition, so the stored
+		// choice is kept — otherwise an untouched condition would revise, or
+		// fork, the question (ADR-0128).
+		// EnsureDependencyAllowed has just found the parent among the live
+		// questions, and a choice it accepted stands for something on it.
+		if (child?.DependsOnChoiceId is { } stored
+			&& child.DependsOnQuestionId == parentId
+			&& choiceId is { } chosen)
+		{
+			var parent = questions.Single(question => question.Id == parentId);
+			choiceId = parent.CurrentChoice(stored) == parent.CurrentChoice(chosen) ? stored : chosen;
+		}
+
+		return (parentId, choiceId);
 	}
 
 	/// <summary>
@@ -546,7 +567,7 @@ public static class QuestionEndpoints
 
 		return request.Options is null
 			? null
-			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr))];
+			: [.. OptionInput.Resolve(request.Options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace))];
 	}
 
 	/// <summary>

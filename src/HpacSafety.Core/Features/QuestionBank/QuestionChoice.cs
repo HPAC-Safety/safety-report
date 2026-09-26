@@ -117,6 +117,13 @@ public class QuestionChoice
 	public string? ReviewedBy { get; private set; }
 
 	/// <summary>
+	///     The picker option that replaced this one, when an Administrator replaced
+	///     it rather than fixing its wording. A retired choice keeps every answer
+	///     given under it; a condition naming it follows this link (ADR-0128).
+	/// </summary>
+	public TinyId? ReplacedByChoiceId { get; private set; }
+
+	/// <summary>
 	///     True while one language is missing — a reporter-added choice waiting for
 	///     an Administrator to supply the other wording.
 	/// </summary>
@@ -172,7 +179,11 @@ public class QuestionChoice
 		};
 	}
 
-	/// <summary>This row, removal and marks included, as a choice of another question — the replacement a fork creates.</summary>
+	/// <summary>
+	///     This row, removal and marks included, as a choice of another question — the
+	///     replacement a fork creates. Its replaced-by link names a row of this
+	///     question, so the fork re-points it at the copy (<see cref="RelinkReplacement" />).
+	/// </summary>
 	internal QuestionChoice CopyTo(TinyId questionId)
 	{
 		return new QuestionChoice(questionId, Code, DisplayOrder, LabelEn, LabelFr, AddedByReporter, ReporterLocale, Deleted)
@@ -239,6 +250,20 @@ public class QuestionChoice
 		ReviewedBy = reviewer;
 	}
 
+	/// <summary>Points this copy's replaced-by link at the copy of the choice that replaced the original.</summary>
+	internal void RelinkReplacement(TinyId? replacedBy)
+	{
+		ReplacedByChoiceId = replacedBy;
+	}
+
+	/// <summary>Retires this choice in favour of <paramref name="replacement" /> (ADR-0128).</summary>
+	internal void ReplaceWith(QuestionChoice replacement,
+							  DateTimeOffset at)
+	{
+		Deleted = at;
+		ReplacedByChoiceId = replacement.Id;
+	}
+
 	/// <summary>
 	///     Replaces the wording. A choice an Administrator wrote keeps both
 	///     languages; a reporter-added one may keep one missing until someone
@@ -292,6 +317,7 @@ public class QuestionChoice
 	{
 		Relabel(labelEn, labelFr);
 		Deleted = null;
+		ReplacedByChoiceId = null;
 		DisplayOrder = displayOrder;
 	}
 

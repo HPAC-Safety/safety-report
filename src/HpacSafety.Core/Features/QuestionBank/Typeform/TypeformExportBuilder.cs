@@ -34,6 +34,7 @@ public static class TypeformExportBuilder
 		ArgumentNullException.ThrowIfNull(questions);
 
 		var keysByQuestionId = questions.ToDictionary(question => question.Id, question => question.Key);
+		var questionsById = questions.ToDictionary(question => question.Id);
 
 		var englishFields = new List<TypeformField>();
 		var frenchFields = new List<TypeformField>();
@@ -48,7 +49,7 @@ public static class TypeformExportBuilder
 				revision.IsPrivate,
 				revision.IsRequired,
 				NameOf(revision.DependsOnQuestionId, keysByQuestionId),
-				revision.DependsOnOptionCode,
+				RequiredCodeOf(revision, questionsById),
 				NameOf(revision.GroupedUnderQuestionId, keysByQuestionId));
 
 			englishFields.Add(Field(question.Key, revision.LabelEn, revision.HelpTextEn, revision.Type, choices, hpac, english: true));
@@ -56,6 +57,21 @@ public static class TypeformExportBuilder
 		}
 
 		return (new TypeformDocument(englishFields, []), new TypeformDocument(frenchFields, []));
+	}
+
+	/// <summary>
+	///     The code of the parent's choice this revision requires — the choice that
+	///     stands for it today, so a replaced option exports as its replacement. The
+	///     file names choices by code, the one identifier both language files share
+	///     (ADR-0077, ADR-0128).
+	/// </summary>
+	private static string? RequiredCodeOf(QuestionRevision revision,
+										  Dictionary<TinyId, Question> questionsById)
+	{
+		return revision is { DependsOnQuestionId: { } parentId, DependsOnChoiceId: { } choiceId }
+			   && questionsById.TryGetValue(parentId, out var parent)
+			? parent.CurrentChoice(choiceId)?.Code
+			: null;
 	}
 
 	private static string? NameOf(TinyId? questionId,

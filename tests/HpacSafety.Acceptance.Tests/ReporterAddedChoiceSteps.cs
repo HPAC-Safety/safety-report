@@ -37,6 +37,7 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 	private Exception? _refusal;
 	private IReadOnlyList<QuestionOptionInput> _edited = [];
 	private Question? _dependent;
+	private QuestionChoice? _named;
 
 	[Given(@"a type-ahead question offers several choices")]
 	public void GivenATypeAheadOffersChoices()
@@ -122,7 +123,111 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 			options: [new("hang_glider", "Hang glider", "Deltaplane"), new("paraglider", "Paraglider", "Parapente")]);
 		_dependent = Question.Create(
 			"wing_rating", QuestionType.ShortText, "Wing rating", "Homologation", Noon, isActive: true,
-			dependsOnQuestionId: _question.Id, dependsOnOptionCode: code);
+			dependsOnQuestionId: _question.Id, dependsOnChoiceId: _question.Choice(code)!.Id);
+	}
+
+	// --- REQ-QB-123..125: a picker option is fixed in place or replaced (ADR-0128) ---
+
+	[Given(@"a single-select question has been answered with its option ""(.*)""")]
+	public void GivenASingleSelectAnsweredWithItsOption(string label)
+	{
+		_question = Picker(label, "Mara");
+		_answer = new Report(Locale.EnCa, Noon).Answer(_question, label, Noon);
+		_revisionId = _question.CurrentRevision.Id;
+		_named = _question.Choices[0];
+	}
+
+	[Given(@"a single-select question offering ""(.*)"", ""(.*)"", and ""(.*)"" has been answered with ""(.*)""")]
+	public void GivenAPickerOfThreeAnswered(string first,
+											string second,
+											string third,
+											string answered)
+	{
+		_question = Picker(first, second, third);
+		_answer = new Report(Locale.EnCa, Noon).Answer(_question, answered, Noon);
+		_revisionId = _question.CurrentRevision.Id;
+		_named = _question.OfferedChoiceLabelled(answered, Locale.EnCa);
+	}
+
+	[When(@"an Administrator fixes that option's wording in place to ""(.*)""")]
+	public void WhenAnAdministratorFixesTheOption(string wording)
+	{
+		Save([.. _question.Choices.Select(choice => choice == _named
+			? new QuestionOptionInput(choice.Code, wording, $"{wording} (fr)")
+			: new QuestionOptionInput(choice.Code, choice.LabelEn, choice.LabelFr))]);
+	}
+
+	[When(@"an Administrator replaces ""(.*)"" with ""(.*)""")]
+	public void WhenAnAdministratorReplacesTheOption(string old,
+													 string wording)
+	{
+		var code = QuestionKey.Normalize(old);
+		_named ??= _question.Choice(code);
+
+		Save([.. _question.Choices.Select(choice => choice.Code == code
+			? new QuestionOptionInput(choice.Code, wording, $"{wording} (fr)", Replace: true)
+			: new QuestionOptionInput(choice.Code, choice.LabelEn, choice.LabelFr))]);
+	}
+
+	[Then(@"the option keeps its identifier")]
+	public void ThenTheOptionKeepsItsIdentifier()
+	{
+		_question.Choices.ShouldContain(choice => choice.Id == _named!.Id);
+	}
+
+	[Then(@"the earlier answer now reads ""(.*)""")]
+	public void ThenTheEarlierAnswerNowReads(string wording)
+	{
+		_answer!.ChoiceId.ShouldBe(_named!.Id);
+		_answer.Text.ShouldBe(wording);
+	}
+
+	[Then(@"the form offers ""(.*)"", ""(.*)"", and ""(.*)""")]
+	public void ThenTheFormOffers(string first,
+								  string second,
+								  string third)
+	{
+		_question.Choices.Select(choice => choice.LabelEn).ShouldBe([first, second, third]);
+	}
+
+	[Then(@"""(.*)"" is retired, not erased, and records that ""(.*)"" replaced it")]
+	public void ThenTheOptionIsRetiredAndLinked(string old,
+												string replacement)
+	{
+		var retired = _question.AllChoices.Single(choice => choice.Id == _named!.Id);
+		retired.LabelEn.ShouldBe(old);
+		retired.Deleted.ShouldNotBeNull();
+		retired.ReplacedByChoiceId.ShouldBe(_question.OfferedChoiceLabelled(replacement, Locale.EnCa)!.Id);
+	}
+
+	[Then(@"""(.*)"" has an identifier of its own")]
+	public void ThenTheReplacementHasItsOwnIdentifier(string replacement)
+	{
+		_question.OfferedChoiceLabelled(replacement, Locale.EnCa)!.Id.ShouldNotBe(_named!.Id);
+	}
+
+	[Then(@"the earlier answer still names ""(.*)"" and reads ""(.*)""")]
+	public void ThenTheEarlierAnswerStillNamesTheOldOption(string old,
+														   string reads)
+	{
+		_answer!.ChoiceId.ShouldBe(_named!.Id);
+		_named.LabelEn.ShouldBe(old);
+		_answer.Text.ShouldBe(reads);
+	}
+
+	[Then(@"the dependent question is enabled by an answer naming ""(.*)""")]
+	public void ThenTheDependentFollowsTheReplacement(string replacement)
+	{
+		var current = _question.OfferedChoiceLabelled(replacement, Locale.EnCa)!;
+
+		_dependent!.CurrentRevision.IsEnabledGiven(_question, current.Id).ShouldBeTrue();
+		_dependent.DependsOnChoiceId.ShouldBe(_named!.Id);
+	}
+
+	[Then(@"the dependent question keeps its current revision")]
+	public void ThenTheDependentKeepsItsRevision()
+	{
+		_dependent!.Revisions.Count.ShouldBe(1);
 	}
 
 	[When(@"a reporter submits an answer naming a site the question does not offer")]
@@ -492,6 +597,13 @@ public sealed class ReporterAddedChoiceSteps(QuestionEditOutcome outcome)
 		_live = _question.ApplyEdit(
 			true, current.Type, current.LabelEn, current.LabelFr, current.IsPrivate, current.IsActive,
 			current.DisplayOrder, Noon.AddHours(2), options: options);
+	}
+
+	private static Question Picker(params string[] labels)
+	{
+		return Question.Create(
+			"wing_type", QuestionType.SingleSelect, "Wing type", "Type d'aile", Noon, isActive: true,
+			options: [.. labels.Select(label => new QuestionOptionInput(QuestionKey.Normalize(label), label, $"{label} (fr)"))]);
 	}
 
 	private static Question QuestionOfType(QuestionType type)

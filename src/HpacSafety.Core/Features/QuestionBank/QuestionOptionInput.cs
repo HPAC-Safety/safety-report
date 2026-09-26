@@ -10,4 +10,10 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     null on a reporter-added choice typed in French until someone supplies it.
 /// </param>
 /// <param name="LabelFr">The French wording, under the same rule as <paramref name="LabelEn" />.</param>
-public sealed record QuestionOptionInput(string Code, string? LabelEn, string? LabelFr);
+/// <param name="Replace">
+///     For a picker option this question already has: true retires that option
+///     and adds a new one with this wording in its place, so earlier answers keep
+///     the old option; false fixes its wording in place, for every answer
+///     (ADR-0128). Ignored for a new option.
+/// </param>
+public sealed record QuestionOptionInput(string Code, string? LabelEn, string? LabelFr, bool Replace = false);

@@ -96,10 +96,11 @@ public class Question
 	public TinyId? DependsOnQuestionId => CurrentRevision.DependsOnQuestionId;
 
 	/// <summary>
-	///     The required option a single-select parent must be answered
-	///     with today, if any. See ADR-0074.
+	///     The parent's choice a single-select parent must be answered with today,
+	///     if any, as it was named — follow it with <see cref="CurrentChoice" /> on the
+	///     parent. See ADR-0074, ADR-0128.
 	/// </summary>
-	public string? DependsOnOptionCode => CurrentRevision.DependsOnOptionCode;
+	public TinyId? DependsOnChoiceId => CurrentRevision.DependsOnChoiceId;
 
 	/// <summary>The group question this one renders together with today, if any. See ADR-0076.</summary>
 	public TinyId? GroupedUnderQuestionId => CurrentRevision.GroupedUnderQuestionId;
@@ -174,14 +175,14 @@ public class Question
 		bool isActive = false,
 		int displayOrder = 0,
 		TinyId? dependsOnQuestionId = null,
-		string? dependsOnOptionCode = null,
+		TinyId? dependsOnChoiceId = null,
 		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null,
 		bool? isTranslatable = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
 			groupedUnderQuestionId, options, isTranslatable ?? QuestionRevision.TranslatableByDefault(type));
 	}
 
@@ -267,7 +268,7 @@ public class Question
 		bool isActive,
 		int displayOrder,
 		TinyId? dependsOnQuestionId,
-		string? dependsOnOptionCode,
+		TinyId? dependsOnChoiceId,
 		TinyId? groupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput>? options,
 		bool isTranslatable)
@@ -276,7 +277,7 @@ public class Question
 		question._revisions.Add(
 			QuestionRevision.Create(
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
 				groupedUnderQuestionId, isTranslatable, at));
 		question.ReplaceChoices(options ?? [], at);
 		question.EnsureChoicesFitType();
@@ -306,7 +307,7 @@ public class Question
 		string? placeholderFr = null,
 		bool isRequired = false,
 		TinyId? dependsOnQuestionId = null,
-		string? dependsOnOptionCode = null,
+		TinyId? dependsOnChoiceId = null,
 		TinyId? groupedUnderQuestionId = null,
 		bool? isTranslatable = null)
 	{
@@ -337,7 +338,7 @@ public class Question
 		return ReviseInternal(
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
 				groupedUnderQuestionId, TranslatableFor(type, isTranslatable)),
 			at);
 	}
@@ -388,7 +389,7 @@ public class Question
 		string? placeholderFr = null,
 		bool isRequired = false,
 		TinyId? dependsOnQuestionId = null,
-		string? dependsOnOptionCode = null,
+		TinyId? dependsOnChoiceId = null,
 		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null,
 		bool? isTranslatable = null)
@@ -398,7 +399,7 @@ public class Question
 		var draft = new RevisionDraft(
 			type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId,
-			dependsOnOptionCode is null ? null : QuestionKey.Normalize(dependsOnOptionCode), groupedUnderQuestionId,
+			dependsOnChoiceId, groupedUnderQuestionId,
 			TranslatableFor(type, isTranslatable));
 
 		var live = this;
@@ -414,7 +415,7 @@ public class Question
 				Revise(
 					type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
 					helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-					dependsOnOptionCode, groupedUnderQuestionId, draft.IsTranslatable);
+					dependsOnChoiceId, groupedUnderQuestionId, draft.IsTranslatable);
 			}
 		}
 
@@ -449,8 +450,8 @@ public class Question
 
 	/// <summary>
 	///     Makes the question conditional on another question, or unconditional
-	///     again, as a new revision. <paramref name="dependsOnOptionCode" /> names
-	///     the required option when the parent is single-select, and must be null
+	///     again, as a new revision. <paramref name="dependsOnChoiceId" /> names
+	///     the parent's required choice when the parent is single-select, and must be null
 	///     when it is yes/no or when there is no parent. Whether the named
 	///     question is a type that can be a parent at all — and, for
 	///     single-select, whether it currently offers the named option — is
@@ -458,11 +459,11 @@ public class Question
 	///     of the bank. See ADR-0060, ADR-0074.
 	/// </summary>
 	public QuestionRevision DependOn(TinyId? dependsOnQuestionId,
-									 string? dependsOnOptionCode,
+									 TinyId? dependsOnChoiceId,
 									 DateTimeOffset at)
 	{
 		return ReviseInternal(
-			CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId, DependsOnOptionCode = dependsOnOptionCode },
+			CurrentDraft() with { DependsOnQuestionId = dependsOnQuestionId, DependsOnChoiceId = dependsOnChoiceId },
 			at);
 	}
 
@@ -498,6 +499,28 @@ public class Question
 	}
 
 	/// <summary>
+	///     The choice that stands for <paramref name="choiceId" /> today: that choice,
+	///     or — when an Administrator replaced it — the one that replaced it,
+	///     following replacements to the end. Null when this question never had that
+	///     choice. The result is removed only when the last choice in the chain was
+	///     removed rather than replaced (ADR-0128).
+	/// </summary>
+	public QuestionChoice? CurrentChoice(TinyId choiceId)
+	{
+		var choice = _choices.Find(candidate => candidate.Id == choiceId);
+		var visited = new HashSet<TinyId>();
+
+		while (choice?.ReplacedByChoiceId is { } next
+			   && visited.Add(choice.Id)
+			   && _choices.Find(candidate => candidate.Id == next) is { } replacement)
+		{
+			choice = replacement;
+		}
+
+		return choice;
+	}
+
+	/// <summary>
 	///     The live choice labelled exactly this way in the reporter's language —
 	///     which, for a one-language choice, may be the other language
 	///     (<see cref="QuestionChoice.Label" />) — or null when none is.
@@ -517,9 +540,13 @@ public class Question
 	/// <remarks>
 	///     <para>
 	///         A choice missing from the list is removed: stamped, never erased. A
-	///         choice already here is reworded and moved; its code never changes. A new
-	///         code is added — or, if the question once had it and it was removed,
-	///         that row is revived, because an Administrator writing it again means it.
+	///         choice already here is fixed in place — reworded and moved, same row,
+	///         same code — unless the Administrator asked to replace it
+	///         (<see cref="QuestionOptionInput.Replace" />): then it is retired, linked
+	///         to a new choice with the new wording and a code derived from it, and
+	///         every answer given under it keeps it (ADR-0128). A new code is added —
+	///         or, if the question once had it and it was removed, that row is revived,
+	///         because an Administrator writing it again means it.
 	///     </para>
 	///     <para>
 	///         Whether a removed choice is one a live question depends on is a fact
@@ -546,6 +573,8 @@ public class Question
 			EnsureTakesChoices(Type);
 		}
 
+		var replacements = ReplacementCodes(options, codes);
+
 		foreach (var removed in Choices.Where(choice => !codes.Contains(choice.Code, StringComparer.Ordinal)))
 		{
 			removed.Delete(at);
@@ -555,7 +584,14 @@ public class Question
 		{
 			var option = options[i];
 
-			if (_choices.Find(choice => choice.Code == codes[i]) is not { } existing)
+			if (replacements[i] is { } replacementCode)
+			{
+				var retired = _choices.Find(choice => choice.Code == codes[i])!;
+				var replacement = QuestionChoice.Written(Id, replacementCode, i, option.LabelEn!, option.LabelFr!);
+				_choices.Add(replacement);
+				retired.ReplaceWith(replacement, at);
+			}
+			else if (_choices.Find(choice => choice.Code == codes[i]) is not { } existing)
 			{
 				_choices.Add(QuestionChoice.Written(Id, codes[i], i, option.LabelEn!, option.LabelFr!));
 			}
@@ -571,6 +607,47 @@ public class Question
 		}
 
 		EnsureChoicesFitType();
+	}
+
+	/// <summary>
+	///     For each option, the code of the new choice that replaces it, or null when
+	///     it is not a replacement. Only a live picker option is replaced; its new
+	///     code comes from its new English wording and must be one this question has
+	///     never used, removed choices included, so a replacement is always a new row.
+	/// </summary>
+	private string?[] ReplacementCodes(IReadOnlyList<QuestionOptionInput> options,
+									   List<string> codes)
+	{
+		var result = new string?[options.Count];
+
+		for (var i = 0; i < options.Count; i++)
+		{
+			if (!options[i].Replace
+				|| Choices.FirstOrDefault(choice => choice.Code == codes[i]) is null)
+			{
+				continue;
+			}
+
+			if (Type is not (QuestionType.SingleSelect or QuestionType.MultiSelect))
+			{
+				throw new DomainRuleViolationException(
+					$"'{Key}' is a {EnumCode.Of(Type)} question. Only a picker option is replaced; a type-ahead value is corrected in place (ADR-0129).");
+			}
+
+			var code = QuestionKey.Normalize(options[i].LabelEn ?? string.Empty);
+
+			if (_choices.Exists(choice => choice.Code == code)
+				|| codes.Contains(code, StringComparer.Ordinal)
+				|| result.Contains(code, StringComparer.Ordinal))
+			{
+				throw new DomainRuleViolationException(
+					$"'{options[i].LabelEn}' reads like a choice this question already has, or once had. Replace it with different wording, or fix the option in place instead.");
+			}
+
+			result[i] = code;
+		}
+
+		return result;
 	}
 
 	/// <summary>
@@ -910,12 +987,21 @@ public class Question
 				replacement.Id, 1, draft.Type, draft.LabelEn, draft.LabelFr,
 				draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 				false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-				draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId,
+				draft.DependsOnQuestionId, draft.DependsOnChoiceId, draft.GroupedUnderQuestionId,
 				draft.IsTranslatable, at));
 
 		// Every choice crosses, removed ones and reporter-added marks included,
-		// so the replacement offers exactly what this one did (ADR-0095).
-		replacement._choices.AddRange(_choices.Select(choice => choice.CopyTo(replacement.Id)));
+		// so the replacement offers exactly what this one did (ADR-0095). The
+		// copies are new rows (ADR-0128), so a replaced-by link is re-pointed at
+		// the copy of the choice that replaced the original.
+		var copies = _choices.ToDictionary(choice => choice.Id, choice => choice.CopyTo(replacement.Id));
+		foreach (var (originalId, copy) in copies)
+		{
+			var original = _choices.Single(choice => choice.Id == originalId);
+			copy.RelinkReplacement(original.ReplacedByChoiceId is { } next && copies.TryGetValue(next, out var nextCopy) ? nextCopy.Id : null);
+		}
+
+		replacement._choices.AddRange(copies.Values);
 
 		Retire(at);
 		return replacement;
@@ -930,7 +1016,7 @@ public class Question
 			Id, CurrentRevision.RevisionNumber + 1, draft.Type, draft.LabelEn, draft.LabelFr,
 			draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 			IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
-			draft.DependsOnQuestionId, draft.DependsOnOptionCode, draft.GroupedUnderQuestionId,
+			draft.DependsOnQuestionId, draft.DependsOnChoiceId, draft.GroupedUnderQuestionId,
 			draft.IsTranslatable, at);
 		_revisions.Add(revision);
 		return revision;
@@ -949,7 +1035,7 @@ public class Question
 		return new RevisionDraft(
 			current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
 			current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
-			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnOptionCode,
+			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnChoiceId,
 			current.GroupedUnderQuestionId, current.IsTranslatable);
 	}
 
@@ -997,7 +1083,7 @@ public class Question
 		bool IsActive,
 		int DisplayOrder,
 		TinyId? DependsOnQuestionId,
-		string? DependsOnOptionCode,
+		TinyId? DependsOnChoiceId,
 		TinyId? GroupedUnderQuestionId,
 		bool IsTranslatable);
 }

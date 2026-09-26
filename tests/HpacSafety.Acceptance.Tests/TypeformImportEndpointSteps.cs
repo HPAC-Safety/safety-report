@@ -266,7 +266,7 @@ public sealed class TypeformImportEndpointSteps
 			IsPrivate = isPrivate,
 			IsActive = true,
 			DependsOnQuestionId = dependsOnQuestionId,
-			DependsOnOptionCode = (string?)null,
+			DependsOnChoiceId = (string?)null,
 			OptionSetId = (string?)null,
 			GroupedUnderQuestionId = groupedUnderQuestionId,
 			AllowsReporterAdditions = false,

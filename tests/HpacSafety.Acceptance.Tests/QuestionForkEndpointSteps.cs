@@ -304,7 +304,7 @@ public sealed class QuestionForkEndpointSteps(QuestionEditOutcome outcome)
 			isPrivate = fields.IsPrivate,
 			isActive = fields.IsActive,
 			dependsOnQuestionId = (string?)null,
-			dependsOnOptionCode = (string?)null,
+			dependsOnChoiceId = (string?)null,
 			groupedUnderQuestionId = (string?)null,
 			options = Array.Empty<object>(),
 		};

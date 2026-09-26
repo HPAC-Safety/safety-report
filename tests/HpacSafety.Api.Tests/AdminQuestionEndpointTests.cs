@@ -146,13 +146,13 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		var child = Draft(UniqueKey("rating"), "short_text") with
 		{
 			DependsOnQuestionId = parentId,
-			DependsOnOptionCode = "hang_glider",
+			DependsOnChoiceId = ChoiceIdOf(parent, "hang_glider"),
 		};
 		var created = await Create(client, child);
 
-		// Then
+		// Then — the dependency names the parent's choice by ID (ADR-0128)
 		created.GetProperty("dependsOnQuestionId").GetString().ShouldBe(parentId);
-		created.GetProperty("dependsOnOptionCode").GetString().ShouldBe("hang_glider");
+		created.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(parent, "hang_glider"));
 	}
 
 	[Fact]
@@ -161,12 +161,13 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Given
 		using var client = await SignedIn();
 		var parent = await CreatePilotType(client);
+		var another = await CreatePilotType(client);
 
-		// When
+		// When — another question's choice
 		var child = Draft(UniqueKey("rating"), "short_text") with
 		{
 			DependsOnQuestionId = parent.GetProperty("id").GetString(),
-			DependsOnOptionCode = "trike",
+			DependsOnChoiceId = ChoiceIdOf(another, "hang_glider"),
 		};
 		using var response = await client.PostAsJsonAsync(Questions, child);
 
@@ -174,7 +175,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 
 		var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
-		problem.GetProperty("detail").GetString()!.ShouldContain("trike");
+		problem.GetProperty("detail").GetString()!.ShouldContain("does not currently offer");
 	}
 
 	[Fact]
@@ -223,7 +224,7 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		{
 			LabelEn = "Wing rating",
 			DependsOnQuestionId = parentId,
-			DependsOnOptionCode = "paraglider",
+			DependsOnChoiceId = ChoiceIdOf(parent, "paraglider"),
 		});
 
 		// When
@@ -234,6 +235,134 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		// Then
 		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 		(await response.Content.ReadAsStringAsync()).ShouldContain("Wing rating");
+	}
+
+	[Fact]
+	public async Task GivenAConditionOnAPickerOption_WhenTheOptionIsReplaced_ThenTheConditionShowsTheReplacementAndResavingChangesNothing()
+	{
+		// Given
+		using var client = await SignedIn();
+		var parentDraft = Draft(UniqueKey("aircraft"), "single_select") with
+		{
+			Options = [new Option(null, "Hang glider", "Deltaplane"), new Option(null, "Paraglider", "Parapente")],
+		};
+		var parent = await Create(client, parentDraft);
+		var parentId = parent.GetProperty("id").GetString()!;
+		var childDraft = Draft(UniqueKey("wing_rating"), "short_text") with
+		{
+			DependsOnQuestionId = parentId,
+			DependsOnChoiceId = ChoiceIdOf(parent, "paraglider"),
+		};
+		var child = await Create(client, childDraft);
+		var childId = child.GetProperty("id").GetString()!;
+
+		// When — the option is replaced, not fixed (ADR-0128)
+		using var replaced = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{parentId}", UriKind.Relative),
+			parentDraft with
+			{
+				Options = [new Option("hang_glider", "Hang glider", "Deltaplane"), new Option("paraglider", "Paraglider (solo)", "Parapente (solo)", Replace: true)],
+			});
+		replaced.StatusCode.ShouldBe(HttpStatusCode.OK, await replaced.Content.ReadAsStringAsync());
+		var afterReplace = await replaced.Content.ReadFromJsonAsync<JsonElement>();
+
+		// Then — the screen shows the condition on the replacement
+		var shown = (await List(client)).Single(question => question.GetProperty("id").GetString() == childId);
+		shown.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(afterReplace, "paraglider_solo"));
+		using var reader = _factory.CreateClient();
+		(await reader.GetFromJsonAsync<JsonElement>(new Uri("/api/v1/questions/", UriKind.Relative))).EnumerateArray()
+			.Single(question => question.GetProperty("id").GetString() == childId)
+			.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(afterReplace, "paraglider_solo"));
+
+		// When — the condition is saved back as the screen shows it
+		using var resaved = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{childId}", UriKind.Relative),
+			childDraft with { DependsOnChoiceId = ChoiceIdOf(afterReplace, "paraglider_solo") });
+
+		// Then — nothing about the question changed, so nothing is revised
+		resaved.StatusCode.ShouldBe(HttpStatusCode.OK, await resaved.Content.ReadAsStringAsync());
+		(await resaved.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("revisionNumber").GetInt32().ShouldBe(1);
+	}
+
+	[Fact]
+	public async Task GivenAConditionNamingAMalformedChoiceId_WhenSaved_ThenApiRefuses()
+	{
+		// Given
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
+
+		// When
+		using var response = await client.PostAsJsonAsync(Questions, Draft(UniqueKey("rating"), "short_text") with
+		{
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
+			DependsOnChoiceId = "not-a-choice-id",
+		});
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
+	public async Task GivenACondition_WhenSavedNamingAnotherChoice_ThenTheConditionChanges()
+	{
+		// Given
+		using var client = await SignedIn();
+		var parent = await CreatePilotType(client);
+		var draft = Draft(UniqueKey("rating"), "short_text") with
+		{
+			DependsOnQuestionId = parent.GetProperty("id").GetString(),
+			DependsOnChoiceId = ChoiceIdOf(parent, "hang_glider"),
+		};
+		var child = await Create(client, draft);
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{child.GetProperty("id").GetString()}", UriKind.Relative),
+			draft with { DependsOnChoiceId = ChoiceIdOf(parent, "paraglider") });
+
+		// Then — a different condition is a new revision
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+		var saved = await response.Content.ReadFromJsonAsync<JsonElement>();
+		saved.GetProperty("dependsOnChoiceId").GetString().ShouldBe(ChoiceIdOf(parent, "paraglider"));
+		saved.GetProperty("revisionNumber").GetInt32().ShouldBe(2);
+	}
+
+	[Fact]
+	public async Task GivenATypeAheadValue_WhenAnAdministratorAsksToReplaceIt_ThenApiRefuses()
+	{
+		// Given — a type-ahead value is corrected in place, never replaced (ADR-0129)
+		using var client = await SignedIn();
+		var draft = Draft(UniqueKey("launch"), "autocomplete") with { Options = [new Option(null, "Mount 7", "Mont 7")] };
+		var created = await Create(client, draft);
+
+		// When
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{created.GetProperty("id").GetString()}", UriKind.Relative),
+			draft with { Options = [new Option("mount_7", "Mount Seven", "Mont Sept", Replace: true)] });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+		(await response.Content.ReadAsStringAsync()).ShouldContain("corrected in place");
+	}
+
+	[Fact]
+	public async Task GivenAPickerOption_WhenReplacedWithWordingTheQuestionAlreadyHad_ThenApiRefuses()
+	{
+		// Given
+		using var client = await SignedIn();
+		var draft = Draft(UniqueKey("wing"), "single_select") with
+		{
+			Options = [new Option(null, "Hang glider", "Deltaplane"), new Option(null, "Paraglider", "Parapente")],
+		};
+		var created = await Create(client, draft);
+
+		// When — a replacement must be a new option, not one the question has
+		using var response = await client.PutAsJsonAsync(
+			new Uri($"/api/admin/questions/{created.GetProperty("id").GetString()}", UriKind.Relative),
+			draft with { Options = [new Option("hang_glider", "Paraglider", "Parapente", Replace: true), new Option("paraglider", "Paraglider", "Parapente")] });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
 	}
 
 	[Fact]
@@ -1009,11 +1138,20 @@ public class AdminQuestionEndpointTests(ApiPostgresFixture fixture)
 		bool IsPrivate,
 		bool IsActive,
 		string? DependsOnQuestionId,
-		string? DependsOnOptionCode,
+		string? DependsOnChoiceId,
 		string? GroupedUnderQuestionId,
 		IReadOnlyList<Option> Options);
 
 	private sealed record Reorder(IReadOnlyList<string> QuestionIdsInOrder);
 
-	private sealed record Option(string? Code, string? LabelEn, string? LabelFr);
+	private sealed record Option(string? Code, string? LabelEn, string? LabelFr, bool Replace = false);
+
+	/// <summary>The ID of the choice with this code, as the admin view carries it.</summary>
+	private static string ChoiceIdOf(JsonElement question,
+									 string code)
+	{
+		return question.GetProperty("options").EnumerateArray()
+			.Single(option => option.GetProperty("code").GetString() == code)
+			.GetProperty("id").GetString()!;
+	}
 }

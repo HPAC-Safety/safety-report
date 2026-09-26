@@ -54,7 +54,7 @@ public class QuestionRevision
 		bool isActive,
 		int displayOrder,
 		TinyId? dependsOnQuestionId,
-		string? dependsOnOptionCode,
+		TinyId? dependsOnChoiceId,
 		TinyId? groupedUnderQuestionId,
 		bool isTranslatable,
 		DateTimeOffset at)
@@ -89,7 +89,7 @@ public class QuestionRevision
 		IsActive = isActive;
 		DisplayOrder = displayOrder;
 		DependsOnQuestionId = ValidatedDependency(dependsOnQuestionId, questionId, type, isSystem);
-		DependsOnOptionCode = ValidatedOptionCode(dependsOnOptionCode, DependsOnQuestionId);
+		DependsOnChoiceId = ValidatedChoice(dependsOnChoiceId, DependsOnQuestionId);
 		GroupedUnderQuestionId = ValidatedGrouping(groupedUnderQuestionId, questionId);
 		LabelEn = NotBlank(labelEn);
 		LabelFr = NotBlank(labelFr);
@@ -150,8 +150,8 @@ public class QuestionRevision
 	/// <summary>
 	///     The question this one is conditional on, if any. The form enables this
 	///     question only when that question's answer satisfies the condition:
-	///     yes, in either language, for a yes/no parent, or the option named by
-	///     <see cref="DependsOnOptionCode" /> for a single-select parent.
+	///     yes, for a yes/no parent, or the choice named by
+	///     <see cref="DependsOnChoiceId" /> for a single-select parent.
 	/// </summary>
 	/// <remarks>
 	///     This names the stable <see cref="Question" />, not a revision of it, so
@@ -165,13 +165,15 @@ public class QuestionRevision
 	public TinyId? DependsOnQuestionId { get; private init; }
 
 	/// <summary>
-	///     The invariant option code a <see cref="QuestionType.SingleSelect" />
-	///     parent must be answered with to enable this question. Always
-	///     <c>null</c> when <see cref="DependsOnQuestionId" /> is null or names a
-	///     <see cref="QuestionType.YesNo" /> parent, whose condition is the
-	///     yes, in either language, instead. See ADR-0074, ADR-0127.
+	///     The choice a <see cref="QuestionType.SingleSelect" /> parent must be
+	///     answered with to enable this question, by identifier. Always <c>null</c>
+	///     when <see cref="DependsOnQuestionId" /> is null or names a
+	///     <see cref="QuestionType.YesNo" /> parent, whose condition is a yes
+	///     instead. When an Administrator replaces that choice, the condition
+	///     follows the replacement (<see cref="Question.CurrentChoice" />) and this
+	///     revision is not rewritten. See ADR-0074, ADR-0128.
 	/// </summary>
-	public string? DependsOnOptionCode { get; private init; }
+	public TinyId? DependsOnChoiceId { get; private init; }
 
 	/// <summary>
 	///     The <see cref="QuestionType.Group" /> question this revision renders
@@ -306,14 +308,14 @@ public class QuestionRevision
 		bool isActive,
 		int displayOrder,
 		TinyId? dependsOnQuestionId,
-		string? dependsOnOptionCode,
+		TinyId? dependsOnChoiceId,
 		TinyId? groupedUnderQuestionId,
 		bool isTranslatable,
 		DateTimeOffset at)
 	{
 		return new QuestionRevision(
 			questionId, revisionNumber, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
-			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnOptionCode,
+			isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
 			groupedUnderQuestionId, isTranslatable, at);
 	}
 
@@ -383,48 +385,38 @@ public class QuestionRevision
 	}
 
 	/// <summary>
-	///     Normalizes a required option code, and refuses one with no parent to
-	///     attach it to. Whether the parent's type actually takes an option code
-	///     (a <see cref="QuestionType.SingleSelect" /> parent does, a
-	///     <see cref="QuestionType.YesNo" /> one does not) is, like the parent's
-	///     type itself, a fact <see cref="QuestionDependencies" /> checks against
-	///     the live bank. See ADR-0074.
+	///     Refuses a required choice with no parent to attach it to. Whether the
+	///     parent's type actually takes one (a <see cref="QuestionType.SingleSelect" />
+	///     parent does, a <see cref="QuestionType.YesNo" /> one does not) and whether
+	///     the parent offers it are facts <see cref="QuestionDependencies" /> checks
+	///     against the live bank. See ADR-0074.
 	/// </summary>
-	private static string? ValidatedOptionCode(string? dependsOnOptionCode,
-											   TinyId? dependsOnQuestionId)
+	private static TinyId? ValidatedChoice(TinyId? dependsOnChoiceId,
+										   TinyId? dependsOnQuestionId)
 	{
-		if (dependsOnOptionCode is null)
-		{
-			return null;
-		}
-
-		if (dependsOnQuestionId is null)
+		if (dependsOnChoiceId is not null
+			&& dependsOnQuestionId is null)
 		{
 			throw new DomainRuleViolationException("A required option needs a parent question to name it.");
 		}
 
-		return QuestionKey.Normalize(dependsOnOptionCode);
+		return dependsOnChoiceId;
 	}
 
 	/// <summary>
 	///     Whether the reporter's answer to a single-select <paramref name="parent" />
-	///     names this revision's required option, so the question it belongs to should
-	///     be shown. Always true when this revision is unconditional; never true for a
-	///     yes/no parent, whose answer is a boolean (see the other overload). See
-	///     ADR-0074.
+	///     names this revision's required choice — or the choice that replaced it —
+	///     so the question it belongs to should be shown. Always true when this
+	///     revision is unconditional; never true for a yes/no parent, whose answer is
+	///     a boolean (see the other overload). See ADR-0074, ADR-0128.
 	/// </summary>
 	/// <param name="parent">
 	///     The question named by <see cref="DependsOnQuestionId" />, or null when
 	///     this revision is unconditional or the caller has not loaded it.
 	/// </param>
-	/// <param name="parentAnswerValue">
-	///     The reporter's answer to <paramref name="parent" /> so far, in
-	///     <paramref name="locale" />, or null when they have not answered it yet.
-	/// </param>
-	/// <param name="locale">The locale <paramref name="parentAnswerValue" /> was given in.</param>
+	/// <param name="chosenChoiceId">The choice the reporter's answer to <paramref name="parent" /> names, or null when unanswered.</param>
 	public bool IsEnabledGiven(Question? parent,
-							   string? parentAnswerValue,
-							   Locale locale)
+							   TinyId? chosenChoiceId)
 	{
 		if (DependsOnQuestionId is null)
 		{
@@ -432,15 +424,14 @@ public class QuestionRevision
 		}
 
 		if (parent is null
-			|| parentAnswerValue is null
-			|| parent.CurrentRevision.Type == QuestionType.YesNo)
+			|| chosenChoiceId is null
+			|| DependsOnChoiceId is not { } required
+			|| parent.CurrentRevision.Type != QuestionType.SingleSelect)
 		{
 			return false;
 		}
 
-		return DependsOnOptionCode is { } requiredOptionCode
-			   && string.Equals(
-				   parent.Choice(requiredOptionCode)?.Label(locale), parentAnswerValue, StringComparison.Ordinal);
+		return parent.CurrentChoice(required)?.Id == chosenChoiceId;
 	}
 
 	/// <summary>

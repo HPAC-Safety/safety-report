@@ -127,15 +127,15 @@
       "country": "Pays"
     },
     "date": {
-      "invalid": "#Enter a date as yyyy-mm-dd, such as 2026-09-21.",
-      "future": "#Choose a date that is not in the future.",
-      "placeholder": "#yyyy-mm-dd",
-      "calendar": "#Choose a date",
-      "previousMonth": "#Previous month",
-      "nextMonth": "#Next month",
-      "month": "#Month",
-      "year": "#Year",
-      "chosen": "#Selected: {date}"
+      "invalid": "Entrez une date au format aaa-mm-jj, par exemple 2026-09-21.",
+      "future": "Choisissez une date qui ne se situe pas dans le futur.",
+      "placeholder": "aaaa-mm-jj",
+      "calendar": "Choisissez une date",
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Le mois prochain",
+      "month": "Mois",
+      "year": "Année",
+      "chosen": "Sélectionné : {date}"
     },
     "booleanYes": "Oui",
     "booleanNo": "Non",
@@ -248,7 +248,7 @@
       "privateHelp": "Les réponses à une question privée permettent de reconnaître des détails permettant d’identifier la personne et n’apparaissent jamais dans un résumé publié.",
       "translatable": "Traduction automatique de la réponse",
       "translatableHelp": "La réponse à cette question est traduite automatiquement dans l’autre langue officielle à l’intention des réviseurs. Ne la traduisez pas s’il s’agit de noms, de codes ou d’autres passages dont la formulation est identique dans les deux langues.",
-      "allowFutureDates": "#Allow future dates",
+      "allowFutureDates": "Autoriser les dates futures",
       "dependsOn": "Ne posez la question que lorsqu’une autre question a reçu une certaine réponse",
       "dependsOnNone": "Posez toujours cette question",
       "dependsOnHelp": "Seule une question de type « oui/non » ou à choix unique peut en déclencher une autre.",

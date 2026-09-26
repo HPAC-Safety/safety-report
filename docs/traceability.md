@@ -764,11 +764,11 @@ Sign-out is not an audited event — *Reqnroll, Covered*
 
 ### REQ-MOD-092
 
-A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review — *playwright-bdd, Planned*
+A signed-in SafetyOfficer's Admin menu offers reports and type-ahead review — *playwright-bdd, Covered*
 
 ### REQ-MOD-093
 
-A SafetyOfficer's Admin menu counts reports and type-ahead values waiting — *playwright-bdd, Planned*
+A SafetyOfficer's Admin menu counts reports and type-ahead values waiting — *playwright-bdd, Covered*
 
 ### REQ-MOD-094
 
@@ -781,6 +781,10 @@ A Safety Officer reviews flagged type-ahead values on one page — *playwright-b
 ### REQ-MOD-096
 
 A report's consent reaches the admin view as true, false, or null — *Reqnroll, Covered*
+
+### REQ-MOD-097
+
+A Safety Officer approves, corrects, and removes type-ahead values on the review page — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 
@@ -1170,15 +1174,15 @@ A fork's choices are new rows, and old answers keep naming the retired question'
 
 ### REQ-QB-128
 
-A reporter's new type-ahead value is flagged for review and offered at once — *Reqnroll, Planned*
+A reporter's new type-ahead value is flagged for review and offered at once — *Reqnroll, Covered*
 
 ### REQ-QB-129
 
-A type-ahead value is corrected in place for every answer that names it — *Reqnroll, Planned*
+A type-ahead value is corrected in place for every answer that names it — *Reqnroll, Covered*
 
 ### REQ-QB-130
 
-A reporter typing a removed type-ahead value names it without reviving it — *Reqnroll, Planned*
+A reporter typing a removed type-ahead value names it without reviving it — *Reqnroll, Covered*
 
 ### REQ-QB-131
 
@@ -1194,11 +1198,11 @@ Only a type-ahead value can be merged or edited by a Safety Officer — *Reqnrol
 
 ### REQ-QB-134
 
-The Worker supplies a reporter-added value's other language — *Reqnroll, Planned*
+The Worker supplies a reporter-added value's other language — *Reqnroll, Covered*
 
 ### REQ-QB-135
 
-Reviewing a type-ahead value clears its flag — *Reqnroll, Planned*
+Reviewing a type-ahead value clears its flag — *Reqnroll, Covered*
 
 ### REQ-QB-136
 

@@ -11,14 +11,15 @@
 #               ones need nothing more, and skillfile needs these three.
 #
 # gh and shellcheck come from Ubuntu 24.04's own archive, the one GitHub's
-# runner image installs ShellCheck from. Built locally by tools/ci-local.sh;
-# never pushed.
+# runner image installs ShellCheck from, pinned to the versions resolved when
+# this was written. Built locally by tools/ci-local.sh, tagged with this file's
+# hash so a change rebuilds it; never pushed.
 FROM --platform=linux/amd64 ubuntu:24.04@sha256:008173c23f95b170204355c12626cb5a965d779a7e1283b09e9cffbb1bf33ca3 AS amd64
 
 FROM ghcr.io/catthehacker/ubuntu:act-24.04@sha256:62d572b92f9f32d3427b6d220ad1f9dca9c7b6ffad37d295425037dbff78abaf
 
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends gh shellcheck \
+	&& apt-get install -y --no-install-recommends gh=2.45.0-1ubuntu0.3 shellcheck=0.9.0-1 \
 	&& rm -rf /var/lib/apt/lists/*
 
 # Staged, then installed only where the image is not already x86-64, so an

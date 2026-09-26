@@ -189,8 +189,18 @@ fs.writeFileSync(process.argv[1], JSON.stringify({
 
 # --------------------------------------------------------------- the image --
 
-docker build -q -t hpac-safety-act:local "$ROOT/tools/act" >/dev/null \
-	|| die "could not build the runner image from tools/act/Dockerfile"
+#
+# Tagged with the committed Dockerfile's hash, so a changed Dockerfile builds a
+# new image instead of reusing a stale one. `:local` follows it, for .actrc and
+# a hand-run act.
+
+IMAGE="hpac-safety-act:$(git -C "$WORK/repo" rev-parse --short=12 HEAD:tools/act/Dockerfile)"
+if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
+	say "Building $IMAGE from tools/act/Dockerfile…"
+	docker build -q -t "$IMAGE" "$WORK/repo/tools/act" >/dev/null \
+		|| die "could not build the runner image from tools/act/Dockerfile"
+fi
+docker tag "$IMAGE" hpac-safety-act:local
 
 # ------------------------------------------------------------------ the run --
 #
@@ -203,6 +213,7 @@ docker build -q -t hpac-safety-act:local "$ROOT/tools/act" >/dev/null \
 EXTRA=''
 if [ "$(docker info --format '{{.OperatingSystem}}' 2>/dev/null)" = 'Docker Desktop' ]; then
 	EXTRA='--env TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal'
+	say "Docker Desktop: Testcontainers reaches containers through host.docker.internal"
 fi
 
 LOGS="$ROOT/artifacts/ci-local"
@@ -217,10 +228,11 @@ run_act() {
 	# .actrc sits in the clone's root, which is where act reads it from.
 	(
 		cd "$WORK/repo"
-		# EXTRA is empty or one flag and its value, so it must split.
+		# EXTRA is empty or one flag and its value, so it must split. The -P
+		# here overrides .actrc's, since act reads .actrc first.
 		# shellcheck disable=SC2086
 		if act pull_request -W ".github/workflows/$1" ${2:+-j "$2"} \
-			-e "$EVENT" -s GITHUB_TOKEN $EXTRA; then
+			-P "ubuntu-latest=$IMAGE" -e "$EVENT" -s GITHUB_TOKEN $EXTRA; then
 			echo 0 > "$status_file"
 		else
 			echo 1 > "$status_file"

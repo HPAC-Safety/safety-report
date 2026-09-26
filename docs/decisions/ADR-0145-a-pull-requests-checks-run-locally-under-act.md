@@ -49,12 +49,19 @@ and is the pre-pull-request gate.**
   repository (Actions, Contents, Metadata: read), else `gh auth token` with a
   warning. `.actrc` points act's secret, variable, and env files at
   `/dev/null`; `.secrets`, `.vars`, and `.actrc.local` are gitignored.
-- **The image**: `tools/act/Dockerfile`, built locally, is
-  `catthehacker/ubuntu:act-24.04` pinned by digest plus `gh` and `shellcheck`
-  from Ubuntu's archive and, on arm64, the x86-64 loader and libc. It runs
-  natively on each host: arm64 on Apple Silicon, never amd64 emulation for
-  the .NET jobs. Docker Desktop runs the workflows' linux-amd64 downloads
-  (terraform, tflint, skillfile) through Rosetta.
+- **The image**: `tools/act/Dockerfile`, built locally and never pushed.
+  - Base: `catthehacker/ubuntu:act-24.04`, pinned by digest. It lacks `gh`
+    (without it the coverage job's baseline step silently skips the ratchet)
+    and `shellcheck`.
+  - Added: `gh` 2.45.0 and `shellcheck` 0.9.0 from Ubuntu 24.04's archive, at
+    pinned package versions, and, on arm64, the x86-64 loader, libc, and
+    libgcc_s copied from a digest-pinned `ubuntu:24.04`.
+  - Tagged `hpac-safety-act:<hash of the Dockerfile>`, so a changed Dockerfile
+    builds a new image rather than reusing a stale one; the wrapper maps
+    `ubuntu-latest` to that tag.
+  - Native on each host: arm64 on Apple Silicon, never amd64 emulation for the
+    .NET jobs. Docker Desktop runs the workflows' linux-amd64 downloads
+    (terraform, tflint, skillfile) through Rosetta.
 - **The checkout**: act runs in a throwaway clone of `HEAD`, because a
   worktree's `.git` is a file that points outside the copy act makes.
 - **Coverage parity**: the `coverage` job runs as on GitHub, on Ubuntu 24.04
@@ -63,26 +70,32 @@ and is the pre-pull-request gate.**
   the branch was measured on macOS.
 - **Testcontainers** keep Ryuk on
   ([lesson 0008](../lessons/0008-containers-outlive-the-worktree-that-started-them.md)).
-  Under Docker Desktop the wrapper sets
-  `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal`, because a published
-  port reaches the VM's host network about two seconds after the container
-  starts, and Testcontainers connects before then.
+  act puts each job on the Docker VM's host network. Under Docker Desktop a
+  published port reaches that network about two seconds after the container
+  starts, and Testcontainers connects before then, so Ryuk's handshake is
+  refused. The wrapper detects Docker Desktop (`docker info` reports it as the
+  operating system) and only then passes
+  `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal`, which answers at once.
+  A native Linux engine gets nothing.
 
 ### The `env.ACT` carve-outs in `ci.yml`
 
 act sets `ACT=true`; on GitHub `env.ACT` is empty, so each carve-out is a
 no-op there.
 
-- **paths-filter**: `token: ${{ !env.ACT && github.token || '' }}`. No pull
-  request exists for the API to list, and tokenless, the filter diffs the
-  event's `base.sha` with git. (`env.ACT && '' || github.token` would not
-  work: `''` is falsy, so it always yields the token.)
-- **Artifacts**: act 0.2.89 rejects `upload-artifact@v7` and
+- **paths-filter** (permanent):
+  `token: ${{ !env.ACT && github.token || '' }}`. No pull request exists for
+  the API to list; tokenless, the filter diffs the event's `base.sha` with
+  git, so no `base:` input is needed. The form first proposed,
+  `env.ACT && '' || github.token`, always yields the token, because `''` is
+  falsy.
+- **Artifacts** (temporary): act 0.2.89 rejects `upload-artifact@v7` and
   `download-artifact@v8` (nektos/act#6022). The two uploads and the one
   download skip under act, and one act-only step prints the gate, the test
   counts, the per-assembly summary, and the Cobertura totals to the log, where
-  the wrapper finds them. Remove all four when a pinned act release accepts
-  those versions.
+  the wrapper finds them. Each carries a comment citing nektos/act#6022.
+  **Remove all four when act ships the fix**, in the pull request that moves
+  `.act-version` to that release.
 
 ## Rejected
 

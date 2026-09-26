@@ -1162,13 +1162,6 @@ Scenario: A reporter types a type-ahead value its list does not offer
   When they press Tab
   Then the list is closed and the field holds "A ridge nobody listed"
 
-@REQ-QB-171
-@ui
-Scenario: A type-ahead choice picked from the list is sent as that choice, not matched by its wording
-  Given a signed-in reporter answers a type-ahead question offering two choices both worded "Other"
-  When they pick the second "Other" from the list and send the report
-  Then the answer names the second "Other" choice's identifier and carries no typed text
-
 @REQ-QB-163
 @ui
 Scenario: A type-ahead's list fits a phone screen and scrolls when long
@@ -1177,6 +1170,15 @@ Scenario: A type-ahead's list fits a phone screen and scrolls when long
   And they open the field's list by pressing the caret
   Then the list fits within the screen's width, and the page does not scroll sideways
   And the list scrolls within itself
+
+@REQ-QB-171
+@ui
+Scenario: A type-ahead choice picked from the list is sent as that choice, not matched by its wording
+  Given a signed-in reporter answers a type-ahead question offering two choices both worded "Other"
+  When they pick the second "Other" from the list
+  Then the list is closed and the field holds "Other"
+  When they consent on the next page and send the report
+  Then the answer names the second "Other" choice's identifier and carries no typed text
 
 @REQ-QB-104
 Scenario: A new installation asks for several attachments

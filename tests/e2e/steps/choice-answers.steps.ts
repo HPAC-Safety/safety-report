@@ -139,7 +139,8 @@ Then("the launch site is sent as the words typed", async ({ page }) => {
 /*
  * REQ-QB-171: a type-ahead choice picked from the list is sent as that choice,
  * by its identifier, even where another choice carries the same wording. The
- * two choices' IDs sort north before south, so the list shows north first.
+ * stub sends north first, so matching the wording would name north; the list
+ * sorts the tie by ID, north then south, and the reporter picks south.
  */
 
 function sameWordingForm(wording: string): StubQuestion[] {
@@ -149,8 +150,8 @@ function sameWordingForm(wording: string): StubQuestion[] {
 			...launch,
 			displayOrder: 0,
 			options: [
-				{ id: "choice-other-south", code: "other_south", labelEn: wording, labelFr: wording, onlyIn: null },
 				{ id: "choice-other-north", code: "other_north", labelEn: wording, labelFr: wording, onlyIn: null },
+				{ id: "choice-other-south", code: "other_south", labelEn: wording, labelFr: wording, onlyIn: null },
 			],
 		},
 		{ ...consent, displayOrder: 1 },
@@ -165,10 +166,12 @@ Given("a signed-in reporter answers a type-ahead question offering two choices b
 	await page.goto("/report")
 })
 
-When("they pick the second {string} from the list and send the report", async ({ page }, wording: string) => {
+When("they pick the second {string} from the list", async ({ page }, wording: string) => {
 	await page.getByRole("button", { name: "Show choices" }).click()
 	await page.getByRole("listbox").getByRole("option", { name: wording }).nth(1).click()
-	await expect(page.getByRole("combobox", { name: "Where did you launch?" })).toHaveValue(wording)
+})
+
+When("they consent on the next page and send the report", async ({ page }) => {
 	await page.getByRole("button", { name: "Next" }).click()
 	await page.getByRole("radio", { name: "Yes" }).click()
 
@@ -177,7 +180,6 @@ When("they pick the second {string} from the list and send the report", async ({
 	sent.set(page, await request)
 })
 
-Then("the answer names the second {string} choice's identifier and carries no typed text", async ({ page }, wording: string) => {
-	expect(sameWordingForm(wording)[0].options.map((option) => option.labelEn)).toEqual([wording, wording])
+Then("the answer names the second {string} choice's identifier and carries no typed text", async ({ page }, _wording: string) => {
 	expect(answerTo(page, "rev-launch")).toMatchObject({ value: null, choices: ["choice-other-south"] })
 })

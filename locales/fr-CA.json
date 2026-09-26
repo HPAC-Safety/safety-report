@@ -41,10 +41,10 @@
     "toggleLabel": "Thème"
   },
   "translationDirection": {
-    "toFrench": "#Translate English to French",
-    "toEnglish": "#Translate French to English",
-    "english": "#EN",
-    "french": "#FR"
+    "toFrench": "Traduire de l'anglais vers le français",
+    "toEnglish": "Traduire du français vers l'anglais",
+    "english": "FR",
+    "french": "FR"
   },
   "home": {
     "heroTitle": "Ensemble, pour des vols plus sécuritaires",
@@ -277,7 +277,7 @@
       "awaitingFrench": "En attente de la version française",
       "replace": "Remplacer par une nouvelle option",
       "position": "Poste",
-      "translate": "#Translate this choice",
+      "translate": "Traduisez ce choix",
       "pin": {
         "none": "Par ordre alphabétique",
         "first": "Épingler en haut de la page",

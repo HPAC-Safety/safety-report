@@ -50,7 +50,7 @@ need no CSRF protection.
 | Role | Capabilities |
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
-| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports; review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
+| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports; keep private notes on a report ([ADR-0133](../../docs/decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
 | Administrator | Every SafetyOfficer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker option ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
 
 Submission is a membership capability rather than a privileged one, so any of
@@ -140,6 +140,32 @@ Every action carries the version of the report the reviewer loaded. If another
 reviewer changed it since, the API answers `409` and nothing is saved; the page
 asks the reviewer to reload. Each action writes one content-free audit entry
 in the same transaction.
+
+## Private notes (#508)
+
+A safety officer or administrator may keep notes on a report: calls made,
+follow-ups, what an investigator said
+([ADR-0133](../../docs/decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)).
+The report view has a **Private notes** section, newest note first. Each note
+shows its current text, who wrote that text (**You**, or the writer's opaque
+token subject), when, and whether it was edited. Any reviewer may add a note,
+edit any note, open a note's history, or remove a note after confirming.
+
+- A note is plain text of 1 to 4000 characters, shown exactly as typed. It
+  may be added to any report that is not deleted, in any status, including a
+  report without publication consent (REQ-MOD-099, REQ-MOD-102).
+- An edit is a new revision; the history lists every revision, oldest first,
+  each with its own text, writer, and time. An edit based on a revision that
+  is no longer the latest is refused with `409`, so two reviewers cannot
+  silently overwrite each other (REQ-MOD-100).
+- Removal soft-deletes the note and its revisions and writes one
+  content-free `RemovedPrivateNote` audit entry. Deleting the report does the
+  same to its notes (REQ-MOD-101, REQ-MOD-103).
+- The endpoints live under `/api/admin/reports/{reportId}/private-notes` and
+  answer only a Safety Officer or an Administrator (REQ-MOD-098). Nothing else
+  reads the notes: not the report detail DTO, not a database view, not the
+  public feed or comments, not the Worker or the model, and never a
+  translation provider (REQ-MOD-104, REQ-MOD-105).
 
 ## Reading a date, time, or yes/no answer (#403)
 
@@ -247,3 +273,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   the reviewer's zone.
 - A per-reviewer date format preference. The format follows the interface
   language.
+- For private notes: translating a note, Markdown or rich-text rendering,
+  mentions or notifications, files attached to a note, search across notes,
+  a count of notes anywhere outside the note list, and restoring a removed
+  note. A note referring to a private attachment is #507's
+  (ADR-0133).

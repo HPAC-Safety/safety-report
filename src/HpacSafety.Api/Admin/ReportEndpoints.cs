@@ -423,7 +423,7 @@ public static class ReportEndpoints
 
 	/// <summary>
 	///     Soft-deletes a report and everything it owns — answers, files, summary,
-	///     and pending outbox work — with one shared timestamp, in one transaction.
+	///     private notes, and pending outbox work — with one shared timestamp, in one transaction.
 	///     Irreversible: there is no restore endpoint (REQ-DOM-007).
 	/// </summary>
 	private static async Task<IResult> Delete(
@@ -462,6 +462,18 @@ public static class ReportEndpoints
 		foreach (var message in pendingOutbox)
 		{
 			message.Delete(at);
+		}
+
+		// Its staff-only notes go with it, at the same time (REQ-MOD-103).
+		var notes = await database.PrivateNotes
+			.Include(note => note.Revisions)
+			.Where(note => note.ReportId == reportId)
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		foreach (var note in notes)
+		{
+			note.Remove(at);
 		}
 
 		// A validated token should always carry a subject, but the /me endpoint

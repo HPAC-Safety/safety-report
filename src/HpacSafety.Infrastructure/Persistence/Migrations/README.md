@@ -65,6 +65,8 @@ erDiagram
     question_revisions ||--o{ report_answers : "answered under"
     question_choices |o--o{ report_answers : "named by"
     report_answers ||--o{ report_files : "uploaded for"
+    reports ||--o{ report_private_notes : "staff-only notes (ADR-0133)"
+    report_private_notes ||--|{ report_private_note_revisions : "every edit"
 
     questions {
         char(11) id PK
@@ -123,6 +125,23 @@ erDiagram
         boolean consent_publish "the only projected answer"
         timestamptz submitted_at
         timestamptz published_at
+        timestamptz deleted
+    }
+
+    report_private_notes {
+        char(11) id PK
+        char(11) report_id FK
+        timestamptz created_at
+        timestamptz deleted "removed, or its report deleted"
+    }
+
+    report_private_note_revisions {
+        char(11) id PK
+        char(11) note_id FK
+        int number UK "unique per note, from 1"
+        varchar(4000) text
+        varchar(256) author_subject "opaque token subject (ADR-0065)"
+        timestamptz created_at
         timestamptz deleted
     }
 
@@ -267,6 +286,7 @@ this.
 | `20260925235946_ReviewTypeAheadValues` | Added `question_choices.needs_review`, `reviewed_at`, `reviewed_by`, and `created_at`, and flagged every live reporter-added value still missing a language (what "awaiting review" meant before). `admin_pending_counts` gains `type_ahead_values_awaiting_review`, counted on live questions; its Down script drops and recreates the view without it (ADR-0129). |
 | `20260926001923_ReplacePickerOptionsAndNameConditionsByChoice` | Added `question_choices.replaced_by_choice_id` (a replaced picker option names its replacement) and `question_revisions.depends_on_choice_id`, backfilled from `depends_on_option_code` by the parent's choice with that code; the script stops the migration if any code resolves to no choice, and only then is `depends_on_option_code` dropped — nothing it held is lost. Both new columns are restricted foreign keys to `question_choices` (ADR-0128). The backfill is `Sql/20260926001923_ReplacePickerOptionsAndNameConditionsByChoice.sql`; `Down` puts the codes back first. |
 | `20260926004803_MergeTypeAheadValues` | Added `question_choices.merged_into_choice_id`, a restricted self-reference, with `ck_question_choices_merged_is_removed`: a merged value is removed and never names itself. Answers are not touched; they read the value merged into (ADR-0129). |
+| `20260926145501_AddReportPrivateNotes` | Added `report_private_notes` (report, created time, `deleted`) and `report_private_note_revisions` (text up to 4000 characters, the writer's opaque token subject, created time, `deleted`; unique per note and number). Staff-only notes: no view reads them (ADR-0133). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

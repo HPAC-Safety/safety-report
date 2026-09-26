@@ -1613,6 +1613,12 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "questions.translate.wordingGroup": {
+    "source_hash": "da92bf3dfc22539dbdb4bed2f3d2402e862284064f2678556887800c699c10f3",
+    "target_hash": "343f5755d95149134065f36599c50a42edfbcd78d7b49776ede47272d9f5e33d",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "questions.translate.working": {
     "source_hash": "e72799b809825c5c1c66cb3f578688ae64441e76f8bbeb6b7a6d5b30f4df7f89",
     "target_hash": "b8892909214073cbc5dd10f60a78da867252be4a249adc41d96ccf8265087e84",

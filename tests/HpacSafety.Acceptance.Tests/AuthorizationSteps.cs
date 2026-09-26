@@ -108,20 +108,29 @@ public sealed class AuthorizationSteps
 			});
 	}
 
-	[When(@"that member approves, corrects, merges, or removes a reporter-added type-ahead value")]
+	[When(@"that member approves, corrects, merges, relinks, or removes a reporter-added type-ahead value")]
 	public async Task WhenMemberReviewsTypeAheadValues()
 	{
-		// Four reporter-added values on one synthetic type-ahead, one per review
-		// action, so each call is judged on its own (ADR-0129).
+		// Five reporter-added values on one synthetic type-ahead whose values depend
+		// on a synthetic make, one per review action, so each call is judged on its
+		// own (ADR-0129, ADR-0146).
 		TinyId[] values;
+		TinyId ozone;
 		await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
 		{
 			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var now = DateTimeOffset.UtcNow;
+			var make = Question.Create(
+				$"acceptance_make_{Guid.NewGuid():n}"[..28], QuestionType.SingleSelect, "Make?", "Marque ?", now, isActive: true,
+				options: [new QuestionOptionInput("niviuk", "Niviuk", "Niviuk"), new QuestionOptionInput("ozone", "Ozone", "Ozone")]);
+			var niviuk = make.Choice("niviuk")!.Id;
+			ozone = make.Choice("ozone")!.Id;
 			var question = Question.Create(
 				$"acceptance_site_{Guid.NewGuid():n}"[..28], QuestionType.Autocomplete, "Where?", "Où ?",
-				DateTimeOffset.UtcNow, isActive: true);
-			values = [.. new[] { "Approve me", "Correct me", "Merge me", "Remove me" }
-				.Select(typed => question.AddChoiceFromReporter(typed, Locale.EnCa, DateTimeOffset.UtcNow).Id)];
+				now, isActive: true, choicesDependOnQuestionId: make.Id);
+			values = [.. new[] { "Approve me", "Correct me", "Merge me", "Remove me", "Relink me" }
+				.Select(typed => question.AddChoiceFromReporter(typed, Locale.EnCa, now, niviuk).Id)];
+			database.Questions.Add(make);
 			database.Questions.Add(question);
 			await database.SaveChangesAsync();
 		}
@@ -132,6 +141,7 @@ public sealed class AuthorizationSteps
 		_reviews.Add(await _client.PutAsJsonAsync(Value(values[1]), new { labelEn = "Corrected", labelFr = "Corrigé" }));
 		_reviews.Add(await _client.PostAsJsonAsync(Value(values[2], "/merge"), new { intoId = values[0].Value }));
 		_reviews.Add(await _client.DeleteAsync(Value(values[3])));
+		_reviews.Add(await _client.PutAsJsonAsync(Value(values[4], "/parent"), new { parentChoiceId = ozone.Value }));
 	}
 
 	[Then(@"the route does not exist")]

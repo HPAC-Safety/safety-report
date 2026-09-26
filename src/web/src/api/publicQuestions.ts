@@ -21,6 +21,8 @@ export interface PublicOptionView {
 	onlyIn: string | null
 	/** Listed before (`first`) or after (`last`) the alphabetical rest, or among them (`none`) — ADR-0136. */
 	pin: string
+	/** The parent question's choice the form offers this one under, when its question's choices depend on another's (ADR-0146). */
+	parentChoiceId?: string | null
 }
 
 /**
@@ -44,6 +46,11 @@ export interface PublicQuestionView {
 	dependsOnQuestionId: string | null
 	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */
 	dependsOnChoiceId: string | null
+	/**
+	 * The single-select or type-ahead on the form whose answer decides which of
+	 * this question's choices are offered, or null (ADR-0146).
+	 */
+	choicesDependOnQuestionId?: string | null
 	allowsReporterAdditions: boolean
 	labelEn: string
 	labelFr: string

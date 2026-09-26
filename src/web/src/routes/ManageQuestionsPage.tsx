@@ -132,11 +132,26 @@ export function ManageQuestionsPage() {
 	// group cannot itself be grouped under another one (ADR-0076).
 	const groupQuestions = questions.filter((question) => question.type === "group" && question.id !== editing)
 
+	// A single-select's or type-ahead's choices may depend on an earlier
+	// single-select or type-ahead that depends on nothing itself, one level deep —
+	// so none, for a question other questions' choices already depend on (ADR-0146).
+	const editingQuestion = questions.find((question) => question.id === editing)
+	const choiceParentQuestions = questions.some((question) => question.choicesDependOnQuestionId === editing && editing)
+		? []
+		: questions.filter(
+				(question) =>
+					(question.type === "single_select" || question.type === "autocomplete") &&
+					question.id !== editing &&
+					question.choicesDependOnQuestionId === null &&
+					(!editingQuestion || question.displayOrder < editingQuestion.displayOrder),
+			)
+
 	const editor = draft && (
 		<QuestionEditor
 			draft={draft}
 			conditionQuestions={conditionQuestions}
 			groupQuestions={groupQuestions}
+			choiceParentQuestions={choiceParentQuestions}
 			isEditing={editing !== null}
 			hasBeenAnswered={questions.some((question) => question.id === editing && question.hasBeenAnswered)}
 			translationAvailable={canTranslate}

@@ -40,6 +40,27 @@ The category is one of these, and nothing else:
 - docs — documentation only
 -->
 
+## Screenshots
+
+<!--
+Required when this changes a rendered web file (a .tsx or .css under
+src/web/src, not a test). The screenshots check fails the pull request
+otherwise (ADR-0142).
+
+A changed page or component: a before shot, taken from a build of origin/main,
+and an after shot. A new one: an after shot. Commit them under
+docs/screenshots/<dir>/, named before-* and after-*, and link each by a raw URL
+pinned to the commit that added it:
+
+    ![after](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/docs/screenshots/<dir>/after-<name>.png)
+
+A web change with nothing visible (a refactor, a test-only change, a
+non-rendering hook) writes this line instead, at the start of a line, outside
+this comment:
+
+    No screenshot needed: <what changed, and why nothing on screen did>
+-->
+
 ## Verification
 
 <!-- Commands run, tests added, and manual checks actually performed. -->
@@ -58,6 +79,7 @@ The category is one of these, and nothing else:
 
 - [ ] UI copy is localized and English/French catalogue keys remain in parity
 - [ ] .NET assertions use Shouldly and tests use Given/When/Then structure
+- [ ] A rendered web change links before and after screenshots (after only for a new page), or says `No screenshot needed:` and why
 - [ ] Generated files were regenerated with their owning tool
 - [ ] Every markdown file added or changed declares its title, description, and type
 - [ ] Documentation and issue acceptance criteria were updated where needed

@@ -43,10 +43,9 @@ reader's language, ignoring accents and case, so the English and French lists
 may differ in order. An Administrator may pin a choice **first** or **last**;
 by default it is not pinned. The list shows three groups in turn — pinned
 first, not pinned, pinned last — each alphabetical, with a separator between
-groups wherever the control can draw one. A type-ahead's suggestions cannot,
-so they only keep the group order. A value a reporter adds is not pinned and
-takes its alphabetical place at once. The editor re-sorts its options when it
-opens, never while the Administrator is typing
+groups. A value a reporter adds is not pinned and takes its alphabetical place
+at once. The editor re-sorts its options when it opens, never while the
+Administrator is typing
 ([ADR-0136](../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
 
 An answer names its choice by identifier and copies none of its wording; both
@@ -109,6 +108,34 @@ under a group (`REQ-QB-143`).
 
 The Typeform-derived question set is seed/import input, not hardcoded form
 logic. The database remains authoritative after initial seeding.
+
+## The type-ahead field
+
+A type-ahead question looks like the form's other pickers: one field with a
+caret, whose list opens directly beneath it, as wide as the field and drawn in
+the form's own surface, font, border, and focus ring. The form draws that list
+itself; the browser's own suggestion list (`<datalist>`) is not used, so it
+looks the same in every browser (`REQ-QB-159`,
+[ADR-0138](../../docs/decisions/ADR-0138-a-type-ahead-is-a-combobox-the-form-draws.md)).
+
+- **Opening.** Pressing the caret, clicking the field, pressing Alt and the
+  down arrow, or typing opens the list.
+- **Filtering.** What the reporter types narrows the list to the choices whose
+  wording contains it anywhere, ignoring case and accents, in the reader's
+  language (`REQ-QB-160`). The list keeps the order and separators above.
+- **Keyboard.** The up and down arrows move through the list, Enter takes the
+  highlighted choice, Escape closes the list, and Tab moves on (`REQ-QB-161`).
+  The field follows the WAI-ARIA 1.2 combobox pattern, and keeps its label,
+  help text, and error.
+- **A value it does not offer.** The reporter may still type one. The list
+  says nothing matches, and the words typed stay in the field and are sent as
+  a reporter-added value (`REQ-QB-162`, `REQ-SUB-083`,
+  [ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
+- **One-language choices.** A choice a reporter added in one language is
+  offered in that language, marked with it for assistive technology
+  (`REQ-QB-103`).
+- **Small screens.** The list never makes the page scroll sideways, and a long
+  list scrolls within itself (`REQ-QB-163`).
 
 ## Correcting seeded wording
 
@@ -198,6 +225,11 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   a question choose between the order they were written in and alphabetical
   order. Choices are alphabetical, apart from pinning
   ([ADR-0136](../../docs/decisions/ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md)).
+- Fetching a type-ahead's choices from the server as the reporter types. The
+  form already holds every live choice, and filters them in the browser.
+- A combobox library, or the browser's `<datalist>`, for the type-ahead. The
+  form draws its own list, as it does the multi-select picker
+  ([ADR-0138](../../docs/decisions/ADR-0138-a-type-ahead-is-a-combobox-the-form-draws.md)).
 - Sorting choices on the server by language. The server returns each group in
   a stable order and the reader's browser collates it, because only the reader
   knows their language.

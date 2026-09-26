@@ -1048,7 +1048,7 @@ Examples:
   | type          | separators                                                        |
   | single_select | a separator is drawn after "United States" and after "Mexico"     |
   | multi_select  | a separator is drawn after "United States" and after "Mexico"     |
-  | autocomplete  | no separator is drawn, because a type-ahead's suggestions cannot show one |
+  | autocomplete  | a separator is drawn after "United States" and after "Mexico"     |
 
 @REQ-QB-147
 Scenario: A value a reporter adds to a type-ahead is not pinned
@@ -1100,6 +1100,67 @@ Scenario: The type-ahead review page offers merge targets as the form lists them
 Scenario: A multi-select answer on the report page is listed as the form lists its choices
   Given a signed-in Safety Officer opens a report whose multi-select answer names "Turbulent", "Other" pinned last, and "Gusty"
   Then the answer is listed "Gusty", "Turbulent", "Other"
+
+@REQ-QB-159
+@ui
+Scenario Outline: A type-ahead question is a picker the form draws, not the browser's suggestion list
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  Then the question is a combobox field with a caret, described by its help text, and no browser suggestion list
+  When they open the field's list by <opening>
+  Then a list as wide as the field opens directly beneath it, offering "Cooper's", "Mount 7", "Woodside"
+
+Examples:
+  | opening                         |
+  | pressing the caret              |
+  | clicking the field              |
+  | pressing Alt and the down arrow |
+  | typing "o"                      |
+
+@REQ-QB-160
+@ui
+Scenario Outline: Typing into a type-ahead filters its list, ignoring case and accents
+  Given a type-ahead question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
+  When a reporter using French opens that question
+  And they type "<typed>" in the field
+  Then its list offers only <offered>
+
+Examples:
+  | typed | offered                           |
+  | emeu  | "Émeu"                            |
+  | CRÉ   | "Crécerelle"                      |
+  | e     | "Aigle", "Crécerelle", "Émeu"     |
+
+@REQ-QB-161
+@ui
+Scenario: A reporter picks a type-ahead choice from the keyboard
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "o" in the field and press the down arrow twice
+  Then "Mount 7" is the field's active option
+  When they press Enter
+  Then the list is closed and the field holds "Mount 7"
+  When they press Alt and the down arrow, then Escape
+  Then the list is closed and the field holds "Mount 7"
+
+@REQ-QB-162
+@ui
+Scenario: A reporter types a type-ahead value its list does not offer
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "A ridge nobody listed" in the field
+  Then the list says no choice matches
+  When they press Tab
+  Then the list is closed and the field holds "A ridge nobody listed"
+
+@REQ-QB-163
+@ui
+Scenario: A type-ahead's list fits a phone screen and scrolls when long
+  Given a type-ahead question offers 30 choices
+  When a reporter using English opens that question on a screen 360 pixels wide
+  And they open the field's list by pressing the caret
+  Then the list fits within the screen's width, and the page does not scroll sideways
+  And the list scrolls within itself
 
 @REQ-QB-104
 Scenario: A new installation asks for several attachments

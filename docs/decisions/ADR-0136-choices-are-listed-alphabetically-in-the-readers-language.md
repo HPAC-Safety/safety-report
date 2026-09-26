@@ -18,6 +18,9 @@ a question's list of choices has no order of its own, so "reordering" a choice
 is replaced by pinning it. Everything else in ADR-0095 stands, including that
 editing choices never revises or forks the question.
 
+Amended by [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)
+(a type-ahead is a combobox the form draws, so it draws the separators too).
+
 ## Context
 
 A question's choices were shown in the order an Administrator entered them.
@@ -59,7 +62,7 @@ after the choices pinned first and before the choices pinned last.**
   control can draw one. In a multi-select it is a divider between checkbox
   groups. In a single-select `<select>` it is a disabled `──` option, because
   the React version in use does not allow `<hr>` inside `<select>`. A native
-  `<datalist>` cannot draw one, so a type-ahead only keeps the group order.
+  `<datalist>` cannot draw one, so a type-ahead only keeps the group order (amended by [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md): the type-ahead now draws them).
 - **The editor re-sorts only when it opens.** It lists options the way the
   form does when a question is opened, and keeps them in place while the
   Administrator edits, so a row never jumps away from the cursor.

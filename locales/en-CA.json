@@ -74,6 +74,8 @@
   "report.booleanNo": "No",
   "report.select.placeholder": "Choose one",
   "report.multiSelect.placeholder": "Choose any",
+  "report.typeAhead.showChoices": "Show choices",
+  "report.typeAhead.noMatches": "No choice matches. What you typed will be sent as written.",
   "report.attachments.guidance": "Attach photos (JPEG, PNG, WebP, HEIC), videos (MP4, MOV), or documents (PDF, Word, RTF, Markdown, text, ODT) related to this occurrence, if you have them — up to {count} files in all. Each video may be up to {videoSize} MB, and each photo or document up to {size} MB. Each file uploads as soon as you choose it.",
   "report.attachments.dropPrompt": "Drag files here, or choose files",
   "report.attachments.keptWithReport": "Attached files are kept with your saved report for up to 15 days, so they are still here if you leave and come back.",

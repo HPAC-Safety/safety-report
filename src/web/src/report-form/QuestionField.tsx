@@ -7,6 +7,7 @@ import type { DraftAnswer } from "./draft"
 import { EmailField } from "./EmailField"
 import { MultiSelectPicker } from "./MultiSelectPicker"
 import { PhoneField } from "./PhoneField"
+import { TypeAheadField } from "./TypeAheadField"
 import { optionFor, optionGroups, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
 
 const fieldClassName =
@@ -104,31 +105,29 @@ export function QuestionField({
 
 	if (question.type === "single_select" || question.type === "autocomplete") {
 		const value = answer?.kind === "value" ? answer.value : ""
-		const listId = `${fieldId}-list`
+		// A type-ahead choice picked from its list is held by its ID, and shown in the reader's language.
+		const picked = answer?.kind === "value" && answer.choice ? question.options.find((option) => option.id === answer.choice) : undefined
 		const groups = optionGroups(question, locale)
 		return (
 			<div className="mb-6">
 				{label}
 				{question.type === "autocomplete" ? (
-					<>
-						<input
-							id={fieldId}
-							list={listId}
-							className={fieldClassName}
-							value={value}
-							aria-describedby={describedBy}
-							placeholder={questionPlaceholder(question, locale) ?? undefined}
-							onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
-						/>
-						{/* A datalist cannot draw a separator; it keeps the group order (ADR-0136). */}
-						<datalist id={listId}>
-							{groups.flat().map((option) => (
-								// A reporter-added choice may exist in one language only; it is
-								// offered in that language, and says so to assistive technology.
-								<option key={option.id} value={optionLabel(option, locale)} lang={option.onlyIn ?? undefined} />
-							))}
-						</datalist>
-					</>
+					<TypeAheadField
+						fieldId={fieldId}
+						label={questionLabel(question, locale)}
+						groups={groups.map((group) =>
+							group.map((option) => ({ key: option.id, label: optionLabel(option, locale), lang: option.onlyIn ?? undefined })),
+						)}
+						value={picked ? optionLabel(picked, locale) : value}
+						selectedKey={picked?.id}
+						placeholder={questionPlaceholder(question, locale) ?? undefined}
+						describedBy={describedBy}
+						locale={locale}
+						onChange={(typed, choice) =>
+							onChange(typed ? { kind: "value", value: typed, ...(choice ? { choice } : {}) } : undefined)
+						}
+						t={t}
+					/>
 				) : (
 					<select
 						id={fieldId}

@@ -643,13 +643,15 @@ When("a reporter using {word} opens that question", async ({ page }, language: s
 })
 
 Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
-	const offered = page.locator("datalist option")
+	await page.getByRole("combobox").click()
+	const offered = page.getByRole("listbox").getByRole("option")
 
 	// The choice with both languages is offered in French; the one a reporter
 	// typed in English only is offered in English, and says so.
 	await expect(offered).toHaveCount(2)
-	await expect(offered.nth(0)).toHaveAttribute("value", "Colline Cooper")
-	await expect(offered.nth(1)).toHaveAttribute("value", "Mount 7")
+	await expect(offered.nth(0)).toHaveText("Colline Cooper")
+	await expect(offered.nth(0)).not.toHaveAttribute("lang", /./)
+	await expect(offered.nth(1)).toHaveText("Mount 7")
 	await expect(offered.nth(1)).toHaveAttribute("lang", "en-CA")
 })
 
@@ -764,7 +766,7 @@ Given(
 	"a {word} question offers {string} \\/ {string}, {string} \\/ {string}, {string} \\/ {string}, and {string} \\/ {string}, none pinned",
 	async ({ page }, type: string, en1: string, fr1: string, en2: string, fr2: string, en3: string, fr3: string, en4: string, fr4: string) => {
 		const options = [stubChoice(en1, fr1), stubChoice(en2, fr2), stubChoice(en3, fr3), stubChoice(en4, fr4)]
-		await openForm(page, choiceFormQuestions(type, options))
+		await openForm(page, choiceFormQuestions(type === "type-ahead" ? "autocomplete" : type, options))
 	},
 )
 
@@ -805,8 +807,10 @@ async function listedChoices(page: Page): Promise<string[]> {
 			)
 	}
 
-	if ((await main.locator("datalist").count()) > 0) {
-		return main.locator("datalist option").evaluateAll((options) => (options as HTMLOptionElement[]).map((option) => option.value))
+	const combobox = main.getByRole("combobox")
+	if ((await combobox.count()) > 0) {
+		if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
+		return listEntries(page)
 	}
 
 	const trigger = main.getByRole("button", { name: /Which one applies\?/ })
@@ -827,7 +831,188 @@ Then("a separator is drawn after {string} and after {string}", async ({ page }, 
 	expect(separators).toEqual([first, second])
 })
 
-Then("no separator is drawn, because a type-ahead's suggestions cannot show one", async ({ page }) => {
-	expect(await listedChoices(page)).not.toContain("|")
+// ------------------------------ the type-ahead as a picker the form draws (ADR-0140) --
+
+/*
+ * REQ-QB-159 to REQ-QB-163. The type-ahead is a WAI-ARIA combobox: focus stays
+ * in the field, and its list is a listbox the form draws beneath it.
+ */
+
+const typeAheadField = (page: Page) => page.getByRole("main").getByRole("combobox")
+const typeAheadList = (page: Page) => page.getByRole("main").getByRole("listbox")
+
+/** The type-ahead's open list, in order, with "|" where a separator is drawn. */
+async function listEntries(page: Page): Promise<string[]> {
+	await expect(typeAheadList(page)).toBeVisible()
+	return typeAheadList(page)
+		.locator('[role="option"], [data-separator]')
+		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
+}
+
+function quotedList(quoted: string): string[] {
+	return [...quoted.matchAll(/"([^"]*)"/g)].map((match) => match[1])
+}
+
+Given(
+	"a type-ahead question with the help text {string} offers {string}, {string}, and {string}, none pinned",
+	async ({ page }, help: string, first: string, second: string, third: string) => {
+		const options = [stubChoice(first), stubChoice(second), stubChoice(third)]
+		await openForm(page, choiceFormQuestions("autocomplete", options, { helpTextEn: help, helpTextFr: help }))
+	},
+)
+
+Given("a type-ahead question offers {int} choices", async ({ page }, count: number) => {
+	const options = Array.from({ length: count }, (_, index) => stubChoice(`Launch site ${index + 1}`))
+	await openForm(page, choiceFormQuestions("autocomplete", options))
+})
+
+When("a reporter using English opens that question on a screen {int} pixels wide", async ({ page }, width: number) => {
+	await page.setViewportSize({ width, height: 740 })
+	await goNext(page) // intro -> the question's page
+})
+
+Then(
+	"the question is a combobox field with a caret, described by its help text, and no browser suggestion list",
+	async ({ page }) => {
+		const field = page.getByRole("combobox", { name: "Which one applies?" })
+		await expect(field).toBeVisible()
+		await expect(field).toHaveAccessibleDescription("Pick the nearest site")
+		await expect(field).toHaveAttribute("aria-expanded", "false")
+		await expect(field).not.toHaveAttribute("list", /./)
+		await expect(page.locator("datalist")).toHaveCount(0)
+		await expect(page.getByRole("button", { name: "Show choices" })).toBeVisible()
+		// Drawn like the form's other fields, in the design-system border.
+		const border = await field.evaluate((element) => getComputedStyle(element).borderTopColor)
+		const rule = await field.evaluate((element) => {
+			const probe = document.createElement("div")
+			probe.style.color = "var(--color-rule)"
+			element.parentElement!.appendChild(probe)
+			const color = getComputedStyle(probe).color
+			probe.remove()
+			return color
+		})
+		expect(border).toBe(rule)
+	},
+)
+
+When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) => {
+	const field = typeAheadField(page)
+	if (opening === "pressing the caret") await page.getByRole("button", { name: "Show choices" }).click()
+	else if (opening === "clicking the field") await field.click()
+	else if (opening === "pressing Alt and the down arrow") {
+		await field.focus()
+		await page.keyboard.press("Alt+ArrowDown")
+	} else {
+		const typed = /^typing "(.*)"$/.exec(opening)
+		if (!typed) throw new Error(`Unknown way to open the list: ${opening}`)
+		await field.pressSequentially(typed[1])
+	}
+})
+
+Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
+	const field = typeAheadField(page)
+	await expect(field).toHaveAttribute("aria-expanded", "true")
+	const list = typeAheadList(page)
+	await expect(field).toHaveAttribute("aria-controls", (await list.getAttribute("id"))!)
+
+	const fieldBox = (await field.boundingBox())!
+	const listBox = (await list.boundingBox())!
+	expect(Math.abs(listBox.x - fieldBox.x)).toBeLessThanOrEqual(1)
+	expect(Math.abs(listBox.width - fieldBox.width)).toBeLessThanOrEqual(1)
+	expect(listBox.y).toBeGreaterThanOrEqual(fieldBox.y + fieldBox.height)
+	expect(listBox.y - (fieldBox.y + fieldBox.height)).toBeLessThanOrEqual(8)
+
+	expect((await listEntries(page)).filter((entry) => entry !== "|")).toEqual(quotedList(quoted))
+})
+
+When("they type {string} in the field", async ({ page }, typed: string) => {
+	await typeAheadField(page).pressSequentially(typed)
+})
+
+Then(/^its list offers only (".*")$/, async ({ page }, quoted: string) => {
+	await expect(typeAheadList(page).getByRole("option")).toHaveText(quotedList(quoted))
+})
+
+When("they type {string} in the field and press the down arrow twice", async ({ page }, typed: string) => {
+	await typeAheadField(page).pressSequentially(typed)
+	await page.keyboard.press("ArrowDown")
+	await page.keyboard.press("ArrowDown")
+})
+
+Then("{string} is the field's active option", async ({ page }, label: string) => {
+	const option = typeAheadList(page).getByRole("option", { name: label })
+	await expect(option).toHaveAttribute("aria-selected", "true")
+	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", (await option.getAttribute("id"))!)
+	await expect(typeAheadField(page)).toBeFocused()
+})
+
+When("they press Enter", async ({ page }) => {
+	await page.keyboard.press("Enter")
+})
+
+When("they press Tab", async ({ page }) => {
+	await page.keyboard.press("Tab")
+})
+
+When("they press the up arrow", async ({ page }) => {
+	await page.keyboard.press("ArrowUp")
+})
+
+When("they press the down arrow", async ({ page }) => {
+	await page.keyboard.press("ArrowDown")
+})
+
+When("they press Alt and the down arrow", async ({ page }) => {
+	await page.keyboard.press("Alt+ArrowDown")
+})
+
+When("they press Escape", async ({ page }) => {
+	await page.keyboard.press("Escape")
+})
+
+When("they press outside the field", async ({ page }) => {
+	await expect(typeAheadList(page)).toBeVisible()
+	// The page's left margin: outside the field, its caret, its label, and its list.
+	const field = (await typeAheadField(page).boundingBox())!
+	await page.mouse.click(Math.max(1, field.x - 20), field.y + field.height / 2)
+})
+
+Then("its list is open", async ({ page }) => {
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
+	await expect(typeAheadList(page)).toBeVisible()
+	await expect(typeAheadField(page)).toBeFocused()
+})
+
+Then("the list is closed and the field holds {string}", async ({ page }, value: string) => {
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "false")
+	await expect(typeAheadList(page)).toBeHidden()
+	await expect(typeAheadField(page)).toHaveValue(value)
+})
+
+Then("the list says no choice matches", async ({ page }) => {
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "false")
+	await expect(page.getByRole("status").filter({ hasText: "No choice matches" })).toBeVisible()
+})
+
+Then("the list fits within the screen's width, and the page does not scroll sideways", async ({ page }) => {
+	const listBox = (await typeAheadList(page).boundingBox())!
+	const width = page.viewportSize()!.width
+	expect(listBox.x).toBeGreaterThanOrEqual(0)
+	expect(listBox.x + listBox.width).toBeLessThanOrEqual(width)
+	expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width)
+})
+
+Then("the list scrolls within itself", async ({ page }) => {
+	const list = typeAheadList(page)
+	const { scrollHeight, clientHeight, overflowY } = await list.evaluate((element) => ({
+		scrollHeight: element.scrollHeight,
+		clientHeight: element.clientHeight,
+		overflowY: getComputedStyle(element).overflowY,
+	}))
+	expect(scrollHeight).toBeGreaterThan(clientHeight)
+	expect(overflowY).toBe("auto")
+	// The last choice is reached by scrolling the list, not the page.
+	await page.keyboard.press("ArrowUp")
+	await expect(list.getByRole("option", { name: "Launch site 30" })).toBeInViewport()
 })
 

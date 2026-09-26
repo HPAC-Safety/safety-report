@@ -80,6 +80,7 @@ export function blankDraft(): QuestionDraft {
 			dependsOnQuestionId: null,
 			dependsOnChoiceId: null,
 			groupedUnderQuestionId: null,
+			choicesDependOnQuestionId: null,
 			options: [],
 		},
 	}
@@ -117,6 +118,7 @@ export function draftOf(question: QuestionView, locale: Locale): QuestionDraft {
 			dependsOnQuestionId: question.dependsOnQuestionId,
 			dependsOnChoiceId: question.dependsOnChoiceId,
 			groupedUnderQuestionId: question.groupedUnderQuestionId,
+			choicesDependOnQuestionId: question.choicesDependOnQuestionId,
 			options: sortChoices(question.options, locale, (option) => choiceLabel(option, locale)).map((option) => ({
 				code: option.code,
 				// A reporter-added choice may be missing one language; the field
@@ -125,6 +127,7 @@ export function draftOf(question: QuestionView, locale: Locale): QuestionDraft {
 				labelFr: option.labelFr ?? "",
 				addedByReporter: option.addedByReporter,
 				pin: option.pin,
+				parentChoiceId: option.parentChoiceId,
 			})),
 		},
 	}
@@ -165,6 +168,8 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			// the parent's choice by ID (ADR-0128).
 			dependsOnChoiceId: dependsOn?.options.find((option) => option.code === imported.dependsOnOptionCode)?.id ?? null,
 			groupedUnderQuestionId: group?.id ?? null,
+			// Typeform cannot express a choice dependency, so an import never carries one (ADR-0146).
+			choicesDependOnQuestionId: null,
 			options: imported.options.map((option) => ({
 				code: option.code,
 				labelEn: option.labelEn,
@@ -278,6 +283,7 @@ export function QuestionEditor({
 	draft,
 	conditionQuestions,
 	groupQuestions,
+	choiceParentQuestions = [],
 	isEditing,
 	hasBeenAnswered,
 	translationAvailable,
@@ -288,6 +294,8 @@ export function QuestionEditor({
 	draft: QuestionDraft
 	conditionQuestions: QuestionView[]
 	groupQuestions: QuestionView[]
+	/** The questions this one's choices may depend on: earlier single-selects and type-aheads that depend on nothing (ADR-0146). */
+	choiceParentQuestions?: QuestionView[]
 	isEditing: boolean
 	hasBeenAnswered: boolean
 	translationAvailable: boolean
@@ -310,6 +318,18 @@ export function QuestionEditor({
 	// for them; every other type's help text is one line.
 	const helpTakesLines = request.type === "statement"
 	const dependsOnParent = conditionQuestions.find((question) => question.id === request.dependsOnQuestionId)
+	// Only a single-select's or type-ahead's choices may depend on another
+	// question, and each then names the parent choice it is offered under (ADR-0146).
+	const takesChoiceParent = request.type === "single_select" || request.type === "autocomplete"
+	const choiceParent = takesChoiceParent
+		? choiceParentQuestions.find((question) => question.id === request.choicesDependOnQuestionId)
+		: undefined
+	const parentChoices = choiceParent
+		? sortChoices(choiceParent.options, locale, (option) => choiceLabel(option, locale))
+		: []
+	const unlinked = choiceParent
+		? request.options.filter((option) => !parentChoices.some((choice) => choice.id === option.parentChoiceId))
+		: []
 
 	const [translating, setTranslating] = useState(false)
 	const [translationError, setTranslationError] = useState<string | null>(null)
@@ -356,7 +376,10 @@ export function QuestionEditor({
 	// single-select condition additionally needs its required option named,
 	// or the API rejects the save (ADR-0074).
 	const canSave =
-		hasEnglish && hasFrench && (dependsOnParent?.type !== "single_select" || request.dependsOnChoiceId !== null)
+		hasEnglish &&
+		hasFrench &&
+		(dependsOnParent?.type !== "single_select" || request.dependsOnChoiceId !== null) &&
+		unlinked.length === 0
 	const wordingOffered = wordingFieldsToTranslate(wordingOf(request), wordingBaseline, wordingDirection).length > 0
 	// The side the wording is translated from is marked, as a choice's is.
 	const englishFieldClassName = wordingDirection === "toFrench" ? sourceFieldClassName : fieldClassName
@@ -485,7 +508,10 @@ export function QuestionEditor({
 		}
 	}
 
-	function updateOption(index: number, changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace" | "pin">>) {
+	function updateOption(
+		index: number,
+		changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace" | "pin" | "parentChoiceId">>,
+	) {
 		const options = request.options.map((option, current) => (current === index ? { ...option, ...changes } : option))
 		update({ options })
 	}
@@ -531,12 +557,17 @@ export function QuestionEditor({
 							const clearedForNoAnswer = NO_ANSWER_TYPES.includes(type)
 								? { isRequired: false, isPrivate: false, dependsOnQuestionId: null, dependsOnChoiceId: null }
 								: {}
+							// Only a single-select's or type-ahead's choices depend on
+							// another question (ADR-0146).
+							const clearedChoiceParent =
+								type === "single_select" || type === "autocomplete" ? {} : { choicesDependOnQuestionId: null }
 							// A retype takes the new type's translation default: only
 							// free text can need translation at all (ADR-0112).
 							update({
 								type,
 								...clearedOptions,
 								...clearedForNoAnswer,
+								...clearedChoiceParent,
 								isTranslatable: translatableByDefault(type),
 								// Only a date question may allow a future date (ADR-0138).
 								allowFutureDates: false,
@@ -780,6 +811,28 @@ export function QuestionEditor({
 				</div>
 			)}
 
+			{takesChoiceParent && (
+				<div>
+					<label className={labelClassName} htmlFor="question-choices-depend-on">
+						{t("questions.field.choicesDependOn")}
+					</label>
+					<select
+						id="question-choices-depend-on"
+						className={fieldClassName}
+						value={request.choicesDependOnQuestionId ?? ""}
+						onChange={(event) => update({ choicesDependOnQuestionId: event.target.value || null })}
+					>
+						<option value="">{t("questions.field.choicesDependOnNone")}</option>
+						{choiceParentQuestions.map((question) => (
+							<option key={question.id} value={question.id}>
+								{question.labelEn}
+							</option>
+						))}
+					</select>
+					<p className="mt-1 font-sans text-xs text-ink-muted">{t("questions.field.choicesDependOnHelp")}</p>
+				</div>
+			)}
+
 			{takesOptions && (
 				<div
 					ref={choicesRef}
@@ -807,6 +860,11 @@ export function QuestionEditor({
 						</div>
 					</div>
 					<p className="font-sans text-xs text-ink-muted">{t("questions.field.optionsHelp")}</p>
+					{choiceParent && (
+						<p className="font-sans text-xs text-ink-muted">
+							{t("questions.choice.parentHelp", { question: choiceParent.labelEn })}
+						</p>
+					)}
 					{!translationAvailable && (
 						<p id={unavailableId} className="font-sans text-xs text-ink-muted">
 							{t("questions.translate.unavailable")}
@@ -884,6 +942,26 @@ export function QuestionEditor({
 										{row.error}
 									</p>
 								)}
+								{choiceParent && (
+									<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
+										{t("questions.choice.parentChoice")}
+										<select
+											data-testid="question-choice-parent"
+											className="rounded border border-rule bg-surface px-2 py-1 font-sans text-sm text-ink"
+											required
+											aria-invalid={!parentChoices.some((choice) => choice.id === option.parentChoiceId)}
+											value={parentChoices.some((choice) => choice.id === option.parentChoiceId) ? (option.parentChoiceId ?? "") : ""}
+											onChange={(event) => updateOption(index, { parentChoiceId: event.target.value || null })}
+										>
+											<option value="">{t("questions.choice.parentChoiceNone")}</option>
+											{parentChoices.map((choice) => (
+												<option key={choice.id} value={choice.id}>
+													{choiceLabel(choice, locale)}
+												</option>
+											))}
+										</select>
+									</label>
+								)}
 								<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
 									{t("questions.choice.position")}
 									<select
@@ -913,6 +991,13 @@ export function QuestionEditor({
 					})}
 					{canReplace && request.options.some((option) => option.code !== null) && (
 						<p className="font-sans text-xs text-ink-muted">{t("questions.choice.replaceHelp")}</p>
+					)}
+					{unlinked.length > 0 && (
+						<p role="status" data-testid="question-choices-unlinked" className="font-sans text-sm text-ink">
+							{t("questions.choice.unlinked", {
+								choices: unlinked.map((option) => option.labelEn || option.labelFr || t("questions.choice.unnamed")).join(", "),
+							})}
+						</p>
 					)}
 				</div>
 			)}

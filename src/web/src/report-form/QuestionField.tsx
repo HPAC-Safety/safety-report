@@ -32,6 +32,10 @@ export interface QuestionFieldProps {
 	attachmentRoom: number
 	errorText: string | null
 	t: (key: string, params?: Record<string, string | number>) => string
+	/** True while the question cannot be answered: a picker or type-ahead waiting on its parent's answer (ADR-0146). */
+	disabled?: boolean
+	/** Why it cannot be answered, or that its parent's answer leaves nothing to pick; null when there is nothing to say. */
+	note?: string | null
 }
 
 /** One answerable question, in whichever shape its type needs. Not used for `statement`/`group`, which collect no answer. */
@@ -46,12 +50,15 @@ export function QuestionField({
 	attachmentRoom,
 	errorText,
 	t,
+	disabled = false,
+	note = null,
 }: QuestionFieldProps) {
 	const fieldId = `question-${question.revisionId}`
 	const errorId = `${fieldId}-error`
 	const helpId = `${fieldId}-help`
+	const noteId = `${fieldId}-note`
 	const help = questionHelp(question, locale)
-	const describedBy = [help ? helpId : null, errorText ? errorId : null].filter(Boolean).join(" ") || undefined
+	const describedBy = [note ? noteId : null, help ? helpId : null, errorText ? errorId : null].filter(Boolean).join(" ") || undefined
 
 	const label = (
 		<label className={labelClassName} htmlFor={question.type === "yes_no" ? undefined : fieldId}>
@@ -65,6 +72,12 @@ export function QuestionField({
 	const errorNode = errorText ? (
 		<p id={errorId} role="alert" className="mt-1 font-sans text-sm text-brand-700">
 			{errorText}
+		</p>
+	) : null
+
+	const noteNode = note ? (
+		<p id={noteId} data-testid="question-note" className="mt-1 font-sans text-sm text-ink-muted">
+			{note}
 		</p>
 	) : null
 
@@ -127,13 +140,15 @@ export function QuestionField({
 							onChange(typed ? { kind: "value", value: typed, ...(choice ? { choice } : {}) } : undefined)
 						}
 						t={t}
+						disabled={disabled}
 					/>
 				) : (
 					<select
 						id={fieldId}
-						className={fieldClassName}
+						className={`${fieldClassName} disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted`}
 						value={value ? (optionFor(question, value)?.id ?? "") : ""}
 						aria-describedby={describedBy}
+						disabled={disabled}
 						onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
 					>
 						<option value="">{t("report.select.placeholder")}</option>
@@ -154,6 +169,7 @@ export function QuestionField({
 						))}
 					</select>
 				)}
+				{noteNode}
 				{helpNode}
 				{errorNode}
 			</div>

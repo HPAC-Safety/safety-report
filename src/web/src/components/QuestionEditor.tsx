@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react"
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import {
 	ApiError,
@@ -40,9 +40,11 @@ import {
  * Each choice is translated on its own, when the administrator asks. The
  * direction switch at the top of the Choices panel says which way every
  * choice's Translate goes, English to French by default. A choice's Translate
- * is offered only once its source wording has been edited — since the editor
- * opened, or since that choice was last translated — and it replaces the other
- * language with an editable draft. Nothing is saved until Save (ADR-0141).
+ * is offered when its other language is empty, or once its source wording has
+ * been edited since the editor opened or since that choice was last translated.
+ * It replaces the other language with an editable draft, and nothing is saved
+ * until Save (ADR-0141). The wording's own Translate above still fills the
+ * empty side (ADR-0062).
  *
  * The choices are the question's own and are saved in place: editing them never
  * creates a new version, and a choice a reporter typed into a type-ahead is
@@ -193,11 +195,8 @@ interface ChoiceRow {
 	error: string | null
 }
 
-let nextChoiceRowKey = 0
-
-function choiceRow(option: Pick<OptionInput, "labelEn" | "labelFr">): ChoiceRow {
-	nextChoiceRowKey += 1
-	return { key: nextChoiceRowKey, baselineEn: option.labelEn, baselineFr: option.labelFr, pending: false, error: null }
+function choiceRow(option: Pick<OptionInput, "labelEn" | "labelFr">, key: number): ChoiceRow {
+	return { key, baselineEn: option.labelEn, baselineFr: option.labelFr, pending: false, error: null }
 }
 
 function sourceOf(option: Pick<OptionInput, "labelEn" | "labelFr">, direction: TranslationDirection): string {
@@ -205,14 +204,16 @@ function sourceOf(option: Pick<OptionInput, "labelEn" | "labelFr">, direction: T
 }
 
 /**
- * A choice's Translate is offered once its source wording has text and differs
- * from what it was when the editor opened, or when the choice was last
- * translated. A new choice starts blank, so it is dirty as soon as it is typed in.
+ * A choice's Translate is offered when its source wording has text and either
+ * its other language is empty, or its source differs from what it was when the
+ * editor opened or when the choice was last translated. A choice written in
+ * both languages that nobody has edited offers nothing (ADR-0141).
  */
-function isDirty(option: OptionInput, row: ChoiceRow, direction: TranslationDirection): boolean {
+function canTranslateChoice(option: OptionInput, row: ChoiceRow, direction: TranslationDirection): boolean {
 	const source = sourceOf(option, direction)
+	const target = direction === "toFrench" ? option.labelFr : option.labelEn
 	const baseline = direction === "toFrench" ? row.baselineEn : row.baselineFr
-	return source.trim().length > 0 && source !== baseline
+	return source.trim().length > 0 && (target.trim().length === 0 || source !== baseline)
 }
 
 function TranslateIcon() {
@@ -274,7 +275,9 @@ export function QuestionEditor({
 	const [translating, setTranslating] = useState(false)
 	const [translationError, setTranslationError] = useState<string | null>(null)
 	const [direction, setDirection] = useState<TranslationDirection>(DEFAULT_TRANSLATION_DIRECTION)
-	const [rows, setRows] = useState<ChoiceRow[]>(() => request.options.map(choiceRow))
+	const lastRowKey = useRef(0)
+	const newRow = (option: Pick<OptionInput, "labelEn" | "labelFr">) => choiceRow(option, ++lastRowKey.current)
+	const [rows, setRows] = useState<ChoiceRow[]>(() => request.options.map(newRow))
 	const unavailableId = useId()
 	const choicesRef = useRef<HTMLDivElement>(null)
 	const focusNewChoice = useRef(false)
@@ -282,12 +285,14 @@ export function QuestionEditor({
 	// Read when a choice's translation comes back, to drop a result the
 	// administrator has since made stale.
 	const latest = useRef({ request, rows, direction })
-	latest.current = { request, rows, direction }
+	useLayoutEffect(() => {
+		latest.current = { request, rows, direction }
+	})
 
 	// The rows follow the draft's options one for one. A draft replaced from
 	// outside with a different number of choices starts its rows afresh.
 	useEffect(() => {
-		if (rows.length !== request.options.length) setRows(request.options.map(choiceRow))
+		if (rows.length !== request.options.length) setRows(request.options.map(newRow))
 	}, [rows.length, request.options])
 
 	// A choice added from the panel header takes focus, so it is on screen
@@ -332,34 +337,33 @@ export function QuestionEditor({
 		try {
 			// Label, help text, placeholder, and every option label in one
 			// request rather than one per field.
+			const sentOptions = request.options.map((o) => sourceOf(o, translationDirection))
 			const source = toFrench
-				? [request.labelEn, request.helpTextEn ?? "", request.placeholderEn ?? "", ...request.options.map((o) => o.labelEn)]
-				: [request.labelFr, request.helpTextFr ?? "", request.placeholderFr ?? "", ...request.options.map((o) => o.labelFr)]
+				? [request.labelEn, request.helpTextEn ?? "", request.placeholderEn ?? "", ...sentOptions]
+				: [request.labelFr, request.helpTextFr ?? "", request.placeholderFr ?? "", ...sentOptions]
 
 			const { texts } = await translate(source, from, to)
 			const [label, help, placeholder, ...optionLabels] = texts
 
-			const options = request.options.map((option, index) =>
-				toFrench
-					? { ...option, labelFr: optionLabels[index] ?? option.labelFr }
-					: { ...option, labelEn: optionLabels[index] ?? option.labelEn },
-			)
+			// Applied to the draft as it is now: a choice added, edited, or
+			// translated on its own while this request was out keeps that change.
+			onChange((current) => {
+				const options = current.request.options.map((option, index) => {
+					const translated = optionLabels[index]
+					if (translated === undefined || sourceOf(option, translationDirection) !== sentOptions[index]) return option
+					return toFrench ? { ...option, labelFr: translated } : { ...option, labelEn: translated }
+				})
 
-			update(
-				toFrench
-					? {
-							labelFr: label,
-							helpTextFr: help || null,
-							placeholderFr: placeholder || null,
-							options,
-						}
-					: {
-							labelEn: label,
-							helpTextEn: help || null,
-							placeholderEn: placeholder || null,
-							options,
-						},
-			)
+				return {
+					request: {
+						...current.request,
+						...(toFrench
+							? { labelFr: label, helpTextFr: help || null, placeholderFr: placeholder || null }
+							: { labelEn: label, helpTextEn: help || null, placeholderEn: placeholder || null }),
+						options,
+					},
+				}
+			})
 		} catch (cause) {
 			setTranslationError(translationFailure(cause))
 		} finally {
@@ -724,7 +728,7 @@ export function QuestionEditor({
 								className="touch-target rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
 								onClick={() => {
 									focusNewChoice.current = true
-									setRows((current) => [...current, choiceRow({ labelEn: "", labelFr: "" })])
+									setRows((current) => [...current, newRow({ labelEn: "", labelFr: "" })])
 									update({ options: [...request.options, { code: null, labelEn: "", labelFr: "" }] })
 								}}
 							>
@@ -744,7 +748,7 @@ export function QuestionEditor({
 						// language; an administrator's own choice needs both.
 						const reporterAdded = option.addedByReporter === true
 						const row = rows[index]
-						const dirty = row !== undefined && isDirty(option, row, direction)
+						const offered = row !== undefined && canTranslateChoice(option, row, direction)
 						const awaiting = !option.labelEn.trim()
 							? t("questions.choice.awaitingEnglish")
 							: !option.labelFr.trim()
@@ -785,10 +789,12 @@ export function QuestionEditor({
 											aria-label={t("questions.choice.translate")}
 											title={t("questions.choice.translate")}
 											aria-describedby={translationAvailable ? undefined : unavailableId}
-											disabled={!translationAvailable || !dirty || row?.pending === true}
+											aria-busy={row?.pending === true}
+											disabled={!translationAvailable || !offered || row?.pending === true}
 											onClick={() => void translateChoice(index)}
 										>
 											<TranslateIcon />
+											{row?.pending && <span className="sr-only">{t("questions.translate.working")}</span>}
 										</button>
 										<button
 											type="button"

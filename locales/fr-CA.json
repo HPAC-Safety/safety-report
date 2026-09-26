@@ -43,7 +43,7 @@
   "translationDirection": {
     "toFrench": "Traduire de l'anglais vers le français",
     "toEnglish": "Traduire du français vers l'anglais",
-    "english": "FR",
+    "english": "EN",
     "french": "FR"
   },
   "home": {
@@ -277,7 +277,7 @@
       "awaitingFrench": "En attente de la version française",
       "replace": "Remplacer par une nouvelle option",
       "position": "Poste",
-      "translate": "Traduisez ce choix",
+      "translate": "Traduire ce choix",
       "pin": {
         "none": "Par ordre alphabétique",
         "first": "Épingler en haut de la page",

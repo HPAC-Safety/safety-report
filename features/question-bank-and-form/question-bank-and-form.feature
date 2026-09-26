@@ -579,8 +579,8 @@ Scenario: Translation is not offered when the server has no provider
 
 @REQ-QB-164
 @ui
-Scenario: A choice's Translate is unavailable until that choice is edited
-  Given a signed-in Administrator is editing a single-select question with choices
+Scenario: A choice written in both languages offers Translate only once it is edited
+  Given a signed-in Administrator is editing a single-select question whose choices are written in both languages
   Then no choice's Translate action is available
   When they edit the English wording of one choice
   Then that choice's Translate action becomes available
@@ -614,7 +614,7 @@ Scenario: Flipping the direction translates a choice's French into its English
 @REQ-QB-167
 @ui
 Scenario: Translating one choice changes no other choice
-  Given a signed-in Administrator is editing a single-select question with choices
+  Given a signed-in Administrator is editing a single-select question whose choices are written in both languages
   When they edit the English wording of one choice and press its Translate action
   Then only that choice's wording is sent to be translated
   And only that choice's French field changes
@@ -631,10 +631,18 @@ Scenario: A choice's Translate is unavailable after it translates, until its sou
 @REQ-QB-169
 @ui
 Scenario: No choice's Translate is offered when the server has no provider
-  Given a signed-in Administrator is authoring a question on a server with no translation provider
-  When they choose the type-ahead list type
-  And they add a choice written in English
-  Then that choice's Translate action is unavailable and says why
+  Given a signed-in Administrator is editing a type-ahead question with choices on a server with no translation provider
+  When they add a choice written in English
+  Then every choice's Translate action is unavailable and says why
+
+@REQ-QB-170
+@ui
+Scenario: A choice written in one language can be translated without being edited
+  Given a signed-in Administrator is editing a type-ahead question with a choice written only in English
+  Then that choice's Translate action is available
+  And the choice written in both languages offers no Translate action
+  When they press that choice's Translate action
+  Then that choice's French field is filled with the translation of its English
 
 @REQ-QB-074
 @ui

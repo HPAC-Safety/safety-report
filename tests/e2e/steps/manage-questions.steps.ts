@@ -1042,7 +1042,7 @@ Given("a signed-in Administrator is authoring a new {word} question worded in bo
 	await page.getByLabel("Question (French)").fill("Qui a fabriqué votre aile?")
 })
 
-Given("a signed-in Administrator is editing a single-select question with choices", async ({ page }) => {
+Given("a signed-in Administrator is editing a single-select question whose choices are written in both languages", async ({ page }) => {
 	await signInAndOpenQuestions(page)
 	watchChoiceTraffic(page)
 	await aircraftRow(page).getByRole("button", { name: "Edit" }).click()
@@ -1156,9 +1156,51 @@ When("they add a choice written in English", async ({ page }) => {
 	await addChoice(page, { en: "Niviuk" })
 })
 
-Then("that choice's Translate action is unavailable and says why", async ({ page }) => {
-	const button = choiceTranslate(thatChoice(page))
+Given(
+	"a signed-in Administrator is editing a type-ahead question with choices on a server with no translation provider",
+	async ({ page }) => {
+		await signInAndOpenQuestions(page, { translation: false })
+		await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+		await expect(choices(page)).toHaveCount(2)
+	},
+)
 
-	await expect(button).toBeDisabled()
-	await expect(button).toHaveAccessibleDescription("Translation is not available on this server.")
+Then("every choice's Translate action is unavailable and says why", async ({ page }) => {
+	const count = await choices(page).count()
+	expect(count).toBe(3)
+
+	for (let index = 0; index < count; index++) {
+		const button = choiceTranslate(choices(page).nth(index))
+		await expect(button).toBeDisabled()
+		await expect(button).toHaveAccessibleDescription("Translation is not available on this server.")
+	}
+})
+
+// The stub's type-ahead offers "Cooper's" in both languages and "mount 7",
+// a reporter's value, in English only; the editor lists them in that order.
+Given("a signed-in Administrator is editing a type-ahead question with a choice written only in English", async ({ page }) => {
+	await signInAndOpenQuestions(page)
+	watchChoiceTraffic(page)
+	await launchSiteRow(page).getByRole("button", { name: "Edit" }).click()
+	await expect(choices(page)).toHaveCount(2)
+	thatChoiceIndex.set(page, 1)
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("")
+})
+
+Then("that choice's Translate action is available", async ({ page }) => {
+	await expect(choiceTranslate(thatChoice(page))).toBeEnabled()
+})
+
+Then("the choice written in both languages offers no Translate action", async ({ page }) => {
+	await expect(choiceTranslate(choices(page).nth(0))).toBeDisabled()
+})
+
+When("they press that choice's Translate action", async ({ page }) => {
+	await choiceTranslate(thatChoice(page)).click()
+})
+
+Then("that choice's French field is filled with the translation of its English", async ({ page }) => {
+	await expect(thatChoice(page).getByLabel("Choice (French)")).toHaveValue("[fr-CA] mount 7")
+	await expect(thatChoice(page).getByLabel("Choice (English)")).toHaveValue("mount 7")
+	expect(choiceTraffic.get(page)?.translated).toEqual(["mount 7"])
 })

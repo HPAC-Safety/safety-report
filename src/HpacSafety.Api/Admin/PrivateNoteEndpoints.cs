@@ -1,6 +1,7 @@
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.PrivateAttachments;
 using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -56,7 +57,8 @@ public static class PrivateNoteEndpoints
 			.ConfigureAwait(false);
 
 		var reader = SubjectOf(context);
-		return Results.Ok(notes.ConvertAll(note => View(note, reader)));
+		var referred = await Referred(database, notes.Select(note => note.Current.AttachmentId), cancellationToken).ConfigureAwait(false);
+		return Results.Ok(notes.ConvertAll(note => View(note, reader, referred)));
 	}
 
 	/// <summary>Writes a new note with its first revision (REQ-MOD-099, REQ-MOD-102).</summary>
@@ -77,9 +79,14 @@ public static class PrivateNoteEndpoints
 		var writer = SubjectOf(context);
 		PrivateNote note;
 
+		if (await ReferredTo(database, request.AttachmentId, cancellationToken).ConfigureAwait(false) is not { } refersTo)
+		{
+			return Invalid("That private attachment does not exist.");
+		}
+
 		try
 		{
-			note = PrivateNote.Write(report, writer, request.Text, clock.GetUtcNow());
+			note = PrivateNote.Write(report, writer, request.Text, clock.GetUtcNow(), refersTo.Attachment);
 		}
 		catch (DomainRuleViolationException refusal)
 		{
@@ -89,7 +96,7 @@ public static class PrivateNoteEndpoints
 		database.PrivateNotes.Add(note);
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-		return Results.Created($"/api/admin/reports/{reportId}/private-notes/{note.Id.Value}", View(note, writer));
+		return Results.Created($"/api/admin/reports/{reportId}/private-notes/{note.Id.Value}", View(note, writer, refersTo.AsLookup()));
 	}
 
 	/// <summary>
@@ -120,9 +127,14 @@ public static class PrivateNoteEndpoints
 
 		var writer = SubjectOf(context);
 
+		if (await ReferredTo(database, request.AttachmentId, cancellationToken).ConfigureAwait(false) is not { } refersTo)
+		{
+			return Invalid("That private attachment does not exist.");
+		}
+
 		try
 		{
-			note.Edit(writer, request.Text, basedOn, clock.GetUtcNow());
+			note.Edit(writer, request.Text, basedOn, clock.GetUtcNow(), refersTo.Attachment);
 		}
 		catch (StalePrivateNoteException)
 		{
@@ -143,7 +155,7 @@ public static class PrivateNoteEndpoints
 			return Stale();
 		}
 
-		return Results.Ok(View(note, writer));
+		return Results.Ok(View(note, writer, refersTo.AsLookup()));
 	}
 
 	/// <summary>
@@ -187,6 +199,7 @@ public static class PrivateNoteEndpoints
 		}
 
 		var reader = SubjectOf(context);
+		var referred = await Referred(database, note.Revisions.Select(revision => revision.AttachmentId), cancellationToken).ConfigureAwait(false);
 		return Results.Ok(note.Revisions
 			.OrderBy(revision => revision.Number)
 			.Select(revision => new PrivateNoteRevisionView(
@@ -194,7 +207,8 @@ public static class PrivateNoteEndpoints
 				revision.Text,
 				revision.AuthorSubject,
 				revision.CreatedAt,
-				Mine(revision, reader)))
+				Mine(revision, reader),
+				Reference(revision, referred)))
 			.ToList());
 	}
 
@@ -232,7 +246,8 @@ public static class PrivateNoteEndpoints
 	}
 
 	private static PrivateNoteView View(PrivateNote note,
-										string reader)
+										string reader,
+										IReadOnlyDictionary<TinyId, PrivateAttachment> referred)
 	{
 		var current = note.Current;
 		return new PrivateNoteView(
@@ -243,7 +258,77 @@ public static class PrivateNoteEndpoints
 			current.CreatedAt,
 			note.CreatedAt,
 			current.Number > 1,
-			Mine(current, reader));
+			Mine(current, reader),
+			Reference(current, referred));
+	}
+
+	/// <summary>
+	///     The attachment a request names, loaded whatever its state or report so the
+	///     domain can refuse one that is removed or elsewhere (ADR-0135). A request
+	///     naming none is a reference to nothing; one naming an attachment that does
+	///     not exist at all is <see langword="null" />.
+	/// </summary>
+	private static async Task<Referral?> ReferredTo(HpacSafetyDbContext database,
+													string? attachmentId,
+													CancellationToken cancellationToken)
+	{
+		if (string.IsNullOrEmpty(attachmentId))
+		{
+			return new Referral(null);
+		}
+
+		if (!TinyId.TryParse(attachmentId, out var id))
+		{
+			return null;
+		}
+
+		var attachment = await database.PrivateAttachments
+			.IgnoreQueryFilters()
+			.AsNoTracking()
+			.SingleOrDefaultAsync(candidate => candidate.Id == id, cancellationToken)
+			.ConfigureAwait(false);
+
+		return attachment is null ? null : new Referral(attachment);
+	}
+
+	/// <summary>
+	///     The attachments some revisions refer to, removed ones included, so a
+	///     revision whose attachment was removed later can still say what it was.
+	/// </summary>
+	private static async Task<Dictionary<TinyId, PrivateAttachment>> Referred(HpacSafetyDbContext database,
+																			  IEnumerable<TinyId?> attachmentIds,
+																			  CancellationToken cancellationToken)
+	{
+		var ids = attachmentIds.OfType<TinyId>().Distinct().ToList();
+
+		if (ids.Count == 0)
+		{
+			return [];
+		}
+
+		return await database.PrivateAttachments
+			.IgnoreQueryFilters()
+			.AsNoTracking()
+			.Where(attachment => ids.Contains(attachment.Id))
+			.ToDictionaryAsync(attachment => attachment.Id, cancellationToken)
+			.ConfigureAwait(false);
+	}
+
+	private static PrivateNoteAttachmentView? Reference(PrivateNoteRevision revision,
+														IReadOnlyDictionary<TinyId, PrivateAttachment> referred)
+	{
+		return revision.AttachmentId is { } id && referred.TryGetValue(id, out var attachment)
+			? new PrivateNoteAttachmentView(attachment.Id.Value, attachment.OriginalFileName, attachment.Deleted is not null)
+			: null;
+	}
+
+	/// <summary>The attachment a write names, or none.</summary>
+	private sealed record Referral(PrivateAttachment? Attachment)
+	{
+		public Dictionary<TinyId, PrivateAttachment> AsLookup()
+		{
+			return Attachment is null ? [] : new Dictionary<TinyId, PrivateAttachment> { [Attachment.Id] = Attachment };
+		}
 	}
 
 	private static bool Mine(PrivateNoteRevision revision,
@@ -280,12 +365,20 @@ public static class PrivateNoteEndpoints
 
 /// <summary>A new note's text.</summary>
 /// <param name="Text">Plain text, 1 to 4000 characters once trimmed.</param>
-public sealed record WritePrivateNoteRequest(string? Text);
+/// <param name="AttachmentId">A live private attachment on the same report the note refers to, if any (ADR-0135).</param>
+public sealed record WritePrivateNoteRequest(string? Text, string? AttachmentId = null);
 
 /// <summary>A note's new text and the revision it replaces.</summary>
 /// <param name="Text">Plain text, 1 to 4000 characters once trimmed.</param>
 /// <param name="Revision">The revision number the reviewer was looking at.</param>
-public sealed record EditPrivateNoteRequest(string? Text, int? Revision);
+/// <param name="AttachmentId">The private attachment the new revision refers to, or none (ADR-0135).</param>
+public sealed record EditPrivateNoteRequest(string? Text, int? Revision, string? AttachmentId = null);
+
+/// <summary>The private attachment a note's revision refers to.</summary>
+/// <param name="Id">The attachment.</param>
+/// <param name="FileName">Its sanitized file name.</param>
+/// <param name="Removed">Whether it was removed after the revision referred to it.</param>
+public sealed record PrivateNoteAttachmentView(string Id, string FileName, bool Removed);
 
 /// <summary>A note as it reads now, for the report view.</summary>
 /// <param name="Id">The note.</param>
@@ -296,6 +389,7 @@ public sealed record EditPrivateNoteRequest(string? Text, int? Revision);
 /// <param name="CreatedAt">When the note was first written.</param>
 /// <param name="Edited">Whether it has more than one revision.</param>
 /// <param name="IsMine">Whether the reader wrote the current text.</param>
+/// <param name="Attachment">The private attachment the current text refers to, if any.</param>
 public sealed record PrivateNoteView(
 	string Id,
 	string Text,
@@ -304,7 +398,8 @@ public sealed record PrivateNoteView(
 	DateTimeOffset WrittenAt,
 	DateTimeOffset CreatedAt,
 	bool Edited,
-	bool IsMine);
+	bool IsMine,
+	PrivateNoteAttachmentView? Attachment);
 
 /// <summary>One revision in a note's history.</summary>
 /// <param name="Number">1 for the first text, one more for each edit.</param>
@@ -312,9 +407,11 @@ public sealed record PrivateNoteView(
 /// <param name="WrittenBy">Its writer, as an opaque token subject.</param>
 /// <param name="WrittenAt">When it was written.</param>
 /// <param name="IsMine">Whether the reader wrote it.</param>
+/// <param name="Attachment">The private attachment it referred to, if any.</param>
 public sealed record PrivateNoteRevisionView(
 	int Number,
 	string Text,
 	string WrittenBy,
 	DateTimeOffset WrittenAt,
-	bool IsMine);
+	bool IsMine,
+	PrivateNoteAttachmentView? Attachment);

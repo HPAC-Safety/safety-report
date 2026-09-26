@@ -480,6 +480,17 @@ public static class ReportEndpoints
 		// already treats that as unguaranteed rather than assumed — a role claim
 		// alone does not prove a subject claim exists. Same stance here.
 		var subject = SubjectOf(context);
+
+		// So do its private attachments; their bytes stay in storage (REQ-MOD-111).
+		var attachments = await database.PrivateAttachments
+			.Where(attachment => attachment.ReportId == reportId)
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		foreach (var attachment in attachments)
+		{
+			attachment.Remove(subject, at);
+		}
 		database.AuditLog.Add(new AuditLogEntry(subject, AuditAction.DeletedReport, "Report", reportId, at));
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);

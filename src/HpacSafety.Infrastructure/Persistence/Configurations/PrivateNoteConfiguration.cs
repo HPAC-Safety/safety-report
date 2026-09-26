@@ -1,3 +1,4 @@
+using HpacSafety.Core.Features.PrivateAttachments;
 using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Core.Features.Reporting;
 using Microsoft.EntityFrameworkCore;
@@ -58,6 +59,15 @@ public sealed class PrivateNoteRevisionConfiguration : IEntityTypeConfiguration<
 		// Two reviewers editing the same revision at once: one wins, the other is
 		// refused rather than both writing the same number.
 		builder.HasIndex(revision => new { revision.NoteId, revision.Number }).IsUnique();
+
+		// The private attachment a revision refers to (ADR-0135). Never physically
+		// deleted, so a revision's reference always resolves, even once removed.
+		// That it is on the note's own report is the domain's rule.
+		builder.HasOne<PrivateAttachment>()
+			.WithMany()
+			.HasForeignKey(revision => revision.AttachmentId)
+			.OnDelete(DeleteBehavior.Restrict);
+		builder.HasIndex(revision => revision.AttachmentId);
 
 		builder.ToTable(t => t.HasCheckConstraint("ck_report_private_note_revisions_number", "number >= 1"));
 	}

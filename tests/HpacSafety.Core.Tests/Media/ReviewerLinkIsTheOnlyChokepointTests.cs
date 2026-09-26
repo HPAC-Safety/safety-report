@@ -23,10 +23,12 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 {
 	[Theory]
 	// PublicMediaLink forces a download too, but only of a public document's
-	// original (ADR-0119).
-	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs,PublicMediaLink.cs")]
+	// original (ADR-0119); PrivateAttachmentLink only of a staff private
+	// attachment (ADR-0135).
+	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs,PublicMediaLink.cs,PrivateAttachmentLink.cs")]
 	[InlineData("CreateInlineReadUrl", "PublicMediaLink.cs")]
-	// A reporter's one pre-signed PUT, to their upload's quarantine key (ADR-0126).
+	// The one pre-signed PUT, to an upload's quarantine key, for a reporter
+	// (ADR-0126) or a staff private attachment (ADR-0135).
 	[InlineData("CreateUploadUrl", "UploadLink.cs")]
 	public void GivenShippingSource_WhenPresigningCallIsMade_ThenOnlyChokepointMakes(
 		string method,
@@ -97,6 +99,19 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 
 		// Then
 		source.ShouldContain("CreateUploadUrl(");
+	}
+
+	[Fact]
+	public void GivenPrivateAttachmentChokepoint_WhenSourceIsScanned_ThenScanIsFindingRealCallSites()
+	{
+		// Given
+		var privateLink = Path.Combine(RepositoryRoot(), "src", "HpacSafety.Core", "Features", "PrivateAttachments", "PrivateAttachmentLink.cs");
+
+		// When
+		var source = File.ReadAllText(privateLink);
+
+		// Then
+		source.ShouldContain("CreateReadUrl(");
 	}
 
 	internal static string RepositoryRoot()

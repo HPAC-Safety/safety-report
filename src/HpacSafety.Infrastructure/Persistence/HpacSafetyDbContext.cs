@@ -2,6 +2,7 @@ using HpacSafety.Core;
 using HpacSafety.Core.Features.Comments;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.Outbox;
+using HpacSafety.Core.Features.PrivateAttachments;
 using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Core.Features.QuestionBank;
 using HpacSafety.Core.Features.QuestionBank.Typeform;
@@ -82,6 +83,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 	/// <summary>Every version of a private note's text, with its writer.</summary>
 	public DbSet<PrivateNoteRevision> PrivateNoteRevisions => Set<PrivateNoteRevision>();
+
+	/// <summary>Staff-only files on a report (ADR-0135).</summary>
+	public DbSet<PrivateAttachment> PrivateAttachments => Set<PrivateAttachment>();
 
 	/// <summary>Visible comments on public reports, current text only (the <c>public_report_comments</c> view).</summary>
 	public DbSet<PublicReportComment> PublicReportComments => Set<PublicReportComment>();
@@ -175,6 +179,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new ReportCommentRevisionConfiguration());
 		modelBuilder.ApplyConfiguration(new PrivateNoteConfiguration());
 		modelBuilder.ApplyConfiguration(new PrivateNoteRevisionConfiguration());
+		modelBuilder.ApplyConfiguration(new PrivateAttachmentConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportCommentConfiguration());
 		modelBuilder.ApplyConfiguration(new PublicReportMediaConfiguration());

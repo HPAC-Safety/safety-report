@@ -17,6 +17,7 @@ public class PrivateNoteRevision
 								int number,
 								string text,
 								string authorSubject,
+								TinyId? attachmentId,
 								DateTimeOffset at)
 	{
 		Id = TinyId.New();
@@ -24,6 +25,7 @@ public class PrivateNoteRevision
 		Number = number;
 		Text = text;
 		AuthorSubject = authorSubject;
+		AttachmentId = attachmentId;
 		CreatedAt = at;
 	}
 
@@ -45,6 +47,13 @@ public class PrivateNoteRevision
 	/// </summary>
 	public string AuthorSubject { get; private init; }
 
+	/// <summary>
+	///     The private attachment on the same report this revision refers to, if any
+	///     (ADR-0135). It belongs to the revision, so an edit may add, change, or drop
+	///     it, and the history keeps each revision's own.
+	/// </summary>
+	public TinyId? AttachmentId { get; private init; }
+
 	/// <summary>When it was written.</summary>
 	public DateTimeOffset CreatedAt { get; private init; }
 
@@ -55,9 +64,10 @@ public class PrivateNoteRevision
 											  int number,
 											  string text,
 											  string authorSubject,
+											  TinyId? attachmentId,
 											  DateTimeOffset at)
 	{
-		return new PrivateNoteRevision(noteId, number, text, authorSubject, at);
+		return new PrivateNoteRevision(noteId, number, text, authorSubject, attachmentId, at);
 	}
 
 	internal void Delete(DateTimeOffset at)

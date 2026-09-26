@@ -31,6 +31,7 @@ public class PublicMediaLinkTests
 	[Theory]
 	[InlineData(MediaCompartment.Original)]
 	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
 	public async Task GivenKeyOutsideStrippedCompartment_WhenPublicUrlIsRequested_ThenRefused(MediaCompartment compartment)
 	{
 		// Given
@@ -88,6 +89,7 @@ public class PublicMediaLinkTests
 	[Theory]
 	[InlineData(MediaCompartment.Stripped)]
 	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
 	public async Task GivenDocumentKeyOutsideOriginalCompartment_WhenPublicDownloadIsRequested_ThenRefused(MediaCompartment compartment)
 	{
 		// Given

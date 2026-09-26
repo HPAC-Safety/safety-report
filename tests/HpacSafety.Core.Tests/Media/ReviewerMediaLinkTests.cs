@@ -30,6 +30,7 @@ public class ReviewerMediaLinkTests
 	[Theory]
 	[InlineData(MediaCompartment.Original)]
 	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
 	public async Task GivenKeyOutsideStrippedCompartment_WhenViewUrlIsRequested_ThenRefused(MediaCompartment compartment)
 	{
 		// Given
@@ -105,6 +106,7 @@ public class ReviewerMediaLinkTests
 	[Theory]
 	[InlineData(MediaCompartment.Stripped)]
 	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
 	public async Task GivenDocumentKeyOutsideOriginalCompartment_WhenDocumentDownloadUrlIsRequested_ThenRefused(MediaCompartment compartment)
 	{
 		// Given

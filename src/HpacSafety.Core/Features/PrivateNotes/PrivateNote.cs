@@ -1,3 +1,5 @@
+using HpacSafety.Core.Features.PrivateAttachments;
+
 namespace HpacSafety.Core.Features.PrivateNotes;
 
 /// <summary>
@@ -50,16 +52,24 @@ public class PrivateNote
 										  ?? throw new InvalidOperationException("A private note always has a revision.");
 
 	/// <summary>Writes a new note on a report, with its first revision.</summary>
-	/// <exception cref="DomainRuleViolationException">The text is blank or too long.</exception>
+	/// <param name="reportId">The report.</param>
+	/// <param name="writerSubject">The writing reviewer's token subject.</param>
+	/// <param name="text">The text.</param>
+	/// <param name="at">When.</param>
+	/// <param name="refersTo">A live private attachment on the same report the note refers to, if any (ADR-0135).</param>
+	/// <exception cref="DomainRuleViolationException">
+	///     The text is blank or too long, or the attachment is removed or on another report.
+	/// </exception>
 	public static PrivateNote Write(TinyId reportId,
 									string writerSubject,
 									string? text,
-									DateTimeOffset at)
+									DateTimeOffset at,
+									PrivateAttachment? refersTo = null)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(writerSubject);
 
 		var note = new PrivateNote(reportId, at);
-		note._revisions.Add(PrivateNoteRevision.Write(note.Id, 1, Validated(text), writerSubject, at));
+		note._revisions.Add(PrivateNoteRevision.Write(note.Id, 1, Validated(text), writerSubject, note.Referable(refersTo), at));
 		return note;
 	}
 
@@ -71,12 +81,21 @@ public class PrivateNote
 	/// <param name="text">The new text.</param>
 	/// <param name="basedOn">The revision number the reviewer was looking at.</param>
 	/// <param name="at">When.</param>
+	/// <param name="refersTo">
+	///     The live private attachment on the same report this revision refers to, or
+	///     <see langword="null" /> for none. Each revision names its own; an edit that
+	///     passes none drops the reference (ADR-0135).
+	/// </param>
 	/// <exception cref="StalePrivateNoteException">Someone else edited it since.</exception>
-	/// <exception cref="DomainRuleViolationException">The note was removed, or the text is blank or too long.</exception>
+	/// <exception cref="DomainRuleViolationException">
+	///     The note was removed, the text is blank or too long, or the attachment is
+	///     removed or on another report.
+	/// </exception>
 	public PrivateNoteRevision Edit(string writerSubject,
 									string? text,
 									int basedOn,
-									DateTimeOffset at)
+									DateTimeOffset at,
+									PrivateAttachment? refersTo = null)
 	{
 		ArgumentException.ThrowIfNullOrWhiteSpace(writerSubject);
 
@@ -90,7 +109,7 @@ public class PrivateNote
 			throw new StalePrivateNoteException();
 		}
 
-		var revision = PrivateNoteRevision.Write(Id, Current.Number + 1, Validated(text), writerSubject, at);
+		var revision = PrivateNoteRevision.Write(Id, Current.Number + 1, Validated(text), writerSubject, Referable(refersTo), at);
 		_revisions.Add(revision);
 		return revision;
 	}
@@ -112,6 +131,27 @@ public class PrivateNote
 		{
 			revision.Delete(at);
 		}
+	}
+
+	/// <summary>The id of an attachment this note may refer to: live, and on its own report.</summary>
+	private TinyId? Referable(PrivateAttachment? attachment)
+	{
+		if (attachment is null)
+		{
+			return null;
+		}
+
+		if (attachment.ReportId != ReportId)
+		{
+			throw new DomainRuleViolationException("A private note may refer only to a private attachment on its own report.");
+		}
+
+		if (attachment.Deleted is not null)
+		{
+			throw new DomainRuleViolationException("A private note may not refer to a removed private attachment.");
+		}
+
+		return attachment.Id;
 	}
 
 	private static string Validated(string? text)

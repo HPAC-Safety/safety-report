@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -17,7 +18,9 @@ namespace HpacSafety.Acceptance.Tests;
 ///     What a stored answer holds — REQ-QB-122, a choice answer names its choice
 ///     (ADR-0128); REQ-QB-019 and REQ-QB-118, every answer in its one invariant
 ///     written form or refused, as are REQ-SUB-096 and REQ-SUB-097 for an email
-///     or phone answer (ADR-0137); and REQ-QB-025, only consent is projected onto the
+///     or phone answer (ADR-0137); REQ-SUB-108 and REQ-SUB-109, a date after today
+///     in the latest time zone refused unless its question allows future dates
+///     (ADR-0138); and REQ-QB-025, only consent is projected onto the
 ///     report (ADR-0072, ADR-0095, ADR-0117, ADR-0119).
 /// </summary>
 /// <remarks>
@@ -216,6 +219,60 @@ public sealed class StoredAnswerSteps
 			"JSON null" => null,
 			_ => _submitted,
 		};
+	}
+
+	// --- REQ-SUB-108, REQ-SUB-109: a future date, against the question's setting ---
+
+	[Given(@"^a reporter writing in (English|French) submits (.+) as the answer to a date question that (allows|does not allow) future dates$")]
+	public async Task GivenAReporterSubmitsADate(string language,
+												 string date,
+												 string allows)
+	{
+		_language = language == "French" ? Locale.FrCa : Locale.EnCa;
+		_admin ??= await BootedApi.SignedInAs(MemberRole.Administrator);
+		using var response = await _admin.PostAsJsonAsync(AdminQuestions, new
+		{
+			key = (string?)null,
+			type = "date",
+			labelEn = $"A synthetic date question {_run}",
+			labelFr = $"Une question synthétique date {_run}",
+			isRequired = false,
+			isPrivate = false,
+			isActive = true,
+			options = Array.Empty<object>(),
+			allowFutureDates = allows == "allows",
+		});
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+
+		_answered = await response.Content.ReadFromJsonAsync<JsonElement>();
+		_submitted = DateNamed(date);
+		_submittedValue = _submitted;
+	}
+
+	[Then(@"the date is stored as sent")]
+	public async Task ThenTheDateIsStoredAsSent()
+	{
+		(await AnswersToTheQuestion()).ShouldHaveSingleItem().Value.ShouldBe(_submitted);
+	}
+
+	/// <summary>
+	///     The <c>yyyy-mm-dd</c> a scenario's words name. "Today in the latest time
+	///     zone" is today at UTC+14, the last place on Earth a date is still
+	///     today (ADR-0138).
+	/// </summary>
+	private static string DateNamed(string date)
+	{
+		var there = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(14));
+		var today = new DateOnly(there.Year, there.Month, there.Day);
+
+		return date switch
+		{
+			"today in the latest time zone" => Iso(today),
+			"the day after today in the latest time zone" => Iso(today.AddDays(1)),
+			_ => date,
+		};
+
+		static string Iso(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
 	}
 
 	[When(@"the answer is persisted")]

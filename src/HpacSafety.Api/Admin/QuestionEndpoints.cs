@@ -128,7 +128,8 @@ public static class QuestionEndpoints
 				dependsOn.ChoiceId,
 				groupedUnderQuestionId,
 				options,
-				request.IsTranslatable);
+				request.IsTranslatable,
+				request.AllowFutureDates);
 
 			database.Questions.Add(question);
 			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
@@ -211,7 +212,8 @@ public static class QuestionEndpoints
 				dependsOn.ChoiceId,
 				groupedUnderQuestionId,
 				options,
-				request.IsTranslatable);
+				request.IsTranslatable,
+				request.AllowFutureDates);
 
 			var forked = !ReferenceEquals(live, question);
 

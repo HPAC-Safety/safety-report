@@ -265,6 +265,13 @@ same numbers.
 6. **Screenshots** for any user-visible web change:
    - captured from the real running app by a browser tool, not a mockup;
    - a new page or component: an after shot; a changed one: before and after;
+   - the before shot comes from a build of `origin/main`, taken before the code
+     changes, so there is always something to compare against;
+   - state the page cannot capture (a native popup, an OS picker, a hover, a
+     toast) is captured at OS level against a headed browser window. "It can't
+     be captured" is not grounds to skip a shot;
+   - taken after entry animations settle;
+   - light and dark when the issue asks for both;
    - in the project's primary language;
    - committed in the repository, named `before-*` / `after-*`, and referenced
      from the body or a comment, not only pasted inline;
@@ -272,6 +279,8 @@ same numbers.
      commit. A relative path or `github.com/…/blob/…` URL renders broken;
    - before reporting, check each URL answers `image/png`:
      `curl -sI <url> | grep -i content-type`.
+   - a web change with nothing visible says why in the body instead, in the
+     project's exemption form.
 7. **Prove it starts.** After pushing, start the app from the worktree and wait
    until it answers.
 8. **Tear down at once**: stop what step 7 started, then `git worktree remove`.

@@ -38,6 +38,8 @@ export interface PublicQuestionView {
 	type: string
 	isRequired: boolean
 	isPrivate: boolean
+	/** Whether a date answer may lie after today; false for every other type (ADR-0138). */
+	allowFutureDates: boolean
 	displayOrder: number
 	dependsOnQuestionId: string | null
 	/** The parent's required choice, by ID — for a replaced option, the option that replaced it (ADR-0128). */

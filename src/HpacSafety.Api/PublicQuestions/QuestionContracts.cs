@@ -28,6 +28,7 @@ public sealed record PublicQuestionView(
 	string Type,
 	bool IsRequired,
 	bool IsPrivate,
+	bool AllowFutureDates,
 	int DisplayOrder,
 	string? DependsOnQuestionId,
 	string? DependsOnChoiceId,
@@ -70,6 +71,7 @@ public sealed record PublicQuestionView(
 			EnumCode.Of(revision.Type),
 			revision.IsRequired,
 			revision.IsPrivate,
+			revision.AllowFutureDates,
 			revision.DisplayOrder,
 			(revision.DependsOnQuestionId is { } parentId
 				? QuestionDependencies.ParentToday(bank, parentId)?.Id ?? parentId

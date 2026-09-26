@@ -22,6 +22,7 @@ public sealed record QuestionView(
 	bool IsRequired,
 	bool IsPrivate,
 	bool IsTranslatable,
+	bool AllowFutureDates,
 	bool IsActive,
 	int DisplayOrder,
 	string? DependsOnQuestionId,
@@ -67,6 +68,7 @@ public sealed record QuestionView(
 			revision.IsRequired,
 			revision.IsPrivate,
 			revision.IsTranslatable,
+			revision.AllowFutureDates,
 			revision.IsActive,
 			revision.DisplayOrder,
 			(revision.DependsOnQuestionId is { } parentId && bank is not null
@@ -130,7 +132,9 @@ public sealed record OptionView(
 ///     <see cref="Options" />, the complete list of its choices, is applied in
 ///     place and never does (ADR-0095). <see cref="IsTranslatable" /> may be left
 ///     out: a new question then takes its type's default, and an edit that keeps
-///     the type keeps the current setting (ADR-0112).
+///     the type keeps the current setting (ADR-0112). So may
+///     <see cref="AllowFutureDates" />: a new question then does not allow future
+///     dates, and an edit to a date question keeps its setting (ADR-0138).
 /// </summary>
 public sealed record SaveQuestionRequest(
 	string? Key,
@@ -148,7 +152,8 @@ public sealed record SaveQuestionRequest(
 	string? DependsOnChoiceId,
 	string? GroupedUnderQuestionId,
 	IReadOnlyList<OptionInput>? Options,
-	bool? IsTranslatable = null);
+	bool? IsTranslatable = null,
+	bool? AllowFutureDates = null);
 
 /// <summary>
 ///     One option as authored. An administrator names a choice by its wording

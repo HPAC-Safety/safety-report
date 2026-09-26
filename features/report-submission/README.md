@@ -286,6 +286,59 @@ is written.
 - The field is a combobox (`role="combobox"`) controlling a labelled listbox,
   with the highlighted suggestion named by `aria-activedescendant`.
 
+## Date answers (#517)
+
+A date answer is stored as `yyyy-mm-dd` whichever way it was entered
+([ADR-0072](../../docs/decisions/ADR-0072-every-answer-is-stored-as-a-string.md)).
+Nothing about storage or the wire format changes with the picker.
+
+**Future dates are a per-question setting.** A date question's revision
+carries `allow_future_dates`, `false` unless an administrator checks **Allow
+future dates** in the question editor. The checkbox appears only for a date
+question. Changing it is an ordinary question edit: a new revision while the
+question is unanswered, a replacement question once it has been answered
+([ADR-0071](../../docs/decisions/ADR-0071-an-answered-question-forks-instead-of-revising.md)),
+so an answer is always judged by the revision it was given under. The
+occurrence-date question, like every date question that existed before the
+setting, does not allow future dates
+([ADR-0138](../../docs/decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md)).
+
+**Today.** The form compares against the reporter's own local date. The API
+compares against today in the latest time zone, UTC+14, so it never refuses a
+date that is already today somewhere. The form's check is the strict one. A
+refused future date gets `400` naming the question by its key, never the
+value, before anything is written. `GET /api/v1/questions/` carries each
+question's `allowFutureDates` so the form can apply the same rule.
+
+**On a desktop** (a fine pointer), the field is a text box that takes
+`yyyy-mm-dd` only. Clicking or focusing it opens a calendar popover under it:
+
+- one month at a time, with Previous month and Next month buttons, a month
+  picker and a year picker for reaching a date a few years back, and today
+  marked;
+- when the question does not allow future dates, the days after today are
+  disabled, and so are the pickers' later months and years; it always opens
+  on the chosen date's month, or today's;
+- choosing a day fills the field as `yyyy-mm-dd`, closes the popover, and
+  announces the chosen day in words;
+- month and weekday names follow the reader's language, and the week starts
+  on Sunday in English and Monday in French. Every button and picker is
+  labelled from the locale catalogues;
+- the popover is a labelled dialog. From the field, ArrowDown moves into it.
+  Inside it, the arrow keys move by a day or a week, Page Up and Page Down by a
+  month, Enter chooses the focused day, and Escape closes it and returns focus
+  to the field.
+
+Typed text that is not a real `yyyy-mm-dd` date, or a future date where the
+question does not allow one, shows an inline message in the reader's language
+when the reporter presses Next, and the form stays on that page.
+
+**On a touch device** (`(pointer: coarse)`), the field is a native
+`<input type="date">`, so the phone shows its own picker. Its value is always
+`yyyy-mm-dd`. When the question does not allow future dates, its `max` is the
+reporter's local today; some mobile pickers ignore `max`, so the same inline
+message and the API's refusal still apply.
+
 ## Validation order
 
 The API performs, in order:
@@ -296,7 +349,8 @@ The API performs, in order:
 3. revision lookup including soft-deleted rows;
 4. rejection of unknown or deleted revisions and validation against each exact
    historical type and the question's live choices, including the written
-   form of a date, time, email, or phone answer;
+   form of a date, time, email, or phone answer, and a date after today in
+   the latest time zone where that revision does not allow future dates;
 5. enforcement of an explicit answer to the `consent_publish` revision;
 6. upload-ID shape, duplicate, and count checks;
 7. existence of every named upload, refusing with the missing IDs before
@@ -411,3 +465,11 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   `phone`, or rewriting or revalidating an answer stored before it existed.
 - Guessing the phone country from the reporter's language or location; the
   picker starts on Canada.
+- A date-range picker, or any per-question earliest or latest date beyond the
+  Allow future dates checkbox.
+- Typed dates in any shape but `yyyy-mm-dd` (`2026/9/21`, `Sep 21 2026`), or
+  converting one into it.
+- A time picker. A time question keeps the native `<input type="time">`.
+- A third-party date-picker package; the calendar is the form's own small
+  component.
+- Changing how an admin screen or a published report shows a date.

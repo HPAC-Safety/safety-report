@@ -141,6 +141,36 @@ Scenario: Whether a question needs translation is a revision field
   When an Administrator changes it back after it has been answered
   Then the question is retired and replaced, so each answer keeps the setting it was given under
 
+@REQ-QB-154
+Scenario Outline: A date question allows future dates only when an Administrator says so
+  Given an Administrator creates a date question through the API <saying>
+  Then the saved question reads allowFutureDates as the JSON boolean <stored>
+
+Examples:
+  | saying                                        | stored |
+  | without saying whether it allows future dates | false  |
+  | allowing future dates                         | true   |
+
+@REQ-QB-155
+Scenario: Only a date question can allow future dates
+  Given an Administrator creates a short-text, time, or number question through the API
+  When they mark it as allowing future dates
+  Then the API refuses to save each one
+
+@REQ-QB-156
+Scenario: Whether a date question allows future dates is a revision field
+  Given a date question that does not allow future dates
+  When an Administrator allows future dates while nobody has answered it
+  Then a new revision of the same question allows future dates, and the earlier revision still does not
+  When a reporter answers it and an Administrator then disallows future dates
+  Then the question is retired and replaced under the same key, and the answer keeps the revision that allowed future dates
+
+@REQ-QB-157
+Scenario: The migration leaves the occurrence date refusing future dates, with no new revision
+  Given the migrations have been applied
+  Then the seeded occurrence-date question "Tell us the date of the occurrence." does not allow future dates
+  And it is still the revision it was seeded as
+
 @REQ-QB-016
 Scenario: consent_publish must resolve to an explicit yes or no
   Given the consent_publish revision has no preselected value
@@ -628,6 +658,17 @@ Scenario: The editor offers Auto-translate answer only for free text
   Then Auto-translate answer is offered and unchecked
   When they choose email
   Then Auto-translate answer is not offered
+
+@REQ-QB-158
+@ui
+Scenario: The editor offers Allow future dates only for a date question, unchecked
+  Given a signed-in Administrator is authoring a new question
+  When they choose date
+  Then Allow future dates is offered and unchecked
+  When they choose time
+  Then Allow future dates is not offered
+  When they choose date, check Allow future dates, write the question in both languages, and save
+  Then the saved question is sent with allowFutureDates true
 
 @REQ-QB-083
 @ui

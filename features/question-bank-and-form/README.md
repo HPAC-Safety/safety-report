@@ -20,6 +20,10 @@ Each revision contains:
 - question type;
 - form sort order and optional section/group key;
 - `is_private`, `is_active`, `is_system`, and `is_required` flags;
+- `allow_future_dates`, `false` unless an administrator allows future dates.
+  Only a date question may set it, and changing it is a revision like any
+  other field
+  ([ADR-0138](../../docs/decisions/ADR-0138-a-date-question-allows-future-dates-only-when-it-says-so.md));
 - creation timestamp and the revision it supersedes, when any;
 - a nullable `deleted` timestamp.
 

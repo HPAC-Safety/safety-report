@@ -167,9 +167,13 @@ banned through the BannedApiAnalyzers analyzer and `tests/BannedSymbols.txt`,
 not through source grep (ADR-0013, ADR-0035).
 
 [Source inventory](source-inventory.md) maps every `src/` project and
-directory, and [issue traceability](issue-traceability.md) lists every open
-issue. No check enforces either yet: a CI check that fails when they drift is
-issue #444. No test fixture or specification
+directory; `tools/check-inventories.mjs` fails the required `docs` job when it
+drifts. [Issue traceability](issue-traceability.md) lists every open issue;
+`tools/issue-traceability.mjs` checks it daily and on every push to `main`
+from its own non-required workflow, and keeps one drift issue open instead of
+failing a pull request, because open issues change without any commit
+([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+No test fixture or specification
 may contain a real reporter's personal information.
 *Verified by: none — a rule about the tests themselves, enforced by the suites
 and the CI gates rather than by a scenario.*

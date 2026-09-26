@@ -12,6 +12,7 @@ type: readme
 | `linked-issue.yml` | Check each PR body: a closing issue reference (`linked-issue`), no agent session link (`no-session-link`), and screenshots or a reason for none on a rendered web change (`screenshots`) |
 | `feature-coverage.yml` | Require a scenario for a behavior change, or a citation of the claims it preserves |
 | `i18n-translate.yml` | Prepare French application-catalogue changes only, and report each run that calls the provider to open `verify:translation-run` issues (ADR-0103) |
+| `issue-traceability.yml` | Daily and on push to `main`: keep one drift issue open while `docs/issue-traceability.md` misses an open issue or lists a closed one. Never gates a PR |
 | `traceability.yml` | Commit the regenerated `docs/traceability.md` onto a same-repo PR's branch |
 | `terraform.yml` | Validate/plan/apply infrastructure |
 | `deploy-api.yml` | Publish API image and run explicit migrations |

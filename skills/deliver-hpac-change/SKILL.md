@@ -69,6 +69,19 @@ names and step numbers.
   `renovate.json`
   ([ADR-0111](../../docs/decisions/ADR-0111-renovate-cites-the-claims-a-web-dependency-bump-preserves.md)).
 
+### Inventories
+
+- A new directory under `src/` gets a row in
+  [`docs/source-inventory.md`](../../docs/source-inventory.md), and a removed
+  one loses its row. `node tools/check-inventories.mjs` fails the pre-commit
+  hook and the `docs` job otherwise.
+- A pull request that closes an issue removes its row from
+  [`docs/issue-traceability.md`](../../docs/issue-traceability.md). Filing an
+  issue needs no pull request. Drift never fails a pull request; it keeps an
+  "Issue traceability drift" issue open, and whoever resolves that issue adds
+  the missing rows
+  ([ADR-0143](../../docs/decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)).
+
 ### Lessons
 
 - Lessons live under [`docs/lessons/`](../../docs/lessons/README.md)

@@ -6,11 +6,13 @@ type: guide
 
 # Source inventory
 
-This page maps every project and directory under `src/`, as of 2026-09-25
-(#437). It is kept at directory level so it stays true: a new file in an
-existing directory needs no entry, but a new directory does. Issue #444 adds
-the check that fails when an entry is missing or names a directory that no
-longer exists. Migrations are listed in
+This page maps every project and directory under `src/`, as of 2026-09-26
+(#444). It is kept at directory level so it stays true: a new file in an
+existing directory needs no entry, but a new directory does.
+`tools/check-inventories.mjs`, in the `docs` CI job, fails when a directory
+holding tracked files has no entry or an entry names a directory that no longer
+exists
+([ADR-0143](decisions/ADR-0143-issue-traceability-drift-opens-an-issue-and-gates-nothing.md)). Migrations are listed in
 [`Persistence/Migrations/README.md`](../src/HpacSafety.Infrastructure/Persistence/Migrations/README.md),
 not here.
 
@@ -42,6 +44,8 @@ Core has no runtime package dependency.
 | [`Features/Comments/`](../src/HpacSafety.Core/Features/Comments/) | A member's comment and its immutable revisions (ADR-0114). |
 | [`Features/Moderation/`](../src/HpacSafety.Core/Features/Moderation/) | Roles, the token identity, and the append-only audit entry (ADR-0064, ADR-0065). |
 | [`Features/Outbox/`](../src/HpacSafety.Core/Features/Outbox/) | Outbox messages and their four types (ADR-0002). |
+| [`Features/PrivateAttachments/`](../src/HpacSafety.Core/Features/PrivateAttachments/) | A staff-only file on a report, its link, and its upload policy; never summarized, processed, or published (ADR-0135). |
+| [`Features/PrivateNotes/`](../src/HpacSafety.Core/Features/PrivateNotes/) | A staff-only note on a report and its immutable revisions (ADR-0133). |
 | [`Features/QuestionBank/`](../src/HpacSafety.Core/Features/QuestionBank/) | Questions, immutable revisions, forks, owned choices, dependencies, grouping, and the two system consent questions (ADR-0071, ADR-0095, ADR-0117). |
 | [`Features/QuestionBank/Typeform/`](../src/HpacSafety.Core/Features/QuestionBank/Typeform/) | The Typeform mapper, export builder, and the hard-deleted pending-logic notes (ADR-0077, ADR-0078). |
 | [`Features/Reporting/`](../src/HpacSafety.Core/Features/Reporting/) | The report aggregate, answers, files, summary, lifecycle, the media policy and ingestor, the private-value marker (ADR-0082), and the two link chokepoints, `ReviewerMediaLink` and `PublicMediaLink`. |

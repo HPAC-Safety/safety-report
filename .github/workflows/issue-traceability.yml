@@ -1,0 +1,49 @@
+name: Issue traceability
+
+# docs/issue-traceability.md lists every open issue (ADR-0143). Open issues change
+# without any commit, so this never runs on a pull request and is not a
+# required check: a pull request that closes an issue would have to keep its
+# row until it merged and leave it stale the moment it did, and filing any
+# issue would fail every open pull request. Instead, tools/issue-traceability.mjs
+# keeps one "Issue traceability drift" issue open while the page and the open
+# issues disagree, and closes it once they match. Only an issue this bot wrote
+# under that title is the drift issue.
+#
+# Runs only on a schedule, a push to main, or dispatch — never on a
+# pull_request — so a fork cannot make this repository write issues.
+
+on:
+  schedule:
+    # Daily, off the hour to avoid the shared top-of-hour scheduler spike.
+    - cron: "23 6 * * *"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: issue-traceability
+  cancel-in-progress: false
+
+jobs:
+  issue-traceability:
+    # A dispatch can name any branch; only main's page is the one kept.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Keep the drift issue current
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node tools/issue-traceability.mjs --sync

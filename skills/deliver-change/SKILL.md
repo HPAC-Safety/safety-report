@@ -335,3 +335,16 @@ same numbers.
   `persist-credentials: false`. The persisted `GITHUB_TOKEN` header outranks
   the URL, so the push authenticates as `github-actions[bot]` and its CI waits
   for maintainer approval.
+
+## Concurrency and quotas
+
+- **Serialise only the job that needs it.** A workflow-level concurrency group
+  is held by every job in the run, including one waiting on an environment's
+  reviewers. The platform keeps one pending run per group and cancels the one
+  before it, so a run left waiting cancels every later one. That includes the
+  checks those runs would have reported. Put the group on the job that must
+  not overlap, such as a deploy or an apply.
+- **A job that calls an API authenticates.** An anonymous quota is shared with
+  whoever else is on the runner's address. A required check that spends it
+  fails at random. Pass the job's own read-only token, under the variable the
+  tool reads.

@@ -18,6 +18,10 @@ rejected push means. Amends
 [ADR-0057](ADR-0057-same-repo-pull-requests-translate-in-pr.md) on how the
 French is pushed onto a same-repo pull request. Both bots still commit onto
 the pull request's own branch, and neither ever pushes to `main`.
+Amended by
+[ADR-0149](ADR-0149-a-bot-push-stands-down-when-its-own-output-already-landed.md),
+which adds an outcome before the replay: an earlier run of the same workflow
+already landed its output.
 
 ## Context
 

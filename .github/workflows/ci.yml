@@ -681,7 +681,14 @@ jobs:
           chmod +x "$RUNNER_TEMP/skillfile"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 
+      # skillfile resolves each github-sourced entry through the GitHub API.
+      # Unauthenticated, it shares the runner IP's 60-an-hour anonymous quota
+      # and fails with HTTP 403 when a neighbour has spent it (#552). It reads
+      # GITHUB_TOKEN, then GH_TOKEN; the job token is read-only here, and on a
+      # fork pull request too, which is all public repositories need.
       - name: Skillfile validates and installs from the lock
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           skillfile validate

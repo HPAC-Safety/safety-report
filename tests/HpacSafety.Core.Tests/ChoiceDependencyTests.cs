@@ -428,4 +428,141 @@ public class ChoiceDependencyTests
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() => model.RelinkValue(mentor.Id, mentor.Id, Reviewer, At));
 	}
+
+	[Fact]
+	public void GivenQuestion_WhenDependencyOnItselfChecked_ThenRefused()
+	{
+		// Given
+		var make = Make();
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() =>
+			ChoiceDependencies.EnsureDependencyAllowed([make], make.Id, "Make", QuestionType.SingleSelect, 5, make.Id));
+	}
+
+	[Fact]
+	public void GivenDependentPicker_WhenOptionReplacedWithoutNamingParent_ThenReplacementKeepsLink()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make, QuestionType.SingleSelect);
+		var niviuk = make.Choice("niviuk")!.Id;
+
+		// When
+		model.ReplaceChoices(
+			[
+				new QuestionOptionInput("mentor_7", "Mentor 7 Light", "Mentor 7 Light", Replace: true),
+				new QuestionOptionInput("rush_6", "Rush 6", "Rush 6"),
+			], At);
+
+		// Then
+		model.Choice("mentor_7_light")!.ParentChoiceId.ShouldBe(niviuk);
+	}
+
+	[Fact]
+	public void GivenLinkNamingNoChoiceOfForkedParent_WhenFollowed_ThenLinkIsLeftAsItIs()
+	{
+		// Given
+		var make = Make();
+		var elsewhere = Question.Create(
+			"elsewhere", QuestionType.SingleSelect, "Elsewhere", "Ailleurs", At, isActive: true,
+			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
+		var model = Model(make);
+		var gin = elsewhere.Choice("gin")!.Id;
+		model.ReplaceChoices(Kept(model, ("mentor_7", gin)), At);
+		var replacement = make.ApplyEdit(true, QuestionType.SingleSelect, "Wing make", "Marque", true, true, 0, At);
+
+		// When
+		ChoiceDependencies.Follow([make, model, replacement], replacement);
+
+		// Then
+		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(gin);
+		model.Choice("rush_6")!.ParentChoiceId.ShouldBe(replacement.Choice("ozone")!.Id);
+	}
+
+	[Fact]
+	public void GivenQuestionNothingDependsOn_WhenRetypedToText_ThenAllowed()
+	{
+		// Given
+		var make = Make();
+
+		// When / Then
+		Should.NotThrow(() => ChoiceDependencies.EnsureParentKeepsType([make], make, QuestionType.ShortText));
+	}
+
+	[Fact]
+	public void GivenRetiredParent_WhenLinksChecked_ThenRefused()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+		make.Delete(false, At);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinksAllowed([make, model], model));
+	}
+
+	[Fact]
+	public void GivenValueTypedWhileParentOffForm_WhenLinksChecked_ThenRefusedNamingIt()
+	{
+		// Given — a value a reporter typed with no parent answer to be offered under
+		var make = Make();
+		var model = Model(make);
+		model.AddChoiceFromReporter("Zeno 2", Locale.EnCa, At);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinksAllowed([make, model], model))
+			.Message.ShouldContain("'Zeno 2'");
+	}
+
+	[Fact]
+	public void GivenParentNotLoaded_WhenFollowed_ThenDependentIsLeftAlone()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+		var other = Make();
+
+		// When
+		ChoiceDependencies.Follow([model, other], other);
+
+		// Then
+		model.ChoicesDependOnQuestionId.ShouldBe(make.Id);
+		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(make.Choice("niviuk")!.Id);
+	}
+
+	[Fact]
+	public void GivenLinkNamingAnotherQuestionsChoice_WhenFollowedUnforked_ThenLinkIsLeftAsItIs()
+	{
+		// Given
+		var make = Make();
+		var elsewhere = Question.Create(
+			"elsewhere", QuestionType.SingleSelect, "Elsewhere", "Ailleurs", At, isActive: true,
+			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
+		var model = Model(make);
+		var gin = elsewhere.Choice("gin")!.Id;
+		model.ReplaceChoices(Kept(model, ("mentor_7", gin)), At);
+
+		// When
+		ChoiceDependencies.Follow([make, model], make);
+
+		// Then
+		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(gin);
+	}
+
+	[Fact]
+	public void GivenDependentTypeAhead_WhenMergingValuesUnderOneParentChoice_ThenMerged()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+		var ozone = make.Choice("ozone")!.Id;
+		var typo = model.AddChoiceFromReporter("Rush6", Locale.EnCa, At, ozone);
+
+		// When
+		model.MergeValue(typo.Id, model.Choice("rush_6")!.Id, Reviewer, At);
+
+		// Then
+		typo.MergedIntoChoiceId.ShouldBe(model.Choice("rush_6")!.Id);
+	}
 }

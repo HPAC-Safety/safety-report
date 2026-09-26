@@ -756,6 +756,14 @@ Scenario: A condition follows its choice's replacement
   Then the dependent question is enabled by an answer naming "paraglider (solo)"
   And the dependent question keeps its current revision
 
+@REQ-QB-140
+Scenario: A condition follows its parent question when the parent forks
+  Given a question depends on the "Paraglider" choice of an answered single-select question
+  When an Administrator changes the single-select question's wording
+  Then the report form and the editor show the condition on the replacement question and its "Paraglider" choice
+  And the dependent question is not revised by its parent's fork
+  And saving the dependent question unchanged gives it no new revision
+
 @REQ-QB-139
 @ui
 Scenario: An Administrator chooses to replace a picker option rather than fix it

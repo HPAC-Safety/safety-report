@@ -21,7 +21,9 @@ dependency lives, how it is enforced, what a cycle means — still holds.
 
 Amended by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): the required option is named by
 choice ID, not by `depends_on_option_code`, and a condition follows its
-choice's replacement.
+choice's replacement. Amended by [ADR-0132](ADR-0132-a-condition-follows-its-parent-through-a-fork.md): a condition also follows its
+parent through a fork, to the live question that replaced it and its copy of
+the choice.
 
 ## Context
 

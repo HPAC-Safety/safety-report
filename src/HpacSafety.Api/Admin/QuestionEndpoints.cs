@@ -49,13 +49,14 @@ public static class QuestionEndpoints
 											CancellationToken cancellationToken)
 	{
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
+		var bank = await WithRetiredParents(database, questions, cancellationToken).ConfigureAwait(false);
 		var answered = await AnsweredQuestionIds(database, cancellationToken).ConfigureAwait(false);
 
 		return Results.Ok(
 			questions
 				.OrderBy(question => question.DisplayOrder)
 				.ThenBy(question => question.Key, StringComparer.Ordinal)
-				.Select(question => QuestionView.Of(question, answered.Contains(question.Id), questions))
+				.Select(question => QuestionView.Of(question, answered.Contains(question.Id), bank))
 				.ToList());
 	}
 
@@ -75,6 +76,7 @@ public static class QuestionEndpoints
 
 		var at = clock.GetUtcNow();
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
+		var bank = await WithRetiredParents(database, questions, cancellationToken).ConfigureAwait(false);
 		string key;
 
 		if (string.IsNullOrWhiteSpace(request.Key))
@@ -103,7 +105,7 @@ public static class QuestionEndpoints
 
 		return await Save(async () =>
 		{
-			var dependsOn = ResolvedDependency(request, questions, null);
+			var dependsOn = ResolvedDependency(request, bank, null);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
 			var options = OptionsFor(request, type);
 
@@ -132,7 +134,7 @@ public static class QuestionEndpoints
 			Audit(database, context, AuditAction.CreatedQuestion, question.Id, at);
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-			return Results.Created($"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question, bank: questions));
+			return Results.Created($"/api/admin/questions/{question.Id.Value}", QuestionView.Of(question, bank: bank));
 		}).ConfigureAwait(false);
 	}
 
@@ -163,6 +165,7 @@ public static class QuestionEndpoints
 		}
 
 		var questions = await LiveQuestions(database).ToListAsync(cancellationToken).ConfigureAwait(false);
+		var bank = await WithRetiredParents(database, questions, cancellationToken).ConfigureAwait(false);
 		var question = questions.Find(candidate => candidate.Id == questionId);
 
 		if (question is null)
@@ -175,13 +178,13 @@ public static class QuestionEndpoints
 
 		return await Save(async () =>
 		{
-			var dependsOn = ResolvedDependency(request, questions, question);
+			var dependsOn = ResolvedDependency(request, bank, question);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
 			var options = OptionsFor(request, type);
 
 			if (options is not null)
 			{
-				QuestionDependencies.EnsureChoicesRemovable(questions, question, [.. options.Select(option => option.Code)]);
+				QuestionDependencies.EnsureChoicesRemovable(bank, question, [.. options.Select(option => option.Code)]);
 			}
 
 			var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
@@ -222,7 +225,7 @@ public static class QuestionEndpoints
 			await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 			// The replacement is new, so nothing has answered it yet.
-			return Results.Ok(QuestionView.Of(live, hasBeenAnswered && !forked, questions));
+			return Results.Ok(QuestionView.Of(live, hasBeenAnswered && !forked, bank));
 		}).ConfigureAwait(false);
 	}
 
@@ -284,7 +287,8 @@ public static class QuestionEndpoints
 
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-		return Results.Ok(ordered.Select(question => QuestionView.Of(question, bank: ordered)).ToList());
+		var bank = await WithRetiredParents(database, ordered, cancellationToken).ConfigureAwait(false);
+		return Results.Ok(ordered.Select(question => QuestionView.Of(question, bank: bank)).ToList());
 	}
 
 	/// <summary>
@@ -481,6 +485,40 @@ public static class QuestionEndpoints
 			.Include(question => question.AllChoices);
 	}
 
+	/// <summary>
+	///     <paramref name="live" />, and every retired question a live one's condition
+	///     still names: the parents that forked after the condition was saved. A
+	///     condition follows its parent's fork on read, and resolving it needs the
+	///     retired parent's key and choices (ADR-0132).
+	/// </summary>
+	internal static async Task<List<Question>> WithRetiredParents(HpacSafetyDbContext database,
+																  List<Question> live,
+																  CancellationToken cancellationToken)
+	{
+		var liveIds = live.Select(question => question.Id).ToHashSet();
+		var named = live
+			.Select(question => question.DependsOnQuestionId)
+			.OfType<TinyId>()
+			.Where(id => !liveIds.Contains(id))
+			.Distinct()
+			.ToList();
+
+		if (named.Count == 0)
+		{
+			return live;
+		}
+
+		var retired = await database.Questions
+			.IgnoreQueryFilters()
+			.Include(question => question.Revisions)
+			.Include(question => question.AllChoices)
+			.Where(question => named.Contains(question.Id))
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		return [.. live, .. retired];
+	}
+
 	private static int NextDisplayOrder(List<Question> questions)
 	{
 		return questions.Count == 0 ? 0 : questions.Max(question => question.DisplayOrder) + 1;
@@ -514,18 +552,20 @@ public static class QuestionEndpoints
 
 		QuestionDependencies.EnsureDependencyAllowed(questions, child?.Id, parentId, choiceId);
 
-		// The screen shows a condition naming a replaced option as its
-		// replacement. Saving it back is not a change of condition, so the stored
-		// choice is kept — otherwise an untouched condition would revise, or
-		// fork, the question (ADR-0128).
-		// EnsureDependencyAllowed has just found the parent among the live
-		// questions, and a choice it accepted stands for something on it.
-		if (child?.DependsOnChoiceId is { } stored
-			&& child.DependsOnQuestionId == parentId
-			&& choiceId is { } chosen)
+		// The screen shows a condition as the parent and choice that stand for it
+		// today: the replacement of a replaced option (ADR-0128), and the live
+		// question that replaced a forked parent (ADR-0132). Saving it back is not
+		// a change of condition, so what is stored is kept — otherwise an
+		// untouched condition would revise, or fork, the question.
+		if (child?.DependsOnQuestionId is { } storedParent
+			&& QuestionDependencies.ParentToday(questions, storedParent) is { } today
+			&& today.Id == parentId
+			&& (choiceId is null
+				? child.DependsOnChoiceId is null
+				: QuestionDependencies.RequiredChoiceToday(questions, child.CurrentRevision) is { } required
+				  && required == today.CurrentChoice(choiceId.Value)))
 		{
-			var parent = questions.Single(question => question.Id == parentId);
-			choiceId = parent.CurrentChoice(stored) == parent.CurrentChoice(chosen) ? stored : chosen;
+			return (storedParent, child.DependsOnChoiceId);
 		}
 
 		return (parentId, choiceId);

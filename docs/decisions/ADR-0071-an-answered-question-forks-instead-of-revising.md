@@ -15,6 +15,9 @@ revisions, so editing only the choices never revises or forks the question. A
 fork copies every choice, removed ones and reporter-added marks included, onto
 the replacement. Amended again by [ADR-0128](ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md): the copies are new
 choice rows, and answers to the retired question keep naming its rows.
+Amended by [ADR-0132](ADR-0132-a-condition-follows-its-parent-through-a-fork.md): a fork leaves the questions that depend on the
+forked one as they are; each resolves its condition to the replacement on
+read.
 
 ## Context
 

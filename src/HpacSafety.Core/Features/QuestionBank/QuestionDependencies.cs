@@ -20,6 +20,17 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         This is a static rule-checker over a collection, not a repository. It does
 ///         no I/O — the caller loads the live questions and hands them in.
 ///     </para>
+///     <para>
+///         A condition names the parent question and choice it was saved with. When
+///         that parent forks (ADR-0071), the dependent is neither revised nor forked:
+///         every reader resolves the retired parent to the live question with its key,
+///         and the retired choice to its copy there, through any replacement
+///         (<see cref="ParentToday" />, <see cref="RequiredChoiceToday" />). A key is
+///         shared only by one fork chain and never reused (REQ-QB-096), so the live
+///         question with it is the one that replaced the parent. To follow a fork the
+///         collection must also hold the retired parents live questions still name.
+///         See ADR-0132.
+///     </para>
 /// </remarks>
 public static class QuestionDependencies
 {
@@ -81,7 +92,7 @@ public static class QuestionDependencies
 		}
 
 		if (childId is { } child
-			&& LeadsTo(questions, parentId, child))
+			&& LeadsTo(questions, parent.Id, child))
 		{
 			throw new DomainRuleViolationException(
 				$"'{parent.Key}' already depends on this question, directly or through another one. A cycle would leave both permanently disabled.");
@@ -112,24 +123,44 @@ public static class QuestionDependencies
 		// A dependency names a choice, and follows it through any replacement
 		// (ADR-0128): what matters is the choice that stands for it today.
 		var dependent = questions.FirstOrDefault(question => question.Deleted is null
-															 && question.DependsOnQuestionId == parent.Id
-															 && question.DependsOnChoiceId is { } required
-															 && parent.CurrentChoice(required) is { Deleted: null } current
+															 && question.DependsOnQuestionId is { } named
+															 && ParentToday(questions, named) == parent
+															 && RequiredChoiceToday(questions, question.CurrentRevision) is { Deleted: null } current
 															 && !kept.Contains(current.Code));
 
 		if (dependent is not null)
 		{
-			var wording = parent.CurrentChoice(dependent.DependsOnChoiceId!.Value)!.Label(Locale.EnCa);
+			var wording = RequiredChoiceToday(questions, dependent.CurrentRevision)!.Label(Locale.EnCa);
 			throw new DomainRuleViolationException(
 				$"'{dependent.CurrentRevision.LabelEn}' is shown only when '{wording}' is chosen. Change that question first, then remove the choice.");
 		}
 	}
 
 	/// <summary>
-	///     The parent's choice that stands today for the one <paramref name="revision" />
-	///     requires — that choice, or the one that replaced it (ADR-0128). Null when the
-	///     revision requires no choice or its parent is not among
-	///     <paramref name="questions" />.
+	///     The question that stands today for the parent a condition names: that
+	///     question while it is live, or — once it has forked — the live question that
+	///     replaced it, which carries its key (ADR-0071, ADR-0132). Null when the named
+	///     question is not among <paramref name="questions" />, or was deleted rather
+	///     than forked.
+	/// </summary>
+	public static Question? ParentToday(IReadOnlyCollection<Question> questions,
+										TinyId parentId)
+	{
+		ArgumentNullException.ThrowIfNull(questions);
+
+		var named = questions.FirstOrDefault(question => question.Id == parentId);
+
+		return named is null or { Deleted: null }
+			? named
+			: questions.FirstOrDefault(question => question.Deleted is null && question.Key == named.Key);
+	}
+
+	/// <summary>
+	///     The choice that stands today for the one <paramref name="revision" />
+	///     requires: on the parent today (<see cref="ParentToday" />), the choice itself
+	///     or — when the parent forked — its copy, which keeps its code, followed
+	///     through any replacement (ADR-0128, ADR-0132). Null when the revision
+	///     requires no choice or its parent cannot be resolved.
 	/// </summary>
 	public static QuestionChoice? RequiredChoiceToday(IReadOnlyCollection<Question> questions,
 													  QuestionRevision revision)
@@ -137,9 +168,22 @@ public static class QuestionDependencies
 		ArgumentNullException.ThrowIfNull(questions);
 		ArgumentNullException.ThrowIfNull(revision);
 
-		return revision is { DependsOnQuestionId: { } parentId, DependsOnChoiceId: { } choiceId }
-			   && questions.FirstOrDefault(question => question.Id == parentId) is { } parent
-			? parent.CurrentChoice(choiceId)
+		if (revision is not { DependsOnQuestionId: { } parentId, DependsOnChoiceId: { } choiceId }
+			|| ParentToday(questions, parentId) is not { } today)
+		{
+			return null;
+		}
+
+		if (today.Id == parentId)
+		{
+			return today.CurrentChoice(choiceId);
+		}
+
+		var named = questions.First(question => question.Id == parentId);
+		var code = named.AllChoices.FirstOrDefault(choice => choice.Id == choiceId)?.Code;
+
+		return today.AllChoices.FirstOrDefault(choice => choice.Code == code) is { } copy
+			? today.CurrentChoice(copy.Id)
 			: null;
 	}
 
@@ -159,7 +203,8 @@ public static class QuestionDependencies
 		{
 			var question = questions.FirstOrDefault(candidate => candidate.Id == current);
 
-			if (question?.DependsOnQuestionId is not { } next)
+			if (question?.DependsOnQuestionId is not { } named
+				|| ParentToday(questions, named)?.Id is not { } next)
 			{
 				return false;
 			}

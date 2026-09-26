@@ -29,12 +29,19 @@ public static class TypeformExportBuilder
 {
 	/// <summary>Builds the English and French documents for the given live questions.</summary>
 	/// <param name="questions">Every live question, in display order, with its choices loaded.</param>
-	public static (TypeformDocument English, TypeformDocument French) Build(IReadOnlyList<Question> questions)
+	/// <param name="bank">
+	///     <paramref name="questions" /> and every retired parent a condition still
+	///     names, so a condition on a parent that forked exports as the live question
+	///     and choice that replaced it (ADR-0132). Defaults to
+	///     <paramref name="questions" />.
+	/// </param>
+	public static (TypeformDocument English, TypeformDocument French) Build(IReadOnlyList<Question> questions,
+																			 IReadOnlyCollection<Question>? bank = null)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 
+		bank ??= questions;
 		var keysByQuestionId = questions.ToDictionary(question => question.Id, question => question.Key);
-		var questionsById = questions.ToDictionary(question => question.Id);
 
 		var englishFields = new List<TypeformField>();
 		var frenchFields = new List<TypeformField>();
@@ -48,8 +55,8 @@ public static class TypeformExportBuilder
 				EnumCode.Of(revision.Type),
 				revision.IsPrivate,
 				revision.IsRequired,
-				NameOf(revision.DependsOnQuestionId, keysByQuestionId),
-				RequiredCodeOf(revision, questionsById),
+				NameOf(revision.DependsOnQuestionId is { } parentId ? QuestionDependencies.ParentToday(bank, parentId)?.Id : null, keysByQuestionId),
+				QuestionDependencies.RequiredChoiceToday(bank, revision)?.Code,
 				NameOf(revision.GroupedUnderQuestionId, keysByQuestionId));
 
 			englishFields.Add(Field(question.Key, revision.LabelEn, revision.HelpTextEn, revision.Type, choices, hpac, english: true));
@@ -57,21 +64,6 @@ public static class TypeformExportBuilder
 		}
 
 		return (new TypeformDocument(englishFields, []), new TypeformDocument(frenchFields, []));
-	}
-
-	/// <summary>
-	///     The code of the parent's choice this revision requires — the choice that
-	///     stands for it today, so a replaced option exports as its replacement. The
-	///     file names choices by code, the one identifier both language files share
-	///     (ADR-0077, ADR-0128).
-	/// </summary>
-	private static string? RequiredCodeOf(QuestionRevision revision,
-										  Dictionary<TinyId, Question> questionsById)
-	{
-		return revision is { DependsOnQuestionId: { } parentId, DependsOnChoiceId: { } choiceId }
-			   && questionsById.TryGetValue(parentId, out var parent)
-			? parent.CurrentChoice(choiceId)?.Code
-			: null;
 	}
 
 	private static string? NameOf(TinyId? questionId,

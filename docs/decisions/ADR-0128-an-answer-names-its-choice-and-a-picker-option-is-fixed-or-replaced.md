@@ -41,6 +41,9 @@ Accepted. This ADR:
 decides what editing, merging, and reviewing a type-ahead value means. This
 ADR decides how any choice answer is stored and how a picker option changes.
 
+Amended by [ADR-0132](ADR-0132-a-condition-follows-its-parent-through-a-fork.md): a condition follows its parent's fork, as it
+follows a replaced choice.
+
 ## Context
 
 ADR-0072 stored a picker answer as the label the reporter saw, so that a

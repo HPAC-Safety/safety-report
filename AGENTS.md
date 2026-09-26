@@ -191,9 +191,11 @@ contributor who never invokes one is unaffected.
      [ADR-0035](docs/decisions/ADR-0035-dateonly-datetimeoffset-timeonly-datetime-is-banned.md)).
    - **Conditional questions** depend on a yes/no question, or on a
      single-select naming one of its live choices by ID — which then cannot be
-     removed, only replaced
+     removed, only replaced. A condition follows a replaced choice and a forked
+     parent without revising the dependent question
      ([ADR-0060](docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
-     [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
+     [ADR-0074](docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md),
+     [ADR-0132](docs/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
 2. **Nothing reaches the server before final submission — except
    attachments.**
    - Unfinished answers and shown revision IDs stay only in that browser, for

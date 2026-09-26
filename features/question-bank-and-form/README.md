@@ -42,6 +42,10 @@ wording ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and
   **replace it** (the old choice is retired, still named by every earlier
   answer, and a new choice takes its place). A condition naming a replaced
   choice follows it to its replacement ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)).
+  A condition also follows its parent when the parent forks: the dependent
+  question is not revised, and the form and the editor name the live question
+  that replaced the parent and its copy of the choice
+  ([ADR-0132](../../docs/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
 - **Type-ahead values** are corrected in place for every answer that names
   them, removed by soft delete, and merged: merging B into A retires B, and
   answers naming B read A without being rewritten. A value a reporter adds is

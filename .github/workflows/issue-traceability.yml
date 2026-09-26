@@ -6,7 +6,8 @@ name: Issue traceability
 # row until it merged and leave it stale the moment it did, and filing any
 # issue would fail every open pull request. Instead, tools/issue-traceability.mjs
 # keeps one "Issue traceability drift" issue open while the page and the open
-# issues disagree, and closes it once they match.
+# issues disagree, and closes it once they match. Only an issue this bot wrote
+# under that title is the drift issue.
 #
 # Runs only on a schedule, a push to main, or dispatch — never on a
 # pull_request — so a fork cannot make this repository write issues.
@@ -28,6 +29,8 @@ concurrency:
 
 jobs:
   issue-traceability:
+    # A dispatch can name any branch; only main's page is the one kept.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read

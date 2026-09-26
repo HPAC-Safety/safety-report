@@ -73,8 +73,8 @@ names and step numbers.
 
 - A new directory under `src/` gets a row in
   [`docs/source-inventory.md`](../../docs/source-inventory.md), and a removed
-  one loses its row. `node tools/check-inventories.mjs` fails the `docs` job
-  otherwise.
+  one loses its row. `node tools/check-inventories.mjs` fails the pre-commit
+  hook and the `docs` job otherwise.
 - A pull request that closes an issue removes its row from
   [`docs/issue-traceability.md`](../../docs/issue-traceability.md). Filing an
   issue needs no pull request. Drift never fails a pull request; it keeps an

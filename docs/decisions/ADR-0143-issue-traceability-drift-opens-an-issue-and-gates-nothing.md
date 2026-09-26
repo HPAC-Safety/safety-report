@@ -36,19 +36,30 @@ any commit:
 ## Decision
 
 - **Source inventory: a required check.** `tools/check-inventories.mjs` runs
-  in the `docs` job. It fails when a directory under `src/` holding tracked
+  in the pre-commit hook, when a file under `src/` is added or deleted or the
+  inventory is staged, and in the `docs` job as the backstop
+  ([ADR-0073](ADR-0073-a-ui-scenario-is-skipped-by-reqnroll-itself.md)). It fails when a directory under `src/` holding tracked
   files has no row, or a row names a directory that no longer exists. It
   takes the directories from `git ls-files`, so build output never counts. A
   directory holding only other directories needs no row.
 - **Issue traceability: a drift issue, never a failed check.**
   `tools/issue-traceability.mjs --sync` runs from
   `.github/workflows/issue-traceability.yml` daily, on push to `main`, and on
-  dispatch, and never on a pull request. It keeps one "Issue traceability
-  drift" issue:
-  - opened, with a label and milestone, when an open issue has no row or a row
-    names an issue that is not open;
-  - updated while the drift lasts;
-  - closed once the page matches.
+  dispatch from `main`, and never on a pull request. It keeps one "Issue
+  traceability drift" issue:
+  - the drift issue is one titled that way **and** written by
+    `github-actions[bot]`; an issue anyone else files under the title is an
+    ordinary issue, needs a row, and is never edited or closed;
+  - when an open issue has no row or a row names an issue that is not open, it
+    reopens the most recent closed drift issue with the new list, or else opens
+    one labelled `documentation` and `area:ci`, in the "Docs & spec hygiene"
+    milestone when that milestone is open;
+  - it updates the list while the drift lasts;
+  - it comments and closes the issue once the page matches.
+
+  Issue titles are quoted in backticks, so the list mentions no one, and
+  escaped in workflow-command lines. A 403 or 429 from GitHub is a warning,
+  not a failure; the next run tries again.
 
   Without a token it reads nothing and exits with a notice. Run locally
   without `--sync`, it reports the drift and exits 1.

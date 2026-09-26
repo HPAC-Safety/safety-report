@@ -6,8 +6,8 @@ type: guide
 
 # Source inventory
 
-This page maps every project and directory under `src/`, as of 2026-09-25
-(#437). It is kept at directory level so it stays true: a new file in an
+This page maps every project and directory under `src/`, as of 2026-09-26
+(#444). It is kept at directory level so it stays true: a new file in an
 existing directory needs no entry, but a new directory does.
 `tools/check-inventories.mjs`, in the `docs` CI job, fails when a directory
 holding tracked files has no entry or an entry names a directory that no longer

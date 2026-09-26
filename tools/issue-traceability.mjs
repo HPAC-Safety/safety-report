@@ -6,8 +6,10 @@
 // state, a pull request that closes an issue would have to keep that issue's
 // row until it merges and would leave it stale the moment it did, and filing
 // any issue would fail every open pull request. So a scheduled workflow runs
-// it, and it keeps one drift issue current instead: opened when drift appears,
-// updated while it lasts, closed when it is gone.
+// it, and it keeps one drift issue current instead: opened (or the last one
+// reopened) when drift appears, updated while it lasts, closed when it is gone.
+// The drift issue is the one this workflow's bot wrote under DRIFT_TITLE; an
+// issue anyone else files under that title is an ordinary issue.
 //
 //   GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/issue-traceability.mjs          reports drift
 //   GITHUB_TOKEN=… GITHUB_REPOSITORY=owner/repo node tools/issue-traceability.mjs --sync   also keeps the drift issue
@@ -18,7 +20,18 @@ import { readFileSync } from 'node:fs'
 
 export const PAGE = 'docs/issue-traceability.md'
 export const DRIFT_TITLE = 'Issue traceability drift'
-export const DRIFT_LABELS = ['documentation']
+export const DRIFT_LABELS = ['documentation', 'area:ci']
+export const BOT = 'github-actions[bot]'
+
+/** Whether an issue is the drift issue this workflow keeps: its title, written by its bot. */
+export const isDriftIssue = (issue) => issue.title === DRIFT_TITLE && issue.user === BOT
+
+// A title goes into a warning line and an issue body. In backticks it cannot
+// mention anyone or link anything.
+const quoted = (title) => `\`${title.replaceAll('`', "'")}\``
+
+/** Text made safe for one GitHub Actions workflow-command line. */
+export const escapeCommand = (text) => text.replaceAll('%', '%25').replaceAll('\r', '%0D').replaceAll('\n', '%0A')
 export const DRIFT_MILESTONE = 'Docs & spec hygiene'
 
 /** The issue number each table row names in its first cell. */
@@ -31,14 +44,14 @@ export function listedIssues(markdown) {
  * issue, pull requests excluded; the drift issue itself needs no row.
  */
 export function driftProblems({ openIssues, markdown }) {
-	const open = openIssues.filter((issue) => issue.title !== DRIFT_TITLE)
+	const open = openIssues.filter((issue) => !isDriftIssue(issue))
 	const openNumbers = new Set(open.map((issue) => issue.number))
 	const listed = listedIssues(markdown)
 	const listedNumbers = new Set(listed)
 
 	const problems = []
 	for (const issue of [...open].sort((a, b) => a.number - b.number)) {
-		if (!listedNumbers.has(issue.number)) problems.push(`#${issue.number} (${issue.title}) is open and has no row.`)
+		if (!listedNumbers.has(issue.number)) problems.push(`#${issue.number} (${quoted(issue.title)}) is open and has no row.`)
 	}
 	for (const number of listed) {
 		if (!openNumbers.has(number)) problems.push(`#${number} has a row but is not an open issue.`)
@@ -59,11 +72,11 @@ export function driftBody(problems, repository) {
 }
 
 /**
- * Opens, updates, or closes the one drift issue so it matches `problems`.
- * Returns what it did.
+ * Opens, reopens, updates, or closes the one drift issue so it matches
+ * `problems`. Returns what it did.
  */
 export async function syncDriftIssue({ api, problems, openIssues, repository }) {
-	const existing = openIssues.find((issue) => issue.title === DRIFT_TITLE)
+	const existing = openIssues.find(isDriftIssue)
 
 	if (problems.length === 0) {
 		if (!existing) return 'none'
@@ -78,6 +91,15 @@ export async function syncDriftIssue({ api, problems, openIssues, repository }) 
 		return `updated #${existing.number}`
 	}
 
+	const closed = (await api.list(`/issues?state=closed&creator=${encodeURIComponent(BOT)}`))
+		.map(summary)
+		.filter(isDriftIssue)
+		.sort((a, b) => b.number - a.number)
+	if (closed.length > 0) {
+		await api.request('PATCH', `/issues/${closed[0].number}`, { state: 'open', body })
+		return `reopened #${closed[0].number}`
+	}
+
 	const milestones = await api.list('/milestones?state=open')
 	const milestone = milestones.find((candidate) => candidate.title === DRIFT_MILESTONE)
 	const created = await api.request('POST', '/issues', {
@@ -89,10 +111,12 @@ export async function syncDriftIssue({ api, problems, openIssues, repository }) 
 	return `opened #${created.number}`
 }
 
+const summary = ({ number, title, body, user }) => ({ number, title, body, user: user?.login })
+
 /** Every open issue, pull requests excluded. */
 export async function openIssues(api) {
 	const items = await api.list('/issues?state=open')
-	return items.filter((item) => !item.pull_request).map(({ number, title, body }) => ({ number, title, body }))
+	return items.filter((item) => !item.pull_request).map(summary)
 }
 
 /** A minimal GitHub REST client for one repository. */
@@ -102,7 +126,7 @@ export function github({ token, repository, fetch = globalThis.fetch }) {
 
 	async function call(method, url, body) {
 		const response = await fetch(url, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) })
-		if (!response.ok) throw new Error(`${method} ${url} answered ${response.status}`)
+		if (!response.ok) throw Object.assign(new Error(`${method} ${url} answered ${response.status}`), { status: response.status })
 		return response
 	}
 
@@ -132,17 +156,24 @@ export async function main({ api, markdown, sync, repository }) {
 		return 0
 	}
 
-	const issues = await openIssues(api)
-	const problems = driftProblems({ openIssues: issues, markdown })
+	try {
+		const issues = await openIssues(api)
+		const problems = driftProblems({ openIssues: issues, markdown })
 
-	if (problems.length === 0) console.log(`::notice::${PAGE} lists every open issue and nothing else.`)
-	for (const problem of problems) console.log(`::warning file=${PAGE}::${problem}`)
+		if (problems.length === 0) console.log(`::notice::${PAGE} lists every open issue and nothing else.`)
+		for (const problem of problems) console.log(`::warning file=${PAGE}::${escapeCommand(problem)}`)
 
-	if (sync) {
-		console.log(await syncDriftIssue({ api, problems, openIssues: issues, repository }))
+		if (sync) {
+			console.log(await syncDriftIssue({ api, problems, openIssues: issues, repository }))
+			return 0
+		}
+		return problems.length === 0 ? 0 : 1
+	} catch (error) {
+		// Refused or rate-limited: GitHub's state, not the page's. Try again next run.
+		if (error.status !== 403 && error.status !== 429) throw error
+		console.log(`::warning::${escapeCommand(error.message)}; issue traceability was not checked.`)
 		return 0
 	}
-	return problems.length === 0 ? 0 : 1
 }
 
 const runAsCommand = String(process.argv[1]).endsWith('issue-traceability.mjs')

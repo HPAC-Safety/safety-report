@@ -93,7 +93,7 @@ public sealed record PublicQuestionView(
 	/// <summary>
 	///     The question whose answer filters this one's choices, when it is on the
 	///     form. A parent the form does not ask — deactivated, or deleted — filters
-	///     nothing, as a condition whose parent is missing hides nothing (ADR-0145).
+	///     nothing, as a condition whose parent is missing hides nothing (ADR-0146).
 	/// </summary>
 	private static TinyId? ChoiceParentOnForm(Question question,
 											  IReadOnlyCollection<Question> bank)
@@ -122,7 +122,7 @@ public sealed record PublicQuestionView(
 /// </param>
 /// <param name="ParentChoiceId">
 ///     The parent question's choice the form offers this one under, when its
-///     question's choices depend on another's (ADR-0145).
+///     question's choices depend on another's (ADR-0146).
 /// </param>
 public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin, string? ParentChoiceId)
 {

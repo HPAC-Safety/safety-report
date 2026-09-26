@@ -65,7 +65,7 @@ public sealed class QuestionConfiguration : IEntityTypeConfiguration<Question>
 			.UsePropertyAccessMode(PropertyAccessMode.Field);
 
 		// The question whose answer decides which of this one's choices are
-		// offered (ADR-0145). On the question, not a revision, so setting it never
+		// offered (ADR-0146). On the question, not a revision, so setting it never
 		// revises or forks. Restrict: a question is retired by a stamp, never
 		// erased. Which types, one level only, and form order are checked by
 		// ChoiceDependencies against the current revisions.
@@ -215,7 +215,7 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 			.OnDelete(DeleteBehavior.Restrict);
 
 		// The parent question's choice this one is offered under, when its
-		// question's choices depend on another's (ADR-0145). Changed, never
+		// question's choices depend on another's (ADR-0146). Changed, never
 		// cleared; which question it belongs to is checked by ChoiceDependencies.
 		builder.HasOne<QuestionChoice>()
 			.WithMany()

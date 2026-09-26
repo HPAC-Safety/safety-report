@@ -513,7 +513,7 @@ Scenario: A submitted choice must be one the question offers
   And a removed choice, or another question's choice, is rejected
   And only a type-ahead also accepts typed text naming a value it does not yet offer
 
-@REQ-SUB-112
+@REQ-SUB-113
 Scenario Outline: A choice of a dependent question must be offered under the parent's answer
   Given the "Model" question's choices depend on the "Make" question, and "Mentor 7" is offered under "Niviuk"
   When a reporter submits "Model" answered with "Mentor 7" and "Make" <make>

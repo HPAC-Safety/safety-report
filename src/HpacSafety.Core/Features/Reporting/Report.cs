@@ -161,7 +161,7 @@ public class Report
 	/// <param name="parentChoiceId">
 	///     For a type-ahead whose choices depend on another question's, the choice the
 	///     parent was answered with: typed words match, or become, a value offered
-	///     under it (ADR-0145).
+	///     under it (ADR-0146).
 	/// </param>
 	public ReportAnswer Answer(Question question,
 							   QuestionRevision revision,

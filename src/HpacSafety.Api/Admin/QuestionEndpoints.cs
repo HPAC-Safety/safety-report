@@ -197,7 +197,7 @@ public static class QuestionEndpoints
 				ChoiceDependencies.EnsureParentChoicesRemovable(questions, question, [.. options.Select(option => option.Code)]);
 			}
 
-			// Outside the revision (ADR-0145): set in place, and carried by a fork.
+			// Outside the revision (ADR-0146): set in place, and carried by a fork.
 			question.DependChoicesOn(choiceParentId);
 
 			var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
@@ -235,7 +235,7 @@ public static class QuestionEndpoints
 			}
 
 			// A replaced, merged, or forked parent choice passes its links on, and a
-			// forked parent its dependents, without revising them (ADR-0145).
+			// forked parent its dependents, without revising them (ADR-0146).
 			List<Question> touched = [.. questions, .. forked ? [live] : Array.Empty<Question>()];
 			ChoiceDependencies.EnsureLinksAllowed(touched, live);
 			ChoiceDependencies.Follow(touched, live);
@@ -291,7 +291,7 @@ public static class QuestionEndpoints
 		try
 		{
 			// A parent is answered first, so it stays above every question whose
-			// choices depend on it (ADR-0145).
+			// choices depend on it (ADR-0146).
 			ChoiceDependencies.EnsureOrder(ordered);
 		}
 		catch (DomainRuleViolationException cause)
@@ -606,7 +606,7 @@ public static class QuestionEndpoints
 	///     The question whose answer decides which of this one's choices are offered,
 	///     checking what needs the rest of the bank: it is another live single-select
 	///     or type-ahead, depends on nothing itself, is nobody's child when this one
-	///     is somebody's parent, and comes first on the form (ADR-0145). Null, for a
+	///     is somebody's parent, and comes first on the form (ADR-0146). Null, for a
 	///     type that takes no choices, clears it — a retype must not leave one behind.
 	/// </summary>
 	private static TinyId? ResolvedChoiceParent(SaveQuestionRequest request,
@@ -680,7 +680,7 @@ public static class QuestionEndpoints
 	///     wording is entered once under each parent choice it applies to — "Other"
 	///     under every make — so a new choice whose wording reduces to a code the
 	///     question already holds takes the next free <c>_2</c>, <c>_3</c>, … instead
-	///     of reviving or relabelling that choice (ADR-0145). Wording repeated under
+	///     of reviving or relabelling that choice (ADR-0146). Wording repeated under
 	///     one parent choice is still refused, by the question.
 	/// </summary>
 	private static List<OptionInput> CodedUnderParents(IReadOnlyList<OptionInput> options,

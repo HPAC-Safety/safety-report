@@ -29,7 +29,7 @@ reporter-added value), and by
 (the list has no order of its own: choices are listed alphabetically in the
 reader's language, apart from those an Administrator pins first or last, so
 "reordering" a choice below means pinning it), and by
-[ADR-0145](ADR-0145-a-choice-list-may-depend-on-another-questions-answer.md)
+[ADR-0146](ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)
 (a choice may name one choice of a parent question it is offered under; the
 link sits outside revisions too, and a fork copies it).
 

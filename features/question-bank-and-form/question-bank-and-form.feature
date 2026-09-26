@@ -1243,10 +1243,10 @@ Scenario: A type-ahead choice picked from the list is sent as that choice, not m
   When they consent on the next page and send the report
   Then the answer names the second "Other" choice's identifier and carries no typed text
 
-@REQ-QB-176
+@REQ-QB-179
 Scenario Outline: A picker or type-ahead's choices may depend on another picker or type-ahead
-  Given a <parent> question offers "Niviuk" and "Ozone"
-  When an Administrator makes a <child> question's choices depend on it
+  Given a <parent> question, offering "Niviuk" and "Ozone" when its type has choices
+  When an Administrator makes a <child> question's choices depend on it, linking each choice to one of its choices
   Then the dependency is <outcome>
 
 Examples:
@@ -1259,7 +1259,7 @@ Examples:
   | single_select | multi_select  | refused  |
   | yes_no        | autocomplete  | refused  |
 
-@REQ-QB-177
+@REQ-QB-180
 Scenario: A dependency is one level deep
   Given the "Model" question's choices depend on the "Make" question
   When an Administrator makes a third question's choices depend on "Model"
@@ -1267,7 +1267,7 @@ Scenario: A dependency is one level deep
   When an Administrator makes the "Make" question's choices depend on a third question
   Then the dependency is refused, because other questions' choices already depend on "Make"
 
-@REQ-QB-178
+@REQ-QB-181
 Scenario: The parent comes before the child on the form
   Given the "Make" question comes after the "Model" question on the form
   When an Administrator makes the "Model" question's choices depend on "Make"
@@ -1276,7 +1276,7 @@ Scenario: The parent comes before the child on the form
   When an Administrator moves "Model" before "Make"
   Then the new order is refused, naming both questions
 
-@REQ-QB-179
+@REQ-QB-182
 Scenario: Every choice of a dependent question names one parent choice
   Given a type-ahead question "Model" offers "Mentor 7" and "Rush 6"
   When an Administrator makes its choices depend on the "Make" question, linking only "Mentor 7" to "Niviuk"
@@ -1287,14 +1287,14 @@ Scenario: Every choice of a dependent question names one parent choice
   And adding a choice to "Model" without a parent choice is refused
   And linking a choice to a choice of any question other than "Make" is refused
 
-@REQ-QB-180
+@REQ-QB-183
 Scenario: The same wording is entered once for each parent choice it applies to
   Given the "Model" question's choices depend on the "Make" question
   When an Administrator adds "Other" linked to "Niviuk" and "Other" linked to "Ozone"
   Then "Model" offers two "Other" choices, each with its own identifier and link
   And adding a second "Other" linked to "Niviuk" is refused
 
-@REQ-QB-181
+@REQ-QB-184
 Scenario: A dependency and its links sit outside revisions
   Given an answered "Make" question and an answered "Model" question
   When an Administrator makes "Model"'s choices depend on "Make" and links each choice
@@ -1302,7 +1302,7 @@ Scenario: A dependency and its links sit outside revisions
   Then neither question gains a revision, and neither is replaced
   And every earlier answer still names the choice it named
 
-@REQ-QB-182
+@REQ-QB-185
 Scenario: Removing a question's parent keeps the links and stops filtering
   Given the "Model" question's choices depend on the "Make" question
   When an Administrator clears the "Model" question's parent
@@ -1310,7 +1310,7 @@ Scenario: Removing a question's parent keeps the links and stops filtering
   And the report form offers every "Model" choice, whatever "Make" is answered with
   And a choice added to "Model" needs no parent choice
 
-@REQ-QB-183
+@REQ-QB-186
 Scenario Outline: A parent choice that live child choices link to cannot be removed
   Given the "Model" question's choices depend on a <parent> "Make" question
   And "Mentor 7" is linked to the "Niviuk" choice
@@ -1323,22 +1323,22 @@ Examples:
   | single_select | an Administrator saving the question         |
   | autocomplete  | a Safety Officer on the type-ahead review page |
 
-@REQ-QB-184
+@REQ-QB-187
 Scenario: A replaced picker parent choice passes its child links to the replacement
   Given the "Model" question's choices depend on a single-select "Make" question
   And "Mentor 7" is linked to the "Niviuk" choice
-  When an Administrator replaces "Niviuk" with "Niviuk Gliders"
+  When an Administrator replaces the parent choice "Niviuk" with "Niviuk Gliders"
   Then "Mentor 7" is linked to "Niviuk Gliders"
   And neither question gains a revision
 
-@REQ-QB-185
+@REQ-QB-188
 Scenario: A merged type-ahead parent value passes its child links to the value it was merged into
   Given the "Model" question's choices depend on a type-ahead "Make" question
   And "Mentor 7" is linked to the "Nivuik" value
-  When a Safety Officer merges "Nivuik" into "Niviuk"
+  When a Safety Officer merges the parent value "Nivuik" into "Niviuk"
   Then "Mentor 7" is linked to "Niviuk"
 
-@REQ-QB-186
+@REQ-QB-189
 Scenario: A dependency follows its parent when the parent forks
   Given the "Model" question's choices depend on an answered single-select "Make" question
   And "Mentor 7" is linked to the "Niviuk" choice
@@ -1347,7 +1347,7 @@ Scenario: A dependency follows its parent when the parent forks
   And "Mentor 7" is linked to that question's copy of "Niviuk"
   And "Model" gains no revision
 
-@REQ-QB-187
+@REQ-QB-190
 Scenario: A forked dependent question copies every choice with its link
   Given the answered "Model" question's choices depend on the "Make" question
   And "Mentor 7" is linked to the "Niviuk" choice
@@ -1355,7 +1355,7 @@ Scenario: A forked dependent question copies every choice with its link
   Then the question that replaced "Model" depends on "Make"
   And its copy of "Mentor 7" is linked to "Niviuk"
 
-@REQ-QB-188
+@REQ-QB-191
 Scenario: The report form's questions name each dependency and each link
   Given the "Model" question's choices depend on the "Make" question
   When the report form loads today's questions
@@ -1363,7 +1363,7 @@ Scenario: The report form's questions name each dependency and each link
   And each "Model" choice names the "Make" choice it is linked to
   And a question whose choices depend on nothing names no parent
 
-@REQ-QB-189
+@REQ-QB-192
 Scenario Outline: A reporter's new value in a dependent type-ahead is linked to the parent's answer
   Given the type-ahead "Model" question's choices depend on the type-ahead "Make" question
   When a reporter answers "Make" with <make> and types "Zeno 2" for "Model", which "Model" does not offer
@@ -1375,14 +1375,14 @@ Examples:
   | its "Ozone" choice                            | "Ozone"                                   |
   | "Gin", a value "Make" does not offer          | the reporter-added "Make" value "Gin"     |
 
-@REQ-QB-190
+@REQ-QB-193
 Scenario: A reporter's typed value in a dependent type-ahead matches only values under the parent's answer
   Given the "Model" question offers "Other" linked to "Niviuk" and "Other" linked to "Ozone"
   When a reporter answers "Make" with "Ozone" and types "other" for "Model"
   Then the "Model" answer names the "Other" linked to "Ozone"
   And "Model" gains no new value
 
-@REQ-QB-191
+@REQ-QB-194
 Scenario: A reviewer changes a dependent type-ahead value's link, never clears it
   Given a reporter added the "Model" value "Zeno 2", linked to "Ozone"
   When a Safety Officer links "Zeno 2" to "Niviuk"
@@ -1391,7 +1391,7 @@ Scenario: A reviewer changes a dependent type-ahead value's link, never clears i
   And linking it to a choice of any question other than "Make" is refused
   And merging "Zeno 2" into a "Model" value linked to another "Make" choice is refused
 
-@REQ-QB-192
+@REQ-QB-195
 @ui
 Scenario: An Administrator picks the question a question's choices depend on, and clears it
   Given a signed-in Administrator opens the manage-questions page
@@ -1402,7 +1402,7 @@ Scenario: An Administrator picks the question a question's choices depend on, an
   When they clear "Choices depend on" and save
   Then the save names no parent question and keeps every choice's link
 
-@REQ-QB-193
+@REQ-QB-196
 @ui
 Scenario: Each choice of a dependent question asks for its parent choice
   Given a signed-in Administrator opens the manage-questions page
@@ -1412,7 +1412,7 @@ Scenario: Each choice of a dependent question asks for its parent choice
   When they pick a parent choice for every row and save
   Then the save sends each choice with the parent choice picked for it
 
-@REQ-QB-194
+@REQ-QB-197
 @ui
 Scenario Outline: A dependent question offers only the choices linked to the parent's answer
   Given a <child> "Model" question's choices depend on a single-select "Make" question offering "Niviuk" and "Ozone"
@@ -1428,7 +1428,7 @@ Examples:
   | autocomplete  | English  |
   | autocomplete  | French   |
 
-@REQ-QB-195
+@REQ-QB-198
 @ui
 Scenario: Changing the parent's answer clears a child answer it no longer offers
   Given the type-ahead "Model" question's choices depend on the single-select "Make" question
@@ -1438,7 +1438,7 @@ Scenario: Changing the parent's answer clears a child answer it no longer offers
   When they type "Zeno 2", a value "Model" does not offer, and change "Make" to "Niviuk"
   Then "Model" still holds "Zeno 2"
 
-@REQ-QB-196
+@REQ-QB-199
 @ui
 Scenario: A parent answered with a new value leaves the child nothing to pick, but a value to type
   Given the type-ahead "Model" question's choices depend on the type-ahead "Make" question
@@ -1447,7 +1447,7 @@ Scenario: A parent answered with a new value leaves the child nothing to pick, b
   When they type "Zeno 2" for "Model" and send the report
   Then "Make" is sent as "Gin" and "Model" as "Zeno 2", both as the words typed
 
-@REQ-QB-197
+@REQ-QB-200
 @ui
 Scenario: A saved report restores the parent and child answers together
   Given a reporter answered "Make" with "Niviuk" and "Model" with "Mentor 7", and the browser saved the report
@@ -1455,21 +1455,21 @@ Scenario: A saved report restores the parent and child answers together
   Then "Make" holds "Niviuk", and "Model" holds "Mentor 7" and offers only the "Niviuk" models
   And a saved "Model" answer no longer linked to the saved "Make" answer is restored empty
 
-@REQ-QB-198
+@REQ-QB-201
 @ui
 Scenario: A dependent child that cannot be answered yet does not hold the reporter back
   Given a required "Model" question's choices depend on an optional "Make" question
   When a reporter leaves "Make" unanswered and presses Next
   Then the form moves on, because "Model" cannot be answered until "Make" is
 
-@REQ-QB-200
+@REQ-QB-203
 Scenario: A parent the form does not ask filters nothing
   Given the "Model" question's choices depend on the "Make" question
   When an Administrator deactivates "Make"
   Then the report form names no parent for "Model" and offers every "Model" choice
   And a report answering "Model" with any of its choices, and not answering "Make", is accepted
 
-@REQ-QB-199
+@REQ-QB-202
 @ui
 Scenario: The type-ahead review page shows a dependent value's link and changes it
   Given a signed-in Safety Officer reviews the reporter-added "Model" value "Zeno 2", linked to "Ozone"

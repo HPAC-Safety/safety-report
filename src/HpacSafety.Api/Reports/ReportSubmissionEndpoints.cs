@@ -93,7 +93,7 @@ public static partial class ReportSubmissionEndpoints
 
 		// A question whose choices depend on another's is checked against the
 		// parent's answer, so every parent is answered first — its new type-ahead
-		// value included, which a new child value is offered under (ADR-0145).
+		// value included, which a new child value is offered under (ADR-0146).
 		foreach (var entry in dto.Answers.OrderBy(entry => IsDependent(entry, revisionLookup) ? 1 : 0))
 		{
 			var outcome = TryApplyAnswer(
@@ -359,7 +359,7 @@ public static partial class ReportSubmissionEndpoints
 		{
 			// The form offers a child's choices only under the parent's answer, and
 			// only once the parent is answered; the API holds a submission to the
-			// same, whatever the form did (ADR-0145). The refusal names the
+			// same, whatever the form did (ADR-0146). The refusal names the
 			// questions by key, never an answer.
 			parentChoiceId = report.Answers.FirstOrDefault(answer => answer.QuestionId == parent.Id)?.ChoiceId;
 
@@ -396,7 +396,7 @@ public static partial class ReportSubmissionEndpoints
 	/// <summary>
 	///     The question whose answer filters <paramref name="question" />'s choices,
 	///     when it is on the form. A parent the form does not ask filters nothing,
-	///     so it is not checked (ADR-0145).
+	///     so it is not checked (ADR-0146).
 	/// </summary>
 	private static Question? FilteringParent(Question question,
 											 Dictionary<TinyId, (Question Question, QuestionRevision Revision)> revisionLookup)

@@ -114,7 +114,7 @@ public class Question
 	///     changing, or clearing it never revises or forks either question. Whether
 	///     the named question may be a parent is checked by
 	///     <see cref="ChoiceDependencies" />, which can see the rest of the bank
-	///     (ADR-0145).
+	///     (ADR-0146).
 	/// </summary>
 	public TinyId? ChoicesDependOnQuestionId { get; private set; }
 
@@ -514,7 +514,7 @@ public class Question
 
 	/// <summary>
 	///     Makes this question's choices depend on another question's answer, or on
-	///     nothing. No revision: the dependency lives on the question (ADR-0145).
+	///     nothing. No revision: the dependency lives on the question (ADR-0146).
 	///     Every live choice must then name one of the parent's choices, which the
 	///     save that sets it checks once the choices are applied
 	///     (<see cref="ApplyEdit" />, <see cref="ReplaceChoices" />). Clearing it keeps
@@ -535,7 +535,7 @@ public class Question
 	/// <summary>
 	///     Points the dependency at the question that replaced its parent when the
 	///     parent forked. Called by <see cref="ChoiceDependencies.Follow" />, which
-	///     re-points each choice's link in the same pass (ADR-0145).
+	///     re-points each choice's link in the same pass (ADR-0146).
 	/// </summary>
 	internal void FollowParent(TinyId parentQuestionId)
 	{
@@ -694,7 +694,7 @@ public class Question
 	///     choices names no parent choice, naming each such choice — and one offering
 	///     the same wording twice under one parent choice, which a reporter could not
 	///     tell apart. The same wording under two parent choices is two choices: a
-	///     model sold under two makes is entered twice (ADR-0145). Whether each link
+	///     model sold under two makes is entered twice (ADR-0146). Whether each link
 	///     names a live choice of the parent is checked by
 	///     <see cref="ChoiceDependencies" />, which can see the parent.
 	/// </summary>
@@ -810,7 +810,7 @@ public class Question
 	///     The choice the parent question was answered with, when this question's
 	///     choices depend on another's. Only the values offered under it are
 	///     matched, and a new value is offered under it: a value typed under Ozone
-	///     is an Ozone model, even where a Niviuk model reads the same (ADR-0145).
+	///     is an Ozone model, even where a Niviuk model reads the same (ADR-0146).
 	/// </param>
 	public QuestionChoice AddChoiceFromReporter(string value,
 												Locale locale,
@@ -862,7 +862,7 @@ public class Question
 	///     <paramref name="code" />, or — when this question already has a choice
 	///     recorded under it, removed ones included — the first of <c>code_2</c>,
 	///     <c>code_3</c>, … it has not. Only a dependent question offers one wording
-	///     twice, once under each parent choice (ADR-0145).
+	///     twice, once under each parent choice (ADR-0146).
 	/// </summary>
 	public string UnusedCode(string code, IReadOnlyCollection<string>? alsoTaken = null)
 	{
@@ -907,7 +907,7 @@ public class Question
 
 		foreach (var label in new[] { labelEn, labelFr }.Where(label => !string.IsNullOrWhiteSpace(label)))
 		{
-			// Under a parent, one wording may be offered once per parent choice (ADR-0145).
+			// Under a parent, one wording may be offered once per parent choice (ADR-0146).
 			if (_choices.Exists(other => other.Id != value.Id
 										 && other.Deleted is null
 										 && (ChoicesDependOnQuestionId is null || other.ParentChoiceId == value.ParentChoiceId)
@@ -971,7 +971,7 @@ public class Question
 		}
 
 		// Every answer naming the source would read a value offered under another
-		// parent choice — a Niviuk model's answers reading an Ozone model (ADR-0145).
+		// parent choice — a Niviuk model's answers reading an Ozone model (ADR-0146).
 		if (ChoicesDependOnQuestionId is not null
 			&& source.ParentChoiceId != target.ParentChoiceId)
 		{
@@ -994,7 +994,7 @@ public class Question
 	///     A reviewer offers a dependent type-ahead's value under another choice of its
 	///     parent question. The link is changed, never cleared, and every answer
 	///     naming the value still names it. Whether the new parent choice is a live
-	///     choice of the parent is checked by <see cref="ChoiceDependencies" /> (ADR-0145).
+	///     choice of the parent is checked by <see cref="ChoiceDependencies" /> (ADR-0146).
 	/// </summary>
 	public void RelinkValue(TinyId choiceId,
 							TinyId parentChoiceId,

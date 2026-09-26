@@ -205,7 +205,7 @@ contributor who never invokes one is unaffected.
      parent's answer. The dependency and the links sit outside revisions. A
      replace, merge, or fork re-points them when it happens. A parent choice a
      live choice is linked to is replaced or merged, never removed
-     ([ADR-0145](docs/decisions/ADR-0145-a-choice-list-may-depend-on-another-questions-answer.md)).
+     ([ADR-0146](docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
 2. **Nothing reaches the server before final submission — except
    attachments.**
    - Unfinished answers and shown revision IDs stay only in that browser, for

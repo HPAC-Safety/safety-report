@@ -12,13 +12,19 @@ keywords: Terraform, topology, infrastructure
 
 **Status:** Superseded by the
 [minimal infrastructure specification](../infrastructure-and-operations.md),
-which requires separate public/admin sites and removes SES/email resources.
-The S3 + CloudFront origin described below is further superseded by
-[ADR-0044](ADR-0044-containerized-web-hosting.md): each site's origin is now
-an ECS Fargate container, not a site bucket — and the current target has
-already reverted this ADR's one-site/admin-as-a-route consolidation back to
-separate public/admin sites, so ADR-0044 builds on that separation, not on
-this ADR's shape.
+which removes SES/email resources. Parts of this record hold again today:
+
+- **One website, with admin as a route.**
+  [ADR-0044](ADR-0044-containerized-web-hosting.md) reversed it to separate
+  public and admin sites.
+  [ADR-0048](ADR-0048-one-website-admin-as-a-route.md) reinstated it, and
+  [ADR-0123](ADR-0123-the-worker-runs-on-lambda-and-the-website-on-s3-and-cloudfront.md)
+  confirms it: one website, one distribution, one hostname.
+- **The S3 + CloudFront origin.** ADR-0044 replaced it with an ECS Fargate
+  container. ADR-0123 made it current again: the website is static files in a
+  private S3 bucket behind CloudFront.
+- **S3-native state locking.** This record's change from ADR-0010's DynamoDB
+  lock table stands.
 
 **Supersedes, in part:**
 

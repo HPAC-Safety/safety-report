@@ -38,7 +38,7 @@ output "deploy_variables" {
 }
 
 output "site_urls" {
-  description = "Where the website answers. ONE site: the public report form at the root, the review queue under the admin prefix. See ADR-0031."
+  description = "Where the website answers. ONE site: the public report form at the root, the review queue under the admin prefix. See ADR-0048 and ADR-0123."
 
   value = {
     public = "https://${var.site_domain}/"

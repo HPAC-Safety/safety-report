@@ -87,6 +87,7 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		builder.Property(revision => revision.IsRequired).IsRequired();
 		builder.Property(revision => revision.IsPrivate).IsRequired();
 		builder.Property(revision => revision.IsTranslatable).IsRequired();
+		builder.Property(revision => revision.AllowFutureDates).IsRequired();
 		builder.Property(revision => revision.IsActive).IsRequired();
 		builder.Property(revision => revision.DisplayOrder).IsRequired();
 		builder.Ignore(revision => revision.TakesReporterAdditions);
@@ -138,6 +139,11 @@ public sealed class QuestionRevisionConfiguration : IEntityTypeConfiguration<Que
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_question_revisions_translatable_text",
 			"NOT is_translatable OR type IN ('short_text', 'long_text')"));
+
+		// Only a date question can allow a future date (ADR-0138).
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_revisions_future_dates_date",
+			"NOT allow_future_dates OR type = 'date'"));
 	}
 }
 

@@ -88,6 +88,7 @@ erDiagram
         boolean is_required "authored; forced true for consent"
         boolean is_private "answers are recognition context only"
         boolean is_translatable "free text machine-translated for reviewers"
+        boolean allow_future_dates "a date answer may lie after today"
         boolean is_active
         int display_order
         char(11) depends_on_question_id FK "nullable; a yes_no or single_select question"
@@ -311,6 +312,7 @@ this.
 | `20260926145501_AddReportPrivateNotes` | Added `report_private_notes` (report, created time, `deleted`) and `report_private_note_revisions` (text up to 4000 characters, the writer's opaque token subject, created time, `deleted`; unique per note and number). Staff-only notes: no view reads them (ADR-0133). |
 | `20260926162317_AddReportPrivateAttachments` | Added `report_private_attachments` (report, blob key, sanitized file name, content type, byte size above zero, optional description, the adder's and remover's opaque token subjects, `deleted`) and a nullable `report_private_note_revisions.attachment_id`, a restricted foreign key to it. Staff-only files: no view reads them (ADR-0135). |
 | `20260926180740_PinChoicesFirstOrLast` | Added `question_choices.pin` (`none`, `first`, or `last`; default `none`, so every existing choice is unpinned) with `ck_question_choices_pin`. Choices are listed pinned first, then alphabetically in the reader's language, then pinned last; `display_order` stays and is no longer read (ADR-0136). |
+| `20260926190248_AllowFutureDatesOnDateQuestions` | Added `question_revisions.allow_future_dates` (`boolean not null default false`, so every existing date question, the seeded occurrence date included, refuses future dates) with `ck_question_revisions_future_dates_date`: only a date question may allow them. No wording changes and no revision is created (ADR-0138). |
 
 Past migrations are history and are never edited — including the raw SQL
 already inlined in them. New raw SQL goes in its own `.sql` file under

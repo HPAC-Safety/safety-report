@@ -615,6 +615,10 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasColumnName("id")
                         .IsFixedLength();
 
+                    b.Property<bool>("AllowFutureDates")
+                        .HasColumnType("boolean")
+                        .HasColumnName("allow_future_dates");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -729,6 +733,8 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
 
                     b.ToTable("question_revisions", null, t =>
                         {
+                            t.HasCheckConstraint("ck_question_revisions_future_dates_date", "NOT allow_future_dates OR type = 'date'");
+
                             t.HasCheckConstraint("ck_question_revisions_translatable_text", "NOT is_translatable OR type IN ('short_text', 'long_text')");
 
                             t.HasCheckConstraint("ck_question_revisions_type", "type IN ('short_text', 'long_text', 'email', 'phone', 'date', 'number', 'single_select', 'multi_select', 'yes_no', 'checkbox', 'file_upload', 'statement', 'group', 'time', 'autocomplete')");

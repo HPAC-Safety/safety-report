@@ -183,12 +183,14 @@ public class Question
 		TinyId? dependsOnChoiceId = null,
 		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null,
-		bool? isTranslatable = null)
+		bool? isTranslatable = null,
+		bool? allowFutureDates = null)
 	{
 		return Create(
 			key, type, labelEn, labelFr, at, false, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			role, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
-			groupedUnderQuestionId, options, isTranslatable ?? QuestionRevision.TranslatableByDefault(type));
+			groupedUnderQuestionId, options, isTranslatable ?? QuestionRevision.TranslatableByDefault(type),
+			allowFutureDates ?? false);
 	}
 
 	/// <summary>
@@ -253,6 +255,7 @@ public class Question
 			null,
 			null,
 			null,
+			false,
 			false);
 	}
 
@@ -276,14 +279,15 @@ public class Question
 		TinyId? dependsOnChoiceId,
 		TinyId? groupedUnderQuestionId,
 		IReadOnlyList<QuestionOptionInput>? options,
-		bool isTranslatable)
+		bool isTranslatable,
+		bool allowFutureDates)
 	{
 		var question = new Question(key, isSystem, role, at);
 		question._revisions.Add(
 			QuestionRevision.Create(
 				question.Id, 1, type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isSystem, isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
-				groupedUnderQuestionId, isTranslatable, at));
+				groupedUnderQuestionId, isTranslatable, allowFutureDates, at));
 		question.ReplaceChoices(options ?? [], at);
 		question.EnsureChoicesFitType();
 		return question;
@@ -314,7 +318,8 @@ public class Question
 		TinyId? dependsOnQuestionId = null,
 		TinyId? dependsOnChoiceId = null,
 		TinyId? groupedUnderQuestionId = null,
-		bool? isTranslatable = null)
+		bool? isTranslatable = null,
+		bool? allowFutureDates = null)
 	{
 		if (IsSystem && type != Type)
 		{
@@ -344,7 +349,8 @@ public class Question
 			new RevisionDraft(
 				type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 				isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId, dependsOnChoiceId,
-				groupedUnderQuestionId, TranslatableFor(type, isTranslatable)),
+				groupedUnderQuestionId, TranslatableFor(type, isTranslatable),
+				AllowFutureDatesFor(type, allowFutureDates)),
 			at);
 	}
 
@@ -397,7 +403,8 @@ public class Question
 		TinyId? dependsOnChoiceId = null,
 		TinyId? groupedUnderQuestionId = null,
 		IReadOnlyList<QuestionOptionInput>? options = null,
-		bool? isTranslatable = null)
+		bool? isTranslatable = null,
+		bool? allowFutureDates = null)
 	{
 		EnsureNotDeleted();
 
@@ -405,7 +412,8 @@ public class Question
 			type, labelEn, labelFr, helpTextEn, helpTextFr, placeholderEn, placeholderFr,
 			isRequired, isPrivate, isActive, displayOrder, dependsOnQuestionId,
 			dependsOnChoiceId, groupedUnderQuestionId,
-			TranslatableFor(type, isTranslatable));
+			TranslatableFor(type, isTranslatable),
+			AllowFutureDatesFor(type, allowFutureDates));
 
 		var live = this;
 
@@ -420,7 +428,7 @@ public class Question
 				Revise(
 					type, labelEn, labelFr, isPrivate, isActive, displayOrder, at,
 					helpTextEn, helpTextFr, placeholderEn, placeholderFr, isRequired, dependsOnQuestionId,
-					dependsOnChoiceId, groupedUnderQuestionId, draft.IsTranslatable);
+					dependsOnChoiceId, groupedUnderQuestionId, draft.IsTranslatable, draft.AllowFutureDates);
 			}
 		}
 
@@ -1059,7 +1067,7 @@ public class Question
 				draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 				false, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
 				draft.DependsOnQuestionId, draft.DependsOnChoiceId, draft.GroupedUnderQuestionId,
-				draft.IsTranslatable, at));
+				draft.IsTranslatable, draft.AllowFutureDates, at));
 
 		// Every choice crosses, removed ones and reporter-added marks included,
 		// so the replacement offers exactly what this one did (ADR-0095). The
@@ -1095,7 +1103,7 @@ public class Question
 			draft.HelpTextEn, draft.HelpTextFr, draft.PlaceholderEn, draft.PlaceholderFr,
 			IsSystem, draft.IsRequired, draft.IsPrivate, draft.IsActive, draft.DisplayOrder,
 			draft.DependsOnQuestionId, draft.DependsOnChoiceId, draft.GroupedUnderQuestionId,
-			draft.IsTranslatable, at);
+			draft.IsTranslatable, draft.AllowFutureDates, at);
 		_revisions.Add(revision);
 		return revision;
 	}
@@ -1114,7 +1122,7 @@ public class Question
 			current.Type, current.LabelEn, current.LabelFr, current.HelpTextEn, current.HelpTextFr,
 			current.PlaceholderEn, current.PlaceholderFr, current.IsRequired, current.IsPrivate, current.IsActive,
 			current.DisplayOrder, current.DependsOnQuestionId, current.DependsOnChoiceId,
-			current.GroupedUnderQuestionId, current.IsTranslatable);
+			current.GroupedUnderQuestionId, current.IsTranslatable, current.AllowFutureDates);
 	}
 
 	/// <summary>
@@ -1133,6 +1141,22 @@ public class Question
 		return type == Type
 			? CurrentRevision.IsTranslatable
 			: QuestionRevision.TranslatableByDefault(type);
+	}
+
+	/// <summary>
+	///     Whether the next revision allows a future date. An explicit answer wins.
+	///     With none, a date question keeps its setting, and anything else — a new
+	///     type included — does not allow one (ADR-0138).
+	/// </summary>
+	private bool AllowFutureDatesFor(QuestionType type,
+									 bool? requested)
+	{
+		if (requested is { } explicitly)
+		{
+			return explicitly;
+		}
+
+		return type == Type && CurrentRevision.AllowFutureDates;
 	}
 
 	private void EnsureNotDeleted()
@@ -1163,5 +1187,6 @@ public class Question
 		TinyId? DependsOnQuestionId,
 		TinyId? DependsOnChoiceId,
 		TinyId? GroupedUnderQuestionId,
-		bool IsTranslatable);
+		bool IsTranslatable,
+		bool AllowFutureDates);
 }

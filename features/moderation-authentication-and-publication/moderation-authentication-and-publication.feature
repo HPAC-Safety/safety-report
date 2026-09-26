@@ -914,3 +914,107 @@ Scenario: A safety officer keeps private notes on the report page
   And its history shows both revisions
   When the safety officer removes that private note and confirms
   Then "Investigator report received." is no longer listed
+
+@REQ-MOD-107
+Scenario Outline: Only a Safety Officer or an Administrator may reach private attachments
+  Given a report carrying one private attachment
+  When <who> mints a private upload for, adds, lists, downloads, and removes private attachments on it
+  Then the API answers <outcome> to every one of those private-attachment requests
+
+Examples:
+  | who                  | outcome      |
+  | an anonymous visitor | 401          |
+  | a User               | 403          |
+  | a SafetyOfficer      | with success |
+  | an Administrator     | with success |
+
+@REQ-MOD-108
+Scenario Outline: Staff add private attachments to a report in any status
+  Given a <status> report that staff add private attachments to
+  When a safety officer adds a private attachment with a description and then an administrator adds one without
+  Then both private attachments are listed, newest first
+  And each lists its file name, size, description, adder's token subject, and when it was added
+  And adding them queued no work for the Worker
+  And the report's detail view lists neither among its attachments
+
+Examples:
+  | status         |
+  | pending        |
+  | published      |
+  | unpublished    |
+  | summary-failed |
+  | no-consent     |
+
+@REQ-MOD-109
+Scenario: Removing a private attachment soft-deletes it and keeps its bytes
+  Given a report carrying one private attachment
+  When an administrator removes that private attachment
+  Then the private attachment is no longer listed, and downloading or removing it answers 404
+  And its row is stamped deleted with the administrator's token subject, and its bytes are still stored
+  And one audit entry records the administrator's token subject, RemovedPrivateAttachment, the attachment, and the time
+
+@REQ-MOD-110
+Scenario Outline: A private attachment needs a usable name, a short description, and a sent upload
+  Given a pending report that staff add private attachments to
+  When a safety officer adds a private attachment whose <field> is <value>
+  Then the API answers 400 and no private attachment is stored
+
+Examples:
+  | field       | value                    |
+  | file name   | empty                    |
+  | file name   | only reserved characters |
+  | description | 501 characters long      |
+  | upload      | one that was never sent  |
+
+@REQ-MOD-111
+Scenario: A deleted report's private attachments go with it
+  Given a report carrying one private attachment
+  When a safety officer deletes the report carrying that private attachment
+  Then the private attachment is stamped deleted at the report's deletion time, and its bytes are still stored
+  And minting, adding, listing, or downloading private attachments on that report answers 404
+
+@REQ-MOD-112
+Scenario: No public or member read ever returns a private attachment, not even a count
+  Given a published report whose reporter consented to publication and media carries one private attachment
+  When an anonymous visitor and a User read the public feed, that report's public page, and its public media
+  Then no response carries the private attachment's name, description, or identifier, or any count of private attachments
+  And asking for the private attachment's identifier as public media answers 404
+  And no database view reads the private-attachment table
+
+@REQ-MOD-113
+Scenario: A private attachment never reaches the model
+  Given a consented report carrying one private attachment is due for summarization
+  When the Worker claims the message and builds the model input DTO
+  Then the model input carries nothing from the private attachment
+  And no outbox message names the private attachment
+
+@REQ-MOD-114
+Scenario: A private note may refer to a private attachment on its own report only
+  Given a report carrying one private attachment, and another report carrying one of its own
+  When a safety officer adds a private note referring to the first report's private attachment
+  Then the private note lists the private attachment it refers to, by identifier and file name
+  When an administrator edits that private note to refer to no private attachment
+  Then the private note refers to none, and its history shows the first revision still referring to it
+  And a private note referring to the other report's private attachment is refused with 400 and nothing is stored
+  And a private note referring to a removed private attachment is refused with 400
+
+@REQ-MOD-115
+@ui
+Scenario: A safety officer adds, downloads, and removes a private attachment on the report page
+  Given a safety officer is signed in and a pending report exists
+  When the safety officer opens that report
+  And the safety officer adds the private attachment "coroner-report.zip" with the description "Received from the coroner"
+  Then the private attachments section lists "coroner-report.zip" with its description, its adder, and when it was added
+  When the safety officer downloads the private attachment "coroner-report.zip"
+  Then the browser saves a file named "coroner-report.zip"
+  When the safety officer removes the private attachment "coroner-report.zip" and confirms
+  Then the private attachments section lists no attachments
+
+@REQ-MOD-116
+@ui
+Scenario: A private note refers to a private attachment on the report page
+  Given a safety officer is signed in and a pending report exists
+  And the report carries the private attachment "police-report.pdf"
+  When the safety officer opens that report
+  And the safety officer adds the private note "See the police report." referring to "police-report.pdf"
+  Then that private note shows that it refers to "police-report.pdf"

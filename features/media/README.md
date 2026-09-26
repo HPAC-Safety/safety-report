@@ -146,6 +146,38 @@ reworded to name documents. A yes given before that, or to a superseded wording
 a stale draft still held, shows the report's photos and video and keeps its
 documents private.
 
+## Private attachments (#507)
+
+A safety officer or administrator may add files to a report that are for
+staff only: a coroner's report, a police report, an investigation archive
+([ADR-0135](../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
+They are not the reporter's attachments, and none of the rules above about
+formats, sniffing, derivatives, consent, or publication applies to them.
+
+- **Upload.** The browser asks
+  `POST /api/admin/reports/{reportId}/private-attachments/uploads` with the
+  declared type and exact size, gets a pre-signed PUT to
+  `quarantine/<upload id>`, and sends the file straight to storage, exactly as
+  a reporter's upload does. A private upload is judged on size alone: above
+  zero and at most `HpacSafety:Media:PrivateAttachments:MaxByteSize`
+  (1 GB by default), which is separate from the reporter caps. Any type is
+  accepted; an empty or malformed type is signed as
+  `application/octet-stream` (REQ-MED-046, REQ-MED-047).
+- **Claim.** `POST /api/admin/reports/{reportId}/private-attachments` names the
+  upload, the file name, and an optional description. The API copies the
+  upload, inside storage and unchanged, to
+  `<report id>/private/<attachment id>`, records it, and erases the quarantine
+  copy. An upload nobody claims expires with the same quarantine lifecycle rule
+  as any other (REQ-MED-048, REQ-MED-050).
+- **Download.** A pre-signed GET of at most fifteen minutes, forcing a
+  download under the sanitized file name with its own extension, and one
+  `DownloadedPrivateAttachment` audit entry per link. Only
+  `PrivateAttachmentLink` signs a URL for the private compartment, and it
+  signs nothing else (REQ-MED-049, REQ-MED-051).
+
+Who may do this, removal, and the private-note reference are in
+[`features/moderation-authentication-and-publication`](../moderation-authentication-and-publication/README.md).
+
 ## Out of scope
 
 What not to build here. The global list in
@@ -180,7 +212,15 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   submission claims it
   ([ADR-0126](../../docs/decisions/ADR-0126-an-attachment-uploads-straight-to-quarantine-by-pre-signed-put.md)).
 - A pre-signed URL that writes anywhere but `quarantine/<upload id>`, or that
-  names a report or a member.
+  names a report or a member. A private attachment's upload follows the same
+  rule (ADR-0135).
 - An upload table, or any record linking an upload to the member who made it.
+  A private attachment records the staff member who added it only once it is
+  claimed onto a report (ADR-0135).
+- For private attachments: previews, thumbnails, derivatives, unpacking a zip,
+  sniffing or an allowlist, a malware scan (ADR-0089), a multipart or
+  resumable upload, editing or replacing a file (remove it and add it again),
+  restoring a removed one, a per-report count cap, and any sharing or
+  publication beyond the two reviewer roles.
 - A filesystem storage adapter. Development runs an S3-compatible server
   (RustFS, ADR-0110) behind the same `S3BlobStore` production uses.

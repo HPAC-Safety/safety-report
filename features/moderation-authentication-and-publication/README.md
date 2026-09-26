@@ -50,7 +50,7 @@ need no CSRF protection.
 | Role | Capabilities |
 |---|---|
 | User | Proves HPAC membership. May submit an occurrence report. Nothing else — no review, authoring, or publication capability. |
-| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports; keep private notes on a report ([ADR-0133](../../docs/decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
+| SafetyOfficer | View the review queue and private report material; view safe image/video derivatives and download validated unredacted documents; edit the bilingual summary pair; publish, unpublish, and soft-delete reports; keep private notes on a report ([ADR-0133](../../docs/decisions/ADR-0133-staff-keep-private-notes-on-a-report.md)); add, download, and remove a report's private attachments ([ADR-0135](../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)); review type-ahead values (approve, correct, merge, remove) ([ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)). |
 | Administrator | Every SafetyOfficer capability, plus create question revisions and author each question's choices, including fixing or replacing a picker option ([ADR-0128](../../docs/decisions/ADR-0128-an-answer-names-its-choice-and-a-picker-option-is-fixed-or-replaced.md)). |
 
 Submission is a membership capability rather than a privileged one, so any of
@@ -166,6 +166,41 @@ edit any note, open a note's history, or remove a note after confirming.
   reads the notes: not the report detail DTO, not a database view, not the
   public feed or comments, not the Worker or the model, and never a
   translation provider (REQ-MOD-104, REQ-MOD-105).
+- A note may refer to one private attachment on the same report. The
+  reference belongs to the revision, so an edit may add, change, or drop it,
+  and the history shows each revision's own. An attachment on another report,
+  or one already removed, is refused with `400`; a revision whose attachment
+  was removed later still shows it, marked removed (REQ-MOD-114,
+  [ADR-0135](../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
+
+## Private attachments (#507)
+
+A safety officer or administrator may add files to a report that are for
+staff only
+([ADR-0135](../../docs/decisions/ADR-0135-staff-add-private-attachments-to-a-report.md)).
+The report view has a **Private attachments** section, newest first. Each
+lists its file name, size, optional description, who added it (**You**, or
+the adder's opaque token subject), and when. Adding a file shows its progress
+and can be cancelled; any reviewer may download any attachment, or remove one
+after confirming.
+
+- Any report that is not deleted, in any status, including a report without
+  publication consent (REQ-MOD-108). Any file type, up to the configured cap;
+  how the file travels and is stored is
+  [`features/media`](../media/README.md)'s rule.
+- The file name is required and is sanitized; the description is optional
+  plain text of at most 500 characters (REQ-MOD-110).
+- Removal soft-deletes the row, records who removed it, and writes one
+  `RemovedPrivateAttachment` audit entry; the bytes stay in storage. Deleting
+  the report does the same to its private attachments (REQ-MOD-109,
+  REQ-MOD-111).
+- The endpoints live under
+  `/api/admin/reports/{reportId}/private-attachments` and answer only a Safety
+  Officer or an Administrator (REQ-MOD-107). Nothing else reads the table: not
+  the report detail DTO or its attachment list, not a count, not a database
+  view, not the public feed or its media, not the Worker or the model
+  (REQ-MOD-112, REQ-MOD-113). An attachment count on a report list (#427)
+  counts the reporter's attachments only.
 
 ## Reading a date, time, or yes/no answer (#403)
 
@@ -276,5 +311,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - For private notes: translating a note, Markdown or rich-text rendering,
   mentions or notifications, files attached to a note, search across notes,
   a count of notes anywhere outside the note list, and restoring a removed
-  note. A note referring to a private attachment is #507's
-  (ADR-0133).
+  note (ADR-0133). A note may refer to a private attachment, but never holds a
+  file of its own (ADR-0135).
+- For private attachments: any count of them outside their own list, a
+  preview or inline view, and anything the media area rules out for them
+  ([`features/media`](../media/README.md)).

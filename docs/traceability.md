@@ -1348,6 +1348,46 @@ Instructional text keeps the line breaks its description was written with — *R
 
 A reporter reads instructional text with its description's paragraphs — *playwright-bdd, Covered*
 
+### REQ-QB-144
+
+The API sends each choice's pin, pinned-first choices first and pinned-last choices last — *Reqnroll, Covered*
+
+### REQ-QB-145
+
+A question's choices are listed alphabetically in the reader's language — *playwright-bdd, Covered*
+
+### REQ-QB-146
+
+Pinned choices come first or last, each group alphabetical — *playwright-bdd, Covered*
+
+### REQ-QB-147
+
+A value a reporter adds to a type-ahead is not pinned — *Reqnroll, Covered*
+
+### REQ-QB-148
+
+A value a reporter adds to a type-ahead takes its alphabetical place — *playwright-bdd, Covered*
+
+### REQ-QB-149
+
+Pinning a choice never revises or forks its question — *Reqnroll, Covered*
+
+### REQ-QB-150
+
+An Administrator sets each option's position, and the editor lists options as the form does — *playwright-bdd, Covered*
+
+### REQ-QB-151
+
+The required-option control lists the parent's choices as the form does — *playwright-bdd, Covered*
+
+### REQ-QB-152
+
+The type-ahead review page offers merge targets as the form lists them — *playwright-bdd, Covered*
+
+### REQ-QB-153
+
+A multi-select answer on the report page is listed as the form lists its choices — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

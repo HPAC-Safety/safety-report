@@ -427,7 +427,7 @@
   "privateNotes.attachmentLabel": "Refers to a private attachment (optional)",
   "privateNotes.noAttachment": "No attachment",
   "privateAttachments.title": "Private attachments",
-  "privateAttachments.explanation": "Files for safety officers and administrators only, such as a coroner's or police report. They are never published, summarized, or changed, and download exactly as uploaded.",
+  "privateAttachments.explanation": "Files for safety officers and administrators only, such as a coroner's or police report. They are never published, summarized, or changed in any way.",
   "privateAttachments.listLabel": "Private attachments on this report",
   "privateAttachments.loading": "Loading private attachments…",
   "privateAttachments.empty": "No private attachments yet.",

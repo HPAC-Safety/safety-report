@@ -113,6 +113,14 @@ public class Report
 	///     summary has been soft-deleted. Every clause is load bearing: nothing
 	///     reaches the public without all of them (REQ-DOM-003/004).
 	/// </summary>
+	/// <remarks>
+	///     The <c>public_reports</c> view is the authority on what is public
+	///     (ADR-0055, ADR-0116); every public read goes through it, never through
+	///     this property. This is the domain-side mirror that tests assert on. The
+	///     view also requires both summary texts to be nonblank, which this
+	///     property does not repeat because the <c>Summary</c> type refuses a blank
+	///     text; the view's check guards rows written outside the domain.
+	/// </remarks>
 	public bool IsPublishable =>
 		Deleted is null
 		&& ConsentPublish is true

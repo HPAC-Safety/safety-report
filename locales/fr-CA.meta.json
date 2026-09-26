@@ -2107,15 +2107,15 @@
   },
   "report.typeAhead.noMatches": {
     "source_hash": "cc9f0a2805e3912e6d2096004948f76d6c0b8c9fdd79e5ef7f6b633cd73a17ad",
-    "target_hash": "9cbcbb8fa7f72e62fb0beb6e17c8626f828ddc4b2185427f76e3910603ae2fd0",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "f936b4ed9301d2ebb9115bb8a5d923324f0429ad495764becc76188fccc1a0ae",
+    "provider": "human",
+    "reviewed": true
   },
   "report.typeAhead.showChoices": {
     "source_hash": "c66a7cf036d2697f04fb44594c69dd5148e9005473071697fbe115133f5f1d90",
-    "target_hash": "ea255c1911509f321bd5ec8994048763237a3d59db063fe63c020a9e914ddd05",
-    "provider": "deepl:FR-CA:prefer_more",
-    "reviewed": false
+    "target_hash": "4a3b9d4f585730e4b7fbe28c5fb17fa6b29d333f5e7be5d0d7122ce8e83a9858",
+    "provider": "human",
+    "reviewed": true
   },
   "reports.action.cancel": {
     "source_hash": "19766ed6ccb2f4a32778eed80d1928d2c87a18d7c275ccb163ec6709d3eb2e27",

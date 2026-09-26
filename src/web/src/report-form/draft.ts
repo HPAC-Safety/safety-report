@@ -16,8 +16,10 @@ const MAX_AGE_MS = 15 * 24 * 60 * 60 * 1000
 /**
  * One answer as the draft holds it — never a file. A phone answer holds the
  * number as the field shows it, with the country it was typed for (ADR-0137).
+ * A type-ahead answer picked from its list also names that choice's ID, so it
+ * is sent as that choice even where another carries the same wording.
  */
-export type DraftAnswer = { kind: "value"; value: string; country?: string } | { kind: "options"; values: string[] }
+export type DraftAnswer = { kind: "value"; value: string; country?: string; choice?: string } | { kind: "options"; values: string[] }
 
 /** One finished upload, as the draft names it; the bytes stay in quarantine. */
 export interface DraftAttachment {

@@ -1138,9 +1138,18 @@ Scenario: A reporter picks a type-ahead choice from the keyboard
   When a reporter using English opens that question
   And they type "o" in the field and press the down arrow twice
   Then "Mount 7" is the field's active option
+  When they press the up arrow
+  Then "Cooper's" is the field's active option
+  When they press the down arrow
+  Then "Mount 7" is the field's active option
   When they press Enter
   Then the list is closed and the field holds "Mount 7"
-  When they press Alt and the down arrow, then Escape
+  When they press Alt and the down arrow
+  Then its list is open
+  When they press Escape
+  Then the list is closed and the field holds "Mount 7"
+  When they open the field's list by pressing the caret
+  And they press outside the field
   Then the list is closed and the field holds "Mount 7"
 
 @REQ-QB-162
@@ -1152,6 +1161,13 @@ Scenario: A reporter types a type-ahead value its list does not offer
   Then the list says no choice matches
   When they press Tab
   Then the list is closed and the field holds "A ridge nobody listed"
+
+@REQ-QB-171
+@ui
+Scenario: A type-ahead choice picked from the list is sent as that choice, not matched by its wording
+  Given a signed-in reporter answers a type-ahead question offering two choices both worded "Other"
+  When they pick the second "Other" from the list and send the report
+  Then the answer names the second "Other" choice's identifier and carries no typed text
 
 @REQ-QB-163
 @ui

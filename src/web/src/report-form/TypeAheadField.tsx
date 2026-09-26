@@ -15,10 +15,16 @@ export interface TypeAheadFieldProps {
 	/** The choices in display order, pinned first, unpinned, pinned last (ADR-0136). */
 	groups: TypeAheadChoice[][]
 	value: string
+	/** The choice the field holds, when the reporter picked it from the list. */
+	selectedKey: string | undefined
 	placeholder: string | undefined
 	describedBy: string | undefined
 	locale: string
-	onChange: (value: string) => void
+	/**
+	 * The field's text, and the choice it names when the reporter picked one
+	 * from the list. Typed text names no choice here (ADR-0129).
+	 */
+	onChange: (value: string, choiceKey?: string) => void
 	t: (key: string) => string
 }
 
@@ -34,7 +40,18 @@ function folded(text: string, locale: string): string {
  * field, and the arrow keys move the active option. Any text may be typed; a
  * value the list does not offer is a reporter-added one (ADR-0129).
  */
-export function TypeAheadField({ fieldId, label, groups, value, placeholder, describedBy, locale, onChange, t }: TypeAheadFieldProps) {
+export function TypeAheadField({
+	fieldId,
+	label,
+	groups,
+	value,
+	selectedKey,
+	placeholder,
+	describedBy,
+	locale,
+	onChange,
+	t,
+}: TypeAheadFieldProps) {
 	const [open, setOpen] = useState(false)
 	// What narrows the list: the text typed since it opened, or null for every choice.
 	const [filter, setFilter] = useState<string | null>(null)
@@ -52,6 +69,7 @@ export function TypeAheadField({ fieldId, label, groups, value, placeholder, des
 	const expanded = open && flat.length > 0
 	const activeChoice = expanded && active >= 0 ? flat[active] : undefined
 	const activeId = activeChoice ? optionId(activeChoice) : undefined
+	const noMatch = open && flat.length === 0 && needle !== ""
 
 	useEffect(() => {
 		if (!open) return
@@ -71,7 +89,7 @@ export function TypeAheadField({ fieldId, label, groups, value, placeholder, des
 	/** Opens the whole list, with the choice the field holds, if any, active. */
 	function openAll(first: "none" | "first" | "last" = "none") {
 		const all = groups.flat()
-		const current = all.findIndex((choice) => choice.label === value)
+		const current = all.findIndex((choice) => (selectedKey ? choice.key === selectedKey : choice.label === value))
 		setFilter(null)
 		setOpen(true)
 		setActive(current >= 0 ? current : first === "first" ? 0 : first === "last" ? all.length - 1 : -1)
@@ -83,7 +101,7 @@ export function TypeAheadField({ fieldId, label, groups, value, placeholder, des
 	}
 
 	function choose(choice: TypeAheadChoice) {
-		onChange(choice.label)
+		onChange(choice.label, choice.key)
 		close()
 		inputRef.current?.focus()
 	}
@@ -193,9 +211,17 @@ export function TypeAheadField({ fieldId, label, groups, value, placeholder, des
 								// offered in that language, and says so to assistive technology.
 								lang={choice.lang}
 								aria-selected={choice === activeChoice}
-								className={`touch-target flex cursor-pointer items-center px-3 font-sans text-ink hover:bg-surface-2 ${
-									choice === activeChoice ? "bg-surface-3" : ""
+								// The highlighted choice: a stronger surface and an inset bar in
+								// the focus colour, so it reads at 3:1 against the list.
+								className={`touch-target flex cursor-pointer items-center px-3 font-sans text-ink ${
+									choice === activeChoice ? "bg-surface-4 shadow-[inset_4px_0_0_var(--color-focus)]" : ""
 								}`}
+								// Pointing at a choice highlights it, so hover and the
+								// keyboard's highlight are always the same one.
+								onMouseMove={() => {
+									const index = flat.indexOf(choice)
+									if (index !== active) setActive(index)
+								}}
 								// Keep focus in the field while a choice is pressed.
 								onMouseDown={(event) => event.preventDefault()}
 								onClick={() => choose(choice)}
@@ -206,14 +232,17 @@ export function TypeAheadField({ fieldId, label, groups, value, placeholder, des
 					</Fragment>
 				))}
 			</ul>
-			{open && flat.length === 0 && needle && (
-				<p
-					role="status"
-					className="absolute left-0 right-0 top-full z-40 mt-1 rounded border border-rule bg-surface px-3 py-2 font-sans text-sm text-ink-muted shadow-lg"
-				>
-					{t("report.typeAhead.noMatches")}
-				</p>
-			)}
+			{/* Always in the page and empty until nothing matches, so the message is announced when it appears. */}
+			<p
+				role="status"
+				className={
+					noMatch
+						? "absolute left-0 right-0 top-full z-40 mt-1 rounded border border-rule bg-surface px-3 py-2 font-sans text-sm text-ink-muted shadow-lg"
+						: "sr-only"
+				}
+			>
+				{noMatch ? t("report.typeAhead.noMatches") : ""}
+			</p>
 		</div>
 	)
 }

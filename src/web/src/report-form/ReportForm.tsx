@@ -360,8 +360,15 @@ export function ReportForm() {
 				// value no choice carries yet goes as the typed text (ADR-0129).
 				if (question.type === "multi_select" || question.type === "single_select" || question.type === "autocomplete") {
 					const stored = answer?.kind === "options" ? answer.values : answer?.kind === "value" ? [answer.value] : []
-					const named =
-						question.type === "autocomplete"
+					// A type-ahead choice picked from its list names itself by ID; only
+					// typed text is matched to a choice by its wording.
+					const picked =
+						question.type === "autocomplete" && answer?.kind === "value" && answer.choice
+							? question.options.find((option) => option.id === answer.choice)
+							: undefined
+					const named = picked
+						? [picked]
+						: question.type === "autocomplete"
 							? stored.map((typed) => optionTyped(question, typed))
 							: stored.map((value) => optionFor(question, value))
 					const typed = question.type === "autocomplete" && stored.length > 0 && !named[0] ? stored[0].trim() : null

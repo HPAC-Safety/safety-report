@@ -954,10 +954,33 @@ When("they press Tab", async ({ page }) => {
 	await page.keyboard.press("Tab")
 })
 
-When("they press Alt and the down arrow, then Escape", async ({ page }) => {
+When("they press the up arrow", async ({ page }) => {
+	await page.keyboard.press("ArrowUp")
+})
+
+When("they press the down arrow", async ({ page }) => {
+	await page.keyboard.press("ArrowDown")
+})
+
+When("they press Alt and the down arrow", async ({ page }) => {
 	await page.keyboard.press("Alt+ArrowDown")
-	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
+})
+
+When("they press Escape", async ({ page }) => {
 	await page.keyboard.press("Escape")
+})
+
+When("they press outside the field", async ({ page }) => {
+	await expect(typeAheadList(page)).toBeVisible()
+	// The page's left margin: outside the field, its caret, its label, and its list.
+	const field = (await typeAheadField(page).boundingBox())!
+	await page.mouse.click(Math.max(1, field.x - 20), field.y + field.height / 2)
+})
+
+Then("its list is open", async ({ page }) => {
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
+	await expect(typeAheadList(page)).toBeVisible()
+	await expect(typeAheadField(page)).toBeFocused()
 })
 
 Then("the list is closed and the field holds {string}", async ({ page }, value: string) => {

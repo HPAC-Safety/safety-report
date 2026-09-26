@@ -123,10 +123,17 @@ looks the same in every browser (`REQ-QB-159`,
 - **Filtering.** What the reporter types narrows the list to the choices whose
   wording contains it anywhere, ignoring case and accents, in the reader's
   language (`REQ-QB-160`). The list keeps the order and separators above.
-- **Keyboard.** The up and down arrows move through the list, Enter takes the
-  highlighted choice, Escape closes the list, and Tab moves on (`REQ-QB-161`).
-  The field follows the WAI-ARIA 1.2 combobox pattern, and keeps its label,
-  help text, and error.
+- **Keyboard and pointer.** The down and up arrows move the highlighted
+  choice through the list, and pointing at a choice highlights it. Enter takes
+  the highlighted choice, Alt and the down arrow open the list without moving,
+  and Escape or a press outside the field closes it, keeping what the field
+  holds (`REQ-QB-161`). Tab moves on and closes it too (`REQ-QB-162`). The
+  field follows the WAI-ARIA 1.2 combobox pattern, and keeps its label, help
+  text, and error.
+- **A picked choice.** A choice taken from the list is sent as that choice,
+  by its identifier, even where another choice carries the same wording
+  (`REQ-QB-171`). Text typed without picking is matched to a choice by its
+  wording, ignoring case, or else sent as typed.
 - **A value it does not offer.** The reporter may still type one. The list
   says nothing matches, and the words typed stay in the field and are sent as
   a reporter-added value (`REQ-QB-162`, `REQ-SUB-083`,

@@ -105,6 +105,8 @@ export function QuestionField({
 
 	if (question.type === "single_select" || question.type === "autocomplete") {
 		const value = answer?.kind === "value" ? answer.value : ""
+		// A type-ahead choice picked from its list is held by its ID, and shown in the reader's language.
+		const picked = answer?.kind === "value" && answer.choice ? question.options.find((option) => option.id === answer.choice) : undefined
 		const groups = optionGroups(question, locale)
 		return (
 			<div className="mb-6">
@@ -116,11 +118,14 @@ export function QuestionField({
 						groups={groups.map((group) =>
 							group.map((option) => ({ key: option.id, label: optionLabel(option, locale), lang: option.onlyIn ?? undefined })),
 						)}
-						value={value}
+						value={picked ? optionLabel(picked, locale) : value}
+						selectedKey={picked?.id}
 						placeholder={questionPlaceholder(question, locale) ?? undefined}
 						describedBy={describedBy}
 						locale={locale}
-						onChange={(typed) => onChange(typed ? { kind: "value", value: typed } : undefined)}
+						onChange={(typed, choice) =>
+							onChange(typed ? { kind: "value", value: typed, ...(choice ? { choice } : {}) } : undefined)
+						}
 						t={t}
 					/>
 				) : (

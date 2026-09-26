@@ -62,7 +62,7 @@ after the choices pinned first and before the choices pinned last.**
   control can draw one. In a multi-select it is a divider between checkbox
   groups. In a single-select `<select>` it is a disabled `──` option, because
   the React version in use does not allow `<hr>` inside `<select>`. A native
-  `<datalist>` cannot draw one, so a type-ahead only keeps the group order.
+  `<datalist>` cannot draw one, so a type-ahead only keeps the group order (amended by [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md): the type-ahead now draws them).
 - **The editor re-sorts only when it opens.** It lists options the way the
   form does when a question is opened, and keeps them in place while the
   Administrator edits, so a row never jumps away from the cursor.

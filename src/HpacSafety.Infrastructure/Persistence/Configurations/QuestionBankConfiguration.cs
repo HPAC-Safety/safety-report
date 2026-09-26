@@ -164,6 +164,17 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 		// reviewer is a token subject, never a key: there is no user table.
 		builder.Property(choice => choice.NeedsReview).IsRequired().HasDefaultValue(false);
 		builder.Property(choice => choice.ReviewedBy).HasMaxLength(256);
+		builder.Ignore(choice => choice.Resolved);
+
+		// A merged value names the one it reads as (ADR-0129). Merges are
+		// flattened when made, and a merged value is always removed.
+		builder.HasOne(choice => choice.MergedInto)
+			.WithMany()
+			.HasForeignKey(choice => choice.MergedIntoChoiceId)
+			.OnDelete(DeleteBehavior.Restrict);
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_choices_merged_is_removed",
+			"merged_into_choice_id IS NULL OR (deleted IS NOT NULL AND merged_into_choice_id <> id)"));
 		builder.Ignore(choice => choice.NeedsTranslation);
 
 		// How each language was produced: written by a person, or supplied by the

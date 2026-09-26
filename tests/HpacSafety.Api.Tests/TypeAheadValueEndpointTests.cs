@@ -126,6 +126,61 @@ public class TypeAheadValueEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenTwoValues_WhenOneIsMergedIntoTheOther_ThenItsAnswersReadTheTargetAndItIsAudited()
+	{
+		// Given
+		var (question, coopers) = await TypeAheadWithReporterValue("Coopers", answers: 2);
+		TinyId target;
+		await using (var scope = _factory.Services.CreateAsyncScope())
+		{
+			var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var loaded = await database.Questions.Include(q => q.Revisions).Include(q => q.AllChoices).SingleAsync(q => q.Id == question);
+			var report = new Report(Locale.EnCa, At);
+			report.Answer(loaded, "Cooper's", At);
+			database.Reports.Add(report);
+			await database.SaveChangesAsync();
+			target = loaded.AllChoices.Single(choice => choice.LabelEn == "Cooper's").Id;
+		}
+
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var listed = await client.GetFromJsonAsync<JsonElement>(Awaiting);
+		listed.GetProperty("values").EnumerateArray().Single(entry => entry.GetProperty("id").GetString() == coopers.Value)
+			.GetProperty("mergeTargets").EnumerateArray().Select(entry => entry.GetProperty("id").GetString())
+			.ShouldBe([target.Value]);
+
+		// When
+		using var response = await client.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{coopers}/merge", UriKind.Relative), new { intoId = target.Value });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+		(await Stored(coopers)).MergedIntoChoiceId.ShouldBe(target);
+		(await Audited(coopers, AuditAction.MergedTypeAheadValue)).ShouldBeTrue();
+
+		await using var reader = _factory.Services.CreateAsyncScope();
+		var answers = await reader.ServiceProvider.GetRequiredService<HpacSafetyDbContext>().ReportAnswers.AsNoTracking()
+			.Include(answer => answer.Choice).ThenInclude(choice => choice!.MergedInto)
+			.Where(answer => answer.ChoiceId == coopers).ToListAsync();
+		answers.Count.ShouldBe(2);
+		answers.ShouldAllBe(answer => answer.Text == "Cooper's");
+	}
+
+	[Fact]
+	public async Task GivenAMergeNamingNoValue_WhenSent_ThenRefused()
+	{
+		// Given
+		var (_, value) = await TypeAheadWithReporterValue("Nowhere yet");
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await client.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{value}/merge", UriKind.Relative), new { intoId = "nope" });
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+	}
+
+	[Fact]
 	public async Task GivenAPickerOption_WhenReviewed_ThenRefused()
 	{
 		// Given — a picker option is an Administrator's to fix or replace (ADR-0128)

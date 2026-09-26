@@ -237,7 +237,6 @@ Scenario: Administrator capabilities include everything SafetyOfficer has
   And can additionally create question revisions and author every question's choices
 
 @REQ-MOD-094
-@ignore
 Scenario Outline: A Safety Officer or an Administrator reviews type-ahead values
   Given a member has the <role> role
   When that member approves, corrects, merges, or removes a reporter-added type-ahead value
@@ -260,7 +259,6 @@ Scenario: A Safety Officer approves, corrects, and removes type-ahead values on 
   And the page lists no value left to review
 
 @REQ-MOD-095
-@ignore
 @ui
 Scenario: A Safety Officer reviews flagged type-ahead values on one page
   Given a signed-in Safety Officer and two type-ahead questions with values flagged for review

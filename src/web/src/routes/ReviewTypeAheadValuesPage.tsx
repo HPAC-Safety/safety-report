@@ -5,6 +5,7 @@ import {
 	approveTypeAheadValue,
 	correctTypeAheadValue,
 	listTypeAheadValuesAwaitingReview,
+	mergeTypeAheadValue,
 	removeTypeAheadValue,
 	type TypeAheadValueView,
 } from "../api/adminQuestions"
@@ -15,8 +16,9 @@ import {
  * this is where someone who reads the reports looks at it afterwards.
  *
  * Each value can be approved as it stands, corrected in place — the same
- * value, so every answer that names it reads the correction — or removed:
- * no longer offered, while every answer that named it still does. A removed
+ * value, so every answer that names it reads the correction — merged into
+ * another value of its question, which every answer naming it then reads, or
+ * removed: no longer offered, while every answer that named it still does. A removed
  * value a reporter typed again comes back here, still removed.
  */
 
@@ -30,6 +32,7 @@ export function ReviewTypeAheadValuesPage() {
 	const { t, locale } = useLocale()
 	const [values, setValues] = useState<TypeAheadValueView[]>([])
 	const [drafts, setDrafts] = useState<Record<string, Draft>>({})
+	const [mergeInto, setMergeInto] = useState<Record<string, string>>({})
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 
@@ -72,7 +75,7 @@ export function ReviewTypeAheadValuesPage() {
 		setDrafts((current) => ({ ...current, [value.id]: { labelEn: value.labelEn ?? "", labelFr: value.labelFr ?? "" } }))
 	}
 
-	function wording(value: TypeAheadValueView) {
+	function wording(value: { labelEn: string | null; labelFr: string | null }) {
 		return (locale === "fr-CA" ? (value.labelFr ?? value.labelEn) : (value.labelEn ?? value.labelFr)) ?? ""
 	}
 
@@ -100,7 +103,9 @@ export function ReviewTypeAheadValuesPage() {
 								<p className="font-sans text-xs uppercase tracking-wide text-ink-muted">
 									{locale === "fr-CA" ? value.questionLabelFr : value.questionLabelEn}
 								</p>
-								<p className="mt-1 font-sans text-lg font-medium text-ink">{wording(value)}</p>
+								<p data-testid="type-ahead-value-wording" className="mt-1 font-sans text-lg font-medium text-ink">
+									{wording(value)}
+								</p>
 								<p className="font-sans text-sm text-ink-muted">
 									{value.typedIn
 										? t("typeAheadValues.typedIn", { locale: value.typedIn })
@@ -185,6 +190,36 @@ export function ReviewTypeAheadValuesPage() {
 												>
 													{t("typeAheadValues.remove")}
 												</button>
+											)}
+											{value.mergeTargets.length > 0 && (
+												<span className="flex flex-wrap items-center gap-2">
+													<label className="font-sans text-sm text-ink">
+														<span className="sr-only">{t("typeAheadValues.mergeInto")}</span>
+														<select
+															aria-label={t("typeAheadValues.mergeInto")}
+															className="touch-target rounded border border-rule bg-surface-2 px-3 font-sans text-ink"
+															value={mergeInto[value.id] ?? ""}
+															onChange={(event) =>
+																setMergeInto((current) => ({ ...current, [value.id]: event.target.value }))
+															}
+														>
+															<option value="">{t("typeAheadValues.mergeInto")}</option>
+															{value.mergeTargets.map((target) => (
+																<option key={target.id} value={target.id}>
+																	{wording(target)}
+																</option>
+															))}
+														</select>
+													</label>
+													<button
+														type="button"
+														disabled={!mergeInto[value.id]}
+														className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-ink disabled:opacity-50"
+														onClick={() => void act(() => mergeTypeAheadValue(value.id, mergeInto[value.id]!), value.id)}
+													>
+														{t("typeAheadValues.merge")}
+													</button>
+												</span>
 											)}
 										</>
 									)}

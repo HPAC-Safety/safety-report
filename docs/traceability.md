@@ -772,11 +772,11 @@ A SafetyOfficer's Admin menu counts reports and type-ahead values waiting — *p
 
 ### REQ-MOD-094
 
-A Safety Officer or an Administrator reviews type-ahead values — *Reqnroll, Planned*
+A Safety Officer or an Administrator reviews type-ahead values — *Reqnroll, Covered*
 
 ### REQ-MOD-095
 
-A Safety Officer reviews flagged type-ahead values on one page — *playwright-bdd, Planned*
+A Safety Officer reviews flagged type-ahead values on one page — *playwright-bdd, Covered*
 
 ### REQ-MOD-096
 
@@ -1186,15 +1186,15 @@ A reporter typing a removed type-ahead value names it without reviving it — *R
 
 ### REQ-QB-131
 
-Merging one type-ahead value into another leaves every answer untouched — *Reqnroll, Planned*
+Merging one type-ahead value into another leaves every answer untouched — *Reqnroll, Covered*
 
 ### REQ-QB-132
 
-Merges resolve in a chain and never form a cycle — *Reqnroll, Planned*
+Merges resolve in a chain and never form a cycle — *Reqnroll, Covered*
 
 ### REQ-QB-133
 
-Only a type-ahead value can be merged or edited by a Safety Officer — *Reqnroll, Planned*
+Only a type-ahead value can be merged or edited by a Safety Officer — *Reqnroll, Covered*
 
 ### REQ-QB-134
 

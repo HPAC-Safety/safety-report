@@ -198,9 +198,10 @@ public class ReportAnswer
 				: DisplayedTranslation ?? Value;
 	}
 
+	// A merged value reads as the one it was merged into (ADR-0129).
 	private QuestionChoice NamedChoice =>
-		Choice ?? throw new InvalidOperationException(
-			"This answer names a choice that was not loaded with it. Include the answer's choice to read its wording.");
+		(Choice ?? throw new InvalidOperationException(
+			"This answer names a choice that was not loaded with it. Include the answer's choice to read its wording.")).Resolved;
 
 	/// <summary>
 	///     Records one answer, of any type, against the question's current revision. A

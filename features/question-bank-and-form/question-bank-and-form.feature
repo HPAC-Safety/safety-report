@@ -817,7 +817,6 @@ Scenario: A reporter typing a removed type-ahead value names it without reviving
   And the value is flagged for review again
 
 @REQ-QB-131
-@ignore
 Scenario: Merging one type-ahead value into another leaves every answer untouched
   Given reports answered a type-ahead question with "Coopers" and with "Cooper's", two separate values
   When a Safety Officer merges "Coopers" into "Cooper's"
@@ -828,7 +827,6 @@ Scenario: Merging one type-ahead value into another leaves every answer untouche
   Then the new answer names "Cooper's"
 
 @REQ-QB-132
-@ignore
 Scenario: Merges resolve in a chain and never form a cycle
   Given the type-ahead value "A" was merged into "B"
   When a Safety Officer merges "B" into "C"
@@ -836,7 +834,6 @@ Scenario: Merges resolve in a chain and never form a cycle
   And merging "C" into "A" is refused
 
 @REQ-QB-133
-@ignore
 Scenario Outline: Only a type-ahead value can be merged or edited by a Safety Officer
   Given a <type> question has two choices
   When a Safety Officer tries to <action> one of them

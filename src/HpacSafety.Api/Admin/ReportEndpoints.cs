@@ -294,7 +294,7 @@ public static class ReportEndpoints
 		}
 
 		return await database.Reports
-			.Include(candidate => candidate.Answers).ThenInclude(answer => answer.Choice)
+			.Include(candidate => candidate.Answers).ThenInclude(answer => answer.Choice).ThenInclude(choice => choice!.MergedInto)
 			.Include(candidate => candidate.Files)
 			.Include(candidate => candidate.Summary)
 			.SingleOrDefaultAsync(candidate => candidate.Id == reportId, cancellationToken)

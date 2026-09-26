@@ -2291,6 +2291,18 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "typeAheadValues.merge": {
+    "source_hash": "8851aaa7d08ca1ae7e5d63278037532f3222a8b746e7abdd8af3fb06d6d4f993",
+    "target_hash": "ccd2b4904cdf0c6d561daaac36a1898a712e162a79fd69ae4b18a1a2ab70963c",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "typeAheadValues.mergeInto": {
+    "source_hash": "2eb1fd03bbe336faa22866bc42606cc26624bd002a04109ba201081c1e95a7c2",
+    "target_hash": "e8fa5f2818daf33f3801d53e2e4ff99b2d36754d59ae45cf65748c761f72be04",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "typeAheadValues.remove": {
     "source_hash": "c3812fc4acb861d5182fc2b8155f327f736fbe5e5eb86a7bd7afcb6dc5497282",
     "target_hash": "5e5d0216ce0b5b9ef8c015800730294a0ae3fb3f153f3015423b908dbe579d63",

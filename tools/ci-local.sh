@@ -128,7 +128,7 @@ until mkdir "$LOCK" 2>/dev/null; do
 		printf 'ci-local: %s was held for %ss; if no run is left, remove it by hand\n' "$LOCK" "$WAIT" >&2
 		exit 3
 	fi
-	[ "$waited" -gt 0 ] || say "Waiting for another local CI run to release $LOCK…"
+	[ "$waited" -gt 0 ] || say "Waiting for another local CI run to release ${LOCK}..."
 	sleep 10
 	waited=$((waited + 10))
 done
@@ -196,7 +196,7 @@ fs.writeFileSync(process.argv[1], JSON.stringify({
 
 IMAGE="hpac-safety-act:$(git -C "$WORK/repo" rev-parse --short=12 HEAD:tools/act/Dockerfile)"
 if ! docker image inspect "$IMAGE" >/dev/null 2>&1; then
-	say "Building $IMAGE from tools/act/Dockerfile…"
+	say "Building $IMAGE from tools/act/Dockerfile..."
 	docker build -q -t "$IMAGE" "$WORK/repo/tools/act" >/dev/null \
 		|| die "could not build the runner image from tools/act/Dockerfile"
 fi

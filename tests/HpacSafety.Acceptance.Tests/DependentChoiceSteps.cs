@@ -211,8 +211,12 @@ public sealed class DependentChoiceSteps
 											 string parent)
 	{
 		// Every question must be listed, and parallel scenarios add questions, so a
-		// listing that went stale before it was sent is simply taken again.
-		for (var attempt = 0; attempt < 5; attempt++)
+		// listing that went stale before it was sent is simply taken again. A short
+		// jittered delay between attempts gives the concurrent writers a chance to
+		// settle, instead of hammering the endpoint with the same stale snapshot.
+		const int maxAttempts = 50;
+
+		for (var attempt = 0; attempt < maxAttempts; attempt++)
 		{
 			var order = (await _admin!.GetFromJsonAsync<JsonElement>(AdminQuestions)).EnumerateArray()
 				.Select(question => question.GetProperty("id").GetString()!)
@@ -228,7 +232,12 @@ public sealed class DependentChoiceSteps
 			{
 				return;
 			}
+
+			await Task.Delay(TimeSpan.FromMilliseconds(20 + Random.Shared.Next(0, 60)));
 		}
+
+		throw new InvalidOperationException(
+			$"Order kept going stale after {maxAttempts} attempts because parallel scenarios kept adding questions.");
 	}
 
 	// ---- REQ-QB-212: every choice is offered under at least one parent choice ----

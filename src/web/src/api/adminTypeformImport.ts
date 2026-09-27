@@ -15,6 +15,8 @@ export interface ImportedOptionView {
 	labelEn: string
 	labelFr: string
 	frenchDefaultedToEnglish: boolean
+	/** The parent question's choices it is offered under, by code, from the export's `hpac` object (ADR-0151). */
+	parentRefs?: string[] | null
 }
 
 export interface ImportedQuestionDraftView {
@@ -33,6 +35,8 @@ export interface ImportedQuestionDraftView {
 	dependsOnOptionCode: string | null
 	/** Carried in the export's `hpac` object; false for a plain Typeform file (ADR-0138). */
 	allowFutureDates: boolean
+	/** The question whose answer decides which choices are offered, by key; null for a plain Typeform file (ADR-0151). */
+	choicesDependOnKey?: string | null
 }
 
 export interface RejectedTypeformFieldView {

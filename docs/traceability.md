@@ -1500,14 +1500,6 @@ A dependency is one level deep — *Reqnroll, Covered*
 
 The parent comes before the child on the form — *Reqnroll, Covered*
 
-### REQ-QB-182
-
-Every choice of a dependent question names one parent choice — *Reqnroll, Covered*
-
-### REQ-QB-183
-
-The same wording is entered once for each parent choice it applies to — *Reqnroll, Covered*
-
 ### REQ-QB-184
 
 A dependency and its links sit outside revisions — *Reqnroll, Covered*
@@ -1515,10 +1507,6 @@ A dependency and its links sit outside revisions — *Reqnroll, Covered*
 ### REQ-QB-185
 
 Removing a question's parent keeps the links and stops filtering — *Reqnroll, Covered*
-
-### REQ-QB-186
-
-A parent choice that live child choices link to cannot be removed — *Reqnroll, Covered*
 
 ### REQ-QB-187
 
@@ -1534,7 +1522,7 @@ A dependency follows its parent when the parent forks — *Reqnroll, Covered*
 
 ### REQ-QB-190
 
-A forked dependent question copies every choice with its link — *Reqnroll, Covered*
+A forked dependent question copies every choice with its links — *Reqnroll, Covered*
 
 ### REQ-QB-191
 
@@ -1544,21 +1532,9 @@ The report form's questions name each dependency and each link — *Reqnroll, Co
 
 A reporter's new value in a dependent type-ahead is linked to the parent's answer — *Reqnroll, Covered*
 
-### REQ-QB-193
-
-A reporter's typed value in a dependent type-ahead matches only values under the parent's answer — *Reqnroll, Covered*
-
-### REQ-QB-194
-
-A reviewer changes a dependent type-ahead value's link, never clears it — *Reqnroll, Covered*
-
 ### REQ-QB-195
 
 An Administrator picks the question a question's choices depend on, and clears it — *playwright-bdd, Covered*
-
-### REQ-QB-196
-
-Each choice of a dependent question asks for its parent choice — *playwright-bdd, Covered*
 
 ### REQ-QB-197
 
@@ -1580,10 +1556,6 @@ A saved report restores the parent and child answers together — *playwright-bd
 
 A dependent child that cannot be answered yet does not hold the reporter back — *playwright-bdd, Covered*
 
-### REQ-QB-202
-
-The type-ahead review page shows a dependent value's link and changes it — *playwright-bdd, Covered*
-
 ### REQ-QB-203
 
 A parent the form does not ask filters nothing — *Reqnroll, Covered*
@@ -1600,10 +1572,6 @@ The manage-questions page shows why a question cannot move above its parent — 
 
 The parent comes before the child wherever grouping places them — *Reqnroll, Covered*
 
-### REQ-QB-207
-
-A parent merge that would offer one wording twice under one parent choice is refused — *Reqnroll, Covered*
-
 ### REQ-QB-208
 
 A single-select question is a picker the form draws, not the browser's select — *playwright-bdd, Covered*
@@ -1619,6 +1587,70 @@ A single-select answer can be cleared back to unanswered — *playwright-bdd, Co
 ### REQ-QB-211
 
 A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row — *playwright-bdd, Covered*
+
+### REQ-QB-212
+
+Every choice of a dependent question is offered under at least one parent choice — *Reqnroll, Covered*
+
+### REQ-QB-213
+
+One choice is offered under several parent choices, and its wording is unique on the question — *Reqnroll, Covered*
+
+### REQ-QB-214
+
+A parent choice is removed only while every child choice under it keeps another parent — *Reqnroll, Covered*
+
+### REQ-QB-215
+
+Merging a parent value into one the child choice already names leaves one link — *Reqnroll, Covered*
+
+### REQ-QB-216
+
+A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer — *Reqnroll, Covered*
+
+### REQ-QB-217
+
+A reporter's typed value matching a value under another parent answer links it and flags it — *Reqnroll, Covered*
+
+### REQ-QB-218
+
+A reporter's typed value matching a merged value names the value it was merged into — *Reqnroll, Covered*
+
+### REQ-QB-219
+
+A reporter's typed value matching a removed value brings it back flagged, not revived — *Reqnroll, Covered*
+
+### REQ-QB-220
+
+A reviewer adds and removes a dependent type-ahead value's parents, never down to none — *Reqnroll, Covered*
+
+### REQ-QB-221
+
+Merging dependent type-ahead values offers the survivor under every parent either was under — *Reqnroll, Covered*
+
+### REQ-QB-222
+
+Each choice of a dependent question picks the parent choices it is offered under — *playwright-bdd, Covered*
+
+### REQ-QB-223
+
+The form offers one choice under each of its parent answers and keeps it across them — *playwright-bdd, Covered*
+
+### REQ-QB-224
+
+The type-ahead review page shows every parent of a dependent value and edits them — *playwright-bdd, Covered*
+
+### REQ-QB-225
+
+The migration folds each link into the join table and merges identical duplicates — *Reqnroll, Covered*
+
+### REQ-QB-226
+
+The migration merges no pair whose wording matches in one language only — *Reqnroll, Covered*
+
+### REQ-QB-227
+
+Words typed into a dependent type-ahead are kept and sent as typed, even when they read as a choice under another answer — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 
@@ -2042,6 +2074,10 @@ A choice of a dependent question must be offered under the parent's answer — *
 
 A required dependent question that cannot be answered yet does not block a submission — *Reqnroll, Covered*
 
+### REQ-SUB-115
+
+A choice offered under several parent answers is accepted under each, and refused under any other — *Reqnroll, Covered*
+
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001
@@ -2127,6 +2163,10 @@ Only an Administrator may import or export — *Reqnroll, Covered*
 ### REQ-TF-022
 
 A date question's Allow future dates setting survives an export and reimport — *Reqnroll, Covered*
+
+### REQ-TF-023
+
+A choice dependency survives an export and reimport — *Reqnroll, Covered*
 
 ## Claims: web-localization-and-design
 

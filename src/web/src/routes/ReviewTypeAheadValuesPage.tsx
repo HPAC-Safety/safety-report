@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { sortChoices } from "../lib/sortChoices"
+import { MultiSelectPicker } from "../report-form/MultiSelectPicker"
 import {
 	ApiError,
 	approveTypeAheadValue,
 	correctTypeAheadValue,
 	listTypeAheadValuesAwaitingReview,
 	mergeTypeAheadValue,
-	relinkTypeAheadValue,
+	setTypeAheadValueParents,
 	removeTypeAheadValue,
 	type TypeAheadValueView,
 } from "../api/adminQuestions"
@@ -35,7 +36,7 @@ export function ReviewTypeAheadValuesPage() {
 	const [values, setValues] = useState<TypeAheadValueView[]>([])
 	const [drafts, setDrafts] = useState<Record<string, Draft>>({})
 	const [mergeInto, setMergeInto] = useState<Record<string, string>>({})
-	const [relinkTo, setRelinkTo] = useState<Record<string, string>>({})
+	const [relinkTo, setRelinkTo] = useState<Record<string, string[]>>({})
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 
@@ -120,10 +121,11 @@ export function ReviewTypeAheadValuesPage() {
 
 								{value.parent && (
 									<ParentLink
+										valueId={value.id}
 										parent={value.parent}
-										chosen={relinkTo[value.id] ?? value.parent.parentChoiceId ?? ""}
-										onChoose={(choiceId) => setRelinkTo((current) => ({ ...current, [value.id]: choiceId }))}
-										onRelink={(choiceId) => void act(() => relinkTypeAheadValue(value.id, choiceId), value.id)}
+										chosen={relinkTo[value.id] ?? value.parent.parentChoiceIds}
+										onChoose={(choiceIds) => setRelinkTo((current) => ({ ...current, [value.id]: choiceIds }))}
+										onRelink={(choiceIds) => void act(() => setTypeAheadValueParents(value.id, choiceIds), value.id)}
 										wording={wording}
 									/>
 								)}
@@ -247,55 +249,54 @@ export function ReviewTypeAheadValuesPage() {
 }
 
 /**
- * The parent choice a dependent type-ahead's value is offered under, and a
- * control to offer it under another. A link is changed, never cleared, so the
- * control has no empty choice unless the value has no link yet (ADR-0146).
+ * The parent choices a dependent type-ahead's value is offered under, and a
+ * multi-select to add or remove them. A value is offered under at least one, so
+ * the last one ticked cannot be unticked, unless the value has none yet
+ * (ADR-0151).
  */
 function ParentLink({
+	valueId,
 	parent,
 	chosen,
 	onChoose,
 	onRelink,
 	wording,
 }: {
+	valueId: string
 	parent: NonNullable<TypeAheadValueView["parent"]>
-	chosen: string
-	onChoose: (choiceId: string) => void
-	onRelink: (choiceId: string) => void
+	chosen: string[]
+	onChoose: (choiceIds: string[]) => void
+	onRelink: (choiceIds: string[]) => void
 	wording: (choice: { labelEn: string | null; labelFr: string | null }) => string
 }) {
 	const { t, locale } = useLocale()
 	const question = locale === "fr-CA" ? parent.questionLabelFr : parent.questionLabelEn
-	const current = parent.choices.find((choice) => choice.id === parent.parentChoiceId)
+	const sorted = sortChoices(parent.choices, locale, wording)
+	const current = sorted.filter((choice) => parent.parentChoiceIds.includes(choice.id))
+	const unchanged = chosen.length === parent.parentChoiceIds.length && chosen.every((id) => parent.parentChoiceIds.includes(id))
 
 	return (
-		<div className="mt-3 flex flex-wrap items-center gap-2">
-			<p data-testid="type-ahead-value-parent" className="font-sans text-sm text-ink">
-				{current
-					? t("typeAheadValues.offeredUnder", { question, choice: wording(current) })
+		<div className="mt-3 flex flex-wrap items-end gap-2">
+			<p data-testid="type-ahead-value-parent" className="w-full font-sans text-sm text-ink">
+				{current.length > 0
+					? t("typeAheadValues.offeredUnder", { question, choice: current.map(wording).join(", ") })
 					: t("typeAheadValues.offeredUnderNothing", { question })}
 			</p>
-			<select
-				aria-label={t("typeAheadValues.relinkTo", { question })}
-				data-testid="type-ahead-value-parent-choice"
-				className="touch-target rounded border border-rule bg-surface-2 px-3 font-sans text-ink"
-				value={chosen}
-				onChange={(event) => onChoose(event.target.value)}
-			>
-				{!current && (
-					<option value="" disabled>
-						{t("typeAheadValues.relinkTo", { question })}
-					</option>
-				)}
-				{sortChoices(parent.choices, locale, wording).map((choice) => (
-					<option key={choice.id} value={choice.id}>
-						{wording(choice)}
-					</option>
-				))}
-			</select>
+			<div className="min-w-64" data-testid="type-ahead-value-parent-choice">
+				<MultiSelectPicker
+					fieldId={`type-ahead-value-parent-${valueId}`}
+					label={t("typeAheadValues.relinkTo", { question })}
+					groups={[sorted.map((choice) => ({ key: choice.id, label: wording(choice) }))]}
+					values={chosen}
+					placeholder={t("typeAheadValues.relinkNone")}
+					describedBy={undefined}
+					locked={chosen.length === 1 ? chosen : []}
+					onToggle={(id) => onChoose(chosen.includes(id) ? chosen.filter((ticked) => ticked !== id) : [...chosen, id])}
+				/>
+			</div>
 			<button
 				type="button"
-				disabled={!chosen || chosen === parent.parentChoiceId}
+				disabled={chosen.length === 0 || unchanged}
 				className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-ink disabled:opacity-50"
 				onClick={() => onRelink(chosen)}
 			>

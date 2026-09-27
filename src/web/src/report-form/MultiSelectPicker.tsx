@@ -14,6 +14,8 @@ export interface MultiSelectPickerProps {
 	placeholder: string
 	describedBy: string | undefined
 	onToggle: (key: string) => void
+	/** Options shown but not toggled: a review page keeps a value's last parent choice ticked (ADR-0151). */
+	locked?: string[]
 }
 
 /**
@@ -23,7 +25,7 @@ export interface MultiSelectPickerProps {
  * are checked. Escape closes it and returns focus to
  * the trigger; pressing outside or tabbing away closes it too.
  */
-export function MultiSelectPicker({ fieldId, label, groups, values, placeholder, describedBy, onToggle }: MultiSelectPickerProps) {
+export function MultiSelectPicker({ fieldId, label, groups, values, placeholder, describedBy, onToggle, locked = [] }: MultiSelectPickerProps) {
 	const [open, setOpen] = useState(false)
 	const containerRef = useRef<HTMLDivElement>(null)
 	const triggerRef = useRef<HTMLButtonElement>(null)
@@ -100,7 +102,12 @@ export function MultiSelectPicker({ fieldId, label, groups, values, placeholder,
 										<label
 											className={`${choiceRowClassName} gap-2 hover:bg-surface-4 hover:shadow-[inset_4px_0_0_var(--color-focus)] has-[:focus-visible]:bg-surface-4 has-[:focus-visible]:shadow-[inset_4px_0_0_var(--color-focus)]`}
 										>
-											<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
+											<input
+												type="checkbox"
+												checked={values.includes(option.key)}
+												disabled={locked.includes(option.key)}
+												onChange={() => onToggle(option.key)}
+											/>
 											{option.label}
 										</label>
 									</li>

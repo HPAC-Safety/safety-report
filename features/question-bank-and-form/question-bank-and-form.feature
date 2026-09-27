@@ -1649,6 +1649,15 @@ Scenario: The form offers one choice under each of its parent answers and keeps 
   When the browser saved the report and they come back and continue it
   Then "Make" holds "Ozone" and "Model" holds "Other"
 
+@REQ-QB-227
+@ui
+Scenario: Words typed into a dependent type-ahead are kept and sent as typed, even when they read as a choice under another answer
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  When a reporter answers "Make" with "Ozone" and types "Mentor 7", which is offered only under "Niviuk"
+  Then "Model" still holds "Mentor 7"
+  When they press Next, consent, and send the report
+  Then "Model" is sent as the words "Mentor 7"
+
 @REQ-QB-224
 @ui
 Scenario: The type-ahead review page shows every parent of a dependent value and edits them

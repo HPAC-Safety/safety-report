@@ -394,6 +394,7 @@
     "offeredUnder": "Proposé dans le cadre de «{choice} » pour «{question} »",
     "offeredUnderNothing": "N’a pas encore été proposé dans une réponse à la question «{question} »",
     "relinkTo": "Offre formulée dans une réponse à la question «{question} »",
+    "relinkNone": "#Choose one or more…",
     "relink": "Modifier"
   },
   "reports": {

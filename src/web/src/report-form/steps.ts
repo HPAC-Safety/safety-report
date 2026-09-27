@@ -112,7 +112,7 @@ export function choiceScope(
 	if (answer?.kind !== "value" || !answer.value.trim()) return { kind: "waiting", parent }
 
 	const chosen = answeredChoiceId(parent, answer)
-	return { kind: "under", parent, options: chosen ? question.options.filter((option) => option.parentChoiceId === chosen) : [] }
+	return { kind: "under", parent, options: chosen ? question.options.filter((option) => option.parentChoiceIds?.includes(chosen) ?? false) : [] }
 }
 
 /** The question as the form offers it now: with only the choices its parent's answer allows. */
@@ -143,9 +143,11 @@ export function cannotBeAnswered(
 
 /**
  * The answers with every child answer its parent's answer no longer allows
- * removed: a choice not offered under it, typed words reading as such a
- * choice, or anything at all while the parent is unanswered. Words typed that
- * name no choice stay (ADR-0146).
+ * removed: a choice not offered under it, or anything at all while the parent
+ * is unanswered. A choice offered under several parent answers stays while the
+ * new answer is one of them. Words typed into a type-ahead stay: the server
+ * matches them against the whole question, and offers a match under the
+ * parent's answer from then on (ADR-0151).
  */
 export function consistentAnswers(answers: AnswerMap, questionsById: Map<string, PublicQuestionView>): AnswerMap {
 	let consistent = answers
@@ -165,7 +167,7 @@ export function consistentAnswers(answers: AnswerMap, questionsById: Map<string,
 				? offers(optionFor(question, answer.value)?.id)
 				: answer.choice
 					? offers(answer.choice)
-					: offers(optionTyped({ ...question, options: offered }, answer.value)?.id) || !optionTyped(question, answer.value))
+					: true)
 
 		if (!keep) {
 			consistent = { ...consistent }

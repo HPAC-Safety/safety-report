@@ -1,7 +1,7 @@
 import { describe, it, before, after } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -106,5 +106,86 @@ describe('tools/ci-local.sh without a gh login', () => {
 		const result = run('--allow-gh-token')
 		assert.equal(result.status, 2)
 		assert.match(result.stderr, /unknown option: --allow-gh-token/)
+	})
+})
+
+// On GitHub two bots commit onto a same-repository pull request before its
+// verdict settles: the regenerated traceability matrix and the French. Neither
+// runs locally, so ci-local stands in for both without changing what GitHub
+// runs (ADR-0145, #546).
+describe('what the bots would commit', () => {
+	const ci = readFileSync(join(REPO, '.github/workflows/ci.yml'), 'utf8')
+	const step = ci.match(/- name: Locale translation is in step with English\n\s+run: (.*)\n/)?.[1] ?? ''
+
+	it('the i18n check tolerates pending French only when ACT is set', () => {
+		assert.equal(step, 'node tools/translate-locale.mjs --check --locales locales ${ACT:+--allow-pending-translation}')
+	})
+
+	describe('running that step against French still pending as a # stub', () => {
+		let dir
+
+		before(() => {
+			dir = mkdtempSync(join(tmpdir(), 'ci-local-i18n-'))
+			mkdirSync(join(dir, 'locales'))
+			for (const file of readdirSync(join(REPO, 'locales'))) {
+				copyFileSync(join(REPO, 'locales', file), join(dir, 'locales', file))
+			}
+			symlinkSync(join(REPO, 'tools'), join(dir, 'tools'))
+			// One French value turned back into the stub the pre-commit hook
+			// writes for a new English key.
+			const french = JSON.parse(readFileSync(join(dir, 'locales/fr-CA.json'), 'utf8'))
+			const stub = (node) => {
+				for (const [key, value] of Object.entries(node)) {
+					if (typeof value === 'string') {
+						node[key] = `#${value}`
+						return true
+					}
+					if (value && typeof value === 'object' && stub(value)) return true
+				}
+				return false
+			}
+			assert.ok(stub(french))
+			writeFileSync(join(dir, 'locales/fr-CA.json'), `${JSON.stringify(french, null, 2)}\n`)
+		})
+
+		after(() => rmSync(dir, { recursive: true, force: true }))
+
+		const runStep = (env) =>
+			spawnSync('sh', ['-c', step], { cwd: dir, encoding: 'utf8', env: { PATH: process.env.PATH, ...env } })
+
+		it('fails on GitHub, where ACT is unset', () => {
+			const result = runStep({})
+			assert.equal(result.status, 1)
+			assert.match(result.stderr, /still a local # stub/)
+		})
+
+		it('passes under act, reporting the stub as a notice', () => {
+			const result = runStep({ ACT: 'true' })
+			assert.equal(result.status, 0, result.stderr)
+			assert.match(result.stdout, /::notice::.*still a local # stub/)
+		})
+	})
+
+	it('ci-local regenerates the matrix in the clone and commits it there', () => {
+		assert.match(code, /diff --quiet "\$BASE_SHA" HEAD -- tools\/traceability\.mjs/)
+		assert.match(code, /cd "\$WORK\/repo" && node tools\/traceability\.mjs/)
+		assert.match(code, /commit -q --no-verify -m "Regenerate the traceability matrix[^"]*"\s*\\\s*-- docs\/traceability\.md/)
+		assert.match(code, /update-ref "refs\/remotes\/origin\/\$BRANCH" "\$HEAD_SHA"/)
+	})
+
+	it('regenerates before the event is written, so head.sha is the regenerated commit', () => {
+		assert.ok(code.indexOf('node tools/traceability.mjs') < code.indexOf('HEAD_SHA="$HEAD_SHA"'))
+	})
+})
+
+// vstest copies each project's report into a per-run directory named to the
+// second as well as its GUID attachment directory; two projects finishing in
+// the same second made the merge read 11 files instead of 12 (#546).
+describe('the coverage merge', () => {
+	const ci = readFileSync(join(REPO, '.github/workflows/ci.yml'), 'utf8')
+
+	it('reads only the per-project attachment copies', () => {
+		assert.match(ci, /"-reports:\.\/artifacts\/coverage\/\*\/coverage\.cobertura\.xml;/)
+		assert.doesNotMatch(ci, /-reports:\.\/artifacts\/coverage\/\*\*\/coverage\.cobertura\.xml/)
 	})
 })

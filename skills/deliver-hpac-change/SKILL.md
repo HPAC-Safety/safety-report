@@ -131,6 +131,10 @@ names and step numbers.
    - No token: act gets none. The script downloads main's coverage baseline
      on the host with the `gh` login; without one, a run that includes
      `coverage` exits 2 ("run gh auth login").
+   - The bots' commits: it regenerates and commits the traceability matrix in
+     its own clone, and under act `i18n` accepts French still pending as a `#`
+     stub. A scenario change or a new English key passes locally as it will
+     after the bots run; never hand-write French to pass it.
    - One job: `--job <id>`, repeatable (a body edit: `--job linked-issue
      --job feature-coverage`).
    - Exit 0 passed, 1 a job failed (or coverage lost a per-project report),

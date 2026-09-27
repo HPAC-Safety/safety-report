@@ -363,10 +363,17 @@ jobs:
 
       # ReportGenerator merges every Cobertura and lcov file it finds into one
       # report, so the JS half needs no wiring here beyond producing lcov.
+      # Only the attachment copies, one per test project in a GUID directory
+      # directly under the results directory, are read. vstest also copies each
+      # report into a per-run <machine>_<timestamp>/In/ directory named to the
+      # second; two projects finishing in the same second share it, and the
+      # second copy is renamed coverage.cobertura[1].xml, which no glob matched.
+      # The count read then varied between 11 and 12 with identical coverage,
+      # because every In/ copy duplicates an attachment (#546).
       - name: Merge into one report
         run: >
           dotnet tool run reportgenerator
-          "-reports:./artifacts/coverage/**/coverage.cobertura.xml;./artifacts/coverage/**/lcov.info"
+          "-reports:./artifacts/coverage/*/coverage.cobertura.xml;./artifacts/coverage/**/lcov.info"
           "-targetdir:./artifacts/report"
           "-reporttypes:Cobertura;MarkdownSummaryGithub;HtmlInline"
 
@@ -524,12 +531,10 @@ jobs:
           for f in $(find ./artifacts/coverage -name coverage.cobertura.xml | sort); do
             echo "$f: $(grep -o '<package name="[^"]*"' "$f" | sed 's/.*name="//; s/"$//' | sort | tr '\n' ' ')"
           done
-          # vstest leaves each project's report twice: in a per-run
-          # <machine>_<timestamp>/In/ directory, and as an attachment copy in a
-          # GUID directory. The copies, deduplicated by content, are the
-          # distinct per-project reports; fewer than the test projects means
-          # one was lost (two runs named in the same second share a
-          # directory).
+          # The attachment copies, one per project in a GUID directory, are
+          # what the merge above reads. Deduplicated by content, they are the
+          # distinct per-project reports; fewer than the test projects means a
+          # suite's coverage was lost.
           echo "ci-local:reports=$(find ./artifacts/coverage -mindepth 2 -maxdepth 2 -name coverage.cobertura.xml -exec sha256sum {} + | cut -d' ' -f1 | sort -u | wc -l)"
           echo "ci-local:coverage:end"
 
@@ -777,5 +782,12 @@ jobs:
       #
       # No provider configuration is passed into this step, on purpose. There is
       # nothing here for it to use.
+      #
+      # Under act (tools/ci-local.sh) the check takes the pre-commit hook's
+      # branch rule, --allow-pending-translation: French still pending as a
+      # local `#` stub, or English reworded since it was translated, is a
+      # notice. On GitHub i18n-translate.yml commits that French onto the
+      # branch before this passes, and nothing runs it locally. ACT is unset
+      # on GitHub, so the flag is never passed there (ADR-0145).
       - name: Locale translation is in step with English
-        run: node tools/translate-locale.mjs --check --locales locales
+        run: node tools/translate-locale.mjs --check --locales locales ${ACT:+--allow-pending-translation}

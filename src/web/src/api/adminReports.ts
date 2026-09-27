@@ -37,6 +37,8 @@ export interface ReportListItem {
 	language: string
 	consent: ReportConsent
 	isStuck: boolean
+	/** Sent back with every review command; a stale one is refused with 409 (ADR-0105). */
+	version: string
 }
 
 export interface ReportAnswerValue {
@@ -97,8 +99,6 @@ export interface ReportDetail extends ReportListItem {
 	attachments: ReportAttachment[]
 	/** Whether the reporter agreed to share photos and video; unanswered when they were never asked. */
 	mediaConsent: ReportConsent
-	/** Sent back with every review command; a stale one is refused with 409 (ADR-0105). */
-	version: string
 	unpublishNote: string | null
 	publishedAt: string | null
 }

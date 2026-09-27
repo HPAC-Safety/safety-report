@@ -528,6 +528,11 @@
       "confirm": "Supprimer le signalement",
       "keep": "Conserver le signalement"
     },
+    "row": {
+      "actions": "Mesures prises à la suite du signalement soumis à l’{at}",
+      "stale": "Un autre réviseur a modifié ce signalement depuis le chargement de la liste. Rien de ce que vous venez de faire n'a été enregistré.",
+      "reload": "Recharger la liste"
+    },
     "translate": {
       "label": "Traduire",
       "toFrench": "Traduire en français",

@@ -2657,6 +2657,24 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "reports.row.actions": {
+    "source_hash": "2b3eae1f96d82664e682dc2261a8c1a8a151b38ba6fac3e13fd41d7728cc037f",
+    "target_hash": "3d39c04cd8e3592b714682f1276b42e04b9664a90cc4c2f06dc8476f2c3908f5",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "reports.row.reload": {
+    "source_hash": "0953524e2307a0024fa8a9a6d8da43fbe4965790101d8c16239a24f70e9abf98",
+    "target_hash": "f1318698978276702045601be4a6c51d4a0ba603c03c17701b7060e790797b29",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "reports.row.stale": {
+    "source_hash": "23263047a5468457530692ceccb2e93d33db84a28ae422c96a85782dfeb47621",
+    "target_hash": "175679398f2c398287e63b4afbbc0d5295ec3cf927f7b84520c7703f36113df5",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "reports.stale.message": {
     "source_hash": "efeef67b645c6842f8c727e0ee6b7baa8f2938a71c404bb1be12e9e9c4e5412b",
     "target_hash": "e3530e7554cf59a8fe44a472264544630a0898a25a4666adc67967fd4d597a66",

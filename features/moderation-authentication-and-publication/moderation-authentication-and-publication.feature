@@ -310,6 +310,14 @@ Scenario: The admin report list shows every live report with its state
   And the soft-deleted report does not appear
   And no answer text or summary text appears in the list
 
+@REQ-MOD-119
+Scenario: A list row carries the version a review command sends back
+  Given reports exist in every workflow state
+  When a reviewer lists reports
+  Then each row carries the same version the report's detail view gives
+  And publishing an unpublished report with its row's version succeeds without opening the report
+  And no ViewedRawReport entry is written for that report
+
 @REQ-MOD-049
 Scenario: The Needs action filter shows pending, failed, and stuck reports
   Given reports exist in every workflow state
@@ -517,6 +525,56 @@ Scenario: Choosing a filter on Manage reports narrows the list
   And the safety officer chooses the "Published" filter
   Then only published reports are listed
   And the chosen filter stays in the address bar
+
+@REQ-MOD-120
+@ui
+Scenario Outline: Each row of Manage reports offers the quick actions its state allows
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  Then the <row> row offers <actions>
+
+Examples:
+  | row                 | actions           |
+  | pending             | Publish, Delete   |
+  | published           | Unpublish, Delete |
+  | unpublished         | Publish, Delete   |
+  | private-unpublished | Delete            |
+  | summary-failed      | Delete            |
+  | stuck               | Delete            |
+
+@REQ-MOD-121
+@ui
+Scenario: Publishing and unpublishing from the list updates the row in place
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer publishes the pending row
+  Then the pending row shows the "Published" badge and offers Unpublish
+  When the safety officer unpublishes the published row
+  Then the published row shows the "Unpublished" badge and offers Publish
+  And each row action sent the version its row was listed with
+
+@REQ-MOD-122
+@ui
+Scenario: Deleting from the list asks for confirmation first
+  Given a safety officer is signed in and reports exist in several states
+  When the safety officer opens Manage reports
+  And the safety officer chooses Delete on the pending row
+  Then a confirmation asks whether to delete it
+  When the safety officer keeps the report
+  Then the pending row is still listed and nothing was deleted
+  When the safety officer chooses Delete on the pending row
+  And the safety officer confirms
+  Then the pending row is no longer listed and it was deleted
+
+@REQ-MOD-123
+@ui
+Scenario: A stale row action tells the reviewer to reload the list
+  Given a safety officer is signed in and reports exist in several states
+  And another reviewer has changed the pending report since the list was loaded
+  When the safety officer opens Manage reports
+  And the safety officer publishes the pending row
+  Then a message says the report changed and offers to reload the list
+  And the pending row still shows the "Pending" badge
 
 @REQ-MOD-054
 @ui

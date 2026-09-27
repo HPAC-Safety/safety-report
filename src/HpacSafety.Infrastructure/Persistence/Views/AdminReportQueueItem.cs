@@ -30,4 +30,11 @@ public sealed class AdminReportQueueItem
 
 	/// <summary>Whether a reviewer has something to do: pending review, summary failed, or stuck.</summary>
 	public bool NeedsAction { get; private init; }
+
+	/// <summary>
+	///     The version a review command sends back, the same value the detail view
+	///     gives (<see cref="ConcurrencyToken.Of" />), so a row action needs no
+	///     audited detail read (ADR-0105).
+	/// </summary>
+	public string Version { get; private init; } = string.Empty;
 }

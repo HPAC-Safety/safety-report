@@ -92,6 +92,30 @@ view, and that read is audited as `ViewedRawReport`
 Attachments are listed by kind and state; opening one goes through its own
 audited view or download request (REQ-MOD-046).
 
+### Quick actions on each row (#568)
+
+Each row also carries icon buttons, so a reviewer can act without opening the
+report. Each has a name in both languages and a tooltip:
+
+| Row | Buttons |
+|---|---|
+| Pending, or Unpublished (consented) | Publish, Delete |
+| Published | Unpublish, Delete |
+| Any other | Delete |
+
+Publish and Unpublish run the same audited commands as the report view, and
+the row's badge changes in place. Unpublishing from a row carries no note;
+declining a Pending report with a note stays in the report view. Delete asks
+for confirmation first, with the report view's dialog, because nothing
+restores a deleted report (REQ-DOM-007).
+
+Each row carries the report's review version
+([ADR-0105](../../docs/decisions/ADR-0105-approving-a-consented-pair-publishes-it.md)),
+so a row action needs no detail read, and listing stays unaudited. A row
+action based on a stale list is refused with `409`, and the page offers to
+reload the list
+([REQ-MOD-119..123](moderation-authentication-and-publication.feature)).
+
 ## Pending counts on the Admin menu (#418)
 
 The Admin menu shows how much work is waiting, so a reviewer sees it without
@@ -284,6 +308,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Pagination, search, or sorting of the admin report list other than newest
   first. HPAC receives dozens of reports a year.
 - Showing answer or summary text in the admin report list itself.
+- Acting on several reports at once from the list, editing or writing the
+  summary pair from a row, or an unpublishing note from a row.
 - Re-running summarization from the review screen. A failed summary is
   written by hand.
 - Editing one language without the other in separate saves: the pair is

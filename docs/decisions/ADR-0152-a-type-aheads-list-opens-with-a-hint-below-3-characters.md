@@ -8,7 +8,7 @@ decision-makers: Chase Florell
 keywords: type-ahead, autocomplete, combobox, threshold, hint, caret, WAI-ARIA, report form, ADR-0140, ADR-0150
 ---
 
-# ADR-0212 — A type-ahead's list opens with a hint below 3 characters
+# ADR-0152 — A type-ahead's list opens with a hint below 3 characters
 
 ## Status
 

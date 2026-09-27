@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ChoiceOptions, choiceListClassName, choiceRowClassName, type ListChoice } from "./ChoiceList"
 
-/** A type-ahead shows no choices below this many typed characters, trimmed (ADR-0140, ADR-0212). */
+/** A type-ahead shows no choices below this many typed characters, trimmed (ADR-0140, ADR-0152). */
 export const TYPE_AHEAD_THRESHOLD = 3
 
 export interface TypeAheadChoice {
@@ -49,7 +49,7 @@ function folded(text: string, locale: string): string {
  *
  * Below three typed characters, trimmed, the open list shows a hint instead
  * of choices, so the field reads as a place to type rather than a dropdown to
- * pick from (ADR-0212). No option is active there, so Up, Down, and Enter do
+ * pick from (ADR-0152). No option is active there, so Up, Down, and Enter do
  * nothing.
  */
 export function TypeAheadField({

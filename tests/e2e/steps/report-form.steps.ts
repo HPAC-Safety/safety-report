@@ -645,7 +645,7 @@ When("a reporter using {word} opens that question", async ({ page }, language: s
 
 Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
 	// Reopening once the field already holds 3 or more characters shows every
-	// choice, unfiltered, same as before this rule (ADR-0212).
+	// choice, unfiltered, same as before this rule (ADR-0152).
 	const field = page.getByRole("combobox")
 	await field.fill("xxx")
 	await page.keyboard.press("Escape")
@@ -816,7 +816,7 @@ async function listedChoices(page: Page): Promise<string[]> {
 				// A type-ahead's open list only ever shows what matches the typed
 				// text; reopening once it already holds 3 or more characters
 				// shows every choice, unfiltered, same as before this rule
-				// (ADR-0212). A single-select's button always shows its full
+				// (ADR-0152). A single-select's button always shows its full
 				// list, so it skips this.
 				await combobox.fill("xxx")
 				await page.keyboard.press("Escape")
@@ -925,7 +925,7 @@ Then(
 		await expect(field).toHaveAttribute("aria-expanded", "false")
 		await expect(field).not.toHaveAttribute("list", /./)
 		await expect(page.locator("datalist")).toHaveCount(0)
-		// No caret drawn beside the field (ADR-0212).
+		// No caret drawn beside the field (ADR-0152).
 		await expect(page.getByRole("button", { name: "Show choices" })).toHaveCount(0)
 		await expect(page.locator("[data-caret]")).toHaveCount(0)
 		// Drawn like the form's other fields, in the design-system border.
@@ -951,7 +951,7 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 		"pressing Space": "Space",
 	}
 	if (opening === "pressing the caret") {
-		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0212).
+		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0152).
 		const box = (await field.boundingBox())!
 		await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
 	} else if (opening === "clicking the field") await field.click()

@@ -201,7 +201,7 @@ same in every browser (`REQ-QB-159`,
 [ADR-0140](../../docs/decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
 Unlike the single-select and the multi-select, it has **no caret**: it reads
 as a place to type, not a dropdown to pick from
-([ADR-0212](../../docs/decisions/ADR-0212-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
+([ADR-0152](../../docs/decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
 
 - **Opening.** Clicking the field, pressing Alt and the down arrow, or typing
   opens the list.
@@ -211,10 +211,10 @@ as a place to type, not a dropdown to pick from
   active there, so the up and down arrows and Enter do nothing. Reaching 3
   characters replaces the hint with the matching choices; deleting back below
   3 brings the hint back. This is announced to assistive technology through a
-  polite live status (`REQ-QB-159`, `REQ-QB-228`, `REQ-QB-229`,
-  [ADR-0212](../../docs/decisions/ADR-0212-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
+  polite live status (`REQ-QB-159`, `REQ-QB-229`, `REQ-QB-230`,
+  [ADR-0152](../../docs/decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
   A dependent type-ahead follows the same rule, on top of its own narrowing by
-  the parent's answer (`REQ-QB-230`, ADR-0146).
+  the parent's answer (`REQ-QB-231`, ADR-0146).
 - **Filtering.** At 3 or more characters, what the reporter typed narrows the
   list to the choices whose wording contains it anywhere, ignoring case and
   accents, in the reader's language (`REQ-QB-160`). The list keeps the order

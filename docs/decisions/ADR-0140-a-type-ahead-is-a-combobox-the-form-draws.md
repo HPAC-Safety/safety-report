@@ -22,7 +22,7 @@ Extended by
 the single-select and the multi-select picker draw the same list.
 
 Amended by
-[ADR-0212](ADR-0212-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)
+[ADR-0152](ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)
 on two points: a type-ahead draws no caret, and its list opens with a hint,
 not every choice, below 3 typed characters. Everything else below stands.
 
@@ -92,4 +92,4 @@ may add a missing value, which is then reviewed
 - [#516](https://github.com/HPAC-Safety/safety-report/issues/516).
 - [ADR-0136](ADR-0136-choices-are-listed-alphabetically-in-the-readers-language.md) — amended.
 - [ADR-0129](ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md) — a reporter-added value, unchanged.
-- [ADR-0212](ADR-0212-a-type-aheads-list-opens-with-a-hint-below-3-characters.md) — amends this ADR: no caret, and a hint below 3 typed characters.
+- [ADR-0152](ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md) — amends this ADR: no caret, and a hint below 3 typed characters.

@@ -1620,15 +1620,15 @@ A single-select answer can be cleared back to unanswered — *playwright-bdd, Co
 
 A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row — *playwright-bdd, Covered*
 
-### REQ-QB-228
+### REQ-QB-229
 
 Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint — *playwright-bdd, Covered*
 
-### REQ-QB-229
+### REQ-QB-230
 
 Below 3 characters, a type-ahead's arrow keys and Enter pick nothing — *playwright-bdd, Covered*
 
-### REQ-QB-230
+### REQ-QB-231
 
 A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do — *playwright-bdd, Covered*
 

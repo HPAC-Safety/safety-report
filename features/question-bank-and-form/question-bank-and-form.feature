@@ -1179,7 +1179,7 @@ Examples:
   | pressing Alt and the down arrow |
   | typing "o"                      |
 
-@REQ-QB-228
+@REQ-QB-229
 @ui
 Scenario: Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
@@ -1191,7 +1191,7 @@ Scenario: Typing 3 characters into a type-ahead reveals its matching choices, an
   When they press Backspace
   Then the list offers only the hint to type 3 or more letters
 
-@REQ-QB-229
+@REQ-QB-230
 @ui
 Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
@@ -1262,7 +1262,7 @@ Examples:
   | type-ahead    | typing "Launch site"  |
   | single-select | pressing the caret    |
 
-@REQ-QB-230
+@REQ-QB-231
 @ui
 Scenario: A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do
   Given the type-ahead "Model" question's choices depend on the single-select "Make" question

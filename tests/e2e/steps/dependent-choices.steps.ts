@@ -330,7 +330,7 @@ function modelField(page: Page) {
 
 /**
  * The choices currently offered under the parent's answer. A type-ahead
- * shows no choices below 3 typed characters (ADR-0212), so each candidate's
+ * shows no choices below 3 typed characters (ADR-0152), so each candidate's
  * own label is typed in turn and checked for a match, rather than opening the
  * list once to read every row.
  */
@@ -346,10 +346,15 @@ async function modelOffers(page: Page, expected: string[]): Promise<void> {
 			await page.keyboard.press("Escape")
 		}
 		for (const label of MODELS.map((model) => model.labelEn).filter((label) => !expected.includes(label))) {
-			// A partial, not the exact wording: typing another choice's exact
-			// label is itself matched to that choice by wording (REQ-QB-171) and,
-			// being one the parent's answer does not offer, is cleared on its own
-			// (ADR-0146) — a different rule from the one this checks.
+			// #558 / REQ-QB-227 workaround: typing another choice's exact wording
+			// is matched to that choice (REQ-QB-171), and `consistentAnswers`
+			// currently clears ANY answer matched to a choice the parent's answer
+			// does not offer — even free text that only happens to spell a
+			// foreign choice's wording, which REQ-QB-227 (from #558/#562) fixes to
+			// keep as typed words instead. Until #562 merges, a partial (not the
+			// exact) wording avoids tripping that clear so this only tests what it
+			// means to: the list shows no match. Remove this workaround, and type
+			// the exact label instead, once #562 lands.
 			const partial = label.slice(0, Math.max(3, label.length - 1))
 			await field.click()
 			await field.fill(partial)
@@ -441,7 +446,7 @@ When("they change {string} to {string}", async ({ page }, _parent: string, make:
 	await answerMake(page, make)
 })
 
-// ---- A dependent type-ahead's own hint and threshold (REQ-QB-230, ADR-0212) ----
+// ---- A dependent type-ahead's own hint and threshold (REQ-QB-231, ADR-0152) ----
 
 When("they open {string}'s list by clicking the field", async ({ page }, _child: string) => {
 	await modelField(page).click()

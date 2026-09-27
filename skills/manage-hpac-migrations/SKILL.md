@@ -29,8 +29,9 @@ plus:
    holding application data, no `ALTER` that loses a value
    ([ADR-0040](../../docs/decisions/ADR-0040-migrate-canonical-domain-and-persistence.md)).
    - Retirement is a `deleted timestamptz` stamp. Every new table gets that
-     column and the default live-row filter — except `question_choices`, which
-     skips the filter because its aggregate reads removed rows (ADR-0095).
+     column and the default live-row filter — except `question_choices` and
+     `question_choice_parents`, which skip the filter because their aggregate
+     reads removed rows (ADR-0095, ADR-0151).
    - A widening cast that loses nothing (`char(11)` → `varchar(256)`) is not
      destructive.
    - The carved exceptions (`AGENTS.md` invariant 8), each argued in its own

@@ -43,8 +43,9 @@ where they differ.
 
 - `deleted timestamptz` and a default filter on every table except append-only
   `audit_log` and hard-deleted `pending_import_logic` (ADR-0077).
-  `question_choices` has the column but no default filter, because its
-  aggregate reads removed rows (ADR-0095).
+  `question_choices` and `question_choice_parents` have the column but no
+  default filter, because their aggregate reads removed rows (ADR-0095,
+  ADR-0151).
 - Cascade soft deletion explicitly, with one timestamp.
 - Reference checks for question deletion include answers beneath deleted
   reports.

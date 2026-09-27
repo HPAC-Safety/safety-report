@@ -113,9 +113,11 @@ logic. The database remains authoritative after initial seeding.
 
 A single-select or type-ahead question's choices may **depend on** another
 single-select or type-ahead question, its *parent*: a paraglider's model
-depends on its make. Every live choice of the *child* then names exactly one
-parent choice, and the form offers only the choices named under the parent's
-answer (`REQ-QB-179`–`REQ-QB-203`,
+depends on its make. Every live choice of the *child* then names **one or
+more** parent choices, and the form offers it whenever the parent's answer is
+any one of them (`REQ-QB-179`–`REQ-QB-226`,
+[ADR-0151](../../docs/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md),
+which supersedes
 [ADR-0146](../../docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
 It is not a condition: a condition decides whether a question is shown, a
 dependency decides which of its choices are offered, and a question may be
@@ -127,48 +129,65 @@ both.
   page (`REQ-QB-180`, `REQ-QB-181`, `REQ-QB-206`). The manage page shows a
   refused reorder (`REQ-QB-205`).
 - **Links sit outside revisions.** The dependency is on the question and each
-  link on its choice, so setting, changing, or clearing either never revises or
-  forks a question (`REQ-QB-184`). A model sold under two makes is entered
-  twice, and a catch-all such as "Other" once under each make it applies to;
-  the same wording twice under one parent choice is refused (`REQ-QB-183`).
-- **The editor.** With a parent set, every choice row, a new one included, asks
-  for its parent choice, listed as the form lists the parent's choices. A save
-  with any choice unlinked is refused, naming the choices (`REQ-QB-182`,
-  `REQ-QB-196`). Clearing the parent keeps every link; they stop filtering
-  (`REQ-QB-185`).
+  link beside its choice, so setting, changing, or clearing either never
+  revises or forks a question (`REQ-QB-184`). A model sold under two makes, or
+  a catch-all such as "Other", is one choice offered under each make it
+  applies to. Wording is unique on the child, in either language, ignoring
+  case and whitespace (`REQ-QB-212`, `REQ-QB-213`). An unticked link is
+  stamped removed, never erased, and ticking it again restores it.
+- **The editor.** With a parent set, every choice row, a new one included, has
+  an "Offered under" multi-select of the parent's live choices, listed as the
+  form lists them. A save with any choice offered under nothing is refused,
+  naming the choices (`REQ-QB-212`, `REQ-QB-222`). Clearing the parent keeps
+  every link; they stop filtering (`REQ-QB-185`).
 - **Following the parent.** A replaced picker parent choice, a merged
   type-ahead parent value, and a forked parent question each pass their links
-  on at once, without revising the child (`REQ-QB-187`–`REQ-QB-190`). A parent
-  choice any live child choice is offered under cannot be removed; it is
-  replaced or merged instead (`REQ-QB-186`). A parent merge that would offer
-  one wording twice under one parent choice is refused (`REQ-QB-207`).
+  on at once, without revising the child (`REQ-QB-187`–`REQ-QB-190`). A link
+  passed onto a parent choice the child choice already names collapses into
+  one (`REQ-QB-215`). A parent choice is removed only while every child choice
+  under it keeps another live parent; its links then stay and filter nothing.
+  Otherwise the removal is refused, naming the child choices, and the parent
+  choice is replaced or merged instead (`REQ-QB-214`).
 - **The form.** The child is disabled until the parent is answered, then offers
-  only the choices under that answer. Changing the parent clears a child
-  answer naming a choice no longer offered; words typed that name no choice
-  stay (`REQ-QB-197`, `REQ-QB-198`). A disabled child never holds the reporter
-  back, even when required; nor does a single-select child with nothing under
-  the parent's answer, which says so. The form leaves such a child out of the
-  submission, and the API records nothing for it (`REQ-QB-201`, `REQ-QB-204`,
-  `REQ-SUB-114`). A polite live region tells a screen reader when the parent's
-  answer opens the child. A parent answered with a
-  new typed value leaves a type-ahead child nothing to pick and a value to type
-  (`REQ-QB-199`). A saved report restores both answers, dropping a child answer
-  no longer under the parent's (`REQ-QB-200`).
+  only the choices under that answer. Changing the parent keeps a child answer
+  whose choice is also under the new answer, and clears one that is not; words
+  typed that name no choice stay (`REQ-QB-197`, `REQ-QB-198`, `REQ-QB-223`). A
+  disabled child never holds the reporter back, even when required; nor does
+  a single-select child with nothing under the parent's answer, which says so.
+  The form leaves such a child out of the submission, and the API records
+  nothing for it (`REQ-QB-201`, `REQ-QB-204`, `REQ-SUB-114`). A polite live
+  region tells a screen reader when the parent's answer opens the child. A
+  parent answered with a new typed value leaves a type-ahead child nothing to
+  pick and a value to type (`REQ-QB-199`). A saved report restores both
+  answers, dropping a child answer no longer under the parent's
+  (`REQ-QB-200`, `REQ-QB-223`).
 - **A parent the form does not ask** — deactivated, or deleted rather than
   forked — filters nothing, as a condition whose parent is missing hides
   nothing, and the API does not check the link (`REQ-QB-203`).
 - **Reporter-added values.** A value typed into a dependent type-ahead is
-  matched only among the values under the parent's answer, and a new one is
-  offered under it, even when the parent's answer is itself a new value
-  (`REQ-QB-192`, `REQ-QB-193`). A Safety Officer or an Administrator changes a
-  value's link on the type-ahead review page, never clears it, and merges only
-  values under the same parent choice. A merged value is not relinked: it
-  reads as its target (`REQ-QB-194`, `REQ-QB-202`).
+  matched against the whole question, ignoring case and whitespace. A match
+  already under the parent's answer is named as it is (`REQ-QB-216`). A live
+  match under another answer gains a link to the parent's answer and is
+  flagged for review (`REQ-QB-217`); a merged match does the same through its
+  target (`REQ-QB-218`); a removed match comes back flagged and is not revived
+  (`REQ-QB-219`). A new value is offered under the parent's answer, even when
+  that answer is itself a new value (`REQ-QB-192`).
+- **Review.** A Safety Officer or an Administrator adds or removes a value's
+  parents on the type-ahead review page, never down to none. A merged value's
+  parents are not changed: it reads as its target (`REQ-QB-220`,
+  `REQ-QB-224`). Merging two values offers the survivor under every parent
+  either was under (`REQ-QB-221`).
 - **The API.** A submission naming a child choice not offered under the
   parent's answer, or answering the child while the parent is unanswered, is
-  refused by question key before anything is written (`REQ-SUB-113`). An
-  answer still names only its own choice; nothing about the parent is copied
-  into it.
+  refused by question key before anything is written (`REQ-SUB-113`,
+  `REQ-SUB-115`). An answer still names only its own choice; nothing about the
+  parent is copied into it.
+- **The migration** folds each old single link into the join table, then
+  merges a dependent question's live choices whose English and French wording
+  both match: the oldest survives under every parent the copies had, and each
+  other copy is retired into it without rewriting any answer. A pair matching
+  in one language only is left for an Administrator (`REQ-QB-225`,
+  `REQ-QB-226`).
 
 ## The type-ahead field
 
@@ -279,16 +298,16 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
   it ([ADR-0060](../../docs/decisions/ADR-0060-conditional-questions-depend-on-a-boolean-question.md),
   [ADR-0074](../../docs/decisions/ADR-0074-a-single-select-parent-may-enable-a-conditional-question.md)).
 - For choices that depend on another question
-  ([ADR-0146](../../docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)):
+  ([ADR-0151](../../docs/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)):
   - a multi-select parent or child;
   - chains deeper than one level (make → model → size);
-  - a child choice under more than one parent choice, or under none, shown
-    whatever the parent's answer. The one unlinked choice is a value a reporter
-    typed while the parent was off the form; it waits for a reviewer to link it;
-  - bulk linking: pasting a list, or linking many choices at once. An
-    Administrator links choices one at a time;
-  - Typeform import or export of a dependency
-    ([ADR-0077](../../docs/decisions/ADR-0077-typeform-json-import-and-export.md));
+  - a child choice under no parent choice, shown whatever the parent's answer.
+    A choice for every parent ticks every parent. The one unlinked choice is a
+    value a reporter typed while the parent was off the form; it waits for a
+    reviewer to link it;
+  - bulk linking: pasting a list, or ticking a parent across many rows at
+    once. An Administrator ticks each choice's parents on its own row;
+  - merging duplicates whose wording differs, in either language;
   - copying the parent's answer, or anything about it, into a child answer.
 - Machine translation on the submission path. Translation is administrator-
   initiated while authoring, or Worker-run off the submission path

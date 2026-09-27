@@ -1359,24 +1359,6 @@ Scenario: The parent comes before the child on the form
   When an Administrator moves "Model" before "Make"
   Then the new order is refused, naming both questions
 
-@REQ-QB-182
-Scenario: Every choice of a dependent question names one parent choice
-  Given a type-ahead question "Model" offers "Mentor 7" and "Rush 6"
-  When an Administrator makes its choices depend on the "Make" question, linking only "Mentor 7" to "Niviuk"
-  Then the save is refused, naming "Rush 6"
-  And nothing is saved
-  When they link "Mentor 7" to "Niviuk" and "Rush 6" to "Ozone" in the same save
-  Then the dependency is saved with both links
-  And adding a choice to "Model" without a parent choice is refused
-  And linking a choice to a choice of any question other than "Make" is refused
-
-@REQ-QB-183
-Scenario: The same wording is entered once for each parent choice it applies to
-  Given the "Model" question's choices depend on the "Make" question
-  When an Administrator adds "Other" linked to "Niviuk" and "Other" linked to "Ozone"
-  Then "Model" offers two "Other" choices, each with its own identifier and link
-  And adding a second "Other" linked to "Niviuk" is refused
-
 @REQ-QB-184
 Scenario: A dependency and its links sit outside revisions
   Given an answered "Make" question and an answered "Model" question
@@ -1392,19 +1374,6 @@ Scenario: Removing a question's parent keeps the links and stops filtering
   Then each "Model" choice keeps its link
   And the report form offers every "Model" choice, whatever "Make" is answered with
   And a choice added to "Model" needs no parent choice
-
-@REQ-QB-186
-Scenario Outline: A parent choice that live child choices link to cannot be removed
-  Given the "Model" question's choices depend on a <parent> "Make" question
-  And "Mentor 7" is linked to the "Niviuk" choice
-  When <who> removes "Niviuk"
-  Then the removal is refused, naming the "Model" question
-  And "Niviuk" is still offered
-
-Examples:
-  | parent        | who                                          |
-  | single_select | an Administrator saving the question         |
-  | autocomplete  | a Safety Officer on the type-ahead review page |
 
 @REQ-QB-187
 Scenario: A replaced picker parent choice passes its child links to the replacement
@@ -1431,7 +1400,7 @@ Scenario: A dependency follows its parent when the parent forks
   And "Model" gains no revision
 
 @REQ-QB-190
-Scenario: A forked dependent question copies every choice with its link
+Scenario: A forked dependent question copies every choice with its links
   Given the answered "Model" question's choices depend on the "Make" question
   And "Mentor 7" is linked to the "Niviuk" choice
   When an Administrator changes the "Model" question's wording
@@ -1443,7 +1412,7 @@ Scenario: The report form's questions name each dependency and each link
   Given the "Model" question's choices depend on the "Make" question
   When the report form loads today's questions
   Then the "Model" question names "Make" as the question its choices depend on
-  And each "Model" choice names the "Make" choice it is linked to
+  And each "Model" choice names every "Make" choice it is offered under
   And a question whose choices depend on nothing names no parent
 
 @REQ-QB-192
@@ -1458,23 +1427,6 @@ Examples:
   | its "Ozone" choice                            | "Ozone"                                   |
   | "Gin", a value "Make" does not offer          | the reporter-added "Make" value "Gin"     |
 
-@REQ-QB-193
-Scenario: A reporter's typed value in a dependent type-ahead matches only values under the parent's answer
-  Given the "Model" question offers "Other" linked to "Niviuk" and "Other" linked to "Ozone"
-  When a reporter answers "Make" with "Ozone" and types "other" for "Model"
-  Then the "Model" answer names the "Other" linked to "Ozone"
-  And "Model" gains no new value
-
-@REQ-QB-194
-Scenario: A reviewer changes a dependent type-ahead value's link, never clears it
-  Given a reporter added the "Model" value "Zeno 2", linked to "Ozone"
-  When a Safety Officer links "Zeno 2" to "Niviuk"
-  Then "Zeno 2" is linked to "Niviuk", and every answer naming it still names it
-  And clearing its link is refused
-  And linking it to a choice of any question other than "Make" is refused
-  And merging "Zeno 2" into a "Model" value linked to another "Make" choice is refused
-  And relinking a "Model" value that was merged into another is refused
-
 @REQ-QB-195
 @ui
 Scenario: An Administrator picks the question a question's choices depend on, and clears it
@@ -1485,16 +1437,6 @@ Scenario: An Administrator picks the question a question's choices depend on, an
   Then the save names "Make" as the question its choices depend on
   When they clear "Choices depend on" and save
   Then the save names no parent question and keeps every choice's link
-
-@REQ-QB-196
-@ui
-Scenario: Each choice of a dependent question asks for its parent choice
-  Given a signed-in Administrator opens the manage-questions page
-  When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
-  Then every choice row, a new one included, has a required parent-choice control listing "Niviuk", "Ozone", "Other"
-  And Save is refused while a choice has no parent choice, naming that choice
-  When they pick a parent choice for every row and save
-  Then the save sends each choice with the parent choice picked for it
 
 @REQ-QB-197
 @ui
@@ -1573,14 +1515,6 @@ Scenario: The parent comes before the child wherever grouping places them
   When an Administrator groups "Make" under a group question placed after "Model"
   Then the change is refused, naming both questions
 
-@REQ-QB-207
-Scenario: A parent merge that would offer one wording twice under one parent choice is refused
-  Given the "Model" question's choices depend on a type-ahead "Make" question
-  And "Model" offers "Other" under "Nivuik" and "Other" under "Niviuk"
-  When a Safety Officer tries to merge the parent value "Nivuik" into "Niviuk"
-  Then the merge is refused, naming "Model" and "Other"
-  And "Nivuik" is still offered
-
 @REQ-QB-203
 Scenario Outline: A parent the form does not ask filters nothing
   Given the "Model" question's choices depend on the "Make" question
@@ -1593,14 +1527,156 @@ Examples:
   | deactivates |
   | deletes     |
 
-@REQ-QB-202
+@REQ-QB-212
+Scenario: Every choice of a dependent question is offered under at least one parent choice
+  Given a type-ahead question "Model" offers "Mentor 7" and "Rush 6"
+  When an Administrator makes its choices depend on the "Make" question, offering only "Mentor 7" under "Niviuk"
+  Then the save is refused, naming "Rush 6"
+  And nothing is saved
+  When they offer "Mentor 7" under "Niviuk" and "Ozone", and "Rush 6" under "Ozone", in the same save
+  Then the dependency is saved, with "Mentor 7" under both and "Rush 6" under "Ozone"
+  And adding a choice to "Model" under no parent choice is refused
+  And offering a choice under a choice of any question other than "Make" is refused
+
+@REQ-QB-213
+Scenario Outline: One choice is offered under several parent choices, and its wording is unique on the question
+  Given the "Model" question's choices depend on the "Make" question
+  When an Administrator adds "Other" offered under "Niviuk" and "Ozone"
+  Then "Model" offers one "Other" choice, offered under both
+  And adding <wording> under any parent choice is refused, naming it
+
+Examples:
+  | wording                              |
+  | a second "Other"                     |
+  | " other " in English                 |
+  | a choice whose French reads "Autre"  |
+
+@REQ-QB-214
+Scenario Outline: A parent choice is removed only while every child choice under it keeps another parent
+  Given the "Model" question's choices depend on a <parent> "Make" question
+  And "Other" is offered under "Niviuk" and "Ozone", and "Mentor 7" under "Niviuk" only
+  When <who> removes "Niviuk"
+  Then the removal is refused, naming "Mentor 7" and not "Other"
+  When "Mentor 7" is also offered under "Ozone" and <who> removes "Niviuk" again
+  Then "Niviuk" is removed
+  And "Other" and "Mentor 7" keep their "Niviuk" links, which filter nothing
+
+Examples:
+  | parent        | who                                            |
+  | single_select | an Administrator saving the question           |
+  | autocomplete  | a Safety Officer on the type-ahead review page |
+
+@REQ-QB-215
+Scenario: Merging a parent value into one the child choice already names leaves one link
+  Given the "Model" question's choices depend on a type-ahead "Make" question
+  And "Other" is offered under "Nivuik" and "Niviuk"
+  When a Safety Officer merges the parent value "Nivuik" into "Niviuk"
+  Then "Other" is offered under "Niviuk" once
+  And its link to "Nivuik" is stamped removed, not erased
+
+@REQ-QB-216
+Scenario: A reporter's typed value in a dependent type-ahead names a value already offered under the parent's answer
+  Given the "Model" question offers "Other" under "Niviuk" and "Ozone"
+  When a reporter answers "Make" with "Ozone" and types " other " for "Model"
+  Then the "Model" answer names that "Other"
+  And "Model" gains no new value, and "Other" is not flagged for review
+
+@REQ-QB-217
+Scenario: A reporter's typed value matching a value under another parent answer links it and flags it
+  Given the "Model" question offers "Mentor 7" under "Niviuk" only
+  When a reporter answers "Make" with "Ozone" and types "mentor 7" for "Model"
+  Then the "Model" answer names "Mentor 7"
+  And "Model" gains no new value
+  And "Mentor 7" is offered under "Niviuk" and "Ozone", and is flagged for review
+
+@REQ-QB-218
+Scenario: A reporter's typed value matching a merged value names the value it was merged into
+  Given the "Model" value "Mentr 7" was merged into "Mentor 7", which is offered under "Niviuk" only
+  When a reporter answers "Make" with "Ozone" and types "Mentr 7" for "Model"
+  Then the "Model" answer names "Mentor 7"
+  And "Mentor 7" is offered under "Niviuk" and "Ozone", and is flagged for review
+
+@REQ-QB-219
+Scenario: A reporter's typed value matching a removed value brings it back flagged, not revived
+  Given the "Model" value "Zeno 1" was removed
+  When a reporter answers "Make" with "Ozone" and types "Zeno 1" for "Model"
+  Then the "Model" answer names "Zeno 1"
+  And "Zeno 1" is flagged for review and still removed
+
+@REQ-QB-220
+Scenario: A reviewer adds and removes a dependent type-ahead value's parents, never down to none
+  Given a reporter added the "Model" value "Zeno 2", offered under "Ozone"
+  When a Safety Officer offers "Zeno 2" under "Ozone" and "Niviuk"
+  Then "Zeno 2" is offered under both, and every answer naming it still names it
+  When they offer it under "Niviuk" only
+  Then its "Ozone" link is stamped removed, not erased
+  And offering it under no parent choice is refused
+  And offering it under a choice of any question other than "Make" is refused
+  And changing the parents of a "Model" value that was merged into another is refused
+
+@REQ-QB-221
+Scenario: Merging dependent type-ahead values offers the survivor under every parent either was under
+  Given the "Model" values "Zeno 2" under "Ozone" and "Zeno two" under "Niviuk"
+  When a Safety Officer merges "Zeno two" into "Zeno 2"
+  Then "Zeno 2" is offered under "Ozone" and "Niviuk"
+  And every answer naming "Zeno two" reads "Zeno 2", and none is rewritten
+
+@REQ-QB-222
 @ui
-Scenario: The type-ahead review page shows a dependent value's link and changes it
-  Given a signed-in Safety Officer reviews the reporter-added "Model" value "Zeno 2", linked to "Ozone"
-  Then the value shows that it is linked to "Ozone"
-  And its link control lists "Make"'s choices and offers no empty choice
-  When they link it to "Niviuk"
-  Then the page sends the new link
+Scenario Outline: Each choice of a dependent question picks the parent choices it is offered under
+  Given a signed-in Administrator using <language> opens the manage-questions page
+  When they make a type-ahead question's choices depend on a single-select question offering "Other" pinned last, and "Ozone" and "Niviuk" not pinned
+  Then every choice row, a new one included, has an "Offered under" multi-select listing "Niviuk", "Ozone", "Other"
+  And Save is refused while a choice is offered under nothing, naming that choice in <language>
+  When they tick "Niviuk" and "Ozone" for one choice and "Ozone" for every other, and save
+  Then the save sends each choice with every parent choice ticked for it
+
+Examples:
+  | language |
+  | English  |
+  | French   |
+
+@REQ-QB-223
+@ui
+Scenario: The form offers one choice under each of its parent answers and keeps it across them
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  And "Model" offers "Other" under "Niviuk" and "Ozone", "Mentor 7" under "Niviuk", and "Rush 6" under "Ozone"
+  When a reporter answers "Make" with "Niviuk"
+  Then "Model" offers "Mentor 7" and "Other"
+  When they pick "Other" and change "Make" to "Ozone"
+  Then "Model" still holds "Other" and offers "Other" and "Rush 6"
+  When the browser saved the report and they come back and continue it
+  Then "Make" holds "Ozone" and "Model" holds "Other"
+
+@REQ-QB-224
+@ui
+Scenario: The type-ahead review page shows every parent of a dependent value and edits them
+  Given a signed-in Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
+  Then the value shows that it is offered under "Ozone"
+  And its "Offered under" control lists "Make"'s choices
+  When they also tick "Niviuk"
+  Then the page sends "Ozone" and "Niviuk"
+  And the page does not let them untick the last parent choice
+
+@REQ-QB-225
+Scenario: The migration folds each link into the join table and merges identical duplicates
+  Given a database one migration short, whose dependent "Certification:" question offers "EN-A" to "EN-D" twice each, one copy under "Paraglider" and one under "Hang Glider", and "EN-CCC" once, under "Paraglider"
+  And reports answered "Certification:" with both copies of "EN-A"
+  And a question is conditional on the "Hang Glider" copy of "EN-B"
+  When the migration runs
+  Then "Certification:" offers one "EN-A" to "EN-D" each, the oldest copy, offered under "Paraglider" and "Hang Glider"
+  And each other copy is retired, replaced by the one that survived
+  And "EN-CCC" is offered under "Paraglider" only
+  And every answer still names the choice it named and reads the same wording
+  And the conditional question's condition follows the surviving "EN-B"
+  And the old parent column is gone
+
+@REQ-QB-226
+Scenario: The migration merges no pair whose wording matches in one language only
+  Given a database one migration short, whose dependent question offers "EN-A" / "EN-A" under "Paraglider" and "EN-A" / "EN-A (FR)" under "Hang Glider"
+  When the migration runs
+  Then both choices stay live, each under its own parent choice
+  And the question's next save is refused, naming "EN-A"
 
 @REQ-QB-104
 Scenario: A new installation asks for several attachments

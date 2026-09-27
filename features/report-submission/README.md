@@ -115,12 +115,14 @@ reporter-added value. No answer carries a choice's wording or code
 
 When a question's choices depend on another question on the form, the API
 checks each against the other's answer before writing anything:
-- a named choice must be offered under that answer;
+- a named choice must list that answer among the parent choices it is
+  offered under;
 - the question may be answered only once its parent is;
-- typed text matches, or becomes, a value offered under that answer.
+- typed text matches a value of the question, which is offered under that
+  answer from then on, or becomes a new value offered under it.
 
-Either refusal names both questions by key (`REQ-SUB-113`,
-[ADR-0146](../../docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
+Either refusal names both questions by key (`REQ-SUB-113`, `REQ-SUB-115`,
+[ADR-0151](../../docs/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)).
 
 Field names are camelCase on the wire (ASP.NET's default JSON casing), not
 the snake_case the Gherkin prose uses when it names them — the scenarios are

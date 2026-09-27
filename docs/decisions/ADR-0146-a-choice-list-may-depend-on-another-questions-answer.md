@@ -2,7 +2,7 @@
 title: A question's choices may depend on another question's answer
 description: A single-select or type-ahead question may take another single-select or type-ahead as its parent; each of its choices then names one parent choice, the form offers only those under the parent's answer, and the links live outside revisions and follow the parent through replace, merge, and fork when those happen.
 type: adr
-status: accepted
+status: superseded
 date: 2026-09-26
 decision-makers: Chase Florell
 keywords: choices, dependent choices, parent choice, type-ahead, single-select, question bank, revisions, fork, replace, merge, ADR-0095, ADR-0128, ADR-0129, ADR-0132
@@ -12,7 +12,15 @@ keywords: choices, dependent choices, parent choice, type-ahead, single-select, 
 
 ## Status
 
-Accepted. This ADR:
+Superseded by
+[ADR-0151](ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md):
+a dependent choice names one or more parent choices through a join table,
+wording is unique on the dependent question, a type-ahead merge unions parents,
+a parent choice is removable while every child it carries keeps another parent,
+and Typeform carries the dependency. The rest of this record still holds, as
+ADR-0151 restates it. The record below is history.
+
+When accepted, this ADR:
 
 - **amends**
   [ADR-0095](ADR-0095-a-question-owns-its-choices-outside-its-revisions.md):

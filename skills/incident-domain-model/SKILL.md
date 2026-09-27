@@ -43,6 +43,7 @@ stateDiagram-v2
 | `questions` | Stable question identity: key, role, system flag, deleted state. |
 | `question_revisions` | Complete, immutable bilingual revisions: wording, type, required, private, translatable, active, display order, dependency, grouping. Answers reference a revision, never the question row. |
 | `question_choices` | A question's own editable choices, outside its revisions. Editing never forks; a reporter-added type-ahead choice may hold one language until an Administrator supplies the other (ADR-0095). |
+| `question_choice_parents` | The parent choices a dependent question's choice is offered under, one stamped-not-erased row per pair (ADR-0151). |
 | `reports` | The submission. Only consent projects onto typed columns (see "The consents"); every other answer is in `report_answers`. `language` is the locale the reporter wrote in. |
 | `report_answers` | One row per answered value (a multi-select writes one row per chosen value), each referencing the exact revision answered. |
 | `report_files` | Blob keys, an `AttachmentKind`, and the file-upload answer they belong to. |
@@ -57,8 +58,9 @@ stateDiagram-v2
   foreign key. A report records nothing about the member who filed it.
 - Every table except `audit_log` and `pending_import_logic` (transient Typeform
   import notes, hard-deleted, ADR-0077) has `Deleted timestamptz` and a
-  default live-row query filter (ADR-0040). `question_choices` has the column
-  but no filter (ADR-0095).
+  default live-row query filter (ADR-0040). `question_choices` and
+  `question_choice_parents` have the column but no filter (ADR-0095,
+  ADR-0151).
 
 ## Language
 

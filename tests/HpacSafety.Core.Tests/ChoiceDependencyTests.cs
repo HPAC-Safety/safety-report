@@ -845,5 +845,7 @@ public class ChoiceDependencyTests
 		echoed.ShouldBe([niviuk, ozone], ignoreOrder: true);
 		Should.Throw<DomainRuleViolationException>(() =>
 			ChoiceDependencies.WithStandingLinks([make, model], make.Id, model.Choice("rush_6"), [niviuk, ozone]));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.ValueParents([make, model], model, mentor.Id, [niviuk]))
+			.Message.ShouldContain("at least one");
 	}
 }

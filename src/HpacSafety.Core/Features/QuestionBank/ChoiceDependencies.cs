@@ -241,8 +241,8 @@ public static class ChoiceDependencies
 
 	/// <summary>
 	///     The parent choices a reviewer's save offers one value under: those ticked,
-	///     at least one, plus any link to a parent value since removed, which the page
-	///     cannot show (ADR-0151).
+	///     at least one of them a live parent choice, plus any link to a parent value
+	///     since removed, which the page cannot show (ADR-0151).
 	/// </summary>
 	public static IReadOnlyList<TinyId> ValueParents(IReadOnlyCollection<Question> questions,
 													 Question child,
@@ -255,12 +255,17 @@ public static class ChoiceDependencies
 		var parentId = child.ChoicesDependOnQuestionId
 					   ?? throw new DomainRuleViolationException($"'{child.Key}' does not depend on another question, so its values have no parent choice.");
 
-		if (ticked.Count == 0)
+		var parents = WithStandingLinks(questions, parentId, child.AllChoices.FirstOrDefault(choice => choice.Id == choiceId), ticked);
+
+		// Only a live parent choice counts toward "at least one": a link to one
+		// since removed filters nothing, so it cannot be the value's only parent.
+		var parent = ParentOf(questions, parentId);
+		if (!ticked.Any(id => parent.OfferedChoice(id) is not null))
 		{
 			throw new DomainRuleViolationException("A value is offered under at least one choice of the parent question. Tick another before unticking the last.");
 		}
 
-		return WithStandingLinks(questions, parentId, child.AllChoices.FirstOrDefault(choice => choice.Id == choiceId), ticked);
+		return parents;
 	}
 
 	/// <summary>

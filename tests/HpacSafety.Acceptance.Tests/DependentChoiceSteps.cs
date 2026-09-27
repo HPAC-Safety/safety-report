@@ -594,6 +594,24 @@ public sealed class DependentChoiceSteps
 		ParentsOf(await View(_childName!), choice).ShouldBe(Sorted(live, removed));
 	}
 
+	[Then(@"a reviewer offering {string} under the removed {string} alone is refused, and {string} stays under {string}")]
+	public async Task ThenOnlyARemovedParentIsRefused(string choice,
+													  string removedChoice,
+													  string _,
+													  string liveChoice)
+	{
+		var removed = _ids[$"{removedChoice} (choice)"];
+		var live = ChoiceId(await View("Make"), liveChoice);
+		var before = ParentsOf(await View(_childName!), choice);
+
+		_response = await SetParents(choice, removed);
+		(await Refused()).ShouldContain("at least one");
+
+		var after = ParentsOf(await View(_childName!), choice);
+		after.ShouldBe(before);
+		after.ShouldContain(live);
+	}
+
 	// ---- REQ-QB-215: a re-pointed link collapses into the one the child has ----
 
 	[Given(@"{string} is offered under {string} and {string}")]

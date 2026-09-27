@@ -1563,6 +1563,7 @@ Scenario Outline: A parent choice is removed only while every child choice under
   And "Other" and "Mentor 7" keep their "Niviuk" links, which filter nothing
   And saving "Model" again, as the editor sends it, succeeds and keeps the "Niviuk" links
   And a reviewer offering "Other" under "Ozone" only succeeds and keeps its "Niviuk" link
+  And a reviewer offering "Other" under the removed "Niviuk" alone is refused, and "Other" stays under "Ozone"
 
 Examples:
   | parent        | who                                            |

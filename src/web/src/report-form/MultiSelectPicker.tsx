@@ -14,6 +14,12 @@ export interface MultiSelectPickerProps {
 	placeholder: string
 	describedBy: string | undefined
 	onToggle: (key: string) => void
+	/** Options shown but not toggled: a review page keeps a value's last parent choice ticked (ADR-0151). */
+	locked?: string[]
+	/** Why a locked option cannot be toggled, read by a screen reader on that option. */
+	lockedReason?: string
+	/** Marks the trigger invalid, as a choice row offered under nothing is (ADR-0151). */
+	invalid?: boolean
 }
 
 /**
@@ -23,13 +29,25 @@ export interface MultiSelectPickerProps {
  * are checked. Escape closes it and returns focus to
  * the trigger; pressing outside or tabbing away closes it too.
  */
-export function MultiSelectPicker({ fieldId, label, groups, values, placeholder, describedBy, onToggle }: MultiSelectPickerProps) {
+export function MultiSelectPicker({
+	fieldId,
+	label,
+	groups,
+	values,
+	placeholder,
+	describedBy,
+	onToggle,
+	locked = [],
+	lockedReason,
+	invalid = false,
+}: MultiSelectPickerProps) {
 	const [open, setOpen] = useState(false)
 	const containerRef = useRef<HTMLDivElement>(null)
 	const triggerRef = useRef<HTMLButtonElement>(null)
 	const labelId = `${fieldId}-label`
 	const summaryId = `${fieldId}-summary`
 	const panelId = `${fieldId}-options`
+	const lockedReasonId = `${fieldId}-locked-reason`
 
 	useEffect(() => {
 		if (!open) return
@@ -81,6 +99,7 @@ export function MultiSelectPicker({ fieldId, label, groups, values, placeholder,
 					aria-controls={panelId}
 					aria-labelledby={`${labelId} ${summaryId}`}
 					aria-describedby={describedBy}
+					aria-invalid={invalid || undefined}
 					onClick={() => setOpen((value) => !value)}
 					className="touch-target mt-1 flex w-full items-center justify-between gap-2 rounded border border-rule bg-surface px-3 py-2 text-left font-sans text-ink"
 				>
@@ -100,7 +119,13 @@ export function MultiSelectPicker({ fieldId, label, groups, values, placeholder,
 										<label
 											className={`${choiceRowClassName} gap-2 hover:bg-surface-4 hover:shadow-[inset_4px_0_0_var(--color-focus)] has-[:focus-visible]:bg-surface-4 has-[:focus-visible]:shadow-[inset_4px_0_0_var(--color-focus)]`}
 										>
-											<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
+											<input
+												type="checkbox"
+												checked={values.includes(option.key)}
+												disabled={locked.includes(option.key)}
+												aria-describedby={locked.includes(option.key) && lockedReason ? lockedReasonId : undefined}
+												onChange={() => onToggle(option.key)}
+											/>
 											{option.label}
 										</label>
 									</li>
@@ -108,6 +133,11 @@ export function MultiSelectPicker({ fieldId, label, groups, values, placeholder,
 							</Fragment>
 						))}
 					</ul>
+				)}
+				{lockedReason && (
+					<span id={lockedReasonId} className="sr-only">
+						{lockedReason}
+					</span>
 				)}
 			</div>
 		</div>

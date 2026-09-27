@@ -201,11 +201,13 @@ contributor who never invokes one is unaffected.
      [ADR-0132](docs/decisions/ADR-0132-a-condition-follows-its-parent-through-a-fork.md)).
    - **Dependent choices**: a single-select or type-ahead's choices may depend
      on an earlier single-select or type-ahead, one level deep. Each choice
-     names one parent choice, and the form offers only those under the
-     parent's answer. The dependency and the links sit outside revisions. A
-     replace, merge, or fork re-points them when it happens. A parent choice a
-     live choice is linked to is replaced or merged, never removed
-     ([ADR-0146](docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
+     names one or more parent choices, and the form offers it under any of
+     them. Its wording is unique on the question. The dependency and the links
+     sit outside revisions; an unticked link is stamped, never erased. A
+     replace, merge, or fork re-points links when it happens, and a merge
+     unions parents. A parent choice is removed only while every child choice
+     under it keeps another live parent
+     ([ADR-0151](docs/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)).
 2. **Nothing reaches the server before final submission — except
    attachments.**
    - Unfinished answers and shown revision IDs stay only in that browser, for

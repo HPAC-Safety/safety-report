@@ -33,3 +33,4 @@ issue open while an open issue has no row here or a row names a closed one
 | [#465 — Make the Terraform build staging and production, grouped as HPAC-Safety, with CloudFront routing /api to the API](https://github.com/HPAC-Safety/safety-report/issues/465) | Infrastructure | Open, phase 2. |
 | [#466 — Deploy by release: build once, deploy to staging, promote to production on approval](https://github.com/HPAC-Safety/safety-report/issues/466) | Infrastructure, CI | Open, phase 2. |
 | [#467 — Emit the operational metrics, alarm on them, and write the runbooks](https://github.com/HPAC-Safety/safety-report/issues/467) | Worker, infrastructure | Open, phase 2. |
+| [#561 — Show a type-ahead's choices only after 3 typed characters, with a hint to type your own](https://github.com/HPAC-Safety/safety-report/issues/561) | Web | Open. The report form's type-ahead lists nothing until three characters are typed, and says a value can be typed in. |

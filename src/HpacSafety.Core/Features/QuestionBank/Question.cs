@@ -107,14 +107,14 @@ public class Question
 
 	/// <summary>
 	///     The question whose answer decides which of this question's choices the form
-	///     offers, if any: each choice names one of that question's choices
-	///     (<see cref="QuestionChoice.ParentChoiceId" />). Distinct from
+	///     offers, if any: each choice names one or more of that question's choices
+	///     (<see cref="QuestionChoice.ParentChoiceIds" />). Distinct from
 	///     <see cref="DependsOnQuestionId" />, which decides whether this question is
 	///     shown at all. It lives on the question, not a revision, so setting,
 	///     changing, or clearing it never revises or forks either question. Whether
 	///     the named question may be a parent is checked by
 	///     <see cref="ChoiceDependencies" />, which can see the rest of the bank
-	///     (ADR-0146).
+	///     (ADR-0146, ADR-0151).
 	/// </summary>
 	public TinyId? ChoicesDependOnQuestionId { get; private set; }
 
@@ -655,10 +655,10 @@ public class Question
 				retired.ReplaceWith(saved, at);
 
 				// A replacement stands for the choice it retires, so it is offered
-				// under the same parent choice unless the save says otherwise.
-				if (retired.ParentChoiceId is { } inherited)
+				// under the same parent choices unless the save says otherwise.
+				foreach (var inherited in retired.ParentChoiceIds)
 				{
-					saved.LinkTo(inherited);
+					saved.OfferUnder(inherited);
 				}
 			}
 			else if (_choices.Find(choice => choice.Code == codes[i]) is not { } existing)
@@ -679,9 +679,9 @@ public class Question
 				saved = existing;
 			}
 
-			if (option.ParentChoiceId is { } parentChoiceId)
+			if (option.ParentChoiceIds is { } parentChoiceIds)
 			{
-				saved.LinkTo(parentChoiceId);
+				saved.OfferUnderOnly(parentChoiceIds, at);
 			}
 		}
 
@@ -691,12 +691,12 @@ public class Question
 
 	/// <summary>
 	///     Refuses a question whose choices depend on another's while any of its live
-	///     choices names no parent choice, naming each such choice — and one offering
-	///     the same wording twice under one parent choice, which a reporter could not
-	///     tell apart. The same wording under two parent choices is two choices: a
-	///     model sold under two makes is entered twice (ADR-0146). Whether each link
-	///     names a live choice of the parent is checked by
-	///     <see cref="ChoiceDependencies" />, which can see the parent.
+	///     choices is offered under no parent choice, naming each such choice — and
+	///     one offering the same wording twice, in either language, which a reporter
+	///     could not tell apart. One choice is offered under every parent choice it
+	///     applies to instead (ADR-0151). Whether each link names a live choice of the
+	///     parent is checked by <see cref="ChoiceDependencies" />, which can see the
+	///     parent.
 	/// </summary>
 	private void EnsureChoicesLinked()
 	{
@@ -705,23 +705,20 @@ public class Question
 			return;
 		}
 
-		var unlinked = Choices.Where(choice => choice.ParentChoiceId is null).ToList();
+		var unlinked = Choices.Where(choice => choice.ParentChoiceIds.Count == 0).ToList();
 
 		if (unlinked.Count > 0)
 		{
 			var wording = string.Join(", ", unlinked.Select(choice => $"'{choice.LabelEn ?? choice.LabelFr}'"));
 			throw new DomainRuleViolationException(
-				$"Every choice of '{Key}' needs the choice of its parent question it is offered under. Pick one for {wording}.");
+				$"Every choice of '{Key}' needs at least one choice of its parent question it is offered under. Pick one for {wording}.");
 		}
 
-		foreach (var siblings in Choices.GroupBy(choice => choice.ParentChoiceId))
+		if ((RepeatedLabel(Choices.Select(choice => choice.LabelEn))
+			 ?? RepeatedLabel(Choices.Select(choice => choice.LabelFr))) is { } repeated)
 		{
-			if ((RepeatedLabel(siblings.Select(choice => choice.LabelEn))
-				 ?? RepeatedLabel(siblings.Select(choice => choice.LabelFr))) is { } repeated)
-			{
-				throw new DomainRuleViolationException(
-					$"'{repeated}' is offered twice under the same parent choice. A reporter could not tell them apart.");
-			}
+			throw new DomainRuleViolationException(
+				$"'{repeated}' is offered twice on '{Key}'. A reporter could not tell them apart: offer the one choice under every parent choice it applies to instead.");
 		}
 	}
 
@@ -729,8 +726,8 @@ public class Question
 	{
 		return labels
 			.OfType<string>()
-			.GroupBy(label => label.Trim(), StringComparer.OrdinalIgnoreCase)
-			.FirstOrDefault(group => group.Count() > 1)?.Key;
+			.GroupBy(ChoiceWording.Normalize, StringComparer.Ordinal)
+			.FirstOrDefault(group => group.Key is not null && group.Count() > 1)?.First().Trim();
 	}
 
 	/// <summary>
@@ -807,9 +804,11 @@ public class Question
 	/// <param name="at">When the report was submitted.</param>
 	/// <param name="parentChoiceId">
 	///     The choice the parent question was answered with, when this question's
-	///     choices depend on another's. Only the values offered under it are
-	///     matched, and a new value is offered under it: a value typed under Ozone
-	///     is an Ozone model, even where a Niviuk model reads the same (ADR-0146).
+	///     choices depend on another's. Words are still matched against the whole
+	///     question, ignoring case and whitespace, since a dependent question offers
+	///     each wording once. A live match not yet offered under this choice is
+	///     offered under it from now on and flagged for review, as is a merged
+	///     match's target; a new value is offered under it (ADR-0151).
 	/// </param>
 	public QuestionChoice AddChoiceFromReporter(string value,
 												Locale locale,
@@ -826,30 +825,32 @@ public class Question
 		}
 
 		var typed = value.Trim();
-		var scope = parentChoiceId is null ? _choices : _choices.FindAll(choice => choice.ParentChoiceId == parentChoiceId);
+		var dependent = ChoicesDependOnQuestionId is not null;
 
-		if (scope.Find(choice => choice.Deleted is null && ReadsAs(choice, typed)) is { } worded)
+		if (_choices.Find(choice => choice.Deleted is null && Matches(choice, typed, dependent)) is { } worded)
 		{
-			return worded;
+			return OfferedUnderAnswer(worded, parentChoiceId);
 		}
 
 		var code = QuestionKey.Normalize(typed);
 
-		if ((scope.Find(choice => choice.MergedIntoChoiceId is not null && ReadsAs(choice, typed))
-			 ?? scope.Find(choice => choice.Deleted is not null && ReadsAs(choice, typed))
-			 ?? scope.Find(choice => choice.Code == code)) is { } existing)
+		if ((_choices.Find(choice => choice.MergedIntoChoiceId is not null && Matches(choice, typed, dependent))
+			 ?? _choices.Find(choice => choice.Deleted is not null && Matches(choice, typed, dependent))
+			 ?? _choices.Find(choice => choice.Code == code)) is { } existing)
 		{
 			if (existing.MergedIntoChoiceId is not null)
 			{
-				return MergeTargetOf(existing);
+				return OfferedUnderAnswer(MergeTargetOf(existing), parentChoiceId);
 			}
 
 			if (existing.Deleted is not null)
 			{
+				// A removed value comes back flagged, never revived (ADR-0129, ADR-0151).
 				existing.FlagForReview();
+				return existing;
 			}
 
-			return existing;
+			return OfferedUnderAnswer(existing, parentChoiceId);
 		}
 
 		var added = QuestionChoice.FromReporter(Id, UnusedCode(code), NextChoiceOrder(), typed, locale, at, parentChoiceId);
@@ -858,10 +859,37 @@ public class Question
 	}
 
 	/// <summary>
+	///     Whether typed words name <paramref name="choice" />: exactly, ignoring case,
+	///     in either language — and, on a dependent question, ignoring whitespace too,
+	///     as its wording is unique that way (ADR-0151).
+	/// </summary>
+	private static bool Matches(QuestionChoice choice,
+								string typed,
+								bool dependent)
+	{
+		return dependent ? ChoiceWording.ReadsAs(choice, typed) : ReadsAs(choice, typed);
+	}
+
+	/// <summary>
+	///     A live value a reporter's words named, offered under the parent's answer
+	///     from now on: when it was not, it gains the link and is flagged, so a
+	///     reviewer sees it and can untick the parent again (ADR-0151).
+	/// </summary>
+	private static QuestionChoice OfferedUnderAnswer(QuestionChoice value,
+													 TinyId? parentChoiceId)
+	{
+		if (parentChoiceId is { } parent && value.OfferUnder(parent))
+		{
+			value.FlagForReview();
+		}
+
+		return value;
+	}
+
+	/// <summary>
 	///     <paramref name="code" />, or — when this question already has a choice
 	///     recorded under it, removed ones included — the first of <c>code_2</c>,
-	///     <c>code_3</c>, … it has not. Only a dependent question offers one wording
-	///     twice, once under each parent choice (ADR-0146).
+	///     <c>code_3</c>, … it has not: two wordings can reduce to one code.
 	/// </summary>
 	public string UnusedCode(string code, IReadOnlyCollection<string>? alsoTaken = null)
 	{
@@ -906,11 +934,10 @@ public class Question
 
 		foreach (var label in new[] { labelEn, labelFr }.Where(label => !string.IsNullOrWhiteSpace(label)))
 		{
-			// Under a parent, one wording may be offered once per parent choice (ADR-0146).
+			// A dependent question offers each wording once, ignoring whitespace too (ADR-0151).
 			if (_choices.Exists(other => other.Id != value.Id
 										 && other.Deleted is null
-										 && (ChoicesDependOnQuestionId is null || other.ParentChoiceId == value.ParentChoiceId)
-										 && ReadsAs(other, label!.Trim())))
+										 && Matches(other, label!.Trim(), ChoicesDependOnQuestionId is not null)))
 			{
 				throw new DomainRuleViolationException(
 					$"'{Key}' already offers a value reading '{label!.Trim()}'. Merge the two instead.");
@@ -969,16 +996,13 @@ public class Question
 			throw new DomainRuleViolationException("A value can only be merged into one the form still offers.");
 		}
 
-		// Every answer naming the source would read a value offered under another
-		// parent choice — a Niviuk model's answers reading an Ozone model (ADR-0146).
-		if (ChoicesDependOnQuestionId is not null
-			&& source.ParentChoiceId != target.ParentChoiceId)
-		{
-			throw new DomainRuleViolationException(
-				"Those values are offered under different choices of the parent question. Link them to the same one first.");
-		}
-
 		source.MergeInto(target, at);
+
+		// The survivor is offered under every parent choice either was (ADR-0151).
+		foreach (var parentChoiceId in source.ParentChoiceIds)
+		{
+			target.OfferUnder(parentChoiceId);
+		}
 
 		foreach (var earlier in _choices.Where(choice => choice.MergedIntoChoiceId == source.Id))
 		{
@@ -990,16 +1014,19 @@ public class Question
 	}
 
 	/// <summary>
-	///     A reviewer offers a dependent type-ahead's value under another choice of its
-	///     parent question. The link is changed, never cleared, and every answer
-	///     naming the value still names it. Whether the new parent choice is a live
-	///     choice of the parent is checked by <see cref="ChoiceDependencies" /> (ADR-0146).
+	///     A reviewer sets the parent choices a dependent type-ahead's value is offered
+	///     under: one or more, never none. An unticked link is stamped, never erased,
+	///     and every answer naming the value still names it. Whether each parent
+	///     choice is a live choice of the parent is checked by
+	///     <see cref="ChoiceDependencies" /> (ADR-0151).
 	/// </summary>
-	public void RelinkValue(TinyId choiceId,
-							TinyId parentChoiceId,
-							string reviewer,
-							DateTimeOffset at)
+	public void OfferValueUnder(TinyId choiceId,
+								IReadOnlyCollection<TinyId> parentChoiceIds,
+								string reviewer,
+								DateTimeOffset at)
 	{
+		ArgumentNullException.ThrowIfNull(parentChoiceIds);
+
 		var value = ReviewedValue(choiceId);
 
 		if (ChoicesDependOnQuestionId is null)
@@ -1007,24 +1034,19 @@ public class Question
 			throw new DomainRuleViolationException($"'{Key}' does not depend on another question, so its values have no parent choice.");
 		}
 
-		// A merged value reads as its target and sits under the target's parent
-		// choice. A removed one may still be relinked: its answers keep naming it.
+		// A merged value reads as its target and is offered wherever the target is.
+		// A removed one may still be relinked: its answers keep naming it.
 		if (value.MergedIntoChoiceId is not null)
 		{
-			throw new DomainRuleViolationException("That value was merged into another. Relink the value it was merged into instead.");
+			throw new DomainRuleViolationException("That value was merged into another. Change the parents of the value it was merged into instead.");
 		}
 
-		if (value.Deleted is null
-			&& _choices.Exists(other => other.Id != value.Id
-										&& other.Deleted is null
-										&& other.ParentChoiceId == parentChoiceId
-										&& (ReadsAs(other, value.LabelEn ?? string.Empty) || ReadsAs(other, value.LabelFr ?? string.Empty))))
+		if (parentChoiceIds.Count == 0)
 		{
-			throw new DomainRuleViolationException(
-				$"'{Key}' already offers that wording under that parent choice. Merge the two instead.");
+			throw new DomainRuleViolationException("A value is offered under at least one choice of the parent question. Tick another before unticking the last.");
 		}
 
-		value.LinkTo(parentChoiceId);
+		value.OfferUnderOnly([.. parentChoiceIds.Distinct()], at);
 		value.MarkReviewed(reviewer, at);
 	}
 

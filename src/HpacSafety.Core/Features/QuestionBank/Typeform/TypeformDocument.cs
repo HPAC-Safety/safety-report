@@ -83,7 +83,10 @@ public sealed record TypeformFieldProperties(
 ///     — the only identifier stable across a round trip — never by an internal
 ///     database id. See ADR-0077. <see cref="AllowFutureDates" /> is absent from
 ///     a file exported before the setting existed, and then reads false
-///     (ADR-0138).
+///     (ADR-0138). <see cref="ChoicesDependOnKey" /> names the question whose
+///     answer decides which choices are offered, by key; each choice then names
+///     its parent choices in its own <see cref="TypeformChoice.Hpac" />. A file
+///     exported before this has neither (ADR-0151).
 /// </summary>
 public sealed record TypeformHpacExtension(
 	string Type,
@@ -92,15 +95,29 @@ public sealed record TypeformHpacExtension(
 	string? DependsOnKey,
 	string? DependsOnOptionCode,
 	string? GroupedUnderKey,
-	bool AllowFutureDates = false);
+	bool AllowFutureDates = false,
+	string? ChoicesDependOnKey = null);
 
 /// <summary>
 ///     One choice on a <c>multiple_choice</c> or <c>dropdown</c> field.
 ///     <see cref="Ref" />, not <see cref="Id" />, is what matches the same choice
 ///     across the English and French exports — <see cref="Id" /> differs per
-///     language.
+///     language. <see cref="Hpac" /> is written only for a choice of a question
+///     whose choices depend on another's (ADR-0151).
 /// </summary>
-public sealed record TypeformChoice(string Id, string Ref, string Label);
+public sealed record TypeformChoice(
+	string Id,
+	string Ref,
+	string Label,
+	[property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+	TypeformChoiceHpac? Hpac = null);
+
+/// <summary>
+///     What HPAC's schema has for one choice that plain Typeform JSON has no field
+///     for: the parent question's choices it is offered under, by their refs
+///     (ADR-0151).
+/// </summary>
+public sealed record TypeformChoiceHpac(IReadOnlyList<string> ParentRefs);
 
 /// <summary>
 ///     One field's branching rule — Typeform's own model is "jump to a

@@ -120,11 +120,12 @@ public sealed record PublicQuestionView(
 ///     <c>first</c>, <c>last</c>, or <c>none</c>: whether the form lists this choice
 ///     before or after the alphabetical rest, or among them (ADR-0136).
 /// </param>
-/// <param name="ParentChoiceId">
-///     The parent question's choice the form offers this one under, when its
-///     question's choices depend on another's (ADR-0146).
+/// <param name="ParentChoiceIds">
+///     The parent question's choices the form offers this one under, when its
+///     question's choices depend on another's: it is offered whenever the parent
+///     is answered with any of them (ADR-0151).
 /// </param>
-public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin, string? ParentChoiceId)
+public sealed record PublicOptionView(string Id, string Code, string LabelEn, string LabelFr, string? OnlyIn, string Pin, IReadOnlyList<string> ParentChoiceIds)
 {
 	/// <summary>Flattens one choice for the public form.</summary>
 	public static PublicOptionView Of(QuestionChoice choice)
@@ -138,6 +139,6 @@ public sealed record PublicOptionView(string Id, string Code, string LabelEn, st
 			choice.Label(Locale.FrCa),
 			choice.NeedsTranslation ? (choice.LabelEn is null ? Locale.FrCa : Locale.EnCa).Code : null,
 			EnumCode.Of(choice.Pin),
-			choice.ParentChoiceId?.Value);
+			[.. choice.ParentChoiceIds.Select(id => id.Value)]);
 	}
 }

@@ -370,7 +370,7 @@ public static partial class ReportSubmissionEndpoints
 				&& choiceIds.Count == 0
 				&& (parentChoiceId is null
 					|| (!revision.TakesReporterAdditions
-						&& !question.Choices.Any(choice => choice.ParentChoiceId == parentChoiceId))))
+						&& !question.Choices.Any(choice => choice.IsOfferedUnder(parentChoiceId.Value)))))
 			{
 				return null;
 			}
@@ -380,7 +380,7 @@ public static partial class ReportSubmissionEndpoints
 				return Problem($"'{question.Key}' can be answered only once '{parent.Key}' is.");
 			}
 
-			if (choiceIds.Exists(choiceId => question.OfferedChoice(choiceId) is { } choice && choice.ParentChoiceId != parentChoiceId))
+			if (choiceIds.Exists(choiceId => question.OfferedChoice(choiceId) is { } choice && !choice.IsOfferedUnder(parentChoiceId.Value)))
 			{
 				return Problem($"'{question.Key}' named a choice that is not offered for the answer to '{parent.Key}'.");
 			}

@@ -4,8 +4,8 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     The rules for a question whose choices depend on another question's answer
 ///     that no single question can check on its own, because they are about two
 ///     questions at once: the <i>parent</i>, whose answer decides what is offered,
-///     and the <i>child</i>, each of whose choices names one parent choice
-///     (ADR-0146).
+///     and the <i>child</i>, each of whose choices names one or more parent
+///     choices (ADR-0146, ADR-0151).
 /// </summary>
 /// <remarks>
 ///     <para>
@@ -19,8 +19,9 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///         its choices, so nothing here ever revises or forks either question. When
 ///         the parent choice a link names is replaced, merged, or copied by a fork,
 ///         <see cref="Follow" /> re-points the link at the choice that stands for it
-///         today, at the moment it happens. Readers then compare identifiers and
-///         never resolve anything.
+///         today, at the moment it happens: the old link is stamped and the choice
+///         offered under the new one, collapsing into a link it already has. Readers
+///         then compare identifiers and never resolve anything.
 ///     </para>
 ///     <para>
 ///         Like <see cref="QuestionDependencies" />, this is a static rule-checker over
@@ -164,9 +165,11 @@ public static class ChoiceDependencies
 	}
 
 	/// <summary>
-	///     Checks that every live choice of a dependent <paramref name="child" /> names
-	///     a live choice of its parent — never another question's — naming the first
-	///     that does not. A question whose choices depend on nothing is not checked.
+	///     Checks that every live choice of a dependent <paramref name="child" /> is
+	///     offered under at least one live choice of its parent, and that no live link
+	///     names another question's choice, naming the first choice that fails. A link
+	///     to a parent choice since removed may stay: it filters nothing (ADR-0151). A
+	///     question whose choices depend on nothing is not checked.
 	/// </summary>
 	public static void EnsureLinksAllowed(IReadOnlyCollection<Question> questions,
 										  Question child)
@@ -179,47 +182,100 @@ public static class ChoiceDependencies
 			return;
 		}
 
-		var parent = questions.FirstOrDefault(question => question.Id == parentId && question.Deleted is null)
-					 ?? throw new DomainRuleViolationException(
-						 "That question no longer exists, so no question's choices can depend on it.");
+		var parent = ParentOf(questions, parentId);
 
-		if (child.Choices.FirstOrDefault(choice => choice.ParentChoiceId is not { } linked || parent.OfferedChoice(linked) is null) is { } stray)
+		if (child.Choices.FirstOrDefault(choice => !LinksAllowed(parent, choice)) is { } stray)
 		{
 			throw new DomainRuleViolationException(
-				$"'{stray.LabelEn ?? stray.LabelFr}' must be offered under a choice '{parent.CurrentRevision.LabelEn}' offers.");
+				$"'{stray.LabelEn ?? stray.LabelFr}' must be offered under at least one choice '{parent.CurrentRevision.LabelEn}' offers, and under no other question's choice.");
 		}
 	}
 
 	/// <summary>
-	///     Checks one value a reviewer relinked: it names a live choice of its
-	///     question's parent. Other values are not judged by it (ADR-0146).
+	///     Checks the parent choices a save ticks: each is a live choice of the parent
+	///     question <paramref name="parentId" />, never a removed one or another
+	///     question's (ADR-0151).
 	/// </summary>
-	public static void EnsureLinkAllowed(IReadOnlyCollection<Question> questions,
-										 Question child,
-										 TinyId choiceId)
+	public static void EnsureOfferable(IReadOnlyCollection<Question> questions,
+									   TinyId parentId,
+									   IEnumerable<TinyId> parentChoiceIds)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
-		ArgumentNullException.ThrowIfNull(child);
+		ArgumentNullException.ThrowIfNull(parentChoiceIds);
 
-		var parent = questions.FirstOrDefault(question => question.Id == child.ChoicesDependOnQuestionId && question.Deleted is null)
-					 ?? throw new DomainRuleViolationException(
-						 "That question no longer exists, so no question's choices can depend on it.");
-		var value = child.AllChoices.First(choice => choice.Id == choiceId);
+		var parent = ParentOf(questions, parentId);
 
-		if (value.ParentChoiceId is not { } linked || parent.OfferedChoice(linked) is null)
+		if (parentChoiceIds.Any(id => parent.OfferedChoice(id) is null))
 		{
 			throw new DomainRuleViolationException(
-				$"'{value.LabelEn ?? value.LabelFr}' must be offered under a choice '{parent.CurrentRevision.LabelEn}' offers.");
+				$"A choice can be offered only under a choice '{parent.CurrentRevision.LabelEn}' offers.");
 		}
+	}
+
+	/// <summary>
+	///     The parent choices a save offers <paramref name="existing" /> under: the ones
+	///     it ticks, each a live choice of the parent unless the choice already names
+	///     it, and every link it already has to a parent choice since removed. A
+	///     control lists only the parent's live choices, so it can neither show nor
+	///     untick such a link; it stays, and filters nothing (ADR-0151).
+	/// </summary>
+	/// <param name="questions">Every live question.</param>
+	/// <param name="parentId">The question the choices depend on.</param>
+	/// <param name="existing">The choice being saved, or null for a new one.</param>
+	/// <param name="ticked">The parent choices the save ticks.</param>
+	public static IReadOnlyList<TinyId> WithStandingLinks(IReadOnlyCollection<Question> questions,
+														  TinyId parentId,
+														  QuestionChoice? existing,
+														  IReadOnlyCollection<TinyId> ticked)
+	{
+		ArgumentNullException.ThrowIfNull(ticked);
+
+		var linked = existing?.ParentChoiceIds ?? [];
+		EnsureOfferable(questions, parentId, ticked.Where(id => !linked.Contains(id)));
+
+		var parent = ParentOf(questions, parentId);
+		var inert = linked.Where(id => parent.OfferedChoice(id) is null && parent.AllChoices.Any(choice => choice.Id == id));
+
+		return [.. ticked.Union(inert)];
+	}
+
+	/// <summary>
+	///     The parent choices a reviewer's save offers one value under: those ticked,
+	///     at least one of them a live parent choice, plus any link to a parent value
+	///     since removed, which the page cannot show (ADR-0151).
+	/// </summary>
+	public static IReadOnlyList<TinyId> ValueParents(IReadOnlyCollection<Question> questions,
+													 Question child,
+													 TinyId choiceId,
+													 IReadOnlyCollection<TinyId> ticked)
+	{
+		ArgumentNullException.ThrowIfNull(child);
+		ArgumentNullException.ThrowIfNull(ticked);
+
+		var parentId = child.ChoicesDependOnQuestionId
+					   ?? throw new DomainRuleViolationException($"'{child.Key}' does not depend on another question, so its values have no parent choice.");
+
+		var parents = WithStandingLinks(questions, parentId, child.AllChoices.FirstOrDefault(choice => choice.Id == choiceId), ticked);
+
+		// Only a live parent choice counts toward "at least one": a link to one
+		// since removed filters nothing, so it cannot be the value's only parent.
+		var parent = ParentOf(questions, parentId);
+		if (!ticked.Any(id => parent.OfferedChoice(id) is not null))
+		{
+			throw new DomainRuleViolationException("A value is offered under at least one choice of the parent question. Tick another before unticking the last.");
+		}
+
+		return parents;
 	}
 
 	/// <summary>
 	///     Checks that saving <paramref name="parent" />'s choices as
-	///     <paramref name="remainingCodes" /> removes none a live choice of a dependent
-	///     question is offered under. Removing one would leave that choice offered
-	///     under nothing, so the save is refused naming the dependent; a replaced
+	///     <paramref name="remainingCodes" /> leaves every live choice of a dependent
+	///     question offered under at least one live parent choice. A removed parent
+	///     choice's links then stay and filter nothing; the save is refused only when
+	///     a child choice would be left under none, naming those choices. A replaced
 	///     option keeps its code in the list and passes its links on instead
-	///     (ADR-0146).
+	///     (ADR-0151).
 	/// </summary>
 	public static void EnsureParentChoicesRemovable(IReadOnlyCollection<Question> questions,
 													Question parent,
@@ -232,13 +288,14 @@ public static class ChoiceDependencies
 		var kept = remainingCodes.Select(QuestionKey.Normalize).ToHashSet(StringComparer.Ordinal);
 		var removed = parent.Choices.Where(choice => !kept.Contains(choice.Code)).Select(choice => choice.Id).ToHashSet();
 
-		EnsureNoneLinked(questions, parent, removed);
+		EnsureNoneStranded(questions, parent, removed);
 	}
 
 	/// <summary>
-	///     Checks that a reviewer may remove a type-ahead parent's value: no live
-	///     choice of a dependent question is offered under it. Merging it instead
-	///     passes its links to the value it is merged into (ADR-0146).
+	///     Checks that a reviewer may remove a type-ahead parent's value: every live
+	///     choice of a dependent question offered under it is offered under another
+	///     live value too. Merging it instead passes its links to the value it is
+	///     merged into (ADR-0151).
 	/// </summary>
 	public static void EnsureValueRemovable(IReadOnlyCollection<Question> questions,
 											Question parent,
@@ -247,39 +304,7 @@ public static class ChoiceDependencies
 		ArgumentNullException.ThrowIfNull(questions);
 		ArgumentNullException.ThrowIfNull(parent);
 
-		EnsureNoneLinked(questions, parent, [choiceId]);
-	}
-
-	/// <summary>
-	///     Checks that merging parent value <paramref name="sourceId" /> into
-	///     <paramref name="targetId" /> leaves no dependent question offering one
-	///     wording twice under the target, which a reporter could not tell apart. The
-	///     reviewer merges or removes one of the pair first (ADR-0146).
-	/// </summary>
-	public static void EnsureMergeKeepsChildrenApart(IReadOnlyCollection<Question> questions,
-													 Question parent,
-													 TinyId sourceId,
-													 TinyId targetId)
-	{
-		ArgumentNullException.ThrowIfNull(questions);
-		ArgumentNullException.ThrowIfNull(parent);
-
-		static IEnumerable<string> Wording(QuestionChoice choice)
-		{
-			return new[] { choice.LabelEn, choice.LabelFr }.OfType<string>().Select(label => label.Trim());
-		}
-
-		foreach (var child in DependentsOf(questions, parent))
-		{
-			var underTarget = child.Choices.Where(choice => choice.ParentChoiceId == targetId).SelectMany(Wording)
-				.ToHashSet(StringComparer.OrdinalIgnoreCase);
-
-			if (child.Choices.FirstOrDefault(choice => choice.ParentChoiceId == sourceId && Wording(choice).Any(underTarget.Contains)) is { } clash)
-			{
-				throw new DomainRuleViolationException(
-					$"'{child.CurrentRevision.LabelEn}' offers '{clash.LabelEn ?? clash.LabelFr}' under both values. Merge or remove one of those first.");
-			}
-		}
+		EnsureNoneStranded(questions, parent, [choiceId]);
 	}
 
 	/// <summary>
@@ -340,8 +365,10 @@ public static class ChoiceDependencies
 	///     fork left behind included, so its choices can be matched to their copies.
 	/// </param>
 	/// <param name="parent">The parent as it stands now.</param>
+	/// <param name="at">When the change happened: the stamp on each link it re-points.</param>
 	public static void Follow(IReadOnlyCollection<Question> questions,
-							  Question parent)
+							  Question parent,
+							  DateTimeOffset at)
 	{
 		ArgumentNullException.ThrowIfNull(questions);
 		ArgumentNullException.ThrowIfNull(parent);
@@ -358,12 +385,15 @@ public static class ChoiceDependencies
 
 			child.FollowParent(parent.Id);
 
-			foreach (var choice in child.AllChoices.Where(choice => choice.ParentChoiceId is not null))
+			foreach (var choice in child.AllChoices)
 			{
-				if (ChoiceToday(named, parent, choice.ParentChoiceId!.Value) is { } today
-					&& today.Id != choice.ParentChoiceId)
+				foreach (var linked in choice.ParentChoiceIds)
 				{
-					choice.LinkTo(today.Id);
+					if (ChoiceToday(named, parent, linked) is { } today
+						&& today.Id != linked)
+					{
+						choice.Repoint(linked, today.Id, at);
+					}
 				}
 			}
 		}
@@ -399,22 +429,49 @@ public static class ChoiceDependencies
 			: current;
 	}
 
-	private static void EnsureNoneLinked(IReadOnlyCollection<Question> questions,
-										 Question parent,
-										 HashSet<TinyId> removed)
+	private static Question ParentOf(IReadOnlyCollection<Question> questions,
+									 TinyId parentId)
+	{
+		return questions.FirstOrDefault(question => question.Id == parentId && question.Deleted is null)
+			   ?? throw new DomainRuleViolationException(
+				   "That question no longer exists, so no question's choices can depend on it.");
+	}
+
+	/// <summary>
+	///     A choice's links are allowed when at least one names a live choice of the
+	///     parent, and none names another question's.
+	/// </summary>
+	private static bool LinksAllowed(Question parent,
+									 QuestionChoice choice)
+	{
+		var linked = choice.ParentChoiceIds;
+
+		return linked.Any(id => parent.OfferedChoice(id) is not null)
+			   && linked.All(id => parent.AllChoices.Any(parentChoice => parentChoice.Id == id));
+	}
+
+	private static void EnsureNoneStranded(IReadOnlyCollection<Question> questions,
+										   Question parent,
+										   HashSet<TinyId> removed)
 	{
 		if (removed.Count == 0)
 		{
 			return;
 		}
 
+		var remaining = parent.Choices.Select(choice => choice.Id).Where(id => !removed.Contains(id)).ToHashSet();
+
 		foreach (var child in DependentsOf(questions, parent))
 		{
-			if (child.Choices.FirstOrDefault(choice => choice.ParentChoiceId is { } linked && removed.Contains(linked)) is { } linkedChoice)
+			var stranded = child.Choices
+				.Where(choice => choice.ParentChoiceIds.Any(removed.Contains) && !choice.ParentChoiceIds.Any(remaining.Contains))
+				.ToList();
+
+			if (stranded.Count > 0)
 			{
-				var wording = parent.AllChoices.First(choice => choice.Id == linkedChoice.ParentChoiceId).Label(Locale.EnCa);
+				var wording = string.Join(", ", stranded.Select(choice => $"'{choice.LabelEn ?? choice.LabelFr}'"));
 				throw new DomainRuleViolationException(
-					$"The choices of '{child.CurrentRevision.LabelEn}' are offered under '{wording}'. Link them to another choice first, or replace or merge '{wording}' instead of removing it.");
+					$"Removing that would leave {wording} of '{child.CurrentRevision.LabelEn}' offered under no choice. Offer them under another choice first, or replace or merge it instead of removing it.");
 			}
 		}
 	}

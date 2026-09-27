@@ -276,7 +276,7 @@
       "groupedUnderHelp": "Seule une question de groupe peut comporter d'autres questions affichées en dessous.",
       "choicesDependOn": "Les choix dépendent de la réponse à",
       "choicesDependOnNone": "Aucune autre question",
-      "choicesDependOnHelp": "Seule une sélection antérieure (sélection unique ou saisie semi-automatique) peut déterminer les options proposées par celle-ci. Chaque option indique ensuite le nom de l'option sous laquelle elle est proposée.",
+      "choicesDependOnHelp": "Seule une sélection unique ou une saisie anticipée effectuée auparavant peut déterminer les choix proposés par celle-ci. Chaque choix énumère ensuite toutes les réponses sous lesquelles il est proposé.",
       "options": "Choix",
       "optionsHelp": "Le fait d'ajouter, de reformuler, de mettre en évidence ou de supprimer un choix modifie cette question sur place et ne crée jamais de nouvelle version. Les choix sont classés par ordre alphabétique dans la langue du lecteur; l’option « Position » permet d’en placer un en haut ou en bas de la liste. Un choix supprimé disparaît du formulaire; les réponses déjà données continuent toutefois de le mentionner.",
       "optionLabelEn": "Choix (anglais)",
@@ -298,9 +298,9 @@
       },
       "replaceHelp": "Une option modifiée est verrouillée : toutes les réponses antérieures affichent la nouvelle formulation. Cochez la case « Remplacer » lorsque l'option a désormais une signification différente; les réponses antérieures conservent l'ancienne option et sa formulation.",
       "parentChoice": "Offert dans le cadre de",
-      "parentChoiceNone": "Choisissez…",
-      "parentHelp": "Chaque option n’est proposée que lorsque la question «{question} » reçoit comme réponse l’option sous laquelle elle se trouve. Entrez une option une fois pour chaque réponse à laquelle elle s’applique.",
-      "unlinked": "Avant de sauvegarder, veuillez sélectionner la catégorie sous laquelle chaque option est proposée : {choices}.",
+      "parentChoiceNone": "Choisissez un ou plusieurs…",
+      "parentHelp": "Chaque choix s’affiche lorsque l’on répond à la question «{question} » en cochant l’une des réponses proposées. Veuillez cocher toutes les réponses auxquelles un choix s’applique, plutôt que de l’entrer deux fois.",
+      "unlinked": "Cochez au moins une réponse pour chaque option proposée avant d’enregistrer : {choices}.",
       "unnamed": "(un nouveau choix)"
     },
     "type": {
@@ -393,7 +393,9 @@
     "merge": "Fusionner",
     "offeredUnder": "Proposé dans le cadre de «{choice} » pour «{question} »",
     "offeredUnderNothing": "N’a pas encore été proposé dans une réponse à la question «{question} »",
-    "relinkTo": "Offre formulée dans une réponse à la question «{question} »",
+    "relinkTo": "Proposé dans le cadre des réponses à «{question} »",
+    "relinkNone": "Choisissez un ou plusieurs…",
+    "lastParent": "Une valeur est proposée sous au moins une réponse; par conséquent, la dernière reste cochée.",
     "relink": "Modifier"
   },
   "reports": {

@@ -15,8 +15,15 @@ public static class SoftDeleteFilters
 	///     would hide rows the domain depends on. A question's removed choice is
 	///     still what a fork copies and what stops a reporter reviving it; the
 	///     question filters to live choices in <c>Question.Choices</c> (ADR-0095).
+	///     A choice's stamped parent link is the row ticking that parent again
+	///     restores; the choice filters to live links in <c>ParentChoiceIds</c>
+	///     (ADR-0151).
 	/// </summary>
-	private static readonly HashSet<Type> Unfiltered = [typeof(Core.Features.QuestionBank.QuestionChoice)];
+	private static readonly HashSet<Type> Unfiltered =
+	[
+		typeof(Core.Features.QuestionBank.QuestionChoice),
+		typeof(Core.Features.QuestionBank.ChoiceParentLink),
+	];
 
 	/// <summary>Applies the default live-row filter to every entity with a <c>Deleted</c> property.</summary>
 	/// <param name="modelBuilder">The model being built.</param>

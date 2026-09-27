@@ -235,7 +235,7 @@ public static class TypeformQuestionMapper
 				frenchChoicesByRef.TryGetValue(choice.Ref, out var frenchChoice);
 				var (optionEn, optionFr, optionDefaulted) = Pair(choice.Label, frenchChoice?.Label);
 
-				return new ImportedOption(choice.Ref, optionEn, optionFr, optionDefaulted);
+				return new ImportedOption(choice.Ref, optionEn, optionFr, optionDefaulted, choice.Hpac?.ParentRefs);
 			})
 			.ToList();
 
@@ -274,6 +274,8 @@ public static class TypeformQuestionMapper
 			GroupedUnderKey = hpac.GroupedUnderKey ?? groupedUnderKey,
 			// Only a date question can allow a future date (ADR-0138).
 			AllowFutureDates = type == QuestionType.Date && hpac.AllowFutureDates,
+			// Only a single-select or type-ahead's choices depend on another's (ADR-0151).
+			ChoicesDependOnKey = ChoiceDependencies.TakesPart(type) ? hpac.ChoicesDependOnKey : null,
 		};
 	}
 

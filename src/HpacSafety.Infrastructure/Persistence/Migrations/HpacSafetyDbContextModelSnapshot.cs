@@ -439,6 +439,48 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.ChoiceParentLink", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("id")
+                        .IsFixedLength();
+
+                    b.Property<string>("ChoiceId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("choice_id")
+                        .IsFixedLength();
+
+                    b.Property<DateTimeOffset?>("Deleted")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted");
+
+                    b.Property<string>("ParentChoiceId")
+                        .IsRequired()
+                        .HasMaxLength(11)
+                        .HasColumnType("char(11)")
+                        .HasColumnName("parent_choice_id")
+                        .IsFixedLength();
+
+                    b.HasKey("Id")
+                        .HasName("pk_question_choice_parents");
+
+                    b.HasIndex("ParentChoiceId")
+                        .HasDatabaseName("ix_question_choice_parents_parent_choice_id");
+
+                    b.HasIndex("ChoiceId", "ParentChoiceId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_question_choice_parents_choice_id_parent_choice_id");
+
+                    b.ToTable("question_choice_parents", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_question_choice_parents_other", "parent_choice_id <> choice_id");
+                        });
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
                 {
                     b.Property<string>("Id")
@@ -558,12 +600,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("needs_review");
 
-                    b.Property<string>("ParentChoiceId")
-                        .HasMaxLength(11)
-                        .HasColumnType("char(11)")
-                        .HasColumnName("parent_choice_id")
-                        .IsFixedLength();
-
                     b.Property<string>("Pin")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -605,9 +641,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.HasIndex("MergedIntoChoiceId")
                         .HasDatabaseName("ix_question_choices_merged_into_choice_id");
 
-                    b.HasIndex("ParentChoiceId")
-                        .HasDatabaseName("ix_question_choices_parent_choice_id");
-
                     b.HasIndex("ReplacedByChoiceId")
                         .HasDatabaseName("ix_question_choices_replaced_by_choice_id");
 
@@ -622,8 +655,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                             t.HasCheckConstraint("ck_question_choices_label_source", "(label_en_source IS NULL OR label_en_source IN ('human', 'auto')) AND (label_fr_source IS NULL OR label_fr_source IN ('human', 'auto')) AND (label_en IS NULL) = (label_en_source IS NULL) AND (label_fr IS NULL) = (label_fr_source IS NULL)");
 
                             t.HasCheckConstraint("ck_question_choices_merged_is_removed", "merged_into_choice_id IS NULL OR (deleted IS NOT NULL AND merged_into_choice_id <> id)");
-
-                            t.HasCheckConstraint("ck_question_choices_parent_other", "parent_choice_id IS NULL OR parent_choice_id <> id");
 
                             t.HasCheckConstraint("ck_question_choices_pin", "pin IN ('none', 'first', 'last')");
                         });
@@ -1486,6 +1517,23 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasConstraintName("fk_report_private_note_revisions_report_private_notes_note_id");
                 });
 
+            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.ChoiceParentLink", b =>
+                {
+                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionChoice", null)
+                        .WithMany("ParentLinks")
+                        .HasForeignKey("ChoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_question_choice_parents_question_choices_choice_id");
+
+                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionChoice", null)
+                        .WithMany()
+                        .HasForeignKey("ParentChoiceId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_question_choice_parents_question_choices_parent_choice_id");
+                });
+
             modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.Question", b =>
                 {
                     b.HasOne("HpacSafety.Core.Features.QuestionBank.Question", null)
@@ -1502,12 +1550,6 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                         .HasForeignKey("MergedIntoChoiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_question_choices_question_choices_merged_into_choice_id");
-
-                    b.HasOne("HpacSafety.Core.Features.QuestionBank.QuestionChoice", null)
-                        .WithMany()
-                        .HasForeignKey("ParentChoiceId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("fk_question_choices_question_choices_parent_choice_id");
 
                     b.HasOne("HpacSafety.Core.Features.QuestionBank.Question", null)
                         .WithMany("AllChoices")
@@ -1627,6 +1669,11 @@ namespace HpacSafety.Infrastructure.Persistence.Migrations
                     b.Navigation("AllChoices");
 
                     b.Navigation("Revisions");
+                });
+
+            modelBuilder.Entity("HpacSafety.Core.Features.QuestionBank.QuestionChoice", b =>
+                {
+                    b.Navigation("ParentLinks");
                 });
 
             modelBuilder.Entity("HpacSafety.Core.Features.Reporting.Report", b =>

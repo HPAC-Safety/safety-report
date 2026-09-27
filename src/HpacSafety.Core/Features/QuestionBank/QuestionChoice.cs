@@ -22,6 +22,8 @@ namespace HpacSafety.Core.Features.QuestionBank;
 /// </remarks>
 public class QuestionChoice
 {
+	private readonly List<ChoiceParentLink> _parentLinks = [];
+
 	// EF Core materializes an entity by calling this constructor and then
 	// setting every mapped property and backing field directly. It exists for
 	// the ORM and for nothing else.
@@ -141,14 +143,28 @@ public class QuestionChoice
 	public TinyId? MergedIntoChoiceId { get; private set; }
 
 	/// <summary>
-	///     The parent question's choice this one is offered under, when its question's
-	///     choices depend on another question's: the form offers it only while the
-	///     parent is answered with that choice. Part of the choice, outside every
-	///     revision, so linking never revises or forks either question. Changed,
-	///     never cleared; it stays when the question stops depending on a parent,
-	///     and simply stops filtering (ADR-0146).
+	///     Every parent choice this one was ever offered under, stamped links
+	///     included, when its question's choices depend on another question's
+	///     (ADR-0151). Part of the choice, outside every revision, so linking never
+	///     revises or forks either question. The links stay when the question stops
+	///     depending on a parent, and simply stop filtering.
 	/// </summary>
-	public TinyId? ParentChoiceId { get; private set; }
+	public IReadOnlyCollection<ChoiceParentLink> ParentLinks => _parentLinks;
+
+	/// <summary>
+	///     The parent choices the form offers this one under: whenever the parent is
+	///     answered with any of them (ADR-0151). A link to a parent choice that was
+	///     removed stays here and filters nothing, since the form never answers with
+	///     a removed choice.
+	/// </summary>
+	public IReadOnlyList<TinyId> ParentChoiceIds =>
+		[.. _parentLinks.Where(link => link.Deleted is null).Select(link => link.ParentChoiceId).OrderBy(id => id.Value, StringComparer.Ordinal)];
+
+	/// <summary>Whether the form offers this choice when the parent is answered with <paramref name="parentChoiceId" />.</summary>
+	public bool IsOfferedUnder(TinyId parentChoiceId)
+	{
+		return _parentLinks.Exists(link => link.Deleted is null && link.ParentChoiceId == parentChoiceId);
+	}
 
 	/// <summary>
 	///     The value <see cref="MergedIntoChoiceId" /> names, when the reader loaded
@@ -217,7 +233,7 @@ public class QuestionChoice
 	{
 		var label = NotBlank(typed);
 
-		return new QuestionChoice(
+		var added = new QuestionChoice(
 			questionId, code, displayOrder,
 			locale == Locale.FrCa ? null : label,
 			locale == Locale.FrCa ? label : null,
@@ -225,8 +241,14 @@ public class QuestionChoice
 		{
 			CreatedAt = at,
 			NeedsReview = true,
-			ParentChoiceId = parentChoiceId,
 		};
+
+		if (parentChoiceId is { } parent)
+		{
+			added.OfferUnder(parent);
+		}
+
+		return added;
 	}
 
 	/// <summary>
@@ -236,7 +258,7 @@ public class QuestionChoice
 	/// </summary>
 	internal QuestionChoice CopyTo(TinyId questionId)
 	{
-		return new QuestionChoice(questionId, Code, DisplayOrder, LabelEn, LabelFr, AddedByReporter, ReporterLocale, Deleted)
+		var copy = new QuestionChoice(questionId, Code, DisplayOrder, LabelEn, LabelFr, AddedByReporter, ReporterLocale, Deleted)
 		{
 			Pin = Pin,
 			LabelEnSource = LabelEnSource,
@@ -245,8 +267,12 @@ public class QuestionChoice
 			NeedsReview = NeedsReview,
 			ReviewedAt = ReviewedAt,
 			ReviewedBy = ReviewedBy,
-			ParentChoiceId = ParentChoiceId,
 		};
+
+		// Every link crosses, stamped ones included, as new rows of the copy.
+		copy._parentLinks.AddRange(_parentLinks.Select(link => new ChoiceParentLink(copy.Id, link.ParentChoiceId, link.Deleted)));
+
+		return copy;
 	}
 
 	/// <summary>
@@ -317,17 +343,64 @@ public class QuestionChoice
 
 	/// <summary>
 	///     Offers this choice under <paramref name="parentChoiceId" /> of its question's
-	///     parent. Which question that choice belongs to is checked by
-	///     <see cref="ChoiceDependencies" />, which can see both (ADR-0146).
+	///     parent too: restores a stamped link to it, or adds one. Which question that
+	///     choice belongs to is checked by <see cref="ChoiceDependencies" />, which can
+	///     see both (ADR-0151).
 	/// </summary>
-	internal void LinkTo(TinyId parentChoiceId)
+	/// <returns>Whether the choice was not already offered under it.</returns>
+	internal bool OfferUnder(TinyId parentChoiceId)
 	{
 		if (parentChoiceId == Id)
 		{
 			throw new DomainRuleViolationException("A choice cannot be offered under itself.");
 		}
 
-		ParentChoiceId = parentChoiceId;
+		if (_parentLinks.Find(link => link.ParentChoiceId == parentChoiceId) is { } existing)
+		{
+			var wasRemoved = existing.Deleted is not null;
+			existing.Restore();
+			return wasRemoved;
+		}
+
+		_parentLinks.Add(new ChoiceParentLink(Id, parentChoiceId));
+		return true;
+	}
+
+	/// <summary>
+	///     Offers this choice under exactly <paramref name="parentChoiceIds" />: each is
+	///     ticked, and every other live link is stamped, never erased (ADR-0151).
+	/// </summary>
+	internal void OfferUnderOnly(IReadOnlyCollection<TinyId> parentChoiceIds,
+								 DateTimeOffset at)
+	{
+		foreach (var link in _parentLinks.Where(link => link.Deleted is null && !parentChoiceIds.Contains(link.ParentChoiceId)))
+		{
+			link.Remove(at);
+		}
+
+		foreach (var parentChoiceId in parentChoiceIds)
+		{
+			OfferUnder(parentChoiceId);
+		}
+	}
+
+	/// <summary>
+	///     Passes a live link to <paramref name="from" /> on to <paramref name="to" />:
+	///     the old link is stamped, and the choice is offered under <paramref name="to" />,
+	///     collapsing into the link it may already have (ADR-0151).
+	/// </summary>
+	internal void Repoint(TinyId from,
+						  TinyId to,
+						  DateTimeOffset at)
+	{
+		if (from == to
+			|| _parentLinks.Find(link => link.Deleted is null && link.ParentChoiceId == from) is not { } link)
+		{
+			return;
+		}
+
+		link.Remove(at);
+		OfferUnder(to);
 	}
 
 	/// <summary>Points this copy's replaced-by link at the copy of the choice that replaced the original.</summary>

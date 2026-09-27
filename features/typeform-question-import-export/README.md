@@ -84,6 +84,11 @@ present, it wins over the Typeform type and the defaults above. It sets:
 - the condition: the question it depends on, by key, and the parent's choice
   code;
 - the group it sits under, by key;
+- the question its choices depend on, by key (`choices_depend_on_key`), and,
+  on each choice, the parent choices it is offered under, by their codes
+  (`hpac.parent_refs`). A file exported before this has neither, and its
+  questions import with no dependency (`REQ-TF-023`,
+  [ADR-0151](../../docs/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md));
 - whether a date question allows future dates. Typeform's own date field
   cannot say, so a plain Typeform file, with no `hpac` object, imports every
   date question without it

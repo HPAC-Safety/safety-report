@@ -20,10 +20,10 @@ namespace HpacSafety.Core.Features.QuestionBank;
 ///     Whether the choice is listed before or after the alphabetical rest, or among
 ///     them — the default (ADR-0136).
 /// </param>
-/// <param name="ParentChoiceId">
-///     The parent question's choice this one is offered under, when the question's
-///     choices depend on another question's (ADR-0146). Null leaves the choice's
-///     link as it is: a link is changed, never cleared.
+/// <param name="ParentChoiceIds">
+///     The parent question's choices this one is offered under, when the question's
+///     choices depend on another question's (ADR-0151): exactly these, and every
+///     other live link is stamped. Null leaves the choice's links as they are.
 /// </param>
 public sealed record QuestionOptionInput(
 	string Code,
@@ -31,4 +31,4 @@ public sealed record QuestionOptionInput(
 	string? LabelFr,
 	bool Replace = false,
 	ChoicePin Pin = ChoicePin.None,
-	TinyId? ParentChoiceId = null);
+	IReadOnlyList<TinyId>? ParentChoiceIds = null);

@@ -150,6 +150,15 @@ Scenario: A date question's Allow future dates setting survives an export and re
   Then each date question's draft allows future dates exactly as the original did
   And a date field in a plain Typeform file, with no hpac object, imports without allowing future dates
 
+@REQ-TF-023
+Scenario: A choice dependency survives an export and reimport
+  Given a live type-ahead "Model" question whose choices depend on the single-select "Make" question
+  And "Model" offers "Other" under "Niviuk" and "Ozone", and "Mentor 7" under "Niviuk"
+  When an Administrator exports it and imports the result back in
+  Then the "Model" draft depends on "Make" by key
+  And its "Other" draft is offered under "Niviuk" and "Ozone", and "Mentor 7" under "Niviuk", by their codes
+  And a field in a file with no dependency in its hpac object imports with no dependency
+
 @REQ-TF-021
 Scenario: Only an Administrator may import or export
   Given a member does not have the Administrator role

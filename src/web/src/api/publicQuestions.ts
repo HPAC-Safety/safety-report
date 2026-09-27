@@ -21,8 +21,8 @@ export interface PublicOptionView {
 	onlyIn: string | null
 	/** Listed before (`first`) or after (`last`) the alphabetical rest, or among them (`none`) — ADR-0136. */
 	pin: string
-	/** The parent question's choice the form offers this one under, when its question's choices depend on another's (ADR-0146). */
-	parentChoiceId?: string | null
+	/** The parent question's choices the form offers this one under, when its question's choices depend on another's (ADR-0151). */
+	parentChoiceIds?: string[]
 }
 
 /**

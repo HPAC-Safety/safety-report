@@ -109,7 +109,7 @@ public static class QuestionEndpoints
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, null);
 			var displayOrder = NextDisplayOrder(questions);
 			var choiceParentId = ResolvedChoiceParent(request, type, questions, null, displayOrder, groupedUnderQuestionId);
-			var options = OptionsFor(request, type, null, choiceParentId);
+			var options = OptionsFor(request, type, null, choiceParentId, questions);
 
 			var question = Question.Create(
 				key,
@@ -187,7 +187,7 @@ public static class QuestionEndpoints
 			var dependsOn = ResolvedDependency(request, bank, question);
 			var groupedUnderQuestionId = ResolvedGrouping(request, questions, question.Id);
 			var choiceParentId = ResolvedChoiceParent(request, type, questions, question, question.DisplayOrder, groupedUnderQuestionId);
-			var options = OptionsFor(request, type, question, choiceParentId);
+			var options = OptionsFor(request, type, question, choiceParentId, questions);
 
 			ChoiceDependencies.EnsureParentKeepsType(questions, question, type);
 			ChoiceDependencies.EnsureDependentsFollow(questions, question, groupedUnderQuestionId);
@@ -198,7 +198,7 @@ public static class QuestionEndpoints
 				ChoiceDependencies.EnsureParentChoicesRemovable(questions, question, [.. options.Select(option => option.Code)]);
 			}
 
-			// Outside the revision (ADR-0146): set in place, and carried by a fork.
+			// Outside the revision (ADR-0146, ADR-0151): set in place, and carried by a fork.
 			question.DependChoicesOn(choiceParentId);
 
 			var hasBeenAnswered = await HasBeenAnswered(database, question.Id, cancellationToken)
@@ -236,10 +236,10 @@ public static class QuestionEndpoints
 			}
 
 			// A replaced, merged, or forked parent choice passes its links on, and a
-			// forked parent its dependents, without revising them (ADR-0146).
+			// forked parent its dependents, without revising them (ADR-0146, ADR-0151).
 			List<Question> touched = [.. questions, .. forked ? [live] : Array.Empty<Question>()];
 			ChoiceDependencies.EnsureLinksAllowed(touched, live);
-			ChoiceDependencies.Follow(touched, live);
+			ChoiceDependencies.Follow(touched, live, at);
 
 			var action = wasActive && !request.IsActive ? AuditAction.DeactivatedQuestion : AuditAction.RevisedQuestion;
 			Audit(database, context, action, live.Id, at, forked ? "forked" : null);
@@ -657,10 +657,18 @@ public static class QuestionEndpoints
 	///     takes no choices, which clears any a retyped question still had; null
 	///     when the request sends none, which leaves the choices as they are.
 	/// </summary>
+	/// <remarks>
+	///     With a parent, each choice is offered under exactly the parent choices it
+	///     ticks, each a live choice of the parent. A link to a parent choice since
+	///     removed is kept: the editor lists only live parent choices, so it cannot
+	///     have unticked it, and it filters nothing (ADR-0151). Without a parent, the
+	///     links are left as they are.
+	/// </remarks>
 	private static IReadOnlyList<QuestionOptionInput>? OptionsFor(SaveQuestionRequest request,
 																  QuestionType type,
 																  Question? existing,
-																  TinyId? choiceParentId)
+																  TinyId? choiceParentId,
+																  List<Question> questions)
 	{
 		if (type is not (QuestionType.SingleSelect or QuestionType.MultiSelect or QuestionType.Autocomplete))
 		{
@@ -672,46 +680,25 @@ public static class QuestionEndpoints
 			return null;
 		}
 
-		var options = choiceParentId is null ? request.Options : CodedUnderParents(request.Options, existing);
-
-		return [.. OptionInput.Resolve(options).Select(pair => new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace, pair.Option.ResolvedPin, pair.Option.ResolvedParentChoiceId))];
-	}
-
-	/// <summary>
-	///     Gives each new choice of a dependent question a code of its own. The same
-	///     wording is entered once under each parent choice it applies to — "Other"
-	///     under every make — so a new choice whose wording reduces to a code the
-	///     question already holds takes the next free <c>_2</c>, <c>_3</c>, … instead
-	///     of reviving or relabelling that choice (ADR-0146). Wording repeated under
-	///     one parent choice is still refused, by the question.
-	/// </summary>
-	private static List<OptionInput> CodedUnderParents(IReadOnlyList<OptionInput> options,
-														Question? existing)
-	{
-		var taken = options
-			.Where(option => !string.IsNullOrWhiteSpace(option.Code))
-			.Select(option => QuestionKey.Normalize(option.Code!))
-			.ToHashSet(StringComparer.Ordinal);
+		var parent = choiceParentId is { } parentId ? questions.Find(question => question.Id == parentId) : null;
 
 		return
 		[
-			.. options.Select(option =>
+			.. OptionInput.Resolve(request.Options).Select(pair =>
 			{
-				if (!string.IsNullOrWhiteSpace(option.Code))
+				var ticked = pair.Option.ResolvedParentChoiceIds;
+
+				if (parent is null || ticked is null)
 				{
-					return option;
+					ticked = null;
+				}
+				else
+				{
+					ticked = ChoiceDependencies.WithStandingLinks(
+						questions, parent.Id, existing?.AllChoices.FirstOrDefault(choice => choice.Code == pair.Code), ticked);
 				}
 
-				var stem = option.ResolvedCode;
-				var code = existing?.UnusedCode(stem, taken) ?? stem;
-
-				for (var suffix = 2; existing is null && taken.Contains(code); suffix++)
-				{
-					code = $"{stem}_{suffix}";
-				}
-
-				taken.Add(code);
-				return option with { Code = code };
+				return new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace, pair.Option.ResolvedPin, ticked);
 			}),
 		];
 	}

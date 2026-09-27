@@ -536,6 +536,19 @@ Examples:
   | leaving "Make" unanswered     |
   | answering "Make" with "Gin"   |
   | answering "Make" with "Ozone", after every "Model" choice under "Ozone" was removed |
+
+@REQ-SUB-115
+Scenario Outline: A choice offered under several parent answers is accepted under each, and refused under any other
+  Given the "Model" question's choices depend on the "Make" question, and "Other" is offered under "Niviuk" and "Ozone"
+  When a reporter submits "Model" answered with "Other" and "Make" answered with <make>
+  Then the API <outcome>
+
+Examples:
+  | make     | outcome                                                                                     |
+  | "Niviuk" | accepts the report                                                                          |
+  | "Ozone"  | accepts the report                                                                          |
+  | "Gin"    | refuses the submission, naming "model" and "make" by key, and no report, answer, or choice is written |
+
 @REQ-SUB-080
 Scenario: The submission path never calls a translation provider
   Given a submission contains choice answers and a value typed into a type-ahead

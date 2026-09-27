@@ -16,6 +16,7 @@ import {
 import type { ImportedQuestionDraftView } from "../api/adminTypeformImport"
 import type { Locale } from "../i18n/locales"
 import { sortChoices } from "../lib/sortChoices"
+import { MultiSelectPicker } from "../report-form/MultiSelectPicker"
 import {
 	DEFAULT_TRANSLATION_DIRECTION,
 	TranslationDirectionSwitch,
@@ -127,7 +128,7 @@ export function draftOf(question: QuestionView, locale: Locale): QuestionDraft {
 				labelFr: option.labelFr ?? "",
 				addedByReporter: option.addedByReporter,
 				pin: option.pin,
-				parentChoiceId: option.parentChoiceId,
+				parentChoiceIds: option.parentChoiceIds,
 			})),
 		},
 	}
@@ -145,6 +146,11 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 		: undefined
 	const dependsOn = imported.dependsOnKey
 		? questions.find((question) => question.key === imported.dependsOnKey)
+		: undefined
+	// The export names the parent question by key and each parent choice by code
+	// (ADR-0151); the editor names both by ID.
+	const choiceParent = imported.choicesDependOnKey
+		? questions.find((question) => question.key === imported.choicesDependOnKey)
 		: undefined
 
 	return {
@@ -168,12 +174,18 @@ export function draftFromImported(imported: ImportedQuestionDraftView, questions
 			// the parent's choice by ID (ADR-0128).
 			dependsOnChoiceId: dependsOn?.options.find((option) => option.code === imported.dependsOnOptionCode)?.id ?? null,
 			groupedUnderQuestionId: group?.id ?? null,
-			// Typeform cannot express a choice dependency, so an import never carries one (ADR-0146).
-			choicesDependOnQuestionId: null,
+			choicesDependOnQuestionId: choiceParent?.id ?? null,
 			options: imported.options.map((option) => ({
 				code: option.code,
 				labelEn: option.labelEn,
 				labelFr: option.labelFr,
+				...(choiceParent
+					? {
+							parentChoiceIds: (option.parentRefs ?? [])
+								.map((code) => choiceParent.options.find((choice) => choice.code === code)?.id)
+								.filter((id): id is string => id !== undefined),
+						}
+					: {}),
 			})),
 		},
 	}
@@ -319,7 +331,7 @@ export function QuestionEditor({
 	const helpTakesLines = request.type === "statement"
 	const dependsOnParent = conditionQuestions.find((question) => question.id === request.dependsOnQuestionId)
 	// Only a single-select's or type-ahead's choices may depend on another
-	// question, and each then names the parent choice it is offered under (ADR-0146).
+	// question, and each then names the parent choices it is offered under (ADR-0151).
 	const takesChoiceParent = request.type === "single_select" || request.type === "autocomplete"
 	const choiceParent = takesChoiceParent
 		? choiceParentQuestions.find((question) => question.id === request.choicesDependOnQuestionId)
@@ -328,7 +340,7 @@ export function QuestionEditor({
 		? sortChoices(choiceParent.options, locale, (option) => choiceLabel(option, locale))
 		: []
 	const unlinked = choiceParent
-		? request.options.filter((option) => !parentChoices.some((choice) => choice.id === option.parentChoiceId))
+		? request.options.filter((option) => !parentChoices.some((choice) => option.parentChoiceIds?.includes(choice.id)))
 		: []
 
 	const [translating, setTranslating] = useState(false)
@@ -342,6 +354,7 @@ export function QuestionEditor({
 	const [rows, setRows] = useState<ChoiceRow[]>(() => request.options.map(newRow))
 	const unavailableId = useId()
 	const choicesHeadingId = useId()
+	const unlinkedId = useId()
 	const choicesRef = useRef<HTMLDivElement>(null)
 	const focusNewChoice = useRef(false)
 
@@ -510,7 +523,7 @@ export function QuestionEditor({
 
 	function updateOption(
 		index: number,
-		changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace" | "pin" | "parentChoiceId">>,
+		changes: Partial<Pick<OptionInput, "labelEn" | "labelFr" | "replace" | "pin" | "parentChoiceIds">>,
 	) {
 		const options = request.options.map((option, current) => (current === index ? { ...option, ...changes } : option))
 		update({ options })
@@ -943,24 +956,26 @@ export function QuestionEditor({
 									</p>
 								)}
 								{choiceParent && (
-									<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
-										{t("questions.choice.parentChoice")}
-										<select
-											data-testid="question-choice-parent"
-											className="rounded border border-rule bg-surface px-2 py-1 font-sans text-sm text-ink"
-											required
-											aria-invalid={!parentChoices.some((choice) => choice.id === option.parentChoiceId)}
-											value={parentChoices.some((choice) => choice.id === option.parentChoiceId) ? (option.parentChoiceId ?? "") : ""}
-											onChange={(event) => updateOption(index, { parentChoiceId: event.target.value || null })}
-										>
-											<option value="">{t("questions.choice.parentChoiceNone")}</option>
-											{parentChoices.map((choice) => (
-												<option key={choice.id} value={choice.id}>
-													{choiceLabel(choice, locale)}
-												</option>
-											))}
-										</select>
-									</label>
+									// Every parent choice this one is offered under: one or more (ADR-0151).
+									<div className="max-w-sm" data-testid="question-choice-parent">
+										<MultiSelectPicker
+											fieldId={`question-choice-parent-${row?.key ?? index}`}
+											label={t("questions.choice.parentChoice")}
+											groups={[parentChoices.map((choice) => ({ key: choice.id, label: choiceLabel(choice, locale) }))]}
+											// Only live parent choices are shown and counted; a link to one since
+											// removed stays in the draft, untouched, and the server keeps it.
+											values={(option.parentChoiceIds ?? []).filter((id) => parentChoices.some((choice) => choice.id === id))}
+											placeholder={t("questions.choice.parentChoiceNone")}
+											invalid={unlinked.includes(option)}
+											describedBy={unlinked.includes(option) ? unlinkedId : undefined}
+											onToggle={(id) => {
+												const current = option.parentChoiceIds ?? []
+												updateOption(index, {
+													parentChoiceIds: current.includes(id) ? current.filter((ticked) => ticked !== id) : [...current, id],
+												})
+											}}
+										/>
+									</div>
 								)}
 								<label className="flex items-center gap-2 font-sans text-xs text-ink-muted">
 									{t("questions.choice.position")}
@@ -993,7 +1008,7 @@ export function QuestionEditor({
 						<p className="font-sans text-xs text-ink-muted">{t("questions.choice.replaceHelp")}</p>
 					)}
 					{unlinked.length > 0 && (
-						<p role="status" data-testid="question-choices-unlinked" className="font-sans text-sm text-ink">
+						<p id={unlinkedId} role="status" data-testid="question-choices-unlinked" className="font-sans text-sm text-ink">
 							{t("questions.choice.unlinked", {
 								choices: unlinked.map((option) => option.labelEn || option.labelFr || t("questions.choice.unnamed")).join(", "),
 							})}

@@ -24,7 +24,8 @@ public sealed record ImportedQuestionDraftView(
 	bool IsRequired,
 	string? DependsOnKey,
 	string? DependsOnOptionCode,
-	bool AllowFutureDates)
+	bool AllowFutureDates,
+	string? ChoicesDependOnKey)
 {
 	/// <summary>Flattens a draft for the wire, converting its type to the invariant code every other view uses.</summary>
 	public static ImportedQuestionDraftView Of(ImportedQuestionDraft draft)
@@ -35,19 +36,23 @@ public sealed record ImportedQuestionDraftView(
 			draft.Key, EnumCode.Of(draft.Type), draft.LabelEn, draft.LabelFr, draft.FrenchDefaultedToEnglish,
 			draft.HelpTextEn, draft.HelpTextFr, draft.GroupedUnderKey,
 			[.. draft.Options.Select(ImportedOptionView.Of)], draft.IsPrivate, draft.IsRequired, draft.DependsOnKey,
-			draft.DependsOnOptionCode, draft.AllowFutureDates);
+			draft.DependsOnOptionCode, draft.AllowFutureDates, draft.ChoicesDependOnKey);
 	}
 }
 
-/// <summary>One choice on an imported draft.</summary>
-public sealed record ImportedOptionView(string Code, string LabelEn, string LabelFr, bool FrenchDefaultedToEnglish)
+/// <summary>
+///     One choice on an imported draft, with the parent question's choices it is
+///     offered under, by code, when the draft's choices depend on another question's
+///     (ADR-0151).
+/// </summary>
+public sealed record ImportedOptionView(string Code, string LabelEn, string LabelFr, bool FrenchDefaultedToEnglish, IReadOnlyList<string>? ParentRefs)
 {
 	/// <summary>Flattens an option for the wire.</summary>
 	public static ImportedOptionView Of(ImportedOption option)
 	{
 		ArgumentNullException.ThrowIfNull(option);
 
-		return new ImportedOptionView(option.Code, option.LabelEn, option.LabelFr, option.FrenchDefaultedToEnglish);
+		return new ImportedOptionView(option.Code, option.LabelEn, option.LabelFr, option.FrenchDefaultedToEnglish, option.ParentRefs);
 	}
 }
 

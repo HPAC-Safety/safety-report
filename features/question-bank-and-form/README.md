@@ -205,6 +205,37 @@ looks the same in every browser (`REQ-QB-159`,
 - **Small screens.** The list never makes the page scroll sideways, and a long
   list scrolls within itself (`REQ-QB-163`).
 
+## The single-select and multi-select fields
+
+A single-select and a multi-select look and feel like the type-ahead: the
+same field, caret, and list, drawn by the form, with the same rows,
+separators, and highlighted row. Each keeps its own input type
+([ADR-0150](../../docs/decisions/ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md)).
+
+- **Single-select.** A field with a caret shows the chosen choice, or "Choose
+  one". It is not the browser's `<select>` (`REQ-QB-208`). It follows the
+  WAI-ARIA 1.2 select-only combobox pattern:
+  - **Opening.** Clicking it, Enter, Space, the down arrow, or Alt and the
+    down arrow opens the list directly beneath it, with the chosen choice
+    highlighted.
+  - **Moving.** The up and down arrows move the highlighted choice, Home and
+    End jump to the ends, typing a character jumps to the next choice
+    starting with it, and pointing at a choice highlights it.
+  - **Choosing.** Enter or Space takes the highlighted choice and closes the
+    list. Escape, Tab, or a press outside closes it without changing the
+    answer (`REQ-QB-209`).
+  - **Clearing.** "Choose one" is the list's first row; choosing it leaves
+    the question unanswered (`REQ-QB-210`).
+  - **The answer** is held and sent by its choice's identifier, as before.
+    Nothing can be typed into a single-select; that stays the type-ahead's.
+  - **Disabled.** A dependent single-select waiting on its parent looks and
+    behaves disabled, as a type-ahead does (`REQ-QB-197`).
+  - **Small screens.** As the type-ahead's (`REQ-QB-163`).
+- **Multi-select.** The closed trigger is unchanged (`REQ-SUB-034`). Its open
+  list takes the type-ahead's rows and separators, a real checkbox on each
+  row, and the type-ahead's highlight on the row pointed at or focused. It
+  stays open while several are checked (`REQ-QB-211`).
+
 ## Correcting seeded wording
 
 The seeded attachment question departs from Typeform on purpose. Typeform took
@@ -314,6 +345,11 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - A combobox library, or the browser's `<datalist>`, for the type-ahead. The
   form draws its own list, as it does the multi-select picker
   ([ADR-0140](../../docs/decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
+- The browser's `<select>` for a single-select on the report form, or
+  type-to-filter and reporter-added values in one. The admin pages keep their
+  native selects
+  ([ADR-0150](../../docs/decisions/ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md),
+  [ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - Sorting choices on the server by language. The server returns each group in
   a stable order and the reader's browser collates it, because only the reader
   knows their language.

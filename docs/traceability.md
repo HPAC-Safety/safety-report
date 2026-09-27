@@ -1426,7 +1426,7 @@ A reporter types a type-ahead value its list does not offer — *playwright-bdd,
 
 ### REQ-QB-163
 
-A type-ahead's list fits a phone screen and scrolls when long — *playwright-bdd, Covered*
+A type-ahead's or single-select's list fits a phone screen and scrolls when long — *playwright-bdd, Covered*
 
 ### REQ-QB-164
 
@@ -1603,6 +1603,22 @@ The parent comes before the child wherever grouping places them — *Reqnroll, C
 ### REQ-QB-207
 
 A parent merge that would offer one wording twice under one parent choice is refused — *Reqnroll, Covered*
+
+### REQ-QB-208
+
+A single-select question is a picker the form draws, not the browser's select — *playwright-bdd, Covered*
+
+### REQ-QB-209
+
+A reporter picks a single-select choice from the keyboard and the pointer — *playwright-bdd, Covered*
+
+### REQ-QB-210
+
+A single-select answer can be cleared back to unanswered — *playwright-bdd, Covered*
+
+### REQ-QB-211
+
+A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 

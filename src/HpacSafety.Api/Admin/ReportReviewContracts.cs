@@ -10,13 +10,18 @@ namespace HpacSafety.Api.Admin;
 /// <param name="Language">The locale it was written in.</param>
 /// <param name="Consent">Publication consent: <c>true</c>, <c>false</c>, or <c>null</c> when unanswered (ADR-0130).</param>
 /// <param name="IsStuck">Still Submitted or Summarizing more than a day after submission.</param>
+/// <param name="Version">
+///     The version a review command sends back, the same value the detail view gives, so a
+///     reviewer can act on a row without opening the report (ADR-0105, REQ-MOD-119).
+/// </param>
 public sealed record ReportListItem(
 	string Id,
 	DateTimeOffset SubmittedAt,
 	string Status,
 	string Language,
 	bool? Consent,
-	bool IsStuck);
+	bool IsStuck,
+	string Version);
 
 /// <summary>
 ///     Everything a reviewer needs to judge one report, and nothing more

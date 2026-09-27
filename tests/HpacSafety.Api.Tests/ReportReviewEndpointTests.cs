@@ -16,7 +16,7 @@ namespace HpacSafety.Api.Tests;
 
 /// <summary>
 ///     The admin report list and read-only detail view, against a real PostgreSQL
-///     container (REQ-MOD-030, REQ-MOD-031, REQ-MOD-049..051). The database is shared
+///     container (REQ-MOD-030, REQ-MOD-031, REQ-MOD-049..051, REQ-MOD-119). The database is shared
 ///     across the collection, so every assertion names the reports this test seeded
 ///     rather than counting rows. Every report here is synthetic.
 /// </summary>
@@ -119,6 +119,43 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		Item(listed, seeded["stuckSubmitted"]).GetProperty("isStuck").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["stuckSummarizing"]).GetProperty("isStuck").GetBoolean().ShouldBeTrue();
 		Item(listed, seeded["pending"]).GetProperty("isStuck").GetBoolean().ShouldBeFalse();
+	}
+
+	[Theory]
+	[InlineData("pending")]
+	[InlineData("failed")]
+	public async Task GivenAReport_WhenListed_ThenItsRowCarriesTheDetailViewsVersion(string name)
+	{
+		// Given
+		var seeded = await Seed();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var listed = await List(client, null);
+		var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{seeded[name]}", UriKind.Relative));
+
+		// Then
+		Item(listed, seeded[name]).GetProperty("version").GetString().ShouldBe(detail.GetProperty("version").GetString());
+	}
+
+	[Fact]
+	public async Task GivenARowVersion_WhenTheReportChangesSince_ThenACommandSentWithItIsRefusedAsStale()
+	{
+		// Given
+		var seeded = await Seed();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var listedVersion = Item(await List(client, null), seeded["pending"]).GetProperty("version").GetString();
+		using var first = await client.PostAsJsonAsync(
+			new Uri($"/api/admin/reports/{seeded["pending"]}/publish", UriKind.Relative), new { version = listedVersion });
+		first.EnsureSuccessStatusCode();
+
+		// When
+		using var second = await client.PostAsJsonAsync(
+			new Uri($"/api/admin/reports/{seeded["pending"]}/unpublish", UriKind.Relative), new { version = listedVersion, note = "" });
+
+		// Then
+		second.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+		Item(await List(client, null), seeded["pending"]).GetProperty("version").GetString().ShouldNotBe(listedVersion);
 	}
 
 	[Fact]

@@ -87,7 +87,8 @@ public static class ReportEndpoints
 				EnumCode.Of(report.Status),
 				report.Language.Code,
 				report.ConsentPublish,
-				report.IsStuck))
+				report.IsStuck,
+				report.Version))
 			.ToList());
 	}
 

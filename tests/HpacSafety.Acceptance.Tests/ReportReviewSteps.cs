@@ -15,7 +15,7 @@ namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
 ///     The admin report list and read-only detail view, through the booted API
-///     (REQ-MOD-030, REQ-MOD-031, REQ-MOD-049..051). The booted database is shared
+///     (REQ-MOD-030, REQ-MOD-031, REQ-MOD-049..051, REQ-MOD-119). The booted database is shared
 ///     by every scenario, so assertions name the reports seeded here.
 /// </summary>
 [Binding]
@@ -155,6 +155,45 @@ public sealed class ReportReviewSteps
 		};
 
 		Mine().ShouldBe([.. expected.Select(name => _seeded[name])]);
+	}
+
+	[Then(@"each row carries the same version the report's detail view gives")]
+	public async Task ThenEachRowCarriesTheDetailVersion()
+	{
+		foreach (var name in new[] { "pending", "private", "published" })
+		{
+			using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+			var detail = await client.GetFromJsonAsync<JsonElement>(new Uri($"/api/admin/reports/{_seeded[name]}", UriKind.Relative));
+
+			Row(name).GetProperty("version").GetString().ShouldBe(detail.GetProperty("version").GetString());
+		}
+	}
+
+	[Then(@"publishing an unpublished report with its row's version succeeds without opening the report")]
+	public async Task ThenPublishingWithTheRowVersionSucceeds()
+	{
+		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		using var response = await client.PostAsJsonAsync(
+			new Uri($"/api/admin/reports/{_seeded["unpublished"]}/publish", UriKind.Relative),
+			new { version = Row("unpublished").GetProperty("version").GetString() });
+
+		response.EnsureSuccessStatusCode();
+		var published = await response.Content.ReadFromJsonAsync<JsonElement>();
+		published.GetProperty("status").GetString().ShouldBe("published");
+	}
+
+	[Then(@"no ViewedRawReport entry is written for that report")]
+	public async Task ThenNoViewedRawReportEntryIsWritten()
+	{
+		var factory = await BootedApi.Factory();
+		await using var scope = factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var reportId = TinyId.Parse(_seeded["unpublished"]);
+
+		(await database.AuditLog.CountAsync(entry => entry.Action == AuditAction.ViewedRawReport && entry.TargetId == reportId))
+			.ShouldBe(0);
+		(await database.AuditLog.CountAsync(entry => entry.Action == AuditAction.PublishedReport && entry.TargetId == reportId))
+			.ShouldBe(1);
 	}
 
 	// ── Then: the detail view ───────────────────────────────────────────────

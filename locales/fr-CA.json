@@ -561,9 +561,6 @@
     "error": "Les signalements publiés n'ont pas pu être chargés. Veuillez réessayer.",
     "publishedAt": "Publié le {at}",
     "read": "Lisez le signalement complet",
-    "pagesLabel": "D'autres signalements",
-    "next": "Anciens signalements",
-    "newest": "Derniers signalements",
     "back": "Retour aux signalements de sécurité",
     "loadingOne": "Chargement du signalement…",
     "errorOne": "Le signalement n'a pas pu être chargé. Veuillez réessayer.",
@@ -576,6 +573,12 @@
       "one": "1 commentaire",
       "other": "{count} commentaires"
     }
+  },
+  "list": {
+    "loadMore": "Afficher plus",
+    "loadingMore": "Chargement…",
+    "retry": "Réessayer",
+    "error": "Certains signalements n'ont pas pu être chargés. Veuillez réessayer."
   },
   "media": {
     "title": "Photos, vidéos et documents",

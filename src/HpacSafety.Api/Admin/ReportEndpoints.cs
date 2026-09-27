@@ -1,4 +1,6 @@
+using System.Buffers.Text;
 using System.Linq.Expressions;
+using System.Text;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
@@ -18,6 +20,9 @@ namespace HpacSafety.Api.Admin;
 /// </summary>
 public static class ReportEndpoints
 {
+	/// <summary>How many reports one admin list page carries (REQ-MOD-125).</summary>
+	public const int PageSize = 20;
+
 	/// <summary>
 	///     Each filter the list accepts, by its query-string code. Stuck and needs
 	///     action are the <c>admin_report_queue</c> view's rule, not this file's.
@@ -53,14 +58,20 @@ public static class ReportEndpoints
 	}
 
 	/// <summary>
-	///     Every live report, newest first, narrowed by <paramref name="filter" />
-	///     (REQ-MOD-030, REQ-MOD-049, REQ-MOD-050, REQ-MOD-124). State and timing only,
-	///     plus the reporter's and pilot's names, is the one piece of answer text this
-	///     list shows without an audited read (ADR-0154) — it carries no other answer or
-	///     summary text. Opening a report remains the audited read of everything else.
+	///     One page of the live report list, newest submitted first, a tie broken
+	///     by report ID, narrowed by <paramref name="filter" /> (REQ-MOD-030,
+	///     REQ-MOD-049, REQ-MOD-050, REQ-MOD-124, REQ-MOD-125). State and timing
+	///     only, plus the reporter's and pilot's names — the one piece of answer
+	///     text this list shows without an audited read (ADR-0154) — the list
+	///     carries no other answer or summary text, so reading it is not audited.
+	///     Opening a report remains the audited read of everything else. An
+	///     unreadable cursor, or one naming a report no longer in the queue, starts
+	///     from the top rather than failing, the same rule as the public feed
+	///     (ADR-0155).
 	/// </summary>
 	private static async Task<IResult> List(
 		string? filter,
+		string? after,
 		HpacSafetyDbContext database,
 		CancellationToken cancellationToken)
 	{
@@ -75,14 +86,48 @@ public static class ReportEndpoints
 				type: "https://hpac.ca/problems/unknown-filter");
 		}
 
-		var reports = await database.AdminReportQueue
-			.AsNoTracking()
-			.Where(matches)
+		var query = database.AdminReportQueue.AsNoTracking().Where(matches);
+
+		if (Cursor.TryRead(after, out var afterId) && TinyId.TryParse(afterId, out var afterTinyId))
+		{
+			var position = await database.AdminReportQueue
+				.AsNoTracking()
+				.Where(report => report.Id == afterTinyId)
+				.Select(report => new { report.Id, report.SubmittedAt })
+				.SingleOrDefaultAsync(cancellationToken)
+				.ConfigureAwait(false);
+
+			// A cursor naming a report no longer in the queue (deleted, or simply
+			// not matching this filter any more) resolves to nothing, and the page
+			// starts over from the top — the same rule as an unreadable cursor.
+			//
+			// The tie-break for two reports submitted at the exact same instant
+			// (to the tick) excludes the anchor by ID rather than ordering past
+			// it: TinyId has no translatable ordering, only equality, and an
+			// exact `submitted_at` collision is vanishingly rare against a
+			// microsecond-resolution timestamp.
+			if (position is not null)
+			{
+				var submittedAt = position.SubmittedAt;
+				var id = position.Id;
+
+				query = query.Where(report =>
+					report.SubmittedAt < submittedAt
+					|| (report.SubmittedAt == submittedAt && report.Id != id));
+			}
+		}
+
+		var rows = await query
 			.OrderByDescending(report => report.SubmittedAt)
+			.ThenByDescending(report => report.Id)
+			.Take(PageSize + 1)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
-		return Results.Ok(reports
+		var page = rows.Take(PageSize).ToList();
+		var next = rows.Count > PageSize ? Cursor.Write(page[^1].Id.Value) : null;
+
+		var items = page
 			.Select(report => new ReportListItem(
 				report.Id.Value,
 				report.SubmittedAt,
@@ -93,7 +138,9 @@ public static class ReportEndpoints
 				report.Version,
 				report.ReporterName,
 				report.PilotName))
-			.ToList());
+			.ToList();
+
+		return Results.Ok(new ReportListPage(items, next));
 	}
 
 	/// <summary>
@@ -502,5 +549,42 @@ public static class ReportEndpoints
 		await database.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
 		return Results.NoContent();
+	}
+
+	/// <summary>
+	///     The admin list's keyset position: the last page's last report ID,
+	///     written as one opaque URL-safe token — the same ID-only shape as the
+	///     public feed's cursor (ADR-0155). It carries nothing a reviewer could
+	///     not already read from the row itself, and <see cref="List" /> looks the
+	///     ID's <c>submitted_at</c> up server-side to resolve a position.
+	/// </summary>
+	private static class Cursor
+	{
+		private static readonly int MaxTokenLength = ((TinyId.Length + 2) / 3) * 4;
+
+		public static string Write(string id)
+		{
+			return Base64Url.EncodeToString(Encoding.UTF8.GetBytes(id));
+		}
+
+		public static bool TryRead(string? token, out string id)
+		{
+			id = string.Empty;
+
+			if (string.IsNullOrEmpty(token) || token.Length > MaxTokenLength || !Base64Url.IsValid(token))
+			{
+				return false;
+			}
+
+			var plain = Encoding.UTF8.GetString(Base64Url.DecodeFromChars(token));
+
+			if (!TinyId.TryParse(plain, out _))
+			{
+				return false;
+			}
+
+			id = plain;
+			return true;
+		}
 	}
 }

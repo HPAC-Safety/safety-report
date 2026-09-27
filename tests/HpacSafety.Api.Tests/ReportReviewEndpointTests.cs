@@ -1,5 +1,7 @@
+using System.Buffers.Text;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using HpacSafety.Api.Authentication;
 using HpacSafety.Core;
@@ -227,6 +229,51 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenMoreReportsThanFitOnOnePage_WhenListed_ThenTheNextCursorContinuesWithNoDuplicateOrMissingReport()
+	{
+		// Given: enough live reports on their own to guarantee more than one page,
+		// whatever else this shared database already holds.
+		Seeding.Seeded last = await Seed();
+		for (var i = 0; i < 3; i++)
+		{
+			last = await Seed();
+		}
+
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+
+		// When
+		var first = await Page(client, null, null);
+		var firstItems = first.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()).ToList();
+		var next = first.GetProperty("next").ValueKind == JsonValueKind.String ? first.GetProperty("next").GetString() : null;
+
+		// Then
+		next.ShouldNotBeNull();
+
+		var second = await Page(client, null, next);
+		var secondItems = second.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()).ToList();
+
+		firstItems.Intersect(secondItems).ShouldBeEmpty();
+		firstItems.Concat(secondItems).ShouldContain(last["pending"]);
+	}
+
+	[Fact]
+	public async Task GivenACursorNamingAReportNoLongerInTheQueue_WhenListed_ThenTheListRestartsFromTheTop()
+	{
+		// Given
+		await Seed();
+		using var client = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		var first = await Page(client, null, null);
+		var unknownCursor = Base64Url.EncodeToString(Encoding.UTF8.GetBytes(TinyId.New().Value));
+
+		// When
+		var restarted = await Page(client, null, unknownCursor);
+
+		// Then
+		restarted.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString())
+			.ShouldBe(first.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()));
+	}
+
+	[Fact]
 	public async Task GivenAnUnknownFilter_WhenListed_ThenProblemNamesTheKnownFilters()
 	{
 		// Given
@@ -398,12 +445,41 @@ public class ReportReviewEndpointTests(ApiPostgresFixture fixture)
 		return listed.Single(item => item.GetProperty("id").GetString() == id);
 	}
 
+	/// <summary>Reads every page of the list, following <c>next</c> until it is null (REQ-MOD-125).</summary>
 	private static async Task<List<JsonElement>> List(HttpClient client,
 													  string? filter)
 	{
-		var path = filter is null ? "/api/admin/reports" : $"/api/admin/reports?filter={filter}";
-		var body = await client.GetFromJsonAsync<JsonElement>(new Uri(path, UriKind.Relative));
-		return [.. body.EnumerateArray()];
+		var items = new List<JsonElement>();
+		string? after = null;
+
+		do
+		{
+			var page = await Page(client, filter, after);
+			items.AddRange(page.GetProperty("items").EnumerateArray());
+			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
+		} while (after is not null);
+
+		return items;
+	}
+
+	private static async Task<JsonElement> Page(HttpClient client,
+										  string? filter,
+										  string? after)
+	{
+		var query = string.Join('&', new[]
+		{
+			filter is null ? null : $"filter={filter}",
+			after is null ? null : $"after={after}",
+		}.Where(part => part is not null));
+
+		var path = query.Length == 0 ? "/api/admin/reports" : $"/api/admin/reports?{query}";
+		using var response = await client.GetAsync(new Uri(path, UriKind.Relative));
+		var body = await response.Content.ReadAsStringAsync();
+		if (!response.IsSuccessStatusCode)
+		{
+			throw new InvalidOperationException($"{(int)response.StatusCode}: {body}");
+		}
+		return JsonDocument.Parse(body).RootElement;
 	}
 
 	private static readonly Uri PendingCounts = new("/api/admin/counts", UriKind.Relative);

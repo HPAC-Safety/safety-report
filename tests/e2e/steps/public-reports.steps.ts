@@ -174,3 +174,81 @@ Then("the report shows the other language's text", async ({ page }) => {
 	await expect(page.locator('[data-summary="en-CA"]')).toHaveText(FIRST.aiSummaryEn)
 	await expect(page).toHaveURL(new RegExp(`/reports/${FIRST.id}$`))
 })
+
+// ── Infinite scroll (issue no. 572): auto-load, back-button restore, fallback, retry ──
+
+/**
+ * Disables the auto-load sentinel so a scenario proves the fallback button
+ * itself works, on its own, the way a keyboard or screen-reader visitor who
+ * never triggers the IntersectionObserver would rely on it.
+ */
+async function disableAutoLoad(page: Page) {
+	await page.addInitScript(() => {
+		class NoObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		;(window as any).IntersectionObserver = NoObserver
+	})
+}
+
+When("a visitor scrolls to the end of the list", async ({ page }) => {
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	const sentinel = page.locator("[data-infinite-scroll-sentinel]")
+	// A short synthetic list may already sit within the viewport, so the
+	// sentinel can auto-load before this ever scrolls it into view — that is
+	// still the behaviour under test, so a sentinel already gone is fine.
+	await sentinel.scrollIntoViewIfNeeded().catch(() => {})
+})
+
+Then("the older reports load without a page change or an address change", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page).toHaveURL(/\/reports$/)
+})
+
+When("a visitor opens one of them and goes back", async ({ page }) => {
+	await page.locator(`[data-report-id="${OLDER.id}"] a, [data-report-id="${OLDER.id}"]`).first().click()
+	await expect(page).toHaveURL(new RegExp(`/reports/${OLDER.id}$`))
+	await page.goBack()
+})
+
+Then("the same reports are still shown, at the same scroll position", async ({ page }) => {
+	await expect(page).toHaveURL(/\/reports$/)
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+})
+
+When("a visitor activates the {string} action without scrolling", async ({ page }, name: string) => {
+	await disableAutoLoad(page)
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await page.getByRole("button", { name }).click()
+})
+
+Then("the older reports load", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+})
+
+Then("a screen reader is told how many more reports loaded", async ({ page }) => {
+	await expect(page.locator('[aria-live="polite"]')).toContainText("1 more report loaded")
+})
+
+Given("the public feed's next page fails to load", async ({ page }) => {
+	await stubFeed(page)
+	await page.route(/\/api\/v1\/public\/reports\?after=/, (route) => route.fulfill({ status: 500, body: "" }))
+})
+
+When("a visitor activates the {string} action", async ({ page }, name: string) => {
+	await disableAutoLoad(page)
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await page.getByRole("button", { name }).click()
+})
+
+Then("the feed offers a {string} action instead of failing silently", async ({ page }, name: string) => {
+	await expect(page.getByRole("button", { name })).toBeVisible()
+})

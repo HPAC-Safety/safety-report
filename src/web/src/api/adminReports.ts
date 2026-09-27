@@ -49,6 +49,12 @@ export interface ReportListItem {
 	pilotName: string | null
 }
 
+/** One page of the admin report list, newest submitted first; `next` continues it, or is null on the last page (REQ-MOD-125). */
+export interface ReportListPage {
+	items: ReportListItem[]
+	next: string | null
+}
+
 export interface ReportAnswerValue {
 	/** A boolean for a yes/no or checkbox answer (ADR-0130); the reporter's words otherwise. */
 	value: string | boolean
@@ -161,8 +167,10 @@ function post<T>(
 	return call<T>(path, { method: "POST", body: JSON.stringify(body) })
 }
 
-export function listReports(filter: ReportFilter): Promise<ReportListItem[]> {
-	return get(`/api/admin/reports?filter=${encodeURIComponent(filter)}`)
+/** One page of the list, keyset-paginated; `after` continues a previous page (REQ-MOD-125). */
+export function listReports(filter: ReportFilter, after: string | null = null): Promise<ReportListPage> {
+	const query = after ? `filter=${encodeURIComponent(filter)}&after=${encodeURIComponent(after)}` : `filter=${encodeURIComponent(filter)}`
+	return get(`/api/admin/reports?${query}`)
 }
 
 export function getReport(id: string): Promise<ReportDetail> {

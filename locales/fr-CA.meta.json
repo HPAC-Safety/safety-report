@@ -2189,11 +2189,11 @@
     "provider": "human",
     "reviewed": true
   },
-  "report.typeAhead.showChoices": {
-    "source_hash": "c66a7cf036d2697f04fb44594c69dd5148e9005473071697fbe115133f5f1d90",
-    "target_hash": "4a3b9d4f585730e4b7fbe28c5fb17fa6b29d333f5e7be5d0d7122ce8e83a9858",
-    "provider": "human",
-    "reviewed": true
+  "report.typeAhead.typeToSeeChoices": {
+    "source_hash": "4b7bd803654de0cb40a4ca1cc9f7e342538ccf6985fac515cfedaf1139090fc6",
+    "target_hash": "caa505ef4d38a75c05cadfcfabc0fb966aaa638bf70d67ce07f7f73a5e74d479",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
   },
   "reports.action.cancel": {
     "source_hash": "19766ed6ccb2f4a32778eed80d1928d2c87a18d7c275ccb163ec6709d3eb2e27",

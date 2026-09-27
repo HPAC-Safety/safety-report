@@ -167,7 +167,9 @@ Given("a signed-in reporter answers a type-ahead question offering two choices b
 })
 
 When("they pick the second {string} from the list", async ({ page }, wording: string) => {
-	await page.getByRole("button", { name: "Show choices" }).click()
+	const field = page.getByRole("combobox", { name: "Where did you launch?" })
+	await field.click()
+	await field.fill(wording)
 	await page.getByRole("listbox").getByRole("option", { name: wording }).nth(1).click()
 })
 

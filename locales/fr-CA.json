@@ -152,8 +152,8 @@
       "placeholder": "Choisissez n’importe lequel"
     },
     "typeAhead": {
-      "showChoices": "Afficher les choix",
-      "noMatches": "Aucun choix ne correspond. Ce que vous avez tapé sera envoyé tel quel."
+      "noMatches": "Aucun choix ne correspond. Ce que vous avez tapé sera envoyé tel quel.",
+      "typeToSeeChoices": "Tapez au moins trois lettres pour voir les suggestions correspondantes, ou saisissez votre propre terme."
     },
     "dependent": {
       "answerFirst": "Répondez d’abord à la question «{question} ».",

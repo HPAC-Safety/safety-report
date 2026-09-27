@@ -1410,7 +1410,7 @@ The editor offers Allow future dates only for a date question, unchecked — *pl
 
 ### REQ-QB-159
 
-A type-ahead question is a picker the form draws, not the browser's suggestion list — *playwright-bdd, Covered*
+A type-ahead question is a field the form draws, with no caret, and opens with a hint before 3 characters — *playwright-bdd, Covered*
 
 ### REQ-QB-160
 
@@ -1655,6 +1655,22 @@ Words typed into a dependent type-ahead are kept and sent as typed, even when th
 ### REQ-QB-228
 
 The migration merges a dependent type-ahead's identical duplicates into the oldest — *Reqnroll, Covered*
+
+### REQ-QB-229
+
+Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint — *playwright-bdd, Covered*
+
+### REQ-QB-230
+
+Below 3 characters, a type-ahead's arrow keys and Enter pick nothing — *playwright-bdd, Covered*
+
+### REQ-QB-231
+
+A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do — *playwright-bdd, Covered*
+
+### REQ-QB-232
+
+Reopening a type-ahead filters by what it already holds, however it is reopened — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 

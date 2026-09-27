@@ -193,32 +193,52 @@ both.
 
 ## The type-ahead field
 
-A type-ahead question looks like the form's other pickers: one field with a
-caret, whose list opens directly beneath it, as wide as the field and drawn in
-the form's own surface, font, border, and focus ring. The form draws that list
-itself; the browser's own suggestion list (`<datalist>`) is not used, so it
-looks the same in every browser (`REQ-QB-159`,
+A type-ahead question looks like the form's other pickers: one field, whose
+list opens directly beneath it, as wide as the field and drawn in the form's
+own surface, font, border, and focus ring. The form draws that list itself;
+the browser's own suggestion list (`<datalist>`) is not used, so it looks the
+same in every browser (`REQ-QB-159`,
 [ADR-0140](../../docs/decisions/ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)).
+Unlike the single-select and the multi-select, it has **no caret**: it reads
+as a place to type, not a dropdown to pick from
+([ADR-0152](../../docs/decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
 
-- **Opening.** Pressing the caret, clicking the field, pressing Alt and the
-  down arrow, or typing opens the list.
-- **Filtering.** What the reporter types narrows the list to the choices whose
-  wording contains it anywhere, ignoring case and accents, in the reader's
-  language (`REQ-QB-160`). The list keeps the order and separators above.
-- **Keyboard and pointer.** The down and up arrows move the highlighted
-  choice through the list, and pointing at a choice highlights it. Enter takes
-  the highlighted choice, Alt and the down arrow open the list without moving,
-  and Escape or a press outside the field closes it, keeping what the field
-  holds (`REQ-QB-161`). Tab moves on and closes it too (`REQ-QB-162`). The
-  field follows the WAI-ARIA 1.2 combobox pattern, and keeps its label, help
-  text, and error.
+- **Opening.** Clicking the field, pressing Alt and the down arrow, or typing
+  opens the list.
+- **A hint below 3 characters.** Trimmed of spaces, fewer than 3 typed
+  characters shows the open list with no choices, only a hint row: "Type 3 or
+  more letters to see matching choices, or enter your own." No option is
+  active there, so the up and down arrows and Enter do nothing. Reaching 3
+  characters replaces the hint with the matching choices; deleting back below
+  3 brings the hint back. This is announced to assistive technology through a
+  polite live status (`REQ-QB-159`, `REQ-QB-229`, `REQ-QB-230`,
+  [ADR-0152](../../docs/decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
+  A dependent type-ahead follows the same rule, on top of its own narrowing by
+  the parent's answer (`REQ-QB-231`, ADR-0146).
+- **Reopening filters by what the field holds.** Closing the list and opening
+  it again — by any of the ways above — filters by the field's current text
+  exactly as typing it would: the hint below 3 characters, only the matching
+  choices at 3 or more. It never shows every choice unfiltered on reopen,
+  whatever the field holds (`REQ-QB-232`, ADR-0152).
+- **Filtering.** At 3 or more characters, what the reporter typed narrows the
+  list to the choices whose wording contains it anywhere, ignoring case and
+  accents, in the reader's language (`REQ-QB-160`). The list keeps the order
+  and separators above.
+- **Keyboard and pointer.** At 3 or more characters, the down and up arrows
+  move the highlighted choice through the list, and pointing at a choice
+  highlights it. Enter takes the highlighted choice, Alt and the down arrow
+  open the list without moving, and Escape or a press outside the field
+  closes it, keeping what the field holds (`REQ-QB-161`). Tab moves on and
+  closes it too (`REQ-QB-162`). The field follows the WAI-ARIA 1.2 combobox
+  pattern, and keeps its label, help text, and error.
 - **A picked choice.** A choice taken from the list is sent as that choice,
   by its identifier, even where another choice carries the same wording
   (`REQ-QB-171`). Text typed without picking is matched to a choice by its
   wording, ignoring case, or else sent as typed.
-- **A value it does not offer.** The reporter may still type one. The list
-  says nothing matches, and the words typed stay in the field and are sent as
-  a reporter-added value (`REQ-QB-162`, `REQ-SUB-083`,
+- **A value it does not offer.** The reporter may still type one, of any
+  length. The list says nothing matches once 3 or more characters match no
+  choice, and the words typed stay in the field and are sent as a
+  reporter-added value (`REQ-QB-162`, `REQ-SUB-083`,
   [ADR-0129](../../docs/decisions/ADR-0129-a-type-ahead-value-is-edited-in-place-merged-and-reviewed.md)).
 - **One-language choices.** A choice a reporter added in one language is
   offered in that language, marked with it for assistive technology
@@ -229,8 +249,10 @@ looks the same in every browser (`REQ-QB-159`,
 ## The single-select and multi-select fields
 
 A single-select and a multi-select look and feel like the type-ahead: the
-same field, caret, and list, drawn by the form, with the same rows,
-separators, and highlighted row. Each keeps its own input type
+same field style and list, drawn by the form, with the same rows, separators,
+and highlighted row. Unlike the type-ahead, each keeps a caret and shows its
+full list as soon as it opens — the threshold and hint above are the
+type-ahead's alone. Each keeps its own input type
 ([ADR-0150](../../docs/decisions/ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md)).
 
 - **Single-select.** A field with a caret shows the chosen choice, or "Choose

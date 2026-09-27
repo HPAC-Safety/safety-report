@@ -644,16 +644,28 @@ When("a reporter using {word} opens that question", async ({ page }, language: s
 })
 
 Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
-	await page.getByRole("combobox").click()
-	const offered = page.getByRole("listbox").getByRole("option")
+	// A type-ahead's open list only ever shows what matches the typed text
+	// (ADR-0152); "Colline Cooper" and "Mount 7" share no run of 3 characters,
+	// so each is typed and checked on its own.
+	const field = page.getByRole("combobox")
 
-	// The choice with both languages is offered in French; the one a reporter
-	// typed in English only is offered in English, and says so.
-	await expect(offered).toHaveCount(2)
-	await expect(offered.nth(0)).toHaveText("Colline Cooper")
-	await expect(offered.nth(0)).not.toHaveAttribute("lang", /./)
-	await expect(offered.nth(1)).toHaveText("Mount 7")
-	await expect(offered.nth(1)).toHaveAttribute("lang", "en-CA")
+	// The choice with both languages is offered in French.
+	await field.click()
+	await field.fill("Col")
+	const bilingual = page.getByRole("listbox").getByRole("option")
+	await expect(bilingual).toHaveCount(1)
+	await expect(bilingual.first()).toHaveText("Colline Cooper")
+	await expect(bilingual.first()).not.toHaveAttribute("lang", /./)
+	await field.fill("")
+	await page.keyboard.press("Escape")
+
+	// The one a reporter typed in English only is offered in English, and says so.
+	await field.click()
+	await field.fill("Mou")
+	const englishOnly = page.getByRole("listbox").getByRole("option")
+	await expect(englishOnly).toHaveCount(1)
+	await expect(englishOnly.first()).toHaveText("Mount 7")
+	await expect(englishOnly.first()).toHaveAttribute("lang", "en-CA")
 })
 
 /*
@@ -798,13 +810,75 @@ Given(
 	},
 )
 
-/** What the question's control lists, in order, with "|" where a separator is drawn; a single-select's "Choose one" row is not a choice. */
-async function listedChoices(page: Page): Promise<string[]> {
+/** Text folded for matching: accents and case do not count, as `TypeAheadField` folds them. */
+function folded(text: string): string {
+	return text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase()
+}
+
+/**
+ * A run of 3 or more characters every one of `labels` contains, if one
+ * exists — typing it opens the list on every one of them together, so their
+ * relative order (ADR-0136) can be read off in one pass. `null` when no such
+ * run exists.
+ */
+function sharedSubstring(labels: string[]): string | null {
+	if (labels.length < 2) return null
+	const [first, ...rest] = labels.map(folded)
+	for (let length = first!.length; length >= 3; length--) {
+		for (let start = 0; start + length <= first!.length; start++) {
+			const candidate = first!.slice(start, start + length)
+			if (rest.every((label) => label.includes(candidate))) return candidate
+		}
+	}
+	return null
+}
+
+/**
+ * What the question's control lists, in order, with "|" where a separator is
+ * drawn; a single-select's "Choose one" row is not a choice.
+ *
+ * A type-ahead's open list only ever shows what matches the typed text
+ * (ADR-0152): it never shows every choice unfiltered, however it is opened.
+ * `expected` is required there. Each label is typed and confirmed on its
+ * own first, then every one of `expected` must share a run of 3 or more
+ * characters — the fixture is chosen so they do — and typing it shows them
+ * all together, separators included, so real order (and separator position)
+ * is read the same way a single-select's or multi-select's full list is.
+ * Never returns `expected` unchecked: with no shared run, a test asserting
+ * order or separators against this would pass no matter what the list
+ * actually shows, so this throws instead.
+ */
+async function listedChoices(page: Page, expected?: string[]): Promise<string[]> {
 	const main = page.getByRole("main")
 	await expect(main.getByText("Which one applies?").first()).toBeVisible()
 
 	const combobox = main.getByRole("combobox")
 	if ((await combobox.count()) > 0) {
+		const isInput = (await combobox.evaluate((element) => element.tagName)) === "INPUT"
+		if (isInput) {
+			if (!expected) throw new Error("listedChoices needs the expected labels to read a type-ahead's list")
+			for (const label of expected) {
+				await combobox.click()
+				await combobox.fill(label)
+				await expect(main.getByRole("listbox").getByRole("option", { name: label, exact: true })).toBeVisible()
+				await combobox.fill("")
+				await page.keyboard.press("Escape")
+			}
+			const shared = sharedSubstring(expected)
+			if (!shared) {
+				throw new Error(
+					`listedChoices: no run of 3 or more characters is shared by every one of ${JSON.stringify(expected)}. ` +
+						"A type-ahead's list only ever shows what matches typed text, so order and separators cannot be " +
+						"read from it without one — pick fixture wording that shares a run, or drop this row.",
+				)
+			}
+			await combobox.click()
+			await combobox.fill(shared)
+			const entries = await listEntries(page, { placeholder: false })
+			await combobox.fill("")
+			await page.keyboard.press("Escape")
+			return entries
+		}
 		if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
 		return listEntries(page, { placeholder: false })
 	}
@@ -816,13 +890,22 @@ async function listedChoices(page: Page): Promise<string[]> {
 		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
 }
 
+// The full expected order the last "its choices are listed" step asserted,
+// so "a separator is drawn after" can read a type-ahead's list again with
+// the same fixture — it only ever shows what matches typed text (ADR-0152),
+// so it needs every label, not just the two either side of the separator.
+let lastListedOrder: string[] | undefined
+
 Then(/^its choices are listed (".*")$/, async ({ page }, quoted: string) => {
 	const expected = [...quoted.matchAll(/"([^"]*)"/g)].map((match) => match[1])
-	expect((await listedChoices(page)).filter((entry) => entry !== "|")).toEqual(expected)
+	lastListedOrder = expected
+	expect((await listedChoices(page, expected)).filter((entry) => entry !== "|")).toEqual(expected)
 })
 
 Then("a separator is drawn after {string} and after {string}", async ({ page }, first: string, second: string) => {
-	const listed = await listedChoices(page)
+	const combobox = page.getByRole("main").getByRole("combobox")
+	const isInput = (await combobox.count()) > 0 && (await combobox.evaluate((element) => element.tagName)) === "INPUT"
+	const listed = isInput ? await listedChoices(page, lastListedOrder) : await listedChoices(page)
 	const separators = listed.flatMap((entry, index) => (entry === "|" ? [listed[index - 1]] : []))
 	expect(separators).toEqual([first, second])
 })
@@ -895,7 +978,7 @@ When("a reporter using English opens that question on a screen {int} pixels wide
 })
 
 Then(
-	"the question is a combobox field with a caret, described by its help text, and no browser suggestion list",
+	"the question is a combobox field with no caret, described by its help text, and no browser suggestion list",
 	async ({ page }) => {
 		const field = page.getByRole("combobox", { name: "Which one applies?" })
 		await expect(field).toBeVisible()
@@ -903,7 +986,9 @@ Then(
 		await expect(field).toHaveAttribute("aria-expanded", "false")
 		await expect(field).not.toHaveAttribute("list", /./)
 		await expect(page.locator("datalist")).toHaveCount(0)
-		await expect(page.getByRole("button", { name: "Show choices" })).toBeVisible()
+		// No caret drawn beside the field (ADR-0152).
+		await expect(page.getByRole("button", { name: "Show choices" })).toHaveCount(0)
+		await expect(page.locator("[data-caret]")).toHaveCount(0)
 		// Drawn like the form's other fields, in the design-system border.
 		const border = await field.evaluate((element) => getComputedStyle(element).borderTopColor)
 		const rule = await field.evaluate((element) => {
@@ -927,11 +1012,9 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 		"pressing Space": "Space",
 	}
 	if (opening === "pressing the caret") {
-		// A single-select's caret is drawn inside the field itself.
-		if (await isSingleSelect(page)) {
-			const box = (await field.boundingBox())!
-			await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
-		} else await page.getByRole("button", { name: "Show choices" }).click()
+		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0152).
+		const box = (await field.boundingBox())!
+		await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
 	} else if (opening === "clicking the field") await field.click()
 	else if (keys[opening]) {
 		await field.focus()
@@ -943,7 +1026,8 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 	}
 })
 
-Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
+/** The list geometry shared by every opening: directly beneath the field, as wide as it. */
+async function expectListBeneathField(page: Page) {
 	const field = typeAheadField(page)
 	await expect(field).toHaveAttribute("aria-expanded", "true")
 	const list = typeAheadList(page)
@@ -955,8 +1039,38 @@ Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/,
 	expect(Math.abs(listBox.width - fieldBox.width)).toBeLessThanOrEqual(1)
 	expect(listBox.y).toBeGreaterThanOrEqual(fieldBox.y + fieldBox.height)
 	expect(listBox.y - (fieldBox.y + fieldBox.height)).toBeLessThanOrEqual(8)
+}
 
+Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
+	await expectListBeneathField(page)
 	expect((await listEntries(page)).filter((entry) => entry !== "|")).toEqual(quotedList(quoted))
+})
+
+const HINT_TEXT = "Type 3 or more letters to see matching choices, or enter your own."
+
+/** The hint row, and its polite live-region echo announced to assistive technology. */
+async function expectHint(page: Page) {
+	await expect(typeAheadList(page).getByRole("option")).toHaveCount(0)
+	await expect(typeAheadList(page).locator("[data-hint]")).toHaveText(HINT_TEXT)
+	await expect(page.getByRole("status").filter({ hasText: HINT_TEXT })).toBeAttached()
+}
+
+Then("the list opens directly beneath the field, as wide as it, offering only the hint to type 3 or more letters", async ({ page }) => {
+	await expectListBeneathField(page)
+	await expectHint(page)
+})
+
+Then("the list offers only the hint to type 3 or more letters", async ({ page }) => {
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
+	await expectHint(page)
+})
+
+When("they press Backspace", async ({ page }) => {
+	await page.keyboard.press("Backspace")
+})
+
+Then("the field holds {string}", async ({ page }, value: string) => {
+	await expect(typeAheadField(page)).toHaveValue(value)
 })
 
 When("they type {string} in the field", async ({ page }, typed: string) => {

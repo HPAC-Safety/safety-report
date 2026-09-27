@@ -328,19 +328,62 @@ function modelField(page: Page) {
 	return type === "autocomplete" ? page.getByRole("combobox", { name: "Model" }) : page.locator("#question-rev-model")
 }
 
-async function modelOffers(page: Page): Promise<string[]> {
+/**
+ * The choices currently offered under the parent's answer. A type-ahead
+ * shows no choices below 3 typed characters (ADR-0152), so each candidate's
+ * own label is typed in turn and checked for a match, rather than opening the
+ * list once to read every row.
+ *
+ * This proves which choices are offered, not the order they would list in:
+ * REQ-QB-197/223's own fixed wording ("Ikuma", "Mentor 7", "Other") does not
+ * claim an order, and shares no run of 3 or more characters that would let a
+ * type-ahead show them together to prove one. Order still sorts through the
+ * same `optionGroups`/`sortChoices` path (ADR-0136) as every other choice
+ * question; `report-form.steps.ts`'s `listedChoices` proves it where a
+ * scenario claims it and its fixture shares a run — REQ-QB-145, -146, -148.
+ */
+async function modelOffers(page: Page, expected: string[]): Promise<void> {
 	const type = forms.get(page)?.[0]?.children[1]?.type
 	if (type === "autocomplete") {
-		await page.getByRole("button", { name: /Show choices|Afficher les choix|#Show choices/ }).last().click()
-		const offered = await page.getByRole("listbox", { name: "Model" }).getByRole("option").allTextContents()
-		await page.keyboard.press("Escape")
-		return offered
+		const field = modelField(page)
+		// Probing types into the field, which may already hold a real answer;
+		// put it back exactly as found once every label has been checked.
+		const original = await field.inputValue()
+		for (const label of expected) {
+			await field.click()
+			await field.fill(label)
+			await expect(page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: label, exact: true })).toBeVisible()
+			await field.fill("")
+			await page.keyboard.press("Escape")
+		}
+		// Every label this form's "Model" could name, not just the current
+		// form's own options: the fixture varies from scenario to scenario.
+		const allLabels = (forms.get(page)?.[0]?.children[1]?.options ?? MODELS).map((option) => option.labelEn)
+		for (const label of allLabels.filter((label) => !expected.includes(label))) {
+			// Typing another choice's exact wording matches it by wording
+			// (REQ-QB-171), but #562/REQ-QB-227 keeps it as the words typed
+			// instead of clearing it, since the parent's answer does not offer
+			// it — so the exact label is safe to type here.
+			await field.click()
+			await field.fill(label)
+			await expect(page.getByRole("listbox", { name: "Model" })).toBeHidden()
+			await field.fill("")
+			await page.keyboard.press("Escape")
+		}
+		if (original) {
+			await field.click()
+			await field.fill(original)
+			const option = page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: original, exact: true })
+			if (await option.count()) await option.click()
+			else await page.keyboard.press("Escape")
+		}
+		return
 	}
 	// A single-select's list, less its "Choose one" row (ADR-0150).
 	await modelField(page).click()
 	const offered = await page.getByRole("listbox", { name: "Model" }).locator('[role="option"]:not([data-placeholder])').allTextContents()
 	await page.keyboard.press("Escape")
-	return offered
+	expect(offered).toEqual(expected)
 }
 
 async function openForm(page: Page, form: StubQuestion[], language = "English") {
@@ -398,7 +441,7 @@ When("they answer {string} with {string}", async ({ page }, _parent: string, mak
 
 Then("{string} is enabled and offers only {string} and {string}", async ({ page }, _child: string, first: string, second: string) => {
 	await expect(modelField(page)).toBeEnabled()
-	expect(await modelOffers(page)).toEqual([first, second])
+	await modelOffers(page, [first, second])
 })
 
 Given("the type-ahead {string} question's choices depend on the single-select {string} question", async ({ page }, _child: string, _parent: string) => {
@@ -407,8 +450,10 @@ Given("the type-ahead {string} question's choices depend on the single-select {s
 
 Given("a reporter answered {string} with {string} and picked {string} for {string}", async ({ page }, _parent: string, make: string, model: string, _child: string) => {
 	await answerMake(page, make)
-	await page.getByRole("button", { name: "Show choices" }).last().click()
-	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model }).click()
+	const field = modelField(page)
+	await field.click()
+	await field.fill(model)
+	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model, exact: true }).click()
 	await expect(modelField(page)).toHaveValue(model)
 })
 
@@ -416,9 +461,34 @@ When("they change {string} to {string}", async ({ page }, _parent: string, make:
 	await answerMake(page, make)
 })
 
+// ---- A dependent type-ahead's own hint and threshold (REQ-QB-231, ADR-0152) ----
+
+When("they open {string}'s list by clicking the field", async ({ page }, _child: string) => {
+	await modelField(page).click()
+})
+
+When("they type {string} in {string}", async ({ page }, typed: string, _child: string) => {
+	await modelField(page).fill(typed)
+})
+
+Then("{string}'s list offers only the hint to type 3 or more letters", async ({ page }, _child: string) => {
+	const list = page.getByRole("listbox", { name: "Model" })
+	await expect(list.getByRole("option")).toHaveCount(0)
+	await expect(list.locator("[data-hint]")).toHaveText("Type 3 or more letters to see matching choices, or enter your own.")
+})
+
+Then("{string}'s list offers only {string}", async ({ page }, _child: string, label: string) => {
+	await expect(page.getByRole("listbox", { name: "Model" }).getByRole("option")).toHaveText([label])
+})
+
+Then("{string}'s list offers no choice", async ({ page }, _child: string) => {
+	await expect(modelField(page)).toHaveAttribute("aria-expanded", "false")
+	await expect(page.getByRole("listbox", { name: "Model" })).toBeHidden()
+})
+
 Then("{string} is empty and offers only {string}", async ({ page }, _child: string, only: string) => {
 	await expect(modelField(page)).toHaveValue("")
-	expect(await modelOffers(page)).toEqual([only])
+	await modelOffers(page, [only])
 })
 
 When("they type {string}, a value {string} does not offer, and change {string} to {string}", async ({ page }, typed: string, _child: string, _parent: string, make: string) => {
@@ -442,7 +512,7 @@ When("a reporter types {string}, a value {string} does not offer, for {string}",
 
 Then("{string} is enabled and its list offers no choice", async ({ page }, _child: string) => {
 	await expect(modelField(page)).toBeEnabled()
-	expect(await modelOffers(page)).toEqual([])
+	await modelOffers(page, [])
 	await expect(page.getByTestId("question-note")).toContainText("Type yours")
 })
 
@@ -497,7 +567,7 @@ When("they come back and continue the saved report", async ({ page }) => {
 Then("{string} holds {string}, and {string} holds {string} and offers only the {string} models", async ({ page }, _parent: string, make: string, _child: string, model: string, _models: string) => {
 	await expect(page.getByRole("combobox", { name: "Make" })).toHaveText(make)
 	await expect(modelField(page)).toHaveValue(model)
-	expect(await modelOffers(page)).toEqual(["Ikuma", "Mentor 7"])
+	await modelOffers(page, ["Ikuma", "Mentor 7"])
 })
 
 Then("a saved {string} answer no longer linked to the saved {string} answer is restored empty", async ({ browser }, _child: string, _parent: string) => {
@@ -544,19 +614,21 @@ Given(
 
 Then("{string} offers {string} and {string}", async ({ page }, _child: string, first: string, second: string) => {
 	await expect(modelField(page)).toBeEnabled()
-	expect(await modelOffers(page)).toEqual([first, second])
+	await modelOffers(page, [first, second])
 })
 
 When("they pick {string} and change {string} to {string}", async ({ page }, model: string, _parent: string, make: string) => {
-	await page.getByRole("button", { name: "Show choices" }).last().click()
-	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model }).click()
+	const field = modelField(page)
+	await field.click()
+	await field.fill(model)
+	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model, exact: true }).click()
 	await expect(modelField(page)).toHaveValue(model)
 	await answerMake(page, make)
 })
 
 Then("{string} still holds {string} and offers {string} and {string}", async ({ page }, _child: string, model: string, first: string, second: string) => {
 	await expect(modelField(page)).toHaveValue(model)
-	expect(await modelOffers(page)).toEqual([first, second])
+	await modelOffers(page, [first, second])
 })
 
 When("the browser saved the report and they come back and continue it", async ({ page }) => {

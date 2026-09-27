@@ -1088,30 +1088,30 @@ Scenario: The API sends each choice's pin, pinned-first choices first and pinned
 @REQ-QB-145
 @ui
 Scenario Outline: A question's choices are listed alphabetically in the reader's language
-  Given a <type> question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
+  Given a <type> question offers "Green Ridge" / "Crête Verte", "Stone Ridge" / "Crête de Pierre", "Silver Ridge" / "Crête d'Argent", and "Blue Ridge" / "Crête Bleue", none pinned
   When a reporter using <language> opens that question
   Then its choices are listed <order>
 
 Examples:
-  | type          | language | order                                        |
-  | single_select | English  | "Eagle", "Emu", "Hawk", "Kestrel"            |
-  | single_select | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
-  | multi_select  | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
-  | autocomplete  | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
+  | type          | language | order                                                             |
+  | single_select | English  | "Blue Ridge", "Green Ridge", "Silver Ridge", "Stone Ridge"        |
+  | single_select | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | multi_select  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | autocomplete  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
 
 @REQ-QB-146
 @ui
 Scenario Outline: Pinned choices come first or last, each group alphabetical
-  Given a <type> question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
+  Given a <type> question offers "Southland" and "Northland" pinned first, "Otherland" pinned last, and "Westland", "Eastland", and "Midland" not pinned
   When a reporter using English opens that question
-  Then its choices are listed "Canada", "United States", "Brazil", "France", "Mexico", "Other"
+  Then its choices are listed "Northland", "Southland", "Eastland", "Midland", "Westland", "Otherland"
   And <separators>
 
 Examples:
-  | type          | separators                                                        |
-  | single_select | a separator is drawn after "United States" and after "Mexico"     |
-  | multi_select  | a separator is drawn after "United States" and after "Mexico"     |
-  | autocomplete  | a separator is drawn after "United States" and after "Mexico"     |
+  | type          | separators                                                       |
+  | single_select | a separator is drawn after "Southland" and after "Westland"     |
+  | multi_select  | a separator is drawn after "Southland" and after "Westland"     |
+  | autocomplete  | a separator is drawn after "Southland" and after "Westland"     |
 
 @REQ-QB-147
 Scenario: A value a reporter adds to a type-ahead is not pinned
@@ -1123,9 +1123,9 @@ Scenario: A value a reporter adds to a type-ahead is not pinned
 @REQ-QB-148
 @ui
 Scenario: A value a reporter adds to a type-ahead takes its alphabetical place
-  Given a type-ahead question offers "Woodside" and "Cooper's", and a reporter has since added "Mount 7"
+  Given a type-ahead question offers "Wood Ridge" and "Cooper Ridge", and a reporter has since added "Mount Ridge"
   When a reporter using English opens that question
-  Then its choices are listed "Cooper's", "Mount 7", "Woodside"
+  Then its choices are listed "Cooper Ridge", "Mount Ridge", "Wood Ridge"
 
 @REQ-QB-149
 Scenario: Pinning a choice never revises or forks its question
@@ -1166,19 +1166,61 @@ Scenario: A multi-select answer on the report page is listed as the form lists i
 
 @REQ-QB-159
 @ui
-Scenario Outline: A type-ahead question is a picker the form draws, not the browser's suggestion list
+Scenario Outline: A type-ahead question is a field the form draws, with no caret, and opens with a hint before 3 characters
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  Then the question is a combobox field with a caret, described by its help text, and no browser suggestion list
+  Then the question is a combobox field with no caret, described by its help text, and no browser suggestion list
   When they open the field's list by <opening>
-  Then a list as wide as the field opens directly beneath it, offering "Cooper's", "Mount 7", "Woodside"
+  Then the list opens directly beneath the field, as wide as it, offering only the hint to type 3 or more letters
 
 Examples:
   | opening                         |
-  | pressing the caret              |
   | clicking the field              |
   | pressing Alt and the down arrow |
   | typing "o"                      |
+
+@REQ-QB-229
+@ui
+Scenario: Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "Mo" in the field
+  Then the list offers only the hint to type 3 or more letters
+  When they type "u" in the field
+  Then a list as wide as the field opens directly beneath it, offering "Mount 7"
+  When they press Backspace
+  Then the list offers only the hint to type 3 or more letters
+
+@REQ-QB-230
+@ui
+Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "Mo" in the field
+  And they press the down arrow
+  And they press the up arrow
+  And they press Enter
+  Then the list offers only the hint to type 3 or more letters
+  And the field holds "Mo"
+
+@REQ-QB-232
+@ui
+Scenario Outline: Reopening a type-ahead filters by what it already holds, however it is reopened
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
+  When a reporter using English opens that question
+  And they type "<typed>" in the field
+  And they press Escape
+  When they open the field's list by <opening>
+  Then <outcome>
+
+Examples:
+  | typed | opening                          | outcome                                                                                    |
+  | Mou   | clicking the field               | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing Alt and the down arrow  | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing the down arrow          | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mo    | clicking the field               | the list offers only the hint to type 3 or more letters                                   |
+  | Mo    | pressing Alt and the down arrow  | the list offers only the hint to type 3 or more letters                                   |
+  | Mo    | pressing the down arrow          | the list offers only the hint to type 3 or more letters                                   |
 
 @REQ-QB-160
 @ui
@@ -1192,28 +1234,29 @@ Examples:
   | typed | offered                           |
   | emeu  | "Émeu"                            |
   | CRÉ   | "Crécerelle"                      |
-  | e     | "Aigle", "Crécerelle", "Émeu"     |
+  | aig   | "Aigle"                           |
+  | rel   | "Crécerelle"                      |
 
 @REQ-QB-161
 @ui
 Scenario: A reporter picks a type-ahead choice from the keyboard
-  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   When a reporter using English opens that question
-  And they type "o" in the field and press the down arrow twice
-  Then "Mount 7" is the field's active option
+  And they type "Mou" in the field and press the down arrow twice
+  Then "Mount Fromme" is the field's active option
   When they press the up arrow
-  Then "Cooper's" is the field's active option
-  When they press the down arrow
   Then "Mount 7" is the field's active option
+  When they press the down arrow
+  Then "Mount Fromme" is the field's active option
   When they press Enter
-  Then the list is closed and the field holds "Mount 7"
+  Then the list is closed and the field holds "Mount Fromme"
   When they press Alt and the down arrow
   Then its list is open
   When they press Escape
-  Then the list is closed and the field holds "Mount 7"
-  When they open the field's list by pressing the caret
+  Then the list is closed and the field holds "Mount Fromme"
+  When they open the field's list by clicking the field
   And they press outside the field
-  Then the list is closed and the field holds "Mount 7"
+  Then the list is closed and the field holds "Mount Fromme"
 
 @REQ-QB-162
 @ui
@@ -1230,14 +1273,26 @@ Scenario: A reporter types a type-ahead value its list does not offer
 Scenario Outline: A type-ahead's or single-select's list fits a phone screen and scrolls when long
   Given a <type> question offers 30 choices
   When a reporter using English opens that question on a screen 360 pixels wide
-  And they open the field's list by pressing the caret
+  And they open the field's list by <opening>
   Then the list fits within the screen's width, and the page does not scroll sideways
   And the list scrolls within itself
 
 Examples:
-  | type          |
-  | type-ahead    |
-  | single-select |
+  | type          | opening               |
+  | type-ahead    | typing "Launch site"  |
+  | single-select | pressing the caret    |
+
+@REQ-QB-231
+@ui
+Scenario: A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  When they answer "Make" with "Niviuk"
+  And they open "Model"'s list by clicking the field
+  Then "Model"'s list offers only the hint to type 3 or more letters
+  When they type "Iku" in "Model"
+  Then "Model"'s list offers only "Ikuma"
+  When they type "Rus" in "Model"
+  Then "Model"'s list offers no choice
 
 @REQ-QB-171
 @ui

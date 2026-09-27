@@ -1,5 +1,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from "react"
-import { Caret, ChoiceOptions, choiceListClassName, type ListChoice } from "./ChoiceList"
+import { ChoiceOptions, choiceListClassName, choiceRowClassName, type ListChoice } from "./ChoiceList"
+
+/** A type-ahead shows no choices below this many typed characters, trimmed (ADR-0140, ADR-0152). */
+export const TYPE_AHEAD_THRESHOLD = 3
 
 export interface TypeAheadChoice {
 	key: string
@@ -38,10 +41,16 @@ function folded(text: string, locale: string): string {
 
 /**
  * A type-ahead question as a picker the form draws (REQ-QB-159, ADR-0140): a
- * text field with a caret, and a list directly beneath it that typing narrows.
- * The WAI-ARIA 1.2 combobox pattern with list autocomplete: focus stays in the
- * field, and the arrow keys move the active option. Any text may be typed; a
- * value the list does not offer is a reporter-added one (ADR-0129).
+ * plain text field, with no caret, and a list directly beneath it that typing
+ * narrows. The WAI-ARIA 1.2 combobox pattern with list autocomplete: focus
+ * stays in the field, and the arrow keys move the active option. Any text may
+ * be typed; a value the list does not offer is a reporter-added one
+ * (ADR-0129).
+ *
+ * Below three typed characters, trimmed, the open list shows a hint instead
+ * of choices, so the field reads as a place to type rather than a dropdown to
+ * pick from (ADR-0152). No option is active there, so Up, Down, and Enter do
+ * nothing.
  */
 export function TypeAheadField({
 	fieldId,
@@ -65,15 +74,22 @@ export function TypeAheadField({
 	const listId = `${fieldId}-list`
 	const optionId = (choice: ListChoice) => `${fieldId}-option-${choice.key}`
 
-	const needle = filter ? folded(filter, locale) : ""
-	const shown = groups
-		.map((group) => (needle ? group.filter((choice) => folded(choice.label, locale).includes(needle)) : group))
-		.filter((group) => group.length > 0)
+	/** `groups`, narrowed to the choices whose wording contains `needle` anywhere; every choice for an empty needle. */
+	function filterGroups(needle: string): ListChoice[][] {
+		return (needle ? groups.map((group) => group.filter((choice) => folded(choice.label, locale).includes(needle))) : groups).filter(
+			(group) => group.length > 0,
+		)
+	}
+
+	// Below the threshold, the list shows only the hint: no choices, no active option.
+	const belowThreshold = value.trim().length < TYPE_AHEAD_THRESHOLD
+	const needle = !belowThreshold && filter ? folded(filter, locale) : ""
+	const shown = belowThreshold ? [] : filterGroups(needle)
 	const flat = shown.flat()
-	const expanded = open && flat.length > 0
-	const activeChoice = expanded && active >= 0 ? flat[active] : undefined
+	const expanded = open && (belowThreshold || flat.length > 0)
+	const activeChoice = expanded && !belowThreshold && active >= 0 ? flat[active] : undefined
 	const activeId = activeChoice ? optionId(activeChoice) : undefined
-	const noMatch = open && flat.length === 0 && needle !== ""
+	const noMatch = open && !belowThreshold && flat.length === 0 && needle !== ""
 
 	useEffect(() => {
 		if (!open) return
@@ -90,13 +106,18 @@ export function TypeAheadField({
 		if (activeId) document.getElementById(activeId)?.scrollIntoView({ block: "nearest" })
 	}, [activeId])
 
-	/** Opens the whole list, with the choice the field holds, if any, active. */
+	/**
+	 * Opens the list, filtered by what the field already holds — exactly as
+	 * typing it would (ADR-0152) — with the choice the field holds, if any,
+	 * active.
+	 */
 	function openAll(first: "none" | "first" | "last" = "none") {
-		const all = groups.flat()
-		const current = all.findIndex((choice) => (selectedKey ? choice.key === selectedKey : choice.label === value))
-		setFilter(null)
+		const belowAfter = value.trim().length < TYPE_AHEAD_THRESHOLD
+		const nextFlat = belowAfter ? [] : filterGroups(folded(value, locale)).flat()
+		const current = nextFlat.findIndex((choice) => (selectedKey ? choice.key === selectedKey : choice.label === value))
+		setFilter(value)
 		setOpen(true)
-		setActive(current >= 0 ? current : first === "first" ? 0 : first === "last" ? all.length - 1 : -1)
+		setActive(current >= 0 ? current : first === "first" ? 0 : first === "last" ? nextFlat.length - 1 : -1)
 	}
 
 	function close() {
@@ -163,7 +184,7 @@ export function TypeAheadField({
 				aria-controls={listId}
 				aria-activedescendant={activeId}
 				aria-describedby={describedBy}
-				className="w-full rounded border border-rule bg-surface py-2 pl-3 pr-11 font-sans text-ink placeholder:text-ink-muted disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted"
+				className="w-full rounded border border-rule bg-surface py-2 px-3 font-sans text-ink placeholder:text-ink-muted disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted"
 				value={value}
 				placeholder={placeholder}
 				disabled={disabled}
@@ -178,36 +199,31 @@ export function TypeAheadField({
 				}}
 				onKeyDown={onKeyDown}
 			/>
-			<button
-				type="button"
-				tabIndex={-1}
-				aria-label={t("report.typeAhead.showChoices")}
-				aria-controls={listId}
-				aria-expanded={expanded}
-				data-caret
-				disabled={disabled}
-				className="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-ink disabled:opacity-40"
-				onClick={() => {
-					if (open) close()
-					else openAll()
-					inputRef.current?.focus()
-				}}
-			>
-				<Caret />
-			</button>
 			{/* The listbox is always in the page so aria-controls names it; it is hidden while closed. */}
 			<ul id={listId} role="listbox" aria-label={label} hidden={!expanded} className={choiceListClassName}>
-				<ChoiceOptions
-					groups={shown}
-					optionId={optionId}
-					activeKey={activeChoice?.key}
-					// The highlighted choice is the selected one: the combobox with list autocomplete.
-					isSelected={(choice) => choice.key === activeChoice?.key}
-					onPoint={(choice) => setActive(flat.findIndex((entry) => entry.key === choice.key))}
-					onPick={choose}
-				/>
+				{belowThreshold ? (
+					// Presentational, like ChoiceSeparator: not an option, so Up, Down, and Enter pick nothing.
+					<li role="presentation" data-hint="" className={`${choiceRowClassName} cursor-default text-ink-muted`}>
+						{t("report.typeAhead.typeToSeeChoices")}
+					</li>
+				) : (
+					<ChoiceOptions
+						groups={shown}
+						optionId={optionId}
+						activeKey={activeChoice?.key}
+						// The highlighted choice is the selected one: the combobox with list autocomplete.
+						isSelected={(choice) => choice.key === activeChoice?.key}
+						onPoint={(choice) => setActive(flat.findIndex((entry) => entry.key === choice.key))}
+						onPick={choose}
+					/>
+				)}
 			</ul>
-			{/* Always in the page and empty until nothing matches, so the message is announced when it appears. */}
+			{/*
+			 * Always in the page, so a change is announced through this polite live
+			 * status the moment it happens. The hint is already visible as the
+			 * list's own row, so this copy stays screen-reader only; "no match"
+			 * has no visible row of its own, so it also draws the floating box.
+			 */}
 			<p
 				role="status"
 				className={
@@ -216,7 +232,7 @@ export function TypeAheadField({
 						: "sr-only"
 				}
 			>
-				{noMatch ? t("report.typeAhead.noMatches") : ""}
+				{noMatch ? t("report.typeAhead.noMatches") : expanded && belowThreshold ? t("report.typeAhead.typeToSeeChoices") : ""}
 			</p>
 		</div>
 	)

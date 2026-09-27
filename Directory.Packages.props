@@ -24,7 +24,7 @@
 		<!-- ReportGenerator is the other half of this and lives in
 		     .config/dotnet-tools.json, since it is a tool rather than a
 		     reference. Renovate groups the two together. See ADR-0014. -->
-		<PackageVersion Include="coverlet.collector" Version="10.0.1" />
+		<PackageVersion Include="coverlet.collector" Version="10.1.0" />
 	</ItemGroup>
 	<ItemGroup Label="EntityFrameworkCore">
 		<!-- EF Core and the Npgsql PROVIDER move together or migrations break, so

@@ -181,17 +181,19 @@ public class BlobKeyTests
 		Should.Throw<DomainRuleViolationException>(() => BlobKey.For("dQw4w9WgXc/", MediaCompartment.Original, "photo.jpg"));
 	}
 
-	// Every character class of a report id, and the character just outside each
-	// range. Report ids elsewhere in the suite are random, so which of these a
-	// run happened to reach used to vary, and BlobKey's branch coverage with it
-	// (#546). These pin each one.
+	// Every character class of a report id, and a character just outside each
+	// range. "/" is not one: it splits the key into segments before the id is
+	// read, so the BlobKey.For test covers it. Report ids elsewhere in the suite
+	// are random, so which of these a run happened to reach used to vary, and
+	// BlobKey's branch coverage with it (#546). These pin each one.
 	[Theory]
 	[InlineData("azAZ09-_aZ0", true)]
 	[InlineData("-_-_-_-_-_-", true)]
-	[InlineData("dQw4w9WgXc/", false)]
+	[InlineData("dQw4w9WgXc,", false)]
 	[InlineData("dQw4w9WgXc:", false)]
 	[InlineData("dQw4w9WgXc@", false)]
 	[InlineData("dQw4w9WgXc[", false)]
+	[InlineData("dQw4w9WgXc^", false)]
 	[InlineData("dQw4w9WgXc`", false)]
 	[InlineData("dQw4w9WgXc{", false)]
 	[InlineData("dQw4w9WgXc.", false)]

@@ -167,7 +167,7 @@ and is the pre-pull-request gate.**
     reads `./artifacts/coverage/*/coverage.cobertura.xml`, the attachments
     alone, on GitHub too.
   - **Measured differences settled** (#546): #545, #553, #548, and #555
-    measured local and CI totals for the same code, within 0.04 point, with
+    measured local and CI totals for the same code, within 0.05 point, with
     equal gate verdicts. Every difference traced to one of three causes, and
     each is now pinned:
     - `BlobKey`'s report-id alphabet check: suites use random ids, so whether

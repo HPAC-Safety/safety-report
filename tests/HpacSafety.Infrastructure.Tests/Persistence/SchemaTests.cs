@@ -48,7 +48,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	}
 
 	[Fact]
-	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenPublicReportsViewCarriesOnlyTheAllowlist()
+	public async Task GivenCleanPostgres17_WhenMigrationsAreApplied_ThenPublicReportsViewCarriesOnlyTheAllowlistPlusSubmittedAt()
 	{
 		// Given
 		var connectionString = await postgres.CreateMigratedDatabase();
@@ -61,9 +61,11 @@ public sealed class SchemaTests(PostgresFixture postgres)
 			connectionString,
 			"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'public_reports' ORDER BY ordinal_position");
 
-		// Then — the view's columns are the public DTO's allowlist (CON-DP-011).
+		// Then — the view's columns are the public DTO's allowlist (CON-DP-011)
+		// plus submitted_at, the feed's sort and keyset cursor key, which the API
+		// reads but never serializes (#570, ADR-0153).
 		views.ShouldBe(["admin_pending_counts", "admin_report_queue", "answers_awaiting_translation", "public_report_comments", "public_report_media", "public_reports"]);
-		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count"]);
+		columns.ShouldBe(["id", "ai_summary_en", "ai_summary_fr", "published_at", "comment_count", "submitted_at"]);
 	}
 
 	[Theory]

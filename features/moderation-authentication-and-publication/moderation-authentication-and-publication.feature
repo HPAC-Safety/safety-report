@@ -410,12 +410,14 @@ Scenario: The public DTO exposes only the approved summary and its metadata
   And it never contains question keys, labels, answers, consent values, report language, private flags, raw reports, attachment names, sizes, content types, keys, or URLs, member or reviewer identities, model provenance, or audit records
 
 @REQ-MOD-037
-Scenario: The public feed lists only publishable reports
+Scenario: The public feed lists only publishable reports, newest submitted first
   Given some reports are publishable and others are not
   When the public feed is queried
   Then the response is a deterministic paginated list containing only publishable reports
   And no non-publishable report ever appears
-  And the list is newest published first, a tie broken by report ID, and each page names the cursor that continues it
+  And the list is newest submitted first, a tie broken by report ID, and each page names the cursor that continues it
+  And no feed entry names its submission time
+  And no cursor reveals a submission time
 
 @REQ-MOD-038
 Scenario: An unknown or non-public report id returns 404

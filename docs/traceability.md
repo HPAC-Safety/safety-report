@@ -584,7 +584,7 @@ The public DTO exposes only the approved summary and its metadata — *Reqnroll,
 
 ### REQ-MOD-037
 
-The public feed lists only publishable reports — *Reqnroll, Covered*
+The public feed lists only publishable reports, newest submitted first — *Reqnroll, Covered*
 
 ### REQ-MOD-038
 

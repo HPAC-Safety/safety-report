@@ -1,5 +1,7 @@
+using System.Buffers.Text;
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using System.Text.Json;
 using HpacSafety.Api.PublicReports;
 using HpacSafety.Core;
@@ -42,6 +44,7 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 	private readonly List<string> _hidden = [];
 	private readonly List<HttpResponseMessage> _responses = [];
 	private readonly List<JsonElement> _pages = [];
+	private readonly List<(string Cursor, string LastItemId)> _cursors = [];
 	private HttpResponseMessage? _response;
 	private JsonElement? _body;
 
@@ -155,6 +158,12 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 			var page = await client.GetFromJsonAsync<JsonElement>(new Uri(uri, UriKind.Relative));
 			_pages.Add(page);
 			after = page.GetProperty("next").GetString();
+
+			if (after is not null)
+			{
+				var lastItemId = page.GetProperty("items").EnumerateArray().Last().GetProperty("id").GetString()!;
+				_cursors.Add((after, lastItemId));
+			}
 		}
 		while (after is not null && _pages.Count < 1000);
 	}
@@ -220,18 +229,43 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		Listed().Select(item => item.Id).Intersect(_hidden).ShouldBeEmpty();
 	}
 
-	[Then(@"the list is newest published first, a tie broken by report ID, and each page names the cursor that continues it")]
-	public void ThenTheOrderIsTotalAndTheCursorContinuesIt()
+	[Then(@"the list is newest submitted first, a tie broken by report ID, and each page names the cursor that continues it")]
+	public async Task ThenTheOrderIsTotalAndTheCursorContinuesIt()
 	{
 		var listed = Listed();
+		var submittedAt = await SubmittedAtByReportId();
 		var expected = listed
-			.OrderByDescending(item => item.PublishedAt)
+			.OrderByDescending(item => submittedAt[item.Id])
 			.ThenByDescending(item => item.Id, StringComparer.Ordinal)
 			.ToList();
 
 		listed.ShouldBe(expected);
 		_pages[^1].GetProperty("next").ValueKind.ShouldBe(JsonValueKind.Null);
 		_pages[..^1].ShouldAllBe(page => page.GetProperty("next").ValueKind == JsonValueKind.String);
+	}
+
+	[Then(@"no feed entry names its submission time")]
+	public void ThenNoFeedEntryNamesItsSubmissionTime()
+	{
+		foreach (var item in _pages.SelectMany(page => page.GetProperty("items").EnumerateArray()))
+		{
+			item.EnumerateObject().Select(property => property.Name).ShouldNotContain("submittedAt");
+		}
+	}
+
+	[Then(@"no cursor reveals a submission time")]
+	public void ThenNoCursorRevealsASubmissionTime()
+	{
+		// A cursor is base64url of exactly its page's last report ID — an opaque
+		// value already public on that report's own page — never a timestamp or
+		// anything derived from one (#570). Independent of the endpoint's own
+		// Cursor type, so this proves the wire format, not just its code.
+		_cursors.ShouldNotBeEmpty();
+
+		foreach (var (cursor, lastItemId) in _cursors)
+		{
+			Encoding.UTF8.GetString(Base64Url.DecodeFromChars(cursor)).ShouldBe(lastItemId);
+		}
 	}
 
 	[Then(@"the API returns 404")]
@@ -288,6 +322,17 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		report.SoftDelete(DateTimeOffset.UtcNow);
 		await database.SaveChangesAsync();
 		return reportId;
+	}
+
+	private static async Task<Dictionary<string, DateTimeOffset>> SubmittedAtByReportId()
+	{
+		var factory = await BootedApi.Factory();
+		await using var scope = factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var rows = await database.Reports
+			.Select(report => new { report.Id, report.SubmittedAt })
+			.ToListAsync();
+		return rows.ToDictionary(row => row.Id.Value, row => row.SubmittedAt);
 	}
 
 	private static async Task Violate(FormattableString sql)

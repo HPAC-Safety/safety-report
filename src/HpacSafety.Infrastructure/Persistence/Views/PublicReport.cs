@@ -25,4 +25,11 @@ public sealed class PublicReport
 
 	/// <summary>Its comments that are neither deleted nor hidden (ADR-0114).</summary>
 	public int CommentCount { get; private init; }
+
+	/// <summary>
+	///     When the report was submitted — the public feed's sort and keyset
+	///     cursor key (#570). Never part of the public DTO; the feed displays
+	///     <see cref="PublishedAt" /> instead.
+	/// </summary>
+	public DateTimeOffset SubmittedAt { get; private init; }
 }

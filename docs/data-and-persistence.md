@@ -153,9 +153,15 @@ positive allowlists rather than entity projections with fields removed later.
 
 The public report DTO is read from the `public_reports` view, never from the
 tables. The view states the whole publication invariant in SQL, including
-nonblank summary texts. Its columns are the allowlist itself: `id`,
-`ai_summary_en`, `ai_summary_fr`, `published_at`, and `comment_count`. So a
-public query cannot reach a column the view does not carry. Comments are read
+nonblank summary texts. Its columns are the allowlist plus one non-public
+column: `id`, `ai_summary_en`, `ai_summary_fr`, `published_at`,
+`comment_count`, and `submitted_at`. So a public query cannot reach a column
+the view does not carry. `submitted_at` is the feed's sort key (ADR-0153,
+REQ-MOD-037); like `author_subject` below, the API reads it but never
+serializes it, and never even puts it in the feed's own keyset cursor — the
+cursor carries only a report ID, and the API looks that ID's `submitted_at`
+back up server-side on the next request. The feed still displays
+`published_at`. Comments are read
 from `public_report_comments`, which joins to `public_reports`, so a report's
 comments are public exactly while the report is. Its one non-public column,
 `author_subject`, is compared on the server to compute `isMine` and is never

@@ -529,9 +529,9 @@
       "keep": "Conserver le signalement"
     },
     "row": {
-      "actions": "#Actions for the report submitted {at}",
-      "stale": "#Another reviewer changed this report since the list was loaded. Nothing you just did was saved.",
-      "reload": "#Reload list"
+      "actions": "Mesures prises à la suite du signalement soumis à l’{at}",
+      "stale": "Un autre réviseur a modifié ce signalement depuis le chargement de la liste. Rien de ce que vous venez de faire n'a été enregistré.",
+      "reload": "Recharger la liste"
     },
     "translate": {
       "label": "Traduire",

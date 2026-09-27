@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-26
 decision-makers: Chase Florell
-keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login
+keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login, traceability matrix, pending translation, coverage parity
 ---
 
 # ADR-0145 — A pull request's checks run locally under act, against CI's own baseline
@@ -22,6 +22,11 @@ guard that lives only in a CI flag a real guard.
 fine-grained token and `--allow-gh-token` are removed; the coverage baseline
 is downloaded on the host with the developer's `gh` login. See "The token"
 and "The baseline" below.
+
+**Amended 2026-09-27 (#546):** the wrapper stands in for the two bot commits
+CI sees on a same-repository pull request (the regenerated matrix, and the
+French under act's `i18n` job), and the coverage merge reads only the
+per-project attachment copies. See "The bots' commits" and "Coverage parity".
 
 ## Context
 
@@ -120,6 +125,31 @@ and is the pre-pull-request gate.**
   along (CI's checkout has none; a tool whose tests read the repository's
   refs measured differently with them), and its `origin/main` and
   `origin/<branch>` refs are set to the fetched base and `HEAD`.
+- **The bots' commits** (#546): on a same-repository pull request,
+  `traceability.yml` commits the regenerated matrix and `i18n-translate.yml`
+  the French before CI's verdict settles. Neither runs locally, so a branch
+  that changed a scenario failed `docs`, and one that added an English key
+  failed `i18n`, although CI passed. Neither stand-in changes what GitHub
+  runs.
+  - **The matrix**: the wrapper runs `node tools/traceability.mjs` in the clone
+    and, when the matrix changed, commits it there and moves `HEAD`,
+    `origin/<branch>`, and the event's `head.sha` to that commit: the commit
+    `traceability.yml` would push. Like that workflow, it skips a branch that
+    changes the generator, whose author regenerates by hand. A failing
+    generator leaves the clone alone, so the `docs` job reports why.
+  - **The French**: it needs a translation provider, which nothing local may
+    call. So `ci.yml`'s check runs
+    `translate-locale.mjs --check ${ACT:+--allow-pending-translation}`: under
+    act, French still pending as a `#` stub, or English reworded since it was
+    translated, is a notice. That is the pre-commit hook's rule on a branch.
+    `ACT` is unset on GitHub, so the flag never reaches CI, where a stub still
+    cannot merge.
+  - Rejected: patching the workflow in the clone, which would run a copy of
+    CI rather than CI; a wrapper flag that skips `docs` and `i18n`, which
+    would hide every other failure in those jobs; and adding
+    `--allow-pending-translation` to `translate-locale.mjs`'s own defaults
+    under `ACT`, which puts a CI-runner rule in a tool that also runs in the
+    hook and on `main`.
 - **Coverage parity**: the `coverage` job runs as on GitHub, on Ubuntu 24.04
   with the exact SDK, and downloads the same artifact from main's last green
   run. Lesson 0010's same-machine baseline is dropped: it existed only because
@@ -127,6 +157,29 @@ and is the pre-pull-request gate.**
   per-project Cobertura report and the assemblies it carries, and the wrapper
   fails a run whose report count is not the number of test projects: a lost
   report can move the verdict either way.
+  - **One report per project** (#546): vstest copies each project's report
+    into a per-run `<machine>_<timestamp>/In/` directory named to the second,
+    besides its GUID attachment directory. Two projects finishing in the same
+    second share the `In/` directory, and vstest names the second copy
+    `coverage.cobertura[1].xml`, which the old `**/coverage.cobertura.xml`
+    glob did not match. So the merge read 11 or 12 files. No coverage was
+    lost, because every `In/` copy duplicates an attachment. The merge now
+    reads `./artifacts/coverage/*/coverage.cobertura.xml`, the attachments
+    alone, on GitHub too.
+  - **Measured differences settled** (#546): three pull requests measured
+    local and CI totals for the same head. Every difference traced to one of
+    three causes, and each is now pinned:
+    - `BlobKey`'s report-id alphabet check: suites use random ids, so whether
+      a run reached `-` or `_` varied (93.7% to 96.8% branch coverage across
+      CI runs of identical code). A test now covers each character class and
+      each boundary.
+    - `PrivateNoteEndpoints`' commit-time conflict: two lines reached only
+      when a racing edit met the unique index rather than the in-memory
+      check. A test now holds two edits at `SaveChanges` until both have
+      loaded.
+    - `tools/adr-numbers.mjs`'s unreadable-file path: its test skipped as
+      root, and act runs jobs as root. The test now uses a directory in place
+      of a tracked file, which no user can read as a file.
 - **Memory**: a full run peaked at about 5 GiB of container memory
   (`docker stats` summed every 5 s over a 694 s run, Docker Desktop VM of
   7.75 GB), because `build`, `test`, `e2e`, and then `coverage` run side by
@@ -161,6 +214,9 @@ no-op there.
   git, so no `base:` input is needed. The form first proposed,
   `env.ACT && '' || github.token`, always yields the token, because `''` is
   falsy.
+- **Pending French** (permanent, #546): the `i18n` job's translation check
+  adds `--allow-pending-translation` when `ACT` is set, through the shell's
+  `${ACT:+…}`. See "The bots' commits".
 - **Artifacts** (temporary): act 0.2.89 rejects `upload-artifact@v7` and
   `download-artifact@v8` (nektos/act#6022). The two uploads and the one
   download skip under act, and one act-only step prints the gate, the test

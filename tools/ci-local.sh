@@ -21,7 +21,10 @@
 # The cheap body checks go first so a missing `Closes #N` fails in seconds, not
 # after the .NET suite. It never runs traceability.yml, i18n-translate.yml,
 # terraform plan or apply, deploy-*, or terraform-relock: those write to the
-# repository or to AWS, and nothing here can name them.
+# repository or to AWS, and nothing here can name them. What two of them would
+# commit onto the branch is stood in for: the clone gets the regenerated
+# traceability matrix, and the i18n job accepts French still pending as a `#`
+# stub under act (see "the bots' two commits" below).
 #
 # Coverage parity: the coverage job runs as in CI. It gates against the same
 # baseline artifact, from main's last green CI run, that CI does, and measures
@@ -59,7 +62,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,51p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,54p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -208,6 +211,45 @@ git -C "$WORK/repo" update-ref "refs/remotes/origin/main" "$BASE_SHA" || die "gi
 git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" || die "git update-ref failed"
 rm -f "$WORK/head.bundle"
 REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+
+# -------------------------------------------------- the bots' two commits --
+#
+# On a same-repository pull request, two bots commit onto the branch before
+# CI's verdict settles: traceability.yml the regenerated matrix, and
+# i18n-translate.yml the French for new or reworded English. Neither runs here,
+# because both push. Without them a branch that changes a scenario fails
+# `docs`, and one that adds an English key fails `i18n`, although CI passes.
+#
+# The matrix is plain generated data, so the clone gets the commit
+# traceability.yml would push: `node tools/traceability.mjs`, committed on top
+# when it changed anything, with HEAD and origin/<branch> moved to it. Like
+# traceability.yml, it skips a branch that changes the generator itself, whose
+# author regenerates by hand; the docs job then judges the committed matrix,
+# as in CI. A generator that fails leaves the clone alone: the docs job runs it
+# again and reports why.
+#
+# The French needs a translation provider, which nothing local may call.
+# ci.yml's i18n job passes --allow-pending-translation under act instead,
+# the pre-commit hook's branch rule. Neither changes what runs on GitHub.
+
+if git -C "$WORK/repo" diff --quiet "$BASE_SHA" HEAD -- tools/traceability.mjs; then
+	if (cd "$WORK/repo" && node tools/traceability.mjs >/dev/null 2>&1); then
+		if ! git -C "$WORK/repo" diff --quiet -- docs/traceability.md; then
+			git -C "$WORK/repo" -c user.name=ci-local -c user.email=ci-local@localhost \
+				commit -q --no-verify -m "Regenerate the traceability matrix, as traceability.yml would" \
+				-- docs/traceability.md || die "could not commit the regenerated matrix in the clone"
+			HEAD_SHA=$(git -C "$WORK/repo" rev-parse HEAD) || die "cannot read the clone's HEAD"
+			git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" \
+				|| die "git update-ref failed"
+			say "Traceability matrix: regenerated and committed in the clone, as traceability.yml would on GitHub."
+		fi
+	else
+		git -C "$WORK/repo" checkout -q -- docs/traceability.md 2>/dev/null || true
+		warn "node tools/traceability.mjs failed in the clone; the docs job will say why"
+	fi
+else
+	say "Traceability matrix: not regenerated, because this branch changes tools/traceability.mjs (traceability.yml skips it too)."
+fi
 
 # ------------------------------------------------------------ the baseline --
 #

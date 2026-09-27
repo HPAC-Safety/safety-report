@@ -3,10 +3,13 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using HpacSafety.Core;
 using HpacSafety.Core.Features.Moderation;
+using HpacSafety.Core.Features.PrivateNotes;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 
@@ -123,6 +126,38 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		officer.Dispose();
 	}
 
+	// The test above races eight edits, and whether any loser reaches the
+	// database's unique index, rather than the stale-revision check in memory,
+	// depends on timing: in some runs every loser loaded after the winner
+	// committed. So the endpoint's commit-time conflict was covered in some
+	// runs and not others, in CI and locally alike (#546). Here both edits are
+	// held at SaveChanges until both have loaded revision 1, so the second
+	// commit always meets the first one's row.
+	[Fact]
+	public async Task GivenTwoEditsLoadedBeforeEitherSaves_WhenBothSave_ThenSecondConflictsAtCommit()
+	{
+		// Given
+		var (notes, noteId, seeder) = await Noted();
+		seeder.Dispose();
+		var gate = new SaveGate(parties: 2);
+		await using var gated = _factory.WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+			services.ConfigureDbContext<HpacSafetyDbContext>(options => options.AddInterceptors(gate))));
+		using var officer = await SignedInClient.As(gated, MemberRole.SafetyOfficer);
+
+		// When
+		var responses = await Task.WhenAll(Enumerable.Range(0, 2).Select(index =>
+			officer.PutAsJsonAsync($"{notes}/{noteId}", new { text = $"Synthetic held edit {index}.", revision = 1 })));
+
+		// Then
+		responses.Select(response => response.StatusCode).Order()
+			.ShouldBe([HttpStatusCode.OK, HttpStatusCode.Conflict]);
+
+		foreach (var response in responses)
+		{
+			response.Dispose();
+		}
+	}
+
 	private async Task<(string Notes, string NoteId, HttpClient Officer)> Noted()
 	{
 		var reportId = await Pending();
@@ -142,5 +177,35 @@ public class PrivateNoteEndpointTests(ApiPostgresFixture fixture)
 		database.Reports.Add(report);
 		await database.SaveChangesAsync();
 		return report.Id.Value;
+	}
+
+	/// <summary>
+	///     Holds every save that adds a note revision until <c>parties</c> of them
+	///     are waiting, then releases them together.
+	/// </summary>
+	private sealed class SaveGate(int parties) : SaveChangesInterceptor
+	{
+		private readonly TaskCompletionSource _everyoneWaiting = new(TaskCreationOptions.RunContinuationsAsynchronously);
+		private int _waiting;
+
+		public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData,
+																					InterceptionResult<int> result,
+																					CancellationToken cancellationToken = default)
+		{
+			var addsRevision = eventData.Context?.ChangeTracker.Entries<PrivateNoteRevision>()
+				.Any(entry => entry.State == EntityState.Added) ?? false;
+
+			if (addsRevision)
+			{
+				if (Interlocked.Increment(ref _waiting) == parties)
+				{
+					_everyoneWaiting.SetResult();
+				}
+
+				await _everyoneWaiting.Task.WaitAsync(TimeSpan.FromSeconds(30), cancellationToken).ConfigureAwait(false);
+			}
+
+			return result;
+		}
 	}
 }

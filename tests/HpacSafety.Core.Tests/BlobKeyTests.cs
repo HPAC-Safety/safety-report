@@ -181,6 +181,39 @@ public class BlobKeyTests
 		Should.Throw<DomainRuleViolationException>(() => BlobKey.For("dQw4w9WgXc/", MediaCompartment.Original, "photo.jpg"));
 	}
 
+	// Every character class of a report id, and the character just outside each
+	// range. Report ids elsewhere in the suite are random, so which of these a
+	// run happened to reach used to vary, and BlobKey's branch coverage with it
+	// (#546). These pin each one.
+	[Theory]
+	[InlineData("azAZ09-_aZ0", true)]
+	[InlineData("-_-_-_-_-_-", true)]
+	[InlineData("dQw4w9WgXc/", false)]
+	[InlineData("dQw4w9WgXc:", false)]
+	[InlineData("dQw4w9WgXc@", false)]
+	[InlineData("dQw4w9WgXc[", false)]
+	[InlineData("dQw4w9WgXc`", false)]
+	[InlineData("dQw4w9WgXc{", false)]
+	[InlineData("dQw4w9WgXc.", false)]
+	[InlineData("dQw4w9WgXc~", false)]
+	[InlineData("dQw4w9WgXc ", false)]
+	public void GivenReportIdAtEachEdgeOfAlphabet_WhenKeyIsParsed_ThenOnlyAlphabetIsAccepted(string reportId,
+																							   bool accepted)
+	{
+		// Given
+		var candidate = $"{reportId}/original/photo.jpg";
+
+		// When
+		var parsed = BlobKey.TryParse(candidate, out var key);
+
+		// Then
+		parsed.ShouldBe(accepted);
+		if (accepted)
+		{
+			key.ReportId.ShouldBe(reportId);
+		}
+	}
+
 	[Fact]
 	public void GivenFileNameLongerThanLimit_WhenKeyIsBuilt_ThenRefused()
 	{

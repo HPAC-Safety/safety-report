@@ -220,18 +220,28 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		Listed().Select(item => item.Id).Intersect(_hidden).ShouldBeEmpty();
 	}
 
-	[Then(@"the list is newest published first, a tie broken by report ID, and each page names the cursor that continues it")]
-	public void ThenTheOrderIsTotalAndTheCursorContinuesIt()
+	[Then(@"the list is newest submitted first, a tie broken by report ID, and each page names the cursor that continues it")]
+	public async Task ThenTheOrderIsTotalAndTheCursorContinuesIt()
 	{
 		var listed = Listed();
+		var submittedAt = await SubmittedAtByReportId();
 		var expected = listed
-			.OrderByDescending(item => item.PublishedAt)
+			.OrderByDescending(item => submittedAt[item.Id])
 			.ThenByDescending(item => item.Id, StringComparer.Ordinal)
 			.ToList();
 
 		listed.ShouldBe(expected);
 		_pages[^1].GetProperty("next").ValueKind.ShouldBe(JsonValueKind.Null);
 		_pages[..^1].ShouldAllBe(page => page.GetProperty("next").ValueKind == JsonValueKind.String);
+	}
+
+	[Then(@"no feed entry names its submission time")]
+	public void ThenNoFeedEntryNamesItsSubmissionTime()
+	{
+		foreach (var item in _pages.SelectMany(page => page.GetProperty("items").EnumerateArray()))
+		{
+			item.EnumerateObject().Select(property => property.Name).ShouldNotContain("submittedAt");
+		}
 	}
 
 	[Then(@"the API returns 404")]
@@ -288,6 +298,17 @@ public sealed class PublicReportFeedSteps(SeededReport seeded)
 		report.SoftDelete(DateTimeOffset.UtcNow);
 		await database.SaveChangesAsync();
 		return reportId;
+	}
+
+	private static async Task<Dictionary<string, DateTimeOffset>> SubmittedAtByReportId()
+	{
+		var factory = await BootedApi.Factory();
+		await using var scope = factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var rows = await database.Reports
+			.Select(report => new { report.Id, report.SubmittedAt })
+			.ToListAsync();
+		return rows.ToDictionary(row => row.Id.Value, row => row.SubmittedAt);
 	}
 
 	private static async Task Violate(FormattableString sql)

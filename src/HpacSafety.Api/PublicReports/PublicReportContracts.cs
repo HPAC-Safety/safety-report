@@ -44,7 +44,7 @@ public sealed record PublicMediaView(string Id, string Kind, string? Format);
 public sealed record PublicMediaLinkView(string Url, DateTimeOffset ExpiresAt);
 
 /// <summary>
-///     One page of the public feed, newest published first. <see cref="Next" />
+///     One page of the public feed, newest submitted first. <see cref="Next" />
 ///     is the opaque cursor that continues it, or null on the last page
 ///     (REQ-MOD-037).
 /// </summary>

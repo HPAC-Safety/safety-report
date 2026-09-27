@@ -263,19 +263,25 @@ server's translation port; safety officers and administrators may use it.
 ## The public feed and report page (#329)
 
 **View safety reports** (`/reports`) is anonymous. It lists every publishable
-report, newest published first. Each entry shows its summary in the visitor's
-language and its publication date, and links to the report's own address,
-`/reports/<id>`. A visitor can bookmark, share, or reload that address.
-Paging forward puts an opaque cursor in the address bar (`?after=`), so the
-back button returns to the page the visitor came from.
+report, newest submitted first, a tie broken by report ID
+([ADR-0153](../../docs/decisions/ADR-0153-the-public-feed-sorts-by-submission-time.md)).
+Each entry still shows its summary in the visitor's language and its
+publication date — the two can therefore look out of order, since a report
+approved and published later can have been submitted earlier — and links to
+the report's own address, `/reports/<id>`. A visitor can bookmark, share, or
+reload that address. Paging forward puts an opaque cursor in the address bar
+(`?after=`), so the back button returns to the page the visitor came from.
+The cursor keys on submission time and report ID; submission time is never a
+field of a feed entry, only the sort key inside that opaque token.
 
 The API reads both pages from the `public_reports` database view. The view
 holds the whole publication invariant, so it is the only place the public
 side decides what is public
 ([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
-Its publication time is `published_at`, or the pair's approval time for a
-report approved before approval published it. A report that stops being
-publishable disappears from both pages with no further step.
+Its displayed publication time is `published_at`, or the pair's approval time
+for a report approved before approval published it; its sort and cursor key is
+`submitted_at`. A report that stops being publishable disappears from both
+pages with no further step.
 
 The site's language, chosen with the language toggle in the header, decides
 which summary text is shown. A report page has no language control of its
@@ -318,7 +324,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - An Approve step separate from Publish, or a Reject or Reopen action
   ([ADR-0125](../../docs/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
 - Search, filtering, or sorting of the public feed other than newest
-  published first, and a page-count or jump-to-page control.
+  submitted first, and a page-count or jump-to-page control. A best-match
+  order for an active search is future scope, not built here.
 - Any attachment metadata on the public report page beyond each public file's
   opaque id, its kind, and a document's format. Which files are public is
   [`features/media`](../media/README.md)'s rule (ADR-0117, ADR-0119).

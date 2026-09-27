@@ -35,10 +35,12 @@ public static class PublicReportEndpoints
 	}
 
 	/// <summary>
-	///     One page of the feed: newest published first, a tie broken by report ID
+	///     One page of the feed: newest submitted first, a tie broken by report ID
 	///     so the order is total and a cursor never skips or repeats a report
 	///     (REQ-MOD-037). An unreadable cursor starts from the top rather than
-	///     failing, because it is only ever a bookmark.
+	///     failing, because it is only ever a bookmark. Submission time orders the
+	///     feed and keys the cursor; it is never a field of the response — each
+	///     entry still displays <c>published_at</c>.
 	/// </summary>
 	private static async Task<IResult> List(
 		string? after,
@@ -47,28 +49,32 @@ public static class PublicReportEndpoints
 	{
 		var query = database.PublicReports.AsNoTracking();
 
-		if (Cursor.TryRead(after, out var publishedAt, out var id))
+		if (Cursor.TryRead(after, out var submittedAt, out var id))
 		{
 			// EF translates only the two-argument string.Compare into SQL, where it
 			// uses the same collation as the ORDER BY below, which is what keeps
 			// the cursor consistent with the order.
 #pragma warning disable CA1309
 			query = query.Where(report =>
-				report.PublishedAt < publishedAt
-				|| (report.PublishedAt == publishedAt && string.Compare(report.Id, id) < 0));
+				report.SubmittedAt < submittedAt
+				|| (report.SubmittedAt == submittedAt && string.Compare(report.Id, id) < 0));
 #pragma warning restore CA1309
 		}
 
 		var rows = await query
-			.OrderByDescending(report => report.PublishedAt)
+			.OrderByDescending(report => report.SubmittedAt)
 			.ThenByDescending(report => report.Id)
 			.Take(PageSize + 1)
-			.Select(report => new PublicReportView(report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount))
+			.Select(report => new PublicReportRow(report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount, report.SubmittedAt))
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
-		var items = rows.Take(PageSize).ToList();
-		var next = rows.Count > PageSize ? Cursor.Write(items[^1]) : null;
+		var page = rows.Take(PageSize).ToList();
+		var next = rows.Count > PageSize ? Cursor.Write(page[^1]) : null;
+
+		var items = page
+			.Select(row => new PublicReportView(row.Id, row.AiSummaryEn, row.AiSummaryFr, row.PublishedAt, row.CommentCount))
+			.ToList();
 
 		return Results.Ok(new PublicReportPage(items, next));
 	}
@@ -174,23 +180,37 @@ public static class PublicReportEndpoints
 	}
 
 	/// <summary>
-	///     The feed's keyset position, the last report's publication time and ID,
-	///     written as one opaque URL-safe token. It names a place in a public list
-	///     and carries nothing that is not already public.
+	///     One <c>public_reports</c> row read for a feed page: the public DTO's
+	///     fields plus <see cref="SubmittedAt" />, which orders the feed and keys
+	///     its cursor but is never itself returned (#570).
+	/// </summary>
+	private sealed record PublicReportRow(
+		string Id,
+		string AiSummaryEn,
+		string AiSummaryFr,
+		DateTimeOffset PublishedAt,
+		int CommentCount,
+		DateTimeOffset SubmittedAt);
+
+	/// <summary>
+	///     The feed's keyset position, the last report's submission time and ID,
+	///     written as one opaque URL-safe token. It names a place in a public list;
+	///     submission time appears only inside this token, never as a field of a
+	///     feed entry.
 	/// </summary>
 	private static class Cursor
 	{
-		public static string Write(PublicReportView last)
+		public static string Write(PublicReportRow last)
 		{
-			var plain = $"{last.PublishedAt.UtcTicks.ToString(CultureInfo.InvariantCulture)}.{last.Id}";
+			var plain = $"{last.SubmittedAt.UtcTicks.ToString(CultureInfo.InvariantCulture)}.{last.Id}";
 			return Base64Url.EncodeToString(Encoding.UTF8.GetBytes(plain));
 		}
 
 		public static bool TryRead(string? token,
-								   out DateTimeOffset publishedAt,
+								   out DateTimeOffset submittedAt,
 								   out string id)
 		{
-			publishedAt = default;
+			submittedAt = default;
 			id = string.Empty;
 
 			if (string.IsNullOrEmpty(token) || token.Length > 64 || !Base64Url.IsValid(token))
@@ -209,7 +229,7 @@ public static class PublicReportEndpoints
 				return false;
 			}
 
-			publishedAt = new DateTimeOffset(ticks, TimeSpan.Zero);
+			submittedAt = new DateTimeOffset(ticks, TimeSpan.Zero);
 			id = parts[1];
 			return true;
 		}

@@ -417,6 +417,7 @@ Scenario: The public feed lists only publishable reports, newest submitted first
   And no non-publishable report ever appears
   And the list is newest submitted first, a tie broken by report ID, and each page names the cursor that continues it
   And no feed entry names its submission time
+  And no cursor reveals a submission time
 
 @REQ-MOD-038
 Scenario: An unknown or non-public report id returns 404

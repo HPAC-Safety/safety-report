@@ -271,17 +271,20 @@ approved and published later can have been submitted earlier — and links to
 the report's own address, `/reports/<id>`. A visitor can bookmark, share, or
 reload that address. Paging forward puts an opaque cursor in the address bar
 (`?after=`), so the back button returns to the page the visitor came from.
-The cursor keys on submission time and report ID; submission time is never a
-field of a feed entry, only the sort key inside that opaque token.
+The cursor carries only the last page's last report ID — already public on
+that report's own page — and never a timestamp. The API resolves that ID's
+submission time itself, server-side, to find where the next page starts;
+submission time never appears in a response and never travels in a cursor.
 
 The API reads both pages from the `public_reports` database view. The view
 holds the whole publication invariant, so it is the only place the public
 side decides what is public
 ([ADR-0055](../../docs/decisions/ADR-0055-ef-core-migrations-sql-files-stored-procedures.md)).
 Its displayed publication time is `published_at`, or the pair's approval time
-for a report approved before approval published it; its sort and cursor key is
-`submitted_at`. A report that stops being publishable disappears from both
-pages with no further step.
+for a report approved before approval published it; its sort key, read but
+never returned, is `submitted_at`. A report that stops being publishable
+disappears from both pages with no further step, and a cursor naming one
+simply starts the feed over from the top.
 
 The site's language, chosen with the language toggle in the header, decides
 which summary text is shown. A report page has no language control of its

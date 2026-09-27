@@ -898,6 +898,26 @@ A safety officer cancels a private attachment while it uploads — *playwright-b
 
 A phone answer reads formatted, and one stored before phone numbers were validated reads as stored — *playwright-bdd, Covered*
 
+### REQ-MOD-119
+
+A list row carries the version a review command sends back — *Reqnroll, Covered*
+
+### REQ-MOD-120
+
+Each row of Manage reports offers the quick actions its state allows — *playwright-bdd, Covered*
+
+### REQ-MOD-121
+
+Publishing and unpublishing from the list updates the row in place — *playwright-bdd, Covered*
+
+### REQ-MOD-122
+
+Deleting from the list asks for confirmation first — *playwright-bdd, Covered*
+
+### REQ-MOD-123
+
+A stale row action tells the reviewer to reload the list — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

@@ -568,6 +568,32 @@ public sealed class DependentChoiceSteps
 			.ShouldNotContain(option => option.GetProperty("id").GetString() == removed);
 	}
 
+	[Then(@"saving {string} again, as the editor sends it, succeeds and keeps the {string} links")]
+	public async Task ThenTheChildSavesAgain(string child,
+											 string parentChoice)
+	{
+		var removed = _ids[$"{parentChoice} (choice)"];
+		var model = await View(child);
+
+		// The editor's draft echoes every link the view names, the removed parent's included.
+		var saved = await Put(child, RequestFrom(model, options: Options(model)));
+		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+		ParentsOf(await View(child), "Other").ShouldContain(removed);
+		ParentsOf(await View(child), "Mentor 7").ShouldContain(removed);
+	}
+
+	[Then(@"a reviewer offering {string} under {string} only succeeds and keeps its {string} link")]
+	public async Task ThenAReviewerRelinksAfterTheRemoval(string choice,
+														  string parentChoice,
+														  string removedChoice)
+	{
+		var removed = _ids[$"{removedChoice} (choice)"];
+		var live = ChoiceId(await View("Make"), parentChoice);
+		var response = await SetParents(choice, live);
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await response.Content.ReadAsStringAsync());
+		ParentsOf(await View(_childName!), choice).ShouldBe(Sorted(live, removed));
+	}
+
 	// ---- REQ-QB-215: a re-pointed link collapses into the one the child has ----
 
 	[Given(@"{string} is offered under {string} and {string}")]

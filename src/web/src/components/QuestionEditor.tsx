@@ -354,6 +354,7 @@ export function QuestionEditor({
 	const [rows, setRows] = useState<ChoiceRow[]>(() => request.options.map(newRow))
 	const unavailableId = useId()
 	const choicesHeadingId = useId()
+	const unlinkedId = useId()
 	const choicesRef = useRef<HTMLDivElement>(null)
 	const focusNewChoice = useRef(false)
 
@@ -961,9 +962,12 @@ export function QuestionEditor({
 											fieldId={`question-choice-parent-${row?.key ?? index}`}
 											label={t("questions.choice.parentChoice")}
 											groups={[parentChoices.map((choice) => ({ key: choice.id, label: choiceLabel(choice, locale) }))]}
-											values={option.parentChoiceIds ?? []}
+											// Only live parent choices are shown and counted; a link to one since
+											// removed stays in the draft, untouched, and the server keeps it.
+											values={(option.parentChoiceIds ?? []).filter((id) => parentChoices.some((choice) => choice.id === id))}
 											placeholder={t("questions.choice.parentChoiceNone")}
-											describedBy={undefined}
+											invalid={unlinked.includes(option)}
+											describedBy={unlinked.includes(option) ? unlinkedId : undefined}
 											onToggle={(id) => {
 												const current = option.parentChoiceIds ?? []
 												updateOption(index, {
@@ -1004,7 +1008,7 @@ export function QuestionEditor({
 						<p className="font-sans text-xs text-ink-muted">{t("questions.choice.replaceHelp")}</p>
 					)}
 					{unlinked.length > 0 && (
-						<p role="status" data-testid="question-choices-unlinked" className="font-sans text-sm text-ink">
+						<p id={unlinkedId} role="status" data-testid="question-choices-unlinked" className="font-sans text-sm text-ink">
 							{t("questions.choice.unlinked", {
 								choices: unlinked.map((option) => option.labelEn || option.labelFr || t("questions.choice.unnamed")).join(", "),
 							})}

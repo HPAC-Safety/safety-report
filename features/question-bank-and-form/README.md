@@ -115,7 +115,7 @@ A single-select or type-ahead question's choices may **depend on** another
 single-select or type-ahead question, its *parent*: a paraglider's model
 depends on its make. Every live choice of the *child* then names **one or
 more** parent choices, and the form offers it whenever the parent's answer is
-any one of them (`REQ-QB-179`–`REQ-QB-226`,
+any one of them (`REQ-QB-179`–`REQ-QB-228`,
 [ADR-0151](../../docs/decisions/ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md),
 which supersedes
 [ADR-0146](../../docs/decisions/ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)).
@@ -145,13 +145,15 @@ both.
   on at once, without revising the child (`REQ-QB-187`–`REQ-QB-190`). A link
   passed onto a parent choice the child choice already names collapses into
   one (`REQ-QB-215`). A parent choice is removed only while every child choice
-  under it keeps another live parent; its links then stay and filter nothing.
-  Otherwise the removal is refused, naming the child choices, and the parent
+  under it keeps another live parent; its links then stay and filter nothing,
+  and the child still saves and its values still take new parents, since a
+  save checks only the parent choices it newly ticks. Otherwise the removal is refused, naming the child choices, and the parent
   choice is replaced or merged instead (`REQ-QB-214`).
 - **The form.** The child is disabled until the parent is answered, then offers
-  only the choices under that answer. Changing the parent keeps a child answer
-  whose choice is also under the new answer, and clears one that is not; words
-  typed that name no choice stay (`REQ-QB-197`, `REQ-QB-198`, `REQ-QB-223`). A
+  only the choices under that answer. Changing the parent keeps a picked choice
+  that is also under the new answer, and clears one that is not; typed words
+  stay and are sent as typed, even when they read as a choice under another
+  answer (`REQ-QB-197`, `REQ-QB-198`, `REQ-QB-223`, `REQ-QB-227`). A
   disabled child never holds the reporter back, even when required; nor does
   a single-select child with nothing under the parent's answer, which says so.
   The form leaves such a child out of the submission, and the API records
@@ -187,7 +189,7 @@ both.
   both match: the oldest survives under every parent the copies had, and each
   other copy is retired into it without rewriting any answer. A pair matching
   in one language only is left for an Administrator (`REQ-QB-225`,
-  `REQ-QB-226`).
+  `REQ-QB-226`, `REQ-QB-228`).
 
 ## The type-ahead field
 

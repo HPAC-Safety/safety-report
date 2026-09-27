@@ -141,6 +141,63 @@ public sealed class ChoiceParentMigrationSteps
 		await command.ExecuteNonQueryAsync();
 	}
 
+	[Given(@"a database one migration short, whose dependent type-ahead {string} question offers {string} twice, one copy under {string} and one under {string}")]
+	public async Task GivenTypeAheadDuplicates(string question,
+											   string wording,
+											   string firstParent,
+											   string secondParent)
+	{
+		firstParent.ShouldBe("Paraglider");
+		secondParent.ShouldBe("Hang Glider");
+		await BeforeTheMigration();
+		await using var connection = await Open();
+		await using var command = new NpgsqlCommand(
+			$"""
+			INSERT INTO questions (id, key, is_system, role, created_at)
+			VALUES ('qcertauto01', 'synthetic_certification_typed', FALSE, 'none', TIMESTAMPTZ '2026-09-01T00:00:00Z');
+			INSERT INTO question_revisions
+				(id, question_id, revision_number, type, label_en, label_fr, is_system, is_required, is_private, is_active, display_order, created_at)
+			VALUES ('rcertauto01', 'qcertauto01', 1, 'autocomplete', @question, 'Homologation:', FALSE, FALSE, FALSE, TRUE, 91, TIMESTAMPTZ '2026-09-01T00:00:00Z');
+			UPDATE questions SET choices_depend_on_question_id = 'qaircraft01' WHERE id = 'qcertauto01';
+			INSERT INTO question_choices (id, question_id, code, display_order, label_en, label_fr, parent_choice_id, label_en_source, label_fr_source)
+			VALUES ('cautoa00001', 'qcertauto01', 'en_a', 0, @wording, @wording, '{Paraglider}', 'human', 'human'),
+			       ('cautoa00002', 'qcertauto01', 'en_a_2', 1, @wording, @wording, '{HangGlider}', 'human', 'human');
+			""",
+			connection);
+		command.Parameters.AddWithValue("question", question);
+		command.Parameters.AddWithValue("wording", wording);
+		await command.ExecuteNonQueryAsync();
+	}
+
+	[Given(@"the value {string} was merged into the {string} copy")]
+	public async Task GivenAnEarlierMerge(string value,
+										  string _)
+	{
+		await using var connection = await Open();
+		await using var command = new NpgsqlCommand(
+			"""
+			INSERT INTO question_choices (id, question_id, code, display_order, label_en, label_en_source, added_by_reporter, reporter_locale, deleted, merged_into_choice_id, parent_choice_id)
+			VALUES ('cautoenasp1', 'qcertauto01', 'en_a_typed', 2, @value, 'human', TRUE, 'en-CA', TIMESTAMPTZ '2026-09-02T00:00:00Z', 'cautoa00002', 'changglide1');
+			""",
+			connection);
+		command.Parameters.AddWithValue("value", value);
+		await command.ExecuteNonQueryAsync();
+	}
+
+	[Given(@"a report answered {string} with the {string} copy")]
+	public async Task GivenAnAnswerNamingTheCopy(string _,
+												 string __)
+	{
+		await Execute(
+			"""
+			INSERT INTO reports (id, language, status, submitted_at)
+			VALUES ('rptcertauto', 'en-CA', 'submitted', TIMESTAMPTZ '2026-09-01T00:00:00Z');
+			INSERT INTO report_answers
+				(id, report_id, question_id, question_revision_id, question_key, is_private, choice_id, locale, translation_mode, answered_at)
+			VALUES ('anscertauto', 'rptcertauto', 'qcertauto01', 'rcertauto01', 'synthetic_certification_typed', FALSE, 'cautoa00002', 'en-CA', 'none', TIMESTAMPTZ '2026-09-01T00:00:00Z');
+			""");
+	}
+
 	[When(@"the migration runs")]
 	public async Task WhenTheMigrationRuns()
 	{
@@ -207,6 +264,37 @@ public sealed class ChoiceParentMigrationSteps
 		// The revision still names the copy; the condition reads the survivor (ADR-0128, ADR-0132).
 		conditional.CurrentRevision.DependsOnChoiceId.ShouldBe(TinyId.Parse("ccertb00002"));
 		QuestionDependencies.RequiredChoiceToday(bank, conditional.CurrentRevision)!.Id.ShouldBe(TinyId.Parse("ccertb00001"));
+	}
+
+	[Then(@"{string} is offered once, the oldest copy, under {string} and {string}")]
+	public async Task ThenTheTypedOneIsUnderBoth(string _,
+												 string __,
+												 string ___)
+	{
+		(await Scalar("SELECT count(*)::text FROM question_choices WHERE question_id = 'qcertauto01' AND deleted IS NULL")).ShouldBe("1");
+		(await Scalar("SELECT (deleted IS NULL)::text FROM question_choices WHERE id = 'cautoa00001'")).ShouldBe("true");
+		(await Parents("cautoa00001")).ShouldBe([HangGlider, Paraglider]);
+	}
+
+	[Then(@"the other copy is merged into it, and so is {string}")]
+	public async Task ThenTheCopyAndItsMergeFollow(string _)
+	{
+		(await Scalar("SELECT (deleted IS NOT NULL)::text || ':' || merged_into_choice_id || ':' || coalesce(replaced_by_choice_id, '-') FROM question_choices WHERE id = 'cautoa00002'"))
+			.ShouldBe("true:cautoa00001:-");
+		(await Scalar("SELECT merged_into_choice_id FROM question_choices WHERE id = 'cautoenasp1'")).ShouldBe("cautoa00001");
+	}
+
+	[Then(@"the answer still names the copy it named, which reads as {string}")]
+	public async Task ThenTheAnswerReadsTheSurvivor(string wording)
+	{
+		(await Scalar("SELECT choice_id FROM report_answers WHERE id = 'anscertauto'")).ShouldBe("cautoa00002");
+
+		await using var context = WorkerDatabase.ContextFor(ConnectionString);
+		var copy = await context.QuestionChoices.AsNoTracking()
+			.Include(choice => choice.MergedInto)
+			.SingleAsync(choice => choice.Id == TinyId.Parse("cautoa00002"));
+		copy.Resolved.Id.ShouldBe(TinyId.Parse("cautoa00001"));
+		copy.Resolved.LabelEn.ShouldBe(wording);
 	}
 
 	[Then(@"the old parent column is gone")]

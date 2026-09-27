@@ -43,7 +43,12 @@ Amended by
 on a type-ahead whose values depend on another question's answer, typed words
 are matched only among the values under that answer, a new value is offered
 under it, a reviewer may change a value's link, and two values merge only
-under the same parent choice.
+under the same parent choice. Amended again by
+[ADR-0151](ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md):
+typed words are matched against the whole question, and a match not yet under
+the parent's answer is offered under it and flagged; a reviewer sets one or
+more parent choices, never none; and a merge offers the survivor under every
+parent either value was under.
 
 ## Context
 

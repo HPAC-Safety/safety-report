@@ -215,8 +215,7 @@ public static class TypeAheadValueEndpoints
 		return Review(id, database, clock, context, AuditAction.RelinkedTypeAheadValue,
 			(question, choiceId, reviewer, at, bank) =>
 			{
-				ChoiceDependencies.EnsureValueParentsAllowed(bank, question, parentChoiceIds);
-				question.OfferValueUnder(choiceId, parentChoiceIds, reviewer, at);
+				question.OfferValueUnder(choiceId, ChoiceDependencies.ValueParents(bank, question, choiceId, parentChoiceIds), reviewer, at);
 			}, cancellationToken);
 	}
 

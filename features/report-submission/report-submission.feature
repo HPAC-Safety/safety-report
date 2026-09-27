@@ -536,6 +536,7 @@ Examples:
   | leaving "Make" unanswered     |
   | answering "Make" with "Gin"   |
   | answering "Make" with "Ozone", after every "Model" choice under "Ozone" was removed |
+
 @REQ-SUB-115
 Scenario Outline: A choice offered under several parent answers is accepted under each, and refused under any other
   Given the "Model" question's choices depend on the "Make" question, and "Other" is offered under "Niviuk" and "Ozone"

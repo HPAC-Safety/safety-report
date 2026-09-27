@@ -38,6 +38,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 
 	/// <summary>PostgreSQL's <c>unique_violation</c>.</summary>
 	private const string UniqueViolation = "23505";
+	private const string ParentLinkPairIndex = "ix_question_choice_parents_choice_id_parent_choice_id";
 
 	/// <summary>
 	///     Columns that name a row without a foreign key to it, because they point
@@ -157,6 +158,51 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 				}
 
 				MintNewIdentifiers(cause);
+			}
+			catch (DbUpdateException cause)
+				when (attempt < IdentifierAttempts && IsParentLinkAlreadyMade(cause))
+			{
+				if (savepoint is not null)
+				{
+					await transaction!.RollbackToSavepointAsync(savepoint, cancellationToken).ConfigureAwait(false);
+				}
+
+				await DropParentLinksAlreadyMade(cancellationToken).ConfigureAwait(false);
+			}
+		}
+	}
+
+	/// <summary>
+	///     Whether a failed write was a choice's parent link another writer made
+	///     first: two reports typing the same value under the same new parent answer
+	///     both add the link (ADR-0151). The pair has one row for life, so the second
+	///     insert meets the first's.
+	/// </summary>
+	private static bool IsParentLinkAlreadyMade(DbUpdateException cause)
+	{
+		return cause.InnerException is PostgresException postgres
+			   && postgres.SqlState == UniqueViolation
+			   && postgres.ConstraintName == ParentLinkPairIndex;
+	}
+
+	/// <summary>
+	///     Stops inserting every parent link whose pair another writer has since
+	///     stored: the choice is already offered under that parent choice, which is
+	///     all this write wanted. A link the other writer has since stamped stays
+	///     stamped; the later of the two decides (ADR-0151).
+	/// </summary>
+	private async Task DropParentLinksAlreadyMade(CancellationToken cancellationToken)
+	{
+		foreach (var entry in ChangeTracker.Entries<ChoiceParentLink>().Where(entry => entry.State == EntityState.Added).ToList())
+		{
+			var link = entry.Entity;
+			var stored = await ChoiceParentLinks.AsNoTracking()
+				.AnyAsync(candidate => candidate.ChoiceId == link.ChoiceId && candidate.ParentChoiceId == link.ParentChoiceId, cancellationToken)
+				.ConfigureAwait(false);
+
+			if (stored)
+			{
+				entry.State = EntityState.Detached;
 			}
 		}
 	}

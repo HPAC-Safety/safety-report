@@ -123,7 +123,12 @@ export function ReviewTypeAheadValuesPage() {
 									<ParentLink
 										valueId={value.id}
 										parent={value.parent}
-										chosen={relinkTo[value.id] ?? value.parent.parentChoiceIds}
+										// Only live parent choices are shown and counted; a link to one since
+										// removed is kept by the server, and the page never sends it.
+										chosen={
+											relinkTo[value.id] ??
+											value.parent.parentChoiceIds.filter((id) => value.parent!.choices.some((choice) => choice.id === id))
+										}
 										onChoose={(choiceIds) => setRelinkTo((current) => ({ ...current, [value.id]: choiceIds }))}
 										onRelink={(choiceIds) => void act(() => setTypeAheadValueParents(value.id, choiceIds), value.id)}
 										wording={wording}
@@ -273,7 +278,7 @@ function ParentLink({
 	const question = locale === "fr-CA" ? parent.questionLabelFr : parent.questionLabelEn
 	const sorted = sortChoices(parent.choices, locale, wording)
 	const current = sorted.filter((choice) => parent.parentChoiceIds.includes(choice.id))
-	const unchanged = chosen.length === parent.parentChoiceIds.length && chosen.every((id) => parent.parentChoiceIds.includes(id))
+	const unchanged = chosen.length === current.length && current.every((choice) => chosen.includes(choice.id))
 
 	return (
 		<div className="mt-3 flex flex-wrap items-end gap-2">
@@ -291,6 +296,7 @@ function ParentLink({
 					placeholder={t("typeAheadValues.relinkNone")}
 					describedBy={undefined}
 					locked={chosen.length === 1 ? chosen : []}
+					lockedReason={t("typeAheadValues.lastParent")}
 					onToggle={(id) => onChoose(chosen.includes(id) ? chosen.filter((ticked) => ticked !== id) : [...chosen, id])}
 				/>
 			</div>

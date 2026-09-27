@@ -1561,6 +1561,8 @@ Scenario Outline: A parent choice is removed only while every child choice under
   When "Mentor 7" is also offered under "Ozone" and <who> removes "Niviuk" again
   Then "Niviuk" is removed
   And "Other" and "Mentor 7" keep their "Niviuk" links, which filter nothing
+  And saving "Model" again, as the editor sends it, succeeds and keeps the "Niviuk" links
+  And a reviewer offering "Other" under "Ozone" only succeeds and keeps its "Niviuk" link
 
 Examples:
   | parent        | who                                            |
@@ -1662,11 +1664,12 @@ Scenario: Words typed into a dependent type-ahead are kept and sent as typed, ev
 @ui
 Scenario: The type-ahead review page shows every parent of a dependent value and edits them
   Given a signed-in Safety Officer reviews the reporter-added "Model" value "Zeno 2", offered under "Ozone"
+  And "Zeno 2" is also linked to "Gin", a "Make" value since removed
   Then the value shows that it is offered under "Ozone"
   And its "Offered under" control lists "Make"'s choices
   When they also tick "Niviuk"
   Then the page sends "Ozone" and "Niviuk"
-  And the page does not let them untick the last parent choice
+  And the page does not let them untick the last parent choice, and says why
 
 @REQ-QB-225
 Scenario: The migration folds each link into the join table and merges identical duplicates
@@ -1680,6 +1683,16 @@ Scenario: The migration folds each link into the join table and merges identical
   And every answer still names the choice it named and reads the same wording
   And the conditional question's condition follows the surviving "EN-B"
   And the old parent column is gone
+
+@REQ-QB-228
+Scenario: The migration merges a dependent type-ahead's identical duplicates into the oldest
+  Given a database one migration short, whose dependent type-ahead "Certification:" question offers "EN-A" twice, one copy under "Paraglider" and one under "Hang Glider"
+  And the value "EN A" was merged into the "Hang Glider" copy
+  And a report answered "Certification:" with the "Hang Glider" copy
+  When the migration runs
+  Then "EN-A" is offered once, the oldest copy, under "Paraglider" and "Hang Glider"
+  And the other copy is merged into it, and so is "EN A"
+  And the answer still names the copy it named, which reads as "EN-A"
 
 @REQ-QB-226
 Scenario: The migration merges no pair whose wording matches in one language only

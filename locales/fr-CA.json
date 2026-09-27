@@ -395,6 +395,7 @@
     "offeredUnderNothing": "N’a pas encore été proposé dans une réponse à la question «{question} »",
     "relinkTo": "Proposé dans le cadre des réponses à «{question} »",
     "relinkNone": "Choisissez un ou plusieurs…",
+    "lastParent": "#A value is offered under at least one answer, so the last one stays ticked.",
     "relink": "Modifier"
   },
   "reports": {

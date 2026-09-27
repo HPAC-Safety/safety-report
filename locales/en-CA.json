@@ -260,6 +260,7 @@
   "typeAheadValues.offeredUnderNothing": "Not yet offered under any answer to “{question}”",
   "typeAheadValues.relinkTo": "Offered under answers to “{question}”",
   "typeAheadValues.relinkNone": "Choose one or more…",
+  "typeAheadValues.lastParent": "A value is offered under at least one answer, so the last one stays ticked.",
   "typeAheadValues.relink": "Change",
   "questions.forkWarning": "This question has been answered. Changing its wording, type, or settings retires it and creates a new question in its place, so the answers already given keep the wording they were given under. Editing only its choices does not.",
   "questions.import.openDialog": "Import from Typeform",

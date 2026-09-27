@@ -800,7 +800,8 @@ public class ChoiceDependencyTests
 		model.AddChoiceFromReporter("Zeno 2", Locale.EnCa, At);
 
 		// When / Then
-		Should.NotThrow(() => ChoiceDependencies.EnsureValueParentsAllowed([make, model], model, [make.Choice("niviuk")!.Id]));
+		var rush = model.Choice("rush_6")!.Id;
+		ChoiceDependencies.ValueParents([make, model], model, rush, [make.Choice("niviuk")!.Id]).ShouldBe([make.Choice("niviuk")!.Id]);
 	}
 
 	[Fact]
@@ -815,9 +816,34 @@ public class ChoiceDependencyTests
 		var gin = elsewhere.Choice("gin")!.Id;
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureValueParentsAllowed([make, elsewhere, model], model, [gin]));
-		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureValueParentsAllowed([make, elsewhere], elsewhere, [gin]));
+		var rush = model.Choice("rush_6")!.Id;
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.ValueParents([make, elsewhere, model], model, rush, [gin]));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.ValueParents([make, elsewhere], elsewhere, elsewhere.Choice("gin")!.Id, [gin]));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.ValueParents([make, model], model, rush, []))
+			.Message.ShouldContain("at least one");
 		make.Delete(false, At);
-		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureValueParentsAllowed([make, model], model, [make.Choice("niviuk")!.Id]));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.ValueParents([make, model], model, rush, [make.Choice("niviuk")!.Id]));
+	}
+
+	[Fact]
+	public void GivenLinkToRemovedParentChoice_WhenSavedWithOnlyLiveTicks_ThenLinkIsKeptAndNotJudged()
+	{
+		// Given — "Mentor 7" under both makes, then "Niviuk" removed
+		var make = Make();
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		model.ReplaceChoices(Kept(model, ("mentor_7", [niviuk, ozone])), At);
+		make.ReplaceChoices([new QuestionOptionInput("ozone", "Ozone", "Ozone")], At);
+		var mentor = model.Choice("mentor_7")!;
+
+		// When — the editor and the review page send only the live parents, or echo the removed one
+		var fromEditor = ChoiceDependencies.WithStandingLinks([make, model], make.Id, mentor, [ozone]);
+		var echoed = ChoiceDependencies.WithStandingLinks([make, model], make.Id, mentor, [niviuk, ozone]);
+
+		// Then — the removed parent's link stays, but a fresh tick of it is refused
+		fromEditor.ShouldBe([ozone, niviuk], ignoreOrder: true);
+		echoed.ShouldBe([niviuk, ozone], ignoreOrder: true);
+		Should.Throw<DomainRuleViolationException>(() =>
+			ChoiceDependencies.WithStandingLinks([make, model], make.Id, model.Choice("rush_6"), [niviuk, ozone]));
 	}
 }

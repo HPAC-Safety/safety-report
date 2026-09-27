@@ -1652,6 +1652,10 @@ The migration merges no pair whose wording matches in one language only — *Req
 
 Words typed into a dependent type-ahead are kept and sent as typed, even when they read as a choice under another answer — *playwright-bdd, Covered*
 
+### REQ-QB-228
+
+The migration merges a dependent type-ahead's identical duplicates into the oldest — *Reqnroll, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

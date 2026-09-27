@@ -213,21 +213,54 @@ public static class ChoiceDependencies
 	}
 
 	/// <summary>
-	///     Checks one value a reviewer gave new parent choices: each names a live
-	///     choice of its question's parent. Other values are not judged by it
-	///     (ADR-0151).
+	///     The parent choices a save offers <paramref name="existing" /> under: the ones
+	///     it ticks, each a live choice of the parent unless the choice already names
+	///     it, and every link it already has to a parent choice since removed. A
+	///     control lists only the parent's live choices, so it can neither show nor
+	///     untick such a link; it stays, and filters nothing (ADR-0151).
 	/// </summary>
-	public static void EnsureValueParentsAllowed(IReadOnlyCollection<Question> questions,
-												 Question child,
-												 IEnumerable<TinyId> parentChoiceIds)
+	/// <param name="questions">Every live question.</param>
+	/// <param name="parentId">The question the choices depend on.</param>
+	/// <param name="existing">The choice being saved, or null for a new one.</param>
+	/// <param name="ticked">The parent choices the save ticks.</param>
+	public static IReadOnlyList<TinyId> WithStandingLinks(IReadOnlyCollection<Question> questions,
+														  TinyId parentId,
+														  QuestionChoice? existing,
+														  IReadOnlyCollection<TinyId> ticked)
+	{
+		ArgumentNullException.ThrowIfNull(ticked);
+
+		var linked = existing?.ParentChoiceIds ?? [];
+		EnsureOfferable(questions, parentId, ticked.Where(id => !linked.Contains(id)));
+
+		var parent = ParentOf(questions, parentId);
+		var inert = linked.Where(id => parent.OfferedChoice(id) is null && parent.AllChoices.Any(choice => choice.Id == id));
+
+		return [.. ticked.Union(inert)];
+	}
+
+	/// <summary>
+	///     The parent choices a reviewer's save offers one value under: those ticked,
+	///     at least one, plus any link to a parent value since removed, which the page
+	///     cannot show (ADR-0151).
+	/// </summary>
+	public static IReadOnlyList<TinyId> ValueParents(IReadOnlyCollection<Question> questions,
+													 Question child,
+													 TinyId choiceId,
+													 IReadOnlyCollection<TinyId> ticked)
 	{
 		ArgumentNullException.ThrowIfNull(child);
+		ArgumentNullException.ThrowIfNull(ticked);
 
-		EnsureOfferable(
-			questions,
-			child.ChoicesDependOnQuestionId
-			?? throw new DomainRuleViolationException($"'{child.Key}' does not depend on another question, so its values have no parent choice."),
-			parentChoiceIds);
+		var parentId = child.ChoicesDependOnQuestionId
+					   ?? throw new DomainRuleViolationException($"'{child.Key}' does not depend on another question, so its values have no parent choice.");
+
+		if (ticked.Count == 0)
+		{
+			throw new DomainRuleViolationException("A value is offered under at least one choice of the parent question. Tick another before unticking the last.");
+		}
+
+		return WithStandingLinks(questions, parentId, child.AllChoices.FirstOrDefault(choice => choice.Id == choiceId), ticked);
 	}
 
 	/// <summary>

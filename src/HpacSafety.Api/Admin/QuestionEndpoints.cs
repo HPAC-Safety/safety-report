@@ -694,12 +694,8 @@ public static class QuestionEndpoints
 				}
 				else
 				{
-					ChoiceDependencies.EnsureOfferable(questions, parent.Id, ticked);
-
-					var inert = existing?.AllChoices.FirstOrDefault(choice => choice.Code == pair.Code)?.ParentChoiceIds
-						.Where(id => parent.OfferedChoice(id) is null && parent.AllChoices.Any(choice => choice.Id == id))
-						?? [];
-					ticked = [.. ticked.Union(inert)];
+					ticked = ChoiceDependencies.WithStandingLinks(
+						questions, parent.Id, existing?.AllChoices.FirstOrDefault(choice => choice.Code == pair.Code), ticked);
 				}
 
 				return new QuestionOptionInput(pair.Code, pair.Option.LabelEn, pair.Option.LabelFr, pair.Option.Replace, pair.Option.ResolvedPin, ticked);

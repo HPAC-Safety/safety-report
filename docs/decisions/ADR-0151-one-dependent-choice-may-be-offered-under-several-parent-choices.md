@@ -68,8 +68,10 @@ answers (#558).
     choice already names that choice, the two collapse into one.
 - A link to a parent choice that was **removed** (not replaced or merged)
   stays live and filters nothing, because the form never answers with a
-  removed choice. An editor save leaves such a link as it is: the editor lists
-  only live parent choices, so it cannot tick or untick one.
+  removed choice. The editor and the review page list only live parent
+  choices, so they can neither tick nor untick one. A save keeps such a link,
+  checks only the parent choices it newly ticks, and counts only live ones
+  toward "at least one".
 
 ### Wording is unique on a dependent question
 
@@ -120,8 +122,13 @@ answers (#558).
 - The public form's choices carry `parentChoiceIds: string[]` in place of
   `parentChoiceId`.
 - The browser offers a choice when the parent's answer is in that list. When
-  the parent's answer changes, the child keeps its answer if its choice is
-  also under the new answer, and clears it otherwise.
+  the parent's answer changes, a choice picked from the list stays if it is
+  also under the new answer, and is cleared otherwise.
+- Words typed into a type-ahead child stay across a parent change, and are
+  sent as typed, even when they read as a choice under another answer
+  (REQ-QB-227). The server matches them against the whole question and links
+  the match to the parent's answer, so clearing them would erase exactly the
+  input the reporter-added rule above accepts.
 - The API refuses a child answer whose choice does not list the answered
   parent choice.
 
@@ -193,6 +200,10 @@ its own facts.
   - every newly ticked parent is one of its live choices;
   - the removal rule;
   - de-duplicated re-pointing.
+- **The save** treats a racing insert of the same link as already made: two
+  reports that type one value under one new parent answer both add the pair,
+  and the second insert meets the first's row, so the context drops its own
+  and saves again.
 
   As in ADR-0146, these read the parent's current revision and choices, which
   only a trigger could reach, and ADR-0060 and ADR-0074 rejected triggers.

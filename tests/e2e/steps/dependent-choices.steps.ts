@@ -228,6 +228,9 @@ Then("Save is refused while a choice is offered under nothing, naming that choic
 	await tickParents(page, 0, ["Niviuk"])
 	await tickParents(page, 1, ["Ozone"])
 	await expect(page.getByRole("button", { name: "Save" })).toBeDisabled()
+	// The row offered under nothing is marked invalid, and described by the refusal.
+	await expect(parentPicker(page, 2).getByRole("button")).toHaveAttribute("aria-invalid", "true")
+	await expect(parentPicker(page, 0).getByRole("button")).not.toHaveAttribute("aria-invalid", "true")
 	const refusal = page.getByTestId("question-choices-unlinked")
 	await expect(refusal).toContainText("Zeno 2")
 	await expect(refusal).not.toContainText("Mentor 7")
@@ -620,6 +623,7 @@ Given(
 		]
 		const sentLinks: { id: string; body: unknown }[] = []
 		relinks.set(page, sentLinks)
+		reviewValues.set(page, values)
 
 		await stubAuth(page)
 		await page.route("**/api/admin/type-ahead-values/**", async (route) => {
@@ -634,6 +638,14 @@ Given(
 		await page.goto("/admin/type-ahead-values")
 	},
 )
+
+const reviewValues = new WeakMap<Page, { parent: { parentChoiceIds: string[] } }[]>()
+
+Given("{string} is also linked to {string}, a {string} value since removed", async ({ page }, _value: string, removed: string, _parent: string) => {
+	// The page lists only the parent's live values, so this link is never shown, counted, or sent.
+	reviewValues.get(page)![0]!.parent.parentChoiceIds.push(`${removed.toLowerCase()}-removed`)
+	await page.reload()
+})
 
 function valueParents(page: Page) {
 	return page.getByTestId("type-ahead-value-parent-choice")
@@ -663,12 +675,13 @@ Then("the page sends {string} and {string}", async ({ page }, first: string, sec
 	expect([...sentIds].sort()).toEqual([first.toLowerCase(), second.toLowerCase()].sort())
 })
 
-Then("the page does not let them untick the last parent choice", async ({ page }) => {
+Then("the page does not let them untick the last parent choice, and says why", async ({ page }) => {
 	await page.reload()
 	await valueParents(page).getByRole("button").click()
 	const ozone = valueParents(page).getByRole("checkbox", { name: "Ozone" })
 	await expect(ozone).toBeChecked()
 	await expect(ozone).toBeDisabled()
+	await expect(ozone).toHaveAccessibleDescription("A value is offered under at least one answer, so the last one stays ticked.")
 	await expect(page.getByRole("button", { name: "Change" })).toBeDisabled()
 })
 

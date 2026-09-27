@@ -31,7 +31,10 @@ reader's language, apart from those an Administrator pins first or last, so
 "reordering" a choice below means pinning it), and by
 [ADR-0146](ADR-0146-a-choice-list-may-depend-on-another-questions-answer.md)
 (a choice may name one choice of a parent question it is offered under; the
-link sits outside revisions too, and a fork copies it).
+link sits outside revisions too, and a fork copies it), and by
+[ADR-0151](ADR-0151-one-dependent-choice-may-be-offered-under-several-parent-choices.md)
+(one or more parent choices, each link a soft-deleted row of its own, which a
+fork copies too).
 
 It carries the second argued exception to AGENTS.md invariant 8's ban on
 `DROP TABLE`, after

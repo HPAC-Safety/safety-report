@@ -2189,6 +2189,12 @@
     "provider": "human",
     "reviewed": true
   },
+  "report.typeAhead.typeToSeeChoices": {
+    "source_hash": "4b7bd803654de0cb40a4ca1cc9f7e342538ccf6985fac515cfedaf1139090fc6",
+    "target_hash": "caa505ef4d38a75c05cadfcfabc0fb966aaa638bf70d67ce07f7f73a5e74d479",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "reports.action.cancel": {
     "source_hash": "19766ed6ccb2f4a32778eed80d1928d2c87a18d7c275ccb163ec6709d3eb2e27",
     "target_hash": "46ad3916f6a0979841df9c4ba6f5310d34434d95024912df97b2eba644d0a60d",

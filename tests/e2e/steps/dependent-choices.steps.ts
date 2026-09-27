@@ -338,6 +338,9 @@ async function modelOffers(page: Page, expected: string[]): Promise<void> {
 	const type = forms.get(page)?.[0]?.children[1]?.type
 	if (type === "autocomplete") {
 		const field = modelField(page)
+		// Probing types into the field, which may already hold a real answer;
+		// put it back exactly as found once every label has been checked.
+		const original = await field.inputValue()
 		for (const label of expected) {
 			await field.click()
 			await field.fill(label)
@@ -345,22 +348,26 @@ async function modelOffers(page: Page, expected: string[]): Promise<void> {
 			await field.fill("")
 			await page.keyboard.press("Escape")
 		}
-		for (const label of MODELS.map((model) => model.labelEn).filter((label) => !expected.includes(label))) {
-			// #558 / REQ-QB-227 workaround: typing another choice's exact wording
-			// is matched to that choice (REQ-QB-171), and `consistentAnswers`
-			// currently clears ANY answer matched to a choice the parent's answer
-			// does not offer — even free text that only happens to spell a
-			// foreign choice's wording, which REQ-QB-227 (from #558/#562) fixes to
-			// keep as typed words instead. Until #562 merges, a partial (not the
-			// exact) wording avoids tripping that clear so this only tests what it
-			// means to: the list shows no match. Remove this workaround, and type
-			// the exact label instead, once #562 lands.
-			const partial = label.slice(0, Math.max(3, label.length - 1))
+		// Every label this form's "Model" could name, not just the current
+		// form's own options: the fixture varies from scenario to scenario.
+		const allLabels = (forms.get(page)?.[0]?.children[1]?.options ?? MODELS).map((option) => option.labelEn)
+		for (const label of allLabels.filter((label) => !expected.includes(label))) {
+			// Typing another choice's exact wording matches it by wording
+			// (REQ-QB-171), but #562/REQ-QB-227 keeps it as the words typed
+			// instead of clearing it, since the parent's answer does not offer
+			// it — so the exact label is safe to type here.
 			await field.click()
-			await field.fill(partial)
+			await field.fill(label)
 			await expect(page.getByRole("listbox", { name: "Model" })).toBeHidden()
 			await field.fill("")
 			await page.keyboard.press("Escape")
+		}
+		if (original) {
+			await field.click()
+			await field.fill(original)
+			const option = page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: original, exact: true })
+			if (await option.count()) await option.click()
+			else await page.keyboard.press("Escape")
 		}
 		return
 	}
@@ -594,19 +601,21 @@ Given(
 
 Then("{string} offers {string} and {string}", async ({ page }, _child: string, first: string, second: string) => {
 	await expect(modelField(page)).toBeEnabled()
-	expect(await modelOffers(page)).toEqual([first, second])
+	await modelOffers(page, [first, second])
 })
 
 When("they pick {string} and change {string} to {string}", async ({ page }, model: string, _parent: string, make: string) => {
-	await page.getByRole("button", { name: "Show choices" }).last().click()
-	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model }).click()
+	const field = modelField(page)
+	await field.click()
+	await field.fill(model)
+	await page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: model, exact: true }).click()
 	await expect(modelField(page)).toHaveValue(model)
 	await answerMake(page, make)
 })
 
 Then("{string} still holds {string} and offers {string} and {string}", async ({ page }, _child: string, model: string, first: string, second: string) => {
 	await expect(modelField(page)).toHaveValue(model)
-	expect(await modelOffers(page)).toEqual([first, second])
+	await modelOffers(page, [first, second])
 })
 
 When("the browser saved the report and they come back and continue it", async ({ page }) => {

@@ -24,14 +24,16 @@ interface StubRow {
 	language: string
 	consent: boolean | null
 	isStuck: boolean
+	version: string
 }
 
 const ROWS: StubRow[] = [
-	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending", language: "en-CA", consent: true, isStuck: false },
-	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false },
-	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false },
-	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false },
-	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true },
+	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending", language: "en-CA", consent: true, isStuck: false, version: "11.1" },
+	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false, version: "12.0" },
+	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false, version: "13.1" },
+	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false, version: "14.1" },
+	{ id: "failedaaaaa", submittedAt: "2026-09-16T15:30:00Z", status: "summary_failed", language: "en-CA", consent: true, isStuck: false, version: "15.0" },
+	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true, version: "16.0" },
 ]
 
 const DETAIL = {
@@ -96,15 +98,78 @@ const FILTERED: Record<string, (row: StubRow) => boolean> = {
 	"summary-failed": (row) => row.status === "summary_failed",
 }
 
+/*
+ * The list's own copy of the rows, so a row action changes what the next list
+ * request returns, and every command the page sent, with its body.
+ */
+interface ListStub {
+	rows: StubRow[]
+	stale: Set<string>
+	sent: { method: string; path: string; version?: string }[]
+}
+
+const listStubs = new WeakMap<Page, ListStub>()
+
 async function stubReports(page: Page) {
+	const stub: ListStub = { rows: ROWS.map((row) => ({ ...row })), stale: new Set(), sent: [] }
+	listStubs.set(page, stub)
+
 	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
 		const filter = new URL(route.request().url()).searchParams.get("filter") ?? "all"
-		await route.fulfill({ json: ROWS.filter(FILTERED[filter] ?? (() => false)) })
+		await route.fulfill({ json: stub.rows.filter(FILTERED[filter] ?? (() => false)) })
 	})
 
-	await page.route(/\/api\/admin\/reports\/[^/?]+$/, async (route) => {
-		await route.fulfill({ json: DETAIL })
+	await page.route(/\/api\/admin\/reports\/[^/?]+(\/(publish|unpublish))?$/, async (route) => {
+		const request = route.request()
+		const path = new URL(request.url()).pathname
+		const id = path.split("/")[4]
+
+		if (request.method() === "GET") {
+			return route.fulfill({ json: DETAIL })
+		}
+
+		stub.sent.push({ method: request.method(), path, version: request.postDataJSON()?.version })
+
+		if (request.method() === "DELETE") {
+			stub.rows = stub.rows.filter((row) => row.id !== id)
+			return route.fulfill({ status: 204 })
+		}
+
+		if (stub.stale.has(id)) {
+			return route.fulfill({
+				status: 409,
+				contentType: "application/problem+json",
+				body: JSON.stringify({
+					type: "https://hpac.ca/problems/stale-report",
+					title: "This report changed since you opened it.",
+					detail: "Another reviewer saved a change to this report.",
+				}),
+			})
+		}
+
+		const row = stub.rows.find((candidate) => candidate.id === id)!
+		row.status = path.endsWith("/unpublish") ? "unpublished" : "published"
+		row.version = `${row.version}+`
+		return route.fulfill({ json: { ...DETAIL, ...row } })
 	})
+}
+
+/** The stubbed row each scenario word names. */
+const ROW_BY_WORD: Record<string, string> = {
+	pending: "pendingaaaa",
+	published: "publishedaa",
+	unpublished: "unpublished",
+	"private-unpublished": "privateaaaa",
+	"summary-failed": "failedaaaaa",
+	stuck: "stuckaaaaaa",
+}
+
+function row(page: Page, word: string) {
+	return page.locator(`[data-report-id="${ROW_BY_WORD[word]}"]`)
+}
+
+function rowButtons(page: Page, word: string) {
+	return row(page, word).getByRole("group").getByRole("button")
 }
 
 function rows(page: Page) {
@@ -597,3 +662,73 @@ Then("the answer is listed {string}, {string}, {string}", async ({ page }, first
 	await expect(page.locator('[data-question-key="conditions"] dd > span:first-child')).toHaveText([first, second, third])
 })
 
+
+// ── Quick actions on each row of Manage reports (REQ-MOD-120..123) ──
+
+Given("another reviewer has changed the pending report since the list was loaded", async ({ page }) => {
+	listStubs.get(page)!.stale.add(ROW_BY_WORD.pending)
+})
+
+Then("the {word} row offers {}", async ({ page }, word: string, list: string) => {
+	const expected = list.split(",").map((name) => name.trim())
+	const buttons = rowButtons(page, word)
+	await expect(buttons).toHaveCount(expected.length)
+	for (const [index, name] of expected.entries()) {
+		await expect(buttons.nth(index)).toHaveAccessibleName(name)
+		await expect(buttons.nth(index)).toHaveAttribute("title", name)
+	}
+	await expect(row(page, word).getByRole("group")).toHaveAccessibleName(/^Actions for the report submitted /)
+})
+
+When("the safety officer publishes the pending row", async ({ page }) => {
+	await rowButtons(page, "pending").and(page.getByRole("button", { name: "Publish", exact: true })).click()
+})
+
+When("the safety officer unpublishes the published row", async ({ page }) => {
+	await rowButtons(page, "published").and(page.getByRole("button", { name: "Unpublish", exact: true })).click()
+})
+
+When("the safety officer chooses Delete on the pending row", async ({ page }) => {
+	await rowButtons(page, "pending").and(page.getByRole("button", { name: "Delete", exact: true })).click()
+})
+
+When("the safety officer keeps the report", async ({ page }) => {
+	await page.getByRole("dialog").getByRole("button", { name: "Keep report" }).click()
+})
+
+Then("the {word} row shows the {string} badge and offers {word}", async ({ page }, word: string, badge: string, action: string) => {
+	await expect(row(page, word).locator('[data-badge="status"]')).toHaveText(badge)
+	await expect(rowButtons(page, word).first()).toHaveAccessibleName(action)
+})
+
+Then("each row action sent the version its row was listed with", async ({ page }) => {
+	expect(listStubs.get(page)!.sent).toEqual([
+		{ method: "POST", path: "/api/admin/reports/pendingaaaa/publish", version: "11.1" },
+		{ method: "POST", path: "/api/admin/reports/publishedaa/unpublish", version: "13.1" },
+	])
+})
+
+Then("a confirmation asks whether to delete it", async ({ page }) => {
+	await expect(page.getByRole("dialog", { name: "Delete this report?" })).toBeVisible()
+	expect(listStubs.get(page)!.sent).toEqual([])
+})
+
+Then("the pending row is still listed and nothing was deleted", async ({ page }) => {
+	await expect(page.getByRole("dialog")).toHaveCount(0)
+	await expect(row(page, "pending")).toBeVisible()
+	expect(listStubs.get(page)!.sent).toEqual([])
+})
+
+Then("the pending row is no longer listed and it was deleted", async ({ page }) => {
+	await expect(row(page, "pending")).toHaveCount(0)
+	expect(listStubs.get(page)!.sent).toEqual([{ method: "DELETE", path: "/api/admin/reports/pendingaaaa", version: undefined }])
+})
+
+Then("a message says the report changed and offers to reload the list", async ({ page }) => {
+	await expect(page.getByRole("alert")).toContainText("Another reviewer changed this report since the list was loaded")
+	await expect(page.getByRole("button", { name: "Reload list" })).toBeVisible()
+})
+
+Then("the pending row still shows the {string} badge", async ({ page }, badge: string) => {
+	await expect(row(page, "pending").locator('[data-badge="status"]')).toHaveText(badge)
+})

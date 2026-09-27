@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError, translate } from "../api/adminQuestions"
-import type { ReportDetail, ReportStatus, SummarySource } from "../api/adminReports"
+import type { ReportDetail, ReportListItem, ReportStatus, SummarySource } from "../api/adminReports"
 import { TranslateConfirmDialog } from "./TranslateConfirmDialog"
 
 type Language = "en" | "fr"
@@ -25,7 +25,7 @@ const ACTIONS: Record<ReportStatus, ReviewAction[]> = {
  * A report whose reporter did not consent is unpublished for good: it is never
  * summarized, and deleting it is the one thing a reviewer can do (REQ-DOM-015).
  */
-function actionsFor(report: ReportDetail): ReviewAction[] {
+export function actionsFor(report: Pick<ReportListItem, "status" | "consent">): ReviewAction[] {
 	return report.consent === true ? ACTIONS[report.status] : ["delete"]
 }
 

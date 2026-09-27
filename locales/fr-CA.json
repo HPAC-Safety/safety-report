@@ -528,6 +528,11 @@
       "confirm": "Supprimer le signalement",
       "keep": "Conserver le signalement"
     },
+    "row": {
+      "actions": "#Actions for the report submitted {at}",
+      "stale": "#Another reviewer changed this report since the list was loaded. Nothing you just did was saved.",
+      "reload": "#Reload list"
+    },
     "translate": {
       "label": "Traduire",
       "toFrench": "Traduire en français",

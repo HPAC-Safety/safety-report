@@ -2,8 +2,19 @@ import { useEffect, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
-import { isReportFilter, listReports, REPORT_FILTERS, type ReportListItem } from "../api/adminReports"
+import {
+	deleteReport,
+	isReportFilter,
+	listReports,
+	publishReport,
+	REPORT_FILTERS,
+	STALE_REPORT,
+	unpublishReport,
+	type ReportListItem,
+} from "../api/adminReports"
+import { DeleteReportDialog } from "../components/DeleteReportDialog"
 import { ReportBadges } from "../components/ReportBadges"
+import { ReportRowActions, type RowAction } from "../components/ReportRowActions"
 
 /*
  * Every live report, newest first, with its workflow status, a Private badge
@@ -11,6 +22,10 @@ import { ReportBadges } from "../components/ReportBadges"
  * on summarization for more than a day. The filter lives in the address bar
  * so a reviewer can bookmark or share "needs action". The list itself carries
  * no answer or summary text; opening a report is the audited read.
+ *
+ * Each row can also be published, unpublished, or deleted in place
+ * (REQ-MOD-120..123). A row carries its report's version, so these commands
+ * need no detail read; deleting asks first, because nothing restores it.
  */
 export function ManageReportsPage() {
 	const { t, locale } = useLocale()
@@ -20,6 +35,61 @@ export function ManageReportsPage() {
 	const [reports, setReports] = useState<ReportListItem[]>([])
 	const [error, setError] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [busyId, setBusyId] = useState<string | null>(null)
+	const [stale, setStale] = useState(false)
+	const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
+	const [reloads, setReloads] = useState(0)
+
+	function fail(cause: unknown) {
+		if (cause instanceof ApiError && cause.type === STALE_REPORT) setStale(true)
+		else setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
+	}
+
+	async function act(report: ReportListItem, action: RowAction) {
+		if (action === "delete") {
+			setConfirmingDelete(report.id)
+			return
+		}
+		setBusyId(report.id)
+		setError(null)
+		try {
+			const updated =
+				action === "publish"
+					? await publishReport(report.id, report.version)
+					: await unpublishReport(report.id, report.version, "")
+			setReports((current) =>
+				current.map((row) =>
+					row.id === updated.id
+						? { ...row, status: updated.status, consent: updated.consent, isStuck: updated.isStuck, version: updated.version }
+						: row,
+				),
+			)
+		} catch (cause) {
+			fail(cause)
+		} finally {
+			setBusyId(null)
+		}
+	}
+
+	async function remove(id: string) {
+		setConfirmingDelete(null)
+		setBusyId(id)
+		setError(null)
+		try {
+			await deleteReport(id)
+			setReports((current) => current.filter((row) => row.id !== id))
+		} catch (cause) {
+			fail(cause)
+		} finally {
+			setBusyId(null)
+		}
+	}
+
+	function reload() {
+		setStale(false)
+		setError(null)
+		setReloads((count) => count + 1)
+	}
 
 	useEffect(() => {
 		let current = true
@@ -44,7 +114,7 @@ export function ManageReportsPage() {
 		return () => {
 			current = false
 		}
-	}, [filter, t])
+	}, [filter, t, reloads])
 
 	const submitted = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
 
@@ -79,25 +149,53 @@ export function ManageReportsPage() {
 				</p>
 			)}
 
+			{stale && (
+				<div role="alert" className="mt-6 flex flex-wrap items-center gap-3 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
+					<p>{t("reports.row.stale")}</p>
+					<button
+						type="button"
+						className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-medium text-ink-inverse"
+						onClick={reload}
+					>
+						{t("reports.row.reload")}
+					</button>
+				</div>
+			)}
+
+			{confirmingDelete && (
+				<DeleteReportDialog onConfirm={() => void remove(confirmingDelete)} onKeep={() => setConfirmingDelete(null)} />
+			)}
+
 			{loading ? (
 				<p className="mt-8 font-sans text-ink-muted">{t("reports.loading")}</p>
 			) : reports.length === 0 ? (
 				<p className="mt-8 font-sans text-ink-muted">{t("reports.empty")}</p>
 			) : (
 				<ul aria-label={t("reports.listLabel")} className="mt-8 flex flex-col gap-3">
-					{reports.map((report) => (
-						<li key={report.id} data-report-id={report.id}>
-							<Link
-								to={`/admin/reports/${report.id}`}
-								className="flex flex-col gap-2 rounded border border-rule bg-surface p-4 hover:bg-surface-2 sm:flex-row sm:items-center sm:justify-between"
+					{reports.map((report) => {
+						const at = submitted.format(new Date(report.submittedAt))
+						return (
+							<li
+								key={report.id}
+								data-report-id={report.id}
+								className="flex items-center gap-2 rounded border border-rule bg-surface pr-3 hover:bg-surface-2"
 							>
-								<span className="font-sans text-ink">
-									{t("reports.submittedAt", { at: submitted.format(new Date(report.submittedAt)) })}
-								</span>
-								<ReportBadges status={report.status} consent={report.consent} isStuck={report.isStuck} />
-							</Link>
-						</li>
-					))}
+								<Link
+									to={`/admin/reports/${report.id}`}
+									className="flex min-w-0 flex-1 flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
+								>
+									<span className="font-sans text-ink">{t("reports.submittedAt", { at })}</span>
+									<ReportBadges status={report.status} consent={report.consent} isStuck={report.isStuck} />
+								</Link>
+								<ReportRowActions
+									report={report}
+									label={t("reports.row.actions", { at })}
+									busy={busyId === report.id}
+									onAction={(action) => void act(report, action)}
+								/>
+							</li>
+						)
+					})}
 				</ul>
 			)}
 		</main>

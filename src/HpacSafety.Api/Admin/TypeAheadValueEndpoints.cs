@@ -73,7 +73,7 @@ public static class TypeAheadValueEndpoints
 			.ToDictionary(group => group.Key, group => group.Sum(entry => entry.Count));
 
 		// A dependent value's parent choices come from its parent question, which
-		// need not have a value awaiting review itself (ADR-0146).
+		// need not have a value awaiting review itself (ADR-0146, ADR-0151).
 		var parentIds = questions.Select(question => question.ChoicesDependOnQuestionId).OfType<TinyId>().Distinct().ToList();
 		var parents = await QuestionEndpoints.LiveQuestions(database)
 			.AsNoTracking()
@@ -100,18 +100,17 @@ public static class TypeAheadValueEndpoints
 					answerCounts.GetValueOrDefault(entry.Choice.Id),
 					entry.Choice.CreatedAt,
 					[
-						// A dependent value merges only into one offered under the same
-						// parent choice (ADR-0146).
+						// A dependent value merges into any other; the survivor is then
+						// offered under every parent either was (ADR-0151).
 						.. entry.Question.Choices
-							.Where(target => target.Id != entry.Choice.Id
-											 && (parent is null || target.ParentChoiceId == entry.Choice.ParentChoiceId))
+							.Where(target => target.Id != entry.Choice.Id)
 							.Select(target => new TypeAheadMergeTarget(target.Id.Value, target.LabelEn, target.LabelFr, EnumCode.Of(target.Pin))),
 					],
 					parent is null ? null : new TypeAheadParentView(
 						parent.Id.Value,
 						parent.CurrentRevision.LabelEn,
 						parent.CurrentRevision.LabelFr,
-						entry.Choice.ParentChoiceId?.Value,
+						[.. entry.Choice.ParentChoiceIds.Select(id => id.Value)],
 						[.. parent.Choices.Select(choice => new TypeAheadParentChoice(choice.Id.Value, choice.LabelEn, choice.LabelFr, EnumCode.Of(choice.Pin)))]));
 			})
 			.ToList();
@@ -162,13 +161,11 @@ public static class TypeAheadValueEndpoints
 		return Review(id, database, clock, context, AuditAction.MergedTypeAheadValue,
 			(question, choiceId, reviewer, at, bank) =>
 			{
-				// Values offered under both would be offered twice under one (ADR-0146).
-				ChoiceDependencies.EnsureMergeKeepsChildrenApart(bank, question, choiceId, targetId);
 				question.MergeValue(choiceId, targetId, reviewer, at);
 
 				// Values offered under the merged one are offered under its target
-				// from now on (ADR-0146).
-				ChoiceDependencies.Follow(bank, question);
+				// from now on, collapsing into a link they already have (ADR-0151).
+				ChoiceDependencies.Follow(bank, question, at);
 			}, cancellationToken);
 	}
 
@@ -182,16 +179,16 @@ public static class TypeAheadValueEndpoints
 		return Review(id, database, clock, context, AuditAction.RemovedTypeAheadValue,
 			(question, choiceId, reviewer, at, bank) =>
 			{
-				// A value another question's values are offered under is merged, not
-				// removed (ADR-0146).
+				// A value that would leave another question's value offered under
+				// nothing is merged, not removed (ADR-0151).
 				ChoiceDependencies.EnsureValueRemovable(bank, question, choiceId);
 				question.RemoveValue(choiceId, reviewer, at);
 			}, cancellationToken);
 	}
 
 	/// <summary>
-	///     A reviewer offers a dependent type-ahead's value under another choice of its
-	///     parent question: changed, never cleared (ADR-0146).
+	///     A reviewer sets the parent choices a dependent type-ahead's value is offered
+	///     under: one or more, never none (ADR-0151).
 	/// </summary>
 	private static Task<IResult> Relink(
 		string id,
@@ -203,16 +200,23 @@ public static class TypeAheadValueEndpoints
 	{
 		ArgumentNullException.ThrowIfNull(request);
 
-		if (!TinyId.TryParse(request.ParentChoiceId, out var parentChoiceId))
+		var parentChoiceIds = new List<TinyId>();
+
+		foreach (var parentChoiceId in request.ParentChoiceIds ?? [])
 		{
-			return Task.FromResult(Refused("Name the parent choice to offer the value under. A link is changed, never cleared."));
+			if (!TinyId.TryParse(parentChoiceId, out var parsed))
+			{
+				return Task.FromResult(Refused("Name only choices of the parent question to offer the value under."));
+			}
+
+			parentChoiceIds.Add(parsed);
 		}
 
 		return Review(id, database, clock, context, AuditAction.RelinkedTypeAheadValue,
 			(question, choiceId, reviewer, at, bank) =>
 			{
-				question.RelinkValue(choiceId, parentChoiceId, reviewer, at);
-				ChoiceDependencies.EnsureLinkAllowed(bank, question, choiceId);
+				ChoiceDependencies.EnsureValueParentsAllowed(bank, question, parentChoiceIds);
+				question.OfferValueUnder(choiceId, parentChoiceIds, reviewer, at);
 			}, cancellationToken);
 	}
 
@@ -248,7 +252,7 @@ public static class TypeAheadValueEndpoints
 			return Results.NotFound();
 		}
 
-		// The whole bank: a value's parent and its dependents are other questions (ADR-0146).
+		// The whole bank: a value's parent and its dependents are other questions (ADR-0146, ADR-0151).
 		var bank = await QuestionEndpoints.LiveQuestions(database)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
@@ -295,13 +299,13 @@ public sealed record TypeAheadValuesResponse(IReadOnlyList<TypeAheadValueView> V
 /// <param name="AnswerCount">How many live answers name it.</param>
 /// <param name="AddedAt">When a reporter added it, when that was recorded.</param>
 /// <param name="MergeTargets">
-///     The question's other live values, any of which this one may be merged into:
-///     for a dependent question, only those under the same parent choice (ADR-0146).
+///     The question's other live values, any of which this one may be merged into
+///     (ADR-0151).
 /// </param>
 /// <param name="Parent">
 ///     For a type-ahead whose values depend on another question's answer, that
 ///     question, the choice this value is offered under, and the choices it may be
-///     offered under instead; null otherwise (ADR-0146).
+///     offered under instead; null otherwise (ADR-0146, ADR-0151).
 /// </param>
 public sealed record TypeAheadValueView(
 	string Id,
@@ -317,20 +321,20 @@ public sealed record TypeAheadValueView(
 	IReadOnlyList<TypeAheadMergeTarget> MergeTargets,
 	TypeAheadParentView? Parent);
 
-/// <summary>The parent question a dependent type-ahead value is offered under a choice of (ADR-0146).</summary>
+/// <summary>The parent question a dependent type-ahead value is offered under a choice of (ADR-0146, ADR-0151).</summary>
 /// <param name="QuestionId">The parent question.</param>
 /// <param name="QuestionLabelEn">Its English wording.</param>
 /// <param name="QuestionLabelFr">Its French wording.</param>
-/// <param name="ParentChoiceId">The parent choice the value is offered under, or null for one added while the parent was off the form.</param>
+/// <param name="ParentChoiceIds">The parent choices the value is offered under; none for one added while the parent was off the form.</param>
 /// <param name="Choices">The parent's live choices, any of which the value may be offered under instead.</param>
 public sealed record TypeAheadParentView(
 	string QuestionId,
 	string QuestionLabelEn,
 	string QuestionLabelFr,
-	string? ParentChoiceId,
+	IReadOnlyList<string> ParentChoiceIds,
 	IReadOnlyList<TypeAheadParentChoice> Choices);
 
-/// <summary>A live choice of a dependent value's parent question, which the value may be offered under (ADR-0146).</summary>
+/// <summary>A live choice of a dependent value's parent question, which the value may be offered under (ADR-0146, ADR-0151).</summary>
 /// <param name="Id">Its identifier.</param>
 /// <param name="LabelEn">Its English wording, or null while it has none.</param>
 /// <param name="LabelFr">Its French wording, or null while it has none.</param>
@@ -347,9 +351,9 @@ public sealed record TypeAheadParentChoice(string Id, string? LabelEn, string? L
 /// </param>
 public sealed record TypeAheadMergeTarget(string Id, string? LabelEn, string? LabelFr, string Pin);
 
-/// <summary>A reviewer's change of the parent choice a dependent type-ahead value is offered under (ADR-0146).</summary>
-/// <param name="ParentChoiceId">The parent question's choice to offer it under. Required: a link is changed, never cleared.</param>
-public sealed record RelinkTypeAheadValueRequest(string? ParentChoiceId);
+/// <summary>A reviewer's change of the parent choices a dependent type-ahead value is offered under (ADR-0151).</summary>
+/// <param name="ParentChoiceIds">Every parent question's choice to offer it under: at least one, never none.</param>
+public sealed record RelinkTypeAheadValueRequest(IReadOnlyList<string>? ParentChoiceIds);
 
 /// <summary>A reviewer's merge of one type-ahead value into another of the same question.</summary>
 /// <param name="IntoId">The value it is merged into: every answer naming the merged value reads this one.</param>

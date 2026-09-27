@@ -66,6 +66,9 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 	/// <summary>Each question's own choices, outside its revisions (ADR-0095).</summary>
 	public DbSet<QuestionChoice> QuestionChoices => Set<QuestionChoice>();
 
+	/// <summary>The parent choices each dependent question's choice is offered under (ADR-0151).</summary>
+	public DbSet<ChoiceParentLink> ChoiceParentLinks => Set<ChoiceParentLink>();
+
 	/// <summary>Who did what, and when.</summary>
 	public DbSet<AuditLogEntry> AuditLog => Set<AuditLogEntry>();
 
@@ -171,6 +174,7 @@ public class HpacSafetyDbContext(DbContextOptions<HpacSafetyDbContext> options) 
 		modelBuilder.ApplyConfiguration(new QuestionConfiguration());
 		modelBuilder.ApplyConfiguration(new QuestionRevisionConfiguration());
 		modelBuilder.ApplyConfiguration(new QuestionChoiceConfiguration());
+		modelBuilder.ApplyConfiguration(new ChoiceParentLinkConfiguration());
 
 		modelBuilder.ApplyConfiguration(new AuditLogEntryConfiguration());
 		modelBuilder.ApplyConfiguration(new OutboxMessageConfiguration());

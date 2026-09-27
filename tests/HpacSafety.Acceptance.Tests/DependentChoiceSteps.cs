@@ -13,8 +13,9 @@ using Shouldly;
 namespace HpacSafety.Acceptance.Tests;
 
 /// <summary>
-///     A question's choices may depend on another question's answer (<c>REQ-QB-179</c>
-///     to <c>REQ-QB-194</c>, <c>REQ-QB-203</c>, <c>REQ-SUB-113</c>, ADR-0146).
+///     A question's choices may depend on another question's answer, each choice under
+///     one or more parent choices (<c>REQ-QB-179</c> to <c>REQ-QB-221</c>,
+///     <c>REQ-SUB-113</c> to <c>REQ-SUB-115</c>, ADR-0146, ADR-0151).
 /// </summary>
 /// <remarks>
 ///     Every claim here is about what the admin, review, public-form, or submission
@@ -39,6 +40,8 @@ public sealed class DependentChoiceSteps
 	private HttpResponseMessage? _response;
 	private string? _parentType;
 	private string? _childName;
+	private string? _lastChoice;
+	private (TinyId Id, TinyId? ChoiceId)[] _answersBefore = [];
 
 	// ---- REQ-QB-179: which types may take part ----
 
@@ -131,7 +134,7 @@ public sealed class DependentChoiceSteps
 		var model = await View(_childName!);
 		var parentChoiceId = ChoiceId(await View("Make"), parentChoice);
 
-		if (ParentOf(model, choice) != parentChoiceId)
+		if (!ParentsOf(model, choice).SequenceEqual([parentChoiceId]))
 		{
 			var saved = await Put(_childName!, RequestFrom(model, options: Options(model, (choice, parentChoiceId))));
 			saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
@@ -228,7 +231,7 @@ public sealed class DependentChoiceSteps
 		}
 	}
 
-	// ---- REQ-QB-182: every choice is linked, to the parent's choices ----
+	// ---- REQ-QB-212: every choice is offered under at least one parent choice ----
 
 	[Given(@"a type-ahead question {string} offers {string} and {string}")]
 	public async Task GivenAnUnlinkedTypeAhead(string child,
@@ -241,10 +244,10 @@ public sealed class DependentChoiceSteps
 		await Remember("Make", child);
 	}
 
-	[When(@"an Administrator makes its choices depend on the {string} question, linking only {string} to {string}")]
-	public async Task WhenLinkingOnlyOne(string parent,
-										 string choice,
-										 string parentChoice)
+	[When(@"an Administrator makes its choices depend on the {string} question, offering only {string} under {string}")]
+	public async Task WhenOfferingOnlyOne(string parent,
+										  string choice,
+										  string parentChoice)
 	{
 		var model = await View(_childName!);
 		_response = await Put(_childName!, RequestFrom(model, _ids[parent], Options(model, (choice, ChoiceId(await View(parent), parentChoice)))));
@@ -261,85 +264,114 @@ public sealed class DependentChoiceSteps
 	{
 		var model = await View(_childName!);
 		model.GetProperty("choicesDependOnQuestionId").ValueKind.ShouldBe(JsonValueKind.Null);
-		model.GetProperty("options").EnumerateArray().ShouldAllBe(option => option.GetProperty("parentChoiceId").ValueKind == JsonValueKind.Null);
+		model.GetProperty("options").EnumerateArray().ShouldAllBe(option => option.GetProperty("parentChoiceIds").GetArrayLength() == 0);
 	}
 
-	[When(@"they link {string} to {string} and {string} to {string} in the same save")]
-	public async Task WhenLinkingBoth(string first,
-									  string firstParent,
-									  string second,
-									  string secondParent)
+	[When(@"they offer {string} under {string} and {string}, and {string} under {string}, in the same save")]
+	public async Task WhenOfferingBoth(string first,
+									   string firstParent,
+									   string firstOtherParent,
+									   string second,
+									   string secondParent)
 	{
 		var model = await View(_childName!);
 		var make = await View("Make");
-		_response = await Put(_childName!, RequestFrom(model, _ids["Make"], Options(model, (first, ChoiceId(make, firstParent)), (second, ChoiceId(make, secondParent)))));
+		_response = await Put(_childName!, RequestFrom(model, _ids["Make"], OptionsUnder(model,
+			(first, [ChoiceId(make, firstParent), ChoiceId(make, firstOtherParent)]),
+			(second, [ChoiceId(make, secondParent)]))));
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"the dependency is saved with both links")]
-	public async Task ThenBothLinksAreSaved()
+	[Then(@"the dependency is saved, with {string} under both and {string} under {string}")]
+	public async Task ThenBothAreSaved(string first,
+									   string second,
+									   string secondParent)
 	{
 		var model = await View(_childName!);
 		var make = await View("Make");
 		model.GetProperty("choicesDependOnQuestionId").GetString().ShouldBe(_ids["Make"]);
-		ParentOf(model, "Mentor 7").ShouldBe(ChoiceId(make, "Niviuk"));
-		ParentOf(model, "Rush 6").ShouldBe(ChoiceId(make, "Ozone"));
+		ParentsOf(model, first).ShouldBe(Sorted(ChoiceId(make, "Niviuk"), ChoiceId(make, "Ozone")));
+		ParentsOf(model, second).ShouldBe([ChoiceId(make, secondParent)]);
 	}
 
-	[Then(@"adding a choice to {string} without a parent choice is refused")]
+	[Then(@"adding a choice to {string} under no parent choice is refused")]
 	public async Task ThenAnUnlinkedChoiceIsRefused(string child)
 	{
 		var model = await View(child);
 		_response = await Put(child, RequestFrom(model, options: [.. Options(model), Option("Buzz Z7", null)]));
-		await Refused();
+		(await Refused()).ShouldContain("'Buzz Z7'");
+
+		_response = await Put(child, RequestFrom(model, options: [.. Options(model), OptionUnder("Buzz Z7")]));
+		(await Refused()).ShouldContain("'Buzz Z7'");
 	}
 
-	[Then(@"linking a choice to a choice of any question other than {string} is refused")]
+	[Then(@"offering a choice under a choice of any question other than {string} is refused")]
 	public async Task ThenAForeignLinkIsRefused(string parent)
 	{
 		await Create("Elsewhere", "single_select", [("Gin", null)]);
 		var model = await View(_childName!);
-		_response = await Put(_childName!, RequestFrom(model, options: Options(model, ("Mentor 7", ChoiceId(await View("Elsewhere"), "Gin")))));
+		_response = await Put(_childName!, RequestFrom(model, options: OptionsUnder(model,
+			("Mentor 7", [ChoiceId(await View("Make"), "Niviuk"), ChoiceId(await View("Elsewhere"), "Gin")]))));
 		(await Refused()).ShouldContain(Label(parent));
 	}
 
-	// ---- REQ-QB-183: the same wording once per parent choice ----
+	// ---- REQ-QB-213: one choice under several parent choices, and unique wording ----
 
-	[When(@"an Administrator adds {string} linked to {string} and {string} linked to {string}")]
-	public async Task WhenAddingTwoOthers(string first,
-										  string firstParent,
-										  string second,
-										  string secondParent)
+	[When(@"an Administrator adds {string}, in French {string}, offered under {string} and {string}")]
+	public async Task WhenAddingOneBilingualUnderBoth(string wording,
+													  string french,
+													  string firstParent,
+													  string secondParent)
 	{
 		var model = await View(_childName!);
 		var make = await View("Make");
-		_response = await Put(_childName!, RequestFrom(model, options: [.. Options(model), Option(first, ChoiceId(make, firstParent)), Option(second, ChoiceId(make, secondParent))]));
+		var option = OptionUnder(wording, ChoiceId(make, firstParent), ChoiceId(make, secondParent));
+		option["labelFr"] = french;
+		_response = await Put(_childName!, RequestFrom(model, options: [.. Options(model), option]));
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"{string} offers two {string} choices, each with its own identifier and link")]
-	public async Task ThenTwoChoicesShareTheWording(string child,
-													string wording)
-	{
-		var others = (await View(child)).GetProperty("options").EnumerateArray()
-			.Where(option => option.GetProperty("labelEn").GetString() == wording)
-			.ToList();
-
-		others.Count.ShouldBe(2);
-		others.Select(option => option.GetProperty("id").GetString()).Distinct().Count().ShouldBe(2);
-		others.Select(option => option.GetProperty("parentChoiceId").GetString()).Distinct().Count().ShouldBe(2);
-	}
-
-	[Then(@"adding a second {string} linked to {string} is refused")]
-	public async Task ThenADuplicateUnderOneParentIsRefused(string wording,
-															string parentChoice)
+	[When(@"an Administrator adds {string} offered under {string} and {string}")]
+	public async Task WhenAddingOneOtherUnderBoth(string wording,
+												  string firstParent,
+												  string secondParent)
 	{
 		var model = await View(_childName!);
-		_response = await Put(_childName!, RequestFrom(model, options: [.. Options(model), Option(wording, ChoiceId(await View("Make"), parentChoice))]));
-		(await Refused()).ShouldContain(wording);
+		var make = await View("Make");
+		_response = await Put(_childName!, RequestFrom(model, options: [.. Options(model), OptionUnder(wording, ChoiceId(make, firstParent), ChoiceId(make, secondParent))]));
+		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
 	}
 
-	// ---- REQ-QB-184: outside revisions ----
+	[Then(@"{string} offers one {string} choice, offered under both")]
+	public async Task ThenOneChoiceUnderBoth(string child,
+											 string wording)
+	{
+		var model = await View(child);
+		var make = await View("Make");
+		model.GetProperty("options").EnumerateArray().Count(option => option.GetProperty("labelEn").GetString() == wording).ShouldBe(1);
+		ParentsOf(model, wording).ShouldBe(Sorted(ChoiceId(make, "Niviuk"), ChoiceId(make, "Ozone")));
+	}
+
+	[Then(@"adding a second {string} under any parent choice is refused, naming it")]
+	public Task ThenASecondIsRefused(string wording)
+	{
+		return RefusedAsRepeated(wording, $"{wording} (fr) bis", wording);
+	}
+
+	[Then(@"adding {string} in English under any parent choice is refused, naming it")]
+	public Task ThenAWhitespaceVariantIsRefused(string wording)
+	{
+		ArgumentNullException.ThrowIfNull(wording);
+		return RefusedAsRepeated(wording, "Something else", wording.Trim());
+	}
+
+	[Then(@"adding a choice whose French reads {string} under any parent choice is refused, naming it")]
+	public Task ThenAFrenchTwinIsRefused(string french)
+	{
+		return RefusedAsRepeated("Anything else", french, french);
+	}
+
+	// ---- REQ-QB-184: outside revisions ----	// ---- REQ-QB-184: outside revisions ----
 
 	[Given(@"an answered {string} question and an answered {string} question")]
 	public async Task GivenTwoAnsweredQuestions(string parent,
@@ -366,9 +398,10 @@ public sealed class DependentChoiceSteps
 	public async Task WhenOneLinkChanges()
 	{
 		var model = await View(_childName!);
-		_response = await Put(_childName!, RequestFrom(model, options: Options(model, ("Rush 6", ChoiceId(await View("Make"), "Niviuk")))));
+		var make = await View("Make");
+		_response = await Put(_childName!, RequestFrom(model, options: OptionsUnder(model, ("Rush 6", [ChoiceId(make, "Niviuk"), ChoiceId(make, "Ozone")]))));
 		_response.StatusCode.ShouldBe(HttpStatusCode.OK, await _response.Content.ReadAsStringAsync());
-		ParentOf(await View(_childName!), "Rush 6").ShouldBe(ChoiceId(await View("Make"), "Niviuk"));
+		ParentsOf(await View(_childName!), "Rush 6").ShouldContain(ChoiceId(make, "Niviuk"));
 	}
 
 	[Then(@"neither question gains a revision, and neither is replaced")]
@@ -403,7 +436,7 @@ public sealed class DependentChoiceSteps
 		request["choicesDependOnQuestionId"] = null;
 		foreach (var option in request["options"]!.AsArray())
 		{
-			option!["parentChoiceId"] = null;
+			option!["parentChoiceIds"] = null;
 		}
 
 		_response = await Put(child, request);
@@ -415,8 +448,8 @@ public sealed class DependentChoiceSteps
 	{
 		var model = await View(child);
 		model.GetProperty("choicesDependOnQuestionId").ValueKind.ShouldBe(JsonValueKind.Null);
-		ParentOf(model, "Mentor 7").ShouldBe(ChoiceId(await View("Make"), "Niviuk"));
-		ParentOf(model, "Rush 6").ShouldBe(ChoiceId(await View("Make"), "Ozone"));
+		ParentsOf(model, "Mentor 7").ShouldBe([ChoiceId(await View("Make"), "Niviuk")]);
+		ParentsOf(model, "Rush 6").ShouldBe([ChoiceId(await View("Make"), "Ozone")]);
 	}
 
 	[Then(@"the report form offers every {string} choice, whatever {string} is answered with")]
@@ -440,9 +473,32 @@ public sealed class DependentChoiceSteps
 		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
 	}
 
-	// ---- REQ-QB-186: a linked parent choice is not removed ----
+	// ---- REQ-QB-214: a parent choice is removed while each child keeps a parent ----
+
+	[Given(@"{string} is offered under {string} and {string}, and {string} under {string} only")]
+	public async Task GivenOneSharedAndOneAlone(string shared,
+												string firstParent,
+												string secondParent,
+												string alone,
+												string aloneParent)
+	{
+		// The child offers exactly these under the parent, and "Rush 6" under "Ozone".
+		var model = await View(_childName!);
+		var make = await View("Make");
+		var request = RequestFrom(model, options:
+		[
+			OptionUnder(shared, ChoiceId(make, firstParent), ChoiceId(make, secondParent)),
+			.. OptionsUnder(model, (alone, [ChoiceId(make, aloneParent)]))
+				.Where(option => option["labelEn"]!.GetValue<string>() is var label && (label == alone || label == "Rush 6")),
+		]);
+		var saved = await Put(_childName!, request);
+		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+		_ids[$"{firstParent} (choice)"] = ChoiceId(make, firstParent);
+		await Remember("Make", _childName!);
+	}
 
 	[When(@"an Administrator saving the question removes {string}")]
+	[When(@"an Administrator saving the question removes {string} again")]
 	public async Task WhenAnAdministratorRemovesTheParentChoice(string parentChoice)
 	{
 		var make = await View("Make");
@@ -453,22 +509,95 @@ public sealed class DependentChoiceSteps
 	}
 
 	[When(@"a Safety Officer on the type-ahead review page removes {string}")]
+	[When(@"a Safety Officer on the type-ahead review page removes {string} again")]
 	public async Task WhenASafetyOfficerRemovesTheParentValue(string parentChoice)
 	{
 		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		_response = await _officer.DeleteAsync(new Uri($"/api/admin/type-ahead-values/{ChoiceId(await View("Make"), parentChoice)}", UriKind.Relative));
 	}
 
-	[Then(@"the removal is refused, naming the {string} question")]
-	public async Task ThenTheRemovalIsRefused(string child)
+	[Then(@"the removal is refused, naming {string} and not {string}")]
+	public async Task ThenTheRemovalIsRefused(string stranded,
+											  string kept)
 	{
-		(await Refused()).ShouldContain(Label(child));
+		var detail = await Refused();
+		detail.ShouldContain($"'{stranded}'");
+		detail.ShouldNotContain($"'{kept}'");
+		detail.ShouldContain(Label(_childName!));
+		ChoiceId(await View("Make"), "Niviuk").ShouldNotBeNull();
 	}
 
-	[Then(@"{string} is still offered")]
-	public async Task ThenStillOffered(string parentChoice)
+	[When(@"{string} is also offered under {string} and an Administrator saving the question removes {string} again")]
+	public async Task WhenAlsoOfferedAndAdministratorRemoves(string choice,
+															 string otherParent,
+															 string parentChoice)
 	{
-		ChoiceId(await View("Make"), parentChoice).ShouldNotBeNull();
+		await OfferAlsoUnder(choice, otherParent);
+		await WhenAnAdministratorRemovesTheParentChoice(parentChoice);
+	}
+
+	[When(@"{string} is also offered under {string} and a Safety Officer on the type-ahead review page removes {string} again")]
+	public async Task WhenAlsoOfferedAndSafetyOfficerRemoves(string choice,
+															 string otherParent,
+															 string parentChoice)
+	{
+		await OfferAlsoUnder(choice, otherParent);
+		await WhenASafetyOfficerRemovesTheParentValue(parentChoice);
+	}
+
+	[Then(@"{string} is removed")]
+	public async Task ThenTheParentChoiceIsRemoved(string parentChoice)
+	{
+		_response!.IsSuccessStatusCode.ShouldBeTrue(await _response.Content.ReadAsStringAsync());
+		(await View("Make")).GetProperty("options").EnumerateArray()
+			.ShouldNotContain(option => option.GetProperty("labelEn").GetString() == parentChoice);
+	}
+
+	[Then(@"{string} and {string} keep their {string} links, which filter nothing")]
+	public async Task ThenTheLinksStayInert(string first,
+											string second,
+											string parentChoice)
+	{
+		var removed = _ids[$"{parentChoice} (choice)"];
+		var model = await View(_childName!);
+		ParentsOf(model, first).ShouldContain(removed);
+		ParentsOf(model, second).ShouldContain(removed);
+
+		// The form no longer offers the removed parent choice, so the link never matches an answer.
+		(await PublicView("Make")).GetProperty("options").EnumerateArray()
+			.ShouldNotContain(option => option.GetProperty("id").GetString() == removed);
+	}
+
+	// ---- REQ-QB-215: a re-pointed link collapses into the one the child has ----
+
+	[Given(@"{string} is offered under {string} and {string}")]
+	public async Task GivenOfferedUnderTwo(string choice,
+										   string firstParent,
+										   string secondParent)
+	{
+		var model = await View(_childName!);
+		var make = await View("Make");
+		var request = RequestFrom(model, options: [.. Options(model), OptionUnder(choice, ChoiceId(make, firstParent), ChoiceId(make, secondParent))]);
+		var saved = await Put(_childName!, request);
+		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+		_ids[$"{firstParent} (choice)"] = ChoiceId(make, firstParent);
+		_lastChoice = choice;
+		await Remember("Make", _childName!);
+	}
+
+	[Then(@"{string} is offered under {string} once")]
+	public async Task ThenOfferedUnderOnce(string choice,
+										   string parentChoice)
+	{
+		ParentsOf(await View(_childName!), choice).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
+	}
+
+	[Then(@"its link to {string} is stamped removed, not erased")]
+	public async Task ThenTheOldLinkIsStamped(string parentChoice)
+	{
+		var link = await LinkRow(_lastChoice!, _ids[$"{parentChoice} (choice)"]);
+		link.ShouldNotBeNull();
+		link.Deleted.ShouldNotBeNull();
 	}
 
 	// ---- REQ-QB-187 to REQ-QB-190: a link follows its parent ----
@@ -504,7 +633,7 @@ public sealed class DependentChoiceSteps
 	public async Task ThenIsLinkedTo(string choice,
 									 string parentChoice)
 	{
-		ParentOf(await View(_childName!), choice).ShouldBe(ChoiceId(await View("Make"), parentChoice));
+		ParentsOf(await View(_childName!), choice).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
 	}
 
 	[When(@"an Administrator changes the {string} question's wording")]
@@ -533,7 +662,7 @@ public sealed class DependentChoiceSteps
 	public async Task ThenTheLinkFollowsTheFork(string choice,
 												string parentChoice)
 	{
-		ParentOf(await View(_childName!), choice).ShouldBe(ChoiceId(await View("Make"), parentChoice));
+		ParentsOf(await View(_childName!), choice).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
 	}
 
 	[Then(@"{string} gains no revision")]
@@ -557,7 +686,7 @@ public sealed class DependentChoiceSteps
 	{
 		var copy = await View(_childName!);
 		ChoiceId(copy, choice).ShouldNotBe(ChoiceId(_before[_childName!], choice), "a fork's choices are new rows (ADR-0128)");
-		ParentOf(copy, choice).ShouldBe(ChoiceId(await View("Make"), parentChoice));
+		ParentsOf(copy, choice).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
 	}
 
 	// ---- REQ-QB-191: the report form's questions ----
@@ -575,17 +704,21 @@ public sealed class DependentChoiceSteps
 		(await PublicView(child)).GetProperty("choicesDependOnQuestionId").GetString().ShouldBe(_ids[parent]);
 	}
 
-	[Then(@"each {string} choice names the {string} choice it is linked to")]
+	[Then(@"each {string} choice names every {string} choice it is offered under")]
 	public async Task ThenTheFormNamesEachLink(string child,
 											   string parent)
 	{
+		// "Other" is offered under both makes, so one choice names two.
+		var make = await View(parent);
 		var admin = await View(child);
 		foreach (var option in (await PublicView(child)).GetProperty("options").EnumerateArray())
 		{
-			var linked = option.GetProperty("parentChoiceId").GetString();
-			linked.ShouldNotBeNull();
-			linked.ShouldBe(ParentOf(admin, option.GetProperty("labelEn").GetString()!));
+			var linked = option.GetProperty("parentChoiceIds").EnumerateArray().Select(id => id.GetString()!).ToArray();
+			linked.ShouldNotBeEmpty();
+			linked.ShouldBe(ParentsOf(admin, option.GetProperty("labelEn").GetString()!));
 		}
+
+		ParentsOf(admin, "Other").ShouldBe(Sorted(ChoiceId(make, "Niviuk"), ChoiceId(make, "Ozone")));
 	}
 
 	[Then(@"a question whose choices depend on nothing names no parent")]
@@ -628,7 +761,7 @@ public sealed class DependentChoiceSteps
 	{
 		var model = await View(child);
 		Option(model, value).GetProperty("addedByReporter").GetBoolean().ShouldBeTrue();
-		ParentOf(model, value).ShouldBe(ChoiceId(await View("Make"), parentChoice));
+		ParentsOf(model, value).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
 	}
 
 	[Then(@"{string} gains a reporter-added value {string}, linked to the reporter-added {string} value {string}")]
@@ -653,123 +786,236 @@ public sealed class DependentChoiceSteps
 		answer.TranslatedValue.ShouldBeNull();
 	}
 
-	[Given(@"the {string} question offers {string} linked to {string} and {string} linked to {string}")]
-	public async Task GivenTwoOthers(string child,
-									 string first,
-									 string firstParent,
-									 string second,
-									 string secondParent)
-	{
-		await Arrange("Make", "single_select", child, "autocomplete");
-		await WhenAddingTwoOthers(first, firstParent, second, secondParent);
-		_response = null;
-		await Remember("Make", child);
-	}
-
 	[When(@"a reporter answers {string} with {string} and types {string} for {string}")]
 	public async Task WhenAReporterTypesAnExistingWording(string parent,
 														  string parentChoice,
 														  string typed,
 														  string child)
 	{
+		await Remember(child);
+		_answersBefore = await AnswerIds(child);
 		_response = await SubmitRaw(Picked(parent, ChoiceId(await View(parent), parentChoice)), Typed(child, typed));
 		_response.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
-	}
-
-	[Then(@"the {string} answer names the {string} linked to {string}")]
-	public async Task ThenTheAnswerNamesTheScopedChoice(string child,
-														string wording,
-														string parentChoice)
-	{
-		var model = await View(child);
-		var ozone = ChoiceId(await View("Make"), parentChoice);
-		var expected = model.GetProperty("options").EnumerateArray()
-			.Single(option => option.GetProperty("labelEn").GetString() == wording && option.GetProperty("parentChoiceId").GetString() == ozone)
-			.GetProperty("id").GetString();
-
-		(await OnlyAnswerTo(child)).ChoiceId.ShouldBe(TinyId.Parse(expected!));
 	}
 
 	[Then(@"{string} gains no new value")]
 	public async Task ThenNoValueIsAdded(string child)
 	{
-		(await View(child)).GetProperty("options").GetArrayLength().ShouldBe(_before[child].GetProperty("options").GetArrayLength());
+		var now = (await View(child)).GetProperty("options").EnumerateArray().Select(option => option.GetProperty("id").GetString()).ToList();
+		var before = _before[child].GetProperty("options").EnumerateArray().Select(option => option.GetProperty("id").GetString()).ToList();
+		now.ShouldBeSubsetOf(before);
 	}
 
-	// ---- REQ-QB-194: a reviewer changes a link ----
+	// ---- REQ-QB-216 to REQ-QB-219: a reporter's typed value is matched question-wide ----
 
-	[Given(@"a reporter added the {string} value {string}, linked to {string}")]
+	[Given(@"the {string} question offers {string} under {string} and {string}")]
+	public async Task GivenOneChoiceUnderBoth(string child,
+											  string wording,
+											  string firstParent,
+											  string secondParent)
+	{
+		await Arrange("Make", "single_select", child, "autocomplete");
+		await WhenAddingOneOtherUnderBoth(wording, firstParent, secondParent);
+		_response = null;
+		await Remember("Make", child);
+	}
+
+	[Given(@"the {string} question offers {string} under {string} only")]
+	public async Task GivenOneChoiceUnderOne(string child,
+											 string wording,
+											 string parentChoice)
+	{
+		await Arrange("Make", "single_select", child, "autocomplete");
+		ParentsOf(await View(child), wording).ShouldBe([ChoiceId(await View("Make"), parentChoice)]);
+	}
+
+	[Given(@"the {string} value {string} was merged into {string}, which is offered under {string} only")]
+	public async Task GivenAMergedValue(string child,
+										string merged,
+										string target,
+										string parentChoice)
+	{
+		await GivenOneChoiceUnderOne(child, target, parentChoice);
+		await AddedByReporter(child, merged, parentChoice);
+		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var model = await View(child);
+		var response = await _officer.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{await ChoiceIdIncludingRemoved(child, merged)}/merge", UriKind.Relative),
+			new { intoId = ChoiceId(model, target) });
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await response.Content.ReadAsStringAsync());
+		await ApproveAll(child);
+	}
+
+	[Given(@"the {string} value {string} was removed")]
+	public async Task GivenARemovedValue(string child,
+										 string value)
+	{
+		await Arrange("Make", "single_select", child, "autocomplete");
+		await AddedByReporter(child, value, "Niviuk");
+		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var response = await _officer.DeleteAsync(new Uri($"/api/admin/type-ahead-values/{ChoiceId(await View(child), value)}", UriKind.Relative));
+		response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await response.Content.ReadAsStringAsync());
+	}
+
+	[Then(@"the {string} answer names that {string}")]
+	[Then(@"the {string} answer names {string}")]
+	public async Task ThenTheAnswerNames(string child,
+										 string wording)
+	{
+		var fresh = (await AnswerIds(child)).Except(_answersBefore).ShouldHaveSingleItem();
+		fresh.ChoiceId.ShouldBe(TinyId.Parse(await ChoiceIdIncludingRemoved(child, wording)));
+	}
+
+	[Then(@"{string} gains no new value, and {string} is not flagged for review")]
+	public async Task ThenNoValueAndNoFlag(string child,
+										   string wording)
+	{
+		await ThenNoValueIsAdded(child);
+		(await Row(child, wording)).NeedsReview.ShouldBeFalse();
+	}
+
+	[Then(@"{string} is offered under {string} and {string}, and is flagged for review")]
+	public async Task ThenOfferedUnderBothAndFlagged(string wording,
+													 string firstParent,
+													 string secondParent)
+	{
+		var make = await View("Make");
+		ParentsOf(await View(_childName!), wording).ShouldBe(Sorted(ChoiceId(make, firstParent), ChoiceId(make, secondParent)));
+		(await Row(_childName!, wording)).NeedsReview.ShouldBeTrue();
+	}
+
+	[Then(@"{string} is flagged for review and still removed")]
+	public async Task ThenFlaggedAndStillRemoved(string wording)
+	{
+		var row = await Row(_childName!, wording);
+		row.NeedsReview.ShouldBeTrue();
+		row.Deleted.ShouldNotBeNull();
+	}
+
+	// ---- REQ-QB-220: a reviewer sets a value's parents, never none ----
+
+	[Given(@"a reporter added the {string} value {string}, offered under {string}")]
 	public async Task GivenAReporterAddedALinkedValue(string child,
 													  string value,
 													  string parentChoice)
 	{
 		await Arrange("Make", "single_select", child, "autocomplete");
-		(await SubmitRaw(Picked("Make", ChoiceId(await View("Make"), parentChoice)), Typed(child, value))).StatusCode.ShouldBe(HttpStatusCode.Accepted);
+		await AddedByReporter(child, value, parentChoice);
 		_answered.Add((child, ChoiceId(await View(child), value)));
 		await Remember("Make", child);
 	}
 
-	[When(@"a Safety Officer links {string} to {string}")]
-	public async Task WhenASafetyOfficerRelinks(string value,
-												string parentChoice)
+	[When(@"a Safety Officer offers {string} under {string} and {string}")]
+	public async Task WhenASafetyOfficerOffersUnderBoth(string value,
+														string firstParent,
+														string secondParent)
 	{
-		_response = await Relink(value, ChoiceId(await View("Make"), parentChoice));
+		var make = await View("Make");
+		_response = await SetParents(value, ChoiceId(make, firstParent), ChoiceId(make, secondParent));
 		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"{string} is linked to {string}, and every answer naming it still names it")]
-	public async Task ThenTheValueIsRelinked(string value,
-											 string parentChoice)
+	[Then(@"{string} is offered under both, and every answer naming it still names it")]
+	public async Task ThenTheValueIsUnderBoth(string value)
 	{
-		ParentOf(await View(_childName!), value).ShouldBe(ChoiceId(await View("Make"), parentChoice));
+		var make = await View("Make");
+		ParentsOf(await View(_childName!), value).ShouldBe(Sorted(ChoiceId(make, "Niviuk"), ChoiceId(make, "Ozone")));
 		await ThenEveryAnswerStillNamesItsChoice();
 	}
 
-	[Then(@"clearing its link is refused")]
-	public async Task ThenClearingIsRefused()
+	[When(@"they offer it under {string} only")]
+	public async Task WhenOfferedUnderOneOnly(string parentChoice)
 	{
-		_response = await Relink("Zeno 2", null);
-		await Refused();
+		_response = await SetParents(_lastChoice!, ChoiceId(await View("Make"), parentChoice));
+		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await _response.Content.ReadAsStringAsync());
 	}
 
-	[Then(@"linking it to a choice of any question other than {string} is refused")]
-	public async Task ThenAForeignRelinkIsRefused(string parent)
+	[Then(@"its {string} link is stamped removed, not erased")]
+	public async Task ThenTheUntickedLinkIsStamped(string parentChoice)
+	{
+		var link = await LinkRow(_lastChoice!, ChoiceId(await View("Make"), parentChoice));
+		link.ShouldNotBeNull();
+		link.Deleted.ShouldNotBeNull();
+	}
+
+	[Then(@"offering it under no parent choice is refused")]
+	public async Task ThenNoParentIsRefused()
+	{
+		_response = await SetParents(_lastChoice!);
+		(await Refused()).ShouldContain("at least one");
+	}
+
+	[Then(@"offering it under a choice of any question other than {string} is refused")]
+	public async Task ThenAForeignParentIsRefused(string parent)
 	{
 		await Create("Elsewhere", "single_select", [("Gin", null)]);
-		_response = await Relink("Zeno 2", ChoiceId(await View("Elsewhere"), "Gin"));
+		_response = await SetParents(_lastChoice!, ChoiceId(await View("Elsewhere"), "Gin"));
 		(await Refused()).ShouldContain(Label(parent));
 	}
 
-	[Then(@"merging {string} into a {string} value linked to another {string} choice is refused")]
-	public async Task ThenACrossParentMergeIsRefused(string value,
-													 string child,
-													 string _)
+	[Then(@"changing the parents of a {string} value that was merged into another is refused")]
+	public async Task ThenAMergedValuesParentsAreRefused(string child)
 	{
 		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		var model = await View(child);
-		_response = await _officer.PostAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{ChoiceId(model, value)}/merge", UriKind.Relative),
-			new { intoId = ChoiceId(model, "Rush 6") });
-		(await Refused()).ShouldContain("different choices of the parent question");
-	}
-
-	[Then(@"relinking a {string} value that was merged into another is refused")]
-	public async Task ThenRelinkingAMergedValueIsRefused(string child)
-	{
-		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		var model = await View(child);
+		var ikuma = ChoiceId(model, "Ikuma");
 		var merged = await _officer.PostAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{ChoiceId(model, "Ikuma")}/merge", UriKind.Relative),
+			new Uri($"/api/admin/type-ahead-values/{ikuma}/merge", UriKind.Relative),
 			new { intoId = ChoiceId(model, "Mentor 7") });
 		merged.StatusCode.ShouldBe(HttpStatusCode.NoContent, await merged.Content.ReadAsStringAsync());
 
 		_response = await _officer.PutAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{ChoiceId(model, "Ikuma")}/parent", UriKind.Relative),
-			new { parentChoiceId = ChoiceId(await View("Make"), "Ozone") });
+			new Uri($"/api/admin/type-ahead-values/{ikuma}/parent", UriKind.Relative),
+			new { parentChoiceIds = new[] { ChoiceId(await View("Make"), "Ozone") } });
 		(await Refused()).ShouldContain("merged");
 	}
 
-	// ---- REQ-QB-206: grouping and form order ----
+	// ---- REQ-QB-221: a merge unions the parents ----
+
+	[Given(@"the {string} values {string} under {string} and {string} under {string}")]
+	public async Task GivenTwoValuesUnderDifferentParents(string child,
+														  string first,
+														  string firstParent,
+														  string second,
+														  string secondParent)
+	{
+		await Arrange("Make", "single_select", child, "autocomplete");
+		await AddedByReporter(child, first, firstParent);
+		await AddedByReporter(child, second, secondParent);
+		_answered.Add((child, ChoiceId(await View(child), second)));
+	}
+
+	[When(@"a Safety Officer merges the value {string} into {string}")]
+	public async Task WhenASafetyOfficerMergesTheValue(string source,
+													   string target)
+	{
+		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
+		var model = await View(_childName!);
+		_response = await _officer.PostAsJsonAsync(
+			new Uri($"/api/admin/type-ahead-values/{ChoiceId(model, source)}/merge", UriKind.Relative),
+			new { intoId = ChoiceId(model, target) });
+		_response.StatusCode.ShouldBe(HttpStatusCode.NoContent, await _response.Content.ReadAsStringAsync());
+	}
+
+	[Then(@"{string} is offered under {string} and {string}")]
+	public async Task ThenOfferedUnderBoth(string wording,
+										   string firstParent,
+										   string secondParent)
+	{
+		var make = await View("Make");
+		ParentsOf(await View(_childName!), wording).ShouldBe(Sorted(ChoiceId(make, firstParent), ChoiceId(make, secondParent)));
+	}
+
+	[Then(@"every answer naming {string} reads {string}, and none is rewritten")]
+	public async Task ThenMergedAnswersReadTheSurvivor(string merged,
+													   string survivor)
+	{
+		await ThenEveryAnswerStillNamesItsChoice();
+		var row = await Row(_childName!, merged);
+		row.MergedIntoChoiceId.ShouldBe(TinyId.Parse(ChoiceId(await View(_childName!), survivor)));
+	}
+
+	// ---- REQ-QB-206: grouping and form order ----	// ---- REQ-QB-206: grouping and form order ----
 
 	[Given(@"a group question comes before the {string} question on the form")]
 	public async Task GivenAGroupBeforeTheParent(string parent)
@@ -795,40 +1041,6 @@ public sealed class DependentChoiceSteps
 		var request = RequestFrom(make, options: Options(make));
 		request["groupedUnderQuestionId"] = _ids["Later"];
 		_response = await Put(parent, request);
-	}
-
-	// ---- REQ-QB-207: a parent merge that would duplicate a child's wording ----
-
-	[Given(@"{string} offers {string} under {string} and {string} under {string}")]
-	public async Task GivenTheSameWordingUnderTwoParentValues(string child,
-															  string first,
-															  string firstParent,
-															  string second,
-															  string secondParent)
-	{
-		await WhenAddingTwoOthers(first, firstParent, second, secondParent);
-		_response = null;
-		await Remember("Make", child);
-	}
-
-	[When(@"a Safety Officer tries to merge the parent value {string} into {string}")]
-	public async Task WhenASafetyOfficerTriesToMergeTheParentValue(string source,
-																   string target)
-	{
-		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		var make = await View("Make");
-		_response = await _officer.PostAsJsonAsync(
-			new Uri($"/api/admin/type-ahead-values/{ChoiceId(make, source)}/merge", UriKind.Relative),
-			new { intoId = ChoiceId(make, target) });
-	}
-
-	[Then(@"the merge is refused, naming {string} and {string}")]
-	public async Task ThenTheMergeIsRefused(string child,
-										   string wording)
-	{
-		var detail = await Refused();
-		detail.ShouldContain(Label(child));
-		detail.ShouldContain(wording);
 	}
 
 	// ---- REQ-SUB-114: a required child that cannot be answered yet ----
@@ -876,7 +1088,7 @@ public sealed class DependentChoiceSteps
 		// Removed choices are kept, stamped; they no longer count as offered (ADR-0095).
 		var model = await View(child);
 		var removed = ChoiceId(await View(parent), parentChoice);
-		var kept = Options(model).Where(option => option["parentChoiceId"]?.GetValue<string>() != removed).ToArray();
+		var kept = Options(model).Where(option => !option["parentChoiceIds"]!.AsArray().Any(id => id!.GetValue<string>() == removed)).ToArray();
 		var saved = await Put(child, RequestFrom(model, options: kept));
 		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
 
@@ -949,6 +1161,38 @@ public sealed class DependentChoiceSteps
 	{
 		await Remember(parent, child);
 		_response = await SubmitAnswers((child, ChoiceId(await View(child), choice)));
+	}
+
+	[Given(@"the {string} question's choices depend on the {string} question, and {string} is offered under {string} and {string}")]
+	public async Task GivenModelDependsOnMakeWithASharedChoice(string child,
+															   string parent,
+															   string choice,
+															   string firstParent,
+															   string secondParent)
+	{
+		await Arrange(parent, "single_select", child, "autocomplete");
+
+		// A make nothing is offered under, for a mismatched answer.
+		var make = await View(parent);
+		var saved = await Put(parent, RequestFrom(make, options: [.. Options(make), Option("Gin", null)]));
+		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+
+		await WhenAddingOneOtherUnderBoth(choice, firstParent, secondParent);
+		await Remember(parent, child);
+	}
+
+	[Then(@"the API accepts the report")]
+	public async Task ThenTheReportIsAccepted()
+	{
+		_response!.StatusCode.ShouldBe(HttpStatusCode.Accepted, await _response.Content.ReadAsStringAsync());
+	}
+
+	[Then(@"the API refuses the submission, naming {string} and {string} by key, and no report, answer, or choice is written")]
+	public async Task ThenRefusedAndNothingWritten(string child,
+												   string parent)
+	{
+		await ThenTheSubmissionIsRefused(child, parent);
+		await ThenNothingIsWritten();
 	}
 
 	[Then(@"the API refuses the submission, naming {string} and {string} by key")]
@@ -1049,8 +1293,17 @@ public sealed class DependentChoiceSteps
 			["code"] = null,
 			["labelEn"] = label,
 			["labelFr"] = $"{label} (fr)",
-			["parentChoiceId"] = parentChoiceId,
+			["parentChoiceIds"] = parentChoiceId is null ? null : new JsonArray(parentChoiceId),
 		};
+	}
+
+	/// <summary>A new option offered under exactly <paramref name="parentChoiceIds" />, none included.</summary>
+	private static JsonObject OptionUnder(string label,
+										  params string[] parentChoiceIds)
+	{
+		var option = Option(label, null);
+		option["parentChoiceIds"] = new JsonArray([.. parentChoiceIds.Select(id => (JsonNode)id)]);
+		return option;
 	}
 
 	/// <summary>A save request carrying everything the view shows, with the dependency and options given.</summary>
@@ -1071,9 +1324,16 @@ public sealed class DependentChoiceSteps
 		};
 	}
 
-	/// <summary>Every option the view shows, sent back as it is, with the parent choices given re-linked.</summary>
+	/// <summary>Every option the view shows, sent back as it is, with each one named offered under that one parent choice only.</summary>
 	private static JsonNode[] Options(JsonElement view,
 									  params (string Label, string? ParentChoiceId)[] relinked)
+	{
+		return OptionsUnder(view, [.. relinked.Select(pair => (pair.Label, pair.ParentChoiceId is null ? Array.Empty<string>() : new[] { pair.ParentChoiceId }))]);
+	}
+
+	/// <summary>Every option the view shows, sent back as it is, with each one named offered under exactly its parent choices.</summary>
+	private static JsonNode[] OptionsUnder(JsonElement view,
+										   params (string Label, string[] ParentChoiceIds)[] relinked)
 	{
 		return
 		[
@@ -1081,6 +1341,9 @@ public sealed class DependentChoiceSteps
 			{
 				var label = option.GetProperty("labelEn").GetString()!;
 				var link = relinked.FirstOrDefault(pair => pair.Label == label);
+				var parents = link.Label is null
+					? option.GetProperty("parentChoiceIds").EnumerateArray().Select(id => id.GetString()!).ToArray()
+					: link.ParentChoiceIds;
 
 				return (JsonNode)new JsonObject
 				{
@@ -1088,10 +1351,88 @@ public sealed class DependentChoiceSteps
 					["labelEn"] = label,
 					["labelFr"] = option.GetProperty("labelFr").GetString() ?? string.Empty,
 					["pin"] = option.GetProperty("pin").GetString(),
-					["parentChoiceId"] = link.Label is null ? option.GetProperty("parentChoiceId").GetString() : link.ParentChoiceId,
+					["parentChoiceIds"] = new JsonArray([.. parents.Select(id => (JsonNode)id)]),
 				};
 			}),
 		];
+	}
+
+	private static string[] Sorted(params string[] ids)
+	{
+		return [.. ids.Order(StringComparer.Ordinal)];
+	}
+
+	/// <summary>Adds a new choice to the child, under whichever parent choice, and expects it refused as a repeat, naming <paramref name="named" />.</summary>
+	private async Task RefusedAsRepeated(string labelEn,
+										 string labelFr,
+										 string named)
+	{
+		var model = await View(_childName!);
+		var option = OptionUnder(labelEn, ChoiceId(await View("Make"), "Ozone"));
+		option["code"] = $"repeat_{Guid.NewGuid():N}"[..20];
+		option["labelFr"] = labelFr;
+		_response = await Put(_childName!, RequestFrom(model, options: [.. Options(model), option]));
+		var detail = await Refused();
+		detail.ShouldContain("offered twice");
+		detail.ShouldContain(named, Case.Insensitive);
+	}
+
+	private async Task OfferAlsoUnder(string choice,
+									  string parentChoice)
+	{
+		var model = await View(_childName!);
+		var parents = ParentsOf(model, choice).Append(ChoiceId(await View("Make"), parentChoice)).ToArray();
+		var saved = await Put(_childName!, RequestFrom(model, options: OptionsUnder(model, (choice, parents))));
+		saved.StatusCode.ShouldBe(HttpStatusCode.OK, await saved.Content.ReadAsStringAsync());
+	}
+
+	/// <summary>A reporter answers the parent with <paramref name="parentChoice" /> and types <paramref name="value" /> for the child.</summary>
+	private async Task AddedByReporter(string child,
+									   string value,
+									   string parentChoice)
+	{
+		(await SubmitRaw(Picked("Make", ChoiceId(await View("Make"), parentChoice)), Typed(child, value))).StatusCode.ShouldBe(HttpStatusCode.Accepted);
+		_lastChoice = value;
+	}
+
+	/// <summary>Clears every review flag on the child, so a step can see a flag set again.</summary>
+	private async Task ApproveAll(string child)
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var id = TinyId.Parse(_ids[child]);
+		await database.QuestionChoices.Where(choice => choice.QuestionId == id).ExecuteUpdateAsync(set => set.SetProperty(choice => choice.NeedsReview, false));
+	}
+
+	private async Task<Core.Features.QuestionBank.QuestionChoice> Row(string child,
+																	   string wording)
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var id = TinyId.Parse(_ids[child]);
+		return await database.QuestionChoices.AsNoTracking().SingleAsync(choice => choice.QuestionId == id && choice.LabelEn == wording);
+	}
+
+	private async Task<(TinyId Id, TinyId? ChoiceId)[]> AnswerIds(string child)
+	{
+		await using var scope = (await BootedApi.Factory()).Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var id = TinyId.Parse(_ids[child]);
+		return [.. (await database.ReportAnswers.AsNoTracking().Where(answer => answer.QuestionId == id).Select(answer => new { answer.Id, answer.ChoiceId }).ToListAsync())
+			.Select(answer => (answer.Id, answer.ChoiceId))];
+	}
+
+	private async Task<string> ChoiceIdIncludingRemoved(string child,
+														string wording)
+	{
+		return (await Row(child, wording)).Id.Value;
+	}
+
+	private async Task<Core.Features.QuestionBank.ChoiceParentLink?> LinkRow(string wording,
+																		  string parentChoiceId)
+	{
+		var choice = await Row(_childName!, wording);
+		return choice.ParentLinks.SingleOrDefault(link => link.ParentChoiceId == TinyId.Parse(parentChoiceId));
 	}
 
 	private static IEnumerable<string> Labels(JsonElement view)
@@ -1112,13 +1453,13 @@ public sealed class DependentChoiceSteps
 		return await _admin.PutAsJsonAsync(new Uri($"/api/admin/questions/{_ids[name]}", UriKind.Relative), request);
 	}
 
-	private async Task<HttpResponseMessage> Relink(string value,
-												   string? parentChoiceId)
+	private async Task<HttpResponseMessage> SetParents(string value,
+													   params string[] parentChoiceIds)
 	{
 		_officer ??= await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
 		return await _officer.PutAsJsonAsync(
 			new Uri($"/api/admin/type-ahead-values/{ChoiceId(await View(_childName!), value)}/parent", UriKind.Relative),
-			new { parentChoiceId });
+			new { parentChoiceIds });
 	}
 
 	private async Task<string> Refused()
@@ -1156,10 +1497,10 @@ public sealed class DependentChoiceSteps
 		return Option(view, label).GetProperty("id").GetString()!;
 	}
 
-	private static string? ParentOf(JsonElement view,
-									string label)
+	private static string[] ParentsOf(JsonElement view,
+									  string label)
 	{
-		return Option(view, label).GetProperty("parentChoiceId").GetString();
+		return [.. Option(view, label).GetProperty("parentChoiceIds").EnumerateArray().Select(id => id.GetString()!)];
 	}
 
 	private async Task Answered(params (string Question, string ChoiceId)[] answers)

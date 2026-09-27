@@ -1410,6 +1410,7 @@ Scenario: A forked dependent question copies every choice with its links
 @REQ-QB-191
 Scenario: The report form's questions name each dependency and each link
   Given the "Model" question's choices depend on the "Make" question
+  And "Other" is offered under "Niviuk" and "Ozone"
   When the report form loads today's questions
   Then the "Model" question names "Make" as the question its choices depend on
   And each "Model" choice names every "Make" choice it is offered under
@@ -1541,7 +1542,7 @@ Scenario: Every choice of a dependent question is offered under at least one par
 @REQ-QB-213
 Scenario Outline: One choice is offered under several parent choices, and its wording is unique on the question
   Given the "Model" question's choices depend on the "Make" question
-  When an Administrator adds "Other" offered under "Niviuk" and "Ozone"
+  When an Administrator adds "Other", in French "Autre", offered under "Niviuk" and "Ozone"
   Then "Model" offers one "Other" choice, offered under both
   And adding <wording> under any parent choice is refused, naming it
 
@@ -1617,7 +1618,7 @@ Scenario: A reviewer adds and removes a dependent type-ahead value's parents, ne
 @REQ-QB-221
 Scenario: Merging dependent type-ahead values offers the survivor under every parent either was under
   Given the "Model" values "Zeno 2" under "Ozone" and "Zeno two" under "Niviuk"
-  When a Safety Officer merges "Zeno two" into "Zeno 2"
+  When a Safety Officer merges the value "Zeno two" into "Zeno 2"
   Then "Zeno 2" is offered under "Ozone" and "Niviuk"
   And every answer naming "Zeno two" reads "Zeno 2", and none is rewritten
 

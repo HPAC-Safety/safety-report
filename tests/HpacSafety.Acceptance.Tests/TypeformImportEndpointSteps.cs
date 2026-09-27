@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using HpacSafety.Core.Features.Moderation;
 using HpacSafety.Core.Features.QuestionBank.Typeform;
 using Reqnroll;
@@ -43,6 +44,9 @@ public sealed class TypeformImportEndpointSteps
 	private string[] _originalKeys = [];
 	private JsonElement _reimportedPreview;
 	private readonly Dictionary<string, bool> _futureDatesByKey = [];
+	private readonly Dictionary<string, string> _dependencyKeys = new(StringComparer.Ordinal);
+	private JsonElement _dependencyParent;
+	private string? _dependencyChildName;
 
 	[When(@"an Administrator submits only one of the two files")]
 	public async Task WhenOnlyOneFileIsSubmitted()
@@ -268,6 +272,126 @@ public sealed class TypeformImportEndpointSteps
 		var draft = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("drafts").EnumerateArray().ShouldHaveSingleItem();
 		draft.GetProperty("type").GetString().ShouldBe("date");
 		draft.GetProperty("allowFutureDates").GetBoolean().ShouldBeFalse();
+	}
+
+	[Given(@"a live type-ahead {string} question whose choices depend on the single-select {string} question")]
+	public async Task GivenALiveDependentTypeAhead(string child,
+												   string parent)
+	{
+		_client = await BootedApi.SignedInAs(MemberRole.Administrator);
+		_dependencyKeys[parent] = UniqueKey("acceptance_export_make");
+		_dependencyKeys[child] = UniqueKey("acceptance_export_model");
+		_dependencyParent = await PostQuestion(_client, new JsonObject
+		{
+			["key"] = _dependencyKeys[parent],
+			["type"] = "single_select",
+			["labelEn"] = parent,
+			["labelFr"] = parent,
+			["isRequired"] = false,
+			["isPrivate"] = false,
+			["isActive"] = true,
+			["options"] = new JsonArray(ChoiceNode("Niviuk", null), ChoiceNode("Ozone", null)),
+		});
+		_dependencyChildName = child;
+	}
+
+	[Given(@"{string} offers {string} under {string} and {string}, and {string} under {string}")]
+	public async Task GivenTheChildsChoices(string child,
+										   string shared,
+										   string firstParent,
+										   string secondParent,
+										   string alone,
+										   string aloneParent)
+	{
+		string ParentId(string label) => _dependencyParent.GetProperty("options").EnumerateArray()
+			.Single(option => option.GetProperty("labelEn").GetString() == label).GetProperty("id").GetString()!;
+
+		await PostQuestion(_client!, new JsonObject
+		{
+			["key"] = _dependencyKeys[child],
+			["type"] = "autocomplete",
+			["labelEn"] = child,
+			["labelFr"] = child,
+			["isRequired"] = false,
+			["isPrivate"] = false,
+			["isActive"] = true,
+			["choicesDependOnQuestionId"] = _dependencyParent.GetProperty("id").GetString(),
+			["options"] = new JsonArray(
+				ChoiceNode(shared, [ParentId(firstParent), ParentId(secondParent)]),
+				ChoiceNode(alone, [ParentId(aloneParent)])),
+		});
+	}
+
+	[Then(@"the {string} draft depends on {string} by key")]
+	public void ThenTheDraftDependsByKey(string child,
+										 string parent)
+	{
+		Draft(child).GetProperty("choicesDependOnKey").GetString().ShouldBe(_dependencyKeys[parent]);
+		Draft(parent).GetProperty("choicesDependOnKey").ValueKind.ShouldBe(JsonValueKind.Null);
+	}
+
+	[Then(@"its {string} draft is offered under {string} and {string}, and {string} under {string}, by their codes")]
+	public void ThenEachChoiceDraftNamesItsParents(string shared,
+												   string firstParent,
+												   string secondParent,
+												   string alone,
+												   string aloneParent)
+	{
+		string[] RefsOf(string label) =>
+		[
+			.. Draft(_dependencyChildName!).GetProperty("options").EnumerateArray()
+				.Single(option => option.GetProperty("labelEn").GetString() == label)
+				.GetProperty("parentRefs").EnumerateArray().Select(parentRef => parentRef.GetString()!),
+		];
+
+		string CodeOf(string label) => _dependencyParent.GetProperty("options").EnumerateArray()
+			.Single(option => option.GetProperty("labelEn").GetString() == label).GetProperty("code").GetString()!;
+
+		RefsOf(shared).ShouldBe(new[] { CodeOf(firstParent), CodeOf(secondParent) }.Order(StringComparer.Ordinal));
+		RefsOf(alone).ShouldBe([CodeOf(aloneParent)]);
+	}
+
+	[Then(@"a field in a file with no dependency in its hpac object imports with no dependency")]
+	public async Task ThenAFileWithoutADependencyImportsNone()
+	{
+		const string english = """{"fields":[{"id":"1","ref":"acceptance-old-model","title":"Model?","type":"multiple_choice","properties":{"choices":[{"id":"a","ref":"mentor_7","label":"Mentor 7"}],"hpac":{"type":"autocomplete","is_private":false,"is_required":false,"depends_on_key":null,"depends_on_option_code":null,"grouped_under_key":null}}}],"logic":[]}""";
+		const string french = """{"fields":[{"id":"2","ref":"acceptance-old-model","title":"Modèle?","type":"multiple_choice","properties":{"choices":[{"id":"b","ref":"mentor_7","label":"Mentor 7"}]}}],"logic":[]}""";
+		using var content = new MultipartFormDataContent
+		{
+			{ JsonContent(english), "english", "form-en.json" }, { JsonContent(french), "french", "form-fr.json" },
+		};
+		using var response = await _client!.PostAsync(Import, content);
+		response.StatusCode.ShouldBe(HttpStatusCode.OK, await response.Content.ReadAsStringAsync());
+
+		var draft = (await response.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("drafts").EnumerateArray().ShouldHaveSingleItem();
+		draft.GetProperty("type").GetString().ShouldBe("autocomplete");
+		draft.GetProperty("choicesDependOnKey").ValueKind.ShouldBe(JsonValueKind.Null);
+		draft.GetProperty("options").EnumerateArray().ShouldHaveSingleItem().GetProperty("parentRefs").ValueKind.ShouldBe(JsonValueKind.Null);
+	}
+
+	private JsonElement Draft(string name)
+	{
+		return _reimportedPreview.GetProperty("drafts").EnumerateArray()
+			.Single(draft => draft.GetProperty("key").GetString() == _dependencyKeys[name]);
+	}
+
+	private static JsonObject ChoiceNode(string label,
+										 string[]? parentChoiceIds)
+	{
+		return new JsonObject
+		{
+			["labelEn"] = label,
+			["labelFr"] = label,
+			["parentChoiceIds"] = parentChoiceIds is null ? null : new JsonArray([.. parentChoiceIds.Select(id => (JsonNode)id)]),
+		};
+	}
+
+	private static async Task<JsonElement> PostQuestion(HttpClient client,
+														JsonObject request)
+	{
+		using var response = await client.PostAsJsonAsync(Questions, request);
+		response.StatusCode.ShouldBe(HttpStatusCode.Created, await response.Content.ReadAsStringAsync());
+		return await response.Content.ReadFromJsonAsync<JsonElement>();
 	}
 
 	[Given(@"a member does not have the Administrator role")]

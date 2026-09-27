@@ -113,7 +113,7 @@ public sealed class AuthorizationSteps
 	{
 		// Five reporter-added values on one synthetic type-ahead whose values depend
 		// on a synthetic make, one per review action, so each call is judged on its
-		// own (ADR-0129, ADR-0146).
+		// own (ADR-0129, ADR-0151).
 		TinyId[] values;
 		TinyId ozone;
 		await using (var scope = (await BootedApi.Factory()).Services.CreateAsyncScope())
@@ -141,7 +141,7 @@ public sealed class AuthorizationSteps
 		_reviews.Add(await _client.PutAsJsonAsync(Value(values[1]), new { labelEn = "Corrected", labelFr = "Corrigé" }));
 		_reviews.Add(await _client.PostAsJsonAsync(Value(values[2], "/merge"), new { intoId = values[0].Value }));
 		_reviews.Add(await _client.DeleteAsync(Value(values[3])));
-		_reviews.Add(await _client.PutAsJsonAsync(Value(values[4], "/parent"), new { parentChoiceId = ozone.Value }));
+		_reviews.Add(await _client.PutAsJsonAsync(Value(values[4], "/parent"), new { parentChoiceIds = new[] { ozone.Value } }));
 	}
 
 	[Then(@"the route does not exist")]

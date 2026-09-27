@@ -110,9 +110,9 @@ public sealed record QuestionView(
 ///     <c>first</c>, <c>last</c>, or <c>none</c>: whether this choice is listed
 ///     before or after the alphabetical rest, or among them (ADR-0136).
 /// </param>
-/// <param name="ParentChoiceId">
-///     The parent question's choice this one is offered under, when the question's
-///     choices depend on another's, or kept from when they did (ADR-0146).
+/// <param name="ParentChoiceIds">
+///     The parent question's choices this one is offered under, when the question's
+///     choices depend on another's, or kept from when they did (ADR-0151).
 /// </param>
 public sealed record OptionView(
 	string Id,
@@ -123,7 +123,7 @@ public sealed record OptionView(
 	bool NeedsTranslation,
 	string? ReporterLocale,
 	string Pin,
-	string? ParentChoiceId)
+	IReadOnlyList<string> ParentChoiceIds)
 {
 	/// <summary>Flattens one choice.</summary>
 	public static OptionView Of(QuestionChoice choice)
@@ -135,7 +135,7 @@ public sealed record OptionView(
 			choice.Code, choice.LabelEn, choice.LabelFr, choice.AddedByReporter, choice.NeedsTranslation,
 			choice.ReporterLocale?.Code,
 			EnumCode.Of(choice.Pin),
-			choice.ParentChoiceId?.Value);
+			[.. choice.ParentChoiceIds.Select(id => id.Value)]);
 	}
 }
 
@@ -197,20 +197,23 @@ public sealed record SaveQuestionRequest(
 ///     <c>first</c> or <c>last</c> to list the choice before or after the
 ///     alphabetical rest; <c>none</c>, or nothing, to list it among them (ADR-0136).
 /// </param>
-/// <param name="ParentChoiceId">
-///     The parent question's choice this one is offered under, when the question's
-///     choices depend on another's. Null leaves an existing choice's link as it is
-///     (ADR-0146).
+/// <param name="ParentChoiceIds">
+///     The parent question's choices this one is offered under, when the question's
+///     choices depend on another's: exactly these, and every other link to a live
+///     parent choice is stamped. Null leaves an existing choice's links as they are
+///     (ADR-0151).
 /// </param>
-public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false, string? Pin = null, string? ParentChoiceId = null)
+public sealed record OptionInput(string? Code, string? LabelEn, string? LabelFr, bool Replace = false, string? Pin = null, IReadOnlyList<string>? ParentChoiceIds = null)
 {
-	/// <summary>The parent choice this choice is saved under, or null. A malformed identifier is refused, never guessed.</summary>
-	public TinyId? ResolvedParentChoiceId =>
-		string.IsNullOrWhiteSpace(ParentChoiceId)
+	/// <summary>The parent choices this choice is saved under, or null. A malformed identifier is refused, never guessed.</summary>
+	public IReadOnlyList<TinyId>? ResolvedParentChoiceIds =>
+		ParentChoiceIds is null
 			? null
-			: TinyId.TryParse(ParentChoiceId, out var parsed)
-				? parsed
-				: throw new DomainRuleViolationException("That parent choice is not one the parent question offers.");
+			: [
+				.. ParentChoiceIds.Select(id => TinyId.TryParse(id, out var parsed)
+					? parsed
+					: throw new DomainRuleViolationException("That parent choice is not one the parent question offers.")).Distinct(),
+			];
 
 	/// <summary>The pin this choice is saved with. An unknown code is refused, never guessed.</summary>
 	public ChoicePin ResolvedPin =>

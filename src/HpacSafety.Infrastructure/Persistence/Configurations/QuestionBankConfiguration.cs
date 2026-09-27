@@ -214,16 +214,18 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 			.HasForeignKey(choice => choice.ReplacedByChoiceId)
 			.OnDelete(DeleteBehavior.Restrict);
 
-		// The parent question's choice this one is offered under, when its
-		// question's choices depend on another's (ADR-0146). Changed, never
-		// cleared; which question it belongs to is checked by ChoiceDependencies.
-		builder.HasOne<QuestionChoice>()
-			.WithMany()
-			.HasForeignKey(choice => choice.ParentChoiceId)
+		// The parent question's choices this one is offered under, when its
+		// question's choices depend on another's (ADR-0151). Loaded whenever the
+		// choice is: every reader of a choice may filter by them, and a link is
+		// stamped, never erased, so the stamped ones load too.
+		builder.HasMany(choice => choice.ParentLinks)
+			.WithOne()
+			.HasForeignKey(link => link.ChoiceId)
 			.OnDelete(DeleteBehavior.Restrict);
-		builder.ToTable(t => t.HasCheckConstraint(
-			"ck_question_choices_parent_other",
-			"parent_choice_id IS NULL OR parent_choice_id <> id"));
+		builder.Navigation(choice => choice.ParentLinks)
+			.HasField("_parentLinks")
+			.UsePropertyAccessMode(PropertyAccessMode.Field)
+			.AutoInclude();
 
 		// Unique across removed rows too: an Administrator writing a removed
 		// choice again revives that row, and a reporter never does, so a code
@@ -236,5 +238,36 @@ public sealed class QuestionChoiceConfiguration : IEntityTypeConfiguration<Quest
 		builder.ToTable(t => t.HasCheckConstraint(
 			"ck_question_choices_label",
 			"label_en IS NOT NULL AND label_fr IS NOT NULL OR (added_by_reporter OR deleted IS NOT NULL) AND (label_en IS NOT NULL OR label_fr IS NOT NULL)"));
+	}
+}
+
+/// <summary>
+///     The <c>question_choice_parents</c> table: each parent choice a dependent
+///     question's choice is offered under (ADR-0151). One row per pair for life —
+///     unticking stamps it and ticking again restores it — so the table has no
+///     default live-row filter, like <c>question_choices</c>. Which question each
+///     choice belongs to is checked by <c>ChoiceDependencies</c>.
+/// </summary>
+public sealed class ChoiceParentLinkConfiguration : IEntityTypeConfiguration<ChoiceParentLink>
+{
+	/// <inheritdoc />
+	public void Configure(EntityTypeBuilder<ChoiceParentLink> builder)
+	{
+		ArgumentNullException.ThrowIfNull(builder);
+
+		builder.ToTable("question_choice_parents");
+		builder.HasKey(link => link.Id);
+
+		builder.HasOne<QuestionChoice>()
+			.WithMany()
+			.HasForeignKey(link => link.ParentChoiceId)
+			.OnDelete(DeleteBehavior.Restrict);
+
+		builder.HasIndex(link => new { link.ChoiceId, link.ParentChoiceId }).IsUnique();
+		builder.HasIndex(link => link.ParentChoiceId);
+
+		builder.ToTable(t => t.HasCheckConstraint(
+			"ck_question_choice_parents_other",
+			"parent_choice_id <> choice_id"));
 	}
 }

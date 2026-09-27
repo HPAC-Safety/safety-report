@@ -17,6 +17,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		"audit_log",
 		"outbox_messages",
 		"pending_import_logic",
+		"question_choice_parents",
 		"question_choices",
 		"question_revisions",
 		"questions",

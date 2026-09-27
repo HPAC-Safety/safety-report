@@ -65,10 +65,15 @@ public static class TypeformExportBuilder
 				NameOf(revision.DependsOnQuestionId is { } parentId ? QuestionDependencies.ParentToday(bank, parentId)?.Id : null, keysByQuestionId),
 				QuestionDependencies.RequiredChoiceToday(bank, revision)?.Code,
 				NameOf(revision.GroupedUnderQuestionId, keysByQuestionId),
-				revision.AllowFutureDates);
+				revision.AllowFutureDates,
+				NameOf(question.ChoicesDependOnQuestionId, keysByQuestionId));
 
-			englishFields.Add(Field(question.Key, revision.LabelEn, revision.HelpTextEn, revision.Type, choices, hpac, english: true));
-			frenchFields.Add(Field(question.Key, revision.LabelFr, revision.HelpTextFr, revision.Type, choices, hpac, english: false));
+			var parent = hpac.ChoicesDependOnKey is null
+				? null
+				: questions.First(candidate => candidate.Id == question.ChoicesDependOnQuestionId);
+
+			englishFields.Add(Field(question.Key, revision.LabelEn, revision.HelpTextEn, revision.Type, choices, hpac, parent, english: true));
+			frenchFields.Add(Field(question.Key, revision.LabelFr, revision.HelpTextFr, revision.Type, choices, hpac, parent, english: false));
 		}
 
 		return (new TypeformDocument(englishFields, []), new TypeformDocument(frenchFields, []));
@@ -103,6 +108,7 @@ public static class TypeformExportBuilder
 		QuestionType type,
 		List<QuestionChoice> choices,
 		TypeformHpacExtension hpac,
+		Question? parent,
 		bool english)
 	{
 		var properties = new TypeformFieldProperties(
@@ -111,11 +117,31 @@ public static class TypeformExportBuilder
 			AllowOtherChoice: null,
 			Choices: choices.Count == 0
 				? null
-				: [.. choices.Select(choice => new TypeformChoice(choice.Code, choice.Code, choice.Label(english ? Locale.EnCa : Locale.FrCa)))],
+				: [.. choices.Select(choice => new TypeformChoice(choice.Code, choice.Code, choice.Label(english ? Locale.EnCa : Locale.FrCa), ParentsOf(choice, parent)))],
 			Fields: null,
 			Hpac: hpac);
 
 		return new TypeformField(key, key, label, NativeType(type), SubfieldKey: null, properties);
+	}
+
+	/// <summary>
+	///     The parent choices a dependent question's choice is offered under, by the
+	///     refs the parent's own field writes for them: its live choices' codes. A link
+	///     to a parent choice since removed filters nothing and is not written
+	///     (ADR-0151).
+	/// </summary>
+	private static TypeformChoiceHpac? ParentsOf(QuestionChoice choice,
+												 Question? parent)
+	{
+		return parent is null
+			? null
+			: new TypeformChoiceHpac([
+				.. choice.ParentChoiceIds
+					.Select(parent.OfferedChoice)
+					.OfType<QuestionChoice>()
+					.Select(parentChoice => parentChoice.Code)
+					.Order(StringComparer.Ordinal),
+			]);
 	}
 
 	/// <summary>

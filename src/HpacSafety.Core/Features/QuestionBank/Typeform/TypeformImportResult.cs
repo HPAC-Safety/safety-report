@@ -32,10 +32,20 @@ public sealed record ImportedQuestionDraft(
 	bool IsRequired = false,
 	string? DependsOnKey = null,
 	string? DependsOnOptionCode = null,
-	bool AllowFutureDates = false);
+	bool AllowFutureDates = false,
+	string? ChoicesDependOnKey = null);
 
-/// <summary>One choice on an imported draft.</summary>
-public sealed record ImportedOption(string Code, string LabelEn, string LabelFr, bool FrenchDefaultedToEnglish);
+/// <summary>
+///     One choice on an imported draft. <see cref="ParentRefs" /> names the parent
+///     question's choices it is offered under, by code, when the draft's choices
+///     depend on another question's (ADR-0151).
+/// </summary>
+public sealed record ImportedOption(
+	string Code,
+	string LabelEn,
+	string LabelFr,
+	bool FrenchDefaultedToEnglish,
+	IReadOnlyList<string>? ParentRefs = null);
 
 /// <summary>A Typeform field this system has no question type for. Never silently dropped.</summary>
 public sealed record RejectedTypeformField(string Ref, string Title, string TypeformType);

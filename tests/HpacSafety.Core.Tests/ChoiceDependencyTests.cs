@@ -5,7 +5,8 @@ using Shouldly;
 namespace HpacSafety.Core.Tests;
 
 /// <summary>
-///     A question's choices depending on another question's answer (ADR-0146): the
+///     A question's choices depending on another question's answer (ADR-0146,
+///     ADR-0151), each choice under one or more parent choices: the
 ///     rules on one question, and those <see cref="ChoiceDependencies" /> checks
 ///     across two. Every question and choice here is synthetic.
 /// </summary>
@@ -31,21 +32,21 @@ public class ChoiceDependencyTests
 			choicesDependOnQuestionId: make.Id,
 			options:
 			[
-				new QuestionOptionInput("mentor_7", "Mentor 7", "Mentor 7", ParentChoiceId: make.Choice("niviuk")!.Id),
-				new QuestionOptionInput("rush_6", "Rush 6", "Rush 6", ParentChoiceId: make.Choice("ozone")!.Id),
+				new QuestionOptionInput("mentor_7", "Mentor 7", "Mentor 7", ParentChoiceIds: [make.Choice("niviuk")!.Id]),
+				new QuestionOptionInput("rush_6", "Rush 6", "Rush 6", ParentChoiceIds: [make.Choice("ozone")!.Id]),
 			]);
 	}
 
 	private static QuestionOptionInput[] Kept(Question question,
-											  params (string Code, TinyId Parent)[] relinked)
+											  params (string Code, TinyId[] Parents)[] relinked)
 	{
 		return
 		[
 			.. question.Choices.Select(choice => new QuestionOptionInput(
 				choice.Code, choice.LabelEn, choice.LabelFr,
-				ParentChoiceId: relinked.Any(pair => pair.Code == choice.Code)
-					? relinked.First(pair => pair.Code == choice.Code).Parent
-					: choice.ParentChoiceId)),
+				ParentChoiceIds: relinked.Any(pair => pair.Code == choice.Code)
+					? relinked.First(pair => pair.Code == choice.Code).Parents
+					: choice.ParentChoiceIds)),
 		];
 	}
 
@@ -65,39 +66,54 @@ public class ChoiceDependencyTests
 	}
 
 	[Fact]
-	public void GivenDependentQuestion_WhenSameWordingSavedUnderTwoParentChoices_ThenBothAreOffered()
+	public void GivenDependentQuestion_WhenChoiceSavedUnderTwoParentChoices_ThenOneChoiceIsOfferedUnderBoth()
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
 
 		// When
-		model.ReplaceChoices(
-			[
-				.. Kept(model),
-				new QuestionOptionInput("other", "Other", "Autre", ParentChoiceId: make.Choice("niviuk")!.Id),
-				new QuestionOptionInput("other_2", "Other", "Autre", ParentChoiceId: make.Choice("ozone")!.Id),
-			], At);
+		model.ReplaceChoices([.. Kept(model), new QuestionOptionInput("other", "Other", "Autre", ParentChoiceIds: [niviuk, ozone])], At);
 
 		// Then
-		model.Choices.Count(choice => choice.LabelEn == "Other").ShouldBe(2);
+		var other = model.Choices.Single(choice => choice.LabelEn == "Other");
+		other.ParentChoiceIds.ShouldBe(new[] { niviuk, ozone }.OrderBy(id => id.Value, StringComparer.Ordinal));
+		other.IsOfferedUnder(niviuk).ShouldBeTrue();
+		other.IsOfferedUnder(ozone).ShouldBeTrue();
 	}
 
-	[Fact]
-	public void GivenDependentQuestion_WhenSameWordingSavedTwiceUnderOneParentChoice_ThenRefused()
+	[Theory]
+	[InlineData("Other", "Autre")]
+	[InlineData("  other ", "Something else")]
+	[InlineData("Anything", "AUTRE")]
+	public void GivenDependentQuestion_WhenSameWordingSavedTwice_ThenRefusedWhateverParents(string labelEn,
+																							 string labelFr)
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
-		var niviuk = make.Choice("niviuk")!.Id;
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() => model.ReplaceChoices(
 			[
 				.. Kept(model),
-				new QuestionOptionInput("other", "Other", "Autre", ParentChoiceId: niviuk),
-				new QuestionOptionInput("other_2", "other", "autre", ParentChoiceId: niviuk),
-			], At)).Message.ShouldContain("same parent choice");
+				new QuestionOptionInput("other", "Other", "Autre", ParentChoiceIds: [make.Choice("niviuk")!.Id]),
+				new QuestionOptionInput("other_2", labelEn, labelFr, ParentChoiceIds: [make.Choice("ozone")!.Id]),
+			], At)).Message.ShouldContain("offered twice");
+	}
+
+	[Fact]
+	public void GivenDependentQuestion_WhenWordingDiffersOnlyInInnerWhitespace_ThenRefused()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+
+		// When / Then
+		Should.Throw<DomainRuleViolationException>(() => model.ReplaceChoices(
+			[.. Kept(model), new QuestionOptionInput("mentor_7_x", "Mentor   7", "Mentor  7 bis", ParentChoiceIds: [make.Choice("ozone")!.Id])],
+			At)).Message.ShouldContain("'Mentor");
 	}
 
 	[Fact]
@@ -220,28 +236,71 @@ public class ChoiceDependencyTests
 			"elsewhere", QuestionType.SingleSelect, "Elsewhere", "Ailleurs", At, isActive: true,
 			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
 		var model = Model(make);
-		model.ReplaceChoices(Kept(model, ("mentor_7", elsewhere.Choice("gin")!.Id)), At);
+		model.ReplaceChoices(Kept(model, ("mentor_7", [make.Choice("niviuk")!.Id, elsewhere.Choice("gin")!.Id])), At);
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinksAllowed([make, elsewhere, model], model))
 			.Message.ShouldContain("'Mentor 7'");
 		Should.NotThrow(() => ChoiceDependencies.EnsureLinksAllowed([make, elsewhere, model], make));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureOfferable([make, elsewhere, model], make.Id, [elsewhere.Choice("gin")!.Id]));
+		Should.NotThrow(() => ChoiceDependencies.EnsureOfferable([make, elsewhere, model], make.Id, [make.Choice("ozone")!.Id]));
 	}
 
 	[Fact]
-	public void GivenLinkedParentChoice_WhenRemoved_ThenRefusedNamingDependent()
+	public void GivenLinkToRemovedParentChoiceBesideLiveOne_WhenLinksChecked_ThenAllowed()
+	{
+		// Given — "Niviuk" was removed while "Mentor 7" is also offered under "Ozone"
+		var make = Make();
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		model.ReplaceChoices(Kept(model, ("mentor_7", [niviuk, ozone])), At);
+		make.ReplaceChoices([new QuestionOptionInput("ozone", "Ozone", "Ozone")], At);
+
+		// When / Then — the inert link stays, and filters nothing
+		Should.NotThrow(() => ChoiceDependencies.EnsureLinksAllowed([make, model], model));
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldContain(niviuk);
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureOfferable([make, model], make.Id, [niviuk]));
+	}
+
+	[Fact]
+	public void GivenParentChoiceSomeChildIsOfferedUnderAlone_WhenRemoved_ThenRefusedNamingThatChild()
+	{
+		// Given — "Other" is under both makes, "Mentor 7" under Niviuk only
+		var make = Make();
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		model.ReplaceChoices([.. Kept(model), new QuestionOptionInput("other", "Other", "Autre", ParentChoiceIds: [niviuk, ozone])], At);
+
+		// When
+		var refusal = Should.Throw<DomainRuleViolationException>(() =>
+			ChoiceDependencies.EnsureParentChoicesRemovable([make, model], make, ["ozone"]));
+
+		// Then
+		refusal.Message.ShouldContain("'Mentor 7'");
+		refusal.Message.ShouldNotContain("'Other'");
+		refusal.Message.ShouldContain("'Model'");
+		Should.Throw<DomainRuleViolationException>(() =>
+			ChoiceDependencies.EnsureValueRemovable([make, model], make, niviuk));
+		Should.NotThrow(() => ChoiceDependencies.EnsureParentChoicesRemovable([make, model], make, ["niviuk", "ozone"]));
+	}
+
+	[Fact]
+	public void GivenEveryChildUnderParentChoiceHasAnotherParent_WhenRemoved_ThenAllowedAndLinksStay()
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		model.ReplaceChoices(Kept(model, ("mentor_7", [niviuk, ozone])), At);
 
-		// When / Then
-		Should.Throw<DomainRuleViolationException>(() =>
-				ChoiceDependencies.EnsureParentChoicesRemovable([make, model], make, ["ozone"]))
-			.Message.ShouldContain("'Model'");
-		Should.Throw<DomainRuleViolationException>(() =>
-			ChoiceDependencies.EnsureValueRemovable([make, model], make, make.Choice("niviuk")!.Id));
-		Should.NotThrow(() => ChoiceDependencies.EnsureParentChoicesRemovable([make, model], make, ["niviuk", "ozone"]));
+		// When
+		ChoiceDependencies.EnsureParentChoicesRemovable([make, model], make, ["ozone"]);
+		ChoiceDependencies.EnsureValueRemovable([make, model], make, niviuk);
+		make.ReplaceChoices([new QuestionOptionInput("ozone", "Ozone", "Ozone")], At);
+
+		// Then
+		make.Choice("niviuk").ShouldBeNull();
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldContain(niviuk);
 	}
 
 	[Fact]
@@ -255,11 +314,11 @@ public class ChoiceDependencyTests
 			At);
 
 		// When
-		ChoiceDependencies.Follow([make, model], make);
+		ChoiceDependencies.Follow([make, model], make, At);
 
 		// Then
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(make.Choice("niviuk_gliders")!.Id);
-		model.Choice("rush_6")!.ParentChoiceId.ShouldBe(make.Choice("ozone")!.Id);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([make.Choice("niviuk_gliders")!.Id]);
+		model.Choice("rush_6")!.ParentChoiceIds.ShouldBe([make.Choice("ozone")!.Id]);
 	}
 
 	[Fact]
@@ -271,10 +330,10 @@ public class ChoiceDependencyTests
 		make.MergeValue(make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id, Reviewer, At);
 
 		// When
-		ChoiceDependencies.Follow([make, model], make);
+		ChoiceDependencies.Follow([make, model], make, At);
 
 		// Then
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(make.Choice("ozone")!.Id);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([make.Choice("ozone")!.Id]);
 	}
 
 	[Fact]
@@ -287,88 +346,159 @@ public class ChoiceDependencyTests
 		var replacement = make.ApplyEdit(true, QuestionType.SingleSelect, "Wing make", "Marque", true, true, 0, At);
 
 		// When
-		ChoiceDependencies.Follow([make, model, replacement], replacement);
+		ChoiceDependencies.Follow([make, model, replacement], replacement, At);
 
 		// Then
 		replacement.ShouldNotBeSameAs(make);
 		model.ChoicesDependOnQuestionId.ShouldBe(replacement.Id);
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(replacement.Choice("niviuk")!.Id);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([replacement.Choice("niviuk")!.Id]);
 		model.CurrentRevision.Id.ShouldBe(revision);
 	}
 
 	[Fact]
 	public void GivenForkedChild_WhenApplied_ThenCopyKeepsDependencyAndLinks()
 	{
+		// Given — "Mentor 7" is under both makes, and its "Ozone" link was once unticked
+		var make = Make();
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		model.ReplaceChoices(Kept(model, ("rush_6", [niviuk, ozone])), At);
+		model.ReplaceChoices(Kept(model, ("rush_6", [niviuk])), At);
+
+		// When
+		var replacement = model.ApplyEdit(true, QuestionType.Autocomplete, "Wing model", "Modèle", true, true, 1, At);
+
+		// Then — every link crosses as a row of the copy, the stamped one included
+		replacement.ChoicesDependOnQuestionId.ShouldBe(make.Id);
+		replacement.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([niviuk]);
+		var rush = replacement.Choice("rush_6")!;
+		rush.ParentChoiceIds.ShouldBe([niviuk]);
+		rush.ParentLinks.Count.ShouldBe(2);
+		rush.ParentLinks.ShouldAllBe(link => link.ChoiceId == rush.Id);
+	}
+
+	[Fact]
+	public void GivenDependentTypeAhead_WhenReporterTypesWordingUnderAnotherParentChoice_ThenThatValueGainsLinkAndIsFlagged()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		var mentor = model.Choice("mentor_7")!;
+
+		// When
+		var typed = model.AddChoiceFromReporter(" mentor  7 ", Locale.EnCa, At, ozone);
+
+		// Then — one wording, one value, now under both makes, for a reviewer to see
+		typed.ShouldBeSameAs(mentor);
+		mentor.ParentChoiceIds.ShouldBe(new[] { niviuk, ozone }.OrderBy(id => id.Value, StringComparer.Ordinal));
+		mentor.NeedsReview.ShouldBeTrue();
+		model.Choices.Count.ShouldBe(2);
+	}
+
+	[Fact]
+	public void GivenDependentTypeAhead_WhenReporterTypesValueAlreadyUnderAnswer_ThenNamedWithoutFlag()
+	{
 		// Given
 		var make = Make();
 		var model = Model(make);
 
 		// When
-		var replacement = model.ApplyEdit(true, QuestionType.Autocomplete, "Wing model", "Modèle", true, true, 1, At);
+		var typed = model.AddChoiceFromReporter("RUSH 6", Locale.EnCa, At, make.Choice("ozone")!.Id);
 
 		// Then
-		replacement.ChoicesDependOnQuestionId.ShouldBe(make.Id);
-		replacement.Choice("mentor_7")!.ParentChoiceId.ShouldBe(make.Choice("niviuk")!.Id);
+		typed.ShouldBeSameAs(model.Choice("rush_6"));
+		typed.NeedsReview.ShouldBeFalse();
 	}
 
 	[Fact]
-	public void GivenDependentTypeAhead_WhenReporterTypesWordingUnderAnotherParentChoice_ThenNewValueUnderTheirs()
+	public void GivenDependentTypeAhead_WhenReporterTypesMergedValue_ThenTargetGainsLinkAndIsFlagged()
+	{
+		// Given
+		var make = Make();
+		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		var typo = model.AddChoiceFromReporter("Mentr 7", Locale.EnCa, At, niviuk);
+		model.MergeValue(typo.Id, model.Choice("mentor_7")!.Id, Reviewer, At);
+
+		// When
+		var typed = model.AddChoiceFromReporter("mentr 7", Locale.EnCa, At, ozone);
+
+		// Then
+		typed.ShouldBeSameAs(model.Choice("mentor_7"));
+		typed.IsOfferedUnder(ozone).ShouldBeTrue();
+		typed.NeedsReview.ShouldBeTrue();
+	}
+
+	[Fact]
+	public void GivenDependentTypeAhead_WhenReporterTypesRemovedValue_ThenFlaggedNotRevived()
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
 		var ozone = make.Choice("ozone")!.Id;
+		var zeno = model.AddChoiceFromReporter("Zeno 1", Locale.EnCa, At, make.Choice("niviuk")!.Id);
+		model.RemoveValue(zeno.Id, Reviewer, At);
 
 		// When
-		var typed = model.AddChoiceFromReporter("mentor 7", Locale.EnCa, At, ozone);
+		var typed = model.AddChoiceFromReporter("zeno 1", Locale.EnCa, At, ozone);
 
-		// Then — Mentor 7 is a Niviuk model; under Ozone it is a new value
-		typed.Id.ShouldNotBe(model.Choice("mentor_7")!.Id);
-		typed.ParentChoiceId.ShouldBe(ozone);
-		typed.Code.ShouldBe("mentor_7_2");
-		model.AddChoiceFromReporter("RUSH 6", Locale.EnCa, At, ozone).ShouldBe(model.Choice("rush_6"));
+		// Then
+		typed.ShouldBeSameAs(zeno);
+		typed.Deleted.ShouldNotBeNull();
+		typed.NeedsReview.ShouldBeTrue();
+		typed.IsOfferedUnder(ozone).ShouldBeFalse();
 	}
 
 	[Fact]
-	public void GivenDependentTypeAhead_WhenMergingValuesUnderDifferentParentChoices_ThenRefused()
+	public void GivenDependentTypeAhead_WhenMergingValuesUnderDifferentParentChoices_ThenSurvivorIsOfferedUnderBoth()
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
 
-		// When / Then
-		Should.Throw<DomainRuleViolationException>(() =>
-			model.MergeValue(model.Choice("mentor_7")!.Id, model.Choice("rush_6")!.Id, Reviewer, At));
+		// When
+		model.MergeValue(model.Choice("mentor_7")!.Id, model.Choice("rush_6")!.Id, Reviewer, At);
+
+		// Then
+		model.Choice("rush_6")!.ParentChoiceIds.ShouldBe(new[] { niviuk, ozone }.OrderBy(id => id.Value, StringComparer.Ordinal));
 	}
 
 	[Fact]
-	public void GivenDependentTypeAhead_WhenReviewerRelinksValue_ThenLinkChangesAndValueIsReviewed()
+	public void GivenDependentTypeAhead_WhenReviewerSetsValueParents_ThenUntickedLinkIsStampedAndValueReviewed()
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
 		var value = model.Choice("rush_6")!;
+		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
+		var ozoneLink = value.ParentLinks.Single(link => link.ParentChoiceId == ozone);
 
 		// When
-		model.RelinkValue(value.Id, make.Choice("niviuk")!.Id, Reviewer, At);
+		model.OfferValueUnder(value.Id, [niviuk], Reviewer, At);
 
 		// Then
-		value.ParentChoiceId.ShouldBe(make.Choice("niviuk")!.Id);
+		value.ParentChoiceIds.ShouldBe([niviuk]);
+		ozoneLink.Deleted.ShouldBe(At);
 		value.ReviewedBy.ShouldBe(Reviewer);
+
+		// And ticking it again restores the same row
+		model.OfferValueUnder(value.Id, [niviuk, ozone], Reviewer, At);
+		value.ParentLinks.Count.ShouldBe(2);
+		ozoneLink.Deleted.ShouldBeNull();
 	}
 
 	[Fact]
-	public void GivenValueWordedLikeOneUnderTarget_WhenRelinked_ThenRefused()
+	public void GivenDependentTypeAhead_WhenReviewerLeavesValueUnderNothing_ThenRefused()
 	{
 		// Given
 		var make = Make();
 		var model = Model(make);
-		var niviuk = make.Choice("niviuk")!.Id;
-		var twin = model.AddChoiceFromReporter("Mentor 7", Locale.EnCa, At, make.Choice("ozone")!.Id);
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => model.RelinkValue(twin.Id, niviuk, Reviewer, At))
-			.Message.ShouldContain("Merge the two");
+		Should.Throw<DomainRuleViolationException>(() => model.OfferValueUnder(model.Choice("rush_6")!.Id, [], Reviewer, At))
+			.Message.ShouldContain("at least one");
 	}
 
 	[Fact]
@@ -379,7 +509,7 @@ public class ChoiceDependencyTests
 
 		// When / Then
 		Should.Throw<DomainRuleViolationException>(() =>
-			make.RelinkValue(make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id, Reviewer, At));
+			make.OfferValueUnder(make.Choice("niviuk")!.Id, [make.Choice("ozone")!.Id], Reviewer, At));
 	}
 
 	[Fact]
@@ -413,8 +543,8 @@ public class ChoiceDependencyTests
 			], At);
 
 		// Then
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(niviuk);
-		model.Choice("zeno_2")!.ParentChoiceId.ShouldBeNull();
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([niviuk]);
+		model.Choice("zeno_2")!.ParentChoiceIds.ShouldBeEmpty();
 	}
 
 	[Fact]
@@ -426,7 +556,7 @@ public class ChoiceDependencyTests
 		var mentor = model.Choice("mentor_7")!;
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => model.RelinkValue(mentor.Id, mentor.Id, Reviewer, At));
+		Should.Throw<DomainRuleViolationException>(() => model.OfferValueUnder(mentor.Id, [mentor.Id], Reviewer, At));
 	}
 
 	[Fact]
@@ -456,7 +586,7 @@ public class ChoiceDependencyTests
 			], At);
 
 		// Then
-		model.Choice("mentor_7_light")!.ParentChoiceId.ShouldBe(niviuk);
+		model.Choice("mentor_7_light")!.ParentChoiceIds.ShouldBe([niviuk]);
 	}
 
 	[Fact]
@@ -469,15 +599,15 @@ public class ChoiceDependencyTests
 			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
 		var model = Model(make);
 		var gin = elsewhere.Choice("gin")!.Id;
-		model.ReplaceChoices(Kept(model, ("mentor_7", gin)), At);
+		model.ReplaceChoices(Kept(model, ("mentor_7", [gin])), At);
 		var replacement = make.ApplyEdit(true, QuestionType.SingleSelect, "Wing make", "Marque", true, true, 0, At);
 
 		// When
-		ChoiceDependencies.Follow([make, model, replacement], replacement);
+		ChoiceDependencies.Follow([make, model, replacement], replacement, At);
 
 		// Then
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(gin);
-		model.Choice("rush_6")!.ParentChoiceId.ShouldBe(replacement.Choice("ozone")!.Id);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([gin]);
+		model.Choice("rush_6")!.ParentChoiceIds.ShouldBe([replacement.Choice("ozone")!.Id]);
 	}
 
 	[Fact]
@@ -524,11 +654,11 @@ public class ChoiceDependencyTests
 		var other = Make();
 
 		// When
-		ChoiceDependencies.Follow([model, other], other);
+		ChoiceDependencies.Follow([model, other], other, At);
 
 		// Then
 		model.ChoicesDependOnQuestionId.ShouldBe(make.Id);
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(make.Choice("niviuk")!.Id);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([make.Choice("niviuk")!.Id]);
 	}
 
 	[Fact]
@@ -541,13 +671,13 @@ public class ChoiceDependencyTests
 			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
 		var model = Model(make);
 		var gin = elsewhere.Choice("gin")!.Id;
-		model.ReplaceChoices(Kept(model, ("mentor_7", gin)), At);
+		model.ReplaceChoices(Kept(model, ("mentor_7", [gin])), At);
 
 		// When
-		ChoiceDependencies.Follow([make, model], make);
+		ChoiceDependencies.Follow([make, model], make, At);
 
 		// Then
-		model.Choice("mentor_7")!.ParentChoiceId.ShouldBe(gin);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([gin]);
 	}
 
 	[Fact]
@@ -627,34 +757,23 @@ public class ChoiceDependencyTests
 	}
 
 	[Fact]
-	public void GivenSameWordingUnderBothParentValues_WhenParentMergeChecked_ThenRefusedNamingIt()
+	public void GivenChildUnderBothParentValues_WhenParentMergeFollowed_ThenLinksCollapseIntoOne()
 	{
 		// Given
 		var make = Make(QuestionType.Autocomplete);
 		var model = Model(make);
 		var (niviuk, ozone) = (make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id);
-		model.ReplaceChoices(
-			[
-				.. Kept(model),
-				new QuestionOptionInput("other", "Other", "Autre", ParentChoiceId: niviuk),
-				new QuestionOptionInput("other_2", "Other", "Autre", ParentChoiceId: ozone),
-			], At);
+		model.ReplaceChoices([.. Kept(model), new QuestionOptionInput("other", "Other", "Autre", ParentChoiceIds: [niviuk, ozone])], At);
+		make.MergeValue(niviuk, ozone, Reviewer, At);
 
-		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureMergeKeepsChildrenApart([make, model], make, niviuk, ozone))
-			.Message.ShouldContain("'Other'");
-	}
+		// When
+		ChoiceDependencies.Follow([make, model], make, At);
 
-	[Fact]
-	public void GivenDistinctWordingUnderBothParentValues_WhenParentMergeChecked_ThenAllowed()
-	{
-		// Given
-		var make = Make(QuestionType.Autocomplete);
-		var model = Model(make);
-
-		// When / Then
-		Should.NotThrow(() => ChoiceDependencies.EnsureMergeKeepsChildrenApart(
-			[make, model], make, make.Choice("niviuk")!.Id, make.Choice("ozone")!.Id));
+		// Then — one live link to the target, and the old one stamped, not erased
+		var other = model.Choice("other")!;
+		other.ParentChoiceIds.ShouldBe([ozone]);
+		other.ParentLinks.Single(link => link.ParentChoiceId == niviuk).Deleted.ShouldBe(At);
+		model.Choice("mentor_7")!.ParentChoiceIds.ShouldBe([ozone]);
 	}
 
 	[Fact]
@@ -668,26 +787,24 @@ public class ChoiceDependencyTests
 		model.MergeValue(typo.Id, model.Choice("mentor_7")!.Id, Reviewer, At);
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => model.RelinkValue(typo.Id, make.Choice("ozone")!.Id, Reviewer, At))
+		Should.Throw<DomainRuleViolationException>(() => model.OfferValueUnder(typo.Id, [make.Choice("ozone")!.Id], Reviewer, At))
 			.Message.ShouldContain("merged");
 	}
 
 	[Fact]
-	public void GivenOtherValueUnlinked_WhenOneValueRelinkChecked_ThenOnlyThatValueIsJudged()
+	public void GivenOtherValueUnlinked_WhenOneValuesParentsChecked_ThenOnlyTheyAreJudged()
 	{
 		// Given — a value typed while the make was off the form has no link yet
 		var make = Make();
 		var model = Model(make);
 		model.AddChoiceFromReporter("Zeno 2", Locale.EnCa, At);
-		var rush = model.Choice("rush_6")!;
-		model.RelinkValue(rush.Id, make.Choice("niviuk")!.Id, Reviewer, At);
 
 		// When / Then
-		Should.NotThrow(() => ChoiceDependencies.EnsureLinkAllowed([make, model], model, rush.Id));
+		Should.NotThrow(() => ChoiceDependencies.EnsureValueParentsAllowed([make, model], model, [make.Choice("niviuk")!.Id]));
 	}
 
 	[Fact]
-	public void GivenValueLinkedToAnotherQuestion_WhenRelinkChecked_ThenRefused()
+	public void GivenAnotherQuestionsChoice_WhenValueParentsChecked_ThenRefused()
 	{
 		// Given
 		var make = Make();
@@ -695,12 +812,12 @@ public class ChoiceDependencyTests
 			"elsewhere", QuestionType.SingleSelect, "Elsewhere", "Ailleurs", At, isActive: true,
 			options: [new QuestionOptionInput("gin", "Gin", "Gin")]);
 		var model = Model(make);
-		var rush = model.Choice("rush_6")!;
-		model.RelinkValue(rush.Id, elsewhere.Choice("gin")!.Id, Reviewer, At);
+		var gin = elsewhere.Choice("gin")!.Id;
 
 		// When / Then
-		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinkAllowed([make, elsewhere, model], model, rush.Id));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureValueParentsAllowed([make, elsewhere, model], model, [gin]));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureValueParentsAllowed([make, elsewhere], elsewhere, [gin]));
 		make.Delete(false, At);
-		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureLinkAllowed([make, model], model, rush.Id));
+		Should.Throw<DomainRuleViolationException>(() => ChoiceDependencies.EnsureValueParentsAllowed([make, model], model, [make.Choice("niviuk")!.Id]));
 	}
 }

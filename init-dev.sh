@@ -588,17 +588,18 @@ fi
 
 # ------------------------------------------------------------------------ gh --
 #
-# Optional. tools/ci-local.sh reads your login for the pull request's author,
-# and with --allow-gh-token uses it as the token; the delivery skills use gh
-# for issues and pull requests.
+# Optional. tools/ci-local.sh uses your login only on this machine, to
+# download main's coverage baseline (GitHub serves no artifact anonymously)
+# and to name the pull request's author; act never receives it (ADR-0145).
+# The delivery skills use gh for issues and pull requests.
 
 heading "GitHub CLI (optional)"
 if have gh; then
 	ok "$(gh --version 2>/dev/null | head -n 1)"
 	if gh auth status >/dev/null 2>&1; then
-		ok "gh is logged in"
+		ok "gh is logged in; tools/ci-local.sh uses it only to download main's coverage baseline"
 	else
-		note "gh is not logged in — run: gh auth login"
+		note "gh is not logged in — run: gh auth login (tools/ci-local.sh needs it to download main's coverage baseline)"
 	fi
 elif [ "$CHECK_ONLY" -eq 1 ]; then
 	note "gh is not installed — https://cli.github.com"
@@ -948,14 +949,6 @@ ask_key() {
 	fi
 	KEY_VALUE=''
 }
-
-# HPAC_ACT_TOKEN is read from the environment by tools/ci-local.sh, never from
-# .env, and never shown here.
-if [ -n "${HPAC_ACT_TOKEN-}" ]; then
-	ok "HPAC_ACT_TOKEN is set (tools/ci-local.sh)"
-else
-	note "HPAC_ACT_TOKEN is not set — tools/ci-local.sh needs a fine-grained read-only token; see README.md \"Getting started\""
-fi
 
 ask_key DEEPL_API_KEY "answer and question translation"
 ask_key GEMINI_API_KEY "report summaries, with a paid, billing-enabled key"

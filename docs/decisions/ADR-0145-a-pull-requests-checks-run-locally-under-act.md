@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-26
 decision-makers: Chase Florell
-keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions
+keywords: act, local CI, coverage gate, ratchet, pull request checks, Testcontainers, Docker Desktop, GitHub Actions, no token, gh login
 ---
 
 # ADR-0145 — A pull request's checks run locally under act, against CI's own baseline
@@ -17,6 +17,11 @@ supersedes the script
 added. ADR-0014's gate is unchanged: this runs it before the pull request, as
 CI does. ADR-0073 still holds: running CI's flags locally does not make a
 guard that lives only in a CI flag a real guard.
+
+**Amended 2026-09-26 (#554):** act receives no token. The `HPAC_ACT_TOKEN`
+fine-grained token and `--allow-gh-token` are removed; the coverage baseline
+is downloaded on the host with the developer's `gh` login. See "The token"
+and "The baseline" below.
 
 ## Context
 
@@ -46,13 +51,40 @@ and is the pre-pull-request gate.**
   the fetched `origin/main`, `head.sha` at `HEAD`, and
   `head.repo.full_name = "local/act"`. Every write guarded by "same
   repository" (the coverage comment) takes its fork branch.
-- **The token**: only `GITHUB_TOKEN`, from the environment, never argv. It is
-  `HPAC_ACT_TOKEN`, a fine-grained read-only token for this repository
-  (Actions, Contents, Metadata: read). act does not enforce a workflow's
-  `permissions:`, so every job and third-party action receives the token as
-  is. Without `HPAC_ACT_TOKEN` the wrapper exits 2; the developer's
-  full-scope `gh auth token` is used only on an explicit `--allow-gh-token`
-  (or `HPAC_ACT_ALLOW_GH_TOKEN=1`), with a warning.
+- **The token** (amended, #554): act receives none. The repository is public,
+  and measured on 2026-09-26, listing runs and artifacts, the setup actions,
+  `gh release download`, and skillfile's fetch of public skills all work
+  anonymously, within the 60-an-hour per-IP quota.
+  - act fills a missing `GITHUB_TOKEN` secret from `gh auth token` (act 0.2.89,
+    `cmd/root.go`), which would hand every job and action the developer's
+    full-scope login. So the wrapper passes `-s GITHUB_TOKEN=`, explicitly
+    empty, and unsets `GITHUB_TOKEN` and `GH_TOKEN` in act's environment.
+  - The coverage job's act-only baseline step prints whether `github.token` is
+    empty, and the wrapper fails a run that does not report it empty.
+  - A job that hits the anonymous rate limit fails; the wrapper says so and
+    suggests waiting. It never falls back to giving act a token.
+  - This replaces `HPAC_ACT_TOKEN`, a fine-grained read-only token each
+    developer had to create, and `--allow-gh-token`: a token inside act
+    reaches every job and third-party action, because act does not enforce a
+    workflow's `permissions:`.
+- **The baseline** (#554): GitHub answers an anonymous artifact download with
+  401, even on a public repository, and the ratchet needs main's last green
+  `coverage-report`.
+  - Before act starts, the wrapper finds the run CI's "Fetch the main
+    baseline" step picks (the last successful push run of `CI` on `main`) and
+    downloads its `Cobertura.xml` on the host with the developer's `gh` login.
+    It prints the run ID; the job prints it again.
+  - The file goes into the clone's `.ci-local/baseline/`, gitignored, so the
+    jobs' `git status` checks never see it; act runs with
+    `--use-gitignore=false` so it is copied. The coverage job's act-only step
+    reads it, and its `gh` download step skips under act.
+  - No green run on `main`, or none carrying the artifact: the floor alone, as
+    in CI.
+  - **Without a `gh` login**, a run that includes `coverage` exits 2 before act
+    starts, naming `gh auth login`. A floor-only pass with a notice was
+    rejected: it is a local verdict CI would not give, the disagreement this
+    ADR exists to remove. A run of other jobs alone (`--job linked-issue`)
+    needs no login.
 - **Other inputs**: the wrapper passes `--secret-file`, `--var-file`, and
   `--env-file /dev/null` on act's command line, over `.actrc` and any
   user-level actrc (`~/.actrc`, `$XDG_CONFIG_HOME/act/actrc`,

@@ -1668,6 +1668,10 @@ Below 3 characters, a type-ahead's arrow keys and Enter pick nothing — *playwr
 
 A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do — *playwright-bdd, Covered*
 
+### REQ-QB-232
+
+Reopening a type-ahead that already holds 3 or more characters filters by them, not every choice — *playwright-bdd, Covered*
+
 ## Claims: report-submission
 
 ### REQ-SUB-001

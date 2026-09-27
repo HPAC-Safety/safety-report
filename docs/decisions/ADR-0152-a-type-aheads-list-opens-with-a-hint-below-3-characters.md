@@ -49,6 +49,15 @@ trimmed of spaces, and draws no caret.**
   filtered exactly as ADR-0140 already describes — case- and
   accent-insensitive, pin-group separators kept. Deleting back below 3
   characters brings the hint back.
+- **Reopening filters by what the field already holds.** Closing the list
+  (Escape, Tab, a press outside) and opening it again — by a click, Alt and
+  the down arrow, or typing — filters by the field's current text exactly as
+  typing it would: below 3 characters, the hint; at 3 or more, only the
+  matching choices. It never falls back to every choice unfiltered, whatever
+  the field holds and however it is reopened — a reporter who types a query,
+  presses Escape, then clicks or presses Alt and the down arrow does not see
+  the full list either (`REQ-QB-232`). Confirmed by the owner, 2026-09-27:
+  "It should reopen as filtered from the text in the input."
 - **Every type-ahead**, dependent ones included: the threshold applies on top
   of, not instead of, a dependent type-ahead's narrowing by its parent's
   answer (ADR-0146).

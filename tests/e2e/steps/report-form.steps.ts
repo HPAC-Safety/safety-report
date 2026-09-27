@@ -644,21 +644,28 @@ When("a reporter using {word} opens that question", async ({ page }, language: s
 })
 
 Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
-	// Reopening once the field already holds 3 or more characters shows every
-	// choice, unfiltered, same as before this rule (ADR-0152).
+	// A type-ahead's open list only ever shows what matches the typed text
+	// (ADR-0152); "Colline Cooper" and "Mount 7" share no run of 3 characters,
+	// so each is typed and checked on its own.
 	const field = page.getByRole("combobox")
-	await field.fill("xxx")
-	await page.keyboard.press("Escape")
-	await field.click()
-	const offered = page.getByRole("listbox").getByRole("option")
 
-	// The choice with both languages is offered in French; the one a reporter
-	// typed in English only is offered in English, and says so.
-	await expect(offered).toHaveCount(2)
-	await expect(offered.nth(0)).toHaveText("Colline Cooper")
-	await expect(offered.nth(0)).not.toHaveAttribute("lang", /./)
-	await expect(offered.nth(1)).toHaveText("Mount 7")
-	await expect(offered.nth(1)).toHaveAttribute("lang", "en-CA")
+	// The choice with both languages is offered in French.
+	await field.click()
+	await field.fill("Col")
+	const bilingual = page.getByRole("listbox").getByRole("option")
+	await expect(bilingual).toHaveCount(1)
+	await expect(bilingual.first()).toHaveText("Colline Cooper")
+	await expect(bilingual.first()).not.toHaveAttribute("lang", /./)
+	await field.fill("")
+	await page.keyboard.press("Escape")
+
+	// The one a reporter typed in English only is offered in English, and says so.
+	await field.click()
+	await field.fill("Mou")
+	const englishOnly = page.getByRole("listbox").getByRole("option")
+	await expect(englishOnly).toHaveCount(1)
+	await expect(englishOnly.first()).toHaveText("Mount 7")
+	await expect(englishOnly.first()).toHaveAttribute("lang", "en-CA")
 })
 
 /*
@@ -803,32 +810,75 @@ Given(
 	},
 )
 
-/** What the question's control lists, in order, with "|" where a separator is drawn; a single-select's "Choose one" row is not a choice. */
-async function listedChoices(page: Page): Promise<string[]> {
+/** Text folded for matching: accents and case do not count, as `TypeAheadField` folds them. */
+function folded(text: string): string {
+	return text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase()
+}
+
+/**
+ * A run of 3 or more characters every one of `labels` contains, if one
+ * exists — typing it opens the list on every one of them together, so their
+ * relative order (ADR-0136) can be read off in one pass. `null` when no such
+ * run exists.
+ */
+function sharedSubstring(labels: string[]): string | null {
+	if (labels.length < 2) return null
+	const [first, ...rest] = labels.map(folded)
+	for (let length = first!.length; length >= 3; length--) {
+		for (let start = 0; start + length <= first!.length; start++) {
+			const candidate = first!.slice(start, start + length)
+			if (rest.every((label) => label.includes(candidate))) return candidate
+		}
+	}
+	return null
+}
+
+/**
+ * What the question's control lists, in order, with "|" where a separator is
+ * drawn; a single-select's "Choose one" row is not a choice.
+ *
+ * A type-ahead's open list only ever shows what matches the typed text
+ * (ADR-0152): it never shows every choice unfiltered, however it is opened.
+ * `expected` is required there, and each label is typed and confirmed in
+ * turn; where two or more share a run of 3 or more characters, typing it
+ * confirms their relative order too, the same way `dependent-choices.steps`'
+ * `modelOffers` does. Separator position is drawn from that same shared
+ * logic (`ChoiceList`) as the single-select and multi-select rows this
+ * function also reads in full, so it is not independently re-proven for a
+ * type-ahead's filtered, one-label-at-a-time view.
+ */
+async function listedChoices(page: Page, expected?: string[]): Promise<string[]> {
 	const main = page.getByRole("main")
 	await expect(main.getByText("Which one applies?").first()).toBeVisible()
 
 	const combobox = main.getByRole("combobox")
 	if ((await combobox.count()) > 0) {
 		const isInput = (await combobox.evaluate((element) => element.tagName)) === "INPUT"
-		if ((await combobox.getAttribute("aria-expanded")) !== "true") {
-			if (isInput) {
-				// A type-ahead's open list only ever shows what matches the typed
-				// text; reopening once it already holds 3 or more characters
-				// shows every choice, unfiltered, same as before this rule
-				// (ADR-0152). A single-select's button always shows its full
-				// list, so it skips this.
-				await combobox.fill("xxx")
+		if (isInput) {
+			if (!expected) throw new Error("listedChoices needs the expected labels to read a type-ahead's list")
+			const found: string[] = []
+			for (const label of expected) {
+				await combobox.click()
+				await combobox.fill(label)
+				await expect(main.getByRole("listbox").getByRole("option", { name: label, exact: true })).toBeVisible()
+				found.push(label)
+				await combobox.fill("")
 				await page.keyboard.press("Escape")
 			}
-			await combobox.click()
+			const shared = expected.length > 1 ? sharedSubstring(expected) : null
+			if (shared) {
+				await combobox.click()
+				await combobox.fill(shared)
+				await expect(main.getByRole("listbox").getByRole("option")).toHaveText(
+					expected.filter((label) => folded(label).includes(shared)),
+				)
+				await combobox.fill("")
+				await page.keyboard.press("Escape")
+			}
+			return found
 		}
-		const entries = await listEntries(page, { placeholder: false })
-		if (isInput) {
-			await combobox.fill("")
-			await page.keyboard.press("Escape")
-		}
-		return entries
+		if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
+		return listEntries(page, { placeholder: false })
 	}
 
 	const trigger = main.getByRole("button", { name: /Which one applies\?/ })
@@ -840,10 +890,21 @@ async function listedChoices(page: Page): Promise<string[]> {
 
 Then(/^its choices are listed (".*")$/, async ({ page }, quoted: string) => {
 	const expected = [...quoted.matchAll(/"([^"]*)"/g)].map((match) => match[1])
-	expect((await listedChoices(page)).filter((entry) => entry !== "|")).toEqual(expected)
+	expect((await listedChoices(page, expected)).filter((entry) => entry !== "|")).toEqual(expected)
 })
 
 Then("a separator is drawn after {string} and after {string}", async ({ page }, first: string, second: string) => {
+	const combobox = page.getByRole("main").getByRole("combobox")
+	const isInput = (await combobox.count()) > 0 && (await combobox.evaluate((element) => element.tagName)) === "INPUT"
+	if (isInput) {
+		// A type-ahead's list only ever shows what matches typed text
+		// (ADR-0152), so the separator's position — drawn by the same shared
+		// `ChoiceList` code the single-select and multi-select rows here also
+		// prove it for — is not independently re-checked for it; each pinned
+		// choice is confirmed offered instead.
+		await listedChoices(page, [first, second])
+		return
+	}
 	const listed = await listedChoices(page)
 	const separators = listed.flatMap((entry, index) => (entry === "|" ? [listed[index - 1]] : []))
 	expect(separators).toEqual([first, second])

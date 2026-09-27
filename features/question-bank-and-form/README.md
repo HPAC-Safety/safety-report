@@ -215,6 +215,11 @@ as a place to type, not a dropdown to pick from
   [ADR-0152](../../docs/decisions/ADR-0152-a-type-aheads-list-opens-with-a-hint-below-3-characters.md)).
   A dependent type-ahead follows the same rule, on top of its own narrowing by
   the parent's answer (`REQ-QB-231`, ADR-0146).
+- **Reopening filters by what the field holds.** Closing the list and opening
+  it again — by any of the ways above — filters by the field's current text
+  exactly as typing it would: the hint below 3 characters, only the matching
+  choices at 3 or more. It never shows every choice unfiltered on reopen,
+  whatever the field holds (`REQ-QB-232`, ADR-0152).
 - **Filtering.** At 3 or more characters, what the reporter typed narrows the
   list to the choices whose wording contains it anywhere, ignoring case and
   accents, in the reader's language (`REQ-QB-160`). The list keeps the order

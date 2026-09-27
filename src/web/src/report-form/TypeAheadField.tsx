@@ -74,14 +74,17 @@ export function TypeAheadField({
 	const listId = `${fieldId}-list`
 	const optionId = (choice: ListChoice) => `${fieldId}-option-${choice.key}`
 
+	/** `groups`, narrowed to the choices whose wording contains `needle` anywhere; every choice for an empty needle. */
+	function filterGroups(needle: string): ListChoice[][] {
+		return (needle ? groups.map((group) => group.filter((choice) => folded(choice.label, locale).includes(needle))) : groups).filter(
+			(group) => group.length > 0,
+		)
+	}
+
 	// Below the threshold, the list shows only the hint: no choices, no active option.
 	const belowThreshold = value.trim().length < TYPE_AHEAD_THRESHOLD
 	const needle = !belowThreshold && filter ? folded(filter, locale) : ""
-	const shown = belowThreshold
-		? []
-		: groups
-				.map((group) => (needle ? group.filter((choice) => folded(choice.label, locale).includes(needle)) : group))
-				.filter((group) => group.length > 0)
+	const shown = belowThreshold ? [] : filterGroups(needle)
 	const flat = shown.flat()
 	const expanded = open && (belowThreshold || flat.length > 0)
 	const activeChoice = expanded && !belowThreshold && active >= 0 ? flat[active] : undefined
@@ -103,13 +106,18 @@ export function TypeAheadField({
 		if (activeId) document.getElementById(activeId)?.scrollIntoView({ block: "nearest" })
 	}, [activeId])
 
-	/** Opens the whole list, with the choice the field holds, if any, active. */
+	/**
+	 * Opens the list, filtered by what the field already holds — exactly as
+	 * typing it would (ADR-0152) — with the choice the field holds, if any,
+	 * active.
+	 */
 	function openAll(first: "none" | "first" | "last" = "none") {
-		const all = groups.flat()
-		const current = all.findIndex((choice) => (selectedKey ? choice.key === selectedKey : choice.label === value))
-		setFilter(null)
+		const belowAfter = value.trim().length < TYPE_AHEAD_THRESHOLD
+		const nextFlat = belowAfter ? [] : filterGroups(folded(value, locale)).flat()
+		const current = nextFlat.findIndex((choice) => (selectedKey ? choice.key === selectedKey : choice.label === value))
+		setFilter(value)
 		setOpen(true)
-		setActive(current >= 0 ? current : first === "first" ? 0 : first === "last" ? all.length - 1 : -1)
+		setActive(current >= 0 ? current : first === "first" ? 0 : first === "last" ? nextFlat.length - 1 : -1)
 	}
 
 	function close() {

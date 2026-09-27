@@ -1203,6 +1203,16 @@ Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
   Then the list offers only the hint to type 3 or more letters
   And the field holds "Mo"
 
+@REQ-QB-232
+@ui
+Scenario: Reopening a type-ahead that already holds 3 or more characters filters by them, not every choice
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
+  When a reporter using English opens that question
+  And they type "Mou" in the field
+  And they press Escape
+  When they open the field's list by clicking the field
+  Then a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme"
+
 @REQ-QB-160
 @ui
 Scenario Outline: Typing into a type-ahead filters its list, ignoring case and accents
@@ -1216,6 +1226,7 @@ Examples:
   | emeu  | "Émeu"                            |
   | CRÉ   | "Crécerelle"                      |
   | aig   | "Aigle"                           |
+  | rel   | "Crécerelle"                      |
 
 @REQ-QB-161
 @ui
@@ -1271,6 +1282,8 @@ Scenario: A dependent type-ahead's choices show a hint below 3 characters and fi
   Then "Model"'s list offers only the hint to type 3 or more letters
   When they type "Iku" in "Model"
   Then "Model"'s list offers only "Ikuma"
+  When they type "Rus" in "Model"
+  Then "Model"'s list offers no choice
 
 @REQ-QB-171
 @ui

@@ -328,36 +328,19 @@ function modelField(page: Page) {
 	return type === "autocomplete" ? page.getByRole("combobox", { name: "Model" }) : page.locator("#question-rev-model")
 }
 
-/** Text folded for matching: accents and case do not count, as `TypeAheadField` folds them. */
-function folded(text: string): string {
-	return text.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase()
-}
-
-/**
- * A run of 3 or more characters every one of `labels` contains, if one
- * exists — typing it opens the list on every one of them together, so their
- * relative order (ADR-0136) can be read off in one pass. `null` when no such
- * run exists, which the labels here mostly do not share; `modelOffers` then
- * checks presence only, same as before this helper.
- */
-function sharedSubstring(labels: string[]): string | null {
-	if (labels.length < 2) return null
-	const [first, ...rest] = labels.map(folded)
-	for (let length = first!.length; length >= 3; length--) {
-		for (let start = 0; start + length <= first!.length; start++) {
-			const candidate = first!.slice(start, start + length)
-			if (rest.every((label) => label.includes(candidate))) return candidate
-		}
-	}
-	return null
-}
-
 /**
  * The choices currently offered under the parent's answer. A type-ahead
  * shows no choices below 3 typed characters (ADR-0152), so each candidate's
  * own label is typed in turn and checked for a match, rather than opening the
- * list once to read every row. Where two or more expected labels share a run
- * of 3 or more characters, typing it also confirms their relative order.
+ * list once to read every row.
+ *
+ * This proves which choices are offered, not the order they would list in:
+ * REQ-QB-197/223's own fixed wording ("Ikuma", "Mentor 7", "Other") does not
+ * claim an order, and shares no run of 3 or more characters that would let a
+ * type-ahead show them together to prove one. Order still sorts through the
+ * same `optionGroups`/`sortChoices` path (ADR-0136) as every other choice
+ * question; `report-form.steps.ts`'s `listedChoices` proves it where a
+ * scenario claims it and its fixture shares a run — REQ-QB-145, -146, -148.
  */
 async function modelOffers(page: Page, expected: string[]): Promise<void> {
 	const type = forms.get(page)?.[0]?.children[1]?.type
@@ -370,16 +353,6 @@ async function modelOffers(page: Page, expected: string[]): Promise<void> {
 			await field.click()
 			await field.fill(label)
 			await expect(page.getByRole("listbox", { name: "Model" }).getByRole("option", { name: label, exact: true })).toBeVisible()
-			await field.fill("")
-			await page.keyboard.press("Escape")
-		}
-		const shared = sharedSubstring(expected)
-		if (shared) {
-			await field.click()
-			await field.fill(shared)
-			await expect(page.getByRole("listbox", { name: "Model" }).getByRole("option")).toHaveText(
-				expected.filter((label) => folded(label).includes(shared)),
-			)
 			await field.fill("")
 			await page.keyboard.press("Escape")
 		}

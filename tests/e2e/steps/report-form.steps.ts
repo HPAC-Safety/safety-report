@@ -839,13 +839,14 @@ function sharedSubstring(labels: string[]): string | null {
  *
  * A type-ahead's open list only ever shows what matches the typed text
  * (ADR-0152): it never shows every choice unfiltered, however it is opened.
- * `expected` is required there, and each label is typed and confirmed in
- * turn; where two or more share a run of 3 or more characters, typing it
- * confirms their relative order too, the same way `dependent-choices.steps`'
- * `modelOffers` does. Separator position is drawn from that same shared
- * logic (`ChoiceList`) as the single-select and multi-select rows this
- * function also reads in full, so it is not independently re-proven for a
- * type-ahead's filtered, one-label-at-a-time view.
+ * `expected` is required there. Each label is typed and confirmed on its
+ * own first, then every one of `expected` must share a run of 3 or more
+ * characters — the fixture is chosen so they do — and typing it shows them
+ * all together, separators included, so real order (and separator position)
+ * is read the same way a single-select's or multi-select's full list is.
+ * Never returns `expected` unchecked: with no shared run, a test asserting
+ * order or separators against this would pass no matter what the list
+ * actually shows, so this throws instead.
  */
 async function listedChoices(page: Page, expected?: string[]): Promise<string[]> {
 	const main = page.getByRole("main")
@@ -856,26 +857,27 @@ async function listedChoices(page: Page, expected?: string[]): Promise<string[]>
 		const isInput = (await combobox.evaluate((element) => element.tagName)) === "INPUT"
 		if (isInput) {
 			if (!expected) throw new Error("listedChoices needs the expected labels to read a type-ahead's list")
-			const found: string[] = []
 			for (const label of expected) {
 				await combobox.click()
 				await combobox.fill(label)
 				await expect(main.getByRole("listbox").getByRole("option", { name: label, exact: true })).toBeVisible()
-				found.push(label)
 				await combobox.fill("")
 				await page.keyboard.press("Escape")
 			}
-			const shared = expected.length > 1 ? sharedSubstring(expected) : null
-			if (shared) {
-				await combobox.click()
-				await combobox.fill(shared)
-				await expect(main.getByRole("listbox").getByRole("option")).toHaveText(
-					expected.filter((label) => folded(label).includes(shared)),
+			const shared = sharedSubstring(expected)
+			if (!shared) {
+				throw new Error(
+					`listedChoices: no run of 3 or more characters is shared by every one of ${JSON.stringify(expected)}. ` +
+						"A type-ahead's list only ever shows what matches typed text, so order and separators cannot be " +
+						"read from it without one — pick fixture wording that shares a run, or drop this row.",
 				)
-				await combobox.fill("")
-				await page.keyboard.press("Escape")
 			}
-			return found
+			await combobox.click()
+			await combobox.fill(shared)
+			const entries = await listEntries(page, { placeholder: false })
+			await combobox.fill("")
+			await page.keyboard.press("Escape")
+			return entries
 		}
 		if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
 		return listEntries(page, { placeholder: false })
@@ -888,24 +890,22 @@ async function listedChoices(page: Page, expected?: string[]): Promise<string[]>
 		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
 }
 
+// The full expected order the last "its choices are listed" step asserted,
+// so "a separator is drawn after" can read a type-ahead's list again with
+// the same fixture — it only ever shows what matches typed text (ADR-0152),
+// so it needs every label, not just the two either side of the separator.
+let lastListedOrder: string[] | undefined
+
 Then(/^its choices are listed (".*")$/, async ({ page }, quoted: string) => {
 	const expected = [...quoted.matchAll(/"([^"]*)"/g)].map((match) => match[1])
+	lastListedOrder = expected
 	expect((await listedChoices(page, expected)).filter((entry) => entry !== "|")).toEqual(expected)
 })
 
 Then("a separator is drawn after {string} and after {string}", async ({ page }, first: string, second: string) => {
 	const combobox = page.getByRole("main").getByRole("combobox")
 	const isInput = (await combobox.count()) > 0 && (await combobox.evaluate((element) => element.tagName)) === "INPUT"
-	if (isInput) {
-		// A type-ahead's list only ever shows what matches typed text
-		// (ADR-0152), so the separator's position — drawn by the same shared
-		// `ChoiceList` code the single-select and multi-select rows here also
-		// prove it for — is not independently re-checked for it; each pinned
-		// choice is confirmed offered instead.
-		await listedChoices(page, [first, second])
-		return
-	}
-	const listed = await listedChoices(page)
+	const listed = isInput ? await listedChoices(page, lastListedOrder) : await listedChoices(page)
 	const separators = listed.flatMap((entry, index) => (entry === "|" ? [listed[index - 1]] : []))
 	expect(separators).toEqual([first, second])
 })

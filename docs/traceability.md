@@ -1670,7 +1670,7 @@ A dependent type-ahead's choices show a hint below 3 characters and filter at 3,
 
 ### REQ-QB-232
 
-Reopening a type-ahead that already holds 3 or more characters filters by them, not every choice — *playwright-bdd, Covered*
+Reopening a type-ahead filters by what it already holds, however it is reopened — *playwright-bdd, Covered*
 
 ## Claims: report-submission
 

@@ -1088,30 +1088,30 @@ Scenario: The API sends each choice's pin, pinned-first choices first and pinned
 @REQ-QB-145
 @ui
 Scenario Outline: A question's choices are listed alphabetically in the reader's language
-  Given a <type> question offers "Hawk" / "Faucon", "Emu" / "Émeu", "Kestrel" / "Crécerelle", and "Eagle" / "Aigle", none pinned
+  Given a <type> question offers "Green Ridge" / "Crête Verte", "Stone Ridge" / "Crête de Pierre", "Silver Ridge" / "Crête d'Argent", and "Blue Ridge" / "Crête Bleue", none pinned
   When a reporter using <language> opens that question
   Then its choices are listed <order>
 
 Examples:
-  | type          | language | order                                        |
-  | single_select | English  | "Eagle", "Emu", "Hawk", "Kestrel"            |
-  | single_select | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
-  | multi_select  | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
-  | autocomplete  | French   | "Aigle", "Crécerelle", "Émeu", "Faucon"      |
+  | type          | language | order                                                             |
+  | single_select | English  | "Blue Ridge", "Green Ridge", "Silver Ridge", "Stone Ridge"        |
+  | single_select | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | multi_select  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
+  | autocomplete  | French   | "Crête Bleue", "Crête d'Argent", "Crête de Pierre", "Crête Verte" |
 
 @REQ-QB-146
 @ui
 Scenario Outline: Pinned choices come first or last, each group alphabetical
-  Given a <type> question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
+  Given a <type> question offers "Southland" and "Northland" pinned first, "Otherland" pinned last, and "Westland", "Eastland", and "Midland" not pinned
   When a reporter using English opens that question
-  Then its choices are listed "Canada", "United States", "Brazil", "France", "Mexico", "Other"
+  Then its choices are listed "Northland", "Southland", "Eastland", "Midland", "Westland", "Otherland"
   And <separators>
 
 Examples:
-  | type          | separators                                                        |
-  | single_select | a separator is drawn after "United States" and after "Mexico"     |
-  | multi_select  | a separator is drawn after "United States" and after "Mexico"     |
-  | autocomplete  | a separator is drawn after "United States" and after "Mexico"     |
+  | type          | separators                                                       |
+  | single_select | a separator is drawn after "Southland" and after "Westland"     |
+  | multi_select  | a separator is drawn after "Southland" and after "Westland"     |
+  | autocomplete  | a separator is drawn after "Southland" and after "Westland"     |
 
 @REQ-QB-147
 Scenario: A value a reporter adds to a type-ahead is not pinned
@@ -1123,9 +1123,9 @@ Scenario: A value a reporter adds to a type-ahead is not pinned
 @REQ-QB-148
 @ui
 Scenario: A value a reporter adds to a type-ahead takes its alphabetical place
-  Given a type-ahead question offers "Woodside" and "Cooper's", and a reporter has since added "Mount 7"
+  Given a type-ahead question offers "Wood Ridge" and "Cooper Ridge", and a reporter has since added "Mount Ridge"
   When a reporter using English opens that question
-  Then its choices are listed "Cooper's", "Mount 7", "Woodside"
+  Then its choices are listed "Cooper Ridge", "Mount Ridge", "Wood Ridge"
 
 @REQ-QB-149
 Scenario: Pinning a choice never revises or forks its question
@@ -1205,13 +1205,22 @@ Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
 
 @REQ-QB-232
 @ui
-Scenario: Reopening a type-ahead that already holds 3 or more characters filters by them, not every choice
+Scenario Outline: Reopening a type-ahead filters by what it already holds, however it is reopened
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   When a reporter using English opens that question
-  And they type "Mou" in the field
+  And they type "<typed>" in the field
   And they press Escape
-  When they open the field's list by clicking the field
-  Then a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme"
+  When they open the field's list by <opening>
+  Then <outcome>
+
+Examples:
+  | typed | opening                          | outcome                                                                                    |
+  | Mou   | clicking the field               | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing Alt and the down arrow  | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mou   | pressing the down arrow          | a list as wide as the field opens directly beneath it, offering "Mount 7", "Mount Fromme" |
+  | Mo    | clicking the field               | the list offers only the hint to type 3 or more letters                                   |
+  | Mo    | pressing Alt and the down arrow  | the list offers only the hint to type 3 or more letters                                   |
+  | Mo    | pressing the down arrow          | the list offers only the hint to type 3 or more letters                                   |
 
 @REQ-QB-160
 @ui

@@ -2,7 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page, type Request } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
-import { stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { pickChoice, stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
 
 const { Given, When, Then } = createBdd()
 
@@ -97,7 +97,7 @@ Given(
 		await signInAs(page, "user")
 		await page.goto("/report")
 
-		await page.getByLabel("Type of wing").selectOption({ label: "Hang glider" })
+		await pickChoice(page, "Type of wing", "Hang glider")
 		await page.getByRole("button", { name: "Next" }).click()
 
 		await page.getByRole("button", { name: /Which conditions applied\?/ }).click()

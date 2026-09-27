@@ -2,7 +2,7 @@ import { createBdd } from "playwright-bdd"
 import { expect, type Page, type Request } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
-import { stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
+import { pickChoice, stubCurrentQuestions, stubSubmission, type StubQuestion } from "./report-form-fixture"
 
 const { Given, When, Then } = createBdd()
 
@@ -276,7 +276,11 @@ async function modelOffers(page: Page): Promise<string[]> {
 		await page.keyboard.press("Escape")
 		return offered
 	}
-	return (await page.getByLabel("Model", { exact: true }).locator("option:not([value=''])").allTextContents()).filter((text) => !text.startsWith("─"))
+	// A single-select's list, less its "Choose one" row (ADR-0150).
+	await modelField(page).click()
+	const offered = await page.getByRole("listbox", { name: "Model" }).locator('[role="option"]:not([data-placeholder])').allTextContents()
+	await page.keyboard.press("Escape")
+	return offered
 }
 
 async function openForm(page: Page, form: StubQuestion[], language = "English") {
@@ -294,7 +298,7 @@ async function answerMake(page: Page, make: string) {
 	if (makeType === "autocomplete") {
 		await page.getByRole("combobox", { name: "Make" }).fill(make)
 	} else {
-		await page.getByLabel("Make", { exact: true }).selectOption({ label: make })
+		await pickChoice(page, "Make", make)
 	}
 }
 
@@ -431,7 +435,7 @@ When("they come back and continue the saved report", async ({ page }) => {
 })
 
 Then("{string} holds {string}, and {string} holds {string} and offers only the {string} models", async ({ page }, _parent: string, make: string, _child: string, model: string, _models: string) => {
-	await expect(page.getByLabel("Make", { exact: true }).locator("option:checked")).toHaveText(make)
+	await expect(page.getByRole("combobox", { name: "Make" })).toHaveText(make)
 	await expect(modelField(page)).toHaveValue(model)
 	expect(await modelOffers(page)).toEqual(["Ikuma", "Mentor 7"])
 })
@@ -442,7 +446,7 @@ Then("a saved {string} answer no longer linked to the saved {string} answer is r
 	await savedDraft(page, "ozone", { id: "mentor_7", label: "Mentor 7" })
 	await openForm(page, forms.get(page)!)
 	await page.getByRole("dialog", { name: "Continue where you left off?" }).getByRole("button", { name: "Yes, continue" }).click()
-	await expect(page.getByLabel("Make", { exact: true }).locator("option:checked")).toHaveText("Ozone")
+	await expect(page.getByRole("combobox", { name: "Make" })).toHaveText("Ozone")
 	await expect(modelField(page)).toHaveValue("")
 	await page.close()
 })

@@ -1,4 +1,3 @@
-import { Fragment } from "react"
 import type { Locale } from "../i18n/locales"
 import type { PublicQuestionView } from "../api/publicQuestions"
 import { AttachmentField, type Attachment } from "./AttachmentField"
@@ -7,6 +6,7 @@ import type { DraftAnswer } from "./draft"
 import { EmailField } from "./EmailField"
 import { MultiSelectPicker } from "./MultiSelectPicker"
 import { PhoneField } from "./PhoneField"
+import { SingleSelectField } from "./SingleSelectField"
 import { TypeAheadField } from "./TypeAheadField"
 import { optionFor, optionGroups, optionLabel, questionHelp, questionLabel, questionPlaceholder } from "./steps"
 
@@ -161,31 +161,20 @@ export function QuestionField({
 						disabled={disabled}
 					/>
 				) : (
-					<select
-						id={fieldId}
-						className={`${fieldClassName} disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-ink-muted`}
-						value={value ? (optionFor(question, value)?.id ?? "") : ""}
-						aria-describedby={describedBy}
+					<SingleSelectField
+						fieldId={fieldId}
+						label={questionLabel(question, locale)}
+						groups={groups.map((group) =>
+							group.map((option) => ({ key: option.id, label: optionLabel(option, locale), lang: option.onlyIn ?? undefined })),
+						)}
+						// A draft saved before answers named choices holds a label; it still finds its choice.
+						selectedKey={value ? optionFor(question, value)?.id : undefined}
+						placeholder={t("report.select.placeholder")}
+						describedBy={describedBy}
+						locale={locale}
+						onChange={(choice) => onChange(choice ? { kind: "value", value: choice } : undefined)}
 						disabled={disabled}
-						onChange={(event) => onChange(event.target.value ? { kind: "value", value: event.target.value } : undefined)}
-					>
-						<option value="">{t("report.select.placeholder")}</option>
-						{groups.map((group, index) => (
-							<Fragment key={group[0].id}>
-								{/* React 18 allows no hr element in a select, so a separator is a disabled option (ADR-0136). */}
-								{index > 0 && (
-									<option disabled aria-hidden="true" value="" data-separator>
-										──────────
-									</option>
-								)}
-								{group.map((option) => (
-									<option key={option.id} value={option.id}>
-										{optionLabel(option, locale)}
-									</option>
-								))}
-							</Fragment>
-						))}
-					</select>
+					/>
 				)}
 				{noteNode}
 				{helpNode}

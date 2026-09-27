@@ -44,7 +44,7 @@ When("a reporter is shown the form", async ({ page }) => {
 
 Then("that question renders together with the group heading and its other children", async ({ page }) => {
 	await expect(page.getByRole("group", { name: "Aircraft:" })).toBeVisible()
-	await expect(page.getByLabel("Type of aircraft")).toBeVisible()
+	await expect(page.getByRole("combobox", { name: "Type of aircraft" })).toBeVisible()
 	await expect(page.getByLabel("Model")).toBeVisible()
 })
 

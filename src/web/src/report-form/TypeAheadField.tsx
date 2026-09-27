@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useEffect, useRef, useState, type KeyboardEvent } from "react"
+import { Caret, ChoiceOptions, choiceListClassName, type ListChoice } from "./ChoiceList"
 
 export interface TypeAheadChoice {
 	key: string
@@ -62,7 +63,7 @@ export function TypeAheadField({
 	const containerRef = useRef<HTMLDivElement>(null)
 	const inputRef = useRef<HTMLInputElement>(null)
 	const listId = `${fieldId}-list`
-	const optionId = (choice: TypeAheadChoice) => `${fieldId}-option-${choice.key}`
+	const optionId = (choice: ListChoice) => `${fieldId}-option-${choice.key}`
 
 	const needle = filter ? folded(filter, locale) : ""
 	const shown = groups
@@ -103,7 +104,7 @@ export function TypeAheadField({
 		setActive(-1)
 	}
 
-	function choose(choice: TypeAheadChoice) {
+	function choose(choice: ListChoice) {
 		onChange(choice.label, choice.key)
 		close()
 		inputRef.current?.focus()
@@ -192,50 +193,19 @@ export function TypeAheadField({
 					inputRef.current?.focus()
 				}}
 			>
-				<svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4">
-					<path d="M5.5 7.5 10 12l4.5-4.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-				</svg>
+				<Caret />
 			</button>
 			{/* The listbox is always in the page so aria-controls names it; it is hidden while closed. */}
-			<ul
-				id={listId}
-				role="listbox"
-				aria-label={label}
-				hidden={!expanded}
-				className="absolute left-0 right-0 top-full z-40 mt-1 max-h-72 overflow-y-auto rounded border border-rule bg-surface py-1 shadow-lg"
-			>
-				{shown.map((group, index) => (
-					<Fragment key={group[0].key}>
-						{index > 0 && <li role="presentation" aria-hidden="true" className="mx-3 my-1 border-t border-rule" data-separator />}
-						{group.map((choice) => (
-							<li
-								key={choice.key}
-								id={optionId(choice)}
-								role="option"
-								// A reporter-added choice may exist in one language only; it is
-								// offered in that language, and says so to assistive technology.
-								lang={choice.lang}
-								aria-selected={choice === activeChoice}
-								// The highlighted choice: a stronger surface and an inset bar in
-								// the focus colour, so it reads at 3:1 against the list.
-								className={`touch-target flex cursor-pointer items-center px-3 font-sans text-ink ${
-									choice === activeChoice ? "bg-surface-4 shadow-[inset_4px_0_0_var(--color-focus)]" : ""
-								}`}
-								// Pointing at a choice highlights it, so hover and the
-								// keyboard's highlight are always the same one.
-								onMouseMove={() => {
-									const index = flat.indexOf(choice)
-									if (index !== active) setActive(index)
-								}}
-								// Keep focus in the field while a choice is pressed.
-								onMouseDown={(event) => event.preventDefault()}
-								onClick={() => choose(choice)}
-							>
-								{choice.label}
-							</li>
-						))}
-					</Fragment>
-				))}
+			<ul id={listId} role="listbox" aria-label={label} hidden={!expanded} className={choiceListClassName}>
+				<ChoiceOptions
+					groups={shown}
+					optionId={optionId}
+					activeKey={activeChoice?.key}
+					// The highlighted choice is the selected one: the combobox with list autocomplete.
+					isSelected={(choice) => choice.key === activeChoice?.key}
+					onPoint={(choice) => setActive(flat.findIndex((entry) => entry.key === choice.key))}
+					onPick={choose}
+				/>
 			</ul>
 			{/* Always in the page and empty until nothing matches, so the message is announced when it appears. */}
 			<p

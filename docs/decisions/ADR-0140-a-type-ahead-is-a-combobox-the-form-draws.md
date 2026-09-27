@@ -17,6 +17,10 @@ Accepted. This ADR **amends**
 on one point: a type-ahead now draws the separators between pin groups.
 Everything else in ADR-0136 stands.
 
+Extended by
+[ADR-0150](ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md):
+the single-select and the multi-select picker draw the same list.
+
 ## Context
 
 The report form showed a type-ahead question as an `<input list>` with a

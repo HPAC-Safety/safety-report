@@ -1227,12 +1227,17 @@ Scenario: A reporter types a type-ahead value its list does not offer
 
 @REQ-QB-163
 @ui
-Scenario: A type-ahead's list fits a phone screen and scrolls when long
-  Given a type-ahead question offers 30 choices
+Scenario Outline: A type-ahead's or single-select's list fits a phone screen and scrolls when long
+  Given a <type> question offers 30 choices
   When a reporter using English opens that question on a screen 360 pixels wide
   And they open the field's list by pressing the caret
   Then the list fits within the screen's width, and the page does not scroll sideways
   And the list scrolls within itself
+
+Examples:
+  | type          |
+  | type-ahead    |
+  | single-select |
 
 @REQ-QB-171
 @ui
@@ -1242,6 +1247,84 @@ Scenario: A type-ahead choice picked from the list is sent as that choice, not m
   Then the list is closed and the field holds "Other"
   When they consent on the next page and send the report
   Then the answer names the second "Other" choice's identifier and carries no typed text
+
+@REQ-QB-208
+@ui
+Scenario Outline: A single-select question is a picker the form draws, not the browser's select
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  Then the question is a combobox field with a caret showing "Choose one", described by its help text, and no browser select
+  When they open the field's list by <opening>
+  Then a list as wide as the field opens directly beneath it, offering "Choose one", "Cooper's", "Mount 7", "Woodside"
+  And the list is drawn like a type-ahead's list
+
+Examples:
+  | opening                         |
+  | clicking the field              |
+  | pressing Enter                  |
+  | pressing Space                  |
+  | pressing Alt and the down arrow |
+  | pressing the down arrow         |
+
+@REQ-QB-209
+@ui
+Scenario: A reporter picks a single-select choice from the keyboard and the pointer
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they open the field's list by pressing the down arrow
+  Then "Choose one" is the field's active option
+  When they press the down arrow
+  Then "Cooper's" is the field's active option
+  When they press End
+  Then "Woodside" is the field's active option
+  When they press Home
+  Then "Choose one" is the field's active option
+  When they type "m"
+  Then "Mount 7" is the field's active option
+  When they press Enter
+  Then the list is closed and the field holds "Mount 7"
+  When they press Space
+  Then its list is open, with "Mount 7" chosen and active
+  When they press the up arrow
+  And they press Escape
+  Then the list is closed and the field holds "Mount 7"
+  When they open the field's list by pressing Alt and the down arrow
+  And they press the down arrow
+  And they press Space
+  Then the list is closed and the field holds "Woodside"
+  When they open the field's list by clicking the field
+  And they point at "Cooper's"
+  Then "Cooper's" is the field's active option
+  When they press outside the field
+  Then the list is closed and the field holds "Woodside"
+  When they open the field's list by pressing Enter
+  And they press Tab
+  Then the list is closed and the field holds "Woodside"
+
+@REQ-QB-210
+@ui
+Scenario: A single-select answer can be cleared back to unanswered
+  Given a single-select question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they pick "Mount 7" from the field's list
+  Then the list is closed and the field holds "Mount 7"
+  When they pick "Choose one" from the field's list
+  Then the list is closed and the field holds "Choose one"
+  And the browser's saved report holds no answer to that question
+
+@REQ-QB-211
+@ui
+Scenario: A multi-select's list is drawn like a type-ahead's list, with a checkbox on each row
+  Given a multi-select question offers "United States" and "Canada" pinned first, "Other" pinned last, and "Mexico", "Brazil", and "France" not pinned
+  When a reporter using English opens that question
+  And they open the multi-select's list
+  Then the list is drawn like a type-ahead's list
+  And each choice is a row at least 44 pixels tall holding a checkbox
+  When they point at "Brazil"
+  Then the "Brazil" row is highlighted as a type-ahead's active option is
+  When they move to the "France" checkbox with the keyboard and press Space
+  Then the "France" row is highlighted as a type-ahead's active option is
+  And "France" is checked, and the list stays open
 
 @REQ-QB-179
 Scenario Outline: A picker or type-ahead's choices may depend on another picker or type-ahead

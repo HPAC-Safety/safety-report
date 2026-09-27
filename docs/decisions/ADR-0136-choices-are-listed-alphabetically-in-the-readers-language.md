@@ -19,7 +19,9 @@ is replaced by pinning it. Everything else in ADR-0095 stands, including that
 editing choices never revises or forks the question.
 
 Amended by [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md)
-(a type-ahead is a combobox the form draws, so it draws the separators too).
+(a type-ahead is a combobox the form draws, so it draws the separators too),
+and by [ADR-0150](ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md)
+(a single-select is a combobox the form draws, so its separator is a list row).
 
 ## Context
 
@@ -61,7 +63,10 @@ after the choices pinned first and before the choices pinned last.**
 - **Separators.** A separator is drawn between non-empty groups where the
   control can draw one. In a multi-select it is a divider between checkbox
   groups. In a single-select `<select>` it is a disabled `──` option, because
-  the React version in use does not allow `<hr>` inside `<select>`. A native
+  the React version in use does not allow `<hr>` inside `<select>` (amended by
+  [ADR-0150](ADR-0150-a-single-select-is-a-select-only-combobox-the-form-draws.md):
+  the single-select's list is drawn by the form, and the separator is a row of
+  it). A native
   `<datalist>` cannot draw one, so a type-ahead only keeps the group order (amended by [ADR-0140](ADR-0140-a-type-ahead-is-a-combobox-the-form-draws.md): the type-ahead now draws them).
 - **The editor re-sorts only when it opens.** It lists options the way the
   form does when a question is opened, and keeps them in place while the

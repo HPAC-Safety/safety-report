@@ -1,5 +1,5 @@
 import { createBdd } from "playwright-bdd"
-import { expect, type Page } from "@playwright/test"
+import { expect, type Locator, type Page } from "@playwright/test"
 
 import { signInAs, stubAuth } from "./auth"
 import {
@@ -7,6 +7,7 @@ import {
 	dateTimeFormQuestions,
 	defaultFormQuestions,
 	multiSelectFormQuestions,
+	pickChoice,
 	typeAheadFormQuestions,
 	forgetDraftInBrowser,
 	readDraftFromBrowser,
@@ -100,7 +101,7 @@ async function reachLastPage(page: Page) {
 	await goNext(page) // narrative -> injured
 	await answerYesNo(page, "Was anyone injured?", "No")
 	await goNext(page) // injured -> group
-	await page.getByLabel("Type of aircraft").selectOption({ label: "Hang glider" })
+	await pickChoice(page, "Type of aircraft", "Hang glider")
 	await page.getByLabel("Model").fill("Synthetic 1")
 	await goNext(page) // group -> attachments
 	await goNext(page) // attachments -> consent
@@ -351,7 +352,7 @@ Then("a Back control returns to the previous page without losing its answer", as
 
 Then("the group heading and every child render together on one page", async ({ page }) => {
 	await expect(page.getByRole("group", { name: "Aircraft:" })).toBeVisible()
-	await expect(page.getByLabel("Type of aircraft")).toBeVisible()
+	await expect(page.getByRole("combobox", { name: "Type of aircraft" })).toBeVisible()
 	await expect(page.getByLabel("Model")).toBeVisible()
 })
 
@@ -480,7 +481,7 @@ Then("media previews are never required to complete a report", async ({ page }) 
 	await goNext(page)
 	await answerYesNo(page, "Was anyone injured?", "No")
 	await goNext(page)
-	await page.getByLabel("Type of aircraft").selectOption({ label: "Hang glider" })
+	await pickChoice(page, "Type of aircraft", "Hang glider")
 	await page.getByLabel("Model").fill("Synthetic 1")
 	await goNext(page)
 	await goNext(page) // Attachments left empty — this must succeed.
@@ -757,6 +758,11 @@ Then("the continue dialog lists the date as {string} and the time as {string}", 
  * group), so the order on screen is the browser's own.
  */
 
+/** A question type as a scenario names it: "type-ahead", "single-select", "multi-select", or the API's own name. */
+function choiceType(named: string): string {
+	return ({ "type-ahead": "autocomplete", "single-select": "single_select", "multi-select": "multi_select" } as Record<string, string>)[named] ?? named
+}
+
 function stubChoice(labelEn: string, labelFr = labelEn, pin = "none", onlyIn: string | null = null): StubOption {
 	const code = labelEn.toLowerCase().replace(/[^a-z0-9]+/g, "_")
 	return { id: `choice-${code}`, code, labelEn, labelFr, onlyIn, pin }
@@ -766,7 +772,7 @@ Given(
 	"a {word} question offers {string} \\/ {string}, {string} \\/ {string}, {string} \\/ {string}, and {string} \\/ {string}, none pinned",
 	async ({ page }, type: string, en1: string, fr1: string, en2: string, fr2: string, en3: string, fr3: string, en4: string, fr4: string) => {
 		const options = [stubChoice(en1, fr1), stubChoice(en2, fr2), stubChoice(en3, fr3), stubChoice(en4, fr4)]
-		await openForm(page, choiceFormQuestions(type === "type-ahead" ? "autocomplete" : type, options))
+		await openForm(page, choiceFormQuestions(choiceType(type), options))
 	},
 )
 
@@ -780,7 +786,7 @@ Given(
 			...[noneA, noneB, noneC].map((label) => stubChoice(label)),
 			stubChoice(last, last, "last"),
 		]
-		await openForm(page, choiceFormQuestions(type, options))
+		await openForm(page, choiceFormQuestions(choiceType(type), options))
 	},
 )
 
@@ -792,32 +798,22 @@ Given(
 	},
 )
 
-/** What the question's control lists, in order, with "|" where a separator is drawn. */
+/** What the question's control lists, in order, with "|" where a separator is drawn; a single-select's "Choose one" row is not a choice. */
 async function listedChoices(page: Page): Promise<string[]> {
 	const main = page.getByRole("main")
 	await expect(main.getByText("Which one applies?").first()).toBeVisible()
 
-	if ((await main.locator("select").count()) > 0) {
-		return main
-			.locator("select option")
-			.evaluateAll((options) =>
-				(options as HTMLOptionElement[])
-					.filter((option) => option.value !== "" || option.hasAttribute("data-separator"))
-					.map((option) => (option.hasAttribute("data-separator") ? "|" : (option.textContent ?? "").trim())),
-			)
-	}
-
 	const combobox = main.getByRole("combobox")
 	if ((await combobox.count()) > 0) {
 		if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
-		return listEntries(page)
+		return listEntries(page, { placeholder: false })
 	}
 
 	const trigger = main.getByRole("button", { name: /Which one applies\?/ })
 	if ((await trigger.getAttribute("aria-expanded")) !== "true") await trigger.click()
 	return main
-		.locator('[id$="-options"] label, [id$="-options"] hr')
-		.evaluateAll((entries) => entries.map((entry) => (entry.tagName === "HR" ? "|" : (entry.textContent ?? "").trim())))
+		.locator('[id$="-options"] label, [id$="-options"] [data-separator]')
+		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
 }
 
 Then(/^its choices are listed (".*")$/, async ({ page }, quoted: string) => {
@@ -841,12 +837,39 @@ Then("a separator is drawn after {string} and after {string}", async ({ page }, 
 const typeAheadField = (page: Page) => page.getByRole("main").getByRole("combobox")
 const typeAheadList = (page: Page) => page.getByRole("main").getByRole("listbox")
 
-/** The type-ahead's open list, in order, with "|" where a separator is drawn. */
-async function listEntries(page: Page): Promise<string[]> {
+/** The field's open list, in order, with "|" where a separator is drawn. */
+async function listEntries(page: Page, { placeholder = true } = {}): Promise<string[]> {
 	await expect(typeAheadList(page)).toBeVisible()
+	const entries = placeholder ? '[role="option"], [data-separator]' : '[role="option"]:not([data-placeholder]), [data-separator]'
 	return typeAheadList(page)
-		.locator('[role="option"], [data-separator]')
-		.evaluateAll((entries) => entries.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
+		.locator(entries)
+		.evaluateAll((found) => found.map((entry) => (entry.hasAttribute("data-separator") ? "|" : (entry.textContent ?? "").trim())))
+}
+
+/** Whether the question's field is a single-select, a button, rather than a type-ahead's text input (ADR-0150). */
+async function isSingleSelect(page: Page): Promise<boolean> {
+	return (await typeAheadField(page).evaluate((element) => element.tagName)) === "BUTTON"
+}
+
+/** The page's token `name` as a computed colour, to compare a drawn colour with. */
+async function tokenColour(page: Page, name: string): Promise<string> {
+	return page.evaluate((token) => {
+		const probe = document.createElement("div")
+		probe.style.color = `var(${token})`
+		document.body.appendChild(probe)
+		const color = getComputedStyle(probe).color
+		probe.remove()
+		return color
+	}, name)
+}
+
+/** Expects `row` drawn as a type-ahead's highlighted option: the stronger surface and the inset focus bar (ChoiceList). */
+async function expectHighlighted(page: Page, row: Locator) {
+	const surface = await tokenColour(page, "--color-surface-4")
+	const focus = await tokenColour(page, "--color-focus")
+	await expect(row).toHaveCSS("background-color", surface)
+	// Tailwind composes several shadows; the inset bar is one of them.
+	await expect.poll(() => row.evaluate((element) => getComputedStyle(element).boxShadow)).toContain(`${focus} 4px 0px 0px 0px inset`)
 }
 
 function quotedList(quoted: string): string[] {
@@ -854,16 +877,16 @@ function quotedList(quoted: string): string[] {
 }
 
 Given(
-	"a type-ahead question with the help text {string} offers {string}, {string}, and {string}, none pinned",
-	async ({ page }, help: string, first: string, second: string, third: string) => {
+	"a {word} question with the help text {string} offers {string}, {string}, and {string}, none pinned",
+	async ({ page }, type: string, help: string, first: string, second: string, third: string) => {
 		const options = [stubChoice(first), stubChoice(second), stubChoice(third)]
-		await openForm(page, choiceFormQuestions("autocomplete", options, { helpTextEn: help, helpTextFr: help }))
+		await openForm(page, choiceFormQuestions(choiceType(type), options, { helpTextEn: help, helpTextFr: help }))
 	},
 )
 
-Given("a type-ahead question offers {int} choices", async ({ page }, count: number) => {
+Given("a {word} question offers {int} choices", async ({ page }, type: string, count: number) => {
 	const options = Array.from({ length: count }, (_, index) => stubChoice(`Launch site ${index + 1}`))
-	await openForm(page, choiceFormQuestions("autocomplete", options))
+	await openForm(page, choiceFormQuestions(choiceType(type), options))
 })
 
 When("a reporter using English opens that question on a screen {int} pixels wide", async ({ page }, width: number) => {
@@ -897,11 +920,22 @@ Then(
 
 When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) => {
 	const field = typeAheadField(page)
-	if (opening === "pressing the caret") await page.getByRole("button", { name: "Show choices" }).click()
-	else if (opening === "clicking the field") await field.click()
-	else if (opening === "pressing Alt and the down arrow") {
+	const keys: Record<string, string> = {
+		"pressing Alt and the down arrow": "Alt+ArrowDown",
+		"pressing the down arrow": "ArrowDown",
+		"pressing Enter": "Enter",
+		"pressing Space": "Space",
+	}
+	if (opening === "pressing the caret") {
+		// A single-select's caret is drawn inside the field itself.
+		if (await isSingleSelect(page)) {
+			const box = (await field.boundingBox())!
+			await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
+		} else await page.getByRole("button", { name: "Show choices" }).click()
+	} else if (opening === "clicking the field") await field.click()
+	else if (keys[opening]) {
 		await field.focus()
-		await page.keyboard.press("Alt+ArrowDown")
+		await page.keyboard.press(keys[opening])
 	} else {
 		const typed = /^typing "(.*)"$/.exec(opening)
 		if (!typed) throw new Error(`Unknown way to open the list: ${opening}`)
@@ -940,10 +974,120 @@ When("they type {string} in the field and press the down arrow twice", async ({ 
 })
 
 Then("{string} is the field's active option", async ({ page }, label: string) => {
-	const option = typeAheadList(page).getByRole("option", { name: label })
-	await expect(option).toHaveAttribute("aria-selected", "true")
+	const option = typeAheadList(page).getByRole("option", { name: label, exact: true })
+	// A type-ahead selects the highlighted option; a single-select keeps aria-selected for the chosen one (ADR-0150).
+	if (!(await isSingleSelect(page))) await expect(option).toHaveAttribute("aria-selected", "true")
 	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", (await option.getAttribute("id"))!)
+	await expectHighlighted(page, option)
 	await expect(typeAheadField(page)).toBeFocused()
+})
+
+Then("its list is open, with {string} chosen and active", async ({ page }, label: string) => {
+	const option = typeAheadList(page).getByRole("option", { name: label, exact: true })
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
+	await expect(option).toHaveAttribute("aria-selected", "true")
+	await expect(typeAheadList(page).locator('[role="option"][aria-selected="true"]')).toHaveCount(1)
+	await expect(typeAheadField(page)).toHaveAttribute("aria-activedescendant", (await option.getAttribute("id"))!)
+})
+
+When("they press Home", async ({ page }) => {
+	await page.keyboard.press("Home")
+})
+
+When("they press End", async ({ page }) => {
+	await page.keyboard.press("End")
+})
+
+When("they press Space", async ({ page }) => {
+	await page.keyboard.press("Space")
+})
+
+When("they type {string}", async ({ page }, typed: string) => {
+	await page.keyboard.type(typed)
+})
+
+When("they point at {string}", async ({ page }, label: string) => {
+	// A multi-select's row is its checkbox's label; a single-select's is an option.
+	const multi = page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label })
+	if ((await multi.count()) > 0) await multi.hover()
+	else await typeAheadList(page).getByRole("option", { name: label, exact: true }).hover()
+})
+
+When("they pick {string} from the field's list", async ({ page }, label: string) => {
+	await pickChoice(page, "Which one applies?", label)
+})
+
+Then("the browser's saved report holds no answer to that question", async ({ page }) => {
+	await expect
+		.poll(async () => ((await readDraftFromBrowser(page)) as { answers?: Record<string, unknown> } | null)?.answers?.["rev-choice_question"])
+		.toBeUndefined()
+})
+
+Then(
+	"the question is a combobox field with a caret showing {string}, described by its help text, and no browser select",
+	async ({ page }, placeholder: string) => {
+		const field = page.getByRole("combobox", { name: "Which one applies?" })
+		await expect(field).toBeVisible()
+		await expect(field).toHaveText(placeholder)
+		await expect(field).toHaveAccessibleDescription("Pick the nearest site")
+		await expect(field).toHaveAttribute("aria-expanded", "false")
+		await expect(field.locator("svg")).toBeVisible()
+		await expect(page.getByRole("main").locator("select")).toHaveCount(0)
+		// Drawn like the form's other fields, in the design-system border.
+		await expect(field).toHaveCSS("border-top-color", await tokenColour(page, "--color-rule"))
+	},
+)
+
+Then("the list is drawn like a type-ahead's list", async ({ page }) => {
+	const list = page.getByRole("main").locator('[role="listbox"]:visible, [id$="-options"]').first()
+	await expect(list).toBeVisible()
+	// The shared list's surface, border, and shadow (ChoiceList).
+	await expect(list).toHaveCSS("background-color", await tokenColour(page, "--color-surface"))
+	await expect(list).toHaveCSS("border-top-color", await tokenColour(page, "--color-rule"))
+	await expect(list).toHaveCSS("border-top-width", "1px")
+	expect(await list.evaluate((element) => getComputedStyle(element).boxShadow)).not.toBe("none")
+	await expect(list).toHaveCSS("overflow-y", "auto")
+	// A separator, where there is one, is a row of the list, not a rule of its own.
+	await expect(list.locator("hr")).toHaveCount(0)
+	for (const separator of await list.locator("[data-separator]").all()) {
+		expect(await separator.evaluate((element) => element.tagName)).toBe("LI")
+	}
+})
+
+When("they open the multi-select's list", async ({ page }) => {
+	await page.getByRole("main").getByRole("button", { name: /Which one applies\?/ }).click()
+})
+
+Then("each choice is a row at least 44 pixels tall holding a checkbox", async ({ page }) => {
+	const rows = page.getByRole("main").locator('[id$="-options"] label')
+	await expect(rows).toHaveCount(6)
+	for (const row of await rows.all()) {
+		expect((await row.boundingBox())!.height).toBeGreaterThanOrEqual(44)
+		await expect(row.getByRole("checkbox")).toHaveCount(1)
+		// The type-ahead's row inset (ChoiceList).
+		await expect(row).toHaveCSS("padding-left", "12px")
+	}
+})
+
+Then("the {string} row is highlighted as a type-ahead's active option is", async ({ page }, label: string) => {
+	await expectHighlighted(page, page.getByRole("main").locator('[id$="-options"] label').filter({ hasText: label }))
+})
+
+When("they move to the {string} checkbox with the keyboard and press Space", async ({ page }, label: string) => {
+	// Tab from the checkbox before it, so focus arrives by keyboard and shows.
+	const boxes = page.getByRole("main").getByRole("checkbox")
+	const labels = await boxes.evaluateAll((found) => found.map((entry) => entry.closest("label")?.textContent?.trim() ?? ""))
+	await boxes.nth(labels.indexOf(label) - 1).focus()
+	await page.keyboard.press("Tab")
+	await expect(page.getByRole("checkbox", { name: label })).toBeFocused()
+	// Move the pointer off the list, so only keyboard focus can highlight a row.
+	await page.mouse.move(0, 0)
+	await page.keyboard.press("Space")
+})
+
+Then("{string} is checked, and the list stays open", async ({ page }, label: string) => {
+	await expect(page.getByRole("checkbox", { name: label })).toBeChecked()
+	await expect(page.getByRole("main").locator('[id$="-options"]')).toBeVisible()
 })
 
 When("they press Enter", async ({ page }) => {
@@ -986,7 +1130,9 @@ Then("its list is open", async ({ page }) => {
 Then("the list is closed and the field holds {string}", async ({ page }, value: string) => {
 	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "false")
 	await expect(typeAheadList(page)).toBeHidden()
-	await expect(typeAheadField(page)).toHaveValue(value)
+	// A single-select shows its choice as the field's text; a type-ahead holds it as the input's value.
+	if (await isSingleSelect(page)) await expect(typeAheadField(page)).toHaveText(value)
+	else await expect(typeAheadField(page)).toHaveValue(value)
 })
 
 Then("the list says no choice matches", async ({ page }) => {
@@ -1011,8 +1157,9 @@ Then("the list scrolls within itself", async ({ page }) => {
 	}))
 	expect(scrollHeight).toBeGreaterThan(clientHeight)
 	expect(overflowY).toBe("auto")
-	// The last choice is reached by scrolling the list, not the page.
-	await page.keyboard.press("ArrowUp")
+	// The last choice is reached by scrolling the list, not the page. A
+	// type-ahead's Up starts from the end; a single-select's End jumps there.
+	await page.keyboard.press((await isSingleSelect(page)) ? "End" : "ArrowUp")
 	await expect(list.getByRole("option", { name: "Launch site 30" })).toBeInViewport()
 })
 

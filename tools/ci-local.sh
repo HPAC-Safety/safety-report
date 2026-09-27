@@ -4,15 +4,12 @@
 # the pull request is opened (ADR-0145).
 #
 #     tools/ci-local.sh --body <pr-body.md> [--job <id>]... [--verbose]
-#                       [--allow-gh-token]
 #
 #   --body <file>      the draft pull request body; linked-issue,
 #                      no-session-link, screenshots, and feature-coverage judge
 #                      it as CI will
 #   --job <id>         run only this job (repeatable); one of the allowed jobs
 #   --verbose          stream act's full output instead of one line per job
-#   --allow-gh-token   use `gh auth token` when HPAC_ACT_TOKEN is unset (also
-#                      HPAC_ACT_ALLOW_GH_TOKEN=1); it can write, so it is opt-in
 #
 # Without --job it runs, stopping at the first failure:
 #
@@ -26,23 +23,29 @@
 # terraform plan or apply, deploy-*, or terraform-relock: those write to the
 # repository or to AWS, and nothing here can name them.
 #
-# Coverage parity: the coverage job runs unchanged. It downloads the same
-# baseline artifact from main's last green CI run that CI does, and measures
+# Coverage parity: the coverage job runs as in CI. It gates against the same
+# baseline artifact, from main's last green CI run, that CI does, and measures
 # this branch on Ubuntu 24.04 with the SDK global.json names. A run whose
 # coverage merged a different number of per-project reports than there are
 # test projects fails, because its verdict would not be CI's.
 #
-# Secrets: only GITHUB_TOKEN reaches act, through the environment, never argv.
-# It is HPAC_ACT_TOKEN: a fine-grained, read-only token for this repository
-# (Actions: read, Contents: read, Metadata: read). act does not enforce a
-# workflow's `permissions:`, so every job and action gets this token as is. The
-# synthetic event names head repository `local/act`, so every write path
-# guarded by "same repository" (the coverage comment) takes its fork branch.
+# No token reaches act. The repository is public, so every job runs
+# anonymously; act's GITHUB_TOKEN is set explicitly empty, because act fills a
+# missing one from `gh auth token`. The one thing an anonymous caller cannot do
+# is download an artifact (401 even on a public repository), and the coverage
+# ratchet needs one: main's last green coverage-report. So this script
+# downloads it on the host, with your `gh` login, before act starts, into
+# .ci-local/baseline/ in the clone act copies; the coverage job reads it from
+# there and prints the run it came from. Without a gh login, a run that
+# includes coverage stops before act starts: a floor-only pass would not be
+# CI's verdict. The synthetic event names head repository `local/act`, so
+# every write path guarded by "same repository" (the coverage comment) takes
+# its fork branch.
 #
 # Exit codes: 0 every job passed; 1 a job failed; 2 a precondition or setup
-# step failed (usage, token, act version, dirty tree, branch behind
-# origin/main, Docker down, clone, image); 3 another run held the lock past
-# HPAC_CI_LOCAL_WAIT seconds (default 3600).
+# step failed (usage, gh login, act version, dirty tree, branch behind
+# origin/main, Docker down, clone, baseline, image); 3 another run held the
+# lock past HPAC_CI_LOCAL_WAIT seconds (default 3600).
 #
 # Full logs land in artifacts/ci-local/<workflow>[-<job>].log (gitignored).
 
@@ -56,7 +59,7 @@ ROOT=$(git rev-parse --show-toplevel) || die "not inside a git checkout"
 cd "$ROOT" || die "cannot enter $ROOT"
 
 usage() {
-	sed -n '3,47p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
+	sed -n '3,51p' "$0" | sed 's/^#\{0,1\} \{0,1\}//'
 	exit "${1:-0}"
 }
 
@@ -65,13 +68,11 @@ usage() {
 BODY=''
 JOBS=''
 VERBOSE=0
-ALLOW_GH_TOKEN=${HPAC_ACT_ALLOW_GH_TOKEN:-0}
 while [ $# -gt 0 ]; do
 	case "$1" in
 		--body) [ $# -ge 2 ] || die "--body needs a file"; BODY=$2; shift 2 ;;
 		--job) [ $# -ge 2 ] || die "--job needs a job id"; JOBS="$JOBS $2"; shift 2 ;;
 		--verbose) VERBOSE=1; shift ;;
-		--allow-gh-token) ALLOW_GH_TOKEN=1; shift ;;
 		-h|--help) usage 0 ;;
 		*) printf 'ci-local: unknown option: %s\n' "$1" >&2; usage 2 >&2 ;;
 	esac
@@ -95,22 +96,20 @@ for job in $JOBS; do
 	workflow_of "$job" >/dev/null || die "not an allowed job: $job"
 done
 
-# ---------------------------------------------------------------- the token --
+# ------------------------------------------------------------- the gh login --
 #
-# Checked before anything slow. The gh login is a full-scope token, and act
-# hands GITHUB_TOKEN to every job and third-party action regardless of the
-# workflow's `permissions:`, so using it is an explicit choice.
+# Checked before anything slow. Only the coverage job needs it, for main's
+# baseline artifact, which GitHub serves to no anonymous caller. The login
+# stays on the host: it never enters act, a container, or an action.
 
-if [ -n "${HPAC_ACT_TOKEN-}" ]; then
-	GITHUB_TOKEN=$HPAC_ACT_TOKEN
-elif [ "$ALLOW_GH_TOKEN" = 1 ]; then
-	warn "using your gh login (--allow-gh-token), which can write; act passes it to every job and action. A read-only HPAC_ACT_TOKEN is recommended (README.md)."
-	GITHUB_TOKEN=$(gh auth token) || die "gh auth token failed; run gh auth login"
-else
-	die "set HPAC_ACT_TOKEN to a fine-grained read-only token for this repository (README.md), or pass --allow-gh-token to use your gh login, which can write"
+NEED_BASELINE=0
+case " ${JOBS:- coverage} " in *' coverage '*) NEED_BASELINE=1 ;; esac
+if [ "$NEED_BASELINE" -eq 1 ]; then
+	command -v gh >/dev/null 2>&1 \
+		|| die "the coverage ratchet needs main's baseline artifact, which only an authenticated download can fetch; install gh (https://cli.github.com), then run gh auth login"
+	gh auth status >/dev/null 2>&1 \
+		|| die "the coverage ratchet needs main's baseline artifact, which only an authenticated download can fetch; run gh auth login"
 fi
-[ -n "$GITHUB_TOKEN" ] || die "the token is empty"
-export GITHUB_TOKEN
 
 # ------------------------------------------------------------ preconditions --
 
@@ -208,11 +207,47 @@ git -C "$WORK/repo" remote set-url origin "$ORIGIN_URL" || die "git remote set-u
 git -C "$WORK/repo" update-ref "refs/remotes/origin/main" "$BASE_SHA" || die "git update-ref failed"
 git -C "$WORK/repo" update-ref "refs/remotes/origin/$BRANCH" "$HEAD_SHA" || die "git update-ref failed"
 rm -f "$WORK/head.bundle"
+REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+
+# ------------------------------------------------------------ the baseline --
+#
+# The run CI's "Fetch the main baseline" step picks, found the same way: the
+# last successful push run of CI on main. .ci-local/ is gitignored, so the
+# jobs' own `git status` checks never see it, and act is told to copy ignored
+# paths (a fresh clone holds nothing else that is ignored). Only Cobertura.xml
+# is kept: the artifact's markdown and HTML would otherwise sit in the tree
+# the docs checks read. With no green run, or none carrying the artifact, CI
+# runs the floor alone, and so does this.
+
+if [ "$NEED_BASELINE" -eq 1 ]; then
+	BASELINE="$WORK/repo/.ci-local/baseline"
+	mkdir -p "$BASELINE" || die "cannot create $BASELINE"
+	RUN_ID=$(gh run list --repo "$REPOSITORY" --workflow CI --branch main --event push \
+		--status success --limit 1 --json databaseId --jq '.[0].databaseId // empty') \
+		|| die "could not list main's CI runs with gh; check gh auth status"
+	if [ -z "$RUN_ID" ]; then
+		say "Coverage baseline: none, main has no successful CI run; the floor alone applies, as in CI."
+		echo "No successful CI run on main yet. The ratchet will not run; the floor still applies." > "$BASELINE/notice"
+	elif gh run download "$RUN_ID" --repo "$REPOSITORY" --name coverage-report \
+		--dir "$WORK/baseline-download" >/dev/null 2>&1 \
+		&& [ -f "$WORK/baseline-download/Cobertura.xml" ]; then
+		mv "$WORK/baseline-download/Cobertura.xml" "$BASELINE/Cobertura.xml" \
+			|| die "cannot move the baseline into the clone"
+		echo "$RUN_ID" > "$BASELINE/run-id"
+		say "Coverage baseline: main run $RUN_ID, the run CI's ratchet uses."
+	else
+		live=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/artifacts?name=coverage-report" \
+			--jq '[.artifacts[] | select(.expired | not)] | length') \
+			|| die "could not download coverage-report from main run $RUN_ID, nor list its artifacts"
+		[ "$live" = 0 ] || die "could not download coverage-report from main run $RUN_ID; check gh auth status and retry"
+		say "Coverage baseline: none, main run $RUN_ID has no coverage-report; the floor alone applies, as in CI."
+		echo "main run $RUN_ID has no coverage-report artifact - it predates this job, or the artifact expired. Ratchet skipped; the floor still applies." > "$BASELINE/notice"
+	fi
+fi
 
 # -------------------------------------------------------------- the event --
 
-LOGIN=$(GH_TOKEN=$GITHUB_TOKEN gh api user --jq .login 2>/dev/null || echo local)
-REPOSITORY=$(printf '%s' "$ORIGIN_URL" | sed -E 's#^.*github\.com[:/]##; s#\.git$##')
+LOGIN=$(gh api user --jq .login 2>/dev/null || echo local)
 EVENT="$WORK/event.json"
 BODY="$BODY" LOGIN="$LOGIN" REPOSITORY="$REPOSITORY" BRANCH="$BRANCH" \
 HEAD_SHA="$HEAD_SHA" BASE_SHA="$BASE_SHA" node -e '
@@ -280,11 +315,16 @@ run_act() {
 		# a bare clone per job; the default one re-checks-out a shared working
 		# tree, and parallel jobs using one action (setup-node) raced on it:
 		# "Cannot find module .../setup-node@v7/dist/cache-save/index.js".
+		# GITHUB_TOKEN is given explicitly empty: act fills a missing one from
+		# `gh auth token`, and nothing in act may hold a token. The variables
+		# are unset too, so nothing act starts can read one from the environment.
+		# --use-gitignore=false copies the gitignored .ci-local/baseline/.
+		unset GITHUB_TOKEN GH_TOKEN GH_ENTERPRISE_TOKEN GITHUB_ENTERPRISE_TOKEN
 		# shellcheck disable=SC2086
 		if act pull_request -W ".github/workflows/$1" ${2:+-j "$2"} \
-			-P "ubuntu-latest=$IMAGE" --use-new-action-cache \
+			-P "ubuntu-latest=$IMAGE" --use-new-action-cache --use-gitignore=false \
 			--secret-file /dev/null --var-file /dev/null --env-file /dev/null \
-			-e "$EVENT" -s GITHUB_TOKEN $EXTRA; then
+			-s GITHUB_TOKEN= -e "$EVENT" $EXTRA; then
 			echo 0 > "$STATUS"
 		else
 			echo 1 > "$STATUS"
@@ -295,6 +335,11 @@ run_act() {
 	# Anything but a written 0 is a failure, including no status at all.
 	if [ "$(cat "$STATUS" 2>/dev/null)" != 0 ]; then
 		say "✗ $1${2:+ -j $2} failed; full log: $log"
+		if grep -aqi 'rate limit' "$log"; then
+			say "  A GitHub call inside act hit the anonymous rate limit, 60 an hour per IP address."
+			say "  Wait for it to reset (curl -s https://api.github.com/rate_limit shows when), then rerun."
+			say "  ci-local never gives act a token instead."
+		fi
 		return 1
 	fi
 }
@@ -306,6 +351,10 @@ run_act() {
 # suite's coverage was lost, and the verdict is not CI's.
 check_coverage() {
 	grep -aq 'ci-local:coverage:begin' "$LOGS"/ci*.log 2>/dev/null || return 0
+	if ! grep -aq 'ci-local:github-token=empty' "$LOGS"/ci*.log; then
+		say "✗ the coverage job did not report an empty github.token; nothing in act may hold a token"
+		return 1
+	fi
 	say ""
 	cat "$LOGS"/ci*.log | sed -n '/ci-local:coverage:begin/,/ci-local:coverage:end/p' \
 		| sed 's/^\[[^]]*\] *| \{0,1\}//' \

@@ -128,9 +128,9 @@ names and step numbers.
    - It runs committed `HEAD`: commit first. It refuses a dirty tree or a
      `HEAD` without a fresh `origin/main`, and waits while another run holds
      the machine's lock.
-   - Token: `HPAC_ACT_TOKEN`, a fine-grained read-only token for this
-     repository (Actions, Contents, Metadata: read). Without it the script
-     exits 2; `--allow-gh-token` opts in to the `gh` login, which can write.
+   - No token: act gets none. The script downloads main's coverage baseline
+     on the host with the `gh` login; without one, a run that includes
+     `coverage` exits 2 ("run gh auth login").
    - One job: `--job <id>`, repeatable (a body edit: `--job linked-issue
      --job feature-coverage`).
    - Exit 0 passed, 1 a job failed (or coverage lost a per-project report),

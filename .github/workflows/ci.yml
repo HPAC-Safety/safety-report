@@ -380,7 +380,7 @@ jobs:
       # it, so nothing but a merged commit sets the bar (ADR-0147).
       - name: Fetch the main baseline
         id: baseline
-        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && !env.ACT
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -403,6 +403,27 @@ jobs:
             echo "path=none" >> "$GITHUB_OUTPUT"
           fi
 
+      # Under act (tools/ci-local.sh) the job has no token, and GitHub answers an
+      # anonymous artifact download with 401 even on a public repository. So the
+      # wrapper downloads the same run's coverage-report on the host, with the
+      # developer's gh login, into the gitignored .ci-local/baseline/, and this
+      # reads it. Permanent: act never receives a token, and the wrapper fails a
+      # run whose job reports holding one. ADR-0145.
+      - name: The main baseline tools/ci-local.sh fetched
+        id: baseline-local
+        if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && env.ACT
+        env:
+          JOB_TOKEN: ${{ github.token }}
+        run: |
+          echo "ci-local:github-token=$([ -n "$JOB_TOKEN" ] && echo present || echo empty)"
+          if [ -f .ci-local/baseline/Cobertura.xml ]; then
+            echo "Baseline from main run $(cat .ci-local/baseline/run-id)."
+            echo "path=./.ci-local/baseline/Cobertura.xml" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::$(cat .ci-local/baseline/notice 2>/dev/null || echo 'No baseline from tools/ci-local.sh. Ratchet skipped; the floor still applies.')"
+            echo "path=none" >> "$GITHUB_OUTPUT"
+          fi
+
       # Output is captured to comment.md here, once, rather than re-run by the
       # comment step below - the script writes to $GITHUB_STEP_SUMMARY as a
       # side effect, and running it twice duplicated the table in the job
@@ -415,7 +436,7 @@ jobs:
             echo "<!-- coverage-gate -->"
             node tools/coverage-gate.mjs \
               --report ./artifacts/report/Cobertura.xml \
-              --baseline "${{ steps.baseline.outputs.path || 'none' }}" \
+              --baseline "${{ steps.baseline.outputs.path || steps.baseline-local.outputs.path || 'none' }}" \
               --min-line 80 --min-branch 70
           } 2>&1 | tee comment.md
 

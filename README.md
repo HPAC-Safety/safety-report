@@ -195,12 +195,14 @@ installs from the release, checked against `.act-checksums`. `--job <id>`
 runs one job. GitHub stays the authority: a local pass is necessary, not
 sufficient.
 
-It passes act one secret, `GITHUB_TOKEN`, read from `HPAC_ACT_TOKEN`. Create a
-[fine-grained token](https://github.com/settings/personal-access-tokens/new)
-for this repository only, with **Actions**, **Contents**, and **Metadata** set
-to read. Without it the script stops. `--allow-gh-token` uses your `gh` login
-instead, which can write; act hands it to every job and action, so it is
-opt-in.
+It needs no token. act gets none, and every job runs anonymously, since the
+repository is public. The one exception is the coverage baseline: GitHub
+serves no artifact to an anonymous caller, so the script downloads main's last
+green `coverage-report` on your machine with your `gh` login and hands the
+file to the coverage job. Run `gh auth login` once; without it, a run that
+includes coverage stops before it starts. If a job hits GitHub's anonymous
+rate limit (60 requests an hour per IP address), the script says so; wait for
+it to reset.
 
 ## Repository map
 

@@ -1166,19 +1166,42 @@ Scenario: A multi-select answer on the report page is listed as the form lists i
 
 @REQ-QB-159
 @ui
-Scenario Outline: A type-ahead question is a picker the form draws, not the browser's suggestion list
+Scenario Outline: A type-ahead question is a field the form draws, with no caret, and opens with a hint before 3 characters
   Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
   When a reporter using English opens that question
-  Then the question is a combobox field with a caret, described by its help text, and no browser suggestion list
+  Then the question is a combobox field with no caret, described by its help text, and no browser suggestion list
   When they open the field's list by <opening>
-  Then a list as wide as the field opens directly beneath it, offering "Cooper's", "Mount 7", "Woodside"
+  Then the list opens directly beneath the field, as wide as it, offering only the hint to type 3 or more letters
 
 Examples:
   | opening                         |
-  | pressing the caret              |
   | clicking the field              |
   | pressing Alt and the down arrow |
   | typing "o"                      |
+
+@REQ-QB-228
+@ui
+Scenario: Typing 3 characters into a type-ahead reveals its matching choices, and deleting back brings the hint
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "Mo" in the field
+  Then the list offers only the hint to type 3 or more letters
+  When they type "u" in the field
+  Then a list as wide as the field opens directly beneath it, offering "Mount 7"
+  When they press Backspace
+  Then the list offers only the hint to type 3 or more letters
+
+@REQ-QB-229
+@ui
+Scenario: Below 3 characters, a type-ahead's arrow keys and Enter pick nothing
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  When a reporter using English opens that question
+  And they type "Mo" in the field
+  And they press the down arrow
+  And they press the up arrow
+  And they press Enter
+  Then the list offers only the hint to type 3 or more letters
+  And the field holds "Mo"
 
 @REQ-QB-160
 @ui
@@ -1192,28 +1215,28 @@ Examples:
   | typed | offered                           |
   | emeu  | "Émeu"                            |
   | CRÉ   | "Crécerelle"                      |
-  | e     | "Aigle", "Crécerelle", "Émeu"     |
+  | aig   | "Aigle"                           |
 
 @REQ-QB-161
 @ui
 Scenario: A reporter picks a type-ahead choice from the keyboard
-  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Cooper's", none pinned
+  Given a type-ahead question with the help text "Pick the nearest site" offers "Woodside", "Mount 7", and "Mount Fromme", none pinned
   When a reporter using English opens that question
-  And they type "o" in the field and press the down arrow twice
-  Then "Mount 7" is the field's active option
+  And they type "Mou" in the field and press the down arrow twice
+  Then "Mount Fromme" is the field's active option
   When they press the up arrow
-  Then "Cooper's" is the field's active option
-  When they press the down arrow
   Then "Mount 7" is the field's active option
+  When they press the down arrow
+  Then "Mount Fromme" is the field's active option
   When they press Enter
-  Then the list is closed and the field holds "Mount 7"
+  Then the list is closed and the field holds "Mount Fromme"
   When they press Alt and the down arrow
   Then its list is open
   When they press Escape
-  Then the list is closed and the field holds "Mount 7"
-  When they open the field's list by pressing the caret
+  Then the list is closed and the field holds "Mount Fromme"
+  When they open the field's list by clicking the field
   And they press outside the field
-  Then the list is closed and the field holds "Mount 7"
+  Then the list is closed and the field holds "Mount Fromme"
 
 @REQ-QB-162
 @ui
@@ -1230,14 +1253,24 @@ Scenario: A reporter types a type-ahead value its list does not offer
 Scenario Outline: A type-ahead's or single-select's list fits a phone screen and scrolls when long
   Given a <type> question offers 30 choices
   When a reporter using English opens that question on a screen 360 pixels wide
-  And they open the field's list by pressing the caret
+  And they open the field's list by <opening>
   Then the list fits within the screen's width, and the page does not scroll sideways
   And the list scrolls within itself
 
 Examples:
-  | type          |
-  | type-ahead    |
-  | single-select |
+  | type          | opening               |
+  | type-ahead    | typing "Launch site"  |
+  | single-select | pressing the caret    |
+
+@REQ-QB-230
+@ui
+Scenario: A dependent type-ahead's choices show a hint below 3 characters and filter at 3, exactly as an independent one's do
+  Given the type-ahead "Model" question's choices depend on the single-select "Make" question
+  When they answer "Make" with "Niviuk"
+  And they open "Model"'s list by clicking the field
+  Then "Model"'s list offers only the hint to type 3 or more letters
+  When they type "Iku" in "Model"
+  Then "Model"'s list offers only "Ikuma"
 
 @REQ-QB-171
 @ui

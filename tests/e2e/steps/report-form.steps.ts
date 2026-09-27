@@ -644,7 +644,12 @@ When("a reporter using {word} opens that question", async ({ page }, language: s
 })
 
 Then("the type-ahead offers the choice in its English wording", async ({ page }) => {
-	await page.getByRole("combobox").click()
+	// Reopening once the field already holds 3 or more characters shows every
+	// choice, unfiltered, same as before this rule (ADR-0212).
+	const field = page.getByRole("combobox")
+	await field.fill("xxx")
+	await page.keyboard.press("Escape")
+	await field.click()
 	const offered = page.getByRole("listbox").getByRole("option")
 
 	// The choice with both languages is offered in French; the one a reporter
@@ -805,8 +810,25 @@ async function listedChoices(page: Page): Promise<string[]> {
 
 	const combobox = main.getByRole("combobox")
 	if ((await combobox.count()) > 0) {
-		if ((await combobox.getAttribute("aria-expanded")) !== "true") await combobox.click()
-		return listEntries(page, { placeholder: false })
+		const isInput = (await combobox.evaluate((element) => element.tagName)) === "INPUT"
+		if ((await combobox.getAttribute("aria-expanded")) !== "true") {
+			if (isInput) {
+				// A type-ahead's open list only ever shows what matches the typed
+				// text; reopening once it already holds 3 or more characters
+				// shows every choice, unfiltered, same as before this rule
+				// (ADR-0212). A single-select's button always shows its full
+				// list, so it skips this.
+				await combobox.fill("xxx")
+				await page.keyboard.press("Escape")
+			}
+			await combobox.click()
+		}
+		const entries = await listEntries(page, { placeholder: false })
+		if (isInput) {
+			await combobox.fill("")
+			await page.keyboard.press("Escape")
+		}
+		return entries
 	}
 
 	const trigger = main.getByRole("button", { name: /Which one applies\?/ })
@@ -895,7 +917,7 @@ When("a reporter using English opens that question on a screen {int} pixels wide
 })
 
 Then(
-	"the question is a combobox field with a caret, described by its help text, and no browser suggestion list",
+	"the question is a combobox field with no caret, described by its help text, and no browser suggestion list",
 	async ({ page }) => {
 		const field = page.getByRole("combobox", { name: "Which one applies?" })
 		await expect(field).toBeVisible()
@@ -903,7 +925,9 @@ Then(
 		await expect(field).toHaveAttribute("aria-expanded", "false")
 		await expect(field).not.toHaveAttribute("list", /./)
 		await expect(page.locator("datalist")).toHaveCount(0)
-		await expect(page.getByRole("button", { name: "Show choices" })).toBeVisible()
+		// No caret drawn beside the field (ADR-0212).
+		await expect(page.getByRole("button", { name: "Show choices" })).toHaveCount(0)
+		await expect(page.locator("[data-caret]")).toHaveCount(0)
 		// Drawn like the form's other fields, in the design-system border.
 		const border = await field.evaluate((element) => getComputedStyle(element).borderTopColor)
 		const rule = await field.evaluate((element) => {
@@ -927,11 +951,9 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 		"pressing Space": "Space",
 	}
 	if (opening === "pressing the caret") {
-		// A single-select's caret is drawn inside the field itself.
-		if (await isSingleSelect(page)) {
-			const box = (await field.boundingBox())!
-			await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
-		} else await page.getByRole("button", { name: "Show choices" }).click()
+		// Only the single-select keeps a caret; it is drawn inside the field itself (ADR-0212).
+		const box = (await field.boundingBox())!
+		await field.click({ position: { x: box.width - 22, y: box.height / 2 } })
 	} else if (opening === "clicking the field") await field.click()
 	else if (keys[opening]) {
 		await field.focus()
@@ -943,7 +965,8 @@ When(/^they open the field's list by (.+)$/, async ({ page }, opening: string) =
 	}
 })
 
-Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
+/** The list geometry shared by every opening: directly beneath the field, as wide as it. */
+async function expectListBeneathField(page: Page) {
 	const field = typeAheadField(page)
 	await expect(field).toHaveAttribute("aria-expanded", "true")
 	const list = typeAheadList(page)
@@ -955,8 +978,38 @@ Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/,
 	expect(Math.abs(listBox.width - fieldBox.width)).toBeLessThanOrEqual(1)
 	expect(listBox.y).toBeGreaterThanOrEqual(fieldBox.y + fieldBox.height)
 	expect(listBox.y - (fieldBox.y + fieldBox.height)).toBeLessThanOrEqual(8)
+}
 
+Then(/^a list as wide as the field opens directly beneath it, offering (".*")$/, async ({ page }, quoted: string) => {
+	await expectListBeneathField(page)
 	expect((await listEntries(page)).filter((entry) => entry !== "|")).toEqual(quotedList(quoted))
+})
+
+const HINT_TEXT = "Type 3 or more letters to see matching choices, or enter your own."
+
+/** The hint row, and its polite live-region echo announced to assistive technology. */
+async function expectHint(page: Page) {
+	await expect(typeAheadList(page).getByRole("option")).toHaveCount(0)
+	await expect(typeAheadList(page).locator("[data-hint]")).toHaveText(HINT_TEXT)
+	await expect(page.getByRole("status").filter({ hasText: HINT_TEXT })).toBeAttached()
+}
+
+Then("the list opens directly beneath the field, as wide as it, offering only the hint to type 3 or more letters", async ({ page }) => {
+	await expectListBeneathField(page)
+	await expectHint(page)
+})
+
+Then("the list offers only the hint to type 3 or more letters", async ({ page }) => {
+	await expect(typeAheadField(page)).toHaveAttribute("aria-expanded", "true")
+	await expectHint(page)
+})
+
+When("they press Backspace", async ({ page }) => {
+	await page.keyboard.press("Backspace")
+})
+
+Then("the field holds {string}", async ({ page }, value: string) => {
+	await expect(typeAheadField(page)).toHaveValue(value)
 })
 
 When("they type {string} in the field", async ({ page }, typed: string) => {

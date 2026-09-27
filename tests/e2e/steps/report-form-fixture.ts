@@ -370,6 +370,16 @@ export async function forgetDraftInBrowser(page: Page) {
 	await page.evaluate(() => localStorage.removeItem("hpac.report.draft"))
 }
 
+/**
+ * Picks `choice` for the single-select question labelled `question`, as a
+ * reporter does: the question is a combobox the form draws, not a native
+ * `<select>`, so this opens its list and presses the option (ADR-0150).
+ */
+export async function pickChoice(page: Page, question: string, choice: string) {
+	await page.getByRole("combobox", { name: question }).click()
+	await page.getByRole("listbox", { name: question }).getByRole("option", { name: choice, exact: true }).click()
+}
+
 /** A saved, unexpired report holding a date and a time in their stored ISO 8601 form (REQ-SUB-068). */
 export async function writeSavedDateTimeDraftToBrowser(page: Page, date: string, time: string) {
 	await page.addInitScript(

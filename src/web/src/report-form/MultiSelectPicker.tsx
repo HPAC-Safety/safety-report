@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react"
+import { Caret, ChoiceSeparator, choiceListClassName, choiceRowClassName } from "./ChoiceList"
 
 export interface MultiSelectPickerProps {
 	fieldId: string
@@ -17,8 +18,9 @@ export interface MultiSelectPickerProps {
 
 /**
  * A "Pick several" question as a picker dropdown (issue no. 343, REQ-SUB-034):
- * one closed trigger naming what is chosen, opening a list of checkboxes that
- * stays open while several are checked. Escape closes it and returns focus to
+ * one closed trigger naming what is chosen, opening the type-ahead's list with a
+ * checkbox on each row (REQ-QB-211, ADR-0150), which stays open while several
+ * are checked. Escape closes it and returns focus to
  * the trigger; pressing outside or tabbing away closes it too.
  */
 export function MultiSelectPicker({ fieldId, label, groups, values, placeholder, describedBy, onToggle }: MultiSelectPickerProps) {
@@ -85,29 +87,27 @@ export function MultiSelectPicker({ fieldId, label, groups, values, placeholder,
 					<span id={summaryId} className={chosen.length > 0 ? "truncate" : "truncate text-ink-muted"}>
 						{chosen.length > 0 ? chosen.join(", ") : placeholder}
 					</span>
-					<svg aria-hidden="true" viewBox="0 0 20 20" className="h-4 w-4 shrink-0">
-						<path d="M5.5 7.5 10 12l4.5-4.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
-					</svg>
+					<Caret />
 				</button>
 				{open && (
-					<div
-						id={panelId}
-						role="group"
-						aria-labelledby={labelId}
-						className="absolute left-0 right-0 top-full z-40 mt-1 flex max-h-72 flex-col gap-1 overflow-y-auto rounded border border-rule bg-surface py-2 shadow-lg"
-					>
+					<ul id={panelId} role="group" aria-labelledby={labelId} className={choiceListClassName}>
 						{groups.map((group, index) => (
 							<Fragment key={group[0].key}>
-								{index > 0 && <hr className="mx-3 border-rule" data-separator />}
+								{index > 0 && <ChoiceSeparator />}
 								{group.map((option) => (
-									<label key={option.key} className="touch-target flex items-center gap-2 px-3 font-sans text-ink">
-										<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
-										{option.label}
-									</label>
+									<li key={option.key} role="presentation">
+										{/* The type-ahead's row and highlight (ChoiceList), on the row pointed at or holding keyboard focus. */}
+										<label
+											className={`${choiceRowClassName} gap-2 hover:bg-surface-4 hover:shadow-[inset_4px_0_0_var(--color-focus)] has-[:focus-visible]:bg-surface-4 has-[:focus-visible]:shadow-[inset_4px_0_0_var(--color-focus)]`}
+										>
+											<input type="checkbox" checked={values.includes(option.key)} onChange={() => onToggle(option.key)} />
+											{option.label}
+										</label>
+									</li>
 								))}
 							</Fragment>
 						))}
-					</div>
+					</ul>
 				)}
 			</div>
 		</div>

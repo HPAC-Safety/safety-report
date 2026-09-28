@@ -1169,3 +1169,83 @@ Scenario: A safety officer cancels a private attachment while it uploads
   When the safety officer cancels the upload
   Then the private attachments section says the upload was cancelled and lists no attachments
   And the cancelled upload is erased
+
+@REQ-MOD-140
+Scenario: Search matches the approved published summary in the visitor's site language
+  Given a published report whose English summary says "The pilot landed in a field."
+  When a visitor searches "landed" in English
+  Then the report is listed among the results
+
+@REQ-MOD-141
+Scenario: Search matches a visible member comment as shown in the visitor's site language
+  Given a published report carrying a member comment that says "Good reminder to check the fuel gauge."
+  When a visitor searches "fuel gauge" in English
+  Then the report is listed among the results
+
+@REQ-MOD-142
+Scenario: Search is scoped to the visitor's current site language only
+  Given a published report whose French summary mentions a word its English summary does not
+  When a visitor searches that French-only word in English
+  Then the report is not listed among the results
+  When a visitor searches that French-only word in French
+  Then the report is listed among the results
+
+@REQ-MOD-143
+Scenario: A private answer's text never matches
+  Given a published report whose pilot's name is answered privately
+  When a visitor searches for the pilot's name
+  Then the report is not listed among the results
+
+@REQ-MOD-144
+Scenario Outline: A non-publishable report's summary text never matches
+  Given a <status> report whose summary would otherwise match
+  When a visitor searches its summary's distinctive word
+  Then the report is not listed among the results
+
+Examples:
+  | status      |
+  | pending     |
+  | unpublished |
+  | no-consent  |
+  | deleted     |
+
+@REQ-MOD-145
+Scenario: A hidden or a deleted comment never matches
+  Given a published report carrying a comment that is later hidden
+  And another published report carrying a comment that is later deleted
+  When a visitor searches the hidden comment's distinctive word
+  Then the report with the hidden comment is not listed among the results
+  When a visitor searches the deleted comment's distinctive word
+  Then the report with the deleted comment is not listed among the results
+
+@REQ-MOD-146
+Scenario: A typo still finds the best match
+  Given a published report whose English summary says "The pilot landed in a field."
+  When a visitor searches the misspelling "landde"
+  Then the report is listed among the results
+
+@REQ-MOD-147
+Scenario: Best match ranks first while a query is active
+  Given a published report whose summary contains the exact phrase "hydraulic leak"
+  And another published report whose summary only misspells "hydraulic leak"
+  When a visitor searches "hydraulic leak" in English
+  Then the exact match is ranked above the misspelled match
+
+@REQ-MOD-148
+Scenario: An empty search box lists newest submitted first, unchanged
+  Given some reports are publishable and others are not
+  When the public feed is queried with a blank search box
+  Then a blank search box's first page is identical to the plain feed's first page
+
+@REQ-MOD-149
+@ui
+Scenario: The search box sits at the top of the public feed, and its query is bookmarkable
+  Given the public feed has published reports
+  When a visitor opens View safety reports
+  And the visitor types a search term into the search box at the top of the page
+  Then the address bar carries that search term as ?q=
+  And only matching reports are listed
+  When the page reloads
+  Then the search box still shows that search term, and only matching reports are listed
+  When the visitor goes back
+  Then the search box is empty and the full feed is shown again

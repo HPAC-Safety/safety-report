@@ -175,6 +175,17 @@ to mint a link and are never serialized
 ([ADR-0117](decisions/ADR-0117-a-published-report-shows-the-reporters-photos-and-video.md),
 [ADR-0119](decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
 
+The public feed's search box is read the same way: `search_public_reports`, a
+SQL function taking the query text, the visitor's site locale, a cursor
+report ID, and a page size, joins only `public_reports` and
+`public_report_comments` — never a table directly — so it can rank and page a
+match without ever being able to read a private answer, a name, an
+unpublished report, or a hidden or deleted comment. It ranks by the greater
+of full-text rank (English or French, by locale) and trigram
+word-similarity, and its own cursor is the same report-ID-only cursor the
+plain feed already uses (#574,
+[ADR-0157](decisions/ADR-0157-the-public-search-privacy-boundary.md)).
+
 The admin side reads its rules from views in the same way
 ([ADR-0116](decisions/ADR-0116-a-read-rule-lives-in-a-view.md)):
 

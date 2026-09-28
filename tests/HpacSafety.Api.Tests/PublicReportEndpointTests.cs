@@ -51,6 +51,76 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Theory]
+	[InlineData("")]
+	[InlineData("   ")]
+	[InlineData("\t\n")]
+	public async Task GivenBlankSearchBox_WhenFeedIsQueried_ThenSameAsNoQAtAll(string q)
+	{
+		// Given
+		using var client = _factory.CreateClient();
+		var plain = await client.GetFromJsonAsync<JsonElement>(new Uri(Feed, UriKind.Relative));
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		page.GetRawText().ShouldBe(plain.GetRawText());
+	}
+
+	[Theory]
+	[InlineData("a search term nobody's published summary or comment could ever contain")]
+	[InlineData("un terme de recherche introuvable")]
+	public async Task GivenNonBlankSearchMatchingNothing_WhenFeedIsQueried_ThenEmptyPageReturned(string q)
+	{
+		// Given
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}&locale=en-CA", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		page.GetProperty("items").GetArrayLength().ShouldBe(0);
+		page.GetProperty("next").ValueKind.ShouldBe(JsonValueKind.Null);
+	}
+
+	[Fact]
+	public async Task GivenSearchQueryLongerThanCap_WhenFeedIsQueried_ThenAcceptedWithoutError()
+	{
+		// Given
+		using var client = _factory.CreateClient();
+		var tooLong = new string('a', 5000);
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(tooLong)}&locale=en-CA", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
+	[Theory]
+	[InlineData("not a cursor")]
+	[InlineData("!!!!")]
+	public async Task GivenUnreadableCursor_WhenSearchIsQueried_ThenStartsFromTop(string cursor)
+	{
+		// Given
+		using var client = _factory.CreateClient();
+		var first = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA", UriKind.Relative));
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA&after={Uri.EscapeDataString(cursor)}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var firstPage = await first.Content.ReadFromJsonAsync<JsonElement>();
+		page.GetProperty("items").GetRawText().ShouldBe(firstPage.GetProperty("items").GetRawText());
+	}
+
+	[Theory]
 	[InlineData("short")]
 	[InlineData("has spaces!")]
 	[InlineData("AAAAAAAAAAAA")]

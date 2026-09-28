@@ -61,8 +61,24 @@ export class PublicReportNotFound extends Error {
 	}
 }
 
-export async function fetchPublicReports(after: string | null): Promise<PublicReportPage> {
-	const query = after ? `?after=${encodeURIComponent(after)}` : ""
+/**
+ * One page of the feed. A non-blank `q` fuzzy-searches the published summary
+ * and visible member comments, in `locale` only, best match first; a blank
+ * or omitted `q` is the plain feed, newest submitted first, unchanged (#574).
+ */
+export async function fetchPublicReports(after: string | null, q?: string, locale?: string): Promise<PublicReportPage> {
+	const params = new URLSearchParams()
+	if (after) {
+		params.set("after", after)
+	}
+	if (q) {
+		params.set("q", q)
+	}
+	if (locale) {
+		params.set("locale", locale)
+	}
+
+	const query = params.size > 0 ? `?${params.toString()}` : ""
 	const response = await fetch(`/api/v1/public/reports${query}`)
 
 	if (!response.ok) {

@@ -756,7 +756,7 @@ An address for a report that is not public shows not found — *playwright-bdd, 
 
 ### REQ-MOD-082
 
-The public feed loads more reports automatically, and going back restores them — *playwright-bdd, Covered*
+The public feed pages forward and the address keeps the page — *playwright-bdd, Covered*
 
 ### REQ-MOD-083
 
@@ -926,21 +926,45 @@ The admin report list shows the reporter's and pilot's names by stable role, bla
 
 Manage reports shows each row's reporter and pilot names, blank when unanswered — *playwright-bdd, Covered*
 
-### REQ-MOD-126
+### REQ-MOD-140
 
-The public feed's next page offers a keyboard-only fallback and announces itself — *playwright-bdd, Covered*
+Search matches the approved published summary in the visitor's site language — *Reqnroll, Covered*
 
-### REQ-MOD-127
+### REQ-MOD-141
 
-The public feed offers a visible Retry action when its next page fails to load — *playwright-bdd, Covered*
+Search matches a visible member comment as shown in the visitor's site language — *Reqnroll, Covered*
 
-### REQ-MOD-128
+### REQ-MOD-142
 
-Manage reports loads more automatically and offers the same hidden fallback and visible retry — *playwright-bdd, Covered*
+Search is scoped to the visitor's current site language only — *Reqnroll, Covered*
 
-### REQ-MOD-129
+### REQ-MOD-143
 
-The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
+A private answer's text never matches — *Reqnroll, Covered*
+
+### REQ-MOD-144
+
+A non-publishable report's summary text never matches — *Reqnroll, Covered*
+
+### REQ-MOD-145
+
+A hidden or a deleted comment never matches — *Reqnroll, Covered*
+
+### REQ-MOD-146
+
+A typo still finds the best match — *Reqnroll, Covered*
+
+### REQ-MOD-147
+
+Best match ranks first while a query is active — *Reqnroll, Covered*
+
+### REQ-MOD-148
+
+An empty search box lists newest submitted first, unchanged — *Reqnroll, Covered*
+
+### REQ-MOD-149
+
+The search box sits at the top of the public feed, and its query is bookmarkable — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 
@@ -2142,18 +2166,6 @@ A required dependent question that cannot be answered yet does not block a submi
 
 A choice offered under several parent answers is accepted under each, and refused under any other — *Reqnroll, Covered*
 
-### REQ-SUB-116
-
-A request that reached the API without CloudFront's origin-secret header is refused — *Reqnroll, Covered*
-
-### REQ-SUB-117
-
-The rate limiter partitions by the CloudFront viewer address, not the shared connection — *Reqnroll, Covered*
-
-### REQ-SUB-118
-
-A successful submission nudges the Worker — *Reqnroll, Covered*
-
 ## Claims: typeform-question-import-export
 
 ### REQ-TF-001
@@ -2520,18 +2532,6 @@ infrastructure-and-operations.md — verified by none — an infrastructure prop
 ### CON-INF-014
 
 infrastructure-and-operations.md — verified by none — these are review-time properties no application scenario can observe
-
-### CON-INF-015
-
-infrastructure-and-operations.md — verified by `REQ-SUB-118`
-
-### CON-INF-016
-
-infrastructure-and-operations.md — verified by none — a Lambda invocation's own time budget is not something `/features` scenarios observe; proven directly by `OutboxDrainPassTests` (`tests/HpacSafety.Worker.Tests`)
-
-### CON-INF-017
-
-infrastructure-and-operations.md — verified by `REQ-SUB-116`
 
 ### CON-SO-001
 

@@ -57,6 +57,38 @@ public class ReviewerMediaLinkTests
 	}
 
 	[Fact]
+	public async Task GivenStrippedDerivative_WhenInlineViewUrlIsRequested_ThenOneIsIssued()
+	{
+		// Given
+		// issue #427 decision 10: /view mints an inline link now, for the
+		// lightbox, rather than a forced download.
+		var derivative = BlobKey.For(ReportId, MediaCompartment.Stripped, "photo.jpg");
+
+		// When
+		var url = await new ReviewerMediaLink(new InMemoryBlobStore())
+			.CreateInlineViewUrl(derivative, "image/jpeg", TimeSpan.FromMinutes(5), CancellationToken.None);
+
+		// Then
+		url.ShouldNotBeNull();
+	}
+
+	[Theory]
+	[InlineData(MediaCompartment.Original)]
+	[InlineData(MediaCompartment.Quarantine)]
+	[InlineData(MediaCompartment.Private)]
+	public async Task GivenKeyOutsideStrippedCompartment_WhenInlineViewUrlIsRequested_ThenRefused(MediaCompartment compartment)
+	{
+		// Given
+		var key = compartment == MediaCompartment.Quarantine
+			? BlobKey.ForUpload(UploadId.New())
+			: BlobKey.For(ReportId, compartment, "photo.jpg");
+
+		// When / Then
+		await Should.ThrowAsync<DomainRuleViolationException>(() =>
+			new ReviewerMediaLink(new InMemoryBlobStore()).CreateInlineViewUrl(key, "image/jpeg", TimeSpan.FromMinutes(5), CancellationToken.None));
+	}
+
+	[Fact]
 	public void GivenReportIdMovedToFrontOfKey_WhenViewabilityIsChecked_ThenStillReadsCompartment()
 	{
 		// Given

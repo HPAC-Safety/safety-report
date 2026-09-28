@@ -10,9 +10,8 @@
 # EXACTLY the same thing, and two hand-maintained copies would drift the day
 # someone edits one and not the other.
 #
-# Every AWS call in this file is real. It only ever runs from release.yml, on
-# `release: published` (or a maintainer's `workflow_dispatch` redeploy of an
-# earlier tag), or from promote.yml, which a maintainer dispatches — never on
+# Every AWS call in this file is real. It only ever runs from release.yml or
+# promote.yml, each dispatched by a maintainer — never on
 # push, merge, or pull_request. See both callers' headers before changing that.
 name: Deploy environment
 

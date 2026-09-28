@@ -140,9 +140,11 @@ Repository-level (not environment) settings, read by
 - [Settings → Environments → New environment](https://github.com/HPAC-Safety/safety-report/settings/environments/new):
   `hpac-safety-staging`.
 - **Deployment branches and tags** → **Selected branches and tags** → add a
-  **tag** rule `20*` (release tags are `YYYY.MM.DD-N`).
+  **branch** rule `main` (Release runs on `main`) and a **tag** rule `20*`
+  (release tags are `YYYY.MM.DD-N`).
 - No required reviewers.
-- Check it worked: the environment lists the `20*` tag rule and no reviewers.
+- Check it worked: the environment lists the `main` branch rule, the `20*`
+  tag rule, and no reviewers.
 
 ### 2.2 Bootstrap the staging AWS account
 
@@ -199,13 +201,13 @@ Repository-level (not environment) settings, read by
 
 ### 2.5 First staging release
 
-- [Actions → Create release](https://github.com/HPAC-Safety/safety-report/actions/workflows/create-release.yml)
+- [Actions → Release](https://github.com/HPAC-Safety/safety-report/actions/workflows/release.yml)
   → **Run workflow** (from `main`) → **Run workflow**. Or
-  `gh workflow run create-release.yml --repo HPAC-Safety/safety-report --ref main`.
-- It creates today's next tag (`YYYY.MM.DD-N`) and a GitHub Release whose
-  notes list every pull request merged since the previous release, then
-  starts [Actions → Release](https://github.com/HPAC-Safety/safety-report/actions/workflows/release.yml)
-  on that tag. Nothing to type; no tag or release is made by hand.
+  `gh workflow run release.yml --repo HPAC-Safety/safety-report --ref main`.
+- One run creates today's next tag (`YYYY.MM.DD-N`) and a GitHub Release whose
+  notes list every pull request merged since the previous release, builds
+  once, and deploys staging. Nothing to type; no tag or release is made by
+  hand.
 - The `staging` job runs on its own, and the release ends there. It never
   deploys to or waits on production; create as many as you like.
 - Check it worked: the `staging` job is green; the `cloudfront.net` address in
@@ -236,7 +238,7 @@ Repository-level (not environment) settings, read by
 - Untick **Allow administrators to bypass configured protection rules**, so a
   repository admin cannot deploy to production without the approval.
 - **Deployment branches and tags** → **Selected branches and tags** → add a
-  **tag** rule `20*`.
+  **tag** rule `20*` only; no branch rule. Promote runs on the tag.
 - Check it worked: the environment lists the reviewers and the `20*` tag rule.
 
 ### 3.2 Bootstrap the production AWS account
@@ -316,7 +318,7 @@ Repository-level (not environment) settings, read by
 
 ## Part 4 — After setup
 
-- **Every release**: run Create release (2.5); it reaches staging only.
+- **Every release**: run Release (2.5); it reaches staging only.
 - **Promote to production**: when a staged tag is ready, promote it and
   approve (3.5). Nothing else.
 - **Rollback**: production, promote an earlier tag; staging, re-run an

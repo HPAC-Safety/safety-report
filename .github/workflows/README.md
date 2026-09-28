@@ -15,8 +15,7 @@ type: readme
 | `issue-traceability.yml` | Daily and on push to `main`: keep one drift issue open while `docs/issue-traceability.md` misses an open issue or lists a closed one. Never gates a PR |
 | `traceability.yml` | Commit the regenerated `docs/traceability.md` onto a same-repo PR's branch |
 | `terraform.yml` | Validate Terraform on every pull request (credential-free); plan it against both AWS accounts on a same-repo pull request. Never applies. |
-| `create-release.yml` | Run by hand on `main`: create the next `YYYY.MM.DD-N` tag and a GitHub Release with notes generated from the pull requests merged since the last one (`.github/release.yml`), then dispatch `release.yml` on it (issue #619, ADR-0168) |
-| `release.yml` | Build the API image, the Worker image, and the web bundle once per published, date-tagged release, and deploy them to `hpac-safety-staging` automatically. Never deploys to production (issue #466, ADR-0158, ADR-0166, CON-INF-011..013) |
+| `release.yml` | **Release**, run by hand on `main`: create the next `YYYY.MM.DD-N` tag and a GitHub Release with notes generated from the pull requests merged since the last one (`.github/release.yml`), build the API image, the Worker image, and the web bundle once, and deploy them to `hpac-safety-staging` (issues #619, #621, ADR-0168). Never deploys to production (issue #466, ADR-0158, ADR-0166, CON-INF-011..013) |
 | `promote.yml` | Run by hand on a release tag: deploy that tag's already-built, staging-green artifacts to `hpac-safety-production` after `hpac-safety-admins` approves — the same artifacts, never a rebuild (issue #609, ADR-0166, CON-INF-012) |
 | `deploy-environment.yml` | Reusable (`workflow_call` only, no trigger of its own): the one set of deploy steps `release.yml` (staging) and `promote.yml` (production) both call, so the two environments can never drift apart |
 
@@ -32,9 +31,8 @@ translate database questions or summaries.
 
 **Only `release.yml` and `promote.yml` (and, through them,
 `deploy-environment.yml`) ever deploy to AWS**: `release.yml` to staging only,
-when `create-release.yml` dispatches it on a new tag, on a hand-published
-release, or on a maintainer's `workflow_dispatch` redeploy of an earlier tag; `promote.yml` to production only, when a maintainer dispatches it
-with a tag already green on staging — never on push, merge, or pull_request.
+when a maintainer runs it on `main`; `promote.yml` to production only, when
+a maintainer dispatches it on a tag already green on staging — never on push, merge, or pull_request.
 Each holds its own concurrency group, so a promotion waiting on approval
 never holds a staging release (lesson 0026). They use GitHub OIDC rather than
 AWS access keys, one role per account (`hpac-safety-deploy`), and

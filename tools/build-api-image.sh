@@ -44,7 +44,21 @@ dotnet publish "$REPO_ROOT/src/HpacSafety.Api/HpacSafety.Api.csproj" \
 	--output "$OUTPUT" \
 	-p:UseAppHost=false
 
-docker build \
+# The Dockerfile copies the Lambda Web Adapter from public.ecr.aws, which
+# throttles anonymous pulls from shared CI runners with 429 Too Many Requests
+# (release run 36499358659, #621). The release's build job has no AWS
+# credential to log in with, by design, so retry with backoff instead.
+attempt=1
+until docker build \
 	--file "$REPO_ROOT/src/HpacSafety.Api/Dockerfile" \
 	--tag "$IMAGE" \
-	"$OUTPUT"
+	"$OUTPUT"; do
+	if [ "$attempt" -ge 5 ]; then
+		echo "error: docker build failed $attempt times." >&2
+		exit 1
+	fi
+	delay=$((attempt * 30))
+	echo "docker build failed (attempt $attempt); retrying in ${delay}s." >&2
+	sleep "$delay"
+	attempt=$((attempt + 1))
+done

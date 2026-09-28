@@ -12,6 +12,10 @@ keywords: release, create-release.yml, release notes, generate-notes, workflow_d
 
 ## Status
 
+**Amended (#621, owner, 2026-09-28):** one workflow, not two. See
+"Amendment" at the end; it replaces `create-release.yml` and the dispatch
+hand-off described below.
+
 Accepted. Builds on [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)
 (the `YYYY.MM.DD-N` tag and release-driven staging deploy) and
 [ADR-0166](ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)
@@ -74,3 +78,26 @@ Two GitHub constraints shape it:
   every pull request carries from its issue (deliver-hpac-change "File a new
   issue"). An unlabelled one lands under Other changes.
 - The first release's notes list every pull request merged so far.
+
+## Amendment — one Release workflow (#621)
+
+The owner opened **Release** (`release.yml`) and was asked for a tag, beside a
+second **Create release** workflow. The owner wants one workflow, **Release**,
+that creates the release and deploys staging, and a second, **Promote**, for
+production (owner, 2026-09-28).
+
+- `create-release.yml` is removed. `release.yml`, **Release**, runs from
+  `main` with no inputs: its `release` job picks the tag and creates the tag
+  and the release with the same generated notes, then `build` and `staging`
+  run in the same run. Its `release: published` trigger and `tag` input are
+  removed: one way to release.
+- `hpac-safety-staging` also allows deployments from branch `main`, since one
+  run on `main` cannot move onto the tag it creates. This is the alternative
+  rejected above; the owner's single-workflow requirement outweighs keeping
+  staging tag-only. `hpac-safety-production` stays `20*` tags only.
+- A run's title is fixed before its tag exists, so `promote.yml` no longer
+  finds the build by the `Release <tag>` title. It finds the newest
+  successful Release run whose `head_sha` is the tag's commit; the `release`
+  job always tags the commit its run is on.
+- Staging rollback re-runs an earlier Release run's `staging` job only; once
+  its artifacts expire, revert on `main` and release again.

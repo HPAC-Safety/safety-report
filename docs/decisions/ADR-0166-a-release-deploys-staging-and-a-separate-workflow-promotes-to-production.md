@@ -12,6 +12,11 @@ keywords: release, promotion, promote.yml, GitHub Actions, concurrency, environm
 
 ## Status
 
+**Amended by [ADR-0168](ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md)
+(#621):** Release runs on `main` and creates its own tag, so it is no longer
+titled `Release <tag>`; `promote.yml` finds the Release run by the tag's
+commit (`head_sha`). Promotion itself is unchanged.
+
 Accepted. **Partially supersedes**
 [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)
 ("Production waits" inside the release; "one release workflow"; rollback by

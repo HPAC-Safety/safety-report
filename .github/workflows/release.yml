@@ -1,30 +1,29 @@
 ---
-# Build once and deploy to staging (issue #466, part of #30 — ADR-0158,
-# CON-INF-011..013). Promotion to production is promote.yml's, a separate,
-# deliberate step (issue #609, ADR-0166).
+# Release: one run, from `main`, creates a release and deploys it to staging
+# (issues #466, #619, #621 — ADR-0158, ADR-0166, ADR-0168, CON-INF-011..013).
+# Actions → Release → Run workflow. No inputs.
 #
-# THE ONLY WORKFLOW THAT BUILDS A RELEASE. create-release.yml (infra/SETUP.md
-# step 2.5, ADR-0168) creates the tag and the GitHub Release, then dispatches
-# this workflow on that tag with `tag` set to it. The same dispatch rebuilds an
-# earlier release by tag (rollback, or redeploying after the original run's
-# artifacts expired — see docs/deployment.md "Rollback"). `release: published`
-# still builds a release a maintainer publishes by hand in the GitHub UI; a
-# release create-release.yml makes never fires it (GITHUB_TOKEN events trigger
-# no workflow), so nothing is built twice. NOTHING here runs on
-# push, merge, or pull_request: terraform.yml owns the credential-free
-# validation and the PR plan against both accounts (CON-INF-007), and neither
-# of its jobs ever applies.
+#   `release`  picks the next `YYYY.MM.DD-N` tag (today in UTC, next free N),
+#              creates it at this run's `main` commit, and creates the GitHub
+#              Release: a provenance table, then GitHub's generated notes —
+#              every pull request merged since the previous release, grouped
+#              by label (.github/release.yml).
+#   `build`    makes the API image, the Worker image, and the web bundle
+#              exactly once, tagged by commit SHA, and uploads them as
+#              artifacts — no AWS credential of any kind, on purpose, so a bug
+#              here can never reach either account.
+#   `staging`  deploys them through the reusable deploy-environment.yml.
 #
-# Three jobs: `build` makes the API image, the Worker image, and the web
-# bundle exactly once, tagged by commit SHA, and uploads them as workflow
-# artifacts — no AWS credential of any kind is requested here, on purpose,
-# so a bug in this job can never reach either account. `staging` deploys
-# them through the reusable deploy-environment.yml. Nothing here reaches
-# production: promote.yml deploys a tag this workflow already ran green on
-# staging, downloading this run's artifacts by run ID — the same artifacts,
-# never a rebuild (CON-INF-012). So a staging release never asks for, or
-# waits on, a production approval, and many releases can reach staging
-# without promoting any of them.
+# Nothing here reaches production: promote.yml, run on a release's tag, finds
+# the Release run for that tag's commit and deploys ITS artifacts after
+# approval — the same artifacts, never a rebuild (CON-INF-012). So a release
+# never asks for, or waits on, a production approval.
+#
+# `hpac-safety-staging` allows deployments from branch `main` as well as `20*`
+# tags (infra/SETUP.md 2.1): this run is on `main`, and cannot run on the tag
+# it creates. Production allows `20*` tags only. NOTHING here runs on push,
+# merge, or pull_request: terraform.yml owns the credential-free validation
+# and the PR plan against both accounts (CON-INF-007), and never applies.
 #
 # Built on #443 (the Lambda-adapter API image and tools/build-api-image.sh)
 # and #465/#588 (infra/staging.tfvars, infra/production.tfvars, the
@@ -34,34 +33,18 @@
 # dns_records_to_publish). tools/check-terraform-outputs.mjs fails CI if
 # either file drifts from what infra/outputs.tf actually declares.
 name: Release
-# promote.yml finds this run by this exact title; keep the two in step.
-run-name: Release ${{ github.event.release.tag_name || inputs.tag }}
 
 on:
-  release:
-    types: [published]
   workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag to build and deploy to staging, e.g. 2026.10.02-1; run this workflow on that same tag. create-release.yml sets it for a new release; set it by hand only to rebuild an earlier one — see docs/deployment.md "Rollback".'
-        required: true
-        type: string
 
 permissions:
   contents: read
-  # A reusable workflow's job can never hold more than its caller grants,
-  # regardless of its own `permissions:` block — `staging` needs
-  # `id-token: write` for OIDC and `actions: read` to download artifacts
-  # (deploy-environment.yml), so both are granted here even though
-  # `validate-tag` and `build` never use them.
-  id-token: write
-  actions: read
 
 concurrency:
-  # One release deploys to staging at a time; a second one queues behind it
-  # rather than racing it for staging's Terraform state lock. Production has
-  # its own group in promote.yml, so a promotion waiting on its approval never
-  # holds a staging release (lesson 0026).
+  # One release at a time: two runs would pick the same next tag, and race
+  # for staging's Terraform state lock. Production has its own group in
+  # promote.yml, so a promotion waiting on approval never holds a release
+  # (lesson 0026).
   group: release-staging
   cancel-in-progress: false
 
@@ -69,52 +52,69 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
-  validate-tag:
+  release:
     runs-on: ubuntu-latest
+    permissions:
+      # Create the tag and the GitHub Release.
+      contents: write
     outputs:
-      tag: ${{ steps.validate.outputs.tag }}
+      tag: ${{ steps.create.outputs.tag }}
     steps:
-      - name: Tag matches YYYY.MM.DD-N
-        id: validate
+      - name: Create the next tag and its release
+        id: create
         env:
-          TAG: ${{ github.event.release.tag_name || inputs.tag }}
-          EVENT: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           REF: ${{ github.ref }}
+          SHA: ${{ github.sha }}
+          SERVER: ${{ github.server_url }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
-          if [ -z "$TAG" ]; then
-            echo "::error::No tag. This workflow runs only from a published release or a workflow_dispatch tag input."
+          if [ "$REF" != "refs/heads/main" ]; then
+            echo "::error::Release from main only (this run is on $REF). Run workflow → Use workflow from → main."
             exit 1
           fi
-          # YYYY.MM.DD-N: a real month (01-12), a real day (01-31), and a
-          # positive dash-suffix for the same-day republish case. Anything
-          # else is rejected before a single AWS call is even considered.
-          if ! echo "$TAG" | grep -Eq '^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])-[1-9][0-9]*$'; then
-            echo "::error::Tag '$TAG' does not match YYYY.MM.DD-N (e.g. 2026.10.02-1). See ADR-0158."
-            exit 1
-          fi
-          # hpac-safety-staging allows deployments only from refs matching
-          # `20*` (infra/SETUP.md 2.1), so a dispatch from a branch would be
-          # refused at the staging job. Refuse it here, before building.
-          if [ "$EVENT" = "workflow_dispatch" ] && [ "$REF" != "refs/tags/$TAG" ]; then
-            echo "::error::Dispatch this on the tag itself: Run workflow → Use workflow from → Tags → $TAG (or: gh workflow run release.yml --ref $TAG -f tag=$TAG)."
-            exit 1
-          fi
-          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+          # Today's releases are YYYY.MM.DD-1, -2, ...; take the next free N.
+          day=$(date -u +%Y.%m.%d)
+          last=$(gh api "repos/$REPO/git/matching-refs/tags/$day-" --jq '.[].ref' \
+            | sed -n "s|^refs/tags/$day-\([1-9][0-9]*\)$|\1|p" | sort -n | tail -n 1)
+          tag="$day-$(( ${last:-0} + 1 ))"
+
+          notes=$(mktemp)
+          {
+            echo "## Provenance"
+            echo ""
+            echo "| Commit | Release run |"
+            echo "|---|---|"
+            echo "| [\`$SHA\`]($SERVER/$REPO/commit/$SHA) | [run $RUN_ID]($SERVER/$REPO/actions/runs/$RUN_ID) |"
+            echo ""
+            echo "This run deploys it to staging. Promote to production: Actions → Promote → Use workflow from → Tags → \`$tag\`."
+            echo ""
+          } > "$notes"
+
+          # --generate-notes appends every pull request merged since the
+          # previous release, grouped by .github/release.yml.
+          gh release create "$tag" --repo "$REPO" --target "$SHA" \
+            --title "$tag" --notes-file "$notes" --generate-notes
+
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "### Release [$tag]($SERVER/$REPO/releases/tag/$tag)" >> "$GITHUB_STEP_SUMMARY"
 
   # No AWS credential anywhere in this job, deliberately (see this file's
   # header). It builds each artifact exactly once, tagged by the commit SHA
   # the tag points to, and hands the two image tarballs and the web bundle to
-  # `staging` and `production` unchanged.
+  # `staging`, and through this run's artifacts to promote.yml, unchanged.
   build:
-    needs: validate-tag
+    needs: release
     runs-on: ubuntu-latest
     outputs:
       sha: ${{ steps.sha.outputs.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ needs.validate-tag.outputs.tag }}
+          ref: ${{ needs.release.outputs.tag }}
 
       - id: sha
         run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
@@ -169,13 +169,19 @@ jobs:
           retention-days: 90
 
   staging:
-    needs: [validate-tag, build]
+    needs: [release, build]
+    # A reusable workflow's job holds no more than its caller grants:
+    # deploy-environment.yml needs OIDC and to download this run's artifacts.
+    permissions:
+      contents: read
+      id-token: write
+      actions: read
     uses: ./.github/workflows/deploy-environment.yml
     with:
       environment_name: hpac-safety-staging
       tfvars_file: infra/staging.tfvars
       state_key: hpac-safety/staging.tfstate
-      tag: ${{ needs.validate-tag.outputs.tag }}
+      tag: ${{ needs.release.outputs.tag }}
       sha: ${{ needs.build.outputs.sha }}
     # `inherit`, not a named list: GEMINI_API_KEY and DEEPL_API_KEY are
     # environment secrets (H4), one value per environment under the same

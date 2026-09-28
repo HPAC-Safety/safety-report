@@ -5,8 +5,8 @@
 # release.yml builds once and deploys staging only, so many releases can
 # reach staging without any of them asking for a production approval. This
 # workflow is the separate, deliberate step that sends one of them on: a
-# maintainer dispatches it ON a release tag, it finds that tag's latest
-# successful release.yml run, and deploys THAT run's artifacts — the same
+# maintainer dispatches it ON a release tag, it finds the successful
+# release.yml run built from that tag's commit, and deploys THAT run's artifacts — the same
 # images and web bundle staging ran, never a rebuild — through the same
 # deploy-environment.yml. The `hpac-safety-production` GitHub environment's
 # required reviewers gate the deploy job; nothing here re-implements that.
@@ -19,10 +19,10 @@
 #
 # It refuses, before any AWS call:
 #   - a run not dispatched on a tag, or on one that is not YYYY.MM.DD-N;
-#   - a tag with no successful release.yml run (never green on staging);
+#   - a tag with no successful Release run for its commit (never green on
+#     staging);
 #   - a run whose artifacts have expired (release.yml keeps them 90 days) —
-#     publish a new release, or dispatch release.yml on the tag to rebuild
-#     and restage it, then promote again.
+#     run Release to cut a new release, then promote that one.
 #
 # Production rollback is this same workflow on an earlier tag.
 name: Promote
@@ -76,15 +76,15 @@ jobs:
             exit 1
           fi
 
-          # release.yml titles every run "Release <tag>" (its run-name), for a
-          # published release and a workflow_dispatch rebuild alike. Newest
-          # first; a success means its staging job was green.
-          runs=$(gh api --paginate \
-            "repos/$REPO/actions/workflows/release.yml/runs?status=success&per_page=100" \
-            --jq ".workflow_runs[] | select(.display_title == \"Release $TAG\") | .id")
-          run_id=$(printf '%s\n' "$runs" | sed -n '1p')
+          # The build job tagged every image with the commit the tag points to,
+          # and release.yml tags the very commit its run is on, so that run is
+          # the one whose head_sha is this commit. Newest first; a success
+          # means its staging job was green.
+          sha=$(gh api "repos/$REPO/commits/$TAG" --jq '.sha')
+          run_id=$(gh api "repos/$REPO/actions/workflows/release.yml/runs?head_sha=$sha&status=success&per_page=1" \
+            --jq '.workflow_runs[0].id // empty')
           if [ -z "$run_id" ]; then
-            echo "::error::No successful Release run for $TAG. Only a tag already green on staging is promoted: publish the release, or wait for its staging job to pass."
+            echo "::error::No successful Release run for $TAG (commit $sha). Only a release already green on staging is promoted: wait for its staging job to pass."
             exit 1
           fi
 
@@ -92,13 +92,10 @@ jobs:
             --jq '.artifacts[] | select(.expired == false) | .name')
           for name in api-image worker-image web-dist; do
             if ! printf '%s\n' "$live" | grep -qx "$name"; then
-              echo "::error::Release run $run_id for $TAG no longer has its '$name' artifact (release.yml keeps them 90 days). Publish a new release, or dispatch release.yml on this tag to rebuild and restage it (gh workflow run release.yml --ref $TAG -f tag=$TAG), then promote again."
+              echo "::error::Release run $run_id for $TAG no longer has its '$name' artifact (release.yml keeps them 90 days). Run Release to cut a new release from main, then promote that one."
               exit 1
             fi
           done
-
-          # The build job tagged every image with the commit the tag points to.
-          sha=$(gh api "repos/$REPO/commits/$TAG" --jq '.sha')
 
           {
             echo "tag=$TAG"

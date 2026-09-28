@@ -33,8 +33,13 @@
  * Usage:
  *   node tools/coverage-gate.mjs --report <Cobertura.xml>
  *                                [--baseline <Cobertura.xml>]
+ *                                [--baseline-run-id <id>]
  *                                [--min-line 80] [--min-branch 70]
  *                                [--tolerance 0.1]
+ *
+ * --baseline-run-id names, in the comment, which main run the baseline came
+ * from (tools/find-coverage-baseline.mjs picks it) - omitted or `none` when
+ * there is no baseline to name.
  */
 
 import { readFileSync, appendFileSync } from 'node:fs'
@@ -49,6 +54,7 @@ const runAsCommand = process.argv[1]?.endsWith('coverage-gate.mjs') ?? false
 
 const reportPath = args.get('report')
 const baselinePath = args.get('baseline')
+const baselineRunId = args.get('baseline-run-id')
 const minLine = Number(args.get('min-line') ?? 80)
 const minBranch = Number(args.get('min-branch') ?? 70)
 // A refactor that deletes one covered and one uncovered line moves the ratio a
@@ -200,11 +206,16 @@ function main() {
 
 	if (!baseline) {
 		rows.push('', '> No main baseline was available, so the ratchet did not run. The floor still applied.')
-	} else if (added) {
-		rows.push(
-			'',
-			`> This branch adds ${added.linesAdded} coverable lines to main's ${baseline.linesValid}, so the ratchet judged the **added code** rather than the whole-repository ratio: ${fmt(added.line)} of added lines and ${fmt(added.branch)} of added branches are covered. See ADR-0017.`,
-		)
+	} else {
+		if (baselineRunId && baselineRunId !== 'none') {
+			rows.push('', `> Baseline: main's run ${baselineRunId}.`)
+		}
+		if (added) {
+			rows.push(
+				'',
+				`> This branch adds ${added.linesAdded} coverable lines to main's ${baseline.linesValid}, so the ratchet judged the **added code** rather than the whole-repository ratio: ${fmt(added.line)} of added lines and ${fmt(added.branch)} of added branches are covered. See ADR-0017.`,
+			)
+		}
 	}
 
 	const summary = ['## Coverage', '', ...rows].join('\n')

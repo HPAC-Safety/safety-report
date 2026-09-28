@@ -27,16 +27,17 @@
 # stub under act (see "the bots' two commits" below).
 #
 # Coverage parity: the coverage job runs as in CI. It gates against the same
-# baseline artifact, from main's last green CI run, that CI does, and measures
-# this branch on Ubuntu 24.04 with the SDK global.json names. A run whose
-# coverage merged a different number of per-project reports than there are
-# test projects fails, because its verdict would not be CI's.
+# baseline artifact, from the newest push run on main that ran coverage (found
+# by tools/find-coverage-baseline.mjs, #589), that CI does, and measures this
+# branch on Ubuntu 24.04 with the SDK global.json names. A run whose coverage
+# merged a different number of per-project reports than there are test
+# projects fails, because its verdict would not be CI's.
 #
 # No token reaches act. The repository is public, so every job runs
 # anonymously; act's GITHUB_TOKEN is set explicitly empty, because act fills a
 # missing one from `gh auth token`. The one thing an anonymous caller cannot do
 # is download an artifact (401 even on a public repository), and the coverage
-# ratchet needs one: main's last green coverage-report. So this script
+# ratchet needs one: the baseline coverage-report. So this script
 # downloads it on the host, with your `gh` login, before act starts, into
 # .ci-local/baseline/ in the clone act copies; the coverage job reads it from
 # there and prints the run it came from. Without a gh login, a run that
@@ -253,23 +254,26 @@ fi
 
 # ------------------------------------------------------------ the baseline --
 #
-# The run CI's "Fetch the main baseline" step picks, found the same way: the
-# last successful push run of CI on main. .ci-local/ is gitignored, so the
-# jobs' own `git status` checks never see it, and act is told to copy ignored
-# paths (a fresh clone holds nothing else that is ignored). Only Cobertura.xml
-# is kept: the artifact's markdown and HTML would otherwise sit in the tree
-# the docs checks read. With no green run, or none carrying the artifact, CI
-# runs the floor alone, and so does this.
+# The run CI's "Fetch the main baseline" step picks, found the same way -
+# tools/find-coverage-baseline.mjs, so the two can never pick a different run
+# (ADR-0147, ADR-0165). main's newest green push run does not always carry the
+# artifact: the coverage job is skipped on a docs-, infra-, or workflow-only
+# change, so the script walks back to the newest run that actually ran
+# coverage (#589). .ci-local/ is gitignored, so the jobs' own `git status`
+# checks never see it, and act is told to copy ignored paths (a fresh clone
+# holds nothing else that is ignored). Only Cobertura.xml is kept: the
+# artifact's markdown and HTML would otherwise sit in the tree the docs checks
+# read. With no baseline found at all, CI runs the floor alone, and so does
+# this.
 
 if [ "$NEED_BASELINE" -eq 1 ]; then
 	BASELINE="$WORK/repo/.ci-local/baseline"
 	mkdir -p "$BASELINE" || die "cannot create $BASELINE"
-	RUN_ID=$(gh run list --repo "$REPOSITORY" --workflow CI --branch main --event push \
-		--status success --limit 1 --json databaseId --jq '.[0].databaseId // empty') \
-		|| die "could not list main's CI runs with gh; check gh auth status"
-	if [ -z "$RUN_ID" ]; then
-		say "Coverage baseline: none, main has no successful CI run; the floor alone applies, as in CI."
-		echo "No successful CI run on main yet. The ratchet will not run; the floor still applies." > "$BASELINE/notice"
+	RUN_ID=$(node tools/find-coverage-baseline.mjs --repo "$REPOSITORY") \
+		|| die "could not find main's coverage baseline with gh; check gh auth status"
+	if [ "$RUN_ID" = "none" ]; then
+		say "Coverage baseline: none, no push run on main carries a non-expired coverage-report artifact; the floor alone applies, as in CI."
+		echo "No push run on main carries a non-expired coverage-report artifact. The ratchet will not run; the floor still applies." > "$BASELINE/notice"
 	elif gh run download "$RUN_ID" --repo "$REPOSITORY" --name coverage-report \
 		--dir "$WORK/baseline-download" >/dev/null 2>&1 \
 		&& [ -f "$WORK/baseline-download/Cobertura.xml" ]; then
@@ -278,12 +282,7 @@ if [ "$NEED_BASELINE" -eq 1 ]; then
 		echo "$RUN_ID" > "$BASELINE/run-id"
 		say "Coverage baseline: main run $RUN_ID, the run CI's ratchet uses."
 	else
-		live=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID/artifacts?name=coverage-report" \
-			--jq '[.artifacts[] | select(.expired | not)] | length') \
-			|| die "could not download coverage-report from main run $RUN_ID, nor list its artifacts"
-		[ "$live" = 0 ] || die "could not download coverage-report from main run $RUN_ID; check gh auth status and retry"
-		say "Coverage baseline: none, main run $RUN_ID has no coverage-report; the floor alone applies, as in CI."
-		echo "main run $RUN_ID has no coverage-report artifact - it predates this job, or the artifact expired. Ratchet skipped; the floor still applies." > "$BASELINE/notice"
+		die "could not download coverage-report from main run $RUN_ID, though it was reported to hold one; check gh auth status and retry"
 	fi
 fi
 

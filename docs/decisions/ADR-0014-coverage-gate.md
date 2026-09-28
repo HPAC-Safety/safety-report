@@ -12,8 +12,11 @@ keywords: code coverage, coverage gate, CI
 
 **Status:** Accepted. Decision 3 narrowed by
 [ADR-0147](ADR-0147-pull-requests-merge-through-a-merge-queue.md): the
-baseline is `main`'s last successful `push` run only, never a merge queue
-run, and the ratchet also runs on each merge group.
+baseline is a successful `push` run on `main` only, never a merge queue
+run, and the ratchet also runs on each merge group. Further narrowed by
+[ADR-0165](ADR-0165-the-coverage-baseline-walks-back-to-the-newest-run-that-ran-coverage.md):
+that run is not always `main`'s newest, because the `coverage` job itself is
+sometimes skipped.
 
 ## Context
 
@@ -57,7 +60,10 @@ deleted test.
 ## Decision 3 — the baseline comes from main's last green artifact
 
 The `coverage` job uploads its merged Cobertura report. A pull request finds
-main's most recent successful CI run, downloads that artifact, and compares.
+main's most recent successful CI run that actually ran coverage, downloads
+that artifact, and compares — walking back past a run that skipped the job
+entirely, since a docs- or infra-only merge carries no artifact at all
+([ADR-0165](ADR-0165-the-coverage-baseline-walks-back-to-the-newest-run-that-ran-coverage.md)).
 
 **Rejected: recompute main's coverage in the same run.** Always accurate and no
 artifact plumbing, but it roughly doubles the job — including re-running the

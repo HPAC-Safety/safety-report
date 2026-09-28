@@ -381,10 +381,13 @@ jobs:
       # recomputing it, which would double this job's time and re-run the
       # Testcontainers suite for a number that is already known. See ADR-0014.
       # A merge group is ratcheted too: it is the tree that will become main.
-      # The baseline is only ever a push run on main. `--event push` keeps a
-      # merge group's own coverage-report artifact (its branch is
-      # gh-readonly-queue/main/*, never main) and any pull request run out of
-      # it, so nothing but a merged commit sets the bar (ADR-0147).
+      # The baseline is only ever a push run on main - never a merge-group run
+      # (branch gh-readonly-queue/main/*) or a pull request run (ADR-0147).
+      # main's newest green run does not always carry the artifact: the
+      # coverage job is skipped on a docs-, infra-, or workflow-only change, so
+      # tools/find-coverage-baseline.mjs walks back to the newest run that
+      # actually ran coverage (#589, ADR-0165). tools/ci-local.sh calls the
+      # same script, so both pick the same run.
       - name: Fetch the main baseline
         id: baseline
         if: (github.event_name == 'pull_request' || github.event_name == 'merge_group') && !env.ACT
@@ -392,22 +395,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -uo pipefail
-          run_id=$(gh run list --workflow CI --branch main --event push --status success \
-            --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+          run_id=$(node tools/find-coverage-baseline.mjs --repo "$GITHUB_REPOSITORY" || true)
 
-          if [ -z "${run_id:-}" ]; then
-            echo "::notice::No successful CI run on main yet. The ratchet will not run; the floor still applies."
+          if [ -z "${run_id:-}" ] || [ "$run_id" = "none" ]; then
             echo "path=none" >> "$GITHUB_OUTPUT"
+            echo "run-id=none" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if gh run download "$run_id" --name coverage-report --dir ./artifacts/baseline 2>/dev/null \
             && [ -f ./artifacts/baseline/Cobertura.xml ]; then
-            echo "Baseline from main run $run_id."
             echo "path=./artifacts/baseline/Cobertura.xml" >> "$GITHUB_OUTPUT"
+            echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
           else
-            echo "::notice::main run $run_id has no coverage-report artifact - it predates this job, or the artifact expired. Ratchet skipped; the floor still applies."
+            echo "::notice::main run $run_id reported a coverage-report artifact, but the download failed. Ratchet skipped; the floor still applies."
             echo "path=none" >> "$GITHUB_OUTPUT"
+            echo "run-id=none" >> "$GITHUB_OUTPUT"
           fi
 
       # Under act (tools/ci-local.sh) the job has no token, and GitHub answers an
@@ -424,11 +427,14 @@ jobs:
         run: |
           echo "ci-local:github-token=$([ -n "$JOB_TOKEN" ] && echo present || echo empty)"
           if [ -f .ci-local/baseline/Cobertura.xml ]; then
-            echo "Baseline from main run $(cat .ci-local/baseline/run-id)."
+            run_id=$(cat .ci-local/baseline/run-id)
+            echo "Baseline from main run $run_id."
             echo "path=./.ci-local/baseline/Cobertura.xml" >> "$GITHUB_OUTPUT"
+            echo "run-id=$run_id" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::$(cat .ci-local/baseline/notice 2>/dev/null || echo 'No baseline from tools/ci-local.sh. Ratchet skipped; the floor still applies.')"
             echo "path=none" >> "$GITHUB_OUTPUT"
+            echo "run-id=none" >> "$GITHUB_OUTPUT"
           fi
 
       # Output is captured to comment.md here, once, rather than re-run by the
@@ -444,6 +450,7 @@ jobs:
             node tools/coverage-gate.mjs \
               --report ./artifacts/report/Cobertura.xml \
               --baseline "${{ steps.baseline.outputs.path || steps.baseline-local.outputs.path || 'none' }}" \
+              --baseline-run-id "${{ steps.baseline.outputs.run-id || steps.baseline-local.outputs.run-id || 'none' }}" \
               --min-line 80 --min-branch 70
           } 2>&1 | tee comment.md
 

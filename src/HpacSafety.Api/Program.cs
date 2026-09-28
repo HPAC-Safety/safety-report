@@ -18,6 +18,21 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
+
+// Resolved once, here, from Secrets Manager when Terraform supplies an ARN —
+// every deployed environment; the Lambda environment carries only the ARN,
+// never the secret's value. Left unset in Development and every test host.
+// Mirrors DatabaseConnectionStringResolver's ARN pattern (#586). See #597,
+// ADR-0159, ADR-0163.
+var originVerificationSection = builder.Configuration.GetSection(OriginVerificationOptions.SectionName);
+var originVerificationSecret = await SecretArnResolver.ResolveAsync(
+	originVerificationSection[nameof(OriginVerificationOptions.Secret)],
+	originVerificationSection[nameof(OriginVerificationOptions.SecretArn)]).ConfigureAwait(false);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+	[$"{OriginVerificationOptions.SectionName}:{nameof(OriginVerificationOptions.Secret)}"] = originVerificationSecret,
+});
+
 // Fails the host at startup, outside Development, if no origin secret is
 // configured — a caller must never reach an unverified Function URL because a
 // Secrets Manager value was missing. See ADR-0159.
@@ -41,6 +56,20 @@ builder.Services.AddDbContext<HpacSafetyDbContext>((provider, options) =>
 {
 	options.UseNpgsql(connectionString);
 	options.AddInterceptors(provider.GetRequiredService<OutboxNudgeInterceptor>());
+});
+
+// Resolved once, here, from Secrets Manager when Terraform supplies an ARN —
+// every deployed environment; the Lambda environment carries only the ARN,
+// never the key's value. Left unset in Development and every test host,
+// where the plain Translation:ApiKey/DEEPL_API_KEY setting still applies.
+// See #597.
+var translationSection = builder.Configuration.GetSection(DeepLOptions.SectionName);
+var deepLApiKey = await SecretArnResolver.ResolveAsync(
+	translationSection[nameof(DeepLOptions.ApiKey)] ?? builder.Configuration["DEEPL_API_KEY"],
+	translationSection[nameof(DeepLOptions.ApiKeySecretArn)]).ConfigureAwait(false);
+builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
+{
+	[$"{DeepLOptions.SectionName}:{nameof(DeepLOptions.ApiKey)}"] = deepLApiKey,
 });
 
 // Machine translation for the question-authoring screen. With no credential

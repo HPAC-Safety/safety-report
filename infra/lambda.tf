@@ -8,18 +8,18 @@
 # (deploy-api.yml, deploy-worker.yml) updates each function's code to the
 # commit SHA CI tested, so both functions ignore `image_uri` after that.
 #
-# WHO OWNS THE ENVIRONMENT. Most of `environment` is plain, non-secret
-# configuration Terraform sets directly — including the database's host,
-# port, name, and its RDS-managed master-user secret's ARN (not the secret's
-# VALUE, just where to find it: DatabaseConnectionStringResolver in
-# HpacSafety.Infrastructure reads that secret itself at cold start and
-# assembles the real connection string, so the master password never touches
-# Terraform state, #443/#465). The one still-secret-shaped value,
-# `HpacSafety__Security__OriginVerification__Secret`, has no such ARN-based
-# escape hatch the application resolves itself yet, so the deploy workflow
-# reads its current value from Secrets Manager (secrets.tf) and sets it
-# directly on the function's configuration alongside the image update — which
-# is also why both functions ignore `environment` after the first apply.
+# WHO OWNS THE ENVIRONMENT. Every value in `environment` is plain, non-secret
+# configuration Terraform sets directly — including every secret's ARN (not
+# its VALUE, just where to find it). The application reads its own secrets
+# itself, by ARN, at cold start, exactly the way DatabaseConnectionStringResolver
+# reads the RDS-managed master-user secret (#443/#465): SecretArnResolver in
+# HpacSafety.Infrastructure does the same for the CloudFront origin-verify
+# secret (API) and the Gemini and DeepL keys (Worker), so none of their
+# VALUES ever touches Terraform state, a GitHub secret beyond the one human
+# puts into Secrets Manager once, or the Lambda environment (#597). Nothing
+# else writes `environment` any more — the deploy workflow only ever updates
+# `image_uri` — so Terraform owns it outright; only `image_uri` is ignored
+# after the first apply.
 
 locals {
   images = {
@@ -82,9 +82,12 @@ resource "aws_lambda_function" "api" {
         # exists, below.
         HpacSafety__Worker__Nudge__FunctionName = aws_lambda_function.worker.function_name
 
-        # Populated by the deploy workflow from Secrets Manager at deploy
-        # time; see this file's header comment.
-        HpacSafety__Security__OriginVerification__Secret = ""
+        # ARNs only — OriginVerificationServiceCollectionExtensions and
+        # AddHpacSafetyTranslation each resolve their own secret's current
+        # value from Secrets Manager themselves, at cold start (#597); see
+        # this file's header comment.
+        HpacSafety__Security__OriginVerification__SecretArn = aws_secretsmanager_secret.cloudfront_origin_secret.arn
+        Translation__ApiKeySecretArn                        = aws_secretsmanager_secret.this["deepl_api_key"].arn
       }
     )
   }
@@ -92,7 +95,7 @@ resource "aws_lambda_function" "api" {
   tags = merge(local.app_tags, { Name = "${local.name}-api" })
 
   lifecycle {
-    ignore_changes = [image_uri, environment]
+    ignore_changes = [image_uri]
   }
 }
 
@@ -151,9 +154,11 @@ resource "aws_lambda_function" "worker" {
       {
         Metrics__Namespace = local.metric_namespace
 
-        # Populated by the deploy workflow from a repository secret at deploy
-        # time; see deploy-worker.yml's AiChatClient__ApiKey comment.
-        AiChatClient__ApiKey = ""
+        # ARNs only — AddHpacSafetyAiChatClient and AddHpacSafetyTranslation
+        # each resolve their own secret's current value from Secrets Manager
+        # themselves, at cold start (#597); see this file's header comment.
+        AiChatClient__ApiKeySecretArn = aws_secretsmanager_secret.this["gemini_api_key"].arn
+        Translation__ApiKeySecretArn  = aws_secretsmanager_secret.this["deepl_api_key"].arn
       }
     )
   }
@@ -161,7 +166,7 @@ resource "aws_lambda_function" "worker" {
   tags = merge(local.app_tags, { Name = "${local.name}-worker" })
 
   lifecycle {
-    ignore_changes = [image_uri, environment]
+    ignore_changes = [image_uri]
   }
 }
 

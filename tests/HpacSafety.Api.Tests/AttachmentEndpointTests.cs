@@ -241,6 +241,19 @@ public class AttachmentEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Fact]
+	public async Task GivenAnUnknownAttachment_WhenOriginalRequested_ThenNotFound()
+	{
+		// Given
+		using var reviewer = await SignedInAsync(MemberRole.SafetyOfficer);
+
+		// When
+		using var response = await reviewer.GetAsync(OriginalUrl(TinyId.New().Value, TinyId.New().Value));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+	}
+
+	[Fact]
 	public async Task GivenADocument_WhenOriginalRequested_ThenRejected()
 	{
 		// Given

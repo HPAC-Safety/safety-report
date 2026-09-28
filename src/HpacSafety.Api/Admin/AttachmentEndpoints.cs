@@ -83,9 +83,10 @@ public static class AttachmentEndpoints
 
 		try
 		{
-			var contentType = MediaType.TryParse(file.ContentType, out var original) && original.DerivativeForm is { } derived
-				? derived.ContentType
-				: file.ContentType;
+			// A stored content type was validated at submission; a derivative's is
+			// its stripped form, and always MP4 for a video (ADR-0122).
+			var original = MediaType.Parse(file.ContentType);
+			var contentType = (original.DerivativeForm ?? original).ContentType;
 
 			url = await links.CreateInlineViewUrl(
 				file.ViewableKey, contentType, BlobUrlLifetime.Maximum, cancellationToken).ConfigureAwait(false);

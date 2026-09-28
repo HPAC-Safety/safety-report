@@ -232,7 +232,7 @@ public static class PublicReportEndpoints
 		return Results.Ok(new PublicReportDetail(
 			report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount,
 			isStaff ? report.FullAttachmentCount : report.PublicAttachmentCount,
-			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind), FormatOf(file.Kind, file.ContentType)))],
+			[.. media.Select(file => new PublicMediaView(file.Id, EnumCode.Of(file.Kind), ReportEndpoints.FormatOf(file.Kind, file.ContentType)))],
 			staffAttachments));
 	}
 
@@ -254,12 +254,6 @@ public static class PublicReportEndpoints
 		return role is MemberRole.SafetyOfficer or MemberRole.Administrator;
 	}
 
-	/// <summary>A document's coarse format, the extension it downloads with; none for an image or video.</summary>
-	private static string? FormatOf(AttachmentKind kind,
-									string contentType)
-	{
-		return kind is AttachmentKind.Document && MediaType.TryParse(contentType, out var type) ? type.Extension : null;
-	}
 
 	/// <summary>
 	///     A short-lived link for anyone: inline to one public image or video's

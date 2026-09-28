@@ -163,3 +163,18 @@ Examples:
   | a summary pair is approved                                |
   | a report is unpublished                                   |
   | a report is published                                     |
+
+@REQ-DOM-016
+Scenario: An operator requeues poisoned outbox work
+  Given an outbox message has reached the poison threshold and stopped retrying
+  When the Worker is invoked with a requeue-poison payload
+  Then the message's poison state is cleared and its attempt count resets
+  And it becomes claimable again immediately
+  And only the requeued count and the message's own identifier are logged, never its payload
+
+@REQ-DOM-017
+Scenario: A poison-requeue payload naming a time window only requeues messages poisoned within it
+  Given one outbox message was poisoned before the given window and another was poisoned within it
+  When the Worker is invoked with a requeue-poison payload naming that window
+  Then only the message poisoned within the window is requeued
+  And the message poisoned before the window is left poisoned

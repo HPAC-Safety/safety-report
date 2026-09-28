@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Reqnroll;
 using Shouldly;
 
@@ -374,5 +375,138 @@ public sealed class DomainAndLifecycleSteps
 		string[] forbidden = ["purge"];
 		routes.ShouldNotContain(pattern => forbidden.Any(p => pattern.Contains(p, StringComparison.OrdinalIgnoreCase)));
 		await Task.CompletedTask;
+	}
+
+	// --- REQ-DOM-016/017: the operator poison-requeue tool (issue #467) ---
+
+	private HpacSafety.Worker.Outbox.PoisonRequeue.Result? _requeueResult;
+	private TinyId _requeuedMessageId;
+	private TinyId _requeuedMessageId2;
+
+	[Given(@"an outbox message has reached the poison threshold and stopped retrying")]
+	public async Task GivenAPoisonedOutboxMessage()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var message = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, TinyId.New().Value, At);
+		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
+		{
+			message.RecordFailure("synthetic failure", At);
+		}
+
+		message.IsPoisoned.ShouldBeTrue();
+		database.OutboxMessages.Add(message);
+		await database.SaveChangesAsync();
+
+		_requeuedMessageId = message.Id;
+	}
+
+	[When(@"the Worker is invoked with a requeue-poison payload")]
+	public async Task WhenInvokedWithARequeuePoisonPayload()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var logger = scope.ServiceProvider.GetRequiredService<ILogger<DomainAndLifecycleSteps>>();
+
+		_requeueResult = await HpacSafety.Worker.Outbox.PoisonRequeue.Requeue(
+			database, At.AddMinutes(1), from: null, to: null, logger, CancellationToken.None);
+	}
+
+	[Then(@"the message's poison state is cleared and its attempt count resets")]
+	public async Task ThenPoisonStateIsCleared()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var message = await database.OutboxMessages.SingleAsync(m => m.Id == _requeuedMessageId);
+		message.IsPoisoned.ShouldBeFalse();
+		message.Attempts.ShouldBe(0);
+	}
+
+	[Then(@"it becomes claimable again immediately")]
+	public async Task ThenItBecomesClaimableImmediately()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var message = await database.OutboxMessages.SingleAsync(m => m.Id == _requeuedMessageId);
+		message.NextAttemptAt.ShouldBeLessThanOrEqualTo(At.AddMinutes(1));
+	}
+
+	[Then(@"only the requeued count and the message's own identifier are logged, never its payload")]
+	public void ThenOnlyCountAndIdAreLogged()
+	{
+		// The shared booted host's database may carry poison rows other
+		// scenarios left behind — PoisonRequeue.Result names every row it
+		// touched, and asserting this one's own ID is among them (rather than
+		// that it was the only one) is what stays true regardless. The exact
+		// "requeues only what's poisoned, and nothing else" count is proven in
+		// isolation by HpacSafety.Worker.Tests' PoisonRequeueTests.
+		_requeueResult!.RequeuedCount.ShouldBeGreaterThanOrEqualTo(1);
+		_requeueResult.RequeuedIds.ShouldContain(_requeuedMessageId.ToString());
+	}
+
+	[Given(@"one outbox message was poisoned before the given window and another was poisoned within it")]
+	public async Task GivenMessagesPoisonedBeforeAndWithinAWindow()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		var before = new OutboxMessage(TinyId.New(), OutboxMessageType.SummarizeReport, TinyId.New().Value, At);
+		var within = new OutboxMessage(TinyId.New(), OutboxMessageType.TranslateAnswers, TinyId.New().Value, At);
+
+		var beforeWindow = At.AddHours(-2);
+		var withinWindow = At.AddMinutes(-30);
+
+		for (var attempt = 0; attempt < OutboxMessage.PoisonThreshold; attempt++)
+		{
+			before.RecordFailure("synthetic failure", beforeWindow);
+			within.RecordFailure("synthetic failure", withinWindow);
+		}
+
+		database.OutboxMessages.AddRange(before, within);
+		await database.SaveChangesAsync();
+
+		_requeuedMessageId = before.Id;
+		_requeuedMessageId2 = within.Id;
+	}
+
+	[When(@"the Worker is invoked with a requeue-poison payload naming that window")]
+	public async Task WhenInvokedWithARequeuePoisonPayloadNamingAWindow()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var logger = scope.ServiceProvider.GetRequiredService<ILogger<DomainAndLifecycleSteps>>();
+
+		_requeueResult = await HpacSafety.Worker.Outbox.PoisonRequeue.Requeue(
+			database, At, At.AddHours(-1), At, logger, CancellationToken.None);
+	}
+
+	[Then(@"only the message poisoned within the window is requeued")]
+	public void ThenOnlyTheWithinWindowMessageIsRequeued()
+	{
+		// See ThenOnlyCountAndIdAreLogged: the shared host's database is not
+		// reset between scenarios, so this asserts membership, not an exact
+		// count — the exact "only this one, and not the other" behavior is
+		// proven in isolation by PoisonRequeueTests.
+		_requeueResult!.RequeuedIds.ShouldContain(_requeuedMessageId2.ToString());
+		_requeueResult.RequeuedIds.ShouldNotContain(_requeuedMessageId.ToString());
+	}
+
+	[Then(@"the message poisoned before the window is left poisoned")]
+	public async Task ThenTheBeforeWindowMessageIsLeftPoisoned()
+	{
+		var host = await BootedApi.Factory();
+		using var scope = host.Services.CreateScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+
+		(await database.OutboxMessages.SingleAsync(m => m.Id == _requeuedMessageId)).IsPoisoned.ShouldBeTrue();
 	}
 }

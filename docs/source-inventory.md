@@ -58,6 +58,7 @@ Core has no runtime package dependency.
 | [`src/HpacSafety.Infrastructure`](../src/HpacSafety.Infrastructure/) | Persistence service registration. |
 | [`AiChatClient/`](../src/HpacSafety.Infrastructure/AiChatClient/) | The Gemini client and the fail-closed unconfigured client (ADR-0104). |
 | [`Media/`](../src/HpacSafety.Infrastructure/Media/) | Sniffers, the Magick.NET image stripper (ADR-0025), and the ffmpeg remuxer and its verification (ADR-0094, ADR-0122). |
+| [`Observability/`](../src/HpacSafety.Infrastructure/Observability/) | `IMetricsPublisher`, writing `OutboxOldestAgeSeconds` as a CloudWatch Embedded Metric Format log line — no AWS SDK call, the one application metric this system emits (issue #467). |
 | [`Persistence/`](../src/HpacSafety.Infrastructure/Persistence/) | The `DbContext`, `MigrationRunner` (ADR-0055), the outbox claimer, and the concurrency token. |
 | [`Persistence/Configurations/`](../src/HpacSafety.Infrastructure/Persistence/Configurations/) | EF mappings for every table and view. |
 | [`Persistence/Conventions/`](../src/HpacSafety.Infrastructure/Persistence/Conventions/) | Snake-case naming and the soft-delete filters with their exceptions (ADR-0040, ADR-0095). |

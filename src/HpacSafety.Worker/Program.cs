@@ -1,8 +1,10 @@
+using System.Text.Json;
 using Amazon.Lambda.Core;
 using Amazon.Lambda.RuntimeSupport;
 using HpacSafety.Core.Features.Reporting;
 using HpacSafety.Infrastructure.AiChatClient;
 using HpacSafety.Infrastructure.Media;
+using HpacSafety.Infrastructure.Observability;
 using HpacSafety.Infrastructure.Persistence;
 using HpacSafety.Infrastructure.Translation;
 using HpacSafety.Worker;
@@ -29,6 +31,11 @@ var builder = Host.CreateApplicationBuilder(new HostApplicationBuilderSettings
 	EnvironmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"),
 });
 builder.Services.AddSingleton(TimeProvider.System);
+
+// One CloudWatch Embedded Metric Format log line per Publish call — no AWS
+// SDK, no CloudWatch API call (issue #467). See infra/observability.tf.
+builder.Services.AddHpacSafetyObservability(builder.Configuration);
+
 // Built once, at cold start, from the RDS-managed master-user secret in every
 // deployed environment (same shape the API resolves, ADR-0055 applies to
 // both). Falls back to the plain ConnectionStrings:HpacSafety value in
@@ -115,13 +122,49 @@ if (isLambda)
 	// 15-minute Lambda ceiling.
 	var safetyMargin = TimeSpan.FromSeconds(30);
 
-	using var handlerWrapper = HandlerWrapper.GetHandlerWrapper((ILambdaContext context) =>
-		OutboxDrainPass.DrainUntilIdleOrOutOfTime(
-			scopeFactory,
-			clock,
-			() => context.RemainingTime,
-			safetyMargin,
-			CancellationToken.None));
+	var requestJsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+	// A raw Stream in and out — no Amazon.Lambda.Serialization.* package
+	// (issue #467: "no new SDK"). Every invocation (the API's nudge, the
+	// EventBridge sweep, and a manual requeue call alike) reaches this same
+	// handler; only a payload matching {"requeue":"poison"} is read as
+	// anything other than "drain what is due" (PoisonRequeue, ADR-0123).
+	using var handlerWrapper = HandlerWrapper.GetHandlerWrapper(async (Stream inputStream, ILambdaContext context) =>
+	{
+		PoisonRequeue.Request? requeueRequest = null;
+		if (inputStream.Length > 0)
+		{
+			try
+			{
+				requeueRequest = await JsonSerializer
+					.DeserializeAsync<PoisonRequeue.Request>(inputStream, requestJsonOptions)
+					.ConfigureAwait(false);
+			}
+			catch (JsonException)
+			{
+				requeueRequest = null;
+			}
+		}
+
+		if (PoisonRequeue.IsPoisonRequeue(requeueRequest))
+		{
+			await using var requeueScope = scopeFactory.CreateAsyncScope();
+			var database = requeueScope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+			var logger = requeueScope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+			var result = await PoisonRequeue
+				.Requeue(database, clock.GetUtcNow(), requeueRequest!.From, requeueRequest.To, logger, CancellationToken.None)
+				.ConfigureAwait(false);
+
+			return new MemoryStream(JsonSerializer.SerializeToUtf8Bytes(result));
+		}
+
+		await OutboxDrainPass
+			.DrainUntilIdleOrOutOfTime(scopeFactory, clock, () => context.RemainingTime, safetyMargin, CancellationToken.None)
+			.ConfigureAwait(false);
+
+		return new MemoryStream();
+	});
 
 	using var bootstrap = new LambdaBootstrap(handlerWrapper);
 	await bootstrap.RunAsync().ConfigureAwait(false);

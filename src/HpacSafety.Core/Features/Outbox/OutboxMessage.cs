@@ -111,6 +111,20 @@ public class OutboxMessage
 	}
 
 	/// <summary>
+	///     Clears poison and gives this message a fresh run of
+	///     <see cref="PoisonThreshold" /> attempts, claimable again immediately.
+	///     Used only by the operator requeue tool (issue #467) — never called
+	///     from ordinary processing.
+	/// </summary>
+	public void Requeue(DateTimeOffset at)
+	{
+		PoisonedAt = null;
+		Attempts = 0;
+		LastError = null;
+		NextAttemptAt = at;
+	}
+
+	/// <summary>
 	///     Stamps this message deleted, as part of its aggregate's soft deletion
 	///     (REQ-DOM-007) — excluded from the claim query's default filter from this
 	///     point on, so no future attempt claims it.

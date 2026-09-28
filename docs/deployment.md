@@ -190,7 +190,13 @@ which additionally carry `prevent_destroy` — is created once and updated in
 place, protected from deletion.
 
 Alarms route through SNS to `safety@hpac.ca`, in production only; staging's
-topic has no subscriber.
+topic has no subscriber. Four alarms cover this lightly used system: the
+Worker's and the API's Lambda functions throwing unhandled exceptions, the
+oldest unprocessed outbox row exceeding 15 minutes (the one metric the
+Worker publishes itself, as a CloudWatch Embedded Metric Format log line —
+no AWS SDK call), and the NAT instance's Auto Scaling group having no
+healthy instance. Each alarm's own description is short and self-contained;
+none links elsewhere (issue #467).
 
 The Terraform and the application code now match this shape (#443, #465):
 Lambda functions with no ALB, origin-secret verification, the Worker's

@@ -1,3 +1,4 @@
+using HpacSafety.Infrastructure.Observability;
 using HpacSafety.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,7 +30,19 @@ public static class OutboxDrainPass
 
 		await using var scope = scopeFactory.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
-		var processors = scope.ServiceProvider.GetServices<IOutboxMessageProcessor>();
+		var processors = scope.ServiceProvider.GetServices<IOutboxMessageProcessor>().ToList();
+
+		// A host with no processor registered at all has no outbox work to
+		// report on — every deployed host registers all four (Program.cs); this
+		// only spares resolving IMetricsPublisher (and querying the database
+		// below) for a test host built to exercise nothing but start/stop
+		// lifecycle, with no real database or metrics publisher behind it.
+		if (processors.Count == 0)
+		{
+			return claimedAny;
+		}
+
+		var metrics = scope.ServiceProvider.GetRequiredService<IMetricsPublisher>();
 
 		foreach (var processor in processors)
 		{
@@ -40,7 +53,34 @@ public static class OutboxDrainPass
 			claimedAny |= claimed;
 		}
 
+		await PublishOldestAge(database, metrics, clock.GetUtcNow(), cancellationToken).ConfigureAwait(false);
+
 		return claimedAny;
+	}
+
+	/// <summary>
+	///     Publishes <c>OutboxOldestAgeSeconds</c> — a gauge: how long the
+	///     oldest live, unclaimed, unpoisoned row has been waiting — read
+	///     straight from the table each pass rather than tracked incrementally.
+	///     The one application metric this system emits (issue #467, owner
+	///     decision: a lightly used system needs exactly the one alarm this
+	///     drives, nothing more).
+	/// </summary>
+	private static async Task PublishOldestAge(
+		HpacSafetyDbContext database,
+		IMetricsPublisher metrics,
+		DateTimeOffset now,
+		CancellationToken cancellationToken)
+	{
+		var oldestOccurredAt = await database.OutboxMessages
+			.Where(message => message.ProcessedAt == null && message.PoisonedAt == null && message.Deleted == null)
+			.OrderBy(message => message.OccurredAt)
+			.Select(message => (DateTimeOffset?)message.OccurredAt)
+			.FirstOrDefaultAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		var ageSeconds = oldestOccurredAt is null ? 0d : Math.Max(0, (now - oldestOccurredAt.Value).TotalSeconds);
+		metrics.Publish("OutboxOldestAgeSeconds", ageSeconds, MetricUnit.Seconds);
 	}
 
 	/// <summary>

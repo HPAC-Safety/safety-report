@@ -242,6 +242,14 @@ A review action outside its states is refused and changes nothing — *Reqnroll,
 
 A report without publication consent is unpublished for good — *Reqnroll, Covered*
 
+### REQ-DOM-016
+
+An operator requeues poisoned outbox work — *Reqnroll, Covered*
+
+### REQ-DOM-017
+
+A poison-requeue payload naming a time window only requeues messages poisoned within it — *Reqnroll, Covered*
+
 ## Claims: media
 
 ### REQ-MED-001
@@ -2612,6 +2620,14 @@ infrastructure-and-operations.md — verified by none — a Lambda invocation's 
 ### CON-INF-017
 
 infrastructure-and-operations.md — verified by `REQ-SUB-116`
+
+### CON-INF-025
+
+infrastructure-and-operations.md — verified by none — an infrastructure/logging property no application scenario observes directly; `infra/observability.tf` and its tests are the check
+
+### CON-INF-026
+
+infrastructure-and-operations.md — verified by `REQ-DOM-016`, `REQ-DOM-017`
 
 ### CON-SO-001
 

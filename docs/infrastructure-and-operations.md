@@ -7,6 +7,10 @@ area: infrastructure-and-operations
 
 # Infrastructure and operations
 
+This page describes the target: no AWS deployment exists yet. "Where today's
+Terraform differs" says exactly what is still scaffolding, and
+[`docs/deployment.md`](deployment.md) says what stage that work is at.
+
 ## Production topology
 
 **CON-INF-001** Each environment (staging, production) is one deliberately

@@ -26,15 +26,21 @@ staging and production, built from the same Terraform
 
 ## Environments and accounts
 
-- **Staging** is the owner's personal AWS account, which also runs unrelated
-  workloads. It holds synthetic data only and never runs the Development-only
-  members-site login. It serves only its default `*.cloudfront.net` address.
-- **Production** is a separate account that HPAC creates and owns. It is
+**No AWS deployment exists yet.** This section describes the target: what a
+release will do once #443, #464, #465, and #466 land, not something already
+running. See "Where today's Terraform differs" below for exactly what is
+still scaffolding.
+
+- **Staging** will be the owner's personal AWS account, which also runs
+  unrelated workloads. It is meant to hold synthetic data only and never run
+  the Development-only members-site login. It serves only its default
+  `*.cloudfront.net` address.
+- **Production** will be a separate account that HPAC creates and owns. It is
   **not** created from the staging account through AWS Organizations — the
   two accounts are unrelated, and `infra/bootstrap.sh` is run independently in
-  each one, from that account's own CloudShell. Production holds real reports
-  and serves `safety.hpac.ca` and `securite.acvl.ca` on one CloudFront
-  distribution.
+  each one, from that account's own CloudShell. Once deployed, production
+  holds real reports and serves `safety.hpac.ca` and `securite.acvl.ca` on one
+  CloudFront distribution.
 - Each account groups its resources under its own AWS myApplications
   application and tag-based Resource Group — **`hpac-staging`** and
   **`hpac-production`** — a grouping and cost-visibility tool, not a security

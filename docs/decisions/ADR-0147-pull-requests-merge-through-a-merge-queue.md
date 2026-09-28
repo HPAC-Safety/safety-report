@@ -289,7 +289,11 @@ absolute path, nothing person-specific — which is why `init-dev.sh` no longer
 runs `graphify claude install` for the `claude` platform: that command would
 overwrite this tracked file with one hardcoding the local graphify binary's
 path. A contributor's personal hooks belong in the untracked
-`.claude/settings.local.json` instead. `AGENTS.md`, `deliver-change`, and
+`.claude/settings.local.json` instead. `skillfile` has no mechanism to install
+a hook for an agent other than Claude Code, so a non-Claude agent (Copilot,
+Codex, Cursor) never gets this guard mechanically; it reaches them the same
+way every other rule in this repository does — written into `AGENTS.md`
+(issue #427 decision 20). `AGENTS.md`, `deliver-change`, and
 `deliver-hpac-change` are amended to match. See issue #427.
 
 [manage]: https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/configuring-pull-request-merges/managing-a-merge-queue

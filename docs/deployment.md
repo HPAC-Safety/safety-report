@@ -68,11 +68,19 @@ today's Terraform differs" below for exactly what is still scaffolding.
 [`deploy-environment.yml`](../.github/workflows/deploy-environment.yml);
 [ADR-0166](decisions/ADR-0166-a-release-deploys-staging-and-a-separate-workflow-promotes-to-production.md)):
 
-1. **Publish a GitHub Release** on `main`, tagged with the date,
-   `YYYY.MM.DD-N` (e.g. `2026.10.02-1`). This is the only thing that triggers
-   `release.yml`, and the only human action every release afterwards needs
-   ([`infra/SETUP.md`](../infra/SETUP.md) step 2.5). Any other tag shape is rejected before
-   anything is built.
+1. **Run Create release** on `main`
+   ([`create-release.yml`](../.github/workflows/create-release.yml),
+   [ADR-0168](decisions/ADR-0168-a-release-is-created-by-one-action-with-generated-notes.md),
+   [`infra/SETUP.md`](../infra/SETUP.md) step 2.5) — the only human action
+   every release needs. It tags the run's `main` commit with the next
+   `YYYY.MM.DD-N` (today in UTC, next free `N`), creates a GitHub Release whose
+   notes list every pull request merged since the previous one, grouped by
+   label ([`.github/release.yml`](../.github/release.yml)), and dispatches
+   `release.yml` on that tag. It dispatches rather than relying on
+   `release: published`, because a release created with `GITHUB_TOKEN`
+   triggers no workflow, and on the tag rather than `main`, because
+   `hpac-safety-staging` accepts only refs matching `20*`. Any other tag shape
+   is rejected before anything is built.
 2. **`build`** checks out that tag and, with no AWS credential of any kind,
    builds the API image (the Lambda Web Adapter image, `tools/build-api-image.sh`,
    #443), the Worker image (`tools/build-worker-image.sh`, ADR-0118), and the

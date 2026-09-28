@@ -3,11 +3,14 @@
 # CON-INF-011..013). Promotion to production is promote.yml's, a separate,
 # deliberate step (issue #609, ADR-0166).
 #
-# THE ONLY TRIGGER THAT BUILDS A RELEASE. `release: published` fires when a
-# maintainer publishes a GitHub Release tagged `YYYY.MM.DD-N` on `main`
-# (infra/SETUP.md step 2.5). `workflow_dispatch` exists only to rebuild an
+# THE ONLY WORKFLOW THAT BUILDS A RELEASE. create-release.yml (infra/SETUP.md
+# step 2.5, ADR-0168) creates the tag and the GitHub Release, then dispatches
+# this workflow on that tag with `tag` set to it. The same dispatch rebuilds an
 # earlier release by tag (rollback, or redeploying after the original run's
-# artifacts expired — see docs/deployment.md "Rollback"). NOTHING here runs on
+# artifacts expired — see docs/deployment.md "Rollback"). `release: published`
+# still builds a release a maintainer publishes by hand in the GitHub UI; a
+# release create-release.yml makes never fires it (GITHUB_TOKEN events trigger
+# no workflow), so nothing is built twice. NOTHING here runs on
 # push, merge, or pull_request: terraform.yml owns the credential-free
 # validation and the PR plan against both accounts (CON-INF-007), and neither
 # of its jobs ever applies.
@@ -40,7 +43,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag to redeploy, e.g. 2026.10.02-1. Rebuilds from that tag''s commit — see docs/deployment.md "Rollback" for when to use this instead of re-running the original release''s own jobs.'
+        description: 'Release tag to build and deploy to staging, e.g. 2026.10.02-1; run this workflow on that same tag. create-release.yml sets it for a new release; set it by hand only to rebuild an earlier one — see docs/deployment.md "Rollback".'
         required: true
         type: string
 

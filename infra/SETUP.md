@@ -199,12 +199,15 @@ Repository-level (not environment) settings, read by
 
 ### 2.5 First staging release
 
-- [Releases → Draft a new release](https://github.com/HPAC-Safety/safety-report/releases/new)
-  → **Choose a tag** → today's tag, e.g. `2026.10.02-1`, target `main` →
-  **Publish release**. Any other tag shape is refused.
-- Watch it under [Actions → release](https://github.com/HPAC-Safety/safety-report/actions/workflows/release.yml).
-  The `staging` job runs on its own, and the release ends there. It never
-  deploys to or waits on production; publish as many as you like.
+- [Actions → Create release](https://github.com/HPAC-Safety/safety-report/actions/workflows/create-release.yml)
+  → **Run workflow** (from `main`) → **Run workflow**. Or
+  `gh workflow run create-release.yml --repo HPAC-Safety/safety-report --ref main`.
+- It creates today's next tag (`YYYY.MM.DD-N`) and a GitHub Release whose
+  notes list every pull request merged since the previous release, then
+  starts [Actions → Release](https://github.com/HPAC-Safety/safety-report/actions/workflows/release.yml)
+  on that tag. Nothing to type; no tag or release is made by hand.
+- The `staging` job runs on its own, and the release ends there. It never
+  deploys to or waits on production; create as many as you like.
 - Check it worked: the `staging` job is green; the `cloudfront.net` address in
   its summary opens the site, and `<address>/api/health` answers.
 - Also check: open any pull request touching `infra/`; the `plan (staging)` leg
@@ -313,7 +316,7 @@ Repository-level (not environment) settings, read by
 
 ## Part 4 — After setup
 
-- **Every release**: publish a release (2.5); it reaches staging only.
+- **Every release**: run Create release (2.5); it reaches staging only.
 - **Promote to production**: when a staged tag is ready, promote it and
   approve (3.5). Nothing else.
 - **Rollback**: production, promote an earlier tag; staging, re-run an

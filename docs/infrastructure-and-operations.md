@@ -391,14 +391,25 @@ every mutating action on a resource not **already** carrying that tag is
 denied (`aws:ResourceTag`, `StringNotEquals`, no `IfExists`): an
 `IfExists`-only tag check passes on an untagged resource, which describes
 almost every resource belonging to another application, so it is not used as
-the sole guard anywhere in the deploy policy. The same reach also covers
-data, not only mutation: reading a secret value, a Lambda function's
-environment variables, an ECR image layer, log/RDS-log content, an SSM
-parameter, a DynamoDB item, or an SQS/Kinesis message is denied outright
-except (where the resource has a predictable HPAC-Safety-only name) for this
-system's own. This has not been exercised against a real AWS account — see
-`docs/deployment.md` "What `hpac-safety-deploy` may do" for the residual risk
-and the two named, narrow exceptions this leaves.
+the sole guard anywhere in the deploy policy. Creating a TAG is not treated
+as creating a RESOURCE: a tag-adding action that has no way to prove it is
+part of a genuine create call (unlike `ec2:CreateTags`, which AWS's own
+`ec2:CreateAction` context key can tie to one) is either scoped to an
+ARN only this system's own Terraform would name, or denied outright unless
+the resource is already tagged ours — closing the path where this role could
+otherwise stamp `Project=HPAC-Safety` onto another application's existing,
+untagged resource and then, having "made it ours," modify or delete it. The
+same reach also covers data, not only mutation: reading a secret value, a
+Lambda function's environment variables, an ECR image layer, log/RDS-log
+content, an SSM parameter, a DynamoDB item, or an SQS/Kinesis message is
+denied outright except (where the resource has a predictable
+HPAC-Safety-only name) for this system's own — and using a KMS key to
+decrypt or encrypt data is allowed only when AWS itself is calling KMS on
+this role's behalf through one of this system's own services, never as a
+direct call, since a customer-managed key's own key policy (not this IAM
+policy) usually decides who may use it. This has not been exercised against
+a real AWS account — see `docs/deployment.md` "What `hpac-safety-deploy` may
+do" for the residual risk and the two named, narrow exceptions this leaves.
 
 On a published, date-tagged release:
 

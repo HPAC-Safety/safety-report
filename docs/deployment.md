@@ -185,30 +185,43 @@ tag/name scoping does not fit in one):
 - **`hpac-safety-deploy`** — read/write its own Terraform state object,
   manage `hpac-safety-*` S3 buckets, Secrets Manager secrets, Lambda
   functions, ECR repositories, SNS topics, EventBridge rules, Scheduler
-  schedules, and its own log groups **by name**, and IAM roles/policies
-  named `hpac-safety-*`.
+  schedules, and its own log groups **by name**, and — because neither RDS
+  nor Auto Scaling has a context key that ties a tag-adding call to the
+  create call that needed it — tags only an RDS resource named
+  `db`/`subgrp`/`pg`/`snapshot`/`cluster`:`hpac-safety*`, or an Auto Scaling
+  group named `hpac-safety*`.
 - **`hpac-safety-deploy-services`** — for the services with no
   HPAC-Safety-only name pattern to scope by (ACM, Auto Scaling, CloudFront,
   CloudWatch, EC2, RDS, Resource Groups, AppRegistry): read-only metadata
-  broadly, and `Create*` only when the request carries the
-  `Project=HPAC-Safety` tag (`aws:RequestTag`, a real `StringEquals`, not
-  `IfExists`).
+  broadly, `Create*` only when the request carries the `Project=HPAC-Safety`
+  tag (`aws:RequestTag`, a real `StringEquals`, not `IfExists`), and
+  `ec2:CreateTags` only when AWS's own `ec2:CreateAction` context key names
+  one of those same create calls — a key EC2 populates only when tagging is
+  bundled into a genuine create request, never for a standalone `CreateTags`
+  call. KMS use (not administration) of the AWS-managed keys is scoped to
+  calls made *via* the services this system actually uses (see "KMS" below).
 - **`hpac-safety-deploy-guardrails`** — denies every mutating verb
   (`Delete*`/`Modify*`/`Update*`/`Put*`/`Stop*`/`Start*`/`Reboot*`/
   `Terminate*`/`Attach*`/`Detach*`/`Associate*`/`Disassociate*`/
-  `Authorize*`/`Revoke*`, and removing an existing tag) on a resource that
-  is not **already** tagged `Project=HPAC-Safety` (`aws:ResourceTag`, a real
+  `Authorize*`/`Revoke*`, and adding or removing a tag through any action
+  other than the two carve-outs above) on a resource that is not
+  **already** tagged `Project=HPAC-Safety` (`aws:ResourceTag`, a real
   `StringNotEquals`, with no `IfExists` — an untagged resource is denied
   exactly like one tagged for someone else's project). This is what makes
   the tag condition an actual guard: a `StringEqualsIfExists` check alone
   passes whenever a resource carries **no** `Project` tag at all, which
   describes almost every resource belonging to staging's other, unrelated
-  applications.
-- **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles/policies
-  named `hpac-safety-*`, `iam:PassRole` only to those roles and only with
-  `iam:PassedToService` in `[lambda.amazonaws.com, scheduler.amazonaws.com]`,
-  and the explicit denies: never read a secret value even its own, never
-  read an uploaded report file or RDS/log content, never read another
+  applications — and it is also what closes the tag-hijack path: without
+  it, `aws:RequestTag` alone would let this role stamp
+  `Project=HPAC-Safety` onto ANY existing, untagged resource in the
+  account, after which this same guard would treat it as ours and let it
+  be modified or deleted.
+- **`hpac-safety-deploy-iam`** — the IAM/identity portion: roles, policies,
+  and instance profiles (for the NAT instance, #465) named `hpac-safety-*`;
+  `iam:PassRole` only to those roles and only with `iam:PassedToService` in
+  `[lambda.amazonaws.com, scheduler.amazonaws.com, ec2.amazonaws.com]`; and
+  the explicit denies: never read a secret value even its own, never read
+  an uploaded report file or RDS/log content, never read another
   application's Lambda function, ECR image, SSM parameter, DynamoDB item,
   Kinesis record, or SQS message, never create an IAM user or access key,
   touch an OIDC/SAML provider, Organizations, or the account, or edit its
@@ -220,20 +233,49 @@ will: `ec2:RunInstances` (a Create verb, so it is governed by the
 tag-on-create guard instead) also names the public `fck-nat` AMI (#465) as
 a resource in the same call; and the handful of EC2 calls that attach a
 brand-new VPC/subnet/route table to itself
-(`ec2:AttachInternetGateway`, `ec2:CreateRoute`,
-`ec2:AuthorizeSecurityGroupIngress`, and similar — see
-`EstablishNetworkAttachmentsOnResourcesWeJustCreated` in
-`infra/bootstrap.sh`) are excluded from the guardrails deny list, each named
-explicitly rather than as a verb wildcard.
+(`ec2:AttachInternetGateway`, `ec2:AuthorizeSecurityGroupIngress`, and
+similar — see `EstablishNetworkAttachmentsOnResourcesWeJustCreated` in
+`infra/bootstrap.sh`) are allowed unconditionally by that one statement —
+but every one of those same verbs is *also* in the guardrails deny list, so
+the untagged-mutation guard still applies on top and requires the resource
+on the other end (a subnet, a route table, a security group) to already
+carry the tag this role's own creation calls put there moments earlier.
+Nothing here is actually excluded from the guard. `ec2:CreateRoute` is
+named explicitly in the guardrails deny list rather than covered by a verb
+wildcard, because — unlike every other `Create*` action — it mutates an
+existing route table rather than creating a new resource.
+
+**KMS**: `kms:Decrypt`/`Encrypt`/`GenerateDataKey*` are allowed only with
+`kms:ViaService` naming the services this system uses (RDS, Secrets
+Manager, S3, Lambda, Logs, ECR) — a customer-managed key's own key policy,
+not this IAM policy, is usually what actually delegates decrypt access, so
+without this condition the role could decrypt data under another
+application's key too. `kms:CreateGrant`/`ListGrants`/`RevokeGrant` are
+allowed only with `kms:GrantIsForAWSResource: true`. A deny closes the gap
+those two conditions leave open: any of the five actions above **without**
+`kms:ViaService` present at all — a direct call to KMS, not AWS calling KMS
+on this role's behalf — is refused outright. `DescribeKey`/`ListAliases`
+stay unconditional, since they return metadata, not data.
 
 **Residual risk, recorded rather than hidden**: nothing in this repository
 can call AWS, so none of the above has been exercised against a real AWS
 account — it is reviewed by inspection, JSON validation, and shellcheck
-only, the same as `infra`'s required CI check does. The exact action lists,
-the four-policy split, and the two named exceptions are a best-effort,
-reviewable starting point. A future gap — an AWS action this policy
-did not anticipate, a service added to the deploy role's scope without a
-matching name-scope or tag guard, or an untested interaction between the
-`CreateOnlyAsOurProject` and `NeverMutateAnUntaggedResource` statements —
-should be checked for on the first real `apply` in the staging account,
-before production is bootstrapped.
+only, the same as `infra`'s required CI check does. The exact action
+lists, the four-policy split, and the two named exceptions are a
+best-effort, reviewable starting point, refined twice already through
+review rather than testing. One specific, named risk this leaves: if the
+Terraform AWS provider ever tags an ACM certificate, a CloudFront
+distribution, a CloudWatch alarm, an AppRegistry application, or a
+Resource Group with a *separate* API call after creating it, rather than
+through that create call's own tag parameter, that specific call is
+refused on the first real `apply` — a loud, narrow failure to fix, not a
+silent security gap. More generally: an AWS action this policy did not
+anticipate, a service added to the deploy role's scope without a matching
+name-scope or tag guard, or an untested interaction between the
+`CreateOnlyAsOurProject`/`TagOnlyAtEc2CreationTime` and
+`NeverMutateAnUntaggedResource` statements, should be checked for on the
+first real `apply` in the staging account, before production is
+bootstrapped. The NAT instance's exact IAM role/instance-profile and Auto
+Scaling group names are not yet settled (#465 is unmerged); coordinate the
+`hpac-safety-*` naming this policy assumes with that work before the first
+apply.

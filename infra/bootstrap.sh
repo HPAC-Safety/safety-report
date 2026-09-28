@@ -361,16 +361,56 @@ fi
 #     the guardrails deny list at all, and is governed solely by guard 3
 #     (allowed only with our own RequestTag on the instance/volume being
 #     created).
-#   - `ec2:CreateNetworkInterface`, and the handful of ATTACH/ASSOCIATE calls
-#     that wire a brand-new resource to the VPC/subnet it was just created
-#     in (`EstablishNetworkAttachmentsOnResourcesWeJustCreated` in
-#     DEPLOY_POLICY_SERVICES) are excluded from the guardrails deny list
-#     because at the moment they run, the resource on the other end (a
-#     subnet, a route table) is the one THIS role created moments earlier and
-#     tagged - but Attach/Associate verbs are still swept into the deny list
-#     for every OTHER resource type, and only the specific EC2 network calls
-#     needed to stand up a fresh VPC are carved out, each named explicitly
-#     rather than as a verb wildcard.
+#   - `ec2:CreateNetworkInterface`, and the handful of ATTACH/ASSOCIATE/
+#     AUTHORIZE calls that wire a brand-new resource to the VPC/subnet it was
+#     just created in (`EstablishNetworkAttachmentsOnResourcesWeJustCreated`
+#     in DEPLOY_POLICY_SERVICES), are allowed unconditionally by that
+#     statement - but that is not the last word: every one of those same
+#     verbs (`Attach*`/`Associate*`/`Modify*`/`Authorize*`/`Revoke*`) is ALSO
+#     in the guardrails deny list, so guard 4 still applies on top and
+#     requires the resource on the other end (a subnet, a route table, a
+#     security group) to already carry `Project=HPAC-Safety` - exactly the
+#     tag THIS role's own `CreateOnlyAsOurProject`/`TagOnlyAtEc2CreationTime`
+#     put there moments earlier. Nothing in this family is actually excluded
+#     from guard 4; the two statements together are what let a legitimate
+#     wiring call through while still refusing to wire up someone else's
+#     untagged network resource. `ec2:CreateRoute` is the one action here
+#     that is NOT guardrail-covered by a verb wildcard (`Create*` is
+#     deliberately never a guardrails prefix, to keep guard 3/4 non-circular
+#     for genuine creation) - it is named explicitly in the guardrails deny
+#     list instead, because unlike every other `Create*` action it mutates an
+#     EXISTING route table rather than creating a new resource.
+#
+# TAG-HIJACK CLOSED: creating a tag is not the same as creating a resource.
+# `aws:RequestTag` alone, with Resource "*", would let this role attach
+# `Project=HPAC-Safety` to ANY existing resource in the account - including
+# another application's untagged one - after which guard 4 would treat it as
+# ours and let it be modified or deleted. Three different fixes close this,
+# chosen per service:
+#   - `ec2:CreateTags` is allowed only when AWS's own `ec2:CreateAction`
+#     context key names one of the specific EC2 create calls above
+#     (`TagOnlyAtEc2CreationTime`) - that key is populated ONLY when tagging
+#     is bundled into a genuine create request, never for a standalone
+#     `CreateTags` call, so it cannot be pointed at an existing resource.
+#   - `rds:AddTagsToResource` and `autoscaling:CreateOrUpdateTags`/
+#     `DeleteTags` have no equivalent context key, so they are scoped by ARN
+#     instead, to names only THIS role's own Terraform would ever choose
+#     (`db:hpac-safety*` and siblings; `autoScalingGroupName/hpac-safety*`) -
+#     `ManageOurDatabaseTagsOnly`, `ManageOurAutoScalingGroupTagsOnly`.
+#   - `acm:AddTagsToCertificate`, `cloudfront:TagResource`,
+#     `cloudwatch:TagResource`, `servicecatalog:TagResource`, and
+#     `resource-groups:Tag` are removed from `CreateOnlyAsOurProject`
+#     entirely and added to the guardrails deny instead, because each of
+#     their services' create calls (`RequestCertificate`,
+#     `CreateDistribution*`, `PutMetricAlarm`, `CreateApplication`,
+#     `CreateGroup`) accepts tags directly at creation - so the standalone
+#     tag-adding action is never needed to tag OUR OWN new resource, and
+#     denying it on anything not already tagged ours closes the hijack.
+#     RESIDUAL RISK, recorded rather than assumed away: if the Terraform AWS
+#     provider ever calls one of these five tag actions as a SEPARATE step
+#     right after creating the resource, instead of relying on the create
+#     call's own tag parameter, that specific call fails on the first real
+#     `apply` - a loud, narrow failure to fix, not a silent security gap.
 #
 # DATA, NOT JUST RESOURCES, MUST STAY OUT OF REACH. Guard 1-4 stop this role
 # from CHANGING another workload's resources, but several read-only "Get" and
@@ -400,6 +440,28 @@ fi
 #     this account may hold other applications' parameters, tables, streams,
 #     and queues.
 #
+# KMS IS THE SAME SHAPE OF PROBLEM AGAIN, ONE LEVEL DOWN: `kms:Decrypt` on
+# Resource "*" would let this role decrypt anything encrypted under ANY
+# customer-managed key in the account, including another application's,
+# because a KMS key's OWN key policy - not this IAM policy - is usually what
+# delegates decrypt permission to "any principal IAM allows," and this
+# account's other applications' keys are outside this policy's sight
+# entirely. Three conditions close it:
+#   - `Decrypt`/`Encrypt`/`GenerateDataKey*` only with `kms:ViaService`
+#     naming the services this system actually uses (RDS, Secrets Manager,
+#     S3, Lambda, Logs, ECR) - so the call must be AWS calling KMS on this
+#     role's behalf as part of one of those services' own API calls, never
+#     this role calling KMS directly;
+#   - `CreateGrant`/`ListGrants`/`RevokeGrant` only with
+#     `kms:GrantIsForAWSResource: true` - a grant naming this role's own
+#     credentials as the grantee, rather than a third party, is refused;
+#   - `NeverUseKmsOutsideOurServices` denies all four of the above outright
+#     whenever `kms:ViaService` is absent (a `Null` condition), so a direct
+#     KMS API call - the one case the `ViaService` allow-condition above
+#     does not need to consider, because it is not how AWS services request
+#     it - is refused regardless of anything else the policy grants.
+#     `DescribeKey`/`ListAliases` stay unconditional: metadata, not data.
+#
 # NONE OF THIS HAS BEEN EXERCISED AGAINST REAL AWS. Nothing in this repository
 # can call AWS, and this pull request does not change that. Every statement
 # below is reviewed by inspection, JSON validation, and shellcheck only - the
@@ -425,8 +487,13 @@ fi
 #     NeverReadLogContent                    deny: read log/RDS-log content
 #     NeverReadOtherFunctionsOrRepos          deny: Get/Invoke outside ours
 #     NeverReadOtherApplicationsData          deny: ssm/dynamodb/kinesis/sqs
+#     ManageOurDatabaseTagsOnly              tag only db/subgrp/pg/snapshot/cluster:hpac-safety*
+#     ManageOurAutoScalingGroupTagsOnly      tag only autoScalingGroupName/hpac-safety*
+#
+#   DEPLOY_POLICY_IAM (hpac-safety-deploy-iam)
 #     ManageOurRolesOnly/PoliciesOnly         IAM scoped to hpac-safety-*
-#     PassOnlyOurRolesToOurServices           PassRole to lambda/scheduler only
+#     ManageOurInstanceProfilesOnly           instance-profile/hpac-safety-* (NAT instance)
+#     PassOnlyOurRolesToOurServices           PassRole to lambda/scheduler/ec2 only
 #     ServiceLinkedRolesAwsRequiresByFixedName the two SLRs AWS names itself
 #     ReadOnlyIdentityAndApplicationRegistration sts/OIDC-provider read
 #     NeverMintACredentialOrChangeFederation  deny: users/keys/OIDC/org/account
@@ -434,14 +501,20 @@ fi
 #
 #   DEPLOY_POLICY_SERVICES (hpac-safety-deploy-services)
 #     ReadOnlyMetadata                       Describe/List/Get for un-scopable services
-#     CreateOnlyAsOurProject                 Create* only with our RequestTag
-#     EstablishNetworkAttachmentsOnResourcesWeJustCreated  the named EC2 exception above
-#     UseTheAwsManagedKeys                   KMS use, not administration
+#     CreateOnlyAsOurProject                 Create* only with our RequestTag (no tag-adding actions - see TAG-HIJACK CLOSED)
+#     TagOnlyAtEc2CreationTime               ec2:CreateTags gated on ec2:CreateAction
+#     EstablishNetworkAttachmentsOnResourcesWeJustCreated  wiring calls, still guardrail-gated (see above)
+#     UseTheAwsManagedKeysViaOurServicesOnly  Decrypt/Encrypt/GenerateDataKey* via our services only
+#     CreateGrantsForAwsResourcesOnly         CreateGrant/ListGrants/RevokeGrant for AWS-resource grants only
+#     DescribeAndListAllKeys                 KMS metadata, unconditional
+#     NeverUseKmsOutsideOurServices           deny: any of the above without kms:ViaService
 #
 #   DEPLOY_POLICY_GUARDRAILS (hpac-safety-deploy-guardrails)
-#     NeverMutateAnUntaggedResource          deny every mutating verb unless
-#                                             the resource already carries
-#                                             Project=HPAC-Safety
+#     NeverMutateAnUntaggedResource          deny every mutating verb - including
+#                                             acm/cloudfront/cloudwatch/servicecatalog/
+#                                             resource-groups tag-ADD actions, closing the
+#                                             tag-hijack path - unless the resource already
+#                                             carries Project=HPAC-Safety
 
 say '2/4  hpac-safety-deploy IAM role and policies'
 
@@ -687,6 +760,27 @@ DEPLOY_POLICY_CORE=$(cat <<JSON
         "sqs:ReceiveMessage"
       ],
       "Resource": "*"
+    },
+    {
+      "Sid": "ManageOurDatabaseTagsOnly",
+      "Effect": "Allow",
+      "Action": "rds:AddTagsToResource",
+      "Resource": [
+        "arn:aws:rds:${REGION}:${ACCOUNT_ID}:db:hpac-safety*",
+        "arn:aws:rds:${REGION}:${ACCOUNT_ID}:subgrp:hpac-safety*",
+        "arn:aws:rds:${REGION}:${ACCOUNT_ID}:pg:hpac-safety*",
+        "arn:aws:rds:${REGION}:${ACCOUNT_ID}:snapshot:hpac-safety*",
+        "arn:aws:rds:${REGION}:${ACCOUNT_ID}:cluster:hpac-safety*"
+      ]
+    },
+    {
+      "Sid": "ManageOurAutoScalingGroupTagsOnly",
+      "Effect": "Allow",
+      "Action": [
+        "autoscaling:CreateOrUpdateTags",
+        "autoscaling:DeleteTags"
+      ],
+      "Resource": "arn:aws:autoscaling:${REGION}:${ACCOUNT_ID}:autoScalingGroup:*:autoScalingGroupName/hpac-safety*"
     }
   ]
 }
@@ -738,6 +832,21 @@ DEPLOY_POLICY_IAM=$(cat <<JSON
       "Resource": "arn:aws:iam::${ACCOUNT_ID}:policy/hpac-safety-*"
     },
     {
+      "Sid": "ManageOurInstanceProfilesOnly",
+      "Effect": "Allow",
+      "Action": [
+        "iam:CreateInstanceProfile",
+        "iam:DeleteInstanceProfile",
+        "iam:AddRoleToInstanceProfile",
+        "iam:RemoveRoleFromInstanceProfile",
+        "iam:GetInstanceProfile",
+        "iam:TagInstanceProfile",
+        "iam:UntagInstanceProfile",
+        "iam:ListInstanceProfileTags"
+      ],
+      "Resource": "arn:aws:iam::${ACCOUNT_ID}:instance-profile/hpac-safety-*"
+    },
+    {
       "Sid": "PassOnlyOurRolesToOurServices",
       "Effect": "Allow",
       "Action": "iam:PassRole",
@@ -746,7 +855,8 @@ DEPLOY_POLICY_IAM=$(cat <<JSON
         "StringEquals": {
           "iam:PassedToService": [
             "lambda.amazonaws.com",
-            "scheduler.amazonaws.com"
+            "scheduler.amazonaws.com",
+            "ec2.amazonaws.com"
           ]
         }
       }
@@ -854,19 +964,15 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
       "Effect": "Allow",
       "Action": [
         "acm:RequestCertificate",
-        "acm:AddTagsToCertificate",
         "autoscaling:CreateAutoScalingGroup",
         "autoscaling:CreateLaunchConfiguration",
-        "autoscaling:CreateOrUpdateTags",
         "cloudfront:CreateDistribution*",
         "cloudfront:CreateOriginAccessControl",
         "cloudfront:CreateResponseHeadersPolicy",
         "cloudfront:CreateCachePolicy",
         "cloudfront:CreateFunction",
-        "cloudfront:TagResource",
         "cloudwatch:PutMetricAlarm",
         "cloudwatch:PutDashboard",
-        "cloudwatch:TagResource",
         "ec2:CreateVpc",
         "ec2:CreateSubnet",
         "ec2:CreateSecurityGroup",
@@ -878,17 +984,13 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
         "ec2:AllocateAddress",
         "ec2:CreateVpcEndpoint",
         "ec2:CreateFlowLogs",
-        "ec2:CreateTags",
         "ec2:RunInstances",
         "rds:CreateDBInstance",
         "rds:CreateDBSubnetGroup",
         "rds:CreateDBParameterGroup",
-        "rds:AddTagsToResource",
         "resource-groups:CreateGroup",
-        "resource-groups:Tag",
         "servicecatalog:CreateApplication",
         "servicecatalog:CreateAttributeGroup",
-        "servicecatalog:TagResource",
         "servicecatalog:AssociateResource",
         "servicecatalog:AssociateAttributeGroup"
       ],
@@ -896,6 +998,30 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
       "Condition": {
         "StringEquals": {
           "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}"
+        }
+      }
+    },
+    {
+      "Sid": "TagOnlyAtEc2CreationTime",
+      "Effect": "Allow",
+      "Action": "ec2:CreateTags",
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "aws:RequestTag/${TAG_KEY}": "${TAG_VALUE}",
+          "ec2:CreateAction": [
+            "RunInstances",
+            "CreateVpc",
+            "CreateSubnet",
+            "CreateSecurityGroup",
+            "CreateRouteTable",
+            "CreateInternetGateway",
+            "CreateLaunchTemplate",
+            "CreateNetworkInterface",
+            "AllocateAddress",
+            "CreateVpcEndpoint",
+            "CreateFlowLogs"
+          ]
         }
       }
     },
@@ -918,20 +1044,68 @@ DEPLOY_POLICY_SERVICES=$(cat <<JSON
       "Resource": "*"
     },
     {
-      "Sid": "UseTheAwsManagedKeys",
+      "Sid": "UseTheAwsManagedKeysViaOurServicesOnly",
       "Effect": "Allow",
       "Action": [
         "kms:Decrypt",
         "kms:Encrypt",
         "kms:GenerateDataKey",
-        "kms:GenerateDataKeyWithoutPlaintext",
-        "kms:DescribeKey",
-        "kms:ListAliases",
+        "kms:GenerateDataKeyWithoutPlaintext"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "StringEquals": {
+          "kms:ViaService": [
+            "rds.${REGION}.amazonaws.com",
+            "secretsmanager.${REGION}.amazonaws.com",
+            "s3.${REGION}.amazonaws.com",
+            "lambda.${REGION}.amazonaws.com",
+            "logs.${REGION}.amazonaws.com",
+            "ecr.${REGION}.amazonaws.com"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "CreateGrantsForAwsResourcesOnly",
+      "Effect": "Allow",
+      "Action": [
         "kms:CreateGrant",
         "kms:ListGrants",
         "kms:RevokeGrant"
       ],
+      "Resource": "*",
+      "Condition": {
+        "Bool": {
+          "kms:GrantIsForAWSResource": "true"
+        }
+      }
+    },
+    {
+      "Sid": "DescribeAndListAllKeys",
+      "Effect": "Allow",
+      "Action": [
+        "kms:DescribeKey",
+        "kms:ListAliases"
+      ],
       "Resource": "*"
+    },
+    {
+      "Sid": "NeverUseKmsOutsideOurServices",
+      "Effect": "Deny",
+      "Action": [
+        "kms:Decrypt",
+        "kms:Encrypt",
+        "kms:GenerateDataKey",
+        "kms:GenerateDataKeyWithoutPlaintext",
+        "kms:CreateGrant"
+      ],
+      "Resource": "*",
+      "Condition": {
+        "Null": {
+          "kms:ViaService": "true"
+        }
+      }
     }
   ]
 }
@@ -952,6 +1126,7 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "acm:Resend*",
         "acm:Update*",
         "acm:RemoveTagsFromCertificate",
+        "acm:AddTagsToCertificate",
         "autoscaling:Delete*",
         "autoscaling:Update*",
         "autoscaling:Suspend*",
@@ -964,15 +1139,16 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "autoscaling:Exit*",
         "autoscaling:Execute*",
         "autoscaling:Put*",
-        "autoscaling:DeleteTags",
         "cloudfront:Delete*",
         "cloudfront:Update*",
         "cloudfront:UntagResource",
+        "cloudfront:TagResource",
         "cloudwatch:Delete*",
         "cloudwatch:Set*",
         "cloudwatch:Disable*",
         "cloudwatch:Enable*",
         "cloudwatch:UntagResource",
+        "cloudwatch:TagResource",
         "ec2:Delete*",
         "ec2:Modify*",
         "ec2:Terminate*",
@@ -988,6 +1164,7 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "ec2:ReplaceRoute*",
         "ec2:ResetInstanceAttribute",
         "ec2:DeleteTags",
+        "ec2:CreateRoute",
         "rds:Delete*",
         "rds:Modify*",
         "rds:Stop*",
@@ -1005,10 +1182,12 @@ DEPLOY_POLICY_GUARDRAILS=$(cat <<JSON
         "resource-groups:Delete*",
         "resource-groups:Update*",
         "resource-groups:Untag",
+        "resource-groups:Tag",
         "servicecatalog:Delete*",
         "servicecatalog:Update*",
         "servicecatalog:Disassociate*",
         "servicecatalog:UntagResource",
+        "servicecatalog:TagResource",
         "secretsmanager:Delete*",
         "secretsmanager:Update*",
         "secretsmanager:Restore*",

@@ -382,7 +382,7 @@ Media that is no longer public is removed from the page — *playwright-bdd, Cov
 
 ### REQ-MED-035
 
-A reviewer hides a file from the public report page — *playwright-bdd, Covered*
+A reviewer hides a file from the public report page, still marked in the staff strip — *playwright-bdd, Covered*
 
 ### REQ-MED-036
 

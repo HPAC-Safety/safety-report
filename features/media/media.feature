@@ -316,7 +316,7 @@ Scenario: The report page shows a thumbnail strip, and activating a thumbnail op
   Then the report page shows a thumbnail strip in place of stacked embeds
   When the visitor activates the image's thumbnail
   Then the lightbox opens showing the image, labelled "Photo 1 of 1"
-  When the visitor activates the video's thumbnail
+  When the visitor moves to the next item in the lightbox
   Then the lightbox shows the video, playable with its controls and audio, labelled "Video 1 of 1"
 
 @REQ-MED-033
@@ -336,12 +336,12 @@ Scenario: Media that is no longer public is removed from the page
 
 @REQ-MED-035
 @ui
-Scenario: A reviewer hides a file from the public report page
+Scenario: A reviewer hides a file from the public report page, still marked in the staff strip
   Given a safety officer is signed in and a published report shows an image
   When the safety officer opens the report
   Then the image offers to hide it
   When the safety officer hides the image and confirms
-  Then the image is no longer shown
+  Then the image now reads as hidden from the public and offers to show it, still on the report page
 
 @REQ-MED-056
 @ui
@@ -373,7 +373,7 @@ Scenario: A 404 removes the item from both the strip and an open lightbox
 @ui
 Scenario: The admin report page uses the same strip and lightbox, and works for an unpublished report
   Given a safety officer is signed in and an unpublished report has an image and a hidden document
-  When the safety officer opens the report in the admin area
+  When a safety officer opens the report in the admin area
   Then the report shows the same thumbnail strip and lightbox as the public report page
   And the hidden document's thumbnail is marked "Hidden" and offers to show it
 
@@ -381,7 +381,7 @@ Scenario: The admin report page uses the same strip and lightbox, and works for 
 @ui
 Scenario: A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox
   Given a safety officer is signed in and a report has a still-processing image
-  When the safety officer opens the report in the admin area
+  When a safety officer opens the report in the admin area
   Then the image's tile is marked "Processing"
   And activating it downloads the raw original rather than opening the lightbox
 

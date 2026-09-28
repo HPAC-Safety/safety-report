@@ -62,7 +62,9 @@ export function AttachmentStrip({
 	onChanged: () => void
 }) {
 	const { t } = useLocale()
-	const staff = staffAttachments !== null
+	// Loose check: a stub or an older response may omit the field rather than
+	// send an explicit null, and that must still read as "not staff".
+	const staff = staffAttachments != null
 	const [items, setItems] = useState<StripItem[]>(() =>
 		staffAttachments ? itemsFromStaffAttachments(staffAttachments) : itemsFromPublicMedia(media),
 	)
@@ -171,7 +173,7 @@ export function AttachmentStrip({
 
 			<ul className="mt-4 flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2" data-testid="attachment-strip">
 				{items.map((item) => (
-					<li key={item.id} data-media={item.kind} data-visibility={item.visibility ?? undefined} className="flex-none snap-start">
+					<li key={item.id} data-media={item.kind} className="flex-none snap-start">
 						<Thumbnail
 							reportId={reportId}
 							item={item}
@@ -227,7 +229,7 @@ function VisibilityLabel({ item }: { item: StripItem }) {
 	}
 
 	return (
-		<span className="font-sans text-xs text-ink-muted" data-testid="attachment-visibility">
+		<span className="font-sans text-xs text-ink-muted" data-visibility={item.visibility} data-testid="attachment-visibility">
 			{t(`reports.attachment.visibility.${item.visibility}`)}
 		</span>
 	)
@@ -254,28 +256,36 @@ function Thumbnail({
 }) {
 	const { t } = useLocale()
 	const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
+	const failures = useRef(0)
 
 	// Only an image loads its actual derivative as the thumbnail — a video gets
 	// a generic play tile and a document a type icon, neither of which needs a
 	// link until activated (decision 3, issue #427).
-	useEffect(() => {
+	const refresh = useCallback(() => {
 		if (item.kind !== "image" || item.state !== "ready") {
 			return
 		}
 
-		let cancelled = false
 		linkFor(reportId, item, staff)
-			.then((link) => {
-				if (!cancelled) setThumbnailUrl(link)
-			})
+			.then((link) => setThumbnailUrl(link))
 			.catch((cause: unknown) => {
-				if (!cancelled && cause instanceof PublicReportNotFound) onGone()
+				if (cause instanceof PublicReportNotFound) onGone()
 			})
-		return () => {
-			cancelled = true
-		}
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [reportId, item.id, item.kind, item.state, staff])
+
+	useEffect(refresh, [refresh])
+
+	// A thumbnail's own bytes can fail to load even after a good mint — most
+	// often an already-expired link (ADR-0117 point 6) — so one retry asks for
+	// a fresh one before giving up; a second failure just leaves it blank
+	// rather than looping (the lightbox is the resilient path — REQ-MED-033).
+	function failed() {
+		failures.current += 1
+		if (failures.current <= 1) {
+			refresh()
+		}
+	}
 
 	return (
 		<div className="flex w-32 flex-col gap-1">
@@ -286,7 +296,7 @@ function Thumbnail({
 				className="touch-target flex h-24 w-32 items-center justify-center overflow-hidden rounded border border-rule bg-surface-2"
 			>
 				{item.kind === "image" && thumbnailUrl ? (
-					<img src={thumbnailUrl} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+					<img src={thumbnailUrl} alt="" aria-hidden="true" onError={failed} className="h-full w-full object-cover" />
 				) : item.kind === "video" ? (
 					<PlayTile />
 				) : (
@@ -297,21 +307,67 @@ function Thumbnail({
 				{label}
 			</span>
 			{staff && <VisibilityLabel item={item} />}
-			{onHide && <HideShowButton kind="hide" onClick={onHide} />}
-			{onShow && <HideShowButton kind="show" onClick={onShow} />}
+			{onHide && <HideConfirm onHide={onHide} />}
+			{onShow && <ShowButton onShow={onShow} />}
 		</div>
 	)
 }
 
-function HideShowButton({ kind, onClick }: { kind: "hide" | "show"; onClick: () => void }) {
+/**
+ * A two-step confirm before hiding, on both pages (REQ-MED-035, REQ-MED-036):
+ * "Hide from the public" opens "Hide this from everyone?" with confirm/keep.
+ */
+function HideConfirm({ onHide }: { onHide: () => void }) {
+	const { t } = useLocale()
+	const [confirming, setConfirming] = useState(false)
+
+	if (!confirming) {
+		return (
+			<button
+				type="button"
+				className="touch-target inline-flex items-center rounded border border-rule px-2 font-sans text-xs text-ink"
+				onClick={() => setConfirming(true)}
+			>
+				{t("reports.attachment.hide")}
+			</button>
+		)
+	}
+
+	return (
+		<div className="flex flex-col gap-1">
+			<span className="font-sans text-xs text-ink">{t("media.confirmHide")}</span>
+			<div className="flex gap-1">
+				<button
+					type="button"
+					className="touch-target inline-flex items-center rounded bg-brand-700 px-2 font-sans text-xs font-medium text-ink-inverse"
+					onClick={() => {
+						setConfirming(false)
+						onHide()
+					}}
+				>
+					{t("media.hide")}
+				</button>
+				<button
+					type="button"
+					className="touch-target inline-flex items-center rounded border border-rule px-2 font-sans text-xs text-ink"
+					onClick={() => setConfirming(false)}
+				>
+					{t("media.keep")}
+				</button>
+			</div>
+		</div>
+	)
+}
+
+function ShowButton({ onShow }: { onShow: () => void }) {
 	const { t } = useLocale()
 	return (
 		<button
 			type="button"
 			className="touch-target inline-flex items-center rounded border border-rule px-2 font-sans text-xs text-ink"
-			onClick={onClick}
+			onClick={onShow}
 		>
-			{t(kind === "hide" ? "reports.attachment.hide" : "reports.attachment.show")}
+			{t("reports.attachment.show")}
 		</button>
 	)
 }

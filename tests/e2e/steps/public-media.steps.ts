@@ -45,8 +45,15 @@ interface StubMedia {
 	format: string | null
 }
 
+interface StubStaffAttachment extends StubMedia {
+	state: "ready" | "processing" | "failed"
+	visibility: "public" | "when_published" | "hidden" | "no_consent" | "private"
+}
+
 interface MediaStub {
 	media: StubMedia[]
+	/** Present only for a staff-mode scenario (issue #427 decision 4); null for the plain public view. */
+	staffAttachments: StubStaffAttachment[] | null
 	/** How many links each file has been issued. */
 	issued: Record<string, number>
 	/** Files whose link endpoint now answers 404. */
@@ -60,12 +67,28 @@ interface MediaStub {
 
 const stubs = new WeakMap<Page, MediaStub>()
 
-async function stubReport(page: Page, media: StubMedia[]) {
-	const stub: MediaStub = { media: [...media], issued: {}, gone: new Set(), goneAfter: {}, expired: new Set(), hidden: [] }
+/** True for a bearer token minted for SafetyOfficer or Administrator (see auth.ts). */
+function isStaffToken(authorization: string): boolean {
+	return authorization.includes("safety_officer") || authorization.includes("administrator")
+}
+
+async function stubReport(page: Page, media: StubMedia[], staffAttachments: StubStaffAttachment[] | null = null) {
+	const stub: MediaStub = {
+		media: [...media],
+		staffAttachments: staffAttachments ? staffAttachments.map((item) => ({ ...item })) : null,
+		issued: {},
+		gone: new Set(),
+		goneAfter: {},
+		expired: new Set(),
+		hidden: [],
+	}
 	stubs.set(page, stub)
 
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/comments\/?$/, (route) => route.fulfill({ json: [] }))
 
+	// The public link — unaudited, and the only one a plain visitor ever uses.
+	// A staff page also uses it for an item whose visibility is "public"
+	// (decision 11), so the id may name a staff attachment too.
 	await page.route(/\/api\/v1\/public\/reports\/[^/?]+\/media\/[^/?]+$/, async (route) => {
 		const id = new URL(route.request().url()).pathname.split("/").pop()!
 		if (stub.gone.has(id) || (stub.issued[id] ?? 0) >= (stub.goneAfter[id] ?? Infinity)) {
@@ -80,7 +103,32 @@ async function stubReport(page: Page, media: StubMedia[]) {
 		})
 	})
 
-	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, (route) => route.fulfill({ json: { ...REPORT, media: stub.media } }))
+	await page.route(/\/api\/v1\/public\/reports\/[^/?]+$/, (route) => {
+		const authorization = route.request().headers()["authorization"] ?? ""
+		const staff = isStaffToken(authorization)
+		return route.fulfill({
+			json: {
+				...REPORT,
+				media: stub.media,
+				attachmentCount: stub.media.length,
+				staffAttachments: staff ? stub.staffAttachments : null,
+			},
+		})
+	})
+
+	// The audited staff mint: /view (inline), /download, and /original
+	// (issue #427 decisions 10, 15).
+	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(view|download|original)$/, async (route) => {
+		const parts = new URL(route.request().url()).pathname.split("/")
+		const id = parts.at(-2)!
+		if (stub.gone.has(id)) {
+			await route.fulfill({ status: 404, body: "" })
+			return
+		}
+		const generation = (stub.issued[id] ?? 0) + 1
+		stub.issued[id] = generation
+		await route.fulfill({ json: { url: `${STORAGE}/${id}-${generation}`, expiresAt: "2026-09-20T15:45:00Z", fileName: `${id}.bin` } })
+	})
 
 	await page.route(`${STORAGE}/**`, async (route: Route) => {
 		const name = new URL(route.request().url()).pathname.slice(1)
@@ -121,11 +169,22 @@ async function stubReport(page: Page, media: StubMedia[]) {
 		await route.fulfill({ status: 200, contentType, headers: { "Accept-Ranges": "bytes" }, body })
 	})
 
-	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/hide$/, async (route) => {
-		const id = new URL(route.request().url()).pathname.split("/").at(-2)!
-		stub.hidden.push(id)
-		stub.gone.add(id)
-		stub.media = stub.media.filter((item) => item.id !== id)
+	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(hide|show)$/, async (route) => {
+		const parts = new URL(route.request().url()).pathname.split("/")
+		const id = parts.at(-2)!
+		const verb = parts.at(-1)
+		const attachment = stub.staffAttachments?.find((candidate) => candidate.id === id)
+
+		if (verb === "hide") {
+			stub.hidden.push(id)
+			stub.gone.add(id)
+			stub.media = stub.media.filter((item) => item.id !== id)
+			if (attachment) attachment.visibility = "hidden"
+		} else if (attachment) {
+			attachment.visibility = "public"
+			stub.gone.delete(id)
+		}
+
 		await route.fulfill({ status: 204 })
 	})
 
@@ -142,12 +201,24 @@ function video(page: Page) {
 	return page.locator('video[aria-label="Video 1 of 1"]')
 }
 
+function strip(page: Page) {
+	return page.getByTestId("attachment-strip")
+}
+
+function thumbnail(page: Page, kind: string) {
+	return strip(page).locator(`[data-media="${kind}"] button`).first()
+}
+
+function lightbox(page: Page) {
+	return page.getByTestId("attachment-lightbox")
+}
+
 // The Attachments feature's Background, which states limits the API enforces
 // (REQ-MED-001 and the upload scenarios prove them); nothing for a browser to set.
 Given("the maximum attachment count is configurable and defaults to five across all attachment kinds", async () => {})
 Given("each file is limited to 250 MB for a video and 25 MB for an image or a document", async () => {})
 
-// --- REQ-MED-032: embedded photos and video with a generic label ---
+// --- REQ-MED-032: the strip, and the lightbox with a generic label ---
 
 Given("a published report shows an image and a video", async ({ page }) => {
 	await stubReport(page, [IMAGE, VIDEO])
@@ -157,16 +228,35 @@ When("a visitor opens the report", async ({ page }) => {
 	await page.goto(`/reports/${REPORT.id}`)
 })
 
-Then("the image is shown in the page, labelled {string}", async ({ page }, label: string) => {
+Then("the report page shows a thumbnail strip in place of stacked embeds", async ({ page }) => {
+	await expect(strip(page)).toBeVisible()
+	await expect(thumbnail(page, "image")).toBeVisible()
+	await expect(thumbnail(page, "video")).toBeVisible()
+	// The full-size image only ever renders inside the lightbox, not here.
+	await expect(page.getByRole("img", { name: "Photo 1 of 1" })).toHaveCount(0)
+	await expect(lightbox(page)).toHaveCount(0)
+})
+
+When("the visitor activates the image's thumbnail", async ({ page }) => {
+	await thumbnail(page, "image").click()
+})
+
+Then("the lightbox opens showing the image, labelled {string}", async ({ page }, label: string) => {
+	await expect(lightbox(page)).toBeVisible()
 	const image = page.getByRole("img", { name: label })
 	await expect(image).toBeVisible()
 	await expect.poll(() => image.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBeGreaterThan(0)
 })
 
-Then("the video can be played in the page with its controls, labelled {string}", async ({ page }, label: string) => {
-	const player = page.locator(`video[aria-label="${label}"]`)
+When("the visitor moves to the next item in the lightbox", async ({ page }) => {
+	await lightbox(page).getByRole("button", { name: "Next" }).click()
+})
+
+Then("the lightbox shows the video, playable with its controls and audio, labelled {string}", async ({ page }, label: string) => {
+	const player = lightbox(page).locator(`video[aria-label="${label}"]`)
 	await expect(player).toBeVisible()
 	await expect(player).toHaveAttribute("controls", "")
+	await expect(player).not.toHaveAttribute("muted", "")
 	await expect.poll(() => player.evaluate((element: HTMLVideoElement) => element.readyState)).toBeGreaterThan(0)
 })
 
@@ -175,6 +265,8 @@ Then("the video can be played in the page with its controls, labelled {string}",
 Given("a visitor is part-way through a public video", async ({ page }) => {
 	await stubReport(page, [VIDEO])
 	await page.goto(`/reports/${REPORT.id}`)
+	await thumbnail(page, "video").click()
+	await expect(lightbox(page)).toBeVisible()
 	await expect.poll(() => video(page).evaluate((element: HTMLVideoElement) => element.readyState)).toBeGreaterThan(0)
 	await video(page).evaluate((element: HTMLVideoElement) => {
 		element.currentTime = 1.2
@@ -216,14 +308,14 @@ When("the image's link stops working because the image is no longer public", asy
 Then("the page removes the image", async ({ page }) => {
 	await expect.poll(() => stubOf(page).issued[IMAGE.id]).toBe(1)
 	await expect(page.locator('[data-media="image"]')).toHaveCount(0)
-	await expect(page.getByRole("heading", { name: "Photos, video, and documents" })).toHaveCount(0)
+	await expect(strip(page)).toHaveCount(0)
 	await expect(page.locator("[data-summary]")).toBeVisible()
 })
 
 // --- REQ-MED-035: a reviewer hides a file from the public page ---
 
 Given("a safety officer is signed in and a published report shows an image", async ({ page }) => {
-	await stubReport(page, [IMAGE])
+	await stubReport(page, [IMAGE], [{ id: IMAGE.id, kind: "image", format: null, state: "ready", visibility: "public" }])
 	await signInAs(page, "safety_officer")
 })
 
@@ -231,19 +323,24 @@ Given("a safety officer is signed in and a published report shows an image", asy
 // report page, and the stubs above answer for any report.
 
 Then("the image offers to hide it", async ({ page }) => {
-	await expect(page.getByRole("img", { name: "Photo 1 of 1" })).toBeVisible()
-	await expect(page.locator('[data-media="image"]').getByRole("button", { name: "Hide" })).toBeVisible()
+	await expect(thumbnail(page, "image")).toBeVisible()
+	await expect(page.locator('[data-media="image"]').getByRole("button", { name: "Hide from the public" })).toBeVisible()
 })
 
 When("the safety officer hides the image and confirms", async ({ page }) => {
 	const item = page.locator('[data-media="image"]')
-	await item.getByRole("button", { name: "Hide" }).click()
+	await item.getByRole("button", { name: "Hide from the public" }).click()
 	await expect(item.getByText("Hide this from everyone?")).toBeVisible()
-	await item.getByRole("button", { name: "Hide" }).click()
+	await item.getByRole("button", { name: "Hide", exact: true }).click()
 })
 
-Then("the image is no longer shown", async ({ page }) => {
-	await expect(page.getByRole("img", { name: "Photo 1 of 1" })).toHaveCount(0)
+Then("the image now reads as hidden from the public and offers to show it, still on the report page", async ({ page }) => {
+	// Staff still see it, marked hidden, on the same report page (decision 4,
+	// issue #427) — it only stops being shown to the public, not to staff.
+	const item = page.locator('[data-media="image"]')
+	await expect(item).toHaveCount(1)
+	await expect(item.locator('[data-visibility="hidden"]')).toHaveText("Hidden from the public")
+	await expect(item.getByRole("button", { name: "Show on the public report" })).toBeVisible()
 	expect(stubOf(page).hidden).toEqual([IMAGE.id])
 })
 
@@ -255,7 +352,7 @@ Given("a published report offers a validated PDF document", async ({ page }) => 
 
 Then("the document is offered as a download labelled {string}", async ({ page }, label: string) => {
 	const item = page.locator('[data-media="document"]')
-	await expect(item.getByText(label)).toBeVisible()
+	await expect(item).toBeVisible()
 
 	const download = page.waitForEvent("download")
 	await item.getByRole("button", { name: `Download ${label}` }).click()
@@ -265,10 +362,51 @@ Then("the document is offered as a download labelled {string}", async ({ page },
 
 Then("the page never embeds the document's content", async ({ page }) => {
 	await expect(page.locator("iframe, embed, object")).toHaveCount(0)
+	await expect(lightbox(page)).toHaveCount(0)
 	await expect(page).toHaveURL(new RegExp(`/reports/${REPORT.id}$`))
 })
 
-// --- REQ-MED-036/042: the admin page shows whether each file is public ---
+// --- REQ-MED-057: a document's thumbnail never opens the lightbox ---
+
+When("a visitor activates the document's thumbnail", async ({ page }) => {
+	await page.goto(`/reports/${REPORT.id}`)
+	const download = page.waitForEvent("download")
+	await thumbnail(page, "document").click()
+	await download
+})
+
+Then("the document downloads and the lightbox does not open", async ({ page }) => {
+	expect(stubOf(page).issued[DOCUMENT.id]).toBe(1)
+	await expect(lightbox(page)).toHaveCount(0)
+})
+
+// --- REQ-MED-058: a 404 removes the item from the strip and an open lightbox ---
+
+Given("a visitor has the lightbox open on a public image", async ({ page }) => {
+	// Only the image, so once it 404s there is nothing left and the lightbox
+	// closes rather than merely advancing — the more interesting case of the
+	// two is proven here; advancing to a neighbour is ordinary navigation
+	// (REQ-MED-056).
+	await stubReport(page, [IMAGE])
+	await page.goto(`/reports/${REPORT.id}`)
+	await thumbnail(page, "image").click()
+	await expect(lightbox(page)).toBeVisible()
+})
+
+When("the image's link answers 404 because the image is no longer public", async ({ page }) => {
+	stubOf(page).goneAfter[IMAGE.id] = 1
+	await lightbox(page).locator("img").evaluate((element: HTMLImageElement) => {
+		element.dispatchEvent(new Event("error"))
+	})
+})
+
+Then("the lightbox closes and the image's thumbnail is removed from the strip", async ({ page }) => {
+	await expect(lightbox(page)).toHaveCount(0)
+	await expect(page.locator('[data-media="image"]')).toHaveCount(0)
+	await expect(strip(page)).toHaveCount(0)
+})
+
+// --- REQ-MED-036/042/059/060: the admin page shows whether each file is public ---
 
 const ADMIN_REPORT = {
 	id: "adminmedia1",
@@ -297,41 +435,160 @@ const ADMIN_REPORT = {
 	publishedAt: "2026-09-20T16:00:00Z",
 }
 
-Given("a published report has a public {word} and a hidden {word}", async ({ page }, kind: string, _hidden: string) => {
-	const files = [
-		{ id: "publicfile1", kind, state: "ready", visibility: "public" },
-		{ id: "hiddenfile1", kind, state: "ready", visibility: "hidden" },
-	]
-	const changed: string[] = []
+interface AdminFile {
+	id: string
+	kind: string
+	state: string
+	visibility: string
+	format?: string | null
+}
 
+async function stubAdminReport(page: Page, status: string, files: AdminFile[]) {
 	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(hide|show)$/, async (route) => {
 		const parts = new URL(route.request().url()).pathname.split("/")
 		const file = files.find((candidate) => candidate.id === parts.at(-2))!
 		file.visibility = parts.at(-1) === "hide" ? "hidden" : "public"
-		changed.push(`${parts.at(-1)} ${file.id}`)
 		await route.fulfill({ status: 204 })
 	})
-	await page.route(/\/api\/admin\/reports\/[^/?]+$/, (route) => route.fulfill({ json: { ...ADMIN_REPORT, attachments: files } }))
+	await page.route(/\/api\/admin\/reports\/[^/?]+\/attachments\/[^/?]+\/(view|download|original)$/, async (route) => {
+		const parts = new URL(route.request().url()).pathname.split("/")
+		const id = parts.at(-2)!
+		await route.fulfill({ json: { url: `${STORAGE}/${id}-1`, expiresAt: "2026-09-20T15:45:00Z", fileName: `${id}.bin` } })
+	})
+	// /download and /original are always forced downloads; /view (inline)
+	// never triggers a Playwright "download" event, so nothing special is
+	// needed for it here.
+	await page.route(`${STORAGE}/**`, async (route: Route) => {
+		const name = new URL(route.request().url()).pathname.slice(1)
+		await route.fulfill({
+			status: 200,
+			contentType: "application/octet-stream",
+			headers: { "Content-Disposition": `attachment; filename="${name}"` },
+			body: PHOTO,
+		})
+	})
+	await page.route(
+		/\/api\/admin\/reports\/[^/?]+$/,
+		(route) => route.fulfill({ json: { ...ADMIN_REPORT, status, attachments: files } }),
+	)
 	await signInAs(page, "safety_officer")
+}
+
+Given("a published report has a public {word} and a hidden {word}", async ({ page }, kind: string, _hidden: string) => {
+	await stubAdminReport(page, "published", [
+		{ id: "publicfile1", kind, state: "ready", visibility: "public", format: kind === "document" ? "pdf" : null },
+		{ id: "hiddenfile1", kind, state: "ready", visibility: "hidden", format: kind === "document" ? "pdf" : null },
+	])
 })
 
 When("a safety officer opens the report in the admin area", async ({ page }) => {
 	await page.goto(`/admin/reports/${ADMIN_REPORT.id}`)
-	await expect(page.getByRole("heading", { level: 2, name: "Attachments", exact: true })).toBeVisible()
+	await expect(strip(page)).toBeVisible()
 })
 
 Then("the public {word} reads as shown publicly and offers to hide it", async ({ page }, _kind: string) => {
-	const row = page.getByRole("listitem").filter({ has: page.locator('[data-visibility="public"]') })
+	const row = page.locator('[data-media]').filter({ has: page.locator('[data-visibility="public"]') })
 	await expect(row.locator('[data-visibility="public"]')).toHaveText("Shown on the public report")
 	await expect(row.getByRole("button", { name: "Hide from the public" })).toBeVisible()
 })
 
 Then("the hidden {word} reads as hidden from the public and offers to show it", async ({ page }, _kind: string) => {
-	const row = page.getByRole("listitem").filter({ has: page.locator('[data-visibility="hidden"]') })
+	const row = page.locator('[data-media]').filter({ has: page.locator('[data-visibility="hidden"]') })
 	await expect(row.locator('[data-visibility="hidden"]')).toHaveText("Hidden from the public")
 	await row.getByRole("button", { name: "Show on the public report" }).click()
 	await expect(page.locator('[data-visibility="hidden"]')).toHaveCount(0)
 	await expect(page.locator('[data-visibility="public"]')).toHaveCount(2)
+})
+
+// --- REQ-MED-056: the lightbox wraps, is keyboard-operable, and traps and returns focus ---
+
+Given("a published report shows two images", async ({ page }) => {
+	const first = { id: "imageaaaaa1", kind: "image", format: null }
+	const second = { id: "imagebbbbb2", kind: "image", format: null }
+	await stubReport(page, [first, second])
+})
+
+When("a visitor opens the first image in the lightbox", async ({ page }) => {
+	await page.goto(`/reports/${REPORT.id}`)
+	await thumbnail(page, "image").click()
+	await expect(lightbox(page)).toBeVisible()
+	await expect(page.getByRole("img", { name: "Photo 1 of 2" })).toBeVisible()
+})
+
+Then("the Right arrow key moves to the second image", async ({ page }) => {
+	await page.keyboard.press("ArrowRight")
+	await expect(page.getByRole("img", { name: "Photo 2 of 2" })).toBeVisible()
+})
+
+Then("the Right arrow key from the last image wraps to the first", async ({ page }) => {
+	await page.keyboard.press("ArrowRight")
+	await expect(page.getByRole("img", { name: "Photo 1 of 2" })).toBeVisible()
+})
+
+Then("the Left arrow key from the first image wraps to the last", async ({ page }) => {
+	await page.keyboard.press("ArrowLeft")
+	await expect(page.getByRole("img", { name: "Photo 2 of 2" })).toBeVisible()
+})
+
+Then("Tab never moves focus outside the lightbox while it is open", async ({ page }) => {
+	for (let index = 0; index < 6; index += 1) {
+		await page.keyboard.press("Tab")
+	}
+	await expect(lightbox(page).locator(":focus")).toHaveCount(1)
+})
+
+When("the visitor closes the lightbox with Escape", async ({ page }) => {
+	await page.keyboard.press("Escape")
+})
+
+Then("focus returns to the first image's thumbnail", async ({ page }) => {
+	await expect(lightbox(page)).toHaveCount(0)
+	await expect(thumbnail(page, "image").first()).toBeFocused()
+})
+
+// --- REQ-MED-059: the admin report page uses the same strip and lightbox ---
+
+Given(
+	"a safety officer is signed in and an unpublished report has an image and a hidden document",
+	async ({ page }) => {
+		await stubAdminReport(page, "unpublished", [
+			{ id: "imagefile1", kind: "image", state: "ready", visibility: "when_published", format: null },
+			{ id: "hiddendoc1", kind: "document", state: "ready", visibility: "hidden", format: "pdf" },
+		])
+	},
+)
+
+Then("the report shows the same thumbnail strip and lightbox as the public report page", async ({ page }) => {
+	await expect(strip(page)).toBeVisible()
+	await expect(thumbnail(page, "image")).toBeVisible()
+	await expect(thumbnail(page, "document")).toBeVisible()
+	await thumbnail(page, "image").click()
+	await expect(lightbox(page)).toBeVisible()
+	await lightbox(page).getByRole("button", { name: "Close" }).click()
+	await expect(lightbox(page)).toHaveCount(0)
+})
+
+Then("the hidden document's thumbnail is marked {string} and offers to show it", async ({ page }, label: string) => {
+	const row = page.locator('[data-media="document"]')
+	await expect(row.locator('[data-visibility="hidden"]')).toHaveText(label === "Hidden" ? "Hidden from the public" : label)
+	await expect(row.getByRole("button", { name: "Show on the public report" })).toBeVisible()
+})
+
+// --- REQ-MED-060: a processing/failed staff tile downloads the raw original ---
+
+Given("a safety officer is signed in and a report has a still-processing image", async ({ page }) => {
+	await stubAdminReport(page, "pending", [{ id: "processing1", kind: "image", state: "processing", visibility: "private", format: null }])
+})
+
+Then("the image's tile is marked {string}", async ({ page }, label: string) => {
+	await expect(page.locator('[data-media="image"]').getByTestId("attachment-state")).toHaveText(label === "Processing" ? "processing" : label)
+})
+
+Then("activating it downloads the raw original rather than opening the lightbox", async ({ page }) => {
+	const download = page.waitForEvent("download")
+	await thumbnail(page, "image").click()
+	await download
+	await expect(lightbox(page)).toHaveCount(0)
 })
 
 // --- REQ-QB-113: the form asks media consent only when there is media ---

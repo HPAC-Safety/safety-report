@@ -21,6 +21,7 @@ interface StubReport {
 	aiSummaryFr: string
 	publishedAt: string
 	commentCount: number
+	attachmentCount: number
 }
 
 const FIRST: StubReport = {
@@ -29,6 +30,7 @@ const FIRST: StubReport = {
 	aiSummaryFr: "Le pilote a décollé par vent de travers et s'est posé sans incident dans un champ voisin.",
 	publishedAt: "2026-09-20T15:30:00Z",
 	commentCount: 0,
+	attachmentCount: 0,
 }
 
 const SECOND: StubReport = {
@@ -37,6 +39,7 @@ const SECOND: StubReport = {
 	aiSummaryFr: "Un parachute de secours a été déployé après une fermeture à basse altitude.",
 	publishedAt: "2026-09-18T15:30:00Z",
 	commentCount: 0,
+	attachmentCount: 0,
 }
 
 const OLDER: StubReport = {
@@ -45,6 +48,7 @@ const OLDER: StubReport = {
 	aiSummaryFr: "Le pilote a mal évalué l'approche et s'est posé court.",
 	publishedAt: "2026-08-02T15:30:00Z",
 	commentCount: 0,
+	attachmentCount: 0,
 }
 
 const CURSOR = "c2Vjb25kLXBhZ2U"
@@ -88,6 +92,28 @@ async function expectFullSummary(page: Page, report: StubReport) {
 
 Given("the public feed has published reports", async ({ page }) => {
 	await stubFeed(page)
+})
+
+// --- REQ-MOD-153: the feed's attachment icon and count, omitted at zero ---
+
+Given("the public feed holds a report with attachments and one with none", async ({ page }) => {
+	await page.route(/\/api\/v1\/public\/reports\/?(\?.*)?$/, async (route) => {
+		await route.fulfill({
+			json: { items: [{ ...FIRST, attachmentCount: 3 }, { ...SECOND, attachmentCount: 0 }], next: null },
+		})
+	})
+})
+
+When("a visitor opens the public feed", async ({ page }) => {
+	await page.goto("/reports")
+})
+
+Then("the report with attachments shows an attachment icon with its count, accessibly labelled", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`).getByText("3 attachments")).toBeVisible()
+})
+
+Then("the report with none shows no attachment icon", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`).getByText(/attachments?/)).toHaveCount(0)
 })
 
 Given("the public feed has more published reports than fit on one page", async ({ page }) => {

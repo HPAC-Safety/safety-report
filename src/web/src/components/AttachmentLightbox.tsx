@@ -55,6 +55,7 @@ export function AttachmentLightbox({
 		// index was last set; clamp rather than read past the end.
 		if (index >= items.length) {
 			if (items.length === 0) {
+				dialog.current?.close()
 				onClose()
 			} else {
 				setIndex(items.length - 1)
@@ -105,13 +106,21 @@ export function AttachmentLightbox({
 			? t("media.photoLabel", { index: group.indexOf(item) + 1, count: group.length })
 			: t("media.videoLabel", { index: group.indexOf(item) + 1, count: group.length })
 
+	// Closes the native dialog first — it must actually stop being modal before
+	// focus can move to anything outside it (an inert element refuses focus) —
+	// then tells the parent to unmount it.
+	function close() {
+		dialog.current?.close()
+		onClose()
+	}
+
 	return (
 		<dialog
 			ref={dialog}
 			aria-label={label}
 			onCancel={(event) => {
 				event.preventDefault()
-				onClose()
+				close()
 			}}
 			onKeyDown={onKeyDown}
 			className="m-auto w-[calc(100%-2rem)] max-w-3xl rounded border border-rule bg-surface p-4 text-ink backdrop:bg-black/70"
@@ -141,7 +150,7 @@ export function AttachmentLightbox({
 				<button
 					type="button"
 					className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink"
-					onClick={onClose}
+					onClick={close}
 				>
 					{t("media.lightbox.close")}
 				</button>

@@ -380,13 +380,21 @@ Then("the document downloads and the lightbox does not open", async ({ page }) =
 	await expect(lightbox(page)).toHaveCount(0)
 })
 
-// --- REQ-MED-058: a 404 removes the item from the strip and an open lightbox ---
+// --- REQ-MED-058/061: a 404 removes the item from the strip and an open lightbox,
+// closing it only once nothing remains to show ---
 
-Given("a visitor has the lightbox open on a public image", async ({ page }) => {
-	// Only the image, so once it 404s there is nothing left and the lightbox
-	// closes rather than merely advancing — the more interesting case of the
-	// two is proven here; advancing to a neighbour is ordinary navigation
-	// (REQ-MED-056).
+const FIRST_OF_TWO = { id: "imageaaaaa1", kind: "image", format: null }
+const SECOND_OF_TWO = { id: "imagebbbbb2", kind: "image", format: null }
+
+Given("a visitor has the lightbox open on a public image, and another item remains after it", async ({ page }) => {
+	await stubReport(page, [FIRST_OF_TWO, SECOND_OF_TWO])
+	await page.goto(`/reports/${REPORT.id}`)
+	await thumbnail(page, "image").first().click()
+	await expect(lightbox(page)).toBeVisible()
+	await expect(page.getByRole("img", { name: "Photo 1 of 2" })).toBeVisible()
+})
+
+Given("a visitor has the lightbox open on the one public image a report has", async ({ page }) => {
 	await stubReport(page, [IMAGE])
 	await page.goto(`/reports/${REPORT.id}`)
 	await thumbnail(page, "image").click()
@@ -394,13 +402,26 @@ Given("a visitor has the lightbox open on a public image", async ({ page }) => {
 })
 
 When("the image's link answers 404 because the image is no longer public", async ({ page }) => {
+	// Shared by both scenarios above: only one of these two ids is ever the one
+	// open in the lightbox at this point, so setting both is harmless — the
+	// stub only ever consults the id the page actually asks it for.
+	stubOf(page).goneAfter[FIRST_OF_TWO.id] = 1
 	stubOf(page).goneAfter[IMAGE.id] = 1
 	await lightbox(page).locator("img").evaluate((element: HTMLImageElement) => {
 		element.dispatchEvent(new Event("error"))
 	})
 })
 
-Then("the lightbox closes and the image's thumbnail is removed from the strip", async ({ page }) => {
+Then(
+	"the image's thumbnail is removed from the strip and the lightbox steps to the remaining item without closing",
+	async ({ page }) => {
+		await expect(lightbox(page)).toBeVisible()
+		await expect(page.getByRole("img", { name: "Photo 1 of 1" })).toBeVisible()
+		await expect(strip(page).locator('[data-media="image"]')).toHaveCount(1)
+	},
+)
+
+Then("the image's thumbnail is removed from the strip and the lightbox closes, since nothing remains to show", async ({ page }) => {
 	await expect(lightbox(page)).toHaveCount(0)
 	await expect(page.locator('[data-media="image"]')).toHaveCount(0)
 	await expect(strip(page)).toHaveCount(0)

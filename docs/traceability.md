@@ -484,6 +484,10 @@ The admin report page uses the same strip and lightbox, and works for an unpubli
 
 A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox — *playwright-bdd, Covered*
 
+### REQ-MED-061
+
+A 404 on the only remaining lightbox item closes it — *playwright-bdd, Covered*
+
 ## Claims: moderation-authentication-and-publication
 
 ### REQ-MOD-001

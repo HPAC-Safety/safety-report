@@ -365,9 +365,16 @@ Scenario: A document's thumbnail is never opened in the lightbox
 @REQ-MED-058
 @ui
 Scenario: A 404 removes the item from both the strip and an open lightbox
-  Given a visitor has the lightbox open on a public image
+  Given a visitor has the lightbox open on a public image, and another item remains after it
   When the image's link answers 404 because the image is no longer public
-  Then the lightbox closes and the image's thumbnail is removed from the strip
+  Then the image's thumbnail is removed from the strip and the lightbox steps to the remaining item without closing
+
+@REQ-MED-061
+@ui
+Scenario: A 404 on the only remaining lightbox item closes it
+  Given a visitor has the lightbox open on the one public image a report has
+  When the image's link answers 404 because the image is no longer public
+  Then the image's thumbnail is removed from the strip and the lightbox closes, since nothing remains to show
 
 @REQ-MED-059
 @ui

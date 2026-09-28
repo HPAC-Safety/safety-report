@@ -677,7 +677,9 @@ fi
 # its SQL migration scripts, optional extras graphify does not install by
 # default — installed the same way as graphify itself (uv tool, falling back to
 # pip), into graphify's own environment. .graphifyignore keeps PR screenshots
-# out of the graph.
+# and synthetic test media out of a freshly built graph; after changing it,
+# rebuild with --force, because an incremental update never prunes a newly
+# ignored path (upstream Graphify-Labs/graphify#2908).
 
 heading "graphify (optional)"
 

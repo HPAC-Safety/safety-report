@@ -5,3 +5,7 @@
 # graphify would index them as current UI. The files stay: merged PR bodies
 # link to them by SHA-pinned raw URLs (lesson 0017).
 docs/screenshots/
+
+# Synthetic media the public-media browser test uploads. It is not product
+# imagery, and indexed it only joins screenshots by AMBIGUOUS edges (#602).
+tests/e2e/fixtures/

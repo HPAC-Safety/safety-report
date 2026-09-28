@@ -459,4 +459,8 @@ A knowledge graph lives at `graphify-out/`.
 - **PR screenshots are excluded**: `.graphifyignore` leaves out
   `docs/screenshots/`. They show screens as they were when each pull request
   merged, not current UI. The files stay, because merged pull requests link to
-  them.
+  them. It also leaves out `tests/e2e/fixtures/`, synthetic test media.
+- **A changed `.graphifyignore` needs a full rebuild**: `/graphify . --force`.
+  An existing graph keeps a newly ignored path, because `graphify update`
+  never prunes it (upstream
+  [graphify#2908](https://github.com/Graphify-Labs/graphify/issues/2908)).

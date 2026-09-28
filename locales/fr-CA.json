@@ -591,8 +591,8 @@
   },
   "attachments": {
     "count": {
-      "one": "#1 attachment",
-      "other": "#{count} attachments"
+      "one": "1 pièce jointe",
+      "other": "{count} pièces jointes"
     }
   },
   "media": {
@@ -610,9 +610,9 @@
     "keep": "Conserver",
     "confirmHide": "Cacher ceci à tout le monde?",
     "lightbox": {
-      "previous": "#Previous",
-      "next": "#Next",
-      "close": "#Close"
+      "previous": "Précédent",
+      "next": "Suivant",
+      "close": "Fermer"
     }
   },
   "comments": {

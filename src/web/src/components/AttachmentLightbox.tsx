@@ -33,7 +33,10 @@ export function AttachmentLightbox({
 	/** Images and videos only, in attachment order — a document is never here. */
 	items: StripItem[]
 	openId: string
-	getLink: (item: StripItem) => Promise<string>
+	// A method signature, not an arrow property: tools/check-hardcoded-strings.mjs
+	// is a line scanner and reads `=> Promise<string>` as JSX text between a `>`
+	// and a `<` — see AuthContext.tsx.
+	getLink(item: StripItem): Promise<string>
 	invalidateLink: (id: string) => void
 	onClose: () => void
 	onGone: (id: string) => void
@@ -174,7 +177,10 @@ function LightboxMedia({
 }: {
 	item: StripItem
 	label: string
-	getLink: (item: StripItem) => Promise<string>
+	// A method signature, not an arrow property: tools/check-hardcoded-strings.mjs
+	// is a line scanner and reads `=> Promise<string>` as JSX text between a `>`
+	// and a `<` — see AuthContext.tsx.
+	getLink(item: StripItem): Promise<string>
 	invalidateLink: (id: string) => void
 	onGone: () => void
 }) {

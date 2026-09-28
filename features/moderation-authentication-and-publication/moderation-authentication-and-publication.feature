@@ -571,6 +571,22 @@ Scenario: Manage reports shows each row's reporter and pilot names, blank when u
   Then the pending row shows reporter name "Alex Rivera" and pilot name "Sam Chen"
   And the published row shows no reporter or pilot name
 
+@REQ-MOD-153
+@ui
+Scenario: The public feed shows each report's attachment icon and count, omitted at zero
+  Given the public feed holds a report with attachments and one with none
+  When a visitor opens the public feed
+  Then the report with attachments shows an attachment icon with its count, accessibly labelled
+  And the report with none shows no attachment icon
+
+@REQ-MOD-154
+@ui
+Scenario: Manage reports shows each row's attachment icon and count, omitted at zero
+  Given a safety officer is signed in and Manage reports holds a report with attachments and one with none
+  When the safety officer opens Manage reports
+  Then the row with attachments shows an attachment icon with its count, accessibly labelled
+  And the row with none shows no attachment icon
+
 @REQ-MOD-053
 @ui
 Scenario: Choosing a filter on Manage reports narrows the list

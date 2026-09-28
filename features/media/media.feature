@@ -310,11 +310,14 @@ Scenario: A member who is not a reviewer cannot hide or show a file
 
 @REQ-MED-032
 @ui
-Scenario: The report page embeds its photos and video with a generic label
+Scenario: The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label
   Given a published report shows an image and a video
   When a visitor opens the report
-  Then the image is shown in the page, labelled "Photo 1 of 1"
-  And the video can be played in the page with its controls, labelled "Video 1 of 1"
+  Then the report page shows a thumbnail strip in place of stacked embeds
+  When the visitor activates the image's thumbnail
+  Then the lightbox opens showing the image, labelled "Photo 1 of 2"
+  When the visitor activates the video's thumbnail
+  Then the lightbox shows the video, playable with its controls and audio, labelled "Video 2 of 2"
 
 @REQ-MED-033
 @ui
@@ -339,6 +342,48 @@ Scenario: A reviewer hides a file from the public report page
   Then the image offers to hide it
   When the safety officer hides the image and confirms
   Then the image is no longer shown
+
+@REQ-MED-056
+@ui
+Scenario: The lightbox wraps, is keyboard-operable, and traps and returns focus
+  Given a published report shows two images
+  When a visitor opens the first image in the lightbox
+  Then the Right arrow key moves to the second image
+  And the Right arrow key from the last image wraps to the first
+  And the Left arrow key from the first image wraps to the last
+  And Tab never moves focus outside the lightbox while it is open
+  When the visitor closes the lightbox with Escape
+  Then focus returns to the first image's thumbnail
+
+@REQ-MED-057
+@ui
+Scenario: A document's thumbnail is never opened in the lightbox
+  Given a published report offers a validated PDF document
+  When a visitor activates the document's thumbnail
+  Then the document downloads and the lightbox does not open
+
+@REQ-MED-058
+@ui
+Scenario: A 404 removes the item from both the strip and an open lightbox
+  Given a visitor has the lightbox open on a public image
+  When the image's link answers 404 because the image is no longer public
+  Then the lightbox closes and the image's thumbnail is removed from the strip
+
+@REQ-MED-059
+@ui
+Scenario: The admin report page uses the same strip and lightbox, and works for an unpublished report
+  Given a safety officer is signed in and an unpublished report has an image and a hidden document
+  When the safety officer opens the report in the admin area
+  Then the report shows the same thumbnail strip and lightbox as the public report page
+  And the hidden document's thumbnail is marked "Hidden" and offers to show it
+
+@REQ-MED-060
+@ui
+Scenario: A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox
+  Given a safety officer is signed in and a report has a still-processing image
+  When the safety officer opens the report in the admin area
+  Then the image's tile is marked "Processing"
+  And activating it downloads the raw original rather than opening the lightbox
 
 @REQ-MED-036
 @ui

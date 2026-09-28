@@ -370,7 +370,7 @@ A member who is not a reviewer cannot hide or show a file — *Reqnroll, Covered
 
 ### REQ-MED-032
 
-The report page embeds its photos and video with a generic label — *playwright-bdd, Covered*
+The report page shows a thumbnail strip, and activating a thumbnail opens the lightbox with a generic label — *playwright-bdd, Covered*
 
 ### REQ-MED-033
 
@@ -463,6 +463,26 @@ The raw-original download refuses once a derivative exists — *Reqnroll, Covere
 ### REQ-MED-055
 
 The raw-original download refuses a document — *Reqnroll, Covered*
+
+### REQ-MED-056
+
+The lightbox wraps, is keyboard-operable, and traps and returns focus — *playwright-bdd, Covered*
+
+### REQ-MED-057
+
+A document's thumbnail is never opened in the lightbox — *playwright-bdd, Covered*
+
+### REQ-MED-058
+
+A 404 removes the item from both the strip and an open lightbox — *playwright-bdd, Covered*
+
+### REQ-MED-059
+
+The admin report page uses the same strip and lightbox, and works for an unpublished report — *playwright-bdd, Covered*
+
+### REQ-MED-060
+
+A processing or failed image's staff tile offers a raw-original download, never inline or in the lightbox — *playwright-bdd, Covered*
 
 ## Claims: moderation-authentication-and-publication
 
@@ -1053,6 +1073,14 @@ The admin report list carries every non-deleted attachment's count — *Reqnroll
 ### REQ-MOD-152
 
 A signed-in safety officer sees every attachment on the public report page, each marked public or not — *Reqnroll, Covered*
+
+### REQ-MOD-153
+
+The public feed shows each report's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
+
+### REQ-MOD-154
+
+Manage reports shows each row's attachment icon and count, omitted at zero — *playwright-bdd, Covered*
 
 ## Claims: question-bank-and-form
 

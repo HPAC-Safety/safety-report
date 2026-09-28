@@ -169,10 +169,11 @@ Every step that reads an AWS resource name — ECR repositories, the Lambda
 function names, the site and uploads buckets, the CloudFront distribution,
 the NAT instance's Auto Scaling group, the Gemini/DeepL secret ids — comes
 from `terraform output`, never a GitHub variable, so `infra/` stays the one
-place those names are decided (`deploy_variables` and the standalone outputs
-`nat_autoscaling_group_name`, `secret_id_gemini_api_key`,
-`secret_id_deepl_api_key`, `site_urls`, `dns_records_to_publish` — the first
-three are #465's to add).
+place those names are decided: `deploy_variables`, and the standalone
+outputs `nat_autoscaling_group_arn`, `secret_entries`, `site_urls`, and
+`dns_records_to_publish`. `node tools/check-terraform-outputs.mjs` (`ci.yml`'s
+`docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
+reads an output name or JSON key `infra/outputs.tf` doesn't declare.
 
 Migrations apply at startup: the API and the Worker each run pending migrations
 under an advisory lock, and there is no dedicated migration step

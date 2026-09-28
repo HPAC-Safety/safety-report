@@ -22,12 +22,13 @@
 # itself, not in this file). Both deploy the identical images and web bundle
 # `build` produced — never a rebuild (CON-INF-012).
 #
-# Depends on #443 (the Lambda-adapter API image and tools/build-api-image.sh)
-# and #465 (infra/staging.tfvars, infra/production.tfvars, the multi-account
-# Terraform, and the Terraform outputs this file and deploy-environment.yml
-# read by name: ecr_repository_*, nat_autoscaling_group_name,
-# secret_id_gemini_api_key, secret_id_deepl_api_key). Rebase onto both before
-# the first real release.
+# Built on #443 (the Lambda-adapter API image and tools/build-api-image.sh)
+# and #465/#588 (infra/staging.tfvars, infra/production.tfvars, the
+# multi-account Terraform, and every Terraform output this file and
+# deploy-environment.yml read by name from infra/outputs.tf: deploy_variables,
+# nat_autoscaling_group_arn, secret_entries, site_urls,
+# dns_records_to_publish). tools/check-terraform-outputs.mjs fails CI if
+# either file drifts from what infra/outputs.tf actually declares.
 name: Release
 
 on:

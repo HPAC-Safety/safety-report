@@ -32,17 +32,17 @@ copies of the job, and what "re-running the release job for an earlier tag"
 **No AWS account exists yet in this pull request.** This workflow is real —
 every AWS call in it is genuine — but it triggers only on `release: published`
 or a maintainer's `workflow_dispatch` redeploy, never on push, merge, or pull
-request, and nobody publishes a release before #465's multi-account Terraform
-lands and #464's now-merged `infra/bootstrap.sh` (PR #582) is actually run, by
-a human, against both real accounts. Nothing here was run against AWS to
-write it.
+request, and nobody publishes a release before #464's `infra/bootstrap.sh`
+(PR #582) is actually run, by a human, against both real accounts. Nothing
+here was run against AWS to write it.
 
-This pull request also depends on two not-yet-merged pieces: #443's
-`tools/build-api-image.sh` (the Lambda Web Adapter image) and #465's
-multi-account Terraform (`infra/staging.tfvars`, `infra/production.tfvars`,
-and several new Terraform outputs this workflow reads by name). Both are
-referenced by name, not copied, so landing them is a rebase, not a rewrite of
-this file.
+This pull request is built on top of #443 (the Lambda-adapter API image,
+`tools/build-api-image.sh`) and #465/#588 (the multi-account Terraform,
+`infra/staging.tfvars`, `infra/production.tfvars`, and every Terraform
+output this workflow and `deploy-environment.yml` read by name), all now
+merged — every `terraform output` reference is aligned with the real
+`infra/outputs.tf`, and `tools/check-terraform-outputs.mjs` fails CI if that
+ever drifts again.
 
 ## Decision
 
@@ -121,14 +121,24 @@ apply`, and only against the account they are deploying to.
 
 Every AWS resource name `deploy-environment.yml` needs — ECR repositories,
 Lambda function names, the site bucket, the CloudFront distribution, the NAT
-instance's Auto Scaling group, the two vendor-key Secrets Manager entries —
-is read with `terraform output`, never duplicated as a GitHub variable
-(continuing `infra/outputs.tf`'s existing `deploy_variables` map). Three of
-these are new and are #465's to add: `nat_autoscaling_group_name`,
-`secret_id_gemini_api_key`, and `secret_id_deepl_api_key`. Naming them here,
-before #465 defines the resources behind them, is the "clearly named
-placeholder" issue #466 asked for — a rename in #465's Terraform is a
-one-line change to an output, never a change to this workflow.
+instance's Auto Scaling group, the vendor-key Secrets Manager entries, the
+public site URL — is read with `terraform output`, never duplicated as a
+GitHub variable: `infra/outputs.tf`'s `deploy_variables` map for the first
+group, and its own top-level outputs for the rest —
+`nat_autoscaling_group_arn` (an ARN; the ASG's name is parsed off its last
+path segment, since the AWS CLI calls this step makes take the name, not the
+ARN), `secret_entries` (a map read by the `gemini_api_key`/`deepl_api_key`
+keys `infra/secrets.tf` names them), and `site_urls` (a map keyed by
+hostname — staging has exactly one entry, production two — read by taking
+any one entry's `public` URL, since every hostname reaches the same
+distribution and the same `/api/health`).
+
+`tools/check-terraform-outputs.mjs` (added in this pull request, wired into
+`ci.yml`'s `docs` job) statically checks every `terraform output` name and
+JSON key either workflow reads against what `infra/outputs.tf` actually
+declares, and fails the build on a mismatch — the guard issue #466's review
+asked for, so a renamed or removed output is caught here rather than at the
+first real release.
 
 ### Rollback is re-running the release, preferring the original run
 
@@ -178,12 +188,11 @@ new one, which is immaterial once the commit is fixed.
   `TF_STATE_BUCKET_<ACCOUNT>` in the same run, under their own "Repository
   variables" heading — no separate hand-run step, no config an operator has
   to invent from reading this ADR.
-- `infra/outputs.tf` (#465) must add `nat_autoscaling_group_name`,
-  `secret_id_gemini_api_key`, and `secret_id_deepl_api_key`.
-- `tools/build-api-image.sh` and `src/HpacSafety.Api/Dockerfile` (#443) must
-  exist before a real release can build the API image; until then
-  `release.yml` is correct in shape and validated by `actionlint`, but cannot
-  actually run.
+- `tools/build-api-image.sh` and `src/HpacSafety.Api/Dockerfile` (#443), and
+  `infra/outputs.tf`'s `nat_autoscaling_group_arn`, `secret_entries`, and
+  `site_urls` outputs (#465/#588), are merged; `release.yml` and
+  `deploy-environment.yml` read every one of them by its real name, verified
+  by `tools/check-terraform-outputs.mjs`.
 - `docs/deployment.md` "Release and promotion" and "Required GitHub
   configuration" carry the operator-facing half of this record; keep them
   and this ADR in agreement if either changes.

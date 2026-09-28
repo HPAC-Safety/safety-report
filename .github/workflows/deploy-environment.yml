@@ -148,15 +148,17 @@ jobs:
           fi
 
       # The NAT instance is the one resource this system ever deletes and
-      # recreates, every release (CON-INF-013). `nat_autoscaling_group_name`
-      # is the interface #465's Terraform is expected to publish as an
-      # output — coordinate the actual ASG resource/output name with #465;
-      # this step only ever reads it by that name, never a hard-coded
-      # resource address, so a rename in #465 needs no change here.
+      # recreates, every release (CON-INF-013). `nat_autoscaling_group_arn`
+      # is #465's actual output (network.tf, the fck_nat module) — an ARN,
+      # not a name, because that is what the module publishes; the ASG APIs
+      # below take the name, so it is parsed off the ARN's last path segment
+      # (arn:...:autoScalingGroup:<id>:autoScalingGroupName/<name>) rather
+      # than a second output existing for a value one string op already gets.
       - name: Replace the NAT instance
         run: |
           set -euo pipefail
-          asg_name=$(terraform -chdir=infra output -raw nat_autoscaling_group_name)
+          asg_arn=$(terraform -chdir=infra output -raw nat_autoscaling_group_arn)
+          asg_name="${asg_arn##*/}"
           refresh_id=$(aws autoscaling start-instance-refresh \
             --auto-scaling-group-name "$asg_name" \
             --preferences '{"MinHealthyPercentage":0,"InstanceWarmup":60}' \
@@ -225,14 +227,18 @@ jobs:
             echo "- Worker: \`${{ steps.images.outputs.worker_digest }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # secrets.tf's `secret_entries` output is one map holding every entry
+      # Terraform created (issue #597 covers the Lambdas reading each by ARN
+      # at startup — this step only ever supplies the vendor keys' values,
+      # never sets anything on either function).
       - name: Copy vendor keys into Secrets Manager
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
         run: |
           set -euo pipefail
-          gemini_secret_id=$(terraform -chdir=infra output -raw secret_id_gemini_api_key)
-          deepl_secret_id=$(terraform -chdir=infra output -raw secret_id_deepl_api_key)
+          gemini_secret_id=$(terraform -chdir=infra output -json secret_entries | jq -r '.gemini_api_key')
+          deepl_secret_id=$(terraform -chdir=infra output -json secret_entries | jq -r '.deepl_api_key')
           aws secretsmanager put-secret-value --secret-id "$gemini_secret_id" --secret-string "$GEMINI_API_KEY" >/dev/null
           aws secretsmanager put-secret-value --secret-id "$deepl_secret_id" --secret-string "$DEEPL_API_KEY" >/dev/null
           echo "Vendor keys refreshed in Secrets Manager. Values are never echoed."
@@ -268,11 +274,16 @@ jobs:
             --distribution-id "${{ steps.tf.outputs.CLOUDFRONT_DISTRIBUTION_SITE }}" \
             --paths '/*' >/dev/null
 
+      # site_urls is keyed by hostname (staging has exactly one - the
+      # CloudFront default address; production has both hpac.ca/acvl.ca
+      # hostnames) so any one entry's `public` URL reaches the same
+      # distribution and the same /api/health - the smoke test only needs
+      # one to answer.
       - name: Read the site URL
         id: site
         run: |
           set -euo pipefail
-          echo "public_url=$(terraform -chdir=infra output -json site_urls | jq -r '.public')" >> "$GITHUB_OUTPUT"
+          echo "public_url=$(terraform -chdir=infra output -json site_urls | jq -r '[.[]][0].public')" >> "$GITHUB_OUTPUT"
 
       # CloudFront's edge caches take a few seconds to pick up a fresh
       # distribution config, so a short retry loop rather than one shot.

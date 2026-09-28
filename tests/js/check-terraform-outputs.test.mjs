@@ -20,10 +20,16 @@ const OUTPUTS_HCL = [
 	'  }',
 	'}',
 	'',
+	// site_urls' real shape (#465, PR #588): a map keyed by hostname, each
+	// entry the same nested object - the comprehension case parseOutputs has
+	// to read into, not the dynamic `host` key the comprehension itself uses.
 	'output "site_urls" {',
 	'  value = {',
-	'    public = "https://example.test/"',
-	'    admin  = "https://example.test/admin/"',
+	'    for host in var.site_domains :',
+	'    host => {',
+	'      public = "https://${host}/"',
+	'      admin  = "https://${host}/admin/"',
+	'    }',
 	'  }',
 	'}',
 	'',
@@ -79,6 +85,12 @@ describe('parseOutputs', () => {
 		const outputs = parseOutputs(OUTPUTS_HCL)
 		assert.deepEqual([...outputs.get('nat_autoscaling_group_name')], [])
 	})
+
+	it('reads a `for X in ... : X => { KEY = ... }` comprehension by its own object literal, not the dynamic key', () => {
+		const outputs = parseOutputs(OUTPUTS_HCL)
+		assert.deepEqual([...outputs.get('site_urls')].sort(), ['admin', 'public'])
+		assert.ok(!outputs.get('site_urls').has('host'), 'the comprehension variable itself is not a key')
+	})
 })
 
 describe('referencedOutputNames', () => {
@@ -113,6 +125,17 @@ describe('referencedSiteUrlsKeys', () => {
 	it('ignores an unrelated jq read when site_urls was never read as JSON', () => {
 		const text = "echo \"$(terraform -chdir=infra output -json deploy_variables | jq -r '.public')\""
 		assert.deepEqual([...referencedSiteUrlsKeys(text)], [])
+	})
+
+	it('ignores an unrelated jq read against a different output elsewhere in the same file', () => {
+		// The regression this guards: a whole-file scan (rather than one
+		// scoped per line/step) would wrongly attribute secret_entries' jq
+		// keys to site_urls just because both appear somewhere in one file.
+		const text = [
+			"gemini_secret_id=$(terraform -chdir=infra output -json secret_entries | jq -r '.gemini_api_key')",
+			"echo \"public_url=$(terraform -chdir=infra output -json site_urls | jq -r '[.[]][0].public')\"",
+		].join('\n')
+		assert.deepEqual([...referencedSiteUrlsKeys(text)], ['public'])
 	})
 })
 

@@ -61,9 +61,17 @@ function shallowKeys(text) {
 
 /**
  * Every top-level `output "NAME" { ... }` block in Terraform outputs.tf, as a
- * map of name to the top-level keys of its `value = { ... }` object literal
- * (empty when `value` is not an object literal - a string, a list, or a
- * `concat(...)`/`for` expression nobody reads a sub-key of by name here).
+ * map of name to a set of keys read from its `value = { ... }` object
+ * literal (empty when `value` is not an object literal - a string, a list,
+ * or a `concat(...)` expression nobody reads a sub-key of by name here).
+ *
+ * Handles one level of `for X in ... : X => { KEY = ... }` comprehension
+ * (site_urls' shape: a map keyed by hostname, each entry the same nested
+ * object) by reading the KEYs from the comprehension's own object literal
+ * instead of the outer map's - which has no static keys, only whatever
+ * hostnames apply produces. A `for` two levels deep, or one producing
+ * something other than an object literal, is still out of this parser's
+ * scope: it is skipped in `shallowKeys` the same as `concat(...)` is.
  */
 export function parseOutputs(hcl) {
 	const outputs = new Map()
@@ -79,7 +87,16 @@ export function parseOutputs(hcl) {
 		if (valueMatch) {
 			const valueOpen = valueMatch.index + valueMatch[0].length - 1
 			const valueClose = matchBrace(body, valueOpen)
-			keys = shallowKeys(body.slice(valueOpen + 1, valueClose))
+			const valueText = body.slice(valueOpen + 1, valueClose)
+
+			const comprehensionMatch = /=>\s*{/.exec(valueText)
+			if (comprehensionMatch) {
+				const innerOpen = comprehensionMatch.index + comprehensionMatch[0].length - 1
+				const innerClose = matchBrace(valueText, innerOpen)
+				keys = shallowKeys(valueText.slice(innerOpen + 1, innerClose))
+			} else {
+				keys = shallowKeys(valueText)
+			}
 		}
 		outputs.set(match[1], keys)
 	}
@@ -103,8 +120,20 @@ export function referencedDeployVariableKeys(workflowText) {
 
 /** `jq -r '.KEY'` read against a `site_urls` output, wherever it appears in the text. */
 export function referencedSiteUrlsKeys(workflowText) {
-	if (!/output\s+-json\s+site_urls/.test(workflowText)) return new Set()
-	return new Set([...workflowText.matchAll(/jq\s+-r\s+'\.([A-Za-z0-9_]+)'/g)].map((m) => m[1]))
+	const keys = new Set()
+	// Scoped per LINE, not per file: this repository's one convention pipes
+	// `output -json site_urls` straight into `jq` on the same shell line
+	// (`... output -json site_urls | jq -r '...KEY'`), and scoping any wider
+	// would also catch an unrelated jq read against a different output
+	// earlier or later in the same step or file.
+	for (const line of workflowText.split('\n')) {
+		if (!/output\s+-json\s+site_urls/.test(line)) continue
+		// The trailing `.KEY` before the closing quote - matches a plain
+		// '.KEY' filter and one preceded by other jq (e.g. `[.[]][0].KEY`,
+		// picking the first of however many hostnames site_urls is keyed by).
+		for (const found of line.matchAll(/jq\s+-r\s+'[^']*\.([A-Za-z0-9_]+)'/g)) keys.add(found[1])
+	}
+	return keys
 }
 
 /** What is wrong, across every workflow file, or an empty list. */

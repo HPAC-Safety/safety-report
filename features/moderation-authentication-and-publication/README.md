@@ -69,6 +69,25 @@ when it has waited in Submitted or Summarizing for more than 24 hours. Private
 is about consent and Unpublished is a status, so the two are never merged into
 one badge: a report without consent shows both.
 
+Each row also shows the **reporter's name** and the **pilot's name** — the
+only answer text the list ever carries (REQ-MOD-030, REQ-MOD-124). Both are
+read by a stable question role, not by position, so a fork or a reworded
+question never loses them (ADR-0154): `reporter_first_name`,
+`reporter_last_name`, `pilot_first_name`, and `pilot_last_name` are four more
+optional `QuestionRole` values alongside publication and media consent
+(`AGENTS.md` invariant 1). Every one of the four stays independently optional.
+A name shows whichever of first and last was answered, blank when neither
+was. Reporter and pilot are never collapsed into one name when they are the
+same person — each shows what its own answers hold. Names never reach a
+public endpoint; `admin_report_queue` is an admin-only view.
+
+Listing reports is not an audited read (REQ-MOD-030): reading the list writes
+no `ViewedRawReport` entry. The reporter's and pilot's names are the one piece
+of answer text this list shows, so they are the one piece of answer text a
+reviewer can read here without an audit entry recording it. Opening a report
+stays the audited read of everything else — every other answer, the summary
+pair, and any attachment (ADR-0154).
+
 The API gives a report's publication consent (`consent`, on the row and the
 detail) and media consent (`mediaConsent`, on the detail) as a JSON `true`,
 `false`, or `null` when unanswered — never a word. The interface renders each
@@ -316,7 +335,8 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - A per-reporter rate limit, which would mean identifying the reporter.
 - Pagination, search, or sorting of the admin report list other than newest
   first. HPAC receives dozens of reports a year.
-- Showing answer or summary text in the admin report list itself.
+- Showing answer or summary text in the admin report list itself, other than
+  the reporter's and pilot's names (REQ-MOD-124, ADR-0154).
 - Acting on several reports at once from the list, editing or writing the
   summary pair from a row, or an unpublishing note from a row.
 - Re-running summarization from the review screen. A failed summary is

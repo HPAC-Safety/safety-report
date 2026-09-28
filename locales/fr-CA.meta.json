@@ -2663,9 +2663,21 @@
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },
+  "reports.row.pilotName": {
+    "source_hash": "1364f7bb7d24b6fe8743a790f66b2c8c01f8243a933818672a643bdb4caab8a4",
+    "target_hash": "4a1fdedcdc18c2dcb2066e9cb9ad016ad2dcca4fceeb93310b38505a68d2f472",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "reports.row.reload": {
     "source_hash": "0953524e2307a0024fa8a9a6d8da43fbe4965790101d8c16239a24f70e9abf98",
     "target_hash": "f1318698978276702045601be4a6c51d4a0ba603c03c17701b7060e790797b29",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "reports.row.reporterName": {
+    "source_hash": "68756dba8327be5bc62b8a22fe12459fa92369530e73c860871806ac64dc69c2",
+    "target_hash": "3c041c8af1bb962e902118db36518998dd8b3df33f5cac439388b3afcdcafa3d",
     "provider": "deepl:FR-CA:prefer_more",
     "reviewed": false
   },

@@ -119,9 +119,11 @@ public sealed class OutboxAtomicityTests(PostgresFixture postgres)
 	private static async Task<Report> SubmittedReport(HpacSafetyDbContext context)
 	{
 		var report = new Report(Locale.EnCa, At);
-		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
-		context.Questions.Add(consent);
-		await context.SaveChangesAsync();
+		// The seeded system question, not a synthetic one: a role lives on at
+		// most one live question (ix_questions_role, ADR-0154), and a fresh
+		// migrated database already seeds the real one.
+		var consent = await context.Questions.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
 
 		report.Answer(consent, true, At);
 		report.EnsureReadyForSubmission();

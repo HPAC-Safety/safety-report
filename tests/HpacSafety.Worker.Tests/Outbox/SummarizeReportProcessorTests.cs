@@ -85,11 +85,11 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		var connectionString = await postgres.CreateMigratedDatabase();
 		await using var context = WorkerPostgresFixture.ContextFor(connectionString);
 
-		var consent = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+		var consent = await SeededConsentQuestion(context);
 		var narrative = Question.Create("narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", At, isPrivate: false);
 		var weather = Question.Create("weather", QuestionType.ShortText, "Weather", "Météo", At, isPrivate: false, isRequired: false);
 		var photo = Question.Create("photo", QuestionType.FileUpload, "Photo", "Photo", At, isPrivate: false);
-		context.Questions.AddRange(consent, narrative, weather, photo);
+		context.Questions.AddRange(narrative, weather, photo);
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);
@@ -372,13 +372,26 @@ public sealed class SummarizeReportProcessorTests(WorkerPostgresFixture postgres
 		(summarizerA.CallCount + summarizerB.CallCount).ShouldBe(1);
 	}
 
+	/// <summary>
+	///     The seeded publication-consent question, not a synthetic one: a role
+	///     lives on at most one live question (ix_questions_role, ADR-0154), and a
+	///     freshly migrated database already seeds the real one — its own
+	///     Typeform-derived key, not the <see cref="QuestionKey.ConsentPublish" />
+	///     constant.
+	/// </summary>
+	private static async Task<Question> SeededConsentQuestion(HpacSafetyDbContext context)
+	{
+		return await context.Questions.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
+	}
+
 	private static async Task<Report> Seed(HpacSafetyDbContext context,
 										   bool consent = true)
 	{
-		var consentQuestion = Question.CreateConsentPublish("May we publish?", "Pouvons-nous publier ?", At);
+		var consentQuestion = await SeededConsentQuestion(context);
 		var pilotName = Question.Create("pilot_name", QuestionType.ShortText, "Pilot name", "Nom du pilote", At, isPrivate: true);
 		var narrative = Question.Create("narrative", QuestionType.LongText, "What happened?", "Que s'est-il passé ?", At, isPrivate: false);
-		context.Questions.AddRange(consentQuestion, pilotName, narrative);
+		context.Questions.AddRange(pilotName, narrative);
 		await context.SaveChangesAsync();
 
 		var report = new Report(Locale.EnCa, At);

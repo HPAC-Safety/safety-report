@@ -499,25 +499,29 @@ public class ReportSubmissionEndpointTests(ApiPostgresFixture fixture)
 	private async Task<string> ConsentRevisionId()
 	{
 		await EnsureConsentQuestionExists();
-		return await RevisionIdFor(QuestionKey.ConsentPublish);
+
+		await using var scope = _factory.Services.CreateAsyncScope();
+		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
+		var consent = await database.Questions.Include(question => question.Revisions)
+			.SingleAsync(question => question.Role == QuestionRole.ConsentPublish);
+		return consent.CurrentRevision.Id.Value;
 	}
 
 	/// <summary>
-	///     No deployed environment nor this repository's admin question-authoring
-	///     endpoint currently creates the <c>consent_publish</c> system question —
-	///     it is only ever constructed directly in domain-level tests. That is a
-	///     real, pre-existing gap the reporter-facing form will eventually need
-	///     closed by its own change; it is not this endpoint's to fix. Here, tests
-	///     seed it directly against the same database the booted API is using, the
-	///     same way <c>OutboxAtomicityTests</c> does — idempotently, since this
-	///     collection shares one database across every test in it.
+	///     A freshly migrated database already seeds the real publication-consent
+	///     question — under its own Typeform-derived key, not the
+	///     <see cref="QuestionKey.ConsentPublish" /> constant, but carrying
+	///     <see cref="QuestionRole.ConsentPublish" />. A role lives on at most one
+	///     live question (<c>ix_questions_role</c>, ADR-0154), so this checks and
+	///     seeds by role, idempotently, since this collection shares one database
+	///     across every test in it — the same way <c>OutboxAtomicityTests</c> does.
 	/// </summary>
 	private async Task EnsureConsentQuestionExists()
 	{
 		await using var scope = _factory.Services.CreateAsyncScope();
 		var database = scope.ServiceProvider.GetRequiredService<HpacSafetyDbContext>();
 
-		if (await database.Questions.AnyAsync(question => question.Key == QuestionKey.ConsentPublish))
+		if (await database.Questions.AnyAsync(question => question.Role == QuestionRole.ConsentPublish))
 		{
 			return;
 		}

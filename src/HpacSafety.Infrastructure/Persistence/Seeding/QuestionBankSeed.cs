@@ -82,7 +82,7 @@ public static class QuestionBankSeed
 		new(
 			"da89ae06_f229_4f38_8faa_e9c5bafef2f3",
 			QuestionType.ShortText,
-			QuestionRole.None,
+			QuestionRole.ReporterFirstName,
 			true,
 			false,
 			false,
@@ -100,7 +100,7 @@ public static class QuestionBankSeed
 		new(
 			"3d662189_41cb_4430_9db8_7b2e4861df53",
 			QuestionType.ShortText,
-			QuestionRole.None,
+			QuestionRole.ReporterLastName,
 			true,
 			false,
 			false,
@@ -172,7 +172,7 @@ public static class QuestionBankSeed
 		new(
 			"52afac6c_b30c_4bd2_a052_212fa9249a45",
 			QuestionType.ShortText,
-			QuestionRole.None,
+			QuestionRole.PilotFirstName,
 			true,
 			false,
 			false,
@@ -190,7 +190,7 @@ public static class QuestionBankSeed
 		new(
 			"41c4d104_82c5_4f31_9d86_cb95e35622e4",
 			QuestionType.ShortText,
-			QuestionRole.None,
+			QuestionRole.PilotLastName,
 			true,
 			false,
 			false,

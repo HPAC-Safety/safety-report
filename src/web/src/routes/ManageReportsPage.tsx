@@ -20,8 +20,10 @@ import { ReportRowActions, type RowAction } from "../components/ReportRowActions
  * Every live report, newest first, with its workflow status, a Private badge
  * when the reporter refused publication, and a Stuck badge when it has waited
  * on summarization for more than a day. The filter lives in the address bar
- * so a reviewer can bookmark or share "needs action". The list itself carries
- * no answer or summary text; opening a report is the audited read.
+ * so a reviewer can bookmark or share "needs action". Each row also shows the
+ * reporter's and pilot's names when answered (REQ-MOD-124, ADR-0154) — the
+ * list's one exception to carrying no other answer or summary text; opening a
+ * report is the audited read.
  *
  * Each row can also be published, unpublished, or deleted in place
  * (REQ-MOD-120..123). A row carries its report's version, so these commands
@@ -184,7 +186,16 @@ export function ManageReportsPage() {
 									to={`/admin/reports/${report.id}`}
 									className="flex min-w-0 flex-1 flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"
 								>
-									<span className="font-sans text-ink">{t("reports.submittedAt", { at })}</span>
+									<span className="flex flex-col gap-0.5">
+										<span className="font-sans text-ink">{t("reports.submittedAt", { at })}</span>
+										{(report.reporterName || report.pilotName) && (
+											<span className="font-sans text-sm text-ink-muted">
+												{report.reporterName && t("reports.row.reporterName", { name: report.reporterName })}
+												{report.reporterName && report.pilotName && " · "}
+												{report.pilotName && t("reports.row.pilotName", { name: report.pilotName })}
+											</span>
+										)}
+									</span>
 									<ReportBadges status={report.status} consent={report.consent} isStuck={report.isStuck} />
 								</Link>
 								<ReportRowActions

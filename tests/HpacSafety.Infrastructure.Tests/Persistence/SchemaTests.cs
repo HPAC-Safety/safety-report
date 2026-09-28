@@ -69,7 +69,7 @@ public sealed class SchemaTests(PostgresFixture postgres)
 	}
 
 	[Theory]
-	[InlineData("admin_report_queue", "id,submitted_at,status,language,consent_publish,is_stuck,needs_action,version")]
+	[InlineData("admin_report_queue", "id,submitted_at,status,language,consent_publish,is_stuck,needs_action,version,reporter_name,pilot_name")]
 	[InlineData("answers_awaiting_translation", "id,question_key,value,locale,answered_at")]
 	[InlineData("admin_pending_counts", "reports_needing_action,answers_awaiting_translation,type_ahead_values_awaiting_review")]
 	[InlineData("public_report_media", "id,report_id,kind,content_type,stripped_blob_key,document_blob_key,uploaded_at")]
@@ -181,6 +181,27 @@ public sealed class SchemaTests(PostgresFixture postgres)
 		// (ADR-0071)
 		definitions.Length.ShouldBe(1);
 		definitions[0].ShouldContain("UNIQUE");
+		definitions[0].ShouldContain("deleted IS NULL");
+	}
+
+	[Fact]
+	public async Task GivenMigratedDatabase_WhenQuestionRoleIndexIsRead_ThenUniqueAmongLiveNonNoneRowsOnly()
+	{
+		// Given
+		var connectionString = await postgres.CreateMigratedDatabase();
+
+		// When
+		var definitions = await QueryStrings(
+			connectionString,
+			"SELECT indexdef FROM pg_indexes WHERE tablename = 'questions' AND indexname = 'ix_questions_role'");
+
+		// Then — a role lives on at most one live question (Question.AssignRole),
+		// enforced in the database the same way ix_questions_key already is, so a
+		// fork's momentary second row sharing a role never collides and a bug can
+		// never silently give two live questions the same role (ADR-0154)
+		definitions.Length.ShouldBe(1);
+		definitions[0].ShouldContain("UNIQUE");
+		definitions[0].ShouldContain("role)::text <> 'none'");
 		definitions[0].ShouldContain("deleted IS NULL");
 	}
 

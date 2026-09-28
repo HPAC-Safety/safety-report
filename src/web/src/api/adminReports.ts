@@ -29,7 +29,11 @@ export function isReportFilter(value: string | null): value is ReportFilter {
 	return value !== null && (REPORT_FILTERS as readonly string[]).includes(value)
 }
 
-/** One row of the list: state and timing only, never answer or summary text (REQ-MOD-030). */
+/**
+ * One row of the list: state and timing only, plus the reporter's and pilot's
+ * names — the one exception this list carries to no other answer or summary
+ * text (REQ-MOD-030, REQ-MOD-124, ADR-0154).
+ */
 export interface ReportListItem {
 	id: string
 	submittedAt: string
@@ -39,6 +43,10 @@ export interface ReportListItem {
 	isStuck: boolean
 	/** Sent back with every review command; a stale one is refused with 409 (ADR-0105). */
 	version: string
+	/** The reporter's first and last name answers, joined, or null when neither was given. */
+	reporterName: string | null
+	/** The pilot's first and last name answers, joined, or null when neither was given. */
+	pilotName: string | null
 }
 
 export interface ReportAnswerValue {

@@ -25,15 +25,27 @@ interface StubRow {
 	consent: boolean | null
 	isStuck: boolean
 	version: string
+	reporterName: string | null
+	pilotName: string | null
 }
 
 const ROWS: StubRow[] = [
-	{ id: "pendingaaaa", submittedAt: "2026-09-20T15:30:00Z", status: "pending", language: "en-CA", consent: true, isStuck: false, version: "11.1" },
-	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false, version: "12.0" },
-	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false, version: "13.1" },
-	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false, version: "14.1" },
-	{ id: "failedaaaaa", submittedAt: "2026-09-16T15:30:00Z", status: "summary_failed", language: "en-CA", consent: true, isStuck: false, version: "15.0" },
-	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true, version: "16.0" },
+	{
+		id: "pendingaaaa",
+		submittedAt: "2026-09-20T15:30:00Z",
+		status: "pending",
+		language: "en-CA",
+		consent: true,
+		isStuck: false,
+		version: "11.1",
+		reporterName: "Alex Rivera",
+		pilotName: "Sam Chen",
+	},
+	{ id: "privateaaaa", submittedAt: "2026-09-19T15:30:00Z", status: "unpublished", language: "fr-CA", consent: false, isStuck: false, version: "12.0", reporterName: null, pilotName: null },
+	{ id: "publishedaa", submittedAt: "2026-09-18T15:30:00Z", status: "published", language: "en-CA", consent: true, isStuck: false, version: "13.1", reporterName: null, pilotName: null },
+	{ id: "unpublished", submittedAt: "2026-09-17T15:30:00Z", status: "unpublished", language: "en-CA", consent: true, isStuck: false, version: "14.1", reporterName: null, pilotName: null },
+	{ id: "failedaaaaa", submittedAt: "2026-09-16T15:30:00Z", status: "summary_failed", language: "en-CA", consent: true, isStuck: false, version: "15.0", reporterName: null, pilotName: null },
+	{ id: "stuckaaaaaa", submittedAt: "2026-09-10T15:30:00Z", status: "summarizing", language: "en-CA", consent: true, isStuck: true, version: "16.0", reporterName: null, pilotName: null },
 ]
 
 const DETAIL = {
@@ -216,6 +228,16 @@ Then('a report whose reporter refused consent also shows a "Private \\(no consen
 Then('a stuck report shows a "Stuck" badge', async ({ page }) => {
 	await expect(page.locator(`[data-report-id="stuckaaaaaa"] [data-badge="stuck"]`)).toHaveText("Stuck")
 	await expect(page.locator(`[data-report-id="pendingaaaa"] [data-badge="stuck"]`)).toHaveCount(0)
+})
+
+Then('the pending row shows reporter name "Alex Rivera" and pilot name "Sam Chen"', async ({ page }) => {
+	await expect(row(page, "pending")).toContainText("Reporter: Alex Rivera")
+	await expect(row(page, "pending")).toContainText("Pilot: Sam Chen")
+})
+
+Then("the published row shows no reporter or pilot name", async ({ page }) => {
+	await expect(row(page, "published")).not.toContainText("Reporter:")
+	await expect(row(page, "published")).not.toContainText("Pilot:")
 })
 
 Then("only published reports are listed", async ({ page }) => {

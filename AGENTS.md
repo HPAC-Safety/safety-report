@@ -141,6 +141,14 @@ contributor who never invokes one is unaffected.
      [ADR-0119](docs/decisions/ADR-0119-a-published-report-offers-its-documents-for-download.md)).
      Neither can be optional or deleted, so both revise in place even when
      answered.
+   - Four more answers are read by name, on the admin report list only: the
+     reporter's and pilot's first and last names. Each stays optional and
+     ordinary — ordinary questions with a `QuestionRole`, not system
+     questions — identified by that role rather than by wording or position,
+     so a fork or a reworded label never loses them. A name shows blank when
+     unanswered; reporter and pilot are never collapsed even when they name
+     the same person
+     ([ADR-0154](docs/decisions/ADR-0154-reporter-and-pilot-names-are-read-by-question-role.md)).
    - An administrator authors every other question's required state
      ([ADR-0061](docs/decisions/ADR-0061-administrators-may-require-any-question.md)).
    - An administrator authors both languages, may use machine translation as a

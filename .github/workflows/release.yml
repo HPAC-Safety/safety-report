@@ -1,0 +1,182 @@
+---
+# Build once, deploy to staging, promote to production on approval
+# (issue #466, part of #30 — ADR-0158, CON-INF-011..013).
+#
+# THE ONLY TRIGGER THAT MAY TOUCH AWS. `release: published` fires when a
+# maintainer publishes a GitHub Release tagged `YYYY.MM.DD-N` on `main`
+# (issue #30 "Human work" H6). `workflow_dispatch` exists only to re-run an
+# earlier release by tag (rollback, or redeploying after the original run's
+# artifacts expired — see docs/deployment.md "Rollback"). NOTHING here runs on
+# push, merge, or pull_request: terraform.yml owns the credential-free
+# validation and the PR plan against both accounts (CON-INF-007), and neither
+# of its jobs ever applies.
+#
+# Three jobs: `build` makes the API image, the Worker image, and the web
+# bundle exactly once, tagged by commit SHA, and uploads them as workflow
+# artifacts — no AWS credential of any kind is requested here, on purpose,
+# so a bug in this job can never reach either account. `staging` and
+# `production` are the same reusable job (deploy-environment.yml), called
+# twice with different environments and tfvars; `production` needs `staging`
+# and additionally waits for the `hpac-safety-production` GitHub environment's
+# required-reviewer approval (`hpac-safety-admins`, configured on the environment
+# itself, not in this file). Both deploy the identical images and web bundle
+# `build` produced — never a rebuild (CON-INF-012).
+#
+# Depends on #443 (the Lambda-adapter API image and tools/build-api-image.sh)
+# and #465 (infra/staging.tfvars, infra/production.tfvars, the multi-account
+# Terraform, and the Terraform outputs this file and deploy-environment.yml
+# read by name: ecr_repository_*, nat_autoscaling_group_name,
+# secret_id_gemini_api_key, secret_id_deepl_api_key). Rebase onto both before
+# the first real release.
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to redeploy, e.g. 2026.10.02-1. Rebuilds from that tag''s commit — see docs/deployment.md "Rollback" for when to use this instead of re-running the original release''s own jobs.'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  # A reusable workflow's job can never hold more than its caller grants,
+  # regardless of its own `permissions:` block — `staging` and `production`
+  # need `id-token: write` for OIDC (deploy-environment.yml), so it has to be
+  # granted here even though `validate-tag` and `build` never use it.
+  id-token: write
+
+concurrency:
+  # One release moves through staging and production at a time. A second
+  # release published mid-promotion queues behind it rather than racing it
+  # for the same Terraform state lock.
+  group: release
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+
+jobs:
+  validate-tag:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.validate.outputs.tag }}
+    steps:
+      - name: Tag matches YYYY.MM.DD-N
+        id: validate
+        env:
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [ -z "$TAG" ]; then
+            echo "::error::No tag. This workflow runs only from a published release or a workflow_dispatch tag input."
+            exit 1
+          fi
+          # YYYY.MM.DD-N: a real month (01-12), a real day (01-31), and a
+          # positive dash-suffix for the same-day republish case. Anything
+          # else is rejected before a single AWS call is even considered.
+          if ! echo "$TAG" | grep -Eq '^[0-9]{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12][0-9]|3[01])-[1-9][0-9]*$'; then
+            echo "::error::Tag '$TAG' does not match YYYY.MM.DD-N (e.g. 2026.10.02-1). See ADR-0158."
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+  # No AWS credential anywhere in this job, deliberately (see this file's
+  # header). It builds each artifact exactly once, tagged by the commit SHA
+  # the tag points to, and hands the two image tarballs and the web bundle to
+  # `staging` and `production` unchanged.
+  build:
+    needs: validate-tag
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ needs.validate-tag.outputs.tag }}
+
+      - id: sha
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version-file: src/web/package.json
+
+      # tools/build-api-image.sh is #443's (the Lambda Web Adapter image,
+      # ADR-0042). Built to the local Docker daemon only — nothing is pushed
+      # from this job.
+      - name: Build the API image
+        run: tools/build-api-image.sh "hpac-safety-api:${{ steps.sha.outputs.sha }}"
+
+      # tools/build-worker-image.sh already exists on main today (ADR-0118).
+      - name: Build the Worker image
+        run: tools/build-worker-image.sh "hpac-safety-worker:${{ steps.sha.outputs.sha }}"
+
+      - name: Save the images as artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/release
+          docker save "hpac-safety-api:${{ steps.sha.outputs.sha }}" | gzip > artifacts/release/api-image.tar.gz
+          docker save "hpac-safety-worker:${{ steps.sha.outputs.sha }}" | gzip > artifacts/release/worker-image.tar.gz
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: api-image
+          path: artifacts/release/api-image.tar.gz
+          retention-days: 90
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: worker-image
+          path: artifacts/release/worker-image.tar.gz
+          retention-days: 90
+
+      - name: Build the web bundle
+        run: |
+          npm --prefix src/web ci
+          npm --prefix src/web run build
+          tar czf artifacts/release/web-dist.tar.gz -C src/web/dist .
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: web-dist
+          path: artifacts/release/web-dist.tar.gz
+          retention-days: 90
+
+  staging:
+    needs: [validate-tag, build]
+    uses: ./.github/workflows/deploy-environment.yml
+    with:
+      environment_name: hpac-safety-staging
+      tfvars_file: infra/staging.tfvars
+      state_key: hpac-safety/staging.tfstate
+      tag: ${{ needs.validate-tag.outputs.tag }}
+      sha: ${{ needs.build.outputs.sha }}
+    # `inherit`, not a named list: GEMINI_API_KEY and DEEPL_API_KEY are
+    # environment secrets (H4), one value per environment under the same
+    # name, and only resolve to the right one inside deploy-environment.yml's
+    # own job, which sets `environment: ${{ inputs.environment_name }}`.
+    # Naming them here would resolve against *this* job's (non-)environment
+    # instead and pick up nothing.
+    secrets: inherit
+
+  # `needs: staging` is the promotion gate CON-INF-012 describes; the actual
+  # approval requirement (`hpac-safety-admins`) is configured on the `hpac-safety-production`
+  # GitHub environment itself (issue #30 "Human work" H2), not in this file —
+  # the job simply will not start running until that review is granted.
+  production:
+    needs: [validate-tag, build, staging]
+    uses: ./.github/workflows/deploy-environment.yml
+    with:
+      environment_name: hpac-safety-production
+      tfvars_file: infra/production.tfvars
+      state_key: hpac-safety/production.tfstate
+      tag: ${{ needs.validate-tag.outputs.tag }}
+      sha: ${{ needs.build.outputs.sha }}
+    secrets: inherit

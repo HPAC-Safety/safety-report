@@ -1,0 +1,307 @@
+---
+# Deploy one environment's already-built artifacts to its AWS account
+# (CON-INF-011, CON-INF-012, ADR-0158, ADR-0164). Reusable (`workflow_call`)
+# only — it has no trigger of its own, so it never appears as a workflow a
+# person can run directly and does not count against "one release workflow"
+# (issue #466). release.yml calls it once for `hpac-safety-staging` and, after that
+# succeeds, once more for `hpac-safety-production` with the identical image digests
+# and web bundle. Keeping the steps in one file is deliberate: staging and
+# production must do EXACTLY the same thing, and two hand-maintained copies
+# would drift the day someone edits one and not the other.
+#
+# Every AWS call in this file is real. It only ever runs from release.yml, on
+# `release: published` (or a maintainer's `workflow_dispatch` redeploy of an
+# earlier tag) — never on push, merge, or pull_request. See release.yml's own
+# header before changing that.
+name: Deploy environment
+
+on:
+  workflow_call:
+    inputs:
+      environment_name:
+        description: 'The GitHub environment to run under: hpac-safety-staging or hpac-safety-production. Its variables and secrets are what the deploy job below reads (its own `environment:` key is set to this input), and its own protection rules (approval, deployment tag policy) are what actually gate the job — nothing here re-implements that.'
+        required: true
+        type: string
+      tfvars_file:
+        description: 'Path to this environment''s tfvars, e.g. infra/staging.tfvars.'
+        required: true
+        type: string
+      state_key:
+        description: 'This environment''s Terraform state object key inside the shared state bucket (CON-INF-011: one state bucket per account, so the key only has to separate environments if a bucket is ever shared — kept distinct regardless, so a future change of that assumption is not a migration).'
+        required: true
+        type: string
+      tag:
+        description: 'The release tag being deployed, e.g. 2026.10.02-1. Used only for messages and the job summary.'
+        required: true
+        type: string
+      sha:
+        description: 'The commit SHA the build job tagged every artifact with.'
+        required: true
+        type: string
+    secrets:
+      # Named here for documentation even though release.yml calls this
+      # workflow with `secrets: inherit` — the values below still resolve
+      # against THIS job's own `environment:` (set below), which is what
+      # actually picks the right environment secret; `inherit` only decides
+      # that a same-named secret is passed through at all.
+      GEMINI_API_KEY:
+        required: true
+      DEEPL_API_KEY:
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AWS_REGION: ca-central-1
+  TF_IN_AUTOMATION: 'true'
+  TF_INPUT: '0'
+
+jobs:
+  deploy:
+    name: Deploy (${{ inputs.environment_name }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment_name }}
+    steps:
+      # Named, not opaque: a missing value fails here with the name that is
+      # missing, not thirty steps later inside an AWS CLI error.
+      - name: Required configuration is present
+        uses: ./.github/actions/require-config
+        with:
+          secrets: |
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            DEEPL_API_KEY=${{ secrets.DEEPL_API_KEY }}
+          variables: |
+            AWS_DEPLOY_ROLE_ARN=${{ vars.AWS_DEPLOY_ROLE_ARN }}
+            TF_STATE_BUCKET=${{ vars.TF_STATE_BUCKET }}
+            AWS_ACCOUNT_ID=${{ vars.AWS_ACCOUNT_ID }}
+          context: >-
+            ${{ inputs.environment_name }} has not been bootstrapped yet.
+            See issue #30 "Human work" H3 and infra/bootstrap.sh (#464, #465).
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ inputs.tag }}
+
+      - name: Download the release's built artifacts
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          path: artifacts/release
+
+      - uses: aws-actions/configure-aws-credentials@4a1596c86fd706dc0521e32f0121ad1a6d1adb74 # v6
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          role-session-name: release-${{ inputs.tag }}-${{ inputs.environment_name }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Install the pinned Terraform
+        run: |
+          set -euo pipefail
+          tf_version=$(tr -d '[:space:]' < infra/.terraform-version)
+          curl -fsSL -o /tmp/terraform.zip \
+            "https://releases.hashicorp.com/terraform/${tf_version}/terraform_${tf_version}_linux_amd64.zip"
+          unzip -q -o /tmp/terraform.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/terraform
+          terraform version
+
+      - name: terraform init
+        run: >
+          terraform -chdir=infra init
+          -lockfile=readonly
+          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="key=${{ inputs.state_key }}"
+
+      # No plan-then-apply-the-plan-file here, unlike terraform.yml's old
+      # `apply` job: a release environment auto-applies on staging and applies
+      # behind a human approval on production (the environment's own required
+      # reviewer, not a second plan review), so the pull request's plan
+      # (terraform.yml) is the review artifact, and this step is what carries
+      # out what that plan already showed. The drift check right after this is
+      # what stands in for reviewing the plan a second time.
+      - name: terraform apply
+        run: |
+          terraform -chdir=infra apply -no-color -auto-approve \
+            -var-file="${{ inputs.tfvars_file }}"
+
+      # CON-INF-013 / ADR-0158: fails the job if applying planned to (or, after
+      # applying, still would) destroy anything other than the NAT instance —
+      # a destroyed RDS instance, uploads bucket, secret, or log group is
+      # exactly what `prevent_destroy` and deletion protection exist to make
+      # impossible, and this is the release-time check that nothing slipped
+      # past them. `-detailed-exitcode`: 0 no changes, 1 error, 2 changes
+      # pending (drift).
+      - name: Re-plan and fail on drift
+        run: |
+          set +e
+          terraform -chdir=infra plan -no-color -detailed-exitcode \
+            -var-file="${{ inputs.tfvars_file }}"
+          code=$?
+          set -e
+          if [ "$code" -eq 0 ]; then
+            echo 'Converged: a plan right after apply is empty.'
+          elif [ "$code" -eq 2 ]; then
+            echo '::error::terraform apply did not converge — a plan immediately afterwards is not empty. See ADR-0158 / CON-INF-013: every release re-plans after applying and fails on drift.'
+            exit 1
+          else
+            exit "$code"
+          fi
+
+      # The NAT instance is the one resource this system ever deletes and
+      # recreates, every release (CON-INF-013). `nat_autoscaling_group_name`
+      # is the interface #465's Terraform is expected to publish as an
+      # output — coordinate the actual ASG resource/output name with #465;
+      # this step only ever reads it by that name, never a hard-coded
+      # resource address, so a rename in #465 needs no change here.
+      - name: Replace the NAT instance
+        run: |
+          set -euo pipefail
+          asg_name=$(terraform -chdir=infra output -raw nat_autoscaling_group_name)
+          refresh_id=$(aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "$asg_name" \
+            --preferences '{"MinHealthyPercentage":0,"InstanceWarmup":60}' \
+            --query 'InstanceRefreshId' --output text)
+          echo "Started instance refresh $refresh_id on $asg_name."
+          while :; do
+            status=$(aws autoscaling describe-instance-refreshes \
+              --auto-scaling-group-name "$asg_name" \
+              --instance-refresh-ids "$refresh_id" \
+              --query 'InstanceRefreshes[0].Status' --output text)
+            case "$status" in
+              Successful) echo "NAT instance replaced."; break ;;
+              Failed | Cancelled | RollbackFailed | RollbackSuccessful)
+                echo "::error::NAT instance refresh ended as $status."
+                exit 1 ;;
+              *) sleep 15 ;;
+            esac
+          done
+
+      - name: Read Terraform's deploy variables
+        id: tf
+        run: |
+          set -euo pipefail
+          terraform -chdir=infra output -json deploy_variables > /tmp/deploy_variables.json
+          # shellcheck disable=SC2129
+          jq -r 'to_entries[] | "\(.key)=\(.value)"' /tmp/deploy_variables.json >> "$GITHUB_OUTPUT"
+
+      - name: Log in to this account's ECR
+        run: |
+          aws ecr get-login-password --region "${{ env.AWS_REGION }}" \
+            | docker login --username AWS --password-stdin "${{ steps.tf.outputs.ECR_REGISTRY }}"
+
+      - name: Load and push the API and Worker images
+        id: images
+        run: |
+          set -euo pipefail
+          docker load -i artifacts/release/api-image/api-image.tar.gz
+          docker load -i artifacts/release/worker-image/worker-image.tar.gz
+
+          api_image="${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_API }}:${{ inputs.sha }}"
+          worker_image="${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_WORKER }}:${{ inputs.sha }}"
+
+          docker tag "hpac-safety-api:${{ inputs.sha }}" "$api_image"
+          docker tag "hpac-safety-worker:${{ inputs.sha }}" "$worker_image"
+          docker push "$api_image"
+          docker push "$worker_image"
+
+          api_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$api_image" | cut -d@ -f2)
+          worker_digest=$(docker inspect --format='{{index .RepoDigests 0}}' "$worker_image" | cut -d@ -f2)
+          {
+            echo "api_digest=$api_digest"
+            echo "worker_digest=$worker_digest"
+            echo "api_image=$api_image"
+            echo "worker_image=$worker_image"
+          } >> "$GITHUB_OUTPUT"
+
+      # Same content pushed by every environment (the build job produced one
+      # tarball each, loaded unchanged here) — same manifest digest in every
+      # account's ECR. This is what "the same image digests, never a rebuild"
+      # (CON-INF-012) actually rests on: content addressing, not trust.
+      - name: Record this environment's image digests
+        run: |
+          {
+            echo "### Image digests — ${{ inputs.environment_name }}"
+            echo "- API: \`${{ steps.images.outputs.api_digest }}\`"
+            echo "- Worker: \`${{ steps.images.outputs.worker_digest }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Copy vendor keys into Secrets Manager
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          DEEPL_API_KEY: ${{ secrets.DEEPL_API_KEY }}
+        run: |
+          set -euo pipefail
+          gemini_secret_id=$(terraform -chdir=infra output -raw secret_id_gemini_api_key)
+          deepl_secret_id=$(terraform -chdir=infra output -raw secret_id_deepl_api_key)
+          aws secretsmanager put-secret-value --secret-id "$gemini_secret_id" --secret-string "$GEMINI_API_KEY" >/dev/null
+          aws secretsmanager put-secret-value --secret-id "$deepl_secret_id" --secret-string "$DEEPL_API_KEY" >/dev/null
+          echo "Vendor keys refreshed in Secrets Manager. Values are never echoed."
+
+      - name: Update the API Lambda function
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_API }}" \
+            --image-uri "${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_API }}@${{ steps.images.outputs.api_digest }}" \
+            >/dev/null
+          aws lambda wait function-updated --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_API }}"
+
+      - name: Update the Worker Lambda function
+        run: |
+          set -euo pipefail
+          aws lambda update-function-code \
+            --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_WORKER }}" \
+            --image-uri "${{ steps.tf.outputs.ECR_REGISTRY }}/${{ steps.tf.outputs.ECR_REPOSITORY_WORKER }}@${{ steps.images.outputs.worker_digest }}" \
+            >/dev/null
+          aws lambda wait function-updated --function-name "${{ steps.tf.outputs.LAMBDA_FUNCTION_WORKER }}"
+
+      - name: Sync the website bundle
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/web-dist
+          tar xzf artifacts/release/web-dist/web-dist.tar.gz -C /tmp/web-dist
+          aws s3 sync /tmp/web-dist "s3://${{ steps.tf.outputs.S3_BUCKET_SITE }}" --delete
+
+      - name: Invalidate CloudFront
+        run: |
+          aws cloudfront create-invalidation \
+            --distribution-id "${{ steps.tf.outputs.CLOUDFRONT_DISTRIBUTION_SITE }}" \
+            --paths '/*' >/dev/null
+
+      - name: Read the site URL
+        id: site
+        run: |
+          set -euo pipefail
+          echo "public_url=$(terraform -chdir=infra output -json site_urls | jq -r '.public')" >> "$GITHUB_OUTPUT"
+
+      # CloudFront's edge caches take a few seconds to pick up a fresh
+      # distribution config, so a short retry loop rather than one shot.
+      - name: Smoke test /api/health
+        run: |
+          set -euo pipefail
+          url="$(echo "${{ steps.site.outputs.public_url }}" | sed 's:/*$::')/api/health"
+          for _ in $(seq 1 10); do
+            if status=$(curl -fsS -o /dev/null -w '%{http_code}' "$url"); then
+              if [ "$status" = "200" ]; then
+                echo "Healthy: $url"
+                exit 0
+              fi
+            fi
+            sleep 6
+          done
+          echo "::error::/api/health did not answer 200 at $url."
+          exit 1
+
+      # Meaningful only the first time a production account is stood up
+      # (issue #30 "Human work" H7), and harmless every other run: printing it
+      # again costs nothing and needs no "is this the first run" check.
+      - name: DNS records to publish
+        if: inputs.environment_name == 'hpac-safety-production'
+        run: |
+          {
+            echo '### DNS records to publish (issue #30 "Human work" H7)'
+            echo ''
+            echo '```json'
+            terraform -chdir=infra output -json dns_records_to_publish
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

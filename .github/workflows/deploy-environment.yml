@@ -129,10 +129,13 @@ jobs:
       # (terraform.yml) is the review artifact, and this step is what carries
       # out what that plan already showed. The drift check right after this is
       # what stands in for reviewing the plan a second time.
+      # -var-file is absolute: Terraform resolves it after -chdir=infra, so the
+      # repository-root path the callers pass would be looked for under infra/
+      # (#615).
       - name: terraform apply
         run: |
           terraform -chdir=infra apply -no-color -auto-approve \
-            -var-file="${{ inputs.tfvars_file }}"
+            -var-file="$GITHUB_WORKSPACE/${{ inputs.tfvars_file }}"
 
       # CON-INF-013 / ADR-0158: fails the job if applying planned to (or, after
       # applying, still would) destroy anything other than the NAT instance —
@@ -145,7 +148,7 @@ jobs:
         run: |
           set +e
           terraform -chdir=infra plan -no-color -detailed-exitcode \
-            -var-file="${{ inputs.tfvars_file }}"
+            -var-file="$GITHUB_WORKSPACE/${{ inputs.tfvars_file }}"
           code=$?
           set -e
           if [ "$code" -eq 0 ]; then

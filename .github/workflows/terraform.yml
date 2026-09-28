@@ -240,6 +240,7 @@ jobs:
       # to it, and the S3 backend takes its lock by PUTTING a .tflock object into
       # that same bucket. A plan writes no state, so there is nothing for the lock
       # to protect; it exists to stop two APPLIES overlapping.
+      # -var-file is absolute: Terraform resolves it after -chdir=infra (#615).
       - name: terraform plan
         id: plan
         if: steps.configured.outputs.ready == 'true'
@@ -247,7 +248,7 @@ jobs:
         run: |
           set -o pipefail
           terraform -chdir=infra plan -lock=false -no-color \
-            -var-file="${{ matrix.tfvars }}" \
+            -var-file="$GITHUB_WORKSPACE/${{ matrix.tfvars }}" \
             -out=tfplan 2>&1 | tee plan.txt
 
       # The comment is the point of this job. A plan nobody reads is not a review

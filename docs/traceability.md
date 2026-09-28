@@ -942,6 +942,46 @@ Manage reports loads more automatically and offers the same hidden fallback and 
 
 The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one — *Reqnroll, Covered*
 
+### REQ-MOD-140
+
+Search matches the approved published summary in the visitor's site language — *Reqnroll, Covered*
+
+### REQ-MOD-141
+
+Search matches a visible member comment as shown in the visitor's site language — *Reqnroll, Covered*
+
+### REQ-MOD-142
+
+Search is scoped to the visitor's current site language only — *Reqnroll, Covered*
+
+### REQ-MOD-143
+
+The public search never widens by caller role — *Reqnroll, Covered*
+
+### REQ-MOD-144
+
+A non-publishable report's summary text never matches — *Reqnroll, Covered*
+
+### REQ-MOD-145
+
+A hidden or a deleted comment never matches — *Reqnroll, Covered*
+
+### REQ-MOD-146
+
+A typo or a missing accent still finds the best match — *Reqnroll, Covered*
+
+### REQ-MOD-147
+
+Best match ranks first while a query is active — *Reqnroll, Covered*
+
+### REQ-MOD-148
+
+An empty search box lists newest submitted first, unchanged — *Reqnroll, Covered*
+
+### REQ-MOD-149
+
+The search box sits at the top of the public feed, and its query is bookmarkable — *playwright-bdd, Covered*
+
 ## Claims: question-bank-and-form
 
 ### REQ-QB-001

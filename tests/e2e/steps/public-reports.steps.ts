@@ -50,9 +50,21 @@ const OLDER: StubReport = {
 const CURSOR = "c2Vjb25kLXBhZ2U"
 const HIDDEN_ID = "hiddenaaaaa"
 
+/** The one search term this stub recognizes; only FIRST's summary contains it. */
+const SEARCH_TERM = "crosswind"
+
 async function stubFeed(page: Page) {
 	await page.route(/\/api\/v1\/public\/reports\/?(\?.*)?$/, async (route) => {
-		const after = new URL(route.request().url()).searchParams.get("after")
+		const url = new URL(route.request().url())
+		const q = url.searchParams.get("q")
+
+		if (q) {
+			const matches = q.toLowerCase() === SEARCH_TERM ? [FIRST] : []
+			await route.fulfill({ json: { items: matches, next: null } })
+			return
+		}
+
+		const after = url.searchParams.get("after")
 		await route.fulfill({
 			json: after === CURSOR ? { items: [OLDER], next: null } : { items: [FIRST, SECOND], next: CURSOR },
 		})
@@ -304,4 +316,44 @@ When("a visitor activates the {string} action without scrolling", async ({ page 
 
 Then("the feed offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
 	await expect(page.getByRole("button", { name })).toBeVisible()
+})
+
+/*
+ * Search (#574, REQ-MOD-149): the search box at the top of /reports, and its
+ * bookmarkable ?q=. What actually matches — the summary and comments, scoped
+ * to the site's language — is proven against a real database by the Reqnroll
+ * scenarios REQ-MOD-140..148; this only proves the box's own wiring.
+ */
+
+function searchBox(page: Page) {
+	return page.getByRole("searchbox", { name: "Search safety reports" })
+}
+
+When("the visitor types a search term into the search box at the top of the page", async ({ page }) => {
+	await searchBox(page).fill(SEARCH_TERM)
+})
+
+Then("the address bar carries that search term as ?q=", async ({ page }) => {
+	await expect(page).toHaveURL(new RegExp(`[?&]q=${SEARCH_TERM}(&|$)`))
+})
+
+Then("only matching reports are listed", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toHaveCount(0)
+})
+
+Then("the search box still shows that search term, and only matching reports are listed", async ({ page }) => {
+	await expect(searchBox(page)).toHaveValue(SEARCH_TERM)
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toHaveCount(0)
+})
+
+When("the visitor goes back", async ({ page }) => {
+	await page.goBack()
+})
+
+Then("the search box is empty and the full feed is shown again", async ({ page }) => {
+	await expect(searchBox(page)).toHaveValue("")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toBeVisible()
 })

@@ -330,6 +330,25 @@ own. To read the other language, the visitor switches the site's language.
 The locale is edge state, not extra report data. The admin report view links to a published report's public
 address.
 
+A search box at the top of `/reports` fuzzy-searches the approved published
+summary and visible member comments, in the visitor's current site
+language only, best match first while the box holds text; an empty box is
+the plain feed above, unchanged (#574,
+[ADR-0157](../../docs/decisions/ADR-0157-the-public-search-privacy-boundary.md)).
+It reads only `public_reports` and `public_report_comments` — the same rule
+as everywhere else on this page: nothing not already public can be searched,
+because nothing not already public is in either view. The query lives in
+`?q=`, the same way the cursor lives in `?after=`: bookmarkable, shareable,
+and it survives the back button and a reload. Its cursor is the same
+report-ID-only cursor the plain feed uses, never a rank score.
+
+The engine is Postgres full-text search (language-appropriate stemming) plus
+`pg_trgm` (typo tolerance) and `unaccent` (accent tolerance — "securite"
+finds "sécurité" and back), shared with the admin search — that engine
+choice is [#573](https://github.com/HPAC-Safety/safety-report/issues/573)'s
+own ADR (ADR-0156 at the time of writing). No search index backs it; ADR-0156
+decided one is not justified at HPAC's report volume.
+
 ## Out of scope
 
 What not to build here. The global list in
@@ -365,9 +384,9 @@ to this area ([ADR-0083](../../docs/decisions/ADR-0083-specification-driven-deve
 - Showing an unpublishing note anywhere but the admin report view.
 - An Approve step separate from Publish, or a Reject or Reopen action
   ([ADR-0125](../../docs/decisions/ADR-0125-a-report-is-pending-published-or-unpublished.md)).
-- Search, filtering, or sorting of the public feed other than newest
-  submitted first, and a page-count or jump-to-page control. A best-match
-  order for an active search is future scope, not built here.
+- Filtering or sorting of the public feed other than newest submitted first
+  or, while the search box holds text, best match first (#574), and a
+  page-count or jump-to-page control.
 - Any attachment metadata on the public report page beyond each public file's
   opaque id, its kind, and a document's format. Which files are public is
   [`features/media`](../media/README.md)'s rule (ADR-0117, ADR-0119).

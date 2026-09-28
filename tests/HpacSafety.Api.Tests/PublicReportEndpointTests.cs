@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using HpacSafety.Core.Features.Moderation;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Shouldly;
 
@@ -48,6 +49,119 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 		response.StatusCode.ShouldBe(HttpStatusCode.OK);
 		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
 		page.GetProperty("items").GetRawText().ShouldBe(first.GetProperty("items").GetRawText());
+	}
+
+	[Theory]
+	[InlineData("")]
+	[InlineData("   ")]
+	[InlineData("\t\n")]
+	public async Task GivenBlankSearchBox_WhenFeedIsQueried_ThenSameAsNoQAtAll(string q)
+	{
+		// Given
+		using var client = _factory.CreateClient();
+		var plain = await client.GetFromJsonAsync<JsonElement>(new Uri(Feed, UriKind.Relative));
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		page.GetRawText().ShouldBe(plain.GetRawText());
+	}
+
+	[Theory]
+	[InlineData("a search term nobody's published summary or comment could ever contain")]
+	[InlineData("un terme de recherche introuvable")]
+	public async Task GivenNonBlankSearchMatchingNothing_WhenFeedIsQueried_ThenEmptyPageReturned(string q)
+	{
+		// Given
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(q)}&locale=en-CA", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		page.GetProperty("items").GetArrayLength().ShouldBe(0);
+		page.GetProperty("next").ValueKind.ShouldBe(JsonValueKind.Null);
+	}
+
+	[Fact]
+	public async Task GivenSearchQueryLongerThanCap_WhenFeedIsQueried_ThenAcceptedWithoutError()
+	{
+		// Given
+		using var client = _factory.CreateClient();
+		var tooLong = new string('a', 5000);
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(tooLong)}&locale=en-CA", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
+	[Theory]
+	[InlineData("wing-over")]
+	[InlineData("l'aile")]
+	[InlineData("\"wing-over\"")]
+	[InlineData("l'équipage sécurité-\"test\"")]
+	public async Task GivenPunctuatedSearchQuery_WhenFeedIsQueried_ThenAcceptedWithoutError(string query)
+	{
+		// Given: search_public_reports splits the query into words and hands
+		// each one to plainto_tsquery, never re-parses a tsquery's rendered
+		// text, so a hyphen, an apostrophe, or a literal quote character
+		// must never make it to the database as a syntax error (ADR-0157).
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(query)}&locale=en-CA", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
+	[Theory]
+	[InlineData("not a cursor")]
+	[InlineData("!!!!")]
+	public async Task GivenUnreadableCursor_WhenSearchIsQueried_ThenStartsFromTop(string cursor)
+	{
+		// Given
+		using var client = _factory.CreateClient();
+		var first = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA", UriKind.Relative));
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q=field&locale=en-CA&after={Uri.EscapeDataString(cursor)}", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+		var page = await response.Content.ReadFromJsonAsync<JsonElement>();
+		var firstPage = await first.Content.ReadFromJsonAsync<JsonElement>();
+		page.GetProperty("items").GetRawText().ShouldBe(firstPage.GetProperty("items").GetRawText());
+	}
+
+	[Fact]
+	public async Task GivenTheSameSearchFromEveryCallerRole_WhenTheFeedIsQueried_ThenTheResultsAreIdentical()
+	{
+		// Given
+		var uri = new Uri($"{Feed}?q=integration-test-role-parity&locale=en-CA", UriKind.Relative);
+		using var anonymous = _factory.CreateClient();
+		using var user = await SignedInClient.As(_factory, MemberRole.User);
+		using var officer = await SignedInClient.As(_factory, MemberRole.SafetyOfficer);
+		using var administrator = await SignedInClient.As(_factory, MemberRole.Administrator);
+
+		// When
+		var anonymousBody = await (await anonymous.GetAsync(uri)).Content.ReadAsStringAsync();
+		var userBody = await (await user.GetAsync(uri)).Content.ReadAsStringAsync();
+		var officerBody = await (await officer.GetAsync(uri)).Content.ReadAsStringAsync();
+		var administratorBody = await (await administrator.GetAsync(uri)).Content.ReadAsStringAsync();
+
+		// Then: the same query gets the same answer whoever asks, or asks
+		// anonymously — the public search endpoint never widens by role.
+		userBody.ShouldBe(anonymousBody);
+		officerBody.ShouldBe(anonymousBody);
+		administratorBody.ShouldBe(anonymousBody);
 	}
 
 	[Theory]

@@ -311,6 +311,24 @@
     "provider": "human",
     "reviewed": true
   },
+  "feed.search.empty": {
+    "source_hash": "ffd28854cdf4000148ae9b71143e4f842ec014647f1b0baca2e53ede1f0b6423",
+    "target_hash": "46b523db5839ab5a657a8f3be81648c9670a36f4fd0fb7b2f7dd5e16f653970d",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "feed.search.label": {
+    "source_hash": "afbd2122066ae8b177e1acfda7433552009a8f56b36feb9603885305d45066ea",
+    "target_hash": "8f83dff3f3af39a018abeec73f8eeea24b64099ca17a8e21e0cee69c45036aaa",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
+  "feed.search.placeholder": {
+    "source_hash": "9923a74db3fbb96bf8b4354c9333ade19dab0cdf39ff2ca64f669222c1ae1b4d",
+    "target_hash": "7e3d902ec220de352f2312ef69325dfa0a11d815b807aa417bce7457b8255a98",
+    "provider": "deepl:FR-CA:prefer_more",
+    "reviewed": false
+  },
   "footer.copyright": {
     "source_hash": "9cee5ec2702c7908e839099047ddbd0a2b08a790b79704d503e0f31e4204a65f",
     "target_hash": "3b7a367d02c505b59a1e58d9b95ecfcddccab76e2a66ee139569f42126617846",

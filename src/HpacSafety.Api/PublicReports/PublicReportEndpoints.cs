@@ -17,6 +17,9 @@ public static class PublicReportEndpoints
 	/// <summary>How many reports one feed page carries.</summary>
 	public const int PageSize = 20;
 
+	/// <summary>The longest search box text the API will read; anything past this is ignored.</summary>
+	public const int MaxSearchQueryLength = 200;
+
 	/// <summary>Maps the public report endpoints.</summary>
 	/// <param name="app">The route builder.</param>
 	/// <returns>The group, so the caller can see what was mapped.</returns>
@@ -34,20 +37,31 @@ public static class PublicReportEndpoints
 	}
 
 	/// <summary>
-	///     One page of the feed: newest submitted first, a tie broken by report ID
-	///     so the order is total and a cursor never skips or repeats a report
-	///     (REQ-MOD-037). An unreadable cursor, or one naming a report that is no
-	///     longer publishable, starts from the top rather than failing, because it
-	///     is only ever a bookmark. Submission time orders the feed and keys the
-	///     query's keyset position; it is looked up server-side from the cursor's
-	///     report ID, so it is never a field of the response and never travels to
-	///     or from the client — each entry still displays <c>published_at</c>.
+	///     One page of the feed. A blank search box is newest submitted first, a
+	///     tie broken by report ID, exactly as before (REQ-MOD-037). A non-blank
+	///     <paramref name="q" /> instead fuzzy-searches the approved published
+	///     summary and visible member comments, in <paramref name="locale" />
+	///     only, best match first (#574, ADR-0157); the query text is never
+	///     logged. Either way, an unreadable cursor, or one naming a report that
+	///     is no longer publishable or no longer matches, starts from the top
+	///     rather than failing, because it is only ever a bookmark.
 	/// </summary>
 	private static async Task<IResult> List(
 		string? after,
+		string? q,
+		string? locale,
 		HpacSafetyDbContext database,
 		CancellationToken cancellationToken)
 	{
+		var trimmed = q?.Trim();
+
+		if (!string.IsNullOrEmpty(trimmed))
+		{
+			return await Search(
+				trimmed.Length > MaxSearchQueryLength ? trimmed[..MaxSearchQueryLength] : trimmed,
+				locale, after, database, cancellationToken).ConfigureAwait(false);
+		}
+
 		var query = database.PublicReports.AsNoTracking();
 
 		if (Cursor.TryRead(after, out var afterId))
@@ -83,6 +97,47 @@ public static class PublicReportEndpoints
 			.ThenByDescending(report => report.Id)
 			.Take(PageSize + 1)
 			.Select(report => new PublicReportRow(report.Id, report.AiSummaryEn, report.AiSummaryFr, report.PublishedAt, report.CommentCount))
+			.ToListAsync(cancellationToken)
+			.ConfigureAwait(false);
+
+		var page = rows.Take(PageSize).ToList();
+		var next = rows.Count > PageSize ? Cursor.Write(page[^1].Id) : null;
+
+		var items = page
+			.Select(row => new PublicReportView(row.Id, row.AiSummaryEn, row.AiSummaryFr, row.PublishedAt, row.CommentCount))
+			.ToList();
+
+		return Results.Ok(new PublicReportPage(items, next));
+	}
+
+	/// <summary>
+	///     One page of best-match results for a non-blank search box
+	///     (REQ-MOD-140 to REQ-MOD-149). <c>search_public_reports</c> is the one
+	///     read: it joins only <c>public_reports</c> and
+	///     <c>public_report_comments</c>, the two views that already hold the
+	///     whole publication and visibility invariant, so nothing not already
+	///     public can reach a match. The cursor still carries only a report ID
+	///     (ADR-0153); the function resolves its own rank position by looking
+	///     that ID back up against itself, so a rank score never travels to or
+	///     from the client either.
+	/// </summary>
+	private static async Task<IResult> Search(
+		string q,
+		string? localeCode,
+		string? after,
+		HpacSafetyDbContext database,
+		CancellationToken cancellationToken)
+	{
+		var locale = Locale.TryParse(localeCode, out var parsed) ? parsed : Locale.EnCa;
+		var afterId = Cursor.TryRead(after, out var id) ? id : null;
+
+		var rows = await database.Database
+			.SqlQuery<PublicReportSearchRow>(
+				$"""
+				 SELECT id AS "Id", ai_summary_en AS "AiSummaryEn", ai_summary_fr AS "AiSummaryFr",
+				        published_at AS "PublishedAt", comment_count AS "CommentCount"
+				 FROM search_public_reports({q}, {locale.Code}, {afterId}, {PageSize + 1})
+				 """)
 			.ToListAsync(cancellationToken)
 			.ConfigureAwait(false);
 
@@ -201,6 +256,14 @@ public static class PublicReportEndpoints
 	///     DTO's fields (#570).
 	/// </summary>
 	private sealed record PublicReportRow(
+		string Id,
+		string AiSummaryEn,
+		string AiSummaryFr,
+		DateTimeOffset PublishedAt,
+		int CommentCount);
+
+	/// <summary>One <c>search_public_reports</c> row, aliased to match these property names exactly.</summary>
+	private sealed record PublicReportSearchRow(
 		string Id,
 		string AiSummaryEn,
 		string AiSummaryFr,

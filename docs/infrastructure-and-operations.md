@@ -375,6 +375,31 @@ build, test, security/configuration, web, and Terraform validation/plan checks
 against both accounts without mutating either
 ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
 
+Each account's roles are bootstrapped independently by `infra/bootstrap.sh`
+(#464); one account is never reached through the other. `hpac-safety-deploy`
+is trusted only by `repo:HPAC-Safety/safety-report:environment:<that
+account's GitHub environment — hpac-staging or hpac-production>`, and
+`hpac-safety-plan` only by this repository's pull requests. Both trust
+conditions are exact matches (`StringEquals`), never a wildcard subject.
+
+Staging is the owner's own AWS account and also runs other, unrelated
+applications. The deploy role's IAM and S3 grants are scoped by name to
+`hpac-safety-*` resources, and — for the handful of services with no such
+name pattern — creation is allowed only with the request's own
+`Project=HPAC-Safety` tag (`aws:RequestTag`, a real `StringEquals`) while
+every mutating action on a resource not **already** carrying that tag is
+denied (`aws:ResourceTag`, `StringNotEquals`, no `IfExists`): an
+`IfExists`-only tag check passes on an untagged resource, which describes
+almost every resource belonging to another application, so it is not used as
+the sole guard anywhere in the deploy policy. The same reach also covers
+data, not only mutation: reading a secret value, a Lambda function's
+environment variables, an ECR image layer, log/RDS-log content, an SSM
+parameter, a DynamoDB item, or an SQS/Kinesis message is denied outright
+except (where the resource has a predictable HPAC-Safety-only name) for this
+system's own. This has not been exercised against a real AWS account — see
+`docs/deployment.md` "What `hpac-safety-deploy` may do" for the residual risk
+and the two named, narrow exceptions this leaves.
+
 On a published, date-tagged release:
 
 1. immutable API and Worker images are built and pushed to ECR with the commit

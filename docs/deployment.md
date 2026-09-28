@@ -106,3 +106,79 @@ the API, the Worker, and the web dev server in Docker (see the root
 
 Terraform formatting/validation commands remain documented in
 [`infra/README.md`](../infra/README.md).
+
+## Two accounts, two environments
+
+Per #30's owner decisions, this system deploys to two **separate, unrelated**
+AWS accounts, each bootstrapped independently — there is no AWS Organizations
+relationship between them, and one is never reached by "switch role" from the
+other:
+
+- **staging** is the owner's own personal AWS account. It also runs other,
+  unrelated workloads, so every scoping safeguard below is load-bearing, not
+  defensive dressing: it is the only thing keeping this system's deploy role
+  off somebody else's resources in that same account.
+- **production** is a separate account HPAC creates and owns.
+
+Each gets its own `hpac-safety-deploy` role (trusted only by GitHub Actions
+jobs running under that account's matching GitHub *environment*), its own
+`hpac-safety-plan` role, and its own Terraform state bucket. Nothing is shared
+between them.
+
+## Connecting an AWS account to GitHub (once per account)
+
+Do this once in **each** account: the owner's personal account for `staging`,
+and HPAC's account for `production`. Nothing here needs a password or key to
+be shared with anyone — the whole point of OIDC is that GitHub Actions
+authenticates without one, and this script itself runs under whatever session
+you already have open, never a new long-lived credential.
+
+1. Sign in to that AWS account directly, as an administrator —
+   <https://console.aws.amazon.com>. There is no organization to switch roles
+   through; each account is its own sign-in.
+2. At the top right, set the region to **Canada (Central) ca-central-1**.
+3. Click the **CloudShell** icon (`>_`) in the top bar and wait for the
+   prompt. CloudShell already has the AWS CLI and a POSIX shell; nothing
+   needs installing.
+4. Paste one line. For the staging account:
+   ```sh
+   git clone https://github.com/HPAC-Safety/safety-report && sh safety-report/infra/bootstrap.sh staging
+   ```
+   For the production account, use `production` in place of `staging`.
+5. `infra/bootstrap.sh` is idempotent: re-running it in the same account
+   converges the existing OIDC provider, roles, policies, and state bucket
+   onto the current definitions and changes nothing else. It tolerates — and
+   never modifies or deletes — an OIDC provider, client ID, or thumbprint that
+   another application already created in that account; it only adds the
+   `sts.amazonaws.com` audience if that one is missing.
+6. It creates, in that account only:
+   - the GitHub OIDC identity provider (or reuses one that exists);
+   - `hpac-safety-deploy`, trusted only by
+     `repo:HPAC-Safety/safety-report:environment:<staging|production>` —
+     exactly the subject a job with `environment: staging` (or `production`)
+     presents, and nothing else;
+   - `hpac-safety-plan`, trusted only by this repository's pull requests, with
+     `ReadOnlyAccess` plus Terraform state read, and explicit denies on
+     uploaded report objects, secret values, `rds-data`, and RDS log
+     downloads;
+   - the Terraform state bucket `hpac-safety-tfstate-<account-id>`
+     (versioned, encrypted, public access blocked, TLS-only).
+7. It prints four `NAME=value` lines on stdout:
+   ```
+   AWS_DEPLOY_ROLE_ARN=arn:aws:iam::<account-id>:role/hpac-safety-deploy
+   AWS_PLAN_ROLE_ARN=arn:aws:iam::<account-id>:role/hpac-safety-plan
+   TF_STATE_BUCKET=hpac-safety-tfstate-<account-id>
+   AWS_ACCOUNT_ID=<account-id>
+   ```
+   In GitHub, open **Settings → Environments → *(the matching environment)* →
+   Environment variables**, and add each one. These are identifiers, not
+   secrets — no GitHub secret is ever set from this script's output.
+
+What `hpac-safety-deploy` may do, and what it may never do, is documented in
+the "What the deploy role may do" section of #30 and enforced by
+[`infra/bootstrap.sh`](../infra/bootstrap.sh)'s policy: it is scoped to
+`hpac-safety-*` IAM roles/policies and `hpac-safety-*` S3 buckets, conditioned
+on the `Project=HPAC-Safety` tag wherever a service supports it, and it can
+never read an uploaded report file, read an RDS log, create an IAM user or
+access key, touch an OIDC/SAML provider, Organizations, or the account, or
+edit its own role.

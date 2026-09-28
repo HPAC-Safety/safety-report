@@ -35,22 +35,29 @@ staging and production, built from the same Terraform
   each one, from that account's own CloudShell. Production holds real reports
   and serves `safety.hpac.ca` and `securite.acvl.ca` on one CloudFront
   distribution.
-- Both accounts group their resources under one AWS myApplications
-  application named **HPAC-Safety** and a tag-based Resource Group, and are
-  reached only by their own short-lived GitHub OIDC roles
+- Each account groups its resources under its own AWS myApplications
+  application and tag-based Resource Group — **`hpac-staging`** and
+  **`hpac-production`** — a grouping and cost-visibility tool, not a security
+  boundary. Both accounts are reached only by their own short-lived GitHub
+  OIDC roles
   (`hpac-safety-deploy`, `hpac-safety-plan`) — never a long-lived AWS access
   key.
 - **First goal: staging only.** A working release pipeline against staging
   does not need the production account to exist yet. Production is created,
   bootstrapped, and connected once HPAC's account and its DNS records are
   ready; see issue #30's "Human work" for the exact one-time steps.
+- **The identity provider is an external dependency, not chosen here**
+  ([ADR-0064](decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
+  Until `AUTH_AUTHORITY` is set for an environment, that environment can still
+  deploy public pages and submission, but sign-in, review, and administration
+  cannot work there.
 
 ## Release and promotion
 
 A maintainer publishes a GitHub Release tagged with the date, `YYYY.MM.DD-N`.
 The release workflow builds the API image, the Worker image, and the website
 bundle exactly once, deploys those artifacts to staging automatically, then
-waits for the `admins` GitHub team to approve the `production` environment
+waits for the `hpac-admins` GitHub team to approve the `hpac-production` environment
 before deploying the **same artifacts** — never a rebuild — to production.
 Rollback re-runs the job for an earlier release's tag. There is no
 `terraform apply` on a merge to `main`; a pull request only plans, against

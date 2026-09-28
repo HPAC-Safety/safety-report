@@ -110,7 +110,7 @@ The outbound calls, all over HTTPS through the NAT instance:
 flowchart LR
     gha["GitHub Actions<br/>release.yml · OIDC role per account"]
     dns["hpac.ca / acvl.ca DNS<br/>outside AWS · production only"]
-    admins["admins team<br/>approves production"]
+    admins["hpac-admins team<br/>approves production"]
 
     subgraph global["AWS global"]
         cf["CloudFront<br/>site + /api/*"]
@@ -197,7 +197,7 @@ How the pieces connect:
 - **Deployment** is a published GitHub Release, tagged `YYYY.MM.DD-N`. It
   builds the API image, the Worker image, and the website bundle once, deploys
   those same artifacts to staging automatically, then to production only
-  after the `admins` team approves. There is no apply on merge to `main`
+  after the `hpac-admins` team approves. There is no apply on merge to `main`
   ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
   Each account is reached only by its own short-lived OIDC role.
 - **DNS** for `hpac.ca` and `acvl.ca` stays with their current hosts, outside
@@ -242,21 +242,26 @@ reports. The two accounts are not linked: production is not created from
 staging through AWS Organizations, and neither account can assume a role in
 the other. Both are built from the one `infra/` root module, differing only
 in `infra/staging.tfvars` and `infra/production.tfvars`. Each account carries
-an AWS myApplications application named **HPAC-Safety** (Service Catalog
-AppRegistry) and a tag-based Resource Group; every resource is tagged
+its own AWS myApplications application (Service Catalog AppRegistry) and
+tag-based Resource Group — `hpac-staging` and `hpac-production` — a grouping
+and cost-visibility tool, not a security boundary. Every resource is tagged
 `Project=HPAC-Safety`, `Environment=<staging|production>`,
 `ManagedBy=terraform`, and `Repo=HPAC-Safety/safety-report`. Production serves
 `safety.hpac.ca` and `securite.acvl.ca` on one CloudFront distribution with one
 `us-east-1` certificate; staging serves only its default `*.cloudfront.net`
 address
 ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
+The identity provider is an external dependency this ADR does not choose
+(ADR-0064): until `AUTH_AUTHORITY` is set for an environment, that
+environment can still deploy public pages and submission, but sign-in,
+review, and administration cannot work there.
 *Verified by: none — an infrastructure property no application scenario can
 observe; Terraform validation and the `infra` job are its check.*
 
 **CON-INF-012** A GitHub Release tagged `YYYY.MM.DD-N` builds the API image,
 the Worker image, and the website bundle exactly once. Staging deploys those
 artifacts automatically. Production deploys the same artifacts, never a
-rebuild, only after the `admins` GitHub team approves the `production`
+rebuild, only after the `hpac-admins` GitHub team approves the `hpac-production`
 environment. There is no `terraform apply` on a merge to `main` — a pull
 request only plans, against both accounts
 ([ADR-0158](decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
@@ -374,8 +379,8 @@ On a published, date-tagged release:
    Lambda functions are updated to that image, and the website build is synced
    to its S3 bucket and the CloudFront distribution invalidated, each
    independently;
-3. production deploys the identical artifacts only after the `admins` GitHub
-   team approves the `production` environment; and
+3. production deploys the identical artifacts only after the `hpac-admins` GitHub
+   team approves the `hpac-production` environment; and
 4. health/readiness checks confirm the rollout in each account.
 
 There is no `terraform apply` on a merge to `main`.

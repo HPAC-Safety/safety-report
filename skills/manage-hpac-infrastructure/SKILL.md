@@ -23,11 +23,23 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   `infra/production.tfvars`
   ([ADR-0158](../../docs/decisions/ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)).
   A dated GitHub Release deploys to staging automatically, then to production
-  only after `admins` team approval of the same artifacts.
+  only after the `hpac-admins` team approves the `hpac-production` GitHub
+  environment for the same artifacts. First goal: staging alone; production
+  follows once HPAC's own account and DNS exist.
+- Each account groups its resources under its own myApplications application
+  and Resource Group, `hpac-staging`/`hpac-production` — a cost/grouping
+  view, not a security boundary — tagged `Project=HPAC-Safety`,
+  `Environment=<staging|production>`, `ManagedBy=terraform`, `Repo=HPAC-Safety/safety-report`
+  (ADR-0158).
 - A NAT instance (`fck-nat`), recreated every release, is the only resource
   either account ever deletes and recreates; everything else is created once
-  and updated in place, protected from deletion.
-- Terraform and GitHub OIDC. Never create long-lived AWS keys.
+  and updated in place, protected from deletion (`prevent_destroy` on RDS,
+  the uploads bucket, secrets, and log groups).
+- **Terraform and GitHub OIDC only** — `hpac-safety-deploy` (release) and
+  `hpac-safety-plan` (pull-request plan) per account, scoped to
+  `hpac-safety-*` names and the `Project=HPAC-Safety` tag; that scoping, not
+  the AppRegistry grouping, is the actual security boundary. Never create a
+  long-lived AWS key.
 - Preserve least privilege.
 
 ## Data
@@ -51,6 +63,9 @@ description: Maintain HPAC Safety's minimal Canadian AWS, Terraform, deployment,
   ([ADR-0064](../../docs/decisions/ADR-0064-jwt-bearer-authentication-with-three-roles.md)).
 - Provider choice is deferred. Residency matters when it is made:
   `ca-central-1` favors AWS Cognito.
+- **`AUTH_AUTHORITY` is an external dependency, not chosen here.** Until the
+  identity provider exists, public pages and submission can still deploy in
+  either environment, but sign-in, review, and administration cannot work.
 
 ## Operations
 

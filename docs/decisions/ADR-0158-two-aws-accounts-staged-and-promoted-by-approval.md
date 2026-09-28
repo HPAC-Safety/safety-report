@@ -1,6 +1,6 @@
 ---
 title: Two AWS accounts, staging and production, released by date tag and promoted by approval
-description: The existing AWS account becomes staging, synthetic data only; a new account becomes production. One release builds once, deploys to staging automatically, then to production after admins approval of the same artifacts. Both accounts group under one HPAC-Safety application and run the same Terraform.
+description: The existing AWS account becomes staging, synthetic data only; a new account becomes production. One release builds once, deploys to staging automatically, then to production after hpac-admins approval of the same artifacts. Each account groups its resources under its own hpac-staging/hpac-production myApplications application, and both run the same Terraform.
 type: adr
 status: accepted
 date: 2026-09-27
@@ -74,12 +74,16 @@ Nothing here reopens the identity-provider choice (ADR-0064) or the ALB (see
 
 ### Grouping
 
-Each account gets an AWS **myApplications** application named
-**HPAC-Safety** (Service Catalog AppRegistry) and a tag-based Resource Group,
-so every resource the system owns is visible in one place per account even
-though staging's account also hosts unrelated applications. Every resource
-carries the tags `Project=HPAC-Safety`, `Environment=<staging|production>`,
-`ManagedBy=terraform`, and `Repo=HPAC-Safety/safety-report`.
+Each account gets its own AWS **myApplications** application (Service
+Catalog AppRegistry) and tag-based Resource Group, named for the account it
+groups — **`hpac-staging`** and **`hpac-production`** — so every resource the
+system owns is visible in one place per account even though staging's account
+also hosts unrelated applications. This is a grouping and cost-visibility
+tool, not a security boundary; the tags are what a policy condition actually
+checks. Every resource carries the tags `Project=HPAC-Safety`,
+`Environment=<staging|production>`, `ManagedBy=terraform`, and
+`Repo=HPAC-Safety/safety-report`, unchanged by the per-account application
+name.
 
 ### Hostnames
 
@@ -100,12 +104,12 @@ carries the tags `Project=HPAC-Safety`, `Environment=<staging|production>`,
   (for example `2026.10.02-1`).
 - **Build once.** The release workflow builds the API image, the Worker
   image, and the web bundle exactly once, tagged by commit SHA.
-- **Staging deploys on its own**, against the `staging` GitHub environment
+- **Staging deploys on its own**, against the `hpac-staging` GitHub environment
   (deployment branch/tag rule `20*`, no required reviewers): `terraform
   apply`, push images, update both Lambda functions, sync the site bundle,
   invalidate CloudFront, smoke-test `/api/health`.
-- **Production waits.** The `production` GitHub environment requires
-  approval by the `admins` org team before its job runs. It then repeats the
+- **Production waits.** The `hpac-production` GitHub environment requires
+  approval by the `hpac-admins` org team before its job runs. It then repeats the
   same steps against the production account, deploying the **same image
   digests and the same web bundle** staging already ran — never a rebuild.
 - **There is no apply on merge to `main`.** A pull request still gets a
@@ -118,13 +122,29 @@ carries the tags `Project=HPAC-Safety`, `Environment=<staging|production>`,
 ### Deploy credentials
 
 Both accounts are reached only by short-lived OIDC roles, one per account per
-purpose:
+purpose. Staging reuses the AWS IAM OIDC provider for GitHub Actions that
+already exists in the owner's personal account (never replacing it);
+production's `bootstrap.sh` run creates one, because it is a fresh account.
 
-- `hpac-safety-deploy`, trusted only by
-  `repo:HPAC-Safety/safety-report:environment:<staging|production>`, used by
-  the release job.
-- `hpac-safety-plan`, trusted only by this repository's pull requests,
-  read-only plus Terraform state, used by the plan job.
+- **`hpac-safety-deploy`** (used by the release job), trusted only by
+  `repo:HPAC-Safety/safety-report:environment:hpac-<staging|production>`.
+  - **Can manage:** CloudFront, ACM, Lambda, ECR, EventBridge and Scheduler,
+    RDS, VPC networking (EC2), S3, Secrets Manager (create entries and put
+    values), CloudWatch and Logs, SNS, KMS (the AWS-managed keys), Service
+    Catalog AppRegistry, Resource Groups, and tagging.
+  - **Kept to HPAC-Safety resources:** IAM only on roles and policies named
+    `hpac-safety-*`, and `iam:PassRole` only to Lambda and Scheduler; S3 only
+    on `hpac-safety-*` buckets; `Project=HPAC-Safety` tag conditions wherever
+    the service supports them — this scoping, not the AppRegistry/Resource
+    Group grouping, is what keeps staging's deploy role off the account's
+    other, unrelated applications.
+  - **Explicitly denied:** reading uploaded report files, reading database
+    logs, creating IAM users or access keys, changing OIDC/SAML providers,
+    Organizations, or account settings, and editing its own role.
+- **`hpac-safety-plan`** (used by the pull-request plan job), trusted only by
+  this repository's pull requests: AWS `ReadOnlyAccess` plus reading
+  Terraform state. Denied upload objects, secret values, `rds-data`, and
+  database logs.
 
 No long-lived AWS access key exists in either account.
 
@@ -206,10 +226,10 @@ because this is the ADR that first writes the two-environment shape down:
   `diff` must be the whole story; a review that finds environment-specific
   logic anywhere else in the Terraform is a defect.
 - Issue #30's "Human work" H1–H3 (HPAC creates its own AWS account for
-  production, a maintainer sets up the `admins` team and both GitHub
+  production, a maintainer sets up the `hpac-admins` team and both GitHub
   environments, and `bootstrap.sh` runs independently in each account) is the
   one-time setup this ADR assumes exists before a release can run end to end
-  against both accounts. Staging alone needs only H2's `staging` environment
+  against both accounts. Staging alone needs only H2's `hpac-staging` environment
   and H3 run once, against the owner's existing account.
 - `docs/infrastructure-and-operations.md`, `docs/deployment.md`,
   `features/README.md`, and the `manage-hpac-infrastructure` skill are updated
@@ -220,3 +240,13 @@ because this is the ADR that first writes the two-environment shape down:
   corrected in this pull request to also name this record where they discuss
   environments, so a reader following either stale line lands on the current
   target.
+- **The identity provider is an external dependency, not decided here**
+  ([ADR-0064](ADR-0064-jwt-bearer-authentication-with-three-roles.md)). Until
+  `AUTH_AUTHORITY` is set for an environment — staging or production — that
+  environment can deploy public pages and submission, but sign-in, review,
+  and administration cannot work there. This is a stated limitation, not
+  something either environment works around.
+- Vendor keys (`GEMINI_API_KEY`, `DEEPL_API_KEY`) are separate Secrets
+  Manager entries per environment, holding the same values for now; upload
+  size caps (250 MB video, 25 MB image or document) are unchanged by having
+  two environments — both enforce the same caps.

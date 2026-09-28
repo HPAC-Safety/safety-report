@@ -133,10 +133,27 @@ public sealed class ReviewActionSteps(SeededReport seeded) : IDisposable
 	public async Task WhenNeedsActionAndCountsAreRead()
 	{
 		using var client = await BootedApi.SignedInAs(MemberRole.SafetyOfficer);
-		_needsAction = [.. (await client.GetFromJsonAsync<JsonElement[]>(new Uri("/api/admin/reports?filter=needs-action", UriKind.Relative)))!
-			.Select(item => item.GetProperty("id").GetString()!)];
+		_needsAction = [.. await ListAllIds(client, "/api/admin/reports?filter=needs-action")];
 		_needsActionCount = (await client.GetFromJsonAsync<JsonElement>(new Uri("/api/admin/counts", UriKind.Relative)))
 			.GetProperty("reportsNeedingAction").GetInt32();
+	}
+
+	/// <summary>Follows every keyset page (REQ-MOD-129) and returns every row's id.</summary>
+	private static async Task<List<string>> ListAllIds(HttpClient client,
+														string path)
+	{
+		var ids = new List<string>();
+		string? after = null;
+
+		do
+		{
+			var query = after is null ? string.Empty : (path.Contains('?') ? "&" : "?") + $"after={Uri.EscapeDataString(after)}";
+			var page = await client.GetFromJsonAsync<JsonElement>(new Uri($"{path}{query}", UriKind.Relative));
+			ids.AddRange(page.GetProperty("items").EnumerateArray().Select(item => item.GetProperty("id").GetString()!));
+			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
+		} while (after is not null);
+
+		return ids;
 	}
 
 	[Then(@"that report is not listed")]

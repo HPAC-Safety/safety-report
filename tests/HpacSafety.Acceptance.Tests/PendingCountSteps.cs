@@ -80,7 +80,7 @@ public sealed class PendingCountSteps
 	[Then(@"the reports count equals the number of reports the Needs action filter lists")]
 	public async Task ThenTheReportsCountMatchesTheList()
 	{
-		await ShouldAgree("reportsNeedingAction", NeedsAction, listed => listed.GetArrayLength());
+		await ShouldAgree("reportsNeedingAction", CountNeedsAction);
 	}
 
 	[Then(@"the counts carry no answers-awaiting-translation count")]
@@ -93,7 +93,35 @@ public sealed class PendingCountSteps
 	public async Task ThenTheTranslationCountMatchesTheQueue()
 	{
 		_counts.GetProperty("answersAwaitingTranslation").GetInt32().ShouldBeGreaterThan(0);
-		await ShouldAgree("answersAwaitingTranslation", AwaitingTranslation, queue => queue.GetProperty("answers").GetArrayLength());
+		await ShouldAgree("answersAwaitingTranslation", CountAwaitingTranslation);
+	}
+
+	/// <summary>
+	///     The full count of reports the Needs action filter lists, following
+	///     every keyset page rather than reading only the first (REQ-MOD-129) —
+	///     the shared database this suite runs against can easily hold more than
+	///     one page's worth.
+	/// </summary>
+	private static async Task<int> CountNeedsAction(HttpClient client)
+	{
+		var total = 0;
+		string? after = null;
+
+		do
+		{
+			var query = after is null ? string.Empty : $"&after={Uri.EscapeDataString(after)}";
+			var page = await client.GetFromJsonAsync<JsonElement>(new Uri($"{NeedsAction}{query}", UriKind.Relative));
+			total += page.GetProperty("items").GetArrayLength();
+			after = page.GetProperty("next").ValueKind == JsonValueKind.String ? page.GetProperty("next").GetString() : null;
+		} while (after is not null);
+
+		return total;
+	}
+
+	private static async Task<int> CountAwaitingTranslation(HttpClient client)
+	{
+		var queue = await client.GetFromJsonAsync<JsonElement>(AwaitingTranslation);
+		return queue.GetProperty("answers").GetArrayLength();
 	}
 
 	[Then(@"the API refuses the pending counts with 403")]
@@ -110,8 +138,7 @@ public sealed class PendingCountSteps
 	///     delay until the attempts run out.
 	/// </summary>
 	private async Task ShouldAgree(string property,
-								   Uri source,
-								   Func<JsonElement, int> size)
+								   Func<HttpClient, Task<int>> count)
 	{
 		const int attempts = 10;
 		var delay = TimeSpan.FromMilliseconds(200);
@@ -121,7 +148,7 @@ public sealed class PendingCountSteps
 		for (var attempt = 1; attempt <= attempts; attempt++)
 		{
 			before = (await client.GetFromJsonAsync<JsonElement>(Counts)).GetProperty(property).GetInt32();
-			counted = size(await client.GetFromJsonAsync<JsonElement>(source));
+			counted = await count(client);
 			after = (await client.GetFromJsonAsync<JsonElement>(Counts)).GetProperty(property).GetInt32();
 
 			if (before == counted && counted == after)
@@ -133,6 +160,6 @@ public sealed class PendingCountSteps
 		}
 
 		throw new ShouldAssertException(
-			$"{property} never agreed with {source} across {attempts} attempts; last reads: count before {before}, listed {counted}, count after {after}");
+			$"{property} never agreed with its own count across {attempts} attempts; last reads: count before {before}, listed {counted}, count after {after}");
 	}
 }

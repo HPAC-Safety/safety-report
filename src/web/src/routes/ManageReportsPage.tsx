@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
 import { ApiError } from "../api/adminQuestions"
@@ -13,8 +13,10 @@ import {
 	type ReportListItem,
 } from "../api/adminReports"
 import { DeleteReportDialog } from "../components/DeleteReportDialog"
+import { InfiniteScrollStatus } from "../components/InfiniteScrollStatus"
 import { ReportBadges } from "../components/ReportBadges"
 import { ReportRowActions, type RowAction } from "../components/ReportRowActions"
+import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
 
 /*
  * Every live report, newest first, with its workflow status, a Private badge
@@ -34,13 +36,27 @@ export function ManageReportsPage() {
 	const [searchParams] = useSearchParams()
 	const requested = searchParams.get("filter")
 	const filter = isReportFilter(requested) ? requested : "all"
-	const [reports, setReports] = useState<ReportListItem[]>([])
 	const [error, setError] = useState<string | null>(null)
-	const [loading, setLoading] = useState(true)
 	const [busyId, setBusyId] = useState<string | null>(null)
 	const [stale, setStale] = useState(false)
 	const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null)
-	const [reloads, setReloads] = useState(0)
+
+	const {
+		items: reports,
+		initialLoading: loading,
+		loadingMore,
+		failed: pageFailed,
+		hasMore,
+		loadMore,
+		sentinelRef,
+		announcement,
+		mutate,
+		reload: reloadList,
+	} = useInfiniteReportList<ReportListItem>({
+		storageKey: `admin:${filter}`,
+		getId: (report) => report.id,
+		fetchPage: (after) => listReports(filter, after),
+	})
 
 	function fail(cause: unknown) {
 		if (cause instanceof ApiError && cause.type === STALE_REPORT) setStale(true)
@@ -59,7 +75,7 @@ export function ManageReportsPage() {
 				action === "publish"
 					? await publishReport(report.id, report.version)
 					: await unpublishReport(report.id, report.version, "")
-			setReports((current) =>
+			mutate((current) =>
 				current.map((row) =>
 					row.id === updated.id
 						? { ...row, status: updated.status, consent: updated.consent, isStuck: updated.isStuck, version: updated.version }
@@ -79,7 +95,7 @@ export function ManageReportsPage() {
 		setError(null)
 		try {
 			await deleteReport(id)
-			setReports((current) => current.filter((row) => row.id !== id))
+			mutate((current) => current.filter((row) => row.id !== id))
 		} catch (cause) {
 			fail(cause)
 		} finally {
@@ -90,33 +106,8 @@ export function ManageReportsPage() {
 	function reload() {
 		setStale(false)
 		setError(null)
-		setReloads((count) => count + 1)
+		reloadList()
 	}
-
-	useEffect(() => {
-		let current = true
-		setLoading(true)
-		listReports(filter)
-			.then((listed) => {
-				if (current) {
-					setReports(listed)
-					setError(null)
-				}
-			})
-			.catch((cause: unknown) => {
-				if (current) {
-					setError(cause instanceof ApiError ? cause.detail : t("reports.error.unexpected"))
-				}
-			})
-			.finally(() => {
-				if (current) {
-					setLoading(false)
-				}
-			})
-		return () => {
-			current = false
-		}
-	}, [filter, t, reloads])
 
 	const submitted = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" })
 
@@ -208,6 +199,17 @@ export function ManageReportsPage() {
 						)
 					})}
 				</ul>
+			)}
+
+			{!loading && reports.length > 0 && (
+				<InfiniteScrollStatus
+					hasMore={hasMore}
+					loadingMore={loadingMore}
+					failed={pageFailed}
+					onLoadMore={loadMore}
+					sentinelRef={sentinelRef}
+					announcement={announcement}
+				/>
 			)}
 		</main>
 	)

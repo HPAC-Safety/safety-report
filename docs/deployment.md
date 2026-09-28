@@ -27,9 +27,8 @@ staging and production, built from the same Terraform
 ## Environments and accounts
 
 **No AWS deployment exists yet.** This section describes the target: what a
-release will do once #443, #464, #465, and #466 land, not something already
-running. See "Where today's Terraform differs" below for exactly what is
-still scaffolding.
+release will do once #466 lands, not something already running. See "Where
+today's Terraform differs" below for exactly what is still scaffolding.
 
 - **Staging** will be the owner's personal AWS account, which also runs
   unrelated workloads. It is meant to hold synthetic data only and never run
@@ -63,17 +62,118 @@ still scaffolding.
 
 ## Release and promotion
 
-A maintainer publishes a GitHub Release tagged with the date, `YYYY.MM.DD-N`.
-The release workflow builds the API image, the Worker image, and the website
-bundle exactly once, deploys those artifacts to staging automatically, then
-waits for the `hpac-safety-admins` GitHub team to approve the `hpac-safety-production` environment
-before deploying the **same artifacts** — never a rebuild — to production.
-Rollback re-runs the job for an earlier release's tag. There is no
-`terraform apply` on a merge to `main`; a pull request only plans, against
-both accounts.
+**Releasing** ([`release.yml`](../.github/workflows/release.yml),
+[`deploy-environment.yml`](../.github/workflows/deploy-environment.yml)):
+
+1. **Publish a GitHub Release** on `main`, tagged with the date,
+   `YYYY.MM.DD-N` (e.g. `2026.10.02-1`). This is the only thing that triggers
+   `release.yml`, and the only human action every release afterwards needs
+   (issue #30 "Human work" H6). Any other tag shape is rejected before
+   anything is built.
+2. **`build`** checks out that tag and, with no AWS credential of any kind,
+   builds the API image (the Lambda Web Adapter image, `tools/build-api-image.sh`,
+   #443), the Worker image (`tools/build-worker-image.sh`, ADR-0118), and the
+   web bundle, each tagged by the commit SHA the release tag points to. All
+   three are uploaded as workflow artifacts — nothing is pushed to either
+   account's ECR yet.
+3. **`staging`** (GitHub environment `hpac-safety-staging`, no required reviewer)
+   loads those same artifacts, runs `terraform apply -var-file=infra/staging.tfvars`,
+   re-plans and fails the job on drift, replaces the NAT instance, pushes the
+   images to staging's ECR, refreshes `GEMINI_API_KEY`/`DEEPL_API_KEY` in
+   staging's Secrets Manager, updates both Lambda functions to the pushed
+   image digests, syncs the web bundle to the site bucket, invalidates
+   CloudFront, and smoke-tests `/api/health`.
+4. **`production`** (GitHub environment `hpac-safety-production`) needs `staging` to
+   succeed, then waits for the `hpac-safety-admins` team's approval on that
+   environment — configured on the environment itself, not in the workflow —
+   before repeating the same steps against the production account with
+   `infra/production.tfvars` and the **identical image digests and web
+   bundle** staging already deployed. Never a rebuild
+   (CON-INF-012). Its job summary prints `dns_records_to_publish` — meaningful
+   the first time production exists (issue #30 "Human work" H7), harmless
+   every other run.
+
+There is no `terraform apply` on a merge to `main`
+([`terraform.yml`](../.github/workflows/terraform.yml)). A pull request only
+plans, against both accounts, through its own `plan` job (a matrix, one leg
+per account) — never through the `hpac-safety-staging`/`hpac-safety-production` GitHub
+environments, because both restrict deployment to the release tag pattern and
+would simply never run a pull-request-triggered job. `plan` instead uses a
+same-repo pull request's own AWS role/state-bucket pair, one per account
+(below).
+
+**Rollback** is re-running the release for an earlier tag:
+
+- **Preferred**: open that release's own workflow run under **Actions** and
+  choose **Re-run all jobs**. This rebuilds from the exact commit that tag
+  already pointed to and redeploys it to whichever environment(s) you pick —
+  functionally identical to the original run, because the same commit and the
+  same build scripts produce the same image content and therefore the same
+  registry digest.
+- **If that run has aged out** (workflow artifacts expire; see the
+  `retention-days` on `release.yml`'s `upload-artifact` steps), dispatch
+  `release.yml` manually (`workflow_dispatch`) with that earlier tag. This
+  rebuilds from the tagged commit rather than reusing the original run's
+  artifacts — use it only when the native re-run is unavailable.
+- Either way, migrations stay expand/contract (CON-INF-007): a rollback
+  redeploys an artifact, and the schema already supports it.
 
 Runtime secret values stay out of source control and Terraform state. Use
 AWS-managed encryption at rest and TLS.
+
+### Required GitHub configuration
+
+Set once per account, by issue #30 "Human work" H2–H4 and `infra/bootstrap.sh`
+(#464, #466, #465):
+
+| Name | Kind | Scope | Used by |
+|---|---|---|---|
+| `AWS_DEPLOY_ROLE_ARN` | variable | `hpac-safety-staging` / `hpac-safety-production` environment | `release.yml` → `deploy-environment.yml` (OIDC role assumed by the deploy job) |
+| `TF_STATE_BUCKET` | variable | `hpac-safety-staging` / `hpac-safety-production` environment | same — Terraform backend bucket |
+| `AWS_ACCOUNT_ID` | variable | `hpac-safety-staging` / `hpac-safety-production` environment | same — `require-config` only; not otherwise read by the workflow |
+| `GEMINI_API_KEY`, `DEEPL_API_KEY` | secret | `hpac-safety-staging` / `hpac-safety-production` environment | same — copied into that account's Secrets Manager on every release, never logged |
+| `AWS_PLAN_ROLE_ARN_STAGING`, `AWS_PLAN_ROLE_ARN_PRODUCTION` | variable | repository | `terraform.yml`'s `plan` job — read-only OIDC role per account, one matrix leg each |
+| `TF_STATE_BUCKET_STAGING`, `TF_STATE_BUCKET_PRODUCTION` | variable | repository | same — Terraform backend bucket per account, read-only |
+
+The `_STAGING`/`_PRODUCTION`-suffixed pair is a **second** copy of two values
+`infra/bootstrap.sh` already prints — the same `AWS_PLAN_ROLE_ARN` and
+`TF_STATE_BUCKET`, set as plain repository variables instead of
+`hpac-safety-staging`/`hpac-safety-production` environment variables. Both
+copies have to exist: `hpac-safety-plan`'s OIDC trust condition matches the
+subject `repo:HPAC-Safety/safety-report:pull_request` (bootstrap.sh's own
+comment on the plan role), which a job presents only when it does **not**
+declare `environment:` — the moment a job adds `environment: hpac-safety-staging`
+to read that environment's variables, its subject becomes
+`repo:...:environment:hpac-safety-staging` instead, which is what
+`hpac-safety-deploy` trusts, not what `hpac-safety-plan` trusts. On top of
+that, both environments' deployment branch/tag policy (issue #30 "Human work"
+H2) restricts them to the release tag pattern, so a pull-request-triggered
+job scoped to either would be refused before any step ran anyway.
+
+`infra/bootstrap.sh` prints both copies together, in the same run, under
+their own "Repository variables" heading (ADR-0164) — there is no separate,
+hand-run step. Running it once per account and setting everything it prints
+is the whole H3:
+
+```sh
+gh variable set AWS_PLAN_ROLE_ARN_STAGING --repo HPAC-Safety/safety-report --body <printed AWS_PLAN_ROLE_ARN_STAGING>
+gh variable set TF_STATE_BUCKET_STAGING   --repo HPAC-Safety/safety-report --body <printed TF_STATE_BUCKET_STAGING>
+# and the _PRODUCTION pair from the production account's run
+```
+
+This naming (the `_STAGING`/`_PRODUCTION` suffix) was decided in this pull
+request, not by #464 or #591 — `infra/bootstrap.sh` was extended in this pull
+request to print it.
+
+Every step that reads an AWS resource name — ECR repositories, the Lambda
+function names, the site and uploads buckets, the CloudFront distribution,
+the NAT instance's Auto Scaling group, the Gemini/DeepL secret ids — comes
+from `terraform output`, never a GitHub variable, so `infra/` stays the one
+place those names are decided: `deploy_variables`, and the standalone
+outputs `nat_autoscaling_group_arn`, `secret_entries`, `site_urls`, and
+`dns_records_to_publish`. `node tools/check-terraform-outputs.mjs` (`ci.yml`'s
+`docs` job) fails the build if `release.yml` or `deploy-environment.yml` ever
+reads an output name or JSON key `infra/outputs.tf` doesn't declare.
 
 Migrations apply at startup: the API and the Worker each run pending migrations
 under an advisory lock, and there is no dedicated migration step
@@ -92,16 +192,49 @@ place, protected from deletion.
 Alarms route through SNS to `safety@hpac.ca`, in production only; staging's
 topic has no subscriber.
 
-The current Terraform and deploy workflows are scaffolding. The API and the
-Worker are Lambda functions (#443), but CloudFront does not yet route
-`/api/*` to the API's Function URL (#465); there is still one AWS account
-instead of two, and one CloudFront hostname instead of the production pair
-plus a staging default address. Issue #30 owns bringing the deployed topology
-to
-[`infrastructure-and-operations.md`](infrastructure-and-operations.md), whose
-"Where today's Terraform differs" lists every known gap.
+The Terraform and the application code now match this shape (#443, #465):
+Lambda functions with no ALB, origin-secret verification, the Worker's
+Lambda-invocation mode, the API's async nudge, `staging.tfvars`/
+`production.tfvars`, both accounts' AppRegistry applications, both hostname
+sets, and a NAT instance instead of a managed NAT gateway. `release.yml` and
+`deploy-environment.yml` (#466) are now aligned against the real
+`infra/outputs.tf` this Terraform declares. Issue #30 tracks what remains;
+see
+[`infrastructure-and-operations.md`](infrastructure-and-operations.md)'s
+"Where today's Terraform differs" for exactly what is still open.
 Do not interpret a successful Terraform validation as proof that the target
-environment exists or has been applied.
+environment exists or has been applied — **no AWS deployment exists yet**,
+and nothing in `infra/` runs against AWS on merge.
+
+## Estimated monthly cost
+
+Estimated from AWS's published `ca-central-1` list prices as of this pull
+request. **This is an estimate, not an AWS Pricing Calculator export** — #465
+was written without console access to produce one; someone with console
+access should still confirm it in the AWS Pricing Calculator before the first
+real deploy, per issue #30's acceptance criteria.
+
+| Resource | Staging (per month) | Production (per month) | Basis |
+|---|---|---|---|
+| RDS `db.t4g.micro`, 20 GB gp3, single-AZ | ~US$13 | ~US$13 | On-demand instance-hour rate × 730 h, plus 20 GB gp3 storage |
+| RDS automated backup storage | ~US$0 (1-day retention, within the free allowance) | ~US$1–2 (7-day retention) | Backup storage beyond the free allowance equal to the database's own size |
+| NAT instance (`t4g.nano`) | ~US$3 | ~US$3 | On-demand instance-hour rate × 730 h |
+| NAT instance's Elastic IP | ~US$4 | ~US$4 | A public IPv4 address is billed hourly whether or not attached |
+| Secrets Manager (Gemini, DeepL, origin-verify; the RDS master password is billed separately) | ~US$1.20 | ~US$1.20 | US$0.40/secret/month × 3 |
+| Lambda (API + Worker) | ~US$0–1 | ~US$1–3 | Dozens of reports a year; well within the perpetual free tier's request and compute allowances outside a burst of video remuxing |
+| S3 (site + uploads) | <US$1 | ~US$1–3 | Storage plus PUT/GET requests; grows with attachment volume |
+| CloudFront | <US$1 | ~US$1–2 | PriceClass_100, low request volume |
+| ECR | <US$1 | <US$1 | Two small image repositories, 30-image lifecycle |
+| CloudWatch Logs + alarms | <US$1 | ~US$1 | 90-day retention on a handful of small log groups |
+| ACM certificate | — | $0 | ACM certificates for CloudFront are free |
+| **Total** | **~US$22–25** | **~US$25–30** | |
+
+Both together: roughly **US$50–55/month**, close to issue #30's original
+US$45–50 estimate — the difference is mostly the NAT instance's Elastic IP,
+which #30's estimate already itemized separately at ~US$3.65 and this table
+rounds up slightly for margin. Prices are US dollars per AWS's published rate
+card; actual CAD billing depends on the account's currency settings and
+fluctuates with exchange rates.
 
 Local development requires no AWS account. `./init-dev.sh` prepares the
 machine once, and `./dev-up.sh` builds and starts PostgreSQL, the S3 server,

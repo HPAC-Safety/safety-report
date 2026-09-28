@@ -333,6 +333,13 @@ Scenario: A list row carries the version a review command sends back
   And publishing an unpublished report with its row's version succeeds without opening the report
   And no ViewedRawReport entry is written for that report
 
+@REQ-MOD-129
+Scenario: The admin report list pages forward with a keyset cursor, restarting from the top for an unreadable one
+  Given reports exist in every workflow state
+  When a reviewer lists reports
+  And a reviewer lists reports after a cursor naming a report no longer in the queue
+  Then that list starts with the same report the first page did
+
 @REQ-MOD-049
 Scenario: The Needs action filter shows pending, failed, and stuck reports
   Given reports exist in every workflow state
@@ -904,11 +911,44 @@ Scenario: An address for a report that is not public shows not found
 
 @REQ-MOD-082
 @ui
-Scenario: The public feed pages forward and the address keeps the page
+Scenario: The public feed loads more reports automatically, and going back restores them
   Given the public feed has more published reports than fit on one page
-  When a visitor moves to the next page
-  Then the address bar carries that page's cursor
-  And going back returns the visitor to the first page
+  When a visitor scrolls to the end of the list
+  Then the older reports load without a page change or an address change
+  When a visitor opens one of them and goes back
+  Then the same reports are still shown, at the same scroll position
+
+@REQ-MOD-126
+@ui
+Scenario: The public feed's next page offers a keyboard-only fallback and announces itself
+  Given the public feed has more published reports than fit on one page
+  When a visitor opens the feed
+  Then the "Load more" action is not visible
+  When a keyboard visitor tabs to the "Load more" action
+  Then it becomes visible
+  When that visitor activates it
+  Then the older reports load
+  And a screen reader is told how many more reports loaded
+
+@REQ-MOD-127
+@ui
+Scenario: The public feed offers a visible Retry action when its next page fails to load
+  Given the public feed's next page fails to load
+  When a visitor activates the "Load more" action without scrolling
+  Then the feed offers a visible "Retry" action instead of failing silently
+
+@REQ-MOD-128
+@ui
+Scenario: Manage reports loads more automatically and offers the same hidden fallback and visible retry
+  Given a safety officer is signed in and more reports exist than fit on one page
+  Then the "Load more" action is not visible
+  When a keyboard visitor tabs to the "Load more" action
+  Then it becomes visible
+  When that visitor activates it
+  Then the older reports load without leaving Manage reports
+  Given the next report page fails to load
+  When the safety officer activates the "Load more" action
+  Then the list offers a visible "Retry" action instead of failing silently
 
 @REQ-MOD-083
 @ui
@@ -1129,3 +1169,98 @@ Scenario: A safety officer cancels a private attachment while it uploads
   When the safety officer cancels the upload
   Then the private attachments section says the upload was cancelled and lists no attachments
   And the cancelled upload is erased
+
+@REQ-MOD-140
+Scenario: Search matches the approved published summary in the visitor's site language
+  Given a published report whose English summary says "The pilot landed in a field."
+  When a visitor searches "landed" in English
+  Then the report is listed among the results
+
+@REQ-MOD-141
+Scenario: Search matches a visible member comment as shown in the visitor's site language
+  Given a published report carrying a member comment that says "Good reminder to check the fuel gauge."
+  When a visitor searches "fuel gauge" in English
+  Then the report is listed among the results
+
+@REQ-MOD-142
+Scenario: Search is scoped to the visitor's current site language only
+  Given a published report whose French summary mentions a word its English summary does not
+  When a visitor searches that French-only word in English
+  Then the report is not listed among the results
+  When a visitor searches that French-only word in French
+  Then the report is listed among the results
+
+@REQ-MOD-143
+Scenario Outline: The public search never widens by caller role
+  Given a published report whose summary contains a public word, and whose private answer, private note, and private attachment file name each hold their own word no summary or visible comment contains
+  And another report is not publishable, and its summary contains a further private-only word
+  When <who> searches for the public word
+  Then the report is listed among the results
+  When <who> searches for each private-only word
+  Then no report is listed among the results, for every one of those searches
+
+Examples:
+  | who                  |
+  | an anonymous visitor |
+  | a User               |
+  | a SafetyOfficer      |
+  | an Administrator     |
+
+@REQ-MOD-144
+Scenario Outline: A non-publishable report's summary text never matches
+  Given a <status> report whose summary would otherwise match
+  When a visitor searches its summary's distinctive word
+  Then the report is not listed among the results
+
+Examples:
+  | status      |
+  | pending     |
+  | unpublished |
+  | no-consent  |
+  | deleted     |
+
+@REQ-MOD-145
+Scenario: A hidden or a deleted comment never matches
+  Given a published report carrying a comment that is later hidden
+  And another published report carrying a comment that is later deleted
+  When a visitor searches the hidden comment's distinctive word
+  Then the report with the hidden comment is not listed among the results
+  When a visitor searches the deleted comment's distinctive word
+  Then the report with the deleted comment is not listed among the results
+
+@REQ-MOD-146
+Scenario Outline: A typo or a missing accent still finds the best match
+  Given a published report whose English summary says "The pilot landed in a field." and whose French summary says "Le pilote s'est posé dans un champ."
+  When a visitor searches <query> in <language>
+  Then the report is listed among the results
+
+Examples:
+  | query      | language |
+  | "landde"   | English  |
+  | "pose"     | French   |
+
+@REQ-MOD-147
+Scenario: Best match ranks first while a query is active
+  Given a published report whose summary contains the exact phrase "hydraulic leak"
+  And another published report whose summary only misspells "hydraulic leak"
+  When a visitor searches "hydraulic leak" in English
+  Then the exact match is ranked above the misspelled match
+
+@REQ-MOD-148
+Scenario: An empty search box lists newest submitted first, unchanged
+  Given some reports are publishable and others are not
+  When the public feed is queried with a blank search box
+  Then a blank search box's first page is identical to the plain feed's first page
+
+@REQ-MOD-149
+@ui
+Scenario: The search box sits at the top of the public feed, and its query is bookmarkable
+  Given the public feed has published reports
+  When a visitor opens View safety reports
+  And the visitor types a search term into the search box at the top of the page
+  Then the address bar carries that search term as ?q=
+  And only matching reports are listed
+  When the page reloads
+  Then the search box still shows that search term, and only matching reports are listed
+  When the visitor goes back
+  Then the search box is empty and the full feed is shown again

@@ -9,10 +9,15 @@ crash.*.log
 
 # tfvars can hold values, and a value in a file is a value one `git add -A` away
 # from being public. Terraform holds no secret values by design (ADR-0010) — this
-# is the belt to that braces.
+# is the belt to that braces. staging.tfvars and production.tfvars are the two
+# exceptions: they are the whole story of what differs between the two
+# environments (ADR-0158), and every value variables.tf lets them set is a
+# non-secret configuration choice — never seek a "value" for one of the
+# entries secrets.tf creates by adding one to either file.
 *.tfvars
 *.tfvars.json
-!example.tfvars
+!staging.tfvars
+!production.tfvars
 
 # Plan files. A plan contains the full resource graph, including any attribute a
 # provider marked sensitive.

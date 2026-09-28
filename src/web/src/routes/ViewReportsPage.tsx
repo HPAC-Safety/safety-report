@@ -1,40 +1,84 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useLocale } from "../i18n/useLocale"
-import { fetchPublicReports, summaryIn, type PublicReportPage } from "../api/publicReports"
+import { fetchPublicReports, summaryIn, type PublicReport } from "../api/publicReports"
+import { InfiniteScrollStatus } from "../components/InfiniteScrollStatus"
+import { useInfiniteReportList } from "../hooks/useInfiniteReportList"
+
+/** How long to wait, after the visitor stops typing, before searching (ms). */
+const SEARCH_DEBOUNCE_MS = 300
 
 /*
  * View safety reports: every published report, newest first, each linking to
- * its own address (/reports/<id>). The feed's page cursor lives in the address
- * bar, so the back button returns to the page the visitor came from and a page
- * can be bookmarked (REQ-MOD-079, REQ-MOD-082). Anonymous.
+ * its own address (/reports/<id>). The list loads more automatically as the
+ * visitor nears its end (issue no. 572); the back button restores the same
+ * accumulated results and scroll position rather than resetting to the first
+ * page (REQ-MOD-079, REQ-MOD-082). A search box at the top fuzzy-searches the
+ * published summary and visible member comments, in the visitor's current
+ * site language, best match first; a blank box is the plain feed above,
+ * unchanged. Its query lives in ?q=, bookmarkable the same way the page
+ * cursor is (issue no. 574, REQ-MOD-149), and folds into the infinite-scroll
+ * hook's storage key so a changed search never restores another search's — or
+ * the plain feed's — accumulated list. Anonymous.
  */
 export function ViewReportsPage() {
 	const { t, locale } = useLocale()
-	const [searchParams] = useSearchParams()
-	const after = searchParams.get("after")
-	const [page, setPage] = useState<PublicReportPage | null>(null)
-	const [failed, setFailed] = useState(false)
+	const [searchParams, setSearchParams] = useSearchParams()
+	const q = searchParams.get("q") ?? ""
+	const [searchBox, setSearchBox] = useState(q)
+
+	// The address bar is the source of truth; typing only debounces into it.
+	useEffect(() => {
+		setSearchBox(q)
+	}, [q])
+
+	const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+	function onSearchBoxChange(value: string) {
+		setSearchBox(value)
+
+		if (debounceRef.current) {
+			clearTimeout(debounceRef.current)
+		}
+
+		debounceRef.current = setTimeout(() => {
+			// Not `{ replace: true }`: each settled search commits its own
+			// history entry, so the back button returns to whatever was on
+			// screen before it, including the unfiltered feed (REQ-MOD-149).
+			setSearchParams((current) => {
+				const next = new URLSearchParams(current)
+				if (value) {
+					next.set("q", value)
+				} else {
+					next.delete("q")
+				}
+				return next
+			})
+		}, SEARCH_DEBOUNCE_MS)
+	}
 
 	useEffect(() => {
-		let current = true
-		setPage(null)
-		setFailed(false)
-		fetchPublicReports(after)
-			.then((loaded) => {
-				if (current) {
-					setPage(loaded)
-				}
-			})
-			.catch(() => {
-				if (current) {
-					setFailed(true)
-				}
-			})
 		return () => {
-			current = false
+			if (debounceRef.current) {
+				clearTimeout(debounceRef.current)
+			}
 		}
-	}, [after])
+	}, [])
+
+	const {
+		items: reports,
+		initialLoading: loading,
+		loadingMore,
+		failed,
+		hasMore,
+		loadMore,
+		sentinelRef,
+		announcement,
+	} = useInfiniteReportList<PublicReport>({
+		storageKey: `public:${q}`,
+		getId: (report) => report.id,
+		fetchPage: (after) => fetchPublicReports(after, q, locale),
+	})
 
 	const published = new Intl.DateTimeFormat(locale, { dateStyle: "long" })
 
@@ -43,18 +87,30 @@ export function ViewReportsPage() {
 			<h1 className="font-display text-3xl font-bold">{t("nav.viewReports")}</h1>
 			<p className="mt-2 font-sans text-ink-muted">{t("feed.intro")}</p>
 
-			{failed ? (
+			<label htmlFor="feed-search" className="sr-only">
+				{t("feed.search.label")}
+			</label>
+			<input
+				id="feed-search"
+				type="search"
+				value={searchBox}
+				onChange={(event) => onSearchBoxChange(event.target.value)}
+				placeholder={t("feed.search.placeholder")}
+				className="touch-target mt-6 w-full rounded border border-rule bg-surface px-4 font-sans text-ink placeholder:text-ink-muted"
+			/>
+
+			{loading ? (
+				<p className="mt-8 font-sans text-ink-muted">{t("feed.loading")}</p>
+			) : failed && reports.length === 0 ? (
 				<p role="alert" className="mt-8 rounded border border-brand-700 bg-surface-2 p-4 font-sans text-ink">
 					{t("feed.error")}
 				</p>
-			) : !page ? (
-				<p className="mt-8 font-sans text-ink-muted">{t("feed.loading")}</p>
-			) : page.items.length === 0 ? (
-				<p className="mt-8 font-sans text-ink-muted">{t("feed.empty")}</p>
+			) : reports.length === 0 ? (
+				<p className="mt-8 font-sans text-ink-muted">{q ? t("feed.search.empty") : t("feed.empty")}</p>
 			) : (
 				<>
 					<ul aria-label={t("feed.listLabel")} className="mt-8 flex flex-col gap-4">
-						{page.items.map((report) => (
+						{reports.map((report) => (
 							<li key={report.id} data-report-id={report.id}>
 								<Link
 									to={`/reports/${report.id}`}
@@ -77,26 +133,14 @@ export function ViewReportsPage() {
 						))}
 					</ul>
 
-					{(after || page.next) && (
-						<nav aria-label={t("feed.pagesLabel")} className="mt-8 flex flex-wrap gap-3">
-							{after && (
-								<Link
-									to="/reports"
-									className="touch-target inline-flex items-center rounded border border-rule px-4 font-sans text-sm text-ink hover:bg-surface-2"
-								>
-									{t("feed.newest")}
-								</Link>
-							)}
-							{page.next && (
-								<Link
-									to={`/reports?after=${encodeURIComponent(page.next)}`}
-									className="touch-target inline-flex items-center rounded bg-brand-700 px-4 font-sans text-sm font-medium text-ink-inverse"
-								>
-									{t("feed.next")}
-								</Link>
-							)}
-						</nav>
-					)}
+					<InfiniteScrollStatus
+						hasMore={hasMore}
+						loadingMore={loadingMore}
+						failed={failed}
+						onLoadMore={loadMore}
+						sentinelRef={sentinelRef}
+						announcement={announcement}
+					/>
 				</>
 			)}
 		</main>

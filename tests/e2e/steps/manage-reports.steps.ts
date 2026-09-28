@@ -128,7 +128,7 @@ async function stubReports(page: Page) {
 
 	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
 		const filter = new URL(route.request().url()).searchParams.get("filter") ?? "all"
-		await route.fulfill({ json: stub.rows.filter(FILTERED[filter] ?? (() => false)) })
+		await route.fulfill({ json: { items: stub.rows.filter(FILTERED[filter] ?? (() => false)), next: null } })
 	})
 
 	await page.route(/\/api\/admin\/reports\/[^/?]+(\/(publish|unpublish))?$/, async (route) => {
@@ -342,7 +342,7 @@ async function stubReview(page: Page, status: StubStatus, word = "") {
 	reviewStubs.set(page, stub)
 
 	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
-		await route.fulfill({ json: [{ ...ROWS[0], id: stub.detail.id, status: stub.detail.status }] })
+		await route.fulfill({ json: { items: [{ ...ROWS[0], id: stub.detail.id, status: stub.detail.status }], next: null } })
 	})
 
 	await page.route(/\/api\/admin\/reports\/reviewaaaaa(\/.*)?$/, async (route) => {
@@ -753,4 +753,103 @@ Then("a message says the report changed and offers to reload the list", async ({
 
 Then("the pending row still shows the {string} badge", async ({ page }, badge: string) => {
 	await expect(row(page, "pending").locator('[data-badge="status"]')).toHaveText(badge)
+})
+
+// ── Manage reports' own infinite scroll (issue no. 572, REQ-MOD-129, REQ-MOD-128) ──
+
+const PAGE_TWO_CURSOR = "cGFnZS10d28"
+const PAGE_THREE_CURSOR = "cGFnZS10aHJlZQ"
+const NEWER = ROWS[0]
+const OLDER_ROW = ROWS[1]
+
+/**
+ * Three pages: the second always has a further one so it never runs out of
+ * "Load more" on its own; the third either loads empty or fails, per
+ * `failThirdPage` — the fallback button and the retry it offers stay two
+ * separate things to prove, not the same click.
+ */
+async function stubPagedReports(page: Page, failThirdPage: boolean) {
+	await page.route(/\/api\/admin\/reports(\?.*)?$/, async (route) => {
+		const after = new URL(route.request().url()).searchParams.get("after")
+
+		if (after === PAGE_THREE_CURSOR) {
+			if (failThirdPage) {
+				return route.fulfill({ status: 500, body: "" })
+			}
+			return route.fulfill({ json: { items: [], next: null } })
+		}
+
+		if (after === PAGE_TWO_CURSOR) {
+			return route.fulfill({ json: { items: [OLDER_ROW], next: PAGE_THREE_CURSOR } })
+		}
+
+		return route.fulfill({ json: { items: [NEWER], next: PAGE_TWO_CURSOR } })
+	})
+}
+
+/**
+ * Disables the auto-load sentinel so a scenario proves the fallback button
+ * itself works, on its own, the way a keyboard or screen-reader visitor who
+ * never triggers the IntersectionObserver would rely on it.
+ */
+async function disableAutoLoad(page: Page) {
+	await page.addInitScript(() => {
+		class NoObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		;(window as any).IntersectionObserver = NoObserver
+	})
+}
+
+Given("a safety officer is signed in and more reports exist than fit on one page", async ({ page }) => {
+	await disableAutoLoad(page)
+	await stubPagedReports(page, false)
+	await signInAs(page, "safety_officer")
+	await page.goto("/admin/reports")
+	await expect(row(page, "pending")).toBeVisible()
+})
+
+Given("the next report page fails to load", async ({ page }) => {
+	await stubPagedReports(page, true)
+})
+
+/**
+ * Tabs to the named button, bounded rather than one fixed Tab count, since
+ * it may already be visible (nothing to tab past) or still hidden behind
+ * this row's own quick actions.
+ */
+async function tabToButton(page: Page, name: string) {
+	const target = page.getByRole("button", { name })
+	const isFocused = () => target.evaluate((element) => element === document.activeElement).catch(() => false)
+
+	if (await isFocused()) {
+		return
+	}
+
+	for (let tabs = 0; tabs < 50; tabs += 1) {
+		await page.keyboard.press("Tab")
+		if (await isFocused()) {
+			return
+		}
+	}
+	throw new Error(`Could not reach the "${name}" action by tabbing.`)
+}
+
+When("the safety officer activates the {string} action", async ({ page }, name: string) => {
+	// The control is hidden until keyboard focus (ADR-0155); reach it the same
+	// way a keyboard visitor would rather than force-clicking past that.
+	await tabToButton(page, name)
+	await page.keyboard.press("Enter")
+})
+
+Then("the older reports load without leaving Manage reports", async ({ page }) => {
+	await expect(row(page, "private-unpublished")).toBeVisible()
+	await expect(page).toHaveURL(/\/admin\/reports$/)
+})
+
+Then("the list offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
+	await expect(page.getByRole("button", { name })).toBeVisible()
 })

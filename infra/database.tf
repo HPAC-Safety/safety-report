@@ -9,7 +9,7 @@ resource "aws_db_subnet_group" "main" {
   description = "Private subnets. The database has no route to or from the internet."
   subnet_ids  = [for s in aws_subnet.private : s.id]
 
-  tags = { Name = local.name }
+  tags = merge(local.app_tags, { Name = local.name })
 }
 
 # A parameter group exists so there is somewhere to put a setting, rather than
@@ -107,12 +107,21 @@ resource "aws_db_instance" "main" {
   performance_insights_enabled    = false
   enabled_cloudwatch_logs_exports = ["postgresql", "upgrade"]
 
-  tags = { Name = local.name }
+  tags = merge(local.app_tags, { Name = local.name })
 
   lifecycle {
     # timestamp() changes on every plan. Without this, an unchanged repository
     # would produce a diff, and ADR-0010 requires apply on an unchanged
     # repository to be a no-op.
     ignore_changes = [final_snapshot_identifier]
+
+    # This holds every report, answer, summary, and audit record. It is never
+    # replaced, only updated in place — deletion_protection stops a console
+    # click or a workflow mistake, but only prevent_destroy stops a Terraform
+    # plan that would drop and recreate it (CON-INF-013, both environments).
+    # Destroying it deliberately requires clearing this line first, which is
+    # the intended amount of friction for the one resource holding data about
+    # real accidents.
+    prevent_destroy = true
   }
 }

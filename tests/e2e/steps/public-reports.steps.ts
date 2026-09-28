@@ -50,9 +50,21 @@ const OLDER: StubReport = {
 const CURSOR = "c2Vjb25kLXBhZ2U"
 const HIDDEN_ID = "hiddenaaaaa"
 
+/** The one search term this stub recognizes; only FIRST's summary contains it. */
+const SEARCH_TERM = "crosswind"
+
 async function stubFeed(page: Page) {
 	await page.route(/\/api\/v1\/public\/reports\/?(\?.*)?$/, async (route) => {
-		const after = new URL(route.request().url()).searchParams.get("after")
+		const url = new URL(route.request().url())
+		const q = url.searchParams.get("q")
+
+		if (q) {
+			const matches = q.toLowerCase() === SEARCH_TERM ? [FIRST] : []
+			await route.fulfill({ json: { items: matches, next: null } })
+			return
+		}
+
+		const after = url.searchParams.get("after")
 		await route.fulfill({
 			json: after === CURSOR ? { items: [OLDER], next: null } : { items: [FIRST, SECOND], next: CURSOR },
 		})
@@ -173,4 +185,175 @@ When("the visitor switches the site's language", async ({ page }) => {
 Then("the report shows the other language's text", async ({ page }) => {
 	await expect(page.locator('[data-summary="en-CA"]')).toHaveText(FIRST.aiSummaryEn)
 	await expect(page).toHaveURL(new RegExp(`/reports/${FIRST.id}$`))
+})
+
+// ── Infinite scroll (issue no. 572): auto-load, back-button restore, fallback, retry ──
+
+/**
+ * Disables the auto-load sentinel so a scenario proves the fallback button
+ * itself works, on its own, the way a keyboard or screen-reader visitor who
+ * never triggers the IntersectionObserver would rely on it.
+ */
+async function disableAutoLoad(page: Page) {
+	await page.addInitScript(() => {
+		class NoObserver {
+			observe() {}
+			unobserve() {}
+			disconnect() {}
+		}
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		;(window as any).IntersectionObserver = NoObserver
+	})
+}
+
+When("a visitor scrolls to the end of the list", async ({ page }) => {
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	const sentinel = page.locator("[data-infinite-scroll-sentinel]")
+	// A short synthetic list may already sit within the viewport, so the
+	// sentinel can auto-load before this ever scrolls it into view — that is
+	// still the behaviour under test, so a sentinel already gone is fine.
+	await sentinel.scrollIntoViewIfNeeded().catch(() => {})
+})
+
+Then("the older reports load without a page change or an address change", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page).toHaveURL(/\/reports$/)
+})
+
+When("a visitor opens one of them and goes back", async ({ page }) => {
+	await page.locator(`[data-report-id="${OLDER.id}"] a, [data-report-id="${OLDER.id}"]`).first().click()
+	await expect(page).toHaveURL(new RegExp(`/reports/${OLDER.id}$`))
+	await page.goBack()
+})
+
+Then("the same reports are still shown, at the same scroll position", async ({ page }) => {
+	await expect(page).toHaveURL(/\/reports$/)
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+
+	// The end of the list: OLDER's own page named no further cursor, so
+	// neither the sentinel nor the fallback button is offered any more.
+	await expect(page.locator("[data-infinite-scroll-sentinel]")).toHaveCount(0)
+	await expect(page.getByRole("button", { name: "Load more" })).toHaveCount(0)
+})
+
+/** The rendered width of whichever element currently holds focus, in CSS pixels. */
+async function focusedWidth(page: Page): Promise<number> {
+	const box = await page.locator(":focus").boundingBox()
+	return box?.width ?? 0
+}
+
+/**
+ * Tabs to the named button, bounded rather than one fixed Tab count, since
+ * the two lists' rows carry a different number of stops (Manage reports' row
+ * actions) before reaching this same fallback control.
+ */
+async function tabToButton(page: Page, name: string) {
+	const target = page.getByRole("button", { name })
+	const isFocused = () => target.evaluate((element) => element === document.activeElement).catch(() => false)
+
+	if (await isFocused()) {
+		return
+	}
+
+	for (let tabs = 0; tabs < 50; tabs += 1) {
+		await page.keyboard.press("Tab")
+		if (await isFocused()) {
+			return
+		}
+	}
+	throw new Error(`Could not reach the "${name}" action by tabbing.`)
+}
+
+When("a visitor opens the feed", async ({ page }) => {
+	await disableAutoLoad(page)
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+})
+
+Then("the {string} action is not visible", async ({ page }, name: string) => {
+	const box = await page.getByRole("button", { name }).boundingBox()
+	// Tailwind's `sr-only` clips the button to a 1px square rather than
+	// removing it, so it stays reachable by Tab; a real, usable button is far
+	// wider than that.
+	expect(box?.width ?? 0).toBeLessThanOrEqual(2)
+})
+
+When("a keyboard visitor tabs to the {string} action", async ({ page }, name: string) => {
+	await tabToButton(page, name)
+})
+
+Then("it becomes visible", async ({ page }) => {
+	expect(await focusedWidth(page)).toBeGreaterThan(10)
+})
+
+When("that visitor activates it", async ({ page }) => {
+	await page.keyboard.press("Enter")
+})
+
+Then("the older reports load", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${OLDER.id}"]`)).toBeVisible()
+})
+
+Then("a screen reader is told how many more reports loaded", async ({ page }) => {
+	await expect(page.locator('[aria-live="polite"]')).toContainText("1 more report loaded")
+})
+
+Given("the public feed's next page fails to load", async ({ page }) => {
+	await stubFeed(page)
+	await page.route(/\/api\/v1\/public\/reports\?after=/, (route) => route.fulfill({ status: 500, body: "" }))
+})
+
+When("a visitor activates the {string} action without scrolling", async ({ page }, name: string) => {
+	await disableAutoLoad(page)
+	await page.goto("/reports")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await tabToButton(page, name)
+	await page.keyboard.press("Enter")
+})
+
+Then("the feed offers a visible {string} action instead of failing silently", async ({ page }, name: string) => {
+	await expect(page.getByRole("button", { name })).toBeVisible()
+})
+
+/*
+ * Search (#574, REQ-MOD-149): the search box at the top of /reports, and its
+ * bookmarkable ?q=. What actually matches — the summary and comments, scoped
+ * to the site's language — is proven against a real database by the Reqnroll
+ * scenarios REQ-MOD-140..148; this only proves the box's own wiring.
+ */
+
+function searchBox(page: Page) {
+	return page.getByRole("searchbox", { name: "Search safety reports" })
+}
+
+When("the visitor types a search term into the search box at the top of the page", async ({ page }) => {
+	await searchBox(page).fill(SEARCH_TERM)
+})
+
+Then("the address bar carries that search term as ?q=", async ({ page }) => {
+	await expect(page).toHaveURL(new RegExp(`[?&]q=${SEARCH_TERM}(&|$)`))
+})
+
+Then("only matching reports are listed", async ({ page }) => {
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toHaveCount(0)
+})
+
+Then("the search box still shows that search term, and only matching reports are listed", async ({ page }) => {
+	await expect(searchBox(page)).toHaveValue(SEARCH_TERM)
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toHaveCount(0)
+})
+
+When("the visitor goes back", async ({ page }) => {
+	await page.goBack()
+})
+
+Then("the search box is empty and the full feed is shown again", async ({ page }) => {
+	await expect(searchBox(page)).toHaveValue("")
+	await expect(page.locator(`[data-report-id="${FIRST.id}"]`)).toBeVisible()
+	await expect(page.locator(`[data-report-id="${SECOND.id}"]`)).toBeVisible()
 })

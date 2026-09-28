@@ -26,13 +26,19 @@ resource "aws_cloudwatch_log_group" "this" {
   name              = each.value
   retention_in_days = var.log_retention_days
 
-  tags = { Name = each.value }
+  tags = merge(local.app_tags, { Name = each.value })
+
+  lifecycle {
+    # Audit history. Never replaced, in both environments (CON-INF-013) — a
+    # plan that would drop and recreate one loses everything logged under it.
+    prevent_destroy = true
+  }
 }
 
 resource "aws_sns_topic" "alarms" {
   name = "${local.name}-alarms"
 
-  tags = { Name = "${local.name}-alarms" }
+  tags = merge(local.app_tags, { Name = "${local.name}-alarms" })
 }
 
 # PENDING CONFIRMATION until a human clicks the link AWS emails to the address.
@@ -73,7 +79,7 @@ resource "aws_cloudwatch_metric_alarm" "summary_failed" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = { Name = "${local.name}-summary-failed" }
+  tags = merge(local.app_tags, { Name = "${local.name}-summary-failed" })
 }
 
 resource "aws_cloudwatch_metric_alarm" "outbox_age" {
@@ -97,7 +103,7 @@ resource "aws_cloudwatch_metric_alarm" "outbox_age" {
   alarm_actions = [aws_sns_topic.alarms.arn]
   ok_actions    = [aws_sns_topic.alarms.arn]
 
-  tags = { Name = "${local.name}-outbox-age" }
+  tags = merge(local.app_tags, { Name = "${local.name}-outbox-age" })
 }
 
 # --------------------------------------------------------------------------
@@ -129,7 +135,7 @@ resource "aws_cloudwatch_metric_alarm" "api_errors" {
 
   alarm_actions = [aws_sns_topic.alarms.arn]
 
-  tags = { Name = "${local.name}-api-errors" }
+  tags = merge(local.app_tags, { Name = "${local.name}-api-errors" })
 }
 
 resource "aws_cloudwatch_metric_alarm" "database_storage" {
@@ -152,5 +158,5 @@ resource "aws_cloudwatch_metric_alarm" "database_storage" {
 
   alarm_actions = [aws_sns_topic.alarms.arn]
 
-  tags = { Name = "${local.name}-database-storage" }
+  tags = merge(local.app_tags, { Name = "${local.name}-database-storage" })
 }

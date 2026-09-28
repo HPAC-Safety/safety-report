@@ -1,22 +1,28 @@
 name: Terraform
 
-# The AWS environment itself: VPC, RDS, ECS, ECR, S3, CloudFront, Secrets
+# The AWS environment itself: VPC, RDS, Lambda, ECR, S3, CloudFront, Secrets
 # Manager, log groups, alarms. The three deploy-* workflows ship artifacts INTO
 # what this creates; they never create anything.
 #
-# Three jobs, and the split is the whole design:
+# Two jobs, and the split is the whole design:
 #
 #   infra   verifies the Terraform without touching AWS at all. It is the only
 #           one that can be a required status check, because it is the only one
 #           that works on a fresh clone with no account behind it.
-#   plan    posts the plan on a pull request. Needs a read-only AWS role.
-#   apply   changes AWS. Merge to main only, behind the production environment.
+#   plan    posts a plan against EACH account on a pull request. Needs a
+#           read-only AWS role per account.
 #
-# `plan` and `apply` SKIP WITH A NOTICE when the AWS configuration is absent,
-# rather than failing. The AWS account does not exist yet (#32 is not closed by
-# this pull request), and a permanently-red check trains people to merge past
-# red — the reasoning is ADR-0011's, applied to the same problem. ADR-0032
-# records it.
+# There is no `apply` job here any more (issue #466, ADR-0158, CON-INF-012): a
+# merge to `main` never touches AWS. The only thing that ever applies Terraform
+# is release.yml's `staging`/`production` jobs, on a published, date-tagged
+# release, and only against the account the release is deploying to.
+#
+# `plan` SKIPS WITH A NOTICE, per account, when that account's AWS
+# configuration is absent, rather than failing. Both accounts do not exist
+# yet (#464/#465 are not closed by this pull request), and a permanently-red
+# check trains people to merge past red — the reasoning is ADR-0011's, applied
+# to the same problem. ADR-0032 records it for the single-account shape this
+# generalizes.
 #
 # NO `paths:` FILTER, deliberately. `infra` is a required status check, and a
 # required context that never reports blocks a pull request permanently — a
@@ -25,8 +31,8 @@ name: Terraform
 # minute; that is the price of the check being requirable at all.
 #
 # merge_group: `infra` is required, so it reports on the merge queue's
-# gh-readonly-queue/main/* branch too. `plan` and `apply` never run there:
-# their `if:` names pull_request and push/workflow_dispatch only (ADR-0147).
+# gh-readonly-queue/main/* branch too. `plan` never runs there: its `if:`
+# names pull_request only (ADR-0147).
 on:
   push:
     branches: [main]
@@ -41,11 +47,8 @@ permissions:
 
 # Only a pull request's runs share a group, so a newer push to it cancels the
 # older run (ADR-0147). Every other run gets a group of its own: `infra`
-# reports on every main push and every merge group whatever `apply` is doing.
-# Serialising applies is `apply`'s own job-level group below. A workflow-level
-# group on main held every later push behind one apply waiting on its
-# reviewers, and each newer push cancelled the one queued before it, so `infra`
-# reported on no main commit for four days (#552, ADR-0148).
+# reports on every main push and every merge group independently of any
+# pull request's `plan`.
 concurrency:
   group: terraform-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -98,21 +101,6 @@ jobs:
       - name: shellcheck bootstrap.sh
         run: shellcheck -s sh infra/bootstrap.sh
 
-      # The CloudFront Function is real JavaScript that runs on every request to
-      # both static sites, and it is reachable only from a Terraform apply. Parse
-      # it here so a syntax error surfaces on the pull request rather than as a
-      # 500 at the edge. Same reasoning as agent-config loading require-config:
-      # see "The deploy blind spot" in .github/workflows/README.md.
-      - name: CloudFront Function parses
-        run: |
-          set -euo pipefail
-          # It is a Terraform template, so substitute the prefix before parsing.
-          # A literal placeholder in a string is still valid JavaScript, but
-          # substituting keeps this honest about what actually gets published.
-          # shellcheck disable=SC2016  # A Terraform placeholder, not a shell one.
-          sed 's|\${admin_prefix}|/admin|' infra/functions/clean-urls.js.tftpl > /tmp/clean-urls.js
-          node --check /tmp/clean-urls.js
-
       - name: terraform fmt
         run: terraform -chdir=infra fmt -check -recursive -diff
 
@@ -137,12 +125,50 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
   # ------------------------------------------------------------------------
-  # plan — the review artifact ADR-0010 was chosen for
+  # plan — the review artifact ADR-0010 was chosen for, against both accounts
   # ------------------------------------------------------------------------
+  #
+  # `matrix.account` is deliberately NOT a GitHub Environment name here.
+  # `infra/bootstrap.sh` (#464, PR #582) already prints AWS_PLAN_ROLE_ARN
+  # alongside AWS_DEPLOY_ROLE_ARN and TF_STATE_BUCKET, for the operator to set
+  # as `hpac-safety-staging`/`hpac-safety-production` GitHub Environment variables — but
+  # this job cannot read that copy. `hpac-safety-plan`'s OIDC trust condition
+  # matches the subject `repo:HPAC-Safety/safety-report:pull_request`
+  # (bootstrap.sh's own comment on "the plan role"), which is exactly the
+  # subject a job presents when it does NOT declare `environment:` — the
+  # moment a job adds `environment: hpac-safety-staging`, its subject becomes
+  # `repo:...:environment:hpac-safety-staging` instead, which is what
+  # `hpac-safety-deploy` trusts, not what this role trusts. Declaring
+  # `environment:` here to read the existing copy would therefore break the
+  # OIDC assumption this job actually needs, on top of never running at all —
+  # H2 also restricts both environments' deployment branch/tag policy to the
+  # release tag pattern, so a pull-request ref would be refused before any
+  # step ran.
+  #
+  # So this job reads a second, repository-level copy of the same two
+  # bootstrap.sh values, one pair per account, distinguished by suffix —
+  # plain repository variables, matching bootstrap.sh's own "identifiers, not
+  # secrets" treatment of these values:
+  #   AWS_PLAN_ROLE_ARN_STAGING / AWS_PLAN_ROLE_ARN_PRODUCTION
+  #   TF_STATE_BUCKET_STAGING   / TF_STATE_BUCKET_PRODUCTION
+  # Set them from the same `infra/bootstrap.sh` output the environment copies
+  # come from, just with `--repo` instead of `--env <name>` and the suffix
+  # added (see docs/deployment.md "Required GitHub configuration" — this is
+  # additive to #464/#582, not a replacement for it).
   plan:
     needs: infra
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - account: staging
+            account_upper: STAGING
+            tfvars: infra/staging.tfvars
+          - account: production
+            account_upper: PRODUCTION
+            tfvars: infra/production.tfvars
     permissions:
       contents: read
       id-token: write
@@ -154,14 +180,16 @@ jobs:
       # security boundary anyone should have to look up.
       #
       # The role is hpac-safety-plan, NOT hpac-safety-deploy. The deploy role
-      # trusts ref:refs/heads/main and nothing else, and a pull_request-triggered
-      # run presents "repo:ORG/REPO:pull_request" — it cannot assume it, and
-      # widening it so it could is precisely what #32 forbids. See ADR-0032.
-      - name: Is AWS configured?
+      # trusts only the release job's own environment
+      # (repo:HPAC-Safety/safety-report:environment:hpac-<staging|production>,
+      # ADR-0158), and a pull_request-triggered run presents
+      # "repo:ORG/REPO:pull_request" — it cannot assume it, and widening it so
+      # it could is precisely what ADR-0032 forbids.
+      - name: Is AWS configured for ${{ matrix.account }}?
         id: configured
         env:
-          PLAN_ROLE_ARN: ${{ secrets.AWS_PLAN_ROLE_ARN }}
-          STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
+          PLAN_ROLE_ARN: ${{ vars[format('AWS_PLAN_ROLE_ARN_{0}', matrix.account_upper)] }}
+          STATE_BUCKET: ${{ vars[format('TF_STATE_BUCKET_{0}', matrix.account_upper)] }}
           SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         run: |
           set -euo pipefail
@@ -171,14 +199,14 @@ jobs:
             exit 0
           fi
           if [ -z "${PLAN_ROLE_ARN}" ] || [ -z "${STATE_BUCKET}" ]; then
-            echo "::notice::AWS_PLAN_ROLE_ARN or TF_STATE_BUCKET is not set, so the AWS environment has not been bootstrapped yet. Skipping terraform plan. Creating it is #32; infra/README.md has the runbook."
+            echo "::notice::AWS_PLAN_ROLE_ARN_${{ matrix.account_upper }} or TF_STATE_BUCKET_${{ matrix.account_upper }} is not set, so ${{ matrix.account }} has not been bootstrapped yet. Skipping terraform plan. Creating it is #464/#465; infra/README.md has the runbook."
             echo 'ready=false' >> "$GITHUB_OUTPUT"
             exit 0
           fi
           echo 'ready=true' >> "$GITHUB_OUTPUT"
 
       - if: steps.configured.outputs.ready == 'true'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Install the pinned Terraform
         if: steps.configured.outputs.ready == 'true'
@@ -191,18 +219,21 @@ jobs:
           chmod +x /usr/local/bin/terraform
 
       - if: steps.configured.outputs.ready == 'true'
-        uses: aws-actions/configure-aws-credentials@v6
+        uses: aws-actions/configure-aws-credentials@4a1596c86fd706dc0521e32f0121ad1a6d1adb74 # v6
         with:
-          role-to-assume: ${{ secrets.AWS_PLAN_ROLE_ARN }}
-          role-session-name: terraform-plan-${{ github.run_id }}
+          role-to-assume: ${{ vars[format('AWS_PLAN_ROLE_ARN_{0}', matrix.account_upper)] }}
+          role-session-name: terraform-plan-${{ matrix.account }}-${{ github.run_id }}
           aws-region: ${{ env.AWS_REGION }}
 
+      # Key matches infra/bootstrap.sh's own convention (#464):
+      # hpac-safety/<environment>.tfstate.
       - name: terraform init
         if: steps.configured.outputs.ready == 'true'
         run: >
           terraform -chdir=infra init
           -lockfile=readonly
-          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
+          -backend-config="bucket=${{ vars[format('TF_STATE_BUCKET_{0}', matrix.account_upper)] }}"
+          -backend-config="key=hpac-safety/${{ matrix.account }}.tfstate"
 
       # -lock=false because the plan role can read the state bucket but not write
       # to it, and the S3 backend takes its lock by PUTTING a .tflock object into
@@ -214,15 +245,17 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          terraform -chdir=infra plan -lock=false -no-color -out=tfplan 2>&1 | tee plan.txt
+          terraform -chdir=infra plan -lock=false -no-color \
+            -var-file="${{ matrix.tfvars }}" \
+            -out=tfplan 2>&1 | tee plan.txt
 
       # The comment is the point of this job. A plan nobody reads is not a review
-      # artifact, and a plan buried in a job log is a plan nobody reads.
-      #
-      # `-edit-last --create-if-none` keeps ONE comment that updates on every
-      # push, matching what the coverage job does. GitHub caps a comment at 65536
-      # characters, so a long plan is tailed rather than truncated at the front —
-      # the end of a plan is where the summary line is.
+      # artifact, and a plan buried in a job log is a plan nobody reads. One
+      # comment PER ACCOUNT (a distinct marker each), `-edit-last
+      # --create-if-none` keeping each one to a single, updated comment across
+      # pushes, matching what the coverage job does. GitHub caps a comment at
+      # 65536 characters, so a long plan is tailed rather than truncated at the
+      # front — the end of a plan is where the summary line is.
       - name: Comment on the pull request
         if: steps.configured.outputs.ready == 'true'
         env:
@@ -231,8 +264,8 @@ jobs:
         run: |
           set -euo pipefail
           {
-            echo '<!-- terraform-plan -->'
-            echo "### Terraform plan — \`$PLAN_OUTCOME\`"
+            echo "<!-- terraform-plan-${{ matrix.account }} -->"
+            echo "### Terraform plan — ${{ matrix.account }} — \`$PLAN_OUTCOME\`"
             echo ''
             echo '<details><summary>Plan output</summary>'
             echo ''
@@ -250,113 +283,5 @@ jobs:
       - name: Fail if the plan failed
         if: steps.configured.outputs.ready == 'true' && steps.plan.outcome == 'failure'
         run: |
-          echo '::error::terraform plan failed. The output is in the pull request comment above.'
+          echo "::error::terraform plan failed for ${{ matrix.account }}. The output is in the pull request comment above."
           exit 1
-
-  # ------------------------------------------------------------------------
-  # apply — merge to main only, behind a required reviewer
-  # ------------------------------------------------------------------------
-  apply:
-    needs: infra
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
-    # A required reviewer. Changing AWS is a deliberate act, not a side effect of
-    # merging. Same environment the three deploy workflows use — see
-    # docs/deployment.md.
-    environment: production
-    # Never two applies at once. The state lock would catch it, but a queued
-    # apply is a better outcome than a failed one. One group for every ref:
-    # a workflow_dispatch from a branch changes the same AWS account. An apply
-    # waiting on its reviewers holds the group; a newer one queues behind it
-    # and replaces any older one still queued, so the newest commit applies
-    # next (ADR-0148).
-    concurrency:
-      group: terraform-apply
-      cancel-in-progress: false
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Is AWS configured?
-        id: configured
-        env:
-          DEPLOY_ROLE_ARN: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          STATE_BUCKET: ${{ vars.TF_STATE_BUCKET }}
-        run: |
-          set -euo pipefail
-          if [ -z "${DEPLOY_ROLE_ARN}" ] || [ -z "${STATE_BUCKET}" ]; then
-            echo "::notice::AWS_DEPLOY_ROLE_ARN or TF_STATE_BUCKET is not set, so the AWS environment has not been bootstrapped yet. Skipping terraform apply. Creating it is #32; infra/README.md has the runbook."
-            echo 'ready=false' >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-          echo 'ready=true' >> "$GITHUB_OUTPUT"
-
-      - if: steps.configured.outputs.ready == 'true'
-        uses: actions/checkout@v7
-
-      - name: Install the pinned Terraform
-        if: steps.configured.outputs.ready == 'true'
-        run: |
-          set -euo pipefail
-          tf_version=$(tr -d '[:space:]' < infra/.terraform-version)
-          curl -fsSL -o /tmp/terraform.zip \
-            "https://releases.hashicorp.com/terraform/${tf_version}/terraform_${tf_version}_linux_amd64.zip"
-          unzip -q -o /tmp/terraform.zip -d /usr/local/bin
-          chmod +x /usr/local/bin/terraform
-
-      - if: steps.configured.outputs.ready == 'true'
-        uses: aws-actions/configure-aws-credentials@v6
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          role-session-name: terraform-apply-${{ github.run_id }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: terraform init
-        if: steps.configured.outputs.ready == 'true'
-        run: >
-          terraform -chdir=infra init
-          -lockfile=readonly
-          -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}"
-
-      # A fresh plan, then apply that exact plan file. Applying without one would
-      # apply whatever the world looks like at apply time, which is not what the
-      # reviewer approved.
-      - name: terraform apply
-        if: steps.configured.outputs.ready == 'true'
-        run: |
-          set -euo pipefail
-          terraform -chdir=infra plan -no-color -out=tfplan
-          terraform -chdir=infra apply -no-color tfplan
-
-      # ADR-0010: apply on an unchanged repository must be a no-op. If a second
-      # plan straight afterwards is not empty, something in this configuration
-      # does not converge — a timestamp in a name, a provider default that fights
-      # back — and the plan stops being trustworthy. Say so loudly rather than
-      # letting it become normal.
-      - name: Idempotency check
-        if: steps.configured.outputs.ready == 'true'
-        run: |
-          set -euo pipefail
-          if terraform -chdir=infra plan -detailed-exitcode -no-color; then
-            echo 'Converged: a second plan is empty.'
-          else
-            code=$?
-            if [ "$code" -eq 2 ]; then
-              echo '::error::apply did not converge — a plan immediately afterwards is not empty. Something in infra/ drifts on every run. See ADR-0010.'
-            fi
-            exit "$code"
-          fi
-
-      - name: Publish the deploy variables
-        if: steps.configured.outputs.ready == 'true'
-        run: |
-          set -euo pipefail
-          {
-            echo '### Terraform outputs'
-            echo ''
-            echo 'The deploy workflows read these from state rather than from duplicated GitHub variables.'
-            echo ''
-            echo '```json'
-            terraform -chdir=infra output -json deploy_variables
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"

@@ -62,7 +62,8 @@ set -eu
 
 ENVIRONMENT="${1:-}"
 case "$ENVIRONMENT" in
-  staging | production) ;;
+  staging) GITHUB_ENVIRONMENT='hpac-staging' ;;
+  production) GITHUB_ENVIRONMENT='hpac-production' ;;
   *)
     printf 'usage: %s <staging|production>\n' "$0" >&2
     printf '\n' >&2
@@ -147,7 +148,7 @@ POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/${POLICY_NAME}"
 PLAN_ROLE_ARN="arn:aws:iam::${ACCOUNT_ID}:role/${PLAN_ROLE_NAME}"
 PLAN_POLICY_ARN="arn:aws:iam::${ACCOUNT_ID}:policy/${PLAN_POLICY_NAME}"
 
-say "Account ${ACCOUNT_ID}, region ${REGION}, environment ${ENVIRONMENT}, as ${CALLER_ARN}"
+say "Account ${ACCOUNT_ID}, region ${REGION}, environment ${ENVIRONMENT} (GitHub environment ${GITHUB_ENVIRONMENT}), as ${CALLER_ARN}"
 say ''
 
 # --------------------------------------------------------------------------
@@ -200,12 +201,15 @@ fi
 # 2. The deploy role
 # --------------------------------------------------------------------------
 #
-# Trusts EXACTLY this repository's `environment: <ENVIRONMENT>` job, and
-# nothing else - not a branch ref, not a tag, not a pull request, not another
-# repository, not another environment. `aud` and `sub` are both StringEquals,
-# never StringLike: a wildcard here is exactly the gap that would let a
-# workflow running under any OTHER GitHub environment (or none) assume this
-# role.
+# Trusts EXACTLY this repository's `environment: <GITHUB_ENVIRONMENT>` job,
+# and nothing else - not a branch ref, not a tag, not a pull request, not
+# another repository, not another environment. GITHUB_ENVIRONMENT
+# (hpac-staging / hpac-production) is the GitHub environment's own name,
+# distinct from ENVIRONMENT (staging / production), which names the AWS
+# side: the Environment tag and the Terraform state key. `aud` and `sub` are
+# both StringEquals, never StringLike: a wildcard here is exactly the gap
+# that would let a workflow running under any OTHER GitHub environment (or
+# none) assume this role.
 
 say '2/4  hpac-safety-deploy IAM role'
 
@@ -220,7 +224,7 @@ TRUST_POLICY=$(cat <<JSON
       "Condition": {
         "StringEquals": {
           "${OIDC_HOST}:aud": "${OIDC_AUDIENCE}",
-          "${OIDC_HOST}:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:${ENVIRONMENT}"
+          "${OIDC_HOST}:sub": "repo:${GITHUB_ORG}/${GITHUB_REPO}:environment:${GITHUB_ENVIRONMENT}"
         }
       }
     }
@@ -239,7 +243,7 @@ if aws iam get-role --role-name "$ROLE_NAME" >/dev/null 2>&1; then
 else
   aws iam create-role \
     --role-name "$ROLE_NAME" \
-    --description "Assumed by GitHub Actions (environment: ${ENVIRONMENT}) via OIDC to run Terraform and deploy. Created by infra/bootstrap.sh." \
+    --description "Assumed by GitHub Actions (environment: ${GITHUB_ENVIRONMENT}) via OIDC to run Terraform and deploy. Created by infra/bootstrap.sh." \
     --max-session-duration 3600 \
     --assume-role-policy-document "$TRUST_POLICY" \
     --tags "Key=${TAG_KEY},Value=${TAG_VALUE}" "Key=Environment,Value=${ENVIRONMENT}" >/dev/null
@@ -299,6 +303,15 @@ fi
 # network interface/EIP the group attaches to) and the now-dropped
 # `application-autoscaling:*` (which scales ECS/DynamoDB/etc. capacity, not EC2
 # instances, and this system has none of those left to scale).
+#
+# APPREGISTRY / RESOURCE GROUPS NAMING (#30, #465): each account's
+# myApplications application and its Resource Group are named after the
+# GitHub environment - `hpac-staging` / `hpac-production` - not
+# `hpac-safety-*`. `servicecatalog:*` and `resource-groups:*` below are
+# therefore NOT restricted by the hpac-safety-* name pattern the way IAM and
+# S3 are; the `Project=HPAC-Safety` tag condition on this whole statement is
+# what keeps them off another application's AppRegistry application or
+# Resource Group in the shared staging account instead.
 
 DEPLOY_POLICY=$(cat <<JSON
 {
@@ -801,17 +814,17 @@ say '     versioning, encryption, public-access block, TLS-only policy applied'
 # --------------------------------------------------------------------------
 
 say ''
-say "Bootstrap complete for ${ENVIRONMENT}. Next (see docs/deployment.md H3):"
+say "Bootstrap complete for ${ENVIRONMENT} (GitHub environment ${GITHUB_ENVIRONMENT}). Next (see docs/deployment.md H3):"
 say ''
-say "  In GitHub: Settings -> Environments -> ${ENVIRONMENT} -> Environment variables,"
+say "  In GitHub: Settings -> Environments -> ${GITHUB_ENVIRONMENT} -> Environment variables,"
 say '  add each of the four NAME=value lines printed below (they are identifiers,'
 # shellcheck disable=SC2016  # backticks are markdown code formatting, not shell expansion.
 say '  not secrets - no `gh secret set` here, only `gh variable set` if scripting it):'
 say ''
-say "    gh variable set AWS_DEPLOY_ROLE_ARN --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${ENVIRONMENT} --body ${ROLE_ARN}"
-say "    gh variable set AWS_PLAN_ROLE_ARN   --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${ENVIRONMENT} --body ${PLAN_ROLE_ARN}"
-say "    gh variable set TF_STATE_BUCKET     --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${ENVIRONMENT} --body ${STATE_BUCKET}"
-say "    gh variable set AWS_ACCOUNT_ID      --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${ENVIRONMENT} --body ${ACCOUNT_ID}"
+say "    gh variable set AWS_DEPLOY_ROLE_ARN --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${ROLE_ARN}"
+say "    gh variable set AWS_PLAN_ROLE_ARN   --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${PLAN_ROLE_ARN}"
+say "    gh variable set TF_STATE_BUCKET     --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${STATE_BUCKET}"
+say "    gh variable set AWS_ACCOUNT_ID      --repo ${GITHUB_ORG}/${GITHUB_REPO} --env ${GITHUB_ENVIRONMENT} --body ${ACCOUNT_ID}"
 say ''
 say "infra/backend.tf is a partial configuration: the bucket name carries the account"
 say "id, so it is supplied at init time from TF_STATE_BUCKET rather than committed,"

@@ -121,9 +121,10 @@ other:
 - **production** is a separate account HPAC creates and owns.
 
 Each gets its own `hpac-safety-deploy` role (trusted only by GitHub Actions
-jobs running under that account's matching GitHub *environment*), its own
-`hpac-safety-plan` role, and its own Terraform state bucket. Nothing is shared
-between them.
+jobs running under that account's matching GitHub *environment*, named
+`hpac-staging` and `hpac-production`, not just `staging`/`production` — see
+below), its own `hpac-safety-plan` role, and its own Terraform state bucket.
+Nothing is shared between them.
 
 ## Connecting an AWS account to GitHub (once per account)
 
@@ -154,9 +155,13 @@ you already have open, never a new long-lived credential.
 6. It creates, in that account only:
    - the GitHub OIDC identity provider (or reuses one that exists);
    - `hpac-safety-deploy`, trusted only by
-     `repo:HPAC-Safety/safety-report:environment:<staging|production>` —
-     exactly the subject a job with `environment: staging` (or `production`)
-     presents, and nothing else;
+     `repo:HPAC-Safety/safety-report:environment:<hpac-staging|hpac-production>`
+     — exactly the subject a job with `environment: hpac-staging` (or
+     `hpac-production`) presents, and nothing else. The script argument stays
+     `staging`/`production`; it maps that to the GitHub environment's actual
+     name (`hpac-staging`/`hpac-production`) for the trust condition, while
+     the AWS-side `Environment` tag and the Terraform state key stay
+     `staging`/`production`;
    - `hpac-safety-plan`, trusted only by this repository's pull requests, with
      `ReadOnlyAccess` plus Terraform state read, and explicit denies on
      uploaded report objects, secret values, `rds-data`, and RDS log
@@ -170,9 +175,10 @@ you already have open, never a new long-lived credential.
    TF_STATE_BUCKET=hpac-safety-tfstate-<account-id>
    AWS_ACCOUNT_ID=<account-id>
    ```
-   In GitHub, open **Settings → Environments → *(the matching environment)* →
-   Environment variables**, and add each one. These are identifiers, not
-   secrets — no GitHub secret is ever set from this script's output.
+   In GitHub, open **Settings → Environments → `hpac-staging`** (or
+   **`hpac-production`**) **→ Environment variables**, and add each one.
+   These are identifiers, not secrets — no GitHub secret is ever set from
+   this script's output.
 
 What `hpac-safety-deploy` may do, and what it may never do, is documented in
 the "What the deploy role may do" section of #30 and enforced by

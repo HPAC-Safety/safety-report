@@ -103,6 +103,26 @@ public class PublicReportEndpointTests(ApiPostgresFixture fixture)
 	}
 
 	[Theory]
+	[InlineData("wing-over")]
+	[InlineData("l'aile")]
+	[InlineData("\"wing-over\"")]
+	[InlineData("l'équipage sécurité-\"test\"")]
+	public async Task GivenPunctuatedSearchQuery_WhenFeedIsQueried_ThenAcceptedWithoutError(string query)
+	{
+		// Given: search_public_reports splits the query into words and hands
+		// each one to plainto_tsquery, never re-parses a tsquery's rendered
+		// text, so a hyphen, an apostrophe, or a literal quote character
+		// must never make it to the database as a syntax error (ADR-0157).
+		using var client = _factory.CreateClient();
+
+		// When
+		using var response = await client.GetAsync(new Uri($"{Feed}?q={Uri.EscapeDataString(query)}&locale=en-CA", UriKind.Relative));
+
+		// Then
+		response.StatusCode.ShouldBe(HttpStatusCode.OK);
+	}
+
+	[Theory]
 	[InlineData("not a cursor")]
 	[InlineData("!!!!")]
 	public async Task GivenUnreadableCursor_WhenSearchIsQueried_ThenStartsFromTop(string cursor)

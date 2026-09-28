@@ -343,9 +343,11 @@ and it survives the back button and a reload. Its cursor is the same
 report-ID-only cursor the plain feed uses, never a rank score.
 
 The engine is Postgres full-text search (language-appropriate stemming) plus
-`pg_trgm` (typo tolerance), shared with the admin search — that engine choice
-is [#573](https://github.com/HPAC-Safety/safety-report/issues/573)'s own ADR
-(ADR-0156 at the time of writing).
+`pg_trgm` (typo tolerance) and `unaccent` (accent tolerance — "securite"
+finds "sécurité" and back), shared with the admin search — that engine
+choice is [#573](https://github.com/HPAC-Safety/safety-report/issues/573)'s
+own ADR (ADR-0156 at the time of writing). No search index backs it; ADR-0156
+decided one is not justified at HPAC's report volume.
 
 ## Out of scope
 

@@ -1229,10 +1229,15 @@ Scenario: A hidden or a deleted comment never matches
   Then the report with the deleted comment is not listed among the results
 
 @REQ-MOD-146
-Scenario: A typo still finds the best match
-  Given a published report whose English summary says "The pilot landed in a field."
-  When a visitor searches the misspelling "landde"
+Scenario Outline: A typo or a missing accent still finds the best match
+  Given a published report whose English summary says "The pilot landed in a field." and whose French summary says "Le pilote s'est posé dans un champ."
+  When a visitor searches <query> in <language>
   Then the report is listed among the results
+
+Examples:
+  | query      | language |
+  | "landde"   | English  |
+  | "pose"     | French   |
 
 @REQ-MOD-147
 Scenario: Best match ranks first while a query is active

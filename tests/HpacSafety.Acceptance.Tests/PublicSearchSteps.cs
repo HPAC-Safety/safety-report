@@ -65,6 +65,15 @@ public sealed class PublicSearchSteps
 		_reportIdsByLabel["report"] = await BootedReports.Seed(ReportStatus.Published, true);
 	}
 
+	[Given(@"a published report whose English summary says {string} and whose French summary says {string}")]
+	public async Task GivenAPublishedReportWithFixedBilingualSummary(string summaryEn,
+																	 string summaryFr)
+	{
+		_ = summaryEn; // documentation only — see the class remarks.
+		_ = summaryFr;
+		_reportIdsByLabel["report"] = await BootedReports.Seed(ReportStatus.Published, true);
+	}
+
 	[Given(@"a published report whose French summary mentions a word its English summary does not")]
 	public async Task GivenAPublishedReportWithFrenchOnlyWord()
 	{
@@ -242,12 +251,6 @@ public sealed class PublicSearchSteps
 	public async Task WhenAVisitorSearchesTheFrenchOnlyWord(string language)
 	{
 		await Search("champ", language == "French" ? "fr-CA" : "en-CA");
-	}
-
-	[When(@"a visitor searches the misspelling {string}")]
-	public async Task WhenAVisitorSearchesTheMisspelling(string typo)
-	{
-		await Search(typo, "en-CA");
 	}
 
 	[When(@"the public feed is queried with a blank search box")]

@@ -952,7 +952,7 @@ A hidden or a deleted comment never matches — *Reqnroll, Covered*
 
 ### REQ-MOD-146
 
-A typo still finds the best match — *Reqnroll, Covered*
+A typo or a missing accent still finds the best match — *Reqnroll, Covered*
 
 ### REQ-MOD-147
 

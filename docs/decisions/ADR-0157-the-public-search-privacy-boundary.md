@@ -5,7 +5,7 @@ type: adr
 status: accepted
 date: 2026-09-27
 decision-makers: Chase Florell
-keywords: public search, public_reports, public_report_comments, pg_trgm, full-text search, role parity, REQ-MOD-140, REQ-MOD-143, REQ-MOD-149, ADR-0055, ADR-0153, ADR-0156, #574
+keywords: public search, public_reports, public_report_comments, pg_trgm, unaccent, full-text search, role parity, REQ-MOD-140, REQ-MOD-143, REQ-MOD-146, REQ-MOD-149, ADR-0055, ADR-0153, ADR-0156, #574
 ---
 
 # ADR-0157 — The public search privacy boundary
@@ -84,15 +84,39 @@ function reads exactly one text per source:
   language's version instead.
 
 **Matching combines full-text rank and trigram word-similarity with
-`GREATEST`,** exactly the "same engine" decision: `to_tsvector`/
+`GREATEST`,** exactly the "same engine" decision (ADR-0156): `to_tsvector`/
 `plainto_tsquery` in the locale's own text-search configuration (`english` or
 `french`) for stemmed matches, and `word_similarity` for typo tolerance,
 scored against the whole candidate string rather than token-by-token so a
 long summary does not dilute a short query the way whole-string `similarity`
-would. `plainto_tsquery`'s implicit `AND` between words is rewritten to `OR`
-before use, since "best match first" over "landing gear failure" should not
-require every word on the same row — ranking, not filtering, is what decides
-order.
+would.
+
+**Both the query and every candidate text are wrapped in `unaccent`,**
+matching ADR-0156 exactly: a visitor typing `securite` still finds
+`sécurité`, and one typing `sécurité` still finds either spelling. `unaccent`
+is `STABLE`, not `IMMUTABLE`, which only matters for indexing (see below);
+inside this function it is called on both sides of every comparison, the
+same shape ADR-0156 uses for the admin search.
+
+**A multi-word query gets OR semantics without ever parsing a tsquery's own
+rendered text.** `plainto_tsquery`'s implicit `AND` between words means
+searching "landing gear failure" would otherwise require every word on the
+same row — wrong for "best match first," where ranking, not filtering,
+decides order. The first draft rewrote the AND'd tsquery's `::text`
+representation, replacing `&` with `|` before re-parsing it with
+`to_tsquery`; on review this was rejected as string-munging a value with no
+documented, stable grammar to munge — `plainto_tsquery`'s output is exactly
+the quoted-lexeme form its own parser expects back, right up until a lexeme
+itself contains something the replace could misfire on. The function instead
+splits the query into words in SQL (`regexp_split_to_table` on whitespace),
+computes one `plainto_tsquery` per word — already safe against any input,
+since `plainto_tsquery` only ever tokenizes text and never throws — and OR's
+across words by taking the `MAX` full-text rank and the `bool_or` hit across
+that per-word set, in a `LATERAL` join, once per document. No tsquery is
+combined, concatenated, or converted back from text. Verified directly: a
+hyphenated query (`wing-over`), one with an apostrophe (`l'aile`), and one
+with literal quote characters (`"wing-over"`) all return normally with no
+error, whether or not anything matches.
 
 **The cursor still carries only a report ID (ADR-0153), even for a ranked
 query.** `PublicReportEndpoints.Search` reuses the exact `Cursor` type the
@@ -155,15 +179,19 @@ never substitutes for the other's rule.
   storage key #572's `useInfiniteReportList` keys its accumulated list by, so
   a later rebase onto #572 only has to route search's results through that
   hook rather than invent a place for `q` to live.
-- `CREATE EXTENSION IF NOT EXISTS pg_trgm` and four best-effort trigram `GIN`
-  indexes ship in this migration; whichever of #573 or this pull request
-  merges first creates the extension, and the other's identical statement is
-  a no-op.
-- Four new trigram indexes exist alongside the search function; a functional
-  full-text index tied to one fixed language configuration is not added,
-  since the function chooses its configuration per request rather than at
-  index-build time — perf tuning against real query volume is left as a
-  follow-up, not a claim this ADR makes.
+- `CREATE EXTENSION IF NOT EXISTS pg_trgm` and `unaccent` ship in this
+  migration; whichever of #573 or this pull request merges first creates
+  each extension, and the other's identical statement is a no-op.
+- No index backs `search_public_reports`, matching ADR-0156's own decision
+  that HPAC's report volume does not justify one yet. `word_similarity(a, b)`
+  called as a function — needed here because it takes the query as its
+  first argument, not the indexed column — cannot use a trigram index in any
+  case; only the `<%`/`%>` operator forms can. A first draft of this
+  migration added four trigram `GIN` indexes anyway, on the theory that a
+  planner might still use them for the `@@` half of the match; on review
+  they were dead weight (nothing ever read them) and were dropped, so this
+  migration writes to no index it does not also cost the write path for
+  nothing. Revisit together with ADR-0156 if real volume ever justifies one.
 
 ## Rejected alternatives
 
@@ -202,9 +230,32 @@ never substitutes for the other's rule.
   keeping a value internal, and the extra lookup this ADR does instead — one
   more evaluation of the same scoring expression, filtered to one ID — costs
   a single indexed-adjacent query, not a second round trip to the client.
-- **`unaccent`, for accent-insensitive matching.** Left out of this pull
-  request: the product decision does not ask for it, `#573` may or may not
-  add it for the admin search's own reasons, and Postgres's `french` text
-  search configuration already normalizes some accented forms on its own.
-  Revisit if a real query shows it matters; it is not a boundary this ADR
-  needs to draw now.
+- **Leaving `unaccent` out, on the theory that `french`'s text search
+  configuration already normalizes some accented forms on its own.** This
+  was this migration's first shape, and it was wrong: reviewed against
+  ADR-0156, which wraps both sides of every comparison in `unaccent` for the
+  admin search, and a visitor typing `securite` for `sécurité` is exactly
+  the case an unaccented site language should not lose. Fixed by wrapping
+  the query and every candidate text in `unaccent` on both the full-text and
+  trigram halves of the match, verified directly in both directions
+  (accented query against unaccented-typed text, and the reverse).
+- **Rewriting an AND'd `plainto_tsquery`'s `::text` output into an OR'd one,
+  then re-parsing it with `to_tsquery`.** This migration's first shape for
+  "best match first" over a multi-word query. Rejected on review: it treats
+  `plainto_tsquery`'s rendered text as a stable grammar to string-munge,
+  which it is not documented to be, and a lexeme the replace mishandled
+  would either silently change what matched or, in the worst case, fail to
+  parse. Replaced with per-word `plainto_tsquery` OR'd through `MAX`/
+  `bool_or` over a `LATERAL` join (see Decision) — no tsquery is ever
+  serialized back to text and re-parsed, and every input plainto_tsquery
+  accepts is still accepted, verified with hyphenated, apostrophe, and
+  literal-quote queries.
+- **Four trigram `GIN` indexes on the raw summary and comment-revision
+  columns**, added in this migration's first shape "for typo-tolerance
+  performance." Rejected on review: `word_similarity(p_query, column)` is a
+  function call with the query first, not `column %> p_query` or
+  `column <% p_query`; only those operator forms are indexable by a trigram
+  GIN index, and ADR-0156 already settled that no search index is justified
+  at HPAC's report volume in any case. Four indexes nothing ever read would
+  only have cost every future write to `summaries` and
+  `report_comment_revisions` for nothing, so this migration adds none.

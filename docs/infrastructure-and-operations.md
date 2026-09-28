@@ -446,7 +446,7 @@ against both accounts without mutating either
 
 Each account's roles are bootstrapped independently by `infra/bootstrap.sh`
 (#464); one account is never reached through the other. `hpac-safety-deploy`
-is trusted only by `repo:HPAC-Safety/safety-report:environment:<that
+is trusted only by `repo:HPAC-Safety@307760008/safety-report@1341995834:environment:<that
 account's GitHub environment — hpac-safety-staging or hpac-safety-production>`, and
 `hpac-safety-plan` only by this repository's pull requests. Both trust
 conditions are exact matches (`StringEquals`), never a wildcard subject.

@@ -20,6 +20,12 @@ Rollback is re-promoting an earlier tag (production) or re-running its release
 (staging). The build job, the reusable deploy job, the pull-request plan, and
 Terraform outputs as the interface stand.
 
+**Subject form amended by
+[ADR-0167](ADR-0167-oidc-trust-names-the-immutable-subject.md):** every trust
+subject quoted below as `repo:HPAC-Safety/safety-report:<context>` is
+`repo:HPAC-Safety@307760008/safety-report@1341995834:<context>`, GitHub's
+immutable form, which is the only form this repository's tokens carry.
+
 Accepted. Implements [ADR-0158](ADR-0158-two-aws-accounts-staged-and-promoted-by-approval.md)
 and [CON-INF-011 through CON-INF-013](../infrastructure-and-operations.md).
 Does not reopen anything either decided.

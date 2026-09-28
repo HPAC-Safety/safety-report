@@ -12,7 +12,7 @@ import { AttachmentLightbox } from "./AttachmentLightbox"
 
 /*
  * A report's attachments as one horizontal, scrollable strip of thumbnails, in
- * place of stacked embeds or admin list rows (issue #427). An image thumbnail
+ * place of stacked embeds or admin list rows (issue no. 427). An image thumbnail
  * is its existing derivative scaled with CSS; a video gets a generic play
  * tile; a document gets a type icon and downloads instead of opening — never
  * inline, never in the lightbox. No new Worker derivative.
@@ -56,7 +56,7 @@ export function AttachmentStrip({
 	reportId: string
 	/** The public attachment list — used when `staffAttachments` is null. */
 	media: PublicMedia[]
-	/** Every attachment, staff-marked; present only for a signed-in reviewer (issue #427 decision 4). */
+	/** Every attachment, staff-marked; present only for a signed-in reviewer (issue no. 427 decision 4). */
 	staffAttachments: ReportAttachment[] | null
 	/** Called after a successful hide or show, so the caller can refetch. */
 	onChanged: () => void
@@ -71,7 +71,7 @@ export function AttachmentStrip({
 	const [lightboxId, setLightboxId] = useState<string | null>(null)
 	const [error, setError] = useState<string | null>(null)
 	// The thumbnail that opened the lightbox, so closing it can return focus
-	// there (decision 5, issue #427).
+	// there (decision 5, issue no. 427).
 	const returnFocusTo = useRef<HTMLElement | null>(null)
 
 	useEffect(() => {
@@ -260,7 +260,7 @@ function Thumbnail({
 
 	// Only an image loads its actual derivative as the thumbnail — a video gets
 	// a generic play tile and a document a type icon, neither of which needs a
-	// link until activated (decision 3, issue #427).
+	// link until activated (decision 3, issue no. 427).
 	const refresh = useCallback(() => {
 		if (item.kind !== "image" || item.state !== "ready") {
 			return
@@ -401,7 +401,7 @@ function DocumentTile({ format }: { format: string | null }) {
 	)
 }
 
-/** The one link a thumbnail or the lightbox needs for an image or video (issue #427 decision 11). */
+/** The one link a thumbnail or the lightbox needs for an image or video (issue no. 427 decision 11). */
 export async function linkFor(reportId: string, item: StripItem, staff: boolean): Promise<string> {
 	if (!staff || item.visibility === "public") {
 		const link = await fetchMediaLink(reportId, item.id)

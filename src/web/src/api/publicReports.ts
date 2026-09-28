@@ -28,7 +28,7 @@ export interface PublicReport {
 	/** Comments that are neither deleted nor hidden. */
 	commentCount: number
 	/**
-	 * Viewer-scoped (issue #427): the public count for an anonymous visitor or a
+	 * Viewer-scoped (issue no. 427): the public count for an anonymous visitor or a
 	 * `User`, the full non-deleted count for a signed-in `SafetyOfficer`/
 	 * `Administrator`. Never any other attachment detail.
 	 */
@@ -49,7 +49,7 @@ export interface PublicReportDetail extends PublicReport {
 	/**
 	 * Every attachment, public or not, each marked with its state and public
 	 * visibility — present only for a signed-in `SafetyOfficer`/`Administrator`,
-	 * null for everyone else (issue #427 decision 4). Same shape as the admin
+	 * null for everyone else (issue no. 427 decision 4). Same shape as the admin
 	 * report page's own attachment list.
 	 */
 	staffAttachments: ReportAttachment[] | null
@@ -94,7 +94,7 @@ export async function fetchPublicReports(after: string | null, q?: string, local
 
 	const query = params.size > 0 ? `?${params.toString()}` : ""
 	// The endpoint stays anonymous; a bearer token, when one is sent, is read
-	// only to scope the attachment count to a signed-in reviewer (issue #427).
+	// only to scope the attachment count to a signed-in reviewer (issue no. 427).
 	const response = await fetch(`/api/v1/public/reports${query}`, { headers: authorization() })
 
 	if (!response.ok) {
@@ -106,7 +106,7 @@ export async function fetchPublicReports(after: string | null, q?: string, local
 
 export async function fetchPublicReport(id: string): Promise<PublicReportDetail> {
 	// Same rule as the feed: anonymous, but a staff token widens the response
-	// (issue #427 decision 4).
+	// (issue no. 427 decision 4).
 	const response = await fetch(`/api/v1/public/reports/${encodeURIComponent(id)}`, { headers: authorization() })
 
 	if (response.status === 404) {

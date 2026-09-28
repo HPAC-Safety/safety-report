@@ -4,7 +4,7 @@ import { PublicReportNotFound } from "../api/publicReports"
 import { linkFor, type StripItem } from "./AttachmentStrip"
 
 /*
- * Steps through a report's images and videos in attachment order (issue #427
+ * Steps through a report's images and videos in attachment order (issue no. 427
  * decision 3). Left/Right and the caret buttons move, wrapping at both ends
  * (decision 5); Escape closes; focus is trapped by the native <dialog> while
  * it is open and returns to the thumbnail that opened it on close

@@ -2,7 +2,7 @@ import { useLocale } from "../i18n/useLocale"
 
 /*
  * A report's attachment icon and count, on the public feed and the admin
- * report list (issue #427 decisions 1-2). The count is already viewer-scoped
+ * report list (issue no. 427 decisions 1-2). The count is already viewer-scoped
  * by the API — this component only decides whether to show it (omitted at
  * zero) and how to label it accessibly.
  */

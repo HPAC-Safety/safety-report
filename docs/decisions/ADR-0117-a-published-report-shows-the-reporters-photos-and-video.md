@@ -157,3 +157,53 @@ sequenceDiagram
   video is public there. Images are.
 - Every public view of a file is a request to the API and then to S3, with no
   CDN cache. That is fine at HPAC's volume and is the price of point 6.
+
+## Amendment (2026-09-28)
+
+**Media in the public feed list, thumbnails, and a lightbox are now in scope**
+(issue #427; #412 put them out of scope). The stacked embeds point 7
+described are replaced by one horizontal thumbnail strip per report page,
+public and staff. This amendment records what changed; the points above stay
+the historical record of what shipped first.
+
+- **A viewer-scoped attachment count.** The public feed and the admin report
+  list each show a count — the number of attachments *that viewer* may see:
+  the `public_report_media` count for the public, every non-deleted
+  `report_files` row for a signed-in `SafetyOfficer`/`Administrator`, on both
+  lists. Computed in SQL (`public_reports.public_attachment_count` /
+  `.full_attachment_count`, `admin_report_queue.attachment_count`), never in
+  C#. A staff-only private attachment (ADR-0135) is never counted. The public
+  report DTO carries only the count — no ids, kinds, names, or links.
+- **The strip replaces the stacked embeds** on `/reports/:id`. An image
+  thumbnail is the existing derivative scaled with CSS; a video gets a
+  generic play tile; a document gets a type icon and downloads instead of
+  opening (never inline, never in the lightbox) — no new Worker derivative.
+- **Staff see every attachment, public or not**, each marked with its state
+  and public visibility (the admin vocabulary: `public`, `hidden`,
+  `no_consent`, `when_published`, plus `processing`/`failed`), with Hide and
+  Show, on both `/reports/:id` and `/admin/reports/:id` — which now uses the
+  same strip and lightbox in place of its list rows, and works for an
+  unpublished report. The public report endpoint reads a staff bearer token
+  when one is sent (JwtBearer is the default scheme) while staying anonymous;
+  a hidden or otherwise non-public item's state and visibility appear only in
+  that staff response.
+- **The lightbox** steps through images and videos in attachment order, wraps
+  at both ends, is keyboard-operable (arrows, Escape), and traps and returns
+  focus. A document is never opened in it (decision 3, issue #427).
+- **`GET .../attachments/{id}/view` is now inline**, not a forced download,
+  for an image or video derivative — still audited, still at most 15 minutes
+  — so the lightbox can embed it. `.../download` is unchanged (documents).
+  Point 5 above still holds for the public endpoint.
+- **Audit narrows to non-public items.** A public item on a staff page loads
+  through the anonymous public link, unaudited, the same as for a visitor;
+  only a non-public item's view goes through the audited staff mint. The
+  lightbox reuses a thumbnail's link while it is valid; a refresh after an
+  error writes another row.
+- **A processing or failed image or video** (point 2 above: never public) is
+  now also never viewed inline by staff. It is offered as a forced, audited
+  download of its raw original instead — see the ADR-0094 amendment and the
+  new `GET .../attachments/{id}/original` endpoint.
+
+See issue #427 for the full decision record, and
+[ADR-0094](ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md#amendment-2026-09-28)
+for the raw-original download this amendment relies on.

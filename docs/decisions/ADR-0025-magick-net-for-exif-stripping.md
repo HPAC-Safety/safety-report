@@ -157,3 +157,14 @@ carrying a GPS fix.
 - [ADR-0026](ADR-0026-presigned-urls-and-private-blob-storage.md)
 - `docs/data-handling.md`
 - `src/HpacSafety.Infrastructure/Media/README.md`
+
+## Amendment (2026-09-28)
+
+"A reviewer sees nothing rather than something unsafe" narrows to *inline*: a
+reviewer never gets an inline view of a file with no stripped derivative —
+`/view` still 404s for one — but now does get a forced, audited download of
+its raw original, through the new `/original` endpoint (issue #427, decision
+12/15, widening
+[ADR-0094](ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md#amendment-2026-09-28)).
+"Never seen" was always true only of the derivative-shaped view this file
+still refuses to fabricate.

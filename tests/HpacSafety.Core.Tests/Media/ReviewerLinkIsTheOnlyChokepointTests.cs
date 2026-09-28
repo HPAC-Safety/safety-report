@@ -26,7 +26,10 @@ public class ReviewerLinkIsTheOnlyChokepointTests
 	// original (ADR-0119); PrivateAttachmentLink only of a staff private
 	// attachment (ADR-0135).
 	[InlineData("CreateReadUrl", "ReviewerMediaLink.cs,PublicMediaLink.cs,PrivateAttachmentLink.cs")]
-	[InlineData("CreateInlineReadUrl", "PublicMediaLink.cs")]
+	// ReviewerMediaLink.CreateInlineViewUrl mints the staff lightbox's inline
+	// link too (issue #427 decision 10) — the same rule PublicMediaLink already
+	// enforces, on the same compartment check.
+	[InlineData("CreateInlineReadUrl", "PublicMediaLink.cs,ReviewerMediaLink.cs")]
 	// The one pre-signed PUT, to an upload's quarantine key, for a reporter
 	// (ADR-0126) or a staff private attachment (ADR-0135).
 	[InlineData("CreateUploadUrl", "UploadLink.cs")]

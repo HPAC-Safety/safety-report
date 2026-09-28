@@ -351,3 +351,23 @@ that outlives the reason it was minted is a public object URL with extra steps.
 - [ADR-0009](ADR-0009-hosting-on-aws.md)
 - `docs/data-handling.md`, `docs/architecture.md`
 - `src/HpacSafety.Infrastructure/Storage/README.md`
+
+## Amendment (2026-09-28)
+
+**"A reviewer link can only name a derivative" gains one narrow exception.**
+`ReviewerMediaLink` still issues its ordinary view link
+(`CreateViewUrl`/`CreateInlineViewUrl`) only for `MediaCompartment.Stripped`,
+unchanged. It now also carries `CreateOriginalMediaDownloadUrl`, which signs
+the *original* compartment — but only for an image or video that has no
+stripped derivative (still processing, or failed), and it still refuses a
+document and refuses once a derivative exists. The "Reviewer sees" table
+above reads "nothing" for `AwaitingStripping`; read it now as "nothing
+inline" — the raw original downloads instead, forced and audited under its
+own action (`DownloadedOriginalMedia`), through
+`GET /api/admin/reports/{reportId}/attachments/{attachmentId}/original`
+(issue #427, decision 12/15). The check stays on the parsed compartment, and
+the chokepoint stays enforced the same way: `ReviewerMediaLink` and
+`PublicMediaLink` (and `MediaUploadSlot` for uploads) remain the only callers
+`IBlobStore` is used by outside their own tests. See the
+[ADR-0094](ADR-0094-video-is-remuxed-not-transcoded-and-never-refused.md#amendment-2026-09-28)
+amendment for the full behavior this narrows.

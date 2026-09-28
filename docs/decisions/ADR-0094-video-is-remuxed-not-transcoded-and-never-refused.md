@@ -143,3 +143,28 @@ authorized reviewers regardless, and no attachment is ever published.
 - [ADR-0003](ADR-0003-anonymization-pipeline.md)
 - [ADR-0025](ADR-0025-magick-net-for-exif-stripping.md)
 - [ADR-0026](ADR-0026-presigned-urls-and-private-blob-storage.md)
+
+## Amendment (2026-09-28)
+
+**Widened from "an unstrippable video" to any image or video with no
+derivative** (issue #427, decision 12/15): still processing, or failed
+verification, an image is kept exactly the way this ADR already decided a
+video is. The reviewer download this ADR described — "a short-lived, forced
+download of the unredacted original, authorized, never inline-rendered, and
+never published" — is now the real, built-in `GET
+/api/admin/reports/{reportId}/attachments/{attachmentId}/original`, for an
+image or video only while it has no derivative; it 404s once one exists (use
+`/view`, now inline — see the ADR-0117 amendment) and for a document (use
+`/download`). It is audited under its own action,
+`AuditAction.DownloadedOriginalMedia`, distinct from `ViewedAttachment`, so an
+audit reader can spot a raw original — EXIF/GPS intact — without joining to
+the file's processing state. Never in the lightbox.
+
+This also corrects
+[REQ-MED-013](../../features/media/media.feature), which read "the file is
+inaccessible to any reviewer" until now: that line never matched this ADR's
+own decision for video, and #427 makes the code agree with the ADR instead of
+the other way around. See
+[ADR-0025](ADR-0025-magick-net-for-exif-stripping.md#amendment-2026-09-28) and
+[ADR-0026](ADR-0026-presigned-urls-and-private-blob-storage.md#amendment-2026-09-28)
+for the two statements this reconciles.

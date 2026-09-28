@@ -2,10 +2,18 @@
 -- (as of 20260927223122_SortPublicFeedBySubmittedAt.sql), admin_report_queue
 -- (as of 20260927231919_ShowReporterAndPilotNames.sql), and
 -- search_public_reports (as of 20260928012335_AddPublicReportSearch.sql),
--- none of which carry an attachment count.
+-- none of which carry an attachment count. A view cannot lose a trailing
+-- column in place (CREATE OR REPLACE only ever appends), so every view that
+-- reads public_reports or admin_report_queue is dropped and restored with
+-- them, in dependency order, the same pattern
+-- 20260927172950_ListReportVersions.Down.sql uses.
 DROP FUNCTION IF EXISTS search_public_reports(text, text, text, integer);
+DROP VIEW public_report_media;
+DROP VIEW admin_pending_counts;
+DROP VIEW admin_report_queue;
+DROP VIEW public_reports;
 
-CREATE OR REPLACE VIEW public_reports AS
+CREATE VIEW public_reports AS
 SELECT report.id COLLATE "C" AS id,
        summary.ai_summary_en,
        summary.ai_summary_fr,
@@ -26,7 +34,7 @@ WHERE report.deleted IS NULL
   AND btrim(summary.ai_summary_en) <> ''
   AND btrim(summary.ai_summary_fr) <> '';
 
-CREATE OR REPLACE VIEW admin_report_queue AS
+CREATE VIEW admin_report_queue AS
 SELECT report.id,
        report.submitted_at,
        report.status,
@@ -56,6 +64,51 @@ FROM reports AS report
       AND question.role IN ('reporter_first_name', 'reporter_last_name', 'pilot_first_name', 'pilot_last_name')
     ) AS names ON true
 WHERE report.deleted IS NULL;
+
+CREATE VIEW admin_pending_counts AS
+SELECT (SELECT count(*) FROM admin_report_queue WHERE needs_action)::integer AS reports_needing_action,
+       (SELECT count(*) FROM answers_awaiting_translation)::integer          AS answers_awaiting_translation,
+       (SELECT count(*)
+        FROM question_choices AS choice
+                 JOIN questions AS question ON question.id = choice.question_id
+        WHERE choice.needs_review
+          AND question.deleted IS NULL)::integer                             AS type_ahead_values_awaiting_review;
+
+CREATE VIEW public_report_media AS
+SELECT file.id COLLATE "C"        AS id,
+       file.report_id COLLATE "C" AS report_id,
+       file.kind,
+       file.content_type,
+       file.stripped_blob_key,
+       NULL::varchar(512)         AS document_blob_key,
+       file.uploaded_at
+FROM report_files AS file
+         JOIN public_reports AS report ON report.id = file.report_id
+         JOIN reports AS source ON source.id = file.report_id
+WHERE source.consent_media IS TRUE
+  AND file.kind IN ('image', 'video')
+  AND file.deleted IS NULL
+  AND file.hidden_at IS NULL
+  AND file.processing_error_code IS NULL
+  AND file.stripped_blob_key IS NOT NULL
+  AND file.exif_stripped_at IS NOT NULL
+UNION ALL
+SELECT file.id COLLATE "C"        AS id,
+       file.report_id COLLATE "C" AS report_id,
+       file.kind,
+       file.content_type,
+       NULL                       AS stripped_blob_key,
+       file.blob_key              AS document_blob_key,
+       file.uploaded_at
+FROM report_files AS file
+         JOIN public_reports AS report ON report.id = file.report_id
+         JOIN reports AS source ON source.id = file.report_id
+WHERE source.consent_documents IS TRUE
+  AND file.kind = 'document'
+  AND file.deleted IS NULL
+  AND file.hidden_at IS NULL
+  AND file.processing_error_code IS NULL
+  AND file.validated_at IS NOT NULL;
 
 CREATE FUNCTION search_public_reports(
     p_query text,
